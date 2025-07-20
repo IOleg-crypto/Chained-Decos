@@ -18,6 +18,8 @@ if (NOT raylib_FOUND)
     FetchContent_MakeAvailable(raylib)
 endif()
 
-add_executable(Game src/main.cpp)
+add_executable(Game src/main.cpp
+        src/Window/Window.cpp
+        src/Window/Window.h)
 
 target_link_libraries(Game PRIVATE raylib)

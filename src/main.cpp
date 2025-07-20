@@ -1,5 +1,7 @@
-#include <iostream>
+#include "Window/Window.h"
 
 int main() {
-    return 0;
+    std::unique_ptr<Window> pWindow = std::make_unique<Window>(800 ,600 , "Game");
+    pWindow->Init();
+    pWindow->Run();
 }
