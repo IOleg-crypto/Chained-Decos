@@ -20,6 +20,8 @@ endif()
 
 add_executable(Game src/main.cpp
         src/Window/Window.cpp
-        src/Window/Window.h)
+        src/Window/Window.h
+        src/Player/Player.cpp
+        src/Player/Player.h)
 
 target_link_libraries(Game PRIVATE raylib)

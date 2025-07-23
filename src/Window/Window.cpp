@@ -4,11 +4,11 @@
 
 #include "Window.h"
 
-Window::Window() : m_screenX(0) , m_screenY(0) , m_WindowName("") {
+Window::Window() : m_screenX(0) , m_screenY(0){
 
 }
 
-Window::Window(const int screenX, const int screenY, const std::string &windowName) : m_screenX(screenX) , m_screenY(screenY) , m_WindowName(windowName) {
+Window::Window(const int screenX, const int screenY, const std::string &windowName) : m_screenX(screenX) , m_screenY(screenY) , m_WindowName(windowName) , m_player() {
 }
 // Closes window
 Window::~Window() {
@@ -24,7 +24,11 @@ void Window::Run() const {
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        DrawText("Hello i set up raylib", 20, 20, 20, BLACK);
+        BeginMode3D(m_player.getCamera());
+        if (IsKeyPressed('Z')) m_player.getCamera().target = (Vector3){ 0.0f, 0.0f, 0.0f };
+        DrawCube((Vector3){ 0.0f, 1.0f, 0.0f }, 2.0f, 2.0f, 2.0f, BLUE);         // Куб
+        DrawCubeWires((Vector3){ 0.0f, 1.0f, 0.0f }, 2.0f, 2.0f, 2.0f, MAROON); // Контури куба
+        EndMode3D();
         EndDrawing();
     }
 }
