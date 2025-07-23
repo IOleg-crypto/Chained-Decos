@@ -8,6 +8,8 @@
 #include <string>
 #include <memory>
 #include <raylib.h>
+#include "../Player/Player.h"
+
 
 /**
  *  @brief Window - class that creates window using Raylib library
@@ -19,9 +21,10 @@ private:
       int m_screenY;
       // Window name
       std::string m_WindowName;
+      Player m_player{};
 public:
      Window();
-     Window(const int screenX , const int screenY , const std::string &windowName);
+     Window(int screenX , int screenY , const std::string &windowName);
      ~Window();
      // Init window from start
      void Init() const;
