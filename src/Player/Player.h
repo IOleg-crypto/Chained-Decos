@@ -1,5 +1,5 @@
 //
-// Created by I#Oleg on 23.07.2025.
+// Created by I#Oleg
 //
 
 #ifndef PLAYER_H
