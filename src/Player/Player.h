@@ -1,4 +1,3 @@
-//
 // Created by I#Oleg
 //
 
@@ -6,14 +5,22 @@
 #define PLAYER_H
 
 #include <raylib.h>
+#include <raymath.h>
 
+// Player class handles the camera used to represent the player's point of view
 class Player {
 private:
-    Camera camera;
+    Camera camera; // Raylib camera struct to represent 3D perspective
+    float moveSpeed = 0.1f; // Speed for character
 public:
-    Player();
-    [[nodiscard]] Camera getCamera() const;
-    void Update();
+    Player(); // Constructor to initialize the camera
+
+    [[nodiscard]] Camera getCamera() const; // Returns the current camera state (read-only)
+
+    void Update(); // Updates the camera each frame (e.g., handles input and movement)
+    float GetSpeed() const; // Get character speed
+    void SetSpeed(float speed);
+    void Move(Vector3 offset);
 };
 
-#endif //CAMERA_H
+#endif // PLAYER_H

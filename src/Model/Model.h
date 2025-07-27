@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 #include <raylib.h>
-#include <fstream>
+
 #include <nlohmann/json.hpp>
 
 
@@ -30,7 +30,6 @@ public:
     [[deprecated]] void AddModel(const std::string& modelPath);
     void DrawAllModels() const; // Draw all models
     Model& GetModel(size_t index); // Access to one model;
-    void AddModelInstance(int modelIndex, Vector3 pos);
 };
 
 

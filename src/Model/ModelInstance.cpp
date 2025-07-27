@@ -5,7 +5,7 @@
 #include "ModelInstance.h"
 
 // Default init
-ModelInstance::ModelInstance(Vector3 pos , Model *pMdl) : position(pos) , pModel(pMdl) {
+ModelInstance::ModelInstance(Vector3 pos , Model *pMdl , float scl) : position(pos) , pModel(pMdl) , scale(scl) {
 
 }
 

@@ -5,12 +5,15 @@
 #include "Model.h"
 
 #include <iostream>
+#include <fstream>
 
 Models::~Models() {
     // Delete all models
     for (const auto& model : m_models) {
         UnloadModel(model);
     }
+    m_models.clear();
+    m_instances.clear();
 }
 
 void Models::LoadModelsFromJson(const std::string &path) {
@@ -35,17 +38,26 @@ void Models::LoadModelsFromJson(const std::string &path) {
         m_models.push_back(LoadModel(modelPath.c_str()));
         Model *pModel = &m_models.back();
         // Take position from file
-        if (modelEntry.contains("position")) {
-            for (const auto& instance : modelEntry["position"]) {
-                Vector3 pos = {
-                    instance["x"].get<float>(),
-                    instance["y"].get<float>(),
-                    instance["z"].get<float>()
-                };
-                m_instances.emplace_back( pos, pModel );
-            }
-        }
+        if (modelEntry.contains("instances")) {
+            float scaleModel = 0;
+            for (const auto& instance : modelEntry["instances"]) {
+                Vector3 pos = {0, 0 , 0};
+                if (instance.contains("position")) {
+                    pos.x = instance["position"]["x"].get<float>();
+                    pos.y = instance["position"]["y"].get<float>();
+                    pos.z = instance["position"]["z"].get<float>();
+                }
 
+                if (instance.contains("scale")) {
+                    scaleModel = instance["scale"].get<float>();
+                }
+
+                m_instances.push_back({ pos, pModel , scaleModel });
+            }
+        } else {
+            // If no instances, add one default
+            m_instances.push_back( {{0, 0, 0}, pModel , 1.0f });
+        }
     }
 }
 
@@ -61,7 +73,7 @@ void Models::AddModel(const std::string& modelPath){
 // Draw all models with position
 void Models::DrawAllModels() const {
     for (const auto& instance : m_instances) {
-        DrawModel(*instance.pModel, instance.position, 1.0f, WHITE);
+        DrawModel(*instance.pModel, instance.position, instance.scale, WHITE);
     }
 }
 
@@ -74,10 +86,4 @@ Model& Models::GetModel(const size_t index) {
     return m_models.at(index);
 }
 
-void Models::AddModelInstance(const int modelIndex, Vector3 pos) {
-    if (modelIndex >= 0 && modelIndex < m_models.size()) {
-        m_instances.emplace_back( pos , &m_models[modelIndex] );
-    } else {
-        TraceLog(LOG_WARNING, "Invalid model index!");
-    }
-}
+

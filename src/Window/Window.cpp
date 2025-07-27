@@ -26,31 +26,77 @@ Window::~Window() {
 void Window::Init() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_FULLSCREEN_MODE);
     InitWindow(m_screenX, m_screenY, m_WindowName.c_str());
+    HideCursor();
     SetTargetFPS(60);
 
     m_models.LoadModelsFromJson(std::string(GetWorkingDirectory()) + "\\src\\models.json");
 }
 void Window::Run() {
     while (!WindowShouldClose()) {
-        KeyboardShortcut();
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-        BeginMode3D(m_player.getCamera());
-        DrawGrid(20, 5.0f);
-        m_models.DrawAllModels();
-        EndMode3D();
-        DrawText(TextFormat("FPS: %d", GetFPS()), 10, 10, 20, DARKGRAY);
-
-        EndDrawing();
+        Update();
+        Render();
     }
 }
 
-void Window::KeyboardShortcut()  {
+void Window::Update() {
+    KeyboardShortcut();
+}
+
+void Window::Render() const {
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+
+    BeginMode3D(m_player.getCamera());
+    DrawScene3D();
+    EndMode3D();
+
+    DrawOverlay2D();
+
+    EndDrawing();
+}
+void Window::DrawScene3D() const {
+    DrawGrid(50, 5.0f);
+    m_models.DrawAllModels();
+}
+
+void Window::DrawOverlay2D() {
+    DrawText(TextFormat("FPS: %d", GetFPS()), 10, 10, 20, DARKGRAY);
+}
+
+void Window::KeyboardShortcut() {
     if (IsKeyPressed(KEY_F5)) {
         ToggleFullscreen();
     }
-    // To avoid unnecessary movement
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-        m_player.Update();
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        DisableCursor();
+    }
+
+    // Update only camera rotation (not movement) using raylib
+    m_player.Update();
+
+    // Move logic (WASD)
+    Vector3 forward = Vector3Normalize(Vector3Subtract(
+        m_player.getCamera().target,
+        m_player.getCamera().position));
+    Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, m_player.getCamera().up));
+
+    if (IsKeyDown(KEY_LEFT_SHIFT)) m_player.SetSpeed(0.5f);
+    else m_player.SetSpeed(0.1f);
+
+    float speed = m_player.GetSpeed();
+
+    if (IsKeyDown(KEY_W)) {
+        m_player.Move(Vector3Scale(forward, speed));
+    }
+    if (IsKeyDown(KEY_S)) {
+        m_player.Move(Vector3Scale(forward, -speed));
+    }
+    if (IsKeyDown(KEY_D)) {
+        m_player.Move(Vector3Scale(right, speed));
+    }
+    if (IsKeyDown(KEY_A)) {
+        m_player.Move(Vector3Scale(right, -speed));
     }
 }
+
