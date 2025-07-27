@@ -24,11 +24,11 @@ private:
     std::string m_WindowName;
 
     // Game objects
-    Player m_player{};
+    Player m_player;
     Models m_models;
 public:
     Window();
-    Window(int screenX , int screenY , const std::string &windowName);
+    Window(int screenX , int screenY , std::string windowName);
     ~Window();
 
     // Initialize the window
@@ -36,6 +36,8 @@ public:
 
     // Run the main game loop
     void Run();
+    // Init all keyboard hotkeys
+    void KeyboardShortcut() const;
 };
 
 #endif // WINDOW_H
