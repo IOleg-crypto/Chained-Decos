@@ -10,8 +10,9 @@
 struct ModelInstance {
      Vector3 position; // Takes position(x , y , z)
      Model *pModel; //  Take model
+     float scale; // Scale model;
      // Takes position and model
-     ModelInstance(Vector3 pos , Model *pMdl);
+     ModelInstance(Vector3 pos , Model *pMdl , float scl);
 };
 
 

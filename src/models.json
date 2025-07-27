@@ -1,8 +1,11 @@
 [
    {
-      "path": "\\src\\Resources\\plane_big2.glb",
-      "position": [
-         { "x": 5.0, "y": 0.0, "z": 10.0 }
+      "path": "/src/Resources//plane.glb",
+      "instances": [
+         {
+            "position": { "x": 1.0, "y": 0.0, "z": 3.0 },
+            "scale": 5
+         }
       ]
    }
 ]

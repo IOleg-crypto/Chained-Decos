@@ -38,6 +38,14 @@ public:
     void Run();
     // Init all keyboard hotkeys
     void KeyboardShortcut();
+    // Render all stuff , models , text , etc
+    void Render() const;
+    // Draw models in 3D
+    void DrawScene3D() const;
+    // Useful for keyboard
+    void Update();
+    // Draw text etc
+    static void DrawOverlay2D();
 };
 
 #endif // WINDOW_H
