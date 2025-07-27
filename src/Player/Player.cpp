@@ -19,4 +19,17 @@ void Player::Update() {
     UpdateCamera(&camera , CAMERA_FIRST_PERSON);
 }
 
+float Player::GetSpeed() const {
+    return moveSpeed;
+}
+
+void Player::SetSpeed(float speed) {
+    this->moveSpeed = speed;
+}
+
+void Player::Move(Vector3 offset) {
+    camera.position = Vector3Add(camera.position, offset);
+    camera.target = Vector3Add(camera.target, offset);
+}
+
 
