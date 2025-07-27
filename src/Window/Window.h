@@ -37,7 +37,7 @@ public:
     // Run the main game loop
     void Run();
     // Init all keyboard hotkeys
-    void KeyboardShortcut() const;
+    static void KeyboardShortcut();
 };
 
 #endif // WINDOW_H

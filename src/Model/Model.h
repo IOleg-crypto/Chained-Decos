@@ -8,6 +8,10 @@
 #include <vector>
 #include <string>
 #include <raylib.h>
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 class Models {
 private:
@@ -16,6 +20,8 @@ public:
     Models() = default;
     ~Models();
 public:
+    // This function read all paths from .json file
+    void LoadModelsFromJson(const std::string &path);
     void AddModel(const std::string& modelPath);
     void DrawAll(float x , float y , float z) const; // Draw all models
     Model& GetModel(size_t index); // Access to one model;
