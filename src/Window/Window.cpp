@@ -22,7 +22,6 @@ void Window::Run() {
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        UpdateCamera(m_player.getCamera(), CAMERA_ORBITAL);
         BeginMode3D(m_player.getCamera());
 
         m_models.DrawAll(5 ,4 ,4);
