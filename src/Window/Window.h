@@ -27,7 +27,7 @@ private:
     Player m_player;
     Models m_models;
 public:
-    Window();
+    Window() = default;
     Window(int screenX , int screenY , std::string windowName);
     ~Window();
 
@@ -37,7 +37,7 @@ public:
     // Run the main game loop
     void Run();
     // Init all keyboard hotkeys
-    static void KeyboardShortcut();
+    void KeyboardShortcut();
 };
 
 #endif // WINDOW_H

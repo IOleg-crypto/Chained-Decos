@@ -5,26 +5,32 @@
 #ifndef MODEL_H
 #define MODEL_H
 
+#include "ModelInstance.h"
+
 #include <vector>
 #include <string>
 #include <raylib.h>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+
 using json = nlohmann::json;
 
 class Models {
 private:
-    std::vector<Model> m_models;
+    std::vector<Model> m_models; // reading models from .json file
+    std::vector<ModelInstance> m_instances;  // contains model position
 public:
     Models() = default;
     ~Models();
 public:
     // This function read all paths from .json file
     void LoadModelsFromJson(const std::string &path);
-    void AddModel(const std::string& modelPath);
-    void DrawAll(float x , float y , float z) const; // Draw all models
+    // Adding models into game(without position , x , y ,z)
+    [[deprecated]] void AddModel(const std::string& modelPath);
+    void DrawAllModels() const; // Draw all models
     Model& GetModel(size_t index); // Access to one model;
+    void AddModelInstance(int modelIndex, Vector3 pos);
 };
 
 
