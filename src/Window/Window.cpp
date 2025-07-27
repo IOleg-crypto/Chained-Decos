@@ -35,6 +35,7 @@ void Window::Init() {
 
 void Window::Run() {
     while (!WindowShouldClose()) {
+        KeyboardShortcut();
         m_player.Update();
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -43,12 +44,11 @@ void Window::Run() {
         DrawGrid(10, 1.0f); // Draw a grid for reference
         EndMode3D();
         GetFPS();
-        DrawText("test", 10, 10, 20, DARKGRAY);
         EndDrawing();
     }
 }
 
-void Window::KeyboardShortcut() const  {
+void Window::KeyboardShortcut()  {
     if (IsKeyPressed(KEY_F5)) {
         ToggleFullscreen();
     }
