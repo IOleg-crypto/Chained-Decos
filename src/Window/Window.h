@@ -9,26 +9,34 @@
 #include <memory>
 #include <raylib.h>
 #include "../Player/Player.h"
-
+#include "../Model/Model.h"
 
 /**
  *  @brief Window - class that creates window using Raylib library
  */
 class Window {
 private:
-      // Needed for screen resolution
-      int m_screenX;
-      int m_screenY;
-      // Window name
-      std::string m_WindowName;
-      Player m_player{};
+    // Screen resolution
+    int m_screenX;
+    int m_screenY;
+
+    // Window title
+    std::string m_WindowName;
+
+    // Game objects
+    Player m_player{};
+    Models m_models;
 public:
-     Window();
-     Window(int screenX , int screenY , const std::string &windowName);
-     ~Window();
-     // Init window from start
-     void Init() const;
-     // Run game
-     void Run() const;
+    Window();
+    Window(int screenX , int screenY , const std::string &windowName);
+    ~Window();
+
+    // Initialize the window
+    void Init();
+
+    // Run the main game loop
+    void Run();
 };
-#endif //WINDOW_H
+
+#endif // WINDOW_H
+

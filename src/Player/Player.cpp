@@ -1,10 +1,9 @@
 //
-// Created by I#Oleg on 23.07.2025.
+// Created by I#Oleg
 //
-
 #include "Player.h"
 
-Player::Player() {
+Player::Player() : camera({0}){
     camera.position = { 4.0f, 4.0f, 4.0f };
     camera.target = { 0.0f, 1.0f, 0.0f };
     camera.up = { 0.0f, 1.0f, 0.0f };
