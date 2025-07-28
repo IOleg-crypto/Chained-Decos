@@ -2,9 +2,7 @@
 // Created by I#Oleg
 //
 #include "Window.h"
-
 #include "rcamera.h"
-
 
 #include <utility>
 
@@ -42,9 +40,6 @@ void Window::Run() {
 
 void Window::Update() {
     KeyboardShortcut();
-    m_models.CheckCollision(m_player);
-
-
     if (m_showDebug) {
         DrawDebugInfo(m_player.getCamera(), m_player.GetCameraMode());
     }
@@ -67,12 +62,6 @@ void Window::DrawScene3D() {
     DrawCube((Vector3){ -16.0f, 2.5f, 0.0f }, 1.0f, 5.0f, 32.0f, BLUE);     // Draw a blue wall
     DrawCube((Vector3){ 16.0f, 2.5f, 0.0f }, 1.0f, 5.0f, 32.0f, LIME);      // Draw a green wall
     DrawCube((Vector3){ 0.0f, 2.5f, 16.0f }, 32.0f, 5.0f, 1.0f, GOLD);
-
-    if (m_player.GetCameraMode() == CAMERA_THIRD_PERSON)
-    {
-        DrawCube(m_player.getCamera().target, 0.5f, 0.5f, 0.5f, PURPLE);
-        DrawCubeWires(m_player.getCamera().target, 0.5f, 0.5f, 0.5f, DARKPURPLE);
-    }
     m_models.DrawAllModels();
 }
 
