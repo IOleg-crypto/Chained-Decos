@@ -11,8 +11,10 @@
 #include "../Player/Player.h"
 #include "../Model/Model.h"
 
+#include "rcamera.h"
+
 /**
- *  @brief Window - class that creates window using Raylib library
+ *  Window - class that creates window using Raylib library
  */
 class Window {
 private:
@@ -26,10 +28,18 @@ private:
     // Game objects
     Player m_player;
     Models m_models;
+private:
+    bool m_showDebug;
 public:
     Window() = default;
     Window(int screenX , int screenY , std::string windowName);
     ~Window();
+
+    // Deleted constructors(useless)
+public:
+     Window(const Window &other) = delete;
+     Window(Window &&other) = delete;
+public:
 
     // Initialize the window
     void Init();
@@ -44,8 +54,8 @@ public:
     void DrawScene3D();
     // Useful for keyboard
     void Update();
-    // Draw text etc
-    static void DrawOverlay2D();
+    // Show debug info
+    static void DrawDebugInfo(const Camera &camera , const int &cameraMode);
 };
 
 #endif // WINDOW_H
