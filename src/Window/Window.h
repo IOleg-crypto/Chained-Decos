@@ -39,9 +39,9 @@ public:
     // Init all keyboard hotkeys
     void KeyboardShortcut();
     // Render all stuff , models , text , etc
-    void Render() const;
+    void Render();
     // Draw models in 3D
-    void DrawScene3D() const;
+    void DrawScene3D();
     // Useful for keyboard
     void Update();
     // Draw text etc
