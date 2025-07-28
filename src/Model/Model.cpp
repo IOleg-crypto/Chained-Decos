@@ -3,17 +3,13 @@
 //
 
 #include "Model.h"
-
 #include <iostream>
 #include <fstream>
 
 Models::~Models() {
-    // Delete all models
-    for (const auto& model : m_models) {
+    for (const auto& model : m_instances) {
         UnloadModel(model);
     }
-    m_models.clear();
-    m_instances.clear();
 }
 
 void Models::LoadModelsFromJson(const std::string &path) {
@@ -22,7 +18,7 @@ void Models::LoadModelsFromJson(const std::string &path) {
         TraceLog(LOG_WARNING, "Failed to open model list JSON: %s", path.c_str());
         return;
     }
-    // Read all models paths from json file
+
     json j;
     try {
         file >> j;
@@ -30,65 +26,72 @@ void Models::LoadModelsFromJson(const std::string &path) {
         TraceLog(LOG_WARNING, "JSON parsing error: %s", e.what());
         return;
     }
-    // Adding models in game
+
     for (const auto& modelEntry : j) {
+        if (!modelEntry.contains("name")) {
+            TraceLog(LOG_WARNING, "JSON entry without 'name' field");
+            break;
+        }
+        if (!modelEntry.contains("path")) {
+            TraceLog(LOG_WARNING, "JSON entry without 'path' field");
+            break;
+        }
+
+        std::string modelName = GetWorkingDirectory() + modelEntry["name"].get<std::string>();
         std::string modelPath = GetWorkingDirectory() + modelEntry["path"].get<std::string>();
+
         TraceLog(LOG_INFO, "Loading model: %s", modelPath.c_str());
-        // Load models (took from .json file)
-        m_models.push_back(LoadModel(modelPath.c_str()));
-        Model *pModel = &m_models.back();
-        // Take position from file
+
+        Model loadedModel = LoadModel(modelPath.c_str());
+        if (loadedModel.meshCount == 0) {
+            TraceLog(LOG_WARNING, "Failed to load model at path: %s", modelPath.c_str());
+            break;
+        }
+        m_models.push_back(loadedModel);
+        Model* pModel = &m_models.back();
+
         if (modelEntry.contains("instances")) {
-            float scaleModel = 0;
             for (const auto& instance : modelEntry["instances"]) {
-                Vector3 pos = {0, 0 , 0};
+                Vector3 pos = {0,0,0};
+                float scaleModel = 1.0f;
+
                 if (instance.contains("position")) {
-                    pos.x = instance["position"]["x"].get<float>();
-                    pos.y = instance["position"]["y"].get<float>();
-                    pos.z = instance["position"]["z"].get<float>();
+                    pos.x = instance["position"].value("x", 0.0f);
+                    pos.y = instance["position"].value("y", 0.0f);
+                    pos.z = instance["position"].value("z", 0.0f);
                 }
 
                 if (instance.contains("scale")) {
                     scaleModel = instance["scale"].get<float>();
                 }
 
-                m_instances.push_back({ pos, pModel , scaleModel });
+                m_instances.emplace_back(pos, pModel, scaleModel , modelName);
             }
         } else {
-            // If no instances, add one default
-            m_instances.push_back( {{0, 0, 0}, pModel , 1.0f });
+            m_instances.emplace_back(Vector3{0,0,0}, pModel, 1.0f , modelName);
         }
     }
 }
 
-void Models::AddModel(const std::string& modelPath){
-    if (modelPath.empty()) {
-        std::cout << "[Model]: The json don`t exist!" << std::endl;
-        return;
-    }
-    m_models.push_back(LoadModel(modelPath.c_str())); // Add models using raylib func
 
-}
-
-// Draw all models with position
 void Models::DrawAllModels() const {
     for (const auto& instance : m_instances) {
-        DrawModel(*instance.pModel, instance.position, instance.scale, WHITE);
+        if (instance.pModel != nullptr) {
+            DrawModel(*instance.pModel, instance.position, instance.scale, WHITE);
+        }
     }
 }
 
-Model& Models::GetModel(const size_t index) {
+Model& Models::GetModel(size_t index) {
+    static Model dummyModel = {0};
     if (index >= m_models.size()) {
-        static Model dummyModel = {0};
         TraceLog(LOG_WARNING, "Model index %zu is out of bounds. Returning dummy model.", index);
         return dummyModel;
     }
-    return m_models.at(index);
+    return m_models[index];
 }
 
-void Models::CheckCollision(Player &player)
-{
 
-}
+
 
 
