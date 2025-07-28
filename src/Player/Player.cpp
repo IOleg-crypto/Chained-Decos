@@ -30,13 +30,18 @@ float Player::GetSpeed() const {
     return moveSpeed;
 }
 
-void Player::SetSpeed(float speed) {
+void Player::SetSpeed(const float speed) {
     this->moveSpeed = speed;
 }
 
 void Player::Move(const Vector3 offset) {
     camera.position = Vector3Add(camera.position, offset);
     camera.target = Vector3Add(camera.target, offset);
+}
+
+void Player::LoadModelPlayer() {
+    Vector3 modelPosition = camera.position;
+    modelPlayer.AddModel("src/Resources/player.glb", modelPosition, 3.0f);
 }
 
 
