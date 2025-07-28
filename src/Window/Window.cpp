@@ -39,10 +39,11 @@ void Window::Run() {
 }
 
 void Window::Update() {
+    m_models.CheckCollision(m_player);
     KeyboardShortcut();
 }
 
-void Window::Render() const {
+void Window::Render() {
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
@@ -54,9 +55,11 @@ void Window::Render() const {
 
     EndDrawing();
 }
-void Window::DrawScene3D() const {
+void Window::DrawScene3D() {
     DrawGrid(50, 5.0f);
+
     m_models.DrawAllModels();
+
 }
 
 void Window::DrawOverlay2D() {
@@ -68,12 +71,8 @@ void Window::KeyboardShortcut() {
         ToggleFullscreen();
     }
 
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        DisableCursor();
-    }
-
     // Update only camera rotation (not movement) using raylib
-    m_player.Update();
+    //m_player.Update();
 
     // Move logic (WASD)
     Vector3 forward = Vector3Normalize(Vector3Subtract(
@@ -98,5 +97,7 @@ void Window::KeyboardShortcut() {
     if (IsKeyDown(KEY_A)) {
         m_player.Move(Vector3Scale(right, -speed));
     }
+
+
 }
 

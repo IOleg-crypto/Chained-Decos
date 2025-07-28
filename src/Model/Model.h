@@ -6,6 +6,7 @@
 #define MODEL_H
 
 #include "ModelInstance.h"
+#include "../Player/Player.h"
 
 #include <vector>
 #include <string>
@@ -30,6 +31,8 @@ public:
     [[deprecated]] void AddModel(const std::string& modelPath);
     void DrawAllModels() const; // Draw all models
     Model& GetModel(size_t index); // Access to one model;
+    // Detect Collision between player and model
+    void CheckCollision(Player &player);
 };
 
 

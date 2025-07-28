@@ -11,7 +11,7 @@ Player::Player() : camera({0}) {
         90.0f;
     camera.projection = CAMERA_PERSPECTIVE;
 }
-Camera Player::getCamera() const {
+Camera &Player::getCamera() {
     return camera;
 }
 

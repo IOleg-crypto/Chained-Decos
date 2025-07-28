@@ -15,7 +15,7 @@ private:
 public:
     Player(); // Constructor to initialize the camera
 
-    [[nodiscard]] Camera getCamera() const; // Returns the current camera state (read-only)
+    [[nodiscard]] Camera &getCamera(); // Returns the current camera state (read-only)
 
     void Update(); // Updates the camera each frame (e.g., handles input and movement)
     float GetSpeed() const; // Get character speed

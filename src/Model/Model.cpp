@@ -86,4 +86,30 @@ Model& Models::GetModel(const size_t index) {
     return m_models.at(index);
 }
 
+void Models::CheckCollision(Player &player)
+{
+    float playerRadius = 0.4f;
+
+    Camera &cam = player.getCamera();  // Використовуємо посилання
+    Vector3 playerPrevPos = cam.position;
+
+    for (size_t i = 0; i < m_models.size(); i++)
+    {
+        Model &model = m_models[i];
+        Vector3 modelPos = m_instances[i].position;
+
+        BoundingBox box = GetModelBoundingBox(model);
+
+        box.min = Vector3Add(box.min, modelPos);
+        box.max = Vector3Add(box.max, modelPos);
+
+        if (CheckCollisionBoxSphere(box, cam.position, playerRadius))
+        {
+            cam.position = playerPrevPos;
+            cam.target = Vector3Add(playerPrevPos, Vector3Subtract(cam.target, cam.position));
+            break;
+        }
+    }
+}
+
 
