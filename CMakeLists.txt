@@ -39,6 +39,8 @@ add_executable(${PROJECT_NAME}
         src/Model/Model.h
         src/Model/ModelInstance.h
         src/Model/ModelInstance.cpp
+        src/Menu/Menu.cpp
+        src/Menu/Menu.h
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib nlohmann_json)
