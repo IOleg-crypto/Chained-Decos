@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include <raylib.h>
+#include <raymath.h>
 
 #include <nlohmann/json.hpp>
 
