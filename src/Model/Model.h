@@ -15,9 +15,11 @@
 
 #include <nlohmann/json.hpp>
 
-
 using json = nlohmann::json;
 
+// # ----------------------------------------------------------------------------
+// # Models class represents like model loader into game
+// # ----------------------------------------------------------------------------
 class Models {
 private:
     std::vector<Model> m_models; // reading models from .json file
@@ -28,7 +30,7 @@ public:
 public:
     // This function read all paths from .json file
     void LoadModelsFromJson(const std::string &path);
-    // Adding models into game(without position , x , y ,z)
+    // Adding models into game(without position - x , y , z)
     [[deprecated]] void AddModel(const std::string& modelPath);
     void DrawAllModels() const; // Draw all models
     Model& GetModel(size_t index); // Access to one model;

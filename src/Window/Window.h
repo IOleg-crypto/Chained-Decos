@@ -5,22 +5,25 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+// Standard library
 #include <string>
 #include <memory>
+
+// Raylib
 #include <raylib.h>
+
+// Project headers
 #include "../Player/Player.h"
 #include "../Model/Model.h"
 
-#include "rcamera.h"
-
-/**
- *  Window - class that creates window using Raylib library
- */
+// # ------------------------------------------------------
+// # Window - main class , that creates window using raylib
+// # ------------------------------------------------------
 class Window {
 private:
     // Screen resolution
-    int m_screenX;
-    int m_screenY;
+    int m_screenX{};
+    int m_screenY{};
 
     // Window title
     std::string m_WindowName;
@@ -28,35 +31,36 @@ private:
     // Game objects
     Player m_player;
     Models m_models;
-private:
-    bool m_showDebug;
+
+    // Debug flag
+    bool m_showDebug{false};
+
 public:
+    // Constructors & Destructor
     Window() = default;
-    Window(int screenX , int screenY , std::string windowName);
+    Window(int screenX, int screenY, std::string windowName);
     ~Window();
 
-    // Deleted constructors(useless)
-public:
-     Window(const Window &other) = delete;
-     Window(Window &&other) = delete;
-public:
+    // Deleted copy/move constructors (not needed)
+    Window(const Window& other) = delete;
+    Window(Window&& other) = delete;
 
-    // Initialize the window
+    // Initialization
     void Init();
 
-    // Run the main game loop
+    // Main loop
     void Run();
-    // Init all keyboard hotkeys
+
+    // Input
     void KeyboardShortcut();
-    // Render all stuff , models , text , etc
-    void Render();
-    // Draw models in 3D
-    void DrawScene3D();
-    // Useful for keyboard
-    void Update();
-    // Show debug info
-    static void DrawDebugInfo(const Camera &camera , const int &cameraMode);
+    void Update(); // Updates input and player logic
+
+    // Rendering
+    void Render();       // Renders all objects and UI
+    void DrawScene3D();  // Renders 3D scene
+
+    // Debug
+    static void DrawDebugInfo(const Camera& camera, const int& cameraMode);
 };
 
 #endif // WINDOW_H
-

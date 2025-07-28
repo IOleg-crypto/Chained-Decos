@@ -34,7 +34,7 @@ void Player::SetSpeed(float speed) {
     this->moveSpeed = speed;
 }
 
-void Player::Move(Vector3 offset) {
+void Player::Move(const Vector3 offset) {
     camera.position = Vector3Add(camera.position, offset);
     camera.target = Vector3Add(camera.target, offset);
 }
