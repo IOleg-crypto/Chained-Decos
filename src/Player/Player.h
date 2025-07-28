@@ -7,7 +7,9 @@
 #include <raylib.h>
 #include <raymath.h>
 
-// Player class handles the camera used to represent the player's point of view
+// # ----------------------------------------------------------------------------
+// # Player class handles the camera used to represent the player's point of view
+// # ----------------------------------------------------------------------------
 class Player {
 private:
     Camera camera; // Raylib camera struct to represent 3D perspective
