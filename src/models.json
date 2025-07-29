@@ -8,5 +8,15 @@
             "scale": 8
          }
       ]
+   },
+   {
+       "name" : "arc",
+       "path" : "/src/Resources/arc.glb",
+       "instances": [
+       {
+         "position": { "x": 1.0, "y": 9.0, "z": 15.0 },
+         "scale": 11
+       }
+     ]
    }
 ]
