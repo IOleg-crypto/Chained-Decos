@@ -40,8 +40,8 @@ void Player::Move(const Vector3 offset) {
 }
 
 void Player::LoadModelPlayer() {
-    Vector3 modelPosition = camera.position;
-    modelPlayer.AddModel("src/Resources/player.glb", modelPosition, 3.0f);
+
 }
+
 
 
