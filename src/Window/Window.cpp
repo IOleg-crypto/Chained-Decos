@@ -3,7 +3,6 @@
 //
 #include "Window.h"
 #include "rcamera.h"
-
 #include <utility>
 
 Window::Window(const int screenX, const int screenY, std::string windowName)
@@ -58,10 +57,7 @@ void Window::Render() {
 }
 void Window::DrawScene3D() {
     DrawGrid(50, 5.0f);
-    DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 64.0f, 64.0f }, LIGHTGRAY); // Draw ground
-    DrawCube((Vector3){ -16.0f, 2.5f, 0.0f }, 1.0f, 5.0f, 32.0f, BLUE);     // Draw a blue wall
-    DrawCube((Vector3){ 16.0f, 2.5f, 0.0f }, 1.0f, 5.0f, 32.0f, LIME);      // Draw a green wall
-    DrawCube((Vector3){ 0.0f, 2.5f, 16.0f }, 32.0f, 5.0f, 1.0f, GOLD);
+    DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 500.0f, 500.0f }, LIGHTGRAY); // Draw ground
     m_models.DrawAllModels();
 }
 

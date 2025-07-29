@@ -1,3 +1,6 @@
 [submodule "src/src/raygui"]
 	path = src/src/raygui
 	url = https://github.com/raysan5/raygui.git
+[submodule "src/src/rlImGui"]
+	path = src/src/rlImGui
+	url = https://github.com/raylib-extras/rlImGui.git

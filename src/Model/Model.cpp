@@ -7,7 +7,7 @@
 #include <fstream>
 
 Models::~Models() {
-    for (const auto& model : m_instances) {
+    for (const auto& model : m_models) {
         UnloadModel(model);
     }
 }
@@ -77,7 +77,7 @@ void Models::LoadModelsFromJson(const std::string &path) {
 void Models::DrawAllModels() const {
     for (const auto& instance : m_instances) {
         if (instance.pModel != nullptr) {
-            DrawModel(*instance.pModel, instance.position, instance.scale, WHITE);
+            DrawModel(*instance.pModel, instance.position, instance.scale, GRAY);
         }
     }
 }
