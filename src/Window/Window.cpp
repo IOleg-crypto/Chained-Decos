@@ -3,6 +3,8 @@
 //
 #include "Window.h"
 #include "rcamera.h"
+#include "rlImGui.h"
+
 #include <utility>
 
 Window::Window(const int screenX, const int screenY, std::string windowName)
@@ -21,6 +23,7 @@ Window::Window(const int screenX, const int screenY, std::string windowName)
 }
 
 Window::~Window() {
+    rlImGuiShutdown();		// cleans up ImGui
     CloseWindow();
 }
 void Window::Init() {
@@ -28,6 +31,7 @@ void Window::Init() {
     InitWindow(m_screenX, m_screenY, m_WindowName.c_str());
     HideCursor();
     SetTargetFPS(60);
+    rlImGuiSetup(true);
     m_models.LoadModelsFromJson(std::string(GetWorkingDirectory()) + "\\src\\models.json");
 }
 void Window::Run() {
@@ -62,7 +66,15 @@ void Window::DrawScene3D() {
 }
 
 void Window::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
+    // before your game loop
+   	// sets up ImGui with ether a dark or light default theme
 
+    // inside your game loop, between BeginDrawing() and EndDrawing()
+    rlImGuiBegin();			// starts the ImGui content mode. Make all ImGui calls after this
+
+    rlImGuiEnd();			// ends the ImGui content mode. Make all ImGui calls before this
+
+    // after your game loop is over, before you close the window
 }
 
 void Window::KeyboardShortcut() {
