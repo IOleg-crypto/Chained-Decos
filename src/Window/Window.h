@@ -34,7 +34,6 @@ private:
 
     // Debug flag
     bool m_showDebug{false};
-
 public:
     // Constructors & Destructor
     Window() = default;
@@ -59,8 +58,8 @@ public:
     void Render();       // Renders all objects and UI
     void DrawScene3D();  // Renders 3D scene
 
-    // Debug
-    static void DrawDebugInfo(const Camera& camera, const int& cameraMode);
+    // Debug (using ImGui)
+    void DrawDebugInfo(const Camera& camera, const int& cameraMode);
 };
 
 #endif // WINDOW_H
