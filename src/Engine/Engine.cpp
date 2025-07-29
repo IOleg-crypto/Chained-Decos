@@ -1,76 +1,74 @@
 //
 // Created by I#Oleg
 //
-#include "Window.h"
+#include "Engine.h"
+
 #include "rcamera.h"
-#include "imgui.h"
-#include "rlImGui.h"
+// Include ImGui with adapter
+#include <imgui.h>
+#include <rlImGui.h>
 
-#include <utility>
-#include <iostream>
-
-Window::Window(const int screenX, const int screenY, std::string windowName)
-    : m_screenX(screenX), m_screenY(screenY), m_WindowName(std::move(windowName)) , m_showDebug(false) {
+Engine::Engine(const int screenX, const int screenY)
+    : m_screenX(screenX), m_screenY(screenY), m_WindowName("Chained Decos") {
 
     if (m_screenX < 0 || m_screenY < 0) {
         TraceLog(LOG_WARNING, "[Screen] Invalid screen size: %d x %d. Setting default size 800x600.", m_screenX, m_screenY);
         m_screenX = 800;
         m_screenY = 600;
     }
-
-    if (m_WindowName.empty()) {
-        TraceLog(LOG_WARNING, "Window name is empty. Setting default name: 'Raylib Window'.");
-        m_WindowName = "Raylib Window";
-    }
 }
 
-Window::~Window() {
+Engine::~Engine() {
     rlImGuiShutdown();		// cleans up ImGui
     CloseWindow();
 }
-void Window::Init() {
+void Engine::Init() const {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(m_screenX, m_screenY, m_WindowName.c_str());
     HideCursor();
     SetTargetFPS(60);
+    // Using adapter to init ImGui
     rlImGuiSetup(true);
-    m_models.LoadModelsFromJson(std::string(GetWorkingDirectory()) + "\\src\\models.json");
-
 }
-void Window::Run() {
+void Engine::Run() {
+    // Loading models
+    m_models.LoadModelsFromJson(std::string(GetWorkingDirectory()) + "/src/models.json");
+    // Main game loop
     while (!WindowShouldClose()) {
         Update();
         Render();
     }
 }
 
-void Window::Update() {
+void Engine::Update() {
     KeyboardShortcut();
 }
 
-void Window::Render() {
+void Engine::Render() {
     BeginDrawing();
-    ClearBackground(RAYWHITE);
+    ClearBackground(BLUE);
 
     BeginMode3D(m_player.getCamera());
     DrawScene3D();
     EndMode3D();
+
     if (m_showDebug) {
         TraceLog(LOG_DEBUG, "Create ImGui Window for DEBUG");
-        DrawDebugInfo(m_player.getCamera(), m_player.GetCameraMode());
+        DrawDebugInfo(m_player.getCamera(), m_player.GetCameraMode() , m_showDebug);
     }
+
     EndDrawing();
 }
-void Window::DrawScene3D() {
+void Engine::DrawScene3D() const {
     DrawGrid(50, 5.0f);
     DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 500.0f, 500.0f }, LIGHTGRAY); // Draw ground
     m_models.DrawAllModels();
 }
 
-void Window::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
+void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode , bool &showDebugMenu) {
     rlImGuiBegin();			// starts the ImGui content mode. Make all ImGui calls after this
-    ImGui::SetNextWindowPos(ImVec2(320, 240), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Debug info")) {
+    ImGui::SetNextWindowSize(ImVec2(384, 256), ImGuiCond_Always);
+    if (ImGui::Begin("Debug info") , showDebugMenu) {
         //DEBUG information
         ImGui::Text("Camera status:", 610, 15, 10, BLACK);
         ImGui::Text(TextFormat("- Mode: %s", (cameraMode == CAMERA_FREE) ? "FREE" :
@@ -88,12 +86,14 @@ void Window::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
     rlImGuiEnd();
 }
 
-void Window::KeyboardShortcut() {
+void Engine::KeyboardShortcut() {
     if (IsKeyPressed(KEY_F5)) {
         ToggleFullscreen();
     }
     // Update only camera rotation (not movement) using raylib
-    m_player.Update();
+    if (const ImGuiIO& io = ImGui::GetIO(); !io.WantCaptureMouse) {
+        m_player.Update();
+    }
 
     Camera &camera = m_player.getCamera();
     int &cameraMode = m_player.GetCameraMode();

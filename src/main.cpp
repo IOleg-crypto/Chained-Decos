@@ -1,9 +1,9 @@
-#include "Window/Window.h"
+#include "Engine/Engine.h"
 // # --------
-// # int main - init all game
+// # int main - init game
 // # --------
 int main() {
-    Window window(1280 , 720 , "Chained Decos");
-    window.Init();
-    window.Run();
+    Engine engine(1280 , 720);
+    engine.Init();
+    engine.Run();
 }

@@ -7,7 +7,6 @@
 
 // Standard library
 #include <string>
-#include <memory>
 
 // Raylib
 #include <raylib.h>
@@ -16,10 +15,15 @@
 #include "../Player/Player.h"
 #include "../Model/Model.h"
 
+enum class CurrentGameState {
+    IN_GAME,
+    IN_MENU
+};
+
 // # ------------------------------------------------------
-// # Window - main class , that creates window using raylib
+// # Engine - main class , that creates window using raylib
 // # ------------------------------------------------------
-class Window {
+class Engine {
 private:
     // Screen resolution
     int m_screenX{};
@@ -36,16 +40,16 @@ private:
     bool m_showDebug{false};
 public:
     // Constructors & Destructor
-    Window() = default;
-    Window(int screenX, int screenY, std::string windowName);
-    ~Window();
+    Engine() = default;
+    Engine(int screenX, int screenY);
+    ~Engine();
 
     // Deleted copy/move constructors (not needed)
-    Window(const Window& other) = delete;
-    Window(Window&& other) = delete;
+    Engine(const Engine& other) = delete;
+    Engine(Engine&& other) = delete;
 
     // Initialization
-    void Init();
+    void Init() const;
 
     // Main loop
     void Run();
@@ -56,10 +60,10 @@ public:
 
     // Rendering
     void Render();       // Renders all objects and UI
-    void DrawScene3D();  // Renders 3D scene
+    void DrawScene3D() const;  // Renders 3D scene
 
     // Debug (using ImGui)
-    void DrawDebugInfo(const Camera& camera, const int& cameraMode);
+    static void DrawDebugInfo(const Camera &camera , const int &cameraMode , bool &showDebugMenu);
 };
 
 #endif // WINDOW_H
