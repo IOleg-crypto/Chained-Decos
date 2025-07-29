@@ -6,6 +6,8 @@
 #define MENU_H
 
 #include <raylib.h>
+#include <imgui.h>
+#include <rlImGui.h>
 
 // # ----------------------------------------------------------------------------
 // # Menu - creates main menu
