@@ -8,8 +8,9 @@
     <excludeRoots>
       <file path="$PROJECT_DIR$/cmake-build-debug" />
       <file path="$PROJECT_DIR$/cmake-build-release" />
-      <file path="$PROJECT_DIR$/external" />
       <file path="$PROJECT_DIR$/rlImGui" />
+      <file path="$PROJECT_DIR$/src/imgui" />
+      <file path="$PROJECT_DIR$/src/rlImGui" />
     </excludeRoots>
   </component>
 </project>

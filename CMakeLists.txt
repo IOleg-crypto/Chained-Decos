@@ -41,26 +41,33 @@ add_executable(${PROJECT_NAME}
         src/Model/ModelInstance.h
         src/Menu/Menu.cpp
         src/Menu/Menu.h
-        src/rlImGui/imgui_impl_raylib.h
-        src/rlImGui/rlImGui.cpp
-        src/rlImGui/rlImGui.h
-        src/imgui/imgui.cpp
-        src/imgui/imgui.h
-        src/imgui/imgui_draw.cpp
-        src/imgui/imgui_demo.cpp
-        src/imgui/imgui_tables.cpp
-        src/imgui/imgui_widgets.cpp
-        src/imgui/imgui_internal.h
-        src/imgui/imstb_rectpack.h
-        src/imgui/imstb_truetype.h
+        include/rlImGui/imgui_impl_raylib.h
+        include/rlImGui/rlImGui.cpp
+        include/rlImGui/rlImGui.h
+        include/imgui/imgui.cpp
+        include/imgui/imgui.h
+        include/imgui/imgui_draw.cpp
+        include/imgui/imgui_demo.cpp
+        include/imgui/imgui_tables.cpp
+        include/imgui/imgui_widgets.cpp
+        include/imgui/imgui_internal.h
+        include/imgui/imstb_rectpack.h
+        include/imgui/imstb_truetype.h
         src/Engine/Engine.cpp
         src/Engine/Engine.h
         src/Color/ColorParser.h
+        src/Map/MapLoader.cpp
+        src/Map/MapLoader.h
 
 
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/imgui ${CMAKE_SOURCE_DIR}/src/rlImGui)
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/rlImGui
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 target_link_libraries(${PROJECT_NAME}
         PRIVATE raylib nlohmann_json
 )
