@@ -12,14 +12,10 @@
 #include <raylib.h>
 
 // Project headers
-#include "../Player/Player.h"
-#include "../Model/Model.h"
+#include <Player/Player.h>
+#include <Model/Model.h>
 
-enum class CurrentGameState {
-    IN_GAME,
-    IN_MENU
-};
-
+#include <Menu/Menu.h>
 // # ------------------------------------------------------
 // # Engine - main class , that creates window using raylib
 // # ------------------------------------------------------
@@ -38,6 +34,12 @@ private:
 
     // Debug flag
     bool m_showDebug{false};
+    // Menu
+    Menu m_menu;
+    // Show menu
+    bool showMenu = true;
+    // For exit
+    bool m_shouldExit;
 public:
     // Constructors & Destructor
     Engine() = default;
@@ -63,7 +65,7 @@ public:
     void DrawScene3D() const;  // Renders 3D scene
 
     // Debug (using ImGui)
-    static void DrawDebugInfo(const Camera &camera , const int &cameraMode , bool &showDebugMenu);
+    static void DrawDebugInfo(const Camera &camera , const int &cameraMode , const bool &showDebugMenu);
 };
 
 #endif // WINDOW_H
