@@ -7,7 +7,7 @@
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/raylib-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/json-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/raylib-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/src/imgui" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/src/rlImGui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/include/imgui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/include/rlImGui" vcs="Git" />
   </component>
 </project>

@@ -46,6 +46,9 @@ void Engine::Run() {
 
 void Engine::Update() {
     KeyboardShortcut();
+    if (const ImGuiIO& io = ImGui::GetIO(); !io.WantCaptureMouse) {
+        m_player.Update();
+    }
 }
 
 void Engine::Render() {
@@ -59,11 +62,12 @@ void Engine::Render() {
         BeginMode3D(m_player.getCamera());
         DrawScene3D();
         EndMode3D();
+
     }
 
     if (m_showDebug) {
         TraceLog(LOG_DEBUG, "Create ImGui Window for DEBUG");
-        DrawDebugInfo(m_player.getCamera(), m_player.GetCameraMode(), m_showDebug);
+        DrawDebugInfo(m_player.getCamera(), m_player.GetCameraMode());
     }
 
     EndDrawing();
@@ -84,16 +88,22 @@ void Engine::Render() {
     }
 }
 
-void Engine::DrawScene3D() const {
+void Engine::DrawScene3D() {
     DrawGrid(50, 5.0f);
     DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 500.0f, 500.0f }, LIGHTGRAY); // Draw ground
+    // Draw player cube
+    if (m_player.GetCameraMode() == CAMERA_THIRD_PERSON)
+    {
+        DrawCube(m_player.getCamera().target, 0.5f, 0.5f, 0.5f, PURPLE);
+        DrawCubeWires(m_player.getCamera().target, 0.5f, 0.5f, 0.5f, DARKPURPLE);
+    }
     m_models.DrawAllModels();
 }
 
-void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode , const bool &showDebugMenu) {
+void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
     rlImGuiBegin();
     ImGui::SetNextWindowSize(ImVec2(384, 256), ImGuiCond_Always);
-    if (showDebugMenu && ImGui::Begin("Debug info")) {
+    if (ImGui::Begin("Debug info") , nullptr , ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground) {
         ImGui::Text("Camera status:");
         ImGui::Text("- Mode: %s", (cameraMode == CAMERA_FREE) ? "FREE" :
                                    (cameraMode == CAMERA_FIRST_PERSON) ? "FIRST_PERSON" :
@@ -110,14 +120,14 @@ void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode , const 
     rlImGuiEnd();
 }
 
+
+
 void Engine::KeyboardShortcut() {
     if (IsKeyPressed(KEY_F5)) {
         ToggleFullscreen();
     }
 
-    if (const ImGuiIO& io = ImGui::GetIO(); !io.WantCaptureMouse) {
-        m_player.Update();
-    }
+
 
     Camera &camera = m_player.getCamera();
     int &cameraMode = m_player.GetCameraMode();
@@ -165,4 +175,5 @@ void Engine::KeyboardShortcut() {
     if (IsKeyPressed(GLFW_KEY_1)) {
         showMenu = true;
     }
+
 }

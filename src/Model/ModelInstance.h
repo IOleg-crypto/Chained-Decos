@@ -14,8 +14,11 @@ private:
      Model *pModel; //  Take model
      float scale; // Scale model;
      std::string modelName; // Name of model
+     Texture2D texture; // Texture of model (.obj or gltf)
+     std::string modelTexture; // Model texture)
      Color color ; // Color of model;
 public:
+     ModelInstance(Vector3 pos , Model *pMdl , float scl , const std::string &name , Color color , const std::string &modelTexture , const Texture2D &texture);
      ModelInstance(Vector3 pos , Model *pMdl , float scl , const std::string &name , Color color);
      ModelInstance(Vector3 pos , Model *pMdl , float scl , const std::string &name);
 public:
@@ -25,6 +28,9 @@ public:
      [[nodiscard]] float getScale() const;
      [[nodiscard]] Model *getModel() const;
      [[nodiscard]] Vector3 getModelPosition() const;
+     [[nodiscard]] Texture2D getTexture() const;
+     [[nodiscard]] std::string getTexturePath() const;
+
 };
 
 

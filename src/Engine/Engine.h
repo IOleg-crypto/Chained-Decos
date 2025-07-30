@@ -62,10 +62,11 @@ public:
 
     // Rendering
     void Render();       // Renders all objects and UI
-    void DrawScene3D() const;  // Renders 3D scene
+    void DrawScene3D();  // Renders 3D scene
 
     // Debug (using ImGui)
-    static void DrawDebugInfo(const Camera &camera , const int &cameraMode , const bool &showDebugMenu);
+    static void DrawDebugInfo(const Camera &camera , const int &cameraMode);
+
 };
 
 #endif // WINDOW_H
