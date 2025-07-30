@@ -4,12 +4,9 @@
 
 #include "ModelInstance.h"
 
-ModelInstance::ModelInstance(Vector3 pos, Model *pMdl, const float scl, const std::string &name, const Color color, const std::string &modelTexture,
-    const Texture2D &texture) : position(pos) , pModel(pMdl) , scale(scl) , modelName(name) , modelTexture(modelTexture),color(color) {
-    //Loading texture and apply to model
-    this->texture = LoadTexture(modelTexture.c_str());
-    pModel->materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-
+ModelInstance::ModelInstance(const Vector3 pos, Model *pMdl, const float scl, const std::string &name, const Color color, const std::string &modelTexture,
+    const Texture2D &texture) : position(pos), pModel(pMdl), scale(scl), modelName(name), texture(),
+                                modelTexture(modelTexture), color(color) {
 }
 
 // Default init
