@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "../Color/ColorParser.h"
+#include <Color/ColorParser.h>
 
 Models::~Models() {
     for (const auto& model : m_models) {
