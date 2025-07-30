@@ -3,9 +3,9 @@
 //
 #include "Player.h"
 
-Player::Player() : camera({0}) , cameraMode(CAMERA_FIRST_PERSON) {
+Player::Player() : camera({0}) , cameraMode(CAMERA_FIRST_PERSON) , m_playerCurrentPosition(Vector3Zero()) , m_playerLastPosition(Vector3Zero()) , m_playerVelocity(Vector3Zero()) {
     camera.position = { 4.0f, 2.0f, 4.0f }; // Camera position
-    camera.target = (Vector3){ 0.0f, 1.0f, 0.0f };      // Camera looking at point
+    camera.target = (Vector3){ 0.0f, 8.0f, 0.0f };      // Camera looking at point
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
     camera.fovy = 90.0f;                                // Camera field-of-view Y
     camera.projection = CAMERA_PERSPECTIVE;             // Camera projection typ
@@ -46,22 +46,10 @@ void Player::Update() {
     }
     UpdateCamera(&camera, cameraMode);
 
-    //
-    // Take velocity and position for player jump
-    //
+    // Needed for player jump
     m_playerVelocity = Vector3Subtract(m_playerLastPosition , m_playerCurrentPosition);
     m_playerLastPosition = m_playerCurrentPosition;
     m_playerCurrentPosition = camera.position;
-    // Set gravity
-    camera.position.y -= gravity * dt;
-
-    camera.position.y = Clamp(camera.position.y , 3.5f , 999.9f);
-
-    if (IsKeyPressed(KEY_SPACE)) {
-        camera.position.y += jumpStrength;
-    }
-
-
 }
 
 float Player::GetSpeed() const {
@@ -82,16 +70,18 @@ void Player::LoadModelPlayer() {
 }
 
 void Player::Jump() {
-    UpdateCamera(&camera, cameraMode);
+    const float dt = GetFrameTime();
 
-    // Take velocity and position
-    m_playerVelocity = Vector3Subtract(m_playerLastPosition , m_playerCurrentPosition);
-    m_playerLastPosition = m_playerCurrentPosition;
-    m_playerCurrentPosition = camera.position;
     // Set gravity
-    camera.position.y -= gravity * GetFrameTime();
+    camera.position.y -= gravity * dt;
 
-    camera.position.y = Clamp(camera.position.y , 1.7f , 999.9f);
+    camera.position.y = Clamp(camera.position.y , 5.5f , 999.9f);
+
+    if (IsKeyPressed(KEY_SPACE)) {
+        camera.position.y += jumpStrength;
+    }
+
+    UpdateCamera(&camera, cameraMode);
 }
 
 

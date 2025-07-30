@@ -18,9 +18,9 @@ private:
     int cameraMode; // Mode for camera(First , Free , Third , orbital)
     float moveSpeed = 3.0f; // Speed for character
 public:
-    Vector3 m_playerCurrentPosition = Vector3Zero();
-    Vector3 m_playerLastPosition = Vector3Zero();
-    Vector3 m_playerVelocity = Vector3Zero();
+    Vector3 m_playerCurrentPosition;
+    Vector3 m_playerLastPosition;
+    Vector3 m_playerVelocity;
     float gravity = 9.8f; // Used Earth gravity as default
     float jumpStrength = 3.0f; // Adjust as needed
     bool m_isGrounded = true;
@@ -28,16 +28,21 @@ public:
 private:
     Models modelPlayer;
 public:
-    Player(); // Constructor to initialize the camera
+    Player(); // Constructor to initialize the camera and all stuff
 
     [[nodiscard]] Camera &getCamera(); // Returns the current camera state (read-only)
     [[nodiscard]] int &GetCameraMode();
+
     void SetCameraMode(int cameraMode);
+
     void Update(); // Updates the camera each frame (e.g., handles input and movement)
     [[nodiscard]] float GetSpeed() const; // Get character speed
     void SetSpeed(float speed);
+
     void Move(Vector3 offset);
+
     void LoadModelPlayer();
+
     void Jump();
 };
 

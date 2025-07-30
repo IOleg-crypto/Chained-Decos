@@ -24,6 +24,7 @@ void Menu::Update() {
 }
 
 void Menu::Render() const {
+    DrawText("Chained Decos", GetScreenWidth() / 2 - 120, 100 + 1 * 50, 45, WHITE);
     const char* options[] = { "Start Game", "Options", "Quit" };
 
     for (int i = 0; i < std::size(options); i++) {
