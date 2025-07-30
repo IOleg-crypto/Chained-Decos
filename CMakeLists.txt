@@ -66,6 +66,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/include/rlImGui
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui/examples/libs/glfw/include/GLFW
 )
 
 target_link_libraries(${PROJECT_NAME}
