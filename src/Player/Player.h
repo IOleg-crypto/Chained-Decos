@@ -7,7 +7,7 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include "../Model/Model.h"
+#include <Model/Model.h>
 
 // # ----------------------------------------------------------------------------
 // # Player class handles the camera used to represent the player's point of view
