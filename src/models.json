@@ -1,22 +1,11 @@
 [
    {
-      "name": "player",
-      "path": "/resources/player.glb",
-      "instances": [
-         {
-            "position": { "x": 1.0, "y": 5.0, "z": 30.0 },
-            "scale": 8,
-            "color" : "red"
-         }
-      ]
-   },
-   {
        "name" : "arc",
-       "path" : "/resources/arc.glb",
+       "path" : "/resources/arc_column.glb",
        "instances": [
        {
-         "position": { "x": 1.0, "y": 9.0, "z": 45.0 },
-         "scale": 100,
+         "position": { "x": 1.0, "y": 4.0, "z": 30.0 },
+         "scale": 0.8,
          "color" : "red"
        }
      ]

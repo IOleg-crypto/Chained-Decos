@@ -16,7 +16,15 @@ class Player {
 private:
     Camera camera; // Raylib camera struct to represent 3D perspective
     int cameraMode; // Mode for camera(First , Free , Third , orbital)
-    float moveSpeed = 0.1f; // Speed for character
+    float moveSpeed = 3.0f; // Speed for character
+public:
+    Vector3 m_playerCurrentPosition = Vector3Zero();
+    Vector3 m_playerLastPosition = Vector3Zero();
+    Vector3 m_playerVelocity = Vector3Zero();
+    float gravity = 9.8f; // Used Earth gravity as default
+    float jumpStrength = 3.0f; // Adjust as needed
+    bool m_isGrounded = true;
+    float GroundLevel = 0;
 private:
     Models modelPlayer;
 public:
@@ -30,6 +38,7 @@ public:
     void SetSpeed(float speed);
     void Move(Vector3 offset);
     void LoadModelPlayer();
+    void Jump();
 };
 
 #endif // PLAYER_H

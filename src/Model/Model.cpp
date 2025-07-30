@@ -97,7 +97,7 @@ void Models::DrawAllModels() const {
     }
 }
 
-Model& Models::GetModel(size_t index) {
+Model& Models::GetModel(const size_t index) {
     static Model dummyModel = {0};
     if (index >= m_models.size()) {
         TraceLog(LOG_WARNING, "Model index %zu is out of bounds. Returning dummy model.", index);
