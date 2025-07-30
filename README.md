@@ -1,6 +1,6 @@
 # Chained Decos
 
-[![C++](https://img.shields.io/badge/language-C%2B%2B20-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/) [![English](https://img.shields.io/badge/lang-English-blue?logo=github)](README.md) [![Українська](https://img.shields.io/badge/lang-Українська-yellow?logo=github)](#)
+[![C++](https://img.shields.io/badge/language-C%2B%2B20-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/) [![English](https://img.shields.io/badge/lang-English-blue?logo=github)](README.md) 
 
 Chained Decos is a fast-paced parkour game with both singleplayer and multiplayer modes, built in modern C++ (C++20) using the [raylib](https://www.raylib.com/) library. The project also leverages [ImGui](https://github.com/ocornut/imgui) and [rlImGui](https://github.com/raylib-extras/rlImGui) for in-game UI.
 
@@ -39,6 +39,20 @@ Chained Decos is a fast-paced parkour game with both singleplayer and multiplaye
    ```bash
    ./ChainedDecos
    ```
+
+---
+
+## 💻 Recommended IDEs
+
+You can use any C++ IDE that supports CMake. Here are some popular options:
+
+- [**CLion**](https://www.jetbrains.com/clion/) – Full-featured C++ IDE with excellent CMake integration.
+- [**Visual Studio**](https://visualstudio.microsoft.com/) (Windows) – Powerful IDE with built-in CMake support.
+- [**Visual Studio Code**](https://code.visualstudio.com/) – Lightweight editor; use with the CMake Tools and C++ extensions.
+- [**Qt Creator**](https://www.qt.io/product/development-tools) – Good CMake support and cross-platform.
+- [**KDevelop**](https://www.kdevelop.org/) – Open-source IDE with CMake integration (Linux).
+
+You can also use any text editor and build from the command line with CMake.
 
 ---
 
