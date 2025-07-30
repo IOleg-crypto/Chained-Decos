@@ -126,8 +126,7 @@ void Engine::KeyboardShortcut() {
     if (IsKeyPressed(KEY_F5)) {
         ToggleFullscreen();
     }
-
-
+    m_player.Jump();
 
     Camera &camera = m_player.getCamera();
     int &cameraMode = m_player.GetCameraMode();
@@ -174,6 +173,9 @@ void Engine::KeyboardShortcut() {
     }
     if (IsKeyPressed(GLFW_KEY_1)) {
         showMenu = true;
+    }
+    if (IsKeyPressed(KEY_FIVE)) {
+        m_showDebug = !m_showDebug;
     }
 
 }
