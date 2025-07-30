@@ -25,7 +25,6 @@ public:
     [[nodiscard]] Camera &getCamera(); // Returns the current camera state (read-only)
     [[nodiscard]] int &GetCameraMode();
     void SetCameraMode(int cameraMode);
-
     void Update(); // Updates the camera each frame (e.g., handles input and movement)
     [[nodiscard]] float GetSpeed() const; // Get character speed
     void SetSpeed(float speed);

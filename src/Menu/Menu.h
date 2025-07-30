@@ -1,7 +1,3 @@
-//
-// Created by I#Oleg.
-//
-
 #ifndef MENU_H
 #define MENU_H
 
@@ -10,15 +6,26 @@
 #include <rlImGui.h>
 
 // # ----------------------------------------------------------------------------
-// # Menu - creates main menu
+// # Menu - handles rendering and logic for main menu
 // # ----------------------------------------------------------------------------
 
-class Menu{
-private:
-
-public:
+enum class MenuAction {
+    None,
+    StartGame,
+    OpenOptions,
+    ExitGame
 };
 
+class Menu {
+private:
+    int selected = 0;
+    MenuAction action = MenuAction::None;
 
+public:
+    void Update();
+    void Render() const;
+    MenuAction GetAction() const;
+    void ResetAction();
+};
 
-#endif //MENU_H
+#endif

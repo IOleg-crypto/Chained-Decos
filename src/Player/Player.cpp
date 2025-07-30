@@ -40,7 +40,7 @@ void Player::Move(const Vector3 offset) {
 }
 
 void Player::LoadModelPlayer() {
-
+   // Planning
 }
 
 
