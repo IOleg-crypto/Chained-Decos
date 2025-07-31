@@ -15,7 +15,6 @@
 #include <Player/Player.h>
 #include <Model/Model.h>
 #include <Menu/Menu.h>
-#include <CameraController/CameraController.h>
 #include <Input/InputManager.h>
 // # ------------------------------------------------------
 // # Engine - main class , that creates window using raylib
@@ -66,6 +65,8 @@ public:
     void Render();       // Renders all objects and UI
     void DrawScene3D();  // Renders 3D scene
 
+    // For ImGui(Load better font)
+    void InitImGuiFont() const;
     // Debug (using ImGui)
     void DrawDebugInfo(const Camera &camera , const int &cameraMode);
     void InitInput();
