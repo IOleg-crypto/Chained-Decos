@@ -7,8 +7,6 @@
 #include <rcamera.h> // optional, consider removing if using precompiled raylib
 
 
-//Just used for keyboard binding , lol
-#include <glfw3.h>
 
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_WindowName("Chained Decos"), m_shouldExit(false) {
@@ -31,6 +29,7 @@ void Engine::Init() const {
     HideCursor();
     SetTargetFPS(60);
     rlImGuiSetup(true); // init ImGui
+    InitImGuiFont();
 }
 
 void Engine::Run() {
@@ -100,6 +99,13 @@ void Engine::DrawScene3D() {
         DrawCubeWires(m_player.getCameraController()->getCamera().target, 0.5f, 0.5f, 0.5f, DARKPURPLE);
     }
     m_models.DrawAllModels();
+}
+
+void Engine::InitImGuiFont() const {
+    const ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    io.Fonts->AddFontFromFileTTF("resources/font/Lato/Lato-Black.ttf", 16.0f);
+    io.Fonts->Build();
 }
 
 void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
@@ -175,7 +181,7 @@ void Engine::InitInput() {
         m_showDebug = !m_showDebug;
     });
 
-    manager.RegisterAction(GLFW_KEY_1, [this] {
+    manager.RegisterAction(KEY_ONE, [this] {
         showMenu = true;
     });
 }

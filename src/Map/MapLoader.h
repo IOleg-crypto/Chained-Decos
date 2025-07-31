@@ -21,6 +21,7 @@ struct MapLoader {
     Model loadedModel;
 };
 
+
 // Loading all properties about map( look at MapLoader struct)
 std::vector<MapLoader>LoadMap(const std::string &path);
 
