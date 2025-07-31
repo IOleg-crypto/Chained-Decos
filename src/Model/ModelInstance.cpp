@@ -48,5 +48,3 @@ Texture2D ModelInstance::getTexture() const {
 std::string ModelInstance::getTexturePath() const {
     return modelTexture;
 }
-
-

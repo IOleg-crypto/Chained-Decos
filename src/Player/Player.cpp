@@ -4,6 +4,7 @@
 #include "Player.h"
 
 Player::Player() : cameraController(new CameraController) {
+
 }
 
 void Player::Update() {
@@ -28,7 +29,7 @@ void Player::Move(const Vector3 offset) const {
 }
 
 void Player::LoadModelPlayer() {
-   // Planning
+
 }
 
 void Player::Jump() {
@@ -85,7 +86,7 @@ void Player::ApplyInput() {
             right.z * moveDir.x + forward.z * moveDir.z
         };
 
-        TraceLog(LOG_INFO, "MoveVec: X: %.2f Y: %.2f Z: %.2f", finalMove.x, finalMove.y, finalMove.z);
+        //TraceLog(LOG_INFO, "MoveVec: X: %.2f Y: %.2f Z: %.2f", finalMove.x, finalMove.y, finalMove.z);
 
         finalMove = Vector3Scale(finalMove, walkSpeed * physData.dt);
         Move(finalMove);
@@ -94,6 +95,10 @@ void Player::ApplyInput() {
 
 CameraController * Player::getCameraController() const {
      return cameraController;
+}
+
+Models Player::getModelManager() {
+    return modelPlayer;
 }
 
 
