@@ -7,6 +7,10 @@ Player::Player() : cameraController(new CameraController) {
 
 }
 
+Player::~Player() {
+    delete cameraController;
+}
+
 void Player::Update() {
     ApplyInput();
     Jump();
@@ -28,9 +32,6 @@ void Player::Move(const Vector3 offset) const {
     cameraController->getCamera().target = Vector3Add(cameraController->getCamera().target, offset);
 }
 
-void Player::LoadModelPlayer() {
-
-}
 
 void Player::Jump() {
     physData.dt = GetFrameTime();
@@ -47,7 +48,6 @@ void Player::Jump() {
         physData.velocityY = 0;
         physData.m_isGrounded = true;
     }
-
 
     cameraController->Update();
 }
@@ -99,6 +99,10 @@ CameraController * Player::getCameraController() const {
 
 Models Player::getModelManager() {
     return modelPlayer;
+}
+
+PositionData Player::GetPlayerData() const {
+    return posData;
 }
 
 
