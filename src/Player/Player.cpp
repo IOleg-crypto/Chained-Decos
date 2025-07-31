@@ -3,8 +3,7 @@
 //
 #include "Player.h"
 
-Player::Player() : m_playerCurrentPosition(Vector3Zero()), m_playerLastPosition(Vector3Zero()),
-                   m_playerVelocity(Vector3Zero()), cameraController(new CameraController) {
+Player::Player() : cameraController(new CameraController) {
 }
 
 void Player::Update() {
@@ -33,19 +32,19 @@ void Player::LoadModelPlayer() {
 }
 
 void Player::Jump() {
-    dt = GetFrameTime();
+    physData.dt = GetFrameTime();
     // Set gravity
-    if (IsKeyPressed(KEY_SPACE) && m_isGrounded) {
-        velocityY = jumpStrength;
-        m_isGrounded = false;
+    if (IsKeyPressed(KEY_SPACE) && physData.m_isGrounded) {
+        physData.velocityY = jumpStrength;
+        physData.m_isGrounded = false;
     }
-    velocityY -= gravity * dt;
-    cameraController->getCamera().position.y += velocityY * dt ;
+    physData.velocityY -= physData.gravity * physData.dt;
+    cameraController->getCamera().position.y += physData.velocityY * physData.dt ;
     // Check if player on ground
-    if (cameraController->getCamera().position.y <= GroundLevel) {
-        cameraController->getCamera().position.y = GroundLevel;
-        velocityY = 0;
-        m_isGrounded = true;
+    if (cameraController->getCamera().position.y <= physData.GroundLevel) {
+        cameraController->getCamera().position.y = physData.GroundLevel;
+        physData.velocityY = 0;
+        physData.m_isGrounded = true;
     }
 
 
@@ -54,13 +53,13 @@ void Player::Jump() {
 
 void Player::PositionHistory() {
     // Needed for player jump
-    m_playerVelocity = Vector3Subtract(m_playerLastPosition , m_playerCurrentPosition);
-    m_playerLastPosition = m_playerCurrentPosition;
-    m_playerCurrentPosition = cameraController->getCamera().position;
+    posData.m_playerVelocity = Vector3Subtract(posData.m_playerLastPosition , posData.m_playerCurrentPosition);
+    posData.m_playerLastPosition = posData.m_playerCurrentPosition;
+    posData.m_playerCurrentPosition = cameraController->getCamera().position;
 }
 
 void Player::ApplyInput() {
-    dt = GetFrameTime();
+    physData.dt = GetFrameTime();
     Vector3 moveDir = {};
 
     if (IsKeyDown(KEY_W)) moveDir.z -= 1.0f;
@@ -88,7 +87,7 @@ void Player::ApplyInput() {
 
         TraceLog(LOG_INFO, "MoveVec: X: %.2f Y: %.2f Z: %.2f", finalMove.x, finalMove.y, finalMove.z);
 
-        finalMove = Vector3Scale(finalMove, walkSpeed * dt);
+        finalMove = Vector3Scale(finalMove, walkSpeed * physData.dt);
         Move(finalMove);
     }
 }

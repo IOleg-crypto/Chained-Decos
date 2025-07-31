@@ -60,6 +60,10 @@ add_executable(${PROJECT_NAME}
         src/Map/MapLoader.h
         src/CameraController/CameraController.h
         src/CameraController/CameraController.cpp
+        src/World/PhysicsData.h
+        src/Player/PositionData.h
+        src/Input/InputManager.cpp
+        src/Input/InputManager.h
 
 
 )
