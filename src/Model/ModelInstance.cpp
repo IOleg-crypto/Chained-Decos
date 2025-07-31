@@ -5,7 +5,7 @@
 #include "ModelInstance.h"
 
 ModelInstance::ModelInstance(const Vector3 pos, Model *pMdl, const float scl, const std::string &name, const Color color, const std::string &modelTexture,
-    const Texture2D &texture) : position(pos), pModel(pMdl), scale(scl), modelName(name), texture(),
+    const Texture2D &texture) : position(pos), pModel(pMdl), scale(scl), modelName(name), texture(texture),
                                 modelTexture(modelTexture), color(color) {
 }
 
