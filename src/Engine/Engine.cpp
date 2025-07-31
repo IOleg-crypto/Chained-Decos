@@ -89,13 +89,20 @@ void Engine::Render() {
     }
 }
 
+void Engine::LoadPlayerModel() {
+    Model& model = m_models.GetModelByName("player");
+    if (m_player.getCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON) {
+        DrawModel(model ,  m_player.getCameraController()->getCamera().target , 0.5 , GRAY);
+    }
+    else {
+        DrawModel(model , m_player.GetPlayerData().m_playerCurrentPosition, 0.5 , GRAY);
+    }
+}
+
 void Engine::DrawScene3D() {
     DrawGrid(50, 5.0f);
     DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 500.0f, 500.0f }, LIGHTGRAY); // Draw ground
-    Model& model = m_models.GetModelByName("player");
-    if (m_player.getCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON) {
-        DrawModel(model , m_player.getCameraController()->getCamera().target , 1.0 , GRAY);
-    }
+    LoadPlayerModel();
     m_models.DrawAllModels();
 }
 

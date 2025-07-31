@@ -4,6 +4,7 @@ project(ChainedDecos)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 include(FetchContent)
 
 # Raylib
@@ -30,6 +31,23 @@ if (NOT nlohmann_json_FOUND)
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
+find_package(GTest CONFIG QUIET)
+if(NOT GTest_FOUND)
+    message(STATUS "GTest not found, downloading via FetchContent")
+
+    FetchContent_Declare(
+            googletest
+            URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+    )
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    if(WIN32)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    endif()
+
+    FetchContent_MakeAvailable(googletest)
+endif()
+
+
 add_library(imguilib STATIC
         include/rlImGui/imgui_impl_raylib.h
         include/rlImGui/rlImGui.cpp
@@ -53,6 +71,8 @@ target_include_directories(imguilib PUBLIC
 )
 
 target_link_libraries(imguilib PRIVATE raylib)
+
+add_subdirectory(tests)
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
@@ -79,8 +99,9 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+
 )
 
 target_link_libraries(${PROJECT_NAME}
-        PRIVATE raylib nlohmann_json imguilib
+        PRIVATE raylib nlohmann_json imguilib GTest::gtest_main
 )

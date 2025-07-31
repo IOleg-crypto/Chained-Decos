@@ -27,6 +27,7 @@ private:
     CameraController *cameraController;
 public:
     Player(); // Constructor to initialize the camera and all stuff
+    ~Player();
     void Update(); // Updates the camera each frame (e.g., handles input and movement)
     [[nodiscard]] float GetSpeed(); // Get character speed
     void SetSpeed(float speed);
@@ -44,6 +45,7 @@ public:
     [[nodiscard]] CameraController *getCameraController() const;
     // Get model manager
     Models getModelManager();
+    PositionData GetPlayerData() const;
 };
 
 #endif // PLAYER_H

@@ -63,6 +63,8 @@ public:
 
     // Rendering
     void Render();       // Renders all objects and UI
+    void LoadPlayerModel();
+
     void DrawScene3D();  // Renders 3D scene
 
     // For ImGui(Load better font)

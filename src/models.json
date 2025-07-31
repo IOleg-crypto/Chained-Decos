@@ -2,7 +2,7 @@
   {
     "name": "player",
     "path": "/resources/player_low.glb",
-    "spawn": false
+    "spawn": false // Needed for player
   },
   {
     "name": "arc",
