@@ -4,7 +4,6 @@ project(ChainedDecos)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 include(FetchContent)
 
 # Raylib
@@ -31,16 +30,7 @@ if (NOT nlohmann_json_FOUND)
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
-add_executable(${PROJECT_NAME}
-        src/main.cpp
-        src/Player/Player.cpp
-        src/Player/Player.h
-        src/Model/Model.cpp
-        src/Model/Model.h
-        src/Model/ModelInstance.cpp
-        src/Model/ModelInstance.h
-        src/Menu/Menu.cpp
-        src/Menu/Menu.h
+add_library(imguilib STATIC
         include/rlImGui/imgui_impl_raylib.h
         include/rlImGui/rlImGui.cpp
         include/rlImGui/rlImGui.h
@@ -53,6 +43,27 @@ add_executable(${PROJECT_NAME}
         include/imgui/imgui_internal.h
         include/imgui/imstb_rectpack.h
         include/imgui/imstb_truetype.h
+)
+
+target_include_directories(imguilib PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/rlImGui
+        $<TARGET_PROPERTY:raylib,INTERFACE_INCLUDE_DIRECTORIES>
+
+)
+
+target_link_libraries(imguilib PRIVATE raylib)
+
+add_executable(${PROJECT_NAME}
+        src/main.cpp
+        src/Player/Player.cpp
+        src/Player/Player.h
+        src/Model/Model.cpp
+        src/Model/Model.h
+        src/Model/ModelInstance.cpp
+        src/Model/ModelInstance.h
+        src/Menu/Menu.cpp
+        src/Menu/Menu.h
         src/Engine/Engine.cpp
         src/Engine/Engine.h
         src/Color/ColorParser.h
@@ -64,17 +75,12 @@ add_executable(${PROJECT_NAME}
         src/Player/PositionData.h
         src/Input/InputManager.cpp
         src/Input/InputManager.h
-
-
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/rlImGui
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui/examples/libs/glfw/include/GLFW
 )
 
 target_link_libraries(${PROJECT_NAME}
-        PRIVATE raylib nlohmann_json
+        PRIVATE raylib nlohmann_json imguilib
 )
