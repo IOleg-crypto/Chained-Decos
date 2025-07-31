@@ -1,0 +1,43 @@
+{
+  "test_models": [
+    {
+      "name": "test_cube",
+      "path": "resources/test_cube.glb",
+      "position": [0, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1]
+    },
+    {
+      "name": "test_sphere", 
+      "path": "resources/test_sphere.glb",
+      "position": [5, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1]
+    }
+  ],
+  "test_colors": [
+    "red",
+    "green", 
+    "blue",
+    "yellow",
+    "white",
+    "black"
+  ],
+  "test_scenarios": {
+    "player_movement": {
+      "start_position": [0, 0, 0],
+      "movements": [
+        {"direction": [1, 0, 0], "expected": [1, 0, 0]},
+        {"direction": [0, 1, 0], "expected": [1, 1, 0]},
+        {"direction": [0, 0, 1], "expected": [1, 1, 1]}
+      ]
+    },
+    "camera_rotation": {
+      "start_rotation": [0, 0, 0],
+      "rotations": [
+        {"axis": "y", "angle": 90, "expected": [0, 90, 0]},
+        {"axis": "x", "angle": 45, "expected": [45, 90, 0]}
+      ]
+    }
+  }
+} 
