@@ -3,66 +3,29 @@
 //
 #include "Player.h"
 
-Player::Player() : camera({0}) , cameraMode(CAMERA_FIRST_PERSON) , m_playerCurrentPosition(Vector3Zero()) , m_playerLastPosition(Vector3Zero()) , m_playerVelocity(Vector3Zero()) {
-    camera.position = { 4.0f, 2.0f, 4.0f }; // Camera position
-    camera.target = (Vector3){ 0.0f, 8.0f, 0.0f };      // Camera looking at point
-    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
-    camera.fovy = 90.0f;                                // Camera field-of-view Y
-    camera.projection = CAMERA_PERSPECTIVE;             // Camera projection typ
-}
-Camera &Player::getCamera() {
-    return camera;
-}
-
-int &Player::GetCameraMode() {
-    return cameraMode;
-}
-void Player::SetCameraMode(const int cameraMode) {
-    this->cameraMode = cameraMode;
+Player::Player() : m_playerCurrentPosition(Vector3Zero()), m_playerLastPosition(Vector3Zero()),
+                   m_playerVelocity(Vector3Zero()), cameraController(new CameraController) {
 }
 
 void Player::Update() {
+    ApplyInput();
+    Jump();
+    cameraController->Update();
+    PositionHistory();
 
-    const float dt = GetFrameTime();
-    Vector3 moveDir = {};
-
-    if (IsKeyDown(KEY_W)) {
-        moveDir.z -= 1.0f;
-    }
-    if (IsKeyDown(KEY_S)) {
-        moveDir.z += 1.0f;
-    }
-    if (IsKeyDown(KEY_A)) {
-        moveDir.x -= 1.0f;
-    }
-    if (IsKeyDown(KEY_D)) {
-        moveDir.x += 1.0f;
-    }
-
-    if (Vector3Length(moveDir) > 0) {
-        moveDir = Vector3Normalize(moveDir);
-        moveDir = Vector3Scale(moveDir, moveSpeed * dt);
-        Move(moveDir);
-    }
-    UpdateCamera(&camera, cameraMode);
-
-    // Needed for player jump
-    m_playerVelocity = Vector3Subtract(m_playerLastPosition , m_playerCurrentPosition);
-    m_playerLastPosition = m_playerCurrentPosition;
-    m_playerCurrentPosition = camera.position;
 }
 
-float Player::GetSpeed() const {
-    return moveSpeed;
+float Player::GetSpeed() {
+    return walkSpeed;
 }
 
 void Player::SetSpeed(const float speed) {
-    this->moveSpeed = speed;
+    this->walkSpeed = speed;
 }
 
-void Player::Move(const Vector3 offset) {
-    camera.position = Vector3Add(camera.position, offset);
-    camera.target = Vector3Add(camera.target, offset);;
+void Player::Move(const Vector3 offset) const {
+    cameraController->getCamera().position = Vector3Add(cameraController->getCamera().position, offset);
+    cameraController->getCamera().target = Vector3Add(cameraController->getCamera().target, offset);
 }
 
 void Player::LoadModelPlayer() {
@@ -70,18 +33,68 @@ void Player::LoadModelPlayer() {
 }
 
 void Player::Jump() {
-    const float dt = GetFrameTime();
-
+    dt = GetFrameTime();
     // Set gravity
-    camera.position.y -= gravity * dt;
-
-    camera.position.y = Clamp(camera.position.y , 5.5f , 999.9f);
-
-    if (IsKeyPressed(KEY_SPACE)) {
-        camera.position.y += jumpStrength;
+    if (IsKeyPressed(KEY_SPACE) && m_isGrounded) {
+        velocityY = jumpStrength;
+        m_isGrounded = false;
+    }
+    velocityY -= gravity * dt;
+    cameraController->getCamera().position.y += velocityY * dt ;
+    // Check if player on ground
+    if (cameraController->getCamera().position.y <= GroundLevel) {
+        cameraController->getCamera().position.y = GroundLevel;
+        velocityY = 0;
+        m_isGrounded = true;
     }
 
-    UpdateCamera(&camera, cameraMode);
+
+    cameraController->Update();
+}
+
+void Player::PositionHistory() {
+    // Needed for player jump
+    m_playerVelocity = Vector3Subtract(m_playerLastPosition , m_playerCurrentPosition);
+    m_playerLastPosition = m_playerCurrentPosition;
+    m_playerCurrentPosition = cameraController->getCamera().position;
+}
+
+void Player::ApplyInput() {
+    dt = GetFrameTime();
+    Vector3 moveDir = {};
+
+    if (IsKeyDown(KEY_W)) moveDir.z -= 1.0f;
+    if (IsKeyDown(KEY_S)) moveDir.z += 1.0f;
+    if (IsKeyDown(KEY_A)) moveDir.x -= 1.0f;
+    if (IsKeyDown(KEY_D)) moveDir.x += 1.0f;
+
+    walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? runSpeed : 3.1f;
+
+    if (Vector3Length(moveDir) > 0) {
+        moveDir = Vector3Normalize(moveDir);
+
+        Vector3 forward = Vector3Subtract(getCameraController()->getCamera().position , getCameraController()->getCamera().target);
+        forward.y = 0;
+        forward = Vector3Normalize(forward);
+
+        Vector3 right = Vector3CrossProduct((Vector3){ 0, 1, 0 }, forward);
+        right = Vector3Normalize(right);
+
+        Vector3 finalMove = {
+            right.x * moveDir.x + forward.x * moveDir.z,
+            0.0f,
+            right.z * moveDir.x + forward.z * moveDir.z
+        };
+
+        TraceLog(LOG_INFO, "MoveVec: X: %.2f Y: %.2f Z: %.2f", finalMove.x, finalMove.y, finalMove.z);
+
+        finalMove = Vector3Scale(finalMove, walkSpeed * dt);
+        Move(finalMove);
+    }
+}
+
+CameraController * Player::getCameraController() const {
+     return cameraController;
 }
 
 

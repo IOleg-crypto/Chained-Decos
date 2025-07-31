@@ -6,6 +6,7 @@
 #include <rlImGui.h>
 #include <rcamera.h> // optional, consider removing if using precompiled raylib
 
+
 //Just used for keyboard binding , lol
 #include <glfw3.h>
 
@@ -59,7 +60,7 @@ void Engine::Render() {
         m_menu.Update();
         m_menu.Render();
     } else {
-        BeginMode3D(m_player.getCamera());
+        BeginMode3D(m_player.getCameraController()->getCamera());
         DrawScene3D();
         EndMode3D();
 
@@ -67,7 +68,7 @@ void Engine::Render() {
 
     if (m_showDebug) {
         TraceLog(LOG_DEBUG, "Create ImGui Window for DEBUG");
-        DrawDebugInfo(m_player.getCamera(), m_player.GetCameraMode());
+        DrawDebugInfo(m_player.getCameraController()->getCamera(), m_player.getCameraController()->GetCameraMode());
     }
 
     EndDrawing();
@@ -92,10 +93,10 @@ void Engine::DrawScene3D() {
     DrawGrid(50, 5.0f);
     DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 500.0f, 500.0f }, LIGHTGRAY); // Draw ground
     // Draw player cube
-    if (m_player.GetCameraMode() == CAMERA_THIRD_PERSON)
+    if (m_player.getCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON)
     {
-        DrawCube(m_player.getCamera().target, 0.5f, 0.5f, 0.5f, PURPLE);
-        DrawCubeWires(m_player.getCamera().target, 0.5f, 0.5f, 0.5f, DARKPURPLE);
+        DrawCube(m_player.getCameraController()->getCamera().target, 0.5f, 0.5f, 0.5f, PURPLE);
+        DrawCubeWires(m_player.getCameraController()->getCamera().target, 0.5f, 0.5f, 0.5f, DARKPURPLE);
     }
     m_models.DrawAllModels();
 }
@@ -115,6 +116,7 @@ void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
         ImGui::Text("- Target:   (%.3f, %.3f, %.3f)", camera.target.x, camera.target.y, camera.target.z);
         ImGui::Text("- Up:       (%.3f, %.3f, %.3f)", camera.up.x, camera.up.y, camera.up.z);
         ImGui::Text("FPS: %d", GetFPS());
+        ImGui::Text("Player speed : %f" , m_player.GetSpeed());
     }
     ImGui::End();
     rlImGuiEnd();
@@ -126,10 +128,10 @@ void Engine::KeyboardShortcut() {
     if (IsKeyPressed(KEY_F5)) {
         ToggleFullscreen();
     }
-    m_player.Jump();
 
-    Camera &camera = m_player.getCamera();
-    int &cameraMode = m_player.GetCameraMode();
+
+    Camera &camera = m_player.getCameraController()->getCamera();
+    int &cameraMode = m_player.getCameraController()->GetCameraMode();
 
     if (IsKeyPressed(KEY_ONE)) {
         cameraMode = CAMERA_FREE;
@@ -173,9 +175,6 @@ void Engine::KeyboardShortcut() {
     }
     if (IsKeyPressed(GLFW_KEY_1)) {
         showMenu = true;
-    }
-    if (IsKeyPressed(KEY_FIVE)) {
-        m_showDebug = !m_showDebug;
     }
 
 }
