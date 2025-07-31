@@ -58,6 +58,8 @@ add_executable(${PROJECT_NAME}
         src/Color/ColorParser.h
         src/Map/MapLoader.cpp
         src/Map/MapLoader.h
+        src/CameraController/CameraController.h
+        src/CameraController/CameraController.cpp
 
 
 )

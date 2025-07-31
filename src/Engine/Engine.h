@@ -2,8 +2,8 @@
 // Created by I#Oleg on 20.07.2025.
 //
 
-#ifndef WINDOW_H
-#define WINDOW_H
+#ifndef ENGINE_H
+#define ENGINE_H
 
 // Standard library
 #include <string>
@@ -14,8 +14,8 @@
 // Project headers
 #include <Player/Player.h>
 #include <Model/Model.h>
-
 #include <Menu/Menu.h>
+#include <CameraController/CameraController.h>
 // # ------------------------------------------------------
 // # Engine - main class , that creates window using raylib
 // # ------------------------------------------------------
@@ -39,7 +39,7 @@ private:
     // Show menu
     bool showMenu = true;
     // For exit
-    bool m_shouldExit;
+    bool m_shouldExit{};
 public:
     // Constructors & Destructor
     Engine() = default;
@@ -65,7 +65,7 @@ public:
     void DrawScene3D();  // Renders 3D scene
 
     // Debug (using ImGui)
-    static void DrawDebugInfo(const Camera &camera , const int &cameraMode);
+    void DrawDebugInfo(const Camera &camera , const int &cameraMode);
 
 };
 
