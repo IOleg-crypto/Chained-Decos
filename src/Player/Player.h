@@ -9,6 +9,8 @@
 
 #include <Model/Model.h>
 #include <CameraController/CameraController.h>
+#include <Player/PositionData.h>
+#include <World/PhysicsData.h>
 
 // # ----------------------------------------------------------------------------
 // # Player class handles the camera used to represent the player's point of view
@@ -17,15 +19,9 @@ class Player {
 private:
     float walkSpeed = 3.0f; // Speed for character
     float runSpeed = 15;
-    Vector3 m_playerCurrentPosition;
-    Vector3 m_playerLastPosition;
-    Vector3 m_playerVelocity;
-    float gravity = 10.0f; // Used Earth gravity as default
     float jumpStrength = 3.0f; // Adjust as needed
-    float velocityY = 0.0;
-    bool m_isGrounded = true;
-    float GroundLevel = 5.f; // if lower , use see player under world
-    float dt = 0; // FrameRate Time
+    PositionData posData;
+    PhysicsData physData;
 private:
     Models modelPlayer;
     CameraController *cameraController;

@@ -77,6 +77,7 @@ void Engine::Render() {
     switch (m_menu.GetAction()) {
         case MenuAction::StartGame:
             showMenu = false;
+            InitInput();
             m_menu.ResetAction();
             break;
         case MenuAction::OpenOptions:
@@ -122,59 +123,64 @@ void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
     rlImGuiEnd();
 }
 
-
-
-void Engine::KeyboardShortcut() {
-    if (IsKeyPressed(KEY_F5)) {
-        ToggleFullscreen();
-    }
-
-
+void Engine::InitInput() {
     Camera &camera = m_player.getCameraController()->getCamera();
     int &cameraMode = m_player.getCameraController()->GetCameraMode();
 
-    if (IsKeyPressed(KEY_ONE)) {
-        cameraMode = CAMERA_FREE;
-        camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
-    }
-    if (IsKeyPressed(KEY_TWO)) {
-        cameraMode = CAMERA_FIRST_PERSON;
-        camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
-    }
-    if (IsKeyPressed(KEY_THREE)) {
-        cameraMode = CAMERA_THIRD_PERSON;
-        camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
-    }
-    if (IsKeyPressed(KEY_FOUR)) {
-        cameraMode = CAMERA_ORBITAL;
-        camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
-    }
+    manager.RegisterAction(KEY_F5, [this]() {
+        ToggleFullscreen();
+    });
 
-    if (IsKeyPressed(KEY_P)) {
+    manager.RegisterAction(KEY_ONE, [this, &camera, &cameraMode]() {
+        cameraMode = CAMERA_FREE;
+        camera.up = {0, 1, 0};
+    });
+
+    manager.RegisterAction(KEY_TWO, [this, &camera, &cameraMode]() {
+        cameraMode = CAMERA_FIRST_PERSON;
+        camera.up = {0, 1, 0};
+    });
+
+    manager.RegisterAction(KEY_THREE, [this, &camera, &cameraMode]() {
+        cameraMode = CAMERA_THIRD_PERSON;
+        camera.up = {0, 1, 0};
+    });
+
+    manager.RegisterAction(KEY_FOUR, [this, &camera, &cameraMode]() {
+        cameraMode = CAMERA_ORBITAL;
+        camera.up = {0, 1, 0};
+    });
+
+    manager.RegisterAction(KEY_P, [this, &camera, &cameraMode]() {
         if (camera.projection == CAMERA_PERSPECTIVE) {
             cameraMode = CAMERA_THIRD_PERSON;
-            camera.position = (Vector3){ 0.0f, 2.0f, -100.0f };
-            camera.target = (Vector3){ 0.0f, 2.0f, 0.0f };
-            camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
+            camera.position = {0, 2, -100};
+            camera.target = {0, 2, 0};
+            camera.up = {0, 1, 0};
             camera.projection = CAMERA_ORTHOGRAPHIC;
-            camera.fovy = 20.0f;
+            camera.fovy = 20;
             CameraYaw(&camera, -135 * DEG2RAD, true);
             CameraPitch(&camera, -45 * DEG2RAD, true, true, false);
         } else if (camera.projection == CAMERA_ORTHOGRAPHIC) {
             cameraMode = CAMERA_THIRD_PERSON;
-            camera.position = (Vector3){ 0.0f, 2.0f, 10.0f };
-            camera.target = (Vector3){ 0.0f, 2.0f, 0.0f };
-            camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
+            camera.position = {0, 2, 10};
+            camera.target = {0, 2, 0};
+            camera.up = {0, 1, 0};
             camera.projection = CAMERA_PERSPECTIVE;
-            camera.fovy = 60.0f;
+            camera.fovy = 60;
         }
-    }
+    });
 
-    if (IsKeyPressed(KEY_FIVE)) {
+    manager.RegisterAction(KEY_FIVE, [this]() {
         m_showDebug = !m_showDebug;
-    }
-    if (IsKeyPressed(GLFW_KEY_1)) {
-        showMenu = true;
-    }
+    });
 
+    manager.RegisterAction(GLFW_KEY_1, [this] {
+        showMenu = true;
+    });
+}
+
+
+void Engine::KeyboardShortcut() const {
+    manager.ProcessInput();
 }

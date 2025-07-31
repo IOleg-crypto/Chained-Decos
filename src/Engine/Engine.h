@@ -16,6 +16,7 @@
 #include <Model/Model.h>
 #include <Menu/Menu.h>
 #include <CameraController/CameraController.h>
+#include <Input/InputManager.h>
 // # ------------------------------------------------------
 // # Engine - main class , that creates window using raylib
 // # ------------------------------------------------------
@@ -31,6 +32,7 @@ private:
     // Game objects
     Player m_player;
     Models m_models;
+    InputManager manager;
 
     // Debug flag
     bool m_showDebug{false};
@@ -57,7 +59,7 @@ public:
     void Run();
 
     // Input
-    void KeyboardShortcut();
+    void KeyboardShortcut() const;
     void Update(); // Updates input and player logic
 
     // Rendering
@@ -66,6 +68,7 @@ public:
 
     // Debug (using ImGui)
     void DrawDebugInfo(const Camera &camera , const int &cameraMode);
+    void InitInput();
 
 };
 
