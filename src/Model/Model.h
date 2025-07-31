@@ -11,6 +11,7 @@
 #include <string>
 #include <raylib.h>
 #include <raymath.h>
+#include <unordered_map>
 
 #include <nlohmann/json.hpp>
 
@@ -21,18 +22,26 @@ using json = nlohmann::json;
 // # ----------------------------------------------------------------------------
 class Models {
 private:
-    std::vector<Model> m_models; // reading models from .json file
-    std::vector<ModelInstance> m_instances;  // contains model position
+    std::vector<ModelInstance> m_instances;  // contains model instances (with model and position)
+    std::unordered_map<std::string, Model*> m_modelByName; // Direct access by name
+    bool m_spawnInstance = true;
+
 public:
     Models() = default;
     ~Models();
+
 public:
-    // This function read all paths from .json file
+    // This function reads all paths from .json file
     void LoadModelsFromJson(const std::string &path);
-    void DrawAllModels() const; // Draw all models
-    Model& GetModel(size_t index); // Access to one model;
+
+    // Draw all model instances
+    void DrawAllModels() const;
+
+    // Access to original model (not instance)
+    Model& GetModelByName(const std::string& name);
+
+    // Create and add instance
+    void AddInstance(const json& instanceJson, Model* modelPtr, const std::string& modelName);
 };
 
-
-
-#endif //MODEL_H
+#endif // MODEL_H

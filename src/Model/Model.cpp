@@ -1,4 +1,3 @@
-//
 // Created by I#Oleg
 //
 
@@ -9,8 +8,9 @@
 #include <Color/ColorParser.h>
 
 Models::~Models() {
-    for (const auto& model : m_models) {
-        UnloadModel(model);
+    for (const auto &modelPtr: m_modelByName | std::views::values) {
+        UnloadModel(*modelPtr);
+        delete modelPtr;
     }
 }
 
@@ -30,19 +30,15 @@ void Models::LoadModelsFromJson(const std::string &path) {
     }
 
     for (const auto& modelEntry : j) {
-        if (!modelEntry.contains("name")) {
-            TraceLog(LOG_WARNING, "JSON entry without 'name' field");
-            continue;
-        }
-        if (!modelEntry.contains("path")) {
-            TraceLog(LOG_WARNING, "JSON entry without 'path' field");
+        if (!modelEntry.contains("name") || !modelEntry.contains("path")) {
+            TraceLog(LOG_WARNING, "Model entry missing 'name' or 'path'. Skipping.");
             continue;
         }
 
-        std::string modelName = GetWorkingDirectory() + modelEntry["name"].get<std::string>();
+        std::string modelName = modelEntry["name"].get<std::string>();
         std::string modelPath = GetWorkingDirectory() + modelEntry["path"].get<std::string>();
 
-        TraceLog(LOG_INFO, "Loading model: %s", modelPath.c_str());
+        TraceLog(LOG_INFO, "Loading model '%s' from: %s", modelName.c_str(), modelPath.c_str());
 
         Model loadedModel = LoadModel(modelPath.c_str());
         if (loadedModel.meshCount == 0) {
@@ -50,41 +46,19 @@ void Models::LoadModelsFromJson(const std::string &path) {
             continue;
         }
 
-        m_models.push_back(loadedModel);
-        Model* pModel = &m_models.back();
+        auto pModel = new Model(loadedModel);
+        m_modelByName[modelName] = pModel;
+
+        bool spawnInstances = modelEntry.value("spawn", true);
 
         if (modelEntry.contains("instances") && modelEntry["instances"].is_array()) {
             for (const auto& instance : modelEntry["instances"]) {
-                Vector3 pos = {0.0f, 0.0f, 0.0f};
-                float scaleModel = 1.0f;
-                Color color = WHITE;
-
-                if (instance.contains("position")) {
-                    pos.x = instance["position"].value("x", 0.0f);
-                    pos.y = instance["position"].value("y", 0.0f);
-                    pos.z = instance["position"].value("z", 0.0f);
-                }
-
-                if (instance.contains("scale")) {
-                    scaleModel = instance["scale"].get<float>();
-                }
-
-                if (instance.contains("color")) {
-                    if (instance["color"].is_string()) {
-                        color = ParseColorByName(instance["color"].get<std::string>());
-                    } else if (instance["color"].is_object()) {
-                        const auto& colorJson = instance["color"];
-                        color.r = colorJson.value("r", 255);
-                        color.g = colorJson.value("g", 255);
-                        color.b = colorJson.value("b", 255);
-                        color.a = colorJson.value("a", 255);
-                    }
-                }
-
-                m_instances.emplace_back(pos, pModel, scaleModel, modelName, color);
+                bool spawnThis = instance.value("spawn", spawnInstances);
+                if (!spawnThis) continue;
+                AddInstance(instance, pModel, modelName);
             }
-        } else {
-            m_instances.emplace_back(Vector3Zero(), pModel, 1.0f, modelName);
+        } else if (spawnInstances) {
+            AddInstance(json::object(), pModel, modelName);
         }
     }
 }
@@ -97,16 +71,43 @@ void Models::DrawAllModels() const {
     }
 }
 
-Model& Models::GetModel(const size_t index) {
-    static Model dummyModel = {0};
-    if (index >= m_models.size()) {
-        TraceLog(LOG_WARNING, "Model index %zu is out of bounds. Returning dummy model.", index);
+
+Model& Models::GetModelByName(const std::string &name) {
+    static Model dummyModel = { 0 };
+    const auto it = m_modelByName.find(name);
+    if (it == m_modelByName.end()) {
+        TraceLog(LOG_WARNING, "Model name '%s' not found. Returning dummy model.", name.c_str());
         return dummyModel;
     }
-    return m_models[index];
+    return *(it->second);
 }
 
+void Models::AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName) {
+    Vector3 pos = {0.0f, 0.0f, 0.0f};
+    float scaleModel = 1.0f;
+    Color color = WHITE;
 
+    if (instanceJson.contains("position")) {
+        pos.x = instanceJson["position"].value("x", 0.0f);
+        pos.y = instanceJson["position"].value("y", 0.0f);
+        pos.z = instanceJson["position"].value("z", 0.0f);
+    }
 
+    if (instanceJson.contains("scale")) {
+        scaleModel = instanceJson["scale"].get<float>();
+    }
 
+    if (instanceJson.contains("color")) {
+        if (instanceJson["color"].is_string()) {
+            color = ParseColorByName(instanceJson["color"].get<std::string>());
+        } else if (instanceJson["color"].is_object()) {
+            const auto& colorJson = instanceJson["color"];
+            color.r = colorJson.value("r", 255);
+            color.g = colorJson.value("g", 255);
+            color.b = colorJson.value("b", 255);
+            color.a = colorJson.value("a", 255);
+        }
+    }
 
+    m_instances.emplace_back(pos, modelPtr, scaleModel, modelName, color);
+}

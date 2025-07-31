@@ -42,6 +42,8 @@ public:
     void ApplyInput();
     // Get camera
     [[nodiscard]] CameraController *getCameraController() const;
+    // Get model manager
+    Models getModelManager();
 };
 
 #endif // PLAYER_H

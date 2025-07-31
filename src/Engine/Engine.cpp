@@ -8,8 +8,8 @@
 
 
 
-Engine::Engine(const int screenX, const int screenY)
-    : m_screenX(screenX), m_screenY(screenY), m_WindowName("Chained Decos"), m_shouldExit(false) {
+Engine::Engine(const int screenX, const int screenY) : m_player()
+    , m_screenX(screenX), m_screenY(screenY), m_WindowName("Chained Decos"), m_shouldExit(false) {
     if (m_screenX < 0 || m_screenY < 0) {
         TraceLog(LOG_WARNING, "[Screen] Invalid screen size: %d x %d. Setting default size 800x600.", m_screenX,
                  m_screenY);
@@ -92,11 +92,9 @@ void Engine::Render() {
 void Engine::DrawScene3D() {
     DrawGrid(50, 5.0f);
     DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 500.0f, 500.0f }, LIGHTGRAY); // Draw ground
-    // Draw player cube
-    if (m_player.getCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON)
-    {
-        DrawCube(m_player.getCameraController()->getCamera().target, 0.5f, 0.5f, 0.5f, PURPLE);
-        DrawCubeWires(m_player.getCameraController()->getCamera().target, 0.5f, 0.5f, 0.5f, DARKPURPLE);
+    Model& model = m_models.GetModelByName("player");
+    if (m_player.getCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON) {
+        DrawModel(model , m_player.getCameraController()->getCamera().target , 1.0 , GRAY);
     }
     m_models.DrawAllModels();
 }
@@ -144,12 +142,10 @@ void Engine::InitInput() {
 
     manager.RegisterAction(KEY_TWO, [this, &camera, &cameraMode]() {
         cameraMode = CAMERA_FIRST_PERSON;
-        camera.up = {0, 1, 0};
     });
 
     manager.RegisterAction(KEY_THREE, [this, &camera, &cameraMode]() {
         cameraMode = CAMERA_THIRD_PERSON;
-        camera.up = {0, 1, 0};
     });
 
     manager.RegisterAction(KEY_FOUR, [this, &camera, &cameraMode]() {

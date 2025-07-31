@@ -3,7 +3,7 @@
 // # int main - init game
 // # --------
 int main() {
-    Engine engine(1280 , 720);
+    Engine engine(1920 , 1080);
     engine.Init();
     engine.Run();
 }
