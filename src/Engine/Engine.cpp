@@ -1,12 +1,11 @@
 // Created by I#Oleg
 //
 #include "Engine.h"
+#include "Menu/Menu.h"
 // Include ImGui with adapter
-#include <cstring>
 #include <imgui.h>
 #include <rlImGui.h>
 #include <rcamera.h>
-// optional, consider removing if using precompiled raylib
 
 
 
@@ -28,7 +27,6 @@ Engine::~Engine() {
 void Engine::Init() const {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(m_screenX, m_screenY, m_WindowName.c_str());
-    HideCursor();
     SetTargetFPS(60);
     rlImGuiSetup(true); // init ImGui
     InitImGuiFont();
@@ -85,6 +83,7 @@ void Engine::Render() {
             m_menu.ResetAction();
             break;
         case MenuAction::ExitGame:
+            m_menu.ResetAction();
             m_shouldExit = true;
             break;
         default: break;
@@ -92,7 +91,7 @@ void Engine::Render() {
 }
 
 void Engine::LoadPlayerModel() {
-    Model& model = m_models.GetModelByName("player");
+    const Model& model = m_models.GetModelByName("player");
     if (m_player.getCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON) {
         DrawModel(model ,  m_player.getCameraController()->getCamera().target , 0.5 , GRAY);
     }
@@ -102,8 +101,7 @@ void Engine::LoadPlayerModel() {
 }
 
 void Engine::DrawScene3D() {
-    DrawGrid(50, 5.0f);
-    DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 500.0f, 500.0f }, LIGHTGRAY); // Draw ground
+    DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 800.0f, 800.0f }, LIGHTGRAY); // Draw ground
     LoadPlayerModel();
     m_models.DrawAllModels();
 }
@@ -143,54 +141,52 @@ void Engine::InitInput() {
     manager.RegisterAction(KEY_F5, [this]() {
         ToggleFullscreen();
     });
-
     manager.RegisterAction(KEY_ONE, [this, &camera, &cameraMode]() {
-        cameraMode = CAMERA_FREE;
-        camera.up = {0, 1, 0};
-    });
+                cameraMode = CAMERA_FREE;
+                camera.up = {0, 1, 0};});
 
     manager.RegisterAction(KEY_TWO, [this, &camera, &cameraMode]() {
-        cameraMode = CAMERA_FIRST_PERSON;
-    });
+            cameraMode = CAMERA_FIRST_PERSON;
+        });
 
     manager.RegisterAction(KEY_THREE, [this, &camera, &cameraMode]() {
-        cameraMode = CAMERA_THIRD_PERSON;
-    });
+            cameraMode = CAMERA_THIRD_PERSON;
+        });
 
     manager.RegisterAction(KEY_FOUR, [this, &camera, &cameraMode]() {
-        cameraMode = CAMERA_ORBITAL;
-        camera.up = {0, 1, 0};
-    });
+            cameraMode = CAMERA_ORBITAL;
+            camera.up = {0, 1, 0};
+        });
 
     manager.RegisterAction(KEY_P, [this, &camera, &cameraMode]() {
-        if (camera.projection == CAMERA_PERSPECTIVE) {
-            cameraMode = CAMERA_THIRD_PERSON;
-            camera.position = {0, 2, -100};
-            camera.target = {0, 2, 0};
-            camera.up = {0, 1, 0};
-            camera.projection = CAMERA_ORTHOGRAPHIC;
-            camera.fovy = 20;
-            CameraYaw(&camera, -135 * DEG2RAD, true);
-            CameraPitch(&camera, -45 * DEG2RAD, true, true, false);
-        } else if (camera.projection == CAMERA_ORTHOGRAPHIC) {
-            cameraMode = CAMERA_THIRD_PERSON;
-            camera.position = {0, 2, 10};
-            camera.target = {0, 2, 0};
-            camera.up = {0, 1, 0};
-            camera.projection = CAMERA_PERSPECTIVE;
-            camera.fovy = 60;
-        }
-    });
+            if (camera.projection == CAMERA_PERSPECTIVE) {
+                cameraMode = CAMERA_THIRD_PERSON;
+                camera.position = {0, 2, -100};
+                camera.target = {0, 2, 0};
+                camera.up = {0, 1, 0};
+                camera.projection = CAMERA_ORTHOGRAPHIC;
+                camera.fovy = 20;
+                CameraYaw(&camera, -135 * DEG2RAD, true);
+                CameraPitch(&camera, -45 * DEG2RAD, true, true, false);
+            } else if (camera.projection == CAMERA_ORTHOGRAPHIC) {
+                cameraMode = CAMERA_THIRD_PERSON;
+                camera.position = {0, 2, 10};
+                camera.target = {0, 2, 0};
+                camera.up = {0, 1, 0};
+                camera.projection = CAMERA_PERSPECTIVE;
+                camera.fovy = 60;
+            }
+        });
 
     manager.RegisterAction(KEY_FIVE, [this]() {
-        m_showDebug = !m_showDebug;
-    });
+            m_showDebug = !m_showDebug;
+        });
 
     manager.RegisterAction(KEY_ONE, [this] {
-        showMenu = true;
-    });
-}
+            showMenu = true;
+        });
 
+}
 
 void Engine::KeyboardShortcut() const {
     manager.ProcessInput();
