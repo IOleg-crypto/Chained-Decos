@@ -1,0 +1,1 @@
+ "../_deps/raylib-build/raylib/raylib.lib" ../imguilib.lib ../lib/gtest_main.lib "../_deps/raylib-build/raylib/raylib.lib" -lopengl32.lib -lglu32.lib -lwinmm.lib ../lib/gtest.lib -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 -loldnames 

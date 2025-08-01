@@ -1,7 +1,7 @@
 [
   {
     "name": "player",
-    "path": "/resources/player_low.glb",
+    "path": "/resources/player.glb",
     "spawn": false
   },
   {

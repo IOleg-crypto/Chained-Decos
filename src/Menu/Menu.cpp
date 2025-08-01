@@ -2,8 +2,9 @@
 // Created by I#Oleg
 //
 
+#include "Menu.h"
+
 #include <iostream>
-#include <Menu/Menu.h>
 
 void Menu::Update() {
     if (IsKeyPressed(KEY_DOWN)) selected = (selected + 1) % 3;
