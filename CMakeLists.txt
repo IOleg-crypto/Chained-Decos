@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.30)
 project(ChainedDecos)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -73,6 +73,7 @@ target_include_directories(imguilib PUBLIC
 target_link_libraries(imguilib PRIVATE raylib)
 
 add_subdirectory(tests)
+add_subdirectory(src/MapEditor)
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
