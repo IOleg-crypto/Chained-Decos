@@ -8,6 +8,7 @@ Application::Application(int width, int height)
 
 Application::~Application() {
     delete cameraController;
+    CloseWindow();
 }
 
 void Application::Init() {
@@ -22,6 +23,8 @@ void Application::Run() {
           BeginDrawing();
           ClearBackground(BLUE);
           BeginMode3D(cameraController->getCamera());
+          cameraController->SetCameraMode(CAMERA_FREE);
+          cameraController->Update();
           DrawGrid(50, 0.1f);
           EndMode3D();
           EndDrawing(); 
