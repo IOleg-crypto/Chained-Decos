@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.20)
 project(ChainedDecos)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -64,6 +64,10 @@ target_include_directories(imguilib PUBLIC
 )
 target_link_libraries(imguilib PRIVATE raylib)
 
+# Add global include directory for all subprojects
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+add_compile_definitions(PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}")
 add_subdirectory(src/Engine)
 add_subdirectory(src/Player)
 add_subdirectory(src/Model)
@@ -79,8 +83,10 @@ add_subdirectory(src/MapEditor)
 add_executable(${PROJECT_NAME}
     src/main.cpp
 )
+
+
 target_include_directories(${PROJECT_NAME} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE
     engine

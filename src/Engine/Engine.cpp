@@ -1,10 +1,12 @@
 // Created by I#Oleg
 //
-#include <Engine/Engine.h>
+#include "Engine.h"
 // Include ImGui with adapter
+#include <cstring>
 #include <imgui.h>
 #include <rlImGui.h>
-#include <rcamera.h> // optional, consider removing if using precompiled raylib
+#include <rcamera.h>
+// optional, consider removing if using precompiled raylib
 
 
 
@@ -29,11 +31,11 @@ void Engine::Init() const {
     HideCursor();
     SetTargetFPS(60);
     rlImGuiSetup(true); // init ImGui
-    InitImGuiFont();
+   // InitImGuiFont();
 }
 
 void Engine::Run() {
-    m_models.LoadModelsFromJson(std::string(GetWorkingDirectory()) + "/src/models.json");
+    m_models.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/models.json");
 
     while (!WindowShouldClose()) {
         Update();
@@ -109,14 +111,14 @@ void Engine::DrawScene3D() {
 void Engine::InitImGuiFont() const {
     const ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF("resources/font/Lato/Lato-Black.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
     io.Fonts->Build();
 }
 
 void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
     rlImGuiBegin();
     ImGui::SetNextWindowSize(ImVec2(384, 256), ImGuiCond_Always);
-    if (ImGui::Begin("Debug info") , nullptr , ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground) {
+    if (ImGui::Begin("Debug info" , nullptr , ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground)) {
         ImGui::Text("Camera status:");
         ImGui::Text("- Mode: %s", (cameraMode == CAMERA_FREE) ? "FREE" :
                                    (cameraMode == CAMERA_FIRST_PERSON) ? "FIRST_PERSON" :

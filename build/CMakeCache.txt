@@ -322,6 +322,15 @@ CPACK_SOURCE_ZIP:BOOL=ON
 CUSTOMIZE_BUILD:BOOL=OFF
 
 //Value Computed by CMake
+ChainedDecosMapEditor_BINARY_DIR:STATIC=D:/gitnext/Chained Decos/build/src/MapEditor
+
+//Value Computed by CMake
+ChainedDecosMapEditor_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+ChainedDecosMapEditor_SOURCE_DIR:STATIC=D:/gitnext/Chained Decos/src/MapEditor
+
+//Value Computed by CMake
 ChainedDecos_BINARY_DIR:STATIC=D:/gitnext/Chained Decos/build
 
 //Value Computed by CMake
@@ -721,7 +730,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=20
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

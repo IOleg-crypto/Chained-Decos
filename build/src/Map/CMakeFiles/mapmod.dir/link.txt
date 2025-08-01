@@ -1,0 +1,2 @@
+E:/LLVM/bin/llvm-ar.exe qc mapmod.lib CMakeFiles/mapmod.dir/MapLoader.cpp.obj
+E:/LLVM/bin/llvm-ranlib.exe mapmod.lib

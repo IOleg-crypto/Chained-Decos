@@ -35,8 +35,8 @@ void Models::LoadModelsFromJson(const std::string &path) {
             continue;
         }
 
-        std::string modelName = modelEntry["name"].get<std::string>();
-        std::string modelPath = GetWorkingDirectory() + modelEntry["path"].get<std::string>();
+        std::string modelName = PROJECT_ROOT_DIR + modelEntry["name"].get<std::string>();
+        std::string modelPath = PROJECT_ROOT_DIR + modelEntry["path"].get<std::string>();
 
         TraceLog(LOG_INFO, "Loading model '%s' from: %s", modelName.c_str(), modelPath.c_str());
 
