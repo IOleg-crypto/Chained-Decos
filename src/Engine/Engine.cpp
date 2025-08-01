@@ -31,7 +31,7 @@ void Engine::Init() const {
     HideCursor();
     SetTargetFPS(60);
     rlImGuiSetup(true); // init ImGui
-   // InitImGuiFont();
+    InitImGuiFont();
 }
 
 void Engine::Run() {
