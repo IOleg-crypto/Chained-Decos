@@ -6,8 +6,8 @@ includedir=${prefix}/include
 Name: raylib
 Description: A simple and easy-to-use library to enjoy videogames programming
 URL: https://github.com/raysan5/raylib
-Version: 4.2.0
+Version: 5.5.0
 Libs: -L"${libdir}" -lraylib 
-Libs.private: -lglfw
+Libs.private: 
 Requires.private: 
 Cflags: -I"${includedir}"

@@ -36,7 +36,7 @@ endif()
 
 
 execute_process(
-  COMMAND "C:/Program Files/Git/cmd/git.exe" --git-dir=.git show-ref "4.5.0"
+  COMMAND "C:/Program Files/Git/cmd/git.exe" --git-dir=.git show-ref "5.5"
   WORKING_DIRECTORY "D:/gitnext/Chained Decos/build/_deps/raylib-src"
   OUTPUT_VARIABLE show_ref_output
 )
@@ -46,7 +46,7 @@ if(show_ref_output MATCHES "^[a-z0-9]+[ \\t]+refs/remotes/")
   if(can_fetch)
     do_fetch()
   endif()
-  set(checkout_name "4.5.0")
+  set(checkout_name "5.5")
 
 elseif(show_ref_output MATCHES "^[a-z0-9]+[ \\t]+refs/tags/")
   # Given a tag name that we already know about. We don't know if the tag we
@@ -55,7 +55,7 @@ elseif(show_ref_output MATCHES "^[a-z0-9]+[ \\t]+refs/tags/")
   # same commit as the tag we hold locally, don't do a fetch and assume the tag
   # hasn't moved on the remote.
   # FIXME: We should provide an option to always fetch for this case
-  get_hash_for_ref("4.5.0" tag_sha error_msg)
+  get_hash_for_ref("5.5" tag_sha error_msg)
   if(tag_sha STREQUAL head_sha)
     message(VERBOSE "Already at requested tag: ${tag_sha}")
     return()
@@ -64,7 +64,7 @@ elseif(show_ref_output MATCHES "^[a-z0-9]+[ \\t]+refs/tags/")
   if(can_fetch)
     do_fetch()
   endif()
-  set(checkout_name "4.5.0")
+  set(checkout_name "5.5")
 
 elseif(show_ref_output MATCHES "^[a-z0-9]+[ \\t]+refs/heads/")
   # Given a branch name without any remote and we already have a branch by that
@@ -75,10 +75,10 @@ elseif(show_ref_output MATCHES "^[a-z0-9]+[ \\t]+refs/heads/")
   if(can_fetch)
     do_fetch()
   endif()
-  set(checkout_name "origin/4.5.0")
+  set(checkout_name "origin/5.5")
 
 else()
-  get_hash_for_ref("4.5.0" tag_sha error_msg)
+  get_hash_for_ref("5.5" tag_sha error_msg)
   if(tag_sha STREQUAL head_sha)
     # Have the right commit checked out already
     message(VERBOSE "Already at requested ref: ${tag_sha}")
@@ -88,7 +88,7 @@ else()
     # We don't know about this ref yet, so we have no choice but to fetch.
     if(NOT can_fetch)
       message(FATAL_ERROR
-        "Requested git ref \"4.5.0\" is not present locally, and not "
+        "Requested git ref \"5.5\" is not present locally, and not "
         "allowed to contact remote due to UPDATE_DISCONNECTED setting."
       )
     endif()
@@ -100,13 +100,13 @@ else()
       message(VERBOSE "${error_msg}")
     endif()
     do_fetch()
-    set(checkout_name "4.5.0")
+    set(checkout_name "5.5")
 
   else()
     # We have the commit, so we know we were asked to find a commit hash
     # (otherwise it would have been handled further above), but we don't
     # have that commit checked out yet. We don't need to fetch from the remote.
-    set(checkout_name "4.5.0")
+    set(checkout_name "5.5")
     if(NOT error_msg STREQUAL "")
       message(WARNING "${error_msg}")
     endif()

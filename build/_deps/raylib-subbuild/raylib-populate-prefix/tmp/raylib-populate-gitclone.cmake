@@ -41,12 +41,12 @@ endif()
 
 execute_process(
   COMMAND "C:/Program Files/Git/cmd/git.exe"
-          checkout "4.5.0" --
+          checkout "5.5" --
   WORKING_DIRECTORY "D:/gitnext/Chained Decos/build/_deps/raylib-src"
   RESULT_VARIABLE error_code
 )
 if(error_code)
-  message(FATAL_ERROR "Failed to checkout tag: '4.5.0'")
+  message(FATAL_ERROR "Failed to checkout tag: '5.5'")
 endif()
 
 set(init_submodules TRUE)

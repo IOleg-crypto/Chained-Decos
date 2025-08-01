@@ -32,7 +32,7 @@ target_link_libraries(unit_tests
         GTest::gtest_main
 )
 
-# Додаємо всі тести до add_test
+
 add_test(NAME ColorParserTests COMMAND unit_tests --gtest_filter="ColorParserTest*")
 add_test(NAME InputManagerTests COMMAND unit_tests --gtest_filter="InputManagerTest*")
 add_test(NAME MenuTests COMMAND unit_tests --gtest_filter="MenuTest*")
@@ -47,7 +47,6 @@ add_test(NAME PerformanceTests COMMAND unit_tests --gtest_filter="PerformanceTes
 add_test(NAME EdgeCaseTests COMMAND unit_tests --gtest_filter="EdgeCaseTest*")
 add_test(NAME StressTests COMMAND unit_tests --gtest_filter="StressTest*")
 
-# Загальний тест для всіх тестів
 add_test(NAME AllTests COMMAND unit_tests)
 
 include(GoogleTest)
