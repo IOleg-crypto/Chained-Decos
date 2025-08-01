@@ -9,7 +9,7 @@
 
 using json = nlohmann::json;
 
-std::vector<MapLoader>LoadMap(const std::string path) {
+std::vector<MapLoader>LoadMap(const std::string& path) {
      std::ifstream file(path);
      if (!FileExists(path.c_str())) {
           TraceLog(LOG_ERROR , "The map don`t exist at current path");
