@@ -24,7 +24,7 @@ private:
 public:
     void Update();
     void Render() const;
-    MenuAction GetAction() const;
+    [[nodiscard]] MenuAction GetAction() const;
     void ResetAction();
 };
 
