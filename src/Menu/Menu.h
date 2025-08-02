@@ -20,7 +20,11 @@ class Menu {
 private:
     int selected = 0;
     MenuAction action = MenuAction::None;
-
+public:
+    Menu() = default;
+    ~Menu() = default;
+    Menu(const Menu &other) = delete;
+    Menu(Menu &&other) = delete;
 public:
     void Update();
     void Render() const;

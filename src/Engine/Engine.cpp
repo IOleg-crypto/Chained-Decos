@@ -9,8 +9,7 @@
 
 
 
-Engine::Engine(const int screenX, const int screenY) : m_player()
-    , m_screenX(screenX), m_screenY(screenY), m_WindowName("Chained Decos"), m_shouldExit(false) {
+Engine::Engine(const int screenX, const int screenY) : m_screenX(screenX), m_screenY(screenY), m_WindowName("Chained Decos") {
     if (m_screenX < 0 || m_screenY < 0) {
         TraceLog(LOG_WARNING, "[Screen] Invalid screen size: %d x %d. Setting default size 800x600.", m_screenX,
                  m_screenY);
