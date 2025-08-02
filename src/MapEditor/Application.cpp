@@ -3,11 +3,12 @@
 //
 #include <MapEditor/Application.h>
 
-Application::Application(int width, int height)
+Application::Application(const int width, const int height)
     : m_width(width), m_height(height) , m_WindowName("ChainedEditor") , m_editor(std::make_unique<Editor>()) {}
 
 Application::~Application() {
     // Cleanup window resources
+    rlImGuiShutdown();
     CloseWindow();
 }
 
@@ -17,12 +18,29 @@ void Application::Init() const {
     InitWindow(m_width, m_height, m_WindowName.c_str());
     SetTargetFPS(60);
     
-    // Initialize ImGui for the editor interface
-    ImGui::CreateContext();
-    ImGui_ImplRaylib_Init();
+    // Check if window was created successfully
+    if (!IsWindowReady()) {
+        std::cerr << "Failed to create window!" << std::endl;
+        return;
+    }
+    
+    // Initialize ImGui AFTER window is created
+    rlImGuiSetup(true);
+
+    // Render all ImGui panels
+    const ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
+    io.Fonts->Build();
 }
 
 void Application::Run() const {
+    // Check if window is ready before starting the loop
+    if (!IsWindowReady()) {
+        std::cerr << "Window not ready, cannot start application loop!" << std::endl;
+        return;
+    }
+    
     // Main application loop
     while(!WindowShouldClose())
     {
