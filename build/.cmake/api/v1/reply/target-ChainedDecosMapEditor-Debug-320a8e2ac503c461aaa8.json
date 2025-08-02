@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "ChainedDecos.exe"
+			"path" : "src/MapEditor/ChainedDecosMapEditor.exe"
 		},
 		{
-			"path" : "ChainedDecos.pdb"
+			"path" : "src/MapEditor/ChainedDecosMapEditor.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -20,8 +20,9 @@
 		],
 		"files" : 
 		[
-			"CMakeLists.txt",
-			"build/_deps/raylib-src/src/CMakeLists.txt"
+			"src/MapEditor/CMakeLists.txt",
+			"build/_deps/raylib-src/src/CMakeLists.txt",
+			"CMakeLists.txt"
 		],
 		"nodes" : 
 		[
@@ -31,13 +32,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 83,
+				"line" : 7,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 91,
+				"line" : 20,
 				"parent" : 0
 			},
 			{
@@ -50,16 +51,19 @@
 				"parent" : 3
 			},
 			{
+				"file" : 2
+			},
+			{
 				"command" : 2,
-				"file" : 0,
+				"file" : 2,
 				"line" : 70,
-				"parent" : 0
+				"parent" : 5
 			},
 			{
 				"command" : 3,
-				"file" : 0,
+				"file" : 2,
 				"line" : 68,
-				"parent" : 0
+				"parent" : 5
 			}
 		]
 	},
@@ -83,14 +87,14 @@
 					"define" : "PLATFORM_DESKTOP"
 				},
 				{
-					"backtrace" : 5,
+					"backtrace" : 6,
 					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 6,
+					"backtrace" : 7,
 					"path" : "D:/gitnext/Chained Decos/src"
 				},
 				{
@@ -125,7 +129,10 @@
 			},
 			"sourceIndexes" : 
 			[
-				0
+				0,
+				1,
+				4,
+				5
 			]
 		}
 	],
@@ -149,11 +156,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "model::@c31de6ce72a56b005f57"
+			"id" : "player::@be42b85d13b19d60cba7"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "player::@be42b85d13b19d60cba7"
+			"id" : "model::@c31de6ce72a56b005f57"
 		},
 		{
 			"backtrace" : 2,
@@ -165,7 +172,7 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "color::@1a1c00afda0e599bb50a"
+			"id" : "cameracontroller::@5f3ee536e3548f9fd64a"
 		},
 		{
 			"backtrace" : 2,
@@ -173,14 +180,14 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "cameracontroller::@5f3ee536e3548f9fd64a"
+			"id" : "color::@1a1c00afda0e599bb50a"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "world::@92df9c4804674326063e"
 		}
 	],
-	"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
+	"id" : "ChainedDecosMapEditor::@22ba1988a0619764bd02",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -199,62 +206,62 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/Engine/engine.lib",
+				"fragment" : "../Engine/engine.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/Player/player.lib",
+				"fragment" : "../Player/player.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/Model/model.lib",
+				"fragment" : "../Model/model.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/Menu/menu.lib",
+				"fragment" : "../Menu/menu.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/Input/input.lib",
+				"fragment" : "../Input/input.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/Map/mapmod.lib",
+				"fragment" : "../Map/mapmod.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/CameraController/cameracontroller.lib",
+				"fragment" : "../CameraController/cameracontroller.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/Color/color.lib",
+				"fragment" : "../Color/color.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src/World/world.lib",
+				"fragment" : "../World/world.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "_deps/raylib-build/raylib/raylib.lib",
+				"fragment" : "../../_deps/raylib-build/raylib/raylib.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "imguilib.lib",
+				"fragment" : "../../imguilib.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "_deps/raylib-build/raylib/raylib.lib",
+				"fragment" : "../../_deps/raylib-build/raylib/raylib.lib",
 				"role" : "libraries"
 			},
 			{
@@ -279,12 +286,12 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "ChainedDecos",
-	"nameOnDisk" : "ChainedDecos.exe",
+	"name" : "ChainedDecosMapEditor",
+	"nameOnDisk" : "ChainedDecosMapEditor.exe",
 	"paths" : 
 	{
-		"build" : ".",
-		"source" : "."
+		"build" : "src/MapEditor",
+		"source" : "src/MapEditor"
 	},
 	"sourceGroups" : 
 	[
@@ -292,7 +299,18 @@
 			"name" : "Source Files",
 			"sourceIndexes" : 
 			[
-				0
+				0,
+				1,
+				4,
+				5
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				2,
+				3
 			]
 		}
 	],
@@ -301,7 +319,35 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/main.cpp",
+			"path" : "src/MapEditor/Application.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/MapEditor/Map/Map.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/MapEditor/Map/Map.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/MapEditor/Editor/Editor.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/MapEditor/Editor/Editor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/MapEditor/main.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],

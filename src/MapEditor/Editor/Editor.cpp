@@ -4,11 +4,13 @@
 
 #include "Editor.h"
 
-Editor::Editor() : cameraController(new CameraController())
+Editor::Editor() : m_cameraController(std::make_unique<CameraController>())
 {
 
 }
 
-Editor::~Editor() {
-    delete cameraController;
+Editor::~Editor() = default;
+
+std::shared_ptr<CameraController> Editor::GetCameraController() const {
+     return m_cameraController;
 }

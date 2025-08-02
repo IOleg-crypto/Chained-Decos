@@ -46,10 +46,10 @@ public:
     Engine() = default;
     Engine(int screenX, int screenY);
     ~Engine();
-
-    // Deleted copy/move constructors (not needed)
+    // Deleted copy/move constructors (don`t needed)
     Engine(const Engine& other) = delete;
     Engine(Engine&& other) = delete;
+public:
 
     // Initialization
     void Init() const;
