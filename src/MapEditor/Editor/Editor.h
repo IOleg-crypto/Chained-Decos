@@ -61,6 +61,7 @@ public:
     void Render();         // Render 3D objects
     void RenderImGui();    // Render ImGui interface
     void HandleInput();    // Handle user input
+
     
     // Object management functions
     void AddObject(const MapObject& obj);      // Add new object to scene

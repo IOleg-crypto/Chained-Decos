@@ -3,11 +3,11 @@
 //
 
 #include "Editor.h"
-#include "../MapFileManager.h"
+#include "../MapFileManager/MapFileManager.h"
 #include <fstream>
 #include <iostream>
 #include <imgui.h>
-#include <imgui_impl_raylib.h>
+#include <rlImGui.h>
 
 Editor::Editor() 
     : m_cameraController(std::make_shared<CameraController>()),
@@ -17,29 +17,12 @@ Editor::Editor()
       m_showObjectPanel(true),
       m_showPropertiesPanel(true)
 {
-    // Initialize ImGui for the editor interface
-    ImGui::CreateContext();
-    ImGui_ImplRaylib_Init();
-    
-    // Add some test objects to demonstrate the editor
-    MapObject cube;
-    cube.position = {0, 1, 0};
-    cube.name = "Test Cube";
-    cube.type = 0;
-    m_objects.push_back(cube);
-    
-    MapObject sphere;
-    sphere.position = {3, 1, 0};
-    sphere.name = "Test Sphere";
-    sphere.type = 1;
-    sphere.color = RED;
-    m_objects.push_back(sphere);
+    // ImGui will be initialized in Application::Init() after window creation
+
 }
 
 Editor::~Editor() {
-    // Cleanup ImGui resources
-    ImGui_ImplRaylib_Shutdown();
-    ImGui::DestroyContext();
+    //rlImGuiShutdown();
 }
 
 std::shared_ptr<CameraController> Editor::GetCameraController() const {
@@ -60,11 +43,8 @@ void Editor::Render() {
 }
 
 void Editor::RenderImGui() {
-    // Begin ImGui frame
-    ImGui_ImplRaylib_NewFrame();
-    ImGui::NewFrame();
-    
-    // Render all ImGui panels
+
+
     RenderImGuiToolbar();
     
     if (m_showObjectPanel) {
@@ -74,10 +54,6 @@ void Editor::RenderImGui() {
     if (m_showPropertiesPanel && m_selectedObjectIndex >= 0) {
         RenderImGuiPropertiesPanel();
     }
-    
-    // Render ImGui frame
-    ImGui::Render();
-    ImGui_ImplRaylib_RenderDrawData(ImGui::GetDrawData());
 }
 
 void Editor::HandleInput() {
@@ -206,74 +182,77 @@ void Editor::RenderObject(const MapObject& obj) {
 
 void Editor::RenderImGuiToolbar() {
     // Create toolbar window
+    rlImGuiBegin();
     ImGui::SetNextWindowPos(ImVec2(10, 10));
-    ImGui::SetNextWindowSize(ImVec2(400, 300));
-    ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    
-    // Tool buttons
-    const char* tools[] = {"Select", "Move", "Rotate", "Scale", "Add Cube", "Add Sphere", "Add Cylinder"};
-    
-    for (int i = 0; i < 7; i++) {
-        if (ImGui::Button(tools[i])) {
-            m_currentTool = i;
+    ImGui::SetNextWindowSize(ImVec2(700, 300));
+    if (ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        // Tool buttons
+        const char* tools[] = {"Select", "Move", "Rotate", "Scale", "Add Cube", "Add Sphere", "Add Cylinder"};
+
+        for (int i = 0; i < 7; i++) {
+            if (ImGui::Button(tools[i])) {
+                m_currentTool = i;
+            }
+            if (i < 6) ImGui::SameLine();
         }
-        if (i < 6) ImGui::SameLine();
+
+        ImGui::Separator();
+
+        // File operations
+        if (ImGui::Button("Save Map")) {
+            SaveMap("map.json");
+        }
+
+        if (ImGui::Button("Load Map")) {
+            LoadMap("map.json");
+        }
+
+        ImGui::Separator();
+
+        // UI toggle options
+        ImGui::Checkbox("Show Object Panel", &m_showObjectPanel);
+        ImGui::Checkbox("Show Properties", &m_showPropertiesPanel);
     }
-    
-    ImGui::Separator();
-    
-    // File operations
-    if (ImGui::Button("Save Map")) {
-        SaveMap("map.json");
-    }
-    
-    if (ImGui::Button("Load Map")) {
-        LoadMap("map.json");
-    }
-    
-    ImGui::Separator();
-    
-    // UI toggle options
-    ImGui::Checkbox("Show Object Panel", &m_showObjectPanel);
-    ImGui::Checkbox("Show Properties", &m_showPropertiesPanel);
-    
     ImGui::End();
+    rlImGuiEnd();
 }
 
 void Editor::RenderImGuiObjectPanel() {
     // Create object list panel
+    rlImGuiBegin();
     ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() - 250, 10));
     ImGui::SetNextWindowSize(ImVec2(240, 400));
-    ImGui::Begin("Objects", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    
-    // List all objects
-    for (int i = 0; i < m_objects.size(); i++) {
-        const auto& obj = m_objects[i];
-        bool isSelected = (i == m_selectedObjectIndex);
-        
-        if (ImGui::Selectable(obj.name.c_str(), isSelected)) {
-            SelectObject(i);
+    if (ImGui::Begin("Objects", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        // List all objects
+        for (int i = 0; i < m_objects.size(); i++) {
+            const auto& obj = m_objects[i];
+            bool isSelected = (i == m_selectedObjectIndex);
+
+            if (ImGui::Selectable(obj.name.c_str(), isSelected)) {
+                SelectObject(i);
+            }
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
+                SelectObject(i);
+            }
         }
-        
-        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
-            SelectObject(i);
+
+        ImGui::Separator();
+
+        // Object management buttons
+        if (ImGui::Button("Add Object")) {
+            MapObject newObj;
+            newObj.name = "New Object " + std::to_string(m_objects.size());
+            AddObject(newObj);
+        }
+
+        if (ImGui::Button("Remove Selected") && m_selectedObjectIndex >= 0) {
+            RemoveObject(m_selectedObjectIndex);
         }
     }
-    
-    ImGui::Separator();
-    
-    // Object management buttons
-    if (ImGui::Button("Add Object")) {
-        MapObject newObj;
-        newObj.name = "New Object " + std::to_string(m_objects.size());
-        AddObject(newObj);
-    }
-    
-    if (ImGui::Button("Remove Selected") && m_selectedObjectIndex >= 0) {
-        RemoveObject(m_selectedObjectIndex);
-    }
-    
+
     ImGui::End();
+    rlImGuiEnd();
 }
 
 void Editor::RenderImGuiPropertiesPanel() {
@@ -283,6 +262,7 @@ void Editor::RenderImGuiPropertiesPanel() {
     MapObject& obj = m_objects[m_selectedObjectIndex];
     
     // Create properties panel
+    rlImGuiBegin();
     ImGui::SetNextWindowPos(ImVec2(10, GetScreenHeight() - 300));
     ImGui::SetNextWindowSize(ImVec2(300, 290));
     ImGui::Begin("Properties", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -335,6 +315,7 @@ void Editor::RenderImGuiPropertiesPanel() {
     }
     
     ImGui::End();
+    rlImGuiEnd();
 }
 
 void Editor::HandleMouseInput() {

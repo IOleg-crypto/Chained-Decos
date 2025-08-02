@@ -2,7 +2,7 @@
 // Created by I#Oleg
 //
 
-#include "MapFileManager.h"
+#include "../MapFileManager/MapFileManager.h"
 #include <raylib.h>
 
 nlohmann::json SerializableObject::toJson() const {
