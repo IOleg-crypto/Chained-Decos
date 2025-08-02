@@ -7,25 +7,30 @@
 #include <raylib.h>
 #include <string>
 #include <memory>
+#include <imgui.h>
+#include <imgui_impl_raylib.h>
 
 #include "Editor/Editor.h"
 
-
-// Main class for map editor
+// Main application class for the map editor
 class Application {
 public:
-    Application(int width, int height);
+    // Constructor and destructor
+    Application(int width, int height);  // Initialize with window dimensions
     ~Application();
-    Application(const Application&other) = delete;
-    Application(Application &&other) = delete;
+    Application(const Application&other) = delete;  // Disable copy constructor
+    Application(Application &&other) = delete;      // Disable move constructor
+    
 public:
-    void Init();
-    void Run();
+    // Core application functions
+    void Init() const;    // Initialize the application and window
+    void Run() const;     // Main application loop
+    
 private:
-    int m_width;
-    int m_height;
-    std::string m_WindowName;
-    std::unique_ptr<Editor> m_editor;
+    int m_width;                    // Window width
+    int m_height;                   // Window height
+    std::string m_WindowName;       // Window title
+    std::unique_ptr<Editor> m_editor;  // Main editor instance
 };
 
 #endif // APPLICATION_H 

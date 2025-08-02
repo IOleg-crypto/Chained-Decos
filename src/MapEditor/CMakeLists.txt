@@ -6,10 +6,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(${PROJECT_NAME} 
           Application.cpp 
+          Application.h
           Map/Map.cpp 
           Map/Map.h 
           Editor/Editor.h
           Editor/Editor.cpp
+          Editor/CameraModes.h
+          Editor/CameraModes.cpp
+          Editor/ObjectTransform.h
+          Editor/ObjectTransform.cpp
+          MapFileManager.h
+          MapFileManager.cpp
           main.cpp
           )
 
