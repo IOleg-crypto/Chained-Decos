@@ -367,6 +367,24 @@
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp",
+  "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj"
+},
+{
+  "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp",
+  "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj"
+},
+{
+  "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/MapFileManager.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/MapEditor/MapFileManager.cpp",
+  "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager.cpp.obj"
+},
+{
+  "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
   "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/main.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/main.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj"

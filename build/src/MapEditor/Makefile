@@ -219,6 +219,30 @@ Application.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.s
 .PHONY : Application.cpp.s
 
+Editor/CameraModes.obj: Editor/CameraModes.cpp.obj
+.PHONY : Editor/CameraModes.obj
+
+# target to build an object file
+Editor/CameraModes.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj
+.PHONY : Editor/CameraModes.cpp.obj
+
+Editor/CameraModes.i: Editor/CameraModes.cpp.i
+.PHONY : Editor/CameraModes.i
+
+# target to preprocess a source file
+Editor/CameraModes.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.i
+.PHONY : Editor/CameraModes.cpp.i
+
+Editor/CameraModes.s: Editor/CameraModes.cpp.s
+.PHONY : Editor/CameraModes.s
+
+# target to generate assembly for a file
+Editor/CameraModes.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.s
+.PHONY : Editor/CameraModes.cpp.s
+
 Editor/Editor.obj: Editor/Editor.cpp.obj
 .PHONY : Editor/Editor.obj
 
@@ -243,6 +267,30 @@ Editor/Editor.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.s
 .PHONY : Editor/Editor.cpp.s
 
+Editor/ObjectTransform.obj: Editor/ObjectTransform.cpp.obj
+.PHONY : Editor/ObjectTransform.obj
+
+# target to build an object file
+Editor/ObjectTransform.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj
+.PHONY : Editor/ObjectTransform.cpp.obj
+
+Editor/ObjectTransform.i: Editor/ObjectTransform.cpp.i
+.PHONY : Editor/ObjectTransform.i
+
+# target to preprocess a source file
+Editor/ObjectTransform.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.i
+.PHONY : Editor/ObjectTransform.cpp.i
+
+Editor/ObjectTransform.s: Editor/ObjectTransform.cpp.s
+.PHONY : Editor/ObjectTransform.s
+
+# target to generate assembly for a file
+Editor/ObjectTransform.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.s
+.PHONY : Editor/ObjectTransform.cpp.s
+
 Map/Map.obj: Map/Map.cpp.obj
 .PHONY : Map/Map.obj
 
@@ -266,6 +314,30 @@ Map/Map.s: Map/Map.cpp.s
 Map/Map.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Map/Map.cpp.s
 .PHONY : Map/Map.cpp.s
+
+MapFileManager.obj: MapFileManager.cpp.obj
+.PHONY : MapFileManager.obj
+
+# target to build an object file
+MapFileManager.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager.cpp.obj
+.PHONY : MapFileManager.cpp.obj
+
+MapFileManager.i: MapFileManager.cpp.i
+.PHONY : MapFileManager.i
+
+# target to preprocess a source file
+MapFileManager.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager.cpp.i
+.PHONY : MapFileManager.cpp.i
+
+MapFileManager.s: MapFileManager.cpp.s
+.PHONY : MapFileManager.s
+
+# target to generate assembly for a file
+MapFileManager.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager.cpp.s
+.PHONY : MapFileManager.cpp.s
 
 main.obj: main.cpp.obj
 .PHONY : main.obj
@@ -309,12 +381,21 @@ help:
 	@echo "... Application.obj"
 	@echo "... Application.i"
 	@echo "... Application.s"
+	@echo "... Editor/CameraModes.obj"
+	@echo "... Editor/CameraModes.i"
+	@echo "... Editor/CameraModes.s"
 	@echo "... Editor/Editor.obj"
 	@echo "... Editor/Editor.i"
 	@echo "... Editor/Editor.s"
+	@echo "... Editor/ObjectTransform.obj"
+	@echo "... Editor/ObjectTransform.i"
+	@echo "... Editor/ObjectTransform.s"
 	@echo "... Map/Map.obj"
 	@echo "... Map/Map.i"
 	@echo "... Map/Map.s"
+	@echo "... MapFileManager.obj"
+	@echo "... MapFileManager.i"
+	@echo "... MapFileManager.s"
 	@echo "... main.obj"
 	@echo "... main.i"
 	@echo "... main.s"
