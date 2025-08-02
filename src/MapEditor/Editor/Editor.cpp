@@ -15,14 +15,14 @@ Editor::Editor()
       m_currentTool(SELECT),
       m_showImGui(true),
       m_showObjectPanel(true),
-      m_showPropertiesPanel(true)
+      m_showPropertiesPanel(true),
+      m_lockCamera(false)
 {
     // ImGui will be initialized in Application::Init() after window creation
-
 }
 
 Editor::~Editor() {
-    //rlImGuiShutdown();
+    // Don't call rlImGuiShutdown here - it's handled by Application
 }
 
 std::shared_ptr<CameraController> Editor::GetCameraController() const {
@@ -32,7 +32,13 @@ std::shared_ptr<CameraController> Editor::GetCameraController() const {
 void Editor::Update() {
     // Handle user input and update camera
     HandleInput();
-    m_cameraController->Update();
+    
+    // Always update camera, but with reduced sensitivity when ImGui is active
+    const ImGuiIO& io = ImGui::GetIO();
+    if (!io.WantCaptureMouse || !io.WantCaptureKeyboard || m_lockCamera) {
+        // Camera still works but with reduced sensitivity when ImGui is active
+        m_cameraController->Update();
+    }
 }
 
 void Editor::Render() {
@@ -43,23 +49,43 @@ void Editor::Render() {
 }
 
 void Editor::RenderImGui() {
-
-
-    RenderImGuiToolbar();
+    // Use simple rlImGui approach
+    rlImGuiBegin();
     
+    // Render all ImGui panels in specific order
+    RenderImGuiToolbar();
+
     if (m_showObjectPanel) {
         RenderImGuiObjectPanel();
     }
     
-    if (m_showPropertiesPanel && m_selectedObjectIndex >= 0) {
+    if (m_selectedObjectIndex >= 0) {
         RenderImGuiPropertiesPanel();
     }
+    
+    rlImGuiEnd();
 }
 
 void Editor::HandleInput() {
-    // Process mouse and keyboard input
-    HandleMouseInput();
-    HandleKeyboardInput();
+    // Get ImGui IO for input handling
+    const ImGuiIO& io = ImGui::GetIO();
+    
+    // Handle mouse input for object selection only when ImGui is not capturing
+    if (!io.WantCaptureMouse) {
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (m_currentTool == SELECT) {
+                // TODO: Implement object selection via ray casting
+            }
+        }
+        
+        // Handle camera input when ImGui is not capturing mouse
+        m_cameraController->Update();
+    }
+    
+    // Handle keyboard input only when ImGui is not capturing
+    if (!io.WantCaptureKeyboard) {
+        HandleKeyboardInput();
+    }
 }
 
 void Editor::AddObject(const MapObject& obj) {
@@ -181,78 +207,117 @@ void Editor::RenderObject(const MapObject& obj) {
 }
 
 void Editor::RenderImGuiToolbar() {
-    // Create toolbar window
-    rlImGuiBegin();
-    ImGui::SetNextWindowPos(ImVec2(10, 10));
-    ImGui::SetNextWindowSize(ImVec2(700, 300));
-    if (ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    // Ensure window stays within screen bounds
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(700, 300), ImGuiCond_FirstUseEver);
+    
+    // Use minimal flags for testing
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
+    
+    bool toolbarOpen = true;
+    if (ImGui::Begin("Toolbar", &toolbarOpen, windowFlags)) {
+        // Use larger font for toolbar title
+        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
+        ImGui::Text("Map Editor Tools");
+        ImGui::PopFont();
+        
+        ImGui::Separator();
+        
         // Tool buttons
         const char* tools[] = {"Select", "Move", "Rotate", "Scale", "Add Cube", "Add Sphere", "Add Cylinder"};
-
+        
         for (int i = 0; i < 7; i++) {
             if (ImGui::Button(tools[i])) {
                 m_currentTool = i;
             }
             if (i < 6) ImGui::SameLine();
         }
-
+        
         ImGui::Separator();
-
+        
         // File operations
         if (ImGui::Button("Save Map")) {
             SaveMap("map.json");
         }
-
+        ImGui::SameLine();
         if (ImGui::Button("Load Map")) {
             LoadMap("map.json");
         }
-
+        
         ImGui::Separator();
-
+        
         // UI toggle options
         ImGui::Checkbox("Show Object Panel", &m_showObjectPanel);
+        ImGui::SameLine();
         ImGui::Checkbox("Show Properties", &m_showPropertiesPanel);
+        ImGui::SameLine();
+        if(ImGui::Button("Lock camera"))
+        {
+           m_lockCamera != m_lockCamera;     
+        }
     }
+    
+    // If window was closed, don't show it next frame
+    if (!toolbarOpen) {
+        m_showImGui = false;
+    }
+    
     ImGui::End();
-    rlImGuiEnd();
 }
 
 void Editor::RenderImGuiObjectPanel() {
-    // Create object list panel
-    rlImGuiBegin();
-    ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() - 250, 10));
-    ImGui::SetNextWindowSize(ImVec2(240, 400));
-    if (ImGui::Begin("Objects", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        // List all objects
-        for (int i = 0; i < m_objects.size(); i++) {
-            const auto& obj = m_objects[i];
-            bool isSelected = (i == m_selectedObjectIndex);
-
-            if (ImGui::Selectable(obj.name.c_str(), isSelected)) {
-                SelectObject(i);
-            }
-
-            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
-                SelectObject(i);
-            }
-        }
-
-        ImGui::Separator();
-
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    
+    ImGui::SetNextWindowPos(ImVec2(screenWidth - 250, 10), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(240, 400), ImGuiCond_FirstUseEver);
+    
+    // Use minimal flags for testing
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
+    
+    bool objectPanelOpen = true;
+    if (ImGui::Begin("Objects", &objectPanelOpen, windowFlags)) {
         // Object management buttons
         if (ImGui::Button("Add Object")) {
             MapObject newObj;
             newObj.name = "New Object " + std::to_string(m_objects.size());
             AddObject(newObj);
         }
-
+        ImGui::SameLine();
         if (ImGui::Button("Remove Selected") && m_selectedObjectIndex >= 0) {
             RemoveObject(m_selectedObjectIndex);
         }
+        
+        ImGui::Separator();
+        
+        // List all objects
+        for (int i = 0; i < m_objects.size(); i++) {
+            const auto& obj = m_objects[i];
+            bool isSelected = (i == m_selectedObjectIndex);
+            
+            if (ImGui::Selectable(obj.name.c_str(), isSelected)) {
+                SelectObject(i);
+            }
+            
+            // Show object info on hover
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("Position: %.1f, %.1f, %.1f", obj.position.x, obj.position.y, obj.position.z);
+                ImGui::Text("Type: %s", obj.type == 0 ? "Cube" : obj.type == 1 ? "Sphere" : "Cylinder");
+                ImGui::EndTooltip();
+            }
+        }
     }
-
+    
+    // If window was closed, don't show it next frame
+    if (!objectPanelOpen) {
+        m_showObjectPanel = false;
+    }
+    
     ImGui::End();
-    rlImGuiEnd();
 }
 
 void Editor::RenderImGuiPropertiesPanel() {
@@ -261,70 +326,71 @@ void Editor::RenderImGuiPropertiesPanel() {
     
     MapObject& obj = m_objects[m_selectedObjectIndex];
     
-    // Create properties panel
-    rlImGuiBegin();
-    ImGui::SetNextWindowPos(ImVec2(10, GetScreenHeight() - 300));
-    ImGui::SetNextWindowSize(ImVec2(300, 290));
-    ImGui::Begin("Properties", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
     
-    // Object name editing
-    char nameBuffer[256];
-    strcpy_s(nameBuffer, sizeof(nameBuffer), obj.name.c_str());
-    if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
-        obj.name = std::string(nameBuffer);
-    }
+    ImGui::SetNextWindowPos(ImVec2(10, screenHeight - 400), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
     
-    // Object type selection
-    const char* types[] = {"Cube", "Sphere", "Cylinder"};
-    if (ImGui::Combo("Type", &obj.type, types, 3)) {
-        // Update object type
-    }
+    // Use minimal flags for testing
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
     
-    // Position editing
-    float pos[3] = {obj.position.x, obj.position.y, obj.position.z};
-    if (ImGui::DragFloat3("Position", pos, 0.1f)) {
-        obj.position = {pos[0], pos[1], pos[2]};
-    }
-    
-    // Scale editing
-    float scale[3] = {obj.scale.x, obj.scale.y, obj.scale.z};
-    if (ImGui::DragFloat3("Scale", scale, 0.1f)) {
-        obj.scale = {scale[0], scale[1], scale[2]};
-    }
-    
-    // Rotation editing
-    float rot[3] = {obj.rotation.x, obj.rotation.y, obj.rotation.z};
-    if (ImGui::DragFloat3("Rotation", rot, 1.0f)) {
-        obj.rotation = {rot[0], rot[1], rot[2]};
-    }
-    
-    // Color editing
-    float color[4] = {
-        obj.color.r / 255.0f,
-        obj.color.g / 255.0f,
-        obj.color.b / 255.0f,
-        obj.color.a / 255.0f
-    };
-    if (ImGui::ColorEdit4("Color", color)) {
-        obj.color = {
-            static_cast<unsigned char>(color[0] * 255),
-            static_cast<unsigned char>(color[1] * 255),
-            static_cast<unsigned char>(color[2] * 255),
-            static_cast<unsigned char>(color[3] * 255)
+    bool propertiesPanelOpen = true;
+    if (ImGui::Begin("Properties", &propertiesPanelOpen, windowFlags)) {
+        // Object name editing
+        char nameBuffer[256];
+        strcpy_s(nameBuffer, sizeof(nameBuffer), obj.name.c_str());
+        if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
+            obj.name = std::string(nameBuffer);
+        }
+        
+        // Object type selection
+        const char* types[] = {"Cube", "Sphere", "Cylinder"};
+        if (ImGui::Combo("Type", &obj.type, types, 3)) {
+            // Update object type
+        }
+        
+        // Position editing
+        float pos[3] = {obj.position.x, obj.position.y, obj.position.z};
+        if (ImGui::DragFloat3("Position", pos, 0.1f)) {
+            obj.position = {pos[0], pos[1], pos[2]};
+        }
+        
+        // Scale editing
+        float scale[3] = {obj.scale.x, obj.scale.y, obj.scale.z};
+        if (ImGui::DragFloat3("Scale", scale, 0.1f)) {
+            obj.scale = {scale[0], scale[1], scale[2]};
+        }
+        
+        // Rotation editing
+        float rot[3] = {obj.rotation.x, obj.rotation.y, obj.rotation.z};
+        if (ImGui::DragFloat3("Rotation", rot, 1.0f)) {
+            obj.rotation = {rot[0], rot[1], rot[2]};
+        }
+        
+        // Color editing
+        float color[4] = {
+            obj.color.r / 255.0f,
+            obj.color.g / 255.0f,
+            obj.color.b / 255.0f,
+            obj.color.a / 255.0f
         };
+        if (ImGui::ColorEdit4("Color", color)) {
+            obj.color = {
+                static_cast<unsigned char>(color[0] * 255),
+                static_cast<unsigned char>(color[1] * 255),
+                static_cast<unsigned char>(color[2] * 255),
+                static_cast<unsigned char>(color[3] * 255)
+            };
+        }
+    }
+    
+    // If window was closed, don't show it next frame
+    if (!propertiesPanelOpen) {
+        m_showPropertiesPanel = false;
     }
     
     ImGui::End();
-    rlImGuiEnd();
-}
-
-void Editor::HandleMouseInput() {
-    // Handle mouse input for object selection
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        if (m_currentTool == SELECT) {
-            // TODO: Implement object selection via ray casting
-        }
-    }
 }
 
 void Editor::HandleKeyboardInput() {
@@ -337,7 +403,7 @@ void Editor::HandleKeyboardInput() {
         ClearSelection();
     }
     
-    // Toggle UI panels
+    // Toggle UI panels with different keys
     if (IsKeyPressed(KEY_TWO)) {
         m_showObjectPanel = !m_showObjectPanel;
     }

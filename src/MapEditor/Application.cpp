@@ -7,7 +7,7 @@ Application::Application(const int width, const int height)
     : m_width(width), m_height(height) , m_WindowName("ChainedEditor") , m_editor(std::make_unique<Editor>()) {}
 
 Application::~Application() {
-    // Cleanup window resources
+    // Cleanup ImGui first, then window
     rlImGuiShutdown();
     CloseWindow();
 }
@@ -26,12 +26,41 @@ void Application::Init() const {
     
     // Initialize ImGui AFTER window is created
     rlImGuiSetup(true);
-
-    // Render all ImGui panels
-    const ImGuiIO& io = ImGui::GetIO();
+    
+    // Configure ImGui settings for better interaction
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable keyboard navigation
+    
+    // Set up custom font
     io.Fonts->Clear();
     io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
     io.Fonts->Build();
+    
+    // Set up ImGui style for better visibility
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    
+    // Configure style for better window interaction
+    style.WindowPadding = ImVec2(8, 8);
+    style.FramePadding = ImVec2(4, 4);
+    style.ItemSpacing = ImVec2(8, 4);
+    style.ScrollbarSize = 12.0f;
+    style.GrabMinSize = 8.0f;
+    style.WindowRounding = 5.0f;
+    style.FrameRounding = 3.0f;
+    style.GrabRounding = 3.0f;
+    
+    // Colors for better visibility
+    ImVec4* colors = style.Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.95f);
+    colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.16f, 0.16f, 0.54f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.26f, 0.26f, 0.54f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.26f, 0.26f, 0.67f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
 }
 
 void Application::Run() const {
