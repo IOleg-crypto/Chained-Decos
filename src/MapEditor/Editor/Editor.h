@@ -38,6 +38,7 @@ private:
     bool m_showImGui;                                     // Show/hide ImGui interface
     bool m_showObjectPanel;                               // Show/hide object list panel
     bool m_showPropertiesPanel;                           // Show/hide properties panel
+    bool m_lockCamera;                                    // Lock camera (not update)
     
     // Available editing tools
     enum Tool {
