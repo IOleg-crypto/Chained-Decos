@@ -6,6 +6,7 @@
 
 #include <raylib.h>
 #include <raymath.h>
+#include <memory>
 
 #include <Model/Model.h>
 #include <CameraController/CameraController.h>
@@ -24,17 +25,18 @@ private:
     PhysicsData physData;
 private:
     Models modelPlayer;
-    CameraController *cameraController;
+    std::shared_ptr<CameraController> cameraController;
 public:
     Player(); // Constructor to initialize the camera and all stuff
     ~Player();
+    Player(const Player &other) = delete;
+    Player(Player &&other) = delete;
+public:
     void Update(); // Updates the camera each frame (e.g., handles input and movement)
     [[nodiscard]] float GetSpeed(); // Get character speed
     void SetSpeed(float speed);
     // Move player (camera) in 3D
     void Move(Vector3 offset) const;
-    // Loads model player
-    void LoadModelPlayer();
     // Allow player jumps
     void Jump();
     // Take history of player position(needed for player jump)
@@ -42,7 +44,7 @@ public:
     // Allows W,A,S,D - movement
     void ApplyInput();
     // Get camera
-    [[nodiscard]] CameraController *getCameraController() const;
+    [[nodiscard]] std::shared_ptr<CameraController> getCameraController() const;
     // Get model manager
     Models getModelManager();
     PositionData GetPlayerData() const;

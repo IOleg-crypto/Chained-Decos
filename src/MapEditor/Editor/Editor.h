@@ -7,16 +7,20 @@
 
 #include <imgui.h>
 #include <raylib.h>
+#include <memory>
 
 #include <CameraController/CameraController.h>
 
 
 class Editor {
 private:
-     CameraController *cameraController;
+     std::shared_ptr<CameraController>m_cameraController;
 public:
      Editor();
      ~Editor();
+public:
+     [[nodiscard]] std::shared_ptr<CameraController>GetCameraController() const;
+     
 };
 
 

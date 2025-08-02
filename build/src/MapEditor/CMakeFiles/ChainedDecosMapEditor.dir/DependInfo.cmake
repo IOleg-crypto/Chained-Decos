@@ -9,7 +9,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "D:/gitnext/Chained Decos/src/MapEditor/Application.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj.d"
+  "D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj.d"
   "D:/gitnext/Chained Decos/src/MapEditor/Map/Map.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Map/Map.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Map/Map.cpp.obj.d"
+  "D:/gitnext/Chained Decos/src/MapEditor/main.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

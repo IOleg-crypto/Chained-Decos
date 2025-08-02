@@ -2,14 +2,13 @@
 // Created by I#Oleg
 //
 #include "Player.h"
+#include <memory>
 
-Player::Player() : cameraController(new CameraController) {
+Player::Player() : cameraController(std::make_shared<CameraController>()) {
 
 }
 
-Player::~Player() {
-    delete cameraController;
-}
+Player::~Player() = default;
 
 void Player::Update() {
     ApplyInput();
@@ -93,9 +92,10 @@ void Player::ApplyInput() {
     }
 }
 
-CameraController * Player::getCameraController() const {
+std::shared_ptr<CameraController> Player::getCameraController() const {
      return cameraController;
 }
+
 
 Models Player::getModelManager() {
     return modelPlayer;

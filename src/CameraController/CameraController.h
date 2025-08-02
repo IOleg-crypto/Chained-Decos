@@ -13,9 +13,13 @@ private:
     int cameraMode; // Mode for camera(First , Free , Third , orbital)
 public:
     CameraController(); // Init camera
+    ~CameraController() = default;
+    CameraController(const CameraController&other) = delete;
+    CameraController(CameraController &&other) = delete;
+public:
     [[nodiscard]] Camera &getCamera(); // Returns the current camera state (read-only)
     [[nodiscard]] int &GetCameraMode();
-    void SetCameraMode(const int cameraMode);
+    void SetCameraMode(int cameraMode);
     void Update();
 };
 
