@@ -2,127 +2,81 @@
 // Created by I#Oleg
 //
 
-#include "../MapFileManager/MapFileManager.h"
-#include <raylib.h>
-
-nlohmann::json SerializableObject::toJson() const {
-    // Convert SerializableObject to JSON format
-    nlohmann::json j;
-    j["position"] = MapFileManager::Vector3ToJson(position);
-    j["scale"] = MapFileManager::Vector3ToJson(scale);
-    j["rotation"] = MapFileManager::Vector3ToJson(rotation);
-    j["color"] = MapFileManager::ColorToJson(color);
-    j["name"] = name;
-    j["type"] = type;
-    return j;
-}
-
-SerializableObject SerializableObject::fromJson(const nlohmann::json& j) {
-    // Create SerializableObject from JSON data
-    SerializableObject obj;
-    obj.position = MapFileManager::JsonToVector3(j["position"]);
-    obj.scale = MapFileManager::JsonToVector3(j["scale"]);
-    obj.rotation = MapFileManager::JsonToVector3(j["rotation"]);
-    obj.color = MapFileManager::JsonToColor(j["color"]);
-    obj.name = j["name"];
-    obj.type = j["type"];
-    return obj;
-}
+#include "MapFileManager.h"
+#include <fstream>
+#include <iostream>
 
 bool MapFileManager::SaveMap(const std::vector<SerializableObject>& objects, const std::string& filename) {
-    try {
-        // Create JSON structure for the map
-        nlohmann::json mapData;
-        mapData["version"] = "1.0";
-        mapData["objectCount"] = objects.size();
-        
-        // Convert all objects to JSON array
-        nlohmann::json objectsArray = nlohmann::json::array();
-        for (const auto& obj : objects) {
-            objectsArray.push_back(obj.toJson());
-        }
-        mapData["objects"] = objectsArray;
-        
-        // Write JSON to file
-        std::ofstream file(filename);
-        if (!file.is_open()) {
-            std::cerr << "Failed to open file for writing: " << filename << std::endl;
-            return false;
-        }
-        
-        file << mapData.dump(4);  // Pretty print with 4 spaces indentation
-        file.close();
-        
-        std::cout << "Map saved successfully to: " << filename << std::endl;
-        return true;
-    } catch (const std::exception& e) {
-        std::cerr << "Error saving map: " << e.what() << std::endl;
+    // Simple text-based save for now
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
         return false;
     }
+    
+    file << "Map File v1.0" << std::endl;
+    file << "ObjectCount: " << objects.size() << std::endl;
+    
+    for (const auto& obj : objects) {
+        file << "Object:" << std::endl;
+        file << "  Name: " << obj.name << std::endl;
+        file << "  Type: " << obj.type << std::endl;
+        file << "  Position: " << obj.position.x << " " << obj.position.y << " " << obj.position.z << std::endl;
+        file << "  Scale: " << obj.scale.x << " " << obj.scale.y << " " << obj.scale.z << std::endl;
+        file << "  Rotation: " << obj.rotation.x << " " << obj.rotation.y << " " << obj.rotation.z << std::endl;
+        file << "  Color: " << (int)obj.color.r << " " << (int)obj.color.g << " " << (int)obj.color.b << " " << (int)obj.color.a << std::endl;
+    }
+    
+    file.close();
+    std::cout << "Map saved successfully to: " << filename << std::endl;
+    return true;
 }
 
 bool MapFileManager::LoadMap(std::vector<SerializableObject>& objects, const std::string& filename) {
-    try {
-        // Read JSON from file
-        std::ifstream file(filename);
-        if (!file.is_open()) {
-            std::cerr << "Failed to open file for reading: " << filename << std::endl;
-            return false;
-        }
-        
-        nlohmann::json mapData;
-        file >> mapData;
-        file.close();
-        
-        // Clear existing objects and load new ones
-        objects.clear();
-        const auto& objectsArray = mapData["objects"];
-        for (const auto& objJson : objectsArray) {
-            objects.push_back(SerializableObject::fromJson(objJson));
-        }
-        
-        std::cout << "Map loaded successfully from: " << filename << std::endl;
-        return true;
-    } catch (const std::exception& e) {
-        std::cerr << "Error loading map: " << e.what() << std::endl;
+    // Simple text-based load for now
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for reading: " << filename << std::endl;
         return false;
     }
-}
-
-nlohmann::json MapFileManager::Vector3ToJson(const Vector3& vec) {
-    // Convert Vector3 to JSON object
-    nlohmann::json j;
-    j["x"] = vec.x;
-    j["y"] = vec.y;
-    j["z"] = vec.z;
-    return j;
-}
-
-Vector3 MapFileManager::JsonToVector3(const nlohmann::json& j) {
-    // Convert JSON object to Vector3
-    return Vector3{
-        j["x"].get<float>(),
-        j["y"].get<float>(),
-        j["z"].get<float>()
-    };
-}
-
-nlohmann::json MapFileManager::ColorToJson(const Color& color) {
-    // Convert Color to JSON object
-    nlohmann::json j;
-    j["r"] = color.r;
-    j["g"] = color.g;
-    j["b"] = color.b;
-    j["a"] = color.a;
-    return j;
-}
-
-Color MapFileManager::JsonToColor(const nlohmann::json& j) {
-    // Convert JSON object to Color
-    return Color{
-        j["r"].get<unsigned char>(),
-        j["g"].get<unsigned char>(),
-        j["b"].get<unsigned char>(),
-        j["a"].get<unsigned char>()
-    };
+    
+    objects.clear();
+    std::string line;
+    
+    // Skip header
+    std::getline(file, line); // "Map File v1.0"
+    std::getline(file, line); // "ObjectCount: X"
+    
+    while (std::getline(file, line)) {
+        if (line == "Object:") {
+            SerializableObject obj;
+            
+            // Read object properties
+            std::getline(file, line); // Name
+            obj.name = line.substr(line.find(": ") + 2);
+            
+            std::getline(file, line); // Type
+            obj.type = std::stoi(line.substr(line.find(": ") + 2));
+            
+            std::getline(file, line); // Position
+            sscanf(line.c_str(), "  Position: %f %f %f", &obj.position.x, &obj.position.y, &obj.position.z);
+            
+            std::getline(file, line); // Scale
+            sscanf(line.c_str(), "  Scale: %f %f %f", &obj.scale.x, &obj.scale.y, &obj.scale.z);
+            
+            std::getline(file, line); // Rotation
+            sscanf(line.c_str(), "  Rotation: %f %f %f", &obj.rotation.x, &obj.rotation.y, &obj.rotation.z);
+            
+            std::getline(file, line); // Color
+            int r, g, b, a;
+            sscanf(line.c_str(), "  Color: %d %d %d %d", &r, &g, &b, &a);
+            obj.color = {(unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a};
+            
+            objects.push_back(obj);
+        }
+    }
+    
+    file.close();
+    std::cout << "Map loaded successfully from: " << filename << std::endl;
+    return true;
 } 
