@@ -30,7 +30,7 @@ public:
 private:
     int m_width;                    // Window width
     int m_height;                   // Window height
-    std::string m_WindowName;       // Window title
+    std::string m_windowName;       // Window title
     std::unique_ptr<Editor> m_editor;  // Main editor instance
 };
 

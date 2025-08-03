@@ -11,7 +11,7 @@
 
 class InputManager {
 private:
-    std::unordered_map<int , std::function<void()>>m_action;
+    std::unordered_map<int , std::function<void()>> m_actions;
 public:
     InputManager() = default;
     ~InputManager() = default;

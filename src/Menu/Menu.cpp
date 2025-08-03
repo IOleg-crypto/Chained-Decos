@@ -14,10 +14,10 @@ void Menu::Update() {
     const int buttonHeight = 40;
 
     if (IsKeyPressed(KEY_DOWN)) {
-        selected = (selected + 1) % 3;
+        m_selected = (m_selected + 1) % 3;
     }
     if (IsKeyPressed(KEY_UP)) {
-        selected = (selected + 2) % 3;
+        m_selected = (m_selected + 2) % 3;
     }
 
 
@@ -26,12 +26,12 @@ void Menu::Update() {
         int y = startY + i * 50;
         Rectangle btnRect = { static_cast<float>(x), static_cast<float>(y), static_cast<float>(buttonWidth), static_cast<float>(buttonHeight) };
         if (CheckCollisionPointRec(mousePosition, btnRect)) {
-            selected = i;
+            m_selected = i;
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                switch (selected) {
-                    case 0: action = MenuAction::StartGame; break;
-                    case 1: action = MenuAction::OpenOptions; break;
-                    case 2: action = MenuAction::ExitGame; break;
+                switch (m_selected) {
+                    case 0: m_action = MenuAction::StartGame; break;
+                    case 1: m_action = MenuAction::OpenOptions; break;
+                    case 2: m_action = MenuAction::ExitGame; break;
                     default: ;
                 }
             }
@@ -39,10 +39,10 @@ void Menu::Update() {
     }
 
     if (IsKeyPressed(KEY_ENTER)) {
-        switch (selected) {
-            case 0: action = MenuAction::StartGame; break;
-            case 1: action = MenuAction::OpenOptions; break;
-            case 2: action = MenuAction::ExitGame; break;
+        switch (m_selected) {
+            case 0: m_action = MenuAction::StartGame; break;
+            case 1: m_action = MenuAction::OpenOptions; break;
+            case 2: m_action = MenuAction::ExitGame; break;
             default: ;
         }
     }
@@ -62,7 +62,7 @@ void Menu::Render() const {
         const int y = startY + i * 50;
         const Rectangle btnRect = { static_cast<float>(x), static_cast<float>(y), static_cast<float>(buttonWidth), static_cast<float>(buttonHeight) };
 
-        Color color = (i == selected) ? YELLOW : LIGHTGRAY;
+        Color color = (i == m_selected) ? YELLOW : LIGHTGRAY;
         if (CheckCollisionPointRec(mousePosition, btnRect)) {
             color = ORANGE;
         }
@@ -73,9 +73,9 @@ void Menu::Render() const {
 }
 
 MenuAction Menu::GetAction() const {
-    return action;
+    return m_action;
 }
 
 void Menu::ResetAction() {
-    action = MenuAction::None;
+    m_action = MenuAction::None;
 }

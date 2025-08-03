@@ -76,7 +76,7 @@ public:
     
 private:
     // Rendering functions
-    void RenderObject(const MapObject& obj);           // Render single object
+    static void RenderObject(const MapObject& obj);           // Render single object
     void RenderImGuiObjectPanel();                     // Render object list panel
     void RenderImGuiPropertiesPanel();                 // Render properties panel
     void RenderImGuiToolbar();                         // Render toolbar

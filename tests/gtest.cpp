@@ -219,7 +219,7 @@ TEST(CameraControllerTest, GetCamera) {
     CameraController controller;
     
     // Test getting camera reference
-    Camera& camera = controller.getCamera();
+    Camera& camera = controller.GetCamera();
     EXPECT_TRUE(true); // Basic test that function doesn't crash
 }
 
@@ -278,14 +278,14 @@ TEST(ModelInstanceTest, ConstructorWithAllParameters) {
     
     EXPECT_NO_THROW({
         ModelInstance instance(pos, model, scale, name, color, texturePath, texture);
-        EXPECT_EQ(instance.getModelName(), name);
-        EXPECT_EQ(instance.getColor().r, color.r);
-        EXPECT_EQ(instance.getScale(), scale);
-        EXPECT_EQ(instance.getModel(), model);
-        EXPECT_EQ(instance.getModelPosition().x, pos.x);
-        EXPECT_EQ(instance.getModelPosition().y, pos.y);
-        EXPECT_EQ(instance.getModelPosition().z, pos.z);
-        EXPECT_EQ(instance.getTexturePath(), texturePath);
+        EXPECT_EQ(instance.GetModelName(), name);
+        EXPECT_EQ(instance.GetColor().r, color.r);
+        EXPECT_EQ(instance.GetScale(), scale);
+        EXPECT_EQ(instance.GetModel(), model);
+        EXPECT_EQ(instance.GetModelPosition().x, pos.x);
+        EXPECT_EQ(instance.GetModelPosition().y, pos.y);
+        EXPECT_EQ(instance.GetModelPosition().z, pos.z);
+        EXPECT_EQ(instance.GetTexturePath(), texturePath);
     });
 }
 
@@ -298,10 +298,10 @@ TEST(ModelInstanceTest, ConstructorWithColor) {
     
     EXPECT_NO_THROW({
         ModelInstance instance(pos, model, scale, name, color);
-        EXPECT_EQ(instance.getModelName(), name);
-        EXPECT_EQ(instance.getColor().b, color.b); // Blue component
-        EXPECT_EQ(instance.getScale(), scale);
-        EXPECT_EQ(instance.getModel(), model);
+        EXPECT_EQ(instance.GetModelName(), name);
+        EXPECT_EQ(instance.GetColor().b, color.b); // Blue component
+        EXPECT_EQ(instance.GetScale(), scale);
+        EXPECT_EQ(instance.GetModel(), model);
     });
 }
 
@@ -313,12 +313,12 @@ TEST(ModelInstanceTest, ConstructorMinimal) {
     
     EXPECT_NO_THROW({
         ModelInstance instance(pos, model, scale, name);
-        EXPECT_EQ(instance.getModelName(), name);
-        EXPECT_EQ(instance.getScale(), scale);
-        EXPECT_EQ(instance.getModel(), model);
-        EXPECT_EQ(instance.getModelPosition().x, pos.x);
-        EXPECT_EQ(instance.getModelPosition().y, pos.y);
-        EXPECT_EQ(instance.getModelPosition().z, pos.z);
+        EXPECT_EQ(instance.GetModelName(), name);
+        EXPECT_EQ(instance.GetScale(), scale);
+        EXPECT_EQ(instance.GetModel(), model);
+        EXPECT_EQ(instance.GetModelPosition().x, pos.x);
+        EXPECT_EQ(instance.GetModelPosition().y, pos.y);
+        EXPECT_EQ(instance.GetModelPosition().z, pos.z);
     });
 }
 
@@ -332,13 +332,13 @@ TEST(ModelInstanceTest, GetProperties) {
     ModelInstance instance(pos, model, scale, name, color);
     
     // Test all getter methods
-    EXPECT_EQ(instance.getModelName(), name);
-    EXPECT_EQ(instance.getColor().g, color.g); // Green component
-    EXPECT_EQ(instance.getScale(), scale);
-    EXPECT_EQ(instance.getModel(), model);
-    EXPECT_EQ(instance.getModelPosition().x, pos.x);
-    EXPECT_EQ(instance.getModelPosition().y, pos.y);
-    EXPECT_EQ(instance.getModelPosition().z, pos.z);
+    EXPECT_EQ(instance.GetModelName(), name);
+    EXPECT_EQ(instance.GetColor().g, color.g); // Green component
+    EXPECT_EQ(instance.GetScale(), scale);
+    EXPECT_EQ(instance.GetModel(), model);
+    EXPECT_EQ(instance.GetModelPosition().x, pos.x);
+    EXPECT_EQ(instance.GetModelPosition().y, pos.y);
+    EXPECT_EQ(instance.GetModelPosition().z, pos.z);
 }
 
 // ============================================================================
@@ -348,7 +348,7 @@ TEST(ModelInstanceTest, GetProperties) {
 TEST(PlayerTest, Constructor) {
     Player player;
     // Test that player is created successfully
-    EXPECT_NE(player.getCameraController(), nullptr);
+    EXPECT_NE(player.GetCameraController(), nullptr);
 }
 
 TEST(PlayerTest, SpeedOperations) {
@@ -400,7 +400,7 @@ TEST(PlayerTest, ModelManager) {
     Player player;
     
     // Test getting model manager
-    Models modelManager = player.getModelManager();
+    Models modelManager = player.GetModelManager();
     // Should return valid model manager
     EXPECT_TRUE(true); // Basic test that function doesn't crash
 }
@@ -416,7 +416,7 @@ TEST(PlayerTest, PositionHistory) {
     Player player;
     
     // Test position history functionality
-    EXPECT_NO_THROW(player.PositionHistory());
+    EXPECT_NO_THROW(player.UpdatePositionHistory());
 }
 
 TEST(PlayerTest, ApplyInput) {
@@ -523,7 +523,7 @@ TEST(EngineTest, KeyboardShortcuts) {
     Engine engine(800, 600);
     
     // Test keyboard shortcuts
-    EXPECT_NO_THROW(engine.KeyboardShortcut());
+    EXPECT_NO_THROW(engine.HandleKeyboardShortcuts());
 }
 
 TEST(EngineTest, Update) {
@@ -614,7 +614,7 @@ TEST(IntegrationTest, ModelInstanceModelsInteraction) {
     Models models;
     
     // Test that model instance and models can work together
-    EXPECT_EQ(instance.getModelName(), name);
+    EXPECT_EQ(instance.GetModelName(), name);
     EXPECT_NO_THROW(models.DrawAllModels());
 }
 
@@ -750,8 +750,8 @@ TEST(EdgeCaseTest, ModelInstanceEdgeCases) {
     
     EXPECT_NO_THROW({
         ModelInstance instance(extremePos, model, extremeScale, emptyName, color);
-        EXPECT_EQ(instance.getModelName(), emptyName);
-        EXPECT_EQ(instance.getScale(), extremeScale);
+        EXPECT_EQ(instance.GetModelName(), emptyName);
+        EXPECT_EQ(instance.GetScale(), extremeScale);
     });
 }
 

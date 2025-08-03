@@ -26,19 +26,19 @@ private:
     int m_screenY{};
 
     // Window title
-    std::string m_WindowName;
+    std::string m_windowName;
 
     // Game objects
     Player m_player;
     Models m_models;
-    InputManager manager;
+    InputManager m_manager;
 
     // Debug flag
     bool m_showDebug{false};
     // Menu
     Menu m_menu;
     // Show menu
-    bool showMenu = true;
+    bool m_showMenu = true;
     // For exit
     bool m_shouldExit{};
 public:
@@ -58,7 +58,7 @@ public:
     void Run();
 
     // Input
-    void KeyboardShortcut() const;
+    void HandleKeyboardShortcuts() const;
     void Update(); // Updates input and player logic
 
     // Rendering

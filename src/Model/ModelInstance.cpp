@@ -5,46 +5,46 @@
 #include "ModelInstance.h"
 
 ModelInstance::ModelInstance(const Vector3 pos, Model *pMdl, const float scl, const std::string &name, const Color color, const std::string &modelTexture,
-    const Texture2D &texture) : position(pos), pModel(pMdl), scale(scl), modelName(name), texture(texture),
-                                modelTexture(modelTexture), color(color) {
+    const Texture2D &texture) : m_position(pos), m_pModel(pMdl), m_scale(scl), m_modelName(name), m_texture(texture),
+                                m_modelTexture(modelTexture), m_color(color) {
 }
 
 // Default init
 ModelInstance::ModelInstance(const Vector3 pos , Model *pMdl , const float scl , const std::string &name , const Color color)
-    : position(pos), pModel(pMdl), scale(scl), modelName(name), texture(), color(color) {
+    : m_position(pos), m_pModel(pMdl), m_scale(scl), m_modelName(name), m_texture(), m_color(color) {
     // Nothing
 }
 
 // If color don`t exist - in json
 ModelInstance::ModelInstance(const Vector3 pos , Model *pMdl , const float scl , const std::string &name)
-    : position(pos), pModel(pMdl), scale(scl), modelName(name), texture(), color(WHITE) {
+    : m_position(pos), m_pModel(pMdl), m_scale(scl), m_modelName(name), m_texture(), m_color(WHITE) {
     // Nothing
 }
 
-std::string ModelInstance::getModelName() const {
-    return modelName;
+std::string ModelInstance::GetModelName() const {
+    return m_modelName;
 }
 
-Color ModelInstance::getColor() const {
-    return color;
+Color ModelInstance::GetColor() const {
+    return m_color;
 }
 
-float ModelInstance::getScale() const {
-    return scale;
+float ModelInstance::GetScale() const {
+    return m_scale;
 }
 
-Model * ModelInstance::getModel() const {
-    return pModel;
+Model * ModelInstance::GetModel() const {
+    return m_pModel;
 }
 
-Vector3 ModelInstance::getModelPosition() const {
-    return position;
+Vector3 ModelInstance::GetModelPosition() const {
+    return m_position;
 }
 
-Texture2D ModelInstance::getTexture() const {
-    return this->texture;
+Texture2D ModelInstance::GetTexture() const {
+    return this->m_texture;
 }
 
-std::string ModelInstance::getTexturePath() const {
-    return modelTexture;
+std::string ModelInstance::GetTexturePath() const {
+    return m_modelTexture;
 }

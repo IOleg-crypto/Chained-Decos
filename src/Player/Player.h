@@ -18,14 +18,14 @@
 // # ----------------------------------------------------------------------------
 class Player {
 private:
-    float walkSpeed = 3.0f; // Speed for character
-    float runSpeed = 15;
-    float jumpStrength = 3.0f; // Adjust as needed
-    PositionData posData;
-    PhysicsData physData;
+    float m_walkSpeed = 3.0f; // Speed for character
+    float m_runSpeed = 15;
+    float m_jumpStrength = 3.0f; // Adjust as needed
+    PositionData m_posData;
+    PhysicsData m_physData;
 private:
-    Models modelPlayer;
-    std::shared_ptr<CameraController> cameraController;
+    Models m_modelPlayer;
+    std::shared_ptr<CameraController> m_cameraController;
 public:
     Player(); // Constructor to initialize the camera and all stuff
     ~Player();
@@ -40,13 +40,13 @@ public:
     // Allow player jumps
     void Jump();
     // Take history of player position(needed for player jump)
-    void PositionHistory();
+    void UpdatePositionHistory();
     // Allows W,A,S,D - movement
     void ApplyInput();
     // Get camera
-    [[nodiscard]] std::shared_ptr<CameraController> getCameraController() const;
+    [[nodiscard]] std::shared_ptr<CameraController> GetCameraController() const;
     // Get model manager
-    Models getModelManager();
+    Models GetModelManager();
     PositionData GetPlayerData() const;
 };
 
