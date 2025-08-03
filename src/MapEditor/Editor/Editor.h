@@ -22,7 +22,7 @@ struct MapObject {
     Color color;           // Object color
     std::string name;      // Object name for identification
     int type;              // Object type: 0=cube, 1=sphere, 2=cylinder
-    bool selected;         // Selection state for UI
+    mutable bool selected;         // Selection state for UI
     
     MapObject() : position{0,0,0}, scale{1,1,1}, rotation{0,0,0}, 
                    color{WHITE}, name("Object"), type(0), selected(false) {}
@@ -38,7 +38,6 @@ private:
     bool m_showImGui;                                     // Show/hide ImGui interface
     bool m_showObjectPanel;                               // Show/hide object list panel
     bool m_showPropertiesPanel;                           // Show/hide properties panel
-    bool m_lockCamera;                                    // Lock camera (not update)
     
     // Available editing tools
     enum Tool {
@@ -59,7 +58,7 @@ public:
     // Core editor functions
     [[nodiscard]] std::shared_ptr<CameraController> GetCameraController() const;
     void Update();         // Update editor state
-    void Render();         // Render 3D objects
+    void Render() const;         // Render 3D objects
     void RenderImGui();    // Render ImGui interface
     void HandleInput();    // Handle user input
 
@@ -82,7 +81,7 @@ private:
     void RenderImGuiToolbar();                         // Render toolbar
     
     // Input handling
-    void HandleMouseInput();                           // Handle mouse input
+    void PickObject();                           // Handle mouse input
     void HandleKeyboardInput();                        // Handle keyboard input
 };
 
