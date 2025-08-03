@@ -47,6 +47,7 @@ public:
     [[nodiscard]] std::shared_ptr<CameraController> GetCameraController() const;
     // Get model manager
     Models GetModelManager();
+    // Get player position data
     PositionData GetPlayerData() const;
 };
 

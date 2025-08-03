@@ -68,7 +68,7 @@ int ObjectTransform::PickObject(const std::vector<Vector3>& positions, const std
     
     // Check each object for intersection
     for (int i = 0; i < positions.size(); i++) {
-        BoundingBox bbox;
+        BoundingBox bbox = {};
         
         // Create bounding box based on object type
         switch (types[i]) {
@@ -113,16 +113,16 @@ void ObjectTransform::DrawTranslateGizmo(Vector3 position) {
 
 void ObjectTransform::DrawRotateGizmo(Vector3 position) {
     // Draw rotation gizmo with circular handles
-    float radius = 1.0f;
-    Color colors[] = {RED, GREEN, BLUE};  // X, Y, Z rotation colors
+    constexpr Color colors[] = {RED, GREEN, BLUE};  // X, Y, Z rotation colors
     
     // Draw circles for each rotation axis
     for (int axis = 0; axis < 3; axis++) {
         for (int i = 0; i < 32; i++) {
+            float radius = 1.0f;
             float angle1 = static_cast<float>(i) * 2.0f * PI / 32.0f;
             float angle2 = static_cast<float>(i + 1) * 2.0f * PI / 32.0f;
             
-            Vector3 p1, p2;
+            Vector3 p1 = {}, p2 = {};
             switch (axis) {
                 case 0: // X axis circle (YZ plane)
                     p1 = {position.x, position.y + radius * cos(angle1), position.z + radius * sin(angle1)};
@@ -136,6 +136,7 @@ void ObjectTransform::DrawRotateGizmo(Vector3 position) {
                     p1 = {position.x + radius * cos(angle1), position.y + radius * sin(angle1), position.z};
                     p2 = {position.x + radius * cos(angle2), position.y + radius * sin(angle2), position.z};
                     break;
+                default: ;
             }
             DrawLine3D(p1, p2, colors[axis]);
         }
