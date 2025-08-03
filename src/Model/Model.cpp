@@ -66,8 +66,8 @@ void Models::LoadModelsFromJson(const std::string &path) {
 
 void Models::DrawAllModels() const {
     for (const auto& instance : m_instances) {
-        if (instance.getModel() != nullptr) {
-            DrawModel(*instance.getModel(), instance.getModelPosition(), instance.getScale(), instance.getColor());
+        if (instance.GetModel() != nullptr) {
+            DrawModel(*instance.GetModel(), instance.GetModelPosition(), instance.GetScale(), instance.GetColor());
         }
     }
 }

@@ -4,7 +4,7 @@
 #include "Player.h"
 #include <memory>
 
-Player::Player() : cameraController(std::make_shared<CameraController>()) {
+Player::Player() : m_cameraController(std::make_shared<CameraController>()) {
 
 }
 
@@ -13,53 +13,53 @@ Player::~Player() = default;
 void Player::Update() {
     ApplyInput();
     Jump();
-    cameraController->Update();
-    PositionHistory();
+    m_cameraController->Update();
+    UpdatePositionHistory();
 
 }
 
 float Player::GetSpeed() {
-    return walkSpeed;
+    return m_walkSpeed;
 }
 
 void Player::SetSpeed(const float speed) {
-    this->walkSpeed = speed;
+    this->m_walkSpeed = speed;
 }
 
 void Player::Move(const Vector3 offset) const {
-    cameraController->getCamera().position = Vector3Add(cameraController->getCamera().position, offset);
-    cameraController->getCamera().target = Vector3Add(cameraController->getCamera().target, offset);
+    m_cameraController->GetCamera().position = Vector3Add(m_cameraController->GetCamera().position, offset);
+    m_cameraController->GetCamera().target = Vector3Add(m_cameraController->GetCamera().target, offset);
 }
 
 
 void Player::Jump() {
-    physData.dt = GetFrameTime();
+    m_physData.m_dt = GetFrameTime();
     // Set gravity
-    if (IsKeyPressed(KEY_SPACE) && physData.m_isGrounded) {
-        physData.velocityY = jumpStrength;
-        physData.m_isGrounded = false;
+    if (IsKeyPressed(KEY_SPACE) && m_physData.m_isGrounded) {
+        m_physData.m_velocityY = m_jumpStrength;
+        m_physData.m_isGrounded = false;
     }
-    physData.velocityY -= physData.gravity * physData.dt;
-    cameraController->getCamera().position.y += physData.velocityY * physData.dt ;
+    m_physData.m_velocityY -= m_physData.m_gravity * m_physData.m_dt;
+    m_cameraController->GetCamera().position.y += m_physData.m_velocityY * m_physData.m_dt ;
     // Check if player on ground
-    if (cameraController->getCamera().position.y <= physData.GroundLevel) {
-        cameraController->getCamera().position.y = physData.GroundLevel;
-        physData.velocityY = 0;
-        physData.m_isGrounded = true;
+    if (m_cameraController->GetCamera().position.y <= m_physData.m_groundLevel) {
+        m_cameraController->GetCamera().position.y = m_physData.m_groundLevel;
+        m_physData.m_velocityY = 0;
+        m_physData.m_isGrounded = true;
     }
 
-    cameraController->Update();
+    m_cameraController->Update();
 }
 
-void Player::PositionHistory() {
+void Player::UpdatePositionHistory() {
     // Needed for player jump
-    posData.m_playerVelocity = Vector3Subtract(posData.m_playerLastPosition , posData.m_playerCurrentPosition);
-    posData.m_playerLastPosition = posData.m_playerCurrentPosition;
-    posData.m_playerCurrentPosition = cameraController->getCamera().position;
+    m_posData.m_playerVelocity = Vector3Subtract(m_posData.m_playerLastPosition , m_posData.m_playerCurrentPosition);
+    m_posData.m_playerLastPosition = m_posData.m_playerCurrentPosition;
+    m_posData.m_playerCurrentPosition = m_cameraController->GetCamera().position;
 }
 
 void Player::ApplyInput() {
-    physData.dt = GetFrameTime();
+    m_physData.m_dt = GetFrameTime();
     Vector3 moveDir = {};
 
     if (IsKeyDown(KEY_W)) moveDir.z -= 1.0f;
@@ -67,12 +67,12 @@ void Player::ApplyInput() {
     if (IsKeyDown(KEY_A)) moveDir.x -= 1.0f;
     if (IsKeyDown(KEY_D)) moveDir.x += 1.0f;
 
-    walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? runSpeed : 3.1f;
+    m_walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? m_runSpeed : 3.1f;
 
     if (Vector3Length(moveDir) > 0) {
         moveDir = Vector3Normalize(moveDir);
 
-        Vector3 forward = Vector3Subtract(getCameraController()->getCamera().position , getCameraController()->getCamera().target);
+        Vector3 forward = Vector3Subtract(GetCameraController()->GetCamera().position , GetCameraController()->GetCamera().target);
         forward.y = 0;
         forward = Vector3Normalize(forward);
 
@@ -87,22 +87,22 @@ void Player::ApplyInput() {
 
         //TraceLog(LOG_INFO, "MoveVec: X: %.2f Y: %.2f Z: %.2f", finalMove.x, finalMove.y, finalMove.z);
 
-        finalMove = Vector3Scale(finalMove, walkSpeed * physData.dt);
+        finalMove = Vector3Scale(finalMove, m_walkSpeed * m_physData.m_dt);
         Move(finalMove);
     }
 }
 
-std::shared_ptr<CameraController> Player::getCameraController() const {
-     return cameraController;
+std::shared_ptr<CameraController> Player::GetCameraController() const {
+     return m_cameraController;
 }
 
 
-Models Player::getModelManager() {
-    return modelPlayer;
+Models Player::GetModelManager() {
+    return m_modelPlayer;
 }
 
 PositionData Player::GetPlayerData() const {
-    return posData;
+    return m_posData;
 }
 
 

@@ -6,11 +6,11 @@
 #define PHYSICSDATA_H
 
 struct PhysicsData {
-    float gravity = 10.0f; // Used Earth gravity as default
-    float velocityY = 0.0;
+    float m_gravity = 10.0f; // Used Earth gravity as default
+    float m_velocityY = 0.0;
     bool m_isGrounded = true;
-    float GroundLevel = 5.f; // if lower , you see player under world
-    float dt = 0; // FrameRate Time
+    float m_groundLevel = 5.f; // if lower , you see player under world
+    float m_dt = 0; // FrameRate Time
 };
 
 #endif //PHYSICSDATA_H
