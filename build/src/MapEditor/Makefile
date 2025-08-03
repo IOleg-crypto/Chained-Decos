@@ -315,29 +315,29 @@ Map/Map.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Map/Map.cpp.s
 .PHONY : Map/Map.cpp.s
 
-MapFileManager.obj: MapFileManager.cpp.obj
-.PHONY : MapFileManager.obj
+MapFileManager/MapFileManager.obj: MapFileManager/MapFileManager.cpp.obj
+.PHONY : MapFileManager/MapFileManager.obj
 
 # target to build an object file
-MapFileManager.cpp.obj:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager.cpp.obj
-.PHONY : MapFileManager.cpp.obj
+MapFileManager/MapFileManager.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj
+.PHONY : MapFileManager/MapFileManager.cpp.obj
 
-MapFileManager.i: MapFileManager.cpp.i
-.PHONY : MapFileManager.i
+MapFileManager/MapFileManager.i: MapFileManager/MapFileManager.cpp.i
+.PHONY : MapFileManager/MapFileManager.i
 
 # target to preprocess a source file
-MapFileManager.cpp.i:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager.cpp.i
-.PHONY : MapFileManager.cpp.i
+MapFileManager/MapFileManager.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.i
+.PHONY : MapFileManager/MapFileManager.cpp.i
 
-MapFileManager.s: MapFileManager.cpp.s
-.PHONY : MapFileManager.s
+MapFileManager/MapFileManager.s: MapFileManager/MapFileManager.cpp.s
+.PHONY : MapFileManager/MapFileManager.s
 
 # target to generate assembly for a file
-MapFileManager.cpp.s:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager.cpp.s
-.PHONY : MapFileManager.cpp.s
+MapFileManager/MapFileManager.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.s
+.PHONY : MapFileManager/MapFileManager.cpp.s
 
 main.obj: main.cpp.obj
 .PHONY : main.obj
@@ -393,9 +393,9 @@ help:
 	@echo "... Map/Map.obj"
 	@echo "... Map/Map.i"
 	@echo "... Map/Map.s"
-	@echo "... MapFileManager.obj"
-	@echo "... MapFileManager.i"
-	@echo "... MapFileManager.s"
+	@echo "... MapFileManager/MapFileManager.obj"
+	@echo "... MapFileManager/MapFileManager.i"
+	@echo "... MapFileManager/MapFileManager.s"
 	@echo "... main.obj"
 	@echo "... main.i"
 	@echo "... main.s"

@@ -9,7 +9,7 @@
 
 
 
-Engine::Engine(const int screenX, const int screenY) : m_screenX(screenX), m_screenY(screenY), m_WindowName("Chained Decos") {
+Engine::Engine(const int screenX, const int screenY) : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos") {
     if (m_screenX < 0 || m_screenY < 0) {
         TraceLog(LOG_WARNING, "[Screen] Invalid screen size: %d x %d. Setting default size 800x600.", m_screenX,
                  m_screenY);
@@ -25,7 +25,7 @@ Engine::~Engine() {
 
 void Engine::Init() const {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(m_screenX, m_screenY, m_WindowName.c_str());
+    InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     SetTargetFPS(60);
     rlImGuiSetup(true); // init ImGui
     InitImGuiFont();
@@ -44,7 +44,7 @@ void Engine::Run() {
 }
 
 void Engine::Update() {
-    KeyboardShortcut();
+    HandleKeyboardShortcuts();
     if (const ImGuiIO& io = ImGui::GetIO(); !io.WantCaptureMouse) {
         m_player.Update();
     }
@@ -54,11 +54,11 @@ void Engine::Render() {
     BeginDrawing();
     ClearBackground(BLUE);
 
-    if (showMenu) {
+    if (m_showMenu) {
         m_menu.Update();
         m_menu.Render();
     } else {
-        BeginMode3D(m_player.getCameraController()->getCamera());
+        BeginMode3D(m_player.GetCameraController()->GetCamera());
         DrawScene3D();
         EndMode3D();
 
@@ -66,7 +66,7 @@ void Engine::Render() {
 
     if (m_showDebug) {
         TraceLog(LOG_DEBUG, "Create ImGui Window for DEBUG");
-        DrawDebugInfo(m_player.getCameraController()->getCamera(), m_player.getCameraController()->GetCameraMode());
+        DrawDebugInfo(m_player.GetCameraController()->GetCamera(), m_player.GetCameraController()->GetCameraMode());
     }
 
     EndDrawing();
@@ -74,7 +74,7 @@ void Engine::Render() {
     // handle menu actions after frame
     switch (m_menu.GetAction()) {
         case MenuAction::StartGame:
-            showMenu = false;
+            m_showMenu = false;
             InitInput();
             m_menu.ResetAction();
             break;
@@ -91,8 +91,8 @@ void Engine::Render() {
 
 void Engine::LoadPlayerModel() {
     const Model& model = m_models.GetModelByName("player");
-    if (m_player.getCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON) {
-        DrawModel(model ,  m_player.getCameraController()->getCamera().target , 0.5 , GRAY);
+    if (m_player.GetCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON) {
+        DrawModel(model ,  m_player.GetCameraController()->GetCamera().target , 0.5 , GRAY);
     }
     else {
         DrawModel(model , m_player.GetPlayerData().m_playerCurrentPosition, 0.5 , GRAY);
@@ -134,30 +134,30 @@ void Engine::DrawDebugInfo(const Camera &camera , const int &cameraMode) {
 }
 
 void Engine::InitInput() {
-    Camera &camera = m_player.getCameraController()->getCamera();
-    int &cameraMode = m_player.getCameraController()->GetCameraMode();
+    Camera &camera = m_player.GetCameraController()->GetCamera();
+    int &cameraMode = m_player.GetCameraController()->GetCameraMode();
 
-    manager.RegisterAction(KEY_F5, [this]() {
+    m_manager.RegisterAction(KEY_F5, [this]() {
         ToggleFullscreen();
     });
-    manager.RegisterAction(KEY_ONE, [this, &camera, &cameraMode]() {
+    m_manager.RegisterAction(KEY_ONE, [this, &camera, &cameraMode]() {
                 cameraMode = CAMERA_FREE;
                 camera.up = {0, 1, 0};});
 
-    manager.RegisterAction(KEY_TWO, [this, &camera, &cameraMode]() {
+    m_manager.RegisterAction(KEY_TWO, [this, &camera, &cameraMode]() {
             cameraMode = CAMERA_FIRST_PERSON;
         });
 
-    manager.RegisterAction(KEY_THREE, [this, &camera, &cameraMode]() {
+    m_manager.RegisterAction(KEY_THREE, [this, &camera, &cameraMode]() {
             cameraMode = CAMERA_THIRD_PERSON;
         });
 
-    manager.RegisterAction(KEY_FOUR, [this, &camera, &cameraMode]() {
+    m_manager.RegisterAction(KEY_FOUR, [this, &camera, &cameraMode]() {
             cameraMode = CAMERA_ORBITAL;
             camera.up = {0, 1, 0};
         });
 
-    manager.RegisterAction(KEY_P, [this, &camera, &cameraMode]() {
+    m_manager.RegisterAction(KEY_P, [this, &camera, &cameraMode]() {
             if (camera.projection == CAMERA_PERSPECTIVE) {
                 cameraMode = CAMERA_THIRD_PERSON;
                 camera.position = {0, 2, -100};
@@ -177,16 +177,16 @@ void Engine::InitInput() {
             }
         });
 
-    manager.RegisterAction(KEY_FIVE, [this]() {
+    m_manager.RegisterAction(KEY_FIVE, [this]() {
             m_showDebug = !m_showDebug;
         });
 
-    manager.RegisterAction(KEY_ONE, [this] {
-            showMenu = true;
+    m_manager.RegisterAction(KEY_ONE, [this] {
+            m_showMenu = true;
         });
 
 }
 
-void Engine::KeyboardShortcut() const {
-    manager.ProcessInput();
+void Engine::HandleKeyboardShortcuts() const {
+    m_manager.ProcessInput();
 }

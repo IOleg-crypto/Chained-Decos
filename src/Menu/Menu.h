@@ -18,8 +18,8 @@ enum class MenuAction {
 
 class Menu {
 private:
-    int selected = 0;
-    MenuAction action = MenuAction::None;
+    int m_selected = 0;
+    MenuAction m_action = MenuAction::None;
 public:
     Menu() = default;
     ~Menu() = default;

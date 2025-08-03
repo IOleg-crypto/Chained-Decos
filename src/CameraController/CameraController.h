@@ -9,15 +9,15 @@
 
 class CameraController {
 private:
-    Camera camera; // Raylib camera struct to represent 3D perspective
-    int cameraMode; // Mode for camera(First , Free , Third , orbital)
+    Camera m_camera; // Raylib camera struct to represent 3D perspective
+    int m_cameraMode; // Mode for camera(First , Free , Third , orbital)
 public:
     CameraController(); // Init camera
     ~CameraController() = default;
     CameraController(const CameraController&other) = delete;
     CameraController(CameraController &&other) = delete;
 public:
-    [[nodiscard]] Camera &getCamera(); // Returns the current camera state (read-only)
+    [[nodiscard]] Camera &GetCamera(); // Returns the current camera state (read-only)
     [[nodiscard]] int &GetCameraMode();
     void SetCameraMode(int cameraMode);
     void Update();

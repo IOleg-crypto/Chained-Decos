@@ -4,7 +4,7 @@
 #include <MapEditor/Application.h>
 
 Application::Application(const int width, const int height)
-    : m_width(width), m_height(height) , m_WindowName("ChainedEditor") , m_editor(std::make_unique<Editor>()) {}
+    : m_width(width), m_height(height) , m_windowName("ChainedEditor") , m_editor(std::make_unique<Editor>()) {}
 
 Application::~Application() {
     // Cleanup ImGui first, then window
@@ -15,7 +15,7 @@ Application::~Application() {
 void Application::Init() const {
     // Configure window settings
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(m_width, m_height, m_WindowName.c_str());
+    InitWindow(m_width, m_height, m_windowName.c_str());
     SetTargetFPS(60);
     
     // Check if window was created successfully
@@ -81,7 +81,7 @@ void Application::Run() const {
         ClearBackground(DARKGRAY);
         
         // Render 3D scene
-        BeginMode3D(m_editor->GetCameraController()->getCamera());
+        BeginMode3D(m_editor->GetCameraController()->GetCamera());
         m_editor->GetCameraController()->SetCameraMode(CAMERA_FREE);
         DrawGrid(50, 1.0f);  // Draw reference grid
         
