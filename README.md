@@ -4,12 +4,13 @@
 
 Chained Decos is a fast-paced parkour game with both singleplayer and multiplayer modes, built in modern C++ (C++20) using the [raylib](https://www.raylib.com/) library. The project also leverages [ImGui](https://github.com/ocornut/imgui) and [rlImGui](https://github.com/raylib-extras/rlImGui) for in-game UI.
 
+> [!IMPORTANT]  
+> The game is not in a finished state, as its game engine is being finalized.
 ---
-
->**ChainedEditor** is a level/map editor for a game currently in development.  
+> [!NOTE]
+> **ChainedEditor** is a level/map editor for a game currently in development.  
 > It allows you to create and edit 3D scenes, place game objects, and save maps  
 > for later use within the game engine.
->
 > Note: This editor is still under active development and may change frequently.
 
 ## 🚀 Features
@@ -23,6 +24,7 @@ Chained Decos is a fast-paced parkour game with both singleplayer and multiplaye
 
 ## 🛠️ Getting Started
 
+
 ### Prerequisites
 - C++20 or newer
 - [raylib](https://www.raylib.com/)
@@ -32,7 +34,7 @@ Chained Decos is a fast-paced parkour game with both singleplayer and multiplaye
 ### Building
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/chained-decos.git
+   git clone --recurse-submodules https://github.com/IOleg-crypto/Chained-Decos.git
    cd ChainedDecos
    ```
 2. Build with CMake:
