@@ -2,5 +2,15 @@
 	path = include/rlImGui
 	url = https://github.com/raylib-extras/rlImGui.git
 
+[submodule "include/imgui"]
+	path = include/imgui
+	url = https://github.com/ocornut/imgui.git
+
+[submodule "include/raygui"]
+    path = include/raygui
+    url = https://github.com/raysan5/raygui.git
+
+
+
 
 
