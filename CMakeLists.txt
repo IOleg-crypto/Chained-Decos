@@ -56,6 +56,8 @@ add_library(imguilib STATIC
         include/imgui/imgui_internal.h
         include/imgui/imstb_rectpack.h
         include/imgui/imstb_truetype.h
+        include/imgui/misc/cpp/imgui_stdlib.h
+        include/imgui/misc/cpp/imgui_stdlib.cpp
 )
 target_include_directories(imguilib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
