@@ -50,6 +50,14 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev
 
+    - name: Clean build directory (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
+
+    - name: Clean build directory (Windows)
+      if: matrix.os == 'windows-latest'
+      run: rmdir /s /q ${{ steps.strings.outputs.build-output-dir }}
+
     - name: Configure CMake (Windows MinGW)
       if: matrix.os == 'windows-latest'
       run: >
