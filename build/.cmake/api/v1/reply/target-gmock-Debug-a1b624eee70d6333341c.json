@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "lib/gtest.lib"
+			"path" : "lib/gmock.lib"
 		}
 	],
 	"backtrace" : 3,
@@ -16,13 +16,14 @@
 			"cxx_library",
 			"install",
 			"install_project",
+			"target_link_libraries",
 			"include_directories",
 			"target_compile_features"
 		],
 		"files" : 
 		[
 			"build/_deps/googletest-src/googletest/cmake/internal_utils.cmake",
-			"build/_deps/googletest-src/googletest/CMakeLists.txt"
+			"build/_deps/googletest-src/googlemock/CMakeLists.txt"
 		],
 		"nodes" : 
 		[
@@ -32,7 +33,7 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 126,
+				"line" : 97,
 				"parent" : 0
 			},
 			{
@@ -50,7 +51,7 @@
 			{
 				"command" : 4,
 				"file" : 1,
-				"line" : 166,
+				"line" : 120,
 				"parent" : 0
 			},
 			{
@@ -62,11 +63,17 @@
 			{
 				"command" : 5,
 				"file" : 1,
-				"line" : 116,
+				"line" : 98,
 				"parent" : 0
 			},
 			{
 				"command" : 6,
+				"file" : 1,
+				"line" : 75,
+				"parent" : 0
+			},
+			{
+				"command" : 7,
 				"file" : 0,
 				"line" : 200,
 				"parent" : 2
@@ -79,7 +86,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O3 -DNDEBUG -std=c++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
+					"fragment" : "-O0 -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				},
 				{
 					"fragment" : "-Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls"
@@ -88,11 +95,21 @@
 			"includes" : 
 			[
 				{
-					"backtrace" : 6,
+					"backtrace" : 7,
+					"path" : "D:/gitnext/Chained Decos/build/_deps/googletest-src/googlemock/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "D:/gitnext/Chained Decos/build/_deps/googletest-src/googlemock"
+				},
+				{
+					"backtrace" : 7,
+					"isSystem" : true,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include"
 				},
 				{
-					"backtrace" : 6,
+					"backtrace" : 7,
+					"isSystem" : true,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest"
 				}
 			],
@@ -101,7 +118,7 @@
 			{
 				"backtraces" : 
 				[
-					7
+					8
 				],
 				"standard" : "20"
 			},
@@ -111,7 +128,14 @@
 			]
 		}
 	],
-	"id" : "gtest::@1ea2dfc0605fe3ab2a3f",
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 6,
+			"id" : "gtest::@1ea2dfc0605fe3ab2a3f"
+		}
+	],
+	"id" : "gmock::@0f7bb11d64f3678238c7",
 	"install" : 
 	{
 		"destinations" : 
@@ -126,12 +150,12 @@
 			"path" : "C:/Program Files (x86)/ChainedDecos"
 		}
 	},
-	"name" : "gtest",
-	"nameOnDisk" : "gtest.lib",
+	"name" : "gmock",
+	"nameOnDisk" : "gmock.lib",
 	"paths" : 
 	{
-		"build" : "_deps/googletest-build/googletest",
-		"source" : "build/_deps/googletest-src/googletest"
+		"build" : "_deps/googletest-build/googlemock",
+		"source" : "build/_deps/googletest-src/googlemock"
 	},
 	"sourceGroups" : 
 	[
@@ -148,7 +172,7 @@
 		{
 			"backtrace" : 3,
 			"compileGroupIndex" : 0,
-			"path" : "build/_deps/googletest-src/googletest/src/gtest-all.cc",
+			"path" : "build/_deps/googletest-src/googlemock/src/gmock-all.cc",
 			"sourceGroupIndex" : 0
 		}
 	],

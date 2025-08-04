@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/CameraController/cameracontroller.lib"
+			"path" : "src/Menu/menu.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/CameraController/CMakeLists.txt",
+			"src/Menu/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -61,7 +61,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
+					"fragment" : "-O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				}
 			],
 			"defines" : 
@@ -92,6 +92,14 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src/external/glfw/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/include/imgui"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/include/rlImGui"
 				}
 			],
 			"language" : "CXX",
@@ -113,6 +121,10 @@
 	[
 		{
 			"backtrace" : 2,
+			"id" : "imguilib::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 2,
 			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		},
 		{
@@ -120,13 +132,13 @@
 			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
-	"id" : "cameracontroller::@5f3ee536e3548f9fd64a",
-	"name" : "cameracontroller",
-	"nameOnDisk" : "cameracontroller.lib",
+	"id" : "menu::@c946c8ead22e3f9c7e08",
+	"name" : "menu",
+	"nameOnDisk" : "menu.lib",
 	"paths" : 
 	{
-		"build" : "src/CameraController",
-		"source" : "src/CameraController"
+		"build" : "src/Menu",
+		"source" : "src/Menu"
 	},
 	"sourceGroups" : 
 	[
@@ -150,12 +162,12 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/CameraController/CameraController.cpp",
+			"path" : "src/Menu/Menu.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/CameraController/CameraController.h",
+			"path" : "src/Menu/Menu.h",
 			"sourceGroupIndex" : 1
 		}
 	],
