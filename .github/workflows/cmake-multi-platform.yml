@@ -15,7 +15,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         build_type: [Release]
-        c_compiler: [gcc, clang, mingw]  # mingw - умовне ім'я для Windows MinGW
+        c_compiler: [gcc, clang, mingw]  
         cpp_compiler: [g++, clang++, g++]
 
         include:
@@ -56,7 +56,7 @@ jobs:
 
     - name: Clean build directory (Windows)
       if: matrix.os == 'windows-latest'
-      run: rmdir /s /q ${{ steps.strings.outputs.build-output-dir }}
+      run: Remove-Item -Path ${{ steps.strings.outputs.build-output-dir }} -Recurse -Force
 
     - name: Configure CMake (Windows MinGW)
       if: matrix.os == 'windows-latest'
