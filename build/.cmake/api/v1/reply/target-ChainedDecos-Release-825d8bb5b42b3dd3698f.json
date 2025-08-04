@@ -31,13 +31,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 83,
+				"line" : 85,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 91,
+				"line" : 93,
 				"parent" : 0
 			},
 			{
@@ -52,13 +52,13 @@
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 70,
+				"line" : 72,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 68,
+				"line" : 70,
 				"parent" : 0
 			}
 		]
@@ -69,7 +69,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
 				}
 			],
 			"defines" : 
@@ -153,6 +153,10 @@
 		},
 		{
 			"backtrace" : 2,
+			"id" : "model::@c31de6ce72a56b005f57"
+		},
+		{
+			"backtrace" : 2,
 			"id" : "menu::@c946c8ead22e3f9c7e08"
 		},
 		{
@@ -161,15 +165,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "model::@c31de6ce72a56b005f57"
+			"id" : "mapmod::@09eac2343e8a1d778799"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "cameracontroller::@5f3ee536e3548f9fd64a"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "mapmod::@09eac2343e8a1d778799"
 		},
 		{
 			"backtrace" : 2,
@@ -186,7 +186,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd",
+				"fragment" : "-O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt",
 				"role" : "flags"
 			},
 			{

@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Color/color.lib"
+			"path" : "src/Menu/menu.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/Color/CMakeLists.txt",
+			"src/Menu/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -44,13 +44,13 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 70,
+				"line" : 72,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 68,
+				"line" : 70,
 				"parent" : 3
 			}
 		]
@@ -61,7 +61,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
 				}
 			],
 			"defines" : 
@@ -92,6 +92,14 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src/external/glfw/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/include/imgui"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/include/rlImGui"
 				}
 			],
 			"language" : "CXX",
@@ -105,12 +113,16 @@
 			},
 			"sourceIndexes" : 
 			[
-				1
+				0
 			]
 		}
 	],
 	"dependencies" : 
 	[
+		{
+			"backtrace" : 2,
+			"id" : "imguilib::@6890427a1f51a3e7e1df"
+		},
 		{
 			"backtrace" : 2,
 			"id" : "raylib::@4dc3a4644cf4ded08c01"
@@ -120,25 +132,25 @@
 			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
-	"id" : "color::@1a1c00afda0e599bb50a",
-	"name" : "color",
-	"nameOnDisk" : "color.lib",
+	"id" : "menu::@c946c8ead22e3f9c7e08",
+	"name" : "menu",
+	"nameOnDisk" : "menu.lib",
 	"paths" : 
 	{
-		"build" : "src/Color",
-		"source" : "src/Color"
+		"build" : "src/Menu",
+		"source" : "src/Menu"
 	},
 	"sourceGroups" : 
 	[
 		{
-			"name" : "Header Files",
+			"name" : "Source Files",
 			"sourceIndexes" : 
 			[
 				0
 			]
 		},
 		{
-			"name" : "Source Files",
+			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
 				1
@@ -149,13 +161,13 @@
 	[
 		{
 			"backtrace" : 1,
-			"path" : "src/Color/ColorParser.h",
+			"compileGroupIndex" : 0,
+			"path" : "src/Menu/Menu.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/Color/ColorParser.cpp",
+			"path" : "src/Menu/Menu.h",
 			"sourceGroupIndex" : 1
 		}
 	],

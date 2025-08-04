@@ -13,6 +13,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "D:/gitnext/Chained Decos/include/imgui/imgui_draw.cpp" "CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj" "gcc" "CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj.d"
   "D:/gitnext/Chained Decos/include/imgui/imgui_tables.cpp" "CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj" "gcc" "CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj.d"
   "D:/gitnext/Chained Decos/include/imgui/imgui_widgets.cpp" "CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj" "gcc" "CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj.d"
+  "D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp" "CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj" "gcc" "CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj.d"
   "D:/gitnext/Chained Decos/include/rlImGui/rlImGui.cpp" "CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj" "gcc" "CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj.d"
   )
 

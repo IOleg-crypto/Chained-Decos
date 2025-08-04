@@ -7,8 +7,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj.d"
   "CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj"
   "CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj.d"
-  "CMakeFiles/ChainedDecosMapEditor.dir/Map/Map.cpp.obj"
-  "CMakeFiles/ChainedDecosMapEditor.dir/Map/Map.cpp.obj.d"
   "CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj"
   "CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj.d"
   "CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj"

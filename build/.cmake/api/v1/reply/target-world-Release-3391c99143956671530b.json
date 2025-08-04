@@ -37,13 +37,13 @@
 			{
 				"command" : 1,
 				"file" : 1,
-				"line" : 70,
+				"line" : 72,
 				"parent" : 2
 			},
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 68,
+				"line" : 70,
 				"parent" : 2
 			}
 		]
@@ -54,7 +54,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
 				}
 			],
 			"defines" : 
