@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj.d"
   "CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj"
   "CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj.d"
+  "CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj"
+  "CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj.d"
   "CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj"
   "CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj.d"
   "CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj"
