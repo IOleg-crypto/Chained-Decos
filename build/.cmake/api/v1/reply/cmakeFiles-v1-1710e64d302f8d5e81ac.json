@@ -621,6 +621,9 @@
 			"path" : "src/World/CMakeLists.txt"
 		},
 		{
+			"path" : "src/Collision/CMakeLists.txt"
+		},
+		{
 			"path" : "tests/CMakeLists.txt"
 		},
 		{

@@ -429,6 +429,19 @@ world/fast:
 .PHONY : world/fast
 
 #=============================================================================
+# Target rules for targets named collision
+
+# Build rule for target.
+collision: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 collision
+.PHONY : collision
+
+# fast build rule for target.
+collision/fast:
+	$(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/build
+.PHONY : collision/fast
+
+#=============================================================================
 # Target rules for targets named unit_tests
 
 # Build rule for target.
@@ -665,6 +678,7 @@ help:
 	@echo "... ChainedDecos"
 	@echo "... ChainedDecosMapEditor"
 	@echo "... cameracontroller"
+	@echo "... collision"
 	@echo "... color"
 	@echo "... engine"
 	@echo "... glfw"
