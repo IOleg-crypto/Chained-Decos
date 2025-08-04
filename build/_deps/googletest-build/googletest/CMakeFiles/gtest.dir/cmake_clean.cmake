@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "../../../bin/gtest.pdb"
+  "../../../bin/gtestpdb_debug_postfix-NOTFOUND.pdb"
   "../../../lib/gtest.lib"
   "CMakeFiles/gtest.dir/src/gtest-all.cc.obj"
   "CMakeFiles/gtest.dir/src/gtest-all.cc.obj.d"

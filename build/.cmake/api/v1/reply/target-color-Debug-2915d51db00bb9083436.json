@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Model/model.lib"
+			"path" : "src/Color/color.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/Model/CMakeLists.txt",
+			"src/Color/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -35,7 +35,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 7,
+				"line" : 5,
 				"parent" : 0
 			},
 			{
@@ -61,7 +61,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
+					"fragment" : "-O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				}
 			],
 			"defines" : 
@@ -92,10 +92,6 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src/external/glfw/include"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/build/_deps/nlohmann_json-src/include"
 				}
 			],
 			"language" : "CXX",
@@ -103,14 +99,13 @@
 			{
 				"backtraces" : 
 				[
-					2
+					1
 				],
 				"standard" : "20"
 			},
 			"sourceIndexes" : 
 			[
-				0,
-				2
+				1
 			]
 		}
 	],
@@ -125,30 +120,28 @@
 			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
-	"id" : "model::@c31de6ce72a56b005f57",
-	"name" : "model",
-	"nameOnDisk" : "model.lib",
+	"id" : "color::@1a1c00afda0e599bb50a",
+	"name" : "color",
+	"nameOnDisk" : "color.lib",
 	"paths" : 
 	{
-		"build" : "src/Model",
-		"source" : "src/Model"
+		"build" : "src/Color",
+		"source" : "src/Color"
 	},
 	"sourceGroups" : 
 	[
 		{
-			"name" : "Source Files",
-			"sourceIndexes" : 
-			[
-				0,
-				2
-			]
-		},
-		{
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				1,
-				3
+				0
+			]
+		},
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				1
 			]
 		}
 	],
@@ -156,24 +149,13 @@
 	[
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/Model/Model.cpp",
+			"path" : "src/Color/ColorParser.h",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Model/Model.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Model/ModelInstance.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Model/ModelInstance.h",
+			"path" : "src/Color/ColorParser.cpp",
 			"sourceGroupIndex" : 1
 		}
 	],
