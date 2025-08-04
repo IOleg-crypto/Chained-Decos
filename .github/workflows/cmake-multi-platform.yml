@@ -15,27 +15,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         build_type: [Release]
-        c_compiler: [gcc, clang, mingw]  
-        cpp_compiler: [g++, clang++, g++]
+        c_compiler: [gcc, clang]
+        cpp_compiler: [g++, clang++]
 
         include:
           - os: windows-latest
-            c_compiler: mingw
-            cpp_compiler: g++
-          - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-
-        exclude:
-          - os: windows-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: clang
-          - os: ubuntu-latest
-            c_compiler: mingw
 
     steps:
     - uses: actions/checkout@v4
@@ -46,6 +32,10 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+    #################################
+    # Linux-specific setup
+    #################################
+
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev
@@ -54,43 +44,44 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
 
+    #################################
+    # Windows-specific setup
+    #################################
+
+    - name: Install MinGW (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install mingw --no-progress
+        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $env:GITHUB_PATH
+
     - name: Clean build directory (Windows)
       if: matrix.os == 'windows-latest'
-      run: Remove-Item -Path ${{ steps.strings.outputs.build-output-dir }} -Recurse -Force
+      run: Remove-Item -Path "${{ steps.strings.outputs.build-output-dir }}" -Recurse -Force -ErrorAction SilentlyContinue
 
-    - name: Configure CMake (Windows MinGW)
-      if: matrix.os == 'windows-latest'
+    #################################
+    # Configure with CMake
+    #################################
+
+    - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -G "MinGW Makefiles"
+        -G "${{ matrix.os == 'windows-latest' && 'MinGW Makefiles' || 'Unix Makefiles' }}"
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -S ${{ github.workspace }}
 
-    - name: Configure CMake (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}
+    #################################
+    # Build project
+    #################################
 
-    - name: Build (Windows MinGW)
-      if: matrix.os == 'windows-latest'
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }}
-
-    - name: Build (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    - name: Test (Windows MinGW)
-      if: matrix.os == 'windows-latest'
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --output-on-failure
+    #################################
+    # Run tests
+    #################################
 
-    - name: Test (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ctest --output-on-failure --build-config ${{ matrix.build_type }}
