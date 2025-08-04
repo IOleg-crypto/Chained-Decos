@@ -63,7 +63,7 @@
 				"_deps/raylib-build/raylib/raylib.lib"
 			],
 			"targetId" : "raylib::@4dc3a4644cf4ded08c01",
-			"targetIndex" : 16,
+			"targetIndex" : 17,
 			"type" : "target"
 		},
 		{

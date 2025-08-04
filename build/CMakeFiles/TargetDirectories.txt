@@ -161,6 +161,15 @@ D:/gitnext/Chained Decos/build/src/World/CMakeFiles/list_install_components.dir
 D:/gitnext/Chained Decos/build/src/World/CMakeFiles/install.dir
 D:/gitnext/Chained Decos/build/src/World/CMakeFiles/install/local.dir
 D:/gitnext/Chained Decos/build/src/World/CMakeFiles/install/strip.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/collision.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/package.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/package_source.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/edit_cache.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/rebuild_cache.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/list_install_components.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/install.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/install/local.dir
+D:/gitnext/Chained Decos/build/src/Collision/CMakeFiles/install/strip.dir
 D:/gitnext/Chained Decos/build/tests/CMakeFiles/unit_tests.dir
 D:/gitnext/Chained Decos/build/tests/CMakeFiles/package.dir
 D:/gitnext/Chained Decos/build/tests/CMakeFiles/package_source.dir

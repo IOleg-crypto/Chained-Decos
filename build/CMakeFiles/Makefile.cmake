@@ -96,6 +96,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "_deps/raylib-src/src/external/glfw/CMakeLists.txt"
   "_deps/raylib-src/src/external/glfw/src/CMakeLists.txt"
   "D:/gitnext/Chained Decos/src/CameraController/CMakeLists.txt"
+  "D:/gitnext/Chained Decos/src/Collision/CMakeLists.txt"
   "D:/gitnext/Chained Decos/src/Color/CMakeLists.txt"
   "D:/gitnext/Chained Decos/src/Engine/CMakeLists.txt"
   "D:/gitnext/Chained Decos/src/Input/CMakeLists.txt"
@@ -154,6 +155,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
   "src/CameraController/CMakeFiles/CMakeDirectoryInformation.cmake"
   "src/Color/CMakeFiles/CMakeDirectoryInformation.cmake"
   "src/World/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "src/Collision/CMakeFiles/CMakeDirectoryInformation.cmake"
   "tests/CMakeFiles/CMakeDirectoryInformation.cmake"
   "src/MapEditor/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
@@ -179,6 +181,7 @@ set(CMAKE_DEPEND_INFO_FILES
   "src/CameraController/CMakeFiles/cameracontroller.dir/DependInfo.cmake"
   "src/Color/CMakeFiles/color.dir/DependInfo.cmake"
   "src/World/CMakeFiles/world.dir/DependInfo.cmake"
+  "src/Collision/CMakeFiles/collision.dir/DependInfo.cmake"
   "tests/CMakeFiles/unit_tests.dir/DependInfo.cmake"
   "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/DependInfo.cmake"
   )
