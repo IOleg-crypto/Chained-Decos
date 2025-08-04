@@ -159,6 +159,21 @@ CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.s"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
 
+CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj: CMakeFiles/imguilib.dir/flags.make
+CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj: CMakeFiles/imguilib.dir/includes_CXX.rsp
+CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj: D:/gitnext/Chained\ Decos/include/imgui/misc/cpp/imgui_stdlib.cpp
+CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj: CMakeFiles/imguilib.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj"
+	E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj -MF CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj.d -o CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj -c "D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp"
+
+CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
 # Object files for target imguilib
 imguilib_OBJECTS = \
 "CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj" \
@@ -166,7 +181,8 @@ imguilib_OBJECTS = \
 "CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj" \
 "CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj" \
 "CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj" \
-"CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj"
+"CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj" \
+"CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj"
 
 # External object files for target imguilib
 imguilib_EXTERNAL_OBJECTS =
@@ -177,9 +193,10 @@ imguilib.lib: CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj
 imguilib.lib: CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj
 imguilib.lib: CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj
 imguilib.lib: CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj
+imguilib.lib: CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj
 imguilib.lib: CMakeFiles/imguilib.dir/build.make
 imguilib.lib: CMakeFiles/imguilib.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX static library imguilib.lib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX static library imguilib.lib"
 	$(CMAKE_COMMAND) -P CMakeFiles/imguilib.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/imguilib.dir/link.txt --verbose=$(VERBOSE)
 

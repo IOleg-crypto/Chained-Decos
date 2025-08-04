@@ -6,5 +6,5 @@ CXX_DEFINES = -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\""
 
 CXX_INCLUDES = @CMakeFiles/world.dir/includes_CXX.rsp
 
-CXX_FLAGS = -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt
 
