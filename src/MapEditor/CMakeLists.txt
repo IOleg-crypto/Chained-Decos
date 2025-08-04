@@ -11,6 +11,8 @@ add_executable(${PROJECT_NAME}
           Editor/Editor.cpp
           Editor/CameraModes.h
           Editor/CameraModes.cpp
+          Editor/MapObject.cpp
+          Editor/MapObject.h
           Editor/ObjectTransform.h
           Editor/ObjectTransform.cpp
           MapFileManager/MapFileManager.h
