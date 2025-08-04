@@ -216,6 +216,7 @@ src/Model/CMakeFiles/model.dir/Model.cpp.obj: D:/gitnext/Chained\ Decos/src/Mode
   _deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley_undef.hpp \
   _deps/raylib-src/src/raylib.h \
   _deps/raylib-src/src/raymath.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Color/ColorParser.h \
   D:/gitnext/Chained\ Decos/src/Model/Model.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
@@ -381,6 +382,7 @@ src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj: D:/gitnext/Chained\ Decos/
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/sys/stat.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/sys/types.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/wchar.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_bit_utils.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_iter_core.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_sanitizer_annotate_container.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_string_view.hpp \
@@ -420,6 +422,7 @@ src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj: D:/gitnext/Chained\ Decos/
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_new.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_new_debug.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_string.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vector \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xatomic.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xkeycheck.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xmemory \
@@ -430,6 +433,8 @@ src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj: D:/gitnext/Chained\ Decos/
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/yvals.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/yvals_core.h \
   _deps/raylib-src/src/raylib.h \
+  _deps/raylib-src/src/raymath.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
   E:/LLVM/lib/clang/19/include/__stdarg___gnuc_va_list.h \
   E:/LLVM/lib/clang/19/include/__stdarg___va_copy.h \
@@ -1103,6 +1108,8 @@ _deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley_undef.hpp:
 _deps/raylib-src/src/raylib.h:
 
 _deps/raylib-src/src/raymath.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h:
 
 D:/gitnext/Chained\ Decos/src/Color/ColorParser.h:
 

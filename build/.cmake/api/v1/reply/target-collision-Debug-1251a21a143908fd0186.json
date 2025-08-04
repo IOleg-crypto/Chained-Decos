@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/engine.lib"
+			"path" : "src/Collision/collision.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/Engine/CMakeLists.txt",
+			"src/Collision/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -35,7 +35,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 6,
+				"line" : 5,
 				"parent" : 0
 			},
 			{
@@ -92,18 +92,6 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src/external/glfw/include"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/build/_deps/nlohmann_json-src/include"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/include/imgui"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/include/rlImGui"
 				}
 			],
 			"language" : "CXX",
@@ -111,7 +99,7 @@
 			{
 				"backtraces" : 
 				[
-					2
+					1
 				],
 				"standard" : "20"
 			},
@@ -125,10 +113,6 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "imguilib::@6890427a1f51a3e7e1df"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		},
 		{
@@ -136,13 +120,13 @@
 			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
-	"id" : "engine::@57eeced369f002faad1a",
-	"name" : "engine",
-	"nameOnDisk" : "engine.lib",
+	"id" : "collision::@f2fae3303dbf2eca7e7f",
+	"name" : "collision",
+	"nameOnDisk" : "collision.lib",
 	"paths" : 
 	{
-		"build" : "src/Engine",
-		"source" : "src/Engine"
+		"build" : "src/Collision",
+		"source" : "src/Collision"
 	},
 	"sourceGroups" : 
 	[
@@ -166,12 +150,12 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Engine/Engine.cpp",
+			"path" : "src/Collision/CollisionSystem.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Engine.h",
+			"path" : "src/Collision/CollisionSystem.h",
 			"sourceGroupIndex" : 1
 		}
 	],

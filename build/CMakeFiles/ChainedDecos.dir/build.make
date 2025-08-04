@@ -102,6 +102,7 @@ ChainedDecos.exe: src/Map/mapmod.lib
 ChainedDecos.exe: src/CameraController/cameracontroller.lib
 ChainedDecos.exe: src/Color/color.lib
 ChainedDecos.exe: src/World/world.lib
+ChainedDecos.exe: src/Collision/collision.lib
 ChainedDecos.exe: _deps/raylib-build/raylib/raylib.lib
 ChainedDecos.exe: imguilib.lib
 ChainedDecos.exe: _deps/raylib-build/raylib/raylib.lib

@@ -214,6 +214,7 @@ src/Player/CMakeFiles/player.dir/Player.cpp.obj: D:/gitnext/Chained\ Decos/src/P
   _deps/raylib-src/src/raylib.h \
   _deps/raylib-src/src/raymath.h \
   D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Model/Model.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
   D:/gitnext/Chained\ Decos/src/Player/Player.h \
@@ -885,6 +886,8 @@ _deps/raylib-src/src/raylib.h:
 _deps/raylib-src/src/raymath.h:
 
 D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h:
 
 D:/gitnext/Chained\ Decos/src/Model/Model.h:
 

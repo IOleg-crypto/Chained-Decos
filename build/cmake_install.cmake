@@ -99,6 +99,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("D:/gitnext/Chained Decos/build/src/Collision/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("D:/gitnext/Chained Decos/build/tests/cmake_install.cmake")
 endif()
 
