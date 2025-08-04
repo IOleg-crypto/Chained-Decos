@@ -114,11 +114,26 @@ src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.s: cma
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.s"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
 
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/flags.make
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj: D:/gitnext/Chained\ Decos/src/MapEditor/Editor/MapObject.cpp
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/src/MapEditor" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj -MF CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj.d -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj -c "D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.cpp"
+
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/flags.make
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj: D:/gitnext/Chained\ Decos/src/MapEditor/Editor/ObjectTransform.cpp
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj"
 	cd "D:/gitnext/Chained Decos/build/src/MapEditor" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj -MF CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj.d -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj -c "D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp"
 
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.i: cmake_force
@@ -133,7 +148,7 @@ src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj: D:/gitnext/Chained\ Decos/src/MapEditor/MapFileManager/MapFileManager.cpp
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj"
 	cd "D:/gitnext/Chained Decos/build/src/MapEditor" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj -MF CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj.d -o CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj -c "D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.cpp"
 
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.i: cmake_force
@@ -148,7 +163,7 @@ src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj: src/MapEditor/C
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj: D:/gitnext/Chained\ Decos/src/MapEditor/main.cpp
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj"
 	cd "D:/gitnext/Chained Decos/build/src/MapEditor" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj -MF CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj.d -o CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj -c "D:/gitnext/Chained Decos/src/MapEditor/main.cpp"
 
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.i: cmake_force
@@ -164,6 +179,7 @@ ChainedDecosMapEditor_OBJECTS = \
 "CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj" \
 "CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj" \
 "CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj" \
+"CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj" \
 "CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj" \
 "CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj" \
 "CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj"
@@ -174,6 +190,7 @@ ChainedDecosMapEditor_EXTERNAL_OBJECTS =
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj
+src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj
@@ -192,7 +209,7 @@ src/MapEditor/ChainedDecosMapEditor.exe: imguilib.lib
 src/MapEditor/ChainedDecosMapEditor.exe: _deps/raylib-build/raylib/raylib.lib
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/linkLibs.rsp
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/objects1.rsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable ChainedDecosMapEditor.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable ChainedDecosMapEditor.exe"
 	cd "D:/gitnext/Chained Decos/build/src/MapEditor" && E:/LLVM/bin/clang++.exe -nostartfiles -nostdlib -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -Xlinker /subsystem:console -fuse-ld=lld-link @CMakeFiles/ChainedDecosMapEditor.dir/objects1.rsp -o ChainedDecosMapEditor.exe -Xlinker /MANIFEST:EMBED -Xlinker /implib:ChainedDecosMapEditor.lib -Xlinker /pdb:"D:/gitnext/Chained Decos/build/src/MapEditor/ChainedDecosMapEditor.pdb" -Xlinker /version:0.0  @CMakeFiles/ChainedDecosMapEditor.dir/linkLibs.rsp
 
 # Rule to build all files generated by this target.
