@@ -67,13 +67,13 @@
 			{
 				"command" : 2,
 				"file" : 3,
-				"line" : 70,
+				"line" : 72,
 				"parent" : 7
 			},
 			{
 				"command" : 3,
 				"file" : 3,
-				"line" : 68,
+				"line" : 70,
 				"parent" : 7
 			},
 			{
@@ -90,7 +90,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
 				}
 			],
 			"defines" : 
@@ -189,11 +189,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "gtest::@1ea2dfc0605fe3ab2a3f"
+			"id" : "gtest_main::@1ea2dfc0605fe3ab2a3f"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "gtest_main::@1ea2dfc0605fe3ab2a3f"
+			"id" : "gtest::@1ea2dfc0605fe3ab2a3f"
 		}
 	],
 	"id" : "unit_tests::@a44f0ac069e85531cdee",
@@ -202,7 +202,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd",
+				"fragment" : "-O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt",
 				"role" : "flags"
 			},
 			{

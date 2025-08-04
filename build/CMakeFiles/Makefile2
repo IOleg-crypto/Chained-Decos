@@ -420,12 +420,12 @@ CMakeFiles/imguilib.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 CMakeFiles/imguilib.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imguilib.dir/build.make CMakeFiles/imguilib.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imguilib.dir/build.make CMakeFiles/imguilib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=46,47,48,49,50,51,52 "Built target imguilib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=45,46,47,48,49,50,51,52 "Built target imguilib"
 .PHONY : CMakeFiles/imguilib.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/imguilib.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 36
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 37
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/imguilib.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 0
 .PHONY : CMakeFiles/imguilib.dir/rule
@@ -448,11 +448,11 @@ CMakeFiles/ChainedDecos.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir
 CMakeFiles/ChainedDecos.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Player/CMakeFiles/player.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Engine/CMakeFiles/engine.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Model/CMakeFiles/model.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Menu/CMakeFiles/menu.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Input/CMakeFiles/input.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Model/CMakeFiles/model.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Map/CMakeFiles/mapmod.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/World/CMakeFiles/world.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Color/CMakeFiles/color.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/depend
@@ -462,7 +462,7 @@ CMakeFiles/ChainedDecos.dir/all: src/Color/CMakeFiles/color.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/ChainedDecos.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 57
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 58
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/ChainedDecos.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 0
 .PHONY : CMakeFiles/ChainedDecos.dir/rule
@@ -535,7 +535,7 @@ _deps/raylib-build/raylib/CMakeFiles/raylib.dir/clean:
 _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/build.make _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/build.make _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37 "Built target glfw"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36 "Built target glfw"
 .PHONY : _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 
 # Build rule for subdir invocation for target.
@@ -587,7 +587,7 @@ _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/update_mappings.dir/clean
 _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=38,39 "Built target gmock"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=37,38 "Built target gmock"
 .PHONY : _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/all
 
 # Build rule for subdir invocation for target.
@@ -610,11 +610,11 @@ _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/clean:
 # Target rules for target _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir
 
 # All Build rule for target.
-_deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/all: _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/all
+_deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=40,41 "Built target gmock_main"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=39,40 "Built target gmock_main"
 .PHONY : _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/all
 
 # Build rule for subdir invocation for target.
@@ -640,7 +640,7 @@ _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/clean:
 _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=42,43 "Built target gtest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=41,42 "Built target gtest"
 .PHONY : _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 
 # Build rule for subdir invocation for target.
@@ -666,7 +666,7 @@ _deps/googletest-build/googletest/CMakeFiles/gtest.dir/clean:
 _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=44,45 "Built target gtest_main"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=43,44 "Built target gtest_main"
 .PHONY : _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/all
 
 # Build rule for subdir invocation for target.
@@ -694,12 +694,12 @@ src/Engine/CMakeFiles/engine.dir/all: _deps/raylib-build/raylib/CMakeFiles/rayli
 src/Engine/CMakeFiles/engine.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Engine/CMakeFiles/engine.dir/build.make src/Engine/CMakeFiles/engine.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Engine/CMakeFiles/engine.dir/build.make src/Engine/CMakeFiles/engine.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=15,16 "Built target engine"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=14,15 "Built target engine"
 .PHONY : src/Engine/CMakeFiles/engine.dir/all
 
 # Build rule for subdir invocation for target.
 src/Engine/CMakeFiles/engine.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 38
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 39
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/Engine/CMakeFiles/engine.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 0
 .PHONY : src/Engine/CMakeFiles/engine.dir/rule
@@ -781,7 +781,7 @@ src/Menu/CMakeFiles/menu.dir/all: _deps/raylib-build/raylib/external/glfw/src/CM
 
 # Build rule for subdir invocation for target.
 src/Menu/CMakeFiles/menu.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 38
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 39
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/Menu/CMakeFiles/menu.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 0
 .PHONY : src/Menu/CMakeFiles/menu.dir/rule
@@ -857,7 +857,7 @@ src/CameraController/CMakeFiles/cameracontroller.dir/all: _deps/raylib-build/ray
 src/CameraController/CMakeFiles/cameracontroller.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 	$(MAKE) $(MAKESILENT) -f src/CameraController/CMakeFiles/cameracontroller.dir/build.make src/CameraController/CMakeFiles/cameracontroller.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/CameraController/CMakeFiles/cameracontroller.dir/build.make src/CameraController/CMakeFiles/cameracontroller.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=11,12 "Built target cameracontroller"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=10,11 "Built target cameracontroller"
 .PHONY : src/CameraController/CMakeFiles/cameracontroller.dir/all
 
 # Build rule for subdir invocation for target.
@@ -884,7 +884,7 @@ src/Color/CMakeFiles/color.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.
 src/Color/CMakeFiles/color.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Color/CMakeFiles/color.dir/build.make src/Color/CMakeFiles/color.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Color/CMakeFiles/color.dir/build.make src/Color/CMakeFiles/color.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=13,14 "Built target color"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=12,13 "Built target color"
 .PHONY : src/Color/CMakeFiles/color.dir/all
 
 # Build rule for subdir invocation for target.
@@ -936,8 +936,8 @@ src/World/CMakeFiles/world.dir/clean:
 tests/CMakeFiles/unit_tests.dir/all: CMakeFiles/imguilib.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
-tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/all
+tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=72,73,74,75,76,77,78,79,80,81 "Built target unit_tests"
@@ -945,7 +945,7 @@ tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFile
 
 # Build rule for subdir invocation for target.
 tests/CMakeFiles/unit_tests.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 50
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 51
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/CMakeFiles/unit_tests.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "D:/gitnext/Chained Decos/build/CMakeFiles" 0
 .PHONY : tests/CMakeFiles/unit_tests.dir/rule
@@ -968,16 +968,16 @@ src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: _deps/raylib-build/rayli
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Player/CMakeFiles/player.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Engine/CMakeFiles/engine.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Model/CMakeFiles/model.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Menu/CMakeFiles/menu.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Input/CMakeFiles/input.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Model/CMakeFiles/model.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Map/CMakeFiles/mapmod.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/World/CMakeFiles/world.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Color/CMakeFiles/color.dir/all
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=3,4,5,6,7,8,9,10 "Built target ChainedDecosMapEditor"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=3,4,5,6,7,8,9 "Built target ChainedDecosMapEditor"
 .PHONY : src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all
 
 # Build rule for subdir invocation for target.

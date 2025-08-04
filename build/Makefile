@@ -574,6 +574,30 @@ include/imgui/imgui_widgets.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imguilib.dir/build.make CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.s
 .PHONY : include/imgui/imgui_widgets.cpp.s
 
+include/imgui/misc/cpp/imgui_stdlib.obj: include/imgui/misc/cpp/imgui_stdlib.cpp.obj
+.PHONY : include/imgui/misc/cpp/imgui_stdlib.obj
+
+# target to build an object file
+include/imgui/misc/cpp/imgui_stdlib.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/imguilib.dir/build.make CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj
+.PHONY : include/imgui/misc/cpp/imgui_stdlib.cpp.obj
+
+include/imgui/misc/cpp/imgui_stdlib.i: include/imgui/misc/cpp/imgui_stdlib.cpp.i
+.PHONY : include/imgui/misc/cpp/imgui_stdlib.i
+
+# target to preprocess a source file
+include/imgui/misc/cpp/imgui_stdlib.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/imguilib.dir/build.make CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.i
+.PHONY : include/imgui/misc/cpp/imgui_stdlib.cpp.i
+
+include/imgui/misc/cpp/imgui_stdlib.s: include/imgui/misc/cpp/imgui_stdlib.cpp.s
+.PHONY : include/imgui/misc/cpp/imgui_stdlib.s
+
+# target to generate assembly for a file
+include/imgui/misc/cpp/imgui_stdlib.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/imguilib.dir/build.make CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.s
+.PHONY : include/imgui/misc/cpp/imgui_stdlib.cpp.s
+
 include/rlImGui/rlImGui.obj: include/rlImGui/rlImGui.cpp.obj
 .PHONY : include/rlImGui/rlImGui.obj
 
@@ -672,6 +696,9 @@ help:
 	@echo "... include/imgui/imgui_widgets.obj"
 	@echo "... include/imgui/imgui_widgets.i"
 	@echo "... include/imgui/imgui_widgets.s"
+	@echo "... include/imgui/misc/cpp/imgui_stdlib.obj"
+	@echo "... include/imgui/misc/cpp/imgui_stdlib.i"
+	@echo "... include/imgui/misc/cpp/imgui_stdlib.s"
 	@echo "... include/rlImGui/rlImGui.obj"
 	@echo "... include/rlImGui/rlImGui.i"
 	@echo "... include/rlImGui/rlImGui.s"
