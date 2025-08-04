@@ -287,11 +287,11 @@ void Editor::RenderObject(const MapObject &obj)
         DrawSphere(obj.position, obj.scale.x, drawColor);
         if (obj.selected)
         {
-            DrawSphereWires(obj.position, obj.scale.x, 5, 5, RED);
+            DrawSphereWires(obj.position, obj.radiusSphere, 5, 5, RED);
         }
         break;
     case 2: // Cylinder
-        DrawCylinder(obj.position, obj.scale.x, obj.scale.x, obj.scale.y, 8, drawColor);
+        DrawCylinder(obj.position, obj.scale.x, obj.scale.y, obj.scale.y, 8, drawColor);
         if (obj.selected)
         {
             DrawCylinderWires(obj.position, obj.scale.x, obj.scale.x, obj.scale.y, 8, RED);
@@ -438,7 +438,6 @@ void Editor::PickObject()
 
 void Editor::RenderImGuiPropertiesPanel()
 {
-    // Check if we have a selected object
     if (m_selectedObjectIndex < 0 || m_selectedObjectIndex >= m_objects.size())
         return;
 
@@ -454,10 +453,8 @@ void Editor::RenderImGuiPropertiesPanel()
 
     if (ImGui::Begin("Properties##Panel", &propertiesPanelOpen, windowFlags))
     {
-        // TODO : fix problem with IM_ASSERT in DEBUG MODE
         char nameBuffer[256] = {0};
-        strncpy_s(nameBuffer, obj.name.c_str(), sizeof(nameBuffer));
-        nameBuffer[sizeof(nameBuffer) - 1] = '\0';
+        strncpy_s(nameBuffer, obj.name.c_str(), sizeof(nameBuffer) - 1);
 
         std::string inputLabel = "Name##obj" + std::to_string(m_selectedObjectIndex);
         if (ImGui::InputText(inputLabel.c_str(), nameBuffer, sizeof(nameBuffer)))
@@ -465,11 +462,10 @@ void Editor::RenderImGuiPropertiesPanel()
             obj.name = nameBuffer;
         }
 
-        // Type
-        const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane"};
-        ImGui::Combo("Type", &obj.type, types, 4);
+        const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane", "Ellipse"};
+        ImGui::Combo("Type", &obj.type, types, IM_ARRAYSIZE(types));
 
-        // Position
+        // Позиція
         float pos[3] = {obj.position.x, obj.position.y, obj.position.z};
         if (ImGui::DragFloat3("Position", pos, 0.1f))
         {
@@ -478,36 +474,59 @@ void Editor::RenderImGuiPropertiesPanel()
 
         float scale[3] = {obj.scale.x, obj.scale.y, obj.scale.z};
         float size[2] = {obj.size.x, obj.size.y};
+        float radiusEllipse[2] = {obj.radiusH, obj.radiusV};
+        float radiusSphere = obj.radiusSphere;
+
         switch (obj.type)
         {
         case 0: // Cube
-        case 1: // Sphere
-        case 2: // Cylinder
-            // Scale
             if (ImGui::DragFloat3("Scale", scale, 0.1f))
             {
                 obj.scale = {scale[0], scale[1], scale[2]};
             }
             break;
+
+        case 1: // Sphere
+            if (ImGui::DragFloat("Radius", &radiusSphere, 0.1f))
+            {
+                obj.radiusSphere = radiusSphere;
+            }
+            break;
+
+        case 2: // Cylinder
+            if (ImGui::DragFloat3("Scale", scale, 0.1f))
+            {
+                obj.scale = {scale[0], scale[1], scale[2]};
+            }
+            break;
+
         case 3: // Plane
             if (ImGui::DragFloat2("Size", size, 0.1f))
             {
                 obj.size = {size[0], size[1]};
             }
             break;
+
+        case 4: // Ellipse
+            if (ImGui::DragFloat2("Radius H/V", radiusEllipse, 0.1f))
+            {
+                obj.radiusH = radiusEllipse[0];
+                obj.radiusV = radiusEllipse[1];
+            }
+            break;
         }
 
-        // Rotation
+        // Ротація
         float rot[3] = {obj.rotation.x, obj.rotation.y, obj.rotation.z};
         if (ImGui::DragFloat3("Rotation", rot, 1.0f))
         {
             obj.rotation = {rot[0], rot[1], rot[2]};
         }
 
-        // Color
-        float color[4] = {
-            static_cast<float>(obj.color.r) / 255.0f, static_cast<float>(obj.color.g) / 255.0f,
-            static_cast<float>(obj.color.b) / 255.0f, static_cast<float>(obj.color.a) / 255.0f};
+        // Колір
+        float color[4] = {obj.color.r / 255.0f, obj.color.g / 255.0f, obj.color.b / 255.0f,
+                          obj.color.a / 255.0f};
+
         if (ImGui::ColorEdit4("Color", color))
         {
             obj.color = {static_cast<unsigned char>(color[0] * 255),
