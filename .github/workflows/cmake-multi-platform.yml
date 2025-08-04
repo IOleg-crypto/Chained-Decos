@@ -1,0 +1,96 @@
+name: CMake on multiple platforms
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        build_type: [Release]
+        c_compiler: [gcc, clang, mingw]  # mingw - умовне ім'я для Windows MinGW
+        cpp_compiler: [g++, clang++, g++]
+
+        include:
+          - os: windows-latest
+            c_compiler: mingw
+            cpp_compiler: g++
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+
+        exclude:
+          - os: windows-latest
+            c_compiler: gcc
+          - os: windows-latest
+            c_compiler: clang
+          - os: ubuntu-latest
+            c_compiler: mingw
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Install dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev
+
+    - name: Clean build directory (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
+
+    - name: Clean build directory (Windows)
+      if: matrix.os == 'windows-latest'
+      run: rmdir /s /q ${{ steps.strings.outputs.build-output-dir }}
+
+    - name: Configure CMake (Windows MinGW)
+      if: matrix.os == 'windows-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -G "MinGW Makefiles"
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -S ${{ github.workspace }}
+
+    - name: Configure CMake (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -S ${{ github.workspace }}
+
+    - name: Build (Windows MinGW)
+      if: matrix.os == 'windows-latest'
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }}
+
+    - name: Build (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+    - name: Test (Windows MinGW)
+      if: matrix.os == 'windows-latest'
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: ctest --output-on-failure
+
+    - name: Test (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: ctest --output-on-failure --build-config ${{ matrix.build_type }}
