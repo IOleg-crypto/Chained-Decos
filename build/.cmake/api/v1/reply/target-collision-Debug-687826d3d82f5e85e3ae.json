@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Player/player.lib"
+			"path" : "src/Collision/collision.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/Player/CMakeLists.txt",
+			"src/Collision/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -35,7 +35,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 6,
+				"line" : 5,
 				"parent" : 0
 			},
 			{
@@ -44,13 +44,13 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 72,
+				"line" : 73,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 70,
+				"line" : 71,
 				"parent" : 3
 			}
 		]
@@ -92,10 +92,6 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src/external/glfw/include"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/build/_deps/nlohmann_json-src/include"
 				}
 			],
 			"language" : "CXX",
@@ -103,7 +99,7 @@
 			{
 				"backtraces" : 
 				[
-					2
+					1
 				],
 				"standard" : "20"
 			},
@@ -122,19 +118,15 @@
 		{
 			"backtrace" : 2,
 			"id" : "glfw::@9de86fbe87260ae8e66c"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "collision::@f2fae3303dbf2eca7e7f"
 		}
 	],
-	"id" : "player::@be42b85d13b19d60cba7",
-	"name" : "player",
-	"nameOnDisk" : "player.lib",
+	"id" : "collision::@f2fae3303dbf2eca7e7f",
+	"name" : "collision",
+	"nameOnDisk" : "collision.lib",
 	"paths" : 
 	{
-		"build" : "src/Player",
-		"source" : "src/Player"
+		"build" : "src/Collision",
+		"source" : "src/Collision"
 	},
 	"sourceGroups" : 
 	[
@@ -149,8 +141,7 @@
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				1,
-				2
+				1
 			]
 		}
 	],
@@ -159,17 +150,12 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Player/Player.cpp",
+			"path" : "src/Collision/CollisionSystem.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Player/Player.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Player/PositionData.h",
+			"path" : "src/Collision/CollisionSystem.h",
 			"sourceGroupIndex" : 1
 		}
 	],
