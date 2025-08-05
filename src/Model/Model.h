@@ -44,12 +44,6 @@ class Models
 
     // Create and add instance
     void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName);
-
-    // Get collision components from all model instances
-    std::vector<CollisionComponent *> GetAllColliders();
-
-    // Get model instances (for direct access)
-    std::vector<ModelInstance> &GetInstances();
 };
 
 #endif // MODEL_H

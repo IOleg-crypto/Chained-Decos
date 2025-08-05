@@ -5,19 +5,18 @@
 #include "PositionData.h"
 #include "raylib.h"
 #include <memory>
-#include <string>
 
 Player::Player() : m_cameraController(std::make_shared<CameraController>())
 {
     m_originalCameraTarget = m_cameraController->GetCamera().target;
     m_baseTarget = m_originalCameraTarget;
 
-    m_collisionComponent.type = CollisionComponent::BOTH;
-    m_collisionComponent.isStatic = false;
-    m_collisionComponent.isActive = true;
-    m_collisionComponent.sphere.radius = 3.5f;
-
-    UpdateCollisionBounds();
+    m_playerPosition = {0.0f, 1.0f, 0.0f}; 
+    m_playerSize = {1.0f, 2.0f, 1.0f};     
+    m_playerColor = BLUE;
+    m_playerModel = nullptr;
+    m_useModel = false;
+    UpdatePlayerBox();
 }
 
 Player::~Player() = default;
@@ -26,22 +25,30 @@ void Player::Update()
 {
     ApplyInput();
     Jump();
+    UpdateCameraRotation();
+
+    float radius = 5.0f; 
+    Vector3 offset = {
+        radius * sinf(m_cameraYaw) * cosf(m_cameraPitch),
+        radius * sinf(m_cameraPitch) + 2.0f,
+        radius * cosf(m_cameraYaw) * cosf(m_cameraPitch)
+    };
+    Camera& camera = m_cameraController->GetCamera();
+    camera.position = Vector3Add(m_playerPosition, offset);
+    camera.target = m_playerPosition;
+
     m_cameraController->Update();
     UpdatePositionHistory();
-    UpdateCollisionBounds();
 }
 
 float Player::GetSpeed() { return m_walkSpeed; }
 
 void Player::SetSpeed(const float speed) { this->m_walkSpeed = speed; }
 
-void Player::Move(const Vector3 offset)
+void Player::Move(const Vector3& moveVector)
 {
-    m_cameraController->GetCamera().position =
-        Vector3Add(m_cameraController->GetCamera().position, offset);
-    m_cameraController->GetCamera().target =
-        Vector3Add(m_cameraController->GetCamera().target, offset);
-    UpdateCollisionBounds();
+    m_playerPosition = Vector3Add(m_playerPosition, moveVector);
+    UpdatePlayerBox();
 }
 
 void Player::Jump()
@@ -50,39 +57,32 @@ void Player::Jump()
 
     if (IsKeyPressed(KEY_SPACE) && m_physData.m_isGrounded)
     {
-        m_physData.m_velocityY = m_jumpStrength * 0.8f; // Зменшено силу стрибка
+        m_physData.m_velocityY = m_jumpStrength * 0.8f;
         m_physData.m_isGrounded = false;
         m_isJumping = true;
-
-        m_originalCameraTarget = m_cameraController->GetCamera().target;
-        m_baseTarget = m_originalCameraTarget;
     }
 
     if (m_isJumping || !m_physData.m_isGrounded)
     {
         m_physData.m_velocityY -= m_physData.m_gravity * m_physData.m_dt;
-        m_jumpOffsetY += m_physData.m_velocityY * m_physData.m_dt;
-
-        if (m_jumpOffsetY <= 0.0f)
+        m_playerPosition.y += m_physData.m_velocityY * m_physData.m_dt;
+        
+        if (m_playerPosition.y <= 1.0f) 
         {
-            m_jumpOffsetY = 0.0f;
+            m_playerPosition.y = 1.0f;
             m_physData.m_velocityY = 0.0f;
             m_physData.m_isGrounded = true;
             m_isJumping = false;
-            m_cameraController->GetCamera().target = m_originalCameraTarget;
         }
-        else
-        {
-            ApplyJumpToCamera(m_cameraController->GetCamera(), m_originalCameraTarget,
-                              m_jumpOffsetY);
-        }
+        
+        UpdatePlayerBox();
     }
 }
 
 void Player::ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY)
 {
     Vector3 desiredTarget = {baseTarget.x, baseTarget.y + jumpOffsetY, baseTarget.z};
-    float smoothingSpeed = 2.0f; // Зменшено швидкість для плавнішого руху
+    float smoothingSpeed = 8.0f;
     camera.target = Vector3Lerp(camera.target, desiredTarget, smoothingSpeed * GetFrameTime());
     camera.position = Vector3Lerp(camera.position, {camera.position.x, desiredTarget.y, camera.position.z}, smoothingSpeed * GetFrameTime());
 }
@@ -137,113 +137,44 @@ Models Player::GetModelManager() { return m_modelPlayer; }
 
 PositionData Player::GetPlayerData() const { return m_posData; }
 
-Matrix Player::GetPlayerRotation()
+
+void Player::UpdatePlayerBox()
 {
-    Vector3 playerPos = m_posData.m_playerCurrentPosition;
-    Vector3 cameraTarget = m_cameraController->GetCamera().target;
-    Vector3 toCamera = Vector3Subtract(cameraTarget, playerPos);
-    float angleY = atan2f(toCamera.x, toCamera.z);
-    return MatrixRotateY(angleY);
+
+    m_playerBoundingBox.min = Vector3Subtract(m_playerPosition, Vector3Scale(m_playerSize, 0.5f));
+    m_playerBoundingBox.max = Vector3Add(m_playerPosition, Vector3Scale(m_playerSize, 0.5f));
 }
 
-CollisionComponent &Player::GetCollisionComponent() { return m_collisionComponent; }
-
-void Player::UpdateCollisionBounds()
+void Player::DrawPlayer()
 {
-    Vector3 cameraPos = m_cameraController->GetCamera().position;
-    Vector3 center = {cameraPos.x, 0.5f + m_jumpOffsetY, cameraPos.z};
-
-    m_collisionComponent.sphere.center = center;
-
-    Vector3 halfSize = {0.5f, 0.5f, 0.5f};
-    m_collisionComponent.box.min = Vector3Subtract(center, halfSize);
-    m_collisionComponent.box.max = Vector3Add(center, halfSize);
-}
-
-void Player::SetCollisionRadius(float radius) { m_collisionComponent.sphere.radius = radius; }
-
-void Player::SetCollisionSize(Vector3 size)
-{
-    Vector3 center = m_collisionComponent.sphere.center;
-    Vector3 halfSize = Vector3Scale(size, 0.5f);
-    m_collisionComponent.box.min = Vector3Subtract(center, halfSize);
-    m_collisionComponent.box.max = Vector3Add(center, halfSize);
-}
-
-bool Player::CheckCollision(const CollisionComponent &other) const
-{
-    if (!m_collisionComponent.isActive || !other.isActive)
-        return false;
-
-    if (m_collisionComponent.type == CollisionComponent::SPHERE &&
-        other.type == CollisionComponent::SPHERE)
+    if (m_useModel && m_playerModel)
     {
-        return CollisionSystem::CheckSphereSphere(m_collisionComponent.sphere, other.sphere);
+        DrawModel(*m_playerModel, m_playerPosition, 1.0f, WHITE);
     }
-    else if (m_collisionComponent.type == CollisionComponent::SPHERE &&
-             other.type == CollisionComponent::AABB)
+    else
     {
-        return CollisionSystem::CheckSphereAABB(m_collisionComponent.sphere, other.box);
-    }
-    else if (m_collisionComponent.type == CollisionComponent::AABB &&
-             other.type == CollisionComponent::AABB)
-    {
-        return CollisionSystem::CheckAABBAABB(m_collisionComponent.box, other.box);
-    }
-
-    return false;
-}
-
-void Player::HandleCollisionResponse(const CollisionComponent &other)
-{
-    if (!CheckCollision(other))
-        return;
-
-    Vector3 response = {0, 0, 0};
-
-    if (m_collisionComponent.type == CollisionComponent::SPHERE &&
-        other.type == CollisionComponent::SPHERE)
-        response =
-            CollisionSystem::GetSphereSphereResponse(m_collisionComponent.sphere, other.sphere);
-    else if (m_collisionComponent.type == CollisionComponent::SPHERE &&
-             other.type == CollisionComponent::AABB)
-        response = CollisionSystem::GetSphereAABBResponse(m_collisionComponent.sphere, other.box);
-
-    if (Vector3Length(response) > 0.001f)
-    {
-        Move(response);
+        DrawCube(m_playerPosition, m_playerSize.x, m_playerSize.y, m_playerSize.z, m_playerColor);
+        DrawCubeWires(m_playerPosition, m_playerSize.x, m_playerSize.y, m_playerSize.z, BLACK);
     }
 }
 
-void Player::CheckAndHandleCollisions(const std::vector<CollisionComponent *> &colliders)
+void Player::SetPlayerModel(Model* model)
 {
-    for (const auto &collider : colliders)
-    {
-        if (collider && collider->isActive)
-        {
-            HandleCollisionResponse(*collider);
-        }
-    }
+    m_playerModel = model;
 }
 
-bool Player::MoveWithCollisionDetection(Vector3 offset,
-                                        const std::vector<CollisionComponent *> &colliders)
+void Player::ToggleModelRendering(bool useModel)
 {
-    Vector3 originalPosition = m_cameraController->GetCamera().position;
-    Vector3 originalTarget = m_cameraController->GetCamera().target;
-
-    Move(offset);
-
-    for (const auto &collider : colliders)
-    {
-        if (collider && collider->isActive && CheckCollision(*collider))
-        {
-            m_cameraController->GetCamera().position = originalPosition;
-            m_cameraController->GetCamera().target = originalTarget;
-            UpdateCollisionBounds();
-            return false;
-        }
-    }
-
-    return true;
+    m_useModel = useModel;
 }
+
+void Player::UpdateCameraRotation()
+{
+    Vector2 mouseDelta = GetMouseDelta();
+    float sensitivity = 0.005f; 
+    m_cameraYaw   -= mouseDelta.x * sensitivity;
+    m_cameraPitch -= mouseDelta.y * sensitivity;
+    m_cameraPitch = Clamp(m_cameraPitch, -PI/2.0f + 0.1f, PI/2.0f - 0.1f);
+
+}
+
