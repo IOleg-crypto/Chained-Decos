@@ -7,20 +7,24 @@
 
 // Standard library
 #include <string>
+#include <vector>
 
 // Raylib
 #include <raylib.h>
 
 // Project headers
-#include <Player/Player.h>
-#include <Model/Model.h>
-#include <Menu/Menu.h>
+#include <Collision/CollisionSystem.h>
 #include <Input/InputManager.h>
+#include <Menu/Menu.h>
+#include <Model/Model.h>
+#include <Player/Player.h>
+
 // # ------------------------------------------------------
 // # Engine - main class , that creates window using raylib
 // # ------------------------------------------------------
-class Engine {
-private:
+class Engine
+{
+  private:
     // Screen resolution
     int m_screenX{};
     int m_screenY{};
@@ -35,22 +39,25 @@ private:
 
     // Debug flag
     bool m_showDebug{false};
+    // Collision debug visualization
+    bool m_showCollisionDebug{false};
     // Menu
     Menu m_menu;
     // Show menu
     bool m_showMenu = true;
     // For exit
     bool m_shouldExit{};
-public:
+
+  public:
     // Constructors & Destructor
     Engine() = default;
     Engine(int screenX, int screenY);
     ~Engine();
     // Deleted copy/move constructors (don`t needed)
-    Engine(const Engine& other) = delete;
-    Engine(Engine&& other) = delete;
-public:
+    Engine(const Engine &other) = delete;
+    Engine(Engine &&other) = delete;
 
+  public:
     // Initialization
     void Init() const;
 
@@ -62,17 +69,24 @@ public:
     void Update(); // Updates input and player logic
 
     // Rendering
-    void Render();       // Renders all objects and UI
+    void Render(); // Renders all objects and UI
     void LoadPlayerModel();
 
-    void DrawScene3D();  // Renders 3D scene
+    void DrawScene3D(); // Renders 3D scene
 
     // For ImGui(Load better font)
     void InitImGuiFont() const;
     // Debug (using ImGui)
-    void DrawDebugInfo(const Camera &camera , const int &cameraMode);
+    void DrawDebugInfo(const Camera &camera, const int &cameraMode);
     void InitInput();
 
+    // Collision system integration
+    void UpdateCollisions();
+    void DrawCollisionDebug();
+    std::vector<CollisionComponent *> GetModelColliders();
+
+    // Test map generation
+    void DrawGeometricShapes();
 };
 
 #endif // ENGINE_H

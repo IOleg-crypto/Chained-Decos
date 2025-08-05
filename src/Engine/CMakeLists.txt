@@ -3,4 +3,4 @@ add_library(engine STATIC
     Engine.h
 )
 
-target_link_libraries(engine PUBLIC raylib nlohmann_json imguilib) 
+target_link_libraries(engine PUBLIC raylib nlohmann_json imguilib collision)

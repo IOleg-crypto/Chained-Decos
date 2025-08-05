@@ -1,7 +1,7 @@
 [
   {
     "name": "player",
-    "path": "/resources/player.glb",
+    "path": "/resources/player_low.glb",
     "spawn": false
   },
   {
@@ -10,10 +10,11 @@
     "spawn": true,
     "instances": [
       {
-        "position": { "x": 1.0, "y": 1.0, "z": 45.0 },
+        "position": { "x": 1.0, "y": 2.0, "z": 30.0 },
         "scale": 0.4,
         "color": "gray"
       }
     ]
   }
+  
 ]
