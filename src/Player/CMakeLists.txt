@@ -3,4 +3,4 @@ add_library(player STATIC
     Player.h
     PositionData.h
 )
-target_link_libraries(player PUBLIC raylib nlohmann_json) 
+target_link_libraries(player PUBLIC raylib nlohmann_json collision)

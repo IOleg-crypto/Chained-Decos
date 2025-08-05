@@ -145,19 +145,15 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "player::@be42b85d13b19d60cba7"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "engine::@57eeced369f002faad1a"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "menu::@c946c8ead22e3f9c7e08"
+			"id" : "model::@c31de6ce72a56b005f57"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "model::@c31de6ce72a56b005f57"
+			"id" : "player::@be42b85d13b19d60cba7"
 		},
 		{
 			"backtrace" : 2,
@@ -169,15 +165,19 @@
 		},
 		{
 			"backtrace" : 2,
+			"id" : "menu::@c946c8ead22e3f9c7e08"
+		},
+		{
+			"backtrace" : 2,
 			"id" : "cameracontroller::@5f3ee536e3548f9fd64a"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "world::@92df9c4804674326063e"
+			"id" : "color::@1a1c00afda0e599bb50a"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "color::@1a1c00afda0e599bb50a"
+			"id" : "world::@92df9c4804674326063e"
 		},
 		{
 			"backtrace" : 2,

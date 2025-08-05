@@ -7,11 +7,12 @@
 
 #include "ModelInstance.h"
 
-#include <vector>
-#include <string>
 #include <raylib.h>
 #include <raymath.h>
+#include <string>
 #include <unordered_map>
+#include <vector>
+
 
 #include <nlohmann/json.hpp>
 
@@ -20,17 +21,18 @@ using json = nlohmann::json;
 // # ----------------------------------------------------------------------------
 // # Models class represents like model loader into game
 // # ----------------------------------------------------------------------------
-class Models {
-private:
-    std::vector<ModelInstance> m_instances;  // contains model instances (with model and position)
-    std::unordered_map<std::string, Model*> m_modelByName; // Direct access by name
+class Models
+{
+  private:
+    std::vector<ModelInstance> m_instances; // contains model instances (with model and position)
+    std::unordered_map<std::string, Model *> m_modelByName; // Direct access by name
     bool m_spawnInstance = true;
 
-public:
+  public:
     Models() = default;
     ~Models();
 
-public:
+  public:
     // This function reads all paths from .json file
     void LoadModelsFromJson(const std::string &path);
 
@@ -38,10 +40,16 @@ public:
     void DrawAllModels() const;
 
     // Access to original model (not instance)
-    Model& GetModelByName(const std::string& name);
+    Model &GetModelByName(const std::string &name);
 
     // Create and add instance
-    void AddInstance(const json& instanceJson, Model* modelPtr, const std::string& modelName);
+    void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName);
+
+    // Get collision components from all model instances
+    std::vector<CollisionComponent *> GetAllColliders();
+
+    // Get model instances (for direct access)
+    std::vector<ModelInstance> &GetInstances();
 };
 
 #endif // MODEL_H
