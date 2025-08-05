@@ -1,8 +1,8 @@
 // Created by I#Oleg
 //
-#include "Engine.h"
-#include "Menu/Menu.h"
-#include "raylib.h"
+#include <Engine/Engine.h>
+#include <Menu/Menu.h>
+#include <raylib.h>
 // Include ImGui with adapter
 #include <Collision/CollisionSystem.h>
 #include <imgui.h>
@@ -28,11 +28,12 @@ Engine::~Engine()
     CloseWindow();
 }
 
-void Engine::Init() const
+void Engine::Init() 
 {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     SetTargetFPS(144);
+    HideCursor(); // Hide mouse cursor
     rlImGuiSetup(true); // init ImGui
     InitImGuiFont();
 }
@@ -54,11 +55,15 @@ void Engine::Run()
 
 void Engine::Update()
 {
+    if (IsKeyPressed(KEY_ESCAPE))
+    {
+        ToggleMenu();
+    }
+
     HandleKeyboardShortcuts();
     if (const ImGuiIO &io = ImGui::GetIO(); !io.WantCaptureMouse)
     {
         m_player.Update();
-        UpdateCollisions();
     }
 }
 
@@ -66,7 +71,7 @@ void Engine::Render()
 {
     BeginDrawing();
     ClearBackground(BLUE);
-
+    
     if (m_showMenu)
     {
         m_menu.Update();
@@ -76,18 +81,8 @@ void Engine::Render()
     {
         BeginMode3D(m_player.GetCameraController()->GetCamera());
         DrawScene3D();
-        if (m_showCollisionDebug)
-        {
-            DrawCollisionDebug();
-        }
+        m_player.DrawPlayer();
         EndMode3D();
-    }
-
-    if (m_showDebug)
-    {
-        TraceLog(LOG_DEBUG, "Create ImGui Window for DEBUG");
-        DrawDebugInfo(m_player.GetCameraController()->GetCamera(),
-                      m_player.GetCameraController()->GetCameraMode());
     }
 
     EndDrawing();
@@ -98,6 +93,7 @@ void Engine::Render()
     case MenuAction::StartGame:
         m_showMenu = false;
         InitInput();
+        HideCursor(); // Hide mouse cursor when game starts
         m_menu.ResetAction();
         break;
     case MenuAction::OpenOptions:
@@ -112,33 +108,18 @@ void Engine::Render()
     }
 }
 
+
 void Engine::LoadPlayerModel()
 {
-    Model &model = m_models.GetModelByName("player");
-
-    // Get player position from camera but place model on ground (y = 0)
-    Vector3 playerPosition = m_player.GetCameraController()->GetCamera().position;
-    Vector3 modelPosition = {playerPosition.x, 0.0f, playerPosition.z}; // Place on ground
-
-    if (m_player.GetCameraController()->GetCameraMode() == CAMERA_THIRD_PERSON)
-    {
-        model.transform = m_player.GetPlayerRotation();
-        DrawModel(model, m_player.GetCameraController()->GetCamera().target, 1, GRAY);
-    }
-    else
-    {
-        model.transform = m_player.GetPlayerRotation();
-        DrawModel(model, modelPosition, 0.5, GRAY);
-    }
+    m_playerModelMesh = m_models.GetModelByName("player");
+    m_player.SetPlayerModel(&m_playerModelMesh);
 }
 
 void Engine::DrawScene3D()
 {
     DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){800.0f, 800.0f}, LIGHTGRAY); // Draw ground
     LoadPlayerModel();
-    // Draw additional geometric shapes for collision testing
-    DrawGeometricShapes();
-
+    m_player.GetPlayerRotation();
     m_models.DrawAllModels();
 }
 
@@ -238,129 +219,4 @@ void Engine::InitInput()
 
 void Engine::HandleKeyboardShortcuts() const { m_manager.ProcessInput(); }
 
-void Engine::UpdateCollisions()
-{
-    // Get all model colliders
-    std::vector<CollisionComponent *> modelColliders = GetModelColliders();
 
-    // Check and handle collisions between player and models
-    m_player.CheckAndHandleCollisions(modelColliders);
-}
-
-void Engine::DrawCollisionDebug()
-{
-    // Draw player collision bounds
-    CollisionComponent &playerCollision = m_player.GetCollisionComponent();
-    if (playerCollision.isActive)
-    {
-        if (playerCollision.type == CollisionComponent::SPHERE ||
-            playerCollision.type == CollisionComponent::BOTH)
-        {
-            CollisionSystem::DrawCollisionSphere(playerCollision.sphere, RED);
-        }
-
-        if (playerCollision.type == CollisionComponent::AABB ||
-            playerCollision.type == CollisionComponent::BOTH)
-        {
-            CollisionSystem::DrawCollisionBox(playerCollision.box, RED);
-        }
-    }
-
-    // Draw model collision bounds
-    std::vector<CollisionComponent *> modelColliders = GetModelColliders();
-    for (const auto *collider : modelColliders)
-    {
-        if (!collider || !collider->isActive)
-            continue;
-
-        Color color = collider->isStatic ? GREEN : YELLOW;
-
-        if (collider->type == CollisionComponent::SPHERE ||
-            collider->type == CollisionComponent::BOTH)
-        {
-            CollisionSystem::DrawCollisionSphere(collider->sphere, color);
-        }
-
-        if (collider->type == CollisionComponent::AABB ||
-            collider->type == CollisionComponent::BOTH)
-        {
-            CollisionSystem::DrawCollisionBox(collider->box, color);
-        }
-    }
-
-    // Draw collision debug info
-    DrawText("Collision Debug Mode", 10, GetScreenHeight() - 100, 20, WHITE);
-    DrawText("Red = Player", 10, GetScreenHeight() - 75, 16, RED);
-    DrawText("Green = Static Objects", 10, GetScreenHeight() - 55, 16, GREEN);
-    DrawText("Yellow = Dynamic Objects", 10, GetScreenHeight() - 35, 16, YELLOW);
-    DrawText("Press 'C' to toggle", 10, GetScreenHeight() - 15, 16, GRAY);
-}
-
-std::vector<CollisionComponent *> Engine::GetModelColliders() { return m_models.GetAllColliders(); }
-
-void Engine::DrawGeometricShapes()
-{
-    // Draw various geometric shapes for collision testing
-
-    // Cubes at different positions
-    DrawCube({15.0f, 2.0f, 5.0f}, 2.0f, 2.0f, 2.0f, RED);
-    DrawCubeWires({15.0f, 2.0f, 5.0f}, 2.0f, 2.0f, 2.0f, MAROON);
-
-    DrawCube({-15.0f, 1.5f, -5.0f}, 3.0f, 1.0f, 3.0f, BLUE);
-    DrawCubeWires({-15.0f, 1.5f, -5.0f}, 3.0f, 1.0f, 3.0f, DARKBLUE);
-
-    // Spheres
-    DrawSphere({12.0f, 3.0f, -8.0f}, 1.5f, GREEN);
-    DrawSphereWires({12.0f, 3.0f, -8.0f}, 1.5f, 8, 8, DARKGREEN);
-
-    DrawSphere({-12.0f, 2.0f, 8.0f}, 2.0f, YELLOW);
-    DrawSphereWires({-12.0f, 2.0f, 8.0f}, 2.0f, 8, 8, GOLD);
-
-    // Cylinders
-    DrawCylinder({8.0f, 0.0f, -12.0f}, 1.0f, 2.0f, 4.0f, 16, PURPLE);
-    DrawCylinderWires({8.0f, 0.0f, -12.0f}, 1.0f, 2.0f, 4.0f, 16, VIOLET);
-
-    DrawCylinder({-8.0f, 0.0f, 12.0f}, 1.5f, 1.5f, 3.0f, 16, ORANGE);
-    DrawCylinderWires({-8.0f, 0.0f, 12.0f}, 1.5f, 1.5f, 3.0f, 16, BROWN);
-
-    // More complex shapes
-    // Rectangular prisms (elongated cubes)
-    DrawCube({20.0f, 1.0f, 0.0f}, 1.0f, 6.0f, 1.0f, PINK);
-    DrawCubeWires({20.0f, 1.0f, 0.0f}, 1.0f, 6.0f, 1.0f, MAGENTA);
-
-    DrawCube({-20.0f, 1.0f, 0.0f}, 4.0f, 1.0f, 1.0f, LIME);
-    DrawCubeWires({-20.0f, 1.0f, 0.0f}, 4.0f, 1.0f, 1.0f, GREEN);
-
-    // Small cubes in a pattern
-    for (int i = 0; i < 5; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            Vector3 pos = {-25.0f + i * 2.0f, 0.5f + j * 1.0f, 15.0f};
-            Color color =
-                (Color){(unsigned char)(50 + i * 40), (unsigned char)(100 + j * 50), 150, 255};
-            DrawCube(pos, 0.8f, 0.8f, 0.8f, color);
-            DrawCubeWires(pos, 0.8f, 0.8f, 0.8f, BLACK);
-        }
-    }
-
-    // Spheres in a line
-    for (int i = 0; i < 6; i++)
-    {
-        Vector3 pos = {25.0f, 1.0f + i * 0.5f, -15.0f + i * 2.0f};
-        Color color =
-            (Color){255, (unsigned char)(50 + i * 30), (unsigned char)(100 + i * 25), 255};
-        DrawSphere(pos, 0.6f + i * 0.1f, color);
-        DrawSphereWires(pos, 0.6f + i * 0.1f, 8, 8, BLACK);
-    }
-
-    // Tall cylinders as pillars
-    DrawCylinder({0.0f, 0.0f, 25.0f}, 1.0f, 1.0f, 8.0f, 12, BEIGE);
-    DrawCylinderWires({0.0f, 0.0f, 25.0f}, 1.0f, 1.0f, 8.0f, 12, BROWN);
-
-    DrawCylinder({5.0f, 0.0f, 25.0f}, 0.8f, 0.8f, 6.0f, 12, LIGHTGRAY);
-    DrawCylinderWires({5.0f, 0.0f, 25.0f}, 0.8f, 0.8f, 6.0f, 12, GRAY);
-
-    DrawCylinder({-5.0f, 0.0f, 25.0f}, 1.2f, 1.2f, 10.0f, 12, DARKGRAY);
-    DrawCylinderWires({-5.0f, 0.0f, 25.0f}, 1.2f, 1.2f, 10.0f, 12, BLACK);
-}

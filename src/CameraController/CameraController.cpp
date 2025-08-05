@@ -2,8 +2,9 @@
 // Created by I#Oleg
 
 #include "CameraController.h"
+#include "raylib.h"
 
-CameraController::CameraController() : m_camera({0}), m_cameraMode(CAMERA_FIRST_PERSON)
+CameraController::CameraController() : m_camera({0}), m_cameraMode(CAMERA_THIRD_PERSON)
 {
     m_camera.position = (Vector3){4.0f, 4.0f, 4.0f}; // Camera position
     m_camera.target = (Vector3){0.0f, 2.0f, 0.0f};   // Camera looking at point

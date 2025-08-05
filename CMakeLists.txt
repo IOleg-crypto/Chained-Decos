@@ -58,6 +58,7 @@ add_library(imguilib STATIC
         include/imgui/imstb_truetype.h
         include/imgui/misc/cpp/imgui_stdlib.h
         include/imgui/misc/cpp/imgui_stdlib.cpp
+        include/raygui/src/raygui.h
 )
 target_include_directories(imguilib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
