@@ -32,7 +32,14 @@ class Player
     bool m_isPlayerMoving;                         // Track player moving
     PositionData m_posData;
     PhysicsData m_physData;
-    CollisionComponent m_collisionComponent;
+    Vector3 m_playerPosition;
+    Vector3 m_playerSize;
+    BoundingBox m_playerBoundingBox;
+    Color m_playerColor;
+    Model* m_playerModel;
+    bool m_useModel;
+    float m_cameraYaw = 0.0f;
+float m_cameraPitch = 0.0f;
 
   private:
     Models m_modelPlayer;
@@ -49,7 +56,7 @@ class Player
     [[nodiscard]] float GetSpeed(); // Get character speed
     void SetSpeed(float speed);
     // Move player (camera) in 3D
-    void Move(Vector3 offset);
+    void Move(const Vector3& moveVector);
     // Allow player jumps
     void Jump();
     // Take history of player position(needed for player jump)
@@ -66,21 +73,13 @@ class Player
     PositionData GetPlayerData() const;
     // Camera connects with jump
     void ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY);
-    // Get collision component
-    [[nodiscard]] CollisionComponent &GetCollisionComponent();
-    // Update collision bounds based on current position
-    void UpdateCollisionBounds();
-    // Check collision with other collision component
-    bool CheckCollision(const CollisionComponent &other) const;
-    // Handle collision response
-    void HandleCollisionResponse(const CollisionComponent &other);
-    // Check collisions with multiple objects and handle responses
-    void CheckAndHandleCollisions(const std::vector<CollisionComponent *> &colliders);
-    // Move with collision detection (returns true if movement was successful)
-    bool MoveWithCollisionDetection(Vector3 offset,
-                                    const std::vector<CollisionComponent *> &colliders);
-    void SetCollisionSize(Vector3 size);
-    void SetCollisionRadius(float radius);
+    void UpdatePlayerBox();
+    void DrawPlayer();
+    void SetPlayerModel(Model* model);
+    void ToggleModelRendering(bool useModel);
+    Vector3 GetPlayerPosition() const { return m_playerPosition; }
+    BoundingBox GetPlayerBoundingBox() const { return m_playerBoundingBox; }
+    void UpdateCameraRotation(); // Update camera rotation based on mouse input
 };
 
 #endif // PLAYER_H

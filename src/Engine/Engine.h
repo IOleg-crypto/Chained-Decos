@@ -48,6 +48,10 @@ class Engine
     // For exit
     bool m_shouldExit{};
 
+    // Model for player
+    Model m_playerModelMesh;
+    bool m_usePlayerModel;
+
   public:
     // Constructors & Destructor
     Engine() = default;
@@ -59,7 +63,8 @@ class Engine
 
   public:
     // Initialization
-    void Init() const;
+    void Init(); // Initializes the engine and window
+    void InitInput(); // Initializes input handling
 
     // Main loop
     void Run();
@@ -78,15 +83,10 @@ class Engine
     void InitImGuiFont() const;
     // Debug (using ImGui)
     void DrawDebugInfo(const Camera &camera, const int &cameraMode);
-    void InitInput();
 
-    // Collision system integration
-    void UpdateCollisions();
-    void DrawCollisionDebug();
-    std::vector<CollisionComponent *> GetModelColliders();
-
-    // Test map generation
-    void DrawGeometricShapes();
+    // Menu
+    void DrawMenu();
+    void ToggleMenu() { m_showMenu = !m_showMenu; }
 };
 
 #endif // ENGINE_H
