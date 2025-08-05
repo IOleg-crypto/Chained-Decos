@@ -4,4 +4,4 @@ add_library(model STATIC
     ModelInstance.cpp
     ModelInstance.h
 )
-target_link_libraries(model PUBLIC raylib nlohmann_json) 
+target_link_libraries(model PUBLIC raylib nlohmann_json collision)

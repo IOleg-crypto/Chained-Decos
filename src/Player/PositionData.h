@@ -7,9 +7,11 @@
 
 #include <raymath.h>
 
-struct PositionData {
+struct PositionData
+{
     Vector3 m_playerCurrentPosition = Vector3Zero();
     Vector3 m_playerLastPosition = Vector3Zero();
     Vector3 m_playerVelocity = Vector3Zero();
+    float m_cameraPosition = 0;
 };
-#endif //POSITIONDATA_H
+#endif // POSITIONDATA_H
