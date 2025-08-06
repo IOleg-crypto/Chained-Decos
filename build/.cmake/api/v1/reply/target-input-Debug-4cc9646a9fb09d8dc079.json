@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/World/world.lib"
+			"path" : "src/Input/input.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -12,12 +12,13 @@
 		"commands" : 
 		[
 			"add_library",
+			"target_link_libraries",
 			"add_compile_definitions",
 			"include_directories"
 		],
 		"files" : 
 		[
-			"src/World/CMakeLists.txt",
+			"src/Input/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -32,19 +33,25 @@
 				"parent" : 0
 			},
 			{
-				"file" : 1
+				"command" : 1,
+				"file" : 0,
+				"line" : 5,
+				"parent" : 0
 			},
 			{
-				"command" : 1,
-				"file" : 1,
-				"line" : 75,
-				"parent" : 2
+				"file" : 1
 			},
 			{
 				"command" : 2,
 				"file" : 1,
 				"line" : 73,
-				"parent" : 2
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 71,
+				"parent" : 3
 			}
 		]
 	},
@@ -60,15 +67,31 @@
 			"defines" : 
 			[
 				{
-					"backtrace" : 3,
+					"backtrace" : 2,
+					"define" : "GRAPHICS_API_OPENGL_33"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "PLATFORM_DESKTOP"
+				},
+				{
+					"backtrace" : 4,
 					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 4,
+					"backtrace" : 5,
 					"path" : "D:/gitnext/Chained Decos/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src/external/glfw/include"
 				}
 			],
 			"language" : "CXX",
@@ -82,29 +105,40 @@
 			},
 			"sourceIndexes" : 
 			[
-				1
+				0
 			]
 		}
 	],
-	"id" : "world::@92df9c4804674326063e",
-	"name" : "world",
-	"nameOnDisk" : "world.lib",
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "raylib::@4dc3a4644cf4ded08c01"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@9de86fbe87260ae8e66c"
+		}
+	],
+	"id" : "input::@d8fb087ca0f7f8518676",
+	"name" : "input",
+	"nameOnDisk" : "input.lib",
 	"paths" : 
 	{
-		"build" : "src/World",
-		"source" : "src/World"
+		"build" : "src/Input",
+		"source" : "src/Input"
 	},
 	"sourceGroups" : 
 	[
 		{
-			"name" : "Header Files",
+			"name" : "Source Files",
 			"sourceIndexes" : 
 			[
 				0
 			]
 		},
 		{
-			"name" : "Source Files",
+			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
 				1
@@ -115,13 +149,13 @@
 	[
 		{
 			"backtrace" : 1,
-			"path" : "src/World/PhysicsData.h",
+			"compileGroupIndex" : 0,
+			"path" : "src/Input/InputManager.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/World/PhysicsData.cpp",
+			"path" : "src/Input/InputManager.h",
 			"sourceGroupIndex" : 1
 		}
 	],

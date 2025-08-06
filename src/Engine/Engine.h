@@ -13,7 +13,7 @@
 #include <raylib.h>
 
 // Project headers
-#include <Collision/CollisionSystem.h>
+#include <Collision/CollisionManager.h>
 #include <Input/InputManager.h>
 #include <Menu/Menu.h>
 #include <Model/Model.h>
@@ -50,6 +50,10 @@ class Engine
 
     // Model for player
     Model m_playerModelMesh;
+    CollisionManager m_collisionManager;
+    Collision m_collision;
+    Collision m_CubeCollision;
+    // Player model usage flag
     bool m_usePlayerModel;
 
   public:
@@ -63,7 +67,7 @@ class Engine
 
   public:
     // Initialization
-    void Init(); // Initializes the engine and window
+    void Init();      // Initializes the engine and window
     void InitInput(); // Initializes input handling
 
     // Main loop
@@ -87,6 +91,7 @@ class Engine
     // Menu
     void DrawMenu();
     void ToggleMenu() { m_showMenu = !m_showMenu; }
+    void InitCollisions();
 };
 
 #endif // ENGINE_H

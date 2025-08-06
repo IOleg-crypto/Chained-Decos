@@ -11,8 +11,8 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_originalCameraTarget = m_cameraController->GetCamera().target;
     m_baseTarget = m_originalCameraTarget;
 
-    m_playerPosition = {0.0f, 1.0f, 0.0f}; 
-    m_playerSize = {1.0f, 2.0f, 1.0f};     
+    m_playerPosition = {0.0f, 1.0f, 0.0f};
+    m_playerSize = {1.0f, 2.0f, 1.0f};
     m_playerColor = BLUE;
     m_playerModel = nullptr;
     m_useModel = false;
@@ -25,30 +25,30 @@ void Player::Update()
 {
     ApplyInput();
     Jump();
-    UpdateCameraRotation();
+    m_cameraController->UpdateCameraRotation();
 
-    float radius = 5.0f; 
-    Vector3 offset = {
-        radius * sinf(m_cameraYaw) * cosf(m_cameraPitch),
-        radius * sinf(m_cameraPitch) + 2.0f,
-        radius * cosf(m_cameraYaw) * cosf(m_cameraPitch)
-    };
-    Camera& camera = m_cameraController->GetCamera();
+    float radius = 5.0f;
+    Vector3 offset = {radius * sinf(m_cameraController->GetCameraYaw()) *
+                          cosf(m_cameraController->GetCameraPitch()),
+                      radius * sinf(m_cameraController->GetCameraPitch()) + 2.0f,
+                      radius * cosf(m_cameraController->GetCameraYaw()) *
+                          cosf(m_cameraController->GetCameraPitch())};
+    Camera &camera = m_cameraController->GetCamera();
     camera.position = Vector3Add(m_playerPosition, offset);
     camera.target = m_playerPosition;
 
     m_cameraController->Update();
     UpdatePositionHistory();
+    UpdatePlayerBox();
 }
 
 float Player::GetSpeed() { return m_walkSpeed; }
 
 void Player::SetSpeed(const float speed) { this->m_walkSpeed = speed; }
 
-void Player::Move(const Vector3& moveVector)
+void Player::Move(const Vector3 &moveVector)
 {
     m_playerPosition = Vector3Add(m_playerPosition, moveVector);
-    UpdatePlayerBox();
 }
 
 void Player::Jump()
@@ -66,25 +66,17 @@ void Player::Jump()
     {
         m_physData.m_velocityY -= m_physData.m_gravity * m_physData.m_dt;
         m_playerPosition.y += m_physData.m_velocityY * m_physData.m_dt;
-        
-        if (m_playerPosition.y <= 1.0f) 
+
+        if (m_playerPosition.y <= 1.0f)
         {
             m_playerPosition.y = 1.0f;
             m_physData.m_velocityY = 0.0f;
             m_physData.m_isGrounded = true;
             m_isJumping = false;
         }
-        
+
         UpdatePlayerBox();
     }
-}
-
-void Player::ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY)
-{
-    Vector3 desiredTarget = {baseTarget.x, baseTarget.y + jumpOffsetY, baseTarget.z};
-    float smoothingSpeed = 8.0f;
-    camera.target = Vector3Lerp(camera.target, desiredTarget, smoothingSpeed * GetFrameTime());
-    camera.position = Vector3Lerp(camera.position, {camera.position.x, desiredTarget.y, camera.position.z}, smoothingSpeed * GetFrameTime());
 }
 
 void Player::UpdatePositionHistory()
@@ -137,16 +129,15 @@ Models Player::GetModelManager() { return m_modelPlayer; }
 
 PositionData Player::GetPlayerData() const { return m_posData; }
 
-
 void Player::UpdatePlayerBox()
 {
-
     m_playerBoundingBox.min = Vector3Subtract(m_playerPosition, Vector3Scale(m_playerSize, 0.5f));
     m_playerBoundingBox.max = Vector3Add(m_playerPosition, Vector3Scale(m_playerSize, 0.5f));
 }
 
 void Player::DrawPlayer()
 {
+    m_collision.Update(m_playerPosition, m_playerSize);
     if (m_useModel && m_playerModel)
     {
         DrawModel(*m_playerModel, m_playerPosition, 1.0f, WHITE);
@@ -158,23 +149,14 @@ void Player::DrawPlayer()
     }
 }
 
-void Player::SetPlayerModel(Model* model)
+void Player::SetPlayerModel(Model *model) { m_playerModel = model; }
+
+void Player::ToggleModelRendering(bool useModel) { m_useModel = useModel; }
+
+void Player::SetPlayerPosition(const Vector3 &pos)
 {
-    m_playerModel = model;
+    m_playerPosition = pos;
+    UpdatePlayerBox();
+    m_collision.Update(m_playerPosition, m_playerSize);
 }
-
-void Player::ToggleModelRendering(bool useModel)
-{
-    m_useModel = useModel;
-}
-
-void Player::UpdateCameraRotation()
-{
-    Vector2 mouseDelta = GetMouseDelta();
-    float sensitivity = 0.005f; 
-    m_cameraYaw   -= mouseDelta.x * sensitivity;
-    m_cameraPitch -= mouseDelta.y * sensitivity;
-    m_cameraPitch = Clamp(m_cameraPitch, -PI/2.0f + 0.1f, PI/2.0f - 0.1f);
-
-}
-
+const Collision &Player::GetCollision() const { return m_collision; }

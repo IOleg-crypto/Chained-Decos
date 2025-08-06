@@ -1,3 +1,4 @@
+//
 // Created by I#Oleg
 //
 
@@ -9,77 +10,90 @@
 #include <raymath.h>
 
 #include <CameraController/CameraController.h>
+#include <Collision/CollisionManager.h>
 #include <Collision/CollisionSystem.h>
 #include <Model/Model.h>
 #include <Player/PositionData.h>
 #include <World/PhysicsData.h>
 
-// # ----------------------------------------------------------------------------
-// # Player class handles the camera used to represent the player's point of view
-// # ----------------------------------------------------------------------------
+//
+// Player class handles the camera used to represent the player's point of view
+//
 class Player
 {
+    // -------------------- Camera & View --------------------
   private:
-    float m_walkSpeed = 3.0f; // Speed for character
+    std::shared_ptr<CameraController> m_cameraController;
+    float m_cameraYaw = 0.0f;
+    float m_cameraPitch = 0.0f;
+    float m_cameraSmoothingFactor = 4.0f;
+    Vector3 m_baseTarget = {0.0f, 2.0f, 0.0f};
+    Vector3 m_originalCameraTarget = {0.0f, 2.0f, 0.0f};
+
+    // -------------------- Movement & Physics --------------------
+  private:
+    float m_walkSpeed = 3.0f;
     float m_runSpeed = 15.0f;
-    float m_jumpStrength = 8.0f; // Adjust as needed
+    float m_jumpStrength = 8.0f;
     float m_jumpOffsetY = 0.0f;
-    float m_baseCameraY = 4.5f;
-    Vector3 m_baseTarget = {0, 2.0f, 0};
-    Vector3 m_originalCameraTarget = {0, 2.0f, 0}; // Store original target for restoration
-    bool m_isJumping = false;                      // Track jump state
-    float m_cameraSmoothingFactor = 4.0f;          // Camera smoothing speed
-    bool m_isPlayerMoving;                         // Track player moving
-    PositionData m_posData;
+    bool m_isJumping = false;
+    bool m_isPlayerMoving = false;
     PhysicsData m_physData;
+    PositionData m_posData;
+
+    // -------------------- Player State --------------------
+  private:
     Vector3 m_playerPosition;
     Vector3 m_playerSize;
+    Color m_playerColor = BLUE;
     BoundingBox m_playerBoundingBox;
-    Color m_playerColor;
-    Model* m_playerModel;
-    bool m_useModel;
-    float m_cameraYaw = 0.0f;
-float m_cameraPitch = 0.0f;
 
+    // -------------------- Model --------------------
   private:
+    Model *m_playerModel = nullptr;
+    bool m_useModel = false;
     Models m_modelPlayer;
-    std::shared_ptr<CameraController> m_cameraController;
 
+    // -------------------- Collision --------------------
+  private:
+    Collision m_collision;
+    CollisionManager m_collisionManager;
+
+    // -------------------- Public Interface --------------------
   public:
-    Player(); // Constructor to initialize the camera and all stuff
+    Player(); // Constructor
     ~Player();
     Player(const Player &other) = delete;
     Player(Player &&other) = delete;
 
-  public:
-    void Update(); // Updates the camera each frame (e.g., handles input and movement)
-    [[nodiscard]] float GetSpeed(); // Get character speed
-    void SetSpeed(float speed);
-    // Move player (camera) in 3D
-    void Move(const Vector3& moveVector);
-    // Allow player jumps
-    void Jump();
-    // Take history of player position(needed for player jump)
+    // Update Methods
+    void Update(); // Main update logic
     void UpdatePositionHistory();
-    // Allows W,A,S,D - movement
-    void ApplyInput();
-    // Get player rotation
-    Matrix GetPlayerRotation();
-    // Get camera
-    [[nodiscard]] std::shared_ptr<CameraController> GetCameraController() const;
-    // Get model manager
-    Models GetModelManager();
-    // Get player position data
-    PositionData GetPlayerData() const;
-    // Camera connects with jump
-    void ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY);
     void UpdatePlayerBox();
-    void DrawPlayer();
-    void SetPlayerModel(Model* model);
+
+    // Movement
+    void ApplyInput();
+    void Move(const Vector3 &moveVector);
+    void Jump();
+    void SetPlayerPosition(const Vector3 &pos);
+
+    // Camera
+    std::shared_ptr<CameraController> GetCameraController() const;
+
+    // Model
+    void SetPlayerModel(Model *model);
     void ToggleModelRendering(bool useModel);
+    Models GetModelManager();
+
+    // Rendering
+    void DrawPlayer();
+
+    // Getters
+    [[nodiscard]] float GetSpeed();
+    void SetSpeed(float speed);
     Vector3 GetPlayerPosition() const { return m_playerPosition; }
-    BoundingBox GetPlayerBoundingBox() const { return m_playerBoundingBox; }
-    void UpdateCameraRotation(); // Update camera rotation based on mouse input
+    PositionData GetPlayerData() const;
+    const Collision &GetCollision() const;
 };
 
 #endif // PLAYER_H
