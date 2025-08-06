@@ -19,3 +19,29 @@ int &CameraController::GetCameraMode() { return m_cameraMode; }
 void CameraController::SetCameraMode(const int cameraMode) { this->m_cameraMode = cameraMode; }
 
 void CameraController::Update() { UpdateCamera(&m_camera, m_cameraMode); }
+
+void CameraController::UpdateCameraRotation()
+{
+    Vector2 mouseDelta = GetMouseDelta();
+    float sensitivity = 0.005f;
+    m_cameraYaw -= mouseDelta.x * sensitivity;
+    m_cameraPitch -= mouseDelta.y * sensitivity;
+    m_cameraPitch = Clamp(m_cameraPitch, -PI / 2.0f + 0.1f, PI / 2.0f - 0.1f);
+}
+
+void CameraController::ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget,
+                                         float jumpOffsetY)
+{
+    Vector3 desiredTarget = {baseTarget.x, baseTarget.y + jumpOffsetY, baseTarget.z};
+    float smoothingSpeed = 8.0f;
+    camera.target = Vector3Lerp(camera.target, desiredTarget, smoothingSpeed * GetFrameTime());
+    camera.position =
+        Vector3Lerp(camera.position, {camera.position.x, desiredTarget.y, camera.position.z},
+                    smoothingSpeed * GetFrameTime());
+}
+
+float CameraController::GetCameraYaw() const { return m_cameraYaw; }
+
+float CameraController::GetCameraPitch() const { return m_cameraPitch; }
+
+float CameraController::GetCameraSmoothingFactor() const { return m_cameraSmoothingFactor; }

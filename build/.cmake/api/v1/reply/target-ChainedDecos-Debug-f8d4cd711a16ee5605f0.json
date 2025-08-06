@@ -31,13 +31,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 89,
+				"line" : 87,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 97,
+				"line" : 95,
 				"parent" : 0
 			},
 			{
@@ -52,13 +52,13 @@
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 75,
+				"line" : 73,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 73,
+				"line" : 71,
 				"parent" : 0
 			}
 		]
@@ -149,11 +149,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "model::@c31de6ce72a56b005f57"
+			"id" : "engine::@57eeced369f002faad1a"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "engine::@57eeced369f002faad1a"
+			"id" : "model::@c31de6ce72a56b005f57"
 		},
 		{
 			"backtrace" : 2,
@@ -173,7 +173,7 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "collision::@f2fae3303dbf2eca7e7f"
+			"id" : "world::@92df9c4804674326063e"
 		},
 		{
 			"backtrace" : 2,
@@ -181,7 +181,7 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "world::@92df9c4804674326063e"
+			"id" : "collision::@f2fae3303dbf2eca7e7f"
 		}
 	],
 	"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
