@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Map/mapmod.lib"
+			"path" : "src/Input/input.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/Map/CMakeLists.txt",
+			"src/Input/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -44,13 +44,13 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 73,
+				"line" : 75,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 71,
+				"line" : 73,
 				"parent" : 3
 			}
 		]
@@ -92,10 +92,6 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src/external/glfw/include"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/build/_deps/nlohmann_json-src/include"
 				}
 			],
 			"language" : "CXX",
@@ -103,7 +99,7 @@
 			{
 				"backtraces" : 
 				[
-					2
+					1
 				],
 				"standard" : "20"
 			},
@@ -124,13 +120,13 @@
 			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
-	"id" : "mapmod::@09eac2343e8a1d778799",
-	"name" : "mapmod",
-	"nameOnDisk" : "mapmod.lib",
+	"id" : "input::@d8fb087ca0f7f8518676",
+	"name" : "input",
+	"nameOnDisk" : "input.lib",
 	"paths" : 
 	{
-		"build" : "src/Map",
-		"source" : "src/Map"
+		"build" : "src/Input",
+		"source" : "src/Input"
 	},
 	"sourceGroups" : 
 	[
@@ -154,12 +150,12 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Map/MapLoader.cpp",
+			"path" : "src/Input/InputManager.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Map/MapLoader.h",
+			"path" : "src/Input/InputManager.h",
 			"sourceGroupIndex" : 1
 		}
 	],

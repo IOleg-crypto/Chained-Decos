@@ -218,6 +218,7 @@ CMakeFiles/ChainedDecos.dir/src/main.cpp.obj: D:/gitnext/Chained\ Decos/src/main
   D:/gitnext/Chained\ Decos/include/rlImGui/extras/IconsFontAwesome6.h \
   D:/gitnext/Chained\ Decos/include/rlImGui/rlImGui.h \
   D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Engine/Engine.h \
   D:/gitnext/Chained\ Decos/src/Input/InputManager.h \
@@ -487,6 +488,8 @@ C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/time.h:
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wtime.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/float.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/filesystem:
 

@@ -220,6 +220,7 @@ src/Engine/CMakeFiles/engine.dir/Engine.cpp.obj
  D:/gitnext/Chained Decos/include/rlImGui/extras/IconsFontAwesome6.h
  D:/gitnext/Chained Decos/include/rlImGui/rlImGui.h
  D:/gitnext/Chained Decos/src/CameraController/CameraController.h
+ D:/gitnext/Chained Decos/src/Collision/CollisionManager.h
  D:/gitnext/Chained Decos/src/Collision/CollisionSystem.h
  D:/gitnext/Chained Decos/src/Engine/Engine.h
  D:/gitnext/Chained Decos/src/Input/InputManager.h
