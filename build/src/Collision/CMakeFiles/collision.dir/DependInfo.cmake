@@ -8,6 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "D:/gitnext/Chained Decos/src/Collision/CollisionManager.cpp" "src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj" "gcc" "src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj.d"
   "D:/gitnext/Chained Decos/src/Collision/CollisionSystem.cpp" "src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj" "gcc" "src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj.d"
   )
 

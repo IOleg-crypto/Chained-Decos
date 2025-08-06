@@ -130,11 +130,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "glfw::@9de86fbe87260ae8e66c"
+			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "raylib::@4dc3a4644cf4ded08c01"
+			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
 	"id" : "imguilib::@6890427a1f51a3e7e1df",

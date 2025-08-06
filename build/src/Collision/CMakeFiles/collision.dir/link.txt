@@ -1,2 +1,2 @@
-E:/LLVM/bin/llvm-ar.exe qc collision.lib CMakeFiles/collision.dir/CollisionSystem.cpp.obj
+E:/LLVM/bin/llvm-ar.exe qc collision.lib CMakeFiles/collision.dir/CollisionSystem.cpp.obj CMakeFiles/collision.dir/CollisionManager.cpp.obj
 E:/LLVM/bin/llvm-ranlib.exe collision.lib

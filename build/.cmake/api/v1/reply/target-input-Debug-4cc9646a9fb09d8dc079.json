@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Collision/collision.lib"
+			"path" : "src/Input/input.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/Collision/CMakeLists.txt",
+			"src/Input/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -113,20 +113,20 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "glfw::@9de86fbe87260ae8e66c"
+			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "raylib::@4dc3a4644cf4ded08c01"
+			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
-	"id" : "collision::@f2fae3303dbf2eca7e7f",
-	"name" : "collision",
-	"nameOnDisk" : "collision.lib",
+	"id" : "input::@d8fb087ca0f7f8518676",
+	"name" : "input",
+	"nameOnDisk" : "input.lib",
 	"paths" : 
 	{
-		"build" : "src/Collision",
-		"source" : "src/Collision"
+		"build" : "src/Input",
+		"source" : "src/Input"
 	},
 	"sourceGroups" : 
 	[
@@ -150,12 +150,12 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Collision/CollisionSystem.cpp",
+			"path" : "src/Input/InputManager.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Collision/CollisionSystem.h",
+			"path" : "src/Input/InputManager.h",
 			"sourceGroupIndex" : 1
 		}
 	],

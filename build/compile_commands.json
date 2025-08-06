@@ -306,6 +306,12 @@
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj"
 },
 {
+  "directory": "D:/gitnext/Chained Decos/build/src/Collision",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionManager.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/Collision/CollisionManager.cpp",
+  "output": "src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj"
+},
+{
   "directory": "D:/gitnext/Chained Decos/build/tests",
   "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/unit_tests.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/unit_tests.dir/gtest.cpp.obj -c \"D:/gitnext/Chained Decos/tests/gtest.cpp\"",
   "file": "D:/gitnext/Chained Decos/tests/gtest.cpp",
