@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Menu/menu.lib"
+			"path" : "src/Collision/collision.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/Menu/CMakeLists.txt",
+			"src/Collision/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -92,14 +92,6 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/build/_deps/raylib-src/src/external/glfw/include"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/include/imgui"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/include/rlImGui"
 				}
 			],
 			"language" : "CXX",
@@ -121,24 +113,20 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "imguilib::@6890427a1f51a3e7e1df"
+			"id" : "glfw::@9de86fbe87260ae8e66c"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "raylib::@4dc3a4644cf4ded08c01"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
-	"id" : "menu::@c946c8ead22e3f9c7e08",
-	"name" : "menu",
-	"nameOnDisk" : "menu.lib",
+	"id" : "collision::@f2fae3303dbf2eca7e7f",
+	"name" : "collision",
+	"nameOnDisk" : "collision.lib",
 	"paths" : 
 	{
-		"build" : "src/Menu",
-		"source" : "src/Menu"
+		"build" : "src/Collision",
+		"source" : "src/Collision"
 	},
 	"sourceGroups" : 
 	[
@@ -162,12 +150,12 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Menu/Menu.cpp",
+			"path" : "src/Collision/CollisionSystem.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Menu/Menu.h",
+			"path" : "src/Collision/CollisionSystem.h",
 			"sourceGroupIndex" : 1
 		}
 	],

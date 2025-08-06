@@ -434,8 +434,8 @@ tests/clean: tests/CMakeFiles/unit_tests.dir/clean
 # Target rules for target CMakeFiles/imguilib.dir
 
 # All Build rule for target.
-CMakeFiles/imguilib.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 CMakeFiles/imguilib.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+CMakeFiles/imguilib.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imguilib.dir/build.make CMakeFiles/imguilib.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imguilib.dir/build.make CMakeFiles/imguilib.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=48,49,50,51,52,53,54,55 "Built target imguilib"
@@ -462,18 +462,18 @@ CMakeFiles/imguilib.dir/clean:
 
 # All Build rule for target.
 CMakeFiles/ChainedDecos.dir/all: CMakeFiles/imguilib.dir/all
-CMakeFiles/ChainedDecos.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 CMakeFiles/ChainedDecos.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Engine/CMakeFiles/engine.dir/all
+CMakeFiles/ChainedDecos.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Model/CMakeFiles/model.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Engine/CMakeFiles/engine.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Player/CMakeFiles/player.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Input/CMakeFiles/input.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Menu/CMakeFiles/menu.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Collision/CMakeFiles/collision.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Color/CMakeFiles/color.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/World/CMakeFiles/world.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Collision/CMakeFiles/collision.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=1,2 "Built target ChainedDecos"
@@ -709,8 +709,8 @@ _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/clean:
 
 # All Build rule for target.
 src/Engine/CMakeFiles/engine.dir/all: CMakeFiles/imguilib.dir/all
-src/Engine/CMakeFiles/engine.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Engine/CMakeFiles/engine.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/Engine/CMakeFiles/engine.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Engine/CMakeFiles/engine.dir/all: src/Collision/CMakeFiles/collision.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Engine/CMakeFiles/engine.dir/build.make src/Engine/CMakeFiles/engine.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Engine/CMakeFiles/engine.dir/build.make src/Engine/CMakeFiles/engine.dir/build
@@ -737,8 +737,8 @@ src/Engine/CMakeFiles/engine.dir/clean:
 # Target rules for target src/Player/CMakeFiles/player.dir
 
 # All Build rule for target.
-src/Player/CMakeFiles/player.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Player/CMakeFiles/player.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/Player/CMakeFiles/player.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Player/CMakeFiles/player.dir/all: src/Collision/CMakeFiles/collision.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/build
@@ -765,8 +765,8 @@ src/Player/CMakeFiles/player.dir/clean:
 # Target rules for target src/Model/CMakeFiles/model.dir
 
 # All Build rule for target.
-src/Model/CMakeFiles/model.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Model/CMakeFiles/model.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/Model/CMakeFiles/model.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Model/CMakeFiles/model.dir/all: src/Collision/CMakeFiles/collision.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/build
@@ -794,8 +794,8 @@ src/Model/CMakeFiles/model.dir/clean:
 
 # All Build rule for target.
 src/Menu/CMakeFiles/menu.dir/all: CMakeFiles/imguilib.dir/all
-src/Menu/CMakeFiles/menu.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Menu/CMakeFiles/menu.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/Menu/CMakeFiles/menu.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Menu/CMakeFiles/menu.dir/build.make src/Menu/CMakeFiles/menu.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Menu/CMakeFiles/menu.dir/build.make src/Menu/CMakeFiles/menu.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=60,61 "Built target menu"
@@ -821,8 +821,8 @@ src/Menu/CMakeFiles/menu.dir/clean:
 # Target rules for target src/Input/CMakeFiles/input.dir
 
 # All Build rule for target.
-src/Input/CMakeFiles/input.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Input/CMakeFiles/input.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/Input/CMakeFiles/input.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Input/CMakeFiles/input.dir/build.make src/Input/CMakeFiles/input.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Input/CMakeFiles/input.dir/build.make src/Input/CMakeFiles/input.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=56,57 "Built target input"
@@ -848,8 +848,8 @@ src/Input/CMakeFiles/input.dir/clean:
 # Target rules for target src/Map/CMakeFiles/mapmod.dir
 
 # All Build rule for target.
-src/Map/CMakeFiles/mapmod.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Map/CMakeFiles/mapmod.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/Map/CMakeFiles/mapmod.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Map/CMakeFiles/mapmod.dir/build.make src/Map/CMakeFiles/mapmod.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Map/CMakeFiles/mapmod.dir/build.make src/Map/CMakeFiles/mapmod.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=58,59 "Built target mapmod"
@@ -875,8 +875,8 @@ src/Map/CMakeFiles/mapmod.dir/clean:
 # Target rules for target src/CameraController/CMakeFiles/cameracontroller.dir
 
 # All Build rule for target.
-src/CameraController/CMakeFiles/cameracontroller.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/CameraController/CMakeFiles/cameracontroller.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/CameraController/CMakeFiles/cameracontroller.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 	$(MAKE) $(MAKESILENT) -f src/CameraController/CMakeFiles/cameracontroller.dir/build.make src/CameraController/CMakeFiles/cameracontroller.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/CameraController/CMakeFiles/cameracontroller.dir/build.make src/CameraController/CMakeFiles/cameracontroller.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=11,12 "Built target cameracontroller"
@@ -902,8 +902,8 @@ src/CameraController/CMakeFiles/cameracontroller.dir/clean:
 # Target rules for target src/Color/CMakeFiles/color.dir
 
 # All Build rule for target.
-src/Color/CMakeFiles/color.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Color/CMakeFiles/color.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/Color/CMakeFiles/color.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Color/CMakeFiles/color.dir/build.make src/Color/CMakeFiles/color.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Color/CMakeFiles/color.dir/build.make src/Color/CMakeFiles/color.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=15,16 "Built target color"
@@ -955,8 +955,8 @@ src/World/CMakeFiles/world.dir/clean:
 # Target rules for target src/Collision/CMakeFiles/collision.dir
 
 # All Build rule for target.
-src/Collision/CMakeFiles/collision.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/Collision/CMakeFiles/collision.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
+src/Collision/CMakeFiles/collision.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=13,14 "Built target collision"
@@ -983,10 +983,10 @@ src/Collision/CMakeFiles/collision.dir/clean:
 
 # All Build rule for target.
 tests/CMakeFiles/unit_tests.dir/all: CMakeFiles/imguilib.dir/all
-tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
-tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/all
+tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
+tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/all
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=75,76,77,78,79,80,81,82,83,84 "Built target unit_tests"
@@ -1013,18 +1013,18 @@ tests/CMakeFiles/unit_tests.dir/clean:
 
 # All Build rule for target.
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: CMakeFiles/imguilib.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Engine/CMakeFiles/engine.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Model/CMakeFiles/model.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Engine/CMakeFiles/engine.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Player/CMakeFiles/player.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Input/CMakeFiles/input.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Menu/CMakeFiles/menu.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Collision/CMakeFiles/collision.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Color/CMakeFiles/color.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/World/CMakeFiles/world.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Collision/CMakeFiles/collision.dir/all
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=3,4,5,6,7,8,9,10 "Built target ChainedDecosMapEditor"
