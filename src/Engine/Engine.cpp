@@ -10,10 +10,9 @@
 #include <rlImGui.h>
 
 Engine::Engine(const int screenX, const int screenY)
-    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos")
-{
-    if (m_screenX < 0 || m_screenY < 0)
-    {
+    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_playerModelMesh(),
+      m_usePlayerModel(true) {
+    if (m_screenX < 0 || m_screenY < 0) {
         TraceLog(LOG_WARNING,
                  "[Screen] Invalid screen size: %d x %d. Setting default size 800x600.", m_screenX,
                  m_screenY);
@@ -28,14 +27,15 @@ Engine::~Engine()
     CloseWindow();
 }
 
-void Engine::Init() 
+void Engine::Init()
 {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     SetTargetFPS(144);
-    HideCursor(); // Hide mouse cursor
     rlImGuiSetup(true); // init ImGui
     InitImGuiFont();
+    InitCollisions();
+
 }
 
 void Engine::Run()
@@ -65,13 +65,22 @@ void Engine::Update()
     {
         m_player.Update();
     }
+
+
+    m_player.UpdatePlayerBox(); // Оновлює колізійну коробку
+
+    Vector3 response = {0,0,3};
+    if (m_collisionManager.CheckCollision(m_player.GetCollision(), response))
+    {
+        m_player.Move(response);
+    }
 }
 
 void Engine::Render()
 {
     BeginDrawing();
     ClearBackground(BLUE);
-    
+
     if (m_showMenu)
     {
         m_menu.Update();
@@ -108,7 +117,6 @@ void Engine::Render()
     }
 }
 
-
 void Engine::LoadPlayerModel()
 {
     m_playerModelMesh = m_models.GetModelByName("player");
@@ -117,9 +125,12 @@ void Engine::LoadPlayerModel()
 
 void Engine::DrawScene3D()
 {
-    DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){800.0f, 800.0f}, LIGHTGRAY); // Draw ground
+    DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){800.0f, 800.0f}, LIGHTGRAY);
+
+    Vector3 pos = {0, 0, 60.f};
+    DrawCube(pos, 40.f, 40.f, 40.f, RED);
+
     LoadPlayerModel();
-    m_player.GetPlayerRotation();
     m_models.DrawAllModels();
 }
 
@@ -157,6 +168,12 @@ void Engine::DrawDebugInfo(const Camera &camera, const int &cameraMode)
     }
     ImGui::End();
     rlImGuiEnd();
+}
+
+void Engine::InitCollisions() {
+    m_collisionManager.ClearColliders();
+    Collision cube({0, 0, 60.f}, {40.f, 40.f, 40.f});
+    m_collisionManager.AddCollider(cube);
 }
 
 void Engine::InitInput()
@@ -218,5 +235,3 @@ void Engine::InitInput()
 }
 
 void Engine::HandleKeyboardShortcuts() const { m_manager.ProcessInput(); }
-
-
