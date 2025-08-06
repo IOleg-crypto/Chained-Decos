@@ -35,25 +35,25 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 68,
+				"line" : 70,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 73,
+				"line" : 75,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 63,
+				"line" : 65,
 				"parent" : 0
 			},
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 71,
+				"line" : 73,
 				"parent" : 0
 			}
 		]
@@ -173,6 +173,13 @@
 				8,
 				13
 			]
+		},
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				15
+			]
 		}
 	],
 	"sources" : 
@@ -258,6 +265,11 @@
 			"backtrace" : 1,
 			"path" : "include/raygui/src/raygui.h",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/imgui/examples/libs/glfw/include/GLFW",
+			"sourceGroupIndex" : 2
 		}
 	],
 	"type" : "STATIC_LIBRARY"
