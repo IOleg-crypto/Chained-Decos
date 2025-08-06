@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/collision.dir/CollisionManager.cpp.obj"
+  "CMakeFiles/collision.dir/CollisionManager.cpp.obj.d"
   "CMakeFiles/collision.dir/CollisionSystem.cpp.obj"
   "CMakeFiles/collision.dir/CollisionSystem.cpp.obj.d"
   "collision.lib"
