@@ -1,0 +1,50 @@
+# Run command: C:/Program\ Files/CMake/bin/cmake.exe --build . --config "Debug" --target "preinstall"
+# Directory: D:/gitnext/Chained Decos/build
+# Output:
+[ 24%] Built target glfw
+[ 33%] Built target raylib
+[ 42%] Built target imguilib
+[ 44%] Built target world
+[ 48%] Built target collision
+[ 50%] Built target player
+[ 54%] Built target model
+[ 56%] Built target engine
+[ 58%] Built target input
+[ 60%] Built target menu
+[ 63%] Built target cameracontroller
+[ 65%] Built target mapmod
+[ 67%] Built target color
+[ 70%] Built target ChainedDecos
+[ 72%] Built target gtest
+[ 74%] Built target gmock
+[ 77%] Built target gmock_main
+[ 79%] Built target gtest_main
+[ 80%] Building CXX object tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj
+Building CXX object tests/CMakeFiles/unit_tests.dir/__/src/Player/Player.cpp.obj
+Building CXX object tests/CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj
+Linking CXX executable unit_tests.exe
+lld-link: error: undefined symbol: public: void __cdecl Collision::Update(struct Vector3 const &, struct Vector3 const &)
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Player/Player.cpp.obj:(public: void __cdecl Player::DrawPlayer(void))
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Player/Player.cpp.obj:(public: void __cdecl Player::SetPlayerPosition(struct Vector3 const &))
+
+lld-link: error: undefined symbol: public: bool __cdecl CollisionManager::CheckCollision(class Collision const &, struct Vector3 &) const
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Player/Player.cpp.obj:(public: void __cdecl Player::ApplyGravityForPlayer(class CollisionManager const &))
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::Update(void))
+
+lld-link: error: undefined symbol: public: void __cdecl CollisionManager::ClearColliders(void)
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
+
+lld-link: error: undefined symbol: public: __cdecl Collision::Collision(struct Vector3 const &, struct Vector3 const &)
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
+
+lld-link: error: undefined symbol: public: void __cdecl CollisionManager::AddCollider(class Collision &)
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
+>>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
+clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+make[2]: *** [tests/CMakeFiles/unit_tests.dir/build.make:240: tests/unit_tests.exe] Error 1
+make[1]: *** [CMakeFiles/Makefile2:991: tests/CMakeFiles/unit_tests.dir/all] Error 2
+make: *** [Makefile:156: all] Error 2
+
