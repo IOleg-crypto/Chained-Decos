@@ -467,12 +467,12 @@ CMakeFiles/ChainedDecos.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMa
 CMakeFiles/ChainedDecos.dir/all: src/Engine/CMakeFiles/engine.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Player/CMakeFiles/player.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Model/CMakeFiles/model.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Menu/CMakeFiles/menu.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Input/CMakeFiles/input.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Map/CMakeFiles/mapmod.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Menu/CMakeFiles/menu.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Color/CMakeFiles/color.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Collision/CMakeFiles/collision.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Color/CMakeFiles/color.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/World/CMakeFiles/world.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/build
@@ -629,8 +629,8 @@ _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/clean:
 # Target rules for target _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir
 
 # All Build rule for target.
-_deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/all: _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/all
+_deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=43,44 "Built target gmock_main"
@@ -985,8 +985,8 @@ src/Collision/CMakeFiles/collision.dir/clean:
 tests/CMakeFiles/unit_tests.dir/all: CMakeFiles/imguilib.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
-tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/all
+tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=76,77,78,79,80,81,82,83,84,85 "Built target unit_tests"
@@ -1018,12 +1018,12 @@ src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: _deps/raylib-build/rayli
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Engine/CMakeFiles/engine.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Player/CMakeFiles/player.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Model/CMakeFiles/model.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Menu/CMakeFiles/menu.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Input/CMakeFiles/input.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Map/CMakeFiles/mapmod.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Menu/CMakeFiles/menu.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Color/CMakeFiles/color.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Collision/CMakeFiles/collision.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Color/CMakeFiles/color.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/World/CMakeFiles/world.dir/all
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build
