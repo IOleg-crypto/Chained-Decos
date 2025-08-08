@@ -29,6 +29,10 @@ void CameraController::UpdateCameraRotation()
     m_cameraPitch = Clamp(m_cameraPitch, -PI / 2.0f + 0.1f, PI / 2.0f - 0.1f);
 }
 
+void CameraController::SetFOV(float FOV) {
+     this->m_radiusFOV = FOV;
+}
+
 void CameraController::ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget,
                                          float jumpOffsetY)
 {
@@ -45,3 +49,7 @@ float CameraController::GetCameraYaw() const { return m_cameraYaw; }
 float CameraController::GetCameraPitch() const { return m_cameraPitch; }
 
 float CameraController::GetCameraSmoothingFactor() const { return m_cameraSmoothingFactor; }
+
+float CameraController::GetFOV() const {
+    return m_radiusFOV;
+}

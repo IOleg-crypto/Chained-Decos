@@ -32,12 +32,10 @@ class Player
 
     // -------------------- Movement & Physics --------------------
   private:
-    float m_walkSpeed = 3.0f;
-    float m_runSpeed = 15.0f;
-    float m_jumpStrength = 8.0f;
-    float m_jumpOffsetY = 0.0f;
     bool m_isJumping = false;
     bool m_isPlayerMoving = false;
+  float m_walkSpeed = 3.0f;
+  float m_runSpeed = 15.0f;
     PhysicsComponent m_physics;
     PositionData m_posData;
     bool m_isJumpCollision = false;
@@ -99,6 +97,7 @@ class Player
     // Collision
     bool IsJumpCollision() const;
     void ApplyGravityForPlayer(const CollisionManager &collisionManager);
+    void ApplyJumpImpulse(float impulse);
     Matrix GetPlayerRotation() const;
 };
 
