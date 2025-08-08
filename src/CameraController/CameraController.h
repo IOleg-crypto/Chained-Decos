@@ -17,6 +17,7 @@ class CameraController
     float m_cameraYaw = 1.0f;
     float m_cameraPitch = 0.0f;
     float m_cameraSmoothingFactor = 4.0f; // Camera smoothing speed
+    float m_radiusFOV = 8.0f;
   public:
     CameraController(); // Init camera
     ~CameraController() = default;
@@ -29,6 +30,7 @@ class CameraController
     void SetCameraMode(int cameraMode);
     void Update();
     void UpdateCameraRotation(); // Update camera rotation based on mouse input
+    void SetFOV(float FOV);
     // Camera connects with jump
     [[deprecated("Used before , when player is not cube")]] void
     ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY);
@@ -37,6 +39,7 @@ class CameraController
     [[nodiscard]] float GetCameraYaw() const;
     [[nodiscard]] float GetCameraPitch() const;
     [[nodiscard]] float GetCameraSmoothingFactor() const;
+    [[nodiscard]] float GetFOV() const;
 };
 
 #endif // CAMERACONTROLLER_H
