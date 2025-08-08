@@ -295,7 +295,7 @@
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/World",
-  "command": "E:/LLVM/bin/clang++.exe -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/world.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/world.dir/PhysicsData.cpp.obj -c \"D:/gitnext/Chained Decos/src/World/PhysicsData.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/world.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/world.dir/PhysicsData.cpp.obj -c \"D:/gitnext/Chained Decos/src/World/PhysicsData.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/World/PhysicsData.cpp",
   "output": "src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj"
 },
