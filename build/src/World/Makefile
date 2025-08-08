@@ -195,29 +195,29 @@ world/fast:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/World/CMakeFiles/world.dir/build.make src/World/CMakeFiles/world.dir/build
 .PHONY : world/fast
 
-PhysicsData.obj: PhysicsData.cpp.obj
-.PHONY : PhysicsData.obj
+Physics.obj: Physics.cpp.obj
+.PHONY : Physics.obj
 
 # target to build an object file
-PhysicsData.cpp.obj:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/World/CMakeFiles/world.dir/build.make src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj
-.PHONY : PhysicsData.cpp.obj
+Physics.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/World/CMakeFiles/world.dir/build.make src/World/CMakeFiles/world.dir/Physics.cpp.obj
+.PHONY : Physics.cpp.obj
 
-PhysicsData.i: PhysicsData.cpp.i
-.PHONY : PhysicsData.i
+Physics.i: Physics.cpp.i
+.PHONY : Physics.i
 
 # target to preprocess a source file
-PhysicsData.cpp.i:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/World/CMakeFiles/world.dir/build.make src/World/CMakeFiles/world.dir/PhysicsData.cpp.i
-.PHONY : PhysicsData.cpp.i
+Physics.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/World/CMakeFiles/world.dir/build.make src/World/CMakeFiles/world.dir/Physics.cpp.i
+.PHONY : Physics.cpp.i
 
-PhysicsData.s: PhysicsData.cpp.s
-.PHONY : PhysicsData.s
+Physics.s: Physics.cpp.s
+.PHONY : Physics.s
 
 # target to generate assembly for a file
-PhysicsData.cpp.s:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/World/CMakeFiles/world.dir/build.make src/World/CMakeFiles/world.dir/PhysicsData.cpp.s
-.PHONY : PhysicsData.cpp.s
+Physics.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/World/CMakeFiles/world.dir/build.make src/World/CMakeFiles/world.dir/Physics.cpp.s
+.PHONY : Physics.cpp.s
 
 # Help Target
 help:
@@ -234,9 +234,9 @@ help:
 	@echo "... package_source"
 	@echo "... rebuild_cache"
 	@echo "... world"
-	@echo "... PhysicsData.obj"
-	@echo "... PhysicsData.i"
-	@echo "... PhysicsData.s"
+	@echo "... Physics.obj"
+	@echo "... Physics.i"
+	@echo "... Physics.s"
 .PHONY : help
 
 

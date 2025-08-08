@@ -1,4 +1,5 @@
 add_library(world STATIC
-    PhysicsData.h
-    PhysicsData.cpp
+    Physics.h
+    Physics.cpp
 ) 
+target_link_libraries(world PUBLIC raylib)

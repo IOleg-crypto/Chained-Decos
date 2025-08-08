@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "D:/gitnext/Chained Decos/src/World/PhysicsData.cpp" "src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj" "gcc" "src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj.d"
+  "D:/gitnext/Chained Decos/src/World/Physics.cpp" "src/World/CMakeFiles/world.dir/Physics.cpp.obj" "gcc" "src/World/CMakeFiles/world.dir/Physics.cpp.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.
