@@ -69,29 +69,29 @@ include src/World/CMakeFiles/world.dir/progress.make
 # Include the compile flags for this target's objects.
 include src/World/CMakeFiles/world.dir/flags.make
 
-src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj: src/World/CMakeFiles/world.dir/flags.make
-src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj: src/World/CMakeFiles/world.dir/includes_CXX.rsp
-src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj: D:/gitnext/Chained\ Decos/src/World/PhysicsData.cpp
-src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj: src/World/CMakeFiles/world.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj"
-	cd "D:/gitnext/Chained Decos/build/src/World" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj -MF CMakeFiles/world.dir/PhysicsData.cpp.obj.d -o CMakeFiles/world.dir/PhysicsData.cpp.obj -c "D:/gitnext/Chained Decos/src/World/PhysicsData.cpp"
+src/World/CMakeFiles/world.dir/Physics.cpp.obj: src/World/CMakeFiles/world.dir/flags.make
+src/World/CMakeFiles/world.dir/Physics.cpp.obj: src/World/CMakeFiles/world.dir/includes_CXX.rsp
+src/World/CMakeFiles/world.dir/Physics.cpp.obj: D:/gitnext/Chained\ Decos/src/World/Physics.cpp
+src/World/CMakeFiles/world.dir/Physics.cpp.obj: src/World/CMakeFiles/world.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/World/CMakeFiles/world.dir/Physics.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/src/World" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/World/CMakeFiles/world.dir/Physics.cpp.obj -MF CMakeFiles/world.dir/Physics.cpp.obj.d -o CMakeFiles/world.dir/Physics.cpp.obj -c "D:/gitnext/Chained Decos/src/World/Physics.cpp"
 
-src/World/CMakeFiles/world.dir/PhysicsData.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/world.dir/PhysicsData.cpp.i"
+src/World/CMakeFiles/world.dir/Physics.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/world.dir/Physics.cpp.i"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
 
-src/World/CMakeFiles/world.dir/PhysicsData.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/world.dir/PhysicsData.cpp.s"
+src/World/CMakeFiles/world.dir/Physics.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/world.dir/Physics.cpp.s"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
 
 # Object files for target world
 world_OBJECTS = \
-"CMakeFiles/world.dir/PhysicsData.cpp.obj"
+"CMakeFiles/world.dir/Physics.cpp.obj"
 
 # External object files for target world
 world_EXTERNAL_OBJECTS =
 
-src/World/world.lib: src/World/CMakeFiles/world.dir/PhysicsData.cpp.obj
+src/World/world.lib: src/World/CMakeFiles/world.dir/Physics.cpp.obj
 src/World/world.lib: src/World/CMakeFiles/world.dir/build.make
 src/World/world.lib: src/World/CMakeFiles/world.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library world.lib"

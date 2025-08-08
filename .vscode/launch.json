@@ -1,18 +1,23 @@
 {
-      // Use IntelliSense to learn about possible attributes.
-      // Hover to view descriptions of existing attributes.
-      // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
       "version": "0.2.0",
       "configurations": [
+        {
+          "name": "Debug ChainedDecos",
+          "type": "cppdbg",
+          "request": "launch",
+          "program": "${workspaceFolder}/build/ChainedDecos", // .exe на Windows, без .exe — на Linux/macOS
+          "args": [],
+          "stopAtEntry": true,
+          "cwd": "${workspaceFolder}",
+          "environment": [],
+          "externalConsole": false,
+          "setupCommands": [
             {
-                  "type": "cmake",
-                  "request": "launch",
-                  "name": "CMake: Configure project",
-                  "cmakeDebugType": "configure",
-                  "clean": false,
-                  "configureAll": false
+              "description": "Enable pretty-printing for gdb",
+              "text": "-enable-pretty-printing",
+              "ignoreFailures": true
             }
-            
-
+          ]
+        }
       ]
 }
