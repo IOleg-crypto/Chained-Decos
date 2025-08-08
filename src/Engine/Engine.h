@@ -54,7 +54,7 @@ class Engine
     Collision m_collision;
     Collision m_CubeCollision;
     // Player model usage flag
-    bool m_usePlayerModel;
+    bool m_usePlayerModel = true;
 
   public:
     // Constructors & Destructor

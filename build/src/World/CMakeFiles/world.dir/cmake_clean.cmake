@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/world.dir/PhysicsData.cpp.obj"
-  "CMakeFiles/world.dir/PhysicsData.cpp.obj.d"
+  "CMakeFiles/world.dir/Physics.cpp.obj"
+  "CMakeFiles/world.dir/Physics.cpp.obj.d"
   "world.lib"
   "world.pdb"
 )

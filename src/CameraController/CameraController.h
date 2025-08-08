@@ -14,7 +14,7 @@ class CameraController
     Camera m_camera;  // Raylib camera struct to represent 3D perspective
     int m_cameraMode; // Mode for camera(First , Free , Third , orbital)
     float m_baseCameraY = 4.5f;
-    float m_cameraYaw = 0.0f;
+    float m_cameraYaw = 1.0f;
     float m_cameraPitch = 0.0f;
     float m_cameraSmoothingFactor = 4.0f; // Camera smoothing speed
   public:

@@ -14,7 +14,7 @@
 #include <Collision/CollisionSystem.h>
 #include <Model/Model.h>
 #include <Player/PositionData.h>
-#include <World/PhysicsData.h>
+#include <World/Physics.h>
 
 //
 // Player class handles the camera used to represent the player's point of view
@@ -38,15 +38,16 @@ class Player
     float m_jumpOffsetY = 0.0f;
     bool m_isJumping = false;
     bool m_isPlayerMoving = false;
-    PhysicsData m_physData;
+    PhysicsComponent m_physics;
     PositionData m_posData;
+    bool m_isJumpCollision = false;
 
     // -------------------- Player State --------------------
   private:
-    Vector3 m_playerPosition;
-    Vector3 m_playerSize;
+    Vector3 m_playerPosition{};
+    Vector3 m_playerSize{};
     Color m_playerColor = BLUE;
-    BoundingBox m_playerBoundingBox;
+    BoundingBox m_playerBoundingBox{};
 
     // -------------------- Model --------------------
   private:
@@ -56,7 +57,7 @@ class Player
 
     // -------------------- Collision --------------------
   private:
-    Collision m_collision;
+    Collision m_collision{};
     CollisionManager m_collisionManager;
 
     // -------------------- Public Interface --------------------
@@ -74,8 +75,9 @@ class Player
     // Movement
     void ApplyInput();
     void Move(const Vector3 &moveVector);
-    void Jump();
+    [[deprecated("Another function do this - ApplyGravityForPlayer")]] void Jump();
     void SetPlayerPosition(const Vector3 &pos);
+    void UpdateMouseRotation() const;
 
     // Camera
     std::shared_ptr<CameraController> GetCameraController() const;
@@ -85,15 +87,19 @@ class Player
     void ToggleModelRendering(bool useModel);
     Models GetModelManager();
 
-    // Rendering
-    void DrawPlayer();
+    // Update player collision
+    void UpdateCollision();
 
     // Getters
     [[nodiscard]] float GetSpeed();
     void SetSpeed(float speed);
-    Vector3 GetPlayerPosition() const { return m_playerPosition; }
+    Vector3 GetPlayerPosition() const;
     PositionData GetPlayerData() const;
     const Collision &GetCollision() const;
+    // Collision
+    bool IsJumpCollision() const;
+    void ApplyGravityForPlayer(const CollisionManager &collisionManager);
+    Matrix GetPlayerRotation() const;
 };
 
 #endif // PLAYER_H

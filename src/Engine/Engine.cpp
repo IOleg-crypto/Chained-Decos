@@ -11,8 +11,10 @@
 
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_playerModelMesh(),
-      m_usePlayerModel(true) {
-    if (m_screenX < 0 || m_screenY < 0) {
+      m_usePlayerModel(true)
+{
+    if (m_screenX < 0 || m_screenY < 0)
+    {
         TraceLog(LOG_WARNING,
                  "[Screen] Invalid screen size: %d x %d. Setting default size 800x600.", m_screenX,
                  m_screenY);
@@ -35,7 +37,6 @@ void Engine::Init()
     rlImGuiSetup(true); // init ImGui
     InitImGuiFont();
     InitCollisions();
-
 }
 
 void Engine::Run()
@@ -61,18 +62,26 @@ void Engine::Update()
     }
 
     HandleKeyboardShortcuts();
+
     if (const ImGuiIO &io = ImGui::GetIO(); !io.WantCaptureMouse)
     {
         m_player.Update();
     }
 
+    m_player.ApplyGravityForPlayer(m_collisionManager);
+    m_player.UpdatePlayerBox();
 
-    m_player.UpdatePlayerBox(); // Оновлює колізійну коробку
+    Vector3 response = {};
+    bool isColliding = m_collisionManager.CheckCollision(m_player.GetCollision(), response);
 
-    Vector3 response = {0,0,3};
-    if (m_collisionManager.CheckCollision(m_player.GetCollision(), response))
+    if (isColliding)
     {
         m_player.Move(response);
+    }
+    // If player falls below ground level, reset position
+    if (m_player.GetPlayerPosition().y < 0.f)
+    {
+        m_player.SetPlayerPosition({0, 10, 0});
     }
 }
 
@@ -90,7 +99,8 @@ void Engine::Render()
     {
         BeginMode3D(m_player.GetCameraController()->GetCamera());
         DrawScene3D();
-        m_player.DrawPlayer();
+        LoadPlayerModel();
+        m_player.UpdateCollision();
         EndMode3D();
     }
 
@@ -120,17 +130,25 @@ void Engine::Render()
 void Engine::LoadPlayerModel()
 {
     m_playerModelMesh = m_models.GetModelByName("player");
-    m_player.SetPlayerModel(&m_playerModelMesh);
+    m_playerModelMesh.transform = m_player.GetPlayerRotation();
+
+    Vector3 adjustedPos = m_player.GetPlayerPosition();
+    adjustedPos.y -= 0.9f;
+
+    DrawModel(m_playerModelMesh, adjustedPos, 0.5f, WHITE);
 }
 
 void Engine::DrawScene3D()
 {
     DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){800.0f, 800.0f}, LIGHTGRAY);
 
-    Vector3 pos = {0, 0, 60.f};
-    DrawCube(pos, 40.f, 40.f, 40.f, RED);
+    DrawCube((Vector3){0, 0, 60}, 40, 10, 40, RED);
+    DrawCube((Vector3){0, 0, 100}, 10, 2, 10, GREEN);
+    DrawCube((Vector3){30, 0, 30}, 10, 5, 10, DARKGRAY);
+    DrawCube((Vector3){-50, 0, 20}, 20, 4, 20, BROWN);
+    DrawCube((Vector3){20, 5, 60}, 10, 2, 10, SKYBLUE);
+    DrawCube((Vector3){-30, 8, 70}, 6, 2, 6, PURPLE);
 
-    LoadPlayerModel();
     m_models.DrawAllModels();
 }
 
@@ -170,10 +188,44 @@ void Engine::DrawDebugInfo(const Camera &camera, const int &cameraMode)
     rlImGuiEnd();
 }
 
-void Engine::InitCollisions() {
+void Engine::InitCollisions()
+{
     m_collisionManager.ClearColliders();
-    Collision cube({0, 0, 60.f}, {40.f, 40.f, 40.f});
-    m_collisionManager.AddCollider(cube);
+
+    Vector3 pos1 = {0, 0, 60.f};
+    Vector3 size1 = {40.f, 10.f, 40.f};
+    Collision collider1(pos1, size1);
+    m_collisionManager.AddCollider(collider1);
+
+    Vector3 pos2 = {0, 0, 100.f};
+    Vector3 size2 = {10.f, 2.f, 10.f};
+    Collision collider2(pos2, size2);
+    m_collisionManager.AddCollider(collider2);
+
+    Vector3 pos3 = {30, 0, 30};
+    Vector3 size3 = {10.f, 5.f, 10.f};
+    Collision collider3(pos3, size3);
+    m_collisionManager.AddCollider(collider3);
+
+    Vector3 pos4 = {-50, 0, 20};
+    Vector3 size4 = {20.f, 4.f, 20.f};
+    Collision collider4(pos4, size4);
+    m_collisionManager.AddCollider(collider4);
+
+    Vector3 pos5 = {20, 5, 60};
+    Vector3 size5 = {10.f, 2.f, 10.f};
+    Collision collider5(pos5, size5);
+    m_collisionManager.AddCollider(collider5);
+
+    Vector3 pos6 = {-30, 8, 70};
+    Vector3 size6 = {6.f, 2.f, 6.f};
+    Collision collider6(pos6, size6);
+    m_collisionManager.AddCollider(collider6);
+
+    Vector3 groundPos = {0, -0.5f, 0};
+    Vector3 groundSize = {800.f, 1.0f, 800.f};
+    Collision groundCollider(groundPos, groundSize);
+    m_collisionManager.AddCollider(groundCollider);
 }
 
 void Engine::InitInput()
@@ -188,46 +240,50 @@ void Engine::InitInput()
                                  cameraMode = CAMERA_FREE;
                                  camera.up = {0, 1, 0};
                              });
+    // UNUSED
 
-    m_manager.RegisterAction(KEY_TWO,
-                             [this, &camera, &cameraMode]() { cameraMode = CAMERA_FIRST_PERSON; });
+    // m_manager.RegisterAction(KEY_TWO,
+    //                          [this, &camera, &cameraMode]() { cameraMode = CAMERA_FIRST_PERSON;
+    //                          });
 
-    m_manager.RegisterAction(KEY_THREE,
-                             [this, &camera, &cameraMode]() { cameraMode = CAMERA_THIRD_PERSON; });
+    // m_manager.RegisterAction(KEY_THREE,
+    //                          [this, &camera, &cameraMode]() { cameraMode = CAMERA_THIRD_PERSON;
+    //                          });
 
-    m_manager.RegisterAction(KEY_FOUR,
-                             [this, &camera, &cameraMode]()
-                             {
-                                 cameraMode = CAMERA_ORBITAL;
-                                 camera.up = {0, 1, 0};
-                             });
+    // m_manager.RegisterAction(KEY_FOUR,
+    //                          [this, &camera, &cameraMode]()
+    //                          {
+    //                              cameraMode = CAMERA_ORBITAL;
+    //                              camera.up = {0, 1, 0};
+    //                          });
 
-    m_manager.RegisterAction(KEY_P,
-                             [this, &camera, &cameraMode]()
-                             {
-                                 if (camera.projection == CAMERA_PERSPECTIVE)
-                                 {
-                                     cameraMode = CAMERA_THIRD_PERSON;
-                                     camera.position = {0, 2, -100};
-                                     camera.target = {0, 2, 0};
-                                     camera.up = {0, 1, 0};
-                                     camera.projection = CAMERA_ORTHOGRAPHIC;
-                                     camera.fovy = 20;
-                                     CameraYaw(&camera, -135 * DEG2RAD, true);
-                                     CameraPitch(&camera, -45 * DEG2RAD, true, true, false);
-                                 }
-                                 else if (camera.projection == CAMERA_ORTHOGRAPHIC)
-                                 {
-                                     cameraMode = CAMERA_THIRD_PERSON;
-                                     camera.position = {0, 2, 10};
-                                     camera.target = {0, 2, 0};
-                                     camera.up = {0, 1, 0};
-                                     camera.projection = CAMERA_PERSPECTIVE;
-                                     camera.fovy = 60;
-                                 }
-                             });
-
-    m_manager.RegisterAction(KEY_FIVE, [this]() { m_showDebug = !m_showDebug; });
+    // m_manager.RegisterAction(KEY_P,
+    //                          [this, &camera, &cameraMode]()
+    //                          {
+    //                              if (camera.projection == CAMERA_PERSPECTIVE)
+    //                              {
+    //                                  cameraMode = CAMERA_THIRD_PERSON;
+    //                                  camera.position = {0, 2, -100};
+    //                                  camera.target = {0, 2, 0};
+    //                                  camera.up = {0, 1, 0};
+    //                                  camera.projection = CAMERA_ORTHOGRAPHIC;
+    //                                  camera.fovy = 20;
+    //                                  CameraYaw(&camera, -135 * DEG2RAD, true);
+    //                                  CameraPitch(&camera, -45 * DEG2RAD, true, true, false);
+    //                              }
+    //                              else if (camera.projection == CAMERA_ORTHOGRAPHIC)
+    //                              {
+    //                                  cameraMode = CAMERA_THIRD_PERSON;
+    //                                  camera.position = {0, 2, 10};
+    //                                  camera.target = {0, 2, 0};
+    //                                  camera.up = {0, 1, 0};
+    //                                  camera.projection = CAMERA_PERSPECTIVE;
+    //                                  camera.fovy = 60;
+    //                              }
+    //                          });
+#ifndef DEBUG
+    m_manager.RegisterAction(KEY_F5, [this]() { m_showDebug = !m_showDebug; });
+#endif // DEBUG
 
     m_manager.RegisterAction(KEY_C, [this]() { m_showCollisionDebug = !m_showCollisionDebug; });
 
