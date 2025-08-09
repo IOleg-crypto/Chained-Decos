@@ -26,6 +26,7 @@ class Editor
     bool m_showObjectPanel;                               // Show/hide object list panel
     bool m_showPropertiesPanel;                           // Show/hide properties panel
     bool m_shouldAddObject;                               // Add cube , cylinder or sphere
+    std::string m_mapFileName;                            // Current map file name
 
     // Available editing tools
     enum Tool

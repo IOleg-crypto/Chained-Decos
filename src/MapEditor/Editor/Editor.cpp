@@ -308,6 +308,7 @@ void Editor::RenderObject(const MapObject &obj)
 
 void Editor::RenderImGuiToolbar()
 {
+
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(700, 300), ImGuiCond_FirstUseEver);
 
@@ -342,18 +343,17 @@ void Editor::RenderImGuiToolbar()
                 ImGui::SameLine();
         }
 
-        ImGui::Separator();
-
         if (ImGui::Button("Save Map"))
         {
-            SaveMap("map.json");
+            SaveMap(m_mapFileName);
         }
         ImGui::SameLine();
         if (ImGui::Button("Load Map"))
         {
-            LoadMap("map.json");
+            LoadMap(m_mapFileName);
         }
 
+        ImGui::InputText("Map FilePath##Map Name", &m_mapFileName);
         ImGui::Separator();
 
         ImGui::Checkbox("Show Object Panel", &m_showObjectPanel);
@@ -450,16 +450,28 @@ void Editor::RenderImGuiPropertiesPanel()
 
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
     bool propertiesPanelOpen = true;
-
+    std::string nameLabel;
     if (ImGui::Begin("Properties##Panel", &propertiesPanelOpen, windowFlags))
     {
-        char nameBuffer[256] = {0};
-        strncpy_s(nameBuffer, obj.name.c_str(), sizeof(nameBuffer) - 1);
+        // If nameLabel is empty, initialize it with the object's current name
+        if (nameLabel.empty())
+            nameLabel = obj.name;
 
-        std::string inputLabel = "Name##obj" + std::to_string(m_selectedObjectIndex);
-        if (ImGui::InputText(inputLabel.c_str(), nameBuffer, sizeof(nameBuffer)))
+        // InputText requires a char array buffer, so we convert std::string to char[]
+        // Alternatively, ImGui::InputText with std::string can be used but requires memory
+        // allocation
+        char buffer[256];
+        strncpy_s(buffer, nameLabel.c_str(), sizeof(buffer));
+        buffer[sizeof(buffer) - 1] = 0; // Ensure null-termination
+
+        if (ImGui::InputText("Name##Name", buffer, sizeof(buffer)))
         {
-            obj.name = nameBuffer;
+            nameLabel = std::string(buffer);
+            if (nameLabel.empty())
+            {
+                nameLabel = obj.name; // Prevent empty names
+            }
+            obj.name = nameLabel;
         }
 
         const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane", "Ellipse"};
@@ -516,14 +528,12 @@ void Editor::RenderImGuiPropertiesPanel()
             break;
         }
 
-        // Ротація
         float rot[3] = {obj.rotation.x, obj.rotation.y, obj.rotation.z};
         if (ImGui::DragFloat3("Rotation", rot, 1.0f))
         {
             obj.rotation = {rot[0], rot[1], rot[2]};
         }
 
-        // Колір
         float color[4] = {obj.color.r / 255.0f, obj.color.g / 255.0f, obj.color.b / 255.0f,
                           obj.color.a / 255.0f};
 
