@@ -54,10 +54,14 @@ void Player::ApplyInput()
     m_physics.Update(GetFrameTime());
     Vector3 moveDir = {};
 
-    if (IsKeyDown(KEY_W)) moveDir.z -= 1.0f;
-    if (IsKeyDown(KEY_S)) moveDir.z += 1.0f;
-    if (IsKeyDown(KEY_A)) moveDir.x -= 1.0f;
-    if (IsKeyDown(KEY_D)) moveDir.x += 1.0f;
+    if (IsKeyDown(KEY_W))
+        moveDir.z -= 1.0f;
+    if (IsKeyDown(KEY_S))
+        moveDir.z += 1.0f;
+    if (IsKeyDown(KEY_A))
+        moveDir.x -= 1.0f;
+    if (IsKeyDown(KEY_D))
+        moveDir.x += 1.0f;
 
     m_walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? m_runSpeed : 3.1f;
 
@@ -132,23 +136,28 @@ void Player::SetPlayerPosition(const Vector3 &pos)
 const Collision &Player::GetCollision() const { return m_collision; }
 
 // Update camera offset based on FOV and camera angles
-void Player::UpdateMouseRotation() const {
-    //TODO : Fix in the future camera zooming
-    // float wheel = 0.0f;
-    // wheel +=GetMouseWheelMove() * 8.0f; // GetMouseWheelMove - give 1 / 0
-    // GetCameraController()->SetFOV(wheel);
-    // if (GetCameraController()->GetFOV() < 1.0f) {
-    //     GetCameraController()->SetFOV(1.0f);
-    // }
-    // if (GetCameraController()->GetFOV() > 40.0f) {
-    //         GetCameraController()->SetFOV(40.0f);
-    // }
+void Player::UpdateMouseRotation() const
+{
+    float currentFOV = m_cameraController->GetFOV();
 
-    Vector3 offset = {
-        GetCameraController()->GetFOV() * sinf(m_cameraController->GetCameraYaw()) * cosf(m_cameraController->GetCameraPitch()),
-        GetCameraController()->GetFOV() * sinf(m_cameraController->GetCameraPitch()) + 2.0f,
-        GetCameraController()->GetFOV() * cosf(m_cameraController->GetCameraYaw()) * cosf(m_cameraController->GetCameraPitch())
-    };
+    float wheelMove = GetMouseWheelMove();
+    currentFOV -= wheelMove * 0.5f; // Adjust sensitivity as needed
+    GetCameraController()->SetFOV(currentFOV);
+    if (GetCameraController()->GetFOV() < 1.0f)
+    {
+        GetCameraController()->SetFOV(6.0f);
+    }
+    if (GetCameraController()->GetFOV() > 40.0f)
+    {
+        GetCameraController()->SetFOV(40.0f);
+    }
+
+    Vector3 offset = {GetCameraController()->GetFOV() * sinf(m_cameraController->GetCameraYaw()) *
+                          cosf(m_cameraController->GetCameraPitch()),
+                      GetCameraController()->GetFOV() * sinf(m_cameraController->GetCameraPitch()) +
+                          2.0f,
+                      GetCameraController()->GetFOV() * cosf(m_cameraController->GetCameraYaw()) *
+                          cosf(m_cameraController->GetCameraPitch())};
 
     if (offset.y < 0.0f)
         offset.y = 0.0f;
@@ -194,13 +203,13 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
         else if (response.y < 0.0f)
         {
             m_playerPosition.y += response.y;
-            m_physics.SetVelocity({0,0,0});
+            m_physics.SetVelocity({0, 0, 0});
             m_isJumping = false;
         }
         else // Hitting ceiling or wall
         {
             m_playerPosition = Vector3Add(m_playerPosition, response);
-            m_physics.SetVelocity({0,0,0});
+            m_physics.SetVelocity({0, 0, 0});
             if (response.y < 0.0f)
             {
                 m_physics.SetGroundLevel(false);
@@ -217,7 +226,8 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
 }
 
 // Compute Y-axis player rotation matrix based on camera
-Matrix Player::GetPlayerRotation() const {
+Matrix Player::GetPlayerRotation() const
+{
     Vector3 playerPos = m_posData.m_playerCurrentPosition;
     Vector3 cameraTarget = m_cameraController->GetCamera().target;
     Vector3 toCamera = Vector3Subtract(cameraTarget, playerPos);
@@ -231,13 +241,15 @@ Vector3 Player::GetPlayerPosition() const { return m_playerPosition; }
 // Apply jump impulse based on mass and direction
 void Player::ApplyJumpImpulse(float impulse)
 {
-    if (!m_physics.IsGrounded()) return;
+    if (!m_physics.IsGrounded())
+        return;
 
     Vector3 jumpVelocity = {0, m_physics.GetJumpStrength(), 0};
 
     // Estimate mass from player size
     float mass = m_playerSize.x * m_playerSize.y * m_playerSize.z * 1.0f;
-    if (mass <= 0.0f) mass = 1.0f;
+    if (mass <= 0.0f)
+        mass = 1.0f;
 
     float verticalVelocity = impulse / mass;
     Vector3 forwardImpulse = {};
