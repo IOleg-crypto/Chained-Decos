@@ -1,7 +1,9 @@
+//
+//  Created by I#Oleg
+//
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
-#include <Model/Model.h>
 #include <raylib.h>
 #include <string>
 
@@ -13,7 +15,8 @@ public:
 
 public:
     void Update(Model &model);
-    void LoadAnimations(const std::string &path);
+    bool LoadAnimations(const std::string &path);
+    void SetAnimationIndex(unsigned int index);
 
 private:
     int m_animCount;

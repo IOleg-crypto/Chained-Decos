@@ -2,7 +2,7 @@
 
 Animation::Animation() : m_animCount(0), m_animIndex(0), m_animCurrentFrame(0) {}
 
-Animation::~Animation() = default;
+Animation::~Animation() { delete[] m_modelAnimations; }
 
 void Animation::Update(Model &model)
 {
@@ -35,18 +35,19 @@ void Animation::SetAnimationIndex(unsigned int index)
         TraceLog(LOG_WARNING, "Animation index %u out of bounds (max %d)", index, m_animCount - 1);
     }
 }
-void Animation::LoadAnimations(const std::string &path)
+bool Animation::LoadAnimations(const std::string &path)
 {
     if (path.empty())
     {
         TraceLog(LOG_WARNING, "Animation path is empty");
-        return;
+        return false;
     }
     m_modelAnimations = LoadModelAnimations(path.c_str(), &m_animCount);
     if (m_modelAnimations == nullptr || m_animCount <= 0)
     {
         TraceLog(LOG_WARNING, "Failed to load animations from %s", path.c_str());
         m_animCount = 0;
-        return;
+        return false;
     }
+    return true;
 }
