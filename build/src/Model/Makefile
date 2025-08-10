@@ -195,6 +195,30 @@ model/fast:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/build
 .PHONY : model/fast
 
+Animation.obj: Animation.cpp.obj
+.PHONY : Animation.obj
+
+# target to build an object file
+Animation.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/Animation.cpp.obj
+.PHONY : Animation.cpp.obj
+
+Animation.i: Animation.cpp.i
+.PHONY : Animation.i
+
+# target to preprocess a source file
+Animation.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/Animation.cpp.i
+.PHONY : Animation.cpp.i
+
+Animation.s: Animation.cpp.s
+.PHONY : Animation.s
+
+# target to generate assembly for a file
+Animation.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/Animation.cpp.s
+.PHONY : Animation.cpp.s
+
 Model.obj: Model.cpp.obj
 .PHONY : Model.obj
 
@@ -258,6 +282,9 @@ help:
 	@echo "... package_source"
 	@echo "... rebuild_cache"
 	@echo "... model"
+	@echo "... Animation.obj"
+	@echo "... Animation.i"
+	@echo "... Animation.s"
 	@echo "... Model.obj"
 	@echo "... Model.i"
 	@echo "... Model.s"

@@ -76,6 +76,7 @@ private:
     Texture2D m_texture;        // Texture object
     std::string m_modelTexture; // Path to texture file
     Color m_color;              // Model color
+
 };
 
 #endif // MODELINSTANCE_H

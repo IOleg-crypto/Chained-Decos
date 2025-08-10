@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/model.dir/Animation.cpp.obj"
+  "CMakeFiles/model.dir/Animation.cpp.obj.d"
   "CMakeFiles/model.dir/Model.cpp.obj"
   "CMakeFiles/model.dir/Model.cpp.obj.d"
   "CMakeFiles/model.dir/ModelInstance.cpp.obj"
