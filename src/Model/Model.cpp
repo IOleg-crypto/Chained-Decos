@@ -5,7 +5,6 @@
 #include <iostream>
 #include <string>
 
-
 #include <Color/ColorParser.h>
 
 Models::~Models()
@@ -15,6 +14,9 @@ Models::~Models()
         UnloadModel(*modelPtr);
         delete modelPtr;
     }
+    m_modelByName.clear();
+    m_animations.clear();
+    m_instances.clear();
 }
 
 void Models::LoadModelsFromJson(const std::string &path)
@@ -46,7 +48,6 @@ void Models::LoadModelsFromJson(const std::string &path)
         }
 
         auto modelName = modelEntry["name"].get<std::string>();
-        // PROJECT_ROOT_DIR - Needed for path(global)
         std::string modelPath = PROJECT_ROOT_DIR + modelEntry["path"].get<std::string>();
 
         TraceLog(LOG_INFO, "Loading model '%s' from: %s", modelName.c_str(), modelPath.c_str());
@@ -61,7 +62,17 @@ void Models::LoadModelsFromJson(const std::string &path)
         auto pModel = new Model(loadedModel);
         m_modelByName[modelName] = pModel;
 
+        Animation newAnimation;
+        bool animationLoaded = newAnimation.LoadAnimations(modelPath);
+        if (animationLoaded)
+            m_animations[modelName] = std::move(newAnimation);
+
         bool spawnInstances = modelEntry.value("spawn", true);
+
+        Animation *animPtr = nullptr;
+        auto itAnim = m_animations.find(modelName);
+        if (itAnim != m_animations.end())
+            animPtr = &itAnim->second;
 
         if (modelEntry.contains("instances") && modelEntry["instances"].is_array())
         {
@@ -70,13 +81,14 @@ void Models::LoadModelsFromJson(const std::string &path)
                 bool spawnThis = instance.value("spawn", spawnInstances);
                 if (!spawnThis)
                     continue;
-                AddInstance(instance, pModel, modelName);
+                AddInstance(instance, pModel, modelName, animPtr);
             }
         }
         else if (spawnInstances)
         {
-            AddInstance(json::object(), pModel, modelName);
+            AddInstance(json::object(), pModel, modelName, animPtr);
         }
+        delete pModel;
     }
 }
 
@@ -104,7 +116,8 @@ Model &Models::GetModelByName(const std::string &name)
     return *(it->second);
 }
 
-void Models::AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName)
+void Models::AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
+                         Animation *animation)
 {
     Vector3 pos = {0.0f, 0.0f, 0.0f};
     float scaleModel = 1.0f;
@@ -138,5 +151,8 @@ void Models::AddInstance(const json &instanceJson, Model *modelPtr, const std::s
         }
     }
 
-    m_instances.emplace_back(pos, modelPtr, scaleModel, modelName, color);
+    if (animation)
+        m_instances.emplace_back(pos, modelPtr, scaleModel, modelName, color, *animation);
+    else
+        m_instances.emplace_back(pos, modelPtr, scaleModel, modelName, color);
 }

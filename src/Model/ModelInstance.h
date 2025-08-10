@@ -6,6 +6,7 @@
 #define MODELINSTANCE_H
 
 #include <Collision/CollisionSystem.h>
+#include <Model/Animation.h>
 #include <raylib.h>
 #include <string>
 
@@ -34,6 +35,7 @@ public:
     // color        - Model color
     // modelTexture - Path to texture file
     // texture      - Texture2D object
+    // animation    - Animation data
     ModelInstance(Vector3 pos, Model *pMdl, float scl, const std::string &name, Color color,
                   const std::string &modelTexture, const Texture2D &texture);
 
@@ -42,6 +44,13 @@ public:
 
     // Minimal constructor (only position, model, scale, and name)
     ModelInstance(Vector3 pos, Model *pMdl, float scl, const std::string &name);
+    // Model have all
+    ModelInstance(Vector3 pos, Model *pMdl, float scl, const std::string &name, const Color color,
+                  const std::string &modelTexture, const Texture2D &texture,
+                  const Animation &animation);
+
+    ModelInstance(Vector3 pos, Model *pMdl, float scl, const std::string &name, const Color color,
+                  const Animation &animation);
 
     // ----------------------------------------------------
     // Getters
@@ -68,15 +77,17 @@ public:
     // Get the path to the model's texture file (if available)
     [[nodiscard]] std::string GetTexturePath() const;
 
+    [[nodiscard]] Animation GetAnimation() const;
+
 private:
     Vector3 m_position;         // Position in world space (x, y, z)
-    Model* m_pModel;            // Pointer to the base model
+    Model *m_pModel;            // Pointer to the base model
     float m_scale;              // Model scale factor
     std::string m_modelName;    // Name identifier of the model
     Texture2D m_texture;        // Texture object
     std::string m_modelTexture; // Path to texture file
     Color m_color;              // Model color
-
+    Animation m_animation;      // Animation data for the model instance
 };
 
 #endif // MODELINSTANCE_H
