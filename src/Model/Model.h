@@ -12,38 +12,54 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-// # ----------------------------------------------------------------------------
-// # Models class represents like model loader into game
-// # ----------------------------------------------------------------------------
+//
+// Models
+// Handles loading, storage, and rendering of 3D models and their instances.
+// Responsible for:
+//   - Loading models from JSON configuration
+//   - Managing model instances (position, rotation, etc.)
+//   - Rendering all instances in the scene
+//
 class Models
 {
-  private:
-    std::vector<ModelInstance> m_instances; // contains model instances (with model and position)
-    std::unordered_map<std::string, Model *> m_modelByName; // Direct access by name
-    bool m_spawnInstance = true;
+public:
+  Models() = default;
+  ~Models();
 
-  public:
-    Models() = default;
-    ~Models();
+  // -------------------- Loading --------------------
 
-  public:
-    // This function reads all paths from .json file
-    void LoadModelsFromJson(const std::string &path);
+  // Load all models and their metadata from a JSON file.
+  // path - File path to the JSON configuration
+  void LoadModelsFromJson(const std::string &path);
 
-    // Draw all model instances
-    void DrawAllModels() const;
+  // -------------------- Rendering --------------------
 
-    // Access to original model (not instance)
-    Model &GetModelByName(const std::string &name);
+  // Draw all currently loaded model instances to the screen.
+  void DrawAllModels() const;
 
-    // Create and add instance
-    void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName);
+  // -------------------- Accessors --------------------
+
+  // Get a reference to the original (base) model by name.
+  // name - Name of the model to retrieve
+  // Returns reference to the Model object
+  Model &GetModelByName(const std::string &name);
+
+  // -------------------- Instance Management --------------------
+
+  // Create and add a model instance to the scene.
+  // instanceJson - JSON describing the instance properties
+  // modelPtr - Pointer to the base model to instance
+  // modelName - Name of the model
+  void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName);
+
+private:
+  std::vector<ModelInstance> m_instances;                   // List of all model instances
+  std::unordered_map<std::string, Model *> m_modelByName;   // Direct access to base models by name
+  bool m_spawnInstance = true;                              // Whether to spawn instances automatically
 };
 
 #endif // MODEL_H

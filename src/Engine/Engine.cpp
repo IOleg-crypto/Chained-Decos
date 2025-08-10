@@ -10,7 +10,7 @@
 #include <rlImGui.h>
 
 Engine::Engine(const int screenX, const int screenY)
-    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_playerModelMesh(),
+    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
       m_usePlayerModel(true)
 {
     if (m_screenX < 0 || m_screenY < 0)
@@ -50,7 +50,7 @@ void Engine::Run()
         if (m_shouldExit)
         {
             break;
-        };
+        }
     }
 }
 
@@ -100,11 +100,17 @@ void Engine::Render()
         BeginMode3D(m_player.GetCameraController()->GetCamera());
         DrawScene3D();
         LoadPlayerModel();
-        m_player.UpdateCollision();
+        m_player.UpdatePlayerCollision();
         EndMode3D();
     }
 
+
+
     EndDrawing();
+
+    if (m_showDebug) {
+        DrawDebugInfo(m_player.GetCameraController()->GetCamera() , m_player.GetCameraController()->GetCameraMode());
+    }
 
     // handle menu actions after frame
     switch (m_menu.GetAction())
@@ -129,13 +135,13 @@ void Engine::Render()
 
 void Engine::LoadPlayerModel()
 {
-    m_playerModelMesh = m_models.GetModelByName("player");
-    m_playerModelMesh.transform = m_player.GetPlayerRotation();
+    Model &m_playerModel = m_models.GetModelByName("player");
+    m_playerModel.transform = MatrixRotateY(DEG2RAD * m_player.GetRotationY());
 
     Vector3 adjustedPos = m_player.GetPlayerPosition();
     adjustedPos.y -= 0.9f;
 
-    DrawModel(m_playerModelMesh, adjustedPos, 0.5f, WHITE);
+    DrawModel(m_playerModel, adjustedPos, 0.5f, WHITE);
 }
 
 void Engine::DrawScene3D()
@@ -233,57 +239,14 @@ void Engine::InitInput()
     Camera &camera = m_player.GetCameraController()->GetCamera();
     int &cameraMode = m_player.GetCameraController()->GetCameraMode();
 
-    m_manager.RegisterAction(KEY_F5, [this]() { ToggleFullscreen(); });
+    m_manager.RegisterAction(KEY_FOUR, [this]() { ToggleFullscreen(); });
     m_manager.RegisterAction(KEY_ONE,
                              [this, &camera, &cameraMode]()
                              {
                                  cameraMode = CAMERA_FREE;
                                  camera.up = {0, 1, 0};
                              });
-    // UNUSED
-
-    // m_manager.RegisterAction(KEY_TWO,
-    //                          [this, &camera, &cameraMode]() { cameraMode = CAMERA_FIRST_PERSON;
-    //                          });
-
-    // m_manager.RegisterAction(KEY_THREE,
-    //                          [this, &camera, &cameraMode]() { cameraMode = CAMERA_THIRD_PERSON;
-    //                          });
-
-    // m_manager.RegisterAction(KEY_FOUR,
-    //                          [this, &camera, &cameraMode]()
-    //                          {
-    //                              cameraMode = CAMERA_ORBITAL;
-    //                              camera.up = {0, 1, 0};
-    //                          });
-
-    // m_manager.RegisterAction(KEY_P,
-    //                          [this, &camera, &cameraMode]()
-    //                          {
-    //                              if (camera.projection == CAMERA_PERSPECTIVE)
-    //                              {
-    //                                  cameraMode = CAMERA_THIRD_PERSON;
-    //                                  camera.position = {0, 2, -100};
-    //                                  camera.target = {0, 2, 0};
-    //                                  camera.up = {0, 1, 0};
-    //                                  camera.projection = CAMERA_ORTHOGRAPHIC;
-    //                                  camera.fovy = 20;
-    //                                  CameraYaw(&camera, -135 * DEG2RAD, true);
-    //                                  CameraPitch(&camera, -45 * DEG2RAD, true, true, false);
-    //                              }
-    //                              else if (camera.projection == CAMERA_ORTHOGRAPHIC)
-    //                              {
-    //                                  cameraMode = CAMERA_THIRD_PERSON;
-    //                                  camera.position = {0, 2, 10};
-    //                                  camera.target = {0, 2, 0};
-    //                                  camera.up = {0, 1, 0};
-    //                                  camera.projection = CAMERA_PERSPECTIVE;
-    //                                  camera.fovy = 60;
-    //                              }
-    //                          });
-#ifndef DEBUG
     m_manager.RegisterAction(KEY_F5, [this]() { m_showDebug = !m_showDebug; });
-#endif // DEBUG
 
     m_manager.RegisterAction(KEY_C, [this]() { m_showCollisionDebug = !m_showCollisionDebug; });
 

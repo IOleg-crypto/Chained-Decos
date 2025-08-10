@@ -1,5 +1,6 @@
-#include "Physics.h"
-#include "raylib.h"
+#include <World/Physics.h>
+#include <Player/Player.h>
+#include <iostream>
 
 void PhysicsComponent::Update(float dt) { m_dt = dt; }
 
@@ -49,23 +50,18 @@ void PhysicsComponent::SetVelocityY(float velocity) { this->m_velocityY = veloci
 
 bool PhysicsComponent::IsJumping() const { return m_isJumping; }
 
-Vector3 PhysicsComponent::GetVelocity() const {
-    return m_velocity;
-}
+Vector3 PhysicsComponent::GetVelocity() const { return m_velocity; }
 
 void PhysicsComponent::SetGroundLevel(bool isGrounded) { this->m_isGrounded = isGrounded; }
 
-void PhysicsComponent::SetVelocity(const Vector3 &velocity) {
-    this->m_velocity = velocity;
-}
+void PhysicsComponent::SetVelocity(const Vector3 &velocity) { this->m_velocity = velocity; }
 
-void PhysicsComponent::AddVelocity(const Vector3 &delta) {
-    m_velocity = Vector3Add(m_velocity , delta);
+void PhysicsComponent::AddVelocity(const Vector3 &delta)
+{
+    m_velocity = Vector3Add(m_velocity, delta);
 }
 
 float PhysicsComponent::GetDeltaTime() const { return m_dt; }
 
-PhysicsComponent::PhysicsComponent()
-    : m_dt(GetFrameTime())
-{
-}
+PhysicsComponent::PhysicsComponent() : m_dt(GetFrameTime()) {}
+

@@ -10,26 +10,44 @@
 #include <vector>
 
 //
-// Collision - class that handle all collision system in game engine
+// Collision
+// Handles an axis-aligned bounding box (AABB) for collision detection.
+// Provides methods to update bounding box and check collisions or containment.
 //
 class Collision
 {
-  private:
-    Vector3 m_min; // Position of the collision object
-    Vector3 m_max; //
-  public:
-    Collision() = default;
-    // Constructor to initialize position and size
-    Collision(const Vector3 &center, const Vector3 &size);
-    ~Collision() = default;
-    // Getters for position and size
-    // These methods allow access to the position and size of the collision object
-    Vector3 GetMin() const;
-    Vector3 GetMax() const;
-    // Methods that checks collision
-    void Update(const Vector3 &center, const Vector3 &size);
-    bool Intersects(const Collision &other) const;
-    bool Contains(const Vector3 &point) const;
+public:
+  Collision() = default;
+
+  // Initialize collision box by center position and size (half-extents)
+  Collision(const Vector3 &center, const Vector3 &size);
+
+  ~Collision() = default;
+
+  // -------------------- Getters --------------------
+
+  // Get minimum corner of bounding box
+  Vector3 GetMin() const;
+
+  // Get maximum corner of bounding box
+  Vector3 GetMax() const;
+
+  // -------------------- Update --------------------
+
+  // Update bounding box position and size
+  void Update(const Vector3 &center, const Vector3 &size);
+
+  // -------------------- Collision Checks --------------------
+
+  // Check if this collision box intersects with another
+  bool Intersects(const Collision &other) const;
+
+  // Check if this collision box contains a point
+  bool Contains(const Vector3 &point) const;
+
+private:
+  Vector3 m_min{}; // Minimum corner of AABB
+  Vector3 m_max{}; // Maximum corner of AABB
 };
 
 #endif // COLLISIONSYSTEM_H
