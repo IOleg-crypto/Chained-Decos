@@ -10,8 +10,7 @@
 #include <rlImGui.h>
 
 Engine::Engine(const int screenX, const int screenY)
-    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
-      m_usePlayerModel(true)
+    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_usePlayerModel(true)
 {
     if (m_screenX < 0 || m_screenY < 0)
     {
@@ -104,12 +103,12 @@ void Engine::Render()
         EndMode3D();
     }
 
-
-
     EndDrawing();
 
-    if (m_showDebug) {
-        DrawDebugInfo(m_player.GetCameraController()->GetCamera() , m_player.GetCameraController()->GetCameraMode());
+    if (m_showDebug)
+    {
+        DrawDebugInfo(m_player.GetCameraController()->GetCamera(),
+                      m_player.GetCameraController()->GetCameraMode());
     }
 
     // handle menu actions after frame
@@ -139,9 +138,10 @@ void Engine::LoadPlayerModel()
     m_playerModel.transform = MatrixRotateY(DEG2RAD * m_player.GetRotationY());
 
     Vector3 adjustedPos = m_player.GetPlayerPosition();
-    adjustedPos.y -= 0.9f;
+    adjustedPos.y -= 1.2f;
 
-    DrawModel(m_playerModel, adjustedPos, 0.5f, WHITE);
+    DrawModel(m_playerModel, adjustedPos, 0.8f, WHITE);
+    DrawBoundingBox(m_player.GetPlayerBoundingBox(), GREEN);
 }
 
 void Engine::DrawScene3D()

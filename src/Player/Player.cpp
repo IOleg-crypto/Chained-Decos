@@ -9,8 +9,9 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_originalCameraTarget = m_cameraController->GetCamera().target;
     m_baseTarget = m_originalCameraTarget;
 
-    m_playerPosition = {0.0f, 1.0f, 0.0f};
-    m_playerSize = {1.0f, 2.0f, 1.0f};
+    m_playerPosition = {0.0f, -2.0f, 0.0f};
+    // Depends on model size(bounding box collision)
+    m_playerSize = {1.0f, 3.5f, 1.0f};
     m_playerColor = BLUE;
     m_playerModel = nullptr;
     m_useModel = false;
@@ -18,8 +19,6 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
 }
 
 Player::~Player() = default;
-
-
 
 // Main update function called every frame
 void Player::Update()
@@ -33,9 +32,7 @@ void Player::Update()
 
 float Player::GetSpeed() { return m_walkSpeed; }
 
-float Player::GetRotationY() const {
-    return m_rotationY;
-}
+float Player::GetRotationY() const { return m_rotationY; }
 
 void Player::SetSpeed(const float speed) { this->m_walkSpeed = speed; }
 
@@ -81,7 +78,6 @@ void Player::ApplyInput()
                 0.0f,
                 right.z * moveDir.x + forward.z * moveDir.z,
             };
-
 
             inputMove = Vector3Scale(inputMove, 20.0f * m_physics.GetDeltaTime());
             m_physics.AddVelocity(inputMove);
@@ -224,4 +220,9 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
     {
         m_physics.SetGroundLevel(false);
     }
+}
+
+BoundingBox Player::GetPlayerBoundingBox() const // Get bounding box
+{
+    return m_playerBoundingBox;
 }

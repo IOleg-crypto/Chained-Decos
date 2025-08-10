@@ -45,6 +45,7 @@ public:
     Vector3 GetPlayerPosition() const;        // Get position
     const Collision &GetCollision() const;    // Get collision info
     bool IsJumpCollision() const;             // Check jump collision flag
+    BoundingBox GetPlayerBoundingBox() const; // Get bounding box
 
 private:
     std::shared_ptr<CameraController> m_cameraController; // Camera control
