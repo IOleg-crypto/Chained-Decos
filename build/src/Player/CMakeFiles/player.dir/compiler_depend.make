@@ -216,6 +216,7 @@ src/Player/CMakeFiles/player.dir/Player.cpp.obj: D:/gitnext/Chained\ Decos/src/P
   D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
+  D:/gitnext/Chained\ Decos/src/Model/Animation.h \
   D:/gitnext/Chained\ Decos/src/Model/Model.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
   D:/gitnext/Chained\ Decos/src/Player/Player.h \
@@ -616,6 +617,8 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/format:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/forward_list:
+
+D:/gitnext/Chained\ Decos/src/Model/Animation.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/functional:
 

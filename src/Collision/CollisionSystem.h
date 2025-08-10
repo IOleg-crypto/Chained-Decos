@@ -17,37 +17,37 @@
 class Collision
 {
 public:
-  Collision() = default;
+    Collision() = default;
 
-  // Initialize collision box by center position and size (half-extents)
-  Collision(const Vector3 &center, const Vector3 &size);
+    // Initialize collision box by center position and size (half-extents)
+    Collision(const Vector3 &center, const Vector3 &size);
 
-  ~Collision() = default;
+    ~Collision() = default;
 
-  // -------------------- Getters --------------------
+    // -------------------- Getters --------------------
 
-  // Get minimum corner of bounding box
-  Vector3 GetMin() const;
+    // Get minimum corner of bounding box
+    Vector3 GetMin() const;
 
-  // Get maximum corner of bounding box
-  Vector3 GetMax() const;
+    // Get maximum corner of bounding box
+    Vector3 GetMax() const;
 
-  // -------------------- Update --------------------
+    // -------------------- Update --------------------
 
-  // Update bounding box position and size
-  void Update(const Vector3 &center, const Vector3 &size);
+    // Update bounding box position and size
+    void Update(const Vector3 &center, const Vector3 &size);
 
-  // -------------------- Collision Checks --------------------
+    // -------------------- Collision Checks --------------------
 
-  // Check if this collision box intersects with another
-  bool Intersects(const Collision &other) const;
+    // Check if this collision box intersects with another
+    bool Intersects(const Collision &other) const;
 
-  // Check if this collision box contains a point
-  bool Contains(const Vector3 &point) const;
+    // Check if this collision box contains a point
+    bool Contains(const Vector3 &point) const;
 
 private:
-  Vector3 m_min{}; // Minimum corner of AABB
-  Vector3 m_max{}; // Maximum corner of AABB
+    Vector3 m_min{}; // Minimum corner of AABB
+    Vector3 m_max{}; // Maximum corner of AABB
 };
 
 #endif // COLLISIONSYSTEM_H

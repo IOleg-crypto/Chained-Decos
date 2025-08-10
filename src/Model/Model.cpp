@@ -88,7 +88,6 @@ void Models::LoadModelsFromJson(const std::string &path)
         {
             AddInstance(json::object(), pModel, modelName, animPtr);
         }
-        delete pModel;
     }
 }
 
