@@ -1,6 +1,6 @@
+// Created by I#Oleg
 //
-//  Created by I#Oleg
-//
+
 #ifndef PLAYER_H
 #define PLAYER_H
 
@@ -10,72 +10,70 @@
 
 #include <CameraController/CameraController.h>
 #include <Collision/CollisionManager.h>
+#include <Collision/CollisionSystem.h>
 #include <Model/Model.h>
 #include <World/Physics.h>
 
-// Player handles movement, camera, collisions, and optional model rendering.
+// Player: handles movement, camera, collisions, model
 class Player
 {
 public:
     Player();
     ~Player();
+    Player(const Player &other) = delete;
+    Player(Player &&other) = delete;
 
-    void Update();                  // Main per-frame update
-    void ApplyInput();              // Handle keyboard input
-    void Move(const Vector3& move); // Apply movement vector
-    void ApplyJumpImpulse(float impulse);
+    void Update();                                                        // Main update
+    void UpdatePlayerBox();                                               // Update bounding box
+    void UpdatePlayerCollision();                                         // Update collisions
+    void ApplyGravityForPlayer(const CollisionManager &collisionManager); // Gravity + collisions
 
-    void SetPlayerPosition(const Vector3& pos);
-    Vector3 GetPlayerPosition() const { return m_PlayerPosition; }
+    void ApplyInput();                          // Process input
+    void Move(const Vector3 &moveVector);       // Move player
+    void SetPlayerPosition(const Vector3 &pos); // Set position
+    void ApplyJumpImpulse(float impulse);       // Jump impulse
 
-    // Camera
-    std::shared_ptr<CameraController> GetCameraController() const { return m_CameraController; }
+    std::shared_ptr<CameraController> GetCameraController() const; // Get camera
 
-    // Model
-    void SetPlayerModel(Model* model);
-    void ToggleModelRendering(bool useModel) { m_UseModel = useModel; }
+    void SetPlayerModel(Model *model);        // Set 3D model
+    void ToggleModelRendering(bool useModel); // Show/hide model
+    Models GetModelManager();                 // Get model manager
 
-    // Collision
-    void UpdatePlayerBox();                           // Update bounding box
-    void UpdatePlayerCollision();                     // Check collisions
-    void ApplyGravityForPlayer(const CollisionManager& collisionManager);
-    bool IsJumpCollision() const { return m_IsJumpCollision; }
-
-    float GetRotationY() const { return m_RotationY; }
+    [[nodiscard]] float GetSpeed();           // Get current speed
+    [[nodiscard]] float GetRotationY() const; // Get Y rotation
+    void SetSpeed(float speed);               // Set speed
+    Vector3 GetPlayerPosition() const;        // Get position
+    const Collision &GetCollision() const;    // Get collision info
+    bool IsJumpCollision() const;             // Check jump collision flag
 
 private:
-    // --- Camera ---
-    std::shared_ptr<CameraController> m_CameraController;
-    float m_CameraYaw = 0.0f;
-    float m_CameraPitch = 0.0f;
-    float m_CameraSmoothingFactor = 4.0f;
-    Vector3 m_BaseTarget = { 0.0f, 2.0f, 0.0f };
-    Vector3 m_OriginalCameraTarget = { 0.0f, 2.0f, 0.0f };
-    float m_RotationY = 0.0f; // Y-axis rotation
+    std::shared_ptr<CameraController> m_cameraController; // Camera control
+    float m_cameraYaw = 0.0f;
+    float m_cameraPitch = 0.0f;
+    float m_cameraSmoothingFactor = 4.0f;
+    Vector3 m_baseTarget = {0.0f, 2.0f, 0.0f};
+    Vector3 m_originalCameraTarget = {0.0f, 2.0f, 0.0f};
+    float m_rotationY = 0.0f;
 
-    // --- Movement / Physics ---
-    bool m_IsJumping = false;
-    bool m_IsPlayerMoving = false;
-    bool m_IsJumpCollision = false;
-    float m_WalkSpeed = 3.0f;
-    float m_RunSpeed = 15.0f;
-    PhysicsComponent m_Physics;
+    bool m_isJumping = false;
+    bool m_isPlayerMoving = false;
+    bool m_isJumpCollision = false;
+    float m_walkSpeed = 3.0f;
+    float m_runSpeed = 15.0f;
+    PhysicsComponent m_physics;
 
-    // --- State ---
-    Vector3 m_PlayerPosition{};
-    Vector3 m_LastPlayerPosition{};
-    Vector3 m_PlayerSize{};
-    Color m_PlayerColor = BLUE;
-    BoundingBox m_PlayerBoundingBox{};
+    Vector3 m_playerPosition{};
+    Vector3 m_lastPlayerPosition{};
+    Vector3 m_playerSize{};
+    Color m_playerColor = BLUE;
+    BoundingBox m_playerBoundingBox{};
 
-    // --- Model ---
-    Model* m_PlayerModel = nullptr;
-    bool m_UseModel = false;
-    Models m_ModelPlayer;
+    Model *m_playerModel = nullptr;
+    bool m_useModel = false;
+    Models m_modelPlayer;
 
-    // --- Collision ---
-    Collision m_Collision{};
-    CollisionManager m_CollisionManager;
+    Collision m_collision{};
+    CollisionManager m_collisionManager;
 };
 
-#endif
+#endif // PLAYER_H

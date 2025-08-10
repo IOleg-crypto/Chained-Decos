@@ -45,7 +45,7 @@ void Models::LoadModelsFromJson(const std::string &path)
             continue;
         }
 
-        std::string modelName = modelEntry["name"].get<std::string>();
+        auto modelName = modelEntry["name"].get<std::string>();
         // PROJECT_ROOT_DIR - Needed for path(global)
         std::string modelPath = PROJECT_ROOT_DIR + modelEntry["path"].get<std::string>();
 

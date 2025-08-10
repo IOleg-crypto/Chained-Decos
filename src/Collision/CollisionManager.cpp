@@ -1,5 +1,6 @@
-#include <Collision/CollisionManager.h>
+#include <algorithm>
 #include <vector>
+#include <Collision/CollisionManager.h>
 
 void CollisionManager::AddCollider(Collision &collider) { m_collisions.emplace_back(collider); }
 
@@ -7,14 +8,9 @@ void CollisionManager::ClearColliders() { m_collisions.clear(); }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 {
-    for (const auto &collider : m_collisions)
-    {
-        if (playerCollision.Intersects(collider))
-        {
-            return true;
-        }
-    }
-    return false;
+    return std::ranges::any_of(m_collisions, [&](const Collision& collider) {
+        return playerCollision.Intersects(collider);
+    });
 }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const
