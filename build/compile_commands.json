@@ -264,6 +264,12 @@
   "output": "src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj"
 },
 {
+  "directory": "D:/gitnext/Chained Decos/build/src/Model",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/Animation.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/Animation.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/Model/Animation.cpp",
+  "output": "src/Model/CMakeFiles/model.dir/Animation.cpp.obj"
+},
+{
   "directory": "D:/gitnext/Chained Decos/build/src/Menu",
   "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/menu.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/menu.dir/Menu.cpp.obj -c \"D:/gitnext/Chained Decos/src/Menu/Menu.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Menu/Menu.cpp",

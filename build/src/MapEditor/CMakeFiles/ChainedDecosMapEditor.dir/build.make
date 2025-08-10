@@ -207,6 +207,7 @@ src/MapEditor/ChainedDecosMapEditor.exe: src/World/world.lib
 src/MapEditor/ChainedDecosMapEditor.exe: _deps/raylib-build/raylib/raylib.lib
 src/MapEditor/ChainedDecosMapEditor.exe: imguilib.lib
 src/MapEditor/ChainedDecosMapEditor.exe: src/Player/player.lib
+src/MapEditor/ChainedDecosMapEditor.exe: src/World/world.lib
 src/MapEditor/ChainedDecosMapEditor.exe: src/Collision/collision.lib
 src/MapEditor/ChainedDecosMapEditor.exe: _deps/raylib-build/raylib/raylib.lib
 src/MapEditor/ChainedDecosMapEditor.exe: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/linkLibs.rsp
