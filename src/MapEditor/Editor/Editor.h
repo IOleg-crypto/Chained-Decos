@@ -13,6 +13,7 @@
 
 #include "MapObject.h"
 #include <CameraController/CameraController.h>
+#include <Model/Model.h>
 
 // Main editor class for the map editor
 class Editor

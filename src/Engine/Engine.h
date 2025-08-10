@@ -18,13 +18,75 @@
 #include <Menu/Menu.h>
 #include <Model/Model.h>
 #include <Player/Player.h>
+#include <World/Physics.h>
 
-// # ------------------------------------------------------
-// # Engine - main class , that creates window using raylib
-// # ------------------------------------------------------
+//
+// Engine
+// Main application class responsible for:
+//  - Window creation and management (using raylib)
+//  - Game loop and update/render calls
+//  - Managing core game objects (player, models, input, physics)
+//  - Debug and menu handling
+//
 class Engine
 {
-  private:
+public:
+    // Constructors & Destructor
+    Engine() = default;
+    Engine(int screenX, int screenY);
+    ~Engine();
+
+    // Deleted copy/move constructors - non-copyable
+    Engine(const Engine &other) = delete;
+    Engine(Engine &&other) = delete;
+
+    // -------------------- Initialization --------------------
+
+    // Initialize engine subsystems and window
+    void Init();
+
+    // Setup input bindings and handlers
+    void InitInput();
+
+    // -------------------- Main Loop --------------------
+
+    // Start main application loop
+    void Run();
+
+    // Handle input shortcuts (e.g. toggle fullscreen)
+    void HandleKeyboardShortcuts() const;
+
+    // Update game state: input, physics, player, etc.
+    void Update();
+
+    // -------------------- Rendering --------------------
+
+    // Render all game objects and UI
+    void Render();
+
+    // Load player model and prepare it for rendering
+    void LoadPlayerModel();
+
+    // Render the 3D scene objects
+    void DrawScene3D();
+
+    // -------------------- ImGui / Debug --------------------
+
+    // Load better font for ImGui UI
+    void InitImGuiFont() const;
+
+    // Draw debug info overlay (using ImGui)
+    void DrawDebugInfo(const Camera &camera, const int &cameraMode);
+
+    // -------------------- Menu --------------------
+
+    // Toggle menu visibility
+    void ToggleMenu() { m_showMenu = !m_showMenu; }
+
+    // Initialize collision system
+    void InitCollisions();
+
+private:
     // Screen resolution
     int m_screenX{};
     int m_screenY{};
@@ -32,66 +94,27 @@ class Engine
     // Window title
     std::string m_windowName;
 
-    // Game objects
+    // Core game objects
     Player m_player;
     Models m_models;
     InputManager m_manager;
+    PhysicsComponent m_physics;
 
-    // Debug flag
+    // Debug flags
     bool m_showDebug{false};
-    // Collision debug visualization
     bool m_showCollisionDebug{false};
-    // Menu
+
+    // Menu system
     Menu m_menu;
-    // Show menu
     bool m_showMenu = true;
-    // For exit
+
+    // Application state
     bool m_shouldExit{};
 
-    // Model for player
-    Model m_playerModelMesh;
+    // Collision management
     CollisionManager m_collisionManager;
-    Collision m_collision;
-    Collision m_CubeCollision;
-    // Player model usage flag
+    Collision m_collision{};
     bool m_usePlayerModel = true;
-
-  public:
-    // Constructors & Destructor
-    Engine() = default;
-    Engine(int screenX, int screenY);
-    ~Engine();
-    // Deleted copy/move constructors (don`t needed)
-    Engine(const Engine &other) = delete;
-    Engine(Engine &&other) = delete;
-
-  public:
-    // Initialization
-    void Init();      // Initializes the engine and window
-    void InitInput(); // Initializes input handling
-
-    // Main loop
-    void Run();
-
-    // Input
-    void HandleKeyboardShortcuts() const;
-    void Update(); // Updates input and player logic
-
-    // Rendering
-    void Render(); // Renders all objects and UI
-    void LoadPlayerModel();
-
-    void DrawScene3D(); // Renders 3D scene
-
-    // For ImGui(Load better font)
-    void InitImGuiFont() const;
-    // Debug (using ImGui)
-    void DrawDebugInfo(const Camera &camera, const int &cameraMode);
-
-    // Menu
-    void DrawMenu();
-    void ToggleMenu() { m_showMenu = !m_showMenu; }
-    void InitCollisions();
 };
 
 #endif // ENGINE_H

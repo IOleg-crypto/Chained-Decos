@@ -105,6 +105,8 @@ ChainedDecos.exe: src/World/world.lib
 ChainedDecos.exe: src/Collision/collision.lib
 ChainedDecos.exe: _deps/raylib-build/raylib/raylib.lib
 ChainedDecos.exe: imguilib.lib
+ChainedDecos.exe: src/Player/player.lib
+ChainedDecos.exe: src/Collision/collision.lib
 ChainedDecos.exe: _deps/raylib-build/raylib/raylib.lib
 ChainedDecos.exe: CMakeFiles/ChainedDecos.dir/linkLibs.rsp
 ChainedDecos.exe: CMakeFiles/ChainedDecos.dir/objects1.rsp

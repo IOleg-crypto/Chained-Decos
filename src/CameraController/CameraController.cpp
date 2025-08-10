@@ -29,9 +29,7 @@ void CameraController::UpdateCameraRotation()
     m_cameraPitch = Clamp(m_cameraPitch, -PI / 2.0f + 0.1f, PI / 2.0f - 0.1f);
 }
 
-void CameraController::SetFOV(float FOV) {
-     this->m_radiusFOV = FOV;
-}
+void CameraController::SetFOV(float FOV) { this->m_radiusFOV = FOV; }
 
 void CameraController::ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget,
                                          float jumpOffsetY)
@@ -50,6 +48,30 @@ float CameraController::GetCameraPitch() const { return m_cameraPitch; }
 
 float CameraController::GetCameraSmoothingFactor() const { return m_cameraSmoothingFactor; }
 
-float CameraController::GetFOV() const {
-    return m_radiusFOV;
+float CameraController::GetFOV() const { return m_radiusFOV; }
+
+void CameraController::UpdateMouseRotation(Camera &camera, Vector3 &playerPosition)
+{
+    float currentFOV = GetFOV();
+    float wheelMove = GetMouseWheelMove();
+    currentFOV -= wheelMove * 0.5f; // Adjust sensitivity as needed
+    SetFOV(currentFOV);
+    if (GetFOV() < 1.0f)
+    {
+        SetFOV(6.0f);
+    }
+    if (GetFOV() > 40.0f)
+    {
+        SetFOV(40.0f);
+    }
+
+    Vector3 offset = {GetFOV() * sinf(GetCameraYaw()) * cosf(GetCameraPitch()),
+                      GetFOV() * sinf(GetCameraPitch()) + 2.0f,
+                      GetFOV() * cosf(GetCameraYaw()) * cosf(GetCameraPitch())};
+
+    if (offset.y < 0.0f)
+        offset.y = 0.0f;
+
+    camera.position = Vector3Add(playerPosition, offset);
+    camera.target = playerPosition;
 }
