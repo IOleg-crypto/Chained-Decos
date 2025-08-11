@@ -5,6 +5,7 @@
 #ifndef COLLISIONSYSTEM_H
 #define COLLISIONSYSTEM_H
 
+#include <cfloat>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
@@ -44,10 +45,13 @@ public:
 
     // Check if this collision box contains a point
     bool Contains(const Vector3 &point) const;
+    // Check if this collision box contains another box
+    void GetMeshModelCollision(Model *model);
 
 private:
     Vector3 m_min{}; // Minimum corner of AABB
     Vector3 m_max{}; // Maximum corner of AABB
+    Mesh m_mesh{};   // Optional mesh for rendering (not used in this example)
 };
 
 #endif // COLLISIONSYSTEM_H

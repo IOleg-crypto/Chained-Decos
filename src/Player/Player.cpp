@@ -11,7 +11,7 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
 
     m_playerPosition = {0.0f, -2.0f, 0.0f};
     // Depends on model size(bounding box collision)
-    m_playerSize = {1.0f, 3.5f, 1.0f};
+    m_playerSize = {1.0f, 5.5f, 1.0f};
     m_playerColor = BLUE;
     m_playerModel = nullptr;
     m_useModel = false;

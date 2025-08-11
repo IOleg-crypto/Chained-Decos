@@ -9,10 +9,12 @@
 
 Models::~Models()
 {
-    for (const auto &modelPtr : m_modelByName | std::views::values)
+    for (auto &pair : m_modelByName)
     {
-        UnloadModel(*modelPtr);
-        delete modelPtr;
+        if (pair.second && pair.second->meshCount > 0)
+        {
+            UnloadModel(*pair.second);
+        }
     }
     m_modelByName.clear();
     m_animations.clear();
@@ -95,10 +97,15 @@ void Models::DrawAllModels() const
 {
     for (const auto &instance : m_instances)
     {
-        if (instance.GetModel() != nullptr)
+        Model *modelPtr = instance.GetModel();
+        if (modelPtr != nullptr && modelPtr->meshCount > 0)
         {
-            DrawModel(*instance.GetModel(), instance.GetModelPosition(), instance.GetScale(),
+            DrawModel(*modelPtr, instance.GetModelPosition(), instance.GetScale(),
                       instance.GetColor());
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Trying to draw invalid or empty model instance");
         }
     }
 }
@@ -117,7 +124,15 @@ Model &Models::GetModelByName(const std::string &name)
 
 void Models::AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
                          Animation *animation)
+
 {
+    if (!modelPtr)
+    {
+        TraceLog(LOG_WARNING, "AddInstance called with nullptr modelPtr for model '%s'",
+                 modelName.c_str());
+        return;
+    }
+
     Vector3 pos = {0.0f, 0.0f, 0.0f};
     float scaleModel = 1.0f;
     Color color = WHITE;
