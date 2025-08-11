@@ -1,50 +1,77 @@
 # Run command: C:/Program\ Files/CMake/bin/cmake.exe --build . --config "Debug" --target "preinstall"
 # Directory: D:/gitnext/Chained Decos/build
 # Output:
-[ 24%] Built target glfw
-[ 33%] Built target raylib
+[ 23%] Built target glfw
+[ 32%] Built target raylib
 [ 42%] Built target imguilib
-[ 44%] Built target world
-[ 48%] Built target collision
+[ 45%] Built target collision
+[ 47%] Built target world
 [ 50%] Built target player
 [ 54%] Built target model
-[ 56%] Built target engine
-[ 58%] Built target input
-[ 60%] Built target menu
-[ 63%] Built target cameracontroller
-[ 65%] Built target mapmod
-[ 67%] Built target color
-[ 70%] Built target ChainedDecos
-[ 72%] Built target gtest
-[ 74%] Built target gmock
-[ 77%] Built target gmock_main
-[ 79%] Built target gtest_main
-[ 80%] Building CXX object tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj
-Building CXX object tests/CMakeFiles/unit_tests.dir/__/src/Player/Player.cpp.obj
-Building CXX object tests/CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj
-Linking CXX executable unit_tests.exe
-lld-link: error: undefined symbol: public: void __cdecl Collision::Update(struct Vector3 const &, struct Vector3 const &)
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Player/Player.cpp.obj:(public: void __cdecl Player::DrawPlayer(void))
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Player/Player.cpp.obj:(public: void __cdecl Player::SetPlayerPosition(struct Vector3 const &))
-
-lld-link: error: undefined symbol: public: bool __cdecl CollisionManager::CheckCollision(class Collision const &, struct Vector3 &) const
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Player/Player.cpp.obj:(public: void __cdecl Player::ApplyGravityForPlayer(class CollisionManager const &))
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::Update(void))
-
-lld-link: error: undefined symbol: public: void __cdecl CollisionManager::ClearColliders(void)
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
-
-lld-link: error: undefined symbol: public: __cdecl Collision::Collision(struct Vector3 const &, struct Vector3 const &)
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
-
-lld-link: error: undefined symbol: public: void __cdecl CollisionManager::AddCollider(class Collision &)
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
->>> referenced by CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj:(public: void __cdecl Engine::InitCollisions(void))
-clang++: error: linker command failed with exit code 1 (use -v to see invocation)
-make[2]: *** [tests/CMakeFiles/unit_tests.dir/build.make:240: tests/unit_tests.exe] Error 1
+[ 55%] Building CXX object src/Engine/CMakeFiles/engine.dir/Engine.cpp.obj
+[ 96%] Linking CXX static library engine.lib
+[ 96%] Built target engine
+[ 96%] Built target input
+[ 96%] Built target menu
+[ 96%] Built target cameracontroller
+[ 96%] Built target mapmod
+[ 96%] Built target color
+[ 98%] Linking CXX executable ChainedDecos.exe
+[100%] Built target ChainedDecos
+[103%] Built target gtest
+Built target gmock
+Built target gmock_main
+Built target gtest_main
+Building CXX object tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj
+D:/gitnext/Chained Decos/tests/gtest.cpp:394:5: error: unknown type name 'PositionData'
+  394 |     PositionData data = player.GetPlayerData();
+      |     ^
+D:/gitnext/Chained Decos/tests/gtest.cpp:394:32: error: no member named 'GetPlayerData' in 'Player'
+  394 |     PositionData data = player.GetPlayerData();
+      |                         ~~~~~~ ^
+D:/gitnext/Chained Decos/tests/gtest.cpp:412:28: error: no member named 'Jump' in 'Player'
+  412 |     EXPECT_NO_THROW(player.Jump());
+      |                     ~~~~~~ ^
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/gtest.h:1768:24: note: expanded from macro 'EXPECT_NO_THROW'
+ 1768 |   GTEST_TEST_NO_THROW_(statement, GTEST_NONFATAL_FAILURE_)
+      |                        ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1466:54: note: expanded from macro 'GTEST_TEST_NO_THROW_'
+ 1466 |       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+      |                                                      ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
+ 1365 |     statement;                                                    \
+      |     ^~~~~~~~~
+D:/gitnext/Chained Decos/tests/gtest.cpp:419:28: error: no member named 'UpdatePositionHistory' in 'Player'
+  419 |     EXPECT_NO_THROW(player.UpdatePositionHistory());
+      |                     ~~~~~~ ^
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/gtest.h:1768:24: note: expanded from macro 'EXPECT_NO_THROW'
+ 1768 |   GTEST_TEST_NO_THROW_(statement, GTEST_NONFATAL_FAILURE_)
+      |                        ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1466:54: note: expanded from macro 'GTEST_TEST_NO_THROW_'
+ 1466 |       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+      |                                                      ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
+ 1365 |     statement;                                                    \
+      |     ^~~~~~~~~
+D:/gitnext/Chained Decos/tests/gtest.cpp:484:74: error: too few arguments to function call, expected 4, have 3
+  484 |     EXPECT_NO_THROW(models.AddInstance(instanceJson, testModel, modelName));
+      |                     ~~~~~~~~~~~~~~~~~~                                   ^
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/gtest.h:1768:24: note: expanded from macro 'EXPECT_NO_THROW'
+ 1768 |   GTEST_TEST_NO_THROW_(statement, GTEST_NONFATAL_FAILURE_)
+      |                        ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1466:54: note: expanded from macro 'GTEST_TEST_NO_THROW_'
+ 1466 |       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+      |                                                      ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
+ 1365 |     statement;                                                    \
+      |     ^~~~~~~~~
+D:/gitnext/Chained Decos/src\Model/Model.h:58:10: note: 'AddInstance' declared here
+   58 |     void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
+      |          ^           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   59 |                      Animation *animation);
+      |                      ~~~~~~~~~~~~~~~~~~~~
+5 errors generated.
+make[2]: *** [tests/CMakeFiles/unit_tests.dir/build.make:77: tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj] Error 1
 make[1]: *** [CMakeFiles/Makefile2:991: tests/CMakeFiles/unit_tests.dir/all] Error 2
 make: *** [Makefile:156: all] Error 2
 
