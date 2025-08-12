@@ -1,6 +1,10 @@
 name: CMake on multiple platforms
 
 on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -12,9 +16,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         build_type: [Release]
-        c_compiler: [gcc, clang]
-        cpp_compiler: [g++, clang++]
         include:
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
           - os: windows-latest
             c_compiler: gcc
             cpp_compiler: g++
@@ -30,13 +38,33 @@ jobs:
       id: strings
       shell: bash
       run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+      
+    - name: Cache build dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ steps.strings.outputs.build-output-dir }}/_deps
+          ~/.cache/vcpkg
+        key: ${{ runner.os }}-${{ matrix.c_compiler }}-deps-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.c_compiler }}-deps-
+
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1.14
+      with:
+        cmake-version: '3.20'
 
     #################################
     # Linux-specific setup
     #################################
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake \
+          libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+          libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+          xvfb
 
     - name: Clean build directory (Linux)
       if: matrix.os == 'ubuntu-latest'
@@ -78,4 +106,23 @@ jobs:
     #################################
     - name: Run tests
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --output-on-failure --build-config ${{ matrix.build_type }}
+      run: |
+        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          xvfb-run -a ctest --output-on-failure --build-config ${{ matrix.build_type }}
+        else
+          ctest --output-on-failure --build-config ${{ matrix.build_type }}
+        fi
+
+    #################################
+    # Upload artifacts
+    #################################
+    - name: Upload build artifacts
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-${{ matrix.os }}-${{ matrix.c_compiler }}
+        path: |
+          ${{ steps.strings.outputs.build-output-dir }}/ChainedDecos*
+          ${{ steps.strings.outputs.build-output-dir }}/ChainedDecosMapEditor*
+          ${{ steps.strings.outputs.build-output-dir }}/*.exe
+        retention-days: 7

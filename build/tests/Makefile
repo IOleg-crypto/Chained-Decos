@@ -219,6 +219,30 @@ __/src/CameraController/CameraController.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/__/src/CameraController/CameraController.cpp.s
 .PHONY : __/src/CameraController/CameraController.cpp.s
 
+__/src/Color/ColorParser.obj: __/src/Color/ColorParser.cpp.obj
+.PHONY : __/src/Color/ColorParser.obj
+
+# target to build an object file
+__/src/Color/ColorParser.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj
+.PHONY : __/src/Color/ColorParser.cpp.obj
+
+__/src/Color/ColorParser.i: __/src/Color/ColorParser.cpp.i
+.PHONY : __/src/Color/ColorParser.i
+
+# target to preprocess a source file
+__/src/Color/ColorParser.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.i
+.PHONY : __/src/Color/ColorParser.cpp.i
+
+__/src/Color/ColorParser.s: __/src/Color/ColorParser.cpp.s
+.PHONY : __/src/Color/ColorParser.s
+
+# target to generate assembly for a file
+__/src/Color/ColorParser.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.s
+.PHONY : __/src/Color/ColorParser.cpp.s
+
 __/src/Engine/Engine.obj: __/src/Engine/Engine.cpp.obj
 .PHONY : __/src/Engine/Engine.obj
 
@@ -429,6 +453,9 @@ help:
 	@echo "... __/src/CameraController/CameraController.obj"
 	@echo "... __/src/CameraController/CameraController.i"
 	@echo "... __/src/CameraController/CameraController.s"
+	@echo "... __/src/Color/ColorParser.obj"
+	@echo "... __/src/Color/ColorParser.i"
+	@echo "... __/src/Color/ColorParser.s"
 	@echo "... __/src/Engine/Engine.obj"
 	@echo "... __/src/Engine/Engine.i"
 	@echo "... __/src/Engine/Engine.s"

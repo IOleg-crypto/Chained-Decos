@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/unit_tests.dir/__/src/CameraController/CameraController.cpp.obj"
   "CMakeFiles/unit_tests.dir/__/src/CameraController/CameraController.cpp.obj.d"
+  "CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj"
+  "CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj.d"
   "CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj"
   "CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj.d"
   "CMakeFiles/unit_tests.dir/__/src/Input/InputManager.cpp.obj"

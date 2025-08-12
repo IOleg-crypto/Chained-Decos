@@ -18,6 +18,8 @@ add_executable(unit_tests
         ../src/CameraController/CameraController.cpp
         ../src/Input/InputManager.h
         ../src/Input/InputManager.cpp
+        ../src/Color/ColorParser.h
+        ../src/Color/ColorParser.cpp
 )
 
 target_include_directories(unit_tests PRIVATE
@@ -29,6 +31,7 @@ target_link_libraries(unit_tests
         raylib
         nlohmann_json
         imguilib
+        color
         GTest::gtest_main
 )
 
