@@ -19,7 +19,7 @@ jobs:
           - os: windows-latest
             c_compiler: gcc
             cpp_compiler: g++
-
+            
     steps:
     - uses: actions/checkout@v4
 
@@ -28,6 +28,12 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+         submodules: true
+         fetch-depth: 0
 
     #################################
     # Linux-specific setup
@@ -55,6 +61,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: Remove-Item -Path "${{ steps.strings.outputs.build-output-dir }}" -Recurse -Force -ErrorAction SilentlyContinue
 
+      
     #################################
     # Configure with CMake
     #################################
