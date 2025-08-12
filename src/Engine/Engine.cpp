@@ -54,7 +54,7 @@ void Engine::Init()
     m_models.SetCacheEnabled(true);
     m_models.SetMaxCacheSize(20);
     m_models.EnableLOD(false);
-    // Load models from JSON file (if model not exist - it crashing)
+    // Load models from JSON file (if model don`t exist - it crashing)
     m_models.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/models.json");
     m_models.PrintStatistics();
 
