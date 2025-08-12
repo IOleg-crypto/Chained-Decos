@@ -217,7 +217,10 @@ src/Player/CMakeFiles/player.dir/Player.cpp.obj: D:/gitnext/Chained\ Decos/src/P
   D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Model/Animation.h \
+  D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h \
   D:/gitnext/Chained\ Decos/src/Model/Model.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelCache.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
   D:/gitnext/Chained\ Decos/src/Player/Player.h \
   D:/gitnext/Chained\ Decos/src/World/Physics.h \
@@ -894,7 +897,13 @@ D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h:
 
 D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h:
 
+D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h:
+
 D:/gitnext/Chained\ Decos/src/Model/Model.h:
+
+D:/gitnext/Chained\ Decos/src/Model/ModelCache.h:
+
+D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h:
 
 E:/LLVM/lib/clang/19/include/__stddef_offsetof.h:
 

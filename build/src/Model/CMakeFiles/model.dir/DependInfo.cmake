@@ -9,7 +9,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "D:/gitnext/Chained Decos/src/Model/Animation.cpp" "src/Model/CMakeFiles/model.dir/Animation.cpp.obj" "gcc" "src/Model/CMakeFiles/model.dir/Animation.cpp.obj.d"
+  "D:/gitnext/Chained Decos/src/Model/JsonHelper.cpp" "src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj" "gcc" "src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj.d"
   "D:/gitnext/Chained Decos/src/Model/Model.cpp" "src/Model/CMakeFiles/model.dir/Model.cpp.obj" "gcc" "src/Model/CMakeFiles/model.dir/Model.cpp.obj.d"
+  "D:/gitnext/Chained Decos/src/Model/ModelCache.cpp" "src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj" "gcc" "src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj.d"
   "D:/gitnext/Chained Decos/src/Model/ModelInstance.cpp" "src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj" "gcc" "src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj.d"
   )
 

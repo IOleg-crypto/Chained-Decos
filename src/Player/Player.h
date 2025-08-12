@@ -20,8 +20,6 @@ class Player
 public:
     Player();
     ~Player();
-    Player(const Player &other) = delete;
-    Player(Player &&other) = delete;
 
     void Update();                                                        // Main update
     void UpdatePlayerBox();                                               // Update bounding box
@@ -37,7 +35,7 @@ public:
 
     void SetPlayerModel(Model *model);        // Set 3D model
     void ToggleModelRendering(bool useModel); // Show/hide model
-    Models GetModelManager();                 // Get model manager
+    Models &GetModelManager();                // Get model manager
 
     [[nodiscard]] float GetSpeed();           // Get current speed
     [[nodiscard]] float GetRotationY() const; // Get Y rotation
@@ -75,6 +73,12 @@ private:
 
     Collision m_collision{};
     CollisionManager m_collisionManager;
+
+    // Helper methods for cleaner code
+    Vector3 GetInputDirection();
+    std::pair<Vector3, Vector3> GetCameraVectors(); // Returns {forward, right}
+    void ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime);
+    void ApplyAirborneMovement(const Vector3 &worldMoveDir, float deltaTime);
 };
 
 #endif // PLAYER_H

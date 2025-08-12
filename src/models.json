@@ -6,12 +6,12 @@
   },
   {
     "name": "arc",
-    "path": "/resources/map.glb",
+    "path": "/resources/arc.glb",
     "spawn": true,
     "instances": [
       {
-        "position": { "x": 1.0, "y": 1.0, "z": 45.0 },
-        "scale": 0.4,
+        "position": { "x": 1.0, "y": 0.0, "z": 45.0 },
+        "scale": 0.5,
         "color": "gray"
       }
     ]

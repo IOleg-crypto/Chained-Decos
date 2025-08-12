@@ -3,5 +3,7 @@ add_library(collision STATIC
     CollisionSystem.h
     CollisionManager.cpp
     CollisionManager.h
+    CollisionDebugRenderer.cpp
+    CollisionDebugRenderer.h
 )
 target_link_libraries(collision PUBLIC raylib)

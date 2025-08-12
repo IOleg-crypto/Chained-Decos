@@ -81,10 +81,23 @@ public:
     // -------------------- Menu --------------------
 
     // Toggle menu visibility
-    void ToggleMenu() { m_showMenu = !m_showMenu; }
+    void ToggleMenu();
 
     // Initialize collision system
     void InitCollisions();
+
+    // Private helper methods for better organization
+    void UpdatePlayer();
+    void UpdatePhysics();
+    void CheckPlayerBounds();
+    void RenderCollisionDebug();
+
+    // Load additional models dynamically(Unused)
+    void LoadAdditionalModels();
+    void SpawnEnemies();
+    void SpawnPickups();
+    /////////////////////////////
+    void OptimizeModelPerformance();
 
 private:
     // Screen resolution
@@ -111,8 +124,9 @@ private:
     // Application state
     bool m_shouldExit{};
 
-    // Collision management
+    // Collision management with separation of concerns
     CollisionManager m_collisionManager;
+    class CollisionDebugRenderer *m_collisionDebugRenderer;
     Collision m_collision{};
     bool m_usePlayerModel = true;
 };

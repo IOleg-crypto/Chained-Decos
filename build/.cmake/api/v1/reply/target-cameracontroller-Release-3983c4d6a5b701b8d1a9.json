@@ -61,7 +61,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
 				}
 			],
 			"defines" : 
@@ -113,11 +113,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "raylib::@4dc3a4644cf4ded08c01"
+			"id" : "glfw::@9de86fbe87260ae8e66c"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "glfw::@9de86fbe87260ae8e66c"
+			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		}
 	],
 	"id" : "cameracontroller::@5f3ee536e3548f9fd64a",

@@ -6,32 +6,56 @@
 #define INPUTMANAGER_H
 
 #include <functional>
-#include <unordered_map>
 #include <raylib.h>
+#include <unordered_map>
+
 
 //
 // InputManager
-// Manages input actions mapped to keyboard keys.
-// Allows registration of callbacks that get called when keys are processed.
+// Enhanced input manager with support for different input types:
+// - Single press actions (KEY_PRESSED)
+// - Continuous hold actions (KEY_DOWN)
+// - Release actions (KEY_RELEASED)
 //
-class InputManager {
+class InputManager
+{
 public:
+    enum class InputType
+    {
+        PRESSED, // Single press
+        HELD,    // Continuous while held
+        RELEASED // On key release
+    };
+
     InputManager() = default;
     ~InputManager() = default;
 
-    InputManager(const InputManager& other) = delete;
-    InputManager(InputManager&& other) = delete;
+    InputManager(const InputManager &other) = delete;
+    InputManager(InputManager &&other) = delete;
 
-    // Registers an action callback to a specific key
-    // key    - The keyboard key to listen for (e.g. KEY_W)
-    // action - The function to call when key is pressed
-    void RegisterAction(int key, const std::function<void()>& action);
+    // Register different types of input actions
+    void RegisterAction(int key, const std::function<void()> &action,
+                        InputType type = InputType::PRESSED);
+    void RegisterPressedAction(int key, const std::function<void()> &action);
+    void RegisterHeldAction(int key, const std::function<void()> &action);
+    void RegisterReleasedAction(int key, const std::function<void()> &action);
 
-    // Processes input, calling registered callbacks if their keys are pressed
+    // Remove actions
+    void UnregisterAction(int key, InputType type);
+    void ClearActions();
+
+    // Process all registered input actions
     void ProcessInput() const;
 
+    // Direct input queries
+    bool IsKeyPressed(int key) const { return ::IsKeyPressed(key); }
+    bool IsKeyDown(int key) const { return ::IsKeyDown(key); }
+    bool IsKeyReleased(int key) const { return ::IsKeyReleased(key); }
+
 private:
-    std::unordered_map<int, std::function<void()>> m_actions; // Map of key to action callback
+    std::unordered_map<int, std::function<void()>> m_pressedActions;
+    std::unordered_map<int, std::function<void()>> m_heldActions;
+    std::unordered_map<int, std::function<void()>> m_releasedActions;
 };
 
 #endif // INPUTMANAGER_H

@@ -219,13 +219,17 @@ src/Engine/CMakeFiles/engine.dir/Engine.cpp.obj: D:/gitnext/Chained\ Decos/src/E
   D:/gitnext/Chained\ Decos/include/rlImGui/extras/IconsFontAwesome6.h \
   D:/gitnext/Chained\ Decos/include/rlImGui/rlImGui.h \
   D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionDebugRenderer.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Engine/Engine.h \
   D:/gitnext/Chained\ Decos/src/Input/InputManager.h \
   D:/gitnext/Chained\ Decos/src/Menu/Menu.h \
   D:/gitnext/Chained\ Decos/src/Model/Animation.h \
+  D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h \
   D:/gitnext/Chained\ Decos/src/Model/Model.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelCache.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
   D:/gitnext/Chained\ Decos/src/Player/Player.h \
   D:/gitnext/Chained\ Decos/src/World/Physics.h \
@@ -912,13 +916,25 @@ D:/gitnext/Chained\ Decos/include/rlImGui/rlImGui.h:
 
 D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h:
 
+E:/LLVM/lib/clang/19/include/avx512ifmavlintrin.h:
+
+E:/LLVM/lib/clang/19/include/avx512dqintrin.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionDebugRenderer.h:
+
 D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h:
 
 D:/gitnext/Chained\ Decos/src/Input/InputManager.h:
 
 D:/gitnext/Chained\ Decos/src/Menu/Menu.h:
 
+D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h:
+
 D:/gitnext/Chained\ Decos/src/Model/Model.h:
+
+D:/gitnext/Chained\ Decos/src/Model/ModelCache.h:
+
+D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h:
 
 E:/LLVM/lib/clang/19/include/__stddef_offsetof.h:
 
@@ -967,10 +983,6 @@ E:/LLVM/lib/clang/19/include/avx512bitalgintrin.h:
 E:/LLVM/lib/clang/19/include/avx512bwintrin.h:
 
 E:/LLVM/lib/clang/19/include/avx512cdintrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512ifmavlintrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512dqintrin.h:
 
 E:/LLVM/lib/clang/19/include/avx512fp16intrin.h:
 
