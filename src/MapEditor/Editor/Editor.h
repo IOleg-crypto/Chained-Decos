@@ -18,7 +18,7 @@
 // Main editor class for the map editor
 class Editor
 {
-  private:
+private:
     std::shared_ptr<CameraController> m_cameraController; // Camera controller for 3D view
     std::vector<MapObject> m_objects;                     // List of all objects in the scene
     int m_selectedObjectIndex;                            // Index of currently selected object
@@ -28,30 +28,35 @@ class Editor
     bool m_showPropertiesPanel;                           // Show/hide properties panel
     bool m_shouldAddObject;                               // Add cube , cylinder or sphere
     std::string m_mapFileName;                            // Current map file name
+    Models m_models;                            // Model manager for loading and rendering models
+    std::vector<std::string> m_availableModels; // List of available models
+    std::string m_selectedModelName;            // Currently selected model for adding
+    bool m_modelsInitialized;                   // Flag to track if models are loaded
 
     // Available editing tools
     enum Tool
     {
-        SELECT = 0,      // Select objects
-        MOVE = 1,        // Move objects
-        ROTATE = 2,      // Rotate objects
-        SCALE = 3,       // Scale objects
-        ADD_CUBE = 4,    // Add cube primitive
-        ADD_SPHERE = 5,  // Add sphere primitive
-        ADD_CYLINDER = 6 // Add cylinder primitive
+        SELECT = 0,       // Select objects
+        MOVE = 1,         // Move objects
+        ROTATE = 2,       // Rotate objects
+        SCALE = 3,        // Scale objects
+        ADD_CUBE = 4,     // Add cube primitive
+        ADD_SPHERE = 5,   // Add sphere primitive
+        ADD_CYLINDER = 6, // Add cylinder primitive
+        ADD_MODEL = 7     // Add 3D model
     };
 
-  public:
+public:
     Editor();
     ~Editor();
 
-  public:
+public:
     // Core editor functions
     [[nodiscard]] std::shared_ptr<CameraController> GetCameraController() const;
-    void Update();       // Update editor state
-    void Render() const; // Render 3D objects
-    void RenderImGui();  // Render ImGui interface
-    void HandleInput();  // Handle user input
+    void Update();      // Update editor state
+    void Render();      // Render 3D objects
+    void RenderImGui(); // Render ImGui interface
+    void HandleInput(); // Handle user input
 
     // Object management functions
     void AddObject(const MapObject &obj); // Add new object to scene
@@ -60,19 +65,23 @@ class Editor
     void ClearSelection();                // Clear current selection
 
     // File operations
-    void SaveMap(const std::string &filename) const; // Save map to file
-    void LoadMap(const std::string &filename);       // Load map from file
+    void SaveMap(const std::string &filename); // Save map to file
+    void LoadMap(const std::string &filename); // Load map from file
 
-  private:
+private:
     // Rendering functions
-    static void RenderObject(const MapObject &obj); // Render single object
-    void RenderImGuiObjectPanel();                  // Render object list panel
-    void RenderImGuiPropertiesPanel();              // Render properties panel
-    void RenderImGuiToolbar();                      // Render toolbar
+    void RenderObject(MapObject &obj); // Render single object
+    void RenderImGuiObjectPanel();     // Render object list panel
+    void RenderImGuiPropertiesPanel(); // Render properties panel
+    void RenderImGuiToolbar();         // Render toolbar
 
     // Input handling
     void PickObject();          // Handle mouse input
     void HandleKeyboardInput(); // Handle keyboard input
+
+    // Model management
+    void EnsureModelsLoaded();                         // Ensure models are loaded
+    Model *GetModelSafe(const std::string &modelName); // Safe model retrieval
 };
 
 #endif // EDITOR_H

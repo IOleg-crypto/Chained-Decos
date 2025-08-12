@@ -17,9 +17,8 @@
 Editor::Editor()
     : m_cameraController(std::make_shared<CameraController>()), m_selectedObjectIndex(-1),
       m_currentTool(SELECT), m_showImGui(true), m_showObjectPanel(true),
-      m_showPropertiesPanel(true), m_shouldAddObject(false)
+      m_showPropertiesPanel(true), m_shouldAddObject(false), m_modelsInitialized(false)
 {
-    // ImGui will be initialized in Application::Init() after window creation
 }
 
 Editor::~Editor() = default;
@@ -32,10 +31,10 @@ void Editor::Update()
     HandleInput();
 }
 
-void Editor::Render() const
+void Editor::Render()
 {
     // Render all objects in the scene
-    for (const auto &obj : m_objects)
+    for (auto &obj : m_objects)
     {
         RenderObject(obj);
     }
@@ -118,7 +117,7 @@ void Editor::SelectObject(const int index)
     // Clear previous selection
     if (m_selectedObjectIndex >= 0 && m_selectedObjectIndex < m_objects.size())
     {
-        m_objects[m_selectedObjectIndex].selected = false;
+        m_objects[m_selectedObjectIndex].SetSelected(false);
     }
 
     m_selectedObjectIndex = index;
@@ -126,7 +125,7 @@ void Editor::SelectObject(const int index)
     // Set new selection
     if (index >= 0 && index < m_objects.size())
     {
-        m_objects[index].selected = true;
+        m_objects[index].SetSelected(true);
     }
 }
 
@@ -135,25 +134,26 @@ void Editor::ClearSelection()
     // Clear current object selection
     if (m_selectedObjectIndex >= 0 && m_selectedObjectIndex < m_objects.size())
     {
-        m_objects[m_selectedObjectIndex].selected = false;
+        m_objects[m_selectedObjectIndex].SetSelected(false);
     }
     m_selectedObjectIndex = -1;
 }
 
-void Editor::SaveMap(const std::string &filename) const
+void Editor::SaveMap(const std::string &filename)
 {
     // Convert MapObjects to SerializableObjects for saving
     std::vector<SerializableObject> serializableObjects;
 
-    for (const auto &obj : m_objects)
+    for (auto &obj : m_objects)
     {
         SerializableObject serializableObj;
-        serializableObj.position = obj.position;
-        serializableObj.scale = obj.scale;
-        serializableObj.rotation = obj.rotation;
-        serializableObj.color = obj.color;
-        serializableObj.name = obj.name;
-        serializableObj.type = obj.type;
+        serializableObj.position = obj.GetPosition();
+        serializableObj.scale = obj.GetScale();
+        serializableObj.rotation = obj.GetRotation();
+        serializableObj.color = obj.GetColor();
+        serializableObj.name = obj.GetName();
+        serializableObj.type = obj.GetType();
+        serializableObj.modelName = obj.GetModelName();
         serializableObjects.push_back(serializableObj);
     }
 
@@ -180,16 +180,20 @@ void Editor::LoadMap(const std::string &filename)
         m_selectedObjectIndex = -1;
 
         // Convert SerializableObjects back to MapObjects
-        for (const auto &[position, scale, rotation, color, name, type] : serializableObjects)
+        for (const auto &[position, scale, rotation, color, name, type, modelName] :
+             serializableObjects)
         {
             MapObject obj;
-            obj.position = position;
-            obj.scale = scale;
-            obj.rotation = rotation;
-            obj.color = color;
-            obj.name = name;
-            obj.type = type;
-            obj.selected = false;
+            obj.SetPosition(position);
+            obj.SetScale(scale);
+            obj.SetRotation(rotation);
+            obj.SetColor(color);
+            obj.SetName(name);
+            obj.SetType(type);
+            obj.SetModelName(modelName);
+            obj.SetSelected(false);
+            // Add to scene
+
             m_objects.push_back(obj);
         }
 
@@ -218,7 +222,7 @@ void Editor::RenderImGuiObjectPanel()
         if (ImGui::Button("Add Object"))
         {
             MapObject newObj;
-            newObj.name = "New Object " + std::to_string(m_objects.size());
+            newObj.SetName("New Object " + std::to_string(m_objects.size()));
             AddObject(newObj);
         }
         ImGui::SameLine();
@@ -237,10 +241,10 @@ void Editor::RenderImGuiObjectPanel()
         // List all objects
         for (int i = 0; i < m_objects.size(); i++)
         {
-            const auto &obj = m_objects[i];
+            auto &obj = m_objects[i];
 
             if (const bool isSelected = (i == m_selectedObjectIndex);
-                ImGui::Selectable(obj.name.c_str(), isSelected))
+                ImGui::Selectable(obj.GetName().c_str(), isSelected))
             {
                 SelectObject(i);
             }
@@ -249,11 +253,16 @@ void Editor::RenderImGuiObjectPanel()
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
-                ImGui::Text("Position: %.1f, %.1f, %.1f", obj.position.x, obj.position.y,
-                            obj.position.z);
-                ImGui::Text("Type: %s", obj.type == 0   ? "Cube"
-                                        : obj.type == 1 ? "Sphere"
-                                                        : "Cylinder");
+                ImGui::Text("Position: %.1f, %.1f, %.1f", obj.GetPosition().x, obj.GetPosition().y,
+                            obj.GetPosition().z);
+                ImGui::Text("Type: %s", obj.GetType() == 0   ? "Cube"
+                                        : obj.GetType() == 1 ? "Sphere"
+                                        : obj.GetType() == 2 ? "Cylinder"
+                                        : obj.GetType() == 3 ? "Plane"
+                                        : obj.GetType() == 4 ? "Ellipse"
+                                        : obj.GetType() == 5
+                                            ? ("Model: " + obj.GetModelName()).c_str()
+                                            : "Unknown");
                 ImGui::EndTooltip();
             }
         }
@@ -268,40 +277,98 @@ void Editor::RenderImGuiObjectPanel()
     ImGui::End();
 }
 
-void Editor::RenderObject(const MapObject &obj)
+void Editor::RenderObject(MapObject &obj)
 {
     // Choose color based on selection state
-    Color drawColor = obj.selected ? YELLOW : obj.color;
+    Color drawColor = obj.GetSelected() ? YELLOW : obj.GetColor();
 
     // Render object based on its type
-    switch (obj.type)
+    switch (obj.GetType())
     {
     case 0: // Cube
-        DrawCube(obj.position, obj.scale.x, obj.scale.y, obj.scale.z, drawColor);
-        if (obj.selected)
+        DrawCube(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().z,
+                 drawColor);
+        if (obj.GetSelected())
         {
-            DrawCubeWires(obj.position, obj.scale.x, obj.scale.y, obj.scale.z, RED);
+            DrawCubeWires(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().z,
+                          RED);
         }
         break;
     case 1: // Sphere
-        DrawSphere(obj.position, obj.scale.x, drawColor);
-        if (obj.selected)
+        DrawSphere(obj.GetPosition(), obj.GetScale().x, drawColor);
+        if (obj.GetSelected())
         {
-            DrawSphereWires(obj.position, obj.radiusSphere, 5, 5, RED);
+            DrawSphereWires(obj.GetPosition(), obj.GetRadiusSphere(), 5, 5, RED);
         }
         break;
     case 2: // Cylinder
-        DrawCylinder(obj.position, obj.scale.x, obj.scale.y, obj.scale.y, 8, drawColor);
-        if (obj.selected)
+        DrawCylinder(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().y, 8,
+                     drawColor);
+        if (obj.GetSelected())
         {
-            DrawCylinderWires(obj.position, obj.scale.x, obj.scale.x, obj.scale.y, 8, RED);
+            DrawCylinderWires(obj.GetPosition(), obj.GetScale().x, obj.GetScale().x,
+                              obj.GetScale().y, 8, RED);
         }
         break;
     case 3:
-        DrawPlane(obj.position, obj.size, drawColor);
+        DrawPlane(obj.GetPosition(), obj.GetSize(), drawColor);
         break;
     case 4:
-        DrawEllipse(obj.position.x, obj.position.y, obj.radiusH, obj.radiusV, drawColor);
+        DrawEllipse(obj.GetPosition().x, obj.GetPosition().y, obj.GetRadiusH(), obj.GetRadiusV(),
+                    drawColor);
+        break;
+    case 5: // 3D Model
+        if (!obj.GetModelName().empty())
+        {
+            // Ensure models are loaded before trying to use them
+            EnsureModelsLoaded();
+
+            // Get model safely without exceptions
+            Model *modelPtr = GetModelSafe(obj.GetModelName());
+
+            if (modelPtr != nullptr)
+            {
+                // Calculate rotation from Euler angles
+                Vector3 rotationAxis = {0.0f, 1.0f, 0.0f};
+                float rotationAngle = obj.GetRotation().y * RAD2DEG;
+
+                // Draw the model with transformations
+                DrawModelEx(*modelPtr, obj.GetPosition(), rotationAxis, rotationAngle,
+                            obj.GetScale(), drawColor);
+
+                // Draw wireframe if selected
+                if (obj.GetSelected())
+                {
+                    DrawModelWiresEx(*modelPtr, obj.GetPosition(), rotationAxis, rotationAngle,
+                                     obj.GetScale(), RED);
+                }
+            }
+            else
+            {
+                // Fallback to drawing a cube if model not found
+                DrawCube(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().z,
+                         RED);
+                if (obj.GetSelected())
+                {
+                    DrawCubeWires(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y,
+                                  obj.GetScale().z, RED);
+                }
+
+                // Draw text label to show it's a missing model
+                DrawText(("Missing: " + obj.GetModelName()).c_str(), obj.GetPosition().x - 50,
+                         obj.GetPosition().y + obj.GetScale().y + 10, 20, RED);
+            }
+        }
+        else
+        {
+            // No model name specified
+            DrawCube(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().z, GRAY);
+            if (obj.GetSelected())
+            {
+                DrawCubeWires(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y,
+                              obj.GetScale().z, RED);
+            }
+        }
         break;
     }
 }
@@ -323,8 +390,8 @@ void Editor::RenderImGuiToolbar()
 
         ImGui::Separator();
 
-        const char *toolNames[] = {"Select",   "Move",       "Rotate",      "Scale",
-                                   "Add Cube", "Add Sphere", "Add Cylinder"};
+        const char *toolNames[] = {"Select",   "Move",       "Rotate",       "Scale",
+                                   "Add Cube", "Add Sphere", "Add Cylinder", "Add Model"};
 
         for (int i = 0; i < std::size(toolNames); i++)
         {
@@ -333,7 +400,7 @@ void Editor::RenderImGuiToolbar()
                 m_currentTool = static_cast<Tool>(i);
 
                 if (m_currentTool == ADD_CUBE || m_currentTool == ADD_SPHERE ||
-                    m_currentTool == ADD_CYLINDER)
+                    m_currentTool == ADD_CYLINDER || m_currentTool == ADD_MODEL)
                 {
                     m_shouldAddObject = true;
                 }
@@ -354,6 +421,32 @@ void Editor::RenderImGuiToolbar()
         }
 
         ImGui::InputText("Map FilePath##Map Name", &m_mapFileName);
+
+        // Model selection dropdown (only show when adding models)
+        if (m_currentTool == ADD_MODEL)
+        {
+            // Ensure models are loaded for toolbar
+            EnsureModelsLoaded();
+
+            ImGui::Text("Select Model:");
+            if (ImGui::BeginCombo("##ModelSelect", m_selectedModelName.c_str()))
+            {
+                for (const auto &modelName : m_availableModels)
+                {
+                    bool isSelected = (m_selectedModelName == modelName);
+                    if (ImGui::Selectable(modelName.c_str(), isSelected))
+                    {
+                        m_selectedModelName = modelName;
+                    }
+                    if (isSelected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
+
         ImGui::Separator();
 
         ImGui::Checkbox("Show Object Panel", &m_showObjectPanel);
@@ -366,18 +459,26 @@ void Editor::RenderImGuiToolbar()
     if (m_shouldAddObject)
     {
         MapObject newObj;
-        newObj.name = "New Object " + std::to_string(m_objects.size());
+        newObj.SetName("New Object " + std::to_string(m_objects.size()));
 
         switch (m_currentTool)
         {
         case ADD_CUBE:
-            newObj.type = 0;
+            newObj.SetType(0);
             break;
         case ADD_SPHERE:
-            newObj.type = 1;
+            newObj.SetType(1);
             break;
         case ADD_CYLINDER:
-            newObj.type = 2;
+            newObj.SetType(2);
+            break;
+        case ADD_MODEL:
+            // Ensure models are loaded before adding model objects
+            EnsureModelsLoaded();
+
+            newObj.SetType(5);
+            newObj.SetModelName(m_selectedModelName);
+            newObj.SetName(m_selectedModelName + " " + std::to_string(m_objects.size()));
             break;
         default:
             break;
@@ -408,10 +509,12 @@ void Editor::PickObject()
     for (int i = 0; i < m_objects.size(); ++i)
     {
         auto &obj = m_objects[i];
-        const BoundingBox box = {Vector3{obj.position.x - obj.scale.x, obj.position.y - obj.scale.y,
-                                         obj.position.z - obj.scale.z / 2},
-                                 Vector3{obj.position.x + obj.scale.x, obj.position.y + obj.scale.y,
-                                         obj.position.z + obj.scale.z}};
+        const BoundingBox box = {
+            Vector3{obj.GetPosition().x - obj.GetScale().x, obj.GetPosition().y - obj.GetScale().y,
+                    obj.GetPosition().z - obj.GetScale().z},
+            Vector3{obj.GetPosition().x + obj.GetScale().x, obj.GetPosition().y + obj.GetScale().y,
+                    obj.GetPosition().z + obj.GetScale().z}};
+
         if (const RayCollision collision = GetRayCollisionBox(ray, box);
             collision.hit && collision.distance < minDistance)
         {
@@ -420,9 +523,9 @@ void Editor::PickObject()
         }
         // If we have object selected before using properties panel , we cancel coloring other
         // objects , besides object took by mouse(MOUSE_LEFT_BUTTON)
-        if (obj.selected == true)
+        if (obj.GetSelected() && pickedIndex != i)
         {
-            obj.selected = false;
+            obj.SetSelected(false);
         }
     }
 
@@ -431,7 +534,7 @@ void Editor::PickObject()
     if (m_selectedObjectIndex != -1)
     {
         auto &obj = m_objects[m_selectedObjectIndex];
-        obj.selected = true;
+        obj.SetSelected(true);
         TraceLog(LOG_INFO, "Picked object %d", m_selectedObjectIndex);
     }
 }
@@ -455,7 +558,7 @@ void Editor::RenderImGuiPropertiesPanel()
     {
         // If nameLabel is empty, initialize it with the object's current name
         if (nameLabel.empty())
-            nameLabel = obj.name;
+            nameLabel = obj.GetName();
 
         // InputText requires a char array buffer, so we convert std::string to char[]
         // Alternatively, ImGui::InputText with std::string can be used but requires memory
@@ -469,80 +572,114 @@ void Editor::RenderImGuiPropertiesPanel()
             nameLabel = std::string(buffer);
             if (nameLabel.empty())
             {
-                nameLabel = obj.name; // Prevent empty names
+                nameLabel = obj.GetName(); // Prevent empty names
             }
-            obj.name = nameLabel;
+            obj.SetName(nameLabel); // Update the object's name
         }
 
-        const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane", "Ellipse"};
-        ImGui::Combo("Type", &obj.type, types, IM_ARRAYSIZE(types));
+        const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane", "Ellipse", "Model"};
+        int typeIndex = obj.GetType();
+        if (ImGui::Combo("Type", &typeIndex, types, IM_ARRAYSIZE(types)))
+        {
+            obj.SetType(typeIndex);
+        }
 
-        // Позиція
-        float pos[3] = {obj.position.x, obj.position.y, obj.position.z};
+        float pos[3] = {obj.GetPosition().x, obj.GetPosition().y, obj.GetPosition().z};
         if (ImGui::DragFloat3("Position", pos, 0.1f))
         {
-            obj.position = {pos[0], pos[1], pos[2]};
+            obj.SetPosition({pos[0], pos[1], pos[2]});
         }
 
-        float scale[3] = {obj.scale.x, obj.scale.y, obj.scale.z};
-        float size[2] = {obj.size.x, obj.size.y};
-        float radiusEllipse[2] = {obj.radiusH, obj.radiusV};
-        float radiusSphere = obj.radiusSphere;
+        float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
+        float size[2] = {obj.GetSize().x, obj.GetSize().y};
+        float radiusEllipse[2] = {obj.GetRadiusH(), obj.GetRadiusV()};
+        float radiusSphere = obj.GetRadiusSphere();
 
-        switch (obj.type)
+        switch (obj.GetType())
         {
         case 0: // Cube
             if (ImGui::DragFloat3("Scale", scale, 0.1f))
             {
-                obj.scale = {scale[0], scale[1], scale[2]};
+                obj.SetScale({scale[0], scale[1], scale[2]});
             }
             break;
 
         case 1: // Sphere
             if (ImGui::DragFloat("Radius", &radiusSphere, 0.1f))
             {
-                obj.radiusSphere = radiusSphere;
+                obj.SetRadiusSphere(radiusSphere);
             }
             break;
 
         case 2: // Cylinder
             if (ImGui::DragFloat3("Scale", scale, 0.1f))
             {
-                obj.scale = {scale[0], scale[1], scale[2]};
+                obj.SetScale({scale[0], scale[1], scale[2]});
             }
             break;
 
         case 3: // Plane
             if (ImGui::DragFloat2("Size", size, 0.1f))
             {
-                obj.size = {size[0], size[1]};
+                obj.SetSize({size[0], size[1]});
             }
             break;
 
         case 4: // Ellipse
             if (ImGui::DragFloat2("Radius H/V", radiusEllipse, 0.1f))
             {
-                obj.radiusH = radiusEllipse[0];
-                obj.radiusV = radiusEllipse[1];
+                obj.SetRadiusH(radiusEllipse[0]);
+                obj.SetRadiusV(radiusEllipse[1]);
+            }
+            break;
+
+        case 5: // Model
+            // Ensure models are loaded for properties panel
+            EnsureModelsLoaded();
+
+            // Model selection dropdown
+            ImGui::Text("Model:");
+            if (ImGui::BeginCombo("##ModelSelect", obj.GetModelName().c_str()))
+            {
+                for (const auto &modelName : m_availableModels)
+                {
+                    bool isSelected = (obj.GetModelName() == modelName);
+                    if (ImGui::Selectable(modelName.c_str(), isSelected))
+                    {
+                        obj.SetModelName(modelName);
+                    }
+                    if (isSelected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            // Scale controls for models
+            if (ImGui::DragFloat3("Scale", scale, 0.1f))
+            {
+                obj.SetScale({scale[0], scale[1], scale[2]});
             }
             break;
         }
 
-        float rot[3] = {obj.rotation.x, obj.rotation.y, obj.rotation.z};
+        float rot[3] = {obj.GetRotation().x * RAD2DEG, obj.GetRotation().y * RAD2DEG,
+                        obj.GetRotation().z * RAD2DEG};
         if (ImGui::DragFloat3("Rotation", rot, 1.0f))
         {
-            obj.rotation = {rot[0], rot[1], rot[2]};
+            obj.SetRotation({rot[0] * DEG2RAD, rot[1] * DEG2RAD, rot[2] * DEG2RAD});
         }
 
-        float color[4] = {obj.color.r / 255.0f, obj.color.g / 255.0f, obj.color.b / 255.0f,
-                          obj.color.a / 255.0f};
+        float color[4] = {obj.GetColor().r / 255.0f, obj.GetColor().g / 255.0f,
+                          obj.GetColor().b / 255.0f, obj.GetColor().a / 255.0f};
 
         if (ImGui::ColorEdit4("Color", color))
         {
-            obj.color = {static_cast<unsigned char>(color[0] * 255),
-                         static_cast<unsigned char>(color[1] * 255),
-                         static_cast<unsigned char>(color[2] * 255),
-                         static_cast<unsigned char>(color[3] * 255)};
+            obj.SetColor({static_cast<unsigned char>(color[0] * 255),
+                          static_cast<unsigned char>(color[1] * 255),
+                          static_cast<unsigned char>(color[2] * 255),
+                          static_cast<unsigned char>(color[3] * 255)});
         }
     }
 
@@ -576,5 +713,43 @@ void Editor::HandleKeyboardInput()
     if (IsKeyPressed(KEY_F))
     {
         m_showPropertiesPanel = !m_showPropertiesPanel;
+    }
+}
+
+void Editor::EnsureModelsLoaded()
+{
+    if (!m_modelsInitialized)
+    {
+        try
+        {
+            TraceLog(LOG_INFO, "Loading models...");
+            m_models.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/models.json");
+            m_availableModels = m_models.GetAvailableModels();
+            m_modelsInitialized = true;
+            TraceLog(LOG_INFO, "Models loaded successfully!");
+        }
+        catch (const std::exception &e)
+        {
+            TraceLog(LOG_ERROR, "Failed to load models: %s", e.what());
+            // Keep m_modelsInitialized as false so we can try again later
+        }
+    }
+}
+
+Model *Editor::GetModelSafe(const std::string &modelName)
+{
+    if (!m_modelsInitialized || modelName.empty())
+    {
+        return nullptr;
+    }
+
+    try
+    {
+        return &m_models.GetModelByName(modelName);
+    }
+    catch (...)
+    {
+        // Model not found, return nullptr instead of throwing
+        return nullptr;
     }
 }
