@@ -4,21 +4,32 @@
 
 #include "Editor.h"
 #include "../MapFileManager/MapFileManager.h"
-#include "raylib.h"
+#include <algorithm>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <imgui.h>
 #include <iostream>
 #include <misc/cpp/imgui_stdlib.h>
+#include <raylib.h>
 #include <rlImGui.h>
 
 #include <raymath.h>
 #include <string>
 
+namespace fs = std::filesystem;
+
 Editor::Editor()
     : m_cameraController(std::make_shared<CameraController>()), m_selectedObjectIndex(-1),
       m_currentTool(SELECT), m_showImGui(true), m_showObjectPanel(true),
-      m_showPropertiesPanel(true), m_shouldAddObject(false), m_modelsInitialized(false)
+      m_showPropertiesPanel(true), m_shouldAddObject(false), m_modelsInitialized(false),
+      m_showFileDialog(false), m_isLoadDialog(true), m_showNewFolderDialog(false),
+      m_showDeleteDialog(false)
 {
+    // Initialize file dialog to project root
+    m_currentDirectory = PROJECT_ROOT_DIR;
+    m_newFileName = "new_map.json";
+    RefreshDirectoryItems();
 }
 
 Editor::~Editor() = default;
@@ -57,6 +68,18 @@ void Editor::RenderImGui()
     {
         RenderImGuiPropertiesPanel();
     }
+
+    // Render file dialog if shown
+    if (m_showFileDialog)
+    {
+        RenderFileDialog();
+    }
+
+    // Render new folder dialog if shown
+    RenderNewFolderDialog();
+
+    // Render delete confirmation dialog if shown
+    RenderDeleteConfirmDialog();
 
     rlImGuiEnd();
 }
@@ -218,7 +241,7 @@ void Editor::RenderImGuiObjectPanel()
     bool objectPanelOpen = true;
     if (ImGui::Begin("Objects##foo1", &objectPanelOpen, windowFlags))
     {
-        // Object management buttons
+
         if (ImGui::Button("Add Object"))
         {
             MapObject newObj;
@@ -226,12 +249,12 @@ void Editor::RenderImGuiObjectPanel()
             AddObject(newObj);
         }
         ImGui::SameLine();
-        if (ImGui::Button("Remove Selected") && m_selectedObjectIndex >= 0)
+        if (ImGui::Button("Remove") && m_selectedObjectIndex >= 0)
         {
             RemoveObject(m_selectedObjectIndex);
         }
         ImGui::SameLine();
-        if (ImGui::Button("Delete objects"))
+        if (ImGui::Button("Clear All"))
         {
             m_objects.clear();
         }
@@ -395,6 +418,15 @@ void Editor::RenderImGuiToolbar()
 
         for (int i = 0; i < std::size(toolNames); i++)
         {
+            // Store current tool state before potential change
+            bool isCurrentTool = (m_currentTool == i);
+
+            // Highlight current tool
+            if (isCurrentTool)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.6f, 0.9f, 1.0f));
+            }
+
             if (ImGui::Button(toolNames[i]))
             {
                 m_currentTool = static_cast<Tool>(i);
@@ -406,21 +438,33 @@ void Editor::RenderImGuiToolbar()
                 }
             }
 
+            // Use stored state, not current m_currentTool
+            if (isCurrentTool)
+            {
+                ImGui::PopStyleColor();
+            }
+
             if (i < std::size(toolNames) - 1)
                 ImGui::SameLine();
         }
 
-        if (ImGui::Button("Save Map"))
+        if (ImGui::Button("Save Map As..."))
+        {
+            OpenFileDialog(false); // false for Save dialog
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Load Map..."))
+        {
+            OpenFileDialog(true); // true for Load dialog
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Quick Save") && !m_mapFileName.empty())
         {
             SaveMap(m_mapFileName);
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Load Map"))
-        {
-            LoadMap(m_mapFileName);
-        }
 
-        ImGui::InputText("Map FilePath##Map Name", &m_mapFileName);
+        // Show current file path
+        ImGui::Text("Current: %s", m_mapFileName.c_str());
 
         // Model selection dropdown (only show when adding models)
         if (m_currentTool == ADD_MODEL)
@@ -693,15 +737,27 @@ void Editor::RenderImGuiPropertiesPanel()
 
 void Editor::HandleKeyboardInput()
 {
-    // Handle keyboard shortcuts
-    if (IsKeyPressed(KEY_DELETE) && m_selectedObjectIndex >= 0)
+    // Handle keyboard shortcuts for file dialog
+    if (m_showFileDialog && IsKeyPressed(KEY_DELETE) && !m_selectedFile.empty())
+    {
+        DeleteFolder(m_selectedFile);
+    }
+    // Handle keyboard shortcuts for scene objects
+    else if (!m_showFileDialog && IsKeyPressed(KEY_DELETE) && m_selectedObjectIndex >= 0)
     {
         RemoveObject(m_selectedObjectIndex);
     }
 
     if (IsKeyPressed(KEY_ESCAPE))
     {
-        ClearSelection();
+        if (m_showFileDialog)
+        {
+            m_showFileDialog = false;
+        }
+        else
+        {
+            ClearSelection();
+        }
     }
 
     // Toggle UI panels with different keys
@@ -720,18 +776,44 @@ void Editor::EnsureModelsLoaded()
 {
     if (!m_modelsInitialized)
     {
+        TraceLog(LOG_INFO, "Loading models...");
+
+        bool loadSuccess = false;
         try
         {
-            TraceLog(LOG_INFO, "Loading models...");
             m_models.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/models.json");
-            m_availableModels = m_models.GetAvailableModels();
-            m_modelsInitialized = true;
-            TraceLog(LOG_INFO, "Models loaded successfully!");
+            loadSuccess = true;
         }
         catch (const std::exception &e)
         {
-            TraceLog(LOG_ERROR, "Failed to load models: %s", e.what());
-            // Keep m_modelsInitialized as false so we can try again later
+            TraceLog(LOG_ERROR, "Failed to load models from JSON: %s", e.what());
+            loadSuccess = false;
+        }
+
+        if (loadSuccess)
+        {
+            try
+            {
+                m_availableModels = m_models.GetAvailableModels();
+                m_modelsInitialized = true;
+                TraceLog(LOG_INFO, "Models loaded successfully! Available models: %zu",
+                         m_availableModels.size());
+            }
+            catch (const std::exception &e)
+            {
+                TraceLog(LOG_ERROR, "Failed to get available models list: %s", e.what());
+                // Fallback to hardcoded list if GetAvailableModels fails
+                m_availableModels = {"arc"};
+                m_modelsInitialized = true;
+                TraceLog(LOG_WARNING, "Using fallback model list");
+            }
+        }
+        else
+        {
+            // Complete failure - use fallback
+            TraceLog(LOG_WARNING, "Models failed to load, using fallback model list");
+            m_availableModels = {"arc"};
+            // Don't set m_modelsInitialized to true, so we can retry later
         }
     }
 }
@@ -743,13 +825,466 @@ Model *Editor::GetModelSafe(const std::string &modelName)
         return nullptr;
     }
 
+    // Check if model exists in available models list first
+    auto it = std::find(m_availableModels.begin(), m_availableModels.end(), modelName);
+    if (it == m_availableModels.end())
+    {
+        TraceLog(LOG_WARNING, "Model '%s' not found in available models list", modelName.c_str());
+        return nullptr;
+    }
+
+    // Try to get model, but still handle potential exception safely
     try
     {
         return &m_models.GetModelByName(modelName);
     }
-    catch (...)
+    catch (const std::exception &)
     {
-        // Model not found, return nullptr instead of throwing
+        // Only catch standard exceptions, not system errors
+        TraceLog(LOG_WARNING, "Model '%s' found in list but failed to load", modelName.c_str());
         return nullptr;
+    }
+}
+
+void Editor::OpenFileDialog(bool isLoad)
+{
+    m_isLoadDialog = isLoad;
+    m_showFileDialog = true;
+    m_selectedFile.clear();
+
+    // Reset new file name for save dialog
+    if (!isLoad)
+    {
+        m_newFileName = "new_map.json";
+    }
+
+    RefreshDirectoryItems();
+}
+
+void Editor::RefreshDirectoryItems()
+{
+    m_directoryItems.clear();
+
+    try
+    {
+        if (!fs::exists(m_currentDirectory) || !fs::is_directory(m_currentDirectory))
+        {
+            m_currentDirectory = PROJECT_ROOT_DIR;
+        }
+
+        // Add parent directory option (unless we're at root)
+        fs::path currentPath(m_currentDirectory);
+        if (currentPath.has_parent_path() && currentPath != currentPath.root_path())
+        {
+            m_directoryItems.push_back("../");
+        }
+
+        // Add directories first
+        for (const auto &entry : fs::directory_iterator(m_currentDirectory))
+        {
+            if (entry.is_directory())
+            {
+                std::string name = entry.path().filename().string();
+                if (!name.empty() && name[0] != '.') // Skip hidden directories
+                {
+                    m_directoryItems.push_back(name + "/");
+                }
+            }
+        }
+
+        // Add files (only .json files for maps)
+        for (const auto &entry : fs::directory_iterator(m_currentDirectory))
+        {
+            if (entry.is_regular_file())
+            {
+                std::string fileName = entry.path().filename().string();
+                std::string extension = entry.path().extension().string();
+
+                // Show .json files for maps
+                if (extension == ".json" || extension == ".map")
+                {
+                    m_directoryItems.push_back(fileName);
+                }
+            }
+        }
+    }
+    catch (const fs::filesystem_error &e)
+    {
+        TraceLog(LOG_ERROR, "File system error: %s", e.what());
+        m_currentDirectory = PROJECT_ROOT_DIR;
+        // Try again with project root
+        try
+        {
+            for (const auto &entry : fs::directory_iterator(m_currentDirectory))
+            {
+                if (entry.is_directory())
+                {
+                    std::string name = entry.path().filename().string();
+                    if (!name.empty() && name[0] != '.')
+                    {
+                        m_directoryItems.push_back(name + "/");
+                    }
+                }
+                else if (entry.is_regular_file())
+                {
+                    std::string fileName = entry.path().filename().string();
+                    std::string extension = entry.path().extension().string();
+                    if (extension == ".json" || extension == ".map")
+                    {
+                        m_directoryItems.push_back(fileName);
+                    }
+                }
+            }
+        }
+        catch (...)
+        {
+            TraceLog(LOG_ERROR, "Failed to read directory");
+        }
+    }
+}
+
+void Editor::NavigateToDirectory(const std::string &path)
+{
+    try
+    {
+        fs::path newPath;
+
+        if (path == "../")
+        {
+            newPath = fs::path(m_currentDirectory).parent_path();
+        }
+        else
+        {
+            newPath = fs::path(m_currentDirectory) / path;
+        }
+
+        if (fs::exists(newPath) && fs::is_directory(newPath))
+        {
+            m_currentDirectory = newPath.string();
+            RefreshDirectoryItems();
+        }
+    }
+    catch (const fs::filesystem_error &e)
+    {
+        TraceLog(LOG_ERROR, "Navigation error: %s", e.what());
+    }
+}
+
+void Editor::RenderFileDialog()
+{
+    const char *title = m_isLoadDialog ? "Load Map" : "Save Map As";
+
+    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() * 0.5f - 300, GetScreenHeight() * 0.5f - 200),
+                            ImGuiCond_FirstUseEver);
+
+    if (ImGui::Begin(title, &m_showFileDialog, ImGuiWindowFlags_NoCollapse))
+    {
+        // Current directory display
+        ImGui::Text("Directory: %s", m_currentDirectory.c_str());
+
+        // Position buttons in top-right corner
+        float buttonWidth = 90.0f;  // Smaller button width
+        float buttonHeight = 20.0f; // Smaller button height
+        float spacing = 5.0f;
+        float totalButtonsWidth = buttonWidth * 2 + spacing;
+
+        ImGui::SameLine(ImGui::GetWindowWidth() - totalButtonsWidth -
+                        20); // 20 = padding from right edge
+
+        if (ImGui::Button("Add Folder", ImVec2(buttonWidth, buttonHeight)))
+        {
+            AddFolder();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Delete", ImVec2(buttonWidth, buttonHeight)))
+        {
+            DeleteFolder(m_selectedFile);
+        }
+        ImGui::Separator();
+
+        // Directory and file list
+        if (ImGui::BeginChild("DirectoryList", ImVec2(0, -60)))
+        {
+            std::string directoryToNavigate; // Store directory to navigate to
+
+            for (const auto &item : m_directoryItems)
+            {
+                bool isDirectory = !item.empty() && item.back() == '/';
+                bool isSelected = (m_selectedFile == item);
+
+                if (isDirectory)
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Text,
+                                          ImVec4(0.4f, 0.8f, 1.0f, 1.0f)); // Blue for directories
+                }
+
+                if (ImGui::Selectable(item.c_str(), isSelected,
+                                      ImGuiSelectableFlags_AllowDoubleClick))
+                {
+                    if (isDirectory)
+                    {
+                        if (ImGui::IsMouseDoubleClicked(0))
+                        {
+                            directoryToNavigate = item; // Store for navigation after loop
+                        }
+                        m_selectedFile = item;
+                    }
+                    else
+                    {
+                        m_selectedFile = item;
+                        if (ImGui::IsMouseDoubleClicked(0))
+                        {
+                            // Double-click on file - immediate action
+                            if (m_isLoadDialog)
+                            {
+                                std::string fullPath =
+                                    (fs::path(m_currentDirectory) / m_selectedFile).string();
+                                LoadMap(fullPath);
+                                m_mapFileName = fullPath;
+                            }
+                            else
+                            {
+                                std::string fullPath =
+                                    (fs::path(m_currentDirectory) / m_selectedFile).string();
+                                SaveMap(fullPath);
+                                m_mapFileName = fullPath;
+                            }
+                            m_showFileDialog = false;
+                        }
+                    }
+                }
+
+                if (isDirectory)
+                {
+                    ImGui::PopStyleColor();
+                }
+            }
+
+            // Navigate after the loop to avoid iterator invalidation
+            if (!directoryToNavigate.empty())
+            {
+                NavigateToDirectory(directoryToNavigate);
+            }
+        }
+        ImGui::EndChild();
+
+        ImGui::Separator();
+
+        // File name input (for save dialog)
+        if (!m_isLoadDialog)
+        {
+            ImGui::Text("File name:");
+            if (ImGui::InputText("##FileName", &m_newFileName))
+            {
+                m_selectedFile = m_newFileName;
+            }
+            ImGui::Separator();
+        }
+
+        bool canProceed = false;
+        if (m_isLoadDialog)
+        {
+            canProceed = !m_selectedFile.empty();
+        }
+        else
+        {
+            canProceed = !m_selectedFile.empty() || !m_newFileName.empty();
+            if (!canProceed && !m_newFileName.empty())
+            {
+                m_selectedFile = m_newFileName;
+                canProceed = true;
+            }
+        }
+
+        // Main action buttons with smaller size
+        ImVec2 mainButtonSize(80.0f, 25.0f);
+
+        if (ImGui::Button(m_isLoadDialog ? "Load" : "Save", mainButtonSize) && canProceed)
+        {
+            std::string fullPath = (fs::path(m_currentDirectory) / m_selectedFile).string();
+
+            if (m_isLoadDialog)
+            {
+                LoadMap(fullPath);
+                m_mapFileName = fullPath;
+            }
+            else
+            {
+                SaveMap(fullPath);
+                m_mapFileName = fullPath;
+            }
+            m_showFileDialog = false;
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel", mainButtonSize))
+        {
+            m_showFileDialog = false;
+        }
+
+        // Show selected file
+        if (!m_selectedFile.empty())
+        {
+            // ImGui::SameLine();
+            ImGui::Text("Selected: %s", m_selectedFile.c_str());
+        }
+    }
+    ImGui::End();
+
+    if (!m_showFileDialog)
+    {
+        m_selectedFile.clear();
+    }
+}
+
+void Editor::AddFolder()
+{
+    m_showNewFolderDialog = true;
+    if (m_newFolderName.empty())
+    {
+        m_newFolderName = "New Folder"; // Initialize default name
+    }
+}
+
+void Editor::RenderNewFolderDialog()
+{
+    if (m_showNewFolderDialog)
+    {
+        // Center the popup
+        ImGui::SetNextWindowPos(
+            ImVec2(GetScreenWidth() * 0.5f - 150, GetScreenHeight() * 0.5f - 50));
+        ImGui::SetNextWindowSize(ImVec2(300, 120));
+
+        if (ImGui::Begin("Create Folder", &m_showNewFolderDialog,
+                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+        {
+            ImGui::Text("Enter folder name:");
+
+            // Use imgui_stdlib.h for std::string support
+            ImGui::InputText("##FolderName", &m_newFolderName);
+
+            if (ImGui::Button("Create", ImVec2(70, 25)) && !m_newFolderName.empty())
+            {
+                try
+                {
+                    fs::path newFolderPath = fs::path(m_currentDirectory) / m_newFolderName;
+
+                    if (fs::create_directory(newFolderPath))
+                    {
+                        TraceLog(LOG_INFO, "Created folder: %s", newFolderPath.string().c_str());
+                        RefreshDirectoryItems();
+                    }
+                    else
+                    {
+                        TraceLog(LOG_WARNING, "Folder already exists or failed to create: %s",
+                                 m_newFolderName.c_str());
+                    }
+                }
+                catch (const fs::filesystem_error &e)
+                {
+                    TraceLog(LOG_ERROR, "Failed to create folder: %s", e.what());
+                }
+
+                m_showNewFolderDialog = false;
+                m_newFolderName.clear();
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(70, 25)))
+            {
+                m_showNewFolderDialog = false;
+                m_newFolderName.clear();
+            }
+        }
+        ImGui::End();
+    }
+}
+
+void Editor::DeleteFolder(const std::string &selectedItem)
+{
+    // Check if we have something to delete and not already showing dialog
+    if (!selectedItem.empty() && !m_showDeleteDialog)
+    {
+        m_showDeleteDialog = true;
+        m_itemToDelete = selectedItem;
+    }
+}
+
+void Editor::RenderDeleteConfirmDialog()
+{
+    if (m_showDeleteDialog)
+    {
+        // Center the popup
+        ImGui::SetNextWindowPos(
+            ImVec2(GetScreenWidth() * 0.5f - 150, GetScreenHeight() * 0.5f - 75));
+        ImGui::SetNextWindowSize(ImVec2(300, 130));
+
+        bool isDirectory = !m_itemToDelete.empty() && m_itemToDelete.back() == '/';
+        const char *windowTitle = isDirectory ? "Delete Folder" : "Delete File";
+
+        if (ImGui::Begin(windowTitle, &m_showDeleteDialog,
+                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+        {
+            ImGui::Text("Are you sure you want to delete:");
+            ImGui::TextWrapped("%s", m_itemToDelete.c_str());
+            ImGui::Text("This action cannot be undone!");
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Delete", ImVec2(80, 25)))
+            {
+                try
+                {
+                    std::string itemName = m_itemToDelete;
+                    if (isDirectory)
+                    {
+                        // Remove trailing '/' for directories
+                        itemName = m_itemToDelete.substr(0, m_itemToDelete.length() - 1);
+                    }
+
+                    fs::path itemPath = fs::path(m_currentDirectory) / itemName;
+
+                    bool success = false;
+                    if (isDirectory)
+                    {
+                        success = fs::remove_all(itemPath) > 0;
+                        TraceLog(LOG_INFO, "Deleted folder: %s", itemPath.string().c_str());
+                    }
+                    else
+                    {
+                        success = fs::remove(itemPath);
+                        TraceLog(LOG_INFO, "Deleted file: %s", itemPath.string().c_str());
+                    }
+
+                    if (success)
+                    {
+                        RefreshDirectoryItems();
+                        m_selectedFile.clear();
+                    }
+                    else
+                    {
+                        TraceLog(LOG_WARNING, "Failed to delete %s: %s",
+                                 isDirectory ? "folder" : "file", itemName.c_str());
+                    }
+                }
+                catch (const fs::filesystem_error &e)
+                {
+                    TraceLog(LOG_ERROR, "Failed to delete: %s", e.what());
+                }
+
+                m_showDeleteDialog = false;
+                m_itemToDelete.clear();
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(80, 25)))
+            {
+                m_showDeleteDialog = false;
+                m_itemToDelete.clear();
+            }
+        }
+        ImGui::End();
     }
 }
