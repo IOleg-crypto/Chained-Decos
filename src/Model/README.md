@@ -272,10 +272,5 @@ manager.PrintStatistics();
 
 ---
 
-## 📬 Feedback
-
-If you want a shorter **Quick Start** README for your repository root or a Ukrainian translation — tell me and I will add it.
-
----
 
 **Ready for use! All improvements preserve full backward compatibility.** 🎉
