@@ -1,8 +1,12 @@
 file(REMOVE_RECURSE
   "CMakeFiles/model.dir/Animation.cpp.obj"
   "CMakeFiles/model.dir/Animation.cpp.obj.d"
+  "CMakeFiles/model.dir/JsonHelper.cpp.obj"
+  "CMakeFiles/model.dir/JsonHelper.cpp.obj.d"
   "CMakeFiles/model.dir/Model.cpp.obj"
   "CMakeFiles/model.dir/Model.cpp.obj.d"
+  "CMakeFiles/model.dir/ModelCache.cpp.obj"
+  "CMakeFiles/model.dir/ModelCache.cpp.obj.d"
   "CMakeFiles/model.dir/ModelInstance.cpp.obj"
   "CMakeFiles/model.dir/ModelInstance.cpp.obj.d"
   "model.lib"

@@ -9,7 +9,7 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_originalCameraTarget = m_cameraController->GetCamera().target;
     m_baseTarget = m_originalCameraTarget;
 
-    m_playerPosition = {0.0f, -2.0f, 0.0f};
+    m_playerPosition = {0.0f, 110.0f, 0.0f};
     // Depends on model size(bounding box collision)
     m_playerSize = {1.0f, 5.5f, 1.0f};
     m_playerColor = BLUE;
@@ -44,70 +44,34 @@ void Player::Move(const Vector3 &moveVector)
 // Handle input both on ground and mid-air
 void Player::ApplyInput()
 {
+    float deltaTime = GetFrameTime();
+    m_physics.Update(deltaTime);
 
-    m_physics.Update(GetFrameTime());
-    Vector3 moveDir = {};
+    Vector3 inputDirection = GetInputDirection();
+    if (Vector3Length(inputDirection) == 0)
+        return; // No input
 
-    if (IsKeyDown(KEY_W))
-        moveDir.z -= 1.0f;
+    // Normalize input and get camera vectors
+    inputDirection = Vector3Normalize(inputDirection);
+    auto [forward, right] = GetCameraVectors();
 
-    if (IsKeyDown(KEY_S))
-        moveDir.z += 1.0f;
-    if (IsKeyDown(KEY_A))
-        moveDir.x -= 1.0f;
-    if (IsKeyDown(KEY_D))
-        moveDir.x += 1.0f;
+    // Calculate world movement direction
+    Vector3 worldMoveDir = {right.x * inputDirection.x + forward.x * inputDirection.z, 0.0f,
+                            right.z * inputDirection.x + forward.z * inputDirection.z};
 
-    m_walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? m_runSpeed : 3.1f;
-
-    // If in air, apply extra velocity instead of teleport movement
-    if (!m_physics.IsGrounded())
+    // Apply movement based on grounded state
+    if (m_physics.IsGrounded())
     {
-        if (Vector3Length(moveDir) > 0)
-        {
-            moveDir = Vector3Normalize(moveDir);
-
-            Vector3 forward = Vector3Subtract(m_cameraController->GetCamera().position,
-                                              m_cameraController->GetCamera().target);
-            forward.y = 0;
-            forward = Vector3Normalize(forward);
-            Vector3 right = Vector3Normalize(Vector3CrossProduct({0, 1, 0}, forward));
-
-            Vector3 inputMove = {
-                right.x * moveDir.x + forward.x * moveDir.z,
-                0.0f,
-                right.z * moveDir.x + forward.z * moveDir.z,
-            };
-
-            inputMove = Vector3Scale(inputMove, 20.0f * m_physics.GetDeltaTime());
-            m_physics.AddVelocity(inputMove);
-        }
+        ApplyGroundedMovement(worldMoveDir, deltaTime);
     }
-
-    // Grounded movement
-    if (Vector3Length(moveDir) > 0)
+    else
     {
-        moveDir = Vector3Normalize(moveDir);
-
-        Vector3 forward = Vector3Subtract(GetCameraController()->GetCamera().position,
-                                          GetCameraController()->GetCamera().target);
-        forward.y = 0;
-        forward = Vector3Normalize(forward);
-
-        Vector3 right = Vector3CrossProduct((Vector3){0, 1, 0}, forward);
-        right = Vector3Normalize(right);
-
-        Vector3 finalMove = {right.x * moveDir.x + forward.x * moveDir.z, 0.0f,
-                             right.z * moveDir.x + forward.z * moveDir.z};
-
-        m_rotationY = atan2f(finalMove.x, finalMove.z) * RAD2DEG;
-        finalMove = Vector3Scale(finalMove, m_walkSpeed * m_physics.GetDeltaTime());
-        Move(finalMove);
+        ApplyAirborneMovement(worldMoveDir, deltaTime);
     }
 }
 
 std::shared_ptr<CameraController> Player::GetCameraController() const { return m_cameraController; }
-Models Player::GetModelManager() { return m_modelPlayer; }
+Models &Player::GetModelManager() { return m_modelPlayer; }
 
 // Update the bounding box based on player position and size
 void Player::UpdatePlayerBox()
@@ -165,8 +129,7 @@ void Player::ApplyJumpImpulse(float impulse)
 
 void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
 {
-    m_physics.Update(GetFrameTime());
-
+    // Handle jumping
     if (IsKeyDown(KEY_SPACE) && m_physics.IsGrounded())
     {
         ApplyJumpImpulse(m_physics.GetJumpStrength() * 5.0f);
@@ -225,4 +188,54 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
 BoundingBox Player::GetPlayerBoundingBox() const // Get bounding box
 {
     return m_playerBoundingBox;
+}
+
+// Helper methods implementation
+Vector3 Player::GetInputDirection()
+{
+    Vector3 inputDir = {};
+
+    if (IsKeyDown(KEY_W))
+        inputDir.z -= 1.0f;
+    if (IsKeyDown(KEY_S))
+        inputDir.z += 1.0f;
+    if (IsKeyDown(KEY_A))
+        inputDir.x -= 1.0f;
+    if (IsKeyDown(KEY_D))
+        inputDir.x += 1.0f;
+
+    // Update speed based on sprint key
+    m_walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? m_runSpeed : 3.1f;
+
+    return inputDir;
+}
+
+std::pair<Vector3, Vector3> Player::GetCameraVectors()
+{
+    const Camera &camera = m_cameraController->GetCamera();
+
+    Vector3 forward = Vector3Subtract(camera.position, camera.target);
+    forward.y = 0;
+    forward = Vector3Normalize(forward);
+
+    Vector3 right = Vector3Normalize(Vector3CrossProduct({0, 1, 0}, forward));
+
+    return {forward, right};
+}
+
+void Player::ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime)
+{
+    // Calculate rotation
+    m_rotationY = atan2f(worldMoveDir.x, worldMoveDir.z) * RAD2DEG;
+
+    // Apply movement
+    Vector3 movement = Vector3Scale(worldMoveDir, m_walkSpeed * deltaTime);
+    Move(movement);
+}
+
+void Player::ApplyAirborneMovement(const Vector3 &worldMoveDir, float deltaTime)
+{
+    // In air: apply velocity instead of direct movement
+    Vector3 airMovement = Vector3Scale(worldMoveDir, 20.0f * deltaTime);
+    m_physics.AddVelocity(airMovement);
 }

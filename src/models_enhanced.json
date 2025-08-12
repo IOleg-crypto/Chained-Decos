@@ -1,0 +1,100 @@
+[
+  {
+    "name": "player",
+    "path": "/resources/player_low.glb",
+    "category": "character",
+    "spawn": false,
+    "preload": true,
+    "priority": 10,
+    "lodDistance": 50.0,
+    "hasAnimations": true
+  },
+  {
+    "name": "arc", 
+    "path": "/resources/arc.glb",
+    "category": "structure", 
+    "spawn": true,
+    "preload": true,
+    "priority": 8,
+    "lodDistance": 100.0,
+    "instances": [
+      {
+        "position": { "x": 1.0, "y": 0.0, "z": 45.0 },
+        "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "scale": 0.5,
+        "color": "gray",
+        "tag": "arena",
+        "spawn": true
+      },
+      {
+        "position": { "x": -10.0, "y": 0.0, "z": 30.0 },
+        "rotation": { "x": 0.0, "y": 45.0, "z": 0.0 },
+        "scale": 0.7,
+        "color": { "r": 150, "g": 150, "b": 150, "a": 255 },
+        "tag": "structure",
+        "spawn": true
+      }
+    ]
+  },
+  {
+    "name": "plane",
+    "path": "/resources/plane_big.glb", 
+    "category": "terrain",
+    "spawn": true,
+    "preload": true,
+    "priority": 5,
+    "lodDistance": 200.0,
+    "instances": [
+      {
+        "position": { "x": 0.0, "y": -0.5, "z": 0.0 },
+        "scale": 2.0,
+        "color": "lightgray", 
+        "tag": "ground",
+        "spawn": true
+      }
+    ]
+  },
+  {
+    "name": "column",
+    "path": "/resources/arc_column.glb",
+    "category": "decoration",
+    "spawn": true, 
+    "preload": false,
+    "priority": 3,
+    "lodDistance": 80.0,
+    "instances": [
+      {
+        "position": { "x": 15.0, "y": 0.0, "z": 15.0 },
+        "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "scale": 1.0,
+        "color": "white",
+        "tag": "decoration",
+        "spawn": true
+      },
+      {
+        "position": { "x": -15.0, "y": 0.0, "z": 15.0 },
+        "rotation": { "x": 0.0, "y": 90.0, "z": 0.0 },
+        "scale": 1.0,
+        "color": "white",
+        "tag": "decoration", 
+        "spawn": true
+      },
+      {
+        "position": { "x": 15.0, "y": 0.0, "z": -15.0 },
+        "rotation": { "x": 0.0, "y": 180.0, "z": 0.0 },
+        "scale": 1.0,
+        "color": "white",
+        "tag": "decoration",
+        "spawn": true
+      },
+      {
+        "position": { "x": -15.0, "y": 0.0, "z": -15.0 },
+        "rotation": { "x": 0.0, "y": 270.0, "z": 0.0 },
+        "scale": 1.0,
+        "color": "white", 
+        "tag": "decoration",
+        "spawn": true
+      }
+    ]
+  }
+]

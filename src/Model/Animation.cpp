@@ -45,7 +45,7 @@ bool Animation::LoadAnimations(const std::string &path)
     m_modelAnimations = LoadModelAnimations(path.c_str(), &m_animCount);
     if (m_modelAnimations == nullptr || m_animCount <= 0)
     {
-        TraceLog(LOG_WARNING, "Failed to load animations from %s", path.c_str());
+        TraceLog(LOG_WARNING, "No animations to load from %s", path.c_str());
         m_animCount = 0;
         return false;
     }
