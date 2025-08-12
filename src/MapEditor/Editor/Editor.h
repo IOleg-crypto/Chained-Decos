@@ -33,6 +33,18 @@ private:
     std::string m_selectedModelName;            // Currently selected model for adding
     bool m_modelsInitialized;                   // Flag to track if models are loaded
 
+    // File dialog
+    bool m_showFileDialog;                     // Show/hide file dialog
+    bool m_isLoadDialog;                       // true for Load, false for Save
+    std::string m_currentDirectory;            // Current directory in file browser
+    std::vector<std::string> m_directoryItems; // Items in current directory
+    std::string m_selectedFile;                // Currently selected file
+    std::string m_newFileName;                 // New file name for save dialog
+    std::string m_newFolderName;               // New folder name for file dialog
+    bool m_showNewFolderDialog;                // Show/hide new folder dialog
+    bool m_showDeleteDialog;                   // Show/hide delete confirmation dialog
+    std::string m_itemToDelete;                // Item to delete
+
     // Available editing tools
     enum Tool
     {
@@ -82,6 +94,16 @@ private:
     // Model management
     void EnsureModelsLoaded();                         // Ensure models are loaded
     Model *GetModelSafe(const std::string &modelName); // Safe model retrieval
+
+    // File dialog
+    void OpenFileDialog(bool isLoad);                   // Open file dialog
+    void RenderFileDialog();                            // Render file dialog
+    void RefreshDirectoryItems();                       // Refresh current directory items
+    void NavigateToDirectory(const std::string &path);  // Navigate to directory
+    void AddFolder();                                   // Add folder in file dialog
+    void DeleteFolder(const std::string &selectedItem); // Delete selected file or folder
+    void RenderDeleteConfirmDialog();                   // Render delete confirmation dialog
+    void RenderNewFolderDialog();                       // Render new folder dialog
 };
 
 #endif // EDITOR_H
