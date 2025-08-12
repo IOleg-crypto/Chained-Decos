@@ -5,12 +5,13 @@
           "name": "Debug ChainedDecos",
           "type": "cppdbg",
           "request": "launch",
-          "program": "${workspaceFolder}/build/ChainedDecos", 
-          "args": [],
+          "program": "${command:cmake.launchTargetPath}", 
+          "args": ["-g"],
           "stopAtEntry": true,
           "cwd": "${workspaceFolder}",
           "environment": [],
           "externalConsole": false,
+          "MIMode": "gdb",
           "setupCommands": [
             {
               "description": "Enable pretty-printing for gdb",
@@ -19,5 +20,5 @@
             }
           ]
         }
-      ]
+      ],
 }
