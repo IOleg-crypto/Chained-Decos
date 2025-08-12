@@ -204,6 +204,21 @@ tests/CMakeFiles/unit_tests.dir/__/src/Input/InputManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/unit_tests.dir/__/src/Input/InputManager.cpp.s"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
 
+tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj: tests/CMakeFiles/unit_tests.dir/flags.make
+tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj: tests/CMakeFiles/unit_tests.dir/includes_CXX.rsp
+tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj: D:/gitnext/Chained\ Decos/src/Color/ColorParser.cpp
+tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj: tests/CMakeFiles/unit_tests.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/tests" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj -MF CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj.d -o CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj -c "D:/gitnext/Chained Decos/src/Color/ColorParser.cpp"
+
+tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
 # Object files for target unit_tests
 unit_tests_OBJECTS = \
 "CMakeFiles/unit_tests.dir/gtest.cpp.obj" \
@@ -214,7 +229,8 @@ unit_tests_OBJECTS = \
 "CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.obj" \
 "CMakeFiles/unit_tests.dir/__/src/Map/MapLoader.cpp.obj" \
 "CMakeFiles/unit_tests.dir/__/src/CameraController/CameraController.cpp.obj" \
-"CMakeFiles/unit_tests.dir/__/src/Input/InputManager.cpp.obj"
+"CMakeFiles/unit_tests.dir/__/src/Input/InputManager.cpp.obj" \
+"CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj"
 
 # External object files for target unit_tests
 unit_tests_EXTERNAL_OBJECTS =
@@ -228,15 +244,17 @@ tests/unit_tests.exe: tests/CMakeFiles/unit_tests.dir/__/src/Engine/Engine.cpp.o
 tests/unit_tests.exe: tests/CMakeFiles/unit_tests.dir/__/src/Map/MapLoader.cpp.obj
 tests/unit_tests.exe: tests/CMakeFiles/unit_tests.dir/__/src/CameraController/CameraController.cpp.obj
 tests/unit_tests.exe: tests/CMakeFiles/unit_tests.dir/__/src/Input/InputManager.cpp.obj
+tests/unit_tests.exe: tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj
 tests/unit_tests.exe: tests/CMakeFiles/unit_tests.dir/build.make
 tests/unit_tests.exe: _deps/raylib-build/raylib/raylib.lib
 tests/unit_tests.exe: imguilib.lib
+tests/unit_tests.exe: src/Color/color.lib
 tests/unit_tests.exe: lib/gtest_main.lib
 tests/unit_tests.exe: _deps/raylib-build/raylib/raylib.lib
 tests/unit_tests.exe: lib/gtest.lib
 tests/unit_tests.exe: tests/CMakeFiles/unit_tests.dir/linkLibs.rsp
 tests/unit_tests.exe: tests/CMakeFiles/unit_tests.dir/objects1.rsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable unit_tests.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable unit_tests.exe"
 	cd "D:/gitnext/Chained Decos/build/tests" && E:/LLVM/bin/clang++.exe -nostartfiles -nostdlib -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Xlinker /subsystem:console -fuse-ld=lld-link @CMakeFiles/unit_tests.dir/objects1.rsp -o unit_tests.exe -Xlinker /MANIFEST:EMBED -Xlinker /implib:unit_tests.lib -Xlinker /pdb:"D:/gitnext/Chained Decos/build/tests/unit_tests.pdb" -Xlinker /version:0.0  @CMakeFiles/unit_tests.dir/linkLibs.rsp
 	cd "D:/gitnext/Chained Decos/build/tests" && "C:/Program Files/CMake/bin/cmake.exe" -D TEST_TARGET=unit_tests -D "TEST_EXECUTABLE=D:/gitnext/Chained Decos/build/tests/unit_tests.exe" -D TEST_EXECUTOR= -D "TEST_WORKING_DIR=D:/gitnext/Chained Decos/build/tests" -D TEST_EXTRA_ARGS= -D TEST_PROPERTIES= -D TEST_PREFIX= -D TEST_SUFFIX= -D TEST_FILTER= -D NO_PRETTY_TYPES=FALSE -D NO_PRETTY_VALUES=FALSE -D TEST_LIST=unit_tests_TESTS -D "CTEST_FILE=D:/gitnext/Chained Decos/build/tests/unit_tests[1]_tests.cmake" -D TEST_DISCOVERY_TIMEOUT=5 -D TEST_XML_OUTPUT_DIR= -P "C:/Program Files/CMake/share/cmake-3.29/Modules/GoogleTestAddTests.cmake"
 

@@ -390,6 +390,12 @@
   "output": "tests/CMakeFiles/unit_tests.dir/__/src/Input/InputManager.cpp.obj"
 },
 {
+  "directory": "D:/gitnext/Chained Decos/build/tests",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/unit_tests.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj -c \"D:/gitnext/Chained Decos/src/Color/ColorParser.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/Color/ColorParser.cpp",
+  "output": "tests/CMakeFiles/unit_tests.dir/__/src/Color/ColorParser.cpp.obj"
+},
+{
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
   "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Application.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Application.cpp",
