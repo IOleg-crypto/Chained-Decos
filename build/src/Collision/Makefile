@@ -195,6 +195,30 @@ collision/fast:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/build
 .PHONY : collision/fast
 
+CollisionDebugRenderer.obj: CollisionDebugRenderer.cpp.obj
+.PHONY : CollisionDebugRenderer.obj
+
+# target to build an object file
+CollisionDebugRenderer.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj
+.PHONY : CollisionDebugRenderer.cpp.obj
+
+CollisionDebugRenderer.i: CollisionDebugRenderer.cpp.i
+.PHONY : CollisionDebugRenderer.i
+
+# target to preprocess a source file
+CollisionDebugRenderer.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.i
+.PHONY : CollisionDebugRenderer.cpp.i
+
+CollisionDebugRenderer.s: CollisionDebugRenderer.cpp.s
+.PHONY : CollisionDebugRenderer.s
+
+# target to generate assembly for a file
+CollisionDebugRenderer.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.s
+.PHONY : CollisionDebugRenderer.cpp.s
+
 CollisionManager.obj: CollisionManager.cpp.obj
 .PHONY : CollisionManager.obj
 
@@ -258,6 +282,9 @@ help:
 	@echo "... package_source"
 	@echo "... rebuild_cache"
 	@echo "... collision"
+	@echo "... CollisionDebugRenderer.obj"
+	@echo "... CollisionDebugRenderer.i"
+	@echo "... CollisionDebugRenderer.s"
 	@echo "... CollisionManager.obj"
 	@echo "... CollisionManager.i"
 	@echo "... CollisionManager.s"

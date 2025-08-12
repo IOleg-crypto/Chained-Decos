@@ -224,7 +224,10 @@ CMakeFiles/ChainedDecos.dir/src/main.cpp.obj: D:/gitnext/Chained\ Decos/src/main
   D:/gitnext/Chained\ Decos/src/Input/InputManager.h \
   D:/gitnext/Chained\ Decos/src/Menu/Menu.h \
   D:/gitnext/Chained\ Decos/src/Model/Animation.h \
+  D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h \
   D:/gitnext/Chained\ Decos/src/Model/Model.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelCache.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
   D:/gitnext/Chained\ Decos/src/Player/Player.h \
   D:/gitnext/Chained\ Decos/src/World/Physics.h \
@@ -915,7 +918,13 @@ D:/gitnext/Chained\ Decos/src/Input/InputManager.h:
 
 D:/gitnext/Chained\ Decos/src/Menu/Menu.h:
 
+D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h:
+
 D:/gitnext/Chained\ Decos/src/Model/Model.h:
+
+D:/gitnext/Chained\ Decos/src/Model/ModelCache.h:
+
+D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h:
 
 E:/LLVM/lib/clang/19/include/__stddef_offsetof.h:
 

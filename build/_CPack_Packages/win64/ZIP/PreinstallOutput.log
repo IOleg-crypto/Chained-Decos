@@ -4,25 +4,22 @@
 [ 23%] Built target glfw
 [ 32%] Built target raylib
 [ 42%] Built target imguilib
-[ 45%] Built target collision
-[ 47%] Built target world
-[ 50%] Built target player
-[ 54%] Built target model
-[ 55%] Building CXX object src/Engine/CMakeFiles/engine.dir/Engine.cpp.obj
-[ 96%] Linking CXX static library engine.lib
-[ 96%] Built target engine
-[ 96%] Built target input
-[ 96%] Built target menu
-[ 96%] Built target cameracontroller
-[ 96%] Built target mapmod
-[ 96%] Built target color
-[ 98%] Linking CXX executable ChainedDecos.exe
-[100%] Built target ChainedDecos
-[103%] Built target gtest
-Built target gmock
-Built target gmock_main
-Built target gtest_main
-Building CXX object tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj
+[ 44%] Built target color
+[ 47%] Built target collision
+[ 52%] Built target model
+[ 54%] Built target world
+[ 56%] Built target player
+[ 59%] Built target engine
+[ 61%] Built target input
+[ 63%] Built target menu
+[ 65%] Built target cameracontroller
+[ 68%] Built target mapmod
+[ 70%] Built target ChainedDecos
+[ 72%] Built target gtest
+[ 75%] Built target gmock
+[ 77%] Built target gmock_main
+[ 79%] Built target gtest_main
+[ 80%] Building CXX object tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj
 D:/gitnext/Chained Decos/tests/gtest.cpp:394:5: error: unknown type name 'PositionData'
   394 |     PositionData data = player.GetPlayerData();
       |     ^

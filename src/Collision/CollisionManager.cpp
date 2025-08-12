@@ -1,6 +1,8 @@
-#include <algorithm>
-#include <vector>
 #include <Collision/CollisionManager.h>
+#include <algorithm>
+#include <raylib.h>
+#include <vector>
+
 
 void CollisionManager::AddCollider(Collision &collider) { m_collisions.emplace_back(collider); }
 
@@ -8,9 +10,8 @@ void CollisionManager::ClearColliders() { m_collisions.clear(); }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 {
-    return std::ranges::any_of(m_collisions, [&](const Collision& collider) {
-        return playerCollision.Intersects(collider);
-    });
+    return std::any_of(m_collisions.begin(), m_collisions.end(), [&](const Collision &collider)
+                       { return playerCollision.Intersects(collider); });
 }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const

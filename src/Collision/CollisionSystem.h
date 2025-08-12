@@ -45,8 +45,13 @@ public:
 
     // Check if this collision box contains a point
     bool Contains(const Vector3 &point) const;
-    // Check if this collision box contains another box
-    void GetMeshModelCollision(Model *model);
+
+    // -------------------- Model Collision --------------------
+    void CalculateFromModel(Model *model);
+    void CalculateFromModel(Model *model, const Matrix &transform);
+
+    Vector3 GetCenter() const;
+    Vector3 GetSize() const;
 
 private:
     Vector3 m_min{}; // Minimum corner of AABB

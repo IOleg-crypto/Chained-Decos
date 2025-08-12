@@ -66,11 +66,11 @@ void CameraController::UpdateMouseRotation(Camera &camera, Vector3 &playerPositi
     }
 
     Vector3 offset = {GetFOV() * sinf(GetCameraYaw()) * cosf(GetCameraPitch()),
-                      GetFOV() * sinf(GetCameraPitch()) + 2.0f,
+                      GetFOV() * sinf(GetCameraPitch()) + 5.0f,
                       GetFOV() * cosf(GetCameraYaw()) * cosf(GetCameraPitch())};
 
-    if (offset.y < 0.0f)
-        offset.y = 0.0f;
+    // if (offset.y < 0.0f)
+    //     offset.y = 0.0f;
 
     camera.position = Vector3Add(playerPosition, offset);
     camera.target = playerPosition;

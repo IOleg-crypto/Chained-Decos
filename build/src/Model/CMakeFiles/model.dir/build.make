@@ -114,11 +114,43 @@ src/Model/CMakeFiles/model.dir/Animation.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/model.dir/Animation.cpp.s"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
 
+src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj: src/Model/CMakeFiles/model.dir/flags.make
+src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj: src/Model/CMakeFiles/model.dir/includes_CXX.rsp
+src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj: D:/gitnext/Chained\ Decos/src/Model/JsonHelper.cpp
+src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj: src/Model/CMakeFiles/model.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/src/Model" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj -MF CMakeFiles/model.dir/JsonHelper.cpp.obj.d -o CMakeFiles/model.dir/JsonHelper.cpp.obj -c "D:/gitnext/Chained Decos/src/Model/JsonHelper.cpp"
+
+src/Model/CMakeFiles/model.dir/JsonHelper.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/model.dir/JsonHelper.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+src/Model/CMakeFiles/model.dir/JsonHelper.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/model.dir/JsonHelper.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
+src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj: src/Model/CMakeFiles/model.dir/flags.make
+src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj: src/Model/CMakeFiles/model.dir/includes_CXX.rsp
+src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj: D:/gitnext/Chained\ Decos/src/Model/ModelCache.cpp
+src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj: src/Model/CMakeFiles/model.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/src/Model" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj -MF CMakeFiles/model.dir/ModelCache.cpp.obj.d -o CMakeFiles/model.dir/ModelCache.cpp.obj -c "D:/gitnext/Chained Decos/src/Model/ModelCache.cpp"
+
+src/Model/CMakeFiles/model.dir/ModelCache.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/model.dir/ModelCache.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+src/Model/CMakeFiles/model.dir/ModelCache.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/model.dir/ModelCache.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
 # Object files for target model
 model_OBJECTS = \
 "CMakeFiles/model.dir/Model.cpp.obj" \
 "CMakeFiles/model.dir/ModelInstance.cpp.obj" \
-"CMakeFiles/model.dir/Animation.cpp.obj"
+"CMakeFiles/model.dir/Animation.cpp.obj" \
+"CMakeFiles/model.dir/JsonHelper.cpp.obj" \
+"CMakeFiles/model.dir/ModelCache.cpp.obj"
 
 # External object files for target model
 model_EXTERNAL_OBJECTS =
@@ -126,9 +158,11 @@ model_EXTERNAL_OBJECTS =
 src/Model/model.lib: src/Model/CMakeFiles/model.dir/Model.cpp.obj
 src/Model/model.lib: src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj
 src/Model/model.lib: src/Model/CMakeFiles/model.dir/Animation.cpp.obj
+src/Model/model.lib: src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj
+src/Model/model.lib: src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj
 src/Model/model.lib: src/Model/CMakeFiles/model.dir/build.make
 src/Model/model.lib: src/Model/CMakeFiles/model.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library model.lib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX static library model.lib"
 	cd "D:/gitnext/Chained Decos/build/src/Model" && $(CMAKE_COMMAND) -P CMakeFiles/model.dir/cmake_clean_target.cmake
 	cd "D:/gitnext/Chained Decos/build/src/Model" && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/model.dir/link.txt --verbose=$(VERBOSE)
 

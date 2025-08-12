@@ -6,5 +6,5 @@ C_DEFINES = -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE
 
 C_INCLUDES = @CMakeFiles/glfw.dir/includes_C.rsp
 
-C_FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall
+C_FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -Wall
 

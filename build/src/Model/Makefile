@@ -219,6 +219,30 @@ Animation.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/Animation.cpp.s
 .PHONY : Animation.cpp.s
 
+JsonHelper.obj: JsonHelper.cpp.obj
+.PHONY : JsonHelper.obj
+
+# target to build an object file
+JsonHelper.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj
+.PHONY : JsonHelper.cpp.obj
+
+JsonHelper.i: JsonHelper.cpp.i
+.PHONY : JsonHelper.i
+
+# target to preprocess a source file
+JsonHelper.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/JsonHelper.cpp.i
+.PHONY : JsonHelper.cpp.i
+
+JsonHelper.s: JsonHelper.cpp.s
+.PHONY : JsonHelper.s
+
+# target to generate assembly for a file
+JsonHelper.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/JsonHelper.cpp.s
+.PHONY : JsonHelper.cpp.s
+
 Model.obj: Model.cpp.obj
 .PHONY : Model.obj
 
@@ -242,6 +266,30 @@ Model.s: Model.cpp.s
 Model.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/Model.cpp.s
 .PHONY : Model.cpp.s
+
+ModelCache.obj: ModelCache.cpp.obj
+.PHONY : ModelCache.obj
+
+# target to build an object file
+ModelCache.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj
+.PHONY : ModelCache.cpp.obj
+
+ModelCache.i: ModelCache.cpp.i
+.PHONY : ModelCache.i
+
+# target to preprocess a source file
+ModelCache.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/ModelCache.cpp.i
+.PHONY : ModelCache.cpp.i
+
+ModelCache.s: ModelCache.cpp.s
+.PHONY : ModelCache.s
+
+# target to generate assembly for a file
+ModelCache.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Model/CMakeFiles/model.dir/build.make src/Model/CMakeFiles/model.dir/ModelCache.cpp.s
+.PHONY : ModelCache.cpp.s
 
 ModelInstance.obj: ModelInstance.cpp.obj
 .PHONY : ModelInstance.obj
@@ -285,9 +333,15 @@ help:
 	@echo "... Animation.obj"
 	@echo "... Animation.i"
 	@echo "... Animation.s"
+	@echo "... JsonHelper.obj"
+	@echo "... JsonHelper.i"
+	@echo "... JsonHelper.s"
 	@echo "... Model.obj"
 	@echo "... Model.i"
 	@echo "... Model.s"
+	@echo "... ModelCache.obj"
+	@echo "... ModelCache.i"
+	@echo "... ModelCache.s"
 	@echo "... ModelInstance.obj"
 	@echo "... ModelInstance.i"
 	@echo "... ModelInstance.s"
