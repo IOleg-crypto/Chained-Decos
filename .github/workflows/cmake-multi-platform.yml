@@ -1,8 +1,8 @@
 name: CMake on multiple platforms
 
 on:
-   workflow_dispatch:
-    
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -14,31 +14,26 @@ jobs:
         build_type: [Release]
         c_compiler: [gcc, clang]
         cpp_compiler: [g++, clang++]
-
         include:
           - os: windows-latest
             c_compiler: gcc
             cpp_compiler: g++
-            
+
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set reusable strings
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
-    - name: Checkout repository
+    - name: Checkout repository with submodules
       uses: actions/checkout@v4
       with:
-         submodules: true
-         fetch-depth: 0
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Set build output dir
+      id: strings
+      shell: bash
+      run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
     #################################
     # Linux-specific setup
     #################################
-
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev
@@ -50,7 +45,6 @@ jobs:
     #################################
     # Windows-specific setup
     #################################
-
     - name: Install MinGW (Windows)
       if: matrix.os == 'windows-latest'
       run: |
@@ -61,11 +55,9 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: Remove-Item -Path "${{ steps.strings.outputs.build-output-dir }}" -Recurse -Force -ErrorAction SilentlyContinue
 
-      
     #################################
-    # Configure with CMake
+    # Configure CMake
     #################################
-
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -78,14 +70,12 @@ jobs:
     #################################
     # Build project
     #################################
-
-    # - name: Build
-    #   run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
     #################################
     # Run tests
     #################################
-
-    - name: Test
+    - name: Run tests
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ctest --output-on-failure --build-config ${{ matrix.build_type }}
