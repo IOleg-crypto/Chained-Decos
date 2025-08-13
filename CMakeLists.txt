@@ -81,6 +81,7 @@ add_subdirectory(src/CameraController)
 add_subdirectory(src/Color)
 add_subdirectory(src/World)
 add_subdirectory(src/Collision)
+add_subdirectory(src/Render)
 add_subdirectory(tests)
 add_subdirectory(src/MapEditor)
 
@@ -103,6 +104,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     color
     world
     collision
+    render
     raylib
     nlohmann_json
     imguilib

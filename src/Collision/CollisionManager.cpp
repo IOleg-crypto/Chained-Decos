@@ -3,23 +3,69 @@
 #include <raylib.h>
 #include <vector>
 
-
 void CollisionManager::AddCollider(Collision &collider) { m_collisions.emplace_back(collider); }
 
 void CollisionManager::ClearColliders() { m_collisions.clear(); }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 {
-    return std::any_of(m_collisions.begin(), m_collisions.end(), [&](const Collision &collider)
-                       { return playerCollision.Intersects(collider); });
+    return std::any_of(m_collisions.begin(), m_collisions.end(),
+                       [&](const Collision &collider)
+                       {
+                           // Use BVH if available, otherwise fallback to AABB
+                           if (collider.IsUsingBVH())
+                           {
+                               return collider.IntersectsBVH(playerCollision);
+                           }
+                           return playerCollision.Intersects(collider);
+                       });
 }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const
 {
+    // Debug: Log player position for collision check
+    Vector3 playerMin = playerCollision.GetMin();
+    Vector3 playerMax = playerCollision.GetMax();
+    // TraceLog(LOG_INFO, "🧍 Player collision check: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
+    //          playerMin.x, playerMin.y, playerMin.z, playerMax.x, playerMax.y, playerMax.z);
+
+    // TraceLog(LOG_INFO, "📋 Total colliders to check: %zu", m_collisions.size());
+
+    int colliderIndex = 0;
     for (const auto &collider : m_collisions)
     {
-        if (playerCollision.Intersects(collider))
+        Vector3 colliderMin = collider.GetMin();
+        Vector3 colliderMax = collider.GetMax();
+
+        // Check collision using appropriate method
+        bool hasCollision = false;
+
+        // if (collider.IsUsingBVH())
+        // {
+        //     TraceLog(LOG_INFO,
+        //              "🔍 [%d] Checking BVH collider (Arena): (%.2f,%.2f,%.2f) to
+        //              (%.2f,%.2f,%.2f)", colliderIndex, colliderMin.x, colliderMin.y,
+        //              colliderMin.z, colliderMax.x, colliderMax.y, colliderMax.z);
+        //     hasCollision = collider.IntersectsBVH(playerCollision);
+        // }
+        // else
+        // {
+        //     TraceLog(
+        //         LOG_INFO,
+        //         "🔍 [%d] Checking AABB collider (Ground): (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
+        //         colliderIndex, colliderMin.x, colliderMin.y, colliderMin.z, colliderMax.x,
+        //         colliderMax.y, colliderMax.z);
+        //     hasCollision = playerCollision.Intersects(collider);
+        // }
+
+        colliderIndex++;
+
+        if (hasCollision)
         {
+            // For BVH colliders, we could potentially get more precise collision response
+            // but for now, we'll use the standard AABB-based MTV calculation
+            // TODO: Implement precise BVH-based collision response using hit points and normals
+
             // Calculate the response vector for collision resolution - Minimum Translation Vector
             // (MTV)
             Vector3 aMin = playerCollision.GetMin();
@@ -47,6 +93,21 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
                 response = {0, dy, 0};
             else
                 response = {0, 0, dz};
+
+            // // Log collision type for debugging
+            // if (collider.IsUsingBVH())
+            // {
+            //     TraceLog(LOG_INFO,
+            //              "🎯 [%d] BVH (Arena) Collision WINNER! Response: (%.3f, %.3f, %.3f)",
+            //              colliderIndex - 1, response.x, response.y, response.z);
+            // }
+            // else
+            // {
+            //     TraceLog(LOG_INFO,
+            //              "📦 [%d] AABB (Ground) Collision WINNER! Response: (%.3f, %.3f, %.3f)",
+            //              colliderIndex - 1, response.x, response.y, response.z);
+            // }
+
             return true;
         }
     }

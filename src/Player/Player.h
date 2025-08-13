@@ -18,6 +18,12 @@
 class Player
 {
 public:
+    // Player constants - defined in .cpp file
+    static const Vector3 DEFAULT_SPAWN_POSITION;
+    static const float MODEL_Y_OFFSET;
+    static const float MODEL_SCALE;
+
+    // Constructors and methods
     Player();
     ~Player();
 
