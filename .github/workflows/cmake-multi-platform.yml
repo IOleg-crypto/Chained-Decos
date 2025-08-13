@@ -40,7 +40,7 @@ jobs:
       run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
       
     - name: Cache build dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/_deps
@@ -118,7 +118,7 @@ jobs:
     #################################
     - name: Upload build artifacts
       if: success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-${{ matrix.os }}-${{ matrix.c_compiler }}
         path: |
