@@ -1,12 +1,12 @@
-# 🎯 Enhanced Model Loader
+# 🎯 Model Loader
 
-An improved Model Loader for **Chained Decos** with OOP principles, caching, and cleaner code organization.
+An improved Model Loader for **Chained Decos** with caching, and cleaner code organization.
 
 ---
 
 ## ✨ Overview
 
-The Enhanced Model Loader adds modern C++ practices (smart pointers, RAII), a model cache (LRU), detailed loading statistics, and a clean API while preserving **full backward compatibility** with the existing model manager.
+The Model Loader adds a model cache (LRU), detailed loading statistics, and a clean API while preserving **full backward compatibility** with the existing model manager.
 
 This README contains usage examples, JSON configuration format, API reference snippets, and migration tips.
 
@@ -15,7 +15,6 @@ This README contains usage examples, JSON configuration format, API reference sn
 ## ✅ Key Features
 
 * **Backward compatibility** — existing methods keep working.
-* **Smart pointers & RAII** — automatic memory management.
 * **Model Cache** — automatic caching with LRU eviction and hit-rate stats.
 * **LOD support** — enable/disable Level-of-Detail.
 * **Detailed statistics** — loading time, success/failure counts, hit/miss rates.
@@ -203,14 +202,12 @@ m_models.AddInstanceEx("name", config);
 Files are automatically added to `CMakeLists.txt`:
 
 ```cmake
-# Enhanced Model Library with OOP improvements
 add_library(model STATIC
     # Core model classes (unchanged)
     Model.cpp Model.h
     ModelInstance.cpp ModelInstance.h
     Animation.cpp Animation.h
 
-    # Enhanced OOP components (new)
     ModelConfig.h
     JsonHelper.cpp JsonHelper.h
     ModelCache.cpp ModelCache.h
