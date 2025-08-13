@@ -442,6 +442,19 @@ collision/fast:
 .PHONY : collision/fast
 
 #=============================================================================
+# Target rules for targets named render
+
+# Build rule for target.
+render: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 render
+.PHONY : render
+
+# fast build rule for target.
+render/fast:
+	$(MAKE) $(MAKESILENT) -f src/Render/CMakeFiles/render.dir/build.make src/Render/CMakeFiles/render.dir/build
+.PHONY : render/fast
+
+#=============================================================================
 # Target rules for targets named unit_tests
 
 # Build rule for target.
@@ -693,6 +706,7 @@ help:
 	@echo "... model"
 	@echo "... player"
 	@echo "... raylib"
+	@echo "... render"
 	@echo "... unit_tests"
 	@echo "... world"
 	@echo "... include/imgui/imgui.obj"

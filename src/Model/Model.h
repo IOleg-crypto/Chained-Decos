@@ -26,6 +26,10 @@ using json = nlohmann::json;
 class Models
 {
 public:
+    // Model constants
+    static constexpr int CACHE_SIZE = 20;
+    static constexpr bool LOD_ENABLED = false;
+    static constexpr bool CACHE_ENABLED = true;
     Models();
     ~Models();
 

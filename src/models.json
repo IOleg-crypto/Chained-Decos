@@ -1,7 +1,18 @@
 [
   {
+    "name": "player",
+    "path": "/resources/player_low.glb",
+    "spawn": false
+  },
+  {
     "name": "arc",
     "path": "/resources/arc.glb",
-    "spawn": false
+    "spawn": true,
+    "instances": [{
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "scale": 1.0,
+        "color": "blue"
+    }
+    ]
   }
 ]

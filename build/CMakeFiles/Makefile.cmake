@@ -105,6 +105,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "D:/gitnext/Chained Decos/src/Menu/CMakeLists.txt"
   "D:/gitnext/Chained Decos/src/Model/CMakeLists.txt"
   "D:/gitnext/Chained Decos/src/Player/CMakeLists.txt"
+  "D:/gitnext/Chained Decos/src/Render/CMakeLists.txt"
   "D:/gitnext/Chained Decos/src/World/CMakeLists.txt"
   "D:/gitnext/Chained Decos/tests/CMakeLists.txt"
   )
@@ -156,6 +157,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
   "src/Color/CMakeFiles/CMakeDirectoryInformation.cmake"
   "src/World/CMakeFiles/CMakeDirectoryInformation.cmake"
   "src/Collision/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "src/Render/CMakeFiles/CMakeDirectoryInformation.cmake"
   "tests/CMakeFiles/CMakeDirectoryInformation.cmake"
   "src/MapEditor/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
@@ -182,6 +184,7 @@ set(CMAKE_DEPEND_INFO_FILES
   "src/Color/CMakeFiles/color.dir/DependInfo.cmake"
   "src/World/CMakeFiles/world.dir/DependInfo.cmake"
   "src/Collision/CMakeFiles/collision.dir/DependInfo.cmake"
+  "src/Render/CMakeFiles/render.dir/DependInfo.cmake"
   "tests/CMakeFiles/unit_tests.dir/DependInfo.cmake"
   "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/DependInfo.cmake"
   )

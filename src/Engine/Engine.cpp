@@ -1,81 +1,290 @@
-// Created by I#Oleg
 //
-#include <Engine/Engine.h>
+// Engine.cpp - Main Engine Implementation
+// Created by I#Oleg on 20.07.2025.
+//
+
+#include "Engine.h"
+
+// ==================== INCLUDES ====================
+
+// Standard library
+#include <stdexcept>
+
+// Raylib & ImGui
 #include <Menu/Menu.h>
-#include <raylib.h>
-// Include ImGui with adapter
-#include <Collision/CollisionDebugRenderer.h>
-#include <Collision/CollisionSystem.h>
 #include <imgui.h>
+#include <raylib.h>
 #include <rcamera.h>
 #include <rlImGui.h>
+
+// Collision system
+#include <Collision/CollisionSystem.h>
+
+// ==================== CONSTRUCTORS & DESTRUCTOR ====================
 
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_usePlayerModel(true)
 {
-    if (m_screenX < 0 || m_screenY < 0)
+    // Improved validation using local constants
+    constexpr int DEFAULT_SCREEN_WIDTH = 800;
+    constexpr int DEFAULT_SCREEN_HEIGHT = 600;
+
+    if (m_screenX <= 0 || m_screenY <= 0)
     {
-        TraceLog(LOG_WARNING,
-                 "[Screen] Invalid screen size: %d x %d. Setting default size 800x600.", m_screenX,
-                 m_screenY);
-        m_screenX = 800;
-        m_screenY = 600;
+        TraceLog(LOG_WARNING, "[Screen] Invalid screen size: %d x %d. Setting default size %dx%d.",
+                 m_screenX, m_screenY, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
+        m_screenX = DEFAULT_SCREEN_WIDTH;
+        m_screenY = DEFAULT_SCREEN_HEIGHT;
     }
 
-    m_collisionDebugRenderer = new CollisionDebugRenderer();
-    TraceLog(LOG_INFO, "CollisionDebugRenderer initialized");
+    TraceLog(LOG_INFO, "Engine initialized with screen size: %dx%d", m_screenX, m_screenY);
 }
 
 Engine::~Engine()
 {
-    delete m_collisionDebugRenderer;
-    m_collisionDebugRenderer = nullptr;
+    TraceLog(LOG_INFO, "Starting Engine destructor...");
 
-    rlImGuiShutdown(); // cleans up ImGui
+    // Clear collision system first to avoid dangling pointers
+    TraceLog(LOG_INFO, "Clearing collision manager...");
+    m_collisionManager.ClearColliders();
+
+    TraceLog(LOG_INFO, "Shutting down ImGui...");
+    rlImGuiShutdown();
+
+    TraceLog(LOG_INFO, "Closing window...");
     CloseWindow();
 
     TraceLog(LOG_INFO, "Engine destructor completed");
 }
 
+// ==================== MAIN API ====================
+
 void Engine::Init()
 {
+    TraceLog(LOG_INFO, "Initializing Engine...");
+
     // Configure window flags
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
 
     // Initialize window
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
-    SetTargetFPS(144);
+    SetTargetFPS(60); // Local constant
 
-    // Initialize ImGui
-    rlImGuiSetup(true);
-    InitImGuiFont();
+    // Initialize RenderManager
+    m_renderManager.Initialize();
 
-    TraceLog(LOG_INFO, "Loading models from: %s", PROJECT_ROOT_DIR "/src/models.json");
+    // Initialize models with improved settings
+    const std::string modelsJsonPath = PROJECT_ROOT_DIR "/src/models.json";
+    TraceLog(LOG_INFO, "Loading models from: %s", modelsJsonPath.c_str());
     m_models.SetCacheEnabled(true);
-    m_models.SetMaxCacheSize(20);
-    m_models.EnableLOD(false);
-    // Load models from JSON file (if model don`t exist - it crashing)
-    m_models.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/models.json");
-    m_models.PrintStatistics();
+    m_models.SetMaxCacheSize(50);
+    m_models.EnableLOD(true);
+
+    // Load models from JSON file
+    try
+    {
+        m_models.LoadModelsFromJson(modelsJsonPath);
+        m_models.PrintStatistics();
+        TraceLog(LOG_INFO, "Models loaded successfully");
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_ERROR, " Failed to load models: %s", e.what());
+    }
 
     // Initialize game systems
-    InitCollisions();
+    TraceLog(LOG_INFO, "Starting collision system initialization...");
+    try
+    {
+        InitCollisions();
+        TraceLog(LOG_INFO, " Collision system initialized successfully");
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_ERROR, " Failed to initialize collision system: %s", e.what());
+    }
 
-    TraceLog(LOG_INFO, "Engine initialization complete!");
+    TraceLog(LOG_INFO, " Engine initialization complete!");
 }
 
 void Engine::Run()
 {
-    while (!WindowShouldClose())
+    TraceLog(LOG_INFO, "Starting main game loop...");
+
+    while (!WindowShouldClose() && !m_shouldExit)
     {
         Update();
         Render();
-        if (m_shouldExit)
+    }
+
+    TraceLog(LOG_INFO, "Main game loop ended");
+}
+
+void Engine::ToggleMenu()
+{
+    m_showMenu = !m_showMenu;
+    TraceLog(LOG_INFO, "Menu toggled: %s", m_showMenu ? "ON" : "OFF");
+}
+
+void Engine::RequestExit()
+{
+    m_shouldExit = true;
+    TraceLog(LOG_INFO, "Exit requested");
+}
+
+bool Engine::IsRunning() const { return !WindowShouldClose() && !m_shouldExit; }
+
+// ==================== INITIALIZATION METHODS ====================
+
+void Engine::InitInput()
+{
+    TraceLog(LOG_INFO, "Setting up input bindings...");
+
+    Camera &camera = m_player.GetCameraController()->GetCamera();
+    int &cameraMode = m_player.GetCameraController()->GetCameraMode();
+
+    // Function keys
+    m_manager.RegisterAction(KEY_F11, [this]() { ToggleFullscreen(); });
+    m_manager.RegisterAction(KEY_F1,
+                             [this]()
+                             {
+                                 m_showMenu = true;
+                                 EnableCursor();
+                             });
+
+    // Camera controls
+    m_manager.RegisterAction(KEY_ONE,
+                             [this, &camera, &cameraMode]()
+                             {
+                                 cameraMode = CAMERA_FREE;
+                                 camera.up = {0, 1, 0};
+                                 TraceLog(LOG_INFO, "Camera mode: FREE");
+                             });
+
+    // Debug toggles
+    m_manager.RegisterAction(KEY_F2,
+                             [this]()
+                             {
+                                 m_renderManager.ToggleDebugInfo();
+                                 m_showDebug = m_renderManager.IsDebugInfoVisible();
+                                 TraceLog(LOG_INFO, "Debug info: %s", m_showDebug ? "ON" : "OFF");
+                             });
+
+    m_manager.RegisterAction(KEY_F3,
+                             [this]()
+                             {
+                                 m_renderManager.ToggleCollisionDebug();
+                                 m_showCollisionDebug = m_renderManager.IsCollisionDebugVisible();
+                                 TraceLog(LOG_INFO, "Collision debug: %s",
+                                          m_showCollisionDebug ? "ON" : "OFF");
+                             });
+
+    // Utility functions
+    m_manager.RegisterAction(KEY_F4, [this]() { m_shouldExit = true; });
+
+    m_manager.RegisterAction(
+        KEY_F10,
+        [this]()
         {
-            break;
+            TraceLog(LOG_INFO, "F10 pressed - forcing collision debug ON for next frame");
+            m_renderManager.ForceCollisionDebugNextFrame();
+        });
+
+    m_manager.RegisterAction(KEY_F8, [this]() { OptimizeModelPerformance(); });
+
+    m_manager.RegisterAction(KEY_F9,
+                             [this]()
+                             {
+                                 auto models = m_models.GetAvailableModels();
+                                 TraceLog(LOG_INFO, "=== Available Models ===");
+                                 for (const auto &model : models)
+                                 {
+                                     TraceLog(LOG_INFO, "  - %s", model.c_str());
+                                 }
+
+                                 auto decorations = m_models.GetInstancesByTag("decoration");
+                                 TraceLog(LOG_INFO, "=== Instances by Tags ===");
+                                 TraceLog(LOG_INFO, "  - Decorations: %zu", decorations.size());
+                             });
+
+    // BVH Ray casting test (F12)
+    m_manager.RegisterAction(KEY_F12, [this]() { TestBVHRayCasting(); });
+
+    TraceLog(LOG_INFO, "Input bindings configured successfully");
+}
+// TESTING
+void Engine::InitCollisions()
+{
+    TraceLog(LOG_INFO, "Initializing collision system...");
+
+    // Clear existing collisions
+    m_collisionManager.ClearColliders();
+
+    try
+    {
+        // Use constants for ground collision
+        Collision groundCollision{PhysicsComponent::GROUND_COLLISION_CENTER,
+                                  PhysicsComponent::GROUND_COLLISION_SIZE};
+        groundCollision.SetUseBVH(false);
+        m_collisionManager.AddCollider(groundCollision);
+
+        // Arena model collision
+        TraceLog(LOG_INFO, "Looking for 'arc' model...");
+
+        // Debug: List all available models
+        auto availableModels = m_models.GetAvailableModels();
+        TraceLog(LOG_INFO, "Available models (%zu):", availableModels.size());
+        for (const auto &modelName : availableModels)
+        {
+            TraceLog(LOG_INFO, "  - %s", modelName.c_str());
         }
+
+        try
+        {
+            Model &arenaModel = m_models.GetModelByName("arc");
+            TraceLog(LOG_INFO, " 'arc' model found successfully");
+
+            // Create simple mesh collision (AABB) for arena geometry
+            Collision arenaMeshCollision;
+            arenaMeshCollision.CalculateFromModel(&arenaModel);
+
+            Vector3 aabbMin = arenaMeshCollision.GetMin();
+            Vector3 aabbMax = arenaMeshCollision.GetMax();
+            TraceLog(LOG_INFO, "Arena AABB: min=(%.2f,%.2f,%.2f) max=(%.2f,%.2f,%.2f)", aabbMin.x,
+                     aabbMin.y, aabbMin.z, aabbMax.x, aabbMax.y, aabbMax.z);
+
+            // Use simple mesh collision (no BVH)
+            arenaMeshCollision.SetUseBVH(true);
+            m_collisionManager.AddCollider(arenaMeshCollision);
+            TraceLog(LOG_INFO, "Added arena collision (Mesh/AABB) - faster but less precise");
+
+            // Verify mesh collision is being used
+            if (!arenaMeshCollision.IsUsingBVH())
+            {
+                TraceLog(LOG_INFO, "✓ Mesh collision system is ACTIVE for arena");
+            }
+            else
+            {
+                TraceLog(LOG_WARNING, "✗ Mesh collision system FAILED - BVH still active");
+            }
+        }
+        catch (const std::exception &e)
+        {
+            TraceLog(LOG_ERROR, "Failed to find or process 'arc' model: %s", e.what());
+            TraceLog(LOG_WARNING, "  Collision system will only have ground collision");
+        }
+
+        TraceLog(LOG_INFO, " Collision system initialized with %zu colliders",
+                 m_collisionManager.GetColliders().size());
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_ERROR, "Failed to initialize collisions: %s", e.what());
+        throw; // Re-throw to handle at higher level
     }
 }
+
+// ==================== UPDATE METHODS ====================
 
 void Engine::Update()
 {
@@ -93,6 +302,7 @@ void Engine::Update()
         UpdatePlayer();
         UpdatePhysics();
         CheckPlayerBounds();
+        HandleMousePicking();
     }
 }
 
@@ -123,47 +333,92 @@ void Engine::UpdatePhysics()
 
 void Engine::CheckPlayerBounds()
 {
-    // Reset player if they fall below the world
-    if (m_player.GetPlayerPosition().y < -1.0f) // Changed threshold from 0 to -50
+    // Reset player if they fall below the world (improved with constants)
+    if (m_player.GetPlayerPosition().y < PhysicsComponent::WORLD_FLOOR_Y)
     {
-        TraceLog(LOG_WARNING, "Player fell below world bounds, respawning...");
-        m_player.SetPlayerPosition({2, 50, 150});
+        TraceLog(LOG_WARNING, "Player fell below world bounds (%.1f), respawning...",
+                 PhysicsComponent::WORLD_FLOOR_Y);
+        m_player.SetPlayerPosition(Player::DEFAULT_SPAWN_POSITION);
     }
 }
 
+void Engine::HandleKeyboardShortcuts() const { m_manager.ProcessInput(); }
+
+void Engine::HandleMousePicking()
+{
+    // Only handle mouse picking if ImGui doesn't want the mouse
+    const ImGuiIO &io = ImGui::GetIO();
+    if (io.WantCaptureMouse)
+        return;
+
+    // Check for mouse click
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        Vector2 mousePos = GetMousePosition();
+        Camera &camera = m_player.GetCameraController()->GetCamera();
+
+        // Convert Raylib Ray to CollisionRay
+        Ray raylibRay = GetMouseRay(mousePos, camera);
+        CollisionRay mouseRay(raylibRay.position, raylibRay.direction);
+
+        // Find closest BVH hit
+        const auto &colliders = m_collisionManager.GetColliders();
+        float closestDistance = FLT_MAX;
+        Vector3 closestHitPoint = {0};
+        Vector3 closestHitNormal = {0, 1, 0};
+        bool anyHit = false;
+
+        for (size_t i = 0; i < colliders.size(); i++)
+        {
+            if (colliders[i].IsUsingBVH())
+            {
+                float distance;
+                Vector3 hitPoint, hitNormal;
+
+                if (colliders[i].RaycastBVH(mouseRay, distance, hitPoint, hitNormal))
+                {
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closestHitPoint = hitPoint;
+                        closestHitNormal = hitNormal;
+                        anyHit = true;
+                    }
+                }
+            }
+        }
+
+        if (anyHit)
+        {
+            TraceLog(LOG_INFO, "Mouse picked point: (%.2f, %.2f, %.2f) at distance %.2f",
+                     closestHitPoint.x, closestHitPoint.y, closestHitPoint.z, closestDistance);
+        }
+    }
+}
+
+// ==================== RENDERING METHODS ====================
+
 void Engine::Render()
 {
-    BeginDrawing();
-    ClearBackground(BLUE);
+    m_renderManager.BeginFrame();
 
     if (m_showMenu)
     {
-        m_menu.Update();
-        m_menu.Render();
+        m_renderManager.RenderMenu(m_menu);
     }
     else
     {
-        BeginMode3D(m_player.GetCameraController()->GetCamera());
-        DrawScene3D();
-        LoadPlayerModel();
-        m_player.UpdatePlayerCollision();
-
-        if (m_showCollisionDebug)
-        {
-            RenderCollisionDebug();
-        }
-
-        EndMode3D();
+        m_renderManager.RenderGame(m_player, m_models, m_collisionManager, m_showCollisionDebug);
     }
 
     if (m_showDebug)
     {
-        DrawDebugInfo(m_player.GetCameraController()->GetCamera(),
-                      m_player.GetCameraController()->GetCameraMode());
+        m_renderManager.RenderDebugInfo(m_player, m_models, m_collisionManager);
     }
-    EndDrawing();
 
-    // handle menu actions after frame
+    m_renderManager.EndFrame();
+
+    // Handle menu actions after frame
     switch (m_menu.GetAction())
     {
     case MenuAction::StartGame:
@@ -171,283 +426,133 @@ void Engine::Render()
         InitInput();
         HideCursor(); // Hide mouse cursor when game starts
         m_menu.ResetAction();
+        TraceLog(LOG_INFO, "Game started from menu");
         break;
     case MenuAction::OpenOptions:
         m_menu.ResetAction();
+        TraceLog(LOG_INFO, "Options menu requested");
         break;
     case MenuAction::ExitGame:
         m_menu.ResetAction();
         m_shouldExit = true;
+        TraceLog(LOG_INFO, "Exit game requested from menu");
         break;
     default:
         break;
     }
 }
 
-void Engine::LoadPlayerModel()
+// ==================== TESTING & UTILITY METHODS ====================
+
+void Engine::TestBVHRayCasting()
 {
-    Model &m_playerModel = m_models.GetModelByName("player");
-    m_playerModel.transform = MatrixRotateY(DEG2RAD * m_player.GetRotationY());
+    TraceLog(LOG_INFO, "=== Testing BVH Ray Casting ===");
 
-    Vector3 adjustedPos = m_player.GetPlayerPosition();
-    adjustedPos.y -= 1.2f;
-
-    DrawModel(m_playerModel, adjustedPos, 1.0f, WHITE);
-    DrawBoundingBox(m_player.GetPlayerBoundingBox(), GREEN);
-}
-
-void Engine::DrawScene3D()
-{
-    DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){800.0f, 800.0f}, LIGHTGRAY); // Draw ground
-    m_models.DrawAllModels();
-}
-
-void Engine::InitImGuiFont() const
-{
-    const ImGuiIO &io = ImGui::GetIO();
-    io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
-    io.Fonts->Build();
-}
-
-void Engine::DrawDebugInfo(const Camera &camera, const int &cameraMode)
-{
-    rlImGuiBegin();
-    ImGui::SetNextWindowSize(ImVec2(384, 256), ImGuiCond_Always);
-    if (ImGui::Begin("Debug info", nullptr, ImGuiWindowFlags_NoResize))
-    {
-        ImGui::Text("Camera status:");
-        ImGui::Text("- Mode: %s", (cameraMode == CAMERA_FREE)           ? "FREE"
-                                  : (cameraMode == CAMERA_FIRST_PERSON) ? "FIRST_PERSON"
-                                  : (cameraMode == CAMERA_THIRD_PERSON) ? "THIRD_PERSON"
-                                  : (cameraMode == CAMERA_ORBITAL)      ? "ORBITAL"
-                                                                        : "CUSTOM");
-        ImGui::Text("- Projection: %s", (camera.projection == CAMERA_PERSPECTIVE) ? "PERSPECTIVE"
-                                        : (camera.projection == CAMERA_ORTHOGRAPHIC)
-                                            ? "ORTHOGRAPHIC"
-                                            : "CUSTOM");
-        ImGui::Text("- Position: (%.3f, %.3f, %.3f)", camera.position.x, camera.position.y,
-                    camera.position.z);
-        ImGui::Text("- Target:   (%.3f, %.3f, %.3f)", camera.target.x, camera.target.y,
-                    camera.target.z);
-        ImGui::Text("- Up:       (%.3f, %.3f, %.3f)", camera.up.x, camera.up.y, camera.up.z);
-        ImGui::Text("FPS: %d", GetFPS());
-        ImGui::Text("Player speed : %f", m_player.GetSpeed());
-
-        ImGui::Separator();
-        ImGui::Text("Model Manager:");
-
-        const auto &stats = m_models.GetLoadingStats();
-        ImGui::Text("- Models loaded: %d/%d (%.1f%%)", stats.loadedModels, stats.totalModels,
-                    stats.GetSuccessRate() * 100);
-        ImGui::Text("- Total instances: %d", stats.totalInstances);
-        ImGui::Text("- Loading time: %.2fs", stats.loadingTime);
-
-        if (stats.failedModels > 0)
-        {
-            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "- Failed: %d models",
-                               stats.failedModels);
-        }
-
-        if (ImGui::Button("Print Full Stats"))
-        {
-            m_models.PrintStatistics();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Cache Info"))
-        {
-            m_models.PrintCacheInfo();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Cleanup Cache"))
-        {
-            m_models.CleanupUnusedModels();
-        }
-    }
-    ImGui::End();
-    rlImGuiEnd();
-}
-
-void Engine::InitCollisions()
-{
-    // Clear existing collisions
-    m_collisionManager.ClearColliders();
-
-    TraceLog(LOG_INFO, "Initializing collision system...");
-
-    try
-    {
-        // 1. Ground collision (large plane)
-        Collision groundCollision{{0, 0, 0}, {1000, 1, 1000}};
-        m_collisionManager.AddCollider(groundCollision);
-        TraceLog(LOG_INFO, "Added ground collision");
-
-        // 2. Arena model collision
-        Model &arenaModel = m_models.GetModelByName("arc");
-
-        Collision arenaCollision;
-        arenaCollision.CalculateFromModel(&arenaModel, arenaModel.transform);
-        m_collisionManager.AddCollider(arenaCollision);
-        TraceLog(LOG_INFO, "Added arena collision");
-
-        TraceLog(LOG_INFO, "Collision system initialized with %zu colliders",
-                 m_collisionManager.GetColliders().size());
-    }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_ERROR, "Failed to initialize collisions: %s", e.what());
-    }
-}
-
-void Engine::InitInput()
-{
     Camera &camera = m_player.GetCameraController()->GetCamera();
-    int &cameraMode = m_player.GetCameraController()->GetCameraMode();
 
-    // Function keys
-    m_manager.RegisterAction(KEY_F11, [this]() { ToggleFullscreen(); });
-    m_manager.RegisterAction(KEY_F1,
-                             [this]()
-                             {
-                                 m_showMenu = true;
-                                 EnableCursor();
-                             });
+    // Test ray from camera forward
+    Vector3 rayOrigin = camera.position;
+    Vector3 rayDirection = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    CollisionRay testRay(rayOrigin, rayDirection);
 
-    // Camera controls
-    m_manager.RegisterAction(KEY_ONE,
-                             [this, &camera, &cameraMode]()
-                             {
-                                 cameraMode = CAMERA_FREE;
-                                 camera.up = {0, 1, 0};
-                                 TraceLog(LOG_INFO, "Camera mode: FREE");
-                             });
+    TraceLog(LOG_INFO, "Casting ray from camera position: (%.2f, %.2f, %.2f)", rayOrigin.x,
+             rayOrigin.y, rayOrigin.z);
+    TraceLog(LOG_INFO, "Ray direction: (%.2f, %.2f, %.2f)", rayDirection.x, rayDirection.y,
+             rayDirection.z);
 
-    // Debug toggles
-    m_manager.RegisterAction(KEY_F2,
-                             [this]()
-                             {
-                                 m_showDebug = !m_showDebug;
-                                 TraceLog(LOG_INFO, "Debug info: %s", m_showDebug ? "ON" : "OFF");
-                             });
-
-    m_manager.RegisterAction(KEY_F3,
-                             [this]()
-                             {
-                                 m_showCollisionDebug = !m_showCollisionDebug;
-                                 TraceLog(LOG_INFO, "F3 pressed! Collision debug: %s",
-                                          m_showCollisionDebug ? "ON" : "OFF");
-                             });
-    m_manager.RegisterAction(KEY_F4, [this]() { m_shouldExit = true; });
-    m_manager.RegisterAction(
-        KEY_F10,
-        [this]()
-        {
-            // Force show collision debug for 1 frame
-            TraceLog(LOG_INFO, "F10 pressed - forcing collision debug ON for next frame");
-            m_showCollisionDebug = true;
-        });
-
-    // m_manager.RegisterAction(KEY_F5, [this]() { LoadAdditionalModels(); });
-
-    // m_manager.RegisterAction(KEY_F6, [this]() { SpawnEnemies(); });
-
-    // m_manager.RegisterAction(KEY_F7, [this]() { SpawnPickups(); });
-
-    m_manager.RegisterAction(KEY_F8, [this]() { OptimizeModelPerformance(); });
-
-    m_manager.RegisterAction(KEY_F9,
-                             [this]()
-                             {
-                                 auto models = m_models.GetAvailableModels();
-                                 TraceLog(LOG_INFO, "=== Available Models ===");
-                                 for (const auto &model : models)
-                                 {
-                                     TraceLog(LOG_INFO, "  - %s", model.c_str());
-                                 }
-
-                                 //  auto enemies = m_models.GetInstancesByTag("enemy");
-                                 //  auto pickups = m_models.GetInstancesByTag("pickup");
-                                 auto decorations = m_models.GetInstancesByTag("decoration");
-
-                                 //  TraceLog(LOG_INFO, "=== Instances by Tags ===");
-                                 //  TraceLog(LOG_INFO, "  - Enemies: %zu", enemies.size());
-                                 //  TraceLog(LOG_INFO, "  - Pickups: %zu", pickups.size());
-                                 TraceLog(LOG_INFO, "  - Decorations: %zu", decorations.size());
-                             });
-}
-
-void Engine::HandleKeyboardShortcuts() const { m_manager.ProcessInput(); }
-
-void Engine::RenderCollisionDebug()
-{
-    DrawCubeWires({0, 5, 0}, 2, 2, 2, YELLOW);
-
+    // Test against all BVH-enabled colliders
     const auto &colliders = m_collisionManager.GetColliders();
+    bool anyHit = false;
+    float closestDistance = FLT_MAX;
+    Vector3 closestHitPoint, closestHitNormal;
 
-    m_collisionDebugRenderer->RenderAllCollisions(colliders);
-    m_collisionDebugRenderer->RenderPlayerCollision(m_player.GetCollision());
-
-    TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer");
-}
-
-// UNUSED - COULD BE USED IN FUTURE
-void Engine::LoadAdditionalModels()
-{
-    TraceLog(LOG_INFO, "Loading additional models dynamically...");
-    if (m_models.LoadSingleModel("enemy", "/resources/enemy.glb", true))
+    for (size_t i = 0; i < colliders.size(); i++)
     {
-        TraceLog(LOG_INFO, "Enemy model loaded successfully");
-        SpawnEnemies();
-    }
-
-    if (m_models.LoadSingleModel("pickup", "/resources/pickup.glb", true))
-    {
-        TraceLog(LOG_INFO, "Pickup model loaded successfully");
-        SpawnPickups();
-    }
-}
-
-void Engine::SpawnEnemies()
-{
-    TraceLog(LOG_INFO, "Spawning enemies around the arena...");
-
-    for (int i = 0; i < 5; i++)
-    {
-        float angle = (2 * PI / 5) * i;
-        float radius = 15.0f;
-
-        ModelInstanceConfig enemyConfig;
-        enemyConfig.position = {cos(angle) * radius, 1.0f, sin(angle) * radius};
-        enemyConfig.rotation = {0, angle * RAD2DEG, 0};
-        enemyConfig.scale = 1.2f;
-        enemyConfig.color = RED;
-        enemyConfig.tag = "enemy";
-        enemyConfig.spawn = true;
-
-        if (m_models.AddInstanceEx("enemy", enemyConfig))
+        if (colliders[i].IsUsingBVH())
         {
-            TraceLog(LOG_INFO, "Spawned enemy %d at angle %.1f degrees", i + 1, angle * RAD2DEG);
+            float distance;
+            Vector3 hitPoint, hitNormal;
+
+            if (colliders[i].RaycastBVH(testRay, distance, hitPoint, hitNormal))
+            {
+                anyHit = true;
+                TraceLog(LOG_INFO, "BVH Ray hit collider %zu at distance: %.2f", i, distance);
+                TraceLog(LOG_INFO, "  Hit point: (%.2f, %.2f, %.2f)", hitPoint.x, hitPoint.y,
+                         hitPoint.z);
+                TraceLog(LOG_INFO, "  Hit normal: (%.2f, %.2f, %.2f)", hitNormal.x, hitNormal.y,
+                         hitNormal.z);
+
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestHitPoint = hitPoint;
+                    closestHitNormal = hitNormal;
+                }
+            }
+            else
+            {
+                TraceLog(LOG_INFO, "BVH Ray missed collider %zu (triangles: %zu)", i,
+                         colliders[i].GetTriangleCount());
+            }
+        }
+        else
+        {
+            TraceLog(LOG_INFO, "Collider %zu doesn't use BVH (AABB only)", i);
         }
     }
+
+    if (anyHit)
+    {
+        TraceLog(LOG_INFO, "=== Closest Hit ===");
+        TraceLog(LOG_INFO, "Distance: %.2f", closestDistance);
+        TraceLog(LOG_INFO, "Point: (%.2f, %.2f, %.2f)", closestHitPoint.x, closestHitPoint.y,
+                 closestHitPoint.z);
+        TraceLog(LOG_INFO, "Normal: (%.2f, %.2f, %.2f)", closestHitNormal.x, closestHitNormal.y,
+                 closestHitNormal.z);
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "No BVH ray hits detected");
+    }
+
+    // Test mouse ray casting if in game mode
+    if (!m_showMenu)
+    {
+        TestMouseRayCasting();
+    }
 }
 
-void Engine::SpawnPickups()
+void Engine::TestMouseRayCasting()
 {
-    TraceLog(LOG_INFO, "Spawning pickups...");
+    TraceLog(LOG_INFO, "=== Testing Mouse Ray Casting ===");
 
-    for (int i = 0; i < 8; i++)
+    Vector2 mousePos = GetMousePosition();
+    Camera &camera = m_player.GetCameraController()->GetCamera();
+
+    // Convert Raylib Ray to CollisionRay
+    Ray raylibRay = GetMouseRay(mousePos, camera);
+    CollisionRay mouseRay(raylibRay.position, raylibRay.direction);
+
+    TraceLog(LOG_INFO, "Mouse position: (%.0f, %.0f)", mousePos.x, mousePos.y);
+    TraceLog(LOG_INFO, "Mouse ray origin: (%.2f, %.2f, %.2f)", raylibRay.position.x,
+             raylibRay.position.y, raylibRay.position.z);
+
+    // Test against BVH colliders
+    const auto &colliders = m_collisionManager.GetColliders();
+    for (size_t i = 0; i < colliders.size(); i++)
     {
-        ModelInstanceConfig pickupConfig;
-        pickupConfig.position =
-            Vector3{(float)(GetRandomValue(-10, 10)), 0.5f, (float)(GetRandomValue(-10, 10))};
-        pickupConfig.scale = 0.5f;
-        pickupConfig.color = YELLOW;
-        pickupConfig.tag = "pickup";
-        pickupConfig.spawn = true;
-
-        if (m_models.AddInstanceEx("pickup", pickupConfig))
+        if (colliders[i].IsUsingBVH())
         {
-            TraceLog(LOG_INFO, "Spawned pickup %d", i + 1);
+            float distance;
+            Vector3 hitPoint, hitNormal;
+
+            if (colliders[i].RaycastBVH(mouseRay, distance, hitPoint, hitNormal))
+            {
+                TraceLog(LOG_INFO, "Mouse ray hit collider %zu at distance: %.2f", i, distance);
+                TraceLog(LOG_INFO, "  World hit point: (%.2f, %.2f, %.2f)", hitPoint.x, hitPoint.y,
+                         hitPoint.z);
+                break; // Only show first hit
+            }
         }
     }
 }
@@ -460,6 +565,47 @@ void Engine::OptimizeModelPerformance()
     m_models.OptimizeCache();
     m_models.PrintStatistics();
     m_models.PrintCacheInfo();
+
+    TraceLog(LOG_INFO, "Model performance optimization completed");
 }
 
-void Engine::ToggleMenu() { m_showMenu = !m_showMenu; }
+// ==================== FUTURE FEATURES (UNUSED) ====================
+
+void Engine::LoadAdditionalModels()
+{
+    TraceLog(LOG_INFO, "Loading additional models dynamically...");
+
+    if (m_models.LoadSingleModel("pickup", "/resources/pickup.glb", true))
+    {
+        TraceLog(LOG_INFO, "Pickup model loaded successfully");
+        SpawnPickups();
+    }
+}
+
+void Engine::SpawnPickups()
+{
+    TraceLog(LOG_INFO, "Spawning pickups...");
+
+    // Local spawning constants
+    constexpr int PICKUP_COUNT = 8;
+    constexpr float PICKUP_Y_POSITION = 0.5f;
+    constexpr float PICKUP_SCALE = 0.5f;
+    constexpr int PICKUP_SPAWN_RANGE = 10;
+
+    for (int i = 0; i < PICKUP_COUNT; i++)
+    {
+        ModelInstanceConfig pickupConfig;
+        pickupConfig.position = Vector3{
+            (float)(GetRandomValue(-PICKUP_SPAWN_RANGE, PICKUP_SPAWN_RANGE)), PICKUP_Y_POSITION,
+            (float)(GetRandomValue(-PICKUP_SPAWN_RANGE, PICKUP_SPAWN_RANGE))};
+        pickupConfig.scale = PICKUP_SCALE;
+        pickupConfig.color = YELLOW;
+        pickupConfig.tag = "pickup";
+        pickupConfig.spawn = true;
+
+        if (m_models.AddInstanceEx("pickup", pickupConfig))
+        {
+            TraceLog(LOG_INFO, "Spawned pickup %d", i + 1);
+        }
+    }
+}

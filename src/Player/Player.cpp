@@ -3,13 +3,20 @@
 #include <memory>
 #include <raylib.h>
 
+// ==================== CONSTANTS DEFINITIONS ====================
+
+// Player constants
+const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 50.0f, 150.0f};
+const float Player::MODEL_Y_OFFSET = -1.2f;
+const float Player::MODEL_SCALE = 1.0f;
+
 // Constructor initializes default player parameters
 Player::Player() : m_cameraController(std::make_shared<CameraController>())
 {
     m_originalCameraTarget = m_cameraController->GetCamera().target;
     m_baseTarget = m_originalCameraTarget;
 
-    m_playerPosition = {0.0f, 110.0f, 0.0f};
+    m_playerPosition = {0.0f, 10.0f, 0.0f};
     // Depends on model size(bounding box collision)
     m_playerSize = {1.0f, 5.5f, 1.0f};
     m_playerColor = BLUE;

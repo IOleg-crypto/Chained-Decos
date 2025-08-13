@@ -1,9 +1,9 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
+#include <Collision/CollisionManager.h>
 #include <raylib.h>
 #include <raymath.h>
-#include <Collision/CollisionManager.h>
 
 //
 // PhysicsComponent
@@ -13,6 +13,14 @@
 class PhysicsComponent
 {
 public:
+    // World physics constants
+    static constexpr float WORLD_FLOOR_Y = 0.0f;
+    static constexpr Vector2 GROUND_SIZE = {800.0f, 800.0f};
+    static constexpr Vector3 GROUND_POSITION = {0.0f, 0.0f, 0.0f};
+    static constexpr Vector3 GROUND_COLLISION_CENTER = {0, 0, 0};
+    static constexpr Vector3 GROUND_COLLISION_SIZE = {1000, 1, 1000};
+    static constexpr Vector3 DEBUG_CUBE_POSITION = {0, 5, 0};
+    static constexpr Vector3 DEBUG_CUBE_SIZE = {2, 2, 2};
     PhysicsComponent();
 
     // -------------------- Update & Core Physics --------------------
