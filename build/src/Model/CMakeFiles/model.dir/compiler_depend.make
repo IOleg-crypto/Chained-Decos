@@ -772,6 +772,7 @@ src/Model/CMakeFiles/model.dir/Model.cpp.obj: D:/gitnext/Chained\ Decos/src/Mode
   _deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley_undef.hpp \
   _deps/raylib-src/src/raylib.h \
   _deps/raylib-src/src/raymath.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Color/ColorParser.h \
   D:/gitnext/Chained\ Decos/src/Model/Animation.h \
@@ -1283,6 +1284,7 @@ src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj: D:/gitnext/Chained\ Decos/
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/yvals_core.h \
   _deps/raylib-src/src/raylib.h \
   _deps/raylib-src/src/raymath.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Model/Animation.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
@@ -1936,6 +1938,8 @@ E:/LLVM/lib/clang/19/include/wmmintrin.h:
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xnode_handle.h:
 
 E:/LLVM/lib/clang/19/include/x86gprintrin.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h:
 
 E:/LLVM/lib/clang/19/include/x86intrin.h:
 
