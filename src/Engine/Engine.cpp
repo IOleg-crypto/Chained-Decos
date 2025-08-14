@@ -5,8 +5,6 @@
 
 #include "Engine.h"
 
-// ==================== INCLUDES ====================
-
 // Standard library
 #include <stdexcept>
 
@@ -14,13 +12,12 @@
 #include <Menu/Menu.h>
 #include <imgui.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <rcamera.h>
 #include <rlImGui.h>
 
 // Collision system
 #include <Collision/CollisionSystem.h>
-
-// ==================== CONSTRUCTORS & DESTRUCTOR ====================
 
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_usePlayerModel(true)
@@ -207,8 +204,8 @@ void Engine::InitInput()
                                  TraceLog(LOG_INFO, "  - Decorations: %zu", decorations.size());
                              });
 
-    // BVH Ray casting test (F12)
-    m_manager.RegisterAction(KEY_F12, [this]() { TestBVHRayCasting(); });
+    // Octree Ray casting test (F12)
+    m_manager.RegisterAction(KEY_F12, [this]() { TestOctreeRayCasting(); });
 
     TraceLog(LOG_INFO, "Input bindings configured successfully");
 }
@@ -217,71 +214,194 @@ void Engine::InitCollisions()
 {
     TraceLog(LOG_INFO, "Initializing collision system...");
 
-    // Clear existing collisions
-    m_collisionManager.ClearColliders();
+    // Automatically create collisions for all models with hasCollision=true
+    CreateAutoCollisionsFromModels();
 
-    try
+    // Create a ground plane LAST (lower priority) - solid surface at y=0
+    Collision plane{(Vector3){0, 0, 0}, (Vector3){1000, 2, 1000}};
+    // Simple plane uses AABB by default (no need to set anything)
+    m_collisionManager.AddCollider(plane);
+    TraceLog(LOG_INFO, "Ground plane: center(0,0,0) extends from y=-1 to y=1");
+}
+
+void Engine::CreateAutoCollisionsFromModels()
+{
+    TraceLog(LOG_INFO, "Starting automatic collision generation for all models...");
+
+    // Get all available models
+    auto availableModels = m_models.GetAvailableModels();
+    TraceLog(LOG_INFO, "Found %zu models to check", availableModels.size());
+
+    int collisionsCreated = 0;
+
+    // Process each model
+    for (const auto &modelName : availableModels)
     {
-        // Use constants for ground collision
-        Collision groundCollision{PhysicsComponent::GROUND_COLLISION_CENTER,
-                                  PhysicsComponent::GROUND_COLLISION_SIZE};
-        groundCollision.SetUseBVH(false);
-        m_collisionManager.AddCollider(groundCollision);
-
-        // Arena model collision
-        TraceLog(LOG_INFO, "Looking for 'arc' model...");
-
-        // Debug: List all available models
-        auto availableModels = m_models.GetAvailableModels();
-        TraceLog(LOG_INFO, "Available models (%zu):", availableModels.size());
-        for (const auto &modelName : availableModels)
-        {
-            TraceLog(LOG_INFO, "  - %s", modelName.c_str());
-        }
+        TraceLog(LOG_INFO, "Processing model: %s", modelName.c_str());
 
         try
         {
-            Model &arenaModel = m_models.GetModelByName("arc");
-            TraceLog(LOG_INFO, " 'arc' model found successfully");
+            // Get the model
+            Model &model = m_models.GetModelByName(modelName);
 
-            // Create simple mesh collision (AABB) for arena geometry
-            Collision arenaMeshCollision;
-            arenaMeshCollision.CalculateFromModel(&arenaModel);
-
-            Vector3 aabbMin = arenaMeshCollision.GetMin();
-            Vector3 aabbMax = arenaMeshCollision.GetMax();
-            TraceLog(LOG_INFO, "Arena AABB: min=(%.2f,%.2f,%.2f) max=(%.2f,%.2f,%.2f)", aabbMin.x,
-                     aabbMin.y, aabbMin.z, aabbMax.x, aabbMax.y, aabbMax.z);
-
-            // Use simple mesh collision (no BVH)
-            arenaMeshCollision.SetUseBVH(true);
-            m_collisionManager.AddCollider(arenaMeshCollision);
-            TraceLog(LOG_INFO, "Added arena collision (Mesh/AABB) - faster but less precise");
-
-            // Verify mesh collision is being used
-            if (!arenaMeshCollision.IsUsingBVH())
+            if (model.meshCount == 0)
             {
-                TraceLog(LOG_INFO, "✓ Mesh collision system is ACTIVE for arena");
+                TraceLog(LOG_WARNING, "Model '%s' has no meshes, skipping collision creation",
+                         modelName.c_str());
+                continue;
+            }
+
+            TraceLog(LOG_INFO, "Model '%s' has %d meshes", modelName.c_str(), model.meshCount);
+
+            // Find instances of this model
+            auto instances = m_models.GetInstancesByTag(modelName);
+
+            if (instances.empty())
+            {
+                TraceLog(LOG_INFO,
+                         "No instances found for model '%s', trying with default position",
+                         modelName.c_str());
+
+                // Check if this model should have collision based on JSON config
+                if (m_models.HasCollision(modelName))
+                {
+                    Vector3 defaultPos =
+                        (modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
+                    if (CreateCollisionFromModel(model, defaultPos, 1.0f))
+                    {
+                        collisionsCreated++;
+                        TraceLog(LOG_INFO, "Created default collision for model '%s'",
+                                 modelName.c_str());
+                    }
+                }
             }
             else
             {
-                TraceLog(LOG_WARNING, "✗ Mesh collision system FAILED - BVH still active");
+                // Check if this model should have collision based on JSON config
+                if (m_models.HasCollision(modelName))
+                {
+                    // Create collisions for each instance
+                    for (auto *instance : instances)
+                    {
+                        Vector3 position = instance->GetModelPosition();
+                        float scale = instance->GetScale();
+
+                        TraceLog(
+                            LOG_INFO,
+                            "Creating collision for '%s' instance at (%.1f, %.1f, %.1f) scale=%.2f",
+                            modelName.c_str(), position.x, position.y, position.z, scale);
+
+                        if (CreateCollisionFromModel(model, position, scale))
+                        {
+                            collisionsCreated++;
+                            TraceLog(LOG_INFO, "Successfully created collision for '%s' instance",
+                                     modelName.c_str());
+                        }
+                    }
+                }
+                else
+                {
+                    TraceLog(LOG_INFO,
+                             "Model '%s' has hasCollision=false, skipping collision creation",
+                             modelName.c_str());
+                }
             }
         }
         catch (const std::exception &e)
         {
-            TraceLog(LOG_ERROR, "Failed to find or process 'arc' model: %s", e.what());
-            TraceLog(LOG_WARNING, "  Collision system will only have ground collision");
+            TraceLog(LOG_ERROR, "Failed to create collision for model '%s': %s", modelName.c_str(),
+                     e.what());
         }
+    }
 
-        TraceLog(LOG_INFO, " Collision system initialized with %zu colliders",
-                 m_collisionManager.GetColliders().size());
-    }
-    catch (const std::exception &e)
+    TraceLog(LOG_INFO,
+             "Automatic collision generation complete. Created %d collisions from %zu models",
+             collisionsCreated, availableModels.size());
+}
+
+bool Engine::CreateCollisionFromModel(const Model &model, Vector3 position, float scale)
+{
+    TraceLog(LOG_INFO, "Creating precise collision from model with %d meshes", model.meshCount);
+
+    // Create transformation matrix
+    Matrix transform = MatrixMultiply(MatrixScale(scale, scale, scale),
+                                      MatrixTranslate(position.x, position.y, position.z));
+
+    // Check if we have valid geometry
+    bool hasValidGeometry = false;
+    for (int i = 0; i < model.meshCount; i++)
     {
-        TraceLog(LOG_ERROR, "Failed to initialize collisions: %s", e.what());
-        throw; // Re-throw to handle at higher level
+        if (model.meshes[i].vertices && model.meshes[i].vertexCount > 0)
+        {
+            hasValidGeometry = true;
+            TraceLog(LOG_INFO, "Mesh %d: %d vertices, %d triangles", i, model.meshes[i].vertexCount,
+                     model.meshes[i].triangleCount);
+        }
     }
+
+    if (!hasValidGeometry)
+    {
+        TraceLog(LOG_WARNING, "Model has no valid geometry, creating fallback collision");
+        // Fallback: create simple AABB collision
+        BoundingBox modelBounds = GetModelBoundingBox(model);
+        Vector3 size = {(modelBounds.max.x - modelBounds.min.x) * scale,
+                        (modelBounds.max.y - modelBounds.min.y) * scale,
+                        (modelBounds.max.z - modelBounds.min.z) * scale};
+        Vector3 center = {position.x + (modelBounds.max.x + modelBounds.min.x) * 0.5f * scale,
+                          position.y + (modelBounds.max.y + modelBounds.min.y) * 0.5f * scale,
+                          position.z + (modelBounds.max.z + modelBounds.min.z) * 0.5f * scale};
+
+        Collision fallbackCollision{center, size};
+        // Fallback collision is simple AABB - no need to change anything
+        m_collisionManager.AddCollider(fallbackCollision);
+        return true;
+    }
+
+    // Create collision object with hybrid system (automatically chooses optimal method)
+    Collision modelCollision;
+
+    // Create a non-const copy for processing
+    Model modelCopy = model;
+
+    TraceLog(LOG_INFO, "Building hybrid collision from model geometry...");
+
+    // Build collision using hybrid system (automatically chooses AABB or Octree based on
+    // complexity)
+    modelCollision.BuildFromModel(&modelCopy, transform);
+
+    // Log collision details
+    Vector3 collisionMin = modelCollision.GetMin();
+    Vector3 collisionMax = modelCollision.GetMax();
+    Vector3 collisionCenter = modelCollision.GetCenter();
+    Vector3 collisionSize = modelCollision.GetSize();
+
+    // Get complexity analysis
+    const auto &complexity = modelCollision.GetComplexity();
+    CollisionType collisionType = modelCollision.GetCollisionType();
+
+    TraceLog(LOG_INFO, "Hybrid collision created:");
+    TraceLog(LOG_INFO, "  Type: %s",
+             (collisionType == CollisionType::AABB_ONLY)     ? "AABB"
+             : (collisionType == CollisionType::OCTREE_ONLY) ? "OCTREE"
+                                                             : "HYBRID_AUTO");
+    TraceLog(LOG_INFO, "  Min: (%.2f, %.2f, %.2f)", collisionMin.x, collisionMin.y, collisionMin.z);
+    TraceLog(LOG_INFO, "  Max: (%.2f, %.2f, %.2f)", collisionMax.x, collisionMax.y, collisionMax.z);
+    TraceLog(LOG_INFO, "  Center: (%.2f, %.2f, %.2f)", collisionCenter.x, collisionCenter.y,
+             collisionCenter.z);
+    TraceLog(LOG_INFO, "  Size: (%.2f, %.2f, %.2f)", collisionSize.x, collisionSize.y,
+             collisionSize.z);
+    TraceLog(LOG_INFO, "  Triangle count: %zu", modelCollision.GetTriangleCount());
+    TraceLog(LOG_INFO, "  Model complexity: %s", complexity.IsSimple() ? "SIMPLE" : "COMPLEX");
+
+    if (collisionType == CollisionType::OCTREE_ONLY)
+    {
+        TraceLog(LOG_INFO, "  Octree nodes: %zu", modelCollision.GetNodeCount());
+    }
+
+    m_collisionManager.AddCollider(modelCollision);
+
+    TraceLog(LOG_INFO, "Successfully created hybrid collision from model geometry");
+    return true;
 }
 
 // ==================== UPDATE METHODS ====================
@@ -312,23 +432,28 @@ void Engine::UpdatePlayer()
     if (const ImGuiIO &io = ImGui::GetIO(); !io.WantCaptureMouse)
     {
         m_player.Update();
+
+        // Check collisions immediately after player movement
+        m_player.UpdatePlayerBox(); // Ensure collision box is updated
+        Vector3 response = {};
+        bool isColliding = m_collisionManager.CheckCollision(m_player.GetCollision(), response);
+
+        if (isColliding)
+        {
+            // TraceLog(LOG_INFO,
+            //          "🏃 Immediate collision detected, applying response: (%.2f,%.2f,%.2f)",
+            //          response.x, response.y, response.z);
+            m_player.Move(response);
+        }
     }
 }
 
 void Engine::UpdatePhysics()
 {
-    // Apply physics and handle collisions
+    // Apply physics and handle collisions - ApplyGravityForPlayer already handles collisions
+    // internally
     m_player.ApplyGravityForPlayer(m_collisionManager);
     m_player.UpdatePlayerBox();
-
-    // Check and resolve collisions
-    Vector3 response = {};
-    bool isColliding = m_collisionManager.CheckCollision(m_player.GetCollision(), response);
-
-    if (isColliding)
-    {
-        m_player.Move(response);
-    }
 }
 
 void Engine::CheckPlayerBounds()
@@ -370,12 +495,14 @@ void Engine::HandleMousePicking()
 
         for (size_t i = 0; i < colliders.size(); i++)
         {
-            if (colliders[i].IsUsingBVH())
+            // Try raycast with hybrid system (uses Octree if available)
+            if (colliders[i].IsUsingOctree())
             {
                 float distance;
                 Vector3 hitPoint, hitNormal;
 
-                if (colliders[i].RaycastBVH(mouseRay, distance, hitPoint, hitNormal))
+                if (colliders[i].RaycastOctree(mouseRay.origin, mouseRay.direction, 1000.0f,
+                                               distance, hitPoint, hitNormal))
                 {
                     if (distance < closestDistance)
                     {
@@ -444,9 +571,9 @@ void Engine::Render()
 
 // ==================== TESTING & UTILITY METHODS ====================
 
-void Engine::TestBVHRayCasting()
+void Engine::TestOctreeRayCasting()
 {
-    TraceLog(LOG_INFO, "=== Testing BVH Ray Casting ===");
+    TraceLog(LOG_INFO, "=== Testing Octree Ray Casting ===");
 
     Camera &camera = m_player.GetCameraController()->GetCamera();
 
@@ -468,15 +595,16 @@ void Engine::TestBVHRayCasting()
 
     for (size_t i = 0; i < colliders.size(); i++)
     {
-        if (colliders[i].IsUsingBVH())
+        if (colliders[i].IsUsingOctree())
         {
             float distance;
             Vector3 hitPoint, hitNormal;
 
-            if (colliders[i].RaycastBVH(testRay, distance, hitPoint, hitNormal))
+            if (colliders[i].RaycastOctree(testRay.origin, testRay.direction, 1000.0f, distance,
+                                           hitPoint, hitNormal))
             {
                 anyHit = true;
-                TraceLog(LOG_INFO, "BVH Ray hit collider %zu at distance: %.2f", i, distance);
+                TraceLog(LOG_INFO, "Octree Ray hit collider %zu at distance: %.2f", i, distance);
                 TraceLog(LOG_INFO, "  Hit point: (%.2f, %.2f, %.2f)", hitPoint.x, hitPoint.y,
                          hitPoint.z);
                 TraceLog(LOG_INFO, "  Hit normal: (%.2f, %.2f, %.2f)", hitNormal.x, hitNormal.y,
@@ -491,13 +619,13 @@ void Engine::TestBVHRayCasting()
             }
             else
             {
-                TraceLog(LOG_INFO, "BVH Ray missed collider %zu (triangles: %zu)", i,
+                TraceLog(LOG_INFO, "Octree Ray missed collider %zu (triangles: %zu)", i,
                          colliders[i].GetTriangleCount());
             }
         }
         else
         {
-            TraceLog(LOG_INFO, "Collider %zu doesn't use BVH (AABB only)", i);
+            TraceLog(LOG_INFO, "Collider %zu doesn't use Octree (AABB only)", i);
         }
     }
 
@@ -537,16 +665,17 @@ void Engine::TestMouseRayCasting()
     TraceLog(LOG_INFO, "Mouse ray origin: (%.2f, %.2f, %.2f)", raylibRay.position.x,
              raylibRay.position.y, raylibRay.position.z);
 
-    // Test against BVH colliders
+    // Test against Octree colliders
     const auto &colliders = m_collisionManager.GetColliders();
     for (size_t i = 0; i < colliders.size(); i++)
     {
-        if (colliders[i].IsUsingBVH())
+        if (colliders[i].IsUsingOctree())
         {
             float distance;
             Vector3 hitPoint, hitNormal;
 
-            if (colliders[i].RaycastBVH(mouseRay, distance, hitPoint, hitNormal))
+            if (colliders[i].RaycastOctree(mouseRay.origin, mouseRay.direction, 1000.0f, distance,
+                                           hitPoint, hitNormal))
             {
                 TraceLog(LOG_INFO, "Mouse ray hit collider %zu at distance: %.2f", i, distance);
                 TraceLog(LOG_INFO, "  World hit point: (%.2f, %.2f, %.2f)", hitPoint.x, hitPoint.y,
