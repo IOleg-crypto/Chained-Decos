@@ -98,6 +98,7 @@ ModelFileConfig JsonHelper::ParseModelConfig(const json &entry)
     config.path = entry["path"].get<std::string>();
     config.category = entry.value("category", "default");
     config.spawn = entry.value("spawn", true);
+    config.hasCollision = entry.value("hasCollision", false);
     config.lodDistance = entry.value("lodDistance", 100.0f);
     config.preload = entry.value("preload", true);
     config.priority = entry.value("priority", 0);

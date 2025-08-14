@@ -1,25 +1,34 @@
 # Run command: C:/Program\ Files/CMake/bin/cmake.exe --build . --config "Debug" --target "preinstall"
 # Directory: D:/gitnext/Chained Decos/build
 # Output:
-[ 23%] Built target glfw
-[ 32%] Built target raylib
-[ 42%] Built target imguilib
-[ 44%] Built target color
-[ 47%] Built target collision
-[ 52%] Built target model
-[ 54%] Built target world
-[ 56%] Built target player
-[ 59%] Built target engine
-[ 61%] Built target input
-[ 63%] Built target menu
-[ 65%] Built target cameracontroller
-[ 68%] Built target mapmod
-[ 70%] Built target ChainedDecos
-[ 72%] Built target gtest
-[ 75%] Built target gmock
-[ 77%] Built target gmock_main
-[ 79%] Built target gtest_main
-[ 80%] Building CXX object tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj
+[ 22%] Built target glfw
+[ 30%] Built target raylib
+[ 39%] Built target imguilib
+[ 43%] Built target collision
+[ 45%] Built target world
+[ 47%] Built target player
+[ 54%] Built target model
+[ 56%] Built target menu
+[ 58%] Built target render
+[ 60%] Built target input
+[ 62%] Built target engine
+[ 64%] Built target cameracontroller
+[ 67%] Built target mapmod
+[ 69%] Built target color
+[ 71%] Built target ChainedDecos
+[ 72%] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.obj
+Linking CXX static library ../../../lib/gtest.lib
+Built target gtest
+Building CXX object _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.obj
+Linking CXX static library ../../../lib/gmock.lib
+Built target gmock
+Building CXX object _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.obj
+Linking CXX static library ../../../lib/gmock_main.lib
+Built target gmock_main
+Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.obj
+[ 44%] Linking CXX static library ../../../lib/gtest_main.lib
+[ 70%] Built target gtest_main
+[ 95%] Building CXX object tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj
 D:/gitnext/Chained Decos/tests/gtest.cpp:394:5: error: unknown type name 'PositionData'
   394 |     PositionData data = player.GetPlayerData();
       |     ^
@@ -50,6 +59,18 @@ D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/int
 D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
  1365 |     statement;                                                    \
       |     ^~~~~~~~~
+D:/gitnext/Chained Decos/tests/gtest.cpp:433:28: error: no member named 'LoadPlayerModel' in 'Engine'
+  433 |     EXPECT_NO_THROW(engine.LoadPlayerModel());
+      |                     ~~~~~~ ^
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/gtest.h:1768:24: note: expanded from macro 'EXPECT_NO_THROW'
+ 1768 |   GTEST_TEST_NO_THROW_(statement, GTEST_NONFATAL_FAILURE_)
+      |                        ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1466:54: note: expanded from macro 'GTEST_TEST_NO_THROW_'
+ 1466 |       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+      |                                                      ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
+ 1365 |     statement;                                                    \
+      |     ^~~~~~~~~
 D:/gitnext/Chained Decos/tests/gtest.cpp:484:74: error: too few arguments to function call, expected 4, have 3
   484 |     EXPECT_NO_THROW(models.AddInstance(instanceJson, testModel, modelName));
       |                     ~~~~~~~~~~~~~~~~~~                                   ^
@@ -62,13 +83,91 @@ D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/int
 D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
  1365 |     statement;                                                    \
       |     ^~~~~~~~~
-D:/gitnext/Chained Decos/src\Model/Model.h:58:10: note: 'AddInstance' declared here
-   58 |     void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
+D:/gitnext/Chained Decos/src\Model/Model.h:48:10: note: 'AddInstance' declared here
+   48 |     void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
       |          ^           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   59 |                      Animation *animation);
+   49 |                      Animation *animation);
       |                      ~~~~~~~~~~~~~~~~~~~~
-5 errors generated.
+D:/gitnext/Chained Decos/tests/gtest.cpp:512:28: error: 'InitInput' is a private member of 'Engine'
+  512 |     EXPECT_NO_THROW(engine.InitInput());
+      |                            ^
+D:/gitnext/Chained Decos/tests\../src/Engine/Engine.h:57:10: note: declared private here
+   57 |     void InitInput();
+      |          ^
+D:/gitnext/Chained Decos/tests/gtest.cpp:519:28: error: no member named 'InitImGuiFont' in 'Engine'
+  519 |     EXPECT_NO_THROW(engine.InitImGuiFont());
+      |                     ~~~~~~ ^
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/gtest.h:1768:24: note: expanded from macro 'EXPECT_NO_THROW'
+ 1768 |   GTEST_TEST_NO_THROW_(statement, GTEST_NONFATAL_FAILURE_)
+      |                        ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1466:54: note: expanded from macro 'GTEST_TEST_NO_THROW_'
+ 1466 |       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+      |                                                      ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
+ 1365 |     statement;                                                    \
+      |     ^~~~~~~~~
+D:/gitnext/Chained Decos/tests/gtest.cpp:526:28: error: 'HandleKeyboardShortcuts' is a private member of 'Engine'
+  526 |     EXPECT_NO_THROW(engine.HandleKeyboardShortcuts());
+      |                            ^
+D:/gitnext/Chained Decos/tests\../src/Engine/Engine.h:63:10: note: declared private here
+   63 |     void HandleKeyboardShortcuts() const;
+      |          ^
+D:/gitnext/Chained Decos/tests/gtest.cpp:533:28: error: 'Update' is a private member of 'Engine'
+  533 |     EXPECT_NO_THROW(engine.Update());
+      |                            ^
+D:/gitnext/Chained Decos/tests\../src/Engine/Engine.h:59:10: note: declared private here
+   59 |     void Update();
+      |          ^
+D:/gitnext/Chained Decos/tests/gtest.cpp:540:28: error: 'Render' is a private member of 'Engine'
+  540 |     EXPECT_NO_THROW(engine.Render());
+      |                            ^
+D:/gitnext/Chained Decos/tests\../src/Engine/Engine.h:65:10: note: declared private here
+   65 |     void Render();
+      |          ^
+D:/gitnext/Chained Decos/tests/gtest.cpp:547:28: error: no member named 'DrawScene3D' in 'Engine'
+  547 |     EXPECT_NO_THROW(engine.DrawScene3D());
+      |                     ~~~~~~ ^
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/gtest.h:1768:24: note: expanded from macro 'EXPECT_NO_THROW'
+ 1768 |   GTEST_TEST_NO_THROW_(statement, GTEST_NONFATAL_FAILURE_)
+      |                        ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1466:54: note: expanded from macro 'GTEST_TEST_NO_THROW_'
+ 1466 |       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+      |                                                      ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
+ 1365 |     statement;                                                    \
+      |     ^~~~~~~~~
+D:/gitnext/Chained Decos/tests/gtest.cpp:554:28: error: no member named 'LoadPlayerModel' in 'Engine'
+  554 |     EXPECT_NO_THROW(engine.LoadPlayerModel());
+      |                     ~~~~~~ ^
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/gtest.h:1768:24: note: expanded from macro 'EXPECT_NO_THROW'
+ 1768 |   GTEST_TEST_NO_THROW_(statement, GTEST_NONFATAL_FAILURE_)
+      |                        ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1466:54: note: expanded from macro 'GTEST_TEST_NO_THROW_'
+ 1466 |       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+      |                                                      ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
+ 1365 |     statement;                                                    \
+      |     ^~~~~~~~~
+D:/gitnext/Chained Decos/tests/gtest.cpp:563:28: error: no member named 'DrawDebugInfo' in 'Engine'
+  563 |     EXPECT_NO_THROW(engine.DrawDebugInfo(testCamera, cameraMode));
+      |                     ~~~~~~ ^
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/gtest.h:1768:24: note: expanded from macro 'EXPECT_NO_THROW'
+ 1768 |   GTEST_TEST_NO_THROW_(statement, GTEST_NONFATAL_FAILURE_)
+      |                        ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1466:54: note: expanded from macro 'GTEST_TEST_NO_THROW_'
+ 1466 |       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);         \
+      |                                                      ^~~~~~~~~
+D:/gitnext/Chained Decos/build/_deps/googletest-src/googletest/include\gtest/internal/gtest-internal.h:1365:5: note: expanded from macro 'GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_'
+ 1365 |     statement;                                                    \
+      |     ^~~~~~~~~
+D:/gitnext/Chained Decos/tests/gtest.cpp:575:28: error: 'Update' is a private member of 'Engine'
+  575 |     EXPECT_NO_THROW(engine.Update());
+      |                            ^
+D:/gitnext/Chained Decos/tests\../src/Engine/Engine.h:59:10: note: declared private here
+   59 |     void Update();
+      |          ^
+15 errors generated.
 make[2]: *** [tests/CMakeFiles/unit_tests.dir/build.make:77: tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj] Error 1
-make[1]: *** [CMakeFiles/Makefile2:991: tests/CMakeFiles/unit_tests.dir/all] Error 2
+make[1]: *** [CMakeFiles/Makefile2:1047: tests/CMakeFiles/unit_tests.dir/all] Error 2
 make: *** [Makefile:156: all] Error 2
 
