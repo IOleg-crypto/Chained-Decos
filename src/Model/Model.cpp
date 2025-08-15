@@ -33,6 +33,7 @@ Models::~Models()
     m_animations.clear();
     m_configs.clear();
 
+    // Smart pointers cleanup automatically
     TraceLog(LOG_INFO, "Enhanced Models Manager destroyed");
 }
 
@@ -417,18 +418,6 @@ std::vector<std::string> Models::GetAvailableModels() const
     }
 
     return models;
-}
-
-bool Models::HasCollision(const std::string &modelName) const
-{
-    auto configIt = m_configs.find(modelName);
-    if (configIt != m_configs.end())
-    {
-        return configIt->second.hasCollision;
-    }
-
-    // Fallback: if no config found, return false
-    return false;
 }
 
 void Models::PrintStatistics() const
