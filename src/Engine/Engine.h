@@ -56,11 +56,6 @@ public:
 private:
     void InitInput();
     void InitCollisions();
-    void CreateAutoCollisionsFromModels(); // Automatically create collisions for all models with
-                                           // hasCollision=true
-    bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
-                                  Vector3 position,
-                                  float scale); // Create BVH from model geometry
     void Update();
     void UpdatePlayer();
     void UpdatePhysics();
@@ -68,7 +63,7 @@ private:
     void HandleKeyboardShortcuts() const;
     void HandleMousePicking();
     void Render();
-    void TestOctreeRayCasting();
+    void TestBVHRayCasting();
     void TestMouseRayCasting();
     void OptimizeModelPerformance();
     // Future features (currently unused)
