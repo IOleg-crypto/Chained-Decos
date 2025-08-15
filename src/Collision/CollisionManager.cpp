@@ -12,11 +12,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision) const
     return std::any_of(m_collisions.begin(), m_collisions.end(),
                        [&](const Collision &collider)
                        {
-                           // Use BVH if available, otherwise fallback to AABB
-                           if (collider.IsUsingBVH())
-                           {
-                               return collider.IntersectsBVH(playerCollision);
-                           }
+                           // Use hybrid collision system (automatically chooses optimal method)
                            return playerCollision.Intersects(collider);
                        });
 }
@@ -37,34 +33,25 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         Vector3 colliderMin = collider.GetMin();
         Vector3 colliderMax = collider.GetMax();
 
-        // Check collision using appropriate method
-        bool hasCollision = false;
-
-        // if (collider.IsUsingBVH())
-        // {
-        //     TraceLog(LOG_INFO,
-        //              "🔍 [%d] Checking BVH collider (Arena): (%.2f,%.2f,%.2f) to
-        //              (%.2f,%.2f,%.2f)", colliderIndex, colliderMin.x, colliderMin.y,
-        //              colliderMin.z, colliderMax.x, colliderMax.y, colliderMax.z);
-        //     hasCollision = collider.IntersectsBVH(playerCollision);
-        // }
-        // else
-        // {
-        //     TraceLog(
-        //         LOG_INFO,
-        //         "🔍 [%d] Checking AABB collider (Ground): (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
-        //         colliderIndex, colliderMin.x, colliderMin.y, colliderMin.z, colliderMax.x,
-        //         colliderMax.y, colliderMax.z);
-        //     hasCollision = playerCollision.Intersects(collider);
-        // }
+        // Check collision using hybrid system (automatically chooses optimal method)
+        bool hasCollision = playerCollision.Intersects(collider);
 
         colliderIndex++;
 
         if (hasCollision)
         {
-            // For BVH colliders, we could potentially get more precise collision response
+            // // Only log if it's not the ground plane to reduce spam (ground is now last index)
+            // if (colliderIndex != static_cast<int>(m_collisions.size()) - 1)
+            // {
+            //     TraceLog(
+            //         LOG_INFO,
+            //         "🎯 COLLISION with [%d]! Player Y(%.1f to %.1f) vs Collider Y(%.1f to %.1f)",
+            //         colliderIndex, playerMin.y, playerMax.y, colliderMin.y, colliderMax.y);
+            // }
+
+            // For Octree/BVH colliders, we could potentially get more precise collision response
             // but for now, we'll use the standard AABB-based MTV calculation
-            // TODO: Implement precise BVH-based collision response using hit points and normals
+            // TODO: Implement precise Octree-based collision response using hit points and normals
 
             // Calculate the response vector for collision resolution - Minimum Translation Vector
             // (MTV)
@@ -87,26 +74,20 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
             float absDy = fabsf(dy);
             float absDz = fabsf(dz);
 
+            // // Debug MTV calculation for non-ground colliders (ground is now last)
+            // if (colliderIndex != static_cast<int>(m_collisions.size()) - 1)
+            // {
+            //     TraceLog(LOG_INFO, "  MTV: dx=%.3f dy=%.3f dz=%.3f (abs: %.3f %.3f %.3f)", dx,
+            //     dy,
+            //              dz, absDx, absDy, absDz);
+            // }
+
             if (absDx < absDy && absDx < absDz)
                 response = {dx, 0, 0};
             else if (absDy < absDz)
                 response = {0, dy, 0};
             else
                 response = {0, 0, dz};
-
-            // // Log collision type for debugging
-            // if (collider.IsUsingBVH())
-            // {
-            //     TraceLog(LOG_INFO,
-            //              "🎯 [%d] BVH (Arena) Collision WINNER! Response: (%.3f, %.3f, %.3f)",
-            //              colliderIndex - 1, response.x, response.y, response.z);
-            // }
-            // else
-            // {
-            //     TraceLog(LOG_INFO,
-            //              "📦 [%d] AABB (Ground) Collision WINNER! Response: (%.3f, %.3f, %.3f)",
-            //              colliderIndex - 1, response.x, response.y, response.z);
-            // }
 
             return true;
         }
