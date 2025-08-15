@@ -215,6 +215,7 @@ src/Player/CMakeFiles/player.dir/Player.cpp.obj: D:/gitnext/Chained\ Decos/src/P
   _deps/raylib-src/src/raymath.h \
   D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Model/Animation.h \
   D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h \
@@ -895,6 +896,10 @@ _deps/raylib-src/src/raymath.h:
 
 D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h:
 
+E:/LLVM/lib/clang/19/include/x86intrin.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h:
+
 D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h:
 
 D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h:
@@ -1050,8 +1055,6 @@ E:/LLVM/lib/clang/19/include/usermsrintrin.h:
 E:/LLVM/lib/clang/19/include/vpclmulqdqintrin.h:
 
 E:/LLVM/lib/clang/19/include/waitpkgintrin.h:
-
-E:/LLVM/lib/clang/19/include/x86intrin.h:
 
 E:/LLVM/lib/clang/19/include/xsavecintrin.h:
 
