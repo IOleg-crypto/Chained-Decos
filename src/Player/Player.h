@@ -80,6 +80,7 @@ private:
     Collision m_collision{};
     CollisionManager m_collisionManager;
 
+private:
     // Helper methods for cleaner code
     Vector3 GetInputDirection();
     std::pair<Vector3, Vector3> GetCameraVectors(); // Returns {forward, right}

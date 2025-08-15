@@ -63,6 +63,9 @@ public:
     std::vector<ModelInstance *> GetInstancesByCategory(const std::string &category);
     std::vector<std::string> GetAvailableModels() const;
 
+    // Configuration access
+    bool HasCollision(const std::string &modelName) const;
+
     // Statistics and monitoring
     const LoadingStats &GetLoadingStats() const { return m_stats; }
     void PrintStatistics() const;
