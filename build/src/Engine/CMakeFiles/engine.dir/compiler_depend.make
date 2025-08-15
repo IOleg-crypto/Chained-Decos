@@ -221,6 +221,7 @@ src/Engine/CMakeFiles/engine.dir/Engine.cpp.obj: D:/gitnext/Chained\ Decos/src/E
   D:/gitnext/Chained\ Decos/src/CameraController/CameraController.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionDebugRenderer.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h \
+  D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Engine/Engine.h \
   D:/gitnext/Chained\ Decos/src/Input/InputManager.h \
@@ -923,6 +924,10 @@ E:/LLVM/lib/clang/19/include/avx512dqintrin.h:
 
 D:/gitnext/Chained\ Decos/src/Collision/CollisionDebugRenderer.h:
 
+E:/LLVM/lib/clang/19/include/x86intrin.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h:
+
 D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h:
 
 D:/gitnext/Chained\ Decos/src/Input/InputManager.h:
@@ -1080,8 +1085,6 @@ E:/LLVM/lib/clang/19/include/usermsrintrin.h:
 E:/LLVM/lib/clang/19/include/vpclmulqdqintrin.h:
 
 E:/LLVM/lib/clang/19/include/waitpkgintrin.h:
-
-E:/LLVM/lib/clang/19/include/x86intrin.h:
 
 E:/LLVM/lib/clang/19/include/xsavecintrin.h:
 

@@ -243,6 +243,30 @@ CollisionManager.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.s
 .PHONY : CollisionManager.cpp.s
 
+CollisionStructures.obj: CollisionStructures.cpp.obj
+.PHONY : CollisionStructures.obj
+
+# target to build an object file
+CollisionStructures.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj
+.PHONY : CollisionStructures.cpp.obj
+
+CollisionStructures.i: CollisionStructures.cpp.i
+.PHONY : CollisionStructures.i
+
+# target to preprocess a source file
+CollisionStructures.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.i
+.PHONY : CollisionStructures.cpp.i
+
+CollisionStructures.s: CollisionStructures.cpp.s
+.PHONY : CollisionStructures.s
+
+# target to generate assembly for a file
+CollisionStructures.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.s
+.PHONY : CollisionStructures.cpp.s
+
 CollisionSystem.obj: CollisionSystem.cpp.obj
 .PHONY : CollisionSystem.obj
 
@@ -267,6 +291,30 @@ CollisionSystem.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.s
 .PHONY : CollisionSystem.cpp.s
 
+Octree.obj: Octree.cpp.obj
+.PHONY : Octree.obj
+
+# target to build an object file
+Octree.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj
+.PHONY : Octree.cpp.obj
+
+Octree.i: Octree.cpp.i
+.PHONY : Octree.i
+
+# target to preprocess a source file
+Octree.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.i
+.PHONY : Octree.cpp.i
+
+Octree.s: Octree.cpp.s
+.PHONY : Octree.s
+
+# target to generate assembly for a file
+Octree.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.s
+.PHONY : Octree.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -288,9 +336,15 @@ help:
 	@echo "... CollisionManager.obj"
 	@echo "... CollisionManager.i"
 	@echo "... CollisionManager.s"
+	@echo "... CollisionStructures.obj"
+	@echo "... CollisionStructures.i"
+	@echo "... CollisionStructures.s"
 	@echo "... CollisionSystem.obj"
 	@echo "... CollisionSystem.i"
 	@echo "... CollisionSystem.s"
+	@echo "... Octree.obj"
+	@echo "... Octree.i"
+	@echo "... Octree.s"
 .PHONY : help
 
 

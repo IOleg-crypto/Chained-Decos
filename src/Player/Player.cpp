@@ -6,7 +6,7 @@
 // ==================== CONSTANTS DEFINITIONS ====================
 
 // Player constants
-const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 50.0f, 150.0f};
+const Vector3 Player::DEFAULT_SPAWN_POSITION = {90.0f, 50.0f, 150.0f};
 const float Player::MODEL_Y_OFFSET = -1.2f;
 const float Player::MODEL_SCALE = 1.0f;
 
@@ -154,6 +154,9 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
         UpdatePlayerBox();
     }
 
+    // ALWAYS update player box before collision check to ensure accurate collision detection
+    UpdatePlayerBox();
+
     Vector3 response = {};
     bool isColliding = collisionManager.CheckCollision(GetCollision(), response);
 
@@ -237,6 +240,16 @@ void Player::ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime)
 
     // Apply movement
     Vector3 movement = Vector3Scale(worldMoveDir, m_walkSpeed * deltaTime);
+
+    // Debug: Log movement when on ground (temporarily disabled to reduce spam)
+    // if (Vector3Length(movement) > 0.01f)
+    // {
+    //     TraceLog(LOG_INFO, "🚶 Ground movement: (%.2f,%.2f,%.2f) -> (%.2f,%.2f,%.2f)",
+    //              GetPlayerPosition().x, GetPlayerPosition().y, GetPlayerPosition().z,
+    //              GetPlayerPosition().x + movement.x, GetPlayerPosition().y + movement.y,
+    //              GetPlayerPosition().z + movement.z);
+    // }
+
     Move(movement);
 }
 

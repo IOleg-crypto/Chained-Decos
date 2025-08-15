@@ -1,0 +1,23 @@
+{
+      "C_Cpp.default.compilerPath": "E:/LLVM/bin/clang++.exe",
+      "files.associations": {
+            "*.embeddedhtml": "html",
+            "*.html": "html",
+            "*.cpp": "cpp",
+            "*.h": "cpp",
+            "*.c": "c",
+            "*.py": "python",
+            "*.css": "css",
+            "*.scss": "scss",
+            "*.js": "javascript",
+            "*.jsx": "javascript",
+            "*.ts": "typescript",
+            "*.tsx": "typescript",
+            "*.json": "json",
+            "*.md": "markdown",
+            "*.mdx": "markdown",
+            "*.xml": "xml",
+            "algorithm": "cpp",
+            "xutility": "cpp"
+      }
+}

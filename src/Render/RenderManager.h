@@ -5,7 +5,6 @@
 #include <raylib.h>
 #include <string>
 
-// Direct includes instead of forward declarations
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
 #include <Menu/Menu.h>

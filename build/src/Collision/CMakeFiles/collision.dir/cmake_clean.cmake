@@ -3,8 +3,12 @@ file(REMOVE_RECURSE
   "CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj.d"
   "CMakeFiles/collision.dir/CollisionManager.cpp.obj"
   "CMakeFiles/collision.dir/CollisionManager.cpp.obj.d"
+  "CMakeFiles/collision.dir/CollisionStructures.cpp.obj"
+  "CMakeFiles/collision.dir/CollisionStructures.cpp.obj.d"
   "CMakeFiles/collision.dir/CollisionSystem.cpp.obj"
   "CMakeFiles/collision.dir/CollisionSystem.cpp.obj.d"
+  "CMakeFiles/collision.dir/Octree.cpp.obj"
+  "CMakeFiles/collision.dir/Octree.cpp.obj.d"
   "collision.lib"
   "collision.pdb"
 )
