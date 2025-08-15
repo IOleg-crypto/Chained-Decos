@@ -14,7 +14,7 @@ Application::~Application()
 {
     // Cleanup ImGui first, then window
     rlImGuiShutdown();
-    UnloadImage(m_icon);
+    // UnloadImage(m_icon);
     CloseWindow();
 }
 
@@ -44,8 +44,11 @@ void Application::Init() const
     io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
     io.Fonts->Build();
 
-    m_icon = LoadImage(PROJECT_ROOT_DIR "resources/icons/mapeditor.png");
+    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.png");
+    ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+
     SetWindowIcon(m_icon);
+    UnloadImage(m_icon);
 
     // Set up ImGui style for better visibility
     ImGui::StyleColorsDark();

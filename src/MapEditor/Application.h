@@ -20,9 +20,6 @@ public:
     // Constructor and destructor
     Application(int width, int height); // Initialize with window dimensions
     ~Application();
-    // I don`t need this because i use unique pointer
-    Application(const Application &other) = delete;
-    Application(Application &&other) = delete;
 
 public:
     // Core application functions
@@ -34,7 +31,6 @@ private:
     int m_height;                     // Window height
     std::string m_windowName;         // Window title
     std::unique_ptr<Editor> m_editor; // Main editor instance
-    Image m_icon;                     // Window icon image
 };
 
 #endif // APPLICATION_H
