@@ -21,7 +21,6 @@ struct ModelFileConfig
     std::string path;
     std::string category = "default"; // Model categorization
     bool spawn = true;
-    bool hasCollision = false;  // Enable collision detection for this model
     float lodDistance = 100.0f; // Level of Detail distance
     std::vector<ModelInstanceConfig> instances;
 

@@ -16,7 +16,8 @@
 // ==================== CONSTANTS ====================
 
 RenderManager::RenderManager()
-    : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>()), m_showDebugInfo(false)
+    : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>()), m_showDebugInfo(false),
+      m_showCollisionDebug(false)
 {
     TraceLog(LOG_INFO, "RenderManager created");
 }
@@ -238,7 +239,7 @@ void RenderManager::DrawCollisionSystemInfo(const CollisionManager &collisionMan
 
     for (const auto &collider : colliders)
     {
-        if (collider.IsUsingOctree())
+        if (collider.IsUsingBVH())
         {
             bvhColliders++;
             totalTriangles += collider.GetTriangleCount();
