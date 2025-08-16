@@ -28,17 +28,31 @@ jobs:
             cpp_compiler: g++
 
     steps:
-    - name: Checkout repository with submodules
+    #################################
+    # Checkout repository and submodules
+    #################################
+    - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: recursive
         fetch-depth: 0
 
+    - name: Update submodules to latest commits
+      run: |
+        git submodule sync
+        git submodule update --init --remote --merge
+
+    #################################
+    # Set build output dir
+    #################################
     - name: Set build output dir
       id: strings
       shell: bash
       run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-      
+
+    #################################
+    # Cache build dependencies
+    #################################
     - name: Cache build dependencies
       uses: actions/cache@v4
       with:
@@ -49,6 +63,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ matrix.c_compiler }}-deps-
 
+    #################################
+    # Setup CMake
+    #################################
     - name: Setup CMake
       uses: jwlawson/actions-setup-cmake@v1.14
       with:
