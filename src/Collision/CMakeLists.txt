@@ -9,7 +9,5 @@ add_library(collision STATIC
     CollisionDebugRenderer.h
     Octree.cpp
     Octree.h
-    SmartCollisionSystem.cpp
-    SmartCollisionSystem.h
 )
 target_link_libraries(collision PUBLIC raylib)

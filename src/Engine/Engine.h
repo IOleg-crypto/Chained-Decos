@@ -16,7 +16,6 @@
 // Project headers
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
-#include <Collision/SmartCollisionSystem.h>
 #include <Input/InputManager.h>
 #include <Menu/Menu.h>
 #include <Model/Model.h>
@@ -38,11 +37,9 @@
 class Engine
 {
 public:
-    // ==================== CONSTRUCTORS & DESTRUCTOR ====================
     Engine();
     Engine(int screenX, int screenY);
     ~Engine();
-
     // Non-copyable and non-movable
     Engine(const Engine &other) = delete;
     Engine(Engine &&other) = delete;
@@ -62,24 +59,19 @@ private:
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
                                   Vector3 position,
                                   float scale); // Create BVH from model geometry
-    bool CreateSmartCollisionFromModel(const Model &model, const std::string &modelName,
-                                       Vector3 position,
-                                       float scale); // Create Smart Collision with subdivision
 
     void Update();
     void UpdatePlayer();
     void UpdatePhysics();
-    void ApplyPhysicsWithSmartCollision(); // Physics using smart collision system
     void CheckPlayerBounds();
     void HandleKeyboardShortcuts() const;
     void HandleMousePicking();
     void Render();
     void TestOctreeRayCasting();
-    void TestMouseRayCasting();
     void OptimizeModelPerformance();
     // Future features (currently unused)
-    void LoadAdditionalModels();
-    void SpawnPickups();
+    // void LoadAdditionalModels();
+    // void SpawnPickups();
 
 public:
     void RequestExit();
@@ -87,8 +79,8 @@ public:
 
 private:
     // Window & Display
-    int m_screenX{};
-    int m_screenY{};
+    int m_screenX;
+    int m_screenY;
     std::string m_windowName;
 
     // Core Game Systems
@@ -96,22 +88,17 @@ private:
     Models m_models;
     InputManager m_manager;
     PhysicsComponent m_physics;
-    CollisionManager m_collisionManager;           // Legacy collision system
-    SmartCollisionManager m_smartCollisionManager; // New smart collision system
+    CollisionManager m_collisionManager; // Legacy collision system
     RenderManager m_renderManager;
 
     // Game State
     Menu m_menu;
-    bool m_showMenu = true;
-    bool m_shouldExit{false};
-    bool m_usePlayerModel = true;
+    bool m_showMenu;
+    bool m_shouldExit;
 
     // Debug State
-    bool m_showDebug{false};
-    bool m_showCollisionDebug{false};
-
-    // Legacy (consider removing)
-    Collision m_collision{};
+    bool m_showDebug;
+    bool m_showCollisionDebug;
 };
 
 #endif // ENGINE_H
