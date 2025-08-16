@@ -1,49 +1,49 @@
 [
 {
   "directory": "D:/gitnext/Chained Decos/build",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj -c \"D:/gitnext/Chained Decos/include/rlImGui/rlImGui.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj -c \"D:/gitnext/Chained Decos/include/rlImGui/rlImGui.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/rlImGui/rlImGui.cpp",
   "output": "CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui_draw.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui_draw.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui_draw.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui_demo.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui_demo.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui_demo.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui_tables.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui_tables.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui_tables.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui_widgets.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/imgui_widgets.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui_widgets.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj -c \"D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecos.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecos.dir/src/main.cpp.obj -c \"D:/gitnext/Chained Decos/src/main.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecos.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecos.dir/src/main.cpp.obj -c \"D:/gitnext/Chained Decos/src/main.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/main.cpp",
   "output": "CMakeFiles/ChainedDecos.dir/src/main.cpp.obj"
 },
@@ -241,163 +241,163 @@
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Engine",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/engine.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/engine.dir/Engine.cpp.obj -c \"D:/gitnext/Chained Decos/src/Engine/Engine.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/engine.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/engine.dir/Engine.cpp.obj -c \"D:/gitnext/Chained Decos/src/Engine/Engine.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Engine/Engine.cpp",
   "output": "src/Engine/CMakeFiles/engine.dir/Engine.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Player",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/player.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/player.dir/Player.cpp.obj -c \"D:/gitnext/Chained Decos/src/Player/Player.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/player.dir/Player.cpp.obj -c \"D:/gitnext/Chained Decos/src/Player/Player.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Player/Player.cpp",
   "output": "src/Player/CMakeFiles/player.dir/Player.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Model",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/Model.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/Model.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/Model.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/Model.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/Model.cpp",
   "output": "src/Model/CMakeFiles/model.dir/Model.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Model",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/ModelInstance.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/ModelInstance.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/ModelInstance.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/ModelInstance.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/ModelInstance.cpp",
   "output": "src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Model",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/Animation.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/Animation.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/Animation.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/Animation.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/Animation.cpp",
   "output": "src/Model/CMakeFiles/model.dir/Animation.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Model",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/JsonHelper.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/JsonHelper.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/JsonHelper.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/JsonHelper.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/JsonHelper.cpp",
   "output": "src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Model",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/ModelCache.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/ModelCache.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/ModelCache.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/ModelCache.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/ModelCache.cpp",
   "output": "src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Menu",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/menu.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/menu.dir/Menu.cpp.obj -c \"D:/gitnext/Chained Decos/src/Menu/Menu.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/menu.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/menu.dir/Menu.cpp.obj -c \"D:/gitnext/Chained Decos/src/Menu/Menu.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Menu/Menu.cpp",
   "output": "src/Menu/CMakeFiles/menu.dir/Menu.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Input",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/input.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/input.dir/InputManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/Input/InputManager.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/input.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/input.dir/InputManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/Input/InputManager.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Input/InputManager.cpp",
   "output": "src/Input/CMakeFiles/input.dir/InputManager.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Map",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/mapmod.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/mapmod.dir/MapLoader.cpp.obj -c \"D:/gitnext/Chained Decos/src/Map/MapLoader.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/mapmod.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/mapmod.dir/MapLoader.cpp.obj -c \"D:/gitnext/Chained Decos/src/Map/MapLoader.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Map/MapLoader.cpp",
   "output": "src/Map/CMakeFiles/mapmod.dir/MapLoader.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/CameraController",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/cameracontroller.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/cameracontroller.dir/CameraController.cpp.obj -c \"D:/gitnext/Chained Decos/src/CameraController/CameraController.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/cameracontroller.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/cameracontroller.dir/CameraController.cpp.obj -c \"D:/gitnext/Chained Decos/src/CameraController/CameraController.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/CameraController/CameraController.cpp",
   "output": "src/CameraController/CMakeFiles/cameracontroller.dir/CameraController.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Color",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/color.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/color.dir/ColorParser.cpp.obj -c \"D:/gitnext/Chained Decos/src/Color/ColorParser.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/color.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/color.dir/ColorParser.cpp.obj -c \"D:/gitnext/Chained Decos/src/Color/ColorParser.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Color/ColorParser.cpp",
   "output": "src/Color/CMakeFiles/color.dir/ColorParser.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/World",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/world.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/world.dir/Physics.cpp.obj -c \"D:/gitnext/Chained Decos/src/World/Physics.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/world.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/world.dir/Physics.cpp.obj -c \"D:/gitnext/Chained Decos/src/World/Physics.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/World/Physics.cpp",
   "output": "src/World/CMakeFiles/world.dir/Physics.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Collision",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionSystem.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionSystem.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionSystem.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionSystem.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/CollisionSystem.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Collision",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionStructures.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionStructures.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionStructures.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionStructures.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/CollisionStructures.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Collision",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionManager.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionManager.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/CollisionManager.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Collision",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionDebugRenderer.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/CollisionDebugRenderer.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/CollisionDebugRenderer.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Collision",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/Octree.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/Octree.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/collision.dir/Octree.cpp.obj -c \"D:/gitnext/Chained Decos/src/Collision/Octree.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/Octree.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/Render",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/render.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/render.dir/RenderManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/Render/RenderManager.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/render.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/render.dir/RenderManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/Render/RenderManager.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Render/RenderManager.cpp",
   "output": "src/Render/CMakeFiles/render.dir/RenderManager.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/tests",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/unit_tests.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/unit_tests.dir/gtest.cpp.obj -c \"D:/gitnext/Chained Decos/tests/gtest.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/unit_tests.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/unit_tests.dir/gtest.cpp.obj -c \"D:/gitnext/Chained Decos/tests/gtest.cpp\"",
   "file": "D:/gitnext/Chained Decos/tests/gtest.cpp",
   "output": "tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Application.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Application.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Application.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj"
 },
 {
   "directory": "D:/gitnext/Chained Decos/build/src/MapEditor",
-  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/main.cpp\"",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj -c \"D:/gitnext/Chained Decos/src/MapEditor/main.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/main.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj"
 }
