@@ -6,6 +6,8 @@
 #include <raylib.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
+
 
 // Information about cached model
 struct CachedModelInfo
