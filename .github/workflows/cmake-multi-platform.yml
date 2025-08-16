@@ -96,17 +96,23 @@ jobs:
     # Configure CMake
     #################################
     - name: Configure CMake
+      shell: bash
       run: |
+       if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
         cmake -B ${{ steps.strings.outputs.build-output-dir }} \
-          -G "${{ matrix.os == 'windows-latest' && 'MinGW Makefiles' || 'Unix Makefiles' }}" \
+          -G "Unix Makefiles" \
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          ${{ matrix.os == 'ubuntu-latest' && '-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache' || '' }} \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -S ${{ github.workspace }}
+       else
+        cmake -B "${{ steps.strings.outputs.build-output-dir }}" -G "MinGW Makefiles" -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -S "${{ github.workspace }}"
+       fi
 
     #################################
-    # Build project (паралельно)
+    # Build project 
     #################################
     - name: Build
       run: |
