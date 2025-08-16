@@ -71,6 +71,7 @@ target_link_libraries(imguilib PRIVATE raylib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_compile_definitions(PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}")
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_subdirectory(src/Engine)
 add_subdirectory(src/Player)
 add_subdirectory(src/Model)
