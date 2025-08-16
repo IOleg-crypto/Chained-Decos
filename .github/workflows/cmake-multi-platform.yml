@@ -96,43 +96,50 @@ jobs:
     # Configure CMake
     #################################
     - name: Configure CMake
-      shell: bash
+      shell: pwsh
       run: |
-       if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-        cmake -B ${{ steps.strings.outputs.build-output-dir }} \
-          -G "Unix Makefiles" \
-          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
-          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-          -S ${{ github.workspace }}
-       else
-        cmake -B "${{ steps.strings.outputs.build-output-dir }}" -G "MinGW Makefiles" -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -S "${{ github.workspace }}"
-       fi
+        if ($env:RUNNER_OS -eq "Linux") {
+            cmake -B "${{ steps.strings.outputs.build-output-dir }}" `
+              -G "Unix Makefiles" `
+              -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} `
+              -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} `
+              -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
+              -DCMAKE_C_COMPILER_LAUNCHER=ccache `
+              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
+              -S "${{ github.workspace }}"
+        } else {
+            cmake -B "${{ steps.strings.outputs.build-output-dir }}" `
+              -G "MinGW Makefiles" `
+              -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} `
+              -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} `
+              -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
+              -S "${{ github.workspace }}"
+        }
 
     #################################
     # Build project 
     #################################
     - name: Build
+      shell: pwsh
       run: |
-        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-          cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- -j$(nproc)
-        else
-          cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- /m
-        fi
+        if ($env:RUNNER_OS -eq "Linux") {
+            cmake --build "${{ steps.strings.outputs.build-output-dir }}" --config ${{ matrix.build_type }} -- -j$(nproc)
+        } else {
+            cmake --build "${{ steps.strings.outputs.build-output-dir }}" --config ${{ matrix.build_type }} -- /m
+        }
 
     #################################
     # Run tests
     #################################
     - name: Run tests
+      shell: pwsh
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: |
-        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-          xvfb-run -a ctest --output-on-failure --build-config ${{ matrix.build_type }}
-        else
-          ctest --output-on-failure --build-config ${{ matrix.build_type }}
-        fi
+        if ($env:RUNNER_OS -eq "Linux") {
+            xvfb-run -a ctest --output-on-failure --build-config ${{ matrix.build_type }}
+        } else {
+            ctest --output-on-failure --build-config ${{ matrix.build_type }}
+        }
 
     #################################
     # Upload artifacts
