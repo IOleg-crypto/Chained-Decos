@@ -95,6 +95,7 @@ private:
     Menu m_menu;
     bool m_showMenu;
     bool m_shouldExit;
+    bool m_windowInitialized; // Track if this Engine instance initialized the window
 
     // Debug State
     bool m_showDebug;
