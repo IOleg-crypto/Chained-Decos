@@ -46,8 +46,8 @@ jobs:
     # Set build output dir
     #################################
     - name: Set build output dir
-      id: strings
       shell: bash
+      id: strings
       run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
     #################################
@@ -68,6 +68,7 @@ jobs:
     #################################
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
+      shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential cmake \
@@ -77,6 +78,7 @@ jobs:
 
     - name: Clean build directory (Linux)
       if: matrix.os == 'ubuntu-latest'
+      shell: bash
       run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
 
     #################################
@@ -84,62 +86,70 @@ jobs:
     #################################
     - name: Install MinGW (Windows)
       if: matrix.os == 'windows-latest'
+      shell: pwsh
       run: |
         choco install mingw --no-progress
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $env:GITHUB_PATH
 
     - name: Clean build directory (Windows)
       if: matrix.os == 'windows-latest'
+      shell: pwsh
       run: Remove-Item -Path "${{ steps.strings.outputs.build-output-dir }}" -Recurse -Force -ErrorAction SilentlyContinue
 
     #################################
     # Configure CMake
     #################################
-    - name: Configure CMake
+    - name: Configure CMake (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        cmake -B ${{ steps.strings.outputs.build-output-dir }} \
+          -G "Unix Makefiles" \
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+          -S ${{ github.workspace }}
+
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        if ($env:RUNNER_OS -eq "Linux") {
-            cmake -B "${{ steps.strings.outputs.build-output-dir }}" `
-              -G "Unix Makefiles" `
-              -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} `
-              -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} `
-              -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
-              -DCMAKE_C_COMPILER_LAUNCHER=ccache `
-              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
-              -S "${{ github.workspace }}"
-        } else {
-            cmake -B "${{ steps.strings.outputs.build-output-dir }}" `
-              -G "MinGW Makefiles" `
-              -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} `
-              -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} `
-              -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
-              -S "${{ github.workspace }}"
-        }
+        cmake -B "${{ steps.strings.outputs.build-output-dir }}" `
+          -G "MinGW Makefiles" `
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} `
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} `
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
+          -S "${{ github.workspace }}"
 
     #################################
-    # Build project 
+    # Build project
     #################################
-    - name: Build
+    - name: Build (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- -j$(nproc)
+
+    - name: Build (Windows)
+      if: matrix.os == 'windows-latest'
       shell: pwsh
-      run: |
-        if ($env:RUNNER_OS -eq "Linux") {
-            cmake --build "${{ steps.strings.outputs.build-output-dir }}" --config ${{ matrix.build_type }} -- -j$(nproc)
-        } else {
-            cmake --build "${{ steps.strings.outputs.build-output-dir }}" --config ${{ matrix.build_type }} -- /m
-        }
+      run: cmake --build "${{ steps.strings.outputs.build-output-dir }}" --config ${{ matrix.build_type }} -- /m
 
     #################################
     # Run tests
     #################################
-    - name: Run tests
+    - name: Run tests (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: xvfb-run -a ctest --output-on-failure --build-config ${{ matrix.build_type }}
+
+    - name: Run tests (Windows)
+      if: matrix.os == 'windows-latest'
       shell: pwsh
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: |
-        if ($env:RUNNER_OS -eq "Linux") {
-            xvfb-run -a ctest --output-on-failure --build-config ${{ matrix.build_type }}
-        } else {
-            ctest --output-on-failure --build-config ${{ matrix.build_type }}
-        }
+      run: ctest --output-on-failure --build-config ${{ matrix.build_type }}
 
     #################################
     # Upload artifacts
