@@ -43,13 +43,20 @@ public:
     void ToggleModelRendering(bool useModel); // Show/hide model
     Models &GetModelManager();                // Get model manager
 
-    [[nodiscard]] float GetSpeed();           // Get current speed
-    [[nodiscard]] float GetRotationY() const; // Get Y rotation
-    void SetSpeed(float speed);               // Set speed
-    Vector3 GetPlayerPosition() const;        // Get position
-    const Collision &GetCollision() const;    // Get collision info
-    bool IsJumpCollision() const;             // Check jump collision flag
-    BoundingBox GetPlayerBoundingBox() const; // Get bounding box
+    [[nodiscard]] float GetSpeed();             // Get current speed
+    [[nodiscard]] float GetRotationY() const;   // Get Y rotation
+    void SetSpeed(float speed);                 // Set speed
+    Vector3 GetPlayerPosition() const;          // Get position
+    const Collision &GetCollision() const;      // Get collision info
+    bool IsJumpCollision() const;               // Check jump collision flag
+    BoundingBox GetPlayerBoundingBox() const;   // Get bounding box
+    const PhysicsComponent &GetPhysics() const; // Get physics component
+
+    // Height tracking functions (Chained Together style)
+    [[nodiscard]] float GetCurrentHeight() const; // Get current height above ground level
+    [[nodiscard]] float GetMaxHeight() const;     // Get maximum height achieved
+    void ResetHeight();                           // Reset height tracking
+    void SetGroundLevel(float groundY);           // Set the ground reference level
 
 private:
     std::shared_ptr<CameraController> m_cameraController; // Camera control

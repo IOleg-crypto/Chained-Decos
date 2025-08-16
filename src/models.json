@@ -2,15 +2,18 @@
   {
     "name": "player",
     "path": "/resources/player_low.glb",
+    "hasAnimations" : false,
     "spawn": false
   },
   {
     "name": "arc",
     "path": "/resources/arc.glb",
     "spawn": true,
+    "hasCollision" : false,
+    "hasAnimations": false,
     "instances": [{
-        "position": { "x": 0, "y": 0, "z": 0 },
-        "scale": 1.0,
+        "position": { "x": 5, "y": 0, "z": 0 },
+        "scale": 1.2,
         "color": "blue"
     }
     ]

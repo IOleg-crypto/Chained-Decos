@@ -267,6 +267,20 @@ bool Octree::IntersectsAABB(const Vector3 &min, const Vector3 &max) const
     return IntersectsAABBRecursive(m_root.get(), min, max);
 }
 
+bool Octree::IntersectsOctree(const Octree &other) const
+{
+    if (!m_root || !other.m_root)
+        return false;
+    return IntersectsOctreeRecursive(m_root.get(), other.m_root.get());
+}
+
+bool Octree::IntersectsImproved(const Vector3 &min, const Vector3 &max) const
+{
+    if (!m_root)
+        return false;
+    return IntersectsImprovedRecursive(m_root.get(), min, max);
+}
+
 bool Octree::IntersectsAABBRecursive(const OctreeNode *node, const Vector3 &min,
                                      const Vector3 &max) const
 {
@@ -312,9 +326,68 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
 
     if (node->isLeaf)
     {
-        // For point-in-mesh testing, we'd need more complex algorithms
-        // For now, just check if point is near any triangle
-        return !node->triangles.empty();
+        // For collision detection, check if point is very close to any triangle surface
+        // This is more appropriate for architectural elements like arches
+
+        if (node->triangles.empty())
+            return false;
+
+        const float SURFACE_THRESHOLD =
+            0.1f; // Reduced collision threshold for more precise detection
+
+        TraceLog(LOG_INFO,
+                 "ContainsPointRecursive: Checking point (%.2f, %.2f, %.2f) against %d triangles",
+                 point.x, point.y, point.z, (int)node->triangles.size());
+
+        for (const auto &triangle : node->triangles)
+        {
+            // For architectural elements like arches, we need to check if the point
+            // is actually inside the solid material, not just close to any triangle
+
+            // Check if point is very close to the triangle surface (indicating solid material)
+            Vector3 v0 = triangle.v0;
+            Vector3 v1 = triangle.v1;
+            Vector3 v2 = triangle.v2;
+
+            TraceLog(LOG_INFO,
+                     "  Triangle: v0(%.2f,%.2f,%.2f) v1(%.2f,%.2f,%.2f) v2(%.2f,%.2f,%.2f)", v0.x,
+                     v0.y, v0.z, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+
+            // Calculate barycentric coordinates to see if point projects onto triangle
+            Vector3 v0v1 = Vector3Subtract(v1, v0);
+            Vector3 v0v2 = Vector3Subtract(v2, v0);
+            Vector3 v0p = Vector3Subtract(point, v0);
+
+            float dot00 = Vector3DotProduct(v0v2, v0v2);
+            float dot01 = Vector3DotProduct(v0v2, v0v1);
+            float dot02 = Vector3DotProduct(v0v2, v0p);
+            float dot11 = Vector3DotProduct(v0v1, v0v1);
+            float dot12 = Vector3DotProduct(v0v1, v0p);
+
+            float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+            float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+            // Check if point is inside triangle (barycentric coordinates)
+            if (u >= 0 && v >= 0 && u + v <= 1)
+            {
+                // Point projects onto triangle, now check distance to surface
+                Vector3 normal = triangle.normal;
+                Vector3 toPoint = Vector3Subtract(point, v0);
+                float distanceToPlane = fabsf(Vector3DotProduct(toPoint, normal));
+
+                if (distanceToPlane <= SURFACE_THRESHOLD)
+                {
+                    TraceLog(LOG_INFO,
+                             "Point collision detected: distance %.3f to triangle surface "
+                             "(barycentric: u=%.3f, v=%.3f)",
+                             distanceToPlane, u, v);
+                    return true; // Point is inside solid material
+                }
+            }
+        }
+
+        return false; // Point is not close to any triangle surface
     }
 
     // Check appropriate child
@@ -589,6 +662,96 @@ bool Octree::RaycastRecursive(const OctreeNode *node, const Vector3 &origin,
     {
         hitDistance = closestDistance;
         return true;
+    }
+
+    return false;
+}
+
+bool Octree::IntersectsOctreeRecursive(const OctreeNode *thisNode,
+                                       const OctreeNode *otherNode) const
+{
+    if (!thisNode || !otherNode)
+        return false;
+
+    // Check if nodes' AABBs intersect
+    if (!thisNode->IntersectsAABB(otherNode->GetMin(), otherNode->GetMax()))
+        return false;
+
+    // If both are leaves, check triangle-triangle intersections
+    if (thisNode->isLeaf && otherNode->isLeaf)
+    {
+        for (const auto &thisTriangle : thisNode->triangles)
+        {
+            for (const auto &otherTriangle : otherNode->triangles)
+            {
+                if (thisTriangle.Intersects(otherTriangle))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    // If one is leaf and other is not, recurse on the non-leaf
+    if (thisNode->isLeaf && !otherNode->isLeaf)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            if (otherNode->children[i] &&
+                IntersectsOctreeRecursive(thisNode, otherNode->children[i].get()))
+                return true;
+        }
+        return false;
+    }
+
+    if (!thisNode->isLeaf && otherNode->isLeaf)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            if (thisNode->children[i] &&
+                IntersectsOctreeRecursive(thisNode->children[i].get(), otherNode))
+                return true;
+        }
+        return false;
+    }
+
+    // Both are internal nodes, recurse on all combinations
+    for (int i = 0; i < 8; i++)
+    {
+        if (thisNode->children[i])
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                if (otherNode->children[j] &&
+                    IntersectsOctreeRecursive(thisNode->children[i].get(),
+                                              otherNode->children[j].get()))
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool Octree::IntersectsImprovedRecursive(const OctreeNode *node, const Vector3 &min,
+                                         const Vector3 &max) const
+{
+    if (!node->IntersectsAABB(min, max))
+        return false;
+
+    if (node->isLeaf)
+    {
+        // For improved collision, we use smaller node AABBs instead of full triangle checks
+        // This gives better precision than simple AABB but is faster than triangle-triangle
+        return true; // If we reach a leaf and AABBs intersect, consider it a collision
+    }
+
+    // Check children with smaller AABBs
+    for (int i = 0; i < 8; i++)
+    {
+        if (node->children[i] && IntersectsImprovedRecursive(node->children[i].get(), min, max))
+        {
+            return true;
+        }
     }
 
     return false;

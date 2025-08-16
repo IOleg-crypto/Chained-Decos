@@ -61,6 +61,8 @@ public:
     bool IsDebugInfoVisible() const { return m_showDebugInfo; }
     bool IsCollisionDebugVisible() const { return m_showCollisionDebug; }
 
+    void ShowMetersPlayer(const Player &player);
+
 private:
     // Debug rendering
     std::unique_ptr<CollisionDebugRenderer> m_collisionDebugRenderer;
@@ -80,6 +82,8 @@ private:
 
     // Background color
     Color m_backgroundColor = BLUE;
+
+    Font m_font; // Custom font for raylib
 };
 
 #endif // RENDER_MANAGER_H
