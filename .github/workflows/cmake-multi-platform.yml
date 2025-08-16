@@ -139,15 +139,20 @@ jobs:
 
 
     #################################
-    # Upload artifacts
+    # Run tests (Linux)
     #################################
-    - name: Upload build artifacts
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-${{ matrix.os }}-${{ matrix.c_compiler }}
-        path: |
-          ${{ steps.strings.outputs.build-output-dir }}/ChainedDecos*
-          ${{ steps.strings.outputs.build-output-dir }}/ChainedDecosMapEditor*
-          ${{ steps.strings.outputs.build-output-dir }}/*.exe
-        retention-days: 7
+    - name: Run unit tests (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        chmod +x ${{ steps.strings.outputs.build-output-dir }}/unit_tests
+        ${{ steps.strings.outputs.build-output-dir }}/unit_tests
+
+    #################################
+    # Run tests (Windows)
+    #################################
+    - name: Run unit tests (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        & "${{ steps.strings.outputs.build-output-dir }}\unit_tests.exe"
