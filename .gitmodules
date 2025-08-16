@@ -1,14 +1,17 @@
 [submodule "include/rlImGui"]
 	path = include/rlImGui
 	url = https://github.com/raylib-extras/rlImGui.git
+	branch = master
 
 [submodule "include/imgui"]
 	path = include/imgui
 	url = https://github.com/ocornut/imgui.git
+	branch = main
 
 [submodule "include/raygui"]
     path = include/raygui
     url = https://github.com/raysan5/raygui.git
+    branch = master
 
 
 
