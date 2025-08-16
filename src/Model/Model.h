@@ -76,6 +76,9 @@ public:
     void SetMaxCacheSize(size_t maxSize);
     void EnableLOD(bool enabled) { m_lodEnabled = enabled; }
 
+    // Configuration access
+    const ModelFileConfig *GetModelConfig(const std::string &modelName) const;
+
     // Cleanup and optimization
     void CleanupUnusedModels();
     void OptimizeCache();

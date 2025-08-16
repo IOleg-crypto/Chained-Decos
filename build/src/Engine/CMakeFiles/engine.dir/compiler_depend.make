@@ -223,6 +223,8 @@ src/Engine/CMakeFiles/engine.dir/Engine.cpp.obj: D:/gitnext/Chained\ Decos/src/E
   D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
+  D:/gitnext/Chained\ Decos/src/Collision/Octree.h \
+  D:/gitnext/Chained\ Decos/src/Collision/SmartCollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Engine/Engine.h \
   D:/gitnext/Chained\ Decos/src/Input/InputManager.h \
   D:/gitnext/Chained\ Decos/src/Menu/Menu.h \
@@ -872,6 +874,8 @@ _deps/nlohmann_json-src/include/nlohmann/detail/meta/call_std/end.hpp:
 
 _deps/nlohmann_json-src/include/nlohmann/detail/meta/cpp_future.hpp:
 
+D:/gitnext/Chained\ Decos/src/Collision/Octree.h:
+
 _deps/nlohmann_json-src/include/nlohmann/detail/meta/is_sax.hpp:
 
 _deps/nlohmann_json-src/include/nlohmann/detail/meta/std_fs.hpp:
@@ -929,6 +933,8 @@ E:/LLVM/lib/clang/19/include/x86intrin.h:
 D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h:
 
 D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/SmartCollisionSystem.h:
 
 D:/gitnext/Chained\ Decos/src/Input/InputManager.h:
 

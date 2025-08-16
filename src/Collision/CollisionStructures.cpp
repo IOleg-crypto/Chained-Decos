@@ -52,6 +52,76 @@ bool CollisionTriangle::Intersects(const Vector3 &origin, const Vector3 &directi
     return Intersects(ray, t);
 }
 
+bool CollisionTriangle::Intersects(const CollisionTriangle &other) const
+{
+    // Triangle-triangle intersection using separating axis theorem
+    // This is a simplified version - for production use, consider more robust algorithms
+
+    // Check if triangles are coplanar
+    float d1 = Vector3DotProduct(normal, Vector3Subtract(other.v0, v0));
+    float d2 = Vector3DotProduct(normal, Vector3Subtract(other.v1, v0));
+    float d3 = Vector3DotProduct(normal, Vector3Subtract(other.v2, v0));
+
+    // If all points of other triangle are on same side of this triangle's plane
+    if ((d1 > EPS && d2 > EPS && d3 > EPS) || (d1 < -EPS && d2 < -EPS && d3 < -EPS))
+        return false;
+
+    // Check the other direction
+    d1 = Vector3DotProduct(other.normal, Vector3Subtract(v0, other.v0));
+    d2 = Vector3DotProduct(other.normal, Vector3Subtract(v1, other.v0));
+    d3 = Vector3DotProduct(other.normal, Vector3Subtract(v2, other.v0));
+
+    if ((d1 > EPS && d2 > EPS && d3 > EPS) || (d1 < -EPS && d2 < -EPS && d3 < -EPS))
+        return false;
+
+    // If we get here, triangles potentially intersect
+    // For simplicity, we'll use AABB intersection as approximation
+    Vector3 thisMin = GetMin();
+    Vector3 thisMax = GetMax();
+    Vector3 otherMin = other.GetMin();
+    Vector3 otherMax = other.GetMax();
+
+    return (thisMin.x <= otherMax.x && thisMax.x >= otherMin.x) &&
+           (thisMin.y <= otherMax.y && thisMax.y >= otherMin.y) &&
+           (thisMin.z <= otherMax.z && thisMax.z >= otherMin.z);
+}
+
+bool CollisionTriangle::IntersectsAABB(const Vector3 &boxMin, const Vector3 &boxMax) const
+{
+    // Triangle-AABB intersection test
+    // First check if triangle's AABB intersects with box
+    Vector3 triMin = GetMin();
+    Vector3 triMax = GetMax();
+
+    if (triMax.x < boxMin.x || triMin.x > boxMax.x || triMax.y < boxMin.y || triMin.y > boxMax.y ||
+        triMax.z < boxMin.z || triMin.z > boxMax.z)
+        return false;
+
+    // More precise test: check if triangle intersects box
+    Vector3 boxCenter = Vector3Scale(Vector3Add(boxMin, boxMax), 0.5f);
+    Vector3 boxExtents = Vector3Scale(Vector3Subtract(boxMax, boxMin), 0.5f);
+
+    // Translate triangle to box center
+    Vector3 tv0 = Vector3Subtract(v0, boxCenter);
+    Vector3 tv1 = Vector3Subtract(v1, boxCenter);
+    Vector3 tv2 = Vector3Subtract(v2, boxCenter);
+
+    // Test triangle normal as separating axis
+    float r = boxExtents.x * fabsf(normal.x) + boxExtents.y * fabsf(normal.y) +
+              boxExtents.z * fabsf(normal.z);
+    float p0 = Vector3DotProduct(tv0, normal);
+    float p1 = Vector3DotProduct(tv1, normal);
+    float p2 = Vector3DotProduct(tv2, normal);
+    float minP = fminf(fminf(p0, p1), p2);
+    float maxP = fmaxf(fmaxf(p0, p1), p2);
+
+    if (minP > r || maxP < -r)
+        return false;
+
+    // If we get here, there's likely an intersection
+    return true;
+}
+
 Vector3 CollisionTriangle::GetCenter() const
 {
     return Vector3Scale(Vector3Add(Vector3Add(v0, v1), v2), 1.0f / 3.0f);

@@ -24,6 +24,12 @@ struct CollisionTriangle
     bool Intersects(const struct CollisionRay &ray, float &t) const;
     bool Intersects(const Vector3 &origin, const Vector3 &direction, float &t) const;
 
+    // Triangle-triangle intersection
+    bool Intersects(const CollisionTriangle &other) const;
+
+    // Triangle-AABB intersection
+    bool IntersectsAABB(const Vector3 &boxMin, const Vector3 &boxMax) const;
+
     // Get triangle properties
     Vector3 GetCenter() const;
     Vector3 GetMin() const;
@@ -48,9 +54,11 @@ struct CollisionRay
 //
 enum class CollisionType
 {
-    AABB_ONLY,   // Simple AABB collision (fast, less precise)
-    OCTREE_ONLY, // Octree collision (slower, more precise)
-    HYBRID_AUTO  // Automatically choose based on model complexity
+    AABB_ONLY,       // Simple AABB collision (fast, less precise)
+    OCTREE_ONLY,     // Octree collision (slower, more precise)
+    HYBRID_AUTO,     // Automatically choose based on model complexity
+    IMPROVED_AABB,   // Smaller AABB blocks within octree (balanced)
+    TRIANGLE_PRECISE // Triangle-to-triangle collision (most precise)
 };
 
 //

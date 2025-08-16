@@ -16,6 +16,7 @@
 // Project headers
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
+#include <Collision/SmartCollisionSystem.h>
 #include <Input/InputManager.h>
 #include <Menu/Menu.h>
 #include <Model/Model.h>
@@ -61,10 +62,14 @@ private:
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
                                   Vector3 position,
                                   float scale); // Create BVH from model geometry
+    bool CreateSmartCollisionFromModel(const Model &model, const std::string &modelName,
+                                       Vector3 position,
+                                       float scale); // Create Smart Collision with subdivision
 
     void Update();
     void UpdatePlayer();
     void UpdatePhysics();
+    void ApplyPhysicsWithSmartCollision(); // Physics using smart collision system
     void CheckPlayerBounds();
     void HandleKeyboardShortcuts() const;
     void HandleMousePicking();
@@ -91,7 +96,8 @@ private:
     Models m_models;
     InputManager m_manager;
     PhysicsComponent m_physics;
-    CollisionManager m_collisionManager;
+    CollisionManager m_collisionManager;           // Legacy collision system
+    SmartCollisionManager m_smartCollisionManager; // New smart collision system
     RenderManager m_renderManager;
 
     // Game State

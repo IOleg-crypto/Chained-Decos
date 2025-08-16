@@ -15,14 +15,24 @@ struct ModelInstanceConfig
     std::string tag = ""; // For filtering and search
 };
 
+// Collision precision levels
+enum class CollisionPrecision
+{
+    AABB_ONLY = 0,       // Simple bounding box (fastest)
+    IMPROVED_AABB = 1,   // Smaller AABB blocks within octree (balanced)
+    TRIANGLE_PRECISE = 2 // Triangle-to-triangle collision (most precise)
+};
+
 struct ModelFileConfig
 {
     std::string name;
     std::string path;
     std::string category = "default"; // Model categorization
     bool spawn = true;
-    bool hasCollision = false;  // Enable collision detection for this model
-    float lodDistance = 100.0f; // Level of Detail distance
+    bool hasCollision = false; // Enable collision detection for this model
+    CollisionPrecision collisionPrecision =
+        CollisionPrecision::IMPROVED_AABB; // Collision precision level
+    float lodDistance = 100.0f;            // Level of Detail distance
     std::vector<ModelInstanceConfig> instances;
 
     // Metadata

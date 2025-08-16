@@ -4,6 +4,7 @@
 //
 
 #include "CollisionSystem.h"
+#include "../Model/ModelConfig.h"
 #include "Octree.h"
 #include <algorithm>
 #include <chrono>
@@ -94,18 +95,7 @@ bool Collision::Intersects(const Collision &other) const
 {
     StartPerformanceTimer();
 
-    // Always start with AABB broad-phase check
-    bool aabbIntersects = (m_min.x <= other.m_max.x && m_max.x >= other.m_min.x) &&
-                          (m_min.y <= other.m_max.y && m_max.y >= other.m_min.y) &&
-                          (m_min.z <= other.m_max.z && m_max.z >= other.m_min.z);
-
-    if (!aabbIntersects)
-    {
-        EndPerformanceTimer(CollisionType::AABB_ONLY);
-        return false;
-    }
-
-    // Determine which collision method to use
+    // Determine which collision method to use first
     CollisionType thisType = (m_collisionType == CollisionType::HYBRID_AUTO)
                                  ? DetermineOptimalCollisionType()
                                  : m_collisionType;
@@ -113,32 +103,151 @@ bool Collision::Intersects(const Collision &other) const
                                   ? other.DetermineOptimalCollisionType()
                                   : other.m_collisionType;
 
-    // If both are simple, use AABB
-    if (thisType == CollisionType::AABB_ONLY && otherType == CollisionType::AABB_ONLY)
+    // Choose collision method based on precision requirements
+    CollisionType finalType = (thisType > otherType) ? thisType : otherType; // Use higher precision
+
+    // For precise collision types, we may skip or modify AABB broad-phase check
+    bool skipAABBCheck = (finalType == CollisionType::TRIANGLE_PRECISE);
+
+    if (!skipAABBCheck)
     {
-        EndPerformanceTimer(CollisionType::AABB_ONLY);
-        return true; // AABB already passed
+        // AABB broad-phase check for non-precise collision types
+        bool aabbIntersects = (m_min.x <= other.m_max.x && m_max.x >= other.m_min.x) &&
+                              (m_min.y <= other.m_max.y && m_max.y >= other.m_min.y) &&
+                              (m_min.z <= other.m_max.z && m_max.z >= other.m_min.z);
+
+        if (!aabbIntersects)
+        {
+            EndPerformanceTimer(CollisionType::AABB_ONLY);
+            return false;
+        }
     }
 
-    // If either is complex, use octree intersection
-    if ((thisType == CollisionType::OCTREE_ONLY && m_octree) ||
-        (otherType == CollisionType::OCTREE_ONLY && other.m_octree))
+    switch (finalType)
     {
+    case CollisionType::AABB_ONLY:
+        EndPerformanceTimer(CollisionType::AABB_ONLY);
+        return true; // AABB already passed
+
+    case CollisionType::IMPROVED_AABB:
+        if (m_octree && other.m_octree)
+        {
+            bool result = m_octree->IntersectsImproved(other.m_min, other.m_max) ||
+                          other.m_octree->IntersectsImproved(m_min, m_max);
+            EndPerformanceTimer(CollisionType::IMPROVED_AABB);
+            return result;
+        }
+        else if (m_octree)
+        {
+            bool result = m_octree->IntersectsImproved(other.m_min, other.m_max);
+            EndPerformanceTimer(CollisionType::IMPROVED_AABB);
+            return result;
+        }
+        else if (other.m_octree)
+        {
+            bool result = other.m_octree->IntersectsImproved(m_min, m_max);
+            EndPerformanceTimer(CollisionType::IMPROVED_AABB);
+            return result;
+        }
+        // Fallback to AABB
+        EndPerformanceTimer(CollisionType::AABB_ONLY);
+        return true;
+
+    case CollisionType::TRIANGLE_PRECISE:
+        // For precise collision, we need to check if the other object (usually player)
+        // intersects with our triangle mesh
+        if (m_octree)
+        {
+            // Check if any corner of the other object's AABB is inside our mesh
+            Vector3 corners[8] = {{other.m_min.x, other.m_min.y, other.m_min.z},
+                                  {other.m_max.x, other.m_min.y, other.m_min.z},
+                                  {other.m_min.x, other.m_max.y, other.m_min.z},
+                                  {other.m_max.x, other.m_max.y, other.m_min.z},
+                                  {other.m_min.x, other.m_min.y, other.m_max.z},
+                                  {other.m_max.x, other.m_min.y, other.m_max.z},
+                                  {other.m_min.x, other.m_max.y, other.m_max.z},
+                                  {other.m_max.x, other.m_max.y, other.m_max.z}};
+
+            for (int i = 0; i < 8; i++)
+            {
+                if (m_octree->ContainsPoint(corners[i]))
+                {
+                    TraceLog(LOG_DEBUG,
+                             "PRECISE COLLISION: Corner %d (%.2f, %.2f, %.2f) intersects mesh", i,
+                             corners[i].x, corners[i].y, corners[i].z);
+                    EndPerformanceTimer(CollisionType::TRIANGLE_PRECISE);
+                    return true;
+                }
+            }
+
+            // Also check center point
+            Vector3 center = {(other.m_min.x + other.m_max.x) * 0.5f,
+                              (other.m_min.y + other.m_max.y) * 0.5f,
+                              (other.m_min.z + other.m_max.z) * 0.5f};
+
+            if (m_octree->ContainsPoint(center))
+            {
+                TraceLog(LOG_DEBUG, "PRECISE COLLISION: Center (%.2f, %.2f, %.2f) intersects mesh",
+                         center.x, center.y, center.z);
+                EndPerformanceTimer(CollisionType::TRIANGLE_PRECISE);
+                return true;
+            }
+        }
+
+        // If other object has octree, check the reverse
+        if (other.m_octree)
+        {
+            Vector3 corners[8] = {{m_min.x, m_min.y, m_min.z}, {m_max.x, m_min.y, m_min.z},
+                                  {m_min.x, m_max.y, m_min.z}, {m_max.x, m_max.y, m_min.z},
+                                  {m_min.x, m_min.y, m_max.z}, {m_max.x, m_min.y, m_max.z},
+                                  {m_min.x, m_max.y, m_max.z}, {m_max.x, m_max.y, m_max.z}};
+
+            for (int i = 0; i < 8; i++)
+            {
+                if (other.m_octree->ContainsPoint(corners[i]))
+                {
+                    EndPerformanceTimer(CollisionType::TRIANGLE_PRECISE);
+                    return true;
+                }
+            }
+        }
+
+        EndPerformanceTimer(CollisionType::TRIANGLE_PRECISE);
+        return false;
+
+    case CollisionType::OCTREE_ONLY:
+    default:
         bool result = IntersectsOctree(other);
         EndPerformanceTimer(CollisionType::OCTREE_ONLY);
         return result;
     }
-
-    // Fallback to AABB
-    EndPerformanceTimer(CollisionType::AABB_ONLY);
-    return true;
 }
 
 bool Collision::Contains(const Vector3 &point) const
 {
     StartPerformanceTimer();
 
-    // AABB check first
+    // Determine collision method first
+    CollisionType type = (m_collisionType == CollisionType::HYBRID_AUTO)
+                             ? DetermineOptimalCollisionType()
+                             : m_collisionType;
+
+    // For precise collision types, skip AABB check and go directly to octree
+    if (type == CollisionType::TRIANGLE_PRECISE && m_octree)
+    {
+        bool result = ContainsOctree(point);
+        // Debug logging for precise collision
+        if (result)
+        {
+            TraceLog(LOG_DEBUG,
+                     "PRECISE COLLISION: Point (%.2f, %.2f, %.2f) intersects with surface", point.x,
+                     point.y, point.z);
+        }
+        EndPerformanceTimer(CollisionType::TRIANGLE_PRECISE);
+        return result;
+    }
+
+    // AABB check for other types
     bool aabbContains = (point.x >= m_min.x && point.x <= m_max.x) &&
                         (point.y >= m_min.y && point.y <= m_max.y) &&
                         (point.z >= m_min.z && point.z <= m_max.z);
@@ -149,16 +258,30 @@ bool Collision::Contains(const Vector3 &point) const
         return false;
     }
 
-    // Determine collision method
-    CollisionType type = (m_collisionType == CollisionType::HYBRID_AUTO)
-                             ? DetermineOptimalCollisionType()
-                             : m_collisionType;
-
-    if (type == CollisionType::OCTREE_ONLY && m_octree)
+    // Handle other collision types
+    switch (type)
     {
-        bool result = ContainsOctree(point);
-        EndPerformanceTimer(CollisionType::OCTREE_ONLY);
-        return result;
+    case CollisionType::IMPROVED_AABB:
+        if (m_octree)
+        {
+            bool result = ContainsOctree(point);
+            EndPerformanceTimer(CollisionType::IMPROVED_AABB);
+            return result;
+        }
+        break;
+
+    case CollisionType::OCTREE_ONLY:
+        if (m_octree)
+        {
+            bool result = ContainsOctree(point);
+            EndPerformanceTimer(CollisionType::OCTREE_ONLY);
+            return result;
+        }
+        break;
+
+    case CollisionType::AABB_ONLY:
+    default:
+        break;
     }
 
     // Fallback to AABB result
@@ -233,15 +356,66 @@ void Collision::BuildFromModel(Model *model, CollisionType type, const Matrix &t
     ExtractTrianglesFromModel(model, transform);
     UpdateAABBFromTriangles();
 
-    if (type == CollisionType::OCTREE_ONLY)
+    // Build appropriate collision structure based on type
+    switch (type)
     {
+    case CollisionType::AABB_ONLY:
+        TraceLog(LOG_INFO, "Using AABB-only collision");
+        break;
+
+    case CollisionType::IMPROVED_AABB:
         BuildOctree(model, transform);
-        TraceLog(LOG_INFO, "Forced octree collision with %zu nodes", GetNodeCount());
+        TraceLog(LOG_INFO, "Built improved AABB collision with %zu nodes", GetNodeCount());
+        break;
+
+    case CollisionType::TRIANGLE_PRECISE:
+        BuildOctree(model, transform);
+        TraceLog(LOG_INFO, "Built precise triangle collision with %zu nodes and %zu triangles",
+                 GetNodeCount(), GetTriangleCount());
+        break;
+
+    case CollisionType::OCTREE_ONLY:
+    default:
+        BuildOctree(model, transform);
+        TraceLog(LOG_INFO, "Built octree collision with %zu nodes", GetNodeCount());
+        break;
     }
-    else
+}
+
+void Collision::BuildFromModelConfig(Model *model, const ModelFileConfig &config,
+                                     const Matrix &transform)
+{
+    if (!model || model->meshCount == 0)
     {
-        TraceLog(LOG_INFO, "Forced AABB collision");
+        TraceLog(LOG_WARNING, "Invalid model provided for collision building");
+        return;
     }
+
+    // Convert CollisionPrecision to CollisionType
+    CollisionType targetType;
+    switch (config.collisionPrecision)
+    {
+    case CollisionPrecision::AABB_ONLY:
+        targetType = CollisionType::AABB_ONLY;
+        break;
+    case CollisionPrecision::IMPROVED_AABB:
+        targetType = CollisionType::IMPROVED_AABB;
+        break;
+    case CollisionPrecision::TRIANGLE_PRECISE:
+        targetType = CollisionType::TRIANGLE_PRECISE;
+        break;
+    default:
+        targetType = CollisionType::IMPROVED_AABB;
+        break;
+    }
+
+    TraceLog(LOG_INFO, "Building collision for model '%s' with precision: %s", config.name.c_str(),
+             (targetType == CollisionType::AABB_ONLY)       ? "AABB"
+             : (targetType == CollisionType::IMPROVED_AABB) ? "IMPROVED"
+                                                            : "PRECISE");
+
+    // Use the specific type method
+    BuildFromModel(model, targetType, transform);
 }
 
 // ================== Legacy Methods (Backward Compatibility) ==================
@@ -450,9 +624,11 @@ void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
 
 CollisionType Collision::DetermineOptimalCollisionType() const
 {
-    // Simple heuristic: use octree for complex models
-    if (m_complexity.IsComplex())
-        return CollisionType::OCTREE_ONLY;
+    // Enhanced heuristic based on model complexity
+    if (m_complexity.triangleCount > 500) // Very complex models
+        return CollisionType::TRIANGLE_PRECISE;
+    else if (m_complexity.IsComplex()) // Moderately complex models
+        return CollisionType::IMPROVED_AABB;
     else
         return CollisionType::AABB_ONLY;
 }

@@ -14,6 +14,9 @@
 #include <raymath.h>
 #include <vector>
 
+// Forward declaration
+struct ModelFileConfig;
+
 // Forward declaration for Octree
 class Octree;
 
@@ -78,6 +81,10 @@ public:
     // Build collision with specific type (override automatic detection)
     void BuildFromModel(Model *model, CollisionType type,
                         const Matrix &transform = MatrixIdentity());
+
+    // Build collision from model config (uses precision setting from config)
+    void BuildFromModelConfig(Model *model, const struct ModelFileConfig &config,
+                              const Matrix &transform = MatrixIdentity());
 
     // Legacy methods (for backward compatibility)
     void CalculateFromModel(Model *model);

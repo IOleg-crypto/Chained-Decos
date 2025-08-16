@@ -3,6 +3,7 @@
 //
 
 #include "RenderManager.h"
+#include "raylib.h"
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
 #include <Menu/Menu.h>
@@ -18,10 +19,19 @@
 RenderManager::RenderManager()
     : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>()), m_showDebugInfo(false)
 {
+    m_font = {0};
     TraceLog(LOG_INFO, "RenderManager created");
 }
 
-RenderManager::~RenderManager() { TraceLog(LOG_INFO, "RenderManager destroyed"); }
+RenderManager::~RenderManager()
+{
+    if (m_font.texture.id != 0 && m_font.texture.id != GetFontDefault().texture.id)
+    {
+        UnloadFont(m_font);
+        TraceLog(LOG_INFO, "Custom font unloaded");
+    }
+    TraceLog(LOG_INFO, "RenderManager destroyed");
+}
 
 void RenderManager::Initialize()
 {
@@ -34,6 +44,22 @@ void RenderManager::Initialize()
     const std::string defaultFontPath = PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf";
     float fontSize = 16.0f;
     InitializeImGuiFont(defaultFontPath, fontSize);
+
+    // Init default font for raylib with higher resolution for smoother rendering
+    m_font = LoadFontEx(defaultFontPath.c_str(), 128, NULL, 0);
+    if (m_font.texture.id != 0)
+    {
+        // Set texture filter to linear for smoother scaling
+        SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
+        TraceLog(LOG_INFO, "Default font loaded successfully with smooth filtering: %s",
+                 defaultFontPath.c_str());
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "Failed to load font: %s, using default font",
+                 defaultFontPath.c_str());
+        m_font = GetFontDefault();
+    }
 
     TraceLog(LOG_INFO, "Render manager initialized successfully");
 }
@@ -77,6 +103,9 @@ void RenderManager::RenderGame(const Player &player, const Models &models,
 
     // End 3D rendering
     EndMode3D();
+
+    // Показуємо висоту гравця в реальному часі (2D overlay)
+    ShowMetersPlayer(player);
 }
 
 void RenderManager::RenderMenu(Menu &menu)
@@ -100,8 +129,8 @@ void RenderManager::EndMode3D() { ::EndMode3D(); }
 
 void RenderManager::DrawScene3D(const Models &models)
 {
-    // Draw ground plane using constants from PhysicsComponent
-    DrawPlane(PhysicsComponent::GROUND_POSITION, PhysicsComponent::GROUND_SIZE, LIGHTGRAY);
+    // // Draw ground plane using constants from PhysicsComponent
+    // DrawPlane(PhysicsComponent::GROUND_POSITION, PhysicsComponent::GROUND_SIZE, LIGHTGRAY);
 
     // Draw all models
     models.DrawAllModels();
@@ -256,12 +285,6 @@ void RenderManager::DrawCollisionSystemInfo(const CollisionManager &collisionMan
     {
         ImGui::Text("- Total triangles in BVH: %zu", totalTriangles);
     }
-
-    if (ImGui::Button("Test Collision Ray Cast (F12)"))
-    {
-        // This will need to trigger the test - we'll add callback later
-        TraceLog(LOG_INFO, "Ray cast test requested from debug UI");
-    }
 }
 
 void RenderManager::DrawControlsInfo()
@@ -269,5 +292,83 @@ void RenderManager::DrawControlsInfo()
     ImGui::Text("Controls:");
     ImGui::Text("- F2: Toggle Debug Info");
     ImGui::Text("- F3: Toggle Collision Debug");
-    ImGui::Text("- F12: Test Collision Ray Casting");
+}
+
+void RenderManager::ShowMetersPlayer(const Player &player)
+{
+    Vector3 playerPosition = player.GetPlayerPosition();
+    float groundLevel = PhysicsComponent::WORLD_FLOOR_Y;
+    float heightAboveGround = playerPosition.y - groundLevel;
+
+    static float maxHeight = 0.0f;
+    if (heightAboveGround > maxHeight)
+    {
+        maxHeight = heightAboveGround;
+    }
+
+    std::string heightText = TextFormat("Height: %.1f m", heightAboveGround);
+    std::string recordText = TextFormat("Record: %.1f m", maxHeight);
+
+    Color textColor = WHITE;
+    if (heightAboveGround == 500)
+    {
+        textColor = GOLD;
+    }
+
+    int textX = 20;
+    int textY = 20;
+
+    // Improved font rendering with better spacing for smoother text
+    if (m_font.texture.id != 0)
+    {
+        // Use improved spacing (2.0f instead of 1.0f) for smoother text rendering
+        DrawTextEx(m_font, heightText.c_str(), {(float)textX, (float)textY}, 24, 2.0f, textColor);
+        DrawTextEx(m_font, recordText.c_str(), {(float)textX, (float)(textY + 30)}, 24, 2.0f,
+                   textColor);
+    }
+    else
+    {
+        // Use default font with DrawTextEx for better rendering even in fallback
+        Font defaultFont = GetFontDefault();
+        DrawTextEx(defaultFont, heightText.c_str(), {(float)textX, (float)textY}, 24, 2.0f,
+                   textColor);
+        DrawTextEx(defaultFont, recordText.c_str(), {(float)textX, (float)(textY + 30)}, 24, 2.0f,
+                   textColor);
+    }
+
+    int circleX = textX + 200;
+    int circleY = textY + 12;
+    int circleRadius = 15;
+
+    DrawCircleLines(circleX, circleY, circleRadius, WHITE);
+
+    bool isPhysicsGrounded = player.GetPhysics().IsGrounded();
+    bool isCloseToGround = (heightAboveGround <= 0.5f && heightAboveGround >= -0.1f);
+
+    bool isOnGround = isPhysicsGrounded || isCloseToGround;
+
+    if (isOnGround)
+    {
+        Color groundColor = isPhysicsGrounded ? GREEN : YELLOW;
+        DrawCircle(circleX, circleY, circleRadius - 2, groundColor);
+
+        // Use DrawTextEx for status labels as well for consistency and smoothness
+        Font fontToUse = (m_font.texture.id != 0) ? m_font : GetFontDefault();
+        if (isPhysicsGrounded)
+        {
+            DrawTextEx(fontToUse, "GROUND", {(float)(circleX - 25), (float)(circleY + 25)}, 12,
+                       1.5f, GREEN);
+        }
+        else
+        {
+            DrawTextEx(fontToUse, "NEAR", {(float)(circleX - 20), (float)(circleY + 25)}, 12, 1.5f,
+                       YELLOW);
+        }
+    }
+    else
+    {
+        Font fontToUse = (m_font.texture.id != 0) ? m_font : GetFontDefault();
+        DrawTextEx(fontToUse, "AIR", {(float)(circleX - 15), (float)(circleY + 25)}, 12, 1.5f,
+                   LIGHTGRAY);
+    }
 }
