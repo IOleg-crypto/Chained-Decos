@@ -16,9 +16,9 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_originalCameraTarget = m_cameraController->GetCamera().target;
     m_baseTarget = m_originalCameraTarget;
 
-    m_playerPosition = {0.0f, 10.0f, 0.0f};
+    m_playerPosition = {5.0f, 2.0f, 0.0f}; // Start above ground plane
     // Depends on model size(bounding box collision)
-    m_playerSize = {1.0f, 5.5f, 1.0f};
+    m_playerSize = {1.0f, 1.5f, 1.0f};
     m_playerColor = BLUE;
     m_playerModel = nullptr;
     m_useModel = false;
@@ -174,6 +174,7 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
         {
             playerPosition.y += response.y;
             m_physics.SetVelocity({0, 0, 0});
+            m_physics.SetGroundLevel(true); // Гравець приземлився
             m_isJumping = false;
         }
         else // Hitting ceiling or wall
@@ -191,13 +192,31 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
     }
     else
     {
-        m_physics.SetGroundLevel(false);
+        // If player too close to land using height
+        float groundLevel = PhysicsComponent::WORLD_FLOOR_Y;
+        float heightAboveGround = playerPosition.y - groundLevel;
+
+        if (heightAboveGround <= 0.1f && heightAboveGround >= -0.1f)
+        {
+            // If player too close , he grounded
+            m_physics.SetGroundLevel(true);
+            m_physics.SetVelocity({0, 0, 0});
+        }
+        else
+        {
+            m_physics.SetGroundLevel(false);
+        }
     }
 }
 
 BoundingBox Player::GetPlayerBoundingBox() const // Get bounding box
 {
     return m_playerBoundingBox;
+}
+
+const PhysicsComponent &Player::GetPhysics() const // Get physics component
+{
+    return m_physics;
 }
 
 // Helper methods implementation

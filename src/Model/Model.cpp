@@ -532,3 +532,13 @@ bool Models::ReloadModel(const std::string &name)
     // Reload
     return LoadSingleModel(name, configIt->second.path, true);
 }
+
+const ModelFileConfig *Models::GetModelConfig(const std::string &modelName) const
+{
+    auto it = m_configs.find(modelName);
+    if (it != m_configs.end())
+    {
+        return &it->second;
+    }
+    return nullptr;
+}

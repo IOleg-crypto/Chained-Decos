@@ -98,6 +98,19 @@ ModelFileConfig JsonHelper::ParseModelConfig(const json &entry)
     config.path = entry["path"].get<std::string>();
     config.category = entry.value("category", "default");
     config.spawn = entry.value("spawn", true);
+    config.hasCollision = entry.value("hasCollision", false);
+
+    // Parse collision precision
+    std::string precisionStr = entry.value("collisionPrecision", "improved");
+    if (precisionStr == "aabb" || precisionStr == "simple")
+        config.collisionPrecision = CollisionPrecision::AABB_ONLY;
+    else if (precisionStr == "improved" || precisionStr == "balanced")
+        config.collisionPrecision = CollisionPrecision::IMPROVED_AABB;
+    else if (precisionStr == "precise" || precisionStr == "triangle")
+        config.collisionPrecision = CollisionPrecision::TRIANGLE_PRECISE;
+    else
+        config.collisionPrecision = CollisionPrecision::IMPROVED_AABB; // default
+
     config.lodDistance = entry.value("lodDistance", 100.0f);
     config.preload = entry.value("preload", true);
     config.priority = entry.value("priority", 0);

@@ -33,6 +33,10 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         Vector3 colliderMin = collider.GetMin();
         Vector3 colliderMax = collider.GetMax();
 
+        // TraceLog(LOG_INFO, "🔍 Checking collider [%d]: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
+        //          colliderIndex, colliderMin.x, colliderMin.y, colliderMin.z, colliderMax.x,
+        //          colliderMax.y, colliderMax.z);
+
         // Check collision using hybrid system (automatically chooses optimal method)
         bool hasCollision = playerCollision.Intersects(collider);
 
@@ -40,14 +44,9 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
 
         if (hasCollision)
         {
-            // // Only log if it's not the ground plane to reduce spam (ground is now last index)
-            // if (colliderIndex != static_cast<int>(m_collisions.size()) - 1)
-            // {
-            //     TraceLog(
-            //         LOG_INFO,
-            //         "🎯 COLLISION with [%d]! Player Y(%.1f to %.1f) vs Collider Y(%.1f to %.1f)",
-            //         colliderIndex, playerMin.y, playerMax.y, colliderMin.y, colliderMax.y);
-            // }
+            TraceLog(LOG_INFO,
+                     "🎯 COLLISION with [%d]! Player Y(%.1f to %.1f) vs Collider Y(%.1f to %.1f)",
+                     colliderIndex - 1, playerMin.y, playerMax.y, colliderMin.y, colliderMax.y);
 
             // For Octree/BVH colliders, we could potentially get more precise collision response
             // but for now, we'll use the standard AABB-based MTV calculation
