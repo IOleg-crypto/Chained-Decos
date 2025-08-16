@@ -55,7 +55,7 @@ class Octree
 public:
     static constexpr int MAX_TRIANGLES_PER_NODE = 10; // Maximum triangles per leaf
     static constexpr int MAX_DEPTH = 8;               // Maximum tree depth
-    static constexpr float MIN_NODE_SIZE = 0.5f;      // Minimum node size
+    static constexpr float MIN_NODE_SIZE = 1.3f;      // Minimum node size
 
     Octree();
     ~Octree() = default;
@@ -74,6 +74,9 @@ public:
 
     // Collision queries
     bool IntersectsAABB(const Vector3 &min, const Vector3 &max) const;
+    bool IntersectsOctree(const Octree &other) const; // Precise octree-octree collision
+    bool IntersectsImproved(const Vector3 &min,
+                            const Vector3 &max) const; // Improved AABB collision
     bool ContainsPoint(const Vector3 &point) const;
 
     // Ray casting
@@ -100,6 +103,9 @@ private:
 
     bool IntersectsAABBRecursive(const OctreeNode *node, const Vector3 &min,
                                  const Vector3 &max) const;
+    bool IntersectsOctreeRecursive(const OctreeNode *thisNode, const OctreeNode *otherNode) const;
+    bool IntersectsImprovedRecursive(const OctreeNode *node, const Vector3 &min,
+                                     const Vector3 &max) const;
     bool ContainsPointRecursive(const OctreeNode *node, const Vector3 &point) const;
     bool RaycastRecursive(const OctreeNode *node, const Vector3 &origin, const Vector3 &direction,
                           float maxDistance, float &hitDistance, Vector3 &hitPoint,

@@ -19,6 +19,8 @@
 // Collision system
 #include <Collision/CollisionSystem.h>
 
+Engine::Engine() : Engine(800, 600) {}
+
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_usePlayerModel(true)
 {
@@ -100,6 +102,11 @@ void Engine::Init()
     {
         TraceLog(LOG_ERROR, " Failed to initialize collision system: %s", e.what());
     }
+
+    // Initialize input system
+    TraceLog(LOG_INFO, "Initializing input system...");
+    InitInput();
+    TraceLog(LOG_INFO, " Input system initialized successfully");
 
     TraceLog(LOG_INFO, " Engine initialization complete!");
 }
@@ -218,10 +225,19 @@ void Engine::InitCollisions()
     CreateAutoCollisionsFromModels();
 
     // Create a ground plane LAST (lower priority) - solid surface at y=0
-    Collision plane{(Vector3){0, 0, 0}, (Vector3){1000, 2, 1000}};
+    Collision plane{(Vector3){0, -5, 0}, (Vector3){1000, 10, 1000}};
     // Simple plane uses AABB by default (no need to set anything)
     m_collisionManager.AddCollider(plane);
-    TraceLog(LOG_INFO, "Ground plane: center(0,0,0) extends from y=-1 to y=1");
+    TraceLog(LOG_INFO,
+             "Ground plane added to Legacy system: center(0,-5,0) extends from y=-10 to y=0");
+
+    // Also add ground plane to Smart collision system
+    // Create a simple SmartCollision for ground plane
+    SmartCollision smartGroundPlane;
+    // Note: SmartCollision is designed for complex models, but we can use it for simple geometry
+    // too For now, we'll skip adding to smart system since it's designed for model-based collisions
+    // The legacy system will handle the ground plane
+    TraceLog(LOG_INFO, "Ground plane will be handled by Legacy collision system only");
 }
 
 void Engine::CreateAutoCollisionsFromModels()
@@ -366,9 +382,28 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
 
     TraceLog(LOG_INFO, "Building hybrid collision from model geometry...");
 
-    // Build collision using hybrid system (automatically chooses AABB or Octree based on
-    // complexity)
-    modelCollision.BuildFromModel(&modelCopy, transform);
+    // Get model configuration to determine collision precision
+    const ModelFileConfig *config = m_models.GetModelConfig(modelName);
+
+    if (config)
+    {
+        TraceLog(LOG_INFO, "Using model config for collision precision: %s (hasCollision=%s)",
+                 (config->collisionPrecision == CollisionPrecision::AABB_ONLY)       ? "AABB"
+                 : (config->collisionPrecision == CollisionPrecision::IMPROVED_AABB) ? "IMPROVED"
+                                                                                     : "PRECISE",
+                 config->hasCollision ? "true" : "false");
+
+        // Build collision using model configuration
+        modelCollision.BuildFromModelConfig(&modelCopy, *config, transform);
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "No config found for model '%s', using hybrid auto-detection",
+                 modelName.c_str());
+        // Fallback: Build collision using hybrid system (automatically chooses AABB or Octree based
+        // on complexity)
+        modelCollision.BuildFromModel(&modelCopy, transform);
+    }
 
     // Log collision details
     Vector3 collisionMin = modelCollision.GetMin();
@@ -380,11 +415,13 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
     const auto &complexity = modelCollision.GetComplexity();
     CollisionType collisionType = modelCollision.GetCollisionType();
 
-    TraceLog(LOG_INFO, "Hybrid collision created:");
+    TraceLog(LOG_INFO, "Collision created:");
     TraceLog(LOG_INFO, "  Type: %s",
-             (collisionType == CollisionType::AABB_ONLY)     ? "AABB"
-             : (collisionType == CollisionType::OCTREE_ONLY) ? "OCTREE"
-                                                             : "HYBRID_AUTO");
+             (collisionType == CollisionType::AABB_ONLY)          ? "AABB_ONLY"
+             : (collisionType == CollisionType::IMPROVED_AABB)    ? "IMPROVED_AABB"
+             : (collisionType == CollisionType::TRIANGLE_PRECISE) ? "TRIANGLE_PRECISE"
+             : (collisionType == CollisionType::OCTREE_ONLY)      ? "OCTREE_ONLY"
+                                                                  : "HYBRID_AUTO");
     TraceLog(LOG_INFO, "  Min: (%.2f, %.2f, %.2f)", collisionMin.x, collisionMin.y, collisionMin.z);
     TraceLog(LOG_INFO, "  Max: (%.2f, %.2f, %.2f)", collisionMax.x, collisionMax.y, collisionMax.z);
     TraceLog(LOG_INFO, "  Center: (%.2f, %.2f, %.2f)", collisionCenter.x, collisionCenter.y,
@@ -394,14 +431,100 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
     TraceLog(LOG_INFO, "  Triangle count: %zu", modelCollision.GetTriangleCount());
     TraceLog(LOG_INFO, "  Model complexity: %s", complexity.IsSimple() ? "SIMPLE" : "COMPLEX");
 
-    if (collisionType == CollisionType::OCTREE_ONLY)
+    if (collisionType == CollisionType::OCTREE_ONLY ||
+        collisionType == CollisionType::IMPROVED_AABB ||
+        collisionType == CollisionType::TRIANGLE_PRECISE)
     {
         TraceLog(LOG_INFO, "  Octree nodes: %zu", modelCollision.GetNodeCount());
     }
 
+    // Add to legacy collision manager
     m_collisionManager.AddCollider(modelCollision);
 
+    // Also create smart collision for improved performance
+    CreateSmartCollisionFromModel(model, modelName, position, scale);
+
     TraceLog(LOG_INFO, "Successfully created hybrid collision from model geometry");
+    return true;
+}
+
+bool Engine::CreateSmartCollisionFromModel(const Model &model, const std::string &modelName,
+                                           Vector3 position, float scale)
+{
+    TraceLog(LOG_INFO, "Creating SMART collision from model '%s' with %d meshes", modelName.c_str(),
+             model.meshCount);
+
+    // Create transformation matrix
+    Matrix transform = MatrixMultiply(MatrixScale(scale, scale, scale),
+                                      MatrixTranslate(position.x, position.y, position.z));
+
+    // Check if we have valid geometry
+    bool hasValidGeometry = false;
+    for (int i = 0; i < model.meshCount; i++)
+    {
+        if (model.meshes[i].vertices && model.meshes[i].vertexCount > 0)
+        {
+            hasValidGeometry = true;
+        }
+    }
+
+    if (!hasValidGeometry)
+    {
+        TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, skipping smart collision",
+                 modelName.c_str());
+        return false;
+    }
+
+    // Get model configuration
+    const ModelFileConfig *config = m_models.GetModelConfig(modelName);
+
+    if (config && !config->hasCollision)
+    {
+        TraceLog(LOG_INFO, "Model '%s' has collision disabled in config, skipping smart collision",
+                 modelName.c_str());
+        return false;
+    }
+
+    // Create smart collision
+    SmartCollision smartCollision;
+
+    // Create a non-const copy for processing
+    Model modelCopy = model;
+
+    if (config)
+    {
+        TraceLog(LOG_INFO, "Building smart collision with config precision: %s",
+                 (config->collisionPrecision == CollisionPrecision::AABB_ONLY)       ? "AABB"
+                 : (config->collisionPrecision == CollisionPrecision::IMPROVED_AABB) ? "IMPROVED"
+                                                                                     : "PRECISE");
+
+        smartCollision.BuildFromModelConfig(&modelCopy, *config, transform);
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "Building smart collision with auto-detection for model '%s'",
+                 modelName.c_str());
+        smartCollision.BuildFromModel(&modelCopy, transform);
+    }
+
+    // Log smart collision details
+    Vector3 smartMin = smartCollision.GetMin();
+    Vector3 smartMax = smartCollision.GetMax();
+    Vector3 smartCenter = smartCollision.GetCenter();
+    Vector3 smartSize = smartCollision.GetSize();
+
+    TraceLog(LOG_INFO, "Smart Collision created:");
+    TraceLog(LOG_INFO, "  Subdivisions: %zu (%zu active)", smartCollision.GetSubdivisionCount(),
+             smartCollision.GetActiveSubdivisionCount());
+    TraceLog(LOG_INFO, "  Total triangles: %zu", smartCollision.GetTotalTriangleCount());
+    TraceLog(LOG_INFO, "  Bounds: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)", smartMin.x, smartMin.y,
+             smartMin.z, smartMax.x, smartMax.y, smartMax.z);
+    TraceLog(LOG_INFO, "  Size: (%.2f, %.2f, %.2f)", smartSize.x, smartSize.y, smartSize.z);
+
+    // Add to smart collision manager
+    m_smartCollisionManager.AddSmartCollider(std::move(smartCollision));
+
+    TraceLog(LOG_INFO, "Successfully created smart collision for model '%s'", modelName.c_str());
     return true;
 }
 
@@ -447,14 +570,98 @@ void Engine::UpdatePlayer()
             m_player.Move(response);
         }
     }
+    m_renderManager.ShowMetersPlayer(m_player);
 }
 
 void Engine::UpdatePhysics()
 {
-    // Apply physics and handle collisions - ApplyGravityForPlayer already handles collisions
-    // internally
-    m_player.ApplyGravityForPlayer(m_collisionManager);
+    // Check smart collision system status
+    auto smartStats = m_smartCollisionManager.GetStats();
+
+    // Try smart collision first (if available), fallback to legacy system
+    if (smartStats.totalColliders > 0)
+    {
+        // Use smart collision system for better performance
+        TraceLog(LOG_INFO, "Using Smart Collision System (colliders: %zu)",
+                 smartStats.totalColliders);
+        ApplyPhysicsWithSmartCollision();
+    }
+    else
+    {
+        // Fallback to legacy collision system
+        TraceLog(LOG_INFO,
+                 "Using Legacy Collision System (legacy colliders: %zu, smart colliders: %zu)",
+                 m_collisionManager.GetColliders().size(), smartStats.totalColliders);
+        m_player.ApplyGravityForPlayer(m_collisionManager);
+    }
+
     m_player.UpdatePlayerBox();
+}
+
+void Engine::ApplyPhysicsWithSmartCollision()
+{
+    // Get player position and physics
+    Vector3 playerPos = m_player.GetPlayerPosition();
+
+    // Apply gravity using the correct API (requires position parameter)
+    Vector3 newPosition = playerPos;
+    const_cast<PhysicsComponent &>(m_player.GetPhysics()).ApplyGravity(newPosition);
+
+    // Get player bounding box for collision testing
+    BoundingBox playerBox = m_player.GetPlayerBoundingBox();
+    Vector3 testMin = {playerBox.min.x, playerBox.min.y, playerBox.min.z};
+    Vector3 testMax = {playerBox.max.x, playerBox.max.y, playerBox.max.z};
+
+    // Adjust bounding box to new position
+    Vector3 positionDelta = Vector3Subtract(newPosition, playerPos);
+    testMin = Vector3Add(testMin, positionDelta);
+    testMax = Vector3Add(testMax, positionDelta);
+
+    // Check collision with smart collision system
+    Vector3 collisionResponse = {0, 0, 0};
+    bool hasCollision = m_smartCollisionManager.CheckCollision(testMin, testMax, collisionResponse);
+
+    if (hasCollision)
+    {
+        // Apply collision response
+        newPosition = Vector3Add(newPosition, collisionResponse);
+
+        // Handle ground collision (stop falling)
+        if (collisionResponse.y > 0.0f)
+        {
+            const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetGroundLevel(true);
+            const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetVelocityY(0.0f);
+        }
+        else
+        {
+            const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetGroundLevel(false);
+        }
+
+        // Handle wall collisions (modify velocity)
+        if (fabsf(collisionResponse.x) > 0.001f || fabsf(collisionResponse.z) > 0.001f)
+        {
+            Vector3 currentVelocity = m_player.GetPhysics().GetVelocity();
+
+            // Stop horizontal movement in collision direction
+            if (fabsf(collisionResponse.x) > 0.001f)
+            {
+                currentVelocity.x = 0.0f;
+            }
+            if (fabsf(collisionResponse.z) > 0.001f)
+            {
+                currentVelocity.z = 0.0f;
+            }
+
+            const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetVelocity(currentVelocity);
+        }
+    }
+    else
+    {
+        const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetGroundLevel(false);
+    }
+
+    // Update player position
+    m_player.SetPlayerPosition(newPosition);
 }
 
 void Engine::CheckPlayerBounds()
