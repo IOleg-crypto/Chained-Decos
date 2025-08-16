@@ -129,7 +129,7 @@ jobs:
     - name: Build (Linux)
       if: matrix.os == 'ubuntu-latest'
       shell: bash
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- -j$(nproc)  --target unit_tests
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target unit_tests  -- -j$(nproc)  
 
     - name: Build (Windows)
       if: matrix.os == 'windows-latest'
@@ -146,7 +146,7 @@ jobs:
       shell: bash
       run: |
         chmod +x ${{ steps.strings.outputs.build-output-dir }}/unit_tests
-        ${{ steps.strings.outputs.build-output-dir }}/unit_tests
+        ${{ steps.strings.outputs.build-output-dir }}/tests/unit_tests
 
     #################################
     # Run tests (Windows)
@@ -155,4 +155,4 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        & "${{ steps.strings.outputs.build-output-dir }}\unit_tests.exe"
+        & "${{ steps.strings.outputs.build-output-dir }}\tests\unit_tests.exe"
