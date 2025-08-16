@@ -1,6 +1,9 @@
 #include "Animation.h"
 
-Animation::Animation() : m_animCount(0), m_animIndex(0), m_animCurrentFrame(0) {}
+Animation::Animation()
+    : m_animCount(0), m_animIndex(0), m_animCurrentFrame(0), m_modelAnimations(nullptr)
+{
+}
 
 Animation::~Animation() { delete[] m_modelAnimations; }
 

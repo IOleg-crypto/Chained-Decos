@@ -23,7 +23,7 @@ Engine::Engine() : Engine(800, 600) {}
 
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_shouldExit(false),
-      m_showMenu(true), m_showDebug(false), m_showCollisionDebug(false)
+      m_showMenu(true), m_windowInitialized(false), m_showDebug(false), m_showCollisionDebug(false)
 {
     // Improved validation using local constants
     constexpr int DEFAULT_SCREEN_WIDTH = 800;
@@ -51,8 +51,12 @@ Engine::~Engine()
     TraceLog(LOG_INFO, "Shutting down ImGui...");
     rlImGuiShutdown();
 
-    TraceLog(LOG_INFO, "Closing window...");
-    CloseWindow();
+    // Only close window if this Engine instance initialized it
+    if (m_windowInitialized && IsWindowReady())
+    {
+        TraceLog(LOG_INFO, "Closing window...");
+        CloseWindow();
+    }
 
     TraceLog(LOG_INFO, "Engine destructor completed");
 }
@@ -68,7 +72,8 @@ void Engine::Init()
 
     // Initialize window
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
-    SetTargetFPS(60); // Local constant
+    m_windowInitialized = true; // Mark that we initialized the window
+    SetTargetFPS(60);           // Local constant
 
     // Initialize RenderManager
     m_renderManager.Initialize();
