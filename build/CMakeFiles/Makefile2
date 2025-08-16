@@ -482,15 +482,15 @@ CMakeFiles/imguilib.dir/clean:
 CMakeFiles/ChainedDecos.dir/all: CMakeFiles/imguilib.dir/all
 CMakeFiles/ChainedDecos.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 CMakeFiles/ChainedDecos.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Model/CMakeFiles/model.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Player/CMakeFiles/player.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Engine/CMakeFiles/engine.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Model/CMakeFiles/model.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Input/CMakeFiles/input.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Menu/CMakeFiles/menu.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Color/CMakeFiles/color.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Collision/CMakeFiles/collision.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Color/CMakeFiles/color.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Render/CMakeFiles/render.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/build
@@ -729,8 +729,8 @@ _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/clean:
 src/Engine/CMakeFiles/engine.dir/all: CMakeFiles/imguilib.dir/all
 src/Engine/CMakeFiles/engine.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 src/Engine/CMakeFiles/engine.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
-src/Engine/CMakeFiles/engine.dir/all: src/Model/CMakeFiles/model.dir/all
 src/Engine/CMakeFiles/engine.dir/all: src/Player/CMakeFiles/player.dir/all
+src/Engine/CMakeFiles/engine.dir/all: src/Model/CMakeFiles/model.dir/all
 src/Engine/CMakeFiles/engine.dir/all: src/Input/CMakeFiles/input.dir/all
 src/Engine/CMakeFiles/engine.dir/all: src/Menu/CMakeFiles/menu.dir/all
 src/Engine/CMakeFiles/engine.dir/all: src/Collision/CMakeFiles/collision.dir/all
@@ -1008,8 +1008,8 @@ src/Collision/CMakeFiles/collision.dir/clean:
 src/Render/CMakeFiles/render.dir/all: CMakeFiles/imguilib.dir/all
 src/Render/CMakeFiles/render.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 src/Render/CMakeFiles/render.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
-src/Render/CMakeFiles/render.dir/all: src/Model/CMakeFiles/model.dir/all
 src/Render/CMakeFiles/render.dir/all: src/Player/CMakeFiles/player.dir/all
+src/Render/CMakeFiles/render.dir/all: src/Model/CMakeFiles/model.dir/all
 src/Render/CMakeFiles/render.dir/all: src/Menu/CMakeFiles/menu.dir/all
 src/Render/CMakeFiles/render.dir/all: src/Collision/CMakeFiles/collision.dir/all
 	$(MAKE) $(MAKESILENT) -f src/Render/CMakeFiles/render.dir/build.make src/Render/CMakeFiles/render.dir/depend
@@ -1040,17 +1040,17 @@ src/Render/CMakeFiles/render.dir/clean:
 tests/CMakeFiles/unit_tests.dir/all: CMakeFiles/imguilib.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
-tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/all
-tests/CMakeFiles/unit_tests.dir/all: src/Model/CMakeFiles/model.dir/all
+tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Player/CMakeFiles/player.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Engine/CMakeFiles/engine.dir/all
+tests/CMakeFiles/unit_tests.dir/all: src/Model/CMakeFiles/model.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Input/CMakeFiles/input.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Menu/CMakeFiles/menu.dir/all
-tests/CMakeFiles/unit_tests.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
-tests/CMakeFiles/unit_tests.dir/all: src/Color/CMakeFiles/color.dir/all
+tests/CMakeFiles/unit_tests.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Collision/CMakeFiles/collision.dir/all
+tests/CMakeFiles/unit_tests.dir/all: src/Color/CMakeFiles/color.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Render/CMakeFiles/render.dir/all
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/build
@@ -1080,15 +1080,15 @@ tests/CMakeFiles/unit_tests.dir/clean:
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: CMakeFiles/imguilib.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: _deps/raylib-build/raylib/CMakeFiles/raylib.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Model/CMakeFiles/model.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Player/CMakeFiles/player.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Engine/CMakeFiles/engine.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Model/CMakeFiles/model.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Input/CMakeFiles/input.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Menu/CMakeFiles/menu.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Color/CMakeFiles/color.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Collision/CMakeFiles/collision.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Color/CMakeFiles/color.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Render/CMakeFiles/render.dir/all
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build

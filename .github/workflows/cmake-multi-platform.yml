@@ -64,14 +64,6 @@ jobs:
           ${{ runner.os }}-${{ matrix.c_compiler }}-deps-
 
     #################################
-    # Setup CMake
-    #################################
-    - name: Setup CMake
-      uses: jwlawson/actions-setup-cmake@v1.14
-      with:
-        cmake-version: '3.20'
-
-    #################################
     # Linux-specific setup
     #################################
     - name: Install dependencies (Linux)
@@ -81,7 +73,7 @@ jobs:
         sudo apt-get install -y build-essential cmake \
           libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
           libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-          xvfb
+          xvfb ccache
 
     - name: Clean build directory (Linux)
       if: matrix.os == 'ubuntu-latest'
@@ -104,19 +96,25 @@ jobs:
     # Configure CMake
     #################################
     - name: Configure CMake
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -G "${{ matrix.os == 'windows-latest' && 'MinGW Makefiles' || 'Unix Makefiles' }}"
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}
+      run: |
+        cmake -B ${{ steps.strings.outputs.build-output-dir }} \
+          -G "${{ matrix.os == 'windows-latest' && 'MinGW Makefiles' || 'Unix Makefiles' }}" \
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          ${{ matrix.os == 'ubuntu-latest' && '-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache' || '' }} \
+          -S ${{ github.workspace }}
 
     #################################
-    # Build project
+    # Build project (паралельно)
     #################################
     - name: Build
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      run: |
+        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- -j$(nproc)
+        else
+          cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- /m
+        fi
 
     #################################
     # Run tests
