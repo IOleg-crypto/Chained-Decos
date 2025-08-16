@@ -315,30 +315,6 @@ Octree.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.s
 .PHONY : Octree.cpp.s
 
-SmartCollisionSystem.obj: SmartCollisionSystem.cpp.obj
-.PHONY : SmartCollisionSystem.obj
-
-# target to build an object file
-SmartCollisionSystem.cpp.obj:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/SmartCollisionSystem.cpp.obj
-.PHONY : SmartCollisionSystem.cpp.obj
-
-SmartCollisionSystem.i: SmartCollisionSystem.cpp.i
-.PHONY : SmartCollisionSystem.i
-
-# target to preprocess a source file
-SmartCollisionSystem.cpp.i:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/SmartCollisionSystem.cpp.i
-.PHONY : SmartCollisionSystem.cpp.i
-
-SmartCollisionSystem.s: SmartCollisionSystem.cpp.s
-.PHONY : SmartCollisionSystem.s
-
-# target to generate assembly for a file
-SmartCollisionSystem.cpp.s:
-	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Collision/CMakeFiles/collision.dir/build.make src/Collision/CMakeFiles/collision.dir/SmartCollisionSystem.cpp.s
-.PHONY : SmartCollisionSystem.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -369,9 +345,6 @@ help:
 	@echo "... Octree.obj"
 	@echo "... Octree.i"
 	@echo "... Octree.s"
-	@echo "... SmartCollisionSystem.obj"
-	@echo "... SmartCollisionSystem.i"
-	@echo "... SmartCollisionSystem.s"
 .PHONY : help
 
 

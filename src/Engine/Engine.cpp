@@ -22,7 +22,8 @@
 Engine::Engine() : Engine(800, 600) {}
 
 Engine::Engine(const int screenX, const int screenY)
-    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_usePlayerModel(true)
+    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_shouldExit(false),
+      m_showMenu(true), m_showDebug(false), m_showCollisionDebug(false)
 {
     // Improved validation using local constants
     constexpr int DEFAULT_SCREEN_WIDTH = 800;
@@ -211,9 +212,6 @@ void Engine::InitInput()
                                  TraceLog(LOG_INFO, "  - Decorations: %zu", decorations.size());
                              });
 
-    // Octree Ray casting test (F12)
-    m_manager.RegisterAction(KEY_F12, [this]() { TestOctreeRayCasting(); });
-
     TraceLog(LOG_INFO, "Input bindings configured successfully");
 }
 // TESTING
@@ -230,14 +228,6 @@ void Engine::InitCollisions()
     m_collisionManager.AddCollider(plane);
     TraceLog(LOG_INFO,
              "Ground plane added to Legacy system: center(0,-5,0) extends from y=-10 to y=0");
-
-    // Also add ground plane to Smart collision system
-    // Create a simple SmartCollision for ground plane
-    SmartCollision smartGroundPlane;
-    // Note: SmartCollision is designed for complex models, but we can use it for simple geometry
-    // too For now, we'll skip adding to smart system since it's designed for model-based collisions
-    // The legacy system will handle the ground plane
-    TraceLog(LOG_INFO, "Ground plane will be handled by Legacy collision system only");
 }
 
 void Engine::CreateAutoCollisionsFromModels()
@@ -442,92 +432,11 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
     m_collisionManager.AddCollider(modelCollision);
 
     // Also create smart collision for improved performance
-    CreateSmartCollisionFromModel(model, modelName, position, scale);
+    CreateCollisionFromModel(model, modelName, position, scale);
 
     TraceLog(LOG_INFO, "Successfully created hybrid collision from model geometry");
     return true;
 }
-
-bool Engine::CreateSmartCollisionFromModel(const Model &model, const std::string &modelName,
-                                           Vector3 position, float scale)
-{
-    TraceLog(LOG_INFO, "Creating SMART collision from model '%s' with %d meshes", modelName.c_str(),
-             model.meshCount);
-
-    // Create transformation matrix
-    Matrix transform = MatrixMultiply(MatrixScale(scale, scale, scale),
-                                      MatrixTranslate(position.x, position.y, position.z));
-
-    // Check if we have valid geometry
-    bool hasValidGeometry = false;
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        if (model.meshes[i].vertices && model.meshes[i].vertexCount > 0)
-        {
-            hasValidGeometry = true;
-        }
-    }
-
-    if (!hasValidGeometry)
-    {
-        TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, skipping smart collision",
-                 modelName.c_str());
-        return false;
-    }
-
-    // Get model configuration
-    const ModelFileConfig *config = m_models.GetModelConfig(modelName);
-
-    if (config && !config->hasCollision)
-    {
-        TraceLog(LOG_INFO, "Model '%s' has collision disabled in config, skipping smart collision",
-                 modelName.c_str());
-        return false;
-    }
-
-    // Create smart collision
-    SmartCollision smartCollision;
-
-    // Create a non-const copy for processing
-    Model modelCopy = model;
-
-    if (config)
-    {
-        TraceLog(LOG_INFO, "Building smart collision with config precision: %s",
-                 (config->collisionPrecision == CollisionPrecision::AABB_ONLY)       ? "AABB"
-                 : (config->collisionPrecision == CollisionPrecision::IMPROVED_AABB) ? "IMPROVED"
-                                                                                     : "PRECISE");
-
-        smartCollision.BuildFromModelConfig(&modelCopy, *config, transform);
-    }
-    else
-    {
-        TraceLog(LOG_INFO, "Building smart collision with auto-detection for model '%s'",
-                 modelName.c_str());
-        smartCollision.BuildFromModel(&modelCopy, transform);
-    }
-
-    // Log smart collision details
-    Vector3 smartMin = smartCollision.GetMin();
-    Vector3 smartMax = smartCollision.GetMax();
-    Vector3 smartCenter = smartCollision.GetCenter();
-    Vector3 smartSize = smartCollision.GetSize();
-
-    TraceLog(LOG_INFO, "Smart Collision created:");
-    TraceLog(LOG_INFO, "  Subdivisions: %zu (%zu active)", smartCollision.GetSubdivisionCount(),
-             smartCollision.GetActiveSubdivisionCount());
-    TraceLog(LOG_INFO, "  Total triangles: %zu", smartCollision.GetTotalTriangleCount());
-    TraceLog(LOG_INFO, "  Bounds: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)", smartMin.x, smartMin.y,
-             smartMin.z, smartMax.x, smartMax.y, smartMax.z);
-    TraceLog(LOG_INFO, "  Size: (%.2f, %.2f, %.2f)", smartSize.x, smartSize.y, smartSize.z);
-
-    // Add to smart collision manager
-    m_smartCollisionManager.AddSmartCollider(std::move(smartCollision));
-
-    TraceLog(LOG_INFO, "Successfully created smart collision for model '%s'", modelName.c_str());
-    return true;
-}
-
 // ==================== UPDATE METHODS ====================
 
 void Engine::Update()
@@ -575,93 +484,12 @@ void Engine::UpdatePlayer()
 
 void Engine::UpdatePhysics()
 {
-    // Check smart collision system status
-    auto smartStats = m_smartCollisionManager.GetStats();
-
-    // Try smart collision first (if available), fallback to legacy system
-    if (smartStats.totalColliders > 0)
-    {
-        // Use smart collision system for better performance
-        TraceLog(LOG_INFO, "Using Smart Collision System (colliders: %zu)",
-                 smartStats.totalColliders);
-        ApplyPhysicsWithSmartCollision();
-    }
-    else
-    {
-        // Fallback to legacy collision system
-        TraceLog(LOG_INFO,
-                 "Using Legacy Collision System (legacy colliders: %zu, smart colliders: %zu)",
-                 m_collisionManager.GetColliders().size(), smartStats.totalColliders);
-        m_player.ApplyGravityForPlayer(m_collisionManager);
-    }
+    // Use legacy collision system
+    // TraceLog(LOG_INFO, "Using Legacy Collision System (legacy colliders: %zu)",
+    //          m_collisionManager.GetColliders().size());
+    m_player.ApplyGravityForPlayer(m_collisionManager);
 
     m_player.UpdatePlayerBox();
-}
-
-void Engine::ApplyPhysicsWithSmartCollision()
-{
-    // Get player position and physics
-    Vector3 playerPos = m_player.GetPlayerPosition();
-
-    // Apply gravity using the correct API (requires position parameter)
-    Vector3 newPosition = playerPos;
-    const_cast<PhysicsComponent &>(m_player.GetPhysics()).ApplyGravity(newPosition);
-
-    // Get player bounding box for collision testing
-    BoundingBox playerBox = m_player.GetPlayerBoundingBox();
-    Vector3 testMin = {playerBox.min.x, playerBox.min.y, playerBox.min.z};
-    Vector3 testMax = {playerBox.max.x, playerBox.max.y, playerBox.max.z};
-
-    // Adjust bounding box to new position
-    Vector3 positionDelta = Vector3Subtract(newPosition, playerPos);
-    testMin = Vector3Add(testMin, positionDelta);
-    testMax = Vector3Add(testMax, positionDelta);
-
-    // Check collision with smart collision system
-    Vector3 collisionResponse = {0, 0, 0};
-    bool hasCollision = m_smartCollisionManager.CheckCollision(testMin, testMax, collisionResponse);
-
-    if (hasCollision)
-    {
-        // Apply collision response
-        newPosition = Vector3Add(newPosition, collisionResponse);
-
-        // Handle ground collision (stop falling)
-        if (collisionResponse.y > 0.0f)
-        {
-            const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetGroundLevel(true);
-            const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetVelocityY(0.0f);
-        }
-        else
-        {
-            const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetGroundLevel(false);
-        }
-
-        // Handle wall collisions (modify velocity)
-        if (fabsf(collisionResponse.x) > 0.001f || fabsf(collisionResponse.z) > 0.001f)
-        {
-            Vector3 currentVelocity = m_player.GetPhysics().GetVelocity();
-
-            // Stop horizontal movement in collision direction
-            if (fabsf(collisionResponse.x) > 0.001f)
-            {
-                currentVelocity.x = 0.0f;
-            }
-            if (fabsf(collisionResponse.z) > 0.001f)
-            {
-                currentVelocity.z = 0.0f;
-            }
-
-            const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetVelocity(currentVelocity);
-        }
-    }
-    else
-    {
-        const_cast<PhysicsComponent &>(m_player.GetPhysics()).SetGroundLevel(false);
-    }
-
-    // Update player position
-    m_player.SetPlayerPosition(newPosition);
 }
 
 void Engine::CheckPlayerBounds()
@@ -850,48 +678,6 @@ void Engine::TestOctreeRayCasting()
     {
         TraceLog(LOG_INFO, "No BVH ray hits detected");
     }
-
-    // Test mouse ray casting if in game mode
-    if (!m_showMenu)
-    {
-        TestMouseRayCasting();
-    }
-}
-
-void Engine::TestMouseRayCasting()
-{
-    TraceLog(LOG_INFO, "=== Testing Mouse Ray Casting ===");
-
-    Vector2 mousePos = GetMousePosition();
-    Camera &camera = m_player.GetCameraController()->GetCamera();
-
-    // Convert Raylib Ray to CollisionRay
-    Ray raylibRay = GetMouseRay(mousePos, camera);
-    CollisionRay mouseRay(raylibRay.position, raylibRay.direction);
-
-    TraceLog(LOG_INFO, "Mouse position: (%.0f, %.0f)", mousePos.x, mousePos.y);
-    TraceLog(LOG_INFO, "Mouse ray origin: (%.2f, %.2f, %.2f)", raylibRay.position.x,
-             raylibRay.position.y, raylibRay.position.z);
-
-    // Test against Octree colliders
-    const auto &colliders = m_collisionManager.GetColliders();
-    for (size_t i = 0; i < colliders.size(); i++)
-    {
-        if (colliders[i].IsUsingOctree())
-        {
-            float distance;
-            Vector3 hitPoint, hitNormal;
-
-            if (colliders[i].RaycastOctree(mouseRay.origin, mouseRay.direction, 1000.0f, distance,
-                                           hitPoint, hitNormal))
-            {
-                TraceLog(LOG_INFO, "Mouse ray hit collider %zu at distance: %.2f", i, distance);
-                TraceLog(LOG_INFO, "  World hit point: (%.2f, %.2f, %.2f)", hitPoint.x, hitPoint.y,
-                         hitPoint.z);
-                break; // Only show first hit
-            }
-        }
-    }
 }
 
 void Engine::OptimizeModelPerformance()
@@ -908,41 +694,41 @@ void Engine::OptimizeModelPerformance()
 
 // ==================== FUTURE FEATURES (UNUSED) ====================
 
-void Engine::LoadAdditionalModels()
-{
-    TraceLog(LOG_INFO, "Loading additional models dynamically...");
+// void Engine::LoadAdditionalModels()
+// {
+//     TraceLog(LOG_INFO, "Loading additional models dynamically...");
 
-    if (m_models.LoadSingleModel("pickup", "/resources/pickup.glb", true))
-    {
-        TraceLog(LOG_INFO, "Pickup model loaded successfully");
-        SpawnPickups();
-    }
-}
+//     if (m_models.LoadSingleModel("pickup", "/resources/pickup.glb", true))
+//     {
+//         TraceLog(LOG_INFO, "Pickup model loaded successfully");
+//         SpawnPickups();
+//     }
+// }
 
-void Engine::SpawnPickups()
-{
-    TraceLog(LOG_INFO, "Spawning pickups...");
+// void Engine::SpawnPickups()
+// {
+//     TraceLog(LOG_INFO, "Spawning pickups...");
 
-    // Local spawning constants
-    constexpr int PICKUP_COUNT = 8;
-    constexpr float PICKUP_Y_POSITION = 0.5f;
-    constexpr float PICKUP_SCALE = 0.5f;
-    constexpr int PICKUP_SPAWN_RANGE = 10;
+//     // Local spawning constants
+//     constexpr int PICKUP_COUNT = 8;
+//     constexpr float PICKUP_Y_POSITION = 0.5f;
+//     constexpr float PICKUP_SCALE = 0.5f;
+//     constexpr int PICKUP_SPAWN_RANGE = 10;
 
-    for (int i = 0; i < PICKUP_COUNT; i++)
-    {
-        ModelInstanceConfig pickupConfig;
-        pickupConfig.position = Vector3{
-            (float)(GetRandomValue(-PICKUP_SPAWN_RANGE, PICKUP_SPAWN_RANGE)), PICKUP_Y_POSITION,
-            (float)(GetRandomValue(-PICKUP_SPAWN_RANGE, PICKUP_SPAWN_RANGE))};
-        pickupConfig.scale = PICKUP_SCALE;
-        pickupConfig.color = YELLOW;
-        pickupConfig.tag = "pickup";
-        pickupConfig.spawn = true;
+//     for (int i = 0; i < PICKUP_COUNT; i++)
+//     {
+//         ModelInstanceConfig pickupConfig;
+//         pickupConfig.position = Vector3{
+//             (float)(GetRandomValue(-PICKUP_SPAWN_RANGE, PICKUP_SPAWN_RANGE)), PICKUP_Y_POSITION,
+//             (float)(GetRandomValue(-PICKUP_SPAWN_RANGE, PICKUP_SPAWN_RANGE))};
+//         pickupConfig.scale = PICKUP_SCALE;
+//         pickupConfig.color = YELLOW;
+//         pickupConfig.tag = "pickup";
+//         pickupConfig.spawn = true;
 
-        if (m_models.AddInstanceEx("pickup", pickupConfig))
-        {
-            TraceLog(LOG_INFO, "Spawned pickup %d", i + 1);
-        }
-    }
-}
+//         if (m_models.AddInstanceEx("pickup", pickupConfig))
+//         {
+//             TraceLog(LOG_INFO, "Spawned pickup %d", i + 1);
+//         }
+//     }
+// }
