@@ -608,7 +608,7 @@ void Editor::RenderImGuiPropertiesPanel()
         // Alternatively, ImGui::InputText with std::string can be used but requires memory
         // allocation
         char buffer[256];
-        strncpy_s(buffer, nameLabel.c_str(), sizeof(buffer));
+        strncpy(buffer, nameLabel.c_str(), sizeof(buffer));
         buffer[sizeof(buffer) - 1] = 0; // Ensure null-termination
 
         if (ImGui::InputText("Name##Name", buffer, sizeof(buffer)))
