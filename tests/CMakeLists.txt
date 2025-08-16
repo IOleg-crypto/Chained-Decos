@@ -2,24 +2,6 @@ enable_testing()
 
 add_executable(unit_tests
         gtest.cpp
-        ../src/Player/Player.h
-        ../src/Player/Player.cpp
-        ../src/Model/Model.h
-        ../src/Model/Model.cpp
-        ../src/Model/ModelInstance.h
-        ../src/Model/ModelInstance.cpp
-        ../src/Menu/Menu.h
-        ../src/Menu/Menu.cpp
-        ../src/Engine/Engine.h
-        ../src/Engine/Engine.cpp
-        ../src/Map/MapLoader.h
-        ../src/Map/MapLoader.cpp
-        ../src/CameraController/CameraController.h
-        ../src/CameraController/CameraController.cpp
-        ../src/Input/InputManager.h
-        ../src/Input/InputManager.cpp
-        ../src/Color/ColorParser.h
-        ../src/Color/ColorParser.cpp
 )
 
 target_include_directories(unit_tests PRIVATE
@@ -28,10 +10,20 @@ target_include_directories(unit_tests PRIVATE
 
 target_link_libraries(unit_tests
         PRIVATE
+        engine
+        player
+        model
+        menu
+        input
+        mapmod
+        cameracontroller
+        color
+        world
+        collision
+        render
         raylib
         nlohmann_json
         imguilib
-        color
         GTest::gtest_main
 )
 

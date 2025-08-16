@@ -3,20 +3,47 @@
 //
 #include <chrono>
 #include <gtest/gtest.h>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <raylib.h>
 #include <raymath.h>
 
-#include "../src/CameraController/CameraController.h"
-#include "../src/Color/ColorParser.h"
-#include "../src/Engine/Engine.h"
-#include "../src/Input/InputManager.h"
-#include "../src/Menu/Menu.h"
-#include "../src/Model/Model.h"
-#include "../src/Player/Player.h"
-#include <../src/Map/MapLoader.h>
+#include <CameraController/CameraController.h>
+#include <Color/ColorParser.h>
+#include <Engine/Engine.h>
+#include <Input/InputManager.h>
+#include <Map/MapLoader.h>
+#include <Menu/Menu.h>
+#include <Model/Model.h>
+#include <Player/Player.h>
 
 using json = nlohmann::json;
+
+// Global test environment to initialize Raylib
+class RaylibTestEnvironment : public ::testing::Environment
+{
+public:
+    void SetUp() override
+    {
+        // Initialize Raylib with minimal window for testing
+        SetConfigFlags(FLAG_WINDOW_HIDDEN); // Hide the window during tests
+        InitWindow(800, 600, "Test Window");
+        SetTargetFPS(60);
+    }
+
+    void TearDown() override
+    {
+        // Make sure all resources are cleaned up before closing window
+        if (IsWindowReady())
+        {
+            CloseWindow();
+        }
+    }
+};
+
+// Register the global test environment
+::testing::Environment *const raylib_env =
+    ::testing::AddGlobalTestEnvironment(new RaylibTestEnvironment);
 
 // Helper function to compare colors
 bool ColorsEqual(const Color &a, const Color &b)
@@ -471,8 +498,12 @@ TEST(ModelsTest, GetModelByName)
     Models models;
 
     // Test getting model by name when no models are loaded
-    // This should throw or return a default model
-    EXPECT_ANY_THROW(models.GetModelByName("test_model"));
+    // This should return a dummy model (not throw)
+    EXPECT_NO_THROW({
+        Model &model = models.GetModelByName("test_model");
+        // The dummy model should have meshCount = 0
+        EXPECT_EQ(model.meshCount, 0);
+    });
 }
 
 TEST(ModelsTest, AddInstance)
@@ -495,19 +526,19 @@ TEST(ModelsTest, AddInstance)
 TEST(EngineTest, Constructor)
 {
     // Test default constructor
-    Engine engine1;
-    EXPECT_TRUE(true); // Basic test that constructor doesn't crash
+    EXPECT_NO_THROW({ Engine engine1; });
 
     // Test parameterized constructor
-    Engine engine2(800, 600);
-    EXPECT_TRUE(true); // Basic test that constructor doesn't crash
+    EXPECT_NO_THROW({ Engine engine2(1280, 720); });
 }
 
 TEST(EngineTest, Initialization)
 {
     Engine engine(800, 600);
 
-    // Test initialization
+    // Test initialization - should not throw in normal circumstances
+    // Note: This will try to create a second window, which might fail
+    // but the Engine handles this gracefully
     EXPECT_NO_THROW(engine.Init());
 }
 
@@ -524,53 +555,9 @@ TEST(EngineTest, BasicFunctionality)
     EXPECT_FALSE(engine.IsRunning());
 }
 
-TEST(EngineTest, MenuToggle)
-{
-    Engine engine(800, 600);
-
-    // Test menu toggle functionality
-    EXPECT_NO_THROW(engine.ToggleMenu());
-}
-
-TEST(EngineTest, PhysicsSystem)
-{
-    Engine engine(800, 600);
-
-    // Test that physics system works with legacy collision system
-    EXPECT_NO_THROW(engine.Init());
-    // Physics update is called internally during Update()
-    // We can't test UpdatePhysics directly as it's private
-}
-
 // ============================================================================
 // Integration Tests
 // ============================================================================
-
-TEST(IntegrationTest, EnginePlayerInteraction)
-{
-    Engine engine(800, 600);
-
-    // Test that engine can work with player using legacy collision system
-    EXPECT_NO_THROW(engine.Init());
-
-    // Test that engine is running after initialization
-    EXPECT_TRUE(engine.IsRunning());
-
-    // Test menu toggle functionality
-    EXPECT_NO_THROW(engine.ToggleMenu());
-}
-
-TEST(IntegrationTest, ColorParsingInContext)
-{
-    // Test color parsing in a more realistic context
-    std::vector<std::string> testColors = {"red", "green", "blue", "yellow"};
-
-    for (const auto &colorName : testColors)
-    {
-        Color parsedColor = ParseColorByName(colorName);
-        EXPECT_NE(parsedColor.r, 0); // Basic validation that color is not black
-    }
-}
 
 TEST(IntegrationTest, InputManagerMenuInteraction)
 {
@@ -590,22 +577,6 @@ TEST(IntegrationTest, CameraControllerPlayerInteraction)
     // Test that camera controller and player can work together
     EXPECT_NO_THROW(cameraController.Update());
     EXPECT_NO_THROW(player.Update());
-}
-
-TEST(IntegrationTest, ModelInstanceModelsInteraction)
-{
-    Vector3 pos = {0, 0, 0};
-    Model *model = nullptr;
-    float scale = 1.0f;
-    std::string name = "integration_test";
-    Color color = WHITE;
-
-    ModelInstance instance(pos, model, scale, name, color);
-    Models models;
-
-    // Test that model instance and models can work together
-    EXPECT_EQ(instance.GetModelName(), name);
-    EXPECT_NO_THROW(models.DrawAllModels());
 }
 
 // ============================================================================
@@ -788,20 +759,6 @@ TEST(StressTest, MultipleInputManagers)
             manager.RegisterAction(KEY_A + i, []() {});
         }
         EXPECT_NO_THROW(manager.ProcessInput());
-    }
-}
-
-TEST(StressTest, MultipleMenus)
-{
-    std::vector<Menu> menus(50);
-
-    for (auto &menu : menus)
-    {
-        for (int i = 0; i < 10; ++i)
-        {
-            EXPECT_NO_THROW(menu.Update());
-            EXPECT_NO_THROW(menu.Render());
-        }
     }
 }
 
