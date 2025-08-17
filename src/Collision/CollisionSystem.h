@@ -154,7 +154,7 @@ private:
     std::vector<CollisionTriangle> m_triangles;
 
     // Octree data for precise collision detection
-    std::unique_ptr<Octree> m_octree;
+    mutable std::unique_ptr<Octree> m_octree;
 
     // Caching to prevent duplicate processing
     size_t m_modelHash = 0;
@@ -167,6 +167,7 @@ private:
     void UpdateAABBFromOctree();
     void UpdateAABBFromTriangles();
     void AnalyzeModelComplexity(Model *model, const Matrix &transform);
+    void EnsureOctree() const; // Build octree from triangles if needed
     CollisionType DetermineOptimalCollisionType() const;
     void ExtractTrianglesFromModel(Model *model, const Matrix &transform);
 
