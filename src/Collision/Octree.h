@@ -53,9 +53,10 @@ struct OctreeNode
 class Octree
 {
 public:
-    static constexpr int MAX_TRIANGLES_PER_NODE = 10; // Maximum triangles per leaf
-    static constexpr int MAX_DEPTH = 8;               // Maximum tree depth
-    static constexpr float MIN_NODE_SIZE = 1.3f;      // Minimum node size
+    static constexpr int MAX_TRIANGLES_PER_NODE =
+        20;                                      // Maximum triangles per leaf (increased from 10)
+    static constexpr int MAX_DEPTH = 6;          // Maximum tree depth (reduced from 8)
+    static constexpr float MIN_NODE_SIZE = 2.0f; // Minimum node size (increased from 1.3f)
 
     Octree();
     ~Octree() = default;

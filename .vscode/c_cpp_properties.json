@@ -3,15 +3,21 @@
         {
             "name": "Win32",
             "includePath": [
-                "${default}"
+                "${default}",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/cmake-build-debug/_deps/*/include"
             ],
             "defines": [
                 "_DEBUG",
+                "DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "windowsSdkVersion": "10.0.26100.0",
-            "intelliSenseMode": "windows-msvc-x64"
+            "compilerPath": "C:/msys64/mingw64/bin/g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "windows-gcc-x64"
         }
     ],
     "version": 4
