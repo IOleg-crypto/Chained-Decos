@@ -223,10 +223,12 @@ void Engine::InitInput()
 // TESTING
 void Engine::InitCollisions()
 {
-    TraceLog(LOG_INFO, "Initializing collision system...");
+    TraceLog(LOG_INFO, "🔥 InitCollisions: Starting collision system initialization...");
 
     // Automatically create collisions for all models with hasCollision=true
+    TraceLog(LOG_INFO, "🔥 InitCollisions: About to call CreateAutoCollisionsFromModels()...");
     CreateAutoCollisionsFromModels();
+    TraceLog(LOG_INFO, "🔥 InitCollisions: CreateAutoCollisionsFromModels() completed");
 
     // Create a ground plane LAST (lower priority) - solid surface at y=0
     Collision plane{(Vector3){0, -5, 0}, (Vector3){1000, 10, 1000}};
@@ -238,11 +240,11 @@ void Engine::InitCollisions()
 
 void Engine::CreateAutoCollisionsFromModels()
 {
-    TraceLog(LOG_INFO, "Starting automatic collision generation for all models...");
+    TraceLog(LOG_INFO, "🚀 AUTO: Starting automatic collision generation for all models...");
 
     // Get all available models
     auto availableModels = m_models.GetAvailableModels();
-    TraceLog(LOG_INFO, "Found %zu models to check", availableModels.size());
+    TraceLog(LOG_INFO, "🚀 AUTO: Found %zu models to check", availableModels.size());
 
     // Track processed models to avoid duplication
     std::set<std::string> processedModels;
@@ -277,6 +279,8 @@ void Engine::CreateAutoCollisionsFromModels()
 
             // Find instances of this model
             auto instances = m_models.GetInstancesByTag(modelName);
+            TraceLog(LOG_INFO, "🔎 Model '%s': Found %zu instances by tag", modelName.c_str(),
+                     instances.size());
 
             if (instances.empty())
             {
@@ -285,7 +289,11 @@ void Engine::CreateAutoCollisionsFromModels()
                          modelName.c_str());
 
                 // Check if this model should have collision based on JSON config
-                if (m_models.HasCollision(modelName))
+                bool hasCollision = m_models.HasCollision(modelName);
+                TraceLog(LOG_INFO, "🔧 Model '%s': HasCollision=%s", modelName.c_str(),
+                         hasCollision ? "TRUE" : "FALSE");
+
+                if (hasCollision)
                 {
                     Vector3 defaultPos =
                         (modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
@@ -300,7 +308,11 @@ void Engine::CreateAutoCollisionsFromModels()
             else
             {
                 // Check if this model should have collision based on JSON config
-                if (m_models.HasCollision(modelName))
+                bool hasCollision = m_models.HasCollision(modelName);
+                TraceLog(LOG_INFO, "🔧 Model '%s': HasCollision=%s", modelName.c_str(),
+                         hasCollision ? "TRUE" : "FALSE");
+
+                if (hasCollision)
                 {
                     // Safety check: limit number of collision instances per model
                     const size_t MAX_COLLISION_INSTANCES = 10;
@@ -312,6 +324,8 @@ void Engine::CreateAutoCollisionsFromModels()
                     }
 
                     // Create collisions for each instance
+                    TraceLog(LOG_INFO, "📍 Processing %zu instances for model '%s'",
+                             instances.size(), modelName.c_str());
                     size_t processedInstances = 0;
                     for (auto *instance : instances)
                     {
@@ -361,26 +375,63 @@ void Engine::CreateAutoCollisionsFromModels()
              collisionsCreated, availableModels.size());
 }
 
+// Helper function to create cache key
+std::string Engine::MakeCollisionCacheKey(const std::string &modelName, float scale) const
+{
+    // Round scale to 2 decimal places to avoid cache misses for tiny differences
+    int scaledInt = static_cast<int>(scale * 100.0f);
+    return modelName + "_s" + std::to_string(scaledInt);
+}
+
 bool Engine::CreateCollisionFromModel(const Model &model, const std::string &modelName,
                                       Vector3 position, float scale)
 {
-    TraceLog(LOG_INFO,
-             "Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
-             modelName.c_str(), position.x, position.y, position.z, scale);
+    TraceLog(
+        LOG_INFO,
+        "🔧 ENGINE: Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
+        modelName.c_str(), position.x, position.y, position.z, scale);
 
-    // Check if we already have a base collision for this model
-    std::shared_ptr<Collision> baseCollision;
-    auto cacheIt = m_collisionCache.find(modelName);
+    // Get model config to check collision type
+    const ModelFileConfig *config = m_models.GetModelConfig(modelName);
+    bool needsPreciseCollision = false;
 
-    if (cacheIt != m_collisionCache.end())
+    if (config)
     {
-        baseCollision = cacheIt->second;
-        TraceLog(LOG_INFO, "Using cached collision for model '%s'", modelName.c_str());
+        needsPreciseCollision =
+            (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE ||
+             config->collisionPrecision == CollisionPrecision::IMPROVED_AABB ||
+             config->collisionPrecision == CollisionPrecision::AUTO);
+
+        TraceLog(LOG_INFO, "🎯 CONFIG: Model '%s' precision=%s, hasCollision=%s, needsPrecise=%s",
+                 modelName.c_str(),
+                 (config->collisionPrecision == CollisionPrecision::AUTO)               ? "AUTO"
+                 : (config->collisionPrecision == CollisionPrecision::AABB_ONLY)        ? "AABB"
+                 : (config->collisionPrecision == CollisionPrecision::IMPROVED_AABB)    ? "IMPROVED"
+                 : (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE) ? "TRIANGLE"
+                                                                                        : "UNKNOWN",
+                 config->hasCollision ? "true" : "false", needsPreciseCollision ? "YES" : "NO");
     }
     else
     {
-        TraceLog(LOG_INFO, "Building new collision for model '%s' with %d meshes",
-                 modelName.c_str(), model.meshCount);
+        TraceLog(LOG_WARNING, "⚠️ CONFIG: No config found for model '%s'", modelName.c_str());
+    }
+
+    // Use simple model name as cache key - we'll handle precise collisions differently
+    std::string cacheKey = modelName;
+
+    // Check if we already have a collision for this model+scale combination
+    std::shared_ptr<Collision> cachedCollision;
+    auto cacheIt = m_collisionCache.find(cacheKey);
+
+    if (cacheIt != m_collisionCache.end())
+    {
+        cachedCollision = cacheIt->second;
+        TraceLog(LOG_INFO, "Using cached collision for '%s'", cacheKey.c_str());
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "Building new collision for '%s' with %d meshes", cacheKey.c_str(),
+                 model.meshCount);
 
         // Check if we have valid geometry
         bool hasValidGeometry = false;
@@ -398,29 +449,28 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
         {
             TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback collision",
                      modelName.c_str());
-            // Create fallback AABB collision at origin - will be transformed later
+            // Create fallback AABB collision
             BoundingBox modelBounds = GetModelBoundingBox(model);
-            Vector3 size = {modelBounds.max.x - modelBounds.min.x,
-                            modelBounds.max.y - modelBounds.min.y,
-                            modelBounds.max.z - modelBounds.min.z};
-            Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
-                              (modelBounds.max.y + modelBounds.min.y) * 0.5f,
-                              (modelBounds.max.z + modelBounds.min.z) * 0.5f};
+            Vector3 size = {(modelBounds.max.x - modelBounds.min.x) * scale,
+                            (modelBounds.max.y - modelBounds.min.y) * scale,
+                            (modelBounds.max.z - modelBounds.min.z) * scale};
+            Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f * scale,
+                              (modelBounds.max.y + modelBounds.min.y) * 0.5f * scale,
+                              (modelBounds.max.z + modelBounds.min.z) * 0.5f * scale};
 
-            baseCollision = std::make_shared<Collision>(center, size);
-            m_collisionCache[modelName] = baseCollision;
+            cachedCollision = std::make_shared<Collision>(center, size);
+            m_collisionCache[cacheKey] = cachedCollision;
         }
         else
         {
-            // Create collision object at origin (will be transformed for each instance)
-            baseCollision = std::make_shared<Collision>();
+            // Create collision object with proper scale transformation
+            cachedCollision = std::make_shared<Collision>();
             Model modelCopy = model; // Make a copy for collision building
 
-            TraceLog(LOG_INFO, "Building base collision from model geometry...");
+            TraceLog(LOG_INFO, "Building scaled collision from model geometry for '%s'...",
+                     cacheKey.c_str());
 
-            // Get model configuration to determine collision precision
-            const ModelFileConfig *config = m_models.GetModelConfig(modelName);
-
+            // Always build base collision at origin without transformation
             if (config)
             {
                 TraceLog(
@@ -431,36 +481,70 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
                                                                                         : "PRECISE",
                     config->hasCollision ? "true" : "false");
 
-                // Build collision using model configuration (at origin, no transform)
-                baseCollision->BuildFromModelConfig(&modelCopy, *config, MatrixIdentity());
+                // Build base collision without transformation - will be transformed per instance
+                cachedCollision->BuildFromModelConfig(&modelCopy, *config, MatrixIdentity());
             }
             else
             {
                 TraceLog(LOG_WARNING, "No config found for model '%s', using hybrid auto-detection",
                          modelName.c_str());
-                // Build collision using hybrid system (at origin, no transform)
-                baseCollision->BuildFromModel(&modelCopy, MatrixIdentity());
+                // Build base collision without transformation
+                cachedCollision->BuildFromModel(&modelCopy, MatrixIdentity());
             }
 
-            // Cache the base collision
-            m_collisionCache[modelName] = baseCollision;
+            // Cache the collision
+            m_collisionCache[cacheKey] = cachedCollision;
 
-            // Log collision details for the base collision
-            Vector3 baseMin = baseCollision->GetMin();
-            Vector3 baseMax = baseCollision->GetMax();
-            const auto &complexity = baseCollision->GetComplexity();
-            CollisionType collisionType = baseCollision->GetCollisionType();
+            // 🚨 CRITICAL FIX: Ensure cached collision has correct type for precise configs
+            if (needsPreciseCollision && config &&
+                config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE)
+            {
+                TraceLog(
+                    LOG_ERROR,
+                    "🔥 ATTEMPTING TO FORCE cached collision type to TRIANGLE_PRECISE for '%s'",
+                    modelName.c_str());
+                CollisionType beforeType = cachedCollision->GetCollisionType();
+                cachedCollision->SetCollisionType(CollisionType::TRIANGLE_PRECISE);
+                CollisionType afterType = cachedCollision->GetCollisionType();
+                TraceLog(LOG_ERROR, "🔧 FORCED cached collision: BEFORE=%s, AFTER=%s",
+                         beforeType == CollisionType::TRIANGLE_PRECISE ? "TRIANGLE_PRECISE"
+                         : beforeType == CollisionType::IMPROVED_AABB  ? "IMPROVED_AABB"
+                                                                       : "OTHER",
+                         afterType == CollisionType::TRIANGLE_PRECISE ? "TRIANGLE_PRECISE"
+                         : afterType == CollisionType::IMPROVED_AABB  ? "IMPROVED_AABB"
+                                                                      : "OTHER");
+            }
+            else
+            {
+                TraceLog(LOG_ERROR,
+                         "🚨 NOT FORCING cached collision type! needsPrecise=%s, config=%s, "
+                         "precision=%s",
+                         needsPreciseCollision ? "YES" : "NO", config ? "EXISTS" : "NULL",
+                         config
+                             ? (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE
+                                    ? "TRIANGLE"
+                                    : "OTHER")
+                             : "N/A");
+            }
 
-            TraceLog(LOG_INFO, "Base collision created for '%s':", modelName.c_str());
+            // Log collision details
+            Vector3 cacheMin = cachedCollision->GetMin();
+            Vector3 cacheMax = cachedCollision->GetMax();
+            const auto &complexity = cachedCollision->GetComplexity();
+            CollisionType collisionType = cachedCollision->GetCollisionType();
+
+            TraceLog(LOG_INFO, "Cached collision created for '%s':", cacheKey.c_str());
             TraceLog(LOG_INFO, "  Type: %s",
                      (collisionType == CollisionType::AABB_ONLY)          ? "AABB_ONLY"
                      : (collisionType == CollisionType::IMPROVED_AABB)    ? "IMPROVED_AABB"
                      : (collisionType == CollisionType::TRIANGLE_PRECISE) ? "TRIANGLE_PRECISE"
                      : (collisionType == CollisionType::OCTREE_ONLY)      ? "OCTREE_ONLY"
                                                                           : "HYBRID_AUTO");
-            TraceLog(LOG_INFO, "  Base Min: (%.2f, %.2f, %.2f)", baseMin.x, baseMin.y, baseMin.z);
-            TraceLog(LOG_INFO, "  Base Max: (%.2f, %.2f, %.2f)", baseMax.x, baseMax.y, baseMax.z);
-            TraceLog(LOG_INFO, "  Triangle count: %zu", baseCollision->GetTriangleCount());
+            TraceLog(LOG_INFO, "  Cache Min: (%.2f, %.2f, %.2f)", cacheMin.x, cacheMin.y,
+                     cacheMin.z);
+            TraceLog(LOG_INFO, "  Cache Max: (%.2f, %.2f, %.2f)", cacheMax.x, cacheMax.y,
+                     cacheMax.z);
+            TraceLog(LOG_INFO, "  Triangle count: %zu", cachedCollision->GetTriangleCount());
             TraceLog(LOG_INFO, "  Model complexity: %s",
                      complexity.IsSimple() ? "SIMPLE" : "COMPLEX");
 
@@ -468,23 +552,114 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
                 collisionType == CollisionType::IMPROVED_AABB ||
                 collisionType == CollisionType::TRIANGLE_PRECISE)
             {
-                TraceLog(LOG_INFO, "  Octree nodes: %zu", baseCollision->GetNodeCount());
+                TraceLog(LOG_INFO, "  Octree nodes: %zu", cachedCollision->GetNodeCount());
             }
         }
     }
 
-    // Now create an instance collision by copying the base and applying transform
-    Collision instanceCollision = *baseCollision; // This copies the collision data including octree
+    // Create instance collision from cached collision
+    Collision instanceCollision;
+    CollisionType cachedType = cachedCollision->GetCollisionType();
 
-    // Apply transformation to the copied collision
-    Vector3 baseCenter = baseCollision->GetCenter();
-    Vector3 baseSize = baseCollision->GetSize();
+    TraceLog(LOG_INFO, "🎲 INSTANCE: Model '%s' cachedType=%s, needsPrecise=%s", modelName.c_str(),
+             (cachedType == CollisionType::AABB_ONLY)          ? "AABB_ONLY"
+             : (cachedType == CollisionType::IMPROVED_AABB)    ? "IMPROVED_AABB"
+             : (cachedType == CollisionType::TRIANGLE_PRECISE) ? "TRIANGLE_PRECISE"
+             : (cachedType == CollisionType::OCTREE_ONLY)      ? "OCTREE_ONLY"
+                                                               : "HYBRID_AUTO",
+             needsPreciseCollision ? "YES" : "NO");
 
-    // Apply transformation to center and scale
-    Vector3 transformedCenter = Vector3Add(Vector3Scale(baseCenter, scale), position);
-    Vector3 scaledSize = Vector3Scale(baseSize, scale);
+    if (needsPreciseCollision &&
+        (cachedType == CollisionType::OCTREE_ONLY || cachedType == CollisionType::IMPROVED_AABB ||
+         cachedType == CollisionType::TRIANGLE_PRECISE))
+    {
+        // Check if we've reached the limit for precise collisions for this model
+        int &preciseCount = m_preciseCollisionCount[modelName];
 
-    instanceCollision.Update(transformedCenter, scaledSize);
+        if (preciseCount < MAX_PRECISE_COLLISIONS_PER_MODEL)
+        {
+            // For precise collisions, we need to rebuild with full transformation
+            // because Update() only changes AABB but not the octree
+            TraceLog(LOG_INFO,
+                     "Building precise instance collision %d/%d with full transformation for '%s'",
+                     preciseCount + 1, MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
+
+            // Create transformation matrix with both scale and position
+            Matrix transform = MatrixMultiply(MatrixScale(scale, scale, scale),
+                                              MatrixTranslate(position.x, position.y, position.z));
+
+            // Create a copy of the model for collision building
+            Model modelCopy = model;
+
+            if (config)
+            {
+                // Build collision with full transformation applied
+                instanceCollision.BuildFromModelConfig(&modelCopy, *config, transform);
+            }
+            else
+            {
+                // Fallback: rebuild from model with transformation
+                instanceCollision.BuildFromModel(&modelCopy, transform);
+            }
+
+            preciseCount++; // Increment counter
+
+            // 🚨 CRITICAL FIX: Force the collision type to be TRIANGLE_PRECISE, not HYBRID_AUTO!
+            CollisionType beforeInstanceType = instanceCollision.GetCollisionType();
+            instanceCollision.SetCollisionType(CollisionType::TRIANGLE_PRECISE);
+            CollisionType afterInstanceType = instanceCollision.GetCollisionType();
+            TraceLog(LOG_ERROR, "🔧 FORCED instance collision: BEFORE=%s, AFTER=%s for '%s'",
+                     beforeInstanceType == CollisionType::TRIANGLE_PRECISE ? "TRIANGLE_PRECISE"
+                     : beforeInstanceType == CollisionType::IMPROVED_AABB  ? "IMPROVED_AABB"
+                                                                           : "OTHER",
+                     afterInstanceType == CollisionType::TRIANGLE_PRECISE ? "TRIANGLE_PRECISE"
+                     : afterInstanceType == CollisionType::IMPROVED_AABB  ? "IMPROVED_AABB"
+                                                                          : "OTHER",
+                     modelName.c_str());
+
+            TraceLog(LOG_INFO,
+                     "Built precise collision with octree for instance at (%.2f, %.2f, %.2f)",
+                     position.x, position.y, position.z);
+        }
+        else
+        {
+            // Reached limit, use AABB collision instead
+            TraceLog(LOG_WARNING,
+                     "Reached limit of %d precise collisions for model '%s', using AABB for "
+                     "remaining instances",
+                     MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
+
+            // Use AABB collision (fallback to else branch logic)
+            instanceCollision = *cachedCollision;
+            Vector3 cachedCenter = cachedCollision->GetCenter();
+            Vector3 cachedSize = cachedCollision->GetSize();
+
+            // Apply transformation to center and scale
+            Vector3 transformedCenter = Vector3Add(Vector3Scale(cachedCenter, scale), position);
+            Vector3 scaledSize = Vector3Scale(cachedSize, scale);
+
+            instanceCollision.Update(transformedCenter, scaledSize);
+
+            TraceLog(LOG_INFO, "Used AABB collision fallback for instance at (%.2f, %.2f, %.2f)",
+                     position.x, position.y, position.z);
+        }
+    }
+    else
+    {
+        // For AABB collision, apply both scale and position transform
+        instanceCollision = *cachedCollision;
+        Vector3 cachedCenter = cachedCollision->GetCenter();
+        Vector3 cachedSize = cachedCollision->GetSize();
+
+        // Apply transformation to center and scale
+        Vector3 transformedCenter = Vector3Add(Vector3Scale(cachedCenter, scale), position);
+        Vector3 scaledSize = Vector3Scale(cachedSize, scale);
+
+        instanceCollision.Update(transformedCenter, scaledSize);
+
+        TraceLog(LOG_INFO, "Transformed AABB collision for instance at (%.2f, %.2f, %.2f)",
+                 position.x, position.y, position.z);
+    }
 
     // Add the instance collision to collision manager
     m_collisionManager.AddCollider(instanceCollision);

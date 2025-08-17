@@ -25,7 +25,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
     // TraceLog(LOG_INFO, "🧍 Player collision check: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
     //          playerMin.x, playerMin.y, playerMin.z, playerMax.x, playerMax.y, playerMax.z);
 
-    // TraceLog(LOG_INFO, "📋 Total colliders to check: %zu", m_collisions.size());
+    TraceLog(LOG_ERROR, "� DEBUG: Total colliders to check: %zu", m_collisions.size());
 
     int colliderIndex = 0;
     for (const auto &collider : m_collisions)
@@ -33,9 +33,12 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         Vector3 colliderMin = collider.GetMin();
         Vector3 colliderMax = collider.GetMax();
 
-        // TraceLog(LOG_INFO, "🔍 Checking collider [%d]: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
-        //          colliderIndex, colliderMin.x, colliderMin.y, colliderMin.z, colliderMax.x,
-        //          colliderMax.y, colliderMax.z);
+        TraceLog(LOG_ERROR,
+                 "🔍 DEBUG: Checking collider [%d]: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f) type=%d "
+                 "triangles=%zu",
+                 colliderIndex, colliderMin.x, colliderMin.y, colliderMin.z, colliderMax.x,
+                 colliderMax.y, colliderMax.z, (int)collider.GetCollisionType(),
+                 collider.GetTriangleCount());
 
         // Check collision using hybrid system (automatically chooses optimal method)
         bool hasCollision = playerCollision.Intersects(collider);
@@ -44,9 +47,10 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
 
         if (hasCollision)
         {
-            TraceLog(LOG_INFO,
-                     "🎯 COLLISION with [%d]! Player Y(%.1f to %.1f) vs Collider Y(%.1f to %.1f)",
-                     colliderIndex - 1, playerMin.y, playerMax.y, colliderMin.y, colliderMax.y);
+            // TraceLog(LOG_INFO,
+            //          "🎯 COLLISION with [%d]! Player Y(%.1f to %.1f) vs Collider Y(%.1f to
+            //          %.1f)", colliderIndex - 1, playerMin.y, playerMax.y, colliderMin.y,
+            //          colliderMax.y);
 
             // For Octree/BVH colliders, we could potentially get more precise collision response
             // but for now, we'll use the standard AABB-based MTV calculation
