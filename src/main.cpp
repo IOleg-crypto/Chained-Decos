@@ -4,7 +4,7 @@
 // # --------
 int main()
 {
-    Engine engine(1920, 1080);
+    Engine engine(1280, 720);
     engine.Init();
     engine.Run();
 }

@@ -94,6 +94,15 @@ void Octree::BuildFromModel(Model *model, const Matrix &transform)
 
     TraceLog(LOG_INFO, "Building octree from %zu triangles", triangles.size());
 
+    // Safety check: prevent excessive triangle counts
+    if (triangles.size() > 50000)
+    {
+        TraceLog(
+            LOG_WARNING,
+            "Model has excessive triangle count (%zu). Consider using lower precision collision.",
+            triangles.size());
+    }
+
     // Calculate bounding box from triangles
     Vector3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
     Vector3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
@@ -123,6 +132,9 @@ void Octree::BuildFromModel(Model *model, const Matrix &transform)
     // Build tree recursively
     BuildRecursive(m_root.get(), triangles, 0);
 
+    // Set the actual triangle count (unique triangles from input)
+    m_triangleCount = triangles.size();
+
     TraceLog(LOG_INFO, "Octree built with %zu triangles in %zu nodes", GetTriangleCount(),
              GetNodeCount());
 }
@@ -136,7 +148,8 @@ void Octree::BuildRecursive(OctreeNode *node, const std::vector<CollisionTriangl
     {
         node->triangles = triangles;
         node->isLeaf = true;
-        m_triangleCount += triangles.size();
+        // Note: Don't increment m_triangleCount here as triangles might be duplicated across nodes
+        // Triangle count will be calculated properly at the end
         return;
     }
 
@@ -188,6 +201,7 @@ void Octree::AddTriangle(const CollisionTriangle &triangle)
     if (m_root)
     {
         AddTriangleRecursive(m_root.get(), triangle, 0);
+        // Only increment if this is a new unique triangle
         m_triangleCount++;
     }
 }
@@ -236,7 +250,10 @@ void Octree::AddTriangleRecursive(OctreeNode *node, const CollisionTriangle &tri
             {
                 for (int i = 0; i < 8; i++)
                 {
-                    AddTriangleRecursive(node->children[i].get(), tri, depth + 1);
+                    if (TriangleIntersectsNode(tri, node->children[i].get()))
+                    {
+                        AddTriangleRecursive(node->children[i].get(), tri, depth + 1);
+                    }
                 }
             }
         }
@@ -246,7 +263,7 @@ void Octree::AddTriangleRecursive(OctreeNode *node, const CollisionTriangle &tri
         // Not a leaf, add to appropriate children
         for (int i = 0; i < 8; i++)
         {
-            if (node->children[i])
+            if (node->children[i] && TriangleIntersectsNode(triangle, node->children[i].get()))
             {
                 AddTriangleRecursive(node->children[i].get(), triangle, depth + 1);
             }

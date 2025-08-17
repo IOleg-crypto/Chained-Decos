@@ -156,6 +156,10 @@ private:
     // Octree data for precise collision detection
     std::unique_ptr<Octree> m_octree;
 
+    // Caching to prevent duplicate processing
+    size_t m_modelHash = 0;
+    bool m_isBuilt = false;
+
     // Performance tracking
     mutable PerformanceStats m_stats;
 
