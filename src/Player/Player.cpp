@@ -180,7 +180,7 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
                 m_isJumping = false;
                 // Don't reset velocity completely - preserve horizontal movement
                 Vector3 currentVel = m_physics.GetVelocity();
-                m_physics.SetVelocity({currentVel.x, 0, currentVel.z});
+                m_physics.SetVelocity({0, 0, 0});
             } else {
                 // Too high to step up - block movement
                 playerPosition.y += response.y;

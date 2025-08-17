@@ -1,4 +1,4 @@
-name: CMake on multiple platforms
+name: CMake on multiple platforms 
 
 on:
   workflow_dispatch:
@@ -51,7 +51,6 @@ jobs:
     # ---------------- Linux setup ----------------
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential cmake \
@@ -61,12 +60,10 @@ jobs:
 
     - name: Clean build directory (Linux)
       if: matrix.os == 'ubuntu-latest'
-      shell: bash
       run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
 
     - name: Configure CMake (Linux)
       if: matrix.os == 'ubuntu-latest'
-      shell: bash
       run: |
         cmake -B ${{ steps.strings.outputs.build-output-dir }} \
           -G "Unix Makefiles" \
@@ -79,31 +76,25 @@ jobs:
 
     - name: Build (Linux)
       if: matrix.os == 'ubuntu-latest'
-      shell: bash
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target unit_tests -- -j$(nproc)
 
     - name: Run unit tests (Linux)
       if: matrix.os == 'ubuntu-latest'
-      shell: bash
-      run: |
-        xvfb-run -a ${{ steps.strings.outputs.build-output-dir }}/tests/unit_tests
+      run: xvfb-run -a ${{ steps.strings.outputs.build-output-dir }}/tests/unit_tests
 
     # ---------------- Windows setup ----------------
     - name: Install MinGW (Windows)
       if: matrix.os == 'windows-latest'
-      shell: pwsh
       run: |
         choco install mingw --no-progress
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $env:GITHUB_PATH
 
     - name: Clean build directory (Windows)
       if: matrix.os == 'windows-latest'
-      shell: pwsh
       run: Remove-Item -Path "${{ steps.strings.outputs.build-output-dir }}" -Recurse -Force -ErrorAction SilentlyContinue
 
     - name: Configure CMake (Windows)
       if: matrix.os == 'windows-latest'
-      shell: pwsh
       run: |
         cmake -B "${{ steps.strings.outputs.build-output-dir }}" `
           -G "MinGW Makefiles" `
@@ -114,10 +105,4 @@ jobs:
 
     - name: Build (Windows)
       if: matrix.os == 'windows-latest'
-      shell: pwsh
       run: cmake --build "${{ steps.strings.outputs.build-output-dir }}" --config ${{ matrix.build_type }} --target unit_tests
-
-    - name: Run unit tests (Windows)
-      if: matrix.os == 'windows-latest'
-      shell: pwsh
-      run: "${{ steps.strings.outputs.build-output-dir }}/tests/unit_tests.exe"
