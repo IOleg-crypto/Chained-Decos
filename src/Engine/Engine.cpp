@@ -6,6 +6,7 @@
 #include "Engine.h"
 
 // Standard library
+#include <set>
 #include <stdexcept>
 
 // Raylib & ImGui
@@ -243,11 +244,21 @@ void Engine::CreateAutoCollisionsFromModels()
     auto availableModels = m_models.GetAvailableModels();
     TraceLog(LOG_INFO, "Found %zu models to check", availableModels.size());
 
+    // Track processed models to avoid duplication
+    std::set<std::string> processedModels;
     int collisionsCreated = 0;
 
     // Process each model
     for (const auto &modelName : availableModels)
     {
+        // Skip if already processed
+        if (processedModels.find(modelName) != processedModels.end())
+        {
+            TraceLog(LOG_INFO, "Model '%s' already processed, skipping...", modelName.c_str());
+            continue;
+        }
+
+        processedModels.insert(modelName);
         TraceLog(LOG_INFO, "Processing model: %s", modelName.c_str());
 
         try
@@ -291,9 +302,28 @@ void Engine::CreateAutoCollisionsFromModels()
                 // Check if this model should have collision based on JSON config
                 if (m_models.HasCollision(modelName))
                 {
+                    // Safety check: limit number of collision instances per model
+                    const size_t MAX_COLLISION_INSTANCES = 10;
+                    if (instances.size() > MAX_COLLISION_INSTANCES)
+                    {
+                        TraceLog(LOG_WARNING,
+                                 "Model '%s' has %zu instances, limiting to %zu for performance",
+                                 modelName.c_str(), instances.size(), MAX_COLLISION_INSTANCES);
+                    }
+
                     // Create collisions for each instance
+                    size_t processedInstances = 0;
                     for (auto *instance : instances)
                     {
+                        if (processedInstances >= MAX_COLLISION_INSTANCES)
+                        {
+                            TraceLog(
+                                LOG_WARNING,
+                                "Skipping remaining instances of '%s' to prevent memory issues",
+                                modelName.c_str());
+                            break;
+                        }
+
                         Vector3 position = instance->GetModelPosition();
                         float scale = instance->GetScale();
 
@@ -308,6 +338,7 @@ void Engine::CreateAutoCollisionsFromModels()
                             TraceLog(LOG_INFO, "Successfully created collision for '%s' instance",
                                      modelName.c_str());
                         }
+                        processedInstances++;
                     }
                 }
                 else
@@ -333,113 +364,133 @@ void Engine::CreateAutoCollisionsFromModels()
 bool Engine::CreateCollisionFromModel(const Model &model, const std::string &modelName,
                                       Vector3 position, float scale)
 {
-    TraceLog(LOG_INFO, "Creating precise collision from model with %d meshes", model.meshCount);
+    TraceLog(LOG_INFO,
+             "Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
+             modelName.c_str(), position.x, position.y, position.z, scale);
 
-    // Create transformation matrix
-    Matrix transform = MatrixMultiply(MatrixScale(scale, scale, scale),
-                                      MatrixTranslate(position.x, position.y, position.z));
+    // Check if we already have a base collision for this model
+    std::shared_ptr<Collision> baseCollision;
+    auto cacheIt = m_collisionCache.find(modelName);
 
-    // Check if we have valid geometry
-    bool hasValidGeometry = false;
-    for (int i = 0; i < model.meshCount; i++)
+    if (cacheIt != m_collisionCache.end())
     {
-        if (model.meshes[i].vertices && model.meshes[i].vertexCount > 0)
-        {
-            hasValidGeometry = true;
-            TraceLog(LOG_INFO, "Mesh %d: %d vertices, %d triangles", i, model.meshes[i].vertexCount,
-                     model.meshes[i].triangleCount);
-        }
-    }
-
-    if (!hasValidGeometry)
-    {
-        TraceLog(LOG_WARNING, "Model has no valid geometry, creating fallback collision");
-        // Fallback: create simple AABB collision
-        BoundingBox modelBounds = GetModelBoundingBox(model);
-        Vector3 size = {(modelBounds.max.x - modelBounds.min.x) * scale,
-                        (modelBounds.max.y - modelBounds.min.y) * scale,
-                        (modelBounds.max.z - modelBounds.min.z) * scale};
-        Vector3 center = {position.x + (modelBounds.max.x + modelBounds.min.x) * 0.5f * scale,
-                          position.y + (modelBounds.max.y + modelBounds.min.y) * 0.5f * scale,
-                          position.z + (modelBounds.max.z + modelBounds.min.z) * 0.5f * scale};
-
-        Collision fallbackCollision{center, size};
-        // Fallback collision is simple AABB - no need to change anything
-        m_collisionManager.AddCollider(fallbackCollision);
-        return true;
-    }
-
-    // Create collision object with hybrid system (automatically chooses optimal method)
-    Collision modelCollision;
-
-    // Create a non-const copy for processing
-    Model modelCopy = model;
-
-    TraceLog(LOG_INFO, "Building hybrid collision from model geometry...");
-
-    // Get model configuration to determine collision precision
-    const ModelFileConfig *config = m_models.GetModelConfig(modelName);
-
-    if (config)
-    {
-        TraceLog(LOG_INFO, "Using model config for collision precision: %s (hasCollision=%s)",
-                 (config->collisionPrecision == CollisionPrecision::AABB_ONLY)       ? "AABB"
-                 : (config->collisionPrecision == CollisionPrecision::IMPROVED_AABB) ? "IMPROVED"
-                                                                                     : "PRECISE",
-                 config->hasCollision ? "true" : "false");
-
-        // Build collision using model configuration
-        modelCollision.BuildFromModelConfig(&modelCopy, *config, transform);
+        baseCollision = cacheIt->second;
+        TraceLog(LOG_INFO, "Using cached collision for model '%s'", modelName.c_str());
     }
     else
     {
-        TraceLog(LOG_WARNING, "No config found for model '%s', using hybrid auto-detection",
-                 modelName.c_str());
-        // Fallback: Build collision using hybrid system (automatically chooses AABB or Octree based
-        // on complexity)
-        modelCollision.BuildFromModel(&modelCopy, transform);
+        TraceLog(LOG_INFO, "Building new collision for model '%s' with %d meshes",
+                 modelName.c_str(), model.meshCount);
+
+        // Check if we have valid geometry
+        bool hasValidGeometry = false;
+        for (int i = 0; i < model.meshCount; i++)
+        {
+            if (model.meshes[i].vertices && model.meshes[i].vertexCount > 0)
+            {
+                hasValidGeometry = true;
+                TraceLog(LOG_INFO, "Mesh %d: %d vertices, %d triangles", i,
+                         model.meshes[i].vertexCount, model.meshes[i].triangleCount);
+            }
+        }
+
+        if (!hasValidGeometry)
+        {
+            TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback collision",
+                     modelName.c_str());
+            // Create fallback AABB collision at origin - will be transformed later
+            BoundingBox modelBounds = GetModelBoundingBox(model);
+            Vector3 size = {modelBounds.max.x - modelBounds.min.x,
+                            modelBounds.max.y - modelBounds.min.y,
+                            modelBounds.max.z - modelBounds.min.z};
+            Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
+                              (modelBounds.max.y + modelBounds.min.y) * 0.5f,
+                              (modelBounds.max.z + modelBounds.min.z) * 0.5f};
+
+            baseCollision = std::make_shared<Collision>(center, size);
+            m_collisionCache[modelName] = baseCollision;
+        }
+        else
+        {
+            // Create collision object at origin (will be transformed for each instance)
+            baseCollision = std::make_shared<Collision>();
+            Model modelCopy = model; // Make a copy for collision building
+
+            TraceLog(LOG_INFO, "Building base collision from model geometry...");
+
+            // Get model configuration to determine collision precision
+            const ModelFileConfig *config = m_models.GetModelConfig(modelName);
+
+            if (config)
+            {
+                TraceLog(
+                    LOG_INFO, "Using model config for collision precision: %s (hasCollision=%s)",
+                    (config->collisionPrecision == CollisionPrecision::AUTO)            ? "AUTO"
+                    : (config->collisionPrecision == CollisionPrecision::AABB_ONLY)     ? "AABB"
+                    : (config->collisionPrecision == CollisionPrecision::IMPROVED_AABB) ? "IMPROVED"
+                                                                                        : "PRECISE",
+                    config->hasCollision ? "true" : "false");
+
+                // Build collision using model configuration (at origin, no transform)
+                baseCollision->BuildFromModelConfig(&modelCopy, *config, MatrixIdentity());
+            }
+            else
+            {
+                TraceLog(LOG_WARNING, "No config found for model '%s', using hybrid auto-detection",
+                         modelName.c_str());
+                // Build collision using hybrid system (at origin, no transform)
+                baseCollision->BuildFromModel(&modelCopy, MatrixIdentity());
+            }
+
+            // Cache the base collision
+            m_collisionCache[modelName] = baseCollision;
+
+            // Log collision details for the base collision
+            Vector3 baseMin = baseCollision->GetMin();
+            Vector3 baseMax = baseCollision->GetMax();
+            const auto &complexity = baseCollision->GetComplexity();
+            CollisionType collisionType = baseCollision->GetCollisionType();
+
+            TraceLog(LOG_INFO, "Base collision created for '%s':", modelName.c_str());
+            TraceLog(LOG_INFO, "  Type: %s",
+                     (collisionType == CollisionType::AABB_ONLY)          ? "AABB_ONLY"
+                     : (collisionType == CollisionType::IMPROVED_AABB)    ? "IMPROVED_AABB"
+                     : (collisionType == CollisionType::TRIANGLE_PRECISE) ? "TRIANGLE_PRECISE"
+                     : (collisionType == CollisionType::OCTREE_ONLY)      ? "OCTREE_ONLY"
+                                                                          : "HYBRID_AUTO");
+            TraceLog(LOG_INFO, "  Base Min: (%.2f, %.2f, %.2f)", baseMin.x, baseMin.y, baseMin.z);
+            TraceLog(LOG_INFO, "  Base Max: (%.2f, %.2f, %.2f)", baseMax.x, baseMax.y, baseMax.z);
+            TraceLog(LOG_INFO, "  Triangle count: %zu", baseCollision->GetTriangleCount());
+            TraceLog(LOG_INFO, "  Model complexity: %s",
+                     complexity.IsSimple() ? "SIMPLE" : "COMPLEX");
+
+            if (collisionType == CollisionType::OCTREE_ONLY ||
+                collisionType == CollisionType::IMPROVED_AABB ||
+                collisionType == CollisionType::TRIANGLE_PRECISE)
+            {
+                TraceLog(LOG_INFO, "  Octree nodes: %zu", baseCollision->GetNodeCount());
+            }
+        }
     }
 
-    // Log collision details
-    Vector3 collisionMin = modelCollision.GetMin();
-    Vector3 collisionMax = modelCollision.GetMax();
-    Vector3 collisionCenter = modelCollision.GetCenter();
-    Vector3 collisionSize = modelCollision.GetSize();
+    // Now create an instance collision by copying the base and applying transform
+    Collision instanceCollision = *baseCollision; // This copies the collision data including octree
 
-    // Get complexity analysis
-    const auto &complexity = modelCollision.GetComplexity();
-    CollisionType collisionType = modelCollision.GetCollisionType();
+    // Apply transformation to the copied collision
+    Vector3 baseCenter = baseCollision->GetCenter();
+    Vector3 baseSize = baseCollision->GetSize();
 
-    TraceLog(LOG_INFO, "Collision created:");
-    TraceLog(LOG_INFO, "  Type: %s",
-             (collisionType == CollisionType::AABB_ONLY)          ? "AABB_ONLY"
-             : (collisionType == CollisionType::IMPROVED_AABB)    ? "IMPROVED_AABB"
-             : (collisionType == CollisionType::TRIANGLE_PRECISE) ? "TRIANGLE_PRECISE"
-             : (collisionType == CollisionType::OCTREE_ONLY)      ? "OCTREE_ONLY"
-                                                                  : "HYBRID_AUTO");
-    TraceLog(LOG_INFO, "  Min: (%.2f, %.2f, %.2f)", collisionMin.x, collisionMin.y, collisionMin.z);
-    TraceLog(LOG_INFO, "  Max: (%.2f, %.2f, %.2f)", collisionMax.x, collisionMax.y, collisionMax.z);
-    TraceLog(LOG_INFO, "  Center: (%.2f, %.2f, %.2f)", collisionCenter.x, collisionCenter.y,
-             collisionCenter.z);
-    TraceLog(LOG_INFO, "  Size: (%.2f, %.2f, %.2f)", collisionSize.x, collisionSize.y,
-             collisionSize.z);
-    TraceLog(LOG_INFO, "  Triangle count: %zu", modelCollision.GetTriangleCount());
-    TraceLog(LOG_INFO, "  Model complexity: %s", complexity.IsSimple() ? "SIMPLE" : "COMPLEX");
+    // Apply transformation to center and scale
+    Vector3 transformedCenter = Vector3Add(Vector3Scale(baseCenter, scale), position);
+    Vector3 scaledSize = Vector3Scale(baseSize, scale);
 
-    if (collisionType == CollisionType::OCTREE_ONLY ||
-        collisionType == CollisionType::IMPROVED_AABB ||
-        collisionType == CollisionType::TRIANGLE_PRECISE)
-    {
-        TraceLog(LOG_INFO, "  Octree nodes: %zu", modelCollision.GetNodeCount());
-    }
+    instanceCollision.Update(transformedCenter, scaledSize);
 
-    // Add to legacy collision manager
-    m_collisionManager.AddCollider(modelCollision);
+    // Add the instance collision to collision manager
+    m_collisionManager.AddCollider(instanceCollision);
 
-    // Also create smart collision for improved performance
-    CreateCollisionFromModel(model, modelName, position, scale);
-
-    TraceLog(LOG_INFO, "Successfully created hybrid collision from model geometry");
+    TraceLog(LOG_INFO, "Successfully created instance collision for '%s' at (%.2f, %.2f, %.2f)",
+             modelName.c_str(), position.x, position.y, position.z);
     return true;
 }
 // ==================== UPDATE METHODS ====================
