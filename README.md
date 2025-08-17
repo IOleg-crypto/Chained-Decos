@@ -13,7 +13,7 @@ Chained Decos is a fast-paced parkour game with both singleplayer and multiplaye
 > It allows you to create and edit 3D scenes, place game objects, and save maps  
 > for later use within the game engine.
 > Note: This editor is still under active development and may change frequently.
-> [![2025-08-09-150557.png](https://i.postimg.cc/x8P86rsH/2025-08-09-150557.png)]
+> ![2025-08-09-150557.png](https://i.postimg.cc/x8P86rsH/2025-08-09-150557.png)
 
 ## 🚀 Features
 - **Dynamic Parkour Gameplay:** Run, jump, vault, and chain together moves to overcome challenging levels.
@@ -25,8 +25,8 @@ Chained Decos is a fast-paced parkour game with both singleplayer and multiplaye
 
 > [!IMPORTANT] 
 > ## Early Preview
-> [![2025-08-09-145416.png](https://i.postimg.cc/43rgt81g/2025-08-09-145416.png)]
-> [![2025-08-09-145341.png](https://i.postimg.cc/j5zGfR5H/2025-08-09-145341.png)]
+> ![2025-08-09-145416.png](https://i.postimg.cc/43rgt81g/2025-08-09-145416.png)
+> ![2025-08-09-145341.png](https://i.postimg.cc/j5zGfR5H/2025-08-09-145341.png)
 
 ## 🛠️ Getting Started
 
