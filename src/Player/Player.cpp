@@ -165,17 +165,29 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
     {
         // Anti-jittering: Apply damping to small response vectors
         float responseLength = Vector3Length(response);
-        const float MIN_RESPONSE_THRESHOLD = 0.00002f;
+        const float MIN_RESPONSE_THRESHOLD = 0.02f;  // Increased for smoother movement
         
         if (responseLength < MIN_RESPONSE_THRESHOLD) {
             // Response is too small, might be jittering - ignore
             isColliding = false;
         } else if (response.y > 0.0f)
         {
-            playerPosition.y += response.y;
-            m_physics.SetVelocity({0, 0, 0});
-            m_physics.SetGroundLevel(true);
-            m_isJumping = false;
+            // Step-up logic: Allow automatic climbing of small obstacles
+            const float MAX_STEP_HEIGHT = 0.5f;
+            if (response.y <= MAX_STEP_HEIGHT) {
+                playerPosition.y += response.y;
+                m_physics.SetGroundLevel(true);
+                m_isJumping = false;
+                // Don't reset velocity completely - preserve horizontal movement
+                Vector3 currentVel = m_physics.GetVelocity();
+                m_physics.SetVelocity({currentVel.x, 0, currentVel.z});
+            } else {
+                // Too high to step up - block movement
+                playerPosition.y += response.y;
+                m_physics.SetVelocity({0, 0, 0});
+                m_physics.SetGroundLevel(true);
+                m_isJumping = false;
+            }
         }
         else if (response.y < 0.0f)
         {
@@ -184,14 +196,18 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
             m_physics.SetGroundLevel(true); // Player has landed
             m_isJumping = false;
         }
-        else // Hitting ceiling or wall
+        else // Hitting ceiling or wall (horizontal collision)
         {
+            // For walls, allow sliding along the surface
             playerPosition = Vector3Add(playerPosition, response);
-            m_physics.SetVelocity({0, 0, 0});
-            if (response.y < 0.0f)
-            {
-                m_physics.SetGroundLevel(false);
-                m_isJumping = false;
+            // Don't reset all velocity - preserve movement perpendicular to collision
+            Vector3 currentVel = m_physics.GetVelocity();
+            if (fabsf(response.x) > fabsf(response.z)) {
+                // X-collision, preserve Z movement
+                m_physics.SetVelocity({0, currentVel.y, currentVel.z});
+            } else {
+                // Z-collision, preserve X movement  
+                m_physics.SetVelocity({currentVel.x, currentVel.y, 0});
             }
         }
         SetPlayerPosition(playerPosition);
