@@ -646,9 +646,10 @@ CollisionType Collision::DetermineOptimalCollisionType() const
     }
     else if (triangleCount > 100)
     {
-        // TraceLog(LOG_INFO, "Model has %zu triangles - using precise triangle collision",
-                 //triangleCount);
-        return CollisionType::TRIANGLE_PRECISE;
+        // For architectural elements (like arches), use IMPROVED_AABB instead of TRIANGLE_PRECISE
+        // This prevents jittering when walking through/around complex geometry
+        TraceLog(LOG_INFO, "Model has %zu triangles - using improved AABB (architectural)", triangleCount);
+        return CollisionType::IMPROVED_AABB;
     }
     else
     {
