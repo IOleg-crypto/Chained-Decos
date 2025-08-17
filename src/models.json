@@ -12,11 +12,12 @@
     "hasCollision" : true,
     "collisionPrecision": "triangle",
     "hasAnimations": false,
-    "instances": [{
+    "instances": [
+      {
         "position": { "x": 5, "y": 0, "z": 0 },
         "scale": 0.6,
         "color": "blue"
-    }
+      }
     ]
   }
 ]
