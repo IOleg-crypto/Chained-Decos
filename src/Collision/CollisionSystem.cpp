@@ -110,22 +110,16 @@ bool Collision::Intersects(const Collision &other) const
 {
     StartPerformanceTimer();
 
-    TraceLog(LOG_ERROR,
-             "🚨 DEBUG: Intersects called - THIS type=%d, OTHER type=%d, THIS triangles=%zu, OTHER "
-             "triangles=%zu",
-             (int)m_collisionType, (int)other.m_collisionType, GetTriangleCount(),
-             other.GetTriangleCount());
+    // Performance: disabled debug logging
+    // TraceLog(LOG_INFO, "🔧 Intersects called - types %d vs %d",
+    //          (int)m_collisionType, (int)other.m_collisionType);
 
-    CollisionType thisType =
-        (m_collisionType == CollisionType::HYBRID_AUTO)
-            ? (TraceLog(LOG_ERROR, "🚨 RUNTIME: DetermineOptimalCollisionType() for THIS"),
-               DetermineOptimalCollisionType())
-            : m_collisionType;
-    CollisionType otherType =
-        (other.m_collisionType == CollisionType::HYBRID_AUTO)
-            ? (TraceLog(LOG_ERROR, "🚨 RUNTIME: DetermineOptimalCollisionType() for OTHER"),
-               other.DetermineOptimalCollisionType())
-            : other.m_collisionType;
+    CollisionType thisType = (m_collisionType == CollisionType::HYBRID_AUTO)
+                                 ? DetermineOptimalCollisionType()
+                                 : m_collisionType;
+    CollisionType otherType = (other.m_collisionType == CollisionType::HYBRID_AUTO)
+                                  ? other.DetermineOptimalCollisionType()
+                                  : other.m_collisionType;
 
     CollisionType finalType = (thisType > otherType) ? thisType : otherType;
     bool skipAABBCheck = (finalType == CollisionType::TRIANGLE_PRECISE);
@@ -214,11 +208,9 @@ bool Collision::Contains(const Vector3 &point) const
 {
     StartPerformanceTimer();
 
-    CollisionType type =
-        (m_collisionType == CollisionType::HYBRID_AUTO)
-            ? (TraceLog(LOG_ERROR, "🚨 RUNTIME: ContainsPoint -> DetermineOptimalCollisionType()"),
-               DetermineOptimalCollisionType())
-            : m_collisionType;
+    CollisionType type = (m_collisionType == CollisionType::HYBRID_AUTO)
+                             ? DetermineOptimalCollisionType()
+                             : m_collisionType;
 
     if (type == CollisionType::TRIANGLE_PRECISE)
     {
@@ -644,28 +636,23 @@ CollisionType Collision::DetermineOptimalCollisionType() const
     // Safety: Never use precise collision for models with many triangles
     if (triangleCount > 1000)
     {
-        TraceLog(LOG_INFO, "Model has %zu triangles - using AABB for performance", triangleCount);
+        // TraceLog(LOG_INFO, "Model has %zu triangles - using AABB for performance", triangleCount);
         return CollisionType::AABB_ONLY;
     }
     else if (triangleCount > 500)
     {
-        TraceLog(LOG_INFO, "Model has %zu triangles - using improved AABB", triangleCount);
+        // TraceLog(LOG_INFO, "Model has %zu triangles - using improved AABB", triangleCount);
         return CollisionType::IMPROVED_AABB;
     }
     else if (triangleCount > 100)
     {
-        TraceLog(LOG_ERROR,
-                 "🚨 RUNTIME: Model has %zu triangles - using improved collision - THIS SHOULD NOT "
-                 "HAPPEN FOR ARC!",
-                 triangleCount);
-        // Add stack trace information
-        TraceLog(LOG_ERROR,
-                 "🚨 RUNTIME: DetermineOptimalCollisionType() called - check stack trace!");
-        return CollisionType::IMPROVED_AABB;
+        // TraceLog(LOG_INFO, "Model has %zu triangles - using precise triangle collision",
+                 //triangleCount);
+        return CollisionType::TRIANGLE_PRECISE;
     }
     else
     {
-        TraceLog(LOG_INFO, "Model has %zu triangles - using AABB only", triangleCount);
+        //TraceLog(LOG_INFO, "Model has %zu triangles - using AABB only", triangleCount);
         return CollisionType::AABB_ONLY; // Changed: Use AABB for small models too - safer
     }
 }

@@ -350,11 +350,11 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
             return false;
 
         const float SURFACE_THRESHOLD =
-            0.1f; // Reduced collision threshold for more precise detection
+            0.2f; // Reduced collision threshold for more precise detection
 
-        TraceLog(LOG_INFO,
-                 "ContainsPointRecursive: Checking point (%.2f, %.2f, %.2f) against %d triangles",
-                 point.x, point.y, point.z, (int)node->triangles.size());
+        // TraceLog(LOG_INFO,
+        //          "ContainsPointRecursive: Checking point (%.2f, %.2f, %.2f) against %d triangles",
+        //          point.x, point.y, point.z, (int)node->triangles.size());
 
         for (const auto &triangle : node->triangles)
         {
@@ -366,9 +366,9 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
             Vector3 v1 = triangle.v1;
             Vector3 v2 = triangle.v2;
 
-            TraceLog(LOG_INFO,
-                     "  Triangle: v0(%.2f,%.2f,%.2f) v1(%.2f,%.2f,%.2f) v2(%.2f,%.2f,%.2f)", v0.x,
-                     v0.y, v0.z, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+            // TraceLog(LOG_INFO,
+            //          "  Triangle: v0(%.2f,%.2f,%.2f) v1(%.2f,%.2f,%.2f) v2(%.2f,%.2f,%.2f)",
+            //          v0.x, v0.y, v0.z, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
 
             // Calculate barycentric coordinates to see if point projects onto triangle
             Vector3 v0v1 = Vector3Subtract(v1, v0);
