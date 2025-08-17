@@ -19,28 +19,23 @@
 
 using json = nlohmann::json;
 
-// Global test environment to initialize Raylib
-class RaylibTestEnvironment : public ::testing::Environment
-{
-public:
-    void SetUp() override
-    {
-        // Initialize Raylib with minimal window for testing
-        SetConfigFlags(FLAG_WINDOW_HIDDEN); // Hide the window during tests
-        InitWindow(800, 600, "Test Window");
-        SetTargetFPS(60);
-    }
-
-    void TearDown() override
-    {
-        // Make sure all resources are cleaned up before closing window
-        if (IsWindowReady())
-        {
-            CloseWindow();
+class RaylibTestEnvironment : public ::testing::Environment {
+    public:
+        void SetUp() override {
+    #ifdef CI
+            // На CI нічого не робимо
+    #else
+            SetConfigFlags(FLAG_WINDOW_HIDDEN);
+            InitWindow(800, 600, "Test Window");
+            SetTargetFPS(60);
+    #endif
+        }
+        void TearDown() override {
+    #ifndef CI
+            if (IsWindowReady()) CloseWindow();
+    #endif
         }
     }
-};
-
 // Register the global test environment
 ::testing::Environment *const raylib_env =
     ::testing::AddGlobalTestEnvironment(new RaylibTestEnvironment);
