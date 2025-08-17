@@ -35,7 +35,8 @@ class RaylibTestEnvironment : public ::testing::Environment {
             if (IsWindowReady()) CloseWindow();
     #endif
         }
-    }
+};
+
 // Register the global test environment
 ::testing::Environment *const raylib_env =
     ::testing::AddGlobalTestEnvironment(new RaylibTestEnvironment);
