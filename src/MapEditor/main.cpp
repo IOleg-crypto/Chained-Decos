@@ -2,8 +2,9 @@
 // # --------
 // # int main - init map editor
 // # --------
-int main() {
+int main()
+{
     Application editor(1280, 720);
     editor.Init();
     editor.Run();
-} 
+}

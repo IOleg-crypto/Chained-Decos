@@ -8,6 +8,7 @@
 // Standard library
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // Raylib
@@ -90,6 +91,9 @@ private:
     PhysicsComponent m_physics;
     CollisionManager m_collisionManager; // Legacy collision system
     RenderManager m_renderManager;
+
+    // Collision cache to prevent rebuilding octrees for same models
+    std::unordered_map<std::string, std::shared_ptr<Collision>> m_collisionCache;
 
     // Game State
     Menu m_menu;

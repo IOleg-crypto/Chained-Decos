@@ -348,6 +348,19 @@ void Collision::BuildFromModel(Model *model, CollisionType type, const Matrix &t
         return;
     }
 
+    // Simple model hash to prevent duplicate processing
+    size_t modelHash = reinterpret_cast<size_t>(model) ^ static_cast<size_t>(type) ^
+                       static_cast<size_t>(model->meshCount);
+
+    if (m_isBuilt && m_modelHash == modelHash)
+    {
+        TraceLog(LOG_INFO, "Collision already built for this model configuration, skipping...");
+        return;
+    }
+
+    m_modelHash = modelHash;
+    m_isBuilt = true;
+
     // Force specific collision type
     m_collisionType = type;
 
@@ -395,6 +408,17 @@ void Collision::BuildFromModelConfig(Model *model, const ModelFileConfig &config
     CollisionType targetType;
     switch (config.collisionPrecision)
     {
+    case CollisionPrecision::AUTO:
+        // First analyze model complexity, then determine optimal type
+        AnalyzeModelComplexity(model, transform);
+        ExtractTrianglesFromModel(model, transform);
+        targetType = DetermineOptimalCollisionType();
+        TraceLog(LOG_INFO, "AUTO collision type selected: %s for model '%s'",
+                 (targetType == CollisionType::AABB_ONLY)       ? "AABB"
+                 : (targetType == CollisionType::IMPROVED_AABB) ? "IMPROVED"
+                                                                : "PRECISE",
+                 config.name.c_str());
+        break;
     case CollisionPrecision::AABB_ONLY:
         targetType = CollisionType::AABB_ONLY;
         break;
@@ -405,7 +429,7 @@ void Collision::BuildFromModelConfig(Model *model, const ModelFileConfig &config
         targetType = CollisionType::TRIANGLE_PRECISE;
         break;
     default:
-        targetType = CollisionType::IMPROVED_AABB;
+        targetType = CollisionType::AABB_ONLY; // Safest default
         break;
     }
 
@@ -624,13 +648,30 @@ void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
 
 CollisionType Collision::DetermineOptimalCollisionType() const
 {
-    // Enhanced heuristic based on model complexity
-    if (m_complexity.triangleCount > 500) // Very complex models
-        return CollisionType::TRIANGLE_PRECISE;
-    else if (m_complexity.IsComplex()) // Moderately complex models
-        return CollisionType::IMPROVED_AABB;
-    else
+    // Enhanced heuristic with safety limits to prevent memory issues
+    size_t triangleCount = m_complexity.triangleCount;
+
+    // Safety: Never use precise collision for models with many triangles
+    if (triangleCount > 1000)
+    {
+        TraceLog(LOG_INFO, "Model has %zu triangles - using AABB for performance", triangleCount);
         return CollisionType::AABB_ONLY;
+    }
+    else if (triangleCount > 500)
+    {
+        TraceLog(LOG_INFO, "Model has %zu triangles - using improved AABB", triangleCount);
+        return CollisionType::IMPROVED_AABB;
+    }
+    else if (triangleCount > 100)
+    {
+        TraceLog(LOG_INFO, "Model has %zu triangles - using improved collision", triangleCount);
+        return CollisionType::IMPROVED_AABB;
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "Model has %zu triangles - using AABB only", triangleCount);
+        return CollisionType::AABB_ONLY; // Changed: Use AABB for small models too - safer
+    }
 }
 
 void Collision::ExtractTrianglesFromModel(Model *model, const Matrix &transform)
@@ -644,11 +685,11 @@ void Collision::ExtractTrianglesFromModel(Model *model, const Matrix &transform)
         if (mesh.indices)
         {
             // Indexed mesh
-            for (int i = 0; i < mesh.triangleCount * 3; i += 3)
+            for (int i = 0; i < mesh.triangleCount; i++)
             {
-                unsigned short i0 = mesh.indices[i];
-                unsigned short i1 = mesh.indices[i + 1];
-                unsigned short i2 = mesh.indices[i + 2];
+                unsigned short i0 = mesh.indices[i * 3 + 0];
+                unsigned short i1 = mesh.indices[i * 3 + 1];
+                unsigned short i2 = mesh.indices[i * 3 + 2];
 
                 Vector3 v0 = {mesh.vertices[i0 * 3], mesh.vertices[i0 * 3 + 1],
                               mesh.vertices[i0 * 3 + 2]};

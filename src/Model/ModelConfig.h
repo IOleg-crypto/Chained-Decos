@@ -18,6 +18,7 @@ struct ModelInstanceConfig
 // Collision precision levels
 enum class CollisionPrecision
 {
+    AUTO = -1,           // Automatically choose based on model complexity (recommended)
     AABB_ONLY = 0,       // Simple bounding box (fastest)
     IMPROVED_AABB = 1,   // Smaller AABB blocks within octree (balanced)
     TRIANGLE_PRECISE = 2 // Triangle-to-triangle collision (most precise)
