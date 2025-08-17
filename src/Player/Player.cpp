@@ -163,7 +163,14 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
     Vector3 playerPosition = GetPlayerPosition();
     if (isColliding)
     {
-        if (response.y > 0.0f)
+        // Anti-jittering: Apply damping to small response vectors
+        float responseLength = Vector3Length(response);
+        const float MIN_RESPONSE_THRESHOLD = 0.00002f;
+        
+        if (responseLength < MIN_RESPONSE_THRESHOLD) {
+            // Response is too small, might be jittering - ignore
+            isColliding = false;
+        } else if (response.y > 0.0f)
         {
             playerPosition.y += response.y;
             m_physics.SetVelocity({0, 0, 0});
@@ -174,7 +181,7 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
         {
             playerPosition.y += response.y;
             m_physics.SetVelocity({0, 0, 0});
-            m_physics.SetGroundLevel(true); // Гравець приземлився
+            m_physics.SetGroundLevel(true); // Player has landed
             m_isJumping = false;
         }
         else // Hitting ceiling or wall

@@ -7,7 +7,7 @@
   },
   {
     "name": "arc",
-    "path": "/resources/arc.glb",
+    "path": "/resources/doric_arena.glb",
     "spawn": true,
     "hasCollision" : true,
     "collisionPrecision": "triangle",
@@ -15,7 +15,7 @@
     "instances": [
       {
         "position": { "x": 5, "y": 0, "z": 0 },
-        "scale": 0.6,
+        "scale": 2.6,
         "color": "blue"
       }
     ]

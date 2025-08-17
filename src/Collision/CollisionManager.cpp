@@ -25,7 +25,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
     // TraceLog(LOG_INFO, "🧍 Player collision check: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
     //          playerMin.x, playerMin.y, playerMin.z, playerMax.x, playerMax.y, playerMax.z);
 
-    TraceLog(LOG_ERROR, "� DEBUG: Total colliders to check: %zu", m_collisions.size());
+    // TraceLog(LOG_INFO, "📋 Total colliders to check: %zu", m_collisions.size());
 
     int colliderIndex = 0;
     for (const auto &collider : m_collisions)
@@ -33,12 +33,9 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         Vector3 colliderMin = collider.GetMin();
         Vector3 colliderMax = collider.GetMax();
 
-        TraceLog(LOG_ERROR,
-                 "🔍 DEBUG: Checking collider [%d]: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f) type=%d "
-                 "triangles=%zu",
-                 colliderIndex, colliderMin.x, colliderMin.y, colliderMin.z, colliderMax.x,
-                 colliderMax.y, colliderMax.z, (int)collider.GetCollisionType(),
-                 collider.GetTriangleCount());
+        // TraceLog(LOG_INFO, "🔍 Checking collider [%d]: (%.2f,%.2f,%.2f) to (%.2f,%.2f,%.2f)",
+        //          colliderIndex, colliderMin.x, colliderMin.y, colliderMin.z, colliderMax.x,
+        //          colliderMax.y, colliderMax.z);
 
         // Check collision using hybrid system (automatically chooses optimal method)
         bool hasCollision = playerCollision.Intersects(collider);
@@ -77,20 +74,23 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
             float absDy = fabsf(dy);
             float absDz = fabsf(dz);
 
-            // // Debug MTV calculation for non-ground colliders (ground is now last)
-            // if (colliderIndex != static_cast<int>(m_collisions.size()) - 1)
-            // {
-            //     TraceLog(LOG_INFO, "  MTV: dx=%.3f dy=%.3f dz=%.3f (abs: %.3f %.3f %.3f)", dx,
-            //     dy,
-            //              dz, absDx, absDy, absDz);
-            // }
+            // Anti-jittering: Ignore very small collisions (less than 0.01 units)
+            const float COLLISION_THRESHOLD = 0.01f;
+            float minDistance = (absDx < absDy && absDx < absDz) ? absDx : 
+                               (absDy < absDz) ? absDy : absDz;
+                               
+            if (minDistance < COLLISION_THRESHOLD) {
+                // Collision is too small - might be jittering, ignore it
+                continue;
+            }
 
+            // Prefer horizontal movement over vertical to reduce Y-axis jittering
             if (absDx < absDy && absDx < absDz)
                 response = {dx, 0, 0};
-            else if (absDy < absDz)
-                response = {0, dy, 0};
-            else
+            else if (absDz < absDy)  // Prefer Z over Y
                 response = {0, 0, dz};
+            else
+                response = {0, dy, 0};
 
             return true;
         }
