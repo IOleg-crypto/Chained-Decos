@@ -1,7 +1,7 @@
 name: CMake on multiple platforms
 
 on:
-   workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,9 +24,6 @@ jobs:
             cpp_compiler: g++
 
     steps:
-    #################################
-    # Checkout repository and submodules
-    #################################
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
@@ -38,30 +35,12 @@ jobs:
         git submodule sync
         git submodule update --init --remote --merge
 
-    #################################
-    # Set build output dir
-    #################################
     - name: Set build output dir
       shell: bash
       id: strings
       run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    #################################
-    # Cache build dependencies
-    #################################
-    - name: Cache build dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ${{ steps.strings.outputs.build-output-dir }}/_deps
-          ~/.cache/vcpkg
-        key: ${{ runner.os }}-${{ matrix.c_compiler }}-deps-${{ hashFiles('**/CMakeLists.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.c_compiler }}-deps-
-
-    #################################
-    # Linux-specific setup
-    #################################
+    # ---------------- Linux setup ----------------
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       shell: bash
@@ -77,24 +56,6 @@ jobs:
       shell: bash
       run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
 
-    #################################
-    # Windows-specific setup
-    #################################
-    - name: Install MinGW (Windows)
-      if: matrix.os == 'windows-latest'
-      shell: pwsh
-      run: |
-        choco install mingw --no-progress
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $env:GITHUB_PATH
-
-    - name: Clean build directory (Windows)
-      if: matrix.os == 'windows-latest'
-      shell: pwsh
-      run: Remove-Item -Path "${{ steps.strings.outputs.build-output-dir }}" -Recurse -Force -ErrorAction SilentlyContinue
-
-    #################################
-    # Configure CMake
-    #################################
     - name: Configure CMake (Linux)
       if: matrix.os == 'ubuntu-latest'
       shell: bash
@@ -108,6 +69,30 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -S ${{ github.workspace }}
 
+    - name: Build (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target unit_tests -- -j$(nproc)
+
+    - name: Run unit tests (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        xvfb-run -a ${{ steps.strings.outputs.build-output-dir }}/tests/unit_tests
+
+    # ---------------- Windows setup ----------------
+    - name: Install MinGW (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        choco install mingw --no-progress
+        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $env:GITHUB_PATH
+
+    - name: Clean build directory (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: Remove-Item -Path "${{ steps.strings.outputs.build-output-dir }}" -Recurse -Force -ErrorAction SilentlyContinue
+
     - name: Configure CMake (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
@@ -119,36 +104,12 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
           -S "${{ github.workspace }}"
 
-    #################################
-    # Build project
-    #################################
-    - name: Build (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      shell: bash
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target unit_tests  -- -j$(nproc)  
-
     - name: Build (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
-      run: 
-        cmake --build "${{ steps.strings.outputs.build-output-dir }}" --config ${{ matrix.build_type }}  --target unit_tests
+      run: cmake --build "${{ steps.strings.outputs.build-output-dir }}" --config ${{ matrix.build_type }} --target unit_tests
 
-
-    #################################
-    # Run tests (Linux)
-    #################################
-    - name: Run unit tests (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      shell: bash
-      run: |
-        chmod +x ${{ steps.strings.outputs.build-output-dir }}/unit_tests
-        ${{ steps.strings.outputs.build-output-dir }}/tests/unit_tests
-
-    #################################
-    # Run tests (Windows)
-    #################################
     - name: Run unit tests (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
-      run: |
-        & "${{ steps.strings.outputs.build-output-dir }}\tests\unit_tests.exe"
+      run: "${{ steps.strings.outputs.build-output-dir }}/tests/unit_tests.exe"

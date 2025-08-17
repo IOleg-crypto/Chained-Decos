@@ -74,8 +74,8 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
             float absDy = fabsf(dy);
             float absDz = fabsf(dz);
 
-            // Anti-jittering: Ignore very small collisions (less than 0.01 units)
-            const float COLLISION_THRESHOLD = 0.01f;
+            // Anti-jittering: Ignore very small collisions (architectural elements)
+            const float COLLISION_THRESHOLD = 0.05f;  // Increased for better walking experience
             float minDistance = (absDx < absDy && absDx < absDz) ? absDx : 
                                (absDy < absDz) ? absDy : absDz;
                                
