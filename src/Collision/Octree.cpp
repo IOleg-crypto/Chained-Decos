@@ -350,7 +350,7 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
             return false;
 
         const float SURFACE_THRESHOLD =
-            0.2f; // Reduced collision threshold for more precise detection
+            0.02f; // Very precise threshold for accurate collision detection
 
         // TraceLog(LOG_INFO,
         //          "ContainsPointRecursive: Checking point (%.2f, %.2f, %.2f) against %d triangles",
@@ -389,17 +389,25 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
             if (u >= 0 && v >= 0 && u + v <= 1)
             {
                 // Point projects onto triangle, now check distance to surface
-                Vector3 normal = triangle.normal;
+                Vector3 normal = Vector3Normalize(triangle.normal);
                 Vector3 toPoint = Vector3Subtract(point, v0);
                 float distanceToPlane = fabsf(Vector3DotProduct(toPoint, normal));
 
+                // For collision detection, we want to detect when the player is very close to the surface
+                // This is especially important for floor collision
                 if (distanceToPlane <= SURFACE_THRESHOLD)
                 {
-                    TraceLog(LOG_INFO,
-                             "Point collision detected: distance %.3f to triangle surface "
-                             "(barycentric: u=%.3f, v=%.3f)",
-                             distanceToPlane, u, v);
-                    return true; // Point is inside solid material
+                    // Check if this is a floor collision (normal pointing up)
+                    if (normal.y > 0.7f) { // Floor surface (normal pointing mostly up)
+                        // For floor collision, be more lenient with the threshold
+                        return distanceToPlane <= 0.02f;
+                    } else if (normal.y < -0.7f) { // Ceiling surface (normal pointing mostly down)
+                        // For ceiling collision, use normal threshold
+                        return distanceToPlane <= SURFACE_THRESHOLD;
+                    } else { // Wall surface
+                        // For wall collision, use smaller threshold to prevent sticking
+                        return distanceToPlane <= 0.005f;
+                    }
                 }
             }
         }
@@ -772,4 +780,26 @@ bool Octree::IntersectsImprovedRecursive(const OctreeNode *node, const Vector3 &
     }
 
     return false;
+}
+
+void Octree::DebugDraw(const Color &color) const
+{
+    if (m_root) {
+        DebugDrawRecursive(m_root.get(), color);
+    }
+}
+
+void Octree::DebugDrawRecursive(const OctreeNode *node, const Color &color) const
+{
+    if (!node) return;
+
+    Vector3 size = { node->halfSize * 2, node->halfSize * 2, node->halfSize * 2 };
+    DrawCubeWires(node->center, size.x, size.y, size.z, color);
+
+    if (!node->isLeaf)
+    {
+        for (int i = 0; i < 8; i++)
+            if (node->children[i])
+                DebugDrawRecursive(node->children[i].get(), color);
+    }
 }

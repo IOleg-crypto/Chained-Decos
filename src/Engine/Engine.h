@@ -70,9 +70,7 @@ private:
     void Render();
     void TestOctreeRayCasting();
     void OptimizeModelPerformance();
-    // Future features (currently unused)
-    // void LoadAdditionalModels();
-    // void SpawnPickups();
+
 
 public:
     void RequestExit();
@@ -97,7 +95,7 @@ private:
 
     // Counter for precise collisions per model to limit memory usage
     std::unordered_map<std::string, int> m_preciseCollisionCount;
-    static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 3; // Limit precise collisions
+    static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 15; // Limit precise collisions
 
     // Helper function to create cache key for scaled models
     std::string MakeCollisionCacheKey(const std::string &modelName, float scale) const;
@@ -111,6 +109,7 @@ private:
     // Debug State
     bool m_showDebug;
     bool m_showCollisionDebug;
+    bool m_showOctreeDebug;
 };
 
 #endif // ENGINE_H

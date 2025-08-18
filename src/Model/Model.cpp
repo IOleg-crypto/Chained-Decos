@@ -13,7 +13,7 @@ Models::Models() : m_cache(std::make_shared<ModelCache>())
 {
     // Initialize statistics
     m_stats = LoadingStats{};
-    TraceLog(LOG_INFO, "Models Manager initialized");
+    TraceLog(LOG_INFO, "Models Manager initialized (instance: %p)", this);
 }
 
 Models::~Models()
@@ -33,7 +33,7 @@ Models::~Models()
     m_animations.clear();
     m_configs.clear();
 
-    TraceLog(LOG_INFO, "Enhanced Models Manager destroyed");
+    TraceLog(LOG_INFO, "Enhanced Models Manager destroyed (instance: %p)", this);
 }
 
 void Models::LoadModelsFromJson(const std::string &path)
