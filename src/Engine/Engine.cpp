@@ -235,7 +235,7 @@ void Engine::InitCollisions()
     // Create a ground plane LAST (lower priority) - solid surface matching physics constants
     // Use reasonable ground plane size instead of massive 1000x1000
     Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-    Vector3 groundSize = {1000.0f, 5.0f, 1000.0f}; // Much smaller, reasonable ground plane
+    Vector3 groundSize = {500.0f, 1.0f, 500.0f}; // Much smaller, reasonable ground plane
     
     Collision plane{groundCenter, groundSize};
     // Explicitly set ground plane to use AABB_ONLY (simple plane collision)
@@ -763,24 +763,14 @@ void Engine::UpdatePhysics()
 
 void Engine::CheckPlayerBounds()
 {
-    // Reset player if they fall significantly below the world floor
-    // Give some buffer to prevent immediate respawn due to collision issues
-    const float RESPAWN_THRESHOLD = PhysicsComponent::WORLD_FLOOR_Y - 5.0f;
     
-    if (m_player.GetPlayerPosition().y < RESPAWN_THRESHOLD)
-    {
-        TraceLog(LOG_WARNING, "Player fell below world bounds (%.1f), respawning at (%.1f, %.1f, %.1f)...",
-                 RESPAWN_THRESHOLD, 
-                 Player::DEFAULT_SPAWN_POSITION.x, 
-                 Player::DEFAULT_SPAWN_POSITION.y, 
-                 Player::DEFAULT_SPAWN_POSITION.z);
-        m_player.SetPlayerPosition(Player::DEFAULT_SPAWN_POSITION);
+    m_player.SetPlayerPosition(Player::DEFAULT_SPAWN_POSITION);
         
-        // Reset physics state to prevent immediate falling
-        auto& physics = const_cast<PhysicsComponent&>(m_player.GetPhysics());
-        physics.SetGroundLevel(true);
-        physics.SetVelocity({0, 0, 0});
-    }
+    // Reset physics state to prevent immediate falling
+    auto& physics = const_cast<PhysicsComponent&>(m_player.GetPhysics());
+    physics.SetGroundLevel(true);
+    physics.SetVelocity({0, 0, 0});
+    
 }
 
 void Engine::HandleKeyboardShortcuts() const { m_manager.ProcessInput(); }
