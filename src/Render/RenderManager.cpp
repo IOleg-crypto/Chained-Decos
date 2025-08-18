@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
+#include <Collision/Octree.h>
 #include <Menu/Menu.h>
 #include <Model/Model.h>
 #include <Player/Player.h>
@@ -104,7 +105,6 @@ void RenderManager::RenderGame(const Player &player, const Models &models,
     // End 3D rendering
     EndMode3D();
 
-    // Показуємо висоту гравця в реальному часі (2D overlay)
     ShowMetersPlayer(player);
 }
 
@@ -130,7 +130,7 @@ void RenderManager::EndMode3D() { ::EndMode3D(); }
 void RenderManager::DrawScene3D(const Models &models)
 {
     // // Draw ground plane using constants from PhysicsComponent
-    // DrawPlane(PhysicsComponent::GROUND_POSITION, PhysicsComponent::GROUND_SIZE, LIGHTGRAY);
+    DrawPlane(PhysicsComponent::GROUND_POSITION, PhysicsComponent::GROUND_SIZE, LIGHTGRAY);
 
     // Draw all models
     models.DrawAllModels();
@@ -166,7 +166,19 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
         m_collisionDebugRenderer->RenderAllCollisions(colliders);
         m_collisionDebugRenderer->RenderPlayerCollision(player.GetCollision());
 
-        TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer");
+        // Debug render octrees for all colliders that have them
+        for (const auto &collider : colliders)
+        {
+            // Get octree from each collision object
+            auto *octree = const_cast<Collision&>(collider).GetOctree();
+            if (octree)
+            {
+                // Render octree wireframes in green color to distinguish from AABB collision boxes
+                octree->DebugDraw(GREEN);
+            }
+        }
+
+        TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer with Octree debug");
     }
 }
 

@@ -106,6 +106,8 @@ ModelFileConfig JsonHelper::ParseModelConfig(const json &entry)
         config.collisionPrecision = CollisionPrecision::AUTO;
     else if (precisionStr == "aabb" || precisionStr == "simple")
         config.collisionPrecision = CollisionPrecision::AABB_ONLY;
+    else if (precisionStr == "octree" || precisionStr == "octree_only")
+        config.collisionPrecision = CollisionPrecision::OCTREE_ONLY;
     else if (precisionStr == "improved" || precisionStr == "balanced")
         config.collisionPrecision = CollisionPrecision::IMPROVED_AABB;
     else if (precisionStr == "precise" || precisionStr == "triangle")

@@ -163,20 +163,21 @@ void Engine::InitInput()
                                  EnableCursor();
                              });
 
-    // Camera controls
-    m_manager.RegisterAction(KEY_ONE,
-                             [this, &camera, &cameraMode]()
-                             {
-                                 cameraMode = CAMERA_FREE;
-                                 camera.up = {0, 1, 0};
-                                 TraceLog(LOG_INFO, "Camera mode: FREE");
-                             });
+    // // Camera controls
+    // m_manager.RegisterAction(KEY_ONE,
+    //                          [this, &camera, &cameraMode]()
+    //                          {
+    //                              cameraMode = CAMERA_FREE;
+    //                              camera.up = {0, 1, 0};
+    //                              TraceLog(LOG_INFO, "Camera mode: FREE");
+    //                          });
 
     // Debug toggles
     m_manager.RegisterAction(KEY_F2,
                              [this]()
                              {
                                  m_renderManager.ToggleDebugInfo();
+                                 
                                  m_showDebug = m_renderManager.IsDebugInfoVisible();
                                  TraceLog(LOG_INFO, "Debug info: %s", m_showDebug ? "ON" : "OFF");
                              });
@@ -189,6 +190,7 @@ void Engine::InitInput()
                                  TraceLog(LOG_INFO, "Collision debug: %s",
                                           m_showCollisionDebug ? "ON" : "OFF");
                              });
+
 
     // Utility functions
     m_manager.RegisterAction(KEY_F4, [this]() { m_shouldExit = true; });
@@ -220,7 +222,7 @@ void Engine::InitInput()
 
     TraceLog(LOG_INFO, "Input bindings configured successfully");
 }
-// TESTING
+// TESTING(add plane)
 void Engine::InitCollisions()
 {
     TraceLog(LOG_INFO, "🔥 InitCollisions: Starting collision system initialization...");
@@ -230,12 +232,19 @@ void Engine::InitCollisions()
     CreateAutoCollisionsFromModels();
     TraceLog(LOG_INFO, "🔥 InitCollisions: CreateAutoCollisionsFromModels() completed");
 
-    // Create a ground plane LAST (lower priority) - solid surface at y=0
-    Collision plane{(Vector3){0, -5, 0}, (Vector3){1000, 10, 1000}};
-    // Simple plane uses AABB by default (no need to set anything)
+    // Create a ground plane LAST (lower priority) - solid surface matching physics constants
+    // Use reasonable ground plane size instead of massive 1000x1000
+    Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
+    Vector3 groundSize = {1000.0f, 5.0f, 1000.0f}; // Much smaller, reasonable ground plane
+    
+    Collision plane{groundCenter, groundSize};
+    // Explicitly set ground plane to use AABB_ONLY (simple plane collision)
+    plane.SetCollisionType(CollisionType::AABB_ONLY);
     m_collisionManager.AddCollider(plane);
     TraceLog(LOG_INFO,
-             "Ground plane added to Legacy system: center(0,-5,0) extends from y=-10 to y=0");
+             "Ground plane added to Legacy system: center(%.1f,%.1f,%.1f) size(%.1f,%.1f,%.1f)",
+             groundCenter.x, groundCenter.y, groundCenter.z,
+             groundSize.x, groundSize.y, groundSize.z);
 }
 
 void Engine::CreateAutoCollisionsFromModels()
@@ -399,6 +408,7 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
     {
         needsPreciseCollision =
             (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE ||
+             config->collisionPrecision == CollisionPrecision::OCTREE_ONLY ||
              config->collisionPrecision == CollisionPrecision::IMPROVED_AABB ||
              config->collisionPrecision == CollisionPrecision::AUTO);
 
@@ -406,6 +416,7 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
                  modelName.c_str(),
                  (config->collisionPrecision == CollisionPrecision::AUTO)               ? "AUTO"
                  : (config->collisionPrecision == CollisionPrecision::AABB_ONLY)        ? "AABB"
+                 : (config->collisionPrecision == CollisionPrecision::OCTREE_ONLY)      ? "OCTREE"
                  : (config->collisionPrecision == CollisionPrecision::IMPROVED_AABB)    ? "IMPROVED"
                  : (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE) ? "TRIANGLE"
                                                                                         : "UNKNOWN",
@@ -496,21 +507,37 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
             m_collisionCache[cacheKey] = cachedCollision;
 
             // 🚨 CRITICAL FIX: Ensure cached collision has correct type for precise configs
-            if (needsPreciseCollision && config &&
-                config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE)
+            if (needsPreciseCollision && config)
             {
-                TraceLog(
-                    LOG_ERROR,
-                    "🔥 ATTEMPTING TO FORCE cached collision type to TRIANGLE_PRECISE for '%s'",
-                    modelName.c_str());
+                CollisionType targetType;
+                const char* targetTypeName;
+                
+                if (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE) {
+                    targetType = CollisionType::TRIANGLE_PRECISE;
+                    targetTypeName = "TRIANGLE_PRECISE";
+                } else if (config->collisionPrecision == CollisionPrecision::OCTREE_ONLY) {
+                    targetType = CollisionType::OCTREE_ONLY;
+                    targetTypeName = "OCTREE_ONLY";
+                } else if (config->collisionPrecision == CollisionPrecision::IMPROVED_AABB) {
+                    targetType = CollisionType::IMPROVED_AABB;
+                    targetTypeName = "IMPROVED_AABB";
+                } else {
+                    targetType = CollisionType::HYBRID_AUTO;
+                    targetTypeName = "HYBRID_AUTO";
+                }
+                
+                TraceLog(LOG_INFO, "🔥 FORCING cached collision type to %s for '%s'",
+                         targetTypeName, modelName.c_str());
                 CollisionType beforeType = cachedCollision->GetCollisionType();
-                cachedCollision->SetCollisionType(CollisionType::TRIANGLE_PRECISE);
+                cachedCollision->SetCollisionType(targetType);
                 CollisionType afterType = cachedCollision->GetCollisionType();
-                TraceLog(LOG_ERROR, "🔧 FORCED cached collision: BEFORE=%s, AFTER=%s",
+                TraceLog(LOG_INFO, "🔧 FORCED cached collision: BEFORE=%s, AFTER=%s",
                          beforeType == CollisionType::TRIANGLE_PRECISE ? "TRIANGLE_PRECISE"
+                         : beforeType == CollisionType::OCTREE_ONLY ? "OCTREE_ONLY"
                          : beforeType == CollisionType::IMPROVED_AABB  ? "IMPROVED_AABB"
                                                                        : "OTHER",
                          afterType == CollisionType::TRIANGLE_PRECISE ? "TRIANGLE_PRECISE"
+                         : afterType == CollisionType::OCTREE_ONLY ? "OCTREE_ONLY"
                          : afterType == CollisionType::IMPROVED_AABB  ? "IMPROVED_AABB"
                                                                       : "OTHER");
             }
@@ -604,21 +631,25 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
 
             preciseCount++; // Increment counter
 
-            // 🚨 CRITICAL FIX: Force the collision type to be TRIANGLE_PRECISE, not HYBRID_AUTO!
+            // 🚨 Use OCTREE_ONLY for models (more stable than TRIANGLE_PRECISE)
             CollisionType beforeInstanceType = instanceCollision.GetCollisionType();
-            instanceCollision.SetCollisionType(CollisionType::TRIANGLE_PRECISE);
+            instanceCollision.SetCollisionType(CollisionType::OCTREE_ONLY);
             CollisionType afterInstanceType = instanceCollision.GetCollisionType();
             TraceLog(LOG_ERROR, "🔧 FORCED instance collision: BEFORE=%s, AFTER=%s for '%s'",
                      beforeInstanceType == CollisionType::TRIANGLE_PRECISE ? "TRIANGLE_PRECISE"
                      : beforeInstanceType == CollisionType::IMPROVED_AABB  ? "IMPROVED_AABB"
+                     : beforeInstanceType == CollisionType::AABB_ONLY      ? "AABB_ONLY"
+                     : beforeInstanceType == CollisionType::OCTREE_ONLY    ? "OCTREE_ONLY"
                                                                            : "OTHER",
                      afterInstanceType == CollisionType::TRIANGLE_PRECISE ? "TRIANGLE_PRECISE"
                      : afterInstanceType == CollisionType::IMPROVED_AABB  ? "IMPROVED_AABB"
+                     : afterInstanceType == CollisionType::AABB_ONLY      ? "AABB_ONLY"
+                     : afterInstanceType == CollisionType::OCTREE_ONLY    ? "OCTREE_ONLY"
                                                                           : "OTHER",
                      modelName.c_str());
 
             TraceLog(LOG_INFO,
-                     "Built precise collision with octree for instance at (%.2f, %.2f, %.2f)",
+                     "Built OCTREE collision for instance at (%.2f, %.2f, %.2f)",
                      position.x, position.y, position.z);
         }
         else
@@ -703,7 +734,14 @@ void Engine::UpdatePlayer()
         bool isColliding = m_collisionManager.CheckCollision(m_player.GetCollision(), response);
 
         if (isColliding)
-        {
+        {        
+            // // Check for stuck marker first
+            // if (responseLength > 500.0f) {
+            //     TraceLog(LOG_ERROR, "🚨 STUCK MARKER DETECTED in Engine (%.2f) - player extracting", responseLength);
+            //     // Let the player handle extraction - don't apply the response
+            //     return;
+            // }
+            
             // TraceLog(LOG_INFO,
             //          "🏃 Immediate collision detected, applying response: (%.2f,%.2f,%.2f)",
             //          response.x, response.y, response.z);
@@ -725,12 +763,23 @@ void Engine::UpdatePhysics()
 
 void Engine::CheckPlayerBounds()
 {
-    // Reset player if they fall below the world (improved with constants)
-    if (m_player.GetPlayerPosition().y < PhysicsComponent::WORLD_FLOOR_Y)
+    // Reset player if they fall significantly below the world floor
+    // Give some buffer to prevent immediate respawn due to collision issues
+    const float RESPAWN_THRESHOLD = PhysicsComponent::WORLD_FLOOR_Y - 5.0f;
+    
+    if (m_player.GetPlayerPosition().y < RESPAWN_THRESHOLD)
     {
-        TraceLog(LOG_WARNING, "Player fell below world bounds (%.1f), respawning...",
-                 PhysicsComponent::WORLD_FLOOR_Y);
+        TraceLog(LOG_WARNING, "Player fell below world bounds (%.1f), respawning at (%.1f, %.1f, %.1f)...",
+                 RESPAWN_THRESHOLD, 
+                 Player::DEFAULT_SPAWN_POSITION.x, 
+                 Player::DEFAULT_SPAWN_POSITION.y, 
+                 Player::DEFAULT_SPAWN_POSITION.z);
         m_player.SetPlayerPosition(Player::DEFAULT_SPAWN_POSITION);
+        
+        // Reset physics state to prevent immediate falling
+        auto& physics = const_cast<PhysicsComponent&>(m_player.GetPhysics());
+        physics.SetGroundLevel(true);
+        physics.SetVelocity({0, 0, 0});
     }
 }
 
@@ -922,44 +971,3 @@ void Engine::OptimizeModelPerformance()
 
     TraceLog(LOG_INFO, "Model performance optimization completed");
 }
-
-// ==================== FUTURE FEATURES (UNUSED) ====================
-
-// void Engine::LoadAdditionalModels()
-// {
-//     TraceLog(LOG_INFO, "Loading additional models dynamically...");
-
-//     if (m_models.LoadSingleModel("pickup", "/resources/pickup.glb", true))
-//     {
-//         TraceLog(LOG_INFO, "Pickup model loaded successfully");
-//         SpawnPickups();
-//     }
-// }
-
-// void Engine::SpawnPickups()
-// {
-//     TraceLog(LOG_INFO, "Spawning pickups...");
-
-//     // Local spawning constants
-//     constexpr int PICKUP_COUNT = 8;
-//     constexpr float PICKUP_Y_POSITION = 0.5f;
-//     constexpr float PICKUP_SCALE = 0.5f;
-//     constexpr int PICKUP_SPAWN_RANGE = 10;
-
-//     for (int i = 0; i < PICKUP_COUNT; i++)
-//     {
-//         ModelInstanceConfig pickupConfig;
-//         pickupConfig.position = Vector3{
-//             (float)(GetRandomValue(-PICKUP_SPAWN_RANGE, PICKUP_SPAWN_RANGE)), PICKUP_Y_POSITION,
-//             (float)(GetRandomValue(-PICKUP_SPAWN_RANGE, PICKUP_SPAWN_RANGE))};
-//         pickupConfig.scale = PICKUP_SCALE;
-//         pickupConfig.color = YELLOW;
-//         pickupConfig.tag = "pickup";
-//         pickupConfig.spawn = true;
-
-//         if (m_models.AddInstanceEx("pickup", pickupConfig))
-//         {
-//             TraceLog(LOG_INFO, "Spawned pickup %d", i + 1);
-//         }
-//     }
-// }

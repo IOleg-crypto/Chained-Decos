@@ -68,6 +68,7 @@ private:
     float m_rotationY = 0.0f;
 
     bool m_isJumping = false;
+    float m_jumpStartTime = 0.0f;
     bool m_isPlayerMoving = false;
     bool m_isJumpCollision = false;
     float m_walkSpeed = 3.0f;
@@ -86,6 +87,10 @@ private:
 
     Collision m_collision{};
     CollisionManager m_collisionManager;
+    
+    // Stuck detection
+    int m_stuckCounter = 0;
+    float m_lastStuckTime = 0.0f;
 
 private:
     // Helper methods for cleaner code
@@ -93,6 +98,7 @@ private:
     std::pair<Vector3, Vector3> GetCameraVectors(); // Returns {forward, right}
     void ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime);
     void ApplyAirborneMovement(const Vector3 &worldMoveDir, float deltaTime);
+    bool ExtractFromCollider(); // Extract player from inside collider
 };
 
 #endif // PLAYER_H

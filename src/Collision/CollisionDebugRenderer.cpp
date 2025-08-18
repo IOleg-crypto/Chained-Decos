@@ -23,6 +23,7 @@ void CollisionDebugRenderer::RenderAllCollisions(const std::vector<Collision> &c
         Color color = (i == 0) ? m_groundColor : m_obstacleColor; //
         RenderCollisionBox(collisions[i], color);
     }
+    
 }
 
 void CollisionDebugRenderer::RenderPlayerCollision(const Collision &playerCollision) const

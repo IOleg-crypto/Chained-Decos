@@ -89,7 +89,7 @@ public:
 
 private:
     // Physics parameters
-    float m_gravity = 10.0f;        // Gravity acceleration
+    float m_gravity = 8.0f;        // Gravity acceleration (reduced for better collision)
     float m_velocityY = 0.0f;       // Vertical velocity
     bool m_isGrounded = true;       // Whether object is on the ground
     float m_groundLevel = 0.0f;     // Ground height level (top of ground plane)
