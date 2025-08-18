@@ -309,7 +309,7 @@ void RenderManager::DrawControlsInfo()
 void RenderManager::ShowMetersPlayer(const Player &player)
 {
     Vector3 playerPosition = player.GetPlayerPosition();
-    float groundLevel = PhysicsComponent::WORLD_FLOOR_Y;
+    float groundLevel = 0;
     float heightAboveGround = playerPosition.y - groundLevel;
 
     static float maxHeight = 0.0f;
