@@ -46,6 +46,15 @@ int OctreeNode::GetChildIndex(const Vector3 &point) const
     return index;
 }
 
+Vector3 OctreeNode::GetMin() const{
+    return {center.x - halfSize, center.y - halfSize, center.z - halfSize};
+}
+
+Vector3 OctreeNode::GetMax() const{
+    return {center.x + halfSize, center.y + halfSize, center.z + halfSize};
+}
+
+
 // ================== Octree Implementation ==================
 
 Octree::Octree() : m_triangleCount(0)
@@ -389,7 +398,7 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
             if (u >= 0 && v >= 0 && u + v <= 1)
             {
                 // Point projects onto triangle, now check distance to surface
-                Vector3 normal = Vector3Normalize(triangle.normal);
+                Vector3 normal = (triangle.normal);
                 Vector3 toPoint = Vector3Subtract(point, v0);
                 float distanceToPlane = fabsf(Vector3DotProduct(toPoint, normal));
 

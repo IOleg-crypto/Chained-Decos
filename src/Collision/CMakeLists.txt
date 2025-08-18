@@ -7,6 +7,7 @@ add_library(collision STATIC
     CollisionManager.h
     CollisionDebugRenderer.cpp
     CollisionDebugRenderer.h
+    CollisionUtils.h
     Octree.cpp
     Octree.h
 )

@@ -28,14 +28,8 @@ struct OctreeNode
     OctreeNode(const Vector3 &center, float halfSize);
 
     // Get bounding box of this node
-    Vector3 GetMin() const
-    {
-        return {center.x - halfSize, center.y - halfSize, center.z - halfSize};
-    }
-    Vector3 GetMax() const
-    {
-        return {center.x + halfSize, center.y + halfSize, center.z + halfSize};
-    }
+    Vector3 GetMin() const;
+    Vector3 GetMax() const;
 
     // Check if point is inside this node
     bool Contains(const Vector3 &point) const;
@@ -56,9 +50,9 @@ class Octree
 {
 public:
     static constexpr int MAX_TRIANGLES_PER_NODE =
-        20;                                      // Maximum triangles per leaf (increased from 10)
+        40;                                      // Maximum triangles per leaf (increased from 10)
     static constexpr int MAX_DEPTH = 10;          // Maximum tree depth (reduced from 8)
-    static constexpr float MIN_NODE_SIZE = 2.0f; // Minimum node size (increased from 1.3f)
+    static constexpr float MIN_NODE_SIZE = 5.0f; // Minimum node size (increased from 1.3f)
 
     Octree();
     ~Octree() = default;
