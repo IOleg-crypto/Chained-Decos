@@ -131,6 +131,9 @@ public:
     size_t GetNodeCount() const;
     int GetMaxDepth() const;
 
+    // -------------------- Triangle Access --------------------
+    Octree* GetOctree();
+
     // -------------------- Performance Methods --------------------
 
     // Get collision detection performance stats
