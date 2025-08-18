@@ -1,7 +1,8 @@
 BasedOnStyle: LLVM
 IndentWidth: 4
 AccessModifierOffset: -4
-TabWidth: 6
+TabWidth: 8
+ContinuationIndentWidth: 4
 UseTab: Never
 AllowShortIfStatementsOnASingleLine: false
 ColumnLimit: 100

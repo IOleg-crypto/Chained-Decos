@@ -19,7 +19,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision) const
                        });
 }
 
-bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const
+bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const 
 {
     // Early exit if no colliders are registered
     if (m_collisions.size() == 0) {
