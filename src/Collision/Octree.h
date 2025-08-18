@@ -45,6 +45,8 @@ struct OctreeNode
 
     // Get child index for a point (0-7)
     int GetChildIndex(const Vector3 &point) const;
+
+    
 };
 
 //
@@ -55,7 +57,7 @@ class Octree
 public:
     static constexpr int MAX_TRIANGLES_PER_NODE =
         20;                                      // Maximum triangles per leaf (increased from 10)
-    static constexpr int MAX_DEPTH = 6;          // Maximum tree depth (reduced from 8)
+    static constexpr int MAX_DEPTH = 10;          // Maximum tree depth (reduced from 8)
     static constexpr float MIN_NODE_SIZE = 2.0f; // Minimum node size (increased from 1.3f)
 
     Octree();
@@ -80,6 +82,10 @@ public:
                             const Vector3 &max) const; // Improved AABB collision
     bool ContainsPoint(const Vector3 &point) const;
 
+    // Debug rendering
+    void DebugDraw(const Color &color = RED) const;
+    void DebugDrawRecursive(const OctreeNode *node, const Color &color) const;
+
     // Ray casting
     bool Raycast(const Vector3 &origin, const Vector3 &direction, float maxDistance,
                  float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const;
@@ -96,7 +102,7 @@ private:
     std::unique_ptr<OctreeNode> m_root;
     Vector3 m_min, m_max; // Bounding box of entire octree
     size_t m_triangleCount;
-
+private:
     // Internal methods
     void BuildRecursive(OctreeNode *node, const std::vector<CollisionTriangle> &triangles,
                         int depth);
