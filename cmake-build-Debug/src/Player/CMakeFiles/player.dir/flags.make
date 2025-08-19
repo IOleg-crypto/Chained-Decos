@@ -6,5 +6,5 @@ CXX_DEFINES = -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"
 
 CXX_INCLUDES = @CMakeFiles/player.dir/includes_CXX.rsp
 
-CXX_FLAGS = -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -Wextra -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd
+CXX_FLAGS = -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd
 

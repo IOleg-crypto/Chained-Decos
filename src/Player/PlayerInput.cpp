@@ -1,9 +1,8 @@
-#include <Player/PlayerInput.h>
 #include <Player/Player.h>
+#include <Player/PlayerInput.h>
 
-PlayerInput::PlayerInput(Player* player) : m_player(player)
-{
-}
+
+PlayerInput::PlayerInput(Player *player) : m_player(player) {}
 
 void PlayerInput::ProcessInput()
 {
@@ -11,7 +10,8 @@ void PlayerInput::ProcessInput()
     m_player->GetPhysics().Update(deltaTime);
 
     Vector3 inputDirection = GetInputDirection();
-    if (Vector3Length(inputDirection) < 0.001f) return;
+    if (Vector3Length(inputDirection) < 0.001f)
+        return;
 
     inputDirection = Vector3Normalize(inputDirection);
     auto [forward, right] = GetCameraVectors();
@@ -37,7 +37,8 @@ void PlayerInput::HandleJumpInput()
 {
     if (IsKeyDown(KEY_SPACE) && m_player->GetPhysics().IsGrounded())
     {
-        m_player->ApplyJumpImpulse(m_player->GetPhysics().GetJumpStrength() * 3.0f);
+        // Increased jump multiplier from 3.0f to 5.0f for higher jumps
+        m_player->ApplyJumpImpulse(m_player->GetPhysics().GetJumpStrength() * 5.0f);
     }
 }
 

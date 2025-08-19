@@ -59,18 +59,18 @@ private:
                                            // hasCollision=true
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
                                   Vector3 position, float scale);
-                                  
+
     // Helper methods for collision creation
-    std::shared_ptr<Collision> CreateBaseCollision(
-        const Model &model, const std::string &modelName,
-        const ModelFileConfig *config, bool needsPreciseCollision);
-        
-    Collision CreatePreciseInstanceCollision(
-        const Model &model, const std::string &modelName,
-        Vector3 position, float scale, const ModelFileConfig *config);
-        
-    Collision CreateSimpleInstanceCollision(
-        const Collision &cachedCollision, Vector3 position, float scale);
+    std::shared_ptr<Collision> CreateBaseCollision(const Model &model, const std::string &modelName,
+                                                   const ModelFileConfig *config,
+                                                   bool needsPreciseCollision);
+
+    Collision CreatePreciseInstanceCollision(const Model &model, Vector3 position, float scale,
+                                             const ModelFileConfig *config);
+
+    Collision CreateSimpleInstanceCollision(const Collision &cachedCollision, Vector3 position,
+                                            float scale);
+
 private:
     void Update();
     void UpdatePlayer();
@@ -81,13 +81,15 @@ private:
     void Render();
     void TestOctreeRayCasting();
     void OptimizeModelPerformance();
-    void TracePlayerIssue(const Vector3& pos, const Vector3& vel) const;
-    bool HasExtremeVelocity(const Vector3& vel) const;
-    bool IsPlayerOutOfBounds(const Vector3& pos) const;
+    void TracePlayerIssue(const Vector3 &pos, const Vector3 &vel) const;
+    bool HasExtremeVelocity(const Vector3 &vel) const;
+    bool IsPlayerOutOfBounds(const Vector3 &pos) const;
     void EnsureGroundPlaneExists();
+
 public:
     void RequestExit();
     bool IsRunning() const;
+
 private:
     // Window & Display
     int m_screenX;

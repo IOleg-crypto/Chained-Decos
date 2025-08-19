@@ -1,3 +1,4 @@
+#include "raylib.h"
 #include <Player/Player.h>
 #include <Player/PlayerMovement.h>
 
@@ -42,7 +43,9 @@ void PlayerMovement::SetCollisionManager(const CollisionManager *collisionManage
 void PlayerMovement::ApplyJumpImpulse(float impulse)
 {
     if (!m_physics.IsGrounded())
+    {
         return;
+    }
 
     TraceLog(LOG_INFO, "Jump impulse received: %.2f", impulse);
 
@@ -95,7 +98,9 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
 
     float moveDistance = Vector3Length(move);
     if (moveDistance < 0.001f)
+    {
         return newPosition;
+    }
 
     // Limit maximum movement per frame to prevent tunneling through objects
     const float MAX_MOVE_PER_FRAME = 0.5f;
@@ -123,7 +128,6 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
             ResolveCollision(response);
             newPosition = GetPosition();
             collisionDetected = true;
-            break;
         }
         else
         {
@@ -143,9 +147,13 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
         // Zero out very small velocities
         const float STOP_THRESHOLD = 0.01f;
         if (fabsf(currentVel.x) < STOP_THRESHOLD)
-            currentVel.x = 0.0f;
+        {
+            currentVel.x = 0.f;
+        }
         if (fabsf(currentVel.z) < STOP_THRESHOLD)
+        {
             currentVel.z = 0.0f;
+        }
 
         m_physics.SetVelocity(currentVel);
     }
@@ -236,10 +244,10 @@ void PlayerMovement::SnapToGroundIfNeeded(const CollisionManager &collisionManag
 {
     // Don't snap to ground if we're in the middle of a jump with upward velocity
     Vector3 vel = m_physics.GetVelocity();
-    if (vel.y > 0.1f)
-    {
-        return;
-    }
+    // if (vel.y > 0.1f)
+    // {
+    //     return;
+    // }
 
     Vector3 pos = GetPosition();
     float groundTop = PhysicsComponent::GROUND_COLLISION_CENTER.y +
@@ -318,7 +326,8 @@ bool PlayerMovement::TryStepUp(const Vector3 &targetPos, const Vector3 &response
 {
     const float MAX_STEP_HEIGHT = 0.5f;
     if (!m_physics.IsGrounded() || response.y <= 0.01f || response.y >= MAX_STEP_HEIGHT)
-        return false;
+        TraceLog(LOG_INFO, "🚫 Not attempting step up");
+    return false;
 
     Vector3 stepUpPos = targetPos;
     stepUpPos.y += response.y + 0.01f;
@@ -402,7 +411,8 @@ void PlayerMovement::WallSlide(const Vector3 &currentPos, const Vector3 &movemen
 void PlayerMovement::ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime)
 {
     if (Vector3Length(worldMoveDir) < 0.001f)
-        return;
+        TraceLog(LOG_INFO, "No movement this frame");
+    return;
 
     m_rotationY = atan2f(worldMoveDir.x, worldMoveDir.z) * RAD2DEG;
 
@@ -428,6 +438,7 @@ void PlayerMovement::ApplyGroundedMovement(const Vector3 &worldMoveDir, float de
         float maxAxis = fmaxf(fmaxf(fabsf(response.x), fabsf(response.y)), fabsf(response.z));
         if (maxAxis > 400.0f)
         {
+            TraceLog(LOG_ERROR, "🚨 Called maxaxis (max axis %.2f)", maxAxis);
             m_stuckCounter++;
             m_lastStuckTime = GetTime();
             TraceLog(LOG_ERROR, "🚨 STUCK MARKER DETECTED (max axis %.2f, count %d)", maxAxis,
@@ -544,7 +555,7 @@ bool PlayerMovement::ExtractFromCollider()
         {0.0f, 5.0f, 0.0f}  // Very high spawn position
     };
 
-    for (int i = 0; i < sizeof(safePositions) / sizeof(safePositions[0]); i++)
+    for (size_t i = 0; i < sizeof(safePositions) / sizeof(safePositions[0]); i++)
     {
         Vector3 safePos = safePositions[i];
         SetPosition(safePos);
@@ -558,16 +569,13 @@ bool PlayerMovement::ExtractFromCollider()
             m_physics.SetGroundLevel(false);           // Reset ground state
             return true;
         }
-        else
-        {
-            TraceLog(LOG_WARNING, "❌ Safe position [%d] failed: (%.2f, %.2f, %.2f)", i, safePos.x,
-                     safePos.y, safePos.z);
-        }
+        TraceLog(LOG_WARNING, "❌ Safe position [%d] failed: (%.2f, %.2f, %.2f)", i, safePos.x,
+                 safePos.y, safePos.z);
     }
 
     // If all safe positions failed, force to spawn position anyway
-    SetPosition({0.0f, 2.0f, 0.0f});
-    m_physics.SetVelocity({0.0f, 0.0f, 0.0f});
+    SetPosition({0.0F, 2.0F, 0.0F});
+    m_physics.SetVelocity({0.0F, 0.0F, 0.0F});
     m_physics.SetGroundLevel(false);
     TraceLog(LOG_ERROR, "🚨 ALL SAFE POSITIONS FAILED - forced teleport to spawn");
     return true;
