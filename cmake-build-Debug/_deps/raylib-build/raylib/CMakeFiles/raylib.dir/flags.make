@@ -6,5 +6,5 @@ C_DEFINES = -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNING
 
 C_INCLUDES = @CMakeFiles/raylib.dir/includes_C.rsp
 
-C_FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith   -g -O0 -DDEBUG -D_DEBUG -Wall -Wextra -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd
+C_FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd
 
