@@ -1,2 +1,0 @@
-E:/LLVM/bin/llvm-ar.exe qc imguilib.lib CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj
-E:/LLVM/bin/llvm-ranlib.exe imguilib.lib

@@ -6,18 +6,22 @@
                 "${default}",
                 "${workspaceFolder}/src",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/cmake-build-debug/_deps/*/include"
+                "${workspaceFolder}/cmake-build-debug/_deps/*/include",
+                "${workspaceFolder}/cmake-build-debug/_deps/raylib-src/src",
+                "${workspaceFolder}/cmake-build-debug/_deps/nlohmann_json-src/include"
             ],
             "defines": [
                 "_DEBUG",
                 "DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "PROJECT_ROOT_DIR=\"${workspaceFolder}\""
             ],
-            "compilerPath": "C:/msys64/mingw64/bin/g++.exe",
+            "compilerPath": "E:/LLVM/bin/clang++.exe",
             "cStandard": "c17",
             "cppStandard": "c++20",
-            "intelliSenseMode": "windows-gcc-x64"
+            "intelliSenseMode": "windows-clang-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4
