@@ -14,7 +14,13 @@
 #include <Model/Model.h>
 #include <World/Physics.h>
 
-// Player: handles movement, camera, collisions, model
+// Include new component headers
+#include <Player/PlayerMovement.h>
+#include <Player/PlayerInput.h>
+#include <Player/PlayerModel.h>
+#include <Player/PlayerCollision.h>
+
+// Player: main player class that uses component classes
 class Player
 {
 public:
@@ -32,26 +38,15 @@ public:
     void UpdatePlayerCollision();                                         // Update collisions
     void ApplyGravityForPlayer(const CollisionManager &collisionManager); // Gravity + collisions
 
+    // Delegate to PlayerInput
     void ApplyInput();                          // Process input
+    
+    // Delegate to PlayerMovement
     void Move(const Vector3 &moveVector);       // Move player
     void SetPlayerPosition(const Vector3 &pos); // Set position
     void ApplyJumpImpulse(float impulse);       // Jump impulse
-
-    std::shared_ptr<CameraController> GetCameraController() const; // Get camera
-
-    void SetPlayerModel(Model *model);        // Set 3D model
-    void ToggleModelRendering(bool useModel); // Show/hide model
-    Models &GetModelManager();                // Get model manager
-
-    [[nodiscard]] float GetSpeed();             // Get current speed
-    [[nodiscard]] float GetRotationY() const;   // Get Y rotation
-    void SetSpeed(float speed);                 // Set speed
-    Vector3 GetPlayerPosition() const;          // Get position
-    const Collision &GetCollision() const;      // Get collision info
-    bool IsJumpCollision() const;               // Check jump collision flag
-    BoundingBox GetPlayerBoundingBox() const;   // Get bounding box
-    const PhysicsComponent &GetPhysics() const; // Get physics component (const)
-    PhysicsComponent &GetPhysics(); // Get physics component (non-const)
+    void ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime);
+    void ApplyAirborneMovement(const Vector3 &worldMoveDir, float deltaTime);
     void SnapToGroundIfNeeded(const CollisionManager &collisionManager);
     void ResolveCollision(const Vector3 &response);
     Vector3 StepMovement(const CollisionManager &collisionManager);
@@ -62,49 +57,43 @@ public:
     bool TryStepUp(const Vector3 &targetPos, const Vector3 &response);
     Vector3 ClampMovementPerFrame(const Vector3 &movement, float maxMove);
 
+    // Camera access
+    std::shared_ptr<CameraController> GetCameraController() const; // Get camera
+
+    // Delegate to PlayerModel
+    void SetPlayerModel(Model *model);        // Set 3D model
+    void ToggleModelRendering(bool useModel); // Show/hide model
+    Models &GetModelManager();                // Get model manager
+
+    // Getters/Setters
+    [[nodiscard]] float GetSpeed();             // Get current speed
+    [[nodiscard]] float GetRotationY() const;   // Get Y rotation
+    void SetSpeed(float speed);                 // Set speed
+    Vector3 GetPlayerPosition() const;          // Get position
+    Vector3 GetPlayerSize() const;              // Get player size
+    const Collision &GetCollision() const;      // Get collision info
+    bool IsJumpCollision() const;               // Check jump collision flag
+    BoundingBox GetPlayerBoundingBox() const;   // Get bounding box
+    const PhysicsComponent &GetPhysics() const; // Get physics component (const)
+    PhysicsComponent &GetPhysics();             // Get physics component (non-const)
+
 private:
-    std::shared_ptr<CameraController> m_cameraController; // Camera control
-    float m_cameraYaw = 0.0f;
-    float m_cameraPitch = 0.0f;
-    float m_cameraSmoothingFactor = 4.0f;
+    // Component objects
+    std::unique_ptr<PlayerMovement> m_movement;
+    std::unique_ptr<PlayerInput> m_input;
+    std::unique_ptr<PlayerModel> m_model;
+    std::unique_ptr<PlayerCollision> m_collision;
+    
+    // Camera control
+    std::shared_ptr<CameraController> m_cameraController;
     Vector3 m_baseTarget = {0.0f, 2.0f, 0.0f};
     Vector3 m_originalCameraTarget = {0.0f, 2.0f, 0.0f};
-    float m_rotationY = 0.0f;
-
+    
+    // Player state
     bool m_isJumping = false;
     float m_jumpStartTime = 0.0f;
-    bool m_isPlayerMoving = false;
-    bool m_isJumpCollision = false;
-    float m_walkSpeed = 3.0f;
-    float m_runSpeed = 15.0f;
-    PhysicsComponent m_physics;
-
-    Vector3 m_playerPosition{};
-    Vector3 m_lastPlayerPosition{};
     Vector3 m_playerSize{};
     Color m_playerColor = BLUE;
-    BoundingBox m_playerBoundingBox{};
-
-    Model *m_playerModel = nullptr;
-    bool m_useModel = false;
-    Models m_modelPlayer;
-
-    Collision m_collision{};
-    
-    // Stuck detection
-    int m_stuckCounter = 0;
-    float m_lastStuckTime = 0.0f;
-    
-    // Reference to the engine's collision manager (set by ApplyGravityForPlayer)
-    const CollisionManager* m_lastCollisionManager = nullptr;
-
-private:
-    // Helper methods for cleaner code
-    Vector3 GetInputDirection();
-    std::pair<Vector3, Vector3> GetCameraVectors() const; // Returns {forward, right}
-    void ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime);
-    void ApplyAirborneMovement(const Vector3 &worldMoveDir, float deltaTime);
-    bool ExtractFromCollider(); // Extract player from inside collider
 };
 
 #endif // PLAYER_H
