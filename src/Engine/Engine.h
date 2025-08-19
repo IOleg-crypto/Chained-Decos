@@ -58,24 +58,36 @@ private:
     void CreateAutoCollisionsFromModels(); // Automatically create collisions for all models with
                                            // hasCollision=true
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
-                                  Vector3 position,
-                                  float scale); // Create BVH from model geometry
-
+                                  Vector3 position, float scale);
+                                  
+    // Helper methods for collision creation
+    std::shared_ptr<Collision> CreateBaseCollision(
+        const Model &model, const std::string &modelName,
+        const ModelFileConfig *config, bool needsPreciseCollision);
+        
+    Collision CreatePreciseInstanceCollision(
+        const Model &model, const std::string &modelName,
+        Vector3 position, float scale, const ModelFileConfig *config);
+        
+    Collision CreateSimpleInstanceCollision(
+        const Collision &cachedCollision, Vector3 position, float scale);
+private:
     void Update();
     void UpdatePlayer();
+    void HandlePlayerCollision();
     void UpdatePhysics();
     void CheckPlayerBounds();
     void HandleKeyboardShortcuts() const;
-    void HandleMousePicking();
     void Render();
     void TestOctreeRayCasting();
     void OptimizeModelPerformance();
-
-
+    void TracePlayerIssue(const Vector3& pos, const Vector3& vel) const;
+    bool HasExtremeVelocity(const Vector3& vel) const;
+    bool IsPlayerOutOfBounds(const Vector3& pos) const;
+    void EnsureGroundPlaneExists();
 public:
     void RequestExit();
     bool IsRunning() const;
-
 private:
     // Window & Display
     int m_screenX;
@@ -95,7 +107,7 @@ private:
 
     // Counter for precise collisions per model to limit memory usage
     std::unordered_map<std::string, int> m_preciseCollisionCount;
-    static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 15; // Limit precise collisions
+    static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 50; // Limit precise collisions
 
     // Helper function to create cache key for scaled models
     std::string MakeCollisionCacheKey(const std::string &modelName, float scale) const;

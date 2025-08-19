@@ -50,13 +50,17 @@ public:
     const Collision &GetCollision() const;      // Get collision info
     bool IsJumpCollision() const;               // Check jump collision flag
     BoundingBox GetPlayerBoundingBox() const;   // Get bounding box
-    const PhysicsComponent &GetPhysics() const; // Get physics component
-
-    // Height tracking functions (Chained Together style)
-    [[nodiscard]] float GetCurrentHeight() const; // Get current height above ground level
-    [[nodiscard]] float GetMaxHeight() const;     // Get maximum height achieved
-    void ResetHeight();                           // Reset height tracking
-    void SetGroundLevel(float groundY);           // Set the ground reference level
+    const PhysicsComponent &GetPhysics() const; // Get physics component (const)
+    PhysicsComponent &GetPhysics(); // Get physics component (non-const)
+    void SnapToGroundIfNeeded(const CollisionManager &collisionManager);
+    void ResolveCollision(const Vector3 &response);
+    Vector3 StepMovement(const CollisionManager &collisionManager);
+    void ApplyGravity(float deltaTime);
+    void HandleEmergencyReset();
+    void HandleJumpInput();
+    void WallSlide(const Vector3 &currentPos, const Vector3 &movement, const Vector3 &response);
+    bool TryStepUp(const Vector3 &targetPos, const Vector3 &response);
+    Vector3 ClampMovementPerFrame(const Vector3 &movement, float maxMove);
 
 private:
     std::shared_ptr<CameraController> m_cameraController; // Camera control
@@ -86,16 +90,18 @@ private:
     Models m_modelPlayer;
 
     Collision m_collision{};
-    CollisionManager m_collisionManager;
     
     // Stuck detection
     int m_stuckCounter = 0;
     float m_lastStuckTime = 0.0f;
+    
+    // Reference to the engine's collision manager (set by ApplyGravityForPlayer)
+    const CollisionManager* m_lastCollisionManager = nullptr;
 
 private:
     // Helper methods for cleaner code
     Vector3 GetInputDirection();
-    std::pair<Vector3, Vector3> GetCameraVectors(); // Returns {forward, right}
+    std::pair<Vector3, Vector3> GetCameraVectors() const; // Returns {forward, right}
     void ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime);
     void ApplyAirborneMovement(const Vector3 &worldMoveDir, float deltaTime);
     bool ExtractFromCollider(); // Extract player from inside collider

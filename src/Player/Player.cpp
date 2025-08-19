@@ -6,8 +6,7 @@
 // ==================== CONSTANTS DEFINITIONS ====================
 
 // Player constants - spawn above the ground plane center
-const Vector3 Player::DEFAULT_SPAWN_POSITION = {
-    0.0f, 0.0f, 0.0f}; // Higher spawn to avoid ground collision issues
+const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 2.0f, 0.0f}; // Spawn slightly above ground
 const float Player::MODEL_Y_OFFSET = -1.2f;
 const float Player::MODEL_SCALE = 1.0f;
 
@@ -17,13 +16,23 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_originalCameraTarget = m_cameraController->GetCamera().target;
     m_baseTarget = m_originalCameraTarget;
 
-    m_playerPosition = {3.0f, 5.0f, 0.0f}; // Start well above ground plane center
+    m_playerPosition = DEFAULT_SPAWN_POSITION; // Use default spawn position
     // Depends on model size(bounding box collision)
     m_playerSize = {1.0f, 3.5f, 1.0f};
     m_playerColor = BLUE;
     m_playerModel = nullptr;
     m_useModel = false;
+    
+    // Initialize physics state
+    m_physics.SetGroundLevel(false); // Start in air
+    m_physics.SetVelocity({0, 0, 0}); // No initial velocity
+    
+    // Initialize collision
     UpdatePlayerBox();
+    m_collision.Update(m_playerPosition, m_playerSize);
+    
+    // Initialize collision manager reference
+    m_lastCollisionManager = nullptr;
 }
 
 Player::~Player() = default;
@@ -31,10 +40,10 @@ Player::~Player() = default;
 // Main update function called every frame
 void Player::Update()
 {
+    ApplyInput();
     m_cameraController->UpdateCameraRotation();
     m_cameraController->UpdateMouseRotation(m_cameraController->GetCamera(), m_playerPosition);
     m_cameraController->Update();
-    ApplyInput();
     UpdatePlayerBox();
 }
 
@@ -56,26 +65,27 @@ void Player::ApplyInput()
     m_physics.Update(deltaTime);
 
     Vector3 inputDirection = GetInputDirection();
-    if (Vector3Length(inputDirection) == 0)
-        return; // No input
+    if (Vector3Length(inputDirection) < 0.001f) return;
 
-    // Normalize input and get camera vectors
     inputDirection = Vector3Normalize(inputDirection);
     auto [forward, right] = GetCameraVectors();
 
-    // Calculate world movement direction
+    // Проєкція на горизонтальну площину
+    forward.y = 0.0f;
+    right.y = 0.0f;
+    forward = Vector3Normalize(forward);
+    right = Vector3Normalize(right);
+
     Vector3 worldMoveDir = {right.x * inputDirection.x + forward.x * inputDirection.z, 0.0f,
                             right.z * inputDirection.x + forward.z * inputDirection.z};
 
-    // Apply movement based on grounded state
+    if (Vector3Length(worldMoveDir) > 0.001f)
+        worldMoveDir = Vector3Normalize(worldMoveDir);
+
     if (m_physics.IsGrounded())
-    {
         ApplyGroundedMovement(worldMoveDir, deltaTime);
-    }
     else
-    {
         ApplyAirborneMovement(worldMoveDir, deltaTime);
-    }
 }
 
 std::shared_ptr<CameraController> Player::GetCameraController() const { return m_cameraController; }
@@ -117,10 +127,10 @@ void Player::ApplyJumpImpulse(float impulse)
 
     // Get current horizontal velocity to preserve momentum
     Vector3 currentVel = m_physics.GetVelocity();
-
+    
     // Set jump velocity (preserve horizontal movement, add vertical impulse)
     Vector3 jumpVelocity = {currentVel.x, verticalVelocity, currentVel.z};
-
+    
     m_physics.SetVelocity(jumpVelocity);
     m_physics.SetGroundLevel(false);
     m_isJumping = true;
@@ -130,325 +140,190 @@ void Player::ApplyJumpImpulse(float impulse)
 void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
 {
     float deltaTime = GetFrameTime();
-    
-    // Handle jumping
+
+    HandleJumpInput();
+    HandleEmergencyReset();
+
+    ApplyGravity(deltaTime);
+
+    Vector3 newPosition = StepMovement(collisionManager);
+
+    SetPlayerPosition(newPosition);
+    UpdatePlayerBox();
+
+    SnapToGroundIfNeeded(collisionManager);
+}
+
+void Player::HandleJumpInput()
+{
     if (IsKeyDown(KEY_SPACE) && m_physics.IsGrounded())
     {
         ApplyJumpImpulse(m_physics.GetJumpStrength() * 8.0f);
+        m_isJumping = true;
+        m_physics.SetGroundLevel(false);
     }
-    
-    // Emergency reset to spawn (T key)
+}
+
+void Player::HandleEmergencyReset()
+{
     if (IsKeyPressed(KEY_T))
     {
-        TraceLog(LOG_WARNING, "🚨 EMERGENCY RESET - teleporting to spawn");
         SetPlayerPosition(DEFAULT_SPAWN_POSITION);
         m_physics.SetVelocity({0.0f, 0.0f, 0.0f});
         m_physics.SetGroundLevel(false);
+        m_isJumping = false;
     }
+}
 
-    // Get current position
-    Vector3 playerPosition = GetPlayerPosition();
-    
-    // Apply gravity and physics only if not grounded
+void Player::ApplyGravity(float deltaTime)
+{
     if (!m_physics.IsGrounded())
     {
-        // Apply gravity
         Vector3 vel = m_physics.GetVelocity();
         vel.y -= m_physics.GetGravity() * deltaTime;
+
+        const float MAX_FALL_SPEED = -20.0f;
+        if (vel.y < MAX_FALL_SPEED) vel.y = MAX_FALL_SPEED;
+
         m_physics.SetVelocity(vel);
-
-        // Apply velocity to position
-        Vector3 move = Vector3Scale(vel, deltaTime);
-        playerPosition = Vector3Add(playerPosition, move);
-        
-        SetPlayerPosition(playerPosition);
     }
+}
 
-    // Update collision box before checking
-    UpdatePlayerBox();
+Vector3 Player::StepMovement(const CollisionManager &collisionManager)
+{
+    Vector3 move = Vector3Scale(m_physics.GetVelocity(), GetFrameTime());
+    Vector3 newPosition = GetPlayerPosition();
 
-    // Check for collisions
-    Vector3 response = {};
-    bool isColliding = collisionManager.CheckCollision(GetCollision(), response);
-    playerPosition = GetPlayerPosition(); // Get updated position
+    float moveDistance = Vector3Length(move);
+    if (moveDistance < 0.001f) return newPosition;
 
-    if(isColliding)
+    int steps = (int)(moveDistance / 0.005f) + 1;
+    steps = steps > 200 ? 200 : steps;
+    Vector3 stepMove = Vector3Scale(move, 1.0f / steps);
+
+    for (int i = 0; i < steps; i++)
     {
-        // Визначаємо тип колізії за найбільшою віссю відповіді
-        float absX = fabsf(response.x);
-        float absY = fabsf(response.y);
-        float absZ = fabsf(response.z);
-        
-        // Ігноруємо мікро-колізії
-        if (absX < 0.01f && absY < 0.01f && absZ < 0.01f)
-            return;
-            
-        // Перевіряємо, чи це колізія з підлогою (Y-вісь вгору)
-        bool isFloorCollision = (absY > absX && absY > absZ && response.y > 0);
-        
-        if (isFloorCollision && !m_physics.IsGrounded())
+        Vector3 testPos = Vector3Add(newPosition, stepMove);
+        SetPlayerPosition(testPos);
+        UpdatePlayerBox();
+
+        Vector3 response;
+        if (collisionManager.CheckCollision(GetCollision(), response))
         {
-            // Колізія з підлогою коли гравець у повітрі - приземляємо його
-            m_physics.SetGroundLevel(true);
-            m_physics.SetVelocity({m_physics.GetVelocity().x, 0.0f, m_physics.GetVelocity().z});
-            m_isJumping = false;
-            
-            // Додаємо невеликий буфер, щоб запобігти повторній колізії
-            playerPosition.y += response.y + 0.05f;
-            SetPlayerPosition(playerPosition);
-            TraceLog(LOG_INFO, "Приземлення на підлогу: y=%.2f", playerPosition.y);
-        }
-        else if (isFloorCollision && m_physics.IsGrounded())
-        {
-            // Колізія з підлогою коли гравець на землі - просто рухаємо вгору
-            playerPosition.y += response.y;
-            SetPlayerPosition(playerPosition);
+            ResolveCollision(response);
+            newPosition = GetPlayerPosition();
+            break;
         }
         else
         {
-            // Стіна або стеля - застосовуємо відповідь колізії
-            // Якщо гравець у повітрі, зберігаємо вертикальну швидкість
-            Move(response);
-            
-            // Якщо це стіна (X або Z домінує), зменшуємо горизонтальну швидкість
-            if (absX > absY || absZ > absY)
-            {
-                Vector3 vel = m_physics.GetVelocity();
-                vel.x *= 0.5f;
-                vel.z *= 0.5f;
-                m_physics.SetVelocity(vel);
-            }
-            
-            // Якщо це стеля (Y-вісь вниз), зупиняємо вертикальний рух вгору
-            if (absY > absX && absY > absZ && response.y < 0)
-            {
-                Vector3 vel = m_physics.GetVelocity();
-                if (vel.y > 0) vel.y = 0;
-                m_physics.SetVelocity(vel);
-            }
-            
-            UpdatePlayerBox();
-        }
-        
-        // Перевірка на випадіння за межі світу
-        if (playerPosition.y < -50.0f)
-        {
-            TraceLog(LOG_WARNING, "Гравець випав за межі світу! Телепортація на спавн.");
-            SetPlayerPosition(DEFAULT_SPAWN_POSITION);
-            m_physics.SetVelocity({0.0f, 0.0f, 0.0f});
-            m_physics.SetGroundLevel(false);
+            newPosition = testPos;
         }
     }
-    else
+
+    return newPosition;
+}
+
+void Player::ResolveCollision(const Vector3 &response)
+{
+    Vector3 velocity = m_physics.GetVelocity();
+    float absX = fabsf(response.x);
+    float absY = fabsf(response.y);
+    float absZ = fabsf(response.z);
+
+    // Floor/ceiling collision
+    if (absY >= absX && absY >= absZ)
     {
-        // Немає колізії - перевіряємо, чи гравець над землею
-        // Використовуємо просту перевірку висоти над рівнем землі
-        float groundLevel = PhysicsComponent::GROUND_COLLISION_CENTER.y + 
-                           PhysicsComponent::GROUND_COLLISION_SIZE.y / 2.0f;
-        
-        // Якщо гравець на землі, але знаходиться вище рівня землі - починаємо падіння
-        if (m_physics.IsGrounded() && playerPosition.y > groundLevel + 0.5f)
+        if (response.y > 0.0f) // Floor
         {
-            m_physics.SetGroundLevel(false);
-            TraceLog(LOG_INFO, "Гравець почав падіння з висоти: %.2f", playerPosition.y - groundLevel);
-        }
-        
-        // Якщо гравець падає і досяг рівня землі - приземляємо його
-        if (!m_physics.IsGrounded() && 
-            m_physics.GetVelocityY() <= 0.0f && 
-            playerPosition.y <= groundLevel + 0.1f)
-        {
-            playerPosition.y = groundLevel + 0.05f;
-            SetPlayerPosition(playerPosition);
+            Vector3 pos = GetPlayerPosition();
+            pos.y += response.y + 0.05f;
+            SetPlayerPosition(pos);
             m_physics.SetGroundLevel(true);
-            m_physics.SetVelocity({m_physics.GetVelocity().x, 0.0f, m_physics.GetVelocity().z});
+            velocity.y = 0.0f;
             m_isJumping = false;
-            TraceLog(LOG_INFO, "Приземлення на основну площину: y=%.2f", playerPosition.y);
         }
-    }
-    
-    // Фінальна перевірка - якщо гравець на землі, вертикальна швидкість має бути нульовою
-    if (m_physics.IsGrounded())
-    {
-        Vector3 vel = m_physics.GetVelocity();
-        if (vel.y != 0.0f)
+        else // Ceiling
         {
-            m_physics.SetVelocity({vel.x, 0.0f, vel.z});
+            Vector3 pos = GetPlayerPosition();
+            pos.y += response.y;
+            SetPlayerPosition(pos);
+            velocity.y = 0.0f;
         }
     }
-    
-    // if (isColliding)
-    // {
-    //     // Get maximum response axis
-    //     float maxAxisResponse = fmaxf(fmaxf(fabsf(response.x), fabsf(response.y)), fabsf(response.z));
-            
-    //     // Ignore micro-collisions
-    //     const float MIN_RESPONSE_THRESHOLD = 0.1f;
-    //     if (maxAxisResponse < MIN_RESPONSE_THRESHOLD)
-    //     {
-    //         return;
-    //     }
-        
-    //     // // Check if falling fast
-    //     // Vector3 velocity = m_physics.GetVelocity();
-    //     // bool isFallingFast = velocity.y < -10.0f;
-        
-    //     // // Determine collision type based on response direction
-    //     // float absX = fabsf(response.x);
-    //     // float absY = fabsf(response.y);
-    //     // float absZ = fabsf(response.z);
+    else // Wall collision
+    {
+        Vector3 pos = GetPlayerPosition();
+        if (absX > absZ)
+        {
+            pos.x += response.x;
+            velocity.x = 0.0f;
+        }
+        else
+        {
+            pos.z += response.z;
+            velocity.z = 0.0f;
+        }
+        SetPlayerPosition(pos);
+    }
 
-    //     // // Floor/ceiling collision (Y-axis dominant)
-    //     // if (absY >= absX && absY >= absZ)
-    //     // {
-    //     //     if (response.y > 0.0f) // Floor collision
-    //     //     {
-    //     //         // Limit floor response
-    //     //         float maxFloorResponse = isFallingFast ? 0.5f : 2.0f;
-    //     //         float limitedYResponse = response.y > maxFloorResponse ? maxFloorResponse : response.y;
-                
-    //     //         // Check if it's an actual floor
-    //     //         bool isActualFloor = (m_physics.GetVelocityY() <= 0.0f && !m_isJumping && 
-    //     //                              absY > absX * 1.2f && absY > absZ * 1.2f);
-                
-    //     //         if (isActualFloor)
-    //     //         {
-    //     //             // Move player up to surface
-    //     //             playerPosition.y += limitedYResponse;
-                    
-    //     //             // Set as grounded and stop vertical movement
-    //     //             m_physics.SetGroundLevel(true);
-    //     //             m_physics.SetVelocity({m_physics.GetVelocity().x, 0.0f, m_physics.GetVelocity().z});
-    //     //             m_isJumping = false;
-                    
-    //     //             // Add small buffer to prevent immediate re-collision
-    //     //             playerPosition.y += 0.05f; // Increased buffer to prevent floating
-                    
-    //     //             TraceLog(LOG_INFO, "Floor collision: Player grounded at y=%.2f", playerPosition.y);
-    //     //         }
-    //     //         else
-    //     //         {
-    //     //             // Not a clear floor - just apply collision response without grounding
-    //     //             playerPosition.y += limitedYResponse;
-    //     //         }
-    //     //     }
-    //     //     else // Ceiling collision
-    //     //     {
-    //     //         // Limit ceiling response
-    //     //         float maxCeilingResponse = isFallingFast ? 0.5f : 2.0f;
-    //     //         float limitedYResponse = response.y < -maxCeilingResponse ? -maxCeilingResponse : response.y;
-                
-    //     //         playerPosition.y += limitedYResponse;
-    //     //         Vector3 vel = m_physics.GetVelocity();
-    //     //         vel.y = 0.0f; // Stop upward movement
-    //     //         m_physics.SetVelocity(vel);
-    //     //     }
-    //     // }
-    //     // // Wall collision (X or Z axis dominant)
-    //     // else
-    //     // {
-    //     //     // For wall collisions, limit each axis separately
-    //     //     Vector3 limitedResponse = response;
-    //     //     float maxWallResponse = isFallingFast ? 0.5f : 1.0f;
-            
-    //     //     if (absX > absZ)
-    //     //     {
-    //     //         // X-collision
-    //     //         if (fabsf(limitedResponse.x) > maxWallResponse)
-    //     //         {
-    //     //             limitedResponse.x = limitedResponse.x > 0 ? maxWallResponse : -maxWallResponse;
-    //     //         }
-    //     //         // Reduce X velocity but preserve Y velocity
-    //     //         Vector3 currentVel = m_physics.GetVelocity();
-    //     //         m_physics.SetVelocity({currentVel.x * 0.3f, currentVel.y, currentVel.z});
-    //     //     }
-    //     //     else
-    //     //     {
-    //     //         // Z-collision
-    //     //         if (fabsf(limitedResponse.z) > maxWallResponse)
-    //     //         {
-    //     //             limitedResponse.z = limitedResponse.z > 0 ? maxWallResponse : -maxWallResponse;
-    //     //         }
-    //     //         // Reduce Z velocity but preserve Y velocity
-    //     //         Vector3 currentVel = m_physics.GetVelocity();
-    //     //         m_physics.SetVelocity({currentVel.x, currentVel.y, currentVel.z * 0.3f});
-    //     //     }
-            
-    //     //     // Apply limited wall collision response
-    //     //     playerPosition = Vector3Add(playerPosition, limitedResponse);
-    //     // }
-        
-    //     // Clamp player to world boundaries
-    //     const float WORLD_BOUNDARY = 400.0f;
-    //     const float MIN_Y = -50.0f;
-    //     const float MAX_Y = 100.0f;
-        
-    //     if (playerPosition.x > WORLD_BOUNDARY) playerPosition.x = WORLD_BOUNDARY;
-    //     else if (playerPosition.x < -WORLD_BOUNDARY) playerPosition.x = -WORLD_BOUNDARY;
-        
-    //     if (playerPosition.z > WORLD_BOUNDARY) playerPosition.z = WORLD_BOUNDARY;
-    //     else if (playerPosition.z < -WORLD_BOUNDARY) playerPosition.z = -WORLD_BOUNDARY;
-        
-    //     if (playerPosition.y < MIN_Y)
-    //     {
-    //         playerPosition.y = MIN_Y;
-    //         m_physics.SetVelocity({m_physics.GetVelocity().x, 0.0f, m_physics.GetVelocity().z});
-    //         m_physics.SetGroundLevel(true); // Force grounded when hitting bottom boundary
-    //     }
-    //     else if (playerPosition.y > MAX_Y)
-    //     {
-    //         playerPosition.y = MAX_Y;
-    //         m_physics.SetVelocity({m_physics.GetVelocity().x, 0.0f, m_physics.GetVelocity().z});
-    //     }
-        
-    //     // Make sure player isn't incorrectly marked as grounded after wall collision
-    //     if ((m_isJumping || m_physics.GetVelocityY() < -1.0f) && 
-    //         (absX >= absY || absZ >= absY))
-    //     {
-    //         if (m_physics.IsGrounded() && response.y <= 0.1f)
-    //         {
-    //             m_physics.SetGroundLevel(false);
-    //         }
-    //     }
-        
-    //     SetPlayerPosition(playerPosition);
-    //     UpdatePlayerBox();
-    // }
-    // // else
-    // // {
-    // //     // No collision detected - check if we should fall
-    // //     float groundPlaneTop = PhysicsComponent::GROUND_COLLISION_CENTER.y + 
-    // //                           PhysicsComponent::GROUND_COLLISION_SIZE.y / 2.0f;
-    // //     float heightAboveGround = playerPosition.y - groundPlaneTop;
+    m_physics.SetVelocity(velocity);
+}
 
-    // //     // Fallback ground detection for world floor only
-    // //     if (heightAboveGround <= 0.1f && m_physics.GetVelocityY() <= 0.0f)
-    // //     {
-    // //         // Snap to ground plane top
-    // //         m_physics.SetGroundLevel(true);
-    // //         m_physics.SetVelocity({m_physics.GetVelocity().x, 0.0f, m_physics.GetVelocity().z});
-    // //         playerPosition.y = groundPlaneTop + 0.05f; // Increased buffer to prevent floating
-    // //         SetPlayerPosition(playerPosition);
-    // //         TraceLog(LOG_INFO, "Ground plane detection: Player grounded at y=%.2f", playerPosition.y);
-    // //     }
-    // //     else if (m_physics.IsGrounded() && heightAboveGround > 0.5f)
-    // //     {
-    // //         // Player was grounded but is now clearly above ground - start falling
-    // //         m_physics.SetGroundLevel(false);
-    // //         TraceLog(LOG_INFO, "Player ungrounded - height above ground: %.2f", heightAboveGround);
-    // //     }
-    // // }
-    
-    // // Final check to ensure player isn't floating
-    // if (m_physics.IsGrounded())
-    // {
-    //     // Make sure velocity is zero when grounded
-    //     Vector3 vel = m_physics.GetVelocity();
-    //     if (vel.y != 0.0f)
-    //     {
-    //         m_physics.SetVelocity({vel.x, 0.0f, vel.z});
-    //     }
-    // }
+void Player::SnapToGroundIfNeeded(const CollisionManager &collisionManager)
+{
+    Vector3 pos = GetPlayerPosition();
+    float groundTop = PhysicsComponent::GROUND_COLLISION_CENTER.y +
+                      PhysicsComponent::GROUND_COLLISION_SIZE.y / 2.0f;
+
+    // Simple snap to world floor
+    if (!m_physics.IsGrounded() && pos.y <= groundTop + 0.1f)
+    {
+        pos.y = groundTop + 0.05f;
+        SetPlayerPosition(pos);
+        Vector3 vel = m_physics.GetVelocity();
+        vel.y = 0.0f;
+        m_physics.SetVelocity(vel);
+        m_physics.SetGroundLevel(true);
+        m_isJumping = false;
+    }
+
+    // Optional: extra thin-floor detection via raycast around player
+    if (!m_physics.IsGrounded() && !m_isJumping)
+    {
+        const float RAY_DIST = 0.2f;
+        Vector3 offsets[] = {
+            {0,0,0}, {0.3f,0,0}, {-0.3f,0,0}, {0,0,0.3f}, {0,0,-0.3f},
+            {0.2f,0,0.2f}, {-0.2f,0,0.2f}, {0.2f,0,-0.2f}, {-0.2f,0,-0.2f}
+        };
+
+        for (Vector3 off : offsets)
+        {
+            Vector3 testPos = pos;
+            testPos.x += off.x;
+            testPos.z += off.z;
+            testPos.y -= RAY_DIST;
+
+            SetPlayerPosition(testPos);
+            UpdatePlayerBox();
+
+            Vector3 floorResponse;
+            if (collisionManager.CheckCollision(GetCollision(), floorResponse) && floorResponse.y > 0.01f)
+            {
+                float maxH = fmaxf(fabsf(floorResponse.x), fabsf(floorResponse.z));
+                if (floorResponse.y > maxH * 0.8f)
+                {
+                    pos.y = testPos.y + floorResponse.y + 0.15f;
+                    SetPlayerPosition(pos);
+                    Vector3 vel = m_physics.GetVelocity();
+                    vel.y = 0.0f;
+                    m_physics.SetVelocity(vel);
+                    m_physics.SetGroundLevel(true);
+                    m_isJumping = false;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 BoundingBox Player::GetPlayerBoundingBox() const // Get bounding box
@@ -457,6 +332,11 @@ BoundingBox Player::GetPlayerBoundingBox() const // Get bounding box
 }
 
 const PhysicsComponent &Player::GetPhysics() const // Get physics component
+{
+    return m_physics;
+}
+
+PhysicsComponent &Player::GetPhysics() // Get physics component (non-const)
 {
     return m_physics;
 }
@@ -481,8 +361,7 @@ Vector3 Player::GetInputDirection()
     return inputDir;
 }
 
-std::pair<Vector3, Vector3> Player::GetCameraVectors()
-{
+std::pair<Vector3, Vector3> Player::GetCameraVectors() const {
     const Camera &camera = m_cameraController->GetCamera();
 
     Vector3 forward = Vector3Subtract(camera.position, camera.target);
@@ -494,118 +373,122 @@ std::pair<Vector3, Vector3> Player::GetCameraVectors()
     return {forward, right};
 }
 
-void Player::ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime)
+Vector3 Player::ClampMovementPerFrame(const Vector3 &movement, float maxMove)
 {
-    // Calculate rotation
-    m_rotationY = atan2f(worldMoveDir.x, worldMoveDir.z) * RAD2DEG;
+    float len = Vector3Length(movement);
+    if (len > maxMove) {
+        TraceLog(LOG_INFO, "🚀 Movement clamped from %.3f to %.3f units", len, maxMove);
+        return Vector3Scale(Vector3Normalize(movement), maxMove);
+    }
+    return movement;
+}
 
-    // Apply movement with speed limiting for collision stability
-    Vector3 movement = Vector3Scale(worldMoveDir, m_walkSpeed * deltaTime);
+// Спроба піднятися на невеликий крок
+bool Player::TryStepUp(const Vector3 &targetPos, const Vector3 &response)
+{
+    const float MAX_STEP_HEIGHT = 0.3f;
+    if (!m_physics.IsGrounded() || response.y <= 0.01f || response.y >= MAX_STEP_HEIGHT)
+        return false;
 
-    // Limit movement per frame to prevent tunneling through collision
-    float maxMovePerFrame = 0.5f; // Maximum 0.5 units per frame
-    float moveLength = Vector3Length(movement);
-    if (moveLength > maxMovePerFrame)
-    {
-        movement = Vector3Scale(Vector3Normalize(movement), maxMovePerFrame);
-        TraceLog(LOG_INFO, "🚀 Movement clamped from %.3f to %.3f units", moveLength,
-                 maxMovePerFrame);
+    Vector3 stepUpPos = targetPos;
+    stepUpPos.y += response.y + 0.05f;
+    SetPlayerPosition(stepUpPos);
+    UpdatePlayerBox();
+
+    Vector3 stepResp = {};
+    if (!m_lastCollisionManager->CheckCollision(GetCollision(), stepResp)) {
+        TraceLog(LOG_INFO, "🪜 Step up successful, height: %.2f", response.y);
+        return true;
     }
 
-    // Debug: Log movement when on ground (temporarily disabled to reduce spam)
-    // if (Vector3Length(movement) > 0.01f)
-    // {
-    //     TraceLog(LOG_INFO, "🚶 Ground movement: (%.2f,%.2f,%.2f) -> (%.2f,%.2f,%.2f)",
-    //              GetPlayerPosition().x, GetPlayerPosition().y, GetPlayerPosition().z,
-    //              GetPlayerPosition().x + movement.x, GetPlayerPosition().y + movement.y,
-    //              GetPlayerPosition().z + movement.z);
-    // }
+    SetPlayerPosition(targetPos); // відкат якщо не вдалося
+    UpdatePlayerBox();
+    return false;
+}
 
-    // Apply movement with continuous collision detection
+// Sliding вздовж стіни
+void Player::WallSlide(const Vector3 &currentPos, const Vector3 &movement, const Vector3 &response)
+{
+    Vector3 wallNormal = Vector3Normalize(response);
+    Vector3 slideDir = Vector3Subtract(movement, Vector3Scale(wallNormal, Vector3DotProduct(movement, wallNormal)));
+    slideDir = Vector3Scale(slideDir, 0.8f);
+
+    Vector3 slidePos = Vector3Add(currentPos, slideDir);
+    SetPlayerPosition(slidePos);
+    UpdatePlayerBox();
+
+    Vector3 slideResp = {};
+    if (!m_lastCollisionManager->CheckCollision(GetCollision(), slideResp)) {
+        TraceLog(LOG_INFO, "🚧 Wall sliding successful");
+    } else {
+        slidePos = Vector3Add(currentPos, Vector3Scale(response, 1.1f));
+        SetPlayerPosition(slidePos);
+        UpdatePlayerBox();
+        TraceLog(LOG_INFO, "🚧 Wall sliding failed, applied collision response");
+    }
+}
+
+// ================= MAIN MOVEMENT FUNCTION ===================
+
+void Player::ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime)
+{
+    if (Vector3Length(worldMoveDir) < 0.001f) return;
+
+    // Поворот гравця
+    m_rotationY = atan2f(worldMoveDir.x, worldMoveDir.z) * RAD2DEG;
+
+    // Розрахунок руху
+    Vector3 movement = Vector3Scale(worldMoveDir, m_walkSpeed * deltaTime);
+    movement = ClampMovementPerFrame(movement, 0.5f);
+
     Vector3 currentPos = GetPlayerPosition();
     Vector3 targetPos = Vector3Add(currentPos, movement);
 
-    // Calculate movement distance and direction
-    float moveDistance = Vector3Length(movement);
-
-    // Prevent excessive movement that could cause clipping through colliders
-    const float MAX_MOVEMENT_PER_FRAME = 5.0f; // Maximum units per frame
-    if (moveDistance > MAX_MOVEMENT_PER_FRAME)
-    {
-        TraceLog(LOG_WARNING, "⚠️ Movement too large (%.2f), clamping to %.2f", moveDistance,
-                 MAX_MOVEMENT_PER_FRAME);
-        movement = Vector3Scale(Vector3Normalize(movement), MAX_MOVEMENT_PER_FRAME);
-        targetPos = Vector3Add(currentPos, movement);
+    // Попередня перевірка колізій
+    if (!m_lastCollisionManager) {
+        TraceLog(LOG_ERROR, "🚨 Cannot check collision - no collision manager reference!");
+        return;
     }
 
-    // Pre-validate movement to prevent getting stuck
     SetPlayerPosition(targetPos);
     UpdatePlayerBox();
 
     Vector3 response = {};
-    if (m_collisionManager.CheckCollision(GetCollision(), response))
-    {
-        float maxAxisResponse =
-            fmaxf(fmaxf(fabsf(response.x), fabsf(response.y)), fabsf(response.z));
-        TraceLog(LOG_INFO, "🔍 Movement collision response: max_axis=%.2f, vector=(%.2f,%.2f,%.2f)",
-                 maxAxisResponse, response.x, response.y, response.z);
+    if (m_lastCollisionManager->CheckCollision(GetCollision(), response)) {
 
-        // Check for special "stuck" marker from CollisionManager
-        if (maxAxisResponse > 50.0f)
-        { // Check max axis instead of vector length
+        // Перевірка stuck marker
+        float maxAxis = fmaxf(fmaxf(fabsf(response.x), fabsf(response.y)), fabsf(response.z));
+        if (maxAxis > 400.0f) {
             m_stuckCounter++;
             m_lastStuckTime = GetTime();
-            TraceLog(LOG_ERROR,
-                     "🚨 STUCK MARKER DETECTED (max axis: %.2f) - extracting from collider (stuck "
-                     "count: %d)",
-                     maxAxisResponse, m_stuckCounter);
+            TraceLog(LOG_ERROR, "🚨 STUCK MARKER DETECTED (max axis %.2f, count %d)", maxAxis, m_stuckCounter);
 
-            // If stuck too many times in a short period, force teleport
-            if (m_stuckCounter >= 3)
-            {
-                TraceLog(LOG_ERROR,
-                         "🚨 STUCK TOO MANY TIMES - forcing emergency teleport to spawn");
-                SetPlayerPosition(
-                    {0.0f, 15.0f, 0.0f}); // Higher spawn to avoid immediate re-collision
-                m_physics.SetVelocity({0.0f, 0.0f, 0.0f});
+            if (m_stuckCounter >= 3) {
+                SetPlayerPosition({0.0f, 15.0f, 0.0f});
+                m_physics.SetVelocity({0.0f,0.0f,0.0f});
                 m_physics.SetGroundLevel(false);
-                m_stuckCounter = 0; // Reset counter
+                m_stuckCounter = 0;
                 return;
             }
 
-            if (!ExtractFromCollider())
-            {
-                // If extraction failed, force teleport to spawn
-                TraceLog(LOG_ERROR, "🚨 EXTRACTION FAILED - forcing teleport to spawn");
+            if (!ExtractFromCollider()) {
                 SetPlayerPosition({0.0f, 15.0f, 0.0f});
-                m_physics.SetVelocity({0.0f, 0.0f, 0.0f});
+                m_physics.SetVelocity({0.0f,0.0f,0.0f});
                 m_physics.SetGroundLevel(false);
             }
-            return; // Skip movement this frame
+            return;
         }
 
-        // Normal collision - try wall sliding
-        Vector3 wallNormal = Vector3Normalize(response);
-        Vector3 slideDirection = Vector3Subtract(
-            movement, Vector3Scale(wallNormal, Vector3DotProduct(movement, wallNormal)));
-        Vector3 slidePos = Vector3Add(currentPos, slideDirection);
+        // Step-up
+        if (TryStepUp(targetPos, response)) return;
 
-        // Test if sliding position is safe
-        SetPlayerPosition(slidePos);
+        // Wall sliding
+        WallSlide(currentPos, movement, response);
+    }
+    else {
+        // Успішний рух без колізій
+        SetPlayerPosition(targetPos);
         UpdatePlayerBox();
-        Vector3 slideResponse = {};
-        if (!m_collisionManager.CheckCollision(GetCollision(), slideResponse))
-        {
-            // Sliding is safe
-            TraceLog(LOG_INFO, "🚧 Wall sliding successful");
-        }
-        else
-        {
-            // Sliding failed, apply collision response
-            slidePos = Vector3Add(targetPos, response);
-            SetPlayerPosition(slidePos);
-            TraceLog(LOG_INFO, "🚧 Wall sliding failed, using collision response");
-        }
     }
 }
 
@@ -614,79 +497,93 @@ void Player::ApplyAirborneMovement(const Vector3 &worldMoveDir, float deltaTime)
     // In air: apply reduced air control
     const float AIR_CONTROL_FACTOR = 5.0f; // Reduced air control for more realistic physics
     Vector3 airMovement = Vector3Scale(worldMoveDir, AIR_CONTROL_FACTOR * deltaTime);
-
+    
     // Get current velocity and apply air movement
     Vector3 currentVel = m_physics.GetVelocity();
     currentVel.x += airMovement.x;
     currentVel.z += airMovement.z;
-
+    
     // Apply air resistance to horizontal movement
     const float AIR_RESISTANCE = 0.98f;
     currentVel.x *= AIR_RESISTANCE;
     currentVel.z *= AIR_RESISTANCE;
-
+    
     m_physics.SetVelocity(currentVel);
 }
 
 bool Player::ExtractFromCollider()
 {
+    // Check if we have a valid collision manager reference
+    if (!m_lastCollisionManager) {
+        TraceLog(LOG_ERROR, "🚨 Cannot extract player - no collision manager reference!");
+        return false;
+    }
+    
     Vector3 currentPos = GetPlayerPosition();
     UpdatePlayerBox();
-
+    
     Vector3 response = {};
-    if (!m_collisionManager.CheckCollision(GetCollision(), response))
-    {
+    if (!m_lastCollisionManager->CheckCollision(GetCollision(), response)) {
         TraceLog(LOG_INFO, "🔧 No collision detected - player is free");
         return false; // No collision, nothing to extract from
     }
-
-    TraceLog(LOG_WARNING, "🚨 EXTRACTING PLAYER FROM COLLIDER - current pos: (%.2f, %.2f, %.2f)",
+    
+    TraceLog(LOG_WARNING, "🚨 EXTRACTING PLAYER FROM COLLIDER - current pos: (%.2f, %.2f, %.2f)", 
              currentPos.x, currentPos.y, currentPos.z);
-
-    // Try more aggressive extraction positions when stuck
+    
+    // Try even more gentle extraction positions when stuck
+    // Further reduced distances to prevent extreme teleportation
     Vector3 safePositions[] = {
-        {currentPos.x, currentPos.y + 20.0f, currentPos.z},        // Much higher above
-        {currentPos.x, currentPos.y + 15.0f, currentPos.z},        // High above
-        {currentPos.x, currentPos.y + 10.0f, currentPos.z},        // Above
-        {currentPos.x + 10.0f, currentPos.y + 5.0f, currentPos.z}, // Far right and up
-        {currentPos.x - 10.0f, currentPos.y + 5.0f, currentPos.z}, // Far left and up
-        {currentPos.x, currentPos.y + 5.0f, currentPos.z + 10.0f}, // Far forward and up
-        {currentPos.x, currentPos.y + 5.0f, currentPos.z - 10.0f}, // Far back and up
-        {currentPos.x + 5.0f, currentPos.y + 3.0f, currentPos.z},  // Right and up
-        {currentPos.x - 5.0f, currentPos.y + 3.0f, currentPos.z},  // Left and up
-        {currentPos.x, currentPos.y + 3.0f, currentPos.z + 5.0f},  // Forward and up
-        {currentPos.x, currentPos.y + 3.0f, currentPos.z - 5.0f},  // Back and up
-        {0.0f, 20.0f, 0.0f},                                       // Very high spawn position
-        {0.0f, 10.0f, 0.0f},                                       // High spawn position
-        {10.0f, 10.0f, 10.0f},                                     // Far corner position
-        {-10.0f, 10.0f, -10.0f},                                   // Far opposite corner
-        {5.0f, 5.0f, 5.0f},                                        // Corner position
-        {-5.0f, 5.0f, -5.0f},                                      // Opposite corner
-        {0.0f, 5.0f, 0.0f},                                        // Elevated spawn position
-        {0.0f, 2.0f, 0.0f}                                         // Default spawn position
+        // First try very small adjustments near current position
+        {currentPos.x, currentPos.y + 0.2f, currentPos.z}, // Tiny bit above
+        {currentPos.x + 0.2f, currentPos.y, currentPos.z}, // Tiny bit right
+        {currentPos.x - 0.2f, currentPos.y, currentPos.z}, // Tiny bit left
+        {currentPos.x, currentPos.y, currentPos.z + 0.2f}, // Tiny bit forward
+        {currentPos.x, currentPos.y, currentPos.z - 0.2f}, // Tiny bit back
+        
+        // Then try small adjustments
+        {currentPos.x, currentPos.y + 0.4f, currentPos.z}, // Slightly above
+        {currentPos.x + 0.4f, currentPos.y, currentPos.z}, // Slightly right
+        {currentPos.x - 0.4f, currentPos.y, currentPos.z}, // Slightly left
+        {currentPos.x, currentPos.y, currentPos.z + 0.4f}, // Slightly forward
+        {currentPos.x, currentPos.y, currentPos.z - 0.4f}, // Slightly back
+        
+        // Then try medium adjustments
+        {currentPos.x, currentPos.y + 0.8f, currentPos.z}, // Above
+        {currentPos.x + 0.8f, currentPos.y + 0.2f, currentPos.z}, // Right and up
+        {currentPos.x - 0.8f, currentPos.y + 0.2f, currentPos.z}, // Left and up
+        {currentPos.x, currentPos.y + 0.2f, currentPos.z + 0.8f}, // Forward and up
+        {currentPos.x, currentPos.y + 0.2f, currentPos.z - 0.8f}, // Back and up
+        
+        // Then try larger adjustments
+        {currentPos.x, currentPos.y + 1.5f, currentPos.z}, // Higher above
+        {currentPos.x + 1.5f, currentPos.y + 0.5f, currentPos.z}, // Far right and up
+        {currentPos.x - 1.5f, currentPos.y + 0.5f, currentPos.z}, // Far left and up
+        {currentPos.x, currentPos.y + 0.5f, currentPos.z + 1.5f}, // Far forward and up
+        {currentPos.x, currentPos.y + 0.5f, currentPos.z - 1.5f}, // Far back and up
+        
+        // Finally try spawn positions
+        {0.0f, 2.0f, 0.0f}, // Default spawn position
+        {0.0f, 3.0f, 0.0f}, // Elevated spawn position
+        {0.0f, 4.0f, 0.0f}, // High spawn position
+        {0.0f, 5.0f, 0.0f}  // Very high spawn position
     };
-
-    for (int i = 0; i < sizeof(safePositions) / sizeof(safePositions[0]); i++)
-    {
+    
+    for (int i = 0; i < sizeof(safePositions)/sizeof(safePositions[0]); i++) {
         Vector3 safePos = safePositions[i];
         SetPlayerPosition(safePos);
         UpdatePlayerBox();
         Vector3 testResponse = {};
-        if (!m_collisionManager.CheckCollision(GetCollision(), testResponse))
-        {
-            TraceLog(LOG_INFO, "🏠 Found safe position [%d]: (%.2f, %.2f, %.2f)", i, safePos.x,
-                     safePos.y, safePos.z);
+        if (!m_lastCollisionManager->CheckCollision(GetCollision(), testResponse)) {
+            TraceLog(LOG_INFO, "🏠 Found safe position [%d]: (%.2f, %.2f, %.2f)", i, safePos.x, safePos.y, safePos.z);
             m_physics.SetVelocity({0.0f, 0.0f, 0.0f}); // Stop all movement
-            m_physics.SetGroundLevel(false);           // Reset ground state
+            m_physics.SetGroundLevel(false); // Reset ground state
             return true;
-        }
-        else
-        {
-            TraceLog(LOG_WARNING, "❌ Safe position [%d] failed: (%.2f, %.2f, %.2f)", i, safePos.x,
-                     safePos.y, safePos.z);
+        } else {
+            TraceLog(LOG_WARNING, "❌ Safe position [%d] failed: (%.2f, %.2f, %.2f)", i, safePos.x, safePos.y, safePos.z);
         }
     }
-
+    
     // If all safe positions failed, force to spawn position anyway
     SetPlayerPosition({0.0f, 2.0f, 0.0f});
     m_physics.SetVelocity({0.0f, 0.0f, 0.0f});

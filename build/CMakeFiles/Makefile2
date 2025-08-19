@@ -489,8 +489,8 @@ CMakeFiles/ChainedDecos.dir/all: src/Input/CMakeFiles/input.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Menu/CMakeFiles/menu.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
-CMakeFiles/ChainedDecos.dir/all: src/Collision/CMakeFiles/collision.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Color/CMakeFiles/color.dir/all
+CMakeFiles/ChainedDecos.dir/all: src/Collision/CMakeFiles/collision.dir/all
 CMakeFiles/ChainedDecos.dir/all: src/Render/CMakeFiles/render.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ChainedDecos.dir/build.make CMakeFiles/ChainedDecos.dir/build
@@ -1049,8 +1049,8 @@ tests/CMakeFiles/unit_tests.dir/all: src/Input/CMakeFiles/input.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Menu/CMakeFiles/menu.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
-tests/CMakeFiles/unit_tests.dir/all: src/Collision/CMakeFiles/collision.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Color/CMakeFiles/color.dir/all
+tests/CMakeFiles/unit_tests.dir/all: src/Collision/CMakeFiles/collision.dir/all
 tests/CMakeFiles/unit_tests.dir/all: src/Render/CMakeFiles/render.dir/all
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/build
@@ -1087,8 +1087,8 @@ src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Input/CMakeFiles/inp
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Menu/CMakeFiles/menu.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Map/CMakeFiles/mapmod.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/CameraController/CMakeFiles/cameracontroller.dir/all
-src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Collision/CMakeFiles/collision.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Color/CMakeFiles/color.dir/all
+src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Collision/CMakeFiles/collision.dir/all
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/all: src/Render/CMakeFiles/render.dir/all
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build

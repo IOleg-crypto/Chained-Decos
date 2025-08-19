@@ -10,7 +10,7 @@
     "path": "/resources/doric_arena.glb",
     "spawn": true,
     "hasCollision" : true,
-    "collisionPrecision": "triangle",
+    "collisionPrecision": "aabb",
     "hasAnimations": false,
     "instances": [
       {
