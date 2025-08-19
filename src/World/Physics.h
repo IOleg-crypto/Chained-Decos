@@ -91,7 +91,7 @@ private:
     // Physics parameters
     float m_gravity = 8.0f;        // Gravity acceleration (reduced for better collision)
     float m_velocityY = 0.0f;       // Vertical velocity
-    bool m_isGrounded = true;       // Whether object is on the ground
+    bool m_isGrounded = false;       // Whether object is on the ground
     float m_groundLevel = 0.0f;     // Ground height level (top of ground plane)
     float m_dt = 0.0f;              // Delta time (cached from last update)
     float m_jumpStrength = 8.0f;    // Jump impulse strength

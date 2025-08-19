@@ -123,6 +123,17 @@ public:
     {
         return m_collisionType == CollisionType::OCTREE_ONLY && m_octree != nullptr;
     }
+    
+    // Force initialization of octree if needed
+    void InitializeOctree()
+    {
+        if ((m_collisionType == CollisionType::OCTREE_ONLY || 
+             m_collisionType == CollisionType::TRIANGLE_PRECISE ||
+             m_collisionType == CollisionType::IMPROVED_AABB) && 
+            !m_triangles.empty()) {
+            EnsureOctree();
+        }
+    }
 
     // Get triangle count
     size_t GetTriangleCount() const;
