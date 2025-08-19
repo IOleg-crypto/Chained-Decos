@@ -17,11 +17,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -DDEBUG -D_DEBUG -Wall -Wextra")
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0 -DDEBUG -D_DEBUG -Wall -Wextra")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -DDEBUG -D_DEBUG -Wall ")
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0 -DDEBUG -D_DEBUG -Wall")
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W4 /DDEBUG /D_DEBUG")
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /W4 /DDEBUG /D_DEBUG")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W3 /DDEBUG /D_DEBUG")
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /W2 /DDEBUG /D_DEBUG")
     endif()
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -49,7 +49,6 @@ if(NOT raylib_FOUND)
         GIT_REPOSITORY https://github.com/raysan5/raylib.git
         GIT_TAG        ${RAYLIB_VERSION}
     )
-    # Disable raylib examples and tests
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(raylib)
@@ -62,7 +61,7 @@ if(NOT nlohmann_json_FOUND)
     FetchContent_Declare(
         nlohmann_json
         GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG        v${NLOHMANN_JSON_VERSION}  # Added 'v' prefix here instead
+        GIT_TAG        v${NLOHMANN_JSON_VERSION} 
     )
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
@@ -161,11 +160,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 # Install rules (optional)
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION bin
-)
-
-# Copy resources to build directory
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/resources ${CMAKE_BINARY_DIR}/resources
-    COMMENT "Copying resources to build directory"
 )

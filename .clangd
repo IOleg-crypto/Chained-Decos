@@ -1,0 +1,12 @@
+CompileFlags:
+  Add: [-Wall, -Wextra, -std=c++20]
+  Remove: [-W*, -std=*]
+
+Diagnostics:
+  ClangTidy:
+    Add: [modernize*, performance*]
+    Remove: [modernize-use-trailing-return-type]
+  UnusedIncludes: Strict
+
+Index:
+  Background: Build
