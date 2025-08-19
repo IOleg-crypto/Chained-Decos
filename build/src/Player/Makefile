@@ -219,6 +219,102 @@ Player.cpp.s:
 	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/Player.cpp.s
 .PHONY : Player.cpp.s
 
+PlayerCollision.obj: PlayerCollision.cpp.obj
+.PHONY : PlayerCollision.obj
+
+# target to build an object file
+PlayerCollision.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj
+.PHONY : PlayerCollision.cpp.obj
+
+PlayerCollision.i: PlayerCollision.cpp.i
+.PHONY : PlayerCollision.i
+
+# target to preprocess a source file
+PlayerCollision.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.i
+.PHONY : PlayerCollision.cpp.i
+
+PlayerCollision.s: PlayerCollision.cpp.s
+.PHONY : PlayerCollision.s
+
+# target to generate assembly for a file
+PlayerCollision.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.s
+.PHONY : PlayerCollision.cpp.s
+
+PlayerInput.obj: PlayerInput.cpp.obj
+.PHONY : PlayerInput.obj
+
+# target to build an object file
+PlayerInput.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj
+.PHONY : PlayerInput.cpp.obj
+
+PlayerInput.i: PlayerInput.cpp.i
+.PHONY : PlayerInput.i
+
+# target to preprocess a source file
+PlayerInput.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.i
+.PHONY : PlayerInput.cpp.i
+
+PlayerInput.s: PlayerInput.cpp.s
+.PHONY : PlayerInput.s
+
+# target to generate assembly for a file
+PlayerInput.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.s
+.PHONY : PlayerInput.cpp.s
+
+PlayerModel.obj: PlayerModel.cpp.obj
+.PHONY : PlayerModel.obj
+
+# target to build an object file
+PlayerModel.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj
+.PHONY : PlayerModel.cpp.obj
+
+PlayerModel.i: PlayerModel.cpp.i
+.PHONY : PlayerModel.i
+
+# target to preprocess a source file
+PlayerModel.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.i
+.PHONY : PlayerModel.cpp.i
+
+PlayerModel.s: PlayerModel.cpp.s
+.PHONY : PlayerModel.s
+
+# target to generate assembly for a file
+PlayerModel.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.s
+.PHONY : PlayerModel.cpp.s
+
+PlayerMovement.obj: PlayerMovement.cpp.obj
+.PHONY : PlayerMovement.obj
+
+# target to build an object file
+PlayerMovement.cpp.obj:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj
+.PHONY : PlayerMovement.cpp.obj
+
+PlayerMovement.i: PlayerMovement.cpp.i
+.PHONY : PlayerMovement.i
+
+# target to preprocess a source file
+PlayerMovement.cpp.i:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.i
+.PHONY : PlayerMovement.cpp.i
+
+PlayerMovement.s: PlayerMovement.cpp.s
+.PHONY : PlayerMovement.s
+
+# target to generate assembly for a file
+PlayerMovement.cpp.s:
+	cd "D:/gitnext/Chained Decos/build" && $(MAKE) $(MAKESILENT) -f src/Player/CMakeFiles/player.dir/build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.s
+.PHONY : PlayerMovement.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -237,6 +333,18 @@ help:
 	@echo "... Player.obj"
 	@echo "... Player.i"
 	@echo "... Player.s"
+	@echo "... PlayerCollision.obj"
+	@echo "... PlayerCollision.i"
+	@echo "... PlayerCollision.s"
+	@echo "... PlayerInput.obj"
+	@echo "... PlayerInput.i"
+	@echo "... PlayerInput.s"
+	@echo "... PlayerModel.obj"
+	@echo "... PlayerModel.i"
+	@echo "... PlayerModel.s"
+	@echo "... PlayerMovement.obj"
+	@echo "... PlayerMovement.i"
+	@echo "... PlayerMovement.s"
 .PHONY : help
 
 

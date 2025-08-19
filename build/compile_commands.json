@@ -252,6 +252,30 @@
   "output": "src/Player/CMakeFiles/player.dir/Player.cpp.obj"
 },
 {
+  "directory": "D:/gitnext/Chained Decos/build/src/Player",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/player.dir/PlayerCollision.cpp.obj -c \"D:/gitnext/Chained Decos/src/Player/PlayerCollision.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/Player/PlayerCollision.cpp",
+  "output": "src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj"
+},
+{
+  "directory": "D:/gitnext/Chained Decos/build/src/Player",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/player.dir/PlayerInput.cpp.obj -c \"D:/gitnext/Chained Decos/src/Player/PlayerInput.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/Player/PlayerInput.cpp",
+  "output": "src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj"
+},
+{
+  "directory": "D:/gitnext/Chained Decos/build/src/Player",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/player.dir/PlayerModel.cpp.obj -c \"D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp",
+  "output": "src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj"
+},
+{
+  "directory": "D:/gitnext/Chained Decos/build/src/Player",
+  "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/player.dir/PlayerMovement.cpp.obj -c \"D:/gitnext/Chained Decos/src/Player/PlayerMovement.cpp\"",
+  "file": "D:/gitnext/Chained Decos/src/Player/PlayerMovement.cpp",
+  "output": "src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj"
+},
+{
   "directory": "D:/gitnext/Chained Decos/build/src/Model",
   "command": "E:/LLVM/bin/clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles/model.dir/Model.cpp.obj -c \"D:/gitnext/Chained Decos/src/Model/Model.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/Model.cpp",
