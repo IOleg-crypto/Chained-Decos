@@ -7,7 +7,6 @@
 
 // Standard library
 #include <set>
-#include <stdexcept>
 
 // Raylib & ImGui
 #include <Menu/Menu.h>
@@ -171,13 +170,14 @@ void Engine::Init()
     } else {
         TraceLog(LOG_ERROR, "Cannot apply gravity - no colliders available!");
         
-        // Create emergency ground plane
+        // Create emergency ground plane using the exact same constants
         Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-        Vector3 groundSize = {1000.0f, 10.0f, 1000.0f};
+        Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
         Collision plane{groundCenter, groundSize};
         plane.SetCollisionType(CollisionType::AABB_ONLY);
         m_collisionManager.AddCollider(plane);
-        TraceLog(LOG_WARNING, "Created emergency ground plane in Init");
+        TraceLog(LOG_WARNING, "Created emergency ground plane in Init with size: {%.1f, %.1f, %.1f} at position: {%.1f, %.1f, %.1f}",
+                 groundSize.x, groundSize.y, groundSize.z, groundCenter.x, groundCenter.y, groundCenter.z);
     }
 
     TraceLog(LOG_INFO, " Engine initialization complete!");
@@ -591,19 +591,20 @@ void Engine::Update()
             
             // Create emergency ground plane if no colliders exist
             Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-            Vector3 groundSize = {1000.0f, 1.0f, 1000.0f};
+            Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
             Collision plane{groundCenter, groundSize};
             plane.SetCollisionType(CollisionType::AABB_ONLY);
             m_collisionManager.AddCollider(plane);
             
-            TraceLog(LOG_WARNING, "Created emergency ground plane in Update");
+            TraceLog(LOG_WARNING, "Created emergency ground plane in Update with size: {%.1f, %.1f, %.1f} at position: {%.1f, %.1f, %.1f}",
+                     groundSize.x, groundSize.y, groundSize.z, groundCenter.x, groundCenter.y, groundCenter.z);
         }
         
         // Update player and physics with safety checks
         try {
             UpdatePlayer();
             UpdatePhysics();
-            CheckPlayerBounds();
+            // CheckPlayerBounds();
         } catch (const std::exception& e) {
             TraceLog(LOG_ERROR, "Exception during update: %s", e.what());
             
@@ -660,6 +661,7 @@ void Engine::HandlePlayerCollision()
         TraceLog(LOG_INFO, "Collision detected, applying response: (%.2f, %.2f, %.2f)",
                  response.x, response.y, response.z);
         m_player.Move(response);
+        m_player.GetPhysics().SetVelocity(Vector3Zero());
     }
 }
 
@@ -675,12 +677,13 @@ void Engine::UpdatePhysics()
         
         // Create emergency ground plane if no colliders exist
         Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-        Vector3 groundSize = {1000.0f, 10.0f, 1000.0f};
+        Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
         Collision plane{groundCenter, groundSize};
         plane.SetCollisionType(CollisionType::AABB_ONLY);
         m_collisionManager.AddCollider(plane);
         
-        TraceLog(LOG_WARNING, "Created emergency ground plane, collider count now: %zu", 
+        TraceLog(LOG_WARNING, "Created emergency ground plane with size: {%.1f, %.1f, %.1f} at position: {%.1f, %.1f, %.1f}, collider count now: %zu",
+                 groundSize.x, groundSize.y, groundSize.z, groundCenter.x, groundCenter.y, groundCenter.z,
                  m_collisionManager.GetColliders().size());
     }
     
@@ -700,15 +703,14 @@ void Engine::CheckPlayerBounds()
     {
         TracePlayerIssue(playerPos, playerVel);
 
-        // Безпечний спавн трохи над землею
         Vector3 safeSpawn = {0.0f, 5.0f, 0.0f};
         m_player.SetPlayerPosition(safeSpawn);
 
-        // Скидаємо фізику
+
         m_player.GetPhysics().SetGroundLevel(false);
         m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
 
-        // Дочекаємось наступного кадру, ApplyGravityForPlayer підхопить гравітацію
+
     }
 }
 
@@ -719,13 +721,14 @@ void Engine::EnsureGroundPlaneExists()
     if (!m_collisionManager.GetColliders().empty()) return;
 
     Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-    Vector3 groundSize = {1000.0f, 10.0f, 1000.0f};
+    Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
 
     Collision plane{groundCenter, groundSize};
     plane.SetCollisionType(CollisionType::AABB_ONLY);
     m_collisionManager.AddCollider(plane);
 
-    TraceLog(LOG_WARNING, "Created emergency ground plane in CheckPlayerBounds");
+    TraceLog(LOG_WARNING, "Created emergency ground plane in CheckPlayerBounds with size: {%.1f, %.1f, %.1f} at position: {%.1f, %.1f, %.1f}",
+             groundSize.x, groundSize.y, groundSize.z, groundCenter.x, groundCenter.y, groundCenter.z);
 }
 
 bool Engine::IsPlayerOutOfBounds(const Vector3& pos) const
@@ -740,7 +743,7 @@ bool Engine::IsPlayerOutOfBounds(const Vector3& pos) const
 
 bool Engine::HasExtremeVelocity(const Vector3& vel) const
 {
-    const float MAX_SPEED = 30.0f;
+    const float MAX_SPEED = 90.0f;
     return Vector3Length(vel) > MAX_SPEED;
 }
 
@@ -822,11 +825,12 @@ void Engine::Render()
             TraceLog(LOG_ERROR, "Cannot apply gravity - no colliders available!");
             // Create emergency ground plane
             Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-            Vector3 groundSize = {1000.0f, 10.0f, 1000.0f};
+            Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
             Collision plane{groundCenter, groundSize};
             plane.SetCollisionType(CollisionType::AABB_ONLY);
             m_collisionManager.AddCollider(plane);
-            TraceLog(LOG_WARNING, "Created emergency ground plane in StartGame");
+            TraceLog(LOG_WARNING, "Created emergency ground plane in StartGame with size: {%.1f, %.1f, %.1f} at position: {%.1f, %.1f, %.1f}",
+                     groundSize.x, groundSize.y, groundSize.z, groundCenter.x, groundCenter.y, groundCenter.z);
         }
         
         m_menu.ResetAction();

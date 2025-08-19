@@ -38,7 +38,7 @@ void Player::Update()
     ApplyInput();
     m_cameraController->UpdateCameraRotation();
     
-    // Тепер метод приймає константне посилання, тому можемо передати результат GetPosition() напряму
+
     m_cameraController->UpdateMouseRotation(m_cameraController->GetCamera(), m_movement->GetPosition());
     
     m_cameraController->Update();
