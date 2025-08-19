@@ -84,17 +84,85 @@ src/Player/CMakeFiles/player.dir/Player.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/player.dir/Player.cpp.s"
 	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
 
+src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj: src/Player/CMakeFiles/player.dir/flags.make
+src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
+src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/PlayerCollision.cpp
+src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/src/Player" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj -MF CMakeFiles/player.dir/PlayerCollision.cpp.obj.d -o CMakeFiles/player.dir/PlayerCollision.cpp.obj -c "D:/gitnext/Chained Decos/src/Player/PlayerCollision.cpp"
+
+src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/PlayerCollision.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/player.dir/PlayerCollision.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
+src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj: src/Player/CMakeFiles/player.dir/flags.make
+src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
+src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/PlayerInput.cpp
+src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/src/Player" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj -MF CMakeFiles/player.dir/PlayerInput.cpp.obj.d -o CMakeFiles/player.dir/PlayerInput.cpp.obj -c "D:/gitnext/Chained Decos/src/Player/PlayerInput.cpp"
+
+src/Player/CMakeFiles/player.dir/PlayerInput.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/PlayerInput.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+src/Player/CMakeFiles/player.dir/PlayerInput.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/player.dir/PlayerInput.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
+src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj: src/Player/CMakeFiles/player.dir/flags.make
+src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
+src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/PlayerModel.cpp
+src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/src/Player" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj -MF CMakeFiles/player.dir/PlayerModel.cpp.obj.d -o CMakeFiles/player.dir/PlayerModel.cpp.obj -c "D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp"
+
+src/Player/CMakeFiles/player.dir/PlayerModel.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/PlayerModel.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+src/Player/CMakeFiles/player.dir/PlayerModel.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/player.dir/PlayerModel.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
+src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj: src/Player/CMakeFiles/player.dir/flags.make
+src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
+src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/PlayerMovement.cpp
+src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj"
+	cd "D:/gitnext/Chained Decos/build/src/Player" && E:/LLVM/bin/clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj -MF CMakeFiles/player.dir/PlayerMovement.cpp.obj.d -o CMakeFiles/player.dir/PlayerMovement.cpp.obj -c "D:/gitnext/Chained Decos/src/Player/PlayerMovement.cpp"
+
+src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/PlayerMovement.cpp.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_PREPROCESSED_SOURCE
+
+src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/player.dir/PlayerMovement.cpp.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CXX_CREATE_ASSEMBLY_SOURCE
+
 # Object files for target player
 player_OBJECTS = \
-"CMakeFiles/player.dir/Player.cpp.obj"
+"CMakeFiles/player.dir/Player.cpp.obj" \
+"CMakeFiles/player.dir/PlayerCollision.cpp.obj" \
+"CMakeFiles/player.dir/PlayerInput.cpp.obj" \
+"CMakeFiles/player.dir/PlayerModel.cpp.obj" \
+"CMakeFiles/player.dir/PlayerMovement.cpp.obj"
 
 # External object files for target player
 player_EXTERNAL_OBJECTS =
 
 src/Player/player.lib: src/Player/CMakeFiles/player.dir/Player.cpp.obj
+src/Player/player.lib: src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj
+src/Player/player.lib: src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj
+src/Player/player.lib: src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj
+src/Player/player.lib: src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj
 src/Player/player.lib: src/Player/CMakeFiles/player.dir/build.make
 src/Player/player.lib: src/Player/CMakeFiles/player.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library player.lib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:/gitnext/Chained Decos/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX static library player.lib"
 	cd "D:/gitnext/Chained Decos/build/src/Player" && $(CMAKE_COMMAND) -P CMakeFiles/player.dir/cmake_clean_target.cmake
 	cd "D:/gitnext/Chained Decos/build/src/Player" && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/player.dir/link.txt --verbose=$(VERBOSE)
 

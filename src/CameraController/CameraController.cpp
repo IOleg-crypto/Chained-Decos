@@ -50,7 +50,7 @@ float CameraController::GetCameraSmoothingFactor() const { return m_cameraSmooth
 
 float CameraController::GetFOV() const { return m_radiusFOV; }
 
-void CameraController::UpdateMouseRotation(Camera &camera, Vector3 &playerPosition)
+void CameraController::UpdateMouseRotation(Camera &camera, const Vector3 &playerPosition)
 {
     float currentFOV = GetFOV();
     float wheelMove = GetMouseWheelMove();
