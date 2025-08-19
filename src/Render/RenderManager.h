@@ -45,7 +45,7 @@ public:
     void DrawPlayer(const Player &player, const Models &models);
 
     // Debug rendering
-    void RenderCollisionDebug(const CollisionManager &collisionManager, const Player &player);
+    void RenderCollisionDebug(const CollisionManager &collisionManager, const Player &player) const;
 
     // Utility methods
     void SetBackgroundColor(Color color);
@@ -61,7 +61,7 @@ public:
     bool IsDebugInfoVisible() const { return m_showDebugInfo; }
     bool IsCollisionDebugVisible() const { return m_showCollisionDebug; }
 
-    void ShowMetersPlayer(const Player &player);
+    void ShowMetersPlayer(const Player &player) const;
 
 private:
     // Debug rendering
@@ -83,7 +83,7 @@ private:
     // Background color
     Color m_backgroundColor = BLUE;
 
-    Font m_font; // Custom font for raylib
+    Font m_font{}; // Custom font for raylib
 };
 
 #endif // RENDER_MANAGER_H
