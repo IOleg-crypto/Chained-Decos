@@ -18,7 +18,7 @@ public:
     static constexpr Vector2 GROUND_SIZE = {800.0f, 800.0f};
     static constexpr Vector3 GROUND_POSITION = {0.0f, -5.0f, 0.0f};    // Match ground plane center
     static constexpr Vector3 GROUND_COLLISION_CENTER = {0, -5, 0};     // Match ground plane center
-    static constexpr Vector3 GROUND_COLLISION_SIZE = {1000, 10, 1000}; // Match ground plane size
+    static constexpr Vector3 GROUND_COLLISION_SIZE = {1000, 2, 1000}; // Match ground plane size
     static constexpr Vector3 DEBUG_CUBE_POSITION = {0, 5, 0};
     static constexpr Vector3 DEBUG_CUBE_SIZE = {2, 2, 2};
     PhysicsComponent();
@@ -64,6 +64,7 @@ public:
     // Add to current velocity
     void AddVelocity(const Vector3 &delta);
 
+
     // -------------------- Getters --------------------
 
     // Returns true if the object is touching the ground
@@ -89,7 +90,7 @@ public:
 
 private:
     // Physics parameters
-    float m_gravity = 8.0f;        // Gravity acceleration (reduced for better collision)
+    float m_gravity = 10.0f;        // Gravity acceleration (reduced for better collision)
     float m_velocityY = 0.0f;       // Vertical velocity
     bool m_isGrounded = false;       // Whether object is on the ground
     float m_groundLevel = 0.0f;     // Ground height level (top of ground plane)

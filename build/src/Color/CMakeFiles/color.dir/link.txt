@@ -1,2 +1,0 @@
-E:/LLVM/bin/llvm-ar.exe qc color.lib CMakeFiles/color.dir/ColorParser.cpp.obj
-E:/LLVM/bin/llvm-ranlib.exe color.lib

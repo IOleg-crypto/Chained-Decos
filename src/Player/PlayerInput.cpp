@@ -37,7 +37,7 @@ void PlayerInput::HandleJumpInput()
 {
     if (IsKeyDown(KEY_SPACE) && m_player->GetPhysics().IsGrounded())
     {
-        m_player->ApplyJumpImpulse(m_player->GetPhysics().GetJumpStrength() * 8.0f);
+        m_player->ApplyJumpImpulse(m_player->GetPhysics().GetJumpStrength() * 3.0f);
     }
 }
 

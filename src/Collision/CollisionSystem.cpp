@@ -3,9 +3,9 @@
 // Created by Assistant for optimized collision detection
 //
 
-#include "CollisionSystem.h"
-#include "../Model/ModelConfig.h"
-#include "Octree.h"
+#include <Collision/CollisionSystem.h>
+#include <Model/ModelConfig.h>
+#include <Collision/Octree.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
