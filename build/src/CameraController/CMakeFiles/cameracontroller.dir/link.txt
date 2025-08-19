@@ -1,2 +1,0 @@
-E:/LLVM/bin/llvm-ar.exe qc cameracontroller.lib CMakeFiles/cameracontroller.dir/CameraController.cpp.obj
-E:/LLVM/bin/llvm-ranlib.exe cameracontroller.lib
