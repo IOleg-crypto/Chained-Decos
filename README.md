@@ -17,7 +17,7 @@ Chained Decos is a fast-paced parkour game with both singleplayer and multiplaye
 
 ## 🚀 Features
 - **Dynamic Parkour Gameplay:** Run, jump, vault, and chain together moves to overcome challenging levels.
-- **Multiplayer & Singleplayer:** Play solo or compete with friends online.
+- **Multiplayer & Singleplayer:** *(Planned)** Play solo or compete with friends online.
 - **Modern C++20 Codebase:** Clean, modular, and extensible architecture.
 - **ImGui-powered UI:** In-game menus and debugging tools using ImGui + rlImGui.
 - **Smooth Controls:** Responsive movement and physics for an immersive experience.
