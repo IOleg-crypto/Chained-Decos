@@ -3,7 +3,7 @@
 //
 
 #include "RenderManager.h"
-#include "raylib.h"
+#include <raylib.h>
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
 #include <Collision/Octree.h>
@@ -154,8 +154,7 @@ void RenderManager::DrawPlayer(const Player &player, const Models &models)
 }
 
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
-                                         const Player &player)
-{
+                                         const Player &player) const {
     // Draw debug cube using constants from PhysicsComponent
     DrawCubeWires(PhysicsComponent::DEBUG_CUBE_POSITION, PhysicsComponent::DEBUG_CUBE_SIZE.x,
                   PhysicsComponent::DEBUG_CUBE_SIZE.y, PhysicsComponent::DEBUG_CUBE_SIZE.z, YELLOW);
@@ -254,12 +253,12 @@ void RenderManager::DrawModelManagerInfo(const Models &models)
 
     if (ImGui::Button("Print Full Stats"))
     {
-        const_cast<Models &>(models).PrintStatistics();
+        models.PrintStatistics();
     }
     ImGui::SameLine();
     if (ImGui::Button("Cache Info"))
     {
-        const_cast<Models &>(models).PrintCacheInfo();
+        models.PrintCacheInfo();
     }
     ImGui::SameLine();
     if (ImGui::Button("Cleanup Cache"))
@@ -306,10 +305,9 @@ void RenderManager::DrawControlsInfo()
     ImGui::Text("- F3: Toggle Collision Debug");
 }
 
-void RenderManager::ShowMetersPlayer(const Player &player)
-{
+void RenderManager::ShowMetersPlayer(const Player &player) const {
     Vector3 playerPosition = player.GetPlayerPosition();
-    float groundLevel = 0;
+    float groundLevel = PhysicsComponent::WORLD_FLOOR_Y;
     float heightAboveGround = playerPosition.y - groundLevel;
 
     static float maxHeight = 0.0f;
@@ -341,7 +339,7 @@ void RenderManager::ShowMetersPlayer(const Player &player)
     else
     {
         // Use default font with DrawTextEx for better rendering even in fallback
-        Font defaultFont = GetFontDefault();
+        const Font defaultFont = GetFontDefault();
         DrawTextEx(defaultFont, heightText.c_str(), {(float)textX, (float)textY}, 24, 2.0f,
                    textColor);
         DrawTextEx(defaultFont, recordText.c_str(), {(float)textX, (float)(textY + 30)}, 24, 2.0f,
@@ -350,7 +348,7 @@ void RenderManager::ShowMetersPlayer(const Player &player)
 
     int circleX = textX + 200;
     int circleY = textY + 12;
-    int circleRadius = 15;
+    float circleRadius = 15.f;
 
     DrawCircleLines(circleX, circleY, circleRadius, WHITE);
 
@@ -368,18 +366,18 @@ void RenderManager::ShowMetersPlayer(const Player &player)
         Font fontToUse = (m_font.texture.id != 0) ? m_font : GetFontDefault();
         if (isPhysicsGrounded)
         {
-            DrawTextEx(fontToUse, "GROUND", {(float)(circleX - 25), (float)(circleY + 25)}, 12,
+            DrawTextEx(fontToUse, "GROUND", {static_cast<float>(circleX - 25), static_cast<float>(circleY + 25)}, 12,
                        1.5f, GREEN);
         }
         else
         {
-            DrawTextEx(fontToUse, "NEAR", {(float)(circleX - 20), (float)(circleY + 25)}, 12, 1.5f,
+            DrawTextEx(fontToUse, "NEAR", {static_cast<float>(circleX - 20), static_cast<float>(circleY + 25)}, 12, 1.5f,
                        YELLOW);
         }
     }
     else
     {
-        Font fontToUse = (m_font.texture.id != 0) ? m_font : GetFontDefault();
+        const Font fontToUse = (m_font.texture.id != 0) ? m_font : GetFontDefault();
         DrawTextEx(fontToUse, "AIR", {(float)(circleX - 15), (float)(circleY + 25)}, 12, 1.5f,
                    LIGHTGRAY);
     }

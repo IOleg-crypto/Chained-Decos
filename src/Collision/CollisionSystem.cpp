@@ -11,17 +11,6 @@
 #include <cmath>
 #include <raylib.h>
 
-// CollisionSystem.cpp - Hybrid AABB + Octree Implementation
-// Created by Assistant for optimized collision detection
-//
-
-#include "../Model/ModelConfig.h"
-#include "CollisionSystem.h"
-#include "Octree.h"
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <raylib.h>
 
 // ================== Collision Implementation ==================
 
