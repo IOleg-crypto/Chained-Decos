@@ -42,7 +42,7 @@ public:
     void UpdateCameraRotation();
 
     // Update camera offset based on FOV and angles relative to player position
-    void UpdateMouseRotation(Camera &camera, Vector3 &playerPosition);
+    void UpdateMouseRotation(Camera &camera, const Vector3 &playerPosition);
 
     // -------------------- Settings --------------------
 
