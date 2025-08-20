@@ -1,4 +1,3 @@
-// Created by I#Oleg
 //
 
 #ifndef PLAYER_H
@@ -15,10 +14,10 @@
 #include <World/Physics.h>
 
 // Include new component headers
-#include <Player/PlayerMovement.h>
+#include <Player/PlayerCollision.h>
 #include <Player/PlayerInput.h>
 #include <Player/PlayerModel.h>
-#include <Player/PlayerCollision.h>
+#include <Player/PlayerMovement.h>
 
 // Player: main player class that uses component classes
 class Player
@@ -33,29 +32,23 @@ public:
     Player();
     ~Player();
 
-    void Update();                                                        // Main update
+    void Update(const CollisionManager &collisionManager);                // Main update
     void UpdatePlayerBox();                                               // Update bounding box
     void UpdatePlayerCollision();                                         // Update collisions
     void ApplyGravityForPlayer(const CollisionManager &collisionManager); // Gravity + collisions
 
     // Delegate to PlayerInput
-    void ApplyInput();                          // Process input
-    
+    void ApplyInput(); // Process input
+
     // Delegate to PlayerMovement
     void Move(const Vector3 &moveVector);       // Move player
     void SetPlayerPosition(const Vector3 &pos); // Set position
     void ApplyJumpImpulse(float impulse);       // Jump impulse
-    void ApplyGroundedMovement(const Vector3 &worldMoveDir, float deltaTime);
-    void ApplyAirborneMovement(const Vector3 &worldMoveDir, float deltaTime);
     void SnapToGroundIfNeeded(const CollisionManager &collisionManager);
-    void ResolveCollision(const Vector3 &response);
     Vector3 StepMovement(const CollisionManager &collisionManager);
     void ApplyGravity(float deltaTime);
     void HandleEmergencyReset();
     void HandleJumpInput();
-    void WallSlide(const Vector3 &currentPos, const Vector3 &movement, const Vector3 &response);
-    bool TryStepUp(const Vector3 &targetPos, const Vector3 &response);
-    Vector3 ClampMovementPerFrame(const Vector3 &movement, float maxMove);
 
     // Camera access
     std::shared_ptr<CameraController> GetCameraController() const; // Get camera
@@ -83,17 +76,13 @@ private:
     std::unique_ptr<PlayerInput> m_input;
     std::unique_ptr<PlayerModel> m_model;
     std::unique_ptr<PlayerCollision> m_collision;
-    
+
     // Camera control
     std::shared_ptr<CameraController> m_cameraController;
-    Vector3 m_baseTarget = {0.0f, 2.0f, 0.0f};
-    Vector3 m_originalCameraTarget = {0.0f, 2.0f, 0.0f};
-    
+
     // Player state
     bool m_isJumping = false;
-    float m_jumpStartTime = 0.0f;
     Vector3 m_playerSize{};
-    Color m_playerColor = BLUE;
 };
 
 #endif // PLAYER_H

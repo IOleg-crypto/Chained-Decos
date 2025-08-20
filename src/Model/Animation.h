@@ -1,5 +1,4 @@
 //
-//  Created by I#Oleg
 //
 #ifndef ANIMATION_H
 #define ANIMATION_H

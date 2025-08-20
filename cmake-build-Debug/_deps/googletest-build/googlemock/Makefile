@@ -59,7 +59,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -67,7 +67,7 @@ CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -77,7 +77,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool for source..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-Debug/CPackSourceConfig.cmake"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-debug/CPackSourceConfig.cmake"
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -151,14 +151,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\googletest-build\googlemock\\CMakeFiles\progress.marks"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/all
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-debug\_deps\googletest-build\googlemock\\CMakeFiles\progress.marks"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/all
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/clean
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/clean
 .PHONY : clean
 
 # The main clean target
@@ -167,22 +167,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/rule:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/rule
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/rule
 .PHONY : _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/rule
 
 # Convenience name for target.
@@ -191,12 +191,12 @@ gmock: _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/rule
 
 # fast build rule for target.
 gmock/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build
 .PHONY : gmock/fast
 
 # Convenience name for target.
 _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/rule:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/rule
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/rule
 .PHONY : _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/rule
 
 # Convenience name for target.
@@ -205,7 +205,7 @@ gmock_main: _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/rule
 
 # fast build rule for target.
 gmock_main/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build
 .PHONY : gmock_main/fast
 
 src/gmock-all.obj: src/gmock-all.cc.obj
@@ -213,7 +213,7 @@ src/gmock-all.obj: src/gmock-all.cc.obj
 
 # target to build an object file
 src/gmock-all.cc.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.obj
 .PHONY : src/gmock-all.cc.obj
 
 src/gmock-all.i: src/gmock-all.cc.i
@@ -221,7 +221,7 @@ src/gmock-all.i: src/gmock-all.cc.i
 
 # target to preprocess a source file
 src/gmock-all.cc.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.i
 .PHONY : src/gmock-all.cc.i
 
 src/gmock-all.s: src/gmock-all.cc.s
@@ -229,7 +229,7 @@ src/gmock-all.s: src/gmock-all.cc.s
 
 # target to generate assembly for a file
 src/gmock-all.cc.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.s
 .PHONY : src/gmock-all.cc.s
 
 src/gmock_main.obj: src/gmock_main.cc.obj
@@ -237,7 +237,7 @@ src/gmock_main.obj: src/gmock_main.cc.obj
 
 # target to build an object file
 src/gmock_main.cc.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.obj
 .PHONY : src/gmock_main.cc.obj
 
 src/gmock_main.i: src/gmock_main.cc.i
@@ -245,7 +245,7 @@ src/gmock_main.i: src/gmock_main.cc.i
 
 # target to preprocess a source file
 src/gmock_main.cc.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.i
 .PHONY : src/gmock_main.cc.i
 
 src/gmock_main.s: src/gmock_main.cc.s
@@ -253,7 +253,7 @@ src/gmock_main.s: src/gmock_main.cc.s
 
 # target to generate assembly for a file
 src/gmock_main.cc.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f _deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.s
 .PHONY : src/gmock_main.cc.s
 
 # Help Target
@@ -289,6 +289,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

@@ -1,4 +1,4 @@
-# Install script for directory: D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-src
+# Install script for directory: D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

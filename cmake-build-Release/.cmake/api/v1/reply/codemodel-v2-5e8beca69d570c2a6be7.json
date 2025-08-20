@@ -1,0 +1,689 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						5,
+						6,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-6583eca4a903ae96eb0a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						11
+					]
+				},
+				{
+					"build" : "_deps/raylib-build",
+					"childIndexes" : 
+					[
+						2
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.raylib-build-Debug-7139d9b068f0c6e734ff.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "cmake-build-Release/_deps/raylib-src",
+					"targetIndexes" : 
+					[
+						19
+					]
+				},
+				{
+					"build" : "_deps/raylib-build/raylib",
+					"childIndexes" : 
+					[
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.raylib-build.raylib-Debug-5d7cd5c16217fb8b4520.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "cmake-build-Release/_deps/raylib-src/src",
+					"targetIndexes" : 
+					[
+						17
+					]
+				},
+				{
+					"build" : "_deps/raylib-build/raylib/external/glfw",
+					"childIndexes" : 
+					[
+						4
+					],
+					"jsonFile" : "directory-_deps.raylib-build.raylib.external.glfw-Debug-6fec1b6d1e5937289640.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.4"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 2,
+					"source" : "cmake-build-Release/_deps/raylib-src/src/external/glfw"
+				},
+				{
+					"build" : "_deps/raylib-build/raylib/external/glfw/src",
+					"jsonFile" : "directory-_deps.raylib-build.raylib.external.glfw.src-Debug-864fe4036b5a463ca1a0.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.4"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 2,
+					"source" : "cmake-build-Release/_deps/raylib-src/src/external/glfw/src",
+					"targetIndexes" : 
+					[
+						6,
+						21
+					]
+				},
+				{
+					"build" : "_deps/nlohmann_json-build",
+					"jsonFile" : "directory-_deps.nlohmann_json-build-Debug-231d12ce511159086c76.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : "cmake-build-Release/_deps/nlohmann_json-src"
+				},
+				{
+					"build" : "_deps/googletest-build",
+					"childIndexes" : 
+					[
+						7
+					],
+					"jsonFile" : "directory-_deps.googletest-build-Debug-64b5f88d6c303414730e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 4,
+					"source" : "cmake-build-Release/_deps/googletest-src"
+				},
+				{
+					"build" : "_deps/googletest-build/googlemock",
+					"childIndexes" : 
+					[
+						8
+					],
+					"jsonFile" : "directory-_deps.googletest-build.googlemock-Debug-eae76d6a92ff4137bc00.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 5,
+					"source" : "cmake-build-Release/_deps/googletest-src/googlemock",
+					"targetIndexes" : 
+					[
+						7,
+						8
+					]
+				},
+				{
+					"build" : "_deps/googletest-build/googletest",
+					"jsonFile" : "directory-_deps.googletest-build.googletest-Debug-69d27000cfe13055aa1e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 7,
+					"projectIndex" : 6,
+					"source" : "cmake-build-Release/_deps/googletest-src/googletest",
+					"targetIndexes" : 
+					[
+						9,
+						10
+					]
+				},
+				{
+					"build" : "src/Engine",
+					"jsonFile" : "directory-src.Engine-Debug-d99704a6717bda53cd9a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Engine",
+					"targetIndexes" : 
+					[
+						5
+					]
+				},
+				{
+					"build" : "src/Player",
+					"jsonFile" : "directory-src.Player-Debug-86b8f4dbbb1bb2da30a2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Player",
+					"targetIndexes" : 
+					[
+						16
+					]
+				},
+				{
+					"build" : "src/Model",
+					"jsonFile" : "directory-src.Model-Debug-18a66e70a0452dd8ec5d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Model",
+					"targetIndexes" : 
+					[
+						15
+					]
+				},
+				{
+					"build" : "src/Menu",
+					"jsonFile" : "directory-src.Menu-Debug-388c455462a3149b3d9d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Menu",
+					"targetIndexes" : 
+					[
+						14
+					]
+				},
+				{
+					"build" : "src/Input",
+					"jsonFile" : "directory-src.Input-Debug-9fa021fd1f63bad8e7a2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Input",
+					"targetIndexes" : 
+					[
+						12
+					]
+				},
+				{
+					"build" : "src/Map",
+					"jsonFile" : "directory-src.Map-Debug-f75f07acfbcb716473d6.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Map",
+					"targetIndexes" : 
+					[
+						13
+					]
+				},
+				{
+					"build" : "src/CameraController",
+					"jsonFile" : "directory-src.CameraController-Debug-aa8ac8fdd72934879f6e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/CameraController",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "src/Color",
+					"jsonFile" : "directory-src.Color-Debug-0b3818ca9009610e2102.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Color",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "src/World",
+					"jsonFile" : "directory-src.World-Debug-3f1b11409b841411533a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/World",
+					"targetIndexes" : 
+					[
+						22
+					]
+				},
+				{
+					"build" : "src/Collision",
+					"jsonFile" : "directory-src.Collision-Debug-4fac99548f718072f69d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Collision",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "src/Render",
+					"jsonFile" : "directory-src.Render-Debug-dab98103fe6c4a977b25.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Render",
+					"targetIndexes" : 
+					[
+						18
+					]
+				},
+				{
+					"build" : "tests",
+					"jsonFile" : "directory-tests-Debug-70e4927a02b591d5c1f8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "tests",
+					"targetIndexes" : 
+					[
+						20
+					]
+				},
+				{
+					"build" : "src/MapEditor",
+					"jsonFile" : "directory-src.MapEditor-Debug-2b3aa70c7e3edab8e44e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 7,
+					"source" : "src/MapEditor",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						3,
+						4,
+						7
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20
+					],
+					"name" : "ChainedDecos",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3,
+						4,
+						5,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						18,
+						20,
+						22
+					]
+				},
+				{
+					"childIndexes" : 
+					[
+						2
+					],
+					"directoryIndexes" : 
+					[
+						1,
+						2
+					],
+					"name" : "raylib",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						17,
+						19
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3,
+						4
+					],
+					"name" : "GLFW",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						6,
+						21
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						5
+					],
+					"name" : "nlohmann_json",
+					"parentIndex" : 0
+				},
+				{
+					"childIndexes" : 
+					[
+						5
+					],
+					"directoryIndexes" : 
+					[
+						6
+					],
+					"name" : "googletest-distribution",
+					"parentIndex" : 0
+				},
+				{
+					"childIndexes" : 
+					[
+						6
+					],
+					"directoryIndexes" : 
+					[
+						7
+					],
+					"name" : "gmock",
+					"parentIndex" : 4,
+					"targetIndexes" : 
+					[
+						7,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						8
+					],
+					"name" : "gtest",
+					"parentIndex" : 5,
+					"targetIndexes" : 
+					[
+						9,
+						10
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						21
+					],
+					"name" : "ChainedDecosMapEditor",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ChainedDecos-Debug-9a49c1015684e43918f0.json",
+					"name" : "ChainedDecos",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 21,
+					"id" : "ChainedDecosMapEditor::@22ba1988a0619764bd02",
+					"jsonFile" : "target-ChainedDecosMapEditor-Debug-278fd2c827499bc44a1b.json",
+					"name" : "ChainedDecosMapEditor",
+					"projectIndex" : 7
+				},
+				{
+					"directoryIndex" : 15,
+					"id" : "cameracontroller::@5f3ee536e3548f9fd64a",
+					"jsonFile" : "target-cameracontroller-Debug-820149a4a9c7dadce228.json",
+					"name" : "cameracontroller",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 18,
+					"id" : "collision::@f2fae3303dbf2eca7e7f",
+					"jsonFile" : "target-collision-Debug-6ad67f5e87cce3524efc.json",
+					"name" : "collision",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 16,
+					"id" : "color::@1a1c00afda0e599bb50a",
+					"jsonFile" : "target-color-Debug-f501d2e34f0424d8b9ac.json",
+					"name" : "color",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "engine::@57eeced369f002faad1a",
+					"jsonFile" : "target-engine-Debug-1ad9fc36822a379bb0c3.json",
+					"name" : "engine",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "glfw::@9de86fbe87260ae8e66c",
+					"jsonFile" : "target-glfw-Debug-477fe8769457bca53ef9.json",
+					"name" : "glfw",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "gmock::@0f7bb11d64f3678238c7",
+					"jsonFile" : "target-gmock-Debug-2fbd667dd735d07b09fd.json",
+					"name" : "gmock",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "gmock_main::@0f7bb11d64f3678238c7",
+					"jsonFile" : "target-gmock_main-Debug-ae73740a2603d3d510b6.json",
+					"name" : "gmock_main",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 8,
+					"id" : "gtest::@1ea2dfc0605fe3ab2a3f",
+					"jsonFile" : "target-gtest-Debug-112dccc5f061c1647abf.json",
+					"name" : "gtest",
+					"projectIndex" : 6
+				},
+				{
+					"directoryIndex" : 8,
+					"id" : "gtest_main::@1ea2dfc0605fe3ab2a3f",
+					"jsonFile" : "target-gtest_main-Debug-5bbbc7be0f5c76469f16.json",
+					"name" : "gtest_main",
+					"projectIndex" : 6
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "imguilib::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-imguilib-Debug-fec39997a32cf9c248cb.json",
+					"name" : "imguilib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 13,
+					"id" : "input::@d8fb087ca0f7f8518676",
+					"jsonFile" : "target-input-Debug-f680092b00ab45c96966.json",
+					"name" : "input",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 14,
+					"id" : "mapmod::@09eac2343e8a1d778799",
+					"jsonFile" : "target-mapmod-Debug-c921894d7cde7beb0d91.json",
+					"name" : "mapmod",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 12,
+					"id" : "menu::@c946c8ead22e3f9c7e08",
+					"jsonFile" : "target-menu-Debug-3a35a26d5446dc680e3e.json",
+					"name" : "menu",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 11,
+					"id" : "model::@c31de6ce72a56b005f57",
+					"jsonFile" : "target-model-Debug-1a623c39b2212f1ce58d.json",
+					"name" : "model",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 10,
+					"id" : "player::@be42b85d13b19d60cba7",
+					"jsonFile" : "target-player-Debug-edfff867ac2d404a09d8.json",
+					"name" : "player",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "raylib::@4dc3a4644cf4ded08c01",
+					"jsonFile" : "target-raylib-Debug-66238b3327c84f879c21.json",
+					"name" : "raylib",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 19,
+					"id" : "render::@573df2f7b11149dcccc5",
+					"jsonFile" : "target-render-Debug-18863f8470c67e530968.json",
+					"name" : "render",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "uninstall::@1f4ba659214c9866b353",
+					"jsonFile" : "target-uninstall-Debug-89aa3e1273f0ba14a809.json",
+					"name" : "uninstall",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 20,
+					"id" : "unit_tests::@a44f0ac069e85531cdee",
+					"jsonFile" : "target-unit_tests-Debug-6048ecc0521d74917386.json",
+					"name" : "unit_tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "update_mappings::@9de86fbe87260ae8e66c",
+					"jsonFile" : "target-update_mappings-Debug-2ad27aac34181d25092a.json",
+					"name" : "update_mappings",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 17,
+					"id" : "world::@92df9c4804674326063e",
+					"jsonFile" : "target-world-Debug-749e1fed32f1e5eafc25.json",
+					"name" : "world",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/gitnext/Chained Decos/cmake-build-Release",
+		"source" : "D:/gitnext/Chained Decos"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
