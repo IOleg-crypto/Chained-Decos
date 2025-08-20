@@ -3,7 +3,7 @@
 
 # Relative path conversion top directories.
 set(CMAKE_RELATIVE_PATH_TOP_SOURCE "D:/gitnext/Chained Decos")
-set(CMAKE_RELATIVE_PATH_TOP_BINARY "D:/gitnext/Chained Decos/cmake-build-Debug")
+set(CMAKE_RELATIVE_PATH_TOP_BINARY "D:/gitnext/Chained Decos/cmake-build-debug")
 
 # Force unix paths in dependencies.
 set(CMAKE_FORCE_UNIX_PATHS 1)

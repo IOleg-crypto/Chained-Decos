@@ -1,4 +1,4 @@
-# Install script for directory: D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-src/googletest
+# Install script for directory: D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

@@ -52,10 +52,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild"
+CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild"
 
 # Utility rule file for nlohmann_json-populate.
 
@@ -76,60 +76,60 @@ CMakeFiles/nlohmann_json-populate-complete: nlohmann_json-populate-prefix/src/nl
 CMakeFiles/nlohmann_json-populate-complete: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build
 CMakeFiles/nlohmann_json-populate-complete: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install
 CMakeFiles/nlohmann_json-populate-complete: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Completed 'nlohmann_json-populate'"
-	"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/CMakeFiles"
-	"C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/CMakeFiles/nlohmann_json-populate-complete"
-	"C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Completed 'nlohmann_json-populate'"
+	"C:\Program Files\CMake\bin\cmake.exe" -E make_directory "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/CMakeFiles"
+	"C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/CMakeFiles/nlohmann_json-populate-complete"
+	"C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done"
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update:
 .PHONY : nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "No build step for 'nlohmann_json-populate'"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E echo_append
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "No build step for 'nlohmann_json-populate'"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build"
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure: nlohmann_json-populate-prefix/tmp/nlohmann_json-populate-cfgcmd.txt
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "No configure step for 'nlohmann_json-populate'"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E echo_append
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "No configure step for 'nlohmann_json-populate'"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure"
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-gitinfo.txt
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Performing download step (git clone) for 'nlohmann_json-populate'"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps" && "C:\Program Files\CMake\bin\cmake.exe" -P "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/tmp/nlohmann_json-populate-gitclone.cmake"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Performing download step (git clone) for 'nlohmann_json-populate'"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps" && "C:\Program Files\CMake\bin\cmake.exe" -P "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/tmp/nlohmann_json-populate-gitclone.cmake"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download"
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "No install step for 'nlohmann_json-populate'"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E echo_append
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "No install step for 'nlohmann_json-populate'"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install"
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Creating directories for 'nlohmann_json-populate'"
-	"C:\Program Files\CMake\bin\cmake.exe" -Dcfgdir= -P "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/tmp/nlohmann_json-populate-mkdirs.cmake"
-	"C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Creating directories for 'nlohmann_json-populate'"
+	"C:\Program Files\CMake\bin\cmake.exe" -Dcfgdir= -P "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/tmp/nlohmann_json-populate-mkdirs.cmake"
+	"C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir"
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch-info.txt
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "No patch step for 'nlohmann_json-populate'"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "No patch step for 'nlohmann_json-populate'"
 	"C:\Program Files\CMake\bin\cmake.exe" -E echo_append
-	"C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch"
+	"C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch"
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update:
 .PHONY : nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_8) "No test step for 'nlohmann_json-populate'"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E echo_append
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_8) "No test step for 'nlohmann_json-populate'"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E echo_append
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-build" && "C:\Program Files\CMake\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test"
 
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update: nlohmann_json-populate-prefix/tmp/nlohmann_json-populate-gitupdate.cmake
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update-info.txt
 nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update: nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_9) "Performing update step for 'nlohmann_json-populate'"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-src" && "C:\Program Files\CMake\bin\cmake.exe" -Dcan_fetch=YES -P "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/tmp/nlohmann_json-populate-gitupdate.cmake"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_9) "Performing update step for 'nlohmann_json-populate'"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-src" && "C:\Program Files\CMake\bin\cmake.exe" -Dcan_fetch=YES -P "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/tmp/nlohmann_json-populate-gitupdate.cmake"
 
 nlohmann_json-populate: CMakeFiles/nlohmann_json-populate
 nlohmann_json-populate: CMakeFiles/nlohmann_json-populate-complete
@@ -153,6 +153,6 @@ CMakeFiles/nlohmann_json-populate.dir/clean:
 .PHONY : CMakeFiles/nlohmann_json-populate.dir/clean
 
 CMakeFiles/nlohmann_json-populate.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild" "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild" "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild" "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild" "D:\gitnext\Chained Decos\cmake-build-Debug\_deps\nlohmann_json-subbuild\CMakeFiles\nlohmann_json-populate.dir\DependInfo.cmake" "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild" "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild" "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild" "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild" "D:\gitnext\Chained Decos\cmake-build-debug\_deps\nlohmann_json-subbuild\CMakeFiles\nlohmann_json-populate.dir\DependInfo.cmake" "--color=$(COLOR)"
 .PHONY : CMakeFiles/nlohmann_json-populate.dir/depend
 

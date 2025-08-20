@@ -1,4 +1,4 @@
-# Install script for directory: D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src
+# Install script for directory: D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

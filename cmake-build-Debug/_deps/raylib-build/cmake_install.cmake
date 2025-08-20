@@ -1,4 +1,4 @@
-# Install script for directory: D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src
+# Install script for directory: D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/cmake_install.cmake")
+  include("D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/cmake_install.cmake")
 
 endif()
 

@@ -1,6 +1,5 @@
 //
 // Engine.cpp - Main Engine Implementation
-// Created by I#Oleg on 20.07.2025.
 //
 
 #include "Engine.h"
@@ -22,8 +21,9 @@
 Engine::Engine() : Engine(800, 600) {}
 
 Engine::Engine(const int screenX, const int screenY)
-    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_shouldExit(false),
-      m_showMenu(true), m_windowInitialized(false), m_showDebug(false), m_showCollisionDebug(false)
+    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_showMenu(true),
+      m_shouldExit(false), m_windowInitialized(false), m_showDebug(false),
+      m_showCollisionDebug(false)
 {
     // Improved validation using local constants
     constexpr int DEFAULT_SCREEN_WIDTH = 800;
@@ -67,25 +67,18 @@ void Engine::Init()
 {
     TraceLog(LOG_INFO, "Initializing Engine...");
 
-    // Configure window flags
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
-
-    // Initialize window
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
-    m_windowInitialized = true; // Mark that we initialized the window
-    SetTargetFPS(60);           // Local constant
+    m_windowInitialized = true;
+    SetTargetFPS(60);
 
-    // Initialize RenderManager
     m_renderManager.Initialize();
 
-    // Initialize models with improved settings
     const std::string modelsJsonPath = PROJECT_ROOT_DIR "/src/models.json";
-    TraceLog(LOG_INFO, "Loading models from: %s", modelsJsonPath.c_str());
     m_models.SetCacheEnabled(true);
     m_models.SetMaxCacheSize(50);
     m_models.EnableLOD(true);
 
-    // Load models from JSON file
     try
     {
         m_models.LoadModelsFromJson(modelsJsonPath);
@@ -94,96 +87,53 @@ void Engine::Init()
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, " Failed to load models: %s", e.what());
+        TraceLog(LOG_ERROR, "Failed to load models: %s", e.what());
     }
 
-    // Initialize game systems
-    TraceLog(LOG_INFO, "Starting collision system initialization...");
-    try
-    {
-        InitCollisions();
-        TraceLog(LOG_INFO, " Collision system initialized successfully");
-    }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_ERROR, " Failed to initialize collision system: %s", e.what());
-    }
-
-    // Initialize input system
-    TraceLog(LOG_INFO, "Initializing input system...");
+    InitCollisions();
     InitInput();
-    TraceLog(LOG_INFO, " Input system initialized successfully");
 
-    // Verify collision system state before applying physics
-    TraceLog(LOG_INFO, "Verifying collision system before physics: %zu colliders",
-             m_collisionManager.GetColliders().size());
-
-    // Initialize player physics
-    TraceLog(LOG_INFO, "Initializing player physics...");
     m_player.UpdatePlayerBox();
     m_player.UpdatePlayerCollision();
 
-    // Set player to a safe starting position
-    Vector3 safePosition = {0.0f, 2.0f, 0.0f}; // Lower starting position to reduce fall distance
-
-    // Reset player physics state completely
-    m_player.SetPlayerPosition(safePosition);
-    m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f}); // Ensure zero velocity
-    m_player.GetPhysics().SetGroundLevel(false);           // Start in air
-    m_player.UpdatePlayerBox();
-    m_player.UpdatePlayerCollision();
-
-    TraceLog(LOG_INFO, "Set player to safe starting position: (%.2f, %.2f, %.2f)", safePosition.x,
-             safePosition.y, safePosition.z);
-
-    // Apply initial gravity to ensure player is grounded
     if (!m_collisionManager.GetColliders().empty())
     {
-        TraceLog(LOG_INFO, "Applying initial gravity with %zu colliders",
-                 m_collisionManager.GetColliders().size());
 
-        // Apply a very gentle gravity step
-        Vector3 pos = m_player.GetPlayerPosition();
-        pos.y -= 0.1f; // Move down very slightly
-        m_player.SetPlayerPosition(pos);
+        Vector3 groundTop = PhysicsComponent::GROUND_COLLISION_CENTER;
+        groundTop.y += PhysicsComponent::GROUND_COLLISION_SIZE.y / 2.0f;
+
+        Vector3 safePosition = {0.0f, groundTop.y + 0.01f, 0.0f};
+        m_player.SetPlayerPosition(safePosition);
+
         m_player.UpdatePlayerBox();
+        m_player.UpdatePlayerCollision();
 
-        // Check for collision
-        Vector3 response = {};
-        if (m_collisionManager.CheckCollision(m_player.GetCollision(), response))
-        {
-            // Found ground - stop falling and set as grounded
-            m_player.GetPhysics().SetGroundLevel(true);
-            pos.y += response.y + 0.05f; // Add a small buffer
-            m_player.SetPlayerPosition(pos);
-            TraceLog(LOG_INFO, "Found ground at iteration %d, position: (%.2f, %.2f, %.2f)", pos.x,
-                     pos.y, pos.z);
-        }
+        m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
+        m_player.GetPhysics().SetGroundLevel(true);
+        m_player.SnapToGroundIfNeeded(m_collisionManager);
 
-        TraceLog(LOG_INFO, "Applied gentle gravity step %d, player position: (%.2f, %.2f, %.2f)",
-                 pos.x, pos.y, pos.z);
-
-        // Final check to ensure player is properly positioned
-        m_player.ApplyGravityForPlayer(m_collisionManager);
+        TraceLog(LOG_INFO, "Player positioned safely at: (%.2f, %.2f, %.2f)", safePosition.x,
+                 safePosition.y, safePosition.z);
     }
     else
     {
-        TraceLog(LOG_ERROR, "Cannot apply gravity - no colliders available!");
+        TraceLog(LOG_WARNING, "No colliders found! Creating emergency ground plane.");
 
-        // Create emergency ground plane using the exact same constants
         Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
         Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
         Collision plane{groundCenter, groundSize};
         plane.SetCollisionType(CollisionType::AABB_ONLY);
         m_collisionManager.AddCollider(plane);
-        TraceLog(LOG_WARNING,
-                 "Created emergency ground plane in Init with size: {%.1f, %.1f, %.1f} at "
-                 "position: {%.1f, %.1f, %.1f}",
-                 groundSize.x, groundSize.y, groundSize.z, groundCenter.x, groundCenter.y,
-                 groundCenter.z);
+
+        Vector3 safePosition = {0.0f, groundCenter.y + groundSize.y / 2.0f + 0.01f, 0.0f};
+        m_player.SetPlayerPosition(safePosition);
+        m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
+        m_player.GetPhysics().SetGroundLevel(false);
+        m_player.UpdatePlayerBox();
+        m_player.UpdatePlayerCollision();
     }
 
-    TraceLog(LOG_INFO, " Engine initialization complete!");
+    TraceLog(LOG_INFO, "Engine initialization complete!");
 }
 
 void Engine::Run()
@@ -282,6 +232,17 @@ void Engine::InitCollisions()
     // Clear any existing colliders first
     m_collisionManager.ClearColliders();
     TraceLog(LOG_INFO, "Cleared existing colliders");
+
+    // Step 1: Create basic ground plane
+    Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
+    Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
+    Collision groundPlane{groundCenter, groundSize};
+    groundPlane.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(groundPlane);
+
+    TraceLog(LOG_INFO, "Added ground plane at (%.1f, %.1f, %.1f) with size (%.1f, %.1f, %.1f)",
+             groundCenter.x, groundCenter.y, groundCenter.z, groundSize.x, groundSize.y,
+             groundSize.z);
 
     // Verify ground plane was added
     TraceLog(LOG_INFO, "Collider count after adding ground plane: %zu",
@@ -672,7 +633,7 @@ void Engine::Update()
         {
             UpdatePlayer();
             UpdatePhysics();
-            // CheckPlayerBounds();
+            // CheckPlayerBounds(); // Temporarily disabled for debugging
         }
         catch (const std::exception &e)
         {
@@ -698,10 +659,8 @@ void Engine::UpdatePlayer()
     }
 
     // Update player position and state
-    m_player.Update();
-
-    // Handle collision response
-    HandlePlayerCollision();
+    // Player::Update() now handles everything including collision via StepMovement
+    m_player.Update(m_collisionManager);
 
     // Update UI meters
     m_renderManager.ShowMetersPlayer(m_player);
@@ -815,9 +774,19 @@ bool Engine::IsPlayerOutOfBounds(const Vector3 &pos) const
     const float MIN_Y = PhysicsComponent::WORLD_FLOOR_Y - 5.0f;
     const float MAX_Y = 1000.0f; // Increased from 30.0f to 100.0f to allow higher jumps
     const float MAX_XZ = 1000.0f;
-    TraceLog(LOG_DEBUG, "Checking player bounds: Y=%f, XZ=%f", MAX_Y, MAX_XZ);
+    TraceLog(LOG_INFO, "Checking player bounds at (%.2f, %.2f, %.2f): Y_limit=%f, XZ_limit=%f",
+             pos.x, pos.y, pos.z, MAX_Y, MAX_XZ);
 
-    return (pos.y < MIN_Y || pos.y > MAX_Y || fabs(pos.x) > MAX_XZ || fabs(pos.z) > MAX_XZ);
+    bool outOfBounds =
+        (pos.y < MIN_Y || pos.y > MAX_Y || fabs(pos.x) > MAX_XZ || fabs(pos.z) > MAX_XZ);
+
+    if (outOfBounds)
+    {
+        TraceLog(LOG_WARNING, "Player OUT OF BOUNDS detected at (%.2f, %.2f, %.2f)", pos.x, pos.y,
+                 pos.z);
+    }
+
+    return outOfBounds;
 }
 
 bool Engine::HasExtremeVelocity(const Vector3 &vel) const
@@ -895,9 +864,9 @@ void Engine::Render()
                      m_collisionManager.GetColliders().size());
 
             m_player.ApplyGravityForPlayer(m_collisionManager);
-            TraceLog(LOG_INFO, "Applied gravity iteration %d, player position: (%.2f, %.2f, %.2f)",
-                     m_player.GetPlayerPosition().x, m_player.GetPlayerPosition().y,
-                     m_player.GetPlayerPosition().z);
+            Vector3 pos = m_player.GetPlayerPosition();
+            TraceLog(LOG_INFO, "Applied initial gravity, player position: (%.2f, %.2f, %.2f)",
+                     pos.x, pos.y, pos.z);
         }
         else
         {

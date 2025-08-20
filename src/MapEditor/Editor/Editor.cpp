@@ -1,5 +1,4 @@
 //
-// Created by I#Oleg
 //
 
 #include "Editor.h"

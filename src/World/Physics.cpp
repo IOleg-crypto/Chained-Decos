@@ -61,6 +61,10 @@ void PhysicsComponent::AddVelocity(const Vector3 &delta)
     m_velocity = Vector3Add(m_velocity, delta);
 }
 
+void PhysicsComponent::SetJumpState(bool setJumpState) {
+    m_isJumping = setJumpState;
+}
+
 float PhysicsComponent::GetDeltaTime() const { return m_dt; }
 
 PhysicsComponent::PhysicsComponent() : m_dt(GetFrameTime()) {}

@@ -55,7 +55,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
 
 # Include any dependencies generated for this target.
 include src/Player/CMakeFiles/player.dir/depend.make
@@ -72,8 +72,8 @@ src/Player/CMakeFiles/player.dir/Player.cpp.obj: src/Player/CMakeFiles/player.di
 src/Player/CMakeFiles/player.dir/Player.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
 src/Player/CMakeFiles/player.dir/Player.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/Player.cpp
 src/Player/CMakeFiles/player.dir/Player.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/Player/CMakeFiles/player.dir/Player.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/Player.cpp.obj -MF CMakeFiles\player.dir\Player.cpp.obj.d -o CMakeFiles\player.dir\Player.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\Player.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/Player/CMakeFiles/player.dir/Player.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/Player.cpp.obj -MF CMakeFiles\player.dir\Player.cpp.obj.d -o CMakeFiles\player.dir\Player.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\Player.cpp"
 
 src/Player/CMakeFiles/player.dir/Player.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/Player.cpp.i"
@@ -87,8 +87,8 @@ src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj: src/Player/CMakeFiles/
 src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
 src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/PlayerCollision.cpp
 src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj -MF CMakeFiles\player.dir\PlayerCollision.cpp.obj.d -o CMakeFiles\player.dir\PlayerCollision.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\PlayerCollision.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj -MF CMakeFiles\player.dir\PlayerCollision.cpp.obj.d -o CMakeFiles\player.dir\PlayerCollision.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\PlayerCollision.cpp"
 
 src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/PlayerCollision.cpp.i"
@@ -102,8 +102,8 @@ src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj: src/Player/CMakeFiles/play
 src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
 src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/PlayerInput.cpp
 src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj -MF CMakeFiles\player.dir\PlayerInput.cpp.obj.d -o CMakeFiles\player.dir\PlayerInput.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\PlayerInput.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj -MF CMakeFiles\player.dir\PlayerInput.cpp.obj.d -o CMakeFiles\player.dir\PlayerInput.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\PlayerInput.cpp"
 
 src/Player/CMakeFiles/player.dir/PlayerInput.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/PlayerInput.cpp.i"
@@ -117,8 +117,8 @@ src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj: src/Player/CMakeFiles/play
 src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
 src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/PlayerModel.cpp
 src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj -MF CMakeFiles\player.dir\PlayerModel.cpp.obj.d -o CMakeFiles\player.dir\PlayerModel.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\PlayerModel.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj -MF CMakeFiles\player.dir\PlayerModel.cpp.obj.d -o CMakeFiles\player.dir\PlayerModel.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\PlayerModel.cpp"
 
 src/Player/CMakeFiles/player.dir/PlayerModel.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/PlayerModel.cpp.i"
@@ -132,8 +132,8 @@ src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj: src/Player/CMakeFiles/p
 src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj: src/Player/CMakeFiles/player.dir/includes_CXX.rsp
 src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj: D:/gitnext/Chained\ Decos/src/Player/PlayerMovement.cpp
 src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj: src/Player/CMakeFiles/player.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj -MF CMakeFiles\player.dir\PlayerMovement.cpp.obj.d -o CMakeFiles\player.dir\PlayerMovement.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\PlayerMovement.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj -MF CMakeFiles\player.dir\PlayerMovement.cpp.obj.d -o CMakeFiles\player.dir\PlayerMovement.cpp.obj -c "D:\gitnext\Chained Decos\src\Player\PlayerMovement.cpp"
 
 src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/player.dir/PlayerMovement.cpp.i"
@@ -161,19 +161,19 @@ src/Player/player.lib: src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj
 src/Player/player.lib: src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj
 src/Player/player.lib: src/Player/CMakeFiles/player.dir/build.make
 src/Player/player.lib: src/Player/CMakeFiles/player.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX static library player.lib"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" && $(CMAKE_COMMAND) -P CMakeFiles\player.dir\cmake_clean_target.cmake
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\player.dir\link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX static library player.lib"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" && $(CMAKE_COMMAND) -P CMakeFiles\player.dir\cmake_clean_target.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\player.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 src/Player/CMakeFiles/player.dir/build: src/Player/player.lib
 .PHONY : src/Player/CMakeFiles/player.dir/build
 
 src/Player/CMakeFiles/player.dir/clean:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" && $(CMAKE_COMMAND) -P CMakeFiles\player.dir\cmake_clean.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" && $(CMAKE_COMMAND) -P CMakeFiles\player.dir\cmake_clean.cmake
 .PHONY : src/Player/CMakeFiles/player.dir/clean
 
 src/Player/CMakeFiles/player.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\src\Player" "D:\gitnext\Chained Decos\cmake-build-Debug" "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player" "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player\CMakeFiles\player.dir\DependInfo.cmake" "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\src\Player" "D:\gitnext\Chained Decos\cmake-build-debug" "D:\gitnext\Chained Decos\cmake-build-debug\src\Player" "D:\gitnext\Chained Decos\cmake-build-debug\src\Player\CMakeFiles\player.dir\DependInfo.cmake" "--color=$(COLOR)"
 .PHONY : src/Player/CMakeFiles/player.dir/depend
 
