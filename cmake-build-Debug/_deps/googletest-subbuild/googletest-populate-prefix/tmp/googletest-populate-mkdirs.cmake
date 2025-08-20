@@ -4,19 +4,19 @@
 cmake_minimum_required(VERSION 3.5)
 
 file(MAKE_DIRECTORY
-  "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-src"
-  "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-build"
-  "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-subbuild/googletest-populate-prefix"
-  "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-subbuild/googletest-populate-prefix/tmp"
-  "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp"
-  "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-subbuild/googletest-populate-prefix/src"
-  "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp"
+  "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src"
+  "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build"
+  "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-subbuild/googletest-populate-prefix"
+  "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-subbuild/googletest-populate-prefix/tmp"
+  "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp"
+  "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-subbuild/googletest-populate-prefix/src"
+  "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp"
 )
 
 set(configSubDirs )
 foreach(subDir IN LISTS configSubDirs)
-    file(MAKE_DIRECTORY "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/${subDir}")
+    file(MAKE_DIRECTORY "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/${subDir}")
 endforeach()
 if(cfgdir)
-  file(MAKE_DIRECTORY "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp${cfgdir}") # cfgdir has leading slash
+  file(MAKE_DIRECTORY "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp${cfgdir}") # cfgdir has leading slash
 endif()

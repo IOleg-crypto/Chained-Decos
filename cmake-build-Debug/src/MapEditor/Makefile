@@ -59,7 +59,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -67,7 +67,7 @@ CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -77,7 +77,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool for source..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-Debug/CPackSourceConfig.cmake"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-debug/CPackSourceConfig.cmake"
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -151,14 +151,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-Debug\src\MapEditor\\CMakeFiles\progress.marks"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/all
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-debug\src\MapEditor\\CMakeFiles\progress.marks"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/all
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/clean
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/clean
 .PHONY : clean
 
 # The main clean target
@@ -167,22 +167,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/rule:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/rule
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/rule
 .PHONY : src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/rule
 
 # Convenience name for target.
@@ -191,7 +191,7 @@ ChainedDecosMapEditor: src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/rule
 
 # fast build rule for target.
 ChainedDecosMapEditor/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/build
 .PHONY : ChainedDecosMapEditor/fast
 
 Application.obj: Application.cpp.obj
@@ -199,7 +199,7 @@ Application.obj: Application.cpp.obj
 
 # target to build an object file
 Application.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj
 .PHONY : Application.cpp.obj
 
 Application.i: Application.cpp.i
@@ -207,7 +207,7 @@ Application.i: Application.cpp.i
 
 # target to preprocess a source file
 Application.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.i
 .PHONY : Application.cpp.i
 
 Application.s: Application.cpp.s
@@ -215,7 +215,7 @@ Application.s: Application.cpp.s
 
 # target to generate assembly for a file
 Application.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.s
 .PHONY : Application.cpp.s
 
 Editor/CameraModes.obj: Editor/CameraModes.cpp.obj
@@ -223,7 +223,7 @@ Editor/CameraModes.obj: Editor/CameraModes.cpp.obj
 
 # target to build an object file
 Editor/CameraModes.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj
 .PHONY : Editor/CameraModes.cpp.obj
 
 Editor/CameraModes.i: Editor/CameraModes.cpp.i
@@ -231,7 +231,7 @@ Editor/CameraModes.i: Editor/CameraModes.cpp.i
 
 # target to preprocess a source file
 Editor/CameraModes.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.i
 .PHONY : Editor/CameraModes.cpp.i
 
 Editor/CameraModes.s: Editor/CameraModes.cpp.s
@@ -239,7 +239,7 @@ Editor/CameraModes.s: Editor/CameraModes.cpp.s
 
 # target to generate assembly for a file
 Editor/CameraModes.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.s
 .PHONY : Editor/CameraModes.cpp.s
 
 Editor/Editor.obj: Editor/Editor.cpp.obj
@@ -247,7 +247,7 @@ Editor/Editor.obj: Editor/Editor.cpp.obj
 
 # target to build an object file
 Editor/Editor.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj
 .PHONY : Editor/Editor.cpp.obj
 
 Editor/Editor.i: Editor/Editor.cpp.i
@@ -255,7 +255,7 @@ Editor/Editor.i: Editor/Editor.cpp.i
 
 # target to preprocess a source file
 Editor/Editor.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.i
 .PHONY : Editor/Editor.cpp.i
 
 Editor/Editor.s: Editor/Editor.cpp.s
@@ -263,7 +263,7 @@ Editor/Editor.s: Editor/Editor.cpp.s
 
 # target to generate assembly for a file
 Editor/Editor.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.s
 .PHONY : Editor/Editor.cpp.s
 
 Editor/MapObject.obj: Editor/MapObject.cpp.obj
@@ -271,7 +271,7 @@ Editor/MapObject.obj: Editor/MapObject.cpp.obj
 
 # target to build an object file
 Editor/MapObject.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj
 .PHONY : Editor/MapObject.cpp.obj
 
 Editor/MapObject.i: Editor/MapObject.cpp.i
@@ -279,7 +279,7 @@ Editor/MapObject.i: Editor/MapObject.cpp.i
 
 # target to preprocess a source file
 Editor/MapObject.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.i
 .PHONY : Editor/MapObject.cpp.i
 
 Editor/MapObject.s: Editor/MapObject.cpp.s
@@ -287,7 +287,7 @@ Editor/MapObject.s: Editor/MapObject.cpp.s
 
 # target to generate assembly for a file
 Editor/MapObject.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.s
 .PHONY : Editor/MapObject.cpp.s
 
 Editor/ObjectTransform.obj: Editor/ObjectTransform.cpp.obj
@@ -295,7 +295,7 @@ Editor/ObjectTransform.obj: Editor/ObjectTransform.cpp.obj
 
 # target to build an object file
 Editor/ObjectTransform.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj
 .PHONY : Editor/ObjectTransform.cpp.obj
 
 Editor/ObjectTransform.i: Editor/ObjectTransform.cpp.i
@@ -303,7 +303,7 @@ Editor/ObjectTransform.i: Editor/ObjectTransform.cpp.i
 
 # target to preprocess a source file
 Editor/ObjectTransform.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.i
 .PHONY : Editor/ObjectTransform.cpp.i
 
 Editor/ObjectTransform.s: Editor/ObjectTransform.cpp.s
@@ -311,7 +311,7 @@ Editor/ObjectTransform.s: Editor/ObjectTransform.cpp.s
 
 # target to generate assembly for a file
 Editor/ObjectTransform.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.s
 .PHONY : Editor/ObjectTransform.cpp.s
 
 MapFileManager/MapFileManager.obj: MapFileManager/MapFileManager.cpp.obj
@@ -319,7 +319,7 @@ MapFileManager/MapFileManager.obj: MapFileManager/MapFileManager.cpp.obj
 
 # target to build an object file
 MapFileManager/MapFileManager.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj
 .PHONY : MapFileManager/MapFileManager.cpp.obj
 
 MapFileManager/MapFileManager.i: MapFileManager/MapFileManager.cpp.i
@@ -327,7 +327,7 @@ MapFileManager/MapFileManager.i: MapFileManager/MapFileManager.cpp.i
 
 # target to preprocess a source file
 MapFileManager/MapFileManager.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.i
 .PHONY : MapFileManager/MapFileManager.cpp.i
 
 MapFileManager/MapFileManager.s: MapFileManager/MapFileManager.cpp.s
@@ -335,7 +335,7 @@ MapFileManager/MapFileManager.s: MapFileManager/MapFileManager.cpp.s
 
 # target to generate assembly for a file
 MapFileManager/MapFileManager.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.s
 .PHONY : MapFileManager/MapFileManager.cpp.s
 
 main.obj: main.cpp.obj
@@ -343,7 +343,7 @@ main.obj: main.cpp.obj
 
 # target to build an object file
 main.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj
 .PHONY : main.cpp.obj
 
 main.i: main.cpp.i
@@ -351,7 +351,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -359,7 +359,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\build.make src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 # Help Target
@@ -409,6 +409,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

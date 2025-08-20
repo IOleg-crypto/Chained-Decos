@@ -59,7 +59,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -67,7 +67,7 @@ CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -77,7 +77,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool for source..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-Debug/CPackSourceConfig.cmake"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-debug/CPackSourceConfig.cmake"
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -151,14 +151,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-Debug\src\Color\\CMakeFiles\progress.marks"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/all
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-debug\src\Color\\CMakeFiles\progress.marks"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/all
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/clean
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/clean
 .PHONY : clean
 
 # The main clean target
@@ -167,22 +167,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/Color/CMakeFiles/color.dir/rule:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/CMakeFiles/color.dir/rule
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Color/CMakeFiles/color.dir/rule
 .PHONY : src/Color/CMakeFiles/color.dir/rule
 
 # Convenience name for target.
@@ -191,7 +191,7 @@ color: src/Color/CMakeFiles/color.dir/rule
 
 # fast build rule for target.
 color/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Color\CMakeFiles\color.dir\build.make src/Color/CMakeFiles/color.dir/build
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Color\CMakeFiles\color.dir\build.make src/Color/CMakeFiles/color.dir/build
 .PHONY : color/fast
 
 ColorParser.obj: ColorParser.cpp.obj
@@ -199,7 +199,7 @@ ColorParser.obj: ColorParser.cpp.obj
 
 # target to build an object file
 ColorParser.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Color\CMakeFiles\color.dir\build.make src/Color/CMakeFiles/color.dir/ColorParser.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Color\CMakeFiles\color.dir\build.make src/Color/CMakeFiles/color.dir/ColorParser.cpp.obj
 .PHONY : ColorParser.cpp.obj
 
 ColorParser.i: ColorParser.cpp.i
@@ -207,7 +207,7 @@ ColorParser.i: ColorParser.cpp.i
 
 # target to preprocess a source file
 ColorParser.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Color\CMakeFiles\color.dir\build.make src/Color/CMakeFiles/color.dir/ColorParser.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Color\CMakeFiles\color.dir\build.make src/Color/CMakeFiles/color.dir/ColorParser.cpp.i
 .PHONY : ColorParser.cpp.i
 
 ColorParser.s: ColorParser.cpp.s
@@ -215,7 +215,7 @@ ColorParser.s: ColorParser.cpp.s
 
 # target to generate assembly for a file
 ColorParser.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Color\CMakeFiles\color.dir\build.make src/Color/CMakeFiles/color.dir/ColorParser.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Color\CMakeFiles\color.dir\build.make src/Color/CMakeFiles/color.dir/ColorParser.cpp.s
 .PHONY : ColorParser.cpp.s
 
 # Help Target
@@ -247,6 +247,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

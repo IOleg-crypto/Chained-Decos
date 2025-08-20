@@ -1,4 +1,4 @@
-# Install script for directory: D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild
+# Install script for directory: D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/nlohmann_json-subbuild/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-subbuild/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

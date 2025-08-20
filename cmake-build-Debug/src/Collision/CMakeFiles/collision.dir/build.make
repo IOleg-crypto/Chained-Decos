@@ -55,7 +55,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
 
 # Include any dependencies generated for this target.
 include src/Collision/CMakeFiles/collision.dir/depend.make
@@ -72,8 +72,8 @@ src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj: src/Collision/CM
 src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj: src/Collision/CMakeFiles/collision.dir/includes_CXX.rsp
 src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.cpp
 src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj: src/Collision/CMakeFiles/collision.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj -MF CMakeFiles\collision.dir\CollisionSystem.cpp.obj.d -o CMakeFiles\collision.dir\CollisionSystem.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\CollisionSystem.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj -MF CMakeFiles\collision.dir\CollisionSystem.cpp.obj.d -o CMakeFiles\collision.dir\CollisionSystem.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\CollisionSystem.cpp"
 
 src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/collision.dir/CollisionSystem.cpp.i"
@@ -87,8 +87,8 @@ src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj: src/Collisio
 src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj: src/Collision/CMakeFiles/collision.dir/includes_CXX.rsp
 src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.cpp
 src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj: src/Collision/CMakeFiles/collision.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj -MF CMakeFiles\collision.dir\CollisionStructures.cpp.obj.d -o CMakeFiles\collision.dir\CollisionStructures.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\CollisionStructures.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj -MF CMakeFiles\collision.dir\CollisionStructures.cpp.obj.d -o CMakeFiles\collision.dir\CollisionStructures.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\CollisionStructures.cpp"
 
 src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/collision.dir/CollisionStructures.cpp.i"
@@ -102,8 +102,8 @@ src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: src/Collision/C
 src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: src/Collision/CMakeFiles/collision.dir/includes_CXX.rsp
 src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.cpp
 src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: src/Collision/CMakeFiles/collision.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj -MF CMakeFiles\collision.dir\CollisionManager.cpp.obj.d -o CMakeFiles\collision.dir\CollisionManager.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\CollisionManager.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj -MF CMakeFiles\collision.dir\CollisionManager.cpp.obj.d -o CMakeFiles\collision.dir\CollisionManager.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\CollisionManager.cpp"
 
 src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/collision.dir/CollisionManager.cpp.i"
@@ -117,8 +117,8 @@ src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj: src/Colli
 src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj: src/Collision/CMakeFiles/collision.dir/includes_CXX.rsp
 src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/CollisionDebugRenderer.cpp
 src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj: src/Collision/CMakeFiles/collision.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj -MF CMakeFiles\collision.dir\CollisionDebugRenderer.cpp.obj.d -o CMakeFiles\collision.dir\CollisionDebugRenderer.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\CollisionDebugRenderer.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj -MF CMakeFiles\collision.dir\CollisionDebugRenderer.cpp.obj.d -o CMakeFiles\collision.dir\CollisionDebugRenderer.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\CollisionDebugRenderer.cpp"
 
 src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.i"
@@ -132,8 +132,8 @@ src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj: src/Collision/CMakeFiles/
 src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj: src/Collision/CMakeFiles/collision.dir/includes_CXX.rsp
 src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/Octree.cpp
 src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj: src/Collision/CMakeFiles/collision.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj -MF CMakeFiles\collision.dir\Octree.cpp.obj.d -o CMakeFiles\collision.dir\Octree.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\Octree.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" && E:\LLVM\bin\clang++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj -MF CMakeFiles\collision.dir\Octree.cpp.obj.d -o CMakeFiles\collision.dir\Octree.cpp.obj -c "D:\gitnext\Chained Decos\src\Collision\Octree.cpp"
 
 src/Collision/CMakeFiles/collision.dir/Octree.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/collision.dir/Octree.cpp.i"
@@ -161,19 +161,19 @@ src/Collision/collision.lib: src/Collision/CMakeFiles/collision.dir/CollisionDeb
 src/Collision/collision.lib: src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj
 src/Collision/collision.lib: src/Collision/CMakeFiles/collision.dir/build.make
 src/Collision/collision.lib: src/Collision/CMakeFiles/collision.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX static library collision.lib"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" && $(CMAKE_COMMAND) -P CMakeFiles\collision.dir\cmake_clean_target.cmake
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\collision.dir\link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX static library collision.lib"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" && $(CMAKE_COMMAND) -P CMakeFiles\collision.dir\cmake_clean_target.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\collision.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 src/Collision/CMakeFiles/collision.dir/build: src/Collision/collision.lib
 .PHONY : src/Collision/CMakeFiles/collision.dir/build
 
 src/Collision/CMakeFiles/collision.dir/clean:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" && $(CMAKE_COMMAND) -P CMakeFiles\collision.dir\cmake_clean.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" && $(CMAKE_COMMAND) -P CMakeFiles\collision.dir\cmake_clean.cmake
 .PHONY : src/Collision/CMakeFiles/collision.dir/clean
 
 src/Collision/CMakeFiles/collision.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\src\Collision" "D:\gitnext\Chained Decos\cmake-build-Debug" "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision" "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision\CMakeFiles\collision.dir\DependInfo.cmake" "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\src\Collision" "D:\gitnext\Chained Decos\cmake-build-debug" "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision" "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision\CMakeFiles\collision.dir\DependInfo.cmake" "--color=$(COLOR)"
 .PHONY : src/Collision/CMakeFiles/collision.dir/depend
 

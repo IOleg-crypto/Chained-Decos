@@ -1,5 +1,4 @@
 //
-// Created by I#Oleg
 // Collision System - Hybrid AABB + Octree Implementation
 // Automatically chooses optimal collision method based on model complexity
 //
@@ -123,14 +122,15 @@ public:
     {
         return m_collisionType == CollisionType::OCTREE_ONLY && m_octree != nullptr;
     }
-    
+
     // Force initialization of octree if needed
     void InitializeOctree()
     {
-        if ((m_collisionType == CollisionType::OCTREE_ONLY || 
+        if ((m_collisionType == CollisionType::OCTREE_ONLY ||
              m_collisionType == CollisionType::TRIANGLE_PRECISE ||
-             m_collisionType == CollisionType::IMPROVED_AABB) && 
-            !m_triangles.empty()) {
+             m_collisionType == CollisionType::IMPROVED_AABB) &&
+            !m_triangles.empty())
+        {
             EnsureOctree();
         }
     }
@@ -143,7 +143,7 @@ public:
     int GetMaxDepth() const;
 
     // -------------------- Triangle Access --------------------
-    Octree* GetOctree();
+    Octree *GetOctree();
 
     // -------------------- Performance Methods --------------------
 
