@@ -59,7 +59,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -67,7 +67,7 @@ CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -77,7 +77,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool for source..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-Debug/CPackSourceConfig.cmake"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-debug/CPackSourceConfig.cmake"
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -151,14 +151,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-Debug\src\Player\\CMakeFiles\progress.marks"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/all
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-debug\src\Player\\CMakeFiles\progress.marks"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/all
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/clean
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/clean
 .PHONY : clean
 
 # The main clean target
@@ -167,22 +167,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/Player/CMakeFiles/player.dir/rule:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/CMakeFiles/player.dir/rule
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Player/CMakeFiles/player.dir/rule
 .PHONY : src/Player/CMakeFiles/player.dir/rule
 
 # Convenience name for target.
@@ -191,7 +191,7 @@ player: src/Player/CMakeFiles/player.dir/rule
 
 # fast build rule for target.
 player/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/build
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/build
 .PHONY : player/fast
 
 Player.obj: Player.cpp.obj
@@ -199,7 +199,7 @@ Player.obj: Player.cpp.obj
 
 # target to build an object file
 Player.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/Player.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/Player.cpp.obj
 .PHONY : Player.cpp.obj
 
 Player.i: Player.cpp.i
@@ -207,7 +207,7 @@ Player.i: Player.cpp.i
 
 # target to preprocess a source file
 Player.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/Player.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/Player.cpp.i
 .PHONY : Player.cpp.i
 
 Player.s: Player.cpp.s
@@ -215,7 +215,7 @@ Player.s: Player.cpp.s
 
 # target to generate assembly for a file
 Player.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/Player.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/Player.cpp.s
 .PHONY : Player.cpp.s
 
 PlayerCollision.obj: PlayerCollision.cpp.obj
@@ -223,7 +223,7 @@ PlayerCollision.obj: PlayerCollision.cpp.obj
 
 # target to build an object file
 PlayerCollision.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj
 .PHONY : PlayerCollision.cpp.obj
 
 PlayerCollision.i: PlayerCollision.cpp.i
@@ -231,7 +231,7 @@ PlayerCollision.i: PlayerCollision.cpp.i
 
 # target to preprocess a source file
 PlayerCollision.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.i
 .PHONY : PlayerCollision.cpp.i
 
 PlayerCollision.s: PlayerCollision.cpp.s
@@ -239,7 +239,7 @@ PlayerCollision.s: PlayerCollision.cpp.s
 
 # target to generate assembly for a file
 PlayerCollision.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.s
 .PHONY : PlayerCollision.cpp.s
 
 PlayerInput.obj: PlayerInput.cpp.obj
@@ -247,7 +247,7 @@ PlayerInput.obj: PlayerInput.cpp.obj
 
 # target to build an object file
 PlayerInput.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj
 .PHONY : PlayerInput.cpp.obj
 
 PlayerInput.i: PlayerInput.cpp.i
@@ -255,7 +255,7 @@ PlayerInput.i: PlayerInput.cpp.i
 
 # target to preprocess a source file
 PlayerInput.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.i
 .PHONY : PlayerInput.cpp.i
 
 PlayerInput.s: PlayerInput.cpp.s
@@ -263,7 +263,7 @@ PlayerInput.s: PlayerInput.cpp.s
 
 # target to generate assembly for a file
 PlayerInput.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerInput.cpp.s
 .PHONY : PlayerInput.cpp.s
 
 PlayerModel.obj: PlayerModel.cpp.obj
@@ -271,7 +271,7 @@ PlayerModel.obj: PlayerModel.cpp.obj
 
 # target to build an object file
 PlayerModel.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj
 .PHONY : PlayerModel.cpp.obj
 
 PlayerModel.i: PlayerModel.cpp.i
@@ -279,7 +279,7 @@ PlayerModel.i: PlayerModel.cpp.i
 
 # target to preprocess a source file
 PlayerModel.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.i
 .PHONY : PlayerModel.cpp.i
 
 PlayerModel.s: PlayerModel.cpp.s
@@ -287,7 +287,7 @@ PlayerModel.s: PlayerModel.cpp.s
 
 # target to generate assembly for a file
 PlayerModel.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerModel.cpp.s
 .PHONY : PlayerModel.cpp.s
 
 PlayerMovement.obj: PlayerMovement.cpp.obj
@@ -295,7 +295,7 @@ PlayerMovement.obj: PlayerMovement.cpp.obj
 
 # target to build an object file
 PlayerMovement.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj
 .PHONY : PlayerMovement.cpp.obj
 
 PlayerMovement.i: PlayerMovement.cpp.i
@@ -303,7 +303,7 @@ PlayerMovement.i: PlayerMovement.cpp.i
 
 # target to preprocess a source file
 PlayerMovement.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.i
 .PHONY : PlayerMovement.cpp.i
 
 PlayerMovement.s: PlayerMovement.cpp.s
@@ -311,7 +311,7 @@ PlayerMovement.s: PlayerMovement.cpp.s
 
 # target to generate assembly for a file
 PlayerMovement.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Player\CMakeFiles\player.dir\build.make src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.s
 .PHONY : PlayerMovement.cpp.s
 
 # Help Target
@@ -355,6 +355,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

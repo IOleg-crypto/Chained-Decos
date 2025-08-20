@@ -1,426 +1,426 @@
 [
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\imguilib.dir\\include\\rlImGui\\rlImGui.cpp.obj -c \"D:\\gitnext\\Chained Decos\\include\\rlImGui\\rlImGui.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/rlImGui/rlImGui.cpp",
   "output": "CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\imguilib.dir\\include\\imgui\\imgui.cpp.obj -c \"D:\\gitnext\\Chained Decos\\include\\imgui\\imgui.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\imguilib.dir\\include\\imgui\\imgui_draw.cpp.obj -c \"D:\\gitnext\\Chained Decos\\include\\imgui\\imgui_draw.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui_draw.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\imguilib.dir\\include\\imgui\\imgui_demo.cpp.obj -c \"D:\\gitnext\\Chained Decos\\include\\imgui\\imgui_demo.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui_demo.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\imguilib.dir\\include\\imgui\\imgui_tables.cpp.obj -c \"D:\\gitnext\\Chained Decos\\include\\imgui\\imgui_tables.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui_tables.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\imguilib.dir\\include\\imgui\\imgui_widgets.cpp.obj -c \"D:\\gitnext\\Chained Decos\\include\\imgui\\imgui_widgets.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/imgui_widgets.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/imguilib.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\imguilib.dir\\include\\imgui\\misc\\cpp\\imgui_stdlib.cpp.obj -c \"D:\\gitnext\\Chained Decos\\include\\imgui\\misc\\cpp\\imgui_stdlib.cpp\"",
   "file": "D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp",
   "output": "CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecos.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\ChainedDecos.dir\\src\\main.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\main.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/main.cpp",
   "output": "CMakeFiles/ChainedDecos.dir/src/main.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib",
-  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\raudio.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\raudio.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/raudio.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib",
+  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\raudio.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\raudio.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/raudio.c",
   "output": "_deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib",
-  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rcore.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\rcore.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/rcore.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib",
+  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rcore.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\rcore.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rcore.c",
   "output": "_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib",
-  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rmodels.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\rmodels.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/rmodels.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib",
+  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rmodels.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\rmodels.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rmodels.c",
   "output": "_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib",
-  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rshapes.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\rshapes.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/rshapes.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib",
+  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rshapes.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\rshapes.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rshapes.c",
   "output": "_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib",
-  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rtext.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\rtext.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/rtext.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib",
+  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rtext.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\rtext.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rtext.c",
   "output": "_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib",
-  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rtextures.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\rtextures.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/rtextures.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib",
+  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\rtextures.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\rtextures.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rtextures.c",
   "output": "_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib",
-  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\utils.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\utils.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/utils.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib",
+  "command": "E:\\LLVM\\bin\\clang.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/raylib.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\raylib.dir\\utils.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\utils.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/utils.c",
   "output": "_deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\context.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\context.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/context.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\context.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\context.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/context.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\init.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\init.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/init.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\init.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\init.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/init.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\input.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\input.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/input.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\input.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\input.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/input.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\monitor.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\monitor.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/monitor.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\monitor.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\monitor.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/monitor.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\platform.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\platform.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/platform.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\platform.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\platform.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/platform.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\vulkan.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\vulkan.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/vulkan.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\vulkan.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\vulkan.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/vulkan.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\window.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\window.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/window.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\window.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\window.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/window.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\egl_context.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\egl_context.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/egl_context.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\egl_context.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\egl_context.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/egl_context.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\osmesa_context.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\osmesa_context.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/osmesa_context.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\osmesa_context.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\osmesa_context.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/osmesa_context.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\null_init.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\null_init.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/null_init.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\null_init.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\null_init.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_init.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\null_monitor.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\null_monitor.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/null_monitor.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\null_monitor.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\null_monitor.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_monitor.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\null_window.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\null_window.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/null_window.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\null_window.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\null_window.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_window.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\null_joystick.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\null_joystick.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/null_joystick.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\null_joystick.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\null_joystick.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_joystick.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_module.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_module.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/win32_module.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_module.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_module.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_module.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_time.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_time.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/win32_time.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_time.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_time.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_time.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_thread.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_thread.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/win32_thread.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_thread.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_thread.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_thread.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_init.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_init.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/win32_init.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_init.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_init.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_init.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_joystick.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_joystick.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/win32_joystick.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_joystick.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_joystick.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_joystick.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_monitor.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_monitor.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/win32_monitor.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_monitor.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_monitor.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_monitor.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_window.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_window.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/win32_window.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\win32_window.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\win32_window.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_window.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-build/raylib/external/glfw/src",
-  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\wgl_context.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\wgl_context.c\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/raylib-src/src/external/glfw/src/wgl_context.c",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src",
+  "command": "E:\\LLVM\\bin\\clang.exe -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE @CMakeFiles/glfw.dir/includes_C.rsp -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -o CMakeFiles\\glfw.dir\\wgl_context.c.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\raylib-src\\src\\external\\glfw\\src\\wgl_context.c\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/wgl_context.c",
   "output": "_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-build/googlemock",
-  "command": "E:\\LLVM\\bin\\clang++.exe  @CMakeFiles/gmock.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls -o CMakeFiles\\gmock.dir\\src\\gmock-all.cc.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\googletest-src\\googlemock\\src\\gmock-all.cc\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-src/googlemock/src/gmock-all.cc",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock",
+  "command": "E:\\LLVM\\bin\\clang++.exe  @CMakeFiles/gmock.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls -o CMakeFiles\\gmock.dir\\src\\gmock-all.cc.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\googletest-src\\googlemock\\src\\gmock-all.cc\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/src/gmock-all.cc",
   "output": "_deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-build/googlemock",
-  "command": "E:\\LLVM\\bin\\clang++.exe  @CMakeFiles/gmock_main.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls -o CMakeFiles\\gmock_main.dir\\src\\gmock_main.cc.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\googletest-src\\googlemock\\src\\gmock_main.cc\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-src/googlemock/src/gmock_main.cc",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock",
+  "command": "E:\\LLVM\\bin\\clang++.exe  @CMakeFiles/gmock_main.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls -o CMakeFiles\\gmock_main.dir\\src\\gmock_main.cc.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\googletest-src\\googlemock\\src\\gmock_main.cc\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/src/gmock_main.cc",
   "output": "_deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-build/googletest",
-  "command": "E:\\LLVM\\bin\\clang++.exe  @CMakeFiles/gtest.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls -o CMakeFiles\\gtest.dir\\src\\gtest-all.cc.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\googletest-src\\googletest\\src\\gtest-all.cc\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-src/googletest/src/gtest-all.cc",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest",
+  "command": "E:\\LLVM\\bin\\clang++.exe  @CMakeFiles/gtest.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls -o CMakeFiles\\gtest.dir\\src\\gtest-all.cc.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\googletest-src\\googletest\\src\\gtest-all.cc\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/src/gtest-all.cc",
   "output": "_deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-build/googletest",
-  "command": "E:\\LLVM\\bin\\clang++.exe  @CMakeFiles/gtest_main.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls -o CMakeFiles\\gtest_main.dir\\src\\gtest_main.cc.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-Debug\\_deps\\googletest-src\\googletest\\src\\gtest_main.cc\"",
-  "file": "D:/gitnext/Chained Decos/cmake-build-Debug/_deps/googletest-src/googletest/src/gtest_main.cc",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest",
+  "command": "E:\\LLVM\\bin\\clang++.exe  @CMakeFiles/gtest_main.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wall -Wshadow -Wconversion -DGTEST_HAS_PTHREAD=0 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls -o CMakeFiles\\gtest_main.dir\\src\\gtest_main.cc.obj -c \"D:\\gitnext\\Chained Decos\\cmake-build-debug\\_deps\\googletest-src\\googletest\\src\\gtest_main.cc\"",
+  "file": "D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/src/gtest_main.cc",
   "output": "_deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Engine",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/engine.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\engine.dir\\Engine.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Engine\\Engine.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Engine/Engine.cpp",
   "output": "src/Engine/CMakeFiles/engine.dir/Engine.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Player",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Player",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\player.dir\\Player.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Player\\Player.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Player/Player.cpp",
   "output": "src/Player/CMakeFiles/player.dir/Player.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Player",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Player",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\player.dir\\PlayerCollision.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Player\\PlayerCollision.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Player/PlayerCollision.cpp",
   "output": "src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Player",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Player",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\player.dir\\PlayerInput.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Player\\PlayerInput.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Player/PlayerInput.cpp",
   "output": "src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Player",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Player",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\player.dir\\PlayerModel.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Player\\PlayerModel.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp",
   "output": "src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Player",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Player",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/player.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\player.dir\\PlayerMovement.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Player\\PlayerMovement.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Player/PlayerMovement.cpp",
   "output": "src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Model",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Model",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\model.dir\\Model.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Model\\Model.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/Model.cpp",
   "output": "src/Model/CMakeFiles/model.dir/Model.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Model",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Model",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\model.dir\\ModelInstance.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Model\\ModelInstance.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/ModelInstance.cpp",
   "output": "src/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Model",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Model",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\model.dir\\Animation.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Model\\Animation.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/Animation.cpp",
   "output": "src/Model/CMakeFiles/model.dir/Animation.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Model",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Model",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\model.dir\\JsonHelper.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Model\\JsonHelper.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/JsonHelper.cpp",
   "output": "src/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Model",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Model",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/model.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\model.dir\\ModelCache.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Model\\ModelCache.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Model/ModelCache.cpp",
   "output": "src/Model/CMakeFiles/model.dir/ModelCache.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Menu",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Menu",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/menu.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\menu.dir\\Menu.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Menu\\Menu.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Menu/Menu.cpp",
   "output": "src/Menu/CMakeFiles/menu.dir/Menu.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Input",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Input",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/input.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\input.dir\\InputManager.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Input\\InputManager.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Input/InputManager.cpp",
   "output": "src/Input/CMakeFiles/input.dir/InputManager.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Map",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Map",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/mapmod.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\mapmod.dir\\MapLoader.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Map\\MapLoader.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Map/MapLoader.cpp",
   "output": "src/Map/CMakeFiles/mapmod.dir/MapLoader.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/CameraController",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/cameracontroller.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\cameracontroller.dir\\CameraController.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\CameraController\\CameraController.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/CameraController/CameraController.cpp",
   "output": "src/CameraController/CMakeFiles/cameracontroller.dir/CameraController.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Color",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Color",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/color.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\color.dir\\ColorParser.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Color\\ColorParser.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Color/ColorParser.cpp",
   "output": "src/Color/CMakeFiles/color.dir/ColorParser.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/World",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/World",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/world.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\world.dir\\Physics.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\World\\Physics.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/World/Physics.cpp",
   "output": "src/World/CMakeFiles/world.dir/Physics.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Collision",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Collision",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\collision.dir\\CollisionSystem.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Collision\\CollisionSystem.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/CollisionSystem.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Collision",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Collision",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\collision.dir\\CollisionStructures.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Collision\\CollisionStructures.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/CollisionStructures.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Collision",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Collision",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\collision.dir\\CollisionManager.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Collision\\CollisionManager.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/CollisionManager.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Collision",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Collision",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\collision.dir\\CollisionDebugRenderer.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Collision\\CollisionDebugRenderer.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/CollisionDebugRenderer.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Collision",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Collision",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/collision.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\collision.dir\\Octree.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Collision\\Octree.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Collision/Octree.cpp",
   "output": "src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/Render",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/Render",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/render.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\render.dir\\RenderManager.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\Render\\RenderManager.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/Render/RenderManager.cpp",
   "output": "src/Render/CMakeFiles/render.dir/RenderManager.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/tests",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/tests",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/unit_tests.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\unit_tests.dir\\gtest.cpp.obj -c \"D:\\gitnext\\Chained Decos\\tests\\gtest.cpp\"",
   "file": "D:/gitnext/Chained Decos/tests/gtest.cpp",
   "output": "tests/CMakeFiles/unit_tests.dir/gtest.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/MapEditor",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\ChainedDecosMapEditor.dir\\Application.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\MapEditor\\Application.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Application.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/MapEditor",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\ChainedDecosMapEditor.dir\\Editor\\Editor.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\MapEditor\\Editor\\Editor.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/MapEditor",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\ChainedDecosMapEditor.dir\\Editor\\CameraModes.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\MapEditor\\Editor\\CameraModes.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/MapEditor",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\ChainedDecosMapEditor.dir\\Editor\\MapObject.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\MapEditor\\Editor\\MapObject.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/MapEditor",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\ChainedDecosMapEditor.dir\\Editor\\ObjectTransform.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\MapEditor\\Editor\\ObjectTransform.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/MapEditor",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\ChainedDecosMapEditor.dir\\MapFileManager\\MapFileManager.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\MapEditor\\MapFileManager\\MapFileManager.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj"
 },
 {
-  "directory": "D:/gitnext/Chained Decos/cmake-build-Debug/src/MapEditor",
+  "directory": "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor",
   "command": "E:\\LLVM\\bin\\clang++.exe -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR=\"\\\"D:/gitnext/Chained Decos\\\"\" -D_CRT_SECURE_NO_WARNINGS @CMakeFiles/ChainedDecosMapEditor.dir/includes_CXX.rsp -O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -o CMakeFiles\\ChainedDecosMapEditor.dir\\main.cpp.obj -c \"D:\\gitnext\\Chained Decos\\src\\MapEditor\\main.cpp\"",
   "file": "D:/gitnext/Chained Decos/src/MapEditor/main.cpp",
   "output": "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj"

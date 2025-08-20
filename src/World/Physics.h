@@ -15,10 +15,12 @@ class PhysicsComponent
 public:
     // World physics constants
     static constexpr float WORLD_FLOOR_Y = -10.0f; // Match ground plane bottom
-    static constexpr Vector2 GROUND_SIZE = {800.0f, 800.0f};
-    static constexpr Vector3 GROUND_POSITION = {0.0f, -5.0f, 0.0f};    // Match ground plane center
-    static constexpr Vector3 GROUND_COLLISION_CENTER = {0, -5, 0};     // Match ground plane center
-    static constexpr Vector3 GROUND_COLLISION_SIZE = {1000, 2, 1000}; // Match ground plane size
+    static constexpr Vector2 GROUND_SIZE = {2000.0f,
+                                            2000.0f}; // Increased from 800x800 to 2000x2000
+    static constexpr Vector3 GROUND_POSITION = {0.0f, -5.0f, 0.0f}; // Match ground plane center
+    static constexpr Vector3 GROUND_COLLISION_CENTER = {0, -5, 0};  // Match ground plane center
+    static constexpr Vector3 GROUND_COLLISION_SIZE = {
+        2000, 2, 2000}; // Increased from 1000x1000 to 2000x2000
     static constexpr Vector3 DEBUG_CUBE_POSITION = {0, 5, 0};
     static constexpr Vector3 DEBUG_CUBE_SIZE = {2, 2, 2};
     PhysicsComponent();
@@ -63,8 +65,8 @@ public:
 
     // Add to current velocity
     void AddVelocity(const Vector3 &delta);
-
-
+    // Change player jump state
+    void SetJumpState(bool setJumpState);
     // -------------------- Getters --------------------
 
     // Returns true if the object is touching the ground
@@ -82,6 +84,7 @@ public:
     // Returns last delta time used for physics updates
     [[nodiscard]] float GetDeltaTime() const;
 
+
     // Returns true if currently jumping
     [[nodiscard]] bool IsJumping() const;
 
@@ -92,7 +95,7 @@ private:
     // Physics parameters
     float m_gravity = 10.0f;        // Gravity acceleration (reduced for better collision)
     float m_velocityY = 0.0f;       // Vertical velocity
-    bool m_isGrounded = false;       // Whether object is on the ground
+    bool m_isGrounded = false;      // Whether object is on the ground
     float m_groundLevel = 0.0f;     // Ground height level (top of ground plane)
     float m_dt = 0.0f;              // Delta time (cached from last update)
     float m_jumpStrength = 8.0f;    // Jump impulse strength

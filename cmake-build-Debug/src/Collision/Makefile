@@ -59,7 +59,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -67,7 +67,7 @@ CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-Debug"
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -77,7 +77,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Run CPack packaging tool for source..."
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-Debug/CPackSourceConfig.cmake"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/cmake-build-debug/CPackSourceConfig.cmake"
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -151,14 +151,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-Debug\src\Collision\\CMakeFiles\progress.marks"
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/all
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-Debug\CMakeFiles" 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" "D:\gitnext\Chained Decos\cmake-build-debug\src\Collision\\CMakeFiles\progress.marks"
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/all
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/clean
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/clean
 .PHONY : clean
 
 # The main clean target
@@ -167,22 +167,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/preinstall
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/Collision/CMakeFiles/collision.dir/rule:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/CMakeFiles/collision.dir/rule
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/Collision/CMakeFiles/collision.dir/rule
 .PHONY : src/Collision/CMakeFiles/collision.dir/rule
 
 # Convenience name for target.
@@ -191,7 +191,7 @@ collision: src/Collision/CMakeFiles/collision.dir/rule
 
 # fast build rule for target.
 collision/fast:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/build
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/build
 .PHONY : collision/fast
 
 CollisionDebugRenderer.obj: CollisionDebugRenderer.cpp.obj
@@ -199,7 +199,7 @@ CollisionDebugRenderer.obj: CollisionDebugRenderer.cpp.obj
 
 # target to build an object file
 CollisionDebugRenderer.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj
 .PHONY : CollisionDebugRenderer.cpp.obj
 
 CollisionDebugRenderer.i: CollisionDebugRenderer.cpp.i
@@ -207,7 +207,7 @@ CollisionDebugRenderer.i: CollisionDebugRenderer.cpp.i
 
 # target to preprocess a source file
 CollisionDebugRenderer.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.i
 .PHONY : CollisionDebugRenderer.cpp.i
 
 CollisionDebugRenderer.s: CollisionDebugRenderer.cpp.s
@@ -215,7 +215,7 @@ CollisionDebugRenderer.s: CollisionDebugRenderer.cpp.s
 
 # target to generate assembly for a file
 CollisionDebugRenderer.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.s
 .PHONY : CollisionDebugRenderer.cpp.s
 
 CollisionManager.obj: CollisionManager.cpp.obj
@@ -223,7 +223,7 @@ CollisionManager.obj: CollisionManager.cpp.obj
 
 # target to build an object file
 CollisionManager.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj
 .PHONY : CollisionManager.cpp.obj
 
 CollisionManager.i: CollisionManager.cpp.i
@@ -231,7 +231,7 @@ CollisionManager.i: CollisionManager.cpp.i
 
 # target to preprocess a source file
 CollisionManager.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.i
 .PHONY : CollisionManager.cpp.i
 
 CollisionManager.s: CollisionManager.cpp.s
@@ -239,7 +239,7 @@ CollisionManager.s: CollisionManager.cpp.s
 
 # target to generate assembly for a file
 CollisionManager.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.s
 .PHONY : CollisionManager.cpp.s
 
 CollisionStructures.obj: CollisionStructures.cpp.obj
@@ -247,7 +247,7 @@ CollisionStructures.obj: CollisionStructures.cpp.obj
 
 # target to build an object file
 CollisionStructures.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj
 .PHONY : CollisionStructures.cpp.obj
 
 CollisionStructures.i: CollisionStructures.cpp.i
@@ -255,7 +255,7 @@ CollisionStructures.i: CollisionStructures.cpp.i
 
 # target to preprocess a source file
 CollisionStructures.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.i
 .PHONY : CollisionStructures.cpp.i
 
 CollisionStructures.s: CollisionStructures.cpp.s
@@ -263,7 +263,7 @@ CollisionStructures.s: CollisionStructures.cpp.s
 
 # target to generate assembly for a file
 CollisionStructures.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.s
 .PHONY : CollisionStructures.cpp.s
 
 CollisionSystem.obj: CollisionSystem.cpp.obj
@@ -271,7 +271,7 @@ CollisionSystem.obj: CollisionSystem.cpp.obj
 
 # target to build an object file
 CollisionSystem.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj
 .PHONY : CollisionSystem.cpp.obj
 
 CollisionSystem.i: CollisionSystem.cpp.i
@@ -279,7 +279,7 @@ CollisionSystem.i: CollisionSystem.cpp.i
 
 # target to preprocess a source file
 CollisionSystem.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.i
 .PHONY : CollisionSystem.cpp.i
 
 CollisionSystem.s: CollisionSystem.cpp.s
@@ -287,7 +287,7 @@ CollisionSystem.s: CollisionSystem.cpp.s
 
 # target to generate assembly for a file
 CollisionSystem.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.s
 .PHONY : CollisionSystem.cpp.s
 
 Octree.obj: Octree.cpp.obj
@@ -295,7 +295,7 @@ Octree.obj: Octree.cpp.obj
 
 # target to build an object file
 Octree.cpp.obj:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj
 .PHONY : Octree.cpp.obj
 
 Octree.i: Octree.cpp.i
@@ -303,7 +303,7 @@ Octree.i: Octree.cpp.i
 
 # target to preprocess a source file
 Octree.cpp.i:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.i
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.i
 .PHONY : Octree.cpp.i
 
 Octree.s: Octree.cpp.s
@@ -311,7 +311,7 @@ Octree.s: Octree.cpp.s
 
 # target to generate assembly for a file
 Octree.cpp.s:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.s
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(MAKE) $(MAKESILENT) -f src\Collision\CMakeFiles\collision.dir\build.make src/Collision/CMakeFiles/collision.dir/Octree.cpp.s
 .PHONY : Octree.cpp.s
 
 # Help Target
@@ -355,6 +355,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d "D:\gitnext\Chained Decos\cmake-build-Debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d "D:\gitnext\Chained Decos\cmake-build-debug" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
