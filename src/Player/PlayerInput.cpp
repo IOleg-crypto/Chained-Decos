@@ -26,9 +26,20 @@ void PlayerInput::ProcessInput()
 
     float deltaTime = GetFrameTime();
     float speed = m_player->GetSpeed();
-    Vector3 velocity = Vector3Scale(moveDir, speed);
 
-    m_player->Move(Vector3Scale(velocity, deltaTime));
+    Vector3 movement = Vector3Scale(moveDir, speed * deltaTime);
+    m_player->Move(movement);
+
+    if (Vector3Length(moveDir) > 0.001f)
+    {
+        float currentRotY = m_player->GetRotationY();
+        float targetRotY = atan2f(moveDir.x, moveDir.z) * RAD2DEG;
+
+        // Linear interpolation
+        float smoothEffect = 15.0f;
+        float smoothRotY = currentRotY + (targetRotY - currentRotY) * smoothEffect * deltaTime;
+        m_player->SetRotationY(smoothRotY);
+    }
 }
 
 void PlayerInput::HandleJumpInput()
@@ -64,8 +75,8 @@ Vector3 PlayerInput::GetInputDirection()
         inputDir.x += 1.0f;
 
     // Update speed based on sprint key
-    float walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? 15.0f : 8.1f;
-    m_player->SetSpeed(walkSpeed);
+    m_walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? 15.0f : 8.1f;
+    m_player->SetSpeed(m_walkSpeed);
 
     return inputDir;
 }
