@@ -109,7 +109,7 @@ void Engine::Init()
         m_player.UpdatePlayerCollision();
 
         m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
-        m_player.GetPhysics().SetGroundLevel(true);
+        m_player.GetPhysics().SetGroundLevel(false);
         m_player.SnapToGroundIfNeeded(m_collisionManager);
 
         TraceLog(LOG_INFO, "Player positioned safely at: (%.2f, %.2f, %.2f)", safePosition.x,
@@ -254,6 +254,9 @@ void Engine::InitCollisions()
     // Force collision system to initialize
     m_collisionManager.Initialize();
 
+    TraceLog(LOG_INFO, "Collision system initialization complete with %zu colliders",
+             m_collisionManager.GetColliders().size());
+
     // Log collision system state
     TraceLog(LOG_INFO, "Collision system initialized with %zu colliders",
              m_collisionManager.GetColliders().size());
@@ -276,7 +279,7 @@ void Engine::CreateAutoCollisionsFromModels()
     // Track processed models to avoid duplication
     std::set<std::string> processedModels;
     int collisionsCreated = 0;
-    constexpr size_t MAX_COLLISION_INSTANCES = 5; // Safety limit
+    constexpr size_t MAX_COLLISION_INSTANCES = 3; // Reduced safety limit for better performance
 
     // Process each model
     for (const auto &modelName : availableModels)
@@ -358,8 +361,8 @@ void Engine::CreateAutoCollisionsFromModels()
 // Helper function to create cache key
 std::string Engine::MakeCollisionCacheKey(const std::string &modelName, float scale) const
 {
-    // Round scale to 2 decimal places to avoid cache misses for tiny differences
-    int scaledInt = static_cast<int>(scale * 100.0f);
+    // Round scale to 1 decimal place to avoid cache misses for tiny differences
+    int scaledInt = static_cast<int>(scale * 10.0f);
     return modelName + "_s" + std::to_string(scaledInt);
 }
 
@@ -421,7 +424,8 @@ bool Engine::CreateCollisionFromModel(const Model &model, const std::string &mod
         // Check if we've reached the limit for precise collisions for this model
         int &preciseCount = m_preciseCollisionCount[modelName];
 
-        if (preciseCount < MAX_PRECISE_COLLISIONS_PER_MODEL)
+        if (preciseCount < MAX_PRECISE_COLLISIONS_PER_MODEL &&
+            strcmp(modelName.c_str(), "arc") == 0) // Only use precise collision for "arc" model
         {
             // Create precise collision with full transformation
             instanceCollision = CreatePreciseInstanceCollision(model, position, scale, config);

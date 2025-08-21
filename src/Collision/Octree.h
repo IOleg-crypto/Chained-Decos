@@ -39,8 +39,6 @@ struct OctreeNode
 
     // Get child index for a point (0-7)
     int GetChildIndex(const Vector3 &point) const;
-
-    
 };
 
 //
@@ -50,9 +48,9 @@ class Octree
 {
 public:
     static constexpr int MAX_TRIANGLES_PER_NODE =
-        40;                                      // Maximum triangles per leaf (increased from 10)
-    static constexpr int MAX_DEPTH = 10;          // Maximum tree depth (reduced from 8)
-    static constexpr float MIN_NODE_SIZE = 5.0f; // Minimum node size (increased from 1.3f)
+        20;                             // Reduced maximum triangles per leaf for better performance
+    static constexpr int MAX_DEPTH = 8; // Reduced maximum tree depth for better performance
+    static constexpr float MIN_NODE_SIZE = 2.0f; // Reduced minimum node size for better performance
 
     Octree();
     ~Octree() = default;
@@ -96,6 +94,7 @@ private:
     std::unique_ptr<OctreeNode> m_root;
     Vector3 m_min, m_max; // Bounding box of entire octree
     size_t m_triangleCount;
+
 private:
     // Internal methods
     void BuildRecursive(OctreeNode *node, const std::vector<CollisionTriangle> &triangles,

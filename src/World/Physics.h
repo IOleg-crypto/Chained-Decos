@@ -84,7 +84,6 @@ public:
     // Returns last delta time used for physics updates
     [[nodiscard]] float GetDeltaTime() const;
 
-
     // Returns true if currently jumping
     [[nodiscard]] bool IsJumping() const;
 
@@ -93,12 +92,12 @@ public:
 
 private:
     // Physics parameters
-    float m_gravity = 10.0f;        // Gravity acceleration (reduced for better collision)
+    float m_gravity = 15.0f;        // Increased gravity for more responsive movement
     float m_velocityY = 0.0f;       // Vertical velocity
     bool m_isGrounded = false;      // Whether object is on the ground
     float m_groundLevel = 0.0f;     // Ground height level (top of ground plane)
     float m_dt = 0.0f;              // Delta time (cached from last update)
-    float m_jumpStrength = 8.0f;    // Jump impulse strength
+    float m_jumpStrength = 10.0f;   // Increased jump impulse strength
     bool m_isJumping = false;       // Jump state
     Vector3 m_velocity = {0, 0, 0}; // Full velocity vector
 };

@@ -85,35 +85,43 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     float deltaTime = GetFrameTime();
     Vector3 currentPos = GetPosition();
 
-    Vector3 desiredMove = Vector3Scale(velocity, deltaTime);
-    Vector3 targetPos = Vector3Add(currentPos, desiredMove);
+    // Apply movement in smaller steps to improve collision detection accuracy
+    const int subSteps = 4;
+    Vector3 subStepVelocity = Vector3Scale(velocity, deltaTime / subSteps);
+    Vector3 workingPos = currentPos;
 
-    TraceLog(LOG_DEBUG, "Movement: vel(%.2f,%.2f,%.2f) move(%.2f,%.2f,%.2f)", velocity.x,
-             velocity.y, velocity.z, desiredMove.x, desiredMove.y, desiredMove.z);
-
-    SetPosition(targetPos);
-    m_player->UpdatePlayerBox();
-
-    Vector3 response;
-    bool hasCollision = collisionManager.CheckCollision(m_player->GetCollision(), response);
-
-    if (hasCollision)
+    for (int i = 0; i < subSteps; i++)
     {
-        TraceLog(LOG_INFO, "🚫 Collision: response(%.3f,%.3f,%.3f)", response.x, response.y,
-                 response.z);
-
-        SetPosition(currentPos);
-
-        Vector3 correctedPos = Vector3Add(currentPos, response);
-        SetPosition(correctedPos);
+        Vector3 targetPos = Vector3Add(workingPos, subStepVelocity);
+        SetPosition(targetPos);
         m_player->UpdatePlayerBox();
 
-        HandleCollisionVelocity(response);
+        Vector3 response;
+        bool hasCollision = collisionManager.CheckCollision(m_player->GetCollision(), response);
 
-        return correctedPos;
+        if (hasCollision)
+        {
+            // Move back to previous position
+            SetPosition(workingPos);
+            m_player->UpdatePlayerBox();
+
+            // Apply collision response
+            Vector3 correctedPos = Vector3Add(workingPos, response);
+            SetPosition(correctedPos);
+            m_player->UpdatePlayerBox();
+
+            HandleCollisionVelocity(response);
+
+            // Update working position for next sub-step
+            workingPos = correctedPos;
+        }
+        else
+        {
+            workingPos = targetPos;
+        }
     }
 
-    return targetPos;
+    return workingPos;
 }
 
 void PlayerMovement::HandleCollisionVelocity(const Vector3 &response)
@@ -160,12 +168,13 @@ void PlayerMovement::SnapToGroundIfNeeded(const CollisionManager &collisionManag
     Vector3 velocity = m_physics.GetVelocity();
     Vector3 position = GetPosition();
 
-    if (velocity.y > 0.1f)
+    // Only snap to ground when falling or just landed
+    if (velocity.y > 0.0f)
     {
         return;
     }
 
-    const float SNAP_DISTANCE = 1.0f;
+    const float SNAP_DISTANCE = 0.5f; // Reduced snap distance for more precise snapping
     Vector3 checkPos = position;
     checkPos.y -= SNAP_DISTANCE;
 
@@ -191,12 +200,14 @@ void PlayerMovement::SnapToGroundIfNeeded(const CollisionManager &collisionManag
     }
     else
     {
-
         SetPosition(position);
         m_player->UpdatePlayerBox();
 
-        if (velocity.y <= 0.0f)
-            / { m_physics.SetGroundLevel(false); }
+        // Only set as not grounded if we're actually falling
+        if (velocity.y < -0.1f)
+        {
+            m_physics.SetGroundLevel(false);
+        }
     }
 }
 
@@ -234,7 +245,7 @@ bool PlayerMovement::ExtractFromCollider()
     Vector3 testResponse = {};
     if (!m_lastCollisionManager->CheckCollision(m_player->GetCollision(), testResponse))
     {
-        TraceLog(LOG_INFO, "🏠 Emergency extraction successful at: (%.2f, %.2f, %.2f)", safePos.x,
+        TraceLog(LOG_INFO, "trEmergency extraction successful at: (%.2f, %.2f, %.2f)", safePos.x,
                  safePos.y, safePos.z);
         return true;
     }
@@ -242,6 +253,6 @@ bool PlayerMovement::ExtractFromCollider()
     SetPosition(Player::DEFAULT_SPAWN_POSITION);
     m_physics.SetVelocity({0.0f, 0.0f, 0.0f});
     m_physics.SetGroundLevel(false);
-    TraceLog(LOG_ERROR, "🚨 CRITICAL: Emergency teleport to spawn");
+    TraceLog(LOG_ERROR, "CRITICAL: Emergency teleport to spawn");
     return true;
 }

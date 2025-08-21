@@ -46,14 +46,15 @@ int OctreeNode::GetChildIndex(const Vector3 &point) const
     return index;
 }
 
-Vector3 OctreeNode::GetMin() const{
+Vector3 OctreeNode::GetMin() const
+{
     return {center.x - halfSize, center.y - halfSize, center.z - halfSize};
 }
 
-Vector3 OctreeNode::GetMax() const{
+Vector3 OctreeNode::GetMax() const
+{
     return {center.x + halfSize, center.y + halfSize, center.z + halfSize};
 }
-
 
 // ================== Octree Implementation ==================
 
@@ -104,12 +105,13 @@ void Octree::BuildFromModel(Model *model, const Matrix &transform)
     TraceLog(LOG_INFO, "Building octree from %zu triangles", triangles.size());
 
     // Safety check: prevent excessive triangle counts
-    if (triangles.size() > 50000)
+    // Limit triangle count for performance
+    if (triangles.size() > 10000)
     {
-        TraceLog(
-            LOG_WARNING,
-            "Model has excessive triangle count (%zu). Consider using lower precision collision.",
-            triangles.size());
+        TraceLog(LOG_WARNING,
+                 "Model has excessive triangle count (%zu). Limiting to 10000 for performance.",
+                 triangles.size());
+        triangles.resize(10000);
     }
 
     // Calculate bounding box from triangles
@@ -362,8 +364,8 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
             0.02f; // Very precise threshold for accurate collision detection
 
         // TraceLog(LOG_INFO,
-        //          "ContainsPointRecursive: Checking point (%.2f, %.2f, %.2f) against %d triangles",
-        //          point.x, point.y, point.z, (int)node->triangles.size());
+        //          "ContainsPointRecursive: Checking point (%.2f, %.2f, %.2f) against %d
+        //          triangles", point.x, point.y, point.z, (int)node->triangles.size());
 
         for (const auto &triangle : node->triangles)
         {
@@ -402,18 +404,23 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
                 Vector3 toPoint = Vector3Subtract(point, v0);
                 float distanceToPlane = fabsf(Vector3DotProduct(toPoint, normal));
 
-                // For collision detection, we want to detect when the player is very close to the surface
-                // This is especially important for floor collision
+                // For collision detection, we want to detect when the player is very close to the
+                // surface This is especially important for floor collision
                 if (distanceToPlane <= SURFACE_THRESHOLD)
                 {
                     // Check if this is a floor collision (normal pointing up)
-                    if (normal.y > 0.7f) { // Floor surface (normal pointing mostly up)
+                    if (normal.y > 0.7f)
+                    { // Floor surface (normal pointing mostly up)
                         // For floor collision, be more lenient with the threshold
                         return distanceToPlane <= 0.02f;
-                    } else if (normal.y < -0.7f) { // Ceiling surface (normal pointing mostly down)
+                    }
+                    else if (normal.y < -0.7f)
+                    { // Ceiling surface (normal pointing mostly down)
                         // For ceiling collision, use normal threshold
                         return distanceToPlane <= SURFACE_THRESHOLD;
-                    } else { // Wall surface
+                    }
+                    else
+                    { // Wall surface
                         // For wall collision, use smaller threshold to prevent sticking
                         return distanceToPlane <= 0.005f;
                     }
@@ -793,16 +800,18 @@ bool Octree::IntersectsImprovedRecursive(const OctreeNode *node, const Vector3 &
 
 void Octree::DebugDraw(const Color &color) const
 {
-    if (m_root) {
+    if (m_root)
+    {
         DebugDrawRecursive(m_root.get(), color);
     }
 }
 
 void Octree::DebugDrawRecursive(const OctreeNode *node, const Color &color) const
 {
-    if (!node) return;
+    if (!node)
+        return;
 
-    Vector3 size = { node->halfSize * 2, node->halfSize * 2, node->halfSize * 2 };
+    Vector3 size = {node->halfSize * 2, node->halfSize * 2, node->halfSize * 2};
     DrawCubeWires(node->center, size.x, size.y, size.z, color);
 
     if (!node->isLeaf)
