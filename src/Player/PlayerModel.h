@@ -2,8 +2,8 @@
 #ifndef PLAYER_MODEL_H
 #define PLAYER_MODEL_H
 
-#include <raylib.h>
 #include <Model/Model.h>
+#include <raylib.h>
 
 // PlayerModel: handles the 3D model of the player
 class PlayerModel
@@ -11,28 +11,27 @@ class PlayerModel
 public:
     PlayerModel();
     ~PlayerModel() = default;
-    
+
     // Set the 3D model
-    void SetModel(Model* model);
-    
+    void SetModel(Model *model);
+
     // Toggle model rendering
     void ToggleModelRendering(bool useModel);
-    
+
     // Get model manager
-    Models& GetModelManager();
-    
+    Models &GetModelManager();
+
     // Check if model is being used
     bool IsModelUsed() const;
-    
+
     // Get the model pointer
-    Model* GetModel() const;
-    
+    Model *GetModel() const;
+
 private:
-    Model* m_model = nullptr;
+    Model *m_model = nullptr;
     bool m_useModel = false;
     Models m_modelManager;
+    float m_rotationModelY;
 };
 
 #endif // PLAYER_MODEL_H
-
-

@@ -35,6 +35,7 @@ public:
     [[nodiscard]] float GetRotationY() const;
     float GetSpeed();
     void SetSpeed(float speed);
+    void SetRotationY(float rotation);
     PhysicsComponent &GetPhysics();
     [[nodiscard]] const PhysicsComponent &GetPhysics() const;
 

@@ -2,7 +2,7 @@
 #include <Player/Player.h>
 
 // Define player constants
-const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 5.f,
+const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 60.f,
                                                 0.0f}; // Lowered spawn position for large model
 const float Player::MODEL_Y_OFFSET = -1.f;
 const float Player::MODEL_SCALE = 1.1f;
@@ -140,3 +140,5 @@ BoundingBox Player::GetPlayerBoundingBox() const { return m_collision->GetBoundi
 const PhysicsComponent &Player::GetPhysics() const { return m_movement->GetPhysics(); }
 
 PhysicsComponent &Player::GetPhysics() { return m_movement->GetPhysics(); }
+
+void Player::SetRotationY(float rotationY) { m_movement->SetRotationY(rotationY); }
