@@ -2,16 +2,17 @@
 #include <Player/Player.h>
 
 // Define player constants
-const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 2.0f, 0.0f};
-const float Player::MODEL_Y_OFFSET = -0.95f;
-const float Player::MODEL_SCALE = 1.38f;
+const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 5.f,
+                                                0.0f}; // Lowered spawn position for large model
+const float Player::MODEL_Y_OFFSET = -1.f;
+const float Player::MODEL_SCALE = 1.1f;
 
 Player::Player() : m_cameraController(std::make_shared<CameraController>())
 {
     TraceLog(LOG_INFO, "Creating Player...");
 
     // Initialize player size
-    m_playerSize = {1.0f, 1.8f, 1.0f}; // width, height, depth
+    m_playerSize = (Vector3){1.0f, 2.5f, 1.0f}; // Adjusted height for large model
 
     // Create component objects
     m_movement = std::make_unique<PlayerMovement>(this);
@@ -81,14 +82,7 @@ Models &Player::GetModelManager() { return m_model->GetModelManager(); }
 
 void Player::SetPlayerModel(Model *model) { m_model->SetModel(model); }
 
-void Player::UpdatePlayerBox()
-{
-    Vector3 playerPos = GetPlayerPosition();
-    Vector3 minBounds = Vector3Subtract(playerPos, Vector3Scale(m_playerSize, 0.5f));
-    Vector3 maxBounds = Vector3Add(playerPos, Vector3Scale(m_playerSize, 0.5f));
-
-    m_collision->UpdateBoundingBox();
-}
+void Player::UpdatePlayerBox() { m_collision->UpdateBoundingBox(); }
 
 void Player::UpdatePlayerCollision() { m_collision->Update(); }
 

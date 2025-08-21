@@ -112,7 +112,8 @@ private:
     static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 50; // Limit precise collisions
 
     // Helper function to create cache key for scaled models
-    std::string MakeCollisionCacheKey(const std::string &modelName, float scale) const;
+    [[nodiscard]] std::string MakeCollisionCacheKey(const std::string &modelName,
+                                                    float scale) const;
 
     // Game State
     Menu m_menu;
