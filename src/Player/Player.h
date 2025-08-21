@@ -57,6 +57,7 @@ public:
     void SetPlayerModel(Model *model);        // Set 3D model
     void ToggleModelRendering(bool useModel); // Show/hide model
     Models &GetModelManager();                // Get model manager
+    void SetRotationY(float rotationY);
 
     // Getters/Setters
     [[nodiscard]] float GetSpeed();             // Get current speed

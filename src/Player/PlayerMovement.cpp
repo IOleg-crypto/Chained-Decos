@@ -6,7 +6,7 @@ PlayerMovement::PlayerMovement(Player *player)
     : m_player(player), m_position(Player::DEFAULT_SPAWN_POSITION)
 {
     // Initialize physics state
-    m_physics.SetGroundLevel(true);   // Start in air
+    m_physics.SetGroundLevel(false);  // Start in air
     m_physics.SetVelocity({0, 0, 0}); // No initial velocity
 
     m_lastCollisionManager = nullptr;
@@ -256,3 +256,5 @@ bool PlayerMovement::ExtractFromCollider()
     TraceLog(LOG_ERROR, "CRITICAL: Emergency teleport to spawn");
     return true;
 }
+
+void PlayerMovement::SetRotationY(float rotation) { this->m_rotationY = rotation; }
