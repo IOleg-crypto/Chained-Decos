@@ -41,8 +41,6 @@ public:
     Engine();
     Engine(int screenX, int screenY);
     ~Engine();
-    // Non-copyable and non-movable
-    Engine(const Engine &other) = delete;
     Engine(Engine &&other) = delete;
     Engine &operator=(const Engine &other) = delete;
     Engine &operator=(Engine &&other) = delete;
@@ -124,7 +122,6 @@ private:
     // Debug State
     bool m_showDebug;
     bool m_showCollisionDebug;
-    bool m_showOctreeDebug;
 };
 
 #endif // ENGINE_H

@@ -1,5 +1,6 @@
 #ifndef JSONHELPER_H
 #define JSONHELPER_H
+
 #include "ModelConfig.h"
 #include <nlohmann/json.hpp>
 #include <optional>

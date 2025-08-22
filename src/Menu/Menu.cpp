@@ -2,15 +2,15 @@
 // Created by I#Oleg
 //
 
+#include <Engine/Engine.h>
 #include <Menu/Menu.h>
-#include <array>
 #include <raylib.h>
+
 
 #include <iostream>
 
 void Menu::Update()
 {
-    // Вибір поточного меню
     switch (m_state)
     {
     case MenuState::Main:
@@ -54,7 +54,6 @@ void Menu::Update()
         }
     }
 
-    // --- Обробка дій ---
     switch (m_action)
     {
     case MenuAction::StartGame:
@@ -76,13 +75,16 @@ void Menu::Update()
         m_selected = 0;
         break;
     case MenuAction::ExitGame:
-        CloseWindow();
+        TraceLog(LOG_INFO, "Exit requested");
+        ResetAction();
+        if (m_engine)
+        {
+            m_engine->RequestExit();
+        }
         break;
     default:
         break;
     }
-
-    ResetAction();
 }
 
 float Menu::Lerp(float a, float b, float t) const { return a + (b - a) * t; }
@@ -106,7 +108,16 @@ void Menu::Render() const
     }
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.25f));
 
-    const char *title = (m_state == MenuState::Main) ? "Chained Decos" : "Options";
+    const char *title;
+    if (MenuState::Main == m_state)
+    {
+        title = "Chained Decos";
+    }
+    else
+    {
+        title = currentMenu[m_selected].label;
+    }
+    // DrawText(title, 100,
     int tw = MeasureText(title, 56);
     int tx = GetScreenWidth() / 2 - tw / 2;
     DrawText(title, tx + 4, 104, 56, Fade(BLACK, 0.75f));
@@ -140,21 +151,21 @@ void Menu::Render() const
         Color topColor, bottomColor, borderColor;
         if (selected)
         {
-            topColor = {255, 240, 200, 255};
-            bottomColor = {220, 175, 90, 255};
-            borderColor = {40, 30, 20, 255};
+            topColor = {.r = 255, .g = 240, .b = 200, .a = 255};
+            bottomColor = {.r = 220, .g = 175, .b = 90, .a = 255};
+            borderColor = {.r = 40, .g = 30, .b = 20, .a = 255};
         }
         else if (hovered)
         {
-            topColor = {245, 220, 165, 255};
-            bottomColor = {205, 150, 85, 255};
-            borderColor = {50, 35, 25, 255};
+            topColor = {.r = 245, .g = 220, .b = 165, .a = 255};
+            bottomColor = {.r = 205, .g = 150, .b = 85, .a = 255};
+            borderColor = {.r = 50, .g = 35, .b = 25, .a = 255};
         }
         else
         {
-            topColor = {200, 200, 200, 255};
-            bottomColor = {130, 130, 130, 255};
-            borderColor = {35, 35, 35, 255};
+            topColor = {.r = 200, .g = 200, .b = 200, .a = 255};
+            bottomColor = {.r = 130, .g = 130, .b = 130, .a = 255};
+            borderColor = {.r = 35, .g = 35, .b = 35, .a = 255};
         }
 
         for (int j = 0; j < h; ++j)
@@ -182,5 +193,7 @@ void Menu::Render() const
 }
 
 MenuAction Menu::GetAction() const { return m_action; }
+
+void Menu::GetEngine(Engine *engine) { m_engine = engine; }
 
 void Menu::ResetAction() { m_action = MenuAction::None; }

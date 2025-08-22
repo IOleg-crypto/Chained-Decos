@@ -1,0 +1,244 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "src/Model/model.lib"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"add_compile_definitions",
+			"add_definitions",
+			"include_directories"
+		],
+		"files" : 
+		[
+			"src/Model/CMakeLists.txt",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 2,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 17,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 108,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 109,
+				"parent" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 112,
+				"parent" : 3
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-O0 -g -Xclang -gcodeview -g -O0 -DDEBUG -D_DEBUG -Wall  -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "GRAPHICS_API_OPENGL_33"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "PLATFORM_DESKTOP"
+				},
+				{
+					"backtrace" : 4,
+					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
+				},
+				{
+					"backtrace" : 5,
+					"define" : "_CRT_SECURE_NO_WARNINGS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 6,
+					"path" : "D:/gitnext/Chained Decos/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2
+				],
+				"standard" : "20"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				2,
+				4,
+				7,
+				9
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@9de86fbe87260ae8e66c"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "raylib::@4dc3a4644cf4ded08c01"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "collision::@f2fae3303dbf2eca7e7f"
+		}
+	],
+	"id" : "model::@c31de6ce72a56b005f57",
+	"name" : "model",
+	"nameOnDisk" : "model.lib",
+	"paths" : 
+	{
+		"build" : "src/Model",
+		"source" : "src/Model"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				2,
+				4,
+				7,
+				9
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				1,
+				3,
+				5,
+				6,
+				8,
+				10
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/Model/Model.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Model/Model.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/Model/ModelInstance.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Model/ModelInstance.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/Model/Animation.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Model/Animation.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Model/ModelConfig.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/Model/JsonHelper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Model/JsonHelper.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/Model/ModelCache.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Model/ModelCache.h",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}
