@@ -21,8 +21,8 @@
 Engine::Engine() : Engine(800, 600) {}
 
 Engine::Engine(const int screenX, const int screenY)
-    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_showMenu(true),
-      m_shouldExit(false), m_windowInitialized(false), m_showDebug(false),
+    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_menu(),
+      m_showMenu(true), m_shouldExit(false), m_windowInitialized(false), m_showDebug(false),
       m_showCollisionDebug(false)
 {
     // Improved validation using local constants
@@ -67,6 +67,7 @@ void Engine::Init()
 {
     TraceLog(LOG_INFO, "Initializing Engine...");
 
+    m_menu.GetEngine(this);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     m_windowInitialized = true;
@@ -842,70 +843,70 @@ void Engine::Render()
     }
 
     m_renderManager.EndFrame();
-    // Handle menu actions after frame
-    Vector3 safePosition = {0.0f, 2.0f, 0.0f}; // Lower starting position (2.0 instead of 5.0)
+
+    // --- Handle menu actions ---
     switch (m_menu.GetAction())
     {
     case MenuAction::SinglePlayer:
+    {
         m_showMenu = false;
+        TraceLog(LOG_INFO, "Starting singleplayer...");
 
-        // Reinitialize collision system when starting game from menu
-        TraceLog(LOG_INFO, "Reinitializing collision system for game start...");
         InitCollisions();
-
-        // Reinitialize input
         InitInput();
-        HideCursor(); // Hide mouse cursor when game starts
+        HideCursor();
 
-        // Reset player position to a safe starting point
-
-        // Reset player physics state
+        Vector3 safePosition = {0.0f, 2.0f, 0.0f};
         m_player.SetPlayerPosition(safePosition);
-        m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f}); // Ensure zero velocity
-        m_player.GetPhysics().SetGroundLevel(true);            // Start in air
+        m_player.GetPhysics().SetVelocity({0, 0, 0});
+        m_player.GetPhysics().SetGroundLevel(true);
         m_player.UpdatePlayerBox();
         m_player.UpdatePlayerCollision();
 
-        // Apply initial gravity to ensure player is grounded
         if (!m_collisionManager.GetColliders().empty())
         {
             TraceLog(LOG_INFO, "Applying initial gravity with %zu colliders",
                      m_collisionManager.GetColliders().size());
 
             m_player.ApplyGravityForPlayer(m_collisionManager);
+
             Vector3 pos = m_player.GetPlayerPosition();
-            TraceLog(LOG_INFO, "Applied initial gravity, player position: (%.2f, %.2f, %.2f)",
-                     pos.x, pos.y, pos.z);
+            TraceLog(LOG_INFO, "Initial gravity applied, pos: (%.2f, %.2f, %.2f)", pos.x, pos.y,
+                     pos.z);
         }
         else
         {
-            TraceLog(LOG_ERROR, "Cannot apply gravity - no colliders available!");
-            // Create emergency ground plane
+            TraceLog(LOG_ERROR, "No colliders found, creating emergency ground plane");
+
             Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
             Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
+
             Collision plane{groundCenter, groundSize};
             plane.SetCollisionType(CollisionType::AABB_ONLY);
             m_collisionManager.AddCollider(plane);
-            TraceLog(LOG_WARNING,
-                     "Created emergency ground plane in StartGame with size: {%.1f, %.1f, %.1f} at "
-                     "position: {%.1f, %.1f, %.1f}",
-                     groundSize.x, groundSize.y, groundSize.z, groundCenter.x, groundCenter.y,
-                     groundCenter.z);
+
+            TraceLog(
+                LOG_WARNING,
+                "Emergency ground plane created size: {%.1f, %.1f, %.1f} pos: {%.1f, %.1f, %.1f}",
+                groundSize.x, groundSize.y, groundSize.z, groundCenter.x, groundCenter.y,
+                groundCenter.z);
         }
 
         m_menu.ResetAction();
-        TraceLog(LOG_INFO, "Game started from menu with %zu colliders",
-                 m_collisionManager.GetColliders().size());
         break;
+    }
+
     case MenuAction::OpenOptions:
+        TraceLog(LOG_INFO, "Options menu opened");
         m_menu.ResetAction();
-        TraceLog(LOG_INFO, "Options menu requested");
         break;
+
     case MenuAction::ExitGame:
-        m_menu.ResetAction();
+        TraceLog(LOG_INFO, "Exit requested");
         m_shouldExit = true;
-        TraceLog(LOG_INFO, "Exit game requested from menu");
+        m_menu.ResetAction();
         break;
+
     default:
         break;
     }

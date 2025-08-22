@@ -1,7 +1,6 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include <array>
 #include <imgui.h>
 #include <iostream>
 #include <raylib.h>
@@ -11,6 +10,8 @@
 // # ----------------------------------------------------------------------------
 // # Menu - handles rendering and logic for main menu
 // # ----------------------------------------------------------------------------
+
+class Engine;
 
 enum class MenuAction : uint8_t
 {
@@ -69,13 +70,15 @@ private:
     MenuState m_state = MenuState::Main;
     mutable std::vector<float> m_buttonScales;
     std::vector<MenuItem> m_currentMenu;
+    Engine *m_engine;
 
 public:
     void Update();
     void Render() const;
+    void GetEngine(Engine *engine);
+    float Lerp(float a, float b, float t) const;
     [[nodiscard]] MenuAction GetAction() const;
     void ResetAction();
-    float Lerp(float a, float b, float t) const;
 };
 
 #endif
