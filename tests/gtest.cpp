@@ -19,22 +19,25 @@
 
 using json = nlohmann::json;
 
-class RaylibTestEnvironment : public ::testing::Environment {
-    public:
-        void SetUp() override {
-    #ifdef CI
-            // На CI нічого не робимо
-    #else
-            SetConfigFlags(FLAG_WINDOW_HIDDEN);
-            InitWindow(800, 600, "Test Window");
-            SetTargetFPS(60);
-    #endif
-        }
-        void TearDown() override {
-    #ifndef CI
-            if (IsWindowReady()) CloseWindow();
-    #endif
-        }
+class RaylibTestEnvironment : public ::testing::Environment
+{
+public:
+    void SetUp() override
+    {
+#ifdef CI
+#else
+        SetConfigFlags(FLAG_WINDOW_HIDDEN);
+        InitWindow(800, 600, "Test Window");
+        SetTargetFPS(60);
+#endif
+    }
+    void TearDown() override
+    {
+#ifndef CI
+        if (IsWindowReady())
+            CloseWindow();
+#endif
+    }
 };
 
 // Register the global test environment
