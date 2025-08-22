@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/World/world.lib"
+			"path" : "src/Color/color.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -19,7 +19,7 @@
 		],
 		"files" : 
 		[
-			"src/World/CMakeLists.txt",
+			"src/Color/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -36,7 +36,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 6,
+				"line" : 5,
 				"parent" : 0
 			},
 			{
@@ -103,10 +103,6 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"
 				}
 			],
 			"language" : "CXX",
@@ -114,7 +110,7 @@
 			{
 				"backtraces" : 
 				[
-					2
+					1
 				],
 				"standard" : "20"
 			},
@@ -128,24 +124,20 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "glfw::@9de86fbe87260ae8e66c"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "collision::@f2fae3303dbf2eca7e7f"
+			"id" : "glfw::@9de86fbe87260ae8e66c"
 		}
 	],
-	"id" : "world::@92df9c4804674326063e",
-	"name" : "world",
-	"nameOnDisk" : "world.lib",
+	"id" : "color::@1a1c00afda0e599bb50a",
+	"name" : "color",
+	"nameOnDisk" : "color.lib",
 	"paths" : 
 	{
-		"build" : "src/World",
-		"source" : "src/World"
+		"build" : "src/Color",
+		"source" : "src/Color"
 	},
 	"sourceGroups" : 
 	[
@@ -168,13 +160,13 @@
 	[
 		{
 			"backtrace" : 1,
-			"path" : "src/World/Physics.h",
+			"path" : "src/Color/ColorParser.h",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/World/Physics.cpp",
+			"path" : "src/Color/ColorParser.cpp",
 			"sourceGroupIndex" : 1
 		}
 	],

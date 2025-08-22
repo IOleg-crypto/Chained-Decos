@@ -145,6 +145,10 @@ public:
     // -------------------- Triangle Access --------------------
     Octree *GetOctree();
 
+    // -------------------- Verification --------------------
+    bool HasTriangleData() const;
+    void VerifyTriangleData(const char *context = nullptr) const;
+
     // -------------------- Performance Methods --------------------
 
     // Get collision detection performance stats

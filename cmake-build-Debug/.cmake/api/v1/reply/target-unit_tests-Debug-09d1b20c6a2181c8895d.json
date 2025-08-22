@@ -184,15 +184,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "glfw::@9de86fbe87260ae8e66c"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "gtest::@1ea2dfc0605fe3ab2a3f"
+			"id" : "glfw::@9de86fbe87260ae8e66c"
 		},
 		{
 			"backtrace" : 2,
@@ -200,11 +196,7 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "model::@c31de6ce72a56b005f57"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "player::@be42b85d13b19d60cba7"
+			"id" : "gtest::@1ea2dfc0605fe3ab2a3f"
 		},
 		{
 			"backtrace" : 2,
@@ -212,11 +204,19 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "input::@d8fb087ca0f7f8518676"
+			"id" : "player::@be42b85d13b19d60cba7"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "model::@c31de6ce72a56b005f57"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "menu::@c946c8ead22e3f9c7e08"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "input::@d8fb087ca0f7f8518676"
 		},
 		{
 			"backtrace" : 2,

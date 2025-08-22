@@ -6,7 +6,7 @@ PlayerMovement::PlayerMovement(Player *player)
     : m_player(player), m_position(Player::DEFAULT_SPAWN_POSITION)
 {
     // Initialize physics state
-    m_physics.SetGroundLevel(false);  // Start in air
+    m_physics.SetGroundLevel(true);   // Start in air
     m_physics.SetVelocity({0, 0, 0}); // No initial velocity
 
     m_lastCollisionManager = nullptr;
@@ -64,18 +64,29 @@ void PlayerMovement::ApplyJumpImpulse(float impulse)
 
 void PlayerMovement::ApplyGravity(float deltaTime)
 {
+    Vector3 vel = m_physics.GetVelocity();
+
+    // Якщо гравець не на землі, падаємо
     if (!m_physics.IsGrounded())
     {
-        Vector3 vel = m_physics.GetVelocity();
-
         vel.y -= m_physics.GetGravity() * deltaTime;
 
+        // Обмеження падіння
         const float MAX_FALL_SPEED = -50.0f;
         if (vel.y < MAX_FALL_SPEED)
             vel.y = MAX_FALL_SPEED;
 
         m_physics.SetVelocity(vel);
-        m_player->GetPhysics().SetJumpState(false);
+    }
+
+    // Якщо гравець на землі, обнуляємо вертикальну швидкість
+    else
+    {
+        vel.y = 0.0f;
+        m_physics.SetVelocity(vel);
+
+        // Важливо не скидати jumpState, поки гравець не підніметься
+        // m_player->GetPhysics().SetJumpState(false);
     }
 }
 
@@ -83,12 +94,10 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
 {
     Vector3 velocity = m_physics.GetVelocity();
     float deltaTime = GetFrameTime();
-    Vector3 currentPos = GetPosition();
+    Vector3 workingPos = GetPosition();
 
-    // Apply movement in smaller steps to improve collision detection accuracy
     const int subSteps = 4;
     Vector3 subStepVelocity = Vector3Scale(velocity, deltaTime / subSteps);
-    Vector3 workingPos = currentPos;
 
     for (int i = 0; i < subSteps; i++)
     {
@@ -97,67 +106,47 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
         m_player->UpdatePlayerBox();
 
         Vector3 response;
-        bool hasCollision = collisionManager.CheckCollision(m_player->GetCollision(), response);
-
-        if (hasCollision)
+        if (collisionManager.CheckCollision(m_player->GetCollision(), response))
         {
-            // Move back to previous position
-            SetPosition(workingPos);
+            // Проєктуємо рух по площині колізії
+            subStepVelocity = Vector3Subtract(
+                subStepVelocity,
+                Vector3Scale(response,
+                             Vector3DotProduct(subStepVelocity, Vector3Normalize(response))));
+            targetPos = Vector3Add(workingPos, subStepVelocity);
+
+            SetPosition(targetPos);
             m_player->UpdatePlayerBox();
-
-            // Apply collision response
-            Vector3 correctedPos = Vector3Add(workingPos, response);
-            SetPosition(correctedPos);
-            m_player->UpdatePlayerBox();
-
-            HandleCollisionVelocity(response);
-
-            // Update working position for next sub-step
-            workingPos = correctedPos;
         }
-        else
-        {
-            workingPos = targetPos;
-        }
+
+        workingPos = targetPos;
     }
 
     return workingPos;
 }
 
-void PlayerMovement::HandleCollisionVelocity(const Vector3 &response)
+void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseNormal)
 {
     Vector3 velocity = m_physics.GetVelocity();
 
-    float absX = fabsf(response.x);
-    float absY = fabsf(response.y);
-    float absZ = fabsf(response.z);
-
-    if (absY > absX && absY > absZ)
+    if (responseNormal.y > 0.7f)
     {
-        if (response.y > 0.0f)
+        if (m_physics.GetVelocity().y <= 0.0f) // тільки якщо падали вниз
         {
-            TraceLog(LOG_INFO, "Floor collision - landing");
             velocity.y = 0.0f;
             m_physics.SetGroundLevel(true);
+            TraceLog(LOG_INFO, "Floor collision - landing");
         }
-        else
-        {
-            TraceLog(LOG_INFO, "Ceiling collision");
-            velocity.y = 0.0f;
-        }
+    }
+    else if (responseNormal.y < -0.7f)
+    {
+        velocity.y = 0.0f;
+        TraceLog(LOG_INFO, "Ceiling collision");
     }
     else
     {
-        TraceLog(LOG_INFO, "Wall collision");
-
-        if (absX > absZ)
-        {
-            velocity.x = 0.0f;
-        }
-        else
-        {
-            velocity.z = 0.0f;
-        }
+        float vn = Vector3DotProduct(velocity, responseNormal);
+        velocity = Vector3Subtract(velocity, Vector3Scale(responseNormal, vn));
     }
 
     m_physics.SetVelocity(velocity);
@@ -168,13 +157,14 @@ void PlayerMovement::SnapToGroundIfNeeded(const CollisionManager &collisionManag
     Vector3 velocity = m_physics.GetVelocity();
     Vector3 position = GetPosition();
 
-    // Only snap to ground when falling or just landed
+    // ⚠️ Якщо ми рухаємось вгору — точно не grounded
     if (velocity.y > 0.0f)
     {
+        m_physics.SetGroundLevel(false);
         return;
     }
 
-    const float SNAP_DISTANCE = 0.5f; // Reduced snap distance for more precise snapping
+    const float SNAP_DISTANCE = 0.15f; // можна трохи збільшити, щоб на платформах працювало краще
     Vector3 checkPos = position;
     checkPos.y -= SNAP_DISTANCE;
 
@@ -184,33 +174,28 @@ void PlayerMovement::SnapToGroundIfNeeded(const CollisionManager &collisionManag
     Vector3 response;
     bool foundGround = collisionManager.CheckCollision(m_player->GetCollision(), response);
 
-    if (foundGround && response.y > 0.0f)
+    if (foundGround && response.y > 0.1f)
     {
-        float correctY = checkPos.y + response.y + 0.01f;
-        Vector3 groundPos = position;
-        groundPos.y = correctY;
-        SetPosition(groundPos);
+        // Знайшли землю під ногами → ставимо гравця на неї
+        position.y = checkPos.y + response.y + 0.01f;
+        SetPosition(position);
         m_player->UpdatePlayerBox();
 
+        // Обнуляємо падіння, але тільки якщо падали вниз
         velocity.y = 0.0f;
         m_physics.SetVelocity(velocity);
         m_physics.SetGroundLevel(true);
 
-        TraceLog(LOG_INFO, "⬇️ Snapped to ground: %.3f -> %.3f", position.y, correctY);
+        TraceLog(LOG_INFO, "⬇️ Snapped to ground (%.3f)", position.y);
     }
     else
     {
+        // Немає землі → ми в повітрі
         SetPosition(position);
         m_player->UpdatePlayerBox();
-
-        // Only set as not grounded if we're actually falling
-        if (velocity.y < -0.1f)
-        {
-            m_physics.SetGroundLevel(false);
-        }
+        m_physics.SetGroundLevel(false);
     }
 }
-
 bool PlayerMovement::ExtractFromCollider()
 {
     if (!m_lastCollisionManager)

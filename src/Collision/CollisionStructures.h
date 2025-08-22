@@ -4,6 +4,7 @@
 #ifndef COLLISIONSTRUCTURES_H
 #define COLLISIONSTRUCTURES_H
 
+#include <cstdint>
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
@@ -15,7 +16,14 @@
 struct CollisionTriangle
 {
     Vector3 v0, v1, v2; // Triangle vertices
+    Vector3 min, max;   // Bounding Box;
     Vector3 normal;     // Triangle normal
+    Vector3 center;     // Cached triangle center
+    float area;         // Cached area
+
+    // Cached edge vectors and dot products for barycentric coordinates
+    Vector3 e0, e1; // e0 = v1-v0, e1 = v2-v0
+    float dot00, dot01, dot11;
 
     CollisionTriangle() = default;
     CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c);
@@ -52,7 +60,7 @@ struct CollisionRay
 //
 // CollisionType - determines which collision method to use
 //
-enum class CollisionType
+enum class CollisionType : uint8_t
 {
     AABB_ONLY,       // Simple AABB collision (fast, less precise)
     OCTREE_ONLY,     // Octree collision (slower, more precise)
@@ -75,13 +83,13 @@ struct CollisionComplexity
     static constexpr size_t SIMPLE_TRIANGLE_THRESHOLD = 100;
     static constexpr float SIMPLE_AREA_THRESHOLD = 1000.0f;
 
-    bool IsSimple() const
+    [[nodiscard]] bool IsSimple() const
     {
         return triangleCount <= SIMPLE_TRIANGLE_THRESHOLD && surfaceArea <= SIMPLE_AREA_THRESHOLD &&
                !hasComplexGeometry;
     }
 
-    bool IsComplex() const { return !IsSimple(); }
+    [[nodiscard]] bool IsComplex() const { return !IsSimple(); }
 };
 
 #endif // COLLISIONSTRUCTURES_H

@@ -155,19 +155,11 @@
 		},
 		{
 			"backtrace" : 3,
-			"id" : "glfw::@9de86fbe87260ae8e66c"
-		},
-		{
-			"backtrace" : 3,
 			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		},
 		{
 			"backtrace" : 3,
-			"id" : "model::@c31de6ce72a56b005f57"
-		},
-		{
-			"backtrace" : 3,
-			"id" : "player::@be42b85d13b19d60cba7"
+			"id" : "glfw::@9de86fbe87260ae8e66c"
 		},
 		{
 			"backtrace" : 3,
@@ -175,11 +167,19 @@
 		},
 		{
 			"backtrace" : 3,
-			"id" : "input::@d8fb087ca0f7f8518676"
+			"id" : "player::@be42b85d13b19d60cba7"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "model::@c31de6ce72a56b005f57"
 		},
 		{
 			"backtrace" : 3,
 			"id" : "menu::@c946c8ead22e3f9c7e08"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "input::@d8fb087ca0f7f8518676"
 		},
 		{
 			"backtrace" : 3,

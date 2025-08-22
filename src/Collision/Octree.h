@@ -86,6 +86,7 @@ public:
     size_t GetTriangleCount() const;
     size_t GetNodeCount() const;
     int GetMaxDepth() const;
+    size_t CountTriangles(const OctreeNode *node) const;
 
     // Debug rendering support
     void GetAllNodes(std::vector<std::pair<Vector3, float>> &nodes) const;

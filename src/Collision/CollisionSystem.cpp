@@ -72,10 +72,10 @@ Collision &Collision::operator=(Collision &&other) noexcept
 {
     if (this != &other)
     {
-        m_min = std::move(other.m_min);
-        m_max = std::move(other.m_max);
+        m_min = (other.m_min);
+        m_max = (other.m_max);
         m_collisionType = other.m_collisionType;
-        m_complexity = std::move(other.m_complexity);
+        m_complexity = (other.m_complexity);
         m_triangles = std::move(other.m_triangles);
         m_octree = std::move(other.m_octree);
 
@@ -168,9 +168,9 @@ bool Collision::Intersects(const Collision &other) const
                                   {other.m_max.x, other.m_min.y, other.m_max.z},
                                   {other.m_min.x, other.m_max.y, other.m_max.z},
                                   {other.m_max.x, other.m_max.y, other.m_max.z}};
-            for (int i = 0; i < 8; i++)
+            for (auto corner : corners)
             {
-                if (m_octree->ContainsPoint(corners[i]))
+                if (m_octree->ContainsPoint(corner))
                 {
                     EndPerformanceTimer(CollisionType::TRIANGLE_PRECISE);
                     return true;
@@ -185,9 +185,9 @@ bool Collision::Intersects(const Collision &other) const
                                   {m_min.x, m_max.y, m_min.z}, {m_max.x, m_max.y, m_min.z},
                                   {m_min.x, m_min.y, m_max.z}, {m_max.x, m_min.y, m_max.z},
                                   {m_min.x, m_max.y, m_max.z}, {m_max.x, m_max.y, m_max.z}};
-            for (int i = 0; i < 8; i++)
+            for (auto corner : corners)
             {
-                if (other.m_octree->ContainsPoint(corners[i]))
+                if (other.m_octree->ContainsPoint(corner))
                 {
                     EndPerformanceTimer(CollisionType::TRIANGLE_PRECISE);
                     return true;
@@ -311,6 +311,14 @@ void Collision::BuildFromModel(Model *model, const Matrix &transform)
 
     // Update AABB from triangles
     UpdateAABBFromTriangles();
+
+    // If no triangles, force AABB and avoid extra logs/processing
+    if (m_complexity.triangleCount == 0 || m_triangles.empty())
+    {
+        m_collisionType = CollisionType::AABB_ONLY;
+        TraceLog(LOG_DEBUG, "Model has 0 triangles - using AABB (no mesh data)");
+        return;
+    }
 
     // Determine optimal collision type
     CollisionType optimalType = DetermineOptimalCollisionType();
@@ -499,8 +507,7 @@ bool Collision::IntersectsOctree(const Collision &other) const
     // If neither has octree, fall back to AABB collision
     if (!m_octree && !other.m_octree)
     {
-        TraceLog(LOG_WARNING,
-                 "⚠️ IntersectsOctree: Neither object has octree, falling back to AABB");
+        TraceLog(LOG_WARNING, "IntersectsOctree: Neither object has octree, falling back to AABB");
         return (m_min.x <= other.m_max.x && m_max.x >= other.m_min.x) &&
                (m_min.y <= other.m_max.y && m_max.y >= other.m_min.y) &&
                (m_min.z <= other.m_max.z && m_max.z >= other.m_min.z);
@@ -652,21 +659,20 @@ void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
 
 CollisionType Collision::DetermineOptimalCollisionType() const
 {
-    // Enhanced heuristic with safety limits to prevent memory issues
+    // Choose collision type based on actual complexity. Avoid octree for empty or tiny meshes.
     size_t triangleCount = m_complexity.triangleCount;
 
-    // Always use octree-based collision for more precise detection
-    if (triangleCount > 1000)
+    if (triangleCount == 0)
     {
-        TraceLog(LOG_INFO, "Model has %zu triangles - using OCTREE for precision", triangleCount);
-        return CollisionType::OCTREE_ONLY;
+        TraceLog(LOG_DEBUG, "Model has 0 triangles - using AABB (no mesh data)");
+        return CollisionType::AABB_ONLY;
     }
-    else if (triangleCount > 500)
+    else if (triangleCount <= 100)
     {
-        TraceLog(LOG_INFO, "Model has %zu triangles - using OCTREE for precision", triangleCount);
-        return CollisionType::OCTREE_ONLY;
+        TraceLog(LOG_DEBUG, "Model has %zu triangles - using AABB", triangleCount);
+        return CollisionType::AABB_ONLY;
     }
-    else if (triangleCount > 100)
+    else if (triangleCount <= 1000)
     {
         TraceLog(LOG_INFO, "Model has %zu triangles - using OCTREE for precision", triangleCount);
         return CollisionType::OCTREE_ONLY;
@@ -776,3 +782,17 @@ void Collision::EndPerformanceTimer(CollisionType typeUsed) const
 }
 
 Octree *Collision::GetOctree() { return m_octree.get(); }
+
+bool Collision::HasTriangleData() const { return !m_triangles.empty(); }
+
+void Collision::VerifyTriangleData(const char *context) const
+{
+    if (m_triangles.empty())
+    {
+        if (context)
+            TraceLog(LOG_DEBUG, "Collision verification: no triangles (%s) — using AABB-only path",
+                     context);
+        else
+            TraceLog(LOG_DEBUG, "Collision verification: no triangles — using AABB-only path");
+    }
+}

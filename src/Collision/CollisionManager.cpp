@@ -58,100 +58,63 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const
 {
     if (m_collisions.empty())
-    {
-        static int warningCounter = 0;
-        if (warningCounter++ % 100 == 0)
-        {
-            TraceLog(LOG_WARNING, "⚠️ NO COLLIDERS FOUND! Total colliders: %zu",
-                     m_collisions.size());
-        }
         return false;
-    }
 
     Vector3 playerMin = playerCollision.GetMin();
     Vector3 playerMax = playerCollision.GetMax();
 
+    response = (Vector3){0, 0, 0};
+    bool collided = false;
+
     for (const auto &collider : m_collisions)
     {
-        Vector3 colliderMin = collider.GetMin();
-        Vector3 colliderMax = collider.GetMax();
-
         if (!playerCollision.Intersects(collider))
             continue;
 
-        // Log collision detection for debugging
-        Vector3 playerPos = {(playerMin.x + playerMax.x) / 2, (playerMin.y + playerMax.y) / 2,
-                             (playerMin.z + playerMax.z) / 2};
-        Vector3 colliderPos = {(colliderMin.x + colliderMax.x) / 2,
-                               (colliderMin.y + colliderMax.y) / 2,
-                               (colliderMin.z + colliderMax.z) / 2};
-        float distance = Vector3Distance(playerPos, colliderPos);
+        collided = true;
 
-        // Only log collisions when player is jumping or at significant distance
-        if (fabsf(playerPos.y) > 1.0f || distance > 50.0f)
-        {
-            TraceLog(LOG_INFO,
-                     "🔍 Collision detected at distance %.2f: Player(%.1f,%.1f,%.1f) vs "
-                     "Collider(%.1f,%.1f,%.1f)",
-                     distance, playerPos.x, playerPos.y, playerPos.z, colliderPos.x, colliderPos.y,
-                     colliderPos.z);
-        }
+        Vector3 colliderMin = collider.GetMin();
+        Vector3 colliderMax = collider.GetMax();
 
-        bool isGroundPlane = (collider.GetCollisionType() == CollisionType::AABB_ONLY);
-        bool isComplexModel = (collider.GetCollisionType() == CollisionType::OCTREE_ONLY ||
-                               collider.GetCollisionType() == CollisionType::TRIANGLE_PRECISE ||
-                               collider.GetCollisionType() == CollisionType::IMPROVED_AABB);
-
-        // ------------------- MTV calculation -------------------
-        Vector3 aMin = playerMin;
-        Vector3 aMax = playerMax;
-        Vector3 bMin = colliderMin;
-        Vector3 bMax = colliderMax;
-
-        float overlapX = fminf(aMax.x, bMax.x) - fmaxf(aMin.x, bMin.x);
-        float overlapY = fminf(aMax.y, bMax.y) - fmaxf(aMin.y, bMin.y);
-        float overlapZ = fminf(aMax.z, bMax.z) - fmaxf(aMin.z, bMin.z);
+        float overlapX = fminf(playerMax.x, colliderMax.x) - fmaxf(playerMin.x, colliderMin.x);
+        float overlapY = fminf(playerMax.y, colliderMax.y) - fmaxf(playerMin.y, colliderMin.y);
+        float overlapZ = fminf(playerMax.z, colliderMax.z) - fmaxf(playerMin.z, colliderMin.z);
 
         if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
             continue;
 
-        float dx = ((aMin.x + aMax.x) / 2 < (bMin.x + bMax.x) / 2) ? -overlapX : overlapX;
-        float dy = ((aMin.y + aMax.y) / 2 < (bMin.y + bMax.y) / 2) ? -overlapY : overlapY;
-        float dz = ((aMin.z + aMax.z) / 2 < (bMin.z + bMax.z) / 2) ? -overlapZ : overlapZ;
+        // Обчислюємо напрям MTV
+        float dx = ((playerMin.x + playerMax.x) / 2 < (colliderMin.x + colliderMax.x) / 2)
+                       ? -overlapX
+                       : overlapX;
+        float dy = ((playerMin.y + playerMax.y) / 2 < (colliderMin.y + colliderMax.y) / 2)
+                       ? -overlapY
+                       : overlapY;
+        float dz = ((playerMin.z + playerMax.z) / 2 < (colliderMin.z + colliderMax.z) / 2)
+                       ? -overlapZ
+                       : overlapZ;
 
-        // ------------------- Clamp for complex models -------------------
-        if (isComplexModel)
-        {
-            const float MAX_RESPONSE = 5.0f;
-            dx = fmaxf(fminf(dx, MAX_RESPONSE), -MAX_RESPONSE);
-            dy = fmaxf(fminf(dy, MAX_RESPONSE), -MAX_RESPONSE);
-            dz = fmaxf(fminf(dz, MAX_RESPONSE), -MAX_RESPONSE);
-        }
+        Vector3 mtv = {dx, dy, dz};
+        Vector3 normal = Vector3Normalize(mtv);
 
-        float absDx = fabsf(dx);
-        float absDy = fabsf(dy);
-        float absDz = fabsf(dz);
-
-        // ------------------- Determine main collision axis -------------------
-        if (isGroundPlane || (dy > 0.0f && absDy > absDx * 1.5f && absDy > absDz * 1.5f))
+        // Підлога або стеля
+        if (fabsf(normal.y) > 0.7f)
         {
-            // Floor or ceiling
-            response = {0, dy, 0};
-        }
-        else if (absDx >= absDy && absDx >= absDz)
-        {
-            response = {dx, 0, 0};
+            mtv.x = 0; // залишаємо горизонтальну складову
+            mtv.z = 0;
         }
         else
         {
-            response = {0, 0, dz};
+            mtv.y = 0; // для стін проєктуємо вертикаль
         }
 
-        TraceLog(LOG_INFO, "📐 Final response vector: (%.3f, %.3f, %.3f) length=%.3f", response.x,
-                 response.y, response.z, Vector3Length(response));
+        // Пом’якшення відштовхування
+        const float RESPONSE_FACTOR = 0.5f;
+        mtv = Vector3Scale(mtv, RESPONSE_FACTOR);
 
-        return true;
+        // Застосовуємо response послідовно
+        response = Vector3Add(response, mtv);
     }
 
-    return false;
+    return collided;
 }

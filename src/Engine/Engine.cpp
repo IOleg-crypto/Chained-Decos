@@ -109,7 +109,7 @@ void Engine::Init()
         m_player.UpdatePlayerCollision();
 
         m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
-        m_player.GetPhysics().SetGroundLevel(false);
+        m_player.GetPhysics().SetGroundLevel(true);
         m_player.SnapToGroundIfNeeded(m_collisionManager);
 
         TraceLog(LOG_INFO, "Player positioned safely at: (%.2f, %.2f, %.2f)", safePosition.x,
@@ -145,6 +145,11 @@ void Engine::Run()
         Update();
         Render();
     }
+
+    if (m_shouldExit)
+        TraceLog(LOG_INFO, "Main loop exiting: exit requested (F4 or code)");
+    else if (WindowShouldClose())
+        TraceLog(LOG_INFO, "Main loop exiting: window closed (ESC/close button)");
 
     TraceLog(LOG_INFO, "Main game loop ended");
 }
@@ -841,7 +846,7 @@ void Engine::Render()
     Vector3 safePosition = {0.0f, 2.0f, 0.0f}; // Lower starting position (2.0 instead of 5.0)
     switch (m_menu.GetAction())
     {
-    case MenuAction::StartGame:
+    case MenuAction::SinglePlayer:
         m_showMenu = false;
 
         // Reinitialize collision system when starting game from menu
@@ -857,7 +862,7 @@ void Engine::Render()
         // Reset player physics state
         m_player.SetPlayerPosition(safePosition);
         m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f}); // Ensure zero velocity
-        m_player.GetPhysics().SetGroundLevel(false);           // Start in air
+        m_player.GetPhysics().SetGroundLevel(true);            // Start in air
         m_player.UpdatePlayerBox();
         m_player.UpdatePlayerCollision();
 

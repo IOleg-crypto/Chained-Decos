@@ -4,6 +4,7 @@
 
 #include "Octree.h"
 #include "CollisionSystem.h"
+#include "raymath.h"
 #include <algorithm>
 #include <cmath>
 
@@ -12,9 +13,9 @@
 OctreeNode::OctreeNode(const Vector3 &center, float halfSize)
     : center(center), halfSize(halfSize), isLeaf(true)
 {
-    for (int i = 0; i < 8; i++)
+    for (auto &i : children)
     {
-        children[i] = nullptr;
+        i = nullptr;
     }
 }
 
@@ -36,14 +37,7 @@ bool OctreeNode::IntersectsAABB(const Vector3 &min, const Vector3 &max) const
 
 int OctreeNode::GetChildIndex(const Vector3 &point) const
 {
-    int index = 0;
-    if (point.x > center.x)
-        index |= 1; // Right
-    if (point.y > center.y)
-        index |= 2; // Top
-    if (point.z > center.z)
-        index |= 4; // Front
-    return index;
+    return (point.x > center.x) | ((point.y > center.y) << 1) | ((point.z > center.z) << 2);
 }
 
 Vector3 OctreeNode::GetMin() const
@@ -60,8 +54,8 @@ Vector3 OctreeNode::GetMax() const
 
 Octree::Octree() : m_triangleCount(0)
 {
-    m_min = {0, 0, 0};
-    m_max = {0, 0, 0};
+    m_min = Vector3Zero();
+    m_max = Vector3Zero();
 }
 
 void Octree::Initialize(const Vector3 &min, const Vector3 &max)
@@ -86,14 +80,20 @@ void Octree::Initialize(const Vector3 &min, const Vector3 &max)
 
 void Octree::BuildFromModel(Model *model, const Matrix &transform)
 {
+
     if (!model || model->meshCount == 0)
     {
         TraceLog(LOG_WARNING, "Invalid model provided for octree construction");
         return;
     }
 
-    // Extract triangles from model
     std::vector<CollisionTriangle> triangles;
+
+    int estimatedCount = 0;
+    for (int m = 0; m < model->meshCount; m++)
+        estimatedCount += model->meshes[m].triangleCount;
+    triangles.reserve(estimatedCount);
+
     ExtractTrianglesFromModel(model, transform, triangles);
 
     if (triangles.empty())
@@ -104,47 +104,40 @@ void Octree::BuildFromModel(Model *model, const Matrix &transform)
 
     TraceLog(LOG_INFO, "Building octree from %zu triangles", triangles.size());
 
-    // Safety check: prevent excessive triangle counts
-    // Limit triangle count for performance
-    if (triangles.size() > 10000)
+    // Ліміт трикутників для продуктивності
+    constexpr size_t MAX_TRIANGLES = 10000;
+    if (triangles.size() > MAX_TRIANGLES)
     {
         TraceLog(LOG_WARNING,
-                 "Model has excessive triangle count (%zu). Limiting to 10000 for performance.",
-                 triangles.size());
-        triangles.resize(10000);
+                 "Model has excessive triangle count (%zu). Limiting to %zu for performance.",
+                 triangles.size(), MAX_TRIANGLES);
+        triangles.resize(MAX_TRIANGLES);
     }
 
-    // Calculate bounding box from triangles
+    // Кешування AABB при створенні трикутників
     Vector3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
     Vector3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-
-    for (const auto &triangle : triangles)
+    for (const auto &tri : triangles)
     {
-        Vector3 triMin = triangle.GetMin();
-        Vector3 triMax = triangle.GetMax();
+        const Vector3 &triMin = tri.min;
+        const Vector3 &triMax = tri.max;
 
-        if (triMin.x < min.x)
-            min.x = triMin.x;
-        if (triMin.y < min.y)
-            min.y = triMin.y;
-        if (triMin.z < min.z)
-            min.z = triMin.z;
-        if (triMax.x > max.x)
-            max.x = triMax.x;
-        if (triMax.y > max.y)
-            max.y = triMax.y;
-        if (triMax.z > max.z)
-            max.z = triMax.z;
+        min.x = std::min(min.x, triMin.x);
+        min.y = std::min(min.y, triMin.y);
+        min.z = std::min(min.z, triMin.z);
+
+        max.x = std::max(max.x, triMax.x);
+        max.y = std::max(max.y, triMax.y);
+        max.z = std::max(max.z, triMax.z);
     }
 
-    // Initialize with calculated bounds
     Initialize(min, max);
 
-    // Build tree recursively
     BuildRecursive(m_root.get(), triangles, 0);
 
-    // Set the actual triangle count (unique triangles from input)
-    m_triangleCount = triangles.size();
+    // Зберігаємо кількість трикутників
+    m_triangleCount = CountTriangles(
+        m_root.get()); // тут вже порожній після move, можна замінити на BuildRecursive результат
 
     TraceLog(LOG_INFO, "Octree built with %zu triangles in %zu nodes", GetTriangleCount(),
              GetNodeCount());
@@ -188,13 +181,13 @@ void Octree::BuildRecursive(OctreeNode *node, const std::vector<CollisionTriangl
     }
 
     // Distribute triangles to children
-    for (int i = 0; i < 8; i++)
+    for (const auto &i : node->children)
     {
         std::vector<CollisionTriangle> childTriangles;
 
         for (const auto &triangle : triangles)
         {
-            if (TriangleIntersectsNode(triangle, node->children[i].get()))
+            if (TriangleIntersectsNode(triangle, i.get()))
             {
                 childTriangles.push_back(triangle);
             }
@@ -202,7 +195,7 @@ void Octree::BuildRecursive(OctreeNode *node, const std::vector<CollisionTriangl
 
         if (!childTriangles.empty())
         {
-            BuildRecursive(node->children[i].get(), childTriangles, depth + 1);
+            BuildRecursive(i.get(), childTriangles, depth + 1);
         }
     }
 }
@@ -259,11 +252,11 @@ void Octree::AddTriangleRecursive(OctreeNode *node, const CollisionTriangle &tri
 
             for (const auto &tri : triangles)
             {
-                for (int i = 0; i < 8; i++)
+                for (const auto &i : node->children)
                 {
-                    if (TriangleIntersectsNode(tri, node->children[i].get()))
+                    if (TriangleIntersectsNode(tri, i.get()))
                     {
-                        AddTriangleRecursive(node->children[i].get(), tri, depth + 1);
+                        AddTriangleRecursive(i.get(), tri, depth + 1);
                     }
                 }
             }
@@ -272,11 +265,11 @@ void Octree::AddTriangleRecursive(OctreeNode *node, const CollisionTriangle &tri
     else
     {
         // Not a leaf, add to appropriate children
-        for (int i = 0; i < 8; i++)
+        for (const auto &i : node->children)
         {
-            if (node->children[i] && TriangleIntersectsNode(triangle, node->children[i].get()))
+            if (i && TriangleIntersectsNode(triangle, i.get()))
             {
-                AddTriangleRecursive(node->children[i].get(), triangle, depth + 1);
+                AddTriangleRecursive(i.get(), triangle, depth + 1);
             }
         }
     }
@@ -329,9 +322,9 @@ bool Octree::IntersectsAABBRecursive(const OctreeNode *node, const Vector3 &min,
     }
 
     // Check children
-    for (int i = 0; i < 8; i++)
+    for (const auto &i : node->children)
     {
-        if (node->children[i] && IntersectsAABBRecursive(node->children[i].get(), min, max))
+        if (i && IntersectsAABBRecursive(i.get(), min, max))
         {
             return true;
         }
@@ -354,90 +347,58 @@ bool Octree::ContainsPointRecursive(const OctreeNode *node, const Vector3 &point
 
     if (node->isLeaf)
     {
-        // For collision detection, check if point is very close to any triangle surface
-        // This is more appropriate for architectural elements like arches
-
         if (node->triangles.empty())
             return false;
 
-        const float SURFACE_THRESHOLD =
-            0.02f; // Very precise threshold for accurate collision detection
+        constexpr float FLOOR_THRESHOLD = 0.02f;
+        constexpr float WALL_THRESHOLD = 0.005f;
+        constexpr float CEILING_THRESHOLD = 0.02f;
 
-        // TraceLog(LOG_INFO,
-        //          "ContainsPointRecursive: Checking point (%.2f, %.2f, %.2f) against %d
-        //          triangles", point.x, point.y, point.z, (int)node->triangles.size());
-
-        for (const auto &triangle : node->triangles)
+        for (const auto &tri : node->triangles)
         {
-            // For architectural elements like arches, we need to check if the point
-            // is actually inside the solid material, not just close to any triangle
+            // AABB відсів
+            if (point.x < tri.min.x || point.x > tri.max.x || point.y < tri.min.y ||
+                point.y > tri.max.y || point.z < tri.min.z || point.z > tri.max.z)
+            {
+                continue;
+            }
 
-            // Check if point is very close to the triangle surface (indicating solid material)
-            Vector3 v0 = triangle.v0;
-            Vector3 v1 = triangle.v1;
-            Vector3 v2 = triangle.v2;
+            Vector3 v0p = Vector3Subtract(point, tri.v0);
 
-            // TraceLog(LOG_INFO,
-            //          "  Triangle: v0(%.2f,%.2f,%.2f) v1(%.2f,%.2f,%.2f) v2(%.2f,%.2f,%.2f)",
-            //          v0.x, v0.y, v0.z, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+            // Використовуємо кешовані dot products для barycentric
+            float dot02 = Vector3DotProduct(tri.e1, v0p);
+            float dot12 = Vector3DotProduct(tri.e0, v0p);
 
-            // Calculate barycentric coordinates to see if point projects onto triangle
-            Vector3 v0v1 = Vector3Subtract(v1, v0);
-            Vector3 v0v2 = Vector3Subtract(v2, v0);
-            Vector3 v0p = Vector3Subtract(point, v0);
+            float denom = tri.dot00 * tri.dot11 - tri.dot01 * tri.dot01;
+            if (fabsf(denom) < 1e-6f)
+                continue;
 
-            float dot00 = Vector3DotProduct(v0v2, v0v2);
-            float dot01 = Vector3DotProduct(v0v2, v0v1);
-            float dot02 = Vector3DotProduct(v0v2, v0p);
-            float dot11 = Vector3DotProduct(v0v1, v0v1);
-            float dot12 = Vector3DotProduct(v0v1, v0p);
+            float invDenom = 1.0f / denom;
+            float u = (tri.dot11 * dot02 - tri.dot01 * dot12) * invDenom;
+            float v = (tri.dot00 * dot12 - tri.dot01 * dot02) * invDenom;
 
-            float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
-            float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-            float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-            // Check if point is inside triangle (barycentric coordinates)
             if (u >= 0 && v >= 0 && u + v <= 1)
             {
-                // Point projects onto triangle, now check distance to surface
-                Vector3 normal = (triangle.normal);
-                Vector3 toPoint = Vector3Subtract(point, v0);
-                float distanceToPlane = fabsf(Vector3DotProduct(toPoint, normal));
+                float distanceToPlane = fabsf(Vector3DotProduct(v0p, tri.normal));
 
-                // For collision detection, we want to detect when the player is very close to the
-                // surface This is especially important for floor collision
-                if (distanceToPlane <= SURFACE_THRESHOLD)
+                if (distanceToPlane <= FLOOR_THRESHOLD)
                 {
-                    // Check if this is a floor collision (normal pointing up)
-                    if (normal.y > 0.7f)
-                    { // Floor surface (normal pointing mostly up)
-                        // For floor collision, be more lenient with the threshold
-                        return distanceToPlane <= 0.02f;
-                    }
-                    else if (normal.y < -0.7f)
-                    { // Ceiling surface (normal pointing mostly down)
-                        // For ceiling collision, use normal threshold
-                        return distanceToPlane <= SURFACE_THRESHOLD;
-                    }
+                    if (tri.normal.y > 0.7f)
+                        return distanceToPlane <= FLOOR_THRESHOLD;
+                    else if (tri.normal.y < -0.7f)
+                        return distanceToPlane <= CEILING_THRESHOLD;
                     else
-                    { // Wall surface
-                        // For wall collision, use smaller threshold to prevent sticking
-                        return distanceToPlane <= 0.005f;
-                    }
+                        return distanceToPlane <= WALL_THRESHOLD;
                 }
             }
         }
-
-        return false; // Point is not close to any triangle surface
+        return false;
     }
 
-    // Check appropriate child
-    for (int i = 0; i < 8; i++)
+    for (const auto &child : node->children)
     {
-        if (node->children[i] && ContainsPointRecursive(node->children[i].get(), point))
-        {
+        if (child && child->Contains(point) && ContainsPointRecursive(child.get(), point))
             return true;
-        }
     }
 
     return false;
@@ -461,9 +422,9 @@ size_t Octree::CountNodesRecursive(const OctreeNode *node) const
 
     if (!node->isLeaf)
     {
-        for (int i = 0; i < 8; i++)
+        for (const auto &i : node->children)
         {
-            count += CountNodesRecursive(node->children[i].get());
+            count += CountNodesRecursive(i.get());
         }
     }
 
@@ -489,9 +450,9 @@ void Octree::GetAllNodesRecursive(const OctreeNode *node,
 
     if (!node->isLeaf)
     {
-        for (int i = 0; i < 8; i++)
+        for (const auto &i : node->children)
         {
-            GetAllNodesRecursive(node->children[i].get(), nodes);
+            GetAllNodesRecursive(i.get(), nodes);
         }
     }
 }
@@ -663,7 +624,6 @@ bool Octree::RaycastRecursive(const OctreeNode *node, const Vector3 &origin,
         for (const auto &triangle : node->triangles)
         {
             float t;
-            Vector3 point, normal;
 
             if (triangle.Intersects(origin, direction, t) && t < closestDistance && t >= 0.0f)
             {
@@ -677,15 +637,15 @@ bool Octree::RaycastRecursive(const OctreeNode *node, const Vector3 &origin,
     else
     {
         // Test against children
-        for (int i = 0; i < 8; i++)
+        for (const auto &i : node->children)
         {
-            if (node->children[i])
+            if (i)
             {
                 float childDistance = closestDistance;
                 Vector3 childPoint, childNormal;
 
-                if (RaycastRecursive(node->children[i].get(), origin, direction, closestDistance,
-                                     childDistance, childPoint, childNormal))
+                if (RaycastRecursive(i.get(), origin, direction, closestDistance, childDistance,
+                                     childPoint, childNormal))
                 {
                     if (childDistance < closestDistance)
                     {
@@ -735,10 +695,9 @@ bool Octree::IntersectsOctreeRecursive(const OctreeNode *thisNode,
     // If one is leaf and other is not, recurse on the non-leaf
     if (thisNode->isLeaf && !otherNode->isLeaf)
     {
-        for (int i = 0; i < 8; i++)
+        for (const auto &i : otherNode->children)
         {
-            if (otherNode->children[i] &&
-                IntersectsOctreeRecursive(thisNode, otherNode->children[i].get()))
+            if (i && IntersectsOctreeRecursive(thisNode, i.get()))
                 return true;
         }
         return false;
@@ -746,25 +705,22 @@ bool Octree::IntersectsOctreeRecursive(const OctreeNode *thisNode,
 
     if (!thisNode->isLeaf && otherNode->isLeaf)
     {
-        for (int i = 0; i < 8; i++)
+        for (const auto &i : thisNode->children)
         {
-            if (thisNode->children[i] &&
-                IntersectsOctreeRecursive(thisNode->children[i].get(), otherNode))
+            if (i && IntersectsOctreeRecursive(i.get(), otherNode))
                 return true;
         }
         return false;
     }
 
     // Both are internal nodes, recurse on all combinations
-    for (int i = 0; i < 8; i++)
+    for (const auto &i : thisNode->children)
     {
-        if (thisNode->children[i])
+        if (i)
         {
-            for (int j = 0; j < 8; j++)
+            for (const auto &j : otherNode->children)
             {
-                if (otherNode->children[j] &&
-                    IntersectsOctreeRecursive(thisNode->children[i].get(),
-                                              otherNode->children[j].get()))
+                if (j && IntersectsOctreeRecursive(i.get(), j.get()))
                     return true;
             }
         }
@@ -787,9 +743,9 @@ bool Octree::IntersectsImprovedRecursive(const OctreeNode *node, const Vector3 &
     }
 
     // Check children with smaller AABBs
-    for (int i = 0; i < 8; i++)
+    for (const auto &i : node->children)
     {
-        if (node->children[i] && IntersectsImprovedRecursive(node->children[i].get(), min, max))
+        if (i && IntersectsImprovedRecursive(i.get(), min, max))
         {
             return true;
         }
@@ -816,8 +772,24 @@ void Octree::DebugDrawRecursive(const OctreeNode *node, const Color &color) cons
 
     if (!node->isLeaf)
     {
-        for (int i = 0; i < 8; i++)
-            if (node->children[i])
-                DebugDrawRecursive(node->children[i].get(), color);
+        for (const auto &i : node->children)
+            if (i)
+                DebugDrawRecursive(i.get(), color);
     }
+}
+
+size_t Octree::CountTriangles(const OctreeNode *node) const
+{
+    if (!node)
+        return 0;
+    if (node->isLeaf)
+        return node->triangles.size();
+
+    size_t count = 0;
+    for (const auto &child : node->children)
+    {
+        if (child)
+            count += CountTriangles(child.get());
+    }
+    return count;
 }
