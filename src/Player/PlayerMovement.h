@@ -28,7 +28,7 @@ public:
     void ApplyGravity(float deltaTime);
     Vector3 StepMovement(const CollisionManager &collisionManager);
     void SnapToGroundIfNeeded(const CollisionManager &collisionManager);
-    void HandleCollisionVelocity(const Vector3 &response);
+    void HandleCollisionVelocity(const Vector3 &responseNormal);
     bool ExtractFromCollider();
 
     // Getters/Setters
