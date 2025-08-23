@@ -23,6 +23,8 @@ public:
         2000, 2, 2000}; // Increased from 1000x1000 to 2000x2000
     static constexpr Vector3 DEBUG_CUBE_POSITION = {0, 5, 0};
     static constexpr Vector3 DEBUG_CUBE_SIZE = {2, 2, 2};
+
+public:
     PhysicsComponent();
 
     // -------------------- Update & Core Physics --------------------
@@ -92,7 +94,7 @@ public:
 
 private:
     // Physics parameters
-    float m_gravity = 15.0f;        // Increased gravity for more responsive movement
+    float m_gravity = 10.0f;        // Increased gravity for more responsive movement
     float m_velocityY = 0.0f;       // Vertical velocity
     bool m_isGrounded = false;      // Whether object is on the ground
     float m_groundLevel = 0.0f;     // Ground height level (top of ground plane)

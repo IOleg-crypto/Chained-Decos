@@ -110,7 +110,7 @@ void Engine::Init()
         m_player.UpdatePlayerCollision();
 
         m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
-        m_player.GetPhysics().SetGroundLevel(true);
+        m_player.GetPhysics().SetGroundLevel(false);
         m_player.SnapToGroundIfNeeded(m_collisionManager);
 
         TraceLog(LOG_INFO, "Player positioned safely at: (%.2f, %.2f, %.2f)", safePosition.x,
@@ -856,10 +856,9 @@ void Engine::Render()
         InitInput();
         HideCursor();
 
-        Vector3 safePosition = {0.0f, 2.0f, 0.0f};
-        m_player.SetPlayerPosition(safePosition);
+        m_player.SetPlayerPosition(m_player.DEFAULT_SPAWN_POSITION);
         m_player.GetPhysics().SetVelocity({0, 0, 0});
-        m_player.GetPhysics().SetGroundLevel(true);
+        m_player.GetPhysics().SetGroundLevel(false);
         m_player.UpdatePlayerBox();
         m_player.UpdatePlayerCollision();
 

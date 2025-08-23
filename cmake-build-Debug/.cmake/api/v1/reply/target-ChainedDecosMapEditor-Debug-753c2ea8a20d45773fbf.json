@@ -168,11 +168,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "glfw::@9de86fbe87260ae8e66c"
+			"id" : "raylib::@4dc3a4644cf4ded08c01"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "raylib::@4dc3a4644cf4ded08c01"
+			"id" : "glfw::@9de86fbe87260ae8e66c"
 		},
 		{
 			"backtrace" : 2,
@@ -196,11 +196,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "mapmod::@09eac2343e8a1d778799"
+			"id" : "cameracontroller::@5f3ee536e3548f9fd64a"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "cameracontroller::@5f3ee536e3548f9fd64a"
+			"id" : "mapmod::@09eac2343e8a1d778799"
 		},
 		{
 			"backtrace" : 2,
