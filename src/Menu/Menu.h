@@ -68,7 +68,7 @@ private:
     int m_selected = 0;
     MenuAction m_action = MenuAction::None;
     MenuState m_state = MenuState::Main;
-    mutable std::vector<float> m_buttonScales;
+    std::vector<float> m_buttonScales;
     std::vector<MenuItem> m_currentMenu;
     Engine *m_engine;
 

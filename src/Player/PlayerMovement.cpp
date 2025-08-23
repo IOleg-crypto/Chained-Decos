@@ -6,7 +6,7 @@ PlayerMovement::PlayerMovement(Player *player)
     : m_player(player), m_position(Player::DEFAULT_SPAWN_POSITION)
 {
     // Initialize physics state
-    m_physics.SetGroundLevel(true);   // Start in air
+    m_physics.SetGroundLevel(false);  // Start in air
     m_physics.SetVelocity({0, 0, 0}); // No initial velocity
 
     m_lastCollisionManager = nullptr;
@@ -131,7 +131,7 @@ void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseNormal)
 
     if (responseNormal.y > 0.7f)
     {
-        if (m_physics.GetVelocity().y <= 0.0f) // тільки якщо падали вниз
+        if (m_physics.GetVelocity().y <= 0.0f)
         {
             velocity.y = 0.0f;
             m_physics.SetGroundLevel(true);
@@ -152,47 +152,61 @@ void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseNormal)
     m_physics.SetVelocity(velocity);
 }
 
-void PlayerMovement::SnapToGroundIfNeeded(const CollisionManager &collisionManager)
+void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
 {
     Vector3 velocity = m_physics.GetVelocity();
     Vector3 position = GetPosition();
 
-    // ⚠️ Якщо ми рухаємось вгору — точно не grounded
     if (velocity.y > 0.0f)
     {
         m_physics.SetGroundLevel(false);
         return;
     }
 
-    const float SNAP_DISTANCE = 0.15f; // можна трохи збільшити, щоб на платформах працювало краще
-    Vector3 checkPos = position;
-    checkPos.y -= SNAP_DISTANCE;
+    const float SNAP_DISTANCE = 0.35f;
+    const float EPS = 0.02f;
 
-    SetPosition(checkPos);
-    m_player->UpdatePlayerBox();
+    bool grounded = false;
+    Vector3 bestPos = position;
 
-    Vector3 response;
-    bool foundGround = collisionManager.CheckCollision(m_player->GetCollision(), response);
+    // Масив з точками перевірки: центр + два боки (можна додати всі 4 кути)
+    Vector3 checkOffsets[] = {
+        {0, -SNAP_DISTANCE, 0},     // центр
+        {0.25f, -SNAP_DISTANCE, 0}, // правий край
+        {-0.25f, -SNAP_DISTANCE, 0} // лівий край
+    };
 
-    if (foundGround && response.y > 0.1f)
+    for (auto &offset : checkOffsets)
     {
-        // Знайшли землю під ногами → ставимо гравця на неї
-        position.y = checkPos.y + response.y + 0.01f;
-        SetPosition(position);
+        Vector3 checkPos = position + offset;
+
+        SetPosition(checkPos);
         m_player->UpdatePlayerBox();
 
-        // Обнуляємо падіння, але тільки якщо падали вниз
+        Vector3 response;
+        bool foundGround = collisionManager.CheckCollision(m_player->GetCollision(), response);
+
+        if (foundGround && response.y > 0.01f && response.y <= SNAP_DISTANCE)
+        {
+            bestPos.y = checkPos.y + response.y + EPS;
+            grounded = true;
+            break; // досить хоча б однієї опори
+        }
+    }
+
+    // Повертаємося в кінцеву позицію
+    SetPosition(grounded ? bestPos : position);
+    m_player->UpdatePlayerBox();
+
+    if (grounded)
+    {
         velocity.y = 0.0f;
         m_physics.SetVelocity(velocity);
         m_physics.SetGroundLevel(true);
-
-        TraceLog(LOG_INFO, "⬇️ Snapped to ground (%.3f)", position.y);
+        TraceLog(LOG_INFO, "Snapped to ground (%.3f)", bestPos.y);
     }
     else
     {
-        // Немає землі → ми в повітрі
-        SetPosition(position);
-        m_player->UpdatePlayerBox();
         m_physics.SetGroundLevel(false);
     }
 }
