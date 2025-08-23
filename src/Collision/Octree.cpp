@@ -104,15 +104,15 @@ void Octree::BuildFromModel(Model *model, const Matrix &transform)
 
     TraceLog(LOG_INFO, "Building octree from %zu triangles", triangles.size());
 
-    // Ліміт трикутників для продуктивності
-    constexpr size_t MAX_TRIANGLES = 10000;
-    if (triangles.size() > MAX_TRIANGLES)
-    {
-        TraceLog(LOG_WARNING,
-                 "Model has excessive triangle count (%zu). Limiting to %zu for performance.",
-                 triangles.size(), MAX_TRIANGLES);
-        triangles.resize(MAX_TRIANGLES);
-    }
+    // // Ліміт трикутників для продуктивності
+    // constexpr size_t MAX_TRIANGLES = 10000;
+    // if (triangles.size() > MAX_TRIANGLES)
+    // {
+    //     TraceLog(LOG_WARNING,
+    //              "Model has excessive triangle count (%zu). Limiting to %zu for performance.",
+    //              triangles.size(), MAX_TRIANGLES);
+    //     triangles.resize(MAX_TRIANGLES);
+    // }
 
     // Кешування AABB при створенні трикутників
     Vector3 min = {FLT_MAX, FLT_MAX, FLT_MAX};

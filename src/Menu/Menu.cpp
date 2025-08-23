@@ -6,7 +6,6 @@
 #include <Menu/Menu.h>
 #include <raylib.h>
 
-
 #include <iostream>
 
 void Menu::Update()
@@ -58,7 +57,6 @@ void Menu::Update()
     {
     case MenuAction::StartGame:
         m_state = MenuState::GameMode;
-        m_selected = 0;
         break;
     case MenuAction::SinglePlayer:
     case MenuAction::MultiPlayer:
@@ -68,11 +66,9 @@ void Menu::Update()
         break;
     case MenuAction::OpenOptions:
         m_state = MenuState::Options;
-        m_selected = 0;
         break;
     case MenuAction::BackToMainMenu:
         m_state = MenuState::Main;
-        m_selected = 0;
         break;
     case MenuAction::ExitGame:
         TraceLog(LOG_INFO, "Exit requested");
