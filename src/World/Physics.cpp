@@ -1,5 +1,5 @@
-#include <World/Physics.h>
 #include <Player/Player.h>
+#include <World/Physics.h>
 #include <iostream>
 
 void PhysicsComponent::Update(float dt) { m_dt = dt; }
@@ -61,11 +61,14 @@ void PhysicsComponent::AddVelocity(const Vector3 &delta)
     m_velocity = Vector3Add(m_velocity, delta);
 }
 
-void PhysicsComponent::SetJumpState(bool setJumpState) {
-    m_isJumping = setJumpState;
-}
+void PhysicsComponent::SetJumpState(bool setJumpState) { m_isJumping = setJumpState; }
 
 float PhysicsComponent::GetDeltaTime() const { return m_dt; }
 
 PhysicsComponent::PhysicsComponent() : m_dt(GetFrameTime()) {}
 
+bool PhysicsComponent::HasExtremeVelocity(const Vector3 &vel) const
+{
+    const float MAX_SPEED = 300.0f;
+    return Vector3Length(vel) > MAX_SPEED;
+}

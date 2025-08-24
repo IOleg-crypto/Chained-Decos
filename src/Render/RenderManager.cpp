@@ -3,7 +3,6 @@
 //
 
 #include "RenderManager.h"
-#include <raylib.h>
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
 #include <Collision/Octree.h>
@@ -12,8 +11,10 @@
 #include <Player/Player.h>
 #include <World/Physics.h>
 #include <imgui.h>
+#include <raylib.h>
 #include <rcamera.h>
 #include <rlImGui.h>
+
 
 // ==================== CONSTANTS ====================
 
@@ -154,7 +155,8 @@ void RenderManager::DrawPlayer(const Player &player, const Models &models)
 }
 
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
-                                         const Player &player) const {
+                                         const Player &player) const
+{
     // Draw debug cube using constants from PhysicsComponent
     DrawCubeWires(PhysicsComponent::DEBUG_CUBE_POSITION, PhysicsComponent::DEBUG_CUBE_SIZE.x,
                   PhysicsComponent::DEBUG_CUBE_SIZE.y, PhysicsComponent::DEBUG_CUBE_SIZE.z, YELLOW);
@@ -169,7 +171,7 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
         for (const auto &collider : colliders)
         {
             // Get octree from each collision object
-            auto *octree = const_cast<Collision&>(collider).GetOctree();
+            auto *octree = const_cast<Collision &>(collider).GetOctree();
             if (octree)
             {
                 // Render octree wireframes in green color to distinguish from AABB collision boxes
@@ -177,7 +179,8 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
             }
         }
 
-        TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer with Octree debug");
+        TraceLog(LOG_DEBUG,
+                 "Collision debug rendered via CollisionDebugRenderer with Octree debug");
     }
 }
 
@@ -305,7 +308,8 @@ void RenderManager::DrawControlsInfo()
     ImGui::Text("- F3: Toggle Collision Debug");
 }
 
-void RenderManager::ShowMetersPlayer(const Player &player) const {
+void RenderManager::ShowMetersPlayer(const Player &player) const
+{
     Vector3 playerPosition = player.GetPlayerPosition();
     float groundLevel = PhysicsComponent::WORLD_FLOOR_Y;
     float heightAboveGround = playerPosition.y - groundLevel;
@@ -366,13 +370,15 @@ void RenderManager::ShowMetersPlayer(const Player &player) const {
         Font fontToUse = (m_font.texture.id != 0) ? m_font : GetFontDefault();
         if (isPhysicsGrounded)
         {
-            DrawTextEx(fontToUse, "GROUND", {static_cast<float>(circleX - 25), static_cast<float>(circleY + 25)}, 12,
+            DrawTextEx(fontToUse, "GROUND",
+                       {static_cast<float>(circleX - 25), static_cast<float>(circleY + 25)}, 12,
                        1.5f, GREEN);
         }
         else
         {
-            DrawTextEx(fontToUse, "NEAR", {static_cast<float>(circleX - 20), static_cast<float>(circleY + 25)}, 12, 1.5f,
-                       YELLOW);
+            DrawTextEx(fontToUse, "NEAR",
+                       {static_cast<float>(circleX - 20), static_cast<float>(circleY + 25)}, 12,
+                       1.5f, YELLOW);
         }
     }
     else
@@ -382,3 +388,4 @@ void RenderManager::ShowMetersPlayer(const Player &player) const {
                    LIGHTGRAY);
     }
 }
+void RenderManager::Render() {}

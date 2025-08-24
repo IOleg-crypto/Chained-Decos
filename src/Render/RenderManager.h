@@ -31,6 +31,7 @@ public:
     // Main rendering methods
     void BeginFrame();
     void EndFrame();
+    void Render();
 
     void RenderGame(const Player &player, const Models &models,
                     const CollisionManager &collisionManager, bool showCollisionDebug = false);
