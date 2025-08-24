@@ -17,8 +17,8 @@ public:
     static constexpr float WORLD_FLOOR_Y = -10.0f; // Match ground plane bottom
     static constexpr Vector2 GROUND_SIZE = {2000.0f,
                                             2000.0f}; // Increased from 800x800 to 2000x2000
-    static constexpr Vector3 GROUND_POSITION = {0.0f, -5.0f, 0.0f}; // Match ground plane center
-    static constexpr Vector3 GROUND_COLLISION_CENTER = {0, -5, 0};  // Match ground plane center
+    static constexpr Vector3 GROUND_POSITION = {0.0f, 1.0f, 0.0f}; // Match ground plane center
+    static constexpr Vector3 GROUND_COLLISION_CENTER = {0, 1, 0};  // Match ground plane center
     static constexpr Vector3 GROUND_COLLISION_SIZE = {
         2000, 2, 2000}; // Increased from 1000x1000 to 2000x2000
     static constexpr Vector3 DEBUG_CUBE_POSITION = {0, 5, 0};
@@ -69,6 +69,9 @@ public:
     void AddVelocity(const Vector3 &delta);
     // Change player jump state
     void SetJumpState(bool setJumpState);
+    // If player has extreme velocity
+    bool HasExtremeVelocity(const Vector3 &vel) const;
+
     // -------------------- Getters --------------------
 
     // Returns true if the object is touching the ground

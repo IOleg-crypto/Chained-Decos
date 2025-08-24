@@ -53,21 +53,6 @@ public:
 private:
     void InitInput();
     void InitCollisions();
-    void CreateAutoCollisionsFromModels(); // Automatically create collisions for all models with
-                                           // hasCollision=true
-    bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
-                                  Vector3 position, float scale);
-
-    // Helper methods for collision creation
-    std::shared_ptr<Collision> CreateBaseCollision(const Model &model, const std::string &modelName,
-                                                   const ModelFileConfig *config,
-                                                   bool needsPreciseCollision);
-
-    Collision CreatePreciseInstanceCollision(const Model &model, Vector3 position, float scale,
-                                             const ModelFileConfig *config);
-
-    Collision CreateSimpleInstanceCollision(const Collision &cachedCollision, Vector3 position,
-                                            float scale);
 
 private:
     void Update();
@@ -80,7 +65,6 @@ private:
     void TestOctreeRayCasting();
     void OptimizeModelPerformance();
     void TracePlayerIssue(const Vector3 &pos, const Vector3 &vel) const;
-    bool HasExtremeVelocity(const Vector3 &vel) const;
     bool IsPlayerOutOfBounds(const Vector3 &pos) const;
     void EnsureGroundPlaneExists();
 
@@ -101,17 +85,6 @@ private:
     PhysicsComponent m_physics;
     CollisionManager m_collisionManager; // Legacy collision system
     RenderManager m_renderManager;
-
-    // Collision cache to prevent rebuilding octrees for same models
-    std::unordered_map<std::string, std::shared_ptr<Collision>> m_collisionCache;
-
-    // Counter for precise collisions per model to limit memory usage
-    std::unordered_map<std::string, int> m_preciseCollisionCount;
-    static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 50; // Limit precise collisions
-
-    // Helper function to create cache key for scaled models
-    [[nodiscard]] std::string MakeCollisionCacheKey(const std::string &modelName,
-                                                    float scale) const;
 
     // Game State
     Menu m_menu;
