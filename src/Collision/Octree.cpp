@@ -4,6 +4,7 @@
 
 #include "Octree.h"
 #include "CollisionSystem.h"
+#include "raylib.h"
 #include "raymath.h"
 #include <algorithm>
 #include <cmath>
@@ -793,3 +794,5 @@ size_t Octree::CountTriangles(const OctreeNode *node) const
     }
     return count;
 }
+
+BoundingBox Octree::GetBounds() const { return m_bounds; }
