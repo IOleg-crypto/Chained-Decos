@@ -1,5 +1,7 @@
+#include "Player/PlayerMovement.h"
 #include <CameraController/CameraController.h>
 #include <Player/Player.h>
+#include <memory>
 
 // Define player constants
 const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 3.f,
@@ -142,3 +144,5 @@ const PhysicsComponent &Player::GetPhysics() const { return m_movement->GetPhysi
 PhysicsComponent &Player::GetPhysics() { return m_movement->GetPhysics(); }
 
 void Player::SetRotationY(float rotationY) { m_movement->SetRotationY(rotationY); }
+
+PlayerMovement *Player::GetMovement() const { return m_movement.get(); }

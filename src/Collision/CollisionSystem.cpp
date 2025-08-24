@@ -6,7 +6,7 @@
 #include <Collision/CollisionSystem.h>
 #include <Collision/Octree.h>
 #include <Model/ModelConfig.h>
-#include <algorithm>
+#include <algorithm> // для std::min, std::max
 #include <chrono>
 #include <cmath>
 #include <raylib.h>
@@ -589,9 +589,9 @@ void Collision::UpdateAABBFromOctree()
     if (!m_octree)
         return;
 
-    // Get octree bounds and update AABB
-    // This would need octree to provide its bounds
-    // For now, keep existing AABB
+    BoundingBox bounds = m_octree->GetBounds();
+    m_min = bounds.min;
+    m_max = bounds.max;
 }
 
 void Collision::UpdateAABBFromTriangles()
@@ -607,18 +607,13 @@ void Collision::UpdateAABBFromTriangles()
         Vector3 triMin = triangle.GetMin();
         Vector3 triMax = triangle.GetMax();
 
-        if (triMin.x < min.x)
-            min.x = triMin.x;
-        if (triMin.y < min.y)
-            min.y = triMin.y;
-        if (triMin.z < min.z)
-            min.z = triMin.z;
-        if (triMax.x > max.x)
-            max.x = triMax.x;
-        if (triMax.y > max.y)
-            max.y = triMax.y;
-        if (triMax.z > max.z)
-            max.z = triMax.z;
+        min.x = std::min(min.x, triMin.x);
+        min.y = std::min(min.y, triMin.y);
+        min.z = std::min(min.z, triMin.z);
+
+        max.x = std::max(max.x, triMax.x);
+        max.y = std::max(max.y, triMax.y);
+        max.z = std::max(max.z, triMax.z);
     }
 
     m_min = min;
@@ -633,17 +628,24 @@ void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
         return;
 
     size_t totalTriangles = 0;
-    float totalArea = 0.0f;
     bool hasComplexGeometry = false;
 
     for (int m = 0; m < model->meshCount; m++)
     {
-        Mesh &mesh = model->meshes[m];
+        const Mesh &mesh = model->meshes[m];
+
+        if (mesh.triangleCount == 0)
+            continue;
+
         totalTriangles += mesh.triangleCount;
 
         // Check for complex geometry indicators
         if (mesh.normals || mesh.texcoords || mesh.colors)
+        {
             hasComplexGeometry = true;
+            // Якщо достатньо одного true, можна break;
+            // break;
+        }
     }
 
     // Calculate bounding volume
@@ -652,7 +654,7 @@ void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
     float volume = size.x * size.y * size.z;
 
     m_complexity.triangleCount = totalTriangles;
-    m_complexity.surfaceArea = totalArea; // Approximate
+    m_complexity.surfaceArea = 0.0f; // Якщо не рахуєте площу
     m_complexity.boundingVolume = volume;
     m_complexity.hasComplexGeometry = hasComplexGeometry;
 }
@@ -688,9 +690,18 @@ void Collision::ExtractTrianglesFromModel(Model *model, const Matrix &transform)
 {
     m_triangles.clear();
 
+    // Оцінюємо загальну кількість трикутників для резервування пам'яті
+    size_t totalTriangles = 0;
+    for (int m = 0; m < model->meshCount; m++)
+        totalTriangles += model->meshes[m].triangleCount;
+    m_triangles.reserve(totalTriangles);
+
     for (int m = 0; m < model->meshCount; m++)
     {
         Mesh &mesh = model->meshes[m];
+
+        if (mesh.triangleCount == 0)
+            continue;
 
         if (mesh.indices)
         {
