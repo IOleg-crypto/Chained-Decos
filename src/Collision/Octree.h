@@ -90,11 +90,13 @@ public:
 
     // Debug rendering support
     void GetAllNodes(std::vector<std::pair<Vector3, float>> &nodes) const;
+    BoundingBox GetBounds() const;
 
 private:
     std::unique_ptr<OctreeNode> m_root;
     Vector3 m_min, m_max; // Bounding box of entire octree
     size_t m_triangleCount;
+    BoundingBox m_bounds;
 
 private:
     // Internal methods
