@@ -10,4 +10,4 @@ add_library(collision STATIC
     Octree.cpp
     Octree.h
 )
-target_link_libraries(collision PUBLIC raylib)
+target_link_libraries(collision PUBLIC raylib model)
