@@ -70,6 +70,7 @@ public:
     BoundingBox GetPlayerBoundingBox() const;   // Get bounding box
     const PhysicsComponent &GetPhysics() const; // Get physics component (const)
     PhysicsComponent &GetPhysics();             // Get physics component (non-const)
+    PlayerMovement *GetMovement() const;
 
 private:
     // Component objects

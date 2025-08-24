@@ -66,26 +66,25 @@ void PlayerMovement::ApplyGravity(float deltaTime)
 {
     Vector3 vel = m_physics.GetVelocity();
 
-    // Якщо гравець не на землі, падаємо
+    // If the player is not on the ground, apply gravity
     if (!m_physics.IsGrounded())
     {
         vel.y -= m_physics.GetGravity() * deltaTime;
 
-        // Обмеження падіння
+        // Limit falling speed
         const float MAX_FALL_SPEED = -50.0f;
         if (vel.y < MAX_FALL_SPEED)
             vel.y = MAX_FALL_SPEED;
 
         m_physics.SetVelocity(vel);
     }
-
-    // Якщо гравець на землі, обнуляємо вертикальну швидкість
+    // If the player is on the ground, reset vertical velocity
     else
     {
         vel.y = 0.0f;
         m_physics.SetVelocity(vel);
 
-        // Важливо не скидати jumpState, поки гравець не підніметься
+        // Important: do not reset jumpState until the player leaves the ground
         // m_player->GetPhysics().SetJumpState(false);
     }
 }
@@ -96,7 +95,8 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     float deltaTime = GetFrameTime();
     Vector3 workingPos = GetPosition();
 
-    const int subSteps = 4;
+    // Subdivide movement into smaller steps for better collision accuracy
+    const int subSteps = 6;
     Vector3 subStepVelocity = Vector3Scale(velocity, deltaTime / subSteps);
 
     for (int i = 0; i < subSteps; i++)
@@ -108,19 +108,33 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
         Vector3 response;
         if (collisionManager.CheckCollision(m_player->GetCollision(), response))
         {
-            // Проєктуємо рух по площині колізії
-            subStepVelocity = Vector3Subtract(
-                subStepVelocity,
-                Vector3Scale(response,
-                             Vector3DotProduct(subStepVelocity, Vector3Normalize(response))));
-            targetPos = Vector3Add(workingPos, subStepVelocity);
+            HandleCollisionVelocity(response);
 
+            // If this is ground (Y dominates), apply only vertical correction
+            Vector3 mtvToApply = response;
+            if (fabs(response.y) >= fabs(response.x) && fabs(response.y) >= fabs(response.z))
+            {
+                mtvToApply = {0.0f, response.y, 0.0f};
+            }
+
+            // Minimal push to exit collision
+            targetPos = Vector3Add(workingPos, Vector3Scale(mtvToApply, 1.01f));
             SetPosition(targetPos);
             m_player->UpdatePlayerBox();
+
+            // Adjust remaining velocity for this substep
+            Vector3 movementDir = Vector3Normalize(subStepVelocity);
+            float vn = Vector3DotProduct(subStepVelocity, Vector3Normalize(response));
+            subStepVelocity =
+                Vector3Subtract(subStepVelocity, Vector3Scale(Vector3Normalize(response), vn));
         }
 
-        workingPos = targetPos;
+        workingPos = GetPosition(); // after correction
     }
+
+    // After all substeps, snap to ground if needed
+    if (!m_physics.IsGrounded())
+        SnapToGround(collisionManager);
 
     return workingPos;
 }
@@ -129,20 +143,29 @@ void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseNormal)
 {
     Vector3 velocity = m_physics.GetVelocity();
 
+    // Ground
     if (responseNormal.y > 0.7f)
     {
-        if (m_physics.GetVelocity().y <= 0.0f)
+        // Only reset falling
+        if (velocity.y <= 0.0f)
         {
             velocity.y = 0.0f;
             m_physics.SetGroundLevel(true);
-            TraceLog(LOG_INFO, "Floor collision - landing");
+
+            // Minimal push to keep player on the surface
+            Vector3 pos = GetPosition();
+            pos.y += 0.01f; // small lift
+            SetPosition(pos);
         }
+        return;
     }
-    else if (responseNormal.y < -0.7f)
+
+    // Ceiling
+    if (responseNormal.y < -0.7f)
     {
         velocity.y = 0.0f;
-        TraceLog(LOG_INFO, "Ceiling collision");
     }
+    // Walls
     else
     {
         float vn = Vector3DotProduct(velocity, responseNormal);
@@ -157,53 +180,48 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
     Vector3 velocity = m_physics.GetVelocity();
     Vector3 position = GetPosition();
 
+    // If moving up, not grounded
     if (velocity.y > 0.0f)
     {
         m_physics.SetGroundLevel(false);
         return;
     }
 
-    const float SNAP_DISTANCE = 0.35f;
+    const float SNAP_DISTANCE = 0.2f;
     const float EPS = 0.02f;
 
-    bool grounded = false;
-    Vector3 bestPos = position;
+    // Check point below the player
+    Vector3 checkPos = position;
+    checkPos.y -= SNAP_DISTANCE;
 
-    // Масив з точками перевірки: центр + два боки (можна додати всі 4 кути)
-    Vector3 checkOffsets[] = {
-        {0, -SNAP_DISTANCE, 0},     // центр
-        {0.25f, -SNAP_DISTANCE, 0}, // правий край
-        {-0.25f, -SNAP_DISTANCE, 0} // лівий край
-    };
-
-    for (auto &offset : checkOffsets)
-    {
-        Vector3 checkPos = position + offset;
-
-        SetPosition(checkPos);
-        m_player->UpdatePlayerBox();
-
-        Vector3 response;
-        bool foundGround = collisionManager.CheckCollision(m_player->GetCollision(), response);
-
-        if (foundGround && response.y > 0.01f && response.y <= SNAP_DISTANCE)
-        {
-            bestPos.y = checkPos.y + response.y + EPS;
-            grounded = true;
-            break; // досить хоча б однієї опори
-        }
-    }
-
-    // Повертаємося в кінцеву позицію
-    SetPosition(grounded ? bestPos : position);
+    SetPosition(checkPos);
     m_player->UpdatePlayerBox();
 
-    if (grounded)
+    Vector3 response;
+    bool collide = collisionManager.CheckCollision(m_player->GetCollision(), response);
+
+    // Return to original position
+    SetPosition(position);
+    m_player->UpdatePlayerBox();
+
+    if (collide)
     {
-        velocity.y = 0.0f;
-        m_physics.SetVelocity(velocity);
-        m_physics.SetGroundLevel(true);
-        TraceLog(LOG_INFO, "Snapped to ground (%.3f)", bestPos.y);
+        // Use only Y component of MTV for ground snap
+        if (fabs(response.y) >= fabs(response.x) && fabs(response.y) >= fabs(response.z))
+        {
+            position.y += response.y + EPS; // only vertical snap
+            SetPosition(position);
+            m_player->UpdatePlayerBox();
+
+            velocity.y = 0.0f;
+            m_physics.SetVelocity(velocity);
+            m_physics.SetGroundLevel(true);
+        }
+        else
+        {
+            // If wall/edge, do not set ground
+            m_physics.SetGroundLevel(false);
+        }
     }
     else
     {

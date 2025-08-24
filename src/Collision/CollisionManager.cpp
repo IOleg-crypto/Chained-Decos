@@ -76,6 +76,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         Vector3 colliderMin = collider.GetMin();
         Vector3 colliderMax = collider.GetMax();
 
+        // 1. Знаходимо overlap по кожній осі
         float overlapX = fminf(playerMax.x, colliderMax.x) - fmaxf(playerMin.x, colliderMin.x);
         float overlapY = fminf(playerMax.y, colliderMax.y) - fmaxf(playerMin.y, colliderMin.y);
         float overlapZ = fminf(playerMax.z, colliderMax.z) - fmaxf(playerMin.z, colliderMin.z);
@@ -83,29 +84,40 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
             continue;
 
-        // Обчислюємо напрям MTV
-        float dx = ((playerMin.x + playerMax.x) / 2 < (colliderMin.x + colliderMax.x) / 2)
-                       ? -overlapX
-                       : overlapX;
-        float dy = ((playerMin.y + playerMax.y) / 2 < (colliderMin.y + colliderMax.y) / 2)
-                       ? -overlapY
-                       : overlapY;
-        float dz = ((playerMin.z + playerMax.z) / 2 < (colliderMin.z + colliderMax.z) / 2)
-                       ? -overlapZ
-                       : overlapZ;
+        // 2. Визначаємо найменший overlap
+        float minOverlap = fabsf(overlapX);
+        int axis = 0; // 0 - x, 1 - y, 2 - z
 
-        Vector3 mtv = {dx, dy, dz};
-        Vector3 normal = Vector3Normalize(mtv);
-
-        // Підлога або стеля
-        if (fabsf(normal.y) > 0.7f)
+        if (fabsf(overlapY) < minOverlap)
         {
-            mtv.x = 0; // залишаємо горизонтальну складову
-            mtv.z = 0;
+            minOverlap = fabsf(overlapY);
+            axis = 1;
+        }
+        if (fabsf(overlapZ) < minOverlap)
+        {
+            minOverlap = fabsf(overlapZ);
+            axis = 2;
+        }
+
+        // 3. Формуємо MTV тільки по цій осі
+        Vector3 mtv = {0, 0, 0};
+        if (axis == 0)
+        {
+            mtv.x = ((playerMin.x + playerMax.x) / 2 < (colliderMin.x + colliderMax.x) / 2)
+                        ? -minOverlap
+                        : minOverlap;
+        }
+        else if (axis == 1)
+        {
+            mtv.y = ((playerMin.y + playerMax.y) / 2 < (colliderMin.y + colliderMax.y) / 2)
+                        ? -minOverlap
+                        : minOverlap;
         }
         else
         {
-            mtv.y = 0; // для стін проєктуємо вертикаль
+            mtv.z = ((playerMin.z + playerMax.z) / 2 < (colliderMin.z + colliderMax.z) / 2)
+                        ? -minOverlap
+                        : minOverlap;
         }
 
         // Пом’якшення відштовхування

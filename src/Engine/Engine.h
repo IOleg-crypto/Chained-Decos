@@ -122,6 +122,8 @@ private:
     // Debug State
     bool m_showDebug;
     bool m_showCollisionDebug;
+    // For engine init
+    bool m_isEngineInit;
 };
 
 #endif // ENGINE_H

@@ -23,7 +23,7 @@ Engine::Engine() : Engine(800, 600) {}
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"), m_menu(),
       m_showMenu(true), m_shouldExit(false), m_windowInitialized(false), m_showDebug(false),
-      m_showCollisionDebug(false)
+      m_showCollisionDebug(false), m_isEngineInit(false)
 {
     // Improved validation using local constants
     constexpr int DEFAULT_SCREEN_WIDTH = 800;
@@ -94,8 +94,11 @@ void Engine::Init()
     InitCollisions();
     InitInput();
 
+    m_player.GetMovement()->SetCollisionManager(&m_collisionManager);
     m_player.UpdatePlayerBox();
     m_player.UpdatePlayerCollision();
+
+    m_isEngineInit = true;
 
     if (!m_collisionManager.GetColliders().empty())
     {
@@ -111,6 +114,7 @@ void Engine::Init()
 
         m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
         m_player.GetPhysics().SetGroundLevel(false);
+
         m_player.SnapToGroundIfNeeded(m_collisionManager);
 
         TraceLog(LOG_INFO, "Player positioned safely at: (%.2f, %.2f, %.2f)", safePosition.x,
@@ -694,18 +698,19 @@ void Engine::HandlePlayerCollision()
         return;
     }
 
-    // Check for collisions and get response vector
-    Vector3 response = {};
-    bool isColliding = m_collisionManager.CheckCollision(m_player.GetCollision(), response);
+    // // Check for collisions and get response vector
+    // Vector3 response = {};
+    // bool isColliding = m_collisionManager.CheckCollision(m_player.GetCollision(), response);
 
-    // Apply collision response if needed
-    if (isColliding)
-    {
-        TraceLog(LOG_INFO, "Collision detected, applying response: (%.2f, %.2f, %.2f)", response.x,
-                 response.y, response.z);
-        m_player.Move(response);
-        m_player.GetPhysics().SetVelocity(Vector3Zero());
-    }
+    // // Apply collision response if needed
+    // if (isColliding)
+    // {
+    //     TraceLog(LOG_INFO, "Collision detected, applying response: (%.2f, %.2f, %.2f)",
+    //     response.x,
+    //              response.y, response.z);
+    //     m_player.Move(response);
+    //     m_player.GetPhysics().SetVelocity(Vector3Zero());
+    // }
 }
 
 void Engine::UpdatePhysics()
@@ -858,10 +863,17 @@ void Engine::Render()
 
         m_player.SetPlayerPosition(m_player.DEFAULT_SPAWN_POSITION);
         m_player.GetPhysics().SetVelocity({0, 0, 0});
-        m_player.GetPhysics().SetGroundLevel(false);
         m_player.UpdatePlayerBox();
         m_player.UpdatePlayerCollision();
 
+        if (m_isEngineInit)
+        {
+            m_player.GetPhysics().SetGroundLevel(false);
+        }
+        else
+        {
+            m_player.GetPhysics().SetGroundLevel(true);
+        }
         if (!m_collisionManager.GetColliders().empty())
         {
             TraceLog(LOG_INFO, "Applying initial gravity with %zu colliders",
