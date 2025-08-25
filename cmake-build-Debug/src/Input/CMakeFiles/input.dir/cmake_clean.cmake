@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/input.dir/InputManager.cpp.obj"
-  "CMakeFiles/input.dir/InputManager.cpp.obj.d"
   "input.lib"
   "input.pdb"
 )

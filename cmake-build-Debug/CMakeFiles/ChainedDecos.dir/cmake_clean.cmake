@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/ChainedDecos.dir/src/main.cpp.obj"
-  "CMakeFiles/ChainedDecos.dir/src/main.cpp.obj.d"
   "ChainedDecos.exe"
   "ChainedDecos.exe.manifest"
   "ChainedDecos.lib"

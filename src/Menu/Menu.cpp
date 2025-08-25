@@ -8,18 +8,57 @@
 
 #include <iostream>
 
+Menu::Menu()
+{
+    m_mainMenu = {{{.label = "Start Game", .action = MenuAction::StartGame},
+                   {.label = "Options", .action = MenuAction::OpenOptions},
+                   {.label = "Credits", .action = MenuAction::OpenCredits},
+                   {.label = "Quit", .action = MenuAction::ExitGame}}};
+
+    m_optionsMenu = {{{.label = "Video", .action = MenuAction::OpenVideoMode},
+                      {.label = "Audio", .action = MenuAction::OpenAudio},
+                      {.label = "Controls", .action = MenuAction::OpenControls},
+                      {.label = "Back", .action = MenuAction::BackToMainMenu}}};
+
+    m_SetGameMode = {{{.label = "Singleplayer", .action = MenuAction::SinglePlayer},
+                      {.label = "Multiplayer", .action = MenuAction::MultiPlayer},
+                      {.label = "Back", .action = MenuAction::BackToMainMenu}}};
+
+    m_videoMenu = {{.label = "Resolution", .action = MenuAction::None},
+                   {.label = "Fullscreen", .action = MenuAction::None},
+                   {.label = "VSync", .action = MenuAction::None},
+                   {.label = "Back", .action = MenuAction::BackToMainMenu}};
+
+    m_audioMenu = {{.label = "Master Volume", .action = MenuAction::None},
+                   {.label = "Music Volume", .action = MenuAction::None},
+                   {.label = "SFX Volume", .action = MenuAction::None},
+                   {.label = "Back", .action = MenuAction::BackToMainMenu}};
+
+    m_controlsMenu = {{.label = "Rebind Keys", .action = MenuAction::None},
+                      {.label = "Invert Y Axis", .action = MenuAction::None},
+                      {.label = "Back", .action = MenuAction::BackToMainMenu}};
+}
 void Menu::Update()
 {
     switch (m_state)
     {
     case MenuState::Main:
-        m_currentMenu = mainMenu;
+        m_currentMenu = m_mainMenu;
         break;
     case MenuState::Options:
-        m_currentMenu = optionsMenu;
+        m_currentMenu = m_optionsMenu;
         break;
     case MenuState::GameMode:
-        m_currentMenu = SetGameMode;
+        m_currentMenu = m_SetGameMode;
+        break;
+    case MenuState::Video:
+        m_currentMenu = m_videoMenu;
+        break;
+    case MenuState::Audio:
+        m_currentMenu = m_audioMenu;
+        break;
+    case MenuState::Controls:
+        m_currentMenu = m_controlsMenu;
         break;
     default:
         break;
@@ -36,8 +75,19 @@ void Menu::Update()
         m_selected = (m_selected + 1) % m_currentMenu.size();
     if (IsKeyPressed(KEY_UP))
         m_selected = (m_selected + m_currentMenu.size() - 1) % m_currentMenu.size();
+    if (IsKeyPressed(KEY_TAB))
+        m_selected = (m_selected + 1) % m_currentMenu.size();
+    if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_TAB))
+        m_selected = (m_selected + m_currentMenu.size() - 1) % m_currentMenu.size();
     if (IsKeyPressed(KEY_ENTER))
         m_action = m_currentMenu[m_selected].action;
+    if (IsKeyPressed(KEY_ESCAPE))
+    {
+        if (m_state == MenuState::Options || m_state == MenuState::GameMode)
+            m_state = MenuState::Main;
+        else if (m_state == MenuState::Main)
+            m_action = MenuAction::ExitGame;
+    }
 
     for (size_t i = 0; i < m_currentMenu.size(); ++i)
     {
@@ -67,8 +117,21 @@ void Menu::Update()
     case MenuAction::OpenOptions:
         m_state = MenuState::Options;
         break;
+    case MenuAction::OpenVideoMode:
+        m_state = MenuState::Video;
+        break;
+    case MenuAction::OpenAudio:
+        m_state = MenuState::Audio;
+        break;
+    case MenuAction::OpenControls:
+        m_state = MenuState::Controls;
+        break;
     case MenuAction::BackToMainMenu:
-        m_state = MenuState::Main;
+        if (m_state == MenuState::Video || m_state == MenuState::Audio ||
+            m_state == MenuState::Controls)
+            m_state = MenuState::Options;
+        else
+            m_state = MenuState::Main;
         break;
     case MenuAction::ExitGame:
         TraceLog(LOG_INFO, "Exit requested");
@@ -124,6 +187,35 @@ void Menu::Render() const
 
     for (size_t i = 0; i < currentMenu.size(); ++i)
     {
+        // Section headers for better organization
+        if (m_state == MenuState::Options)
+        {
+            if (i == 0)
+            {
+                // Settings header
+                const char *section = "Settings";
+                int sectionW = MeasureText(section, 24);
+                DrawText(section, GetScreenWidth() / 2 - sectionW / 2, kStartY - 40, 24,
+                         Fade(RAYWHITE, 0.8f));
+                DrawLine(GetScreenWidth() / 2 - kBtnW / 2, kStartY - 10,
+                         GetScreenWidth() / 2 + kBtnW / 2, kStartY - 10, Fade(RAYWHITE, 0.3f));
+            }
+            if (i == currentMenu.size() - 1)
+            {
+                // Divider before 'Back'
+                DrawLine(GetScreenWidth() / 2 - kBtnW / 2, kStartY + int(i) * kSpacing - 15,
+                         GetScreenWidth() / 2 + kBtnW / 2, kStartY + int(i) * kSpacing - 15,
+                         Fade(RAYWHITE, 0.2f));
+            }
+        }
+        if (m_state == MenuState::Main && i == currentMenu.size() - 1)
+        {
+            // Divider before 'Quit'
+            DrawLine(GetScreenWidth() / 2 - kBtnW / 2, kStartY + int(i) * kSpacing - 15,
+                     GetScreenWidth() / 2 + kBtnW / 2, kStartY + int(i) * kSpacing - 15,
+                     Fade(ORANGE, 0.2f));
+        }
+
         int baseX = GetScreenWidth() / 2 - kBtnW / 2;
         int baseY = kStartY + int(i) * kSpacing;
         Rectangle baseRect = {(float)baseX, (float)baseY, (float)kBtnW, (float)kBtnH};
@@ -149,7 +241,7 @@ void Menu::Render() const
         {
             topColor = {.r = 255, .g = 240, .b = 200, .a = 255};
             bottomColor = {.r = 220, .g = 175, .b = 90, .a = 255};
-            borderColor = {.r = 40, .g = 30, .b = 20, .a = 255};
+            borderColor = ORANGE;
         }
         else if (hovered)
         {
@@ -176,7 +268,18 @@ void Menu::Render() const
         int glossH = (int)(h * 0.40f);
         DrawRectangle(x + 1, y + 1, w - 2, glossH, Fade(WHITE, 0.06f));
 
-        DrawRectangleLinesEx(btnRect, 2, borderColor);
+        // Thicker border and glow for selected
+        if (selected)
+        {
+            DrawRectangleLinesEx(btnRect, 4, borderColor);
+            DrawRectangleLinesEx(
+                (Rectangle){btnRect.x - 4, btnRect.y - 4, btnRect.width + 8, btnRect.height + 8}, 2,
+                Fade(borderColor, 0.3f));
+        }
+        else
+        {
+            DrawRectangleLinesEx(btnRect, 2, borderColor);
+        }
 
         int fontSize = 28;
         int textW = MeasureText(currentMenu[i].label, fontSize);
@@ -186,6 +289,11 @@ void Menu::Render() const
         DrawText(currentMenu[i].label, textX + 2, textY + 2, fontSize, Fade(BLACK, 0.7f));
         DrawText(currentMenu[i].label, textX, textY, fontSize, RAYWHITE);
     }
+
+    // Draw footer with keyboard/mouse hints
+    const char *footer = "[Enter] Select   [Esc] Back   [↑/↓] Navigate   [Mouse] Click";
+    int fw = MeasureText(footer, 24);
+    DrawText(footer, GetScreenWidth() / 2 - fw / 2, GetScreenHeight() - 40, 24, GRAY);
 }
 
 MenuAction Menu::GetAction() const { return m_action; }

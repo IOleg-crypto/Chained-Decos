@@ -1,0 +1,1891 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="ChainedDecos"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\cmake-build-debug\;CMake Files\cmake-build-debug\_deps\;CMake Files\cmake-build-debug\_deps\raylib-src\;CMake Files\cmake-build-debug\_deps\raylib-src\cmake\;CMake Files\cmake-build-debug\_deps\raylib-src\src\;CMake Files\cmake-build-debug\_deps\raylib-src\src\external\;CMake Files\cmake-build-debug\_deps\raylib-src\src\external\glfw\;CMake Files\cmake-build-debug\_deps\raylib-src\src\external\glfw\CMake\;CMake Files\cmake-build-debug\_deps\raylib-src\src\external\glfw\src\;CMake Files\cmake-build-debug\_deps\nlohmann_json-src\;CMake Files\cmake-build-debug\_deps\nlohmann_json-src\cmake\;CMake Files\cmake-build-debug\_deps\googletest-src\;CMake Files\cmake-build-debug\_deps\googletest-src\googlemock\;CMake Files\cmake-build-debug\_deps\googletest-src\googletest\;CMake Files\cmake-build-debug\_deps\googletest-src\googletest\cmake\;CMake Files\src\;CMake Files\src\Engine\;CMake Files\src\Player\;CMake Files\src\Model\;CMake Files\src\Menu\;CMake Files\src\Input\;CMake Files\src\Map\;CMake Files\src\CameraController\;CMake Files\src\Color\;CMake Files\src\World\;CMake Files\src\Collision\;CMake Files\src\Render\;CMake Files\src\MapEditor\;CMake Files\tests\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="imguilib">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/libimguilib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 imguilib"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="imguilib/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/libimguilib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 imguilib/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ChainedDecos">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/ChainedDecos.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 ChainedDecos"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ChainedDecos/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/ChainedDecos.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 ChainedDecos/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="package">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 package"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="package_source">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 package_source"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="list_install_components">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 list_install_components"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 install"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/local">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 install/local"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/strip">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 install/strip"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="uninstall">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/Makefile&quot;  VERBOSE=1 uninstall"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="raylib">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/libraylib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/Makefile&quot;  VERBOSE=1 raylib"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="raylib/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/libraylib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/Makefile&quot;  VERBOSE=1 raylib/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glfw">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/glfw.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D_GLFW_WIN32"/>
+					<Add option="-DUNICODE"/>
+					<Add option="-D_UNICODE"/>
+					<Add option="-DWINVER=0x0501"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 glfw"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glfw/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/glfw.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D_GLFW_WIN32"/>
+					<Add option="-DUNICODE"/>
+					<Add option="-D_UNICODE"/>
+					<Add option="-DWINVER=0x0501"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 glfw/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="update_mappings">
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 update_mappings"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gmock">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/lib/libgmock.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 gmock"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gmock/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/lib/libgmock.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 gmock/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gmock_main">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/lib/libgmock_main.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 gmock_main"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gmock_main/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/lib/libgmock_main.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 gmock_main/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googlemock/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gtest">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/lib/libgtest.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 gtest"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gtest/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/lib/libgtest.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 gtest/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gtest_main">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/lib/libgtest_main.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 gtest_main"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gtest_main/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/lib/libgtest_main.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 gtest_main/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-build/googletest/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="engine">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/libengine.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Engine"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Makefile&quot;  VERBOSE=1 engine"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="engine/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/libengine.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Engine"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Makefile&quot;  VERBOSE=1 engine/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="player">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Player/libplayer.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Player"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Player/Makefile&quot;  VERBOSE=1 player"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Player/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Player/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Player/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="player/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Player/libplayer.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Player"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Player/Makefile&quot;  VERBOSE=1 player/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Player/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Player/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Player/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="model">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Model/libmodel.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Model"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Model/Makefile&quot;  VERBOSE=1 model"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Model/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Model/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Model/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="model/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Model/libmodel.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Model"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Model/Makefile&quot;  VERBOSE=1 model/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Model/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Model/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Model/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="menu">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/libmenu.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Menu"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/Makefile&quot;  VERBOSE=1 menu"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="menu/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/libmenu.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Menu"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/Makefile&quot;  VERBOSE=1 menu/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Menu/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="input">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Input/libinput.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Input"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Input/Makefile&quot;  VERBOSE=1 input"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Input/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Input/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Input/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="input/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Input/libinput.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Input"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Input/Makefile&quot;  VERBOSE=1 input/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Input/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Input/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Input/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="mapmod">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Map/libmapmod.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Map"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Map/Makefile&quot;  VERBOSE=1 mapmod"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Map/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Map/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Map/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="mapmod/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Map/libmapmod.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Map"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Map/Makefile&quot;  VERBOSE=1 mapmod/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Map/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Map/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Map/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="cameracontroller">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/libcameracontroller.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/Makefile&quot;  VERBOSE=1 cameracontroller"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="cameracontroller/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/libcameracontroller.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/Makefile&quot;  VERBOSE=1 cameracontroller/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/CameraController/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="color">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Color/libcolor.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Color"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Color/Makefile&quot;  VERBOSE=1 color"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Color/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Color/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Color/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="color/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Color/libcolor.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Color"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Color/Makefile&quot;  VERBOSE=1 color/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Color/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Color/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Color/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="world">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/World/libworld.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/World"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/World/Makefile&quot;  VERBOSE=1 world"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/World/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/World/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/World/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="world/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/World/libworld.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/World"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/World/Makefile&quot;  VERBOSE=1 world/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/World/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/World/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/World/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="collision">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/libcollision.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Collision"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/Makefile&quot;  VERBOSE=1 collision"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="collision/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/libcollision.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Collision"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/Makefile&quot;  VERBOSE=1 collision/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Collision/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="render">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Render/librender.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Render"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Render/Makefile&quot;  VERBOSE=1 render"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Render/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Render/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Render/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="render/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/Render/librender.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/Render"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Render/Makefile&quot;  VERBOSE=1 render/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Render/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Render/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/Render/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="unit_tests">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/tests/unit_tests.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/tests"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/tests/../src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/tests/Makefile&quot;  VERBOSE=1 unit_tests"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/tests/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/tests/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/tests/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="unit_tests/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/tests/unit_tests.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/tests"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/tests/../src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/tests/Makefile&quot;  VERBOSE=1 unit_tests/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/tests/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/tests/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/tests/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ChainedDecosMapEditor">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/ChainedDecosMapEditor.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/Makefile&quot;  VERBOSE=1 ChainedDecosMapEditor"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ChainedDecosMapEditor/fast">
+				<Option output="D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/ChainedDecosMapEditor.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DPROJECT_ROOT_DIR=&quot;D:/gitnext/Chained Decos&quot;"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-DPLATFORM_DESKTOP"/>
+					<Add option="-DGRAPHICS_API_OPENGL_33"/>
+					<Add directory="D:/gitnext/Chained Decos/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include"/>
+					<Add directory="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include"/>
+					<Add directory="D:/gitnext/Chained Decos/include/imgui"/>
+					<Add directory="D:/gitnext/Chained Decos/include/rlImGui"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/x86_64-w64-mingw32"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include/c++/14.2.0/backward"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../include"/>
+					<Add directory="C:/msys64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/Makefile&quot;  VERBOSE=1 ChainedDecosMapEditor/fast"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/src/gmock-all.cc">
+			<Option target="gmock"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/src/gmock_main.cc">
+			<Option target="gmock_main"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/src/gtest-all.cc">
+			<Option target="gtest"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/src/gtest_main.cc">
+			<Option target="gtest_main"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/CMake/GenerateMappings.cmake">
+			<Option target="update_mappings"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include/GLFW/glfw3.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/include/GLFW/glfw3native.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/context.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/egl_context.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/init.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/input.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/internal.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/mappings.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/mappings.h.in">
+			<Option target="update_mappings"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/monitor.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_init.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_joystick.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_joystick.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_monitor.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_platform.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/null_window.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/osmesa_context.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/platform.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/platform.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/vulkan.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/wgl_context.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_init.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_joystick.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_joystick.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_module.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_monitor.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_platform.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_thread.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_thread.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_time.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_time.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/win32_window.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/window.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/raudio.c">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/raylib.h">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/raymath.h">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rcore.c">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rlgl.h">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rmodels.c">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rshapes.c">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rtext.c">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/rtextures.c">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/utils.c">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/utils.h">
+			<Option target="raylib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imgui.cpp">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imgui.h">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imgui_demo.cpp">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imgui_draw.cpp">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imgui_internal.h">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imgui_tables.cpp">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imgui_widgets.cpp">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imstb_rectpack.h">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/imstb_truetype.h">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.h">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/raygui/src/raygui.h">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/rlImGui/imgui_impl_raylib.h">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/rlImGui/rlImGui.cpp">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/include/rlImGui/rlImGui.h">
+			<Option target="imguilib"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/CameraController/CameraController.cpp">
+			<Option target="cameracontroller"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/CameraController/CameraController.h">
+			<Option target="cameracontroller"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CollisionDebugRenderer.cpp">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CollisionDebugRenderer.h">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CollisionManager.cpp">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CollisionManager.h">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CollisionStructures.cpp">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CollisionStructures.h">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CollisionSystem.cpp">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CollisionSystem.h">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/Octree.cpp">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/Octree.h">
+			<Option target="collision"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Color/ColorParser.cpp">
+			<Option target="color"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Color/ColorParser.h">
+			<Option target="color"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Engine/Engine.cpp">
+			<Option target="engine"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Engine/Engine.h">
+			<Option target="engine"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Input/InputManager.cpp">
+			<Option target="input"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Input/InputManager.h">
+			<Option target="input"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Map/MapLoader.cpp">
+			<Option target="mapmod"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Map/MapLoader.h">
+			<Option target="mapmod"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Application.cpp">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Application.h">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.h">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.cpp">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.h">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.cpp">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.h">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.h">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.cpp">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.h">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/main.cpp">
+			<Option target="ChainedDecosMapEditor"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Menu/Menu.cpp">
+			<Option target="menu"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Menu/Menu.h">
+			<Option target="menu"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/Animation.cpp">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/Animation.h">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/JsonHelper.cpp">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/JsonHelper.h">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/Model.cpp">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/Model.h">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/ModelCache.cpp">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/ModelCache.h">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/ModelConfig.h">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/ModelInstance.cpp">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/ModelInstance.h">
+			<Option target="model"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/Player.cpp">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/Player.h">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/PlayerCollision.cpp">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/PlayerCollision.h">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/PlayerInput.cpp">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/PlayerInput.h">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/PlayerModel.h">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/PlayerMovement.cpp">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/PlayerMovement.h">
+			<Option target="player"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Render/RenderManager.cpp">
+			<Option target="render"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Render/RenderManager.h">
+			<Option target="render"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/World/Physics.cpp">
+			<Option target="world"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/World/Physics.h">
+			<Option target="world"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/main.cpp">
+			<Option target="ChainedDecos"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/tests/gtest.cpp">
+			<Option target="unit_tests"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/CMakeOptions.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/raylib.pc.in">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/AddIfFlagCompiles.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/CompileDefinitions.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/CompilerFlags.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/EnumOption.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/GlfwImport.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/InstallConfigurations.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/JoinPaths.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/LibraryConfigurations.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/PackConfigurations.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/ParseConfigHeader.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/Uninstall.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/cmake/raylib-config-version.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\src\external\glfw\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\src\external\glfw\CMake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\src\external\glfw\CMake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src/src/external/glfw/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\raylib-src\src\external\glfw\src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\nlohmann_json-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/cmake/config.cmake.in">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\nlohmann_json-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\nlohmann_json-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/cmake/pkg-config.pc.in">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\nlohmann_json-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\googletest-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googlemock/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\googletest-src\googlemock\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\googletest-src\googletest\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/cmake-build-debug/_deps/googletest-src/googletest/cmake/internal_utils.cmake">
+			<Option virtualFolder="CMake Files\cmake-build-debug\_deps\googletest-src\googletest\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Engine/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Engine\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Player\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Model\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Menu/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Menu\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Input/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Input\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Map/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Map\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/CameraController/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\CameraController\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Color/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Color\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/World/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\World\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Collision\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Render/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Render\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/MapEditor/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\MapEditor\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tests\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

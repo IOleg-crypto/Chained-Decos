@@ -55,6 +55,7 @@ public:
 
 private:
     std::vector<Collision> m_collisions; // List of all collision boxes
+
     // Collision cache to prevent rebuilding octrees for same models
     std::unordered_map<std::string, std::shared_ptr<Collision>> m_collisionCache;
 

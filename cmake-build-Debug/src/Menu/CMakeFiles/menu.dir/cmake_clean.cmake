@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/menu.dir/Menu.cpp.obj"
-  "CMakeFiles/menu.dir/Menu.cpp.obj.d"
   "menu.lib"
   "menu.pdb"
 )
