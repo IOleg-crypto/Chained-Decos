@@ -4,15 +4,36 @@ set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
 
 # The set of languages for which implicit dependencies are needed:
 set(CMAKE_DEPENDS_LANGUAGES
+  "CXX"
+  )
+# The set of files for implicit dependencies of each language:
+set(CMAKE_DEPENDS_CHECK_CXX
+  "D:/gitnext/Chained Decos/src/Player/Player.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/Player/CMakeFiles/player.dir/Player.cpp.obj"
+  "D:/gitnext/Chained Decos/src/Player/PlayerCollision.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj"
+  "D:/gitnext/Chained Decos/src/Player/PlayerInput.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj"
+  "D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj"
+  "D:/gitnext/Chained Decos/src/Player/PlayerMovement.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj"
+  )
+set(CMAKE_CXX_COMPILER_ID "Clang")
+
+# Preprocessor definitions for this target.
+set(CMAKE_TARGET_DEFINITIONS_CXX
+  "GRAPHICS_API_OPENGL_33"
+  "PLATFORM_DESKTOP"
+  "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
+  "_CRT_SECURE_NO_WARNINGS"
+  )
+
+# The include file search paths:
+set(CMAKE_CXX_TARGET_INCLUDE_PATH
+  "D:/gitnext/Chained Decos/src"
+  "_deps/raylib-src/src"
+  "_deps/raylib-src/src/external/glfw/include"
+  "_deps/nlohmann_json-src/include"
   )
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "D:/gitnext/Chained Decos/src/Player/Player.cpp" "src/Player/CMakeFiles/player.dir/Player.cpp.obj" "gcc" "src/Player/CMakeFiles/player.dir/Player.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/Player/PlayerCollision.cpp" "src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj" "gcc" "src/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/Player/PlayerInput.cpp" "src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj" "gcc" "src/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp" "src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj" "gcc" "src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/Player/PlayerMovement.cpp" "src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj" "gcc" "src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

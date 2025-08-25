@@ -36,6 +36,9 @@ enum class MenuState : uint8_t
     Main,
     GameMode,
     Options,
+    Video,    // new
+    Audio,    // new
+    Controls, // new
     Credits,
     Mods
 };
@@ -46,22 +49,6 @@ struct MenuItem
     MenuAction action;
 };
 
-static std::vector<MenuItem> mainMenu = {{{.label = "Start Game", .action = MenuAction::StartGame},
-                                          {.label = "Options", .action = MenuAction::OpenOptions},
-                                          {.label = "Credits", .action = MenuAction::OpenCredits},
-                                          {.label = "Quit", .action = MenuAction::ExitGame}}};
-
-static std::vector<MenuItem> optionsMenu = {
-    {{.label = "Video", .action = MenuAction::OpenVideoMode},
-     {.label = "Audio", .action = MenuAction::OpenAudio},
-     {.label = "Controls", .action = MenuAction::OpenControls},
-     {.label = "Back", .action = MenuAction::BackToMainMenu}}};
-
-static std::vector<MenuItem> SetGameMode = {
-    {{.label = "Singleplayer", .action = MenuAction::SinglePlayer},
-     {.label = "Multiplayer", .action = MenuAction::MultiPlayer},
-     {.label = "Back", .action = MenuAction::BackToMainMenu}}};
-
 class Menu
 {
 private:
@@ -71,6 +58,17 @@ private:
     std::vector<float> m_buttonScales;
     std::vector<MenuItem> m_currentMenu;
     Engine *m_engine;
+
+public:
+    std::vector<MenuItem> m_mainMenu;
+    std::vector<MenuItem> m_optionsMenu;
+    std::vector<MenuItem> m_SetGameMode;
+    std::vector<MenuItem> m_videoMenu;
+    std::vector<MenuItem> m_audioMenu;
+    std::vector<MenuItem> m_controlsMenu;
+
+public:
+    Menu();
 
 public:
     void Update();

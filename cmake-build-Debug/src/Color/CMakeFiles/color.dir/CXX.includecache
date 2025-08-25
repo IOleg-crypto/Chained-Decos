@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+D:/gitnext/Chained Decos/src/Color/ColorParser.cpp
+ColorParser.h
+D:/gitnext/Chained Decos/src/Color/ColorParser.h
+
+D:/gitnext/Chained Decos/src/Color/ColorParser.h
+raylib.h
+-
+string
+-
+unordered_map
+-
+
+_deps/raylib-src/src/raylib.h
+stdarg.h
+-
+stdbool.h
+-
+

@@ -1,10 +1,12 @@
 #include <Collision/CollisionManager.h>
 #include <Model/Model.h>
 #include <algorithm>
+#include <compare>
 #include <raylib.h>
 #include <set>
 #include <string>
 #include <vector>
+
 
 void CollisionManager::Initialize()
 {
@@ -61,7 +63,10 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const
 {
     if (m_collisions.empty())
+    {
+        TraceLog(LOG_INFO, "No collisions");
         return false;
+    }
 
     Vector3 playerMin = playerCollision.GetMin();
     Vector3 playerMax = playerCollision.GetMax();
@@ -229,7 +234,9 @@ std::string CollisionManager::MakeCollisionCacheKey(const std::string &modelName
 {
     // Round scale to 1 decimal place to avoid cache misses for tiny differences
     int scaledInt = static_cast<int>(scale * 10.0f);
-    return modelName + "_s" + std::to_string(scaledInt);
+    std::string key = modelName + "_s" + std::to_string(scaledInt);
+    TraceLog(LOG_INFO, "Generated cache key: %s", key.c_str());
+    return key;
 }
 
 bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::string &modelName,
@@ -258,7 +265,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     }
 
     // --- STEP 2: Check collision cache or create new collision ---
-    std::string cacheKey = modelName;
+    std::string cacheKey = MakeCollisionCacheKey(modelName, scale);
     std::shared_ptr<Collision> cachedCollision;
 
     // Try to find in cache first
@@ -290,8 +297,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         // Check if we've reached the limit for precise collisions for this model
         int &preciseCount = m_preciseCollisionCount[modelName];
 
-        if (preciseCount < MAX_PRECISE_COLLISIONS_PER_MODEL &&
-            strcmp(modelName.c_str(), "arc") == 0) // Only use precise collision for "arc" model
+        if (preciseCount < MAX_PRECISE_COLLISIONS_PER_MODEL) // Only use precise collision for "arc" model
         {
             // Create precise collision with full transformation
             instanceCollision = CreatePreciseInstanceCollision(model, position, scale, config);

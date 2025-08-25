@@ -93,137 +93,165 @@ src/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj: D:/gitnex
   D:/gitnext/Chained\ Decos/src/Collision/CollisionDebugRenderer.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___gnuc_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_arg.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stddef_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stddef_max_align_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_null.h \
-  E:/LLVM/lib/clang/19/include/__stddef_nullptr_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_offsetof.h \
-  E:/LLVM/lib/clang/19/include/__stddef_ptrdiff_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_size_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_wchar_t.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_aes.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_pclmul.h \
-  E:/LLVM/lib/clang/19/include/adcintrin.h \
-  E:/LLVM/lib/clang/19/include/adxintrin.h \
-  E:/LLVM/lib/clang/19/include/ammintrin.h \
-  E:/LLVM/lib/clang/19/include/amxcomplexintrin.h \
-  E:/LLVM/lib/clang/19/include/amxfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/amxintrin.h \
-  E:/LLVM/lib/clang/19/include/avx2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512cdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512dqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmavlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmiintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmivlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlcdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vldqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqvlintrin.h \
-  E:/LLVM/lib/clang/19/include/avxifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avxintrin.h \
-  E:/LLVM/lib/clang/19/include/avxneconvertintrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint16intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint8intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/bmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/bmiintrin.h \
-  E:/LLVM/lib/clang/19/include/cetintrin.h \
-  E:/LLVM/lib/clang/19/include/cldemoteintrin.h \
-  E:/LLVM/lib/clang/19/include/clflushoptintrin.h \
-  E:/LLVM/lib/clang/19/include/clwbintrin.h \
-  E:/LLVM/lib/clang/19/include/clzerointrin.h \
-  E:/LLVM/lib/clang/19/include/cmpccxaddintrin.h \
-  E:/LLVM/lib/clang/19/include/crc32intrin.h \
-  E:/LLVM/lib/clang/19/include/emmintrin.h \
-  E:/LLVM/lib/clang/19/include/enqcmdintrin.h \
-  E:/LLVM/lib/clang/19/include/f16cintrin.h \
-  E:/LLVM/lib/clang/19/include/float.h \
-  E:/LLVM/lib/clang/19/include/fma4intrin.h \
-  E:/LLVM/lib/clang/19/include/fmaintrin.h \
-  E:/LLVM/lib/clang/19/include/fxsrintrin.h \
-  E:/LLVM/lib/clang/19/include/gfniintrin.h \
-  E:/LLVM/lib/clang/19/include/hresetintrin.h \
-  E:/LLVM/lib/clang/19/include/ia32intrin.h \
-  E:/LLVM/lib/clang/19/include/immintrin.h \
-  E:/LLVM/lib/clang/19/include/intrin.h \
-  E:/LLVM/lib/clang/19/include/intrin0.h \
-  E:/LLVM/lib/clang/19/include/invpcidintrin.h \
-  E:/LLVM/lib/clang/19/include/keylockerintrin.h \
-  E:/LLVM/lib/clang/19/include/limits.h \
-  E:/LLVM/lib/clang/19/include/lwpintrin.h \
-  E:/LLVM/lib/clang/19/include/lzcntintrin.h \
-  E:/LLVM/lib/clang/19/include/mm_malloc.h \
-  E:/LLVM/lib/clang/19/include/mmintrin.h \
-  E:/LLVM/lib/clang/19/include/movdirintrin.h \
-  E:/LLVM/lib/clang/19/include/mwaitxintrin.h \
-  E:/LLVM/lib/clang/19/include/pconfigintrin.h \
-  E:/LLVM/lib/clang/19/include/pkuintrin.h \
-  E:/LLVM/lib/clang/19/include/pmmintrin.h \
-  E:/LLVM/lib/clang/19/include/popcntintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchiintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchwintrin.h \
-  E:/LLVM/lib/clang/19/include/ptwriteintrin.h \
-  E:/LLVM/lib/clang/19/include/raointintrin.h \
-  E:/LLVM/lib/clang/19/include/rdpruintrin.h \
-  E:/LLVM/lib/clang/19/include/rdseedintrin.h \
-  E:/LLVM/lib/clang/19/include/rtmintrin.h \
-  E:/LLVM/lib/clang/19/include/serializeintrin.h \
-  E:/LLVM/lib/clang/19/include/sgxintrin.h \
-  E:/LLVM/lib/clang/19/include/sha512intrin.h \
-  E:/LLVM/lib/clang/19/include/shaintrin.h \
-  E:/LLVM/lib/clang/19/include/sm3intrin.h \
-  E:/LLVM/lib/clang/19/include/sm4intrin.h \
-  E:/LLVM/lib/clang/19/include/smmintrin.h \
-  E:/LLVM/lib/clang/19/include/stdarg.h \
-  E:/LLVM/lib/clang/19/include/stdbool.h \
-  E:/LLVM/lib/clang/19/include/stddef.h \
-  E:/LLVM/lib/clang/19/include/stdint.h \
-  E:/LLVM/lib/clang/19/include/tbmintrin.h \
-  E:/LLVM/lib/clang/19/include/tmmintrin.h \
-  E:/LLVM/lib/clang/19/include/tsxldtrkintrin.h \
-  E:/LLVM/lib/clang/19/include/uintrintrin.h \
-  E:/LLVM/lib/clang/19/include/usermsrintrin.h \
-  E:/LLVM/lib/clang/19/include/vadefs.h \
-  E:/LLVM/lib/clang/19/include/vaesintrin.h \
-  E:/LLVM/lib/clang/19/include/vpclmulqdqintrin.h \
-  E:/LLVM/lib/clang/19/include/waitpkgintrin.h \
-  E:/LLVM/lib/clang/19/include/wbnoinvdintrin.h \
-  E:/LLVM/lib/clang/19/include/wmmintrin.h \
-  E:/LLVM/lib/clang/19/include/x86gprintrin.h \
-  E:/LLVM/lib/clang/19/include/x86intrin.h \
-  E:/LLVM/lib/clang/19/include/xmmintrin.h \
-  E:/LLVM/lib/clang/19/include/xopintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavecintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveoptintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavesintrin.h \
-  E:/LLVM/lib/clang/19/include/xtestintrin.h \
-  E:/LLVM/lib/clang/19/include/yvals_core.h
+  E:/LLVM/lib/clang/20/include/__stdarg___gnuc_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stdarg___va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_arg.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stddef_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stddef_max_align_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_null.h \
+  E:/LLVM/lib/clang/20/include/__stddef_nullptr_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_offsetof.h \
+  E:/LLVM/lib/clang/20/include/__stddef_ptrdiff_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_size_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_wchar_t.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_aes.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_pclmul.h \
+  E:/LLVM/lib/clang/20/include/adcintrin.h \
+  E:/LLVM/lib/clang/20/include/adxintrin.h \
+  E:/LLVM/lib/clang/20/include/ammintrin.h \
+  E:/LLVM/lib/clang/20/include/amxavx512intrin.h \
+  E:/LLVM/lib/clang/20/include/amxbf16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplexintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplextransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp8intrin.h \
+  E:/LLVM/lib/clang/20/include/amxintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrsintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrstransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32intrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2copyintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512cdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512dqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmavlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmiintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmivlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlcdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vldqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqvlintrin.h \
+  E:/LLVM/lib/clang/20/include/avxifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avxintrin.h \
+  E:/LLVM/lib/clang/20/include/avxneconvertintrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint16intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint8intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/bmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/bmiintrin.h \
+  E:/LLVM/lib/clang/20/include/cetintrin.h \
+  E:/LLVM/lib/clang/20/include/cldemoteintrin.h \
+  E:/LLVM/lib/clang/20/include/clflushoptintrin.h \
+  E:/LLVM/lib/clang/20/include/clwbintrin.h \
+  E:/LLVM/lib/clang/20/include/clzerointrin.h \
+  E:/LLVM/lib/clang/20/include/cmpccxaddintrin.h \
+  E:/LLVM/lib/clang/20/include/crc32intrin.h \
+  E:/LLVM/lib/clang/20/include/emmintrin.h \
+  E:/LLVM/lib/clang/20/include/enqcmdintrin.h \
+  E:/LLVM/lib/clang/20/include/f16cintrin.h \
+  E:/LLVM/lib/clang/20/include/float.h \
+  E:/LLVM/lib/clang/20/include/fma4intrin.h \
+  E:/LLVM/lib/clang/20/include/fmaintrin.h \
+  E:/LLVM/lib/clang/20/include/fxsrintrin.h \
+  E:/LLVM/lib/clang/20/include/gfniintrin.h \
+  E:/LLVM/lib/clang/20/include/hresetintrin.h \
+  E:/LLVM/lib/clang/20/include/ia32intrin.h \
+  E:/LLVM/lib/clang/20/include/immintrin.h \
+  E:/LLVM/lib/clang/20/include/intrin.h \
+  E:/LLVM/lib/clang/20/include/intrin0.h \
+  E:/LLVM/lib/clang/20/include/invpcidintrin.h \
+  E:/LLVM/lib/clang/20/include/keylockerintrin.h \
+  E:/LLVM/lib/clang/20/include/limits.h \
+  E:/LLVM/lib/clang/20/include/lwpintrin.h \
+  E:/LLVM/lib/clang/20/include/lzcntintrin.h \
+  E:/LLVM/lib/clang/20/include/mm_malloc.h \
+  E:/LLVM/lib/clang/20/include/mmintrin.h \
+  E:/LLVM/lib/clang/20/include/movdirintrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2_512intrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2intrin.h \
+  E:/LLVM/lib/clang/20/include/movrsintrin.h \
+  E:/LLVM/lib/clang/20/include/mwaitxintrin.h \
+  E:/LLVM/lib/clang/20/include/pconfigintrin.h \
+  E:/LLVM/lib/clang/20/include/pkuintrin.h \
+  E:/LLVM/lib/clang/20/include/pmmintrin.h \
+  E:/LLVM/lib/clang/20/include/popcntintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchiintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchwintrin.h \
+  E:/LLVM/lib/clang/20/include/ptwriteintrin.h \
+  E:/LLVM/lib/clang/20/include/raointintrin.h \
+  E:/LLVM/lib/clang/20/include/rdpruintrin.h \
+  E:/LLVM/lib/clang/20/include/rdseedintrin.h \
+  E:/LLVM/lib/clang/20/include/rtmintrin.h \
+  E:/LLVM/lib/clang/20/include/serializeintrin.h \
+  E:/LLVM/lib/clang/20/include/sgxintrin.h \
+  E:/LLVM/lib/clang/20/include/sha512intrin.h \
+  E:/LLVM/lib/clang/20/include/shaintrin.h \
+  E:/LLVM/lib/clang/20/include/sm3intrin.h \
+  E:/LLVM/lib/clang/20/include/sm4evexintrin.h \
+  E:/LLVM/lib/clang/20/include/sm4intrin.h \
+  E:/LLVM/lib/clang/20/include/smmintrin.h \
+  E:/LLVM/lib/clang/20/include/stdarg.h \
+  E:/LLVM/lib/clang/20/include/stdbool.h \
+  E:/LLVM/lib/clang/20/include/stddef.h \
+  E:/LLVM/lib/clang/20/include/stdint.h \
+  E:/LLVM/lib/clang/20/include/tbmintrin.h \
+  E:/LLVM/lib/clang/20/include/tmmintrin.h \
+  E:/LLVM/lib/clang/20/include/tsxldtrkintrin.h \
+  E:/LLVM/lib/clang/20/include/uintrintrin.h \
+  E:/LLVM/lib/clang/20/include/usermsrintrin.h \
+  E:/LLVM/lib/clang/20/include/vadefs.h \
+  E:/LLVM/lib/clang/20/include/vaesintrin.h \
+  E:/LLVM/lib/clang/20/include/vpclmulqdqintrin.h \
+  E:/LLVM/lib/clang/20/include/waitpkgintrin.h \
+  E:/LLVM/lib/clang/20/include/wbnoinvdintrin.h \
+  E:/LLVM/lib/clang/20/include/wmmintrin.h \
+  E:/LLVM/lib/clang/20/include/x86gprintrin.h \
+  E:/LLVM/lib/clang/20/include/x86intrin.h \
+  E:/LLVM/lib/clang/20/include/xmmintrin.h \
+  E:/LLVM/lib/clang/20/include/xopintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavecintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveoptintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavesintrin.h \
+  E:/LLVM/lib/clang/20/include/xtestintrin.h \
+  E:/LLVM/lib/clang/20/include/yvals_core.h
 
 src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.cpp \
+  C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/assert.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_malloc.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_math.h \
@@ -243,10 +271,13 @@ src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: D:/gitnext/Chai
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wstring.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wtime.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/crtdbg.h \
+  C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/ctype.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/errno.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/float.h \
+  C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/locale.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/malloc.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/math.h \
+  C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/share.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/stddef.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/stdio.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/stdlib.h \
@@ -256,15 +287,37 @@ src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: D:/gitnext/Chai
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/time.h \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/wchar.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_bit_utils.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_chrono.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_format_ucd_tables.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_formatter.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_heap_algorithms.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_int128.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_iter_core.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_minmax.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_ostream.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_print.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_ranges_to.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_ranges_tuple_formatter.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_sanitizer_annotate_container.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_string_view.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_system_error_abi.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_threads_core.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_tzdb.hpp \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_xlocinfo_types.hpp \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/algorithm \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/any \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/array \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/atomic \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/bit \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cassert \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cctype \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cerrno \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cfloat \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/charconv \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/chrono \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/climits \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/clocale \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cmath \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/compare \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/concepts \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/concurrencysal.h \
@@ -278,23 +331,49 @@ src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: D:/gitnext/Chai
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cwchar \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/eh.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/exception \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/filesystem \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/format \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/forward_list \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/functional \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/initializer_list \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/iomanip \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/ios \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/iosfwd \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/istream \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/iterator \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/limits \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/limits.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/list \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/locale \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/map \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/memory \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/new \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/numeric \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/optional \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/ostream \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/ranges \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/ratio \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/sal.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/set \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/setjmp.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/span \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/sstream \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/stdarg.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/stdbool.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/stdexcept \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/stdint.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/streambuf \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/string \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/string_view \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/system_error \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/tuple \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/type_traits \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/typeinfo \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/unordered_map \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/use_ansi.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/utility \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vadefs.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/valarray \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_exception.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_new.h \
@@ -302,151 +381,253 @@ src/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: D:/gitnext/Chai
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_string.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_typeinfo.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vector \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/version \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xatomic.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xatomic_wait.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xbit_ops.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcall_once.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv_ryu.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv_ryu_tables.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv_tables.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xerrc.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xfacet \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xfilesystem_abi.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xhash \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xiosbase \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xkeycheck.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocale \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocbuf \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocinfo \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocmes \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocmon \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocnum \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xloctime \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xmemory \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xnode_handle.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xpolymorphic_allocator.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xsmf_control.h \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xstring \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xthreads.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xtimec.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xtr1common \
+  C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xtree \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xutility \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/yvals.h \
   C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/yvals_core.h \
+  _deps/nlohmann_json-src/include/nlohmann/adl_serializer.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/byte_container_with_subtype.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/abi_macros.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/conversions/from_json.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/conversions/to_chars.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/conversions/to_json.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/exceptions.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/hash.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/input/binary_reader.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/input/input_adapters.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/input/json_sax.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/input/lexer.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/input/parser.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/input/position_t.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/iterators/internal_iterator.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/iterators/iter_impl.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/iterators/iteration_proxy.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/iterators/iterator_traits.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/iterators/json_reverse_iterator.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/iterators/primitive_iterator.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/json_custom_base_class.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/json_pointer.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/json_ref.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/macro_scope.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/macro_unscope.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/call_std/begin.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/call_std/end.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/cpp_future.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/detected.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/identity_tag.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/is_sax.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/std_fs.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/type_traits.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/meta/void_t.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/output/binary_writer.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/output/output_adapters.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/output/serializer.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/string_concat.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/string_escape.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/string_utils.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/detail/value_t.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/json.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/json_fwd.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/ordered_map.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley.hpp \
+  _deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley_undef.hpp \
   _deps/raylib-src/src/raylib.h \
   _deps/raylib-src/src/raymath.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___gnuc_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_arg.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stddef_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stddef_max_align_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_null.h \
-  E:/LLVM/lib/clang/19/include/__stddef_nullptr_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_offsetof.h \
-  E:/LLVM/lib/clang/19/include/__stddef_ptrdiff_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_size_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_wchar_t.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_aes.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_pclmul.h \
-  E:/LLVM/lib/clang/19/include/adcintrin.h \
-  E:/LLVM/lib/clang/19/include/adxintrin.h \
-  E:/LLVM/lib/clang/19/include/ammintrin.h \
-  E:/LLVM/lib/clang/19/include/amxcomplexintrin.h \
-  E:/LLVM/lib/clang/19/include/amxfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/amxintrin.h \
-  E:/LLVM/lib/clang/19/include/avx2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512cdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512dqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmavlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmiintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmivlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlcdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vldqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqvlintrin.h \
-  E:/LLVM/lib/clang/19/include/avxifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avxintrin.h \
-  E:/LLVM/lib/clang/19/include/avxneconvertintrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint16intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint8intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/bmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/bmiintrin.h \
-  E:/LLVM/lib/clang/19/include/cetintrin.h \
-  E:/LLVM/lib/clang/19/include/cldemoteintrin.h \
-  E:/LLVM/lib/clang/19/include/clflushoptintrin.h \
-  E:/LLVM/lib/clang/19/include/clwbintrin.h \
-  E:/LLVM/lib/clang/19/include/clzerointrin.h \
-  E:/LLVM/lib/clang/19/include/cmpccxaddintrin.h \
-  E:/LLVM/lib/clang/19/include/crc32intrin.h \
-  E:/LLVM/lib/clang/19/include/emmintrin.h \
-  E:/LLVM/lib/clang/19/include/enqcmdintrin.h \
-  E:/LLVM/lib/clang/19/include/f16cintrin.h \
-  E:/LLVM/lib/clang/19/include/float.h \
-  E:/LLVM/lib/clang/19/include/fma4intrin.h \
-  E:/LLVM/lib/clang/19/include/fmaintrin.h \
-  E:/LLVM/lib/clang/19/include/fxsrintrin.h \
-  E:/LLVM/lib/clang/19/include/gfniintrin.h \
-  E:/LLVM/lib/clang/19/include/hresetintrin.h \
-  E:/LLVM/lib/clang/19/include/ia32intrin.h \
-  E:/LLVM/lib/clang/19/include/immintrin.h \
-  E:/LLVM/lib/clang/19/include/intrin.h \
-  E:/LLVM/lib/clang/19/include/intrin0.h \
-  E:/LLVM/lib/clang/19/include/invpcidintrin.h \
-  E:/LLVM/lib/clang/19/include/keylockerintrin.h \
-  E:/LLVM/lib/clang/19/include/limits.h \
-  E:/LLVM/lib/clang/19/include/lwpintrin.h \
-  E:/LLVM/lib/clang/19/include/lzcntintrin.h \
-  E:/LLVM/lib/clang/19/include/mm_malloc.h \
-  E:/LLVM/lib/clang/19/include/mmintrin.h \
-  E:/LLVM/lib/clang/19/include/movdirintrin.h \
-  E:/LLVM/lib/clang/19/include/mwaitxintrin.h \
-  E:/LLVM/lib/clang/19/include/pconfigintrin.h \
-  E:/LLVM/lib/clang/19/include/pkuintrin.h \
-  E:/LLVM/lib/clang/19/include/pmmintrin.h \
-  E:/LLVM/lib/clang/19/include/popcntintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchiintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchwintrin.h \
-  E:/LLVM/lib/clang/19/include/ptwriteintrin.h \
-  E:/LLVM/lib/clang/19/include/raointintrin.h \
-  E:/LLVM/lib/clang/19/include/rdpruintrin.h \
-  E:/LLVM/lib/clang/19/include/rdseedintrin.h \
-  E:/LLVM/lib/clang/19/include/rtmintrin.h \
-  E:/LLVM/lib/clang/19/include/serializeintrin.h \
-  E:/LLVM/lib/clang/19/include/sgxintrin.h \
-  E:/LLVM/lib/clang/19/include/sha512intrin.h \
-  E:/LLVM/lib/clang/19/include/shaintrin.h \
-  E:/LLVM/lib/clang/19/include/sm3intrin.h \
-  E:/LLVM/lib/clang/19/include/sm4intrin.h \
-  E:/LLVM/lib/clang/19/include/smmintrin.h \
-  E:/LLVM/lib/clang/19/include/stdarg.h \
-  E:/LLVM/lib/clang/19/include/stdbool.h \
-  E:/LLVM/lib/clang/19/include/stddef.h \
-  E:/LLVM/lib/clang/19/include/stdint.h \
-  E:/LLVM/lib/clang/19/include/tbmintrin.h \
-  E:/LLVM/lib/clang/19/include/tmmintrin.h \
-  E:/LLVM/lib/clang/19/include/tsxldtrkintrin.h \
-  E:/LLVM/lib/clang/19/include/uintrintrin.h \
-  E:/LLVM/lib/clang/19/include/usermsrintrin.h \
-  E:/LLVM/lib/clang/19/include/vadefs.h \
-  E:/LLVM/lib/clang/19/include/vaesintrin.h \
-  E:/LLVM/lib/clang/19/include/vpclmulqdqintrin.h \
-  E:/LLVM/lib/clang/19/include/waitpkgintrin.h \
-  E:/LLVM/lib/clang/19/include/wbnoinvdintrin.h \
-  E:/LLVM/lib/clang/19/include/wmmintrin.h \
-  E:/LLVM/lib/clang/19/include/x86gprintrin.h \
-  E:/LLVM/lib/clang/19/include/x86intrin.h \
-  E:/LLVM/lib/clang/19/include/xmmintrin.h \
-  E:/LLVM/lib/clang/19/include/xopintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavecintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveoptintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavesintrin.h \
-  E:/LLVM/lib/clang/19/include/xtestintrin.h \
-  E:/LLVM/lib/clang/19/include/yvals_core.h
+  D:/gitnext/Chained\ Decos/src/Model/Animation.h \
+  D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h \
+  D:/gitnext/Chained\ Decos/src/Model/Model.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelCache.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h \
+  D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h \
+  E:/LLVM/lib/clang/20/include/__stdarg___gnuc_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stdarg___va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_arg.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stddef_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stddef_max_align_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_null.h \
+  E:/LLVM/lib/clang/20/include/__stddef_nullptr_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_offsetof.h \
+  E:/LLVM/lib/clang/20/include/__stddef_ptrdiff_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_size_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_wchar_t.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_aes.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_pclmul.h \
+  E:/LLVM/lib/clang/20/include/adcintrin.h \
+  E:/LLVM/lib/clang/20/include/adxintrin.h \
+  E:/LLVM/lib/clang/20/include/ammintrin.h \
+  E:/LLVM/lib/clang/20/include/amxavx512intrin.h \
+  E:/LLVM/lib/clang/20/include/amxbf16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplexintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplextransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp8intrin.h \
+  E:/LLVM/lib/clang/20/include/amxintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrsintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrstransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32intrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2copyintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512cdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512dqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmavlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmiintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmivlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlcdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vldqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqvlintrin.h \
+  E:/LLVM/lib/clang/20/include/avxifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avxintrin.h \
+  E:/LLVM/lib/clang/20/include/avxneconvertintrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint16intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint8intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/bmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/bmiintrin.h \
+  E:/LLVM/lib/clang/20/include/cetintrin.h \
+  E:/LLVM/lib/clang/20/include/cldemoteintrin.h \
+  E:/LLVM/lib/clang/20/include/clflushoptintrin.h \
+  E:/LLVM/lib/clang/20/include/clwbintrin.h \
+  E:/LLVM/lib/clang/20/include/clzerointrin.h \
+  E:/LLVM/lib/clang/20/include/cmpccxaddintrin.h \
+  E:/LLVM/lib/clang/20/include/crc32intrin.h \
+  E:/LLVM/lib/clang/20/include/emmintrin.h \
+  E:/LLVM/lib/clang/20/include/enqcmdintrin.h \
+  E:/LLVM/lib/clang/20/include/f16cintrin.h \
+  E:/LLVM/lib/clang/20/include/float.h \
+  E:/LLVM/lib/clang/20/include/fma4intrin.h \
+  E:/LLVM/lib/clang/20/include/fmaintrin.h \
+  E:/LLVM/lib/clang/20/include/fxsrintrin.h \
+  E:/LLVM/lib/clang/20/include/gfniintrin.h \
+  E:/LLVM/lib/clang/20/include/hresetintrin.h \
+  E:/LLVM/lib/clang/20/include/ia32intrin.h \
+  E:/LLVM/lib/clang/20/include/immintrin.h \
+  E:/LLVM/lib/clang/20/include/intrin.h \
+  E:/LLVM/lib/clang/20/include/intrin0.h \
+  E:/LLVM/lib/clang/20/include/invpcidintrin.h \
+  E:/LLVM/lib/clang/20/include/keylockerintrin.h \
+  E:/LLVM/lib/clang/20/include/limits.h \
+  E:/LLVM/lib/clang/20/include/lwpintrin.h \
+  E:/LLVM/lib/clang/20/include/lzcntintrin.h \
+  E:/LLVM/lib/clang/20/include/mm_malloc.h \
+  E:/LLVM/lib/clang/20/include/mmintrin.h \
+  E:/LLVM/lib/clang/20/include/movdirintrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2_512intrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2intrin.h \
+  E:/LLVM/lib/clang/20/include/movrsintrin.h \
+  E:/LLVM/lib/clang/20/include/mwaitxintrin.h \
+  E:/LLVM/lib/clang/20/include/pconfigintrin.h \
+  E:/LLVM/lib/clang/20/include/pkuintrin.h \
+  E:/LLVM/lib/clang/20/include/pmmintrin.h \
+  E:/LLVM/lib/clang/20/include/popcntintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchiintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchwintrin.h \
+  E:/LLVM/lib/clang/20/include/ptwriteintrin.h \
+  E:/LLVM/lib/clang/20/include/raointintrin.h \
+  E:/LLVM/lib/clang/20/include/rdpruintrin.h \
+  E:/LLVM/lib/clang/20/include/rdseedintrin.h \
+  E:/LLVM/lib/clang/20/include/rtmintrin.h \
+  E:/LLVM/lib/clang/20/include/serializeintrin.h \
+  E:/LLVM/lib/clang/20/include/sgxintrin.h \
+  E:/LLVM/lib/clang/20/include/sha512intrin.h \
+  E:/LLVM/lib/clang/20/include/shaintrin.h \
+  E:/LLVM/lib/clang/20/include/sm3intrin.h \
+  E:/LLVM/lib/clang/20/include/sm4evexintrin.h \
+  E:/LLVM/lib/clang/20/include/sm4intrin.h \
+  E:/LLVM/lib/clang/20/include/smmintrin.h \
+  E:/LLVM/lib/clang/20/include/stdarg.h \
+  E:/LLVM/lib/clang/20/include/stdbool.h \
+  E:/LLVM/lib/clang/20/include/stddef.h \
+  E:/LLVM/lib/clang/20/include/stdint.h \
+  E:/LLVM/lib/clang/20/include/tbmintrin.h \
+  E:/LLVM/lib/clang/20/include/tmmintrin.h \
+  E:/LLVM/lib/clang/20/include/tsxldtrkintrin.h \
+  E:/LLVM/lib/clang/20/include/uintrintrin.h \
+  E:/LLVM/lib/clang/20/include/usermsrintrin.h \
+  E:/LLVM/lib/clang/20/include/vadefs.h \
+  E:/LLVM/lib/clang/20/include/vaesintrin.h \
+  E:/LLVM/lib/clang/20/include/vpclmulqdqintrin.h \
+  E:/LLVM/lib/clang/20/include/waitpkgintrin.h \
+  E:/LLVM/lib/clang/20/include/wbnoinvdintrin.h \
+  E:/LLVM/lib/clang/20/include/wmmintrin.h \
+  E:/LLVM/lib/clang/20/include/x86gprintrin.h \
+  E:/LLVM/lib/clang/20/include/x86intrin.h \
+  E:/LLVM/lib/clang/20/include/xmmintrin.h \
+  E:/LLVM/lib/clang/20/include/xopintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavecintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveoptintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavesintrin.h \
+  E:/LLVM/lib/clang/20/include/xtestintrin.h \
+  E:/LLVM/lib/clang/20/include/yvals_core.h
 
 src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.cpp \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt.h \
@@ -539,135 +720,162 @@ src/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj: D:/gitnext/C
   _deps/raylib-src/src/raylib.h \
   _deps/raylib-src/src/raymath.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___gnuc_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_arg.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stddef_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stddef_max_align_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_null.h \
-  E:/LLVM/lib/clang/19/include/__stddef_nullptr_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_offsetof.h \
-  E:/LLVM/lib/clang/19/include/__stddef_ptrdiff_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_size_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_wchar_t.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_aes.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_pclmul.h \
-  E:/LLVM/lib/clang/19/include/adcintrin.h \
-  E:/LLVM/lib/clang/19/include/adxintrin.h \
-  E:/LLVM/lib/clang/19/include/ammintrin.h \
-  E:/LLVM/lib/clang/19/include/amxcomplexintrin.h \
-  E:/LLVM/lib/clang/19/include/amxfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/amxintrin.h \
-  E:/LLVM/lib/clang/19/include/avx2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512cdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512dqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmavlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmiintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmivlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlcdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vldqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqvlintrin.h \
-  E:/LLVM/lib/clang/19/include/avxifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avxintrin.h \
-  E:/LLVM/lib/clang/19/include/avxneconvertintrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint16intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint8intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/bmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/bmiintrin.h \
-  E:/LLVM/lib/clang/19/include/cetintrin.h \
-  E:/LLVM/lib/clang/19/include/cldemoteintrin.h \
-  E:/LLVM/lib/clang/19/include/clflushoptintrin.h \
-  E:/LLVM/lib/clang/19/include/clwbintrin.h \
-  E:/LLVM/lib/clang/19/include/clzerointrin.h \
-  E:/LLVM/lib/clang/19/include/cmpccxaddintrin.h \
-  E:/LLVM/lib/clang/19/include/crc32intrin.h \
-  E:/LLVM/lib/clang/19/include/emmintrin.h \
-  E:/LLVM/lib/clang/19/include/enqcmdintrin.h \
-  E:/LLVM/lib/clang/19/include/f16cintrin.h \
-  E:/LLVM/lib/clang/19/include/float.h \
-  E:/LLVM/lib/clang/19/include/fma4intrin.h \
-  E:/LLVM/lib/clang/19/include/fmaintrin.h \
-  E:/LLVM/lib/clang/19/include/fxsrintrin.h \
-  E:/LLVM/lib/clang/19/include/gfniintrin.h \
-  E:/LLVM/lib/clang/19/include/hresetintrin.h \
-  E:/LLVM/lib/clang/19/include/ia32intrin.h \
-  E:/LLVM/lib/clang/19/include/immintrin.h \
-  E:/LLVM/lib/clang/19/include/intrin.h \
-  E:/LLVM/lib/clang/19/include/intrin0.h \
-  E:/LLVM/lib/clang/19/include/invpcidintrin.h \
-  E:/LLVM/lib/clang/19/include/keylockerintrin.h \
-  E:/LLVM/lib/clang/19/include/limits.h \
-  E:/LLVM/lib/clang/19/include/lwpintrin.h \
-  E:/LLVM/lib/clang/19/include/lzcntintrin.h \
-  E:/LLVM/lib/clang/19/include/mm_malloc.h \
-  E:/LLVM/lib/clang/19/include/mmintrin.h \
-  E:/LLVM/lib/clang/19/include/movdirintrin.h \
-  E:/LLVM/lib/clang/19/include/mwaitxintrin.h \
-  E:/LLVM/lib/clang/19/include/pconfigintrin.h \
-  E:/LLVM/lib/clang/19/include/pkuintrin.h \
-  E:/LLVM/lib/clang/19/include/pmmintrin.h \
-  E:/LLVM/lib/clang/19/include/popcntintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchiintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchwintrin.h \
-  E:/LLVM/lib/clang/19/include/ptwriteintrin.h \
-  E:/LLVM/lib/clang/19/include/raointintrin.h \
-  E:/LLVM/lib/clang/19/include/rdpruintrin.h \
-  E:/LLVM/lib/clang/19/include/rdseedintrin.h \
-  E:/LLVM/lib/clang/19/include/rtmintrin.h \
-  E:/LLVM/lib/clang/19/include/serializeintrin.h \
-  E:/LLVM/lib/clang/19/include/sgxintrin.h \
-  E:/LLVM/lib/clang/19/include/sha512intrin.h \
-  E:/LLVM/lib/clang/19/include/shaintrin.h \
-  E:/LLVM/lib/clang/19/include/sm3intrin.h \
-  E:/LLVM/lib/clang/19/include/sm4intrin.h \
-  E:/LLVM/lib/clang/19/include/smmintrin.h \
-  E:/LLVM/lib/clang/19/include/stdarg.h \
-  E:/LLVM/lib/clang/19/include/stdbool.h \
-  E:/LLVM/lib/clang/19/include/stddef.h \
-  E:/LLVM/lib/clang/19/include/stdint.h \
-  E:/LLVM/lib/clang/19/include/tbmintrin.h \
-  E:/LLVM/lib/clang/19/include/tmmintrin.h \
-  E:/LLVM/lib/clang/19/include/tsxldtrkintrin.h \
-  E:/LLVM/lib/clang/19/include/uintrintrin.h \
-  E:/LLVM/lib/clang/19/include/usermsrintrin.h \
-  E:/LLVM/lib/clang/19/include/vadefs.h \
-  E:/LLVM/lib/clang/19/include/vaesintrin.h \
-  E:/LLVM/lib/clang/19/include/vpclmulqdqintrin.h \
-  E:/LLVM/lib/clang/19/include/waitpkgintrin.h \
-  E:/LLVM/lib/clang/19/include/wbnoinvdintrin.h \
-  E:/LLVM/lib/clang/19/include/wmmintrin.h \
-  E:/LLVM/lib/clang/19/include/x86gprintrin.h \
-  E:/LLVM/lib/clang/19/include/x86intrin.h \
-  E:/LLVM/lib/clang/19/include/xmmintrin.h \
-  E:/LLVM/lib/clang/19/include/xopintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavecintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveoptintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavesintrin.h \
-  E:/LLVM/lib/clang/19/include/xtestintrin.h \
-  E:/LLVM/lib/clang/19/include/yvals_core.h
+  E:/LLVM/lib/clang/20/include/__stdarg___gnuc_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stdarg___va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_arg.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stddef_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stddef_max_align_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_null.h \
+  E:/LLVM/lib/clang/20/include/__stddef_nullptr_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_offsetof.h \
+  E:/LLVM/lib/clang/20/include/__stddef_ptrdiff_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_size_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_wchar_t.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_aes.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_pclmul.h \
+  E:/LLVM/lib/clang/20/include/adcintrin.h \
+  E:/LLVM/lib/clang/20/include/adxintrin.h \
+  E:/LLVM/lib/clang/20/include/ammintrin.h \
+  E:/LLVM/lib/clang/20/include/amxavx512intrin.h \
+  E:/LLVM/lib/clang/20/include/amxbf16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplexintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplextransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp8intrin.h \
+  E:/LLVM/lib/clang/20/include/amxintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrsintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrstransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32intrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2copyintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512cdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512dqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmavlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmiintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmivlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlcdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vldqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqvlintrin.h \
+  E:/LLVM/lib/clang/20/include/avxifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avxintrin.h \
+  E:/LLVM/lib/clang/20/include/avxneconvertintrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint16intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint8intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/bmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/bmiintrin.h \
+  E:/LLVM/lib/clang/20/include/cetintrin.h \
+  E:/LLVM/lib/clang/20/include/cldemoteintrin.h \
+  E:/LLVM/lib/clang/20/include/clflushoptintrin.h \
+  E:/LLVM/lib/clang/20/include/clwbintrin.h \
+  E:/LLVM/lib/clang/20/include/clzerointrin.h \
+  E:/LLVM/lib/clang/20/include/cmpccxaddintrin.h \
+  E:/LLVM/lib/clang/20/include/crc32intrin.h \
+  E:/LLVM/lib/clang/20/include/emmintrin.h \
+  E:/LLVM/lib/clang/20/include/enqcmdintrin.h \
+  E:/LLVM/lib/clang/20/include/f16cintrin.h \
+  E:/LLVM/lib/clang/20/include/float.h \
+  E:/LLVM/lib/clang/20/include/fma4intrin.h \
+  E:/LLVM/lib/clang/20/include/fmaintrin.h \
+  E:/LLVM/lib/clang/20/include/fxsrintrin.h \
+  E:/LLVM/lib/clang/20/include/gfniintrin.h \
+  E:/LLVM/lib/clang/20/include/hresetintrin.h \
+  E:/LLVM/lib/clang/20/include/ia32intrin.h \
+  E:/LLVM/lib/clang/20/include/immintrin.h \
+  E:/LLVM/lib/clang/20/include/intrin.h \
+  E:/LLVM/lib/clang/20/include/intrin0.h \
+  E:/LLVM/lib/clang/20/include/invpcidintrin.h \
+  E:/LLVM/lib/clang/20/include/keylockerintrin.h \
+  E:/LLVM/lib/clang/20/include/limits.h \
+  E:/LLVM/lib/clang/20/include/lwpintrin.h \
+  E:/LLVM/lib/clang/20/include/lzcntintrin.h \
+  E:/LLVM/lib/clang/20/include/mm_malloc.h \
+  E:/LLVM/lib/clang/20/include/mmintrin.h \
+  E:/LLVM/lib/clang/20/include/movdirintrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2_512intrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2intrin.h \
+  E:/LLVM/lib/clang/20/include/movrsintrin.h \
+  E:/LLVM/lib/clang/20/include/mwaitxintrin.h \
+  E:/LLVM/lib/clang/20/include/pconfigintrin.h \
+  E:/LLVM/lib/clang/20/include/pkuintrin.h \
+  E:/LLVM/lib/clang/20/include/pmmintrin.h \
+  E:/LLVM/lib/clang/20/include/popcntintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchiintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchwintrin.h \
+  E:/LLVM/lib/clang/20/include/ptwriteintrin.h \
+  E:/LLVM/lib/clang/20/include/raointintrin.h \
+  E:/LLVM/lib/clang/20/include/rdpruintrin.h \
+  E:/LLVM/lib/clang/20/include/rdseedintrin.h \
+  E:/LLVM/lib/clang/20/include/rtmintrin.h \
+  E:/LLVM/lib/clang/20/include/serializeintrin.h \
+  E:/LLVM/lib/clang/20/include/sgxintrin.h \
+  E:/LLVM/lib/clang/20/include/sha512intrin.h \
+  E:/LLVM/lib/clang/20/include/shaintrin.h \
+  E:/LLVM/lib/clang/20/include/sm3intrin.h \
+  E:/LLVM/lib/clang/20/include/sm4evexintrin.h \
+  E:/LLVM/lib/clang/20/include/sm4intrin.h \
+  E:/LLVM/lib/clang/20/include/smmintrin.h \
+  E:/LLVM/lib/clang/20/include/stdarg.h \
+  E:/LLVM/lib/clang/20/include/stdbool.h \
+  E:/LLVM/lib/clang/20/include/stddef.h \
+  E:/LLVM/lib/clang/20/include/stdint.h \
+  E:/LLVM/lib/clang/20/include/tbmintrin.h \
+  E:/LLVM/lib/clang/20/include/tmmintrin.h \
+  E:/LLVM/lib/clang/20/include/tsxldtrkintrin.h \
+  E:/LLVM/lib/clang/20/include/uintrintrin.h \
+  E:/LLVM/lib/clang/20/include/usermsrintrin.h \
+  E:/LLVM/lib/clang/20/include/vadefs.h \
+  E:/LLVM/lib/clang/20/include/vaesintrin.h \
+  E:/LLVM/lib/clang/20/include/vpclmulqdqintrin.h \
+  E:/LLVM/lib/clang/20/include/waitpkgintrin.h \
+  E:/LLVM/lib/clang/20/include/wbnoinvdintrin.h \
+  E:/LLVM/lib/clang/20/include/wmmintrin.h \
+  E:/LLVM/lib/clang/20/include/x86gprintrin.h \
+  E:/LLVM/lib/clang/20/include/x86intrin.h \
+  E:/LLVM/lib/clang/20/include/xmmintrin.h \
+  E:/LLVM/lib/clang/20/include/xopintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavecintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveoptintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavesintrin.h \
+  E:/LLVM/lib/clang/20/include/xtestintrin.h \
+  E:/LLVM/lib/clang/20/include/yvals_core.h
 
 src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.cpp \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt.h \
@@ -818,135 +1026,162 @@ src/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj: D:/gitnext/Chain
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Collision/Octree.h \
   D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___gnuc_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_arg.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stddef_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stddef_max_align_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_null.h \
-  E:/LLVM/lib/clang/19/include/__stddef_nullptr_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_offsetof.h \
-  E:/LLVM/lib/clang/19/include/__stddef_ptrdiff_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_size_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_wchar_t.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_aes.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_pclmul.h \
-  E:/LLVM/lib/clang/19/include/adcintrin.h \
-  E:/LLVM/lib/clang/19/include/adxintrin.h \
-  E:/LLVM/lib/clang/19/include/ammintrin.h \
-  E:/LLVM/lib/clang/19/include/amxcomplexintrin.h \
-  E:/LLVM/lib/clang/19/include/amxfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/amxintrin.h \
-  E:/LLVM/lib/clang/19/include/avx2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512cdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512dqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmavlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmiintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmivlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlcdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vldqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqvlintrin.h \
-  E:/LLVM/lib/clang/19/include/avxifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avxintrin.h \
-  E:/LLVM/lib/clang/19/include/avxneconvertintrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint16intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint8intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/bmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/bmiintrin.h \
-  E:/LLVM/lib/clang/19/include/cetintrin.h \
-  E:/LLVM/lib/clang/19/include/cldemoteintrin.h \
-  E:/LLVM/lib/clang/19/include/clflushoptintrin.h \
-  E:/LLVM/lib/clang/19/include/clwbintrin.h \
-  E:/LLVM/lib/clang/19/include/clzerointrin.h \
-  E:/LLVM/lib/clang/19/include/cmpccxaddintrin.h \
-  E:/LLVM/lib/clang/19/include/crc32intrin.h \
-  E:/LLVM/lib/clang/19/include/emmintrin.h \
-  E:/LLVM/lib/clang/19/include/enqcmdintrin.h \
-  E:/LLVM/lib/clang/19/include/f16cintrin.h \
-  E:/LLVM/lib/clang/19/include/float.h \
-  E:/LLVM/lib/clang/19/include/fma4intrin.h \
-  E:/LLVM/lib/clang/19/include/fmaintrin.h \
-  E:/LLVM/lib/clang/19/include/fxsrintrin.h \
-  E:/LLVM/lib/clang/19/include/gfniintrin.h \
-  E:/LLVM/lib/clang/19/include/hresetintrin.h \
-  E:/LLVM/lib/clang/19/include/ia32intrin.h \
-  E:/LLVM/lib/clang/19/include/immintrin.h \
-  E:/LLVM/lib/clang/19/include/intrin.h \
-  E:/LLVM/lib/clang/19/include/intrin0.h \
-  E:/LLVM/lib/clang/19/include/invpcidintrin.h \
-  E:/LLVM/lib/clang/19/include/keylockerintrin.h \
-  E:/LLVM/lib/clang/19/include/limits.h \
-  E:/LLVM/lib/clang/19/include/lwpintrin.h \
-  E:/LLVM/lib/clang/19/include/lzcntintrin.h \
-  E:/LLVM/lib/clang/19/include/mm_malloc.h \
-  E:/LLVM/lib/clang/19/include/mmintrin.h \
-  E:/LLVM/lib/clang/19/include/movdirintrin.h \
-  E:/LLVM/lib/clang/19/include/mwaitxintrin.h \
-  E:/LLVM/lib/clang/19/include/pconfigintrin.h \
-  E:/LLVM/lib/clang/19/include/pkuintrin.h \
-  E:/LLVM/lib/clang/19/include/pmmintrin.h \
-  E:/LLVM/lib/clang/19/include/popcntintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchiintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchwintrin.h \
-  E:/LLVM/lib/clang/19/include/ptwriteintrin.h \
-  E:/LLVM/lib/clang/19/include/raointintrin.h \
-  E:/LLVM/lib/clang/19/include/rdpruintrin.h \
-  E:/LLVM/lib/clang/19/include/rdseedintrin.h \
-  E:/LLVM/lib/clang/19/include/rtmintrin.h \
-  E:/LLVM/lib/clang/19/include/serializeintrin.h \
-  E:/LLVM/lib/clang/19/include/sgxintrin.h \
-  E:/LLVM/lib/clang/19/include/sha512intrin.h \
-  E:/LLVM/lib/clang/19/include/shaintrin.h \
-  E:/LLVM/lib/clang/19/include/sm3intrin.h \
-  E:/LLVM/lib/clang/19/include/sm4intrin.h \
-  E:/LLVM/lib/clang/19/include/smmintrin.h \
-  E:/LLVM/lib/clang/19/include/stdarg.h \
-  E:/LLVM/lib/clang/19/include/stdbool.h \
-  E:/LLVM/lib/clang/19/include/stddef.h \
-  E:/LLVM/lib/clang/19/include/stdint.h \
-  E:/LLVM/lib/clang/19/include/tbmintrin.h \
-  E:/LLVM/lib/clang/19/include/tmmintrin.h \
-  E:/LLVM/lib/clang/19/include/tsxldtrkintrin.h \
-  E:/LLVM/lib/clang/19/include/uintrintrin.h \
-  E:/LLVM/lib/clang/19/include/usermsrintrin.h \
-  E:/LLVM/lib/clang/19/include/vadefs.h \
-  E:/LLVM/lib/clang/19/include/vaesintrin.h \
-  E:/LLVM/lib/clang/19/include/vpclmulqdqintrin.h \
-  E:/LLVM/lib/clang/19/include/waitpkgintrin.h \
-  E:/LLVM/lib/clang/19/include/wbnoinvdintrin.h \
-  E:/LLVM/lib/clang/19/include/wmmintrin.h \
-  E:/LLVM/lib/clang/19/include/x86gprintrin.h \
-  E:/LLVM/lib/clang/19/include/x86intrin.h \
-  E:/LLVM/lib/clang/19/include/xmmintrin.h \
-  E:/LLVM/lib/clang/19/include/xopintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavecintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveoptintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavesintrin.h \
-  E:/LLVM/lib/clang/19/include/xtestintrin.h \
-  E:/LLVM/lib/clang/19/include/yvals_core.h
+  E:/LLVM/lib/clang/20/include/__stdarg___gnuc_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stdarg___va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_arg.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stddef_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stddef_max_align_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_null.h \
+  E:/LLVM/lib/clang/20/include/__stddef_nullptr_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_offsetof.h \
+  E:/LLVM/lib/clang/20/include/__stddef_ptrdiff_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_size_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_wchar_t.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_aes.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_pclmul.h \
+  E:/LLVM/lib/clang/20/include/adcintrin.h \
+  E:/LLVM/lib/clang/20/include/adxintrin.h \
+  E:/LLVM/lib/clang/20/include/ammintrin.h \
+  E:/LLVM/lib/clang/20/include/amxavx512intrin.h \
+  E:/LLVM/lib/clang/20/include/amxbf16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplexintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplextransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp8intrin.h \
+  E:/LLVM/lib/clang/20/include/amxintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrsintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrstransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32intrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2copyintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512cdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512dqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmavlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmiintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmivlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlcdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vldqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqvlintrin.h \
+  E:/LLVM/lib/clang/20/include/avxifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avxintrin.h \
+  E:/LLVM/lib/clang/20/include/avxneconvertintrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint16intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint8intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/bmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/bmiintrin.h \
+  E:/LLVM/lib/clang/20/include/cetintrin.h \
+  E:/LLVM/lib/clang/20/include/cldemoteintrin.h \
+  E:/LLVM/lib/clang/20/include/clflushoptintrin.h \
+  E:/LLVM/lib/clang/20/include/clwbintrin.h \
+  E:/LLVM/lib/clang/20/include/clzerointrin.h \
+  E:/LLVM/lib/clang/20/include/cmpccxaddintrin.h \
+  E:/LLVM/lib/clang/20/include/crc32intrin.h \
+  E:/LLVM/lib/clang/20/include/emmintrin.h \
+  E:/LLVM/lib/clang/20/include/enqcmdintrin.h \
+  E:/LLVM/lib/clang/20/include/f16cintrin.h \
+  E:/LLVM/lib/clang/20/include/float.h \
+  E:/LLVM/lib/clang/20/include/fma4intrin.h \
+  E:/LLVM/lib/clang/20/include/fmaintrin.h \
+  E:/LLVM/lib/clang/20/include/fxsrintrin.h \
+  E:/LLVM/lib/clang/20/include/gfniintrin.h \
+  E:/LLVM/lib/clang/20/include/hresetintrin.h \
+  E:/LLVM/lib/clang/20/include/ia32intrin.h \
+  E:/LLVM/lib/clang/20/include/immintrin.h \
+  E:/LLVM/lib/clang/20/include/intrin.h \
+  E:/LLVM/lib/clang/20/include/intrin0.h \
+  E:/LLVM/lib/clang/20/include/invpcidintrin.h \
+  E:/LLVM/lib/clang/20/include/keylockerintrin.h \
+  E:/LLVM/lib/clang/20/include/limits.h \
+  E:/LLVM/lib/clang/20/include/lwpintrin.h \
+  E:/LLVM/lib/clang/20/include/lzcntintrin.h \
+  E:/LLVM/lib/clang/20/include/mm_malloc.h \
+  E:/LLVM/lib/clang/20/include/mmintrin.h \
+  E:/LLVM/lib/clang/20/include/movdirintrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2_512intrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2intrin.h \
+  E:/LLVM/lib/clang/20/include/movrsintrin.h \
+  E:/LLVM/lib/clang/20/include/mwaitxintrin.h \
+  E:/LLVM/lib/clang/20/include/pconfigintrin.h \
+  E:/LLVM/lib/clang/20/include/pkuintrin.h \
+  E:/LLVM/lib/clang/20/include/pmmintrin.h \
+  E:/LLVM/lib/clang/20/include/popcntintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchiintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchwintrin.h \
+  E:/LLVM/lib/clang/20/include/ptwriteintrin.h \
+  E:/LLVM/lib/clang/20/include/raointintrin.h \
+  E:/LLVM/lib/clang/20/include/rdpruintrin.h \
+  E:/LLVM/lib/clang/20/include/rdseedintrin.h \
+  E:/LLVM/lib/clang/20/include/rtmintrin.h \
+  E:/LLVM/lib/clang/20/include/serializeintrin.h \
+  E:/LLVM/lib/clang/20/include/sgxintrin.h \
+  E:/LLVM/lib/clang/20/include/sha512intrin.h \
+  E:/LLVM/lib/clang/20/include/shaintrin.h \
+  E:/LLVM/lib/clang/20/include/sm3intrin.h \
+  E:/LLVM/lib/clang/20/include/sm4evexintrin.h \
+  E:/LLVM/lib/clang/20/include/sm4intrin.h \
+  E:/LLVM/lib/clang/20/include/smmintrin.h \
+  E:/LLVM/lib/clang/20/include/stdarg.h \
+  E:/LLVM/lib/clang/20/include/stdbool.h \
+  E:/LLVM/lib/clang/20/include/stddef.h \
+  E:/LLVM/lib/clang/20/include/stdint.h \
+  E:/LLVM/lib/clang/20/include/tbmintrin.h \
+  E:/LLVM/lib/clang/20/include/tmmintrin.h \
+  E:/LLVM/lib/clang/20/include/tsxldtrkintrin.h \
+  E:/LLVM/lib/clang/20/include/uintrintrin.h \
+  E:/LLVM/lib/clang/20/include/usermsrintrin.h \
+  E:/LLVM/lib/clang/20/include/vadefs.h \
+  E:/LLVM/lib/clang/20/include/vaesintrin.h \
+  E:/LLVM/lib/clang/20/include/vpclmulqdqintrin.h \
+  E:/LLVM/lib/clang/20/include/waitpkgintrin.h \
+  E:/LLVM/lib/clang/20/include/wbnoinvdintrin.h \
+  E:/LLVM/lib/clang/20/include/wmmintrin.h \
+  E:/LLVM/lib/clang/20/include/x86gprintrin.h \
+  E:/LLVM/lib/clang/20/include/x86intrin.h \
+  E:/LLVM/lib/clang/20/include/xmmintrin.h \
+  E:/LLVM/lib/clang/20/include/xopintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavecintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveoptintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavesintrin.h \
+  E:/LLVM/lib/clang/20/include/xtestintrin.h \
+  E:/LLVM/lib/clang/20/include/yvals_core.h
 
 src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj: D:/gitnext/Chained\ Decos/src/Collision/Octree.cpp \
   C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt.h \
@@ -1044,168 +1279,197 @@ src/Collision/CMakeFiles/collision.dir/Octree.cpp.obj: D:/gitnext/Chained\ Decos
   D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h \
   D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h \
   D:/gitnext/Chained\ Decos/src/Collision/Octree.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___gnuc_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stdarg___va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_arg.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_copy.h \
-  E:/LLVM/lib/clang/19/include/__stdarg_va_list.h \
-  E:/LLVM/lib/clang/19/include/__stddef_header_macro.h \
-  E:/LLVM/lib/clang/19/include/__stddef_max_align_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_null.h \
-  E:/LLVM/lib/clang/19/include/__stddef_nullptr_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_offsetof.h \
-  E:/LLVM/lib/clang/19/include/__stddef_ptrdiff_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_size_t.h \
-  E:/LLVM/lib/clang/19/include/__stddef_wchar_t.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_aes.h \
-  E:/LLVM/lib/clang/19/include/__wmmintrin_pclmul.h \
-  E:/LLVM/lib/clang/19/include/adcintrin.h \
-  E:/LLVM/lib/clang/19/include/adxintrin.h \
-  E:/LLVM/lib/clang/19/include/ammintrin.h \
-  E:/LLVM/lib/clang/19/include/amxcomplexintrin.h \
-  E:/LLVM/lib/clang/19/include/amxfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/amxintrin.h \
-  E:/LLVM/lib/clang/19/include/avx2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512bwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512cdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512dqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512fp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512ifmavlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmiintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vbmivlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbf16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbitalgintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlbwintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlcdintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vldqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlfp16intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvbmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vlvp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vnniintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vp2intersectintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqintrin.h \
-  E:/LLVM/lib/clang/19/include/avx512vpopcntdqvlintrin.h \
-  E:/LLVM/lib/clang/19/include/avxifmaintrin.h \
-  E:/LLVM/lib/clang/19/include/avxintrin.h \
-  E:/LLVM/lib/clang/19/include/avxneconvertintrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint16intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniint8intrin.h \
-  E:/LLVM/lib/clang/19/include/avxvnniintrin.h \
-  E:/LLVM/lib/clang/19/include/bmi2intrin.h \
-  E:/LLVM/lib/clang/19/include/bmiintrin.h \
-  E:/LLVM/lib/clang/19/include/cetintrin.h \
-  E:/LLVM/lib/clang/19/include/cldemoteintrin.h \
-  E:/LLVM/lib/clang/19/include/clflushoptintrin.h \
-  E:/LLVM/lib/clang/19/include/clwbintrin.h \
-  E:/LLVM/lib/clang/19/include/clzerointrin.h \
-  E:/LLVM/lib/clang/19/include/cmpccxaddintrin.h \
-  E:/LLVM/lib/clang/19/include/crc32intrin.h \
-  E:/LLVM/lib/clang/19/include/emmintrin.h \
-  E:/LLVM/lib/clang/19/include/enqcmdintrin.h \
-  E:/LLVM/lib/clang/19/include/f16cintrin.h \
-  E:/LLVM/lib/clang/19/include/float.h \
-  E:/LLVM/lib/clang/19/include/fma4intrin.h \
-  E:/LLVM/lib/clang/19/include/fmaintrin.h \
-  E:/LLVM/lib/clang/19/include/fxsrintrin.h \
-  E:/LLVM/lib/clang/19/include/gfniintrin.h \
-  E:/LLVM/lib/clang/19/include/hresetintrin.h \
-  E:/LLVM/lib/clang/19/include/ia32intrin.h \
-  E:/LLVM/lib/clang/19/include/immintrin.h \
-  E:/LLVM/lib/clang/19/include/intrin.h \
-  E:/LLVM/lib/clang/19/include/intrin0.h \
-  E:/LLVM/lib/clang/19/include/invpcidintrin.h \
-  E:/LLVM/lib/clang/19/include/keylockerintrin.h \
-  E:/LLVM/lib/clang/19/include/limits.h \
-  E:/LLVM/lib/clang/19/include/lwpintrin.h \
-  E:/LLVM/lib/clang/19/include/lzcntintrin.h \
-  E:/LLVM/lib/clang/19/include/mm_malloc.h \
-  E:/LLVM/lib/clang/19/include/mmintrin.h \
-  E:/LLVM/lib/clang/19/include/movdirintrin.h \
-  E:/LLVM/lib/clang/19/include/mwaitxintrin.h \
-  E:/LLVM/lib/clang/19/include/pconfigintrin.h \
-  E:/LLVM/lib/clang/19/include/pkuintrin.h \
-  E:/LLVM/lib/clang/19/include/pmmintrin.h \
-  E:/LLVM/lib/clang/19/include/popcntintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchiintrin.h \
-  E:/LLVM/lib/clang/19/include/prfchwintrin.h \
-  E:/LLVM/lib/clang/19/include/ptwriteintrin.h \
-  E:/LLVM/lib/clang/19/include/raointintrin.h \
-  E:/LLVM/lib/clang/19/include/rdpruintrin.h \
-  E:/LLVM/lib/clang/19/include/rdseedintrin.h \
-  E:/LLVM/lib/clang/19/include/rtmintrin.h \
-  E:/LLVM/lib/clang/19/include/serializeintrin.h \
-  E:/LLVM/lib/clang/19/include/sgxintrin.h \
-  E:/LLVM/lib/clang/19/include/sha512intrin.h \
-  E:/LLVM/lib/clang/19/include/shaintrin.h \
-  E:/LLVM/lib/clang/19/include/sm3intrin.h \
-  E:/LLVM/lib/clang/19/include/sm4intrin.h \
-  E:/LLVM/lib/clang/19/include/smmintrin.h \
-  E:/LLVM/lib/clang/19/include/stdarg.h \
-  E:/LLVM/lib/clang/19/include/stdbool.h \
-  E:/LLVM/lib/clang/19/include/stddef.h \
-  E:/LLVM/lib/clang/19/include/stdint.h \
-  E:/LLVM/lib/clang/19/include/tbmintrin.h \
-  E:/LLVM/lib/clang/19/include/tmmintrin.h \
-  E:/LLVM/lib/clang/19/include/tsxldtrkintrin.h \
-  E:/LLVM/lib/clang/19/include/uintrintrin.h \
-  E:/LLVM/lib/clang/19/include/usermsrintrin.h \
-  E:/LLVM/lib/clang/19/include/vadefs.h \
-  E:/LLVM/lib/clang/19/include/vaesintrin.h \
-  E:/LLVM/lib/clang/19/include/vpclmulqdqintrin.h \
-  E:/LLVM/lib/clang/19/include/waitpkgintrin.h \
-  E:/LLVM/lib/clang/19/include/wbnoinvdintrin.h \
-  E:/LLVM/lib/clang/19/include/wmmintrin.h \
-  E:/LLVM/lib/clang/19/include/x86gprintrin.h \
-  E:/LLVM/lib/clang/19/include/x86intrin.h \
-  E:/LLVM/lib/clang/19/include/xmmintrin.h \
-  E:/LLVM/lib/clang/19/include/xopintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavecintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveintrin.h \
-  E:/LLVM/lib/clang/19/include/xsaveoptintrin.h \
-  E:/LLVM/lib/clang/19/include/xsavesintrin.h \
-  E:/LLVM/lib/clang/19/include/xtestintrin.h \
-  E:/LLVM/lib/clang/19/include/yvals_core.h
+  E:/LLVM/lib/clang/20/include/__stdarg___gnuc_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stdarg___va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_arg.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_copy.h \
+  E:/LLVM/lib/clang/20/include/__stdarg_va_list.h \
+  E:/LLVM/lib/clang/20/include/__stddef_header_macro.h \
+  E:/LLVM/lib/clang/20/include/__stddef_max_align_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_null.h \
+  E:/LLVM/lib/clang/20/include/__stddef_nullptr_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_offsetof.h \
+  E:/LLVM/lib/clang/20/include/__stddef_ptrdiff_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_size_t.h \
+  E:/LLVM/lib/clang/20/include/__stddef_wchar_t.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_aes.h \
+  E:/LLVM/lib/clang/20/include/__wmmintrin_pclmul.h \
+  E:/LLVM/lib/clang/20/include/adcintrin.h \
+  E:/LLVM/lib/clang/20/include/adxintrin.h \
+  E:/LLVM/lib/clang/20/include/ammintrin.h \
+  E:/LLVM/lib/clang/20/include/amxavx512intrin.h \
+  E:/LLVM/lib/clang/20/include/amxbf16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplexintrin.h \
+  E:/LLVM/lib/clang/20/include/amxcomplextransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp16transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxfp8intrin.h \
+  E:/LLVM/lib/clang/20/include/amxintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrsintrin.h \
+  E:/LLVM/lib/clang/20/include/amxmovrstransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32intrin.h \
+  E:/LLVM/lib/clang/20/include/amxtf32transposeintrin.h \
+  E:/LLVM/lib/clang/20/include/amxtransposeintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2_512satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2convertintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2copyintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2minmaxintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2niintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtdsintrin.h \
+  E:/LLVM/lib/clang/20/include/avx10_2satcvtintrin.h \
+  E:/LLVM/lib/clang/20/include/avx2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512bwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512cdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512dqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512fp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512ifmavlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmiintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vbmivlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbf16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbitalgintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlbwintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlcdintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vldqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlfp16intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvbmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vlvp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vnniintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vp2intersectintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqintrin.h \
+  E:/LLVM/lib/clang/20/include/avx512vpopcntdqvlintrin.h \
+  E:/LLVM/lib/clang/20/include/avxifmaintrin.h \
+  E:/LLVM/lib/clang/20/include/avxintrin.h \
+  E:/LLVM/lib/clang/20/include/avxneconvertintrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint16intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniint8intrin.h \
+  E:/LLVM/lib/clang/20/include/avxvnniintrin.h \
+  E:/LLVM/lib/clang/20/include/bmi2intrin.h \
+  E:/LLVM/lib/clang/20/include/bmiintrin.h \
+  E:/LLVM/lib/clang/20/include/cetintrin.h \
+  E:/LLVM/lib/clang/20/include/cldemoteintrin.h \
+  E:/LLVM/lib/clang/20/include/clflushoptintrin.h \
+  E:/LLVM/lib/clang/20/include/clwbintrin.h \
+  E:/LLVM/lib/clang/20/include/clzerointrin.h \
+  E:/LLVM/lib/clang/20/include/cmpccxaddintrin.h \
+  E:/LLVM/lib/clang/20/include/crc32intrin.h \
+  E:/LLVM/lib/clang/20/include/emmintrin.h \
+  E:/LLVM/lib/clang/20/include/enqcmdintrin.h \
+  E:/LLVM/lib/clang/20/include/f16cintrin.h \
+  E:/LLVM/lib/clang/20/include/float.h \
+  E:/LLVM/lib/clang/20/include/fma4intrin.h \
+  E:/LLVM/lib/clang/20/include/fmaintrin.h \
+  E:/LLVM/lib/clang/20/include/fxsrintrin.h \
+  E:/LLVM/lib/clang/20/include/gfniintrin.h \
+  E:/LLVM/lib/clang/20/include/hresetintrin.h \
+  E:/LLVM/lib/clang/20/include/ia32intrin.h \
+  E:/LLVM/lib/clang/20/include/immintrin.h \
+  E:/LLVM/lib/clang/20/include/intrin.h \
+  E:/LLVM/lib/clang/20/include/intrin0.h \
+  E:/LLVM/lib/clang/20/include/invpcidintrin.h \
+  E:/LLVM/lib/clang/20/include/keylockerintrin.h \
+  E:/LLVM/lib/clang/20/include/limits.h \
+  E:/LLVM/lib/clang/20/include/lwpintrin.h \
+  E:/LLVM/lib/clang/20/include/lzcntintrin.h \
+  E:/LLVM/lib/clang/20/include/mm_malloc.h \
+  E:/LLVM/lib/clang/20/include/mmintrin.h \
+  E:/LLVM/lib/clang/20/include/movdirintrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2_512intrin.h \
+  E:/LLVM/lib/clang/20/include/movrs_avx10_2intrin.h \
+  E:/LLVM/lib/clang/20/include/movrsintrin.h \
+  E:/LLVM/lib/clang/20/include/mwaitxintrin.h \
+  E:/LLVM/lib/clang/20/include/pconfigintrin.h \
+  E:/LLVM/lib/clang/20/include/pkuintrin.h \
+  E:/LLVM/lib/clang/20/include/pmmintrin.h \
+  E:/LLVM/lib/clang/20/include/popcntintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchiintrin.h \
+  E:/LLVM/lib/clang/20/include/prfchwintrin.h \
+  E:/LLVM/lib/clang/20/include/ptwriteintrin.h \
+  E:/LLVM/lib/clang/20/include/raointintrin.h \
+  E:/LLVM/lib/clang/20/include/rdpruintrin.h \
+  E:/LLVM/lib/clang/20/include/rdseedintrin.h \
+  E:/LLVM/lib/clang/20/include/rtmintrin.h \
+  E:/LLVM/lib/clang/20/include/serializeintrin.h \
+  E:/LLVM/lib/clang/20/include/sgxintrin.h \
+  E:/LLVM/lib/clang/20/include/sha512intrin.h \
+  E:/LLVM/lib/clang/20/include/shaintrin.h \
+  E:/LLVM/lib/clang/20/include/sm3intrin.h \
+  E:/LLVM/lib/clang/20/include/sm4evexintrin.h \
+  E:/LLVM/lib/clang/20/include/sm4intrin.h \
+  E:/LLVM/lib/clang/20/include/smmintrin.h \
+  E:/LLVM/lib/clang/20/include/stdarg.h \
+  E:/LLVM/lib/clang/20/include/stdbool.h \
+  E:/LLVM/lib/clang/20/include/stddef.h \
+  E:/LLVM/lib/clang/20/include/stdint.h \
+  E:/LLVM/lib/clang/20/include/tbmintrin.h \
+  E:/LLVM/lib/clang/20/include/tmmintrin.h \
+  E:/LLVM/lib/clang/20/include/tsxldtrkintrin.h \
+  E:/LLVM/lib/clang/20/include/uintrintrin.h \
+  E:/LLVM/lib/clang/20/include/usermsrintrin.h \
+  E:/LLVM/lib/clang/20/include/vadefs.h \
+  E:/LLVM/lib/clang/20/include/vaesintrin.h \
+  E:/LLVM/lib/clang/20/include/vpclmulqdqintrin.h \
+  E:/LLVM/lib/clang/20/include/waitpkgintrin.h \
+  E:/LLVM/lib/clang/20/include/wbnoinvdintrin.h \
+  E:/LLVM/lib/clang/20/include/wmmintrin.h \
+  E:/LLVM/lib/clang/20/include/x86gprintrin.h \
+  E:/LLVM/lib/clang/20/include/x86intrin.h \
+  E:/LLVM/lib/clang/20/include/xmmintrin.h \
+  E:/LLVM/lib/clang/20/include/xopintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavecintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveintrin.h \
+  E:/LLVM/lib/clang/20/include/xsaveoptintrin.h \
+  E:/LLVM/lib/clang/20/include/xsavesintrin.h \
+  E:/LLVM/lib/clang/20/include/xtestintrin.h \
+  E:/LLVM/lib/clang/20/include/yvals_core.h
 
+
+E:/LLVM/lib/clang/20/include/x86gprintrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/use_ansi.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_share.h:
 
-E:/LLVM/lib/clang/19/include/vaesintrin.h:
-
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/atomic:
 
-E:/LLVM/lib/clang/19/include/x86gprintrin.h:
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xnode_handle.h:
 
 D:/gitnext/Chained\ Decos/src/Collision/CollisionDebugRenderer.cpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/call_std/begin.hpp:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_malloc.h:
 
-E:/LLVM/lib/clang/19/include/gfniintrin.h:
-
-E:/LLVM/lib/clang/19/include/amxintrin.h:
-
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_search.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_math.h:
 
+_deps/nlohmann_json-src/include/nlohmann/detail/iterators/internal_iterator.hpp:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cstdlib:
+
+E:/LLVM/lib/clang/20/include/fxsrintrin.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_memcpy_s.h:
 
-C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_memory.h:
+E:/LLVM/lib/clang/20/include/__wmmintrin_aes.h:
 
-E:/LLVM/lib/clang/19/include/pmmintrin.h:
+C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_memory.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/tuple:
 
@@ -1213,15 +1477,23 @@ C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_stdi
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_terminate.h:
 
+_deps/nlohmann_json-src/include/nlohmann/detail/json_ref.hpp:
+
+E:/LLVM/lib/clang/20/include/ia32intrin.h:
+
+E:/LLVM/lib/clang/20/include/amxmovrsintrin.h:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/yvals.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/memory:
 
 D:/gitnext/Chained\ Decos/src/Collision/Octree.cpp:
 
-E:/LLVM/lib/clang/19/include/raointintrin.h:
-
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wconio.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/iterators/iter_impl.hpp:
+
+E:/LLVM/lib/clang/20/include/fmaintrin.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wctype.h:
 
@@ -1233,27 +1505,25 @@ C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wio.
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cstdio:
 
-E:/LLVM/lib/clang/19/include/sha512intrin.h:
+E:/LLVM/lib/clang/20/include/avx512vp2intersectintrin.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wprocess.h:
 
-E:/LLVM/lib/clang/19/include/__stddef_null.h:
+_deps/nlohmann_json-src/include/nlohmann/detail/conversions/to_chars.hpp:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/ctime:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/wchar.h:
 
-E:/LLVM/lib/clang/19/include/prfchiintrin.h:
-
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/stdio.h:
 
-E:/LLVM/lib/clang/19/include/cetintrin.h:
-
-E:/LLVM/lib/clang/19/include/bmi2intrin.h:
+E:/LLVM/lib/clang/20/include/popcntintrin.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wstdio.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/stdlib.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/hash.hpp:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/stddef.h:
 
@@ -1261,15 +1531,17 @@ C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wstd
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/string.h:
 
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/version:
+
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wstring.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/time.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/corecrt_wtime.h:
 
-C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/crtdbg.h:
+E:/LLVM/lib/clang/20/include/xopintrin.h:
 
-E:/LLVM/lib/clang/19/include/smmintrin.h:
+C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/crtdbg.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/compare:
 
@@ -1281,11 +1553,13 @@ C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/malloc.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv_ryu_tables.h:
 
+E:/LLVM/lib/clang/20/include/vaesintrin.h:
+
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/math.h:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/crtdefs.h:
+E:/LLVM/lib/clang/20/include/lzcntintrin.h:
 
-E:/LLVM/lib/clang/19/include/xsaveintrin.h:
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/crtdefs.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/climits:
 
@@ -1295,21 +1569,21 @@ C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/sys/types.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/limits:
 
-E:/LLVM/lib/clang/19/include/avx512vlintrin.h:
-
-E:/LLVM/lib/clang/19/include/__stddef_ptrdiff_t.h:
+E:/LLVM/lib/clang/20/include/avx10_2_512convertintrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/stdarg.h:
 
-E:/LLVM/lib/clang/19/include/xopintrin.h:
+E:/LLVM/lib/clang/20/include/stdarg.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cstdint:
 
-E:/LLVM/lib/clang/19/include/keylockerintrin.h:
+E:/LLVM/lib/clang/20/include/movrs_avx10_2intrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_bit_utils.hpp:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_format_ucd_tables.hpp:
+
+E:/LLVM/lib/clang/20/include/amxfp8intrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_iter_core.hpp:
 
@@ -1317,17 +1591,13 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cfloat:
 
-E:/LLVM/lib/clang/19/include/stdbool.h:
-
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/concepts:
+
+E:/LLVM/lib/clang/20/include/avxneconvertintrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/concurrencysal.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cstddef:
-
-E:/LLVM/lib/clang/19/include/limits.h:
-
-E:/LLVM/lib/clang/19/include/amxcomplexintrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cstring:
 
@@ -1337,13 +1607,15 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xfacet:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/exception:
+E:/LLVM/lib/clang/20/include/__stdarg_va_copy.h:
 
-E:/LLVM/lib/clang/19/include/__stdarg___va_copy.h:
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/exception:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/initializer_list:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/iosfwd:
+
+E:/LLVM/lib/clang/20/include/xsavecintrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/limits.h:
 
@@ -1355,17 +1627,19 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/stdbool.h:
 
+E:/LLVM/lib/clang/20/include/__stddef_max_align_t.h:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/stdint.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/type_traits:
 
-E:/LLVM/lib/clang/19/include/avx512vlvnniintrin.h:
+E:/LLVM/lib/clang/20/include/avx10_2satcvtintrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/typeinfo:
 
-E:/LLVM/lib/clang/19/include/clwbintrin.h:
-
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/utility:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/unordered_map:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vadefs.h:
 
@@ -1379,9 +1653,17 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_new_debug.h:
 
-E:/LLVM/lib/clang/19/include/invpcidintrin.h:
+_deps/nlohmann_json-src/include/nlohmann/ordered_map.hpp:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_string.h:
+
+E:/LLVM/lib/clang/20/include/gfniintrin.h:
+
+E:/LLVM/lib/clang/20/include/fma4intrin.h:
+
+E:/LLVM/lib/clang/20/include/amxintrin.h:
+
+E:/LLVM/lib/clang/20/include/adcintrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/vcruntime_typeinfo.h:
 
@@ -1395,7 +1677,7 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/bit:
 
-E:/LLVM/lib/clang/19/include/avx512fintrin.h:
+E:/LLVM/lib/clang/20/include/amxfp16intrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xatomic_wait.h:
 
@@ -1403,17 +1685,19 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xmemory:
 
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/identity_tag.hpp:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xpolymorphic_allocator.h:
 
-E:/LLVM/lib/clang/19/include/vadefs.h:
-
-E:/LLVM/lib/clang/19/include/fxsrintrin.h:
+_deps/nlohmann_json-src/include/nlohmann/detail/output/output_adapters.hpp:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xthreads.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xtimec.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xtr1common:
+
+E:/LLVM/lib/clang/20/include/avx512bwintrin.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xutility:
 
@@ -1423,259 +1707,365 @@ _deps/raylib-src/src/raylib.h:
 
 _deps/raylib-src/src/raymath.h:
 
-E:/LLVM/lib/clang/19/include/avx512ifmavlintrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512dqintrin.h:
-
 D:/gitnext/Chained\ Decos/src/Collision/CollisionDebugRenderer.h:
 
-E:/LLVM/lib/clang/19/include/x86intrin.h:
+E:/LLVM/lib/clang/20/include/sm4evexintrin.h:
 
 D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.h:
 
 D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.h:
 
-E:/LLVM/lib/clang/19/include/__stdarg___gnuc_va_list.h:
+E:/LLVM/lib/clang/20/include/clflushoptintrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512vpopcntdqintrin.h:
+E:/LLVM/lib/clang/20/include/__stdarg___gnuc_va_list.h:
 
-E:/LLVM/lib/clang/19/include/__stdarg_header_macro.h:
+E:/LLVM/lib/clang/20/include/__stdarg___va_copy.h:
 
-E:/LLVM/lib/clang/19/include/__stdarg_va_arg.h:
+E:/LLVM/lib/clang/20/include/__stdarg_header_macro.h:
 
-E:/LLVM/lib/clang/19/include/wbnoinvdintrin.h:
+E:/LLVM/lib/clang/20/include/__stdarg_va_arg.h:
 
-E:/LLVM/lib/clang/19/include/__stdarg_va_copy.h:
+E:/LLVM/lib/clang/20/include/__stdarg_va_list.h:
 
-E:/LLVM/lib/clang/19/include/__stdarg_va_list.h:
+E:/LLVM/lib/clang/20/include/__stddef_header_macro.h:
 
-E:/LLVM/lib/clang/19/include/__stddef_header_macro.h:
+E:/LLVM/lib/clang/20/include/__stddef_null.h:
 
-E:/LLVM/lib/clang/19/include/stdint.h:
+E:/LLVM/lib/clang/20/include/__stddef_nullptr_t.h:
 
-E:/LLVM/lib/clang/19/include/__stddef_max_align_t.h:
+E:/LLVM/lib/clang/20/include/__wmmintrin_pclmul.h:
 
-E:/LLVM/lib/clang/19/include/__stddef_nullptr_t.h:
+E:/LLVM/lib/clang/20/include/__stddef_offsetof.h:
 
-E:/LLVM/lib/clang/19/include/__stddef_offsetof.h:
+E:/LLVM/lib/clang/20/include/__stddef_ptrdiff_t.h:
 
-E:/LLVM/lib/clang/19/include/movdirintrin.h:
+_deps/nlohmann_json-src/include/nlohmann/detail/conversions/to_json.hpp:
 
-E:/LLVM/lib/clang/19/include/__stddef_size_t.h:
+E:/LLVM/lib/clang/20/include/__stddef_size_t.h:
 
-E:/LLVM/lib/clang/19/include/__stddef_wchar_t.h:
+E:/LLVM/lib/clang/20/include/__stddef_wchar_t.h:
 
-E:/LLVM/lib/clang/19/include/__wmmintrin_aes.h:
+E:/LLVM/lib/clang/20/include/adxintrin.h:
 
-E:/LLVM/lib/clang/19/include/__wmmintrin_pclmul.h:
+E:/LLVM/lib/clang/20/include/ammintrin.h:
 
-E:/LLVM/lib/clang/19/include/adcintrin.h:
+E:/LLVM/lib/clang/20/include/amxavx512intrin.h:
 
-E:/LLVM/lib/clang/19/include/adxintrin.h:
+E:/LLVM/lib/clang/20/include/prfchwintrin.h:
+
+E:/LLVM/lib/clang/20/include/amxbf16transposeintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xtree:
+
+E:/LLVM/lib/clang/20/include/amxcomplexintrin.h:
+
+E:/LLVM/lib/clang/20/include/amxcomplextransposeintrin.h:
+
+E:/LLVM/lib/clang/20/include/movrs_avx10_2_512intrin.h:
+
+E:/LLVM/lib/clang/20/include/amxfp16transposeintrin.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/macro_scope.hpp:
+
+E:/LLVM/lib/clang/20/include/amxmovrstransposeintrin.h:
+
+E:/LLVM/lib/clang/20/include/amxtf32intrin.h:
+
+E:/LLVM/lib/clang/20/include/amxtf32transposeintrin.h:
+
+D:/gitnext/Chained\ Decos/src/Model/ModelInstance.h:
+
+E:/LLVM/lib/clang/20/include/amxtransposeintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx10_2_512bf16intrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xhash:
+
+E:/LLVM/lib/clang/20/include/avx10_2_512minmaxintrin.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/string_concat.hpp:
+
+E:/LLVM/lib/clang/20/include/avx10_2_512niintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vlcdintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx10_2_512satcvtdsintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx10_2_512satcvtintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx10_2bf16intrin.h:
+
+E:/LLVM/lib/clang/20/include/avx10_2convertintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcall_once.h:
+
+E:/LLVM/lib/clang/20/include/avx10_2copyintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_ostream.hpp:
+
+E:/LLVM/lib/clang/20/include/avx10_2minmaxintrin.h:
+
+E:/LLVM/lib/clang/20/include/intrin0.h:
+
+E:/LLVM/lib/clang/20/include/avx10_2niintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx10_2satcvtdsintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx2intrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512bf16intrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512bitalgintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512cdintrin.h:
+
+E:/LLVM/lib/clang/20/include/uintrintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512dqintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512fintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512fp16intrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512ifmaintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512ifmavlintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vbmi2intrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vbmiintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vbmivlintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/iterator:
+
+E:/LLVM/lib/clang/20/include/avx512vlbf16intrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_xlocinfo_types.hpp:
+
+E:/LLVM/lib/clang/20/include/avx512vlbitalgintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vlbwintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vldqintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/map:
+
+E:/LLVM/lib/clang/20/include/avx512vlfp16intrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vlintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vlvbmi2intrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vlvnniintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocale:
+
+E:/LLVM/lib/clang/20/include/avx512vlvp2intersectintrin.h:
+
+E:/LLVM/lib/clang/20/include/xsavesintrin.h:
+
+E:/LLVM/lib/clang/20/include/avx512vnniintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/span:
+
+E:/LLVM/lib/clang/20/include/avx512vpopcntdqintrin.h:
+
+E:/LLVM/lib/clang/20/include/limits.h:
+
+E:/LLVM/lib/clang/20/include/avx512vpopcntdqvlintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xsmf_control.h:
+
+E:/LLVM/lib/clang/20/include/avxifmaintrin.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/detected.hpp:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/chrono:
 
-E:/LLVM/lib/clang/19/include/ammintrin.h:
+E:/LLVM/lib/clang/20/include/tbmintrin.h:
 
-E:/LLVM/lib/clang/19/include/amxfp16intrin.h:
+E:/LLVM/lib/clang/20/include/avxintrin.h:
 
-E:/LLVM/lib/clang/19/include/avx2intrin.h:
+E:/LLVM/lib/clang/20/include/tsxldtrkintrin.h:
 
-E:/LLVM/lib/clang/19/include/tmmintrin.h:
+E:/LLVM/lib/clang/20/include/avxvnniint16intrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512bf16intrin.h:
+E:/LLVM/lib/clang/20/include/avxvnniint8intrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512bitalgintrin.h:
+E:/LLVM/lib/clang/20/include/avxvnniintrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512bwintrin.h:
+_deps/nlohmann_json-src/include/nlohmann/detail/input/position_t.hpp:
 
-E:/LLVM/lib/clang/19/include/avx512cdintrin.h:
+E:/LLVM/lib/clang/20/include/bmi2intrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512fp16intrin.h:
+E:/LLVM/lib/clang/20/include/bmiintrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512ifmaintrin.h:
+E:/LLVM/lib/clang/20/include/cetintrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512vbmi2intrin.h:
+E:/LLVM/lib/clang/20/include/cldemoteintrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512vbmiintrin.h:
+E:/LLVM/lib/clang/20/include/clwbintrin.h:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_print.hpp:
+E:/LLVM/lib/clang/20/include/clzerointrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512vbmivlintrin.h:
+E:/LLVM/lib/clang/20/include/wbnoinvdintrin.h:
 
-E:/LLVM/lib/clang/19/include/avx512vlbf16intrin.h:
+E:/LLVM/lib/clang/20/include/cmpccxaddintrin.h:
 
-E:/LLVM/lib/clang/19/include/float.h:
+_deps/nlohmann_json-src/include/nlohmann/detail/abi_macros.hpp:
 
-E:/LLVM/lib/clang/19/include/avx512vlbitalgintrin.h:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocmon:
-
-E:/LLVM/lib/clang/19/include/avx512vnniintrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512vlbwintrin.h:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_tzdb.hpp:
-
-E:/LLVM/lib/clang/19/include/avx512vlcdintrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512vldqintrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512vlfp16intrin.h:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_chrono.hpp:
-
-E:/LLVM/lib/clang/19/include/avx512vlvbmi2intrin.h:
-
-E:/LLVM/lib/clang/19/include/fma4intrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512vlvp2intersectintrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512vp2intersectintrin.h:
-
-E:/LLVM/lib/clang/19/include/xsaveoptintrin.h:
-
-E:/LLVM/lib/clang/19/include/avx512vpopcntdqvlintrin.h:
-
-E:/LLVM/lib/clang/19/include/avxifmaintrin.h:
-
-E:/LLVM/lib/clang/19/include/avxintrin.h:
-
-E:/LLVM/lib/clang/19/include/avxneconvertintrin.h:
-
-E:/LLVM/lib/clang/19/include/avxvnniint16intrin.h:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cmath:
-
-E:/LLVM/lib/clang/19/include/rdpruintrin.h:
-
-E:/LLVM/lib/clang/19/include/avxvnniint8intrin.h:
-
-E:/LLVM/lib/clang/19/include/avxvnniintrin.h:
-
-E:/LLVM/lib/clang/19/include/bmiintrin.h:
-
-E:/LLVM/lib/clang/19/include/cldemoteintrin.h:
-
-E:/LLVM/lib/clang/19/include/clflushoptintrin.h:
-
-E:/LLVM/lib/clang/19/include/clzerointrin.h:
-
-E:/LLVM/lib/clang/19/include/sm3intrin.h:
-
-E:/LLVM/lib/clang/19/include/cmpccxaddintrin.h:
-
-E:/LLVM/lib/clang/19/include/crc32intrin.h:
-
-E:/LLVM/lib/clang/19/include/emmintrin.h:
-
-E:/LLVM/lib/clang/19/include/enqcmdintrin.h:
-
-E:/LLVM/lib/clang/19/include/mwaitxintrin.h:
-
-E:/LLVM/lib/clang/19/include/f16cintrin.h:
-
-E:/LLVM/lib/clang/19/include/fmaintrin.h:
-
-E:/LLVM/lib/clang/19/include/rdseedintrin.h:
-
-E:/LLVM/lib/clang/19/include/hresetintrin.h:
-
-E:/LLVM/lib/clang/19/include/ia32intrin.h:
-
-E:/LLVM/lib/clang/19/include/immintrin.h:
-
-E:/LLVM/lib/clang/19/include/sgxintrin.h:
-
-E:/LLVM/lib/clang/19/include/intrin.h:
-
-E:/LLVM/lib/clang/19/include/intrin0.h:
-
-E:/LLVM/lib/clang/19/include/lwpintrin.h:
-
-E:/LLVM/lib/clang/19/include/lzcntintrin.h:
-
-E:/LLVM/lib/clang/19/include/mm_malloc.h:
-
-C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/ctype.h:
-
-E:/LLVM/lib/clang/19/include/mmintrin.h:
-
-E:/LLVM/lib/clang/19/include/pconfigintrin.h:
-
-E:/LLVM/lib/clang/19/include/pkuintrin.h:
-
-E:/LLVM/lib/clang/19/include/popcntintrin.h:
-
-E:/LLVM/lib/clang/19/include/prfchwintrin.h:
-
-E:/LLVM/lib/clang/19/include/ptwriteintrin.h:
-
-E:/LLVM/lib/clang/19/include/rtmintrin.h:
-
-E:/LLVM/lib/clang/19/include/serializeintrin.h:
-
-E:/LLVM/lib/clang/19/include/shaintrin.h:
-
-E:/LLVM/lib/clang/19/include/sm4intrin.h:
-
-E:/LLVM/lib/clang/19/include/stdarg.h:
-
-E:/LLVM/lib/clang/19/include/stddef.h:
-
-E:/LLVM/lib/clang/19/include/tbmintrin.h:
-
-E:/LLVM/lib/clang/19/include/tsxldtrkintrin.h:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv_tables.h:
-
-E:/LLVM/lib/clang/19/include/uintrintrin.h:
-
-E:/LLVM/lib/clang/19/include/usermsrintrin.h:
-
-E:/LLVM/lib/clang/19/include/vpclmulqdqintrin.h:
-
-E:/LLVM/lib/clang/19/include/waitpkgintrin.h:
-
-E:/LLVM/lib/clang/19/include/wmmintrin.h:
-
-E:/LLVM/lib/clang/19/include/xmmintrin.h:
-
-E:/LLVM/lib/clang/19/include/xsavecintrin.h:
-
-E:/LLVM/lib/clang/19/include/xsavesintrin.h:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cctype:
-
-E:/LLVM/lib/clang/19/include/xtestintrin.h:
-
-E:/LLVM/lib/clang/19/include/yvals_core.h:
-
-D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.cpp:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/string:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_heap_algorithms.hpp:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_minmax.hpp:
+E:/LLVM/lib/clang/20/include/crc32intrin.h:
 
 D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.h:
 
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/filesystem:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/algorithm:
 
-D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.cpp:
+E:/LLVM/lib/clang/20/include/emmintrin.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.cpp:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/charconv:
 
-D:/gitnext/Chained\ Decos/src/Collision/CollisionSystem.cpp:
+E:/LLVM/lib/clang/20/include/enqcmdintrin.h:
+
+E:/LLVM/lib/clang/20/include/f16cintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cctype:
+
+E:/LLVM/lib/clang/20/include/float.h:
+
+E:/LLVM/lib/clang/20/include/hresetintrin.h:
+
+E:/LLVM/lib/clang/20/include/immintrin.h:
+
+E:/LLVM/lib/clang/20/include/tmmintrin.h:
+
+E:/LLVM/lib/clang/20/include/intrin.h:
+
+E:/LLVM/lib/clang/20/include/invpcidintrin.h:
+
+_deps/nlohmann_json-src/include/nlohmann/json_fwd.hpp:
+
+C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/assert.h:
+
+E:/LLVM/lib/clang/20/include/keylockerintrin.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/input/binary_reader.hpp:
+
+E:/LLVM/lib/clang/20/include/lwpintrin.h:
+
+E:/LLVM/lib/clang/20/include/mm_malloc.h:
+
+E:/LLVM/lib/clang/20/include/mmintrin.h:
+
+E:/LLVM/lib/clang/20/include/movdirintrin.h:
+
+E:/LLVM/lib/clang/20/include/movrsintrin.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/string_escape.hpp:
+
+E:/LLVM/lib/clang/20/include/mwaitxintrin.h:
+
+E:/LLVM/lib/clang/20/include/pconfigintrin.h:
+
+E:/LLVM/lib/clang/20/include/pkuintrin.h:
+
+E:/LLVM/lib/clang/20/include/pmmintrin.h:
+
+E:/LLVM/lib/clang/20/include/prfchiintrin.h:
+
+E:/LLVM/lib/clang/20/include/ptwriteintrin.h:
+
+E:/LLVM/lib/clang/20/include/raointintrin.h:
+
+E:/LLVM/lib/clang/20/include/rdpruintrin.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/iterators/primitive_iterator.hpp:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/sstream:
+
+E:/LLVM/lib/clang/20/include/rdseedintrin.h:
+
+E:/LLVM/lib/clang/20/include/rtmintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/list:
+
+E:/LLVM/lib/clang/20/include/serializeintrin.h:
+
+E:/LLVM/lib/clang/20/include/sgxintrin.h:
+
+E:/LLVM/lib/clang/20/include/sha512intrin.h:
+
+E:/LLVM/lib/clang/20/include/shaintrin.h:
+
+E:/LLVM/lib/clang/20/include/sm3intrin.h:
+
+E:/LLVM/lib/clang/20/include/sm4intrin.h:
+
+E:/LLVM/lib/clang/20/include/smmintrin.h:
+
+E:/LLVM/lib/clang/20/include/stdbool.h:
+
+E:/LLVM/lib/clang/20/include/stddef.h:
+
+E:/LLVM/lib/clang/20/include/stdint.h:
+
+E:/LLVM/lib/clang/20/include/usermsrintrin.h:
+
+E:/LLVM/lib/clang/20/include/vadefs.h:
+
+E:/LLVM/lib/clang/20/include/vpclmulqdqintrin.h:
+
+E:/LLVM/lib/clang/20/include/waitpkgintrin.h:
+
+E:/LLVM/lib/clang/20/include/wmmintrin.h:
+
+E:/LLVM/lib/clang/20/include/x86intrin.h:
+
+E:/LLVM/lib/clang/20/include/xmmintrin.h:
+
+E:/LLVM/lib/clang/20/include/xsaveintrin.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocmon:
+
+E:/LLVM/lib/clang/20/include/xsaveoptintrin.h:
+
+E:/LLVM/lib/clang/20/include/xtestintrin.h:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/input/parser.hpp:
+
+E:/LLVM/lib/clang/20/include/yvals_core.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionManager.cpp:
+
+C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/ctype.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/locale.h:
 
 C:/Program\ Files\ (x86)/Windows\ Kits/10/Include/10.0.26100.0/ucrt/share.h:
 
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_chrono.hpp:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_formatter.hpp:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_ostream.hpp:
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/string:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_heap_algorithms.hpp:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_int128.hpp:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_minmax.hpp:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_print.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/conversions/from_json.hpp:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_tzdb.hpp:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_ranges_to.hpp:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_ranges_tuple_formatter.hpp:
 
@@ -1683,11 +2073,21 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_system_error_abi.hpp:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/__msvc_xlocinfo_types.hpp:
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/any:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/array:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cassert:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cerrno:
 
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/cmath:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/forward_list:
+
+D:/gitnext/Chained\ Decos/src/Model/Animation.h:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/functional:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/iomanip:
 
@@ -1695,35 +2095,43 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/istream:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/iterator:
-
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/locale:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/numeric:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/optional:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/sstream:
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/ostream:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/ranges:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/set:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xfilesystem_abi.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/stdexcept:
 
+_deps/nlohmann_json-src/include/nlohmann/detail/input/input_adapters.hpp:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/streambuf:
+
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/string_view:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/system_error:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xbit_ops.h:
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/valarray:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcall_once.h:
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xbit_ops.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv_ryu.h:
 
+C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xcharconv_tables.h:
+
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xerrc.h:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xiosbase:
-
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocale:
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xlocbuf:
 
@@ -1735,10 +2143,64 @@ C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.3
 
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xloctime:
 
-C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xsmf_control.h:
-
 C:/Program\ Files/Microsoft\ Visual\ Studio/2022/Community/VC/Tools/MSVC/14.44.35207/include/xstring:
+
+_deps/nlohmann_json-src/include/nlohmann/adl_serializer.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/byte_container_with_subtype.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/exceptions.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/input/json_sax.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/input/lexer.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/iterators/iteration_proxy.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/iterators/iterator_traits.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/iterators/json_reverse_iterator.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/json_custom_base_class.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/json_pointer.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/macro_unscope.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/call_std/end.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/cpp_future.hpp:
 
 D:/gitnext/Chained\ Decos/src/Collision/Octree.h:
 
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/is_sax.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/std_fs.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/type_traits.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/meta/void_t.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/output/binary_writer.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/output/serializer.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/string_utils.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/detail/value_t.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/json.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley.hpp:
+
+_deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley_undef.hpp:
+
+D:/gitnext/Chained\ Decos/src/Model/JsonHelper.h:
+
+D:/gitnext/Chained\ Decos/src/Model/Model.h:
+
+D:/gitnext/Chained\ Decos/src/Model/ModelCache.h:
+
 D:/gitnext/Chained\ Decos/src/Model/ModelConfig.h:
+
+D:/gitnext/Chained\ Decos/src/Collision/CollisionStructures.cpp:

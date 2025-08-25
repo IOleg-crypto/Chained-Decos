@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+D:/gitnext/Chained Decos/src/Input/InputManager.cpp
+InputManager.h
+D:/gitnext/Chained Decos/src/Input/InputManager.h
+
+D:/gitnext/Chained Decos/src/Input/InputManager.h
+functional
+-
+raylib.h
+-
+unordered_map
+-
+
+_deps/raylib-src/src/raylib.h
+stdarg.h
+-
+stdbool.h
+-
+

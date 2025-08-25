@@ -71,27 +71,26 @@ float Player::GetSpeed() { return m_movement->GetSpeed(); }
 
 float Player::GetRotationY() const { return m_movement->GetRotationY(); }
 
-void Player::SetSpeed(const float speed) { m_movement->SetSpeed(speed); }
+void Player::SetSpeed(const float speed) const { m_movement->SetSpeed(speed); }
 
-void Player::Move(const Vector3 &moveVector) { m_movement->Move(moveVector); }
+void Player::Move(const Vector3 &moveVector) const { m_movement->Move(moveVector); }
 
 // Handle input both on ground and mid-air
-void Player::ApplyInput() { m_input->ProcessInput(); }
+void Player::ApplyInput() const { m_input->ProcessInput(); }
 
 std::shared_ptr<CameraController> Player::GetCameraController() const { return m_cameraController; }
 
-Models &Player::GetModelManager() { return m_model->GetModelManager(); }
+Models &Player::GetModelManager() const { return m_model->GetModelManager(); }
 
-void Player::SetPlayerModel(Model *model) { m_model->SetModel(model); }
+void Player::SetPlayerModel(Model *model) const { m_model->SetModel(model); }
 
-void Player::UpdatePlayerBox() { m_collision->UpdateBoundingBox(); }
+void Player::UpdatePlayerBox() const { m_collision->UpdateBoundingBox(); }
 
-void Player::UpdatePlayerCollision() { m_collision->Update(); }
+void Player::UpdatePlayerCollision() const { m_collision->Update(); }
 
-void Player::ToggleModelRendering(bool useModel) { m_model->ToggleModelRendering(useModel); }
+void Player::ToggleModelRendering(const bool useModel) const { m_model->ToggleModelRendering(useModel); }
 
-void Player::SetPlayerPosition(const Vector3 &pos)
-{
+void Player::SetPlayerPosition(const Vector3 &pos) const {
     m_movement->SetPosition(pos);
     UpdatePlayerBox();
     UpdatePlayerCollision();
@@ -121,19 +120,17 @@ void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
     Update(collisionManager);
 }
 
-void Player::HandleJumpInput() { m_input->HandleJumpInput(); }
+void Player::HandleJumpInput() const { m_input->HandleJumpInput(); }
 
-void Player::HandleEmergencyReset() { m_input->HandleEmergencyReset(); }
+void Player::HandleEmergencyReset() const { m_input->HandleEmergencyReset(); }
 
-void Player::ApplyGravity(float deltaTime) { m_movement->ApplyGravity(deltaTime); }
+void Player::ApplyGravity(const float deltaTime) const { m_movement->ApplyGravity(deltaTime); }
 
-Vector3 Player::StepMovement(const CollisionManager &collisionManager)
-{
+Vector3 Player::StepMovement(const CollisionManager &collisionManager) const {
     return m_movement->StepMovement(collisionManager);
 }
 
-void Player::SnapToGroundIfNeeded(const CollisionManager &collisionManager)
-{
+void Player::SnapToGroundIfNeeded(const CollisionManager &collisionManager) const {
     m_movement->SnapToGround(collisionManager);
 }
 
@@ -143,6 +140,6 @@ const PhysicsComponent &Player::GetPhysics() const { return m_movement->GetPhysi
 
 PhysicsComponent &Player::GetPhysics() { return m_movement->GetPhysics(); }
 
-void Player::SetRotationY(float rotationY) { m_movement->SetRotationY(rotationY); }
+void Player::SetRotationY(const float rotationY) const { m_movement->SetRotationY(rotationY); }
 
 PlayerMovement *Player::GetMovement() const { return m_movement.get(); }

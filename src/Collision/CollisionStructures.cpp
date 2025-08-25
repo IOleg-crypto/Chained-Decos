@@ -3,6 +3,7 @@
 //
 
 #include "CollisionStructures.h"
+#include <algorithm>
 #include <cmath>
 
 static constexpr float EPS = 1e-6f;
@@ -18,13 +19,13 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
     normal = Vector3Normalize(Vector3CrossProduct(e0, e1));
 
     // Min/Max
-    min.x = std::min({v0.x, v1.x, v2.x});
-    min.y = std::min({v0.y, v1.y, v2.y});
-    min.z = std::min({v0.z, v1.z, v2.z});
+    min.x = std::min(std::min(v0.x, v1.x), v2.x);
+    min.y = std::min(std::min(v0.y, v1.y), v2.y);
+    min.z = std::min(std::min(v0.z, v1.z), v2.z);
 
-    max.x = std::max({v0.x, v1.x, v2.x});
-    max.y = std::max({v0.y, v1.y, v2.y});
-    max.z = std::max({v0.z, v1.z, v2.z});
+    max.x = std::max(std::max(v0.x, v1.x), v2.x);
+    max.y = std::max(std::max(v0.y, v1.y), v2.y);
+    max.z = std::max(std::max(v0.z, v1.z), v2.z);
 
     // Center
     center = {(v0.x + v1.x + v2.x) / 3.0f, (v0.y + v1.y + v2.y) / 3.0f,
@@ -69,7 +70,7 @@ bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
 
 bool CollisionTriangle::Intersects(const Vector3 &origin, const Vector3 &direction, float &t) const
 {
-    CollisionRay ray(origin, direction);
+    const CollisionRay ray(origin, direction);
     return Intersects(ray, t);
 }
 

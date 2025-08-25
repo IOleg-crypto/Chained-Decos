@@ -6,7 +6,7 @@
 #include <Collision/CollisionSystem.h>
 #include <Collision/Octree.h>
 #include <Model/ModelConfig.h>
-#include <algorithm> // для std::min, std::max
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <raylib.h>
@@ -64,7 +64,7 @@ Collision::Collision(Collision &&other) noexcept
       m_complexity((other.m_complexity)), m_triangles(std::move(other.m_triangles)),
       m_octree(std::move(other.m_octree))
 {
-    other.m_collisionType = CollisionType::TRIANGLE_PRECISE;
+    other.m_collisionType = m_collisionType;
 }
 
 // Move assignment operator
@@ -79,7 +79,7 @@ Collision &Collision::operator=(Collision &&other) noexcept
         m_triangles = std::move(other.m_triangles);
         m_octree = std::move(other.m_octree);
 
-        other.m_collisionType = CollisionType::TRIANGLE_PRECISE;
+        other.m_collisionType = m_collisionType;
     }
     return *this;
 }
@@ -417,11 +417,18 @@ void Collision::BuildFromModelConfig(Model *model, const ModelFileConfig &config
         AnalyzeModelComplexity(model, transform);
         ExtractTrianglesFromModel(model, transform);
         targetType = DetermineOptimalCollisionType();
-        TraceLog(LOG_INFO, "AUTO collision type selected: %s for model '%s'",
-                 (targetType == CollisionType::AABB_ONLY)       ? "AABB"
-                 : (targetType == CollisionType::IMPROVED_AABB) ? "IMPROVED"
-                                                                : "PRECISE",
-                 config.name.c_str());
+        if (targetType != CollisionType::IMPROVED_AABB)
+        {
+            TraceLog(LOG_INFO, "AUTO collision type selected: %s for model '%s'",
+                     (targetType == CollisionType::AABB_ONLY) ? "AABB" : "IMPROVED",
+                     config.name.c_str());
+        }
+        else
+        {
+            TraceLog(LOG_INFO, "AUTO collision type selected: %s for model '%s'",
+                     (targetType == CollisionType::AABB_ONLY) ? "AABB" : "PRECISE",
+                     config.name.c_str());
+        }
         break;
     case CollisionPrecision::AABB_ONLY:
         targetType = CollisionType::AABB_ONLY;
@@ -474,7 +481,8 @@ void Collision::SetCollisionType(CollisionType type)
         m_collisionType = CollisionType::AABB_ONLY;
     }
 
-    TraceLog(LOG_INFO, "Collision type changed from %d to %d", (int)oldType, (int)type);
+    TraceLog(LOG_INFO, "Collision type changed from %d to %d", static_cast<int>(oldType),
+             static_cast<int>(type));
 }
 
 // ================== Octree Methods ==================
@@ -562,6 +570,22 @@ void Collision::SetUseOctree(bool useOctree)
     }
 }
 
+bool Collision::IsUsingOctree() const
+{
+    return m_collisionType == CollisionType::OCTREE_ONLY && m_octree != nullptr;
+}
+
+void Collision::InitializeOctree() const
+{
+    if ((m_collisionType == CollisionType::OCTREE_ONLY ||
+         m_collisionType == CollisionType::TRIANGLE_PRECISE ||
+         m_collisionType == CollisionType::IMPROVED_AABB) &&
+        !m_triangles.empty())
+    {
+        EnsureOctree();
+    }
+}
+
 size_t Collision::GetTriangleCount() const
 {
     if (m_octree)
@@ -589,9 +613,9 @@ void Collision::UpdateAABBFromOctree()
     if (!m_octree)
         return;
 
-    BoundingBox bounds = m_octree->GetBounds();
-    m_min = bounds.min;
-    m_max = bounds.max;
+    // BoundingBox bounds = m_octree->GetBounds();
+    // m_min = bounds.min;
+    // m_max = bounds.max;
 }
 
 void Collision::UpdateAABBFromTriangles()
@@ -607,13 +631,18 @@ void Collision::UpdateAABBFromTriangles()
         Vector3 triMin = triangle.GetMin();
         Vector3 triMax = triangle.GetMax();
 
-        min.x = std::min(min.x, triMin.x);
-        min.y = std::min(min.y, triMin.y);
-        min.z = std::min(min.z, triMin.z);
-
-        max.x = std::max(max.x, triMax.x);
-        max.y = std::max(max.y, triMax.y);
-        max.z = std::max(max.z, triMax.z);
+        if (triMin.x < min.x)
+            min.x = triMin.x;
+        if (triMin.y < min.y)
+            min.y = triMin.y;
+        if (triMin.z < min.z)
+            min.z = triMin.z;
+        if (triMax.x > max.x)
+            max.x = triMax.x;
+        if (triMax.y > max.y)
+            max.y = triMax.y;
+        if (triMax.z > max.z)
+            max.z = triMax.z;
     }
 
     m_min = min;
@@ -628,24 +657,17 @@ void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
         return;
 
     size_t totalTriangles = 0;
+    float totalArea = 0.0f;
     bool hasComplexGeometry = false;
 
     for (int m = 0; m < model->meshCount; m++)
     {
-        const Mesh &mesh = model->meshes[m];
-
-        if (mesh.triangleCount == 0)
-            continue;
-
+        Mesh &mesh = model->meshes[m];
         totalTriangles += mesh.triangleCount;
 
         // Check for complex geometry indicators
         if (mesh.normals || mesh.texcoords || mesh.colors)
-        {
             hasComplexGeometry = true;
-            // Якщо достатньо одного true, можна break;
-            // break;
-        }
     }
 
     // Calculate bounding volume
@@ -654,7 +676,7 @@ void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
     float volume = size.x * size.y * size.z;
 
     m_complexity.triangleCount = totalTriangles;
-    m_complexity.surfaceArea = 0.0f; // Якщо не рахуєте площу
+    m_complexity.surfaceArea = totalArea; // Approximate
     m_complexity.boundingVolume = volume;
     m_complexity.hasComplexGeometry = hasComplexGeometry;
 }
@@ -686,15 +708,20 @@ CollisionType Collision::DetermineOptimalCollisionType() const
     }
 }
 
-void Collision::ExtractTrianglesFromModel(Model *model, const Matrix &transform)
+void Collision::ExtractTrianglesFromModel(const Model *model, const Matrix &transform)
 {
-    m_triangles.clear();
-
     // Оцінюємо загальну кількість трикутників для резервування пам'яті
     size_t totalTriangles = 0;
     for (int m = 0; m < model->meshCount; m++)
+    {
         totalTriangles += model->meshes[m].triangleCount;
-    m_triangles.reserve(totalTriangles);
+    }
+
+    // Резервуємо пам'ять тільки якщо є трикутники
+    if (totalTriangles > 0)
+    {
+        m_triangles.reserve(totalTriangles);
+    }
 
     for (int m = 0; m < model->meshCount; m++)
     {
@@ -703,6 +730,7 @@ void Collision::ExtractTrianglesFromModel(Model *model, const Matrix &transform)
         if (mesh.triangleCount == 0)
             continue;
 
+        // Додайте перевірку на наявність даних у vertices
         if (mesh.indices)
         {
             // Indexed mesh
@@ -760,21 +788,25 @@ void Collision::EnsureOctree() const
     {
         TraceLog(LOG_WARNING,
                  "🔧 EnsureOctree: Rebuilding octree from %zu triangles for collision type %d",
-                 m_triangles.size(), (int)m_collisionType);
+                 m_triangles.size(), static_cast<int>(m_collisionType));
 
-        m_octree = std::make_unique<Octree>();
-
-        // Initialize octree with current AABB
-        m_octree->Initialize(m_min, m_max);
-
-        // Add all triangles to octree
-        for (const auto &triangle : m_triangles)
+        // Ensure that we have valid triangles before initializing the octree
+        if (m_triangles.size() > 0)
         {
-            m_octree->AddTriangle(triangle);
+            m_octree = std::make_unique<Octree>();
+            TraceLog(LOG_INFO, "Log info %f %f %f %f %f %f", m_min.x, m_min.y, m_min.z, m_max.x,
+                     m_max.y, m_max.z);
+            m_octree->Initialize(m_min, m_max);
+            // Add triangles to the octree
+            for (const auto &triangle : m_triangles)
+            {
+                m_octree->AddTriangle(triangle);
+            }
         }
-
-        TraceLog(LOG_INFO, "🔧 EnsureOctree: Successfully rebuilt octree with %zu nodes",
-                 m_octree->GetNodeCount());
+        else
+        {
+            TraceLog(LOG_WARNING, "No triangles available to build octree.");
+        }
     }
 }
 
@@ -792,7 +824,7 @@ void Collision::EndPerformanceTimer(CollisionType typeUsed) const
     // m_stats.lastCheckTime would be calculated here with proper timing
 }
 
-Octree *Collision::GetOctree() { return m_octree.get(); }
+Octree *Collision::GetOctree() const { return m_octree.get(); }
 
 bool Collision::HasTriangleData() const { return !m_triangles.empty(); }
 

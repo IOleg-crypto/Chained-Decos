@@ -1,18 +1,11 @@
 file(REMOVE_RECURSE
   "CMakeFiles/raylib.dir/raudio.c.obj"
-  "CMakeFiles/raylib.dir/raudio.c.obj.d"
   "CMakeFiles/raylib.dir/rcore.c.obj"
-  "CMakeFiles/raylib.dir/rcore.c.obj.d"
   "CMakeFiles/raylib.dir/rmodels.c.obj"
-  "CMakeFiles/raylib.dir/rmodels.c.obj.d"
   "CMakeFiles/raylib.dir/rshapes.c.obj"
-  "CMakeFiles/raylib.dir/rshapes.c.obj.d"
   "CMakeFiles/raylib.dir/rtext.c.obj"
-  "CMakeFiles/raylib.dir/rtext.c.obj.d"
   "CMakeFiles/raylib.dir/rtextures.c.obj"
-  "CMakeFiles/raylib.dir/rtextures.c.obj.d"
   "CMakeFiles/raylib.dir/utils.c.obj"
-  "CMakeFiles/raylib.dir/utils.c.obj.d"
   "raylib.lib"
   "raylib.pdb"
 )

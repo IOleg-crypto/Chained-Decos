@@ -118,22 +118,10 @@ public:
 
     // Enable/disable Octree usage (legacy)
     void SetUseOctree(bool useOctree);
-    bool IsUsingOctree() const
-    {
-        return m_collisionType == CollisionType::OCTREE_ONLY && m_octree != nullptr;
-    }
+    bool IsUsingOctree() const;
 
     // Force initialization of octree if needed
-    void InitializeOctree()
-    {
-        if ((m_collisionType == CollisionType::OCTREE_ONLY ||
-             m_collisionType == CollisionType::TRIANGLE_PRECISE ||
-             m_collisionType == CollisionType::IMPROVED_AABB) &&
-            !m_triangles.empty())
-        {
-            EnsureOctree();
-        }
-    }
+    void InitializeOctree() const;
 
     // Get triangle count
     size_t GetTriangleCount() const;
@@ -143,7 +131,7 @@ public:
     int GetMaxDepth() const;
 
     // -------------------- Triangle Access --------------------
-    Octree *GetOctree();
+    Octree *GetOctree() const;
 
     // -------------------- Verification --------------------
     bool HasTriangleData() const;
@@ -187,7 +175,7 @@ private:
     void AnalyzeModelComplexity(Model *model, const Matrix &transform);
     void EnsureOctree() const; // Build octree from triangles if needed
     CollisionType DetermineOptimalCollisionType() const;
-    void ExtractTrianglesFromModel(Model *model, const Matrix &transform);
+    void ExtractTrianglesFromModel(const Model *model, const Matrix &transform);
 
     // Performance measurement helpers
     void StartPerformanceTimer() const;

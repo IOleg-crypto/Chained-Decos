@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/cameracontroller.dir/CameraController.cpp.obj"
-  "CMakeFiles/cameracontroller.dir/CameraController.cpp.obj.d"
   "cameracontroller.lib"
   "cameracontroller.pdb"
 )
