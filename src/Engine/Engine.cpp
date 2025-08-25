@@ -452,7 +452,7 @@ void Engine::HandlePlayerCollision()
         TraceLog(LOG_INFO, "Collision detected, applying response: (%.2f, %.2f, %.2f)", response.x,
                  response.y, response.z);
         m_player.Move(response);
-        m_player.GetPhysics().SetVelocity(Vector3Zero());
+        // m_player.GetPhysics().SetVelocity(Vector3Zero());
     }
 }
 

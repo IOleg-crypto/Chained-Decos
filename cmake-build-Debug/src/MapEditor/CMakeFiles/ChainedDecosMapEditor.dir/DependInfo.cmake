@@ -4,17 +4,40 @@ set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
 
 # The set of languages for which implicit dependencies are needed:
 set(CMAKE_DEPENDS_LANGUAGES
+  "CXX"
+  )
+# The set of files for implicit dependencies of each language:
+set(CMAKE_DEPENDS_CHECK_CXX
+  "D:/gitnext/Chained Decos/src/MapEditor/Application.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj"
+  "D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj"
+  "D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj"
+  "D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj"
+  "D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj"
+  "D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj"
+  "D:/gitnext/Chained Decos/src/MapEditor/main.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj"
+  )
+set(CMAKE_CXX_COMPILER_ID "Clang")
+
+# Preprocessor definitions for this target.
+set(CMAKE_TARGET_DEFINITIONS_CXX
+  "GRAPHICS_API_OPENGL_33"
+  "PLATFORM_DESKTOP"
+  "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
+  "_CRT_SECURE_NO_WARNINGS"
+  )
+
+# The include file search paths:
+set(CMAKE_CXX_TARGET_INCLUDE_PATH
+  "D:/gitnext/Chained Decos/src"
+  "_deps/raylib-src/src"
+  "_deps/raylib-src/src/external/glfw/include"
+  "_deps/nlohmann_json-src/include"
+  "D:/gitnext/Chained Decos/include/imgui"
+  "D:/gitnext/Chained Decos/include/rlImGui"
   )
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "D:/gitnext/Chained Decos/src/MapEditor/Application.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/MapEditor/Editor/CameraModes.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/MapEditor/Editor/Editor.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/MapEditor/Editor/MapObject.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/MapEditor/Editor/ObjectTransform.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/MapEditor/MapFileManager/MapFileManager.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj.d"
-  "D:/gitnext/Chained Decos/src/MapEditor/main.cpp" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj" "gcc" "src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

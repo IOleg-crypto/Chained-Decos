@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/color.dir/ColorParser.cpp.obj"
-  "CMakeFiles/color.dir/ColorParser.cpp.obj.d"
   "color.lib"
   "color.pdb"
 )

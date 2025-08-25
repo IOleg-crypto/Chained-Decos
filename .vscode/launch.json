@@ -8,7 +8,9 @@
       "program": "${workspaceFolder}/cmake-build-debug/ChainedDecos.exe",
       "args": [],
       "cwd": "${workspaceFolder}/cmake-build-debug/",
-      "stopOnEntry": true
+      "stopOnEntry": true,
+      "env": [],
+      "console": "externalTerminal",
     },
     {
       "name": "Debug with LLDB",
@@ -29,7 +31,7 @@
       "program": "${workspaceFolder}/cmake-build-debug/ChainedDecos.exe",
       "args": [],
       "cwd": "${workspaceFolder}/cmake-build-debug/",
-      "stopAtEntry": true,
+      "stopOnEntry": true,
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",
