@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/render.dir/RenderManager.cpp.obj"
-  "CMakeFiles/render.dir/RenderManager.cpp.obj.d"
   "render.lib"
   "render.pdb"
 )

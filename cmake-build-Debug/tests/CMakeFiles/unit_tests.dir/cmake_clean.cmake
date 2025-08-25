@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
   "CMakeFiles/unit_tests.dir/gtest.cpp.obj"
-  "CMakeFiles/unit_tests.dir/gtest.cpp.obj.d"
   "unit_tests.exe"
   "unit_tests.exe.manifest"
   "unit_tests.lib"

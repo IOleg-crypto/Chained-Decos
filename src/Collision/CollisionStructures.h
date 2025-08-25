@@ -16,13 +16,13 @@
 struct CollisionTriangle
 {
     Vector3 v0, v1, v2; // Triangle vertices
-    Vector3 min, max;   // Bounding Box;
-    Vector3 normal;     // Triangle normal
-    Vector3 center;     // Cached triangle center
+    Vector3 min{}, max{};   // Bounding Box;
+    Vector3 normal{};     // Triangle normal
+    Vector3 center{};     // Cached triangle center
     float area;         // Cached area
 
     // Cached edge vectors and dot products for barycentric coordinates
-    Vector3 e0, e1; // e0 = v1-v0, e1 = v2-v0
+    Vector3 e0{}, e1{}; // e0 = v1-v0, e1 = v2-v0
     float dot00, dot01, dot11;
 
     CollisionTriangle() = default;

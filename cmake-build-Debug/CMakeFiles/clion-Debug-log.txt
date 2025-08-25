@@ -15,26 +15,72 @@ CMake Deprecation Warning:
 -- Detecting CXX compile features
 -- Detecting CXX compile features - done
 -- Raylib 5.5 not found, fetching from GitHub...
-[ 11%] Creating directories for 'raylib-populate'
-[ 22%] Performing download step (git clone) for 'raylib-populate'
-Error removing directory "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-src".
-CMake Error at raylib-subbuild/raylib-populate-prefix/tmp/raylib-populate-gitclone.cmake:30 (message):
-  Failed to remove directory: 'D:/gitnext/Chained
-  Decos/cmake-build-debug/_deps/raylib-src'
+CMake Deprecation Warning at cmake-build-debug/_deps/raylib-src/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
 
 
-mingw32-make[2]: *** [CMakeFiles\raylib-populate.dir\build.make:101: raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download] Error 1
-mingw32-make[1]: *** [CMakeFiles\Makefile2:86: CMakeFiles/raylib-populate.dir/all] Error 2
-mingw32-make: *** [Makefile:90: all] Error 2
+-- The C compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/msys64/mingw64/bin/cc.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Performing Test COMPILER_HAS_THOSE_TOGGLES
+-- Performing Test COMPILER_HAS_THOSE_TOGGLES - Success
+-- Testing if -Werror=pointer-arith can be used -- compiles
+-- Testing if -Werror=implicit-function-declaration can be used -- compiles
+-- Testing if -fno-strict-aliasing can be used -- compiles
+-- Using raylib's GLFW
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Including Win32 support
+-- Looking for dinput.h
+-- Looking for dinput.h - found
+-- Looking for xinput.h
+-- Looking for xinput.h - found
+-- Audio Backend: miniaudio
+-- Building raylib static library
+-- Generated build type: Debug
+-- Compiling with the flags:
+--   PLATFORM=PLATFORM_DESKTOP
+--   GRAPHICS=GRAPHICS_API_OPENGL_33
+-- nlohmann_json not found, fetching from GitHub...
+-- Using the multi-header code from D:/gitnext/Chained Decos/cmake-build-debug/_deps/nlohmann_json-src/include/
+-- GTest not found, downloading via FetchContent
+CMake Deprecation Warning at cmake-build-debug/_deps/googletest-src/CMakeLists.txt:4 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
 
-CMake Error at D:/CLion-2025.1.1.win/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent.cmake:1918 (message):
-  Build step for raylib failed: 2
-Call Stack (most recent call first):
-  D:/CLion-2025.1.1.win/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent.cmake:1609 (__FetchContent_populateSubbuild)
-  D:/CLion-2025.1.1.win/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent.cmake:2145:EVAL:2 (__FetchContent_doPopulation)
-  D:/CLion-2025.1.1.win/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent.cmake:2145 (cmake_language)
-  D:/CLion-2025.1.1.win/bin/cmake/win/x64/share/cmake-3.31/Modules/FetchContent.cmake:2384 (__FetchContent_Populate)
-  CMakeLists.txt:49 (FetchContent_MakeAvailable)
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
 
 
--- Configuring incomplete, errors occurred!
+CMake Deprecation Warning at cmake-build-debug/_deps/googletest-src/googlemock/CMakeLists.txt:39 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+CMake Deprecation Warning at cmake-build-debug/_deps/googletest-src/googletest/CMakeLists.txt:49 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+-- Found Python: C:/Program Files/Python311/python.exe (found version "3.11.1") found components: Interpreter
+-- Configuring done (160.3s)
+-- Generating done (7.1s)
+-- Build files have been written to: D:/gitnext/Chained Decos/cmake-build-debug
