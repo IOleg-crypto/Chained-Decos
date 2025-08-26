@@ -6,7 +6,7 @@
     "hasAnimations": false
   },
   {
-    "name": "house",
+    "name": "arena_test",
     "path": "/resources/arena.glb",
     "spawn": true,
     "hasCollision" : true,
