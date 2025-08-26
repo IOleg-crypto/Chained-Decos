@@ -613,6 +613,7 @@ void Collision::UpdateAABBFromOctree()
     if (!m_octree)
         return;
 
+    // This makes the collision system to not
     // BoundingBox bounds = m_octree->GetBounds();
     // m_min = bounds.min;
     // m_max = bounds.max;
@@ -651,13 +652,12 @@ void Collision::UpdateAABBFromTriangles()
 
 void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
 {
-    m_complexity = CollisionComplexity{};
+    m_complexity = {};
 
     if (!model || model->meshCount == 0)
         return;
 
     size_t totalTriangles = 0;
-    float totalArea = 0.0f;
     bool hasComplexGeometry = false;
 
     for (int m = 0; m < model->meshCount; m++)
@@ -665,18 +665,16 @@ void Collision::AnalyzeModelComplexity(Model *model, const Matrix &transform)
         Mesh &mesh = model->meshes[m];
         totalTriangles += mesh.triangleCount;
 
-        // Check for complex geometry indicators
-        if (mesh.normals || mesh.texcoords || mesh.colors)
+        if (!hasComplexGeometry && (mesh.normals || mesh.texcoords || mesh.colors))
             hasComplexGeometry = true;
     }
 
-    // Calculate bounding volume
     BoundingBox bounds = GetModelBoundingBox(*model);
     Vector3 size = Vector3Subtract(bounds.max, bounds.min);
     float volume = size.x * size.y * size.z;
 
     m_complexity.triangleCount = totalTriangles;
-    m_complexity.surfaceArea = totalArea; // Approximate
+    m_complexity.surfaceArea = 0.0f; // якщо треба реально – рахувати окремо
     m_complexity.boundingVolume = volume;
     m_complexity.hasComplexGeometry = hasComplexGeometry;
 }
@@ -710,35 +708,32 @@ CollisionType Collision::DetermineOptimalCollisionType() const
 
 void Collision::ExtractTrianglesFromModel(const Model *model, const Matrix &transform)
 {
-    // Оцінюємо загальну кількість трикутників для резервування пам'яті
+    if (!model || model->meshCount == 0)
+        return;
+
+    // Підраховуємо кількість трикутників
     size_t totalTriangles = 0;
     for (int m = 0; m < model->meshCount; m++)
-    {
         totalTriangles += model->meshes[m].triangleCount;
-    }
 
-    // Резервуємо пам'ять тільки якщо є трикутники
-    if (totalTriangles > 0)
-    {
-        m_triangles.reserve(totalTriangles);
-    }
+    if (totalTriangles == 0)
+        return;
+
+    m_triangles.reserve(totalTriangles);
 
     for (int m = 0; m < model->meshCount; m++)
     {
         Mesh &mesh = model->meshes[m];
-
         if (mesh.triangleCount == 0)
             continue;
 
-        // Додайте перевірку на наявність даних у vertices
         if (mesh.indices)
         {
-            // Indexed mesh
             for (int i = 0; i < mesh.triangleCount; i++)
             {
-                unsigned short i0 = mesh.indices[i * 3 + 0];
-                unsigned short i1 = mesh.indices[i * 3 + 1];
-                unsigned short i2 = mesh.indices[i * 3 + 2];
+                unsigned int i0 = mesh.indices[i * 3 + 0];
+                unsigned int i1 = mesh.indices[i * 3 + 1];
+                unsigned int i2 = mesh.indices[i * 3 + 2];
 
                 Vector3 v0 = {mesh.vertices[i0 * 3], mesh.vertices[i0 * 3 + 1],
                               mesh.vertices[i0 * 3 + 2]};
@@ -747,7 +742,6 @@ void Collision::ExtractTrianglesFromModel(const Model *model, const Matrix &tran
                 Vector3 v2 = {mesh.vertices[i2 * 3], mesh.vertices[i2 * 3 + 1],
                               mesh.vertices[i2 * 3 + 2]};
 
-                // Apply transform
                 v0 = Vector3Transform(v0, transform);
                 v1 = Vector3Transform(v1, transform);
                 v2 = Vector3Transform(v2, transform);
@@ -757,17 +751,15 @@ void Collision::ExtractTrianglesFromModel(const Model *model, const Matrix &tran
         }
         else
         {
-            // Non-indexed mesh
             for (int i = 0; i < mesh.vertexCount; i += 3)
             {
-                Vector3 v0 = {mesh.vertices[i * 3], mesh.vertices[i * 3 + 1],
-                              mesh.vertices[i * 3 + 2]};
+                Vector3 v0 = {mesh.vertices[(i + 0) * 3], mesh.vertices[(i + 0) * 3 + 1],
+                              mesh.vertices[(i + 0) * 3 + 2]};
                 Vector3 v1 = {mesh.vertices[(i + 1) * 3], mesh.vertices[(i + 1) * 3 + 1],
                               mesh.vertices[(i + 1) * 3 + 2]};
                 Vector3 v2 = {mesh.vertices[(i + 2) * 3], mesh.vertices[(i + 2) * 3 + 1],
                               mesh.vertices[(i + 2) * 3 + 2]};
 
-                // Apply transform
                 v0 = Vector3Transform(v0, transform);
                 v1 = Vector3Transform(v1, transform);
                 v2 = Vector3Transform(v2, transform);
@@ -780,32 +772,24 @@ void Collision::ExtractTrianglesFromModel(const Model *model, const Matrix &tran
 
 void Collision::EnsureOctree() const
 {
-    // If octree is needed but doesn't exist, rebuild it from triangles
     if (!m_octree && !m_triangles.empty() &&
         (m_collisionType == CollisionType::TRIANGLE_PRECISE ||
          m_collisionType == CollisionType::IMPROVED_AABB ||
          m_collisionType == CollisionType::OCTREE_ONLY))
     {
+        // Update AABB before building
+        const_cast<Collision *>(this)->UpdateAABBFromTriangles();
+
         TraceLog(LOG_WARNING,
                  "🔧 EnsureOctree: Rebuilding octree from %zu triangles for collision type %d",
                  m_triangles.size(), static_cast<int>(m_collisionType));
 
-        // Ensure that we have valid triangles before initializing the octree
-        if (m_triangles.size() > 0)
+        m_octree = std::make_unique<Octree>();
+        m_octree->Initialize(m_min, m_max);
+
+        for (const auto &triangle : m_triangles)
         {
-            m_octree = std::make_unique<Octree>();
-            TraceLog(LOG_INFO, "Log info %f %f %f %f %f %f", m_min.x, m_min.y, m_min.z, m_max.x,
-                     m_max.y, m_max.z);
-            m_octree->Initialize(m_min, m_max);
-            // Add triangles to the octree
-            for (const auto &triangle : m_triangles)
-            {
-                m_octree->AddTriangle(triangle);
-            }
-        }
-        else
-        {
-            TraceLog(LOG_WARNING, "No triangles available to build octree.");
+            m_octree->AddTriangle(triangle);
         }
     }
 }
