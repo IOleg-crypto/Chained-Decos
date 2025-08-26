@@ -36,9 +36,9 @@ enum class MenuState : uint8_t
     Main,
     GameMode,
     Options,
-    Video,    // new
-    Audio,    // new
-    Controls, // new
+    Video,
+    Audio,
+    Controls,
     Credits,
     Mods
 };
@@ -49,13 +49,20 @@ struct MenuItem
     MenuAction action;
 };
 
+struct MenuOption
+{
+    std::string label;
+    std::vector<std::string> values;
+    int selectedIndex;
+};
+
 class Menu
 {
 private:
     int m_selected = 0;
     MenuAction m_action = MenuAction::None;
     MenuState m_state = MenuState::Main;
-    std::vector<float> m_buttonScales;
+    mutable std::vector<float> m_buttonScales;
     std::vector<MenuItem> m_currentMenu;
     Engine *m_engine;
 
@@ -67,17 +74,24 @@ private:
     std::vector<MenuItem> m_audioMenu;
     std::vector<MenuItem> m_controlsMenu;
 
+    std::vector<MenuOption> m_videoOptions;
+
 public:
     Menu();
 
 public:
     void Update();
-    void Render() const;
     void GetEngine(Engine *engine);
+    void Render();
     float Lerp(float a, float b, float t) const;
     [[nodiscard]] MenuAction GetAction() const;
     void ResetAction();
-    void RenderSettingsMenu() const;
+    void RenderSettingsMenu();
+    void ExecuteAction();
+    void HandleMouseSelection();
+    void HandleKeyboardNavigation();
+    void HandleVideoNavigation();
+    void RenderMenu();
 };
 
 #endif

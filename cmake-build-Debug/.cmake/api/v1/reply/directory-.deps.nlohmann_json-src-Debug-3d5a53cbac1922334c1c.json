@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "D:/gitnext/Chained Decos/.deps/nlohmann_json-build",
+		"source" : ".deps/nlohmann_json-src"
+	}
+}
