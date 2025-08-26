@@ -91,7 +91,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
             continue;
 
-        // 2. Визначаємо найменший overlap
         float minOverlap = fabsf(overlapX);
         int axis = 0; // 0 - x, 1 - y, 2 - z
 
@@ -106,7 +105,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
             axis = 2;
         }
 
-        // 3. Формуємо MTV тільки по цій осі
         Vector3 mtv = {0, 0, 0};
         if (axis == 0)
         {
@@ -127,11 +125,10 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
                         : minOverlap;
         }
 
-        // Пом’якшення відштовхування
-        const float RESPONSE_FACTOR = 0.1f;
+        const float RESPONSE_FACTOR = 0.4f;
         mtv = Vector3Scale(mtv, RESPONSE_FACTOR);
 
-        // Застосовуємо response послідовно
+
         response = Vector3Add(response, mtv);
     }
 
