@@ -246,7 +246,7 @@ void Menu::Render(){
 
 void Menu::RenderMenu() {
     const auto &currentMenu = m_currentMenu;
-    Vector2 mousePos = GetMousePosition();
+    const Vector2 mousePos = GetMousePosition();
 
     constexpr int kBtnW = 200;
     constexpr int kBtnH = 50;
