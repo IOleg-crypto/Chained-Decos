@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="nlohmann_json"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\.deps\;CMake Files\.deps\raylib-src\;CMake Files\.deps\raylib-src\cmake\;CMake Files\.deps\raylib-src\src\;CMake Files\.deps\raylib-src\src\external\;CMake Files\.deps\raylib-src\src\external\glfw\;CMake Files\.deps\raylib-src\src\external\glfw\CMake\;CMake Files\.deps\raylib-src\src\external\glfw\src\;CMake Files\.deps\nlohmann_json-src\;CMake Files\.deps\nlohmann_json-src\cmake\;CMake Files\src\;CMake Files\src\Engine\;CMake Files\src\Player\;CMake Files\src\Model\;CMake Files\src\Menu\;CMake Files\src\Input\;CMake Files\src\Map\;CMake Files\src\CameraController\;CMake Files\src\Color\;CMake Files\src\World\;CMake Files\src\Collision\;CMake Files\src\Render\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="D:/gitnext/Chained Decos/.deps/nlohmann_json-build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/.deps/nlohmann_json-build/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/.deps/nlohmann_json-build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/.deps/nlohmann_json-build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/msys64/mingw64/bin/mingw32-make.exe -f &quot;D:/gitnext/Chained Decos/.deps/nlohmann_json-build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="D:/gitnext/Chained Decos/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/CMakeOptions.txt">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/raylib.pc.in">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/AddIfFlagCompiles.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/CompileDefinitions.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/CompilerFlags.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/EnumOption.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/GlfwImport.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/InstallConfigurations.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/JoinPaths.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/LibraryConfigurations.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/PackConfigurations.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/ParseConfigHeader.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/Uninstall.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/cmake/raylib-config-version.cmake">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\src\external\glfw\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\src\external\glfw\CMake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\src\external\glfw\CMake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\.deps\raylib-src\src\external\glfw\src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/nlohmann_json-src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\.deps\nlohmann_json-src\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/nlohmann_json-src/cmake/config.cmake.in">
+			<Option virtualFolder="CMake Files\.deps\nlohmann_json-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in">
+			<Option virtualFolder="CMake Files\.deps\nlohmann_json-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/.deps/nlohmann_json-src/cmake/pkg-config.pc.in">
+			<Option virtualFolder="CMake Files\.deps\nlohmann_json-src\cmake\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Engine/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Engine\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Player/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Player\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Model/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Model\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Menu/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Menu\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Input/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Input\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Map/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Map\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/CameraController/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\CameraController\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Color/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Color\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/World/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\World\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Collision/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Collision\"/>
+		</Unit>
+		<Unit filename="D:/gitnext/Chained Decos/src/Render/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\Render\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
