@@ -169,6 +169,14 @@ float CollisionTriangle::GetArea() const
     return Vector3Length(cross) * 0.5f;
 }
 
+bool CollisionComplexity::IsSimple() const
+{
+    return triangleCount <= SIMPLE_TRIANGLE_THRESHOLD && surfaceArea <= SIMPLE_AREA_THRESHOLD &&
+           !hasComplexGeometry;
+}
+
+bool CollisionComplexity::IsComplex() const { return !IsSimple(); }
+
 // ================== CollisionRay Implementation ==================
 
 CollisionRay::CollisionRay(const Vector3 &orig, const Vector3 &dir)

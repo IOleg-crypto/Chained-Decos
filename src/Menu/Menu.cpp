@@ -190,16 +190,6 @@ void Menu::Render() const
         // Section headers for better organization
         if (m_state == MenuState::Options)
         {
-            if (i == 0)
-            {
-                // Settings header
-                const char *section = "Settings";
-                int sectionW = MeasureText(section, 24);
-                DrawText(section, GetScreenWidth() / 2 - sectionW / 2, kStartY - 40, 24,
-                         Fade(RAYWHITE, 0.8f));
-                DrawLine(GetScreenWidth() / 2 - kBtnW / 2, kStartY - 10,
-                         GetScreenWidth() / 2 + kBtnW / 2, kStartY - 10, Fade(RAYWHITE, 0.3f));
-            }
             if (i == currentMenu.size() - 1)
             {
                 // Divider before 'Back'
@@ -301,3 +291,5 @@ MenuAction Menu::GetAction() const { return m_action; }
 void Menu::GetEngine(Engine *engine) { m_engine = engine; }
 
 void Menu::ResetAction() { m_action = MenuAction::None; }
+
+void Menu::RenderSettingsMenu() const {}

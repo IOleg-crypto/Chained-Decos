@@ -72,6 +72,7 @@ void Engine::Init()
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     m_windowInitialized = true;
     SetTargetFPS(60);
+    SetExitKey(KEY_NULL); //  To avoid closing the window - escape key
 
     m_renderManager.Initialize();
 
@@ -232,7 +233,12 @@ void Engine::InitInput()
                                  TraceLog(LOG_INFO, "=== Instances by Tags ===");
                                  TraceLog(LOG_INFO, "  - Decorations: %zu", decorations.size());
                              });
-    m_manager.RegisterAction(KEY_ESCAPE, [this]() { ToggleMenu(); });
+    m_manager.RegisterAction(KEY_ESCAPE,
+                             [this]()
+                             {
+                                 ToggleMenu();
+                                 EnableCursor();
+                             });
 
     TraceLog(LOG_INFO, "Input bindings configured successfully");
 }
@@ -458,7 +464,7 @@ void Engine::HandlePlayerCollision()
 
 void Engine::UpdatePhysics()
 {
-    // Verify collision system has colliders
+    // Ensure at least a basic ground plane exists
     if (m_collisionManager.GetColliders().empty())
     {
         static bool warningShown = false;
@@ -482,9 +488,7 @@ void Engine::UpdatePhysics()
                  groundCenter.z, m_collisionManager.GetColliders().size());
     }
 
-    // Apply gravity and handle collisions
-    m_player.ApplyGravityForPlayer(m_collisionManager);
-    m_player.UpdatePlayerBox();
+    // Player physics are handled in UpdatePlayer()
 }
 
 void Engine::CheckPlayerBounds()

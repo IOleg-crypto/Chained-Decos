@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-
 void CollisionManager::Initialize()
 {
     // Ensure all colliders are properly initialized
@@ -129,7 +128,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         }
 
         // Пом’якшення відштовхування
-        const float RESPONSE_FACTOR = 0.5f;
+        const float RESPONSE_FACTOR = 0.1f;
         mtv = Vector3Scale(mtv, RESPONSE_FACTOR);
 
         // Застосовуємо response послідовно
@@ -297,7 +296,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         // Check if we've reached the limit for precise collisions for this model
         int &preciseCount = m_preciseCollisionCount[modelName];
 
-        if (preciseCount < MAX_PRECISE_COLLISIONS_PER_MODEL) // Only use precise collision for "arc" model
+        if (preciseCount <
+            MAX_PRECISE_COLLISIONS_PER_MODEL) // Only use precise collision for "arc" model
         {
             // Create precise collision with full transformation
             instanceCollision = CreatePreciseInstanceCollision(model, position, scale, config);

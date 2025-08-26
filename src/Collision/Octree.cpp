@@ -81,7 +81,6 @@ void Octree::Initialize(const Vector3 &min, const Vector3 &max)
 
 void Octree::BuildFromModel(Model *model, const Matrix &transform)
 {
-
     if (!model || model->meshCount == 0)
     {
         TraceLog(LOG_WARNING, "Invalid model provided for octree construction");
@@ -105,40 +104,26 @@ void Octree::BuildFromModel(Model *model, const Matrix &transform)
 
     TraceLog(LOG_INFO, "Building octree from %zu triangles", triangles.size());
 
-    // // Ліміт трикутників для продуктивності
-    // constexpr size_t MAX_TRIANGLES = 10000;
-    // if (triangles.size() > MAX_TRIANGLES)
-    // {
-    //     TraceLog(LOG_WARNING,
-    //              "Model has excessive triangle count (%zu). Limiting to %zu for performance.",
-    //              triangles.size(), MAX_TRIANGLES);
-    //     triangles.resize(MAX_TRIANGLES);
-    // }
-
-    // Кешування AABB при створенні трикутників
+    // Глобальний AABB одразу по готовим трикутникам
     Vector3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
     Vector3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
     for (const auto &tri : triangles)
     {
-        const Vector3 &triMin = tri.min;
-        const Vector3 &triMax = tri.max;
+        min.x = std::min(min.x, tri.min.x);
+        min.y = std::min(min.y, tri.min.y);
+        min.z = std::min(min.z, tri.min.z);
 
-        min.x = std::min(min.x, triMin.x);
-        min.y = std::min(min.y, triMin.y);
-        min.z = std::min(min.z, triMin.z);
-
-        max.x = std::max(max.x, triMax.x);
-        max.y = std::max(max.y, triMax.y);
-        max.z = std::max(max.z, triMax.z);
+        max.x = std::max(max.x, tri.max.x);
+        max.y = std::max(max.y, tri.max.y);
+        max.z = std::max(max.z, tri.max.z);
     }
 
     Initialize(min, max);
 
+    // тут важливо: передаємо вже готові CollisionTriangle (з min/max)
     BuildRecursive(m_root.get(), triangles, 0);
 
-    // Зберігаємо кількість трикутників
-    m_triangleCount = CountTriangles(
-        m_root.get()); // тут вже порожній після move, можна замінити на BuildRecursive результат
+    m_triangleCount = CountTriangles(m_root.get());
 
     TraceLog(LOG_INFO, "Octree built with %zu triangles in %zu nodes", GetTriangleCount(),
              GetNodeCount());
