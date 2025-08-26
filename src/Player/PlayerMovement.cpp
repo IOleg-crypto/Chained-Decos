@@ -40,7 +40,7 @@ void PlayerMovement::SetCollisionManager(const CollisionManager *collisionManage
     m_lastCollisionManager = collisionManager;
 }
 
-void PlayerMovement::ApplyJumpImpulse(float impulse)
+void PlayerMovement::ApplyJumpImpulse(const float impulse)
 {
     if (!m_physics.IsGrounded())
     {
@@ -98,7 +98,7 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     constexpr int subSteps = 4;
     Vector3 subStepVelocity = Vector3Scale(velocity, deltaTime / subSteps);
 
-    m_physics.SetGroundLevel(false); // Reset grounded state at the start of the step
+    //m_physics.SetGroundLevel(false); // Reset grounded state at the start of the step
 
     for (int i = 0; i < subSteps; i++)
     {
@@ -176,7 +176,7 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
         return;
     }
 
-    const float SNAP_DISTANCE = 0.01f; // Can be adjusted to match player size
+    const float SNAP_DISTANCE = 0.05f; // Can be adjusted to match player size
 
     // Check slightly below the current position
     Vector3 checkPos = position;
