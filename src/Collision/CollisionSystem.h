@@ -13,10 +13,7 @@
 #include <raymath.h>
 #include <vector>
 
-// Forward declaration
 struct ModelFileConfig;
-
-// Forward declaration for Octree
 class Octree;
 
 //

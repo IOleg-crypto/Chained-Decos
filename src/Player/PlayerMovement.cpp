@@ -176,7 +176,7 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
         return;
     }
 
-    const float SNAP_DISTANCE = 0.1f; // Can be adjusted to match player size
+    const float SNAP_DISTANCE = 0.01f; // Can be adjusted to match player size
 
     // Check slightly below the current position
     Vector3 checkPos = position;

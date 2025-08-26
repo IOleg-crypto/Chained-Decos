@@ -120,16 +120,6 @@ raylib.h
 string
 -
 
-D:/gitnext/Chained Decos/src/Player/Player.cpp
-Player/PlayerMovement.h
-D:/gitnext/Chained Decos/src/Player/Player/PlayerMovement.h
-CameraController/CameraController.h
--
-Player/Player.h
--
-memory
--
-
 D:/gitnext/Chained Decos/src/Player/Player.h
 memory
 -
@@ -156,22 +146,10 @@ Player/PlayerModel.h
 Player/PlayerMovement.h
 -
 
-D:/gitnext/Chained Decos/src/Player/PlayerCollision.cpp
-Player/PlayerCollision.h
--
-Player/Player.h
--
-
 D:/gitnext/Chained Decos/src/Player/PlayerCollision.h
 raylib.h
 -
 Collision/CollisionSystem.h
--
-
-D:/gitnext/Chained Decos/src/Player/PlayerInput.cpp
-Player/Player.h
--
-Player/PlayerInput.h
 -
 
 D:/gitnext/Chained Decos/src/Player/PlayerInput.h
@@ -180,10 +158,6 @@ iostream
 raylib.h
 -
 raymath.h
--
-
-D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp
-Player/PlayerModel.h
 -
 
 D:/gitnext/Chained Decos/src/Player/PlayerModel.h

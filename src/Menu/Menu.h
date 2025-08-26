@@ -59,7 +59,7 @@ private:
     std::vector<MenuItem> m_currentMenu;
     Engine *m_engine;
 
-public:
+private:
     std::vector<MenuItem> m_mainMenu;
     std::vector<MenuItem> m_optionsMenu;
     std::vector<MenuItem> m_SetGameMode;
@@ -77,6 +77,7 @@ public:
     float Lerp(float a, float b, float t) const;
     [[nodiscard]] MenuAction GetAction() const;
     void ResetAction();
+    void RenderSettingsMenu() const;
 };
 
 #endif
