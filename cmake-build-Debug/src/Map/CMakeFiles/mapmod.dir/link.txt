@@ -1,2 +1,2 @@
-C:\msys64\mingw64\bin\ar.exe qc mapmod.lib CMakeFiles/mapmod.dir/MapLoader.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe mapmod.lib
+C:\msys64\mingw64\bin\ar.exe qc libmapmod.a CMakeFiles/mapmod.dir/MapLoader.cpp.obj
+C:\msys64\mingw64\bin\ranlib.exe libmapmod.a

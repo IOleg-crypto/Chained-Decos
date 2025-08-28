@@ -88,9 +88,13 @@ void Player::UpdatePlayerBox() const { m_collision->UpdateBoundingBox(); }
 
 void Player::UpdatePlayerCollision() const { m_collision->Update(); }
 
-void Player::ToggleModelRendering(const bool useModel) const { m_model->ToggleModelRendering(useModel); }
+void Player::ToggleModelRendering(const bool useModel) const
+{
+    m_model->ToggleModelRendering(useModel);
+}
 
-void Player::SetPlayerPosition(const Vector3 &pos) const {
+void Player::SetPlayerPosition(const Vector3 &pos) const
+{
     m_movement->SetPosition(pos);
     UpdatePlayerBox();
     UpdatePlayerCollision();
@@ -107,11 +111,10 @@ Vector3 Player::GetPlayerSize() const { return m_playerSize; }
 // Apply jump impulse based on mass and direction
 void Player::ApplyJumpImpulse(float impulse)
 {
-    if (!m_movement->GetPhysics().IsGrounded())
-        return;
-
+    // Delegate jump gating (grounded/coyote-time) to PlayerMovement
     m_movement->ApplyJumpImpulse(impulse);
-    m_isJumping = true;
+    if (m_movement->GetPhysics().GetVelocity().y > 0.0f)
+        m_isJumping = true;
 }
 
 void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
@@ -126,11 +129,13 @@ void Player::HandleEmergencyReset() const { m_input->HandleEmergencyReset(); }
 
 void Player::ApplyGravity(const float deltaTime) const { m_movement->ApplyGravity(deltaTime); }
 
-Vector3 Player::StepMovement(const CollisionManager &collisionManager) const {
+Vector3 Player::StepMovement(const CollisionManager &collisionManager) const
+{
     return m_movement->StepMovement(collisionManager);
 }
 
-void Player::SnapToGroundIfNeeded(const CollisionManager &collisionManager) const {
+void Player::SnapToGroundIfNeeded(const CollisionManager &collisionManager) const
+{
     m_movement->SnapToGround(collisionManager);
 }
 

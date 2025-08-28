@@ -1,4 +1,0 @@
-Cannot generate into D:\gitnext\Chained Decos\cmake-build-release
-It was created with incompatible generator 'MinGW Makefiles'
-
-Please either delete it manually or select another generation directory

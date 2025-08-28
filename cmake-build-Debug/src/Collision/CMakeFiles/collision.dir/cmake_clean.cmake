@@ -4,8 +4,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/collision.dir/CollisionStructures.cpp.obj"
   "CMakeFiles/collision.dir/CollisionSystem.cpp.obj"
   "CMakeFiles/collision.dir/Octree.cpp.obj"
-  "collision.lib"
-  "collision.pdb"
+  "libcollision.a"
+  "libcollision.pdb"
 )
 
 # Per-language clean rules from dependency scanning.
