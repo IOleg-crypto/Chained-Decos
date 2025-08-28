@@ -57,7 +57,7 @@ private:
 private:
     void Update();
     void UpdatePlayer();
-    void HandlePlayerCollision();
+    void HandlePlayerCollision() const;
     void UpdatePhysics();
     void CheckPlayerBounds();
     void HandleKeyboardShortcuts() const;
