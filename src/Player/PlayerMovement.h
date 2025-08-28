@@ -15,7 +15,7 @@ class Player;
 class PlayerMovement
 {
 public:
-    PlayerMovement(Player *player);
+    explicit PlayerMovement(Player *player);
     ~PlayerMovement() = default;
 
     // Movement methods
@@ -45,9 +45,9 @@ public:
 private:
     Player *m_player;
     Vector3 m_position;
-    float m_rotationY = 0.0f;
+    float m_rotationY;
 
-    float m_walkSpeed = 8.0f;
+    float m_walkSpeed;
     PhysicsComponent m_physics;
 
     // Reference to the engine's collision manager

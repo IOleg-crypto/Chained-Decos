@@ -163,6 +163,14 @@ void Engine::Run()
 void Engine::ToggleMenu()
 {
     m_showMenu = !m_showMenu;
+    if (m_showMenu)
+    {
+        EnableCursor();
+    }
+    else
+    {
+        HideCursor();
+    }
     TraceLog(LOG_INFO, "Menu toggled: %s", m_showMenu ? "ON" : "OFF");
 }
 
@@ -181,18 +189,18 @@ void Engine::InitInput()
     TraceLog(LOG_INFO, "Setting up input bindings...");
 
     // Function keys - UI control
-    m_manager.RegisterAction(KEY_F11, []() { ToggleFullscreen(); });
+    m_manager.RegisterAction(KEY_F11, [] { ToggleFullscreen(); });
     m_manager.RegisterAction(KEY_F1,
-                             [this]()
+                             [this]
                              {
                                  m_showMenu = true;
                                  EnableCursor();
                              });
-    m_manager.RegisterAction(KEY_F4, [this]() { m_shouldExit = true; });
+    m_manager.RegisterAction(KEY_F4, [this] { m_shouldExit = true; });
 
     // Debug visualization toggles
     m_manager.RegisterAction(KEY_F2,
-                             [this]()
+                             [this]
                              {
                                  m_renderManager.ToggleDebugInfo();
                                  m_showDebug = m_renderManager.IsDebugInfoVisible();
@@ -200,8 +208,7 @@ void Engine::InitInput()
                              });
 
     m_manager.RegisterAction(KEY_F3,
-                             [this]()
-                             {
+                             [this] {
                                  m_renderManager.ToggleCollisionDebug();
                                  m_showCollisionDebug = m_renderManager.IsCollisionDebugVisible();
                                  TraceLog(LOG_INFO, "Collision debug: %s",
@@ -209,7 +216,7 @@ void Engine::InitInput()
                              });
 
     // Utility functions
-    m_manager.RegisterAction(KEY_F8, [this]() { OptimizeModelPerformance(); });
+    m_manager.RegisterAction(KEY_F8, [this] { OptimizeModelPerformance(); });
     m_manager.RegisterAction(
         KEY_F10,
         [this]()
@@ -220,7 +227,7 @@ void Engine::InitInput()
 
     // Model information display
     m_manager.RegisterAction(KEY_F9,
-                             [this]()
+                             [this]
                              {
                                  auto models = m_models.GetAvailableModels();
                                  TraceLog(LOG_INFO, "=== Available Models ===");
@@ -233,17 +240,19 @@ void Engine::InitInput()
                                  TraceLog(LOG_INFO, "=== Instances by Tags ===");
                                  TraceLog(LOG_INFO, "  - Decorations: %zu", decorations.size());
                              });
-    m_manager.RegisterAction(KEY_ESCAPE,
-                             [this]()
-                             {
-                                 // Open menu only if currently in game; do not close menu with ESC
-                                 if (!m_showMenu)
+
+        m_manager.RegisterAction(KEY_ESCAPE,
+                                 [this]
                                  {
-                                     ToggleMenu();
-                                     EnableCursor();
-                                 }
-                                 // If menu is open, let Menu handle ESC navigation/back behavior
-                             });
+                                     // Open menu only if currently in game; do not close menu with ESC
+                                     if (!m_showMenu)
+                                     {
+                                         m_menu.ResetAction();
+                                         ToggleMenu();
+                                         EnableCursor();
+                                     }
+                                     // If menu is open, let Menu handle ESC navigation/back behavior
+                                 });
 
     TraceLog(LOG_INFO, "Input bindings configured successfully");
 }
@@ -295,6 +304,7 @@ void Engine::InitCollisions()
 void Engine::Update()
 {
     HandleKeyboardShortcuts();
+
 
     // Update game systems only if not in menu
     if (!m_showMenu)
@@ -436,8 +446,7 @@ void Engine::UpdatePlayer()
 }
 
 // Helper method to handle player collision
-void Engine::HandlePlayerCollision()
-{
+void Engine::HandlePlayerCollision() const {
     // Ensure collision box is updated with current player position
     m_player.UpdatePlayerBox();
 

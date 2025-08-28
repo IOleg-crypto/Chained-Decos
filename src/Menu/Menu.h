@@ -93,7 +93,7 @@ public:
     void HandleMouseSelection();
     void HandleKeyboardNavigation();
     void HandleVideoNavigation();
-    void RenderMenu();
+    void RenderMenu() const;
 };
 
 #endif
