@@ -55,7 +55,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-release"
 
 # Utility rule file for update_mappings.
 
@@ -66,7 +66,7 @@ include D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CM
 include D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/update_mappings.dir/progress.make
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/update_mappings:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Updating gamepad mappings from upstream repository"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Updating gamepad mappings from upstream repository"
 	cd /d "D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\src" && D:\CLion-2025.1.1.win\bin\cmake\win\x64\bin\cmake.exe -P "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/CMake/GenerateMappings.cmake" mappings.h.in mappings.h
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/update_mappings.dir/codegen:
@@ -85,6 +85,6 @@ D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles
 .PHONY : D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/update_mappings.dir/clean
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/update_mappings.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\src" "D:\gitnext\Chained Decos\cmake-build-debug" "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src" "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\update_mappings.dir\DependInfo.cmake" "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\src" "D:\gitnext\Chained Decos\cmake-build-release" "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src" "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\update_mappings.dir\DependInfo.cmake" "--color=$(COLOR)"
 .PHONY : D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/update_mappings.dir/depend
 

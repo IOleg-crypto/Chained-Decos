@@ -16,7 +16,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj"
   "D:/gitnext/Chained Decos/include/rlImGui/rlImGui.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj"
   )
-set(CMAKE_CXX_COMPILER_ID "Clang")
+set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_CXX
@@ -30,8 +30,8 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "D:/gitnext/Chained Decos/include/imgui"
   "D:/gitnext/Chained Decos/include/rlImGui"
-  "_deps/raylib-src/src"
-  "_deps/raylib-src/src/external/glfw/include"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   "D:/gitnext/Chained Decos/src"
   )
 

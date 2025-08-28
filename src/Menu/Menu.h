@@ -87,6 +87,8 @@ public:
     [[nodiscard]] MenuAction GetAction() const;
     void ResetAction();
     void RenderSettingsMenu();
+    void RenderCredits();
+    void RenderMods();
     void ExecuteAction();
     void HandleMouseSelection();
     void HandleKeyboardNavigation();

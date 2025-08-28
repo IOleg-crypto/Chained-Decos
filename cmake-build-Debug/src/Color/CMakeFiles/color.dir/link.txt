@@ -1,2 +1,2 @@
-C:\msys64\mingw64\bin\ar.exe qc color.lib CMakeFiles/color.dir/ColorParser.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe color.lib
+C:\msys64\mingw64\bin\ar.exe qc libcolor.a CMakeFiles/color.dir/ColorParser.cpp.obj
+C:\msys64\mingw64\bin\ranlib.exe libcolor.a

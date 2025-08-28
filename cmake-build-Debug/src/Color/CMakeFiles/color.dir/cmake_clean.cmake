@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/color.dir/ColorParser.cpp.obj"
-  "color.lib"
-  "color.pdb"
+  "libcolor.a"
+  "libcolor.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

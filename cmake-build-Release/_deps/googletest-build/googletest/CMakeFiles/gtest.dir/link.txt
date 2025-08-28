@@ -1,2 +1,0 @@
-E:\LLVM\bin\llvm-ar.exe qc ..\..\..\lib\gtest.lib "CMakeFiles/gtest.dir/src/gtest-all.cc.obj"
-E:\LLVM\bin\llvm-ranlib.exe ..\..\..\lib\gtest.lib

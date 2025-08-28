@@ -1,71 +1,51 @@
 #include <Engine/Engine.h>
 #include <Menu/Menu.h>
+#include <iostream>
 #include <raylib.h>
 
-#include <iostream>
 
-Menu::Menu(): m_engine(nullptr) {
-    m_mainMenu = {
-        {
-            {"Start Game", MenuAction::StartGame},
-            {"Options", MenuAction::OpenOptions},
-            {"Credits", MenuAction::OpenCredits},
-            {"Quit", MenuAction::ExitGame}
-        }
-    };
+Menu::Menu() : m_engine(nullptr)
+{
+    m_mainMenu = {{{"Start Game", MenuAction::StartGame},
+                   {"Options", MenuAction::OpenOptions},
+                   {"Mods", MenuAction::OpenMods},
+                   {"Credits", MenuAction::OpenCredits},
+                   {"Quit", MenuAction::ExitGame}}};
 
-    m_optionsMenu = {
-        {
-            {"Video", MenuAction::OpenVideoMode},
-            {"Audio", MenuAction::OpenAudio},
-            {"Controls", MenuAction::OpenControls},
-            {"Back", MenuAction::BackToMainMenu}
-        }
-    };
+    m_optionsMenu = {{{"Video", MenuAction::OpenVideoMode},
+                      {"Audio", MenuAction::OpenAudio},
+                      {"Controls", MenuAction::OpenControls},
+                      {"Back", MenuAction::BackToMainMenu}}};
 
-    m_SetGameMode = {
-        {
-            {"Singleplayer", MenuAction::SinglePlayer},
-            {"Multiplayer", MenuAction::MultiPlayer},
-            {"Back", MenuAction::BackToMainMenu}
-        }
-    };
+    m_SetGameMode = {{{"Singleplayer", MenuAction::SinglePlayer},
+                      {"Multiplayer", MenuAction::MultiPlayer},
+                      {"Back", MenuAction::BackToMainMenu}}};
 
     m_videoOptions = {
-        {"Resolution", {"800x600" , "1280x720" , "1360x768" , "1920x1080", "2560x1440"}, 0},
+        {"Resolution", {"800x600", "1280x720", "1360x768", "1920x1080", "2560x1440"}, 0},
         {"Aspect Ratio", {"16:9", "4:3", "21:9"}, 0},
         {"Display Mode", {"Windowed", "Fullscreen", "Borderless"}, 0},
         {"VSync", {"Off", "On"}, 1},
-        {"Back", {}, 0}
-    };
+        {"Back", {}, 0}};
 
-    m_audioMenu = {
-        {
-            {"Master Volume", MenuAction::None},
-            {"Music Volume", MenuAction::None},
-            {"SFX Volume", MenuAction::None},
-            {"Back", MenuAction::BackToMainMenu}
-        }
-    };
+    m_audioMenu = {{{"Master Volume", MenuAction::None},
+                    {"Music Volume", MenuAction::None},
+                    {"SFX Volume", MenuAction::None},
+                    {"Back", MenuAction::BackToMainMenu}}};
 
-    m_controlsMenu = {
-        {
-            {"Rebind Keys", MenuAction::None},
-            {"Invert Y Axis", MenuAction::None},
-            {"Back", MenuAction::BackToMainMenu}
-        }
-    };
+    m_controlsMenu = {{{"Rebind Keys", MenuAction::None},
+                       {"Invert Y Axis", MenuAction::None},
+                       {"Back", MenuAction::BackToMainMenu}}};
 
     m_currentMenu = m_mainMenu;
-    m_buttonScales.assign(m_currentMenu.size(), 1.0f);
+    m_buttonScales.assign(m_currentMenu.size(), 1.3f);
 }
 
-float Menu::Lerp(const float a, const float b, const float t) const {
-    return a + (b - a) * t;
-}
+float Menu::Lerp(const float a, const float b, const float t) const { return a + (b - a) * t; }
 
 void Menu::Update()
 {
+
     switch (m_state)
     {
     case MenuState::Main:
@@ -77,25 +57,42 @@ void Menu::Update()
     case MenuState::GameMode:
         m_currentMenu = m_SetGameMode;
         break;
-    case MenuState::Video:
-        HandleVideoNavigation();
-        break;
     case MenuState::Audio:
         m_currentMenu = m_audioMenu;
         break;
     case MenuState::Controls:
         m_currentMenu = m_controlsMenu;
         break;
-    default: ;
+    case MenuState::Video:
+        break; // окремо
+    case MenuState::Credits:
+    case MenuState::Mods:
+        break;
+    default:
+        break;
     }
 
-    if (IsKeyPressed(KEY_ENTER) && m_videoOptions[m_selected].label == "Back")
+    if (m_state == MenuState::Video)
+        HandleVideoNavigation();
+    else if (m_state == MenuState::Credits)
     {
-        m_state = MenuState::Options;
+        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ONE))
+        {
+            m_state = MenuState::Main;
+        }
     }
-
-    HandleKeyboardNavigation();
-    HandleMouseSelection();
+    else if (m_state == MenuState::Mods)
+    {
+        if (IsKeyPressed(KEY_ESCAPE))
+        {
+            m_state = MenuState::Main;
+        }
+    }
+    else
+    {
+        HandleKeyboardNavigation();
+        HandleMouseSelection();
+    }
 
     ExecuteAction();
 }
@@ -107,18 +104,56 @@ void Menu::HandleVideoNavigation()
     if (IsKeyPressed(KEY_UP))
         m_selected = (m_selected + m_videoOptions.size() - 1) % m_videoOptions.size();
 
-    if (IsKeyPressed(KEY_RIGHT))
-        m_videoOptions[m_selected].selectedIndex = (m_videoOptions[m_selected].selectedIndex + 1) %
-                                                   m_videoOptions[m_selected].values.size();
+    if (!m_videoOptions[m_selected].values.empty())
+    {
+        if (IsKeyPressed(KEY_RIGHT))
+            m_videoOptions[m_selected].selectedIndex =
+                (m_videoOptions[m_selected].selectedIndex + 1) %
+                m_videoOptions[m_selected].values.size();
+        if (IsKeyPressed(KEY_LEFT))
+            m_videoOptions[m_selected].selectedIndex =
+                (m_videoOptions[m_selected].selectedIndex +
+                 m_videoOptions[m_selected].values.size() - 1) %
+                m_videoOptions[m_selected].values.size();
+    }
 
-    if (IsKeyPressed(KEY_LEFT))
-        m_videoOptions[m_selected].selectedIndex = (m_videoOptions[m_selected].selectedIndex +
-                                                    m_videoOptions[m_selected].values.size() - 1) %
-                                                   m_videoOptions[m_selected].values.size();
+    if (IsKeyPressed(KEY_ENTER))
+    {
+        auto &opt = m_videoOptions[m_selected];
+        if (opt.label == "Back")
+            m_state = MenuState::Options;
+        if (opt.label == "Resolution" && !opt.values.empty())
+        {
+            int width = 0, height = 0;
+            sscanf(opt.values[opt.selectedIndex].c_str(), "%dx%d", &width, &height);
+            SetWindowSize(width, height);
+        }
+        else if (opt.label == "Display Mode" && !opt.values.empty())
+        {
+            std::string mode = opt.values[opt.selectedIndex];
+            if (mode == "Fullscreen")
+                SetWindowState(FLAG_FULLSCREEN_MODE);
+            else if (mode == "Windowed")
+            {
+                ClearWindowState(FLAG_FULLSCREEN_MODE);
+                ClearWindowState(FLAG_WINDOW_UNDECORATED);
+            }
+            else if (mode == "Borderless")
+                SetWindowState(FLAG_WINDOW_UNDECORATED | FLAG_FULLSCREEN_MODE);
+        }
+        else if (opt.label == "VSync" && !opt.values.empty())
+        {
+            std::string vsync = opt.values[opt.selectedIndex];
+            SetTargetFPS(vsync == "On" ? GetMonitorRefreshRate(GetCurrentMonitor()) : 0);
+        }
+    }
 }
 
 void Menu::HandleKeyboardNavigation()
 {
+    if (m_state == MenuState::Credits || m_state == MenuState::Mods)
+        return;
+
     if (m_state != MenuState::Video)
     {
         if (IsKeyPressed(KEY_DOWN))
@@ -126,11 +161,6 @@ void Menu::HandleKeyboardNavigation()
         if (IsKeyPressed(KEY_UP))
             m_selected = (m_selected + m_currentMenu.size() - 1) % m_currentMenu.size();
     }
-
-    if (IsKeyPressed(KEY_TAB))
-        m_selected = (m_selected + 1) % m_currentMenu.size();
-    if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_TAB))
-        m_selected = (m_selected + m_currentMenu.size() - 1) % m_currentMenu.size();
 
     if (IsKeyPressed(KEY_ENTER))
         m_action = m_currentMenu[m_selected].action;
@@ -146,6 +176,9 @@ void Menu::HandleKeyboardNavigation()
 
 void Menu::HandleMouseSelection()
 {
+    if (m_state == MenuState::Credits || m_state == MenuState::Mods)
+        return;
+
     Vector2 mousePos = GetMousePosition();
     constexpr int kBtnW = 200;
     constexpr int kBtnH = 50;
@@ -156,7 +189,8 @@ void Menu::HandleMouseSelection()
     {
         int x = GetScreenWidth() / 2 - kBtnW / 2;
         int y = kStartY + static_cast<int>(i) * kSpacing;
-        const Rectangle btnRect = {static_cast<float>(x), static_cast<float>(y), static_cast<float>(kBtnW), static_cast<float>(kBtnH)};
+        const Rectangle btnRect = {static_cast<float>(x), static_cast<float>(y),
+                                   static_cast<float>(kBtnW), static_cast<float>(kBtnH)};
 
         if (CheckCollisionPointRec(mousePos, btnRect))
         {
@@ -192,6 +226,12 @@ void Menu::ExecuteAction()
     case MenuAction::OpenControls:
         m_state = MenuState::Controls;
         break;
+    case MenuAction::OpenCredits:
+        m_state = MenuState::Credits;
+        break;
+    case MenuAction::OpenMods:
+        m_state = MenuState::Mods;
+        break;
     case MenuAction::BackToMainMenu:
         if (m_state == MenuState::Video || m_state == MenuState::Audio ||
             m_state == MenuState::Controls)
@@ -211,54 +251,55 @@ void Menu::ExecuteAction()
 }
 
 void Menu::GetEngine(Engine *engine) { m_engine = engine; }
-
 void Menu::ResetAction() { m_action = MenuAction::None; }
-
 MenuAction Menu::GetAction() const { return m_action; }
 
-void Menu::Render(){
+void Menu::Render()
+{
     for (int i = 0; i < GetScreenHeight(); ++i)
     {
-        auto t = static_cast<float>(i) / GetScreenHeight();
-        Color color = {static_cast<unsigned char>(15 + 25 * t), static_cast<unsigned char>(15 + 30 * t),
-                   static_cast<unsigned char>(40 + 90 * t), 255};
-        DrawLine(0, i, GetScreenWidth(), i, color);
+        float t = static_cast<float>(i) / GetScreenHeight();
+        DrawLine(0, i, GetScreenWidth(), i,
+                 (Color){(unsigned char)(15 + 25 * t), (unsigned char)(15 + 30 * t),
+                         (unsigned char)(40 + 90 * t), 255});
     }
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.25f));
 
-        switch (m_state) {
-            case MenuState::Main:
-            case MenuState::Options:
-            case MenuState::GameMode:
-            case MenuState::Audio:
-            case MenuState::Controls:
-                RenderMenu();
-                break;
-
-            case MenuState::Video:
-                RenderSettingsMenu();
-                break;
-
-            default:
-                break;
-        }
+    switch (m_state)
+    {
+    case MenuState::Main:
+    case MenuState::Options:
+    case MenuState::GameMode:
+    case MenuState::Audio:
+    case MenuState::Controls:
+        RenderMenu();
+        break;
+    case MenuState::Video:
+        RenderSettingsMenu();
+        break;
+    case MenuState::Credits:
+        RenderCredits();
+        break;
+    case MenuState::Mods:
+        RenderMods();
+        break;
+    default:
+        break;
+    }
 }
 
-void Menu::RenderMenu() {
+// --- RenderMenu ---
+void Menu::RenderMenu()
+{
     const auto &currentMenu = m_currentMenu;
     const Vector2 mousePos = GetMousePosition();
-
-    constexpr int kBtnW = 200;
-    constexpr int kBtnH = 50;
-    constexpr int kStartY = 300;
-    constexpr int kSpacing = 70;
+    constexpr int kBtnW = 200, kBtnH = 50, kStartY = 300, kSpacing = 70;
 
     const char *title =
         (m_state == MenuState::Main) ? "Chained Decos" : currentMenu[m_selected].label;
     int tw = MeasureText(title, 56);
-    int tx = GetScreenWidth() / 2 - tw / 2;
-    DrawText(title, tx + 4, 104, 56, Fade(BLACK, 0.75f));
-    DrawText(title, tx, 100, 56, RAYWHITE);
+    DrawText(title, GetScreenWidth() / 2 - tw / 2 + 4, 104, 56, Fade(BLACK, 0.75f));
+    DrawText(title, GetScreenWidth() / 2 - tw / 2, 100, 56, RAYWHITE);
 
     if (m_buttonScales.size() != currentMenu.size())
         m_buttonScales.assign(currentMenu.size(), 1.0f);
@@ -266,21 +307,18 @@ void Menu::RenderMenu() {
     for (size_t i = 0; i < currentMenu.size(); ++i)
     {
         int baseX = GetScreenWidth() / 2 - kBtnW / 2;
-        int baseY = kStartY + static_cast<int>(i) * kSpacing;
-        Rectangle baseRect = {static_cast<float>(baseX), static_cast<float>(baseY), static_cast<float>(kBtnW), static_cast<float>(kBtnH)};
-
+        int baseY = kStartY + i * kSpacing;
+        Rectangle baseRect = {(float)baseX, (float)baseY, (float)kBtnW, (float)kBtnH};
         bool hovered = CheckCollisionPointRec(mousePos, baseRect);
         bool selected = static_cast<int>(i) == m_selected;
-
-        float targetScale = (hovered || selected) ? 1.10f : 1.00f;
+        float targetScale = (hovered || selected) ? 1.10f : 1.0f;
         m_buttonScales[i] = Lerp(m_buttonScales[i], targetScale, 0.15f);
 
-        int w = static_cast<int>(kBtnW * m_buttonScales[i]);
-        int h = static_cast<int>(kBtnH * m_buttonScales[i]);
+        int w = (int)(kBtnW * m_buttonScales[i]);
+        int h = (int)(kBtnH * m_buttonScales[i]);
         int x = GetScreenWidth() / 2 - w / 2;
-        int y = kStartY + int(i) * kSpacing - (h - kBtnH) / 2;
-        Rectangle btnRect = {static_cast<float>(x), static_cast<float>(y), static_cast<float>(w), static_cast<float>(h)};
-
+        int y = baseY - (h - kBtnH) / 2;
+        Rectangle btnRect = {(float)x, (float)y, (float)w, (float)h};
         DrawRectangle(x + 5, y + 6, w, h, Fade(BLACK, 0.35f));
 
         Color topColor, bottomColor, borderColor;
@@ -305,16 +343,13 @@ void Menu::RenderMenu() {
 
         for (int j = 0; j < h; ++j)
         {
-            float t = static_cast<float>(j) / h;
-            Color c = {static_cast<unsigned char>(topColor.r + t * (bottomColor.r - topColor.r)),
-                       static_cast<unsigned char>(topColor.g + t * (bottomColor.g - topColor.g)),
-                       static_cast<unsigned char>(topColor.b + t * (bottomColor.b - topColor.b)), 255};
+            float t = (float)j / h;
+            Color c = {(unsigned char)(topColor.r + t * (bottomColor.r - topColor.r)),
+                       (unsigned char)(topColor.g + t * (bottomColor.g - topColor.g)),
+                       (unsigned char)(topColor.b + t * (bottomColor.b - topColor.b)), 255};
             DrawLine(x, y + j, x + w, y + j, c);
         }
-
-        int glossH = static_cast<int>(h * 0.40f);
-        DrawRectangle(x + 1, y + 1, w - 2, glossH, Fade(WHITE, 0.06f));
-
+        DrawRectangle(x + 1, y + 1, w - 2, (int)(h * 0.4f), Fade(WHITE, 0.06f));
         if (selected)
         {
             DrawRectangleLinesEx(btnRect, 4, borderColor);
@@ -323,97 +358,86 @@ void Menu::RenderMenu() {
                 Fade(borderColor, 0.3f));
         }
         else
-        {
             DrawRectangleLinesEx(btnRect, 2, borderColor);
-        }
 
-        int fontSize = 28;
-        int textW = MeasureText(currentMenu[i].label, fontSize);
+        int textW = MeasureText(currentMenu[i].label, 28);
         int textX = x + w / 2 - textW / 2;
-        int textY = y + h / 2 - fontSize / 2;
-
-        DrawText(currentMenu[i].label, textX + 2, textY + 2, fontSize, Fade(BLACK, 0.7f));
-        DrawText(currentMenu[i].label, textX, textY, fontSize, RAYWHITE);
+        int textY = y + h / 2 - 28 / 2;
+        DrawText(currentMenu[i].label, textX + 2, textY + 2, 28, Fade(BLACK, 0.7f));
+        DrawText(currentMenu[i].label, textX, textY, 28, RAYWHITE);
     }
 
-    // Footer
     const char *footer = "[Enter] Select   [Esc] Back   [↑/↓] Navigate   [Mouse] Click";
     int fw = MeasureText(footer, 24);
     DrawText(footer, GetScreenWidth() / 2 - fw / 2, GetScreenHeight() - 40, 24, GRAY);
 }
 
-void Menu::RenderSettingsMenu() {
-    int startY = 150;
-    int spacing = 50;
-    int fontSize = 28;
-
-
+// --- RenderSettingsMenu ---
+void Menu::RenderSettingsMenu()
+{
+    int startY = 150, spacing = 50, fontSize = 28;
     DrawText("Video Settings", 80, 50, 40, ORANGE);
-
     for (size_t i = 0; i < m_videoOptions.size(); i++)
     {
         auto &[label, values, selectedIndex] = m_videoOptions[i];
         int y = startY + i * spacing;
+        DrawText(label.c_str(), 80, y, fontSize, i == m_selected ? ORANGE : RAYWHITE);
 
-
-        Color labelCol = (i == m_selected) ? ORANGE : RAYWHITE;
-        Color valueCol = (i == m_selected) ? GOLD : YELLOW;
-
-
-        DrawText(label.c_str(), 80, y, fontSize, labelCol);
-
-        if (!values.empty()) {
+        if (!values.empty())
+        {
             std::string value = "< " + values[selectedIndex] + " >";
             int textWidth = MeasureText(value.c_str(), fontSize);
-            DrawText(value.c_str(), GetScreenWidth() - textWidth - 80, y, fontSize, valueCol);
-        }
-
-
-        if (i == m_selected && IsKeyPressed(KEY_ENTER))
-        {
-            if (label == "Resolution" && !values.empty()) {
-                std::string res = values[selectedIndex];
-                int width = GetScreenWidth(), height = GetScreenHeight();
-                sscanf(res.c_str(), "%dx%d", &width, &height);
-                SetWindowSize(width, height);
-            }
-            else if (label == "Back") {
-                m_state = MenuState::Options;
-            }
-        }
-
-
-        if (label == "Display Mode" && !values.empty())
-        {
-            std::string mode = values[selectedIndex];
-            if (mode == "Fullscreen") {
-                SetWindowState(FLAG_FULLSCREEN_MODE);
-            }
-            else if (mode == "Windowed") {
-                ClearWindowState(FLAG_FULLSCREEN_MODE);
-                ClearWindowState(FLAG_WINDOW_UNDECORATED);
-            }
-            else if (mode == "Borderless") {
-                SetWindowState(FLAG_WINDOW_UNDECORATED | FLAG_FULLSCREEN_MODE);
-            }
-        }
-        else if (label == "VSync" && !values.empty())
-        {
-            std::string vsync = values[selectedIndex];
-            if (vsync == "On") {
-                SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
-            }
-            else {
-                SetTargetFPS(0);
-            }
+            DrawText(value.c_str(), GetScreenWidth() - textWidth - 80, y, fontSize,
+                     i == m_selected ? GOLD : YELLOW);
         }
     }
-
-    // Footer
     std::string footer = "[Enter] Apply/Select [←/→] Change [↑/↓] Navigate [Esc] Back";
     int fw = MeasureText(footer.c_str(), 24);
     DrawText(footer.c_str(), GetScreenWidth() / 2 - fw / 2, GetScreenHeight() - 40, 24, GRAY);
 }
 
+// --- RenderCredits ---
+void Menu::RenderCredits()
+{
+    const char *title = "Credits";
+    int tw = MeasureText(title, 48);
+    DrawText(title, GetScreenWidth() / 2 - tw / 2, 80, 48, ORANGE);
 
+    int y = 160, fs = 26;
+    DrawText("Developer: I#Oleg", 80, y, fs, RAYWHITE);
+    y += 36;
+    DrawText("Engine: raylib + rlImGui", 80, y, fs, RAYWHITE);
+    y += 36;
+    DrawText("UI: Custom styled buttons", 80, y, fs, RAYWHITE);
 
+    const char *footer = "[Esc] Back";
+    int fw2 = MeasureText(footer, 24);
+    DrawText(footer, GetScreenWidth() / 2 - fw2 / 2, GetScreenHeight() - 40, 24, GRAY);
+
+    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ONE))
+    {
+        m_state = MenuState::Main;
+        m_selected = 0; // Скидаємо виділену кнопку
+    }
+}
+
+void Menu::RenderMods()
+{
+    const char *title = "Mods";
+    int tw = MeasureText(title, 48);
+    DrawText(title, GetScreenWidth() / 2 - tw / 2, 80, 48, ORANGE);
+
+    int fs = 24;
+    DrawText("No mods detected.", 80, 160, fs, RAYWHITE);
+    DrawText("Place your mods in the 'resources/mods' folder.", 80, 200, fs, RAYWHITE);
+
+    const char *footer = "[Esc] Back";
+    int fw2 = MeasureText(footer, 24);
+    DrawText(footer, GetScreenWidth() / 2 - fw2 / 2, GetScreenHeight() - 40, 24, GRAY);
+
+    if (IsKeyPressed(KEY_ESCAPE))
+    {
+        m_state = MenuState::Main;
+        m_selected = 0; // Скидаємо виділену кнопку
+    }
+}

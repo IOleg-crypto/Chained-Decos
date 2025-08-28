@@ -6,6 +6,72 @@
 
 #IncludeRegexTransform: 
 
+D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glad.h
+winapifamily.h
+-
+stdint.h
+-
+inttypes.h
+-
+stdint.h
+-
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+
+D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glad_gles2.h
+winapifamily.h
+-
+stdint.h
+-
+inttypes.h
+-
+stdint.h
+-
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+
+D:/gitnext/Chained Decos/.deps/raylib-src/src/raylib.h
+stdarg.h
+-
+stdbool.h
+-
+
+D:/gitnext/Chained Decos/.deps/raylib-src/src/rlgl.h
+stdbool.h
+-
+OpenGL/gl.h
+-
+OpenGL/glext.h
+-
+GL/gl.h
+-
+external/glad.h
+D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glad.h
+GLES3/gl3.h
+-
+GLES2/gl2ext.h
+-
+external/glad_gles2.h
+D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glad_gles2.h
+GLES2/gl2.h
+-
+GLES2/gl2ext.h
+-
+stdlib.h
+-
+string.h
+-
+math.h
+-
+
 D:/gitnext/Chained Decos/include/imgui/imconfig.h
 
 D:/gitnext/Chained Decos/include/imgui/imgui.cpp
@@ -213,70 +279,4 @@ raylib.h
 D:/gitnext/Chained Decos/include/rlImGui/raylib.h
 extras/IconsFontAwesome6.h
 D:/gitnext/Chained Decos/include/rlImGui/extras/IconsFontAwesome6.h
-
-_deps/raylib-src/src/external/glad.h
-winapifamily.h
--
-stdint.h
--
-inttypes.h
--
-stdint.h
--
-stdio.h
--
-stdlib.h
--
-string.h
--
-
-_deps/raylib-src/src/external/glad_gles2.h
-winapifamily.h
--
-stdint.h
--
-inttypes.h
--
-stdint.h
--
-stdio.h
--
-stdlib.h
--
-string.h
--
-
-_deps/raylib-src/src/raylib.h
-stdarg.h
--
-stdbool.h
--
-
-_deps/raylib-src/src/rlgl.h
-stdbool.h
--
-OpenGL/gl.h
--
-OpenGL/glext.h
--
-GL/gl.h
--
-external/glad.h
-_deps/raylib-src/src/external/glad.h
-GLES3/gl3.h
--
-GLES2/gl2ext.h
--
-external/glad_gles2.h
-_deps/raylib-src/src/external/glad_gles2.h
-GLES2/gl2.h
--
-GLES2/gl2ext.h
--
-stdlib.h
--
-string.h
--
-math.h
--
 

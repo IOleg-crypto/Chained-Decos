@@ -67,11 +67,19 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         return false;
     }
 
-    Vector3 playerMin = playerCollision.GetMin();
-    Vector3 playerMax = playerCollision.GetMax();
+    const Vector3 playerMin = playerCollision.GetMin();
+    const Vector3 playerMax = playerCollision.GetMax();
+    const Vector3 playerCenter = {(playerMin.x + playerMax.x) * 0.5f,
+                                  (playerMin.y + playerMax.y) * 0.5f,
+                                  (playerMin.z + playerMax.z) * 0.5f};
 
-    response = (Vector3){0, 0, 0};
     bool collided = false;
+    response = {0, 0, 0};
+
+    // Track the minimum-translation-vector with the smallest magnitude
+    bool hasBest = false;
+    Vector3 bestMTV = {0, 0, 0};
+    float bestLenSq = FLT_MAX;
 
     for (const auto &collider : m_collisions)
     {
@@ -80,17 +88,24 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
 
         collided = true;
 
-        Vector3 colliderMin = collider.GetMin();
-        Vector3 colliderMax = collider.GetMax();
+        const Vector3 colliderMin = collider.GetMin();
+        const Vector3 colliderMax = collider.GetMax();
+        const Vector3 colliderCenter = {(colliderMin.x + colliderMax.x) * 0.5f,
+                                        (colliderMin.y + colliderMax.y) * 0.5f,
+                                        (colliderMin.z + colliderMax.z) * 0.5f};
 
-        // 1. Знаходимо overlap по кожній осі
-        float overlapX = fminf(playerMax.x, colliderMax.x) - fmaxf(playerMin.x, colliderMin.x);
-        float overlapY = fminf(playerMax.y, colliderMax.y) - fmaxf(playerMin.y, colliderMin.y);
-        float overlapZ = fminf(playerMax.z, colliderMax.z) - fmaxf(playerMin.z, colliderMin.z);
+        // Overlaps per axis
+        const float overlapX =
+            fminf(playerMax.x, colliderMax.x) - fmaxf(playerMin.x, colliderMin.x);
+        const float overlapY =
+            fminf(playerMax.y, colliderMax.y) - fmaxf(playerMin.y, colliderMin.y);
+        const float overlapZ =
+            fminf(playerMax.z, colliderMax.z) - fmaxf(playerMin.z, colliderMin.z);
 
         if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
             continue;
 
+        // Choose axis with minimal penetration; bias to Y when standing on top
         float minOverlap = fabsf(overlapX);
         int axis = 0; // 0 - x, 1 - y, 2 - z
 
@@ -105,31 +120,42 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
             axis = 2;
         }
 
+        // Prefer Y slightly when player is above collider, but do not force
+        const float preferYBias = 0.03f; // 3 cm tolerance
+        if (playerCenter.y >= colliderCenter.y && fabsf(overlapY) <= minOverlap + preferYBias)
+        {
+            axis = 1;
+            minOverlap = fabsf(overlapY);
+        }
+
         Vector3 mtv = {0, 0, 0};
-        if (axis == 0)
+        switch (axis)
         {
-            mtv.x = ((playerMin.x + playerMax.x) / 2 < (colliderMin.x + colliderMax.x) / 2)
-                        ? -minOverlap
-                        : minOverlap;
-        }
-        else if (axis == 1)
-        {
-            mtv.y = ((playerMin.y + playerMax.y) / 2 < (colliderMin.y + colliderMax.y) / 2)
-                        ? -minOverlap
-                        : minOverlap;
-        }
-        else
-        {
-            mtv.z = ((playerMin.z + playerMax.z) / 2 < (colliderMin.z + colliderMax.z) / 2)
-                        ? -minOverlap
-                        : minOverlap;
+        case 0:
+            mtv.x = (playerCenter.x < colliderCenter.x) ? -minOverlap : minOverlap;
+            break;
+        case 1:
+            mtv.y = (playerCenter.y < colliderCenter.y) ? -minOverlap : minOverlap;
+            break;
+        case 2:
+            mtv.z = (playerCenter.z < colliderCenter.z) ? -minOverlap : minOverlap;
+            break;
         }
 
-        const float RESPONSE_FACTOR = 0.4f;
-        mtv = Vector3Scale(mtv, RESPONSE_FACTOR);
+        // Keep the smallest correction among all colliders
+        float lenSq = mtv.x * mtv.x + mtv.y * mtv.y + mtv.z * mtv.z;
+        if (!hasBest || lenSq < bestLenSq)
+        {
+            bestLenSq = lenSq;
+            bestMTV = mtv;
+            hasBest = true;
+        }
+    }
 
-
-        response = Vector3Add(response, mtv);
+    if (hasBest)
+    {
+        response = bestMTV; // return a single, stable MTV
+        return true;
     }
 
     return collided;
