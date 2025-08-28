@@ -4,8 +4,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/model.dir/Model.cpp.obj"
   "CMakeFiles/model.dir/ModelCache.cpp.obj"
   "CMakeFiles/model.dir/ModelInstance.cpp.obj"
-  "model.lib"
-  "model.pdb"
+  "libmodel.a"
+  "libmodel.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

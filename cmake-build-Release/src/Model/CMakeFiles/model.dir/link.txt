@@ -1,2 +1,0 @@
-E:\LLVM\bin\llvm-ar.exe qc model.lib CMakeFiles/model.dir/Model.cpp.obj CMakeFiles/model.dir/ModelInstance.cpp.obj CMakeFiles/model.dir/Animation.cpp.obj CMakeFiles/model.dir/JsonHelper.cpp.obj CMakeFiles/model.dir/ModelCache.cpp.obj
-E:\LLVM\bin\llvm-ranlib.exe model.lib

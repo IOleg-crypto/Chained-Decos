@@ -35,14 +35,14 @@ CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj: \
  D:/gitnext/Chained\ Decos/include/imgui/misc/cpp/imgui_stdlib.cpp \
  D:/gitnext/Chained\ Decos/include/imgui/misc/cpp/imgui_stdlib.h
 CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj: \
+ D:/gitnext/Chained\ Decos/.deps/raylib-src/src/external/glad.h \
+ D:/gitnext/Chained\ Decos/.deps/raylib-src/src/external/glad_gles2.h \
+ D:/gitnext/Chained\ Decos/.deps/raylib-src/src/raylib.h \
+ D:/gitnext/Chained\ Decos/.deps/raylib-src/src/rlgl.h \
  D:/gitnext/Chained\ Decos/include/imgui/imconfig.h \
  D:/gitnext/Chained\ Decos/include/imgui/imgui.h \
  D:/gitnext/Chained\ Decos/include/rlImGui/extras/FA6FreeSolidFontData.h \
  D:/gitnext/Chained\ Decos/include/rlImGui/extras/IconsFontAwesome6.h \
  D:/gitnext/Chained\ Decos/include/rlImGui/imgui_impl_raylib.h \
  D:/gitnext/Chained\ Decos/include/rlImGui/rlImGui.cpp \
- D:/gitnext/Chained\ Decos/include/rlImGui/rlImGui.h \
- _deps/raylib-src/src/external/glad.h \
- _deps/raylib-src/src/external/glad_gles2.h \
- _deps/raylib-src/src/raylib.h \
- _deps/raylib-src/src/rlgl.h
+ D:/gitnext/Chained\ Decos/include/rlImGui/rlImGui.h

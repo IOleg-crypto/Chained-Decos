@@ -1,2 +1,0 @@
-E:\LLVM\bin\llvm-ar.exe qc render.lib CMakeFiles/render.dir/RenderManager.cpp.obj
-E:\LLVM\bin\llvm-ranlib.exe render.lib
