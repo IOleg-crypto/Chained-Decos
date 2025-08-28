@@ -55,7 +55,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-release"
 
 # Include any dependencies generated for this target.
 include D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/depend.make
@@ -71,100 +71,100 @@ D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/codege
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/includes_C.rsp
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj: ../.deps/raylib-src/src/raudio.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\raudio.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\raudio.c"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj"
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\raudio.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\raudio.c"
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/raylib.dir/raudio.c.i"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\raudio.c" > CMakeFiles\raylib.dir\raudio.c.i
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\raudio.c" > CMakeFiles\raylib.dir\raudio.c.i
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/raylib.dir/raudio.c.s"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\raudio.c" -o CMakeFiles\raylib.dir\raudio.c.s
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\raudio.c" -o CMakeFiles\raylib.dir\raudio.c.s
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/includes_C.rsp
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj: ../.deps/raylib-src/src/rcore.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rcore.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rcore.c"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj"
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rcore.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rcore.c"
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/raylib.dir/rcore.c.i"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rcore.c" > CMakeFiles\raylib.dir\rcore.c.i
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rcore.c" > CMakeFiles\raylib.dir\rcore.c.i
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/raylib.dir/rcore.c.s"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rcore.c" -o CMakeFiles\raylib.dir\rcore.c.s
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rcore.c" -o CMakeFiles\raylib.dir\rcore.c.s
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/includes_C.rsp
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj: ../.deps/raylib-src/src/rmodels.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rmodels.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rmodels.c"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj"
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rmodels.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rmodels.c"
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/raylib.dir/rmodels.c.i"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rmodels.c" > CMakeFiles\raylib.dir\rmodels.c.i
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rmodels.c" > CMakeFiles\raylib.dir\rmodels.c.i
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/raylib.dir/rmodels.c.s"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rmodels.c" -o CMakeFiles\raylib.dir\rmodels.c.s
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rmodels.c" -o CMakeFiles\raylib.dir\rmodels.c.s
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/includes_C.rsp
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj: ../.deps/raylib-src/src/rshapes.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rshapes.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rshapes.c"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj"
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rshapes.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rshapes.c"
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/raylib.dir/rshapes.c.i"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rshapes.c" > CMakeFiles\raylib.dir\rshapes.c.i
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rshapes.c" > CMakeFiles\raylib.dir\rshapes.c.i
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/raylib.dir/rshapes.c.s"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rshapes.c" -o CMakeFiles\raylib.dir\rshapes.c.s
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rshapes.c" -o CMakeFiles\raylib.dir\rshapes.c.s
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/includes_C.rsp
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj: ../.deps/raylib-src/src/rtext.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rtext.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtext.c"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj"
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rtext.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtext.c"
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/raylib.dir/rtext.c.i"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtext.c" > CMakeFiles\raylib.dir\rtext.c.i
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtext.c" > CMakeFiles\raylib.dir\rtext.c.i
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/raylib.dir/rtext.c.s"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtext.c" -o CMakeFiles\raylib.dir\rtext.c.s
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtext.c" -o CMakeFiles\raylib.dir\rtext.c.s
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/includes_C.rsp
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj: ../.deps/raylib-src/src/rtextures.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rtextures.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtextures.c"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj"
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\rtextures.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtextures.c"
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/raylib.dir/rtextures.c.i"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtextures.c" > CMakeFiles\raylib.dir\rtextures.c.i
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtextures.c" > CMakeFiles\raylib.dir\rtextures.c.i
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/raylib.dir/rtextures.c.s"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtextures.c" -o CMakeFiles\raylib.dir\rtextures.c.s
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\rtextures.c" -o CMakeFiles\raylib.dir\rtextures.c.s
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/includes_C.rsp
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj: ../.deps/raylib-src/src/utils.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\utils.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\utils.c"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "Building C object D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj"
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\raylib.dir\utils.c.obj -c "D:\gitnext\Chained Decos\.deps\raylib-src\src\utils.c"
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/raylib.dir/utils.c.i"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\utils.c" > CMakeFiles\raylib.dir\utils.c.i
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "D:\gitnext\Chained Decos\.deps\raylib-src\src\utils.c" > CMakeFiles\raylib.dir\utils.c.i
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/raylib.dir/utils.c.s"
-	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\utils.c" -o CMakeFiles\raylib.dir\utils.c.s
+	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && C:\msys64\mingw64\bin\cc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "D:\gitnext\Chained Decos\.deps\raylib-src\src\utils.c" -o CMakeFiles\raylib.dir\utils.c.s
 
 # Object files for target raylib
 raylib_OBJECTS = \
@@ -230,7 +230,7 @@ D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/libraylib.a: D:/gitnext/Chai
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/libraylib.a: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/libraylib.a: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/build.make
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/libraylib.a: D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-debug\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_8) "Linking C static library libraylib.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="D:\gitnext\Chained Decos\cmake-build-release\CMakeFiles" --progress-num=$(CMAKE_PROGRESS_8) "Linking C static library libraylib.a"
 	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && $(CMAKE_COMMAND) -P CMakeFiles\raylib.dir\cmake_clean_target.cmake
 	cd /d "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\raylib.dir\link.txt --verbose=$(VERBOSE)
 
@@ -243,6 +243,6 @@ D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/clean:
 .PHONY : D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/clean
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\.deps\raylib-src\src" "D:\gitnext\Chained Decos\cmake-build-debug" "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\DependInfo.cmake" "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\.deps\raylib-src\src" "D:\gitnext\Chained Decos\cmake-build-release" "D:\gitnext\Chained Decos\.deps\raylib-build\raylib" "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\DependInfo.cmake" "--color=$(COLOR)"
 .PHONY : D:/gitnext/Chained\ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/depend
 

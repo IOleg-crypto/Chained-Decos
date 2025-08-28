@@ -1,1 +1,3 @@
-E:\LLVM\bin\clang++.exe -nostartfiles -nostdlib -g -g -O0 -DDEBUG -D_DEBUG -Wall  -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Xlinker /subsystem:console -fuse-ld=lld-link @CMakeFiles\ChainedDecos.dir\objects1.rsp -o ChainedDecos.exe -Xlinker /MANIFEST:EMBED -Xlinker /implib:ChainedDecos.lib -Xlinker /pdb:"D:\gitnext\Chained Decos\cmake-build-debug\ChainedDecos.pdb" -Xlinker /version:0.0  @CMakeFiles\ChainedDecos.dir\linkLibs.rsp
+D:\CLion-2025.1.1.win\bin\cmake\win\x64\bin\cmake.exe -E rm -f CMakeFiles\ChainedDecos.dir/objects.a
+C:\msys64\mingw64\bin\ar.exe qc CMakeFiles\ChainedDecos.dir/objects.a @CMakeFiles\ChainedDecos.dir\objects1.rsp
+C:\msys64\mingw64\bin\g++.exe -g -g -O0 -DDEBUG -D_DEBUG -Wall  -Wl,--whole-archive CMakeFiles\ChainedDecos.dir/objects.a -Wl,--no-whole-archive -o ChainedDecos.exe -Wl,--out-implib,libChainedDecos.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\ChainedDecos.dir\linkLibs.rsp

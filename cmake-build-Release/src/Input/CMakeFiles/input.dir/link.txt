@@ -1,2 +1,0 @@
-E:\LLVM\bin\llvm-ar.exe qc input.lib CMakeFiles/input.dir/InputManager.cpp.obj
-E:\LLVM\bin\llvm-ranlib.exe input.lib

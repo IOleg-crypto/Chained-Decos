@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/menu.dir/Menu.cpp.obj"
-  "menu.lib"
-  "menu.pdb"
+  "libmenu.a"
+  "libmenu.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

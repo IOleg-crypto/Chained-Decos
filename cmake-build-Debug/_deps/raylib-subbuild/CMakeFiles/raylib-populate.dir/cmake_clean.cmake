@@ -6,9 +6,9 @@ file(REMOVE_RECURSE
   "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download"
   "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-install"
   "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir"
-  "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch"
+  "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch_disconnected"
   "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test"
-  "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update"
+  "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update_disconnected"
 )
 
 # Per-language clean rules from dependency scanning.

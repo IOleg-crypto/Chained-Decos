@@ -1,2 +1,0 @@
-E:\LLVM\bin\llvm-ar.exe qc engine.lib CMakeFiles/engine.dir/Engine.cpp.obj
-E:\LLVM\bin\llvm-ranlib.exe engine.lib

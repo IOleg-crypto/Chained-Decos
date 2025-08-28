@@ -236,8 +236,13 @@ void Engine::InitInput()
     m_manager.RegisterAction(KEY_ESCAPE,
                              [this]()
                              {
-                                 ToggleMenu();
-                                 EnableCursor();
+                                 // Open menu only if currently in game; do not close menu with ESC
+                                 if (!m_showMenu)
+                                 {
+                                     ToggleMenu();
+                                     EnableCursor();
+                                 }
+                                 // If menu is open, let Menu handle ESC navigation/back behavior
                              });
 
     TraceLog(LOG_INFO, "Input bindings configured successfully");

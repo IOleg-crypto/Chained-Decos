@@ -14,7 +14,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "D:/gitnext/Chained Decos/src/Player/PlayerModel.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj"
   "D:/gitnext/Chained Decos/src/Player/PlayerMovement.cpp" "D:/gitnext/Chained Decos/cmake-build-debug/src/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj"
   )
-set(CMAKE_CXX_COMPILER_ID "Clang")
+set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_CXX
@@ -27,9 +27,9 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "D:/gitnext/Chained Decos/src"
-  "_deps/raylib-src/src"
-  "_deps/raylib-src/src/external/glfw/include"
-  "_deps/nlohmann_json-src/include"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
+  "D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
   )
 
 # The set of dependency files which are needed:

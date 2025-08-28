@@ -1,2 +1,0 @@
-E:\LLVM\bin\llvm-ar.exe qc world.lib CMakeFiles/world.dir/Physics.cpp.obj
-E:\LLVM\bin\llvm-ranlib.exe world.lib

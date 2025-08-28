@@ -55,7 +55,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = "D:\gitnext\Chained Decos"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-debug"
+CMAKE_BINARY_DIR = "D:\gitnext\Chained Decos\cmake-build-release"
 
 # Utility rule file for uninstall.
 
@@ -84,6 +84,6 @@ D:/gitnext/Chained\ Decos/.deps/raylib-build/CMakeFiles/uninstall.dir/clean:
 .PHONY : D:/gitnext/Chained\ Decos/.deps/raylib-build/CMakeFiles/uninstall.dir/clean
 
 D:/gitnext/Chained\ Decos/.deps/raylib-build/CMakeFiles/uninstall.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\.deps\raylib-src" "D:\gitnext\Chained Decos\cmake-build-debug" "D:\gitnext\Chained Decos\.deps\raylib-build" "D:\gitnext\Chained Decos\.deps\raylib-build\CMakeFiles\uninstall.dir\DependInfo.cmake" "--color=$(COLOR)"
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" "D:\gitnext\Chained Decos" "D:\gitnext\Chained Decos\.deps\raylib-src" "D:\gitnext\Chained Decos\cmake-build-release" "D:\gitnext\Chained Decos\.deps\raylib-build" "D:\gitnext\Chained Decos\.deps\raylib-build\CMakeFiles\uninstall.dir\DependInfo.cmake" "--color=$(COLOR)"
 .PHONY : D:/gitnext/Chained\ Decos/.deps/raylib-build/CMakeFiles/uninstall.dir/depend
 

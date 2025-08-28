@@ -1,2 +1,2 @@
-C:\msys64\mingw64\bin\ar.exe qc input.lib CMakeFiles/input.dir/InputManager.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe input.lib
+C:\msys64\mingw64\bin\ar.exe qc libinput.a CMakeFiles/input.dir/InputManager.cpp.obj
+C:\msys64\mingw64\bin\ranlib.exe libinput.a

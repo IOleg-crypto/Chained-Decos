@@ -44,19 +44,24 @@ void PlayerMovement::ApplyJumpImpulse(const float impulse)
 {
     if (!m_physics.IsGrounded())
     {
-        TraceLog(LOG_WARNING, "Jump ignored - not grounded (vel.y: %.2f)",
-                 m_physics.GetVelocity().y);
-        return;
+        // If nearly grounded (tiny downward speed) allow coyote-time style jump
+        if (m_physics.GetVelocity().y < 0.0f && m_physics.GetVelocity().y > -0.6f)
+        {
+            // proceed
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Jump ignored - not grounded (vel.y: %.2f)",
+                     m_physics.GetVelocity().y);
+            return;
+        }
     }
 
     TraceLog(LOG_INFO, "Jump impulse received: %.2f", impulse);
 
-    float verticalVelocity = impulse;
     Vector3 currentVelocity = m_physics.GetVelocity();
-
-    Vector3 jumpVelocity = {currentVelocity.x, verticalVelocity, currentVelocity.z};
-
-    m_physics.SetVelocity(jumpVelocity);
+    currentVelocity.y = impulse; // set positive vertical velocity
+    m_physics.SetVelocity(currentVelocity);
 
     m_physics.SetGroundLevel(false);
     m_player->GetPhysics().SetJumpState(true);
@@ -98,8 +103,7 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     constexpr int subSteps = 4;
     Vector3 subStepVelocity = Vector3Scale(velocity, deltaTime / subSteps);
 
-    //m_physics.SetGroundLevel(false); // Reset grounded state at the start of the step
-
+    m_physics.SetGroundLevel(false); // Reset grounded state at the start of the step
     for (int i = 0; i < subSteps; i++)
     {
         Vector3 targetPos = Vector3Add(workingPos, subStepVelocity);
@@ -128,39 +132,50 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     }
 
     // After all substeps, check if there is ground under the player
-    SnapToGround(collisionManager);
+    // Only snap if falling or almost static vertically to not cancel jump right after takeoff
+    // Vector3 v = m_physics.GetVelocity();
+    // if (v.y <= 0.05f)
+    //     SnapToGround(collisionManager);
 
     return workingPos;
 }
 
-void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseNormal)
+void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseMtv)
 {
     Vector3 velocity = m_physics.GetVelocity();
 
-    // Ground collision
-    if (responseNormal.y > 0.1f)
+    // Interpret response as MTV (minimum translation vector). Normalize to get a stable normal.
+    Vector3 normal = responseMtv;
+    float len = Vector3Length(normal);
+    if (len > 1e-6f)
+        normal = Vector3Scale(normal, 1.0f / len);
+    else
+        normal = {0, 0, 0};
+
+    // Ground contact: MTV points up (positive Y) when standing on surfaces below us
+    if (responseMtv.y > 0.0f)
     {
         if (velocity.y <= 0.0f)
         {
             velocity.y = 0.0f;
             m_physics.SetGroundLevel(true);
         }
+        m_physics.SetVelocity(velocity);
         return;
     }
 
-    // Ceiling collision
-    if (responseNormal.y < -0.1f)
+    // Ceiling contact: MTV points down (negative Y)
+    if (responseMtv.y < 0.0f)
     {
         if (velocity.y > 0.0f)
             velocity.y = 0.0f;
-    }
-    // Walls
-    else
-    {
-        float vn = Vector3DotProduct(velocity, responseNormal);
-        velocity = Vector3Subtract(velocity, Vector3Scale(responseNormal, vn));
+        m_physics.SetVelocity(velocity);
+        return;
     }
 
+    // Walls: remove velocity component along the collision normal
+    float vn = Vector3DotProduct(velocity, normal);
+    velocity = Vector3Subtract(velocity, Vector3Scale(normal, vn));
     m_physics.SetVelocity(velocity);
 }
 

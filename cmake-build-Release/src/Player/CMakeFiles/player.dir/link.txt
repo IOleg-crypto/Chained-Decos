@@ -1,2 +1,0 @@
-E:\LLVM\bin\llvm-ar.exe qc player.lib CMakeFiles/player.dir/Player.cpp.obj CMakeFiles/player.dir/PlayerCollision.cpp.obj CMakeFiles/player.dir/PlayerInput.cpp.obj CMakeFiles/player.dir/PlayerModel.cpp.obj CMakeFiles/player.dir/PlayerMovement.cpp.obj
-E:\LLVM\bin\llvm-ranlib.exe player.lib

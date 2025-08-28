@@ -26,13 +26,13 @@
 			"file" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir.rule"
 		},
 		{
-			"file" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch.rule"
+			"file" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch_disconnected.rule"
 		},
 		{
 			"file" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test.rule"
 		},
 		{
-			"file" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update.rule"
+			"file" : "D:/gitnext/Chained Decos/cmake-build-debug/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update_disconnected.rule"
 		}
 	],
 	"target" : 

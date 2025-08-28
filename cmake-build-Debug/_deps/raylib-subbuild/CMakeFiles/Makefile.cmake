@@ -16,8 +16,8 @@ set(CMAKE_MAKEFILE_DEPENDS
   "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/RepositoryInfo.txt.in"
   "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/UpdateInfo.txt.in"
   "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/cfgcmd.txt.in"
-  "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/gitclone.cmake.in"
-  "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/gitupdate.cmake.in"
+  "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/download.cmake.in"
+  "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/extractfile.cmake.in"
   "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/mkdirs.cmake.in"
   "C:/Program Files/CMake/share/cmake-3.29/Modules/ExternalProject/shared_internal_commands.cmake"
   "C:/Program Files/CMake/share/cmake-3.29/Modules/Platform/Windows-Initialize.cmake"
@@ -37,9 +37,9 @@ set(CMAKE_MAKEFILE_OUTPUTS
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
   "raylib-populate-prefix/tmp/raylib-populate-mkdirs.cmake"
-  "raylib-populate-prefix/tmp/raylib-populate-gitclone.cmake"
-  "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-gitinfo.txt"
-  "raylib-populate-prefix/tmp/raylib-populate-gitupdate.cmake"
+  "raylib-populate-prefix/src/raylib-populate-stamp/download-raylib-populate.cmake"
+  "raylib-populate-prefix/src/raylib-populate-stamp/extract-raylib-populate.cmake"
+  "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-urlinfo.txt"
   "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update-info.txt"
   "raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch-info.txt"
   "raylib-populate-prefix/tmp/raylib-populate-cfgcmd.txt"

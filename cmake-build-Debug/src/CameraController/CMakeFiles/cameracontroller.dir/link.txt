@@ -1,2 +1,2 @@
-C:\msys64\mingw64\bin\ar.exe qc cameracontroller.lib CMakeFiles/cameracontroller.dir/CameraController.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe cameracontroller.lib
+C:\msys64\mingw64\bin\ar.exe qc libcameracontroller.a CMakeFiles/cameracontroller.dir/CameraController.cpp.obj
+C:\msys64\mingw64\bin\ranlib.exe libcameracontroller.a

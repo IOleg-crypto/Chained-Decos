@@ -4,8 +4,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/player.dir/PlayerInput.cpp.obj"
   "CMakeFiles/player.dir/PlayerModel.cpp.obj"
   "CMakeFiles/player.dir/PlayerMovement.cpp.obj"
-  "player.lib"
-  "player.pdb"
+  "libplayer.a"
+  "libplayer.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

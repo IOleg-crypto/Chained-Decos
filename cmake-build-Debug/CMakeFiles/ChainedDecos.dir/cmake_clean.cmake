@@ -2,8 +2,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/ChainedDecos.dir/src/main.cpp.obj"
   "ChainedDecos.exe"
   "ChainedDecos.exe.manifest"
-  "ChainedDecos.lib"
   "ChainedDecos.pdb"
+  "libChainedDecos.dll.a"
 )
 
 # Per-language clean rules from dependency scanning.
