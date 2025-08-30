@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libcameracontroller.a"
+  "cameracontroller.lib"
 )

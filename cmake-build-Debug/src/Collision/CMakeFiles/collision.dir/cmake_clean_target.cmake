@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libcollision.a"
+  "collision.lib"
 )

@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libplayer.a"
+  "player.lib"
 )

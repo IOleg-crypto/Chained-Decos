@@ -1,14 +1,11 @@
 #include <Player/Player.h>
 #include <Player/PlayerMovement.h>
-#include <raylib.h>
 #include <cmath>
+#include <raylib.h>
 
 PlayerMovement::PlayerMovement(Player *player)
-    : m_player(player),
-      m_position(Player::DEFAULT_SPAWN_POSITION),
-      m_rotationY(0.0f),
-      m_walkSpeed(11.0f),
-      m_lastCollisionManager(nullptr)
+    : m_player(player), m_position(Player::DEFAULT_SPAWN_POSITION), m_rotationY(0.0f),
+      m_walkSpeed(11.0f), m_lastCollisionManager(nullptr)
 {
     m_physics.SetGroundLevel(false);
     m_physics.SetVelocity({0, 0, 0});
@@ -45,10 +42,7 @@ void PlayerMovement::SetCollisionManager(const CollisionManager *collisionManage
 void PlayerMovement::ApplyJumpImpulse(float impulse)
 {
     if (!m_physics.IsGrounded())
-    {
-        float vy = m_physics.GetVelocity().y;
-        if (!(vy < 0.0f && vy > -0.3f)) return;
-    }
+        return;
 
     Vector3 vel = m_physics.GetVelocity();
     vel.y = impulse;
@@ -64,12 +58,16 @@ void PlayerMovement::ApplyGravity(float deltaTime)
     {
         vel.y -= m_physics.GetGravity() * deltaTime;
         constexpr float MAX_FALL_SPEED = -50.0f;
-        if (vel.y < MAX_FALL_SPEED) vel.y = MAX_FALL_SPEED;
+        if (vel.y < MAX_FALL_SPEED)
+        {
+            vel.y = MAX_FALL_SPEED;
+        }
         m_physics.SetVelocity(vel);
     }
     else
     {
-        if (vel.y < 0.0f) vel.y = 0.0f;
+        if (vel.y < 0.0f)
+            vel.y = 0.0f;
         m_physics.SetVelocity(vel);
     }
 }
@@ -147,11 +145,6 @@ void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseMtv)
 void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
 {
     Vector3 velocity = m_physics.GetVelocity();
-    if (velocity.y > 0.0f)
-    {
-        m_physics.SetGroundLevel(false);
-        return;
-    }
 
     constexpr float SNAP_DISTANCE = 0.35f;
     Vector3 checkPos = m_position;
@@ -183,10 +176,12 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
 
 bool PlayerMovement::ExtractFromCollider()
 {
-    if (!m_lastCollisionManager) return false;
+    if (!m_lastCollisionManager)
+        return false;
 
     Vector3 velocity = m_physics.GetVelocity();
-    if (!m_physics.IsGrounded() || fabsf(velocity.y) > 0.1f) return false;
+    if (!m_physics.IsGrounded() || fabsf(velocity.y) > 0.1f)
+        return false;
 
     Vector3 currentPos = GetPosition();
     m_player->UpdatePlayerBox();

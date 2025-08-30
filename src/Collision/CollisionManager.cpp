@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-void CollisionManager::Initialize()
+void CollisionManager::Initialize() const
 {
     // Ensure all colliders are properly initialized
     for (auto &collider : m_collisions)
@@ -62,10 +62,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const
 {
     if (m_collisions.empty())
-    {
-        TraceLog(LOG_INFO, "No collisions");
         return false;
-    }
 
     const Vector3 playerMin = playerCollision.GetMin();
     const Vector3 playerMax = playerCollision.GetMax();
@@ -74,12 +71,14 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
                                   (playerMin.z + playerMax.z) * 0.5f};
 
     bool collided = false;
-    response = {0, 0, 0};
+    response = (Vector3){0, 0, 0};
 
-    // Track the minimum-translation-vector with the smallest magnitude
     bool hasBest = false;
     Vector3 bestMTV = {0, 0, 0};
     float bestLenSq = FLT_MAX;
+
+    Vector3 groundMTV = {0, 0, 0};
+    bool hasGroundMTV = false;
 
     for (const auto &collider : m_collisions)
     {
@@ -94,7 +93,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
                                         (colliderMin.y + colliderMax.y) * 0.5f,
                                         (colliderMin.z + colliderMax.z) * 0.5f};
 
-        // Overlaps per axis
         const float overlapX =
             fminf(playerMax.x, colliderMax.x) - fmaxf(playerMin.x, colliderMin.x);
         const float overlapY =
@@ -105,9 +103,8 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
             continue;
 
-        // Choose axis with minimal penetration; bias to Y when standing on top
         float minOverlap = fabsf(overlapX);
-        int axis = 0; // 0 - x, 1 - y, 2 - z
+        int axis = 0;
 
         if (fabsf(overlapY) < minOverlap)
         {
@@ -118,14 +115,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         {
             minOverlap = fabsf(overlapZ);
             axis = 2;
-        }
-
-        // Prefer Y slightly when player is above collider, but do not force
-        const float preferYBias = 0.03f; // 3 cm tolerance
-        if (playerCenter.y >= colliderCenter.y && fabsf(overlapY) <= minOverlap + preferYBias)
-        {
-            axis = 1;
-            minOverlap = fabsf(overlapY);
         }
 
         Vector3 mtv = {0, 0, 0};
@@ -140,21 +129,39 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         case 2:
             mtv.z = (playerCenter.z < colliderCenter.z) ? -minOverlap : minOverlap;
             break;
+        default:
+            break;
         }
 
-        // Keep the smallest correction among all colliders
-        float lenSq = mtv.x * mtv.x + mtv.y * mtv.y + mtv.z * mtv.z;
-        if (!hasBest || lenSq < bestLenSq)
+        if (axis == 1 && mtv.y > 0)
         {
-            bestLenSq = lenSq;
-            bestMTV = mtv;
-            hasBest = true;
+            if (!hasGroundMTV || fabsf(mtv.y) < fabsf(groundMTV.y))
+            {
+                groundMTV = mtv;
+                hasGroundMTV = true;
+            }
         }
+        else
+        {
+            float lenSq = mtv.x * mtv.x + mtv.y * mtv.y + mtv.z * mtv.z;
+            if (!hasBest || lenSq < bestLenSq)
+            {
+                bestLenSq = lenSq;
+                bestMTV = mtv;
+                hasBest = true;
+            }
+        }
+    }
+
+    if (hasGroundMTV)
+    {
+        response = groundMTV;
+        return true;
     }
 
     if (hasBest)
     {
-        response = bestMTV; // return a single, stable MTV
+        response = bestMTV;
         return true;
     }
 

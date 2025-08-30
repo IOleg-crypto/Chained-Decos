@@ -1,7 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/world.dir/Physics.cpp.obj"
-  "libworld.a"
-  "libworld.pdb"
+  "CMakeFiles/world.dir/Physics.cpp.obj.d"
+  "world.lib"
+  "world.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

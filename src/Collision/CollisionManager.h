@@ -21,7 +21,7 @@ public:
     CollisionManager() = default;
 
     // Initialize the collision system
-    void Initialize();
+    void Initialize() const;
 
     // Add a new collider to the manager
     void AddCollider(Collision &collider);

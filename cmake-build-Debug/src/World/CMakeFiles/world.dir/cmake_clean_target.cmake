@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libworld.a"
+  "world.lib"
 )

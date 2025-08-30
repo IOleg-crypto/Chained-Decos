@@ -1,7 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/mapmod.dir/MapLoader.cpp.obj"
-  "libmapmod.a"
-  "libmapmod.pdb"
+  "CMakeFiles/mapmod.dir/MapLoader.cpp.obj.d"
+  "mapmod.lib"
+  "mapmod.pdb"
 )
 
 # Per-language clean rules from dependency scanning.
