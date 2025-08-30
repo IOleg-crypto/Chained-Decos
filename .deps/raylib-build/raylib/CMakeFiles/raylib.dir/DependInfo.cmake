@@ -4,35 +4,17 @@ set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
 
 # The set of languages for which implicit dependencies are needed:
 set(CMAKE_DEPENDS_LANGUAGES
-  "C"
-  )
-# The set of files for implicit dependencies of each language:
-set(CMAKE_DEPENDS_CHECK_C
-  "D:/gitnext/Chained Decos/.deps/raylib-src/src/raudio.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj"
-  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rcore.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj"
-  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rmodels.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj"
-  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rshapes.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj"
-  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rtext.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj"
-  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rtextures.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj"
-  "D:/gitnext/Chained Decos/.deps/raylib-src/src/utils.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj"
-  )
-set(CMAKE_C_COMPILER_ID "GNU")
-
-# Preprocessor definitions for this target.
-set(CMAKE_TARGET_DEFINITIONS_C
-  "GRAPHICS_API_OPENGL_33"
-  "PLATFORM_DESKTOP"
-  "_CRT_SECURE_NO_WARNINGS"
-  )
-
-# The include file search paths:
-set(CMAKE_C_TARGET_INCLUDE_PATH
-  "../.deps/raylib-src/src"
-  "../.deps/raylib-src/src/external/glfw/include"
   )
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/raudio.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj" "gcc" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj.d"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rcore.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj" "gcc" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj.d"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rmodels.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj" "gcc" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj.d"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rshapes.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj" "gcc" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj.d"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rtext.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj" "gcc" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj.d"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/rtextures.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj" "gcc" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj.d"
+  "D:/gitnext/Chained Decos/.deps/raylib-src/src/utils.c" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj" "gcc" "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

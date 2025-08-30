@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libimguilib.a"
+  "imguilib.lib"
 )
