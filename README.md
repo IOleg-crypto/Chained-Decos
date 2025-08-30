@@ -97,6 +97,33 @@ cmake --build .
 ctest # To run the tests
 ```
 
+### ChainedMapEditor
+
+The `ChainedMapEditor` is a separate executable that allows you to create and edit 3D scenes for the game. This editor is built as an optional component.
+
+To build and run the `ChainedMapEditor`, you need to enable the `BUILD_MAP_EDITOR` CMake option:
+
+1.  **Configure CMake with `BUILD_MAP_EDITOR` enabled:**
+
+    ```bash
+    # From your build directory (e.g., ChainedDecos/build)
+    cmake .. -DBUILD_MAP_EDITOR=ON -DCMAKE_BUILD_TYPE=Debug
+    ```
+
+2.  **Build the Project:**
+
+    ```bash
+    cmake --build . --config Debug # Specify configuration (Debug/Release)
+    ```
+
+3.  **Run the Editor:**
+    The editor executable will be located in the build directory, typically `build/src/MapEditor/`.
+
+    ```bash
+    ./src/MapEditor/ChainedDecosMapEditor # On Linux/macOS
+    .\src\MapEditor\ChainedDecosMapEditor.exe # On Windows (adjust path if different)
+    ```
+
 ### Cleaning the Build Cache (Troubleshooting)
 
 If you encounter build errors (e.g., "No rule to make target" or issues after modifying CMakeLists.txt files), it's often helpful to clean your CMake cache and rebuild.
