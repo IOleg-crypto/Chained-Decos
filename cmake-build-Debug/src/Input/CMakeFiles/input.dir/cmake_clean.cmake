@@ -1,7 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/input.dir/InputManager.cpp.obj"
-  "libinput.a"
-  "libinput.pdb"
+  "CMakeFiles/input.dir/InputManager.cpp.obj.d"
+  "input.lib"
+  "input.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

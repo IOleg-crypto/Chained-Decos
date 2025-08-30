@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libcolor.a"
+  "color.lib"
 )

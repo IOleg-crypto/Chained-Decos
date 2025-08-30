@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libraylib.a"
+  "raylib.lib"
 )

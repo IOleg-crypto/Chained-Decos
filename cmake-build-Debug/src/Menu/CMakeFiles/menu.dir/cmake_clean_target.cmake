@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libmenu.a"
+  "menu.lib"
 )

@@ -1,7 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/render.dir/RenderManager.cpp.obj"
-  "librender.a"
-  "librender.pdb"
+  "CMakeFiles/render.dir/RenderManager.cpp.obj.d"
+  "render.lib"
+  "render.pdb"
 )
 
 # Per-language clean rules from dependency scanning.
