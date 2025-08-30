@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libmodel.a"
+  "model.lib"
 )

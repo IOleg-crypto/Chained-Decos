@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "librender.a"
+  "render.lib"
 )
