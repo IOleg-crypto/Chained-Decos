@@ -4,7 +4,7 @@
 
 Chained Decos is a fast-paced parkour game with both singleplayer and multiplayer modes, built in modern C++ (C++20) using the [raylib](https://www.raylib.com/) library. The project also leverages [ImGui](https://github.com/ocornut/imgui) and [rlImGui](https://github.com/raylib-extras/rlImGui) for its in-game UI and debugging tools.
 
-> [!IMPORTANT]
+> [!IMPORTANT]  
 > The game is currently in active development, with its core engine undergoing significant restructuring and finalization. Expect frequent updates and changes.
 
 ---
@@ -51,10 +51,10 @@ Follow these steps to set up and build the project:
 1.  **Clone the Repository (with submodules):**
     Ensure you clone the repository recursively to fetch all dependencies.
 
-    ```bash
-    git clone --recurse-submodules https://github.com/IOleg-crypto/Chained-Decos.git
-    cd ChainedDecos
-    ```
+   ```bash
+   git clone --recurse-submodules https://github.com/IOleg-crypto/Chained-Decos.git
+   cd ChainedDecos
+   ```
 
     If you cloned without `--recurse-submodules`, you can initialize them later:
     ```bash
@@ -90,10 +90,10 @@ Follow these steps to set up and build the project:
 
 To build and run the unit tests (powered by GoogleTest), configure CMake with the `BUILD_TESTS` option enabled:
 
-```bash
+   ```bash
 # From your build directory (e.g., ChainedDecos/build)
 cmake .. -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
-cmake --build .
+   cmake --build .
 ctest # To run the tests
 ```
 
@@ -128,13 +128,13 @@ To build and run the `ChainedMapEditor`, you need to enable the `BUILD_MAP_EDITO
 
 If you encounter build errors (e.g., "No rule to make target" or issues after modifying CMakeLists.txt files), it's often helpful to clean your CMake cache and rebuild.
 
-```bash
+   ```bash
 # From the root of your project (ChainedDecos/)
 rm -rf build  # Deletes the entire build directory
 # For Windows: rmdir /s /q build
 
 # Then, re-run the build steps from "Create a Build Directory and Configure CMake"
-```
+   ```
 
 ---
 

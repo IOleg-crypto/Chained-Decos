@@ -5,12 +5,12 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include <Model/JsonHelper.h>
-#include <Model/ModelCache.h>
-#include <Model/ModelConfig.h>
-#include <Model/ModelInstance.h>
+#include "JsonHelper.h"
+#include "Model/ModelCache.h"
+#include "ModelConfig.h"
+#include "ModelInstance.h"
 
-#include <Model/Animation.h>
+#include "Animation.h"
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <raylib.h>

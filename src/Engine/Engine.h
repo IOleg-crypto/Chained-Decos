@@ -15,25 +15,18 @@
 #include <raylib.h>
 
 // Project headers
-#include <Collision/CollisionDebugRenderer.h>
-#include <Collision/CollisionManager.h>
-#include <Input/InputManager.h>
-#include <Menu/Menu.h>
-#include <Model/Model.h>
-#include <Player/Player.h>
-#include <Render/RenderManager.h>
-#include <World/Physics.h>
+#include "Input/InputManager.h"
+#include "Render/RenderManager.h"
 
 /**
- * Main Engine class - manages the entire game application
+ * Main Engine class - manages the core application window and rendering
  *
  * Responsibilities:
  *  - Window creation and management (using raylib)
- *  - Game loop (update/render cycle)
- *  - Managing core game objects (player, models, input, physics)
- *  - Debug information and collision visualization
- *  - Menu system integration
-
+ *  - Basic game loop (update/render cycle for engine itself)
+ *  - Managing core engine services (input, rendering)
+ *  - Debug information handling
+ *
  */
 class Engine
 {
@@ -47,55 +40,40 @@ public:
 
     // ==================== MAIN API ====================
     void Init();
-    void Run();
-    void ToggleMenu();
-
-private:
-    void InitInput();
-    void InitCollisions();
-
-private:
     void Update();
-    void UpdatePlayer();
-    void HandlePlayerCollision() const;
-    void UpdatePhysics();
-    void CheckPlayerBounds();
-    void HandleKeyboardShortcuts() const;
     void Render();
-    void TestOctreeRayCasting();
-    void OptimizeModelPerformance();
-    void TracePlayerIssue(const Vector3 &pos, const Vector3 &vel) const;
-    bool IsPlayerOutOfBounds(const Vector3 &pos) const;
-    void EnsureGroundPlaneExists();
+    bool ShouldClose() const;
+    void Shutdown() const;
 
-public:
+    // ==================== Public Getters for Engine Services ====================
+    RenderManager &GetRenderManager() { return m_renderManager; }
+    InputManager &GetInputManager() { return m_inputManager; }
+
+    // ==================== Engine State Control ====================
     void RequestExit();
-    bool IsRunning() const;
+    bool IsDebugInfoVisible() const { return m_showDebug; }
+    bool IsCollisionDebugVisible() const { return m_showCollisionDebug; }
+
+private:
+    void HandleEngineInput(); // For engine-level shortcuts (e.g., F11 for fullscreen)
 
 private:
     // Window & Display
     int m_screenX;
     int m_screenY;
     std::string m_windowName;
+    bool m_windowInitialized; // Track if this Engine instance initialized the window
 
-    // Core Game Systems
-    Player m_player;
-    Models m_models;
-    InputManager m_manager;
-    PhysicsComponent m_physics;
-    CollisionManager m_collisionManager; // Legacy collision system
+    // Core Engine Services
+    InputManager m_inputManager;
     RenderManager m_renderManager;
 
-    // Game State
-    Menu m_menu;
-    bool m_showMenu;
+    // Engine State
     bool m_shouldExit;
-    bool m_windowInitialized; // Track if this Engine instance initialized the window
 
     // Debug State
     bool m_showDebug;
     bool m_showCollisionDebug;
-    // For engine init
     bool m_isEngineInit;
 };
 
