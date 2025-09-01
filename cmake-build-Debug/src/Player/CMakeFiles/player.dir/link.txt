@@ -1,2 +1,0 @@
-C:\msys64\mingw64\bin\ar.exe qc libplayer.a CMakeFiles/player.dir/Player.cpp.obj CMakeFiles/player.dir/PlayerCollision.cpp.obj CMakeFiles/player.dir/PlayerInput.cpp.obj CMakeFiles/player.dir/PlayerModel.cpp.obj CMakeFiles/player.dir/PlayerMovement.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe libplayer.a

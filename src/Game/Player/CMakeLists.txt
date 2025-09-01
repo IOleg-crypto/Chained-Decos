@@ -9,6 +9,10 @@ add_library(player STATIC
     PlayerModel.cpp
     PlayerMovement.h
     PlayerMovement.cpp
-
 )
-target_link_libraries(player PUBLIC raylib nlohmann_json collision world)
+
+target_include_directories(player PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(player PUBLIC raylib nlohmann_json collision)

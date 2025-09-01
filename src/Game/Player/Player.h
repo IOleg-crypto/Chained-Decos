@@ -7,11 +7,11 @@
 #include <raylib.h>
 #include <raymath.h>
 
+#include <World/World/Physics.h>
 #include <CameraController/CameraController.h>
 #include <Collision/CollisionManager.h>
 #include <Collision/CollisionSystem.h>
 #include <Model/Model.h>
-#include <World/Physics.h>
 
 // Include new component headers
 #include <Player/PlayerCollision.h>
@@ -33,8 +33,8 @@ public:
     ~Player();
 
     void Update(const CollisionManager &collisionManager);                // Main update
-    void UpdatePlayerBox() const;                                               // Update bounding box
-    void UpdatePlayerCollision() const;                                         // Update collisions
+    void UpdatePlayerBox() const;                                         // Update bounding box
+    void UpdatePlayerCollision() const;                                   // Update collisions
     void ApplyGravityForPlayer(const CollisionManager &collisionManager); // Gravity + collisions
 
     // Delegate to PlayerInput
@@ -43,7 +43,7 @@ public:
     // Delegate to PlayerMovement
     void Move(const Vector3 &moveVector) const;       // Move player
     void SetPlayerPosition(const Vector3 &pos) const; // Set position
-    void ApplyJumpImpulse(float impulse);       // Jump impulse
+    void ApplyJumpImpulse(float impulse);             // Jump impulse
     void SnapToGroundIfNeeded(const CollisionManager &collisionManager) const;
     Vector3 StepMovement(const CollisionManager &collisionManager) const;
     void ApplyGravity(float deltaTime) const;
@@ -62,7 +62,7 @@ public:
     // Getters/Setters
     [[nodiscard]] float GetSpeed();             // Get current speed
     [[nodiscard]] float GetRotationY() const;   // Get Y rotation
-    void SetSpeed(float speed) const;                 // Set speed
+    void SetSpeed(float speed) const;           // Set speed
     Vector3 GetPlayerPosition() const;          // Get position
     Vector3 GetPlayerSize() const;              // Get player size
     const Collision &GetCollision() const;      // Get collision info
