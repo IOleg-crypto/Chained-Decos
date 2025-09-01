@@ -1,0 +1,20 @@
+{
+	"InstallScripts" : 
+	[
+		"D:/gitnext/Chained Decos/cmake-build-Debug/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Collision/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Input/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Menu/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Model/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Render/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/CameraController/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
