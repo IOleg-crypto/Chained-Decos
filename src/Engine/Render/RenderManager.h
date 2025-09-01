@@ -5,16 +5,19 @@
 #include <raylib.h>
 #include <string>
 
+#include <World/World/Physics.h>
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
 #include <Menu/Menu.h>
 #include <Model/Model.h>
-#include <Player/Player.h>
 
 //
 // RenderManager - Handles all rendering operations
 // Separates rendering logic from the main Engine class
 //
+
+class Player;
+
 class RenderManager
 {
 public:

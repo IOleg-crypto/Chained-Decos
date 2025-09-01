@@ -1,2 +1,0 @@
-C:\msys64\mingw64\bin\ar.exe qc libcollision.a CMakeFiles/collision.dir/CollisionSystem.cpp.obj CMakeFiles/collision.dir/CollisionStructures.cpp.obj CMakeFiles/collision.dir/CollisionManager.cpp.obj CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj CMakeFiles/collision.dir/Octree.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe libcollision.a

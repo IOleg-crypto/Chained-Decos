@@ -1,6 +1,6 @@
 {
     // Set your path for complier heres
-    "C_Cpp.default.compilerPath": "E:/LLVM/bin/clang++.exe",
+    "C_Cpp.default.compilerPath": "C:/LLVM/bin/clang++.exe",
     "files.associations": {
         "*.embeddedhtml": "html",
         "*.html": "html",
@@ -27,12 +27,12 @@
     },
     "cmake.configureOnOpen": true,
     "cmake.buildDirectory": "${workspaceFolder}/cmake-build-${buildType}",
-    "cmake.generator": "MinGW Makefiles",
+    "cmake.generator": "Ninja",
     "cmake.configureSettings": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_C_COMPILER": "E:/LLVM/bin/clang.exe",
-        "CMAKE_CXX_COMPILER": "E:/LLVM/bin/clang++.exe"
+        "CMAKE_C_COMPILER": "C:/LLVM/bin/clang.exe",
+        "CMAKE_CXX_COMPILER": "C:/LLVM/bin/clang++.exe"
     },
     "cmake.defaultVariants": {
         "buildType": {

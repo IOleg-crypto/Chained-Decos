@@ -1,0 +1,110 @@
+"D:\CLion 2025.2.1\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -S "D:\gitnext\Chained Decos" -B "D:\gitnext\Chained Decos\cmake-build-debug"
+-- Raylib 5.5 not found, fetching ZIP...
+CMake Deprecation Warning at .deps/raylib-src/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+-- Testing if -Werror=pointer-arith can be used -- compiles
+-- Testing if -Werror=implicit-function-declaration can be used -- compiles
+-- Testing if -fno-strict-aliasing can be used -- compiles
+-- Using raylib's GLFW
+-- Including Win32 support
+-- Audio Backend: miniaudio
+-- Building raylib static library
+-- Generated build type: Debug
+-- Compiling with the flags:
+--   PLATFORM=PLATFORM_DESKTOP
+--   GRAPHICS=GRAPHICS_API_OPENGL_33
+-- nlohmann_json not found, fetching ZIP...
+-- Configuring done (13.7s)
+CMake Error at src/Engine/Collision/CMakeLists.txt:19 (target_link_libraries):
+  Error evaluating generator expression:
+
+    $<TARGET_PROPERTY:nlohmann_json::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+
+  Target "nlohmann_json::nlohmann_json" not found.
+
+
+CMake Error at src/Engine/Model/CMakeLists.txt:15 (target_include_directories):
+  Error evaluating generator expression:
+
+    $<TARGET_PROPERTY:nlohmann_json::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+
+  Target "nlohmann_json::nlohmann_json" not found.
+
+
+CMake Error at src/Engine/Model/CMakeLists.txt:21 (target_link_libraries):
+  Error evaluating generator expression:
+
+    $<TARGET_PROPERTY:nlohmann_json::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+
+  Target "nlohmann_json::nlohmann_json" not found.
+
+
+CMake Error at src/Engine/Render/CMakeLists.txt:13 (target_link_libraries):
+  Error evaluating generator expression:
+
+    $<TARGET_PROPERTY:nlohmann_json::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+
+  Target "nlohmann_json::nlohmann_json" not found.
+
+
+CMake Error at src/Engine/Menu/CMakeLists.txt:10 (target_link_libraries):
+  Target "menu" links to:
+
+    nlohmann_json::nlohmann_json
+
+  but the target was not found.  Possible reasons include:
+
+    * There is a typo in the target name.
+    * A find_package call is missing for an IMPORTED target.
+    * An ALIAS target is missing.
+
+
+
+CMake Error at src/Engine/Model/CMakeLists.txt:21 (target_link_libraries):
+  Target "model" links to:
+
+    nlohmann_json::nlohmann_json
+
+  but the target was not found.  Possible reasons include:
+
+    * There is a typo in the target name.
+    * A find_package call is missing for an IMPORTED target.
+    * An ALIAS target is missing.
+
+
+
+CMake Error at src/Engine/Render/CMakeLists.txt:13 (target_link_libraries):
+  Target "render" links to:
+
+    nlohmann_json::nlohmann_json
+
+  but the target was not found.  Possible reasons include:
+
+    * There is a typo in the target name.
+    * A find_package call is missing for an IMPORTED target.
+    * An ALIAS target is missing.
+
+
+
+CMake Error at src/Game/CMakeLists.txt:15 (target_link_libraries):
+  Target "ChainedDecosGame" links to:
+
+    nlohmann_json::nlohmann_json
+
+  but the target was not found.  Possible reasons include:
+
+    * There is a typo in the target name.
+    * A find_package call is missing for an IMPORTED target.
+    * An ALIAS target is missing.
+
+
+
+-- Generating done (0.1s)
+CMake Generate step failed.  Build files cannot be regenerated correctly.

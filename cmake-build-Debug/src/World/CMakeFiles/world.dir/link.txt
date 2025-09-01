@@ -1,2 +1,0 @@
-C:\msys64\mingw64\bin\ar.exe qc libworld.a CMakeFiles/world.dir/Physics.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe libworld.a

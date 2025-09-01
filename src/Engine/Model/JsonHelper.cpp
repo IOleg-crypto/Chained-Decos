@@ -1,5 +1,5 @@
 #include "JsonHelper.h"
-#include <Color/ColorParser.h>
+#include "../Color/ColorParser.h"
 #include <raylib.h>
 
 // Safe value retrieval

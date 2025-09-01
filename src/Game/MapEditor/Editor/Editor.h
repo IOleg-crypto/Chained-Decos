@@ -5,15 +5,16 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
-#include <imgui.h>
+#include "imgui.h"
+#include "raylib.h"
 #include <memory>
-#include <raylib.h>
 #include <string>
 #include <vector>
 
+
+#include "Engine/CameraController/CameraController.h" // Коректний шлях
+#include "Engine/Model/Model.h"                       // Коректний шлях
 #include "MapObject.h"
-#include <CameraController/CameraController.h>
-#include <Model/Model.h>
 
 // Main editor class for the map editor
 class Editor

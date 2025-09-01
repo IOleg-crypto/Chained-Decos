@@ -10,4 +10,10 @@ add_library(collision STATIC
     Octree.cpp
     Octree.h
 )
+
+target_include_directories(collision PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src/Engine
+)
+
 target_link_libraries(collision PUBLIC raylib model)

@@ -1,2 +1,0 @@
-C:\msys64\mingw64\bin\ar.exe qc libengine.a CMakeFiles/engine.dir/Engine.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe libengine.a

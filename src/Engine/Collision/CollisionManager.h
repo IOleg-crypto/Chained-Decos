@@ -4,7 +4,7 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
-#include <Collision/CollisionSystem.h>
+#include "CollisionSystem.h"
 #include <string>
 #include <unordered_map>
 #include <vector>

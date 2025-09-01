@@ -1,7 +1,7 @@
 #ifndef COLLISION_DEBUG_RENDERER_H
 #define COLLISION_DEBUG_RENDERER_H
 
-#include <Collision/CollisionSystem.h>
+#include "CollisionSystem.h"
 #include <raylib.h>
 #include <vector>
 
