@@ -1,17 +1,14 @@
-
 #ifndef PLAYER_MOVEMENT_H
 #define PLAYER_MOVEMENT_H
 
 #include <Collision/CollisionManager.h>
 #include <World/Physics.h>
-#include <iostream>
 #include <raylib.h>
 #include <raymath.h>
 
 // Forward declarations
 class Player;
 
-// PlayerMovement: handles all movement-related functionality
 class PlayerMovement
 {
 public:
@@ -24,7 +21,7 @@ public:
     [[nodiscard]] Vector3 GetPosition() const;
     void ApplyJumpImpulse(float impulse);
 
-    // Physics-related methods
+    // Physics & collision
     void ApplyGravity(float deltaTime);
     Vector3 StepMovement(const CollisionManager &collisionManager);
     void SnapToGround(const CollisionManager &collisionManager);
@@ -33,34 +30,38 @@ public:
 
     // Getters/Setters
     [[nodiscard]] float GetRotationY() const;
-    float GetSpeed();
-    void SetSpeed(float speed);
     void SetRotationY(float rotation);
+
+    float GetSpeed();
+
+    float GetSpeed() const;
+    void SetSpeed(float speed);
     PhysicsComponent &GetPhysics();
     [[nodiscard]] const PhysicsComponent &GetPhysics() const;
 
-    // Set reference to collision manager
+    // Reference to collision manager
     void SetCollisionManager(const CollisionManager *collisionManager);
 
 private:
     Player *m_player;
     Vector3 m_position;
-    float m_rotationY;
+    float m_rotationY = 0.0f;
 
-    float m_walkSpeed;
+    float m_walkSpeed = 11.0f;
     PhysicsComponent m_physics;
 
-    // Reference to the engine's collision manager
     const CollisionManager *m_lastCollisionManager = nullptr;
 
-    // Hysteresis for grounded state to prevent flicker and push-offs
+    // Grounding helpers
     int m_framesSinceGround = 0;
     int m_coyoteFramesRemaining = 0;
 
-    // Character controller tuning
-    float m_stepHeight = 0.35f;      // max height we can step up
-    float m_skinWidth = 0.01f;       // small separation to avoid re-penetration
-    float m_maxSlopeDegrees = 50.0f; // reserved for future slope handling
+    // Constants
+    static constexpr int GROUNDED_SET_FRAMES = 2;
+    static constexpr int GROUNDED_CLEAR_FRAMES = 3;
+    static constexpr int COYOTE_FRAMES = 4;
+    static constexpr float MAX_FALL_SPEED = -50.0f;
+    static constexpr float SKIN_WIDTH = 0.001f;
 };
 
 #endif // PLAYER_MOVEMENT_H
