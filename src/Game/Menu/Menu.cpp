@@ -39,10 +39,8 @@ Menu::Menu()
                        {"Back", MenuAction::BackToMainMenu}}};
 
     m_currentMenu = m_mainMenu;
-    m_buttonScales.assign(m_currentMenu.size(), 1.3f);
+    m_buttonScales.assign(m_currentMenu.size(), 1.0f);
 }
-
-Menu::~Menu() = default;
 
 float Menu::Lerp(const float a, const float b, const float t) const { return a + (b - a) * t; }
 
@@ -65,30 +63,21 @@ void Menu::Update()
     case MenuState::Controls:
         m_currentMenu = m_controlsMenu;
         break;
-    case MenuState::Video:
-    case MenuState::Credits:
-    case MenuState::Mods:
-        break;
-    case MenuState::ConfirmExit:
-        break;
     default:
         break;
     }
 
     if (m_state == MenuState::Video)
         HandleVideoNavigation();
-    else if (m_state == MenuState::Credits || m_state == MenuState::Mods)
-    {
-        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ONE))
-        {
-            m_state = MenuState::Main;
-            m_selected = 0;
-        }
-    }
-    else if (m_state == MenuState::ConfirmExit)
-    {
+    else if (m_state != MenuState::Credits && m_state != MenuState::Mods &&
+             m_state != MenuState::ConfirmExit)
+        HandleKeyboardNavigation();
+
+    HandleMouseSelection();
+
+    if (m_state == MenuState::ConfirmExit)
         HandleConfirmExit();
-    }
+
     ExecuteAction();
 }
 
@@ -207,7 +196,6 @@ void Menu::ExecuteAction()
     {
     case MenuAction::StartGame:
         m_state = MenuState::GameMode;
-        // m_selected не скидаємо
         ResetAction();
         break;
 
@@ -252,9 +240,15 @@ void Menu::ExecuteAction()
     case MenuAction::BackToMainMenu:
         if (m_state == MenuState::Video || m_state == MenuState::Audio ||
             m_state == MenuState::Controls)
+        {
             m_state = MenuState::Options;
+            ResetAction();
+        }
         else
+        {
             m_state = MenuState::Main;
+            ResetAction();
+        }
         ResetAction();
         break;
 
@@ -262,7 +256,6 @@ void Menu::ExecuteAction()
         if (m_state == MenuState::ConfirmExit)
         {
             TraceLog(LOG_INFO, "Exit requested");
-            // CallExitToEngine(); // Видалено
         }
         else
         {
@@ -466,7 +459,6 @@ void Menu::RenderMods()
 
 void Menu::HandleConfirmExit()
 {
-    // Підтвердження виходу: Y/N або Enter/Esc
     if (IsKeyPressed(KEY_Y) || IsKeyPressed(KEY_ENTER))
     {
         m_action = MenuAction::ExitGame;
@@ -474,18 +466,17 @@ void Menu::HandleConfirmExit()
     else if (IsKeyPressed(KEY_N) || IsKeyPressed(KEY_ESCAPE))
     {
         m_state = MenuState::Main;
-        m_selected = 0;
     }
 }
 
 void Menu::RenderConfirmExit() const
 {
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.55f));
-    const char *msg = "Вийти з гри?";
+    const char *msg = "Out of game?";
     int tw = MeasureText(msg, 48);
     DrawText(msg, GetScreenWidth() / 2 - tw / 2, GetScreenHeight() / 2 - 80, 48, ORANGE);
-    const char *yes = "[Y/Enter] Так";
-    const char *no = "[N/Esc] Ні";
+    const char *yes = "[Y/Enter] Yes";
+    const char *no = "[N/Esc] No";
     int yw = MeasureText(yes, 32);
     int nw = MeasureText(no, 32);
     DrawText(yes, GetScreenWidth() / 2 - yw - 20, GetScreenHeight() / 2, 32, RAYWHITE);
