@@ -1,10 +1,14 @@
 #ifndef MENU_H
 #define MENU_H
 
+#include "Engine/Engine.h"
 #include <raylib.h>
 #include <rlImGui.h>
 #include <string>
 #include <vector>
+
+class Engine;
+
 
 enum class MenuAction : uint8_t
 {
@@ -67,6 +71,8 @@ private:
     std::vector<MenuItem> m_audioMenu;
     std::vector<MenuItem> m_controlsMenu;
     std::vector<MenuOption> m_videoOptions;
+private:
+    Engine *m_engine;
 
 public:
     Menu();
@@ -79,6 +85,7 @@ public:
 public:
     void Update();
     void Render();
+    void GetEngine(Engine *engine);
     void ResetAction();
     void RenderSettingsMenu();
     void RenderCredits();
