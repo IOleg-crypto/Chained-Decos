@@ -44,7 +44,7 @@ private:
     void UpdatePhysicsLogic();
     void HandleKeyboardShortcuts();
     void HandleMenuActions();
-    void RenderGameWorld();
+    void RenderGameWorld() const;
     void RenderGameUI();
 };
 
