@@ -1,10 +1,11 @@
-#include <Player/PlayerModel.h>
+#include "PlayerModel.h"
 
-PlayerModel::PlayerModel() : m_model(nullptr), m_useModel(false) {}
+PlayerModel::PlayerModel() : m_rotationModelY(0) {
+}
 
 void PlayerModel::SetModel(Model *model) { m_model = model; }
 
-void PlayerModel::ToggleModelRendering(bool useModel) { m_useModel = useModel; }
+void PlayerModel::ToggleModelRendering(const bool useModel) { m_useModel = useModel; }
 
 Models &PlayerModel::GetModelManager() { return m_modelManager; }
 

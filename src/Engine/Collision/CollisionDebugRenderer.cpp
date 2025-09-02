@@ -16,14 +16,13 @@ void CollisionDebugRenderer::RenderCollisionBox(const Collision &collision, Colo
     }
 }
 
-void CollisionDebugRenderer::RenderAllCollisions(const std::vector<Collision> &collisions) const
+void CollisionDebugRenderer::RenderAllCollisions(const std::vector<std::unique_ptr<Collision>> &collisions) const
 {
     for (size_t i = 0; i < collisions.size(); i++)
     {
-        Color color = (i == 0) ? m_groundColor : m_obstacleColor; //
-        RenderCollisionBox(collisions[i], color);
+        Color color = (i == 0) ? m_groundColor : m_obstacleColor;
+        RenderCollisionBox(*collisions[i], color);
     }
-    
 }
 
 void CollisionDebugRenderer::RenderPlayerCollision(const Collision &playerCollision) const

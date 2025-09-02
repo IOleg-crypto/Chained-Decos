@@ -1,28 +1,23 @@
-#include "Game.h"
+#include "Game/Game.h"
+#include "Engine/Collision/CollisionManager.h"
+#include "Engine/Engine.h"
+#include "Engine/Model/Model.h"
+#include "Game/Menu/Menu.h"
 #include "imgui.h"
 #include "raylib.h"
 
-#include "World/World/Physics.h"
-
-Game::Game(Engine &engine)
-    : m_engine(engine), m_menu(&m_engine), m_showMenu(true), m_isGameInitialized(false)
+Game::Game(Engine &engine) : m_engine(engine), m_showMenu(true), m_isGameInitialized(false)
 {
     TraceLog(LOG_INFO, "Game class initialized.");
 }
 
-Game::~Game()
-{
-
-    TraceLog(LOG_INFO, "Game class destructor called.");
-}
+Game::~Game() { TraceLog(LOG_INFO, "Game class destructor called."); }
 
 void Game::Init()
 {
     TraceLog(LOG_INFO, "Game::Init() - Initializing game components...");
 
-
     m_engine.Init();
-
 
     LoadGameModels();
     InitCollisions();
@@ -46,14 +41,12 @@ void Game::Run()
 
 void Game::Update()
 {
-    // Обробка вводу на рівні рушія (F2/F3)
+
     m_engine.Update();
 
-    // Обробка вводу на рівні гри
-    HandleKeyboardShortcuts(); // Якщо є специфічні для гри клавіатурні скорочення
+    HandleKeyboardShortcuts();
     m_engine.GetInputManager().ProcessInput();
 
-    // Обробка меню або ігрової логіки
     if (m_showMenu)
     {
         HandleMenuActions();
@@ -67,10 +60,9 @@ void Game::Update()
 
 void Game::Render()
 {
-    // Починаємо кадр через RenderManager рушія
+
     m_engine.GetRenderManager().BeginFrame();
 
-    // Рендеринг в залежності від стану меню
     if (m_showMenu)
     {
         m_engine.GetRenderManager().RenderMenu(m_menu);
@@ -81,14 +73,12 @@ void Game::Render()
         RenderGameUI();
     }
 
-    // Рендеринг налагоджувальної інформації рушія
     if (m_engine.IsDebugInfoVisible())
     {
-        // Тут можна додати рендеринг специфічної ігрової налагоджувальної інформації
+
         m_engine.GetRenderManager().RenderDebugInfo(m_player, m_models, m_collisionManager);
     }
 
-    // Завершуємо кадр через RenderManager рушія
     m_engine.GetRenderManager().EndFrame();
 }
 
@@ -106,23 +96,19 @@ void Game::ToggleMenu()
     TraceLog(LOG_INFO, "Menu toggled: %s", m_showMenu ? "ON" : "OFF");
 }
 
-void Game::RequestExit()
+void Game::RequestExit() const
 {
 
     m_engine.RequestExit();
     TraceLog(LOG_INFO, "Game exit requested.");
 }
 
-bool Game::IsRunning() const
-{
-    return !m_engine.ShouldClose(); // Перевіряємо лише прапорець рушія
-}
+bool Game::IsRunning() const { return !m_engine.ShouldClose(); }
 
 void Game::InitInput()
 {
     TraceLog(LOG_INFO, "Game::InitInput() - Setting up game-specific input bindings...");
 
-    // Приклад реєстрації ігрових дій (не системних)
     m_engine.GetInputManager().RegisterAction(KEY_F1,
                                               [this]()
                                               {
@@ -140,8 +126,6 @@ void Game::InitInput()
                                                       EnableCursor();
                                                   }
                                               });
-    // Додайте інші ігрові дії тут
-
     TraceLog(LOG_INFO, "Game::InitInput() - Game input bindings configured.");
 }
 
@@ -150,21 +134,19 @@ void Game::InitCollisions()
     TraceLog(LOG_INFO, "Game::InitCollisions() - Initializing collision system...");
     m_collisionManager.ClearColliders();
 
-    // Створення базової площини землі
     Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
     Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
     Collision groundPlane{groundCenter, groundSize};
     groundPlane.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(groundPlane);
+    m_collisionManager.AddCollider(std::move(groundPlane));
 
-    // Створення колізій для моделей (моделі повинні бути завантажені)
     m_collisionManager.CreateAutoCollisionsFromModels(m_models);
     m_collisionManager.Initialize();
     TraceLog(LOG_INFO, "Game::InitCollisions() - Collision system initialized with %zu colliders.",
              m_collisionManager.GetColliders().size());
 }
 
-void Game::InitPlayer()
+void Game::InitPlayer() const
 {
     TraceLog(LOG_INFO, "Game::InitPlayer() - Initializing player...");
     m_player.GetMovement()->SetCollisionManager(&m_collisionManager);
@@ -181,8 +163,7 @@ void Game::InitPlayer()
 void Game::LoadGameModels()
 {
     TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading game models...");
-    const std::string modelsJsonPath =
-        PROJECT_ROOT_DIR "/src/models.json";
+    const std::string modelsJsonPath = PROJECT_ROOT_DIR "/src/models.json";
     m_models.SetCacheEnabled(true);
     m_models.SetMaxCacheSize(50);
     m_models.EnableLOD(true);
@@ -229,7 +210,7 @@ void Game::UpdatePhysicsLogic()
         Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
         Collision plane{groundCenter, groundSize};
         plane.SetCollisionType(CollisionType::AABB_ONLY);
-        m_collisionManager.AddCollider(plane);
+        m_collisionManager.AddCollider(std::move(plane));
 
         TraceLog(LOG_WARNING, "Game::UpdatePhysicsLogic() - Created emergency ground plane.");
     }
@@ -249,15 +230,14 @@ void Game::HandleMenuActions()
     case MenuAction::SinglePlayer:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting singleplayer...");
         ToggleMenu(); // Закриваємо меню
-        // Тут можна додати логіку для скидання стану гри, якщо це новий запуск
-        InitCollisions(); // Переініціалізація колізій для нової гри
-        InitPlayer();     // Переініціалізація гравця
+        InitCollisions();
+        InitPlayer();
         m_menu.ResetAction();
         break;
 
     case MenuAction::ExitGame:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Exit game requested from menu.");
-        RequestExit();
+        m_engine.RequestExit();
         m_menu.ResetAction();
         break;
 
@@ -268,14 +248,9 @@ void Game::HandleMenuActions()
 
 void Game::RenderGameWorld()
 {
-    // Основний рендеринг ігрового світу
-    // Наприклад, рендеринг гравця, моделей, ландшафту тощо
+
     m_engine.GetRenderManager().RenderGame(m_player, m_models, m_collisionManager,
                                            m_engine.IsCollisionDebugVisible());
 }
 
-void Game::RenderGameUI()
-{
-    // Рендеринг елементів ігрового інтерфейсу (HUD, тощо)
-    // m_engine.GetRenderManager().RenderHUD(m_player);
-}
+void Game::RenderGameUI() {}

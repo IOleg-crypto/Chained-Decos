@@ -24,7 +24,7 @@ public:
     void Initialize() const;
 
     // Add a new collider to the manager
-    void AddCollider(Collision &collider);
+    void AddCollider(Collision &&collider);
 
     // Remove all colliders
     void ClearColliders();
@@ -36,7 +36,10 @@ public:
     [[nodiscard]] bool CheckCollision(const Collision &playerCollision, Vector3 &response) const;
 
     // Get all colliders
-    [[nodiscard]] const std::vector<Collision> &GetColliders() const;
+    [[nodiscard]] const std::vector<std::unique_ptr<Collision>> &GetColliders() const;
+    // Raycast down against precise colliders (octree) to find ground beneath a point
+    bool RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
+                     Vector3 &hitPoint, Vector3 &hitNormal) const;
     // Create collision for models automatically
     void CreateAutoCollisionsFromModels(Models &models);
     // Helper function to create cache key
@@ -54,7 +57,7 @@ public:
                                             float scale);
 
 private:
-    std::vector<Collision> m_collisions; // List of all collision boxes
+    std::vector<std::unique_ptr<Collision>> m_collisions; // List of all collision boxes
 
     // Collision cache to prevent rebuilding octrees for same models
     std::unordered_map<std::string, std::shared_ptr<Collision>> m_collisionCache;
