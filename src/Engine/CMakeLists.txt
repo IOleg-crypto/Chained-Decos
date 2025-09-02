@@ -14,9 +14,8 @@ add_library(ChainedDecosEngine STATIC
 )
 target_include_directories(ChainedDecosEngine
         PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(ChainedDecosEngine PUBLIC cxx_std_20)
 target_link_libraries(ChainedDecosEngine
         PUBLIC
         collision
@@ -25,7 +24,6 @@ target_link_libraries(ChainedDecosEngine
         render
         cameracontroller
         world
-        PRIVATE
         raylib
         imguilib
 )

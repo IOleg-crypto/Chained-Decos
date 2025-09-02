@@ -12,12 +12,12 @@ Game::Game(Engine &engine) : m_engine(engine), m_showMenu(true), m_isGameInitial
 }
 
 Game::~Game() { TraceLog(LOG_INFO, "Game class destructor called."); }
-
 void Game::Init()
 {
     TraceLog(LOG_INFO, "Game::Init() - Initializing game components...");
 
     m_engine.Init();
+    m_menu.GetEngine(&m_engine); // To get menu
 
     LoadGameModels();
     InitCollisions();
@@ -61,11 +61,11 @@ void Game::Update()
 void Game::Render()
 {
 
-    m_engine.GetRenderManager().BeginFrame();
+    m_engine.GetRenderManager()->BeginFrame();
 
     if (m_showMenu)
     {
-        m_engine.GetRenderManager().RenderMenu(m_menu);
+        m_engine.GetRenderManager()->RenderMenu(m_menu);
     }
     else
     {
@@ -76,10 +76,10 @@ void Game::Render()
     if (m_engine.IsDebugInfoVisible())
     {
 
-        m_engine.GetRenderManager().RenderDebugInfo(m_player, m_models, m_collisionManager);
+        m_engine.GetRenderManager()->RenderDebugInfo(m_player, m_models, m_collisionManager);
     }
 
-    m_engine.GetRenderManager().EndFrame();
+    m_engine.GetRenderManager()->EndFrame();
 }
 
 void Game::ToggleMenu()
@@ -185,12 +185,12 @@ void Game::UpdatePlayerLogic()
     const ImGuiIO &io = ImGui::GetIO();
     if (io.WantCaptureMouse)
     {
-        m_engine.GetRenderManager().ShowMetersPlayer(m_player);
+        m_engine.GetRenderManager()->ShowMetersPlayer(m_player);
         return;
     }
 
     m_player.Update(m_collisionManager);
-    m_engine.GetRenderManager().ShowMetersPlayer(m_player);
+    m_engine.GetRenderManager()->ShowMetersPlayer(m_player);
 }
 
 void Game::UpdatePhysicsLogic()
@@ -214,7 +214,6 @@ void Game::UpdatePhysicsLogic()
 
         TraceLog(LOG_WARNING, "Game::UpdatePhysicsLogic() - Created emergency ground plane.");
     }
-    // Physics logic for other game objects can go here
 }
 
 void Game::HandleKeyboardShortcuts()
@@ -229,7 +228,7 @@ void Game::HandleMenuActions()
     {
     case MenuAction::SinglePlayer:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting singleplayer...");
-        ToggleMenu(); // Закриваємо меню
+        ToggleMenu();
         InitCollisions();
         InitPlayer();
         m_menu.ResetAction();
@@ -246,10 +245,9 @@ void Game::HandleMenuActions()
     }
 }
 
-void Game::RenderGameWorld()
-{
+void Game::RenderGameWorld() const {
 
-    m_engine.GetRenderManager().RenderGame(m_player, m_models, m_collisionManager,
+    m_engine.GetRenderManager()->RenderGame(m_player, m_models, m_collisionManager,
                                            m_engine.IsCollisionDebugVisible());
 }
 

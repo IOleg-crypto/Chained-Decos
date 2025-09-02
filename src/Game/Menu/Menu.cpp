@@ -70,8 +70,9 @@ void Menu::Update()
     if (m_state == MenuState::Video)
         HandleVideoNavigation();
     else if (m_state != MenuState::Credits && m_state != MenuState::Mods &&
-             m_state != MenuState::ConfirmExit)
+             m_state != MenuState::ConfirmExit) {
         HandleKeyboardNavigation();
+    }
 
     HandleMouseSelection();
 
@@ -262,6 +263,7 @@ void Menu::ExecuteAction()
             m_state = MenuState::ConfirmExit;
         }
         ResetAction();
+        
         break;
 
     default:
@@ -309,6 +311,12 @@ void Menu::Render()
         break;
     default:
         break;
+    }
+}
+
+void Menu::GetEngine(Engine *engine)  {
+    if (engine != nullptr) {
+        this->m_engine = engine;
     }
 }
 
@@ -462,6 +470,7 @@ void Menu::HandleConfirmExit()
     if (IsKeyPressed(KEY_Y) || IsKeyPressed(KEY_ENTER))
     {
         m_action = MenuAction::ExitGame;
+        m_engine->RequestExit();
     }
     else if (IsKeyPressed(KEY_N) || IsKeyPressed(KEY_ESCAPE))
     {

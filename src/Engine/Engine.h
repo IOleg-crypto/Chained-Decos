@@ -5,19 +5,13 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-// Standard library
-#include <memory>
 #include <string>
-#include <unordered_map>
-#include <vector>
-
-// Raylib
-#include <raylib.h>
-
 // Project headers
 #include "Input/InputManager.h"
 #include "Render/RenderManager.h"
 
+
+class RenderManager; // To bad!!!
 /**
  * Main Engine class - manages the core application window and rendering
  *
@@ -41,13 +35,14 @@ public:
     // ==================== MAIN API ====================
     void Init();
     void Update();
-    void Render();
+    void Render() const;
     [[nodiscard]] bool ShouldClose() const;
     void Shutdown() const;
 
     // ==================== Public Getters for Engine Services ====================
-    RenderManager &GetRenderManager() { return m_renderManager; }
-    InputManager &GetInputManager() { return m_inputManager; }
+    RenderManager *GetRenderManager();
+
+    InputManager &GetInputManager();
 
     // ==================== Engine State Control ====================
     void RequestExit();
@@ -67,7 +62,7 @@ private:
 
     // Core Engine Services
     InputManager m_inputManager;
-    RenderManager m_renderManager;
+    RenderManager *m_renderManager;
 
     // Engine State
     bool m_shouldExit;

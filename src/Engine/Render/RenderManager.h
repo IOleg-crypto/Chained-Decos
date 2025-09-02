@@ -17,6 +17,7 @@
 //
 
 class Player;
+class Menu;
 
 class RenderManager
 {

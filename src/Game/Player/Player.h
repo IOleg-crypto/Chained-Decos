@@ -35,11 +35,8 @@ public:
     void Update(const CollisionManager &collisionManager); // Main update
     void UpdatePlayerBox() const;                          // Update bounding box
     void UpdatePlayerCollision() const;                    // Update collisions
-    void SyncCollision() const
-    {
-        UpdatePlayerBox();
-        UpdatePlayerCollision();
-    }
+    void SyncCollision() const;
+
     void ApplyGravityForPlayer(const CollisionManager &collisionManager); // Gravity + collisions
 
     // Delegate to PlayerInput

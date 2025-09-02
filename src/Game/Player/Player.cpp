@@ -99,6 +99,11 @@ void Player::UpdatePlayerBox() const { m_collision->UpdateBoundingBox(); }
 
 void Player::UpdatePlayerCollision() const { m_collision->Update(); }
 
+void Player::SyncCollision() const {
+    UpdatePlayerBox();
+    UpdatePlayerCollision();
+}
+
 void Player::ToggleModelRendering(const bool useModel) const
 {
     m_model->ToggleModelRendering(useModel);

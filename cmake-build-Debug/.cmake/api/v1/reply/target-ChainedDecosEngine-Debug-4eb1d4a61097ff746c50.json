@@ -15,8 +15,7 @@
 			"target_link_libraries",
 			"add_compile_definitions",
 			"add_definitions",
-			"target_include_directories",
-			"target_compile_features"
+			"target_include_directories"
 		],
 		"files" : 
 		[
@@ -37,7 +36,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 20,
+				"line" : 19,
 				"parent" : 0
 			},
 			{
@@ -59,12 +58,6 @@
 				"command" : 4,
 				"file" : 0,
 				"line" : 15,
-				"parent" : 0
-			},
-			{
-				"command" : 5,
-				"file" : 0,
-				"line" : 19,
 				"parent" : 0
 			}
 		]
@@ -101,11 +94,15 @@
 			[
 				{
 					"backtrace" : 6,
-					"path" : "D:/gitnext/Chained Decos/src/Engine"
+					"path" : "D:/gitnext/Chained Decos/src/Engine/src"
 				},
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/Collision"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
 					"backtrace" : 2,
@@ -161,7 +158,6 @@
 			{
 				"backtraces" : 
 				[
-					7,
 					2
 				],
 				"standard" : "20"

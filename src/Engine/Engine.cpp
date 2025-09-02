@@ -3,28 +3,21 @@
 //
 
 #include "Engine.h"
-
-// Standard library
-#include <set>
-
+#include "Render/RenderManager.h"
 // Raylib & ImGui
 #include <raylib.h>
-#include <raymath.h>
-#include <rcamera.h>
-#include <rlImGui.h>
 
 Engine::Engine() : Engine(800, 600) {}
 
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
-      m_windowInitialized(false), m_shouldExit(false), m_showDebug(false),
-      m_showCollisionDebug(false), m_isEngineInit(false)
+      m_windowInitialized(false), m_renderManager(new RenderManager()), m_shouldExit(false),
+      m_showDebug(false), m_showCollisionDebug(false), m_isEngineInit(false)
 {
-    constexpr int DEFAULT_SCREEN_WIDTH = 800;
-    constexpr int DEFAULT_SCREEN_HEIGHT = 600;
-
     if (m_screenX <= 0 || m_screenY <= 0)
     {
+        constexpr int DEFAULT_SCREEN_WIDTH = 1280;
+        constexpr int DEFAULT_SCREEN_HEIGHT = 720;
         TraceLog(LOG_WARNING, "[Screen] Invalid screen size: %d x %d. Setting default size %dx%d.",
                  m_screenX, m_screenY, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
         m_screenX = DEFAULT_SCREEN_WIDTH;
@@ -41,6 +34,7 @@ Engine::~Engine()
     if (m_windowInitialized && IsWindowReady())
     {
         TraceLog(LOG_INFO, "Closing window...");
+        delete m_renderManager;
         CloseWindow();
     }
 
@@ -57,7 +51,7 @@ void Engine::Init()
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
 
-    m_renderManager.Initialize();
+    m_renderManager->Initialize();
 
     // Register engine-level input actions
     m_inputManager.RegisterAction(KEY_F11, ToggleFullscreen);
@@ -73,11 +67,11 @@ void Engine::Update()
     m_inputManager.ProcessInput();
 }
 
-void Engine::Render()
+void Engine::Render() const
 {
-    m_renderManager.BeginFrame();
+    m_renderManager->BeginFrame();
     ClearBackground(RAYWHITE);
-    m_renderManager.EndFrame();
+    m_renderManager->EndFrame();
 }
 
 bool Engine::ShouldClose() const { return WindowShouldClose() || m_shouldExit; }
@@ -92,6 +86,10 @@ void Engine::Shutdown() const
     }
     TraceLog(LOG_INFO, "Engine shutdown complete!");
 }
+
+RenderManager *Engine::GetRenderManager() { return m_renderManager; }
+
+InputManager &Engine::GetInputManager() { return m_inputManager; }
 
 void Engine::RequestExit()
 {
