@@ -1,31 +1,31 @@
 cmake_minimum_required(VERSION 3.20)
-project(ChainedDecosEngine)
+project(ChainedDecosEngine LANGUAGES CXX C)
 
 add_subdirectory(Collision)
 add_subdirectory(Input)
-add_subdirectory(Menu)
 add_subdirectory(Model)
 add_subdirectory(Render)
 add_subdirectory(CameraController)
+add_subdirectory(World)
 
-add_library(ChainedDecosEngine INTERFACE
+add_library(ChainedDecosEngine STATIC
+        Engine.cpp
         Engine.h
-        Engine.cpp)
-
-target_include_directories(ChainedDecosEngine INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/World
-
 )
-
-target_link_libraries(ChainedDecosEngine INTERFACE
-    raylib
-    imguilib
-    Collision
-    Input
-    Menu
-    Model
-    Render
-    CameraController
+target_include_directories(ChainedDecosEngine
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_features(ChainedDecosEngine PUBLIC cxx_std_20)
+target_link_libraries(ChainedDecosEngine
+        PUBLIC
+        collision
+        input
+        model
+        render
+        cameracontroller
+        world
+        PRIVATE
+        raylib
+        imguilib
 )

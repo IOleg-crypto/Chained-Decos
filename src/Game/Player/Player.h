@@ -7,17 +7,17 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include <World/World/Physics.h>
 #include <CameraController/CameraController.h>
 #include <Collision/CollisionManager.h>
 #include <Collision/CollisionSystem.h>
+#include <World/Physics.h>
 #include <Model/Model.h>
 
 // Include new component headers
-#include <Player/PlayerCollision.h>
-#include <Player/PlayerInput.h>
-#include <Player/PlayerModel.h>
-#include <Player/PlayerMovement.h>
+#include "PlayerCollision.h"
+#include "PlayerInput.h"
+#include "PlayerModel.h"
+#include "PlayerMovement.h"
 
 // Player: main player class that uses component classes
 class Player
@@ -32,9 +32,14 @@ public:
     Player();
     ~Player();
 
-    void Update(const CollisionManager &collisionManager);                // Main update
-    void UpdatePlayerBox() const;                                         // Update bounding box
-    void UpdatePlayerCollision() const;                                   // Update collisions
+    void Update(const CollisionManager &collisionManager); // Main update
+    void UpdatePlayerBox() const;                          // Update bounding box
+    void UpdatePlayerCollision() const;                    // Update collisions
+    void SyncCollision() const
+    {
+        UpdatePlayerBox();
+        UpdatePlayerCollision();
+    }
     void ApplyGravityForPlayer(const CollisionManager &collisionManager); // Gravity + collisions
 
     // Delegate to PlayerInput

@@ -1,3 +1,4 @@
+#include <CollisionManager.h>
 #include <CollisionSystem.h>
 #include <Model/Model.h>
 #include <algorithm>
@@ -13,30 +14,26 @@ void CollisionManager::Initialize() const
     for (auto &collider : m_collisions)
     {
         // Force octree initialization for complex colliders
-        if (collider.GetCollisionType() == CollisionType::OCTREE_ONLY ||
-            collider.GetCollisionType() == CollisionType::TRIANGLE_PRECISE ||
-            collider.GetCollisionType() == CollisionType::IMPROVED_AABB)
+        if (collider->GetCollisionType() == CollisionType::OCTREE_ONLY ||
+            collider->GetCollisionType() == CollisionType::TRIANGLE_PRECISE ||
+            collider->GetCollisionType() == CollisionType::IMPROVED_AABB)
         {
-            collider.InitializeOctree();
+            collider->InitializeOctree();
         }
     }
 
     TraceLog(LOG_INFO, "CollisionManager initialized with %zu colliders", m_collisions.size());
 }
 
-void CollisionManager::AddCollider(Collision &collider)
+void CollisionManager::AddCollider(Collision &&collider)
 {
-    // Add a copy of the collider to our collection
-    m_collisions.push_back(collider);
-
-    // Immediately initialize octree for complex colliders
-    if (collider.GetCollisionType() == CollisionType::OCTREE_ONLY ||
-        collider.GetCollisionType() == CollisionType::TRIANGLE_PRECISE ||
-        collider.GetCollisionType() == CollisionType::IMPROVED_AABB)
+    m_collisions.push_back(std::make_unique<Collision>(std::move(collider)));
+    if (m_collisions.back()->GetCollisionType() == CollisionType::OCTREE_ONLY ||
+        m_collisions.back()->GetCollisionType() == CollisionType::TRIANGLE_PRECISE ||
+        m_collisions.back()->GetCollisionType() == CollisionType::IMPROVED_AABB)
     {
-        m_collisions.back().InitializeOctree();
+        m_collisions.back()->InitializeOctree();
     }
-
     TraceLog(LOG_INFO, "Added collider, total count: %zu", m_collisions.size());
 }
 
@@ -44,68 +41,63 @@ void CollisionManager::ClearColliders() { m_collisions.clear(); }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 {
-    // Early exit if no colliders are registered
     if (m_collisions.empty())
-    {
         return false;
+    for (const auto &collider : m_collisions)
+    {
+        bool hit = false;
+        if (collider->IsUsingOctree())
+        {
+            hit = playerCollision.IntersectsOctree(*collider);
+        }
+        else
+        {
+            hit = playerCollision.Intersects(*collider);
+        }
+        if (hit)
+            return true;
     }
-
-    return std::ranges::any_of(m_collisions,
-                               [&](const Collision &collider)
-                               {
-                                   // Use hybrid collision system (automatically chooses optimal
-                                   // method)
-                                   return playerCollision.Intersects(collider);
-                               });
+    return false;
 }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const
 {
     if (m_collisions.empty())
         return false;
-
     const Vector3 playerMin = playerCollision.GetMin();
     const Vector3 playerMax = playerCollision.GetMax();
     const Vector3 playerCenter = {(playerMin.x + playerMax.x) * 0.5f,
                                   (playerMin.y + playerMax.y) * 0.5f,
                                   (playerMin.z + playerMax.z) * 0.5f};
-
     bool collided = false;
     response = (Vector3){0, 0, 0};
-
     bool hasBest = false;
     Vector3 bestMTV = {0, 0, 0};
     float bestLenSq = FLT_MAX;
-
     Vector3 groundMTV = {0, 0, 0};
     bool hasGroundMTV = false;
-
     for (const auto &collider : m_collisions)
     {
-        if (!playerCollision.Intersects(collider))
+        bool hit = collider->IsUsingOctree() ? playerCollision.IntersectsOctree(*collider)
+                                             : playerCollision.Intersects(*collider);
+        if (!hit)
             continue;
-
         collided = true;
-
-        const Vector3 colliderMin = collider.GetMin();
-        const Vector3 colliderMax = collider.GetMax();
+        const Vector3 colliderMin = collider->GetMin();
+        const Vector3 colliderMax = collider->GetMax();
         const Vector3 colliderCenter = {(colliderMin.x + colliderMax.x) * 0.5f,
                                         (colliderMin.y + colliderMax.y) * 0.5f,
                                         (colliderMin.z + colliderMax.z) * 0.5f};
-
         const float overlapX =
             fminf(playerMax.x, colliderMax.x) - fmaxf(playerMin.x, colliderMin.x);
         const float overlapY =
             fminf(playerMax.y, colliderMax.y) - fmaxf(playerMin.y, colliderMin.y);
         const float overlapZ =
             fminf(playerMax.z, colliderMax.z) - fmaxf(playerMin.z, colliderMin.z);
-
         if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
             continue;
-
         float minOverlap = fabsf(overlapX);
         int axis = 0;
-
         if (fabsf(overlapY) < minOverlap)
         {
             minOverlap = fabsf(overlapY);
@@ -116,7 +108,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
             minOverlap = fabsf(overlapZ);
             axis = 2;
         }
-
         Vector3 mtv = {0, 0, 0};
         switch (axis)
         {
@@ -132,8 +123,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         default:
             break;
         }
-
-        if (axis == 1 && mtv.y > 0)
+        if (axis == 1 && mtv.y > 0 && (playerCenter.y - colliderCenter.y) >= 0.1f)
         {
             if (!hasGroundMTV || fabsf(mtv.y) < fabsf(groundMTV.y))
             {
@@ -151,20 +141,40 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
                 hasBest = true;
             }
         }
+        if (collider->IsUsingOctree())
+        {
+            const float rayMax = (playerMax.y - playerMin.y) + 1.0f;
+            Vector3 origin = playerCenter;
+            Vector3 dir = {0.0f, -1.0f, 0.0f};
+            float hitDistance = 0.0f;
+            Vector3 hitPoint = {0};
+            Vector3 hitNormal = {0};
+            if (playerCollision.RaycastOctree(origin, dir, rayMax, hitDistance, hitPoint,
+                                              hitNormal))
+            {
+                float deltaUp = hitPoint.y - playerMin.y;
+                if (deltaUp > 0.0f && deltaUp < rayMax)
+                {
+                    Vector3 refined = {0.0f, deltaUp, 0.0f};
+                    if (!hasGroundMTV || fabsf(refined.y) < fabsf(groundMTV.y))
+                    {
+                        groundMTV = refined;
+                        hasGroundMTV = true;
+                    }
+                }
+            }
+        }
     }
-
     if (hasGroundMTV)
     {
         response = groundMTV;
         return true;
     }
-
     if (hasBest)
     {
         response = bestMTV;
         return true;
     }
-
     return collided;
 }
 
@@ -350,7 +360,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
 
     // Add the instance collision to collision manager
     size_t beforeCount = GetColliders().size();
-    AddCollider(instanceCollision);
+    AddCollider(std::move(instanceCollision));
     size_t afterCount = GetColliders().size();
 
     if (afterCount > beforeCount)
@@ -368,7 +378,43 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     }
 }
 
-const std::vector<Collision> &CollisionManager::GetColliders() const { return m_collisions; }
+const std::vector<std::unique_ptr<Collision>> &CollisionManager::GetColliders() const { return m_collisions; }
+
+bool CollisionManager::RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
+                                   Vector3 &hitPoint, Vector3 &hitNormal) const
+{
+    bool anyHit = false;
+    float bestDist = maxDistance;
+    Vector3 bestPoint = {0};
+    Vector3 bestNormal = {0};
+    for (const auto &collider : m_collisions)
+    {
+        if (!collider->IsUsingOctree())
+            continue;
+        Vector3 dir = {0.0f, -1.0f, 0.0f};
+        float d = 0.0f;
+        Vector3 p = {0};
+        Vector3 n = {0};
+        if (collider->RaycastOctree(origin, dir, maxDistance, d, p, n))
+        {
+            if (d < bestDist)
+            {
+                bestDist = d;
+                bestPoint = p;
+                bestNormal = n;
+                anyHit = true;
+            }
+        }
+    }
+    if (anyHit)
+    {
+        hitDistance = bestDist;
+        hitPoint = bestPoint;
+        hitNormal = bestNormal;
+        return true;
+    }
+    return false;
+}
 
 // Helper method to create base collision for caching
 std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &model,
@@ -452,9 +498,10 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
 {
     Collision instanceCollision;
 
-    // Create transformation matrix with both scale and position
-    Matrix transform = MatrixMultiply(MatrixScale(scale, scale, scale),
-                                      MatrixTranslate(position.x, position.y, position.z));
+    // Create transformation matrix with both position then scale (model space -> scaled ->
+    // translated)
+    Matrix transform = MatrixMultiply(MatrixTranslate(position.x, position.y, position.z),
+                                      MatrixScale(scale, scale, scale));
 
     // Create a copy of the model for collision building
     Model modelCopy = model;

@@ -20,6 +20,9 @@ add_executable(${PROJECT_NAME}
           main.cpp
           )
 
+add_subdirectory(src/Engine)
+add_subdirectory(src/Game)
+
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src/
     ${CMAKE_SOURCE_DIR}/src/Engine

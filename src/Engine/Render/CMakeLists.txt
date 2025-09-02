@@ -7,7 +7,9 @@ add_library(render STATIC
 )
 
 target_include_directories(render PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src/Engine
+    ${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries(render PUBLIC
@@ -16,7 +18,6 @@ target_link_libraries(render PUBLIC
     collision
     menu
     model
-    player
     world
     nlohmann_json::nlohmann_json
 )

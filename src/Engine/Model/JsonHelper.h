@@ -3,6 +3,7 @@
 
 #include "ModelConfig.h"
 #include <nlohmann/json.hpp>
+#include <version>
 #include <optional>
 
 using json = nlohmann::json;

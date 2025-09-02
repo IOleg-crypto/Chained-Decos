@@ -3,9 +3,12 @@
 
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Engine.h"
-#include "Engine/Menu/Menu.h"
 #include "Engine/Model/Model.h"
+#include "Game/Menu/Menu.h"
+#include "Model/Model.h"
 #include "Player/Player.h"
+
+class Engine;
 
 class Game
 {
@@ -16,19 +19,18 @@ private:
     Models m_models;
     Menu m_menu;
 
-    // Стани гри
     bool m_showMenu;
     bool m_isGameInitialized;
 
 public:
-    Game(Engine &engine);
+    explicit Game(Engine &engine);
     ~Game();
 
     void Init();
     void Run();
 
     void ToggleMenu();
-    void RequestExit();
+    void RequestExit() const;
     bool IsRunning() const;
 
 private:
@@ -36,7 +38,7 @@ private:
     void Render();
     void InitInput();
     void InitCollisions();
-    void InitPlayer();
+    void InitPlayer() const;
     void LoadGameModels();
     void UpdatePlayerLogic();
     void UpdatePhysicsLogic();

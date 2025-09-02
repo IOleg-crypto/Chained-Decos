@@ -1,20 +1,26 @@
-
-file(GLOB_RECURSE GAME_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+add_library(ChainedDecosGame STATIC
+        Game.cpp
+        Game.h
 )
 
-add_library(ChainedDecosGame ${GAME_SOURCES})
 
-target_include_directories(ChainedDecosGame PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/Engine
-    ${CMAKE_SOURCE_DIR}/include
+target_include_directories(ChainedDecosGame
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/include
 )
+
+add_subdirectory(Map)
+add_subdirectory(Menu)
+add_subdirectory(Player)
 
 target_link_libraries(ChainedDecosGame
-    ChainedDecosEngine
-    raylib
-    imguilib
-    nlohmann_json::nlohmann_json
+        PUBLIC
+        ChainedDecosEngine
+        player
+        menu
+        mapmod
+        raylib
+        imguilib
+        nlohmann_json::nlohmann_json
 )

@@ -6,7 +6,7 @@
 #define MODEL_H
 
 #include "JsonHelper.h"
-#include "Model/ModelCache.h"
+#include "ModelCache.h"
 #include "ModelConfig.h"
 #include "ModelInstance.h"
 
@@ -61,13 +61,13 @@ public:
     // Filtering and search
     std::vector<ModelInstance *> GetInstancesByTag(const std::string &tag);
     std::vector<ModelInstance *> GetInstancesByCategory(const std::string &category);
-    std::vector<std::string> GetAvailableModels() const;
+    [[nodiscard]] std::vector<std::string> GetAvailableModels() const;
 
     // Configuration access
-    bool HasCollision(const std::string &modelName) const;
+    [[nodiscard]] bool HasCollision(const std::string &modelName) const;
 
     // Statistics and monitoring
-    const LoadingStats &GetLoadingStats() const { return m_stats; }
+    [[nodiscard]] const LoadingStats &GetLoadingStats() const { return m_stats; }
     void PrintStatistics() const;
     void PrintCacheInfo() const;
 
@@ -77,7 +77,7 @@ public:
     void EnableLOD(bool enabled) { m_lodEnabled = enabled; }
 
     // Configuration access
-    const ModelFileConfig *GetModelConfig(const std::string &modelName) const;
+    [[nodiscard]] const ModelFileConfig *GetModelConfig(const std::string &modelName) const;
 
     // Cleanup and optimization
     void CleanupUnusedModels();

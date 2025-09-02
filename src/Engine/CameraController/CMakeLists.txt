@@ -4,7 +4,7 @@ add_library(cameracontroller STATIC
 )
 
 target_include_directories(cameracontroller PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR} # Дозволяє іншим модулям включати заголовки CameraController
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(cameracontroller PUBLIC raylib) 

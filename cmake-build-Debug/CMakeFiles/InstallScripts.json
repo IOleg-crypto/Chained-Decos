@@ -10,11 +10,14 @@
 		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Collision/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Input/cmake_install.cmake",
-		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Menu/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Model/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Render/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/CameraController/cmake_install.cmake",
-		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/cmake_install.cmake"
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/World/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Map/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Menu/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Player/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

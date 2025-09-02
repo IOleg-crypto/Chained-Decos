@@ -13,7 +13,7 @@ public:
     ~CollisionDebugRenderer() = default;
 
     void RenderCollisionBox(const Collision &collision, Color color = RED) const;
-    void RenderAllCollisions(const std::vector<Collision> &collisions) const;
+    void RenderAllCollisions(const std::vector<std::unique_ptr<Collision>> &collisions) const;
     void RenderPlayerCollision(const Collision &playerCollision) const;
 
     void SetWireframeMode(bool wireframe) { m_wireframe = wireframe; }
