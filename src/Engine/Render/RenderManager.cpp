@@ -6,15 +6,14 @@
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
 #include <Collision/Octree.h>
-#include <Menu/Menu.h>
-#include <Model/Model.h>
+#include <Engine/World/Physics.h>
 #include <Game/Player/Player.h>
-#include <World/World/Physics.h>
+#include <Game/Menu/Menu.h>
+#include <Model/Model.h>
 #include <imgui.h>
 #include <raylib.h>
 #include <rcamera.h>
 #include <rlImGui.h>
-
 
 // ==================== CONSTANTS ====================
 
@@ -166,15 +165,11 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
         const auto &colliders = collisionManager.GetColliders();
         m_collisionDebugRenderer->RenderAllCollisions(colliders);
         m_collisionDebugRenderer->RenderPlayerCollision(player.GetCollision());
-
-        // Debug render octrees for all colliders that have them
         for (const auto &collider : colliders)
         {
-            // Get octree from each collision object
-            auto *octree = const_cast<Collision &>(collider).GetOctree();
+            auto *octree = collider->GetOctree();
             if (octree)
             {
-                // Render octree wireframes in green color to distinguish from AABB collision boxes
                 octree->DebugDraw(GREEN);
             }
         }
@@ -281,10 +276,10 @@ void RenderManager::DrawCollisionSystemInfo(const CollisionManager &collisionMan
 
     for (const auto &collider : colliders)
     {
-        if (collider.IsUsingOctree())
+        if (collider->IsUsingOctree())
         {
             bvhColliders++;
-            totalTriangles += collider.GetTriangleCount();
+            totalTriangles += collider->GetTriangleCount();
         }
         else
         {

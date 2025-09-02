@@ -1,41 +1,46 @@
-#include <Player/Player.h>
-#include <Player/PlayerInput.h>
+#include <Player.h>
+#include <PlayerInput.h>
 
 PlayerInput::PlayerInput(Player *player) : m_player(player) {}
 
 void PlayerInput::ProcessInput()
 {
     Vector3 inputDirection = GetInputDirection();
-    if (Vector3Length(inputDirection) < 0.001f)
-        return;
-
-    inputDirection = Vector3Normalize(inputDirection);
-    auto [forward, right] = GetCameraVectors();
-
-    forward.y = 0.0f;
-    right.y = 0.0f;
-    forward = Vector3Normalize(forward);
-    right = Vector3Normalize(right);
-
-    Vector3 moveDir = {};
-    moveDir.x = forward.x * inputDirection.z + right.x * inputDirection.x;
-    moveDir.z = forward.z * inputDirection.z + right.z * inputDirection.x;
-
-    if (Vector3Length(moveDir) > 0.001f)
-        moveDir = Vector3Normalize(moveDir);
-
     float deltaTime = GetFrameTime();
+
+    // Compute camera-aligned move direction
+    Vector3 moveDir = {0};
+    if (Vector3Length(inputDirection) >= 0.001f)
+    {
+        inputDirection = Vector3Normalize(inputDirection);
+        auto [forward, right] = GetCameraVectors();
+
+        forward.y = 0.0f;
+        right.y = 0.0f;
+        forward = Vector3Normalize(forward);
+        right = Vector3Normalize(right);
+
+        moveDir.x = forward.x * inputDirection.z + right.x * inputDirection.x;
+        moveDir.z = forward.z * inputDirection.z + right.z * inputDirection.x;
+        if (Vector3Length(moveDir) > 0.001f)
+            moveDir = Vector3Normalize(moveDir);
+    }
+
+    // Convert desired move direction into horizontal velocity (units per second)
     float speed = m_player->GetSpeed();
+    Vector3 desiredHorizontalVelocity = {moveDir.x * speed, 0.0f, moveDir.z * speed};
 
-    Vector3 movement = Vector3Scale(moveDir, speed * deltaTime);
-    m_player->Move(movement);
+    // Apply to player's physics velocity preserving vertical component
+    Vector3 v = m_player->GetPhysics().GetVelocity();
+    v.x = desiredHorizontalVelocity.x;
+    v.z = desiredHorizontalVelocity.z;
+    m_player->GetPhysics().SetVelocity(v);
 
-    if (Vector3Length(moveDir) > 0.001f)
+    // Smoothly rotate player towards movement direction when moving
+    if (Vector3Length(desiredHorizontalVelocity) > 0.001f)
     {
         float currentRotY = m_player->GetRotationY();
         float targetRotY = atan2f(moveDir.x, moveDir.z) * RAD2DEG;
-
-        // Linear interpolation
         float smoothEffect = 15.0f;
         float smoothRotY = currentRotY + (targetRotY - currentRotY) * smoothEffect * deltaTime;
         m_player->SetRotationY(smoothRotY);

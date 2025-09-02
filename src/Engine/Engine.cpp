@@ -2,7 +2,7 @@
 // Engine.cpp - Main Engine Implementation
 //
 
-#include "Engine/Engine.h"
+#include "Engine.h"
 
 // Standard library
 #include <set>
@@ -103,6 +103,10 @@ void Engine::RequestExit()
     m_shouldExit = true;
     TraceLog(LOG_INFO, "Exit requested");
 }
+
+bool Engine::IsDebugInfoVisible() const { return m_showDebug; }
+
+bool Engine::IsCollisionDebugVisible() const { return m_showCollisionDebug; }
 
 // ==================== Private Engine Input Handling ====================
 void Engine::HandleEngineInput()

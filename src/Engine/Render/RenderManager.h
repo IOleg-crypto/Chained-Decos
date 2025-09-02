@@ -5,11 +5,11 @@
 #include <raylib.h>
 #include <string>
 
-#include <World/World/Physics.h>
-#include <Collision/CollisionDebugRenderer.h>
-#include <Collision/CollisionManager.h>
-#include <Menu/Menu.h>
-#include <Model/Model.h>
+#include "Engine/Collision/CollisionDebugRenderer.h"
+#include "Engine/Collision/CollisionManager.h"
+#include "Game/Menu/Menu.h"
+#include "Engine/Model/Model.h"
+#include "Engine/World/Physics.h"
 
 //
 // RenderManager - Handles all rendering operations

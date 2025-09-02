@@ -1,6 +1,7 @@
-#include "Player/PlayerMovement.h"
+#include "PlayerMovement.h"
 #include <CameraController/CameraController.h>
-#include <Player/Player.h>
+#include <Player.h>
+#include <World/Physics.h>
 #include <memory>
 
 // Define player constants
@@ -49,6 +50,15 @@ void Player::Update(const CollisionManager &collisionManager)
 
     m_movement->ApplyGravity(deltaTime);
 
+    // Integrate horizontal velocity from physics into desired position
+    Vector3 horizVel = m_movement->GetPhysics().GetVelocity();
+    horizVel.y = 0.0f;
+    if (Vector3Length(horizVel) > 0.0f)
+    {
+        Vector3 step = Vector3Scale(horizVel, deltaTime);
+        m_movement->Move(step);
+    }
+
     Vector3 newPosition = m_movement->StepMovement(collisionManager);
 
     SetPlayerPosition(newPosition);
@@ -56,7 +66,8 @@ void Player::Update(const CollisionManager &collisionManager)
     UpdatePlayerBox();
     UpdatePlayerCollision();
 
-    if (!m_movement->GetPhysics().IsGrounded())
+    // Only snap when falling slowly to avoid oscillation
+    if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 0.0f)
     {
         m_movement->SnapToGround(collisionManager);
     }
@@ -93,12 +104,7 @@ void Player::ToggleModelRendering(const bool useModel) const
     m_model->ToggleModelRendering(useModel);
 }
 
-void Player::SetPlayerPosition(const Vector3 &pos) const
-{
-    m_movement->SetPosition(pos);
-    UpdatePlayerBox();
-    UpdatePlayerCollision();
-}
+void Player::SetPlayerPosition(const Vector3 &pos) const { m_movement->SetPosition(pos); }
 
 const Collision &Player::GetCollision() const { return m_collision->GetCollision(); }
 

@@ -5,8 +5,9 @@
 #ifndef MODELINSTANCE_H
 #define MODELINSTANCE_H
 
-#include <Collision/CollisionSystem.h>
-#include <Model/Animation.h>
+#include "Animation.h"
+
+class Model;
 #include <raylib.h>
 #include <string>
 

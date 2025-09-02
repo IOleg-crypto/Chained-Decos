@@ -51,8 +51,9 @@ public:
 
     // ==================== Engine State Control ====================
     void RequestExit();
-    bool IsDebugInfoVisible() const { return m_showDebug; }
-    bool IsCollisionDebugVisible() const { return m_showCollisionDebug; }
+    bool IsDebugInfoVisible() const;
+
+    bool IsCollisionDebugVisible() const;
 
 private:
     void HandleEngineInput(); // For engine-level shortcuts (e.g., F11 for fullscreen)
