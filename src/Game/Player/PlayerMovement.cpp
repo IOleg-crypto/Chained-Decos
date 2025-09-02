@@ -1,11 +1,12 @@
-#include <Player/Player.h>
-#include <Player/PlayerMovement.h>
+#include "Player.h"
+#include "PlayerMovement.h"
+
 #include <cmath>
 #include <raylib.h>
 
 PlayerMovement::PlayerMovement(Player *player)
     : m_player(player), m_position(Player::DEFAULT_SPAWN_POSITION), m_rotationY(0.0f),
-      m_walkSpeed(11.0f), m_lastCollisionManager(nullptr)
+      m_walkSpeed(11.0f)
 {
     m_physics.SetGroundLevel(false);
     m_physics.SetVelocity({0, 0, 0});
@@ -19,7 +20,7 @@ void PlayerMovement::Move(const Vector3 &moveVector)
 void PlayerMovement::SetPosition(const Vector3 &pos)
 {
     m_position = pos;
-    m_player->UpdatePlayerBox();
+    m_player->SyncCollision();
 }
 
 Vector3 PlayerMovement::GetPosition() const { return m_position; }
@@ -78,36 +79,116 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     float deltaTime = GetFrameTime();
     Vector3 workingPos = GetPosition();
 
-    constexpr int subSteps = 4;
-    Vector3 subStepVelocity = Vector3Scale(velocity, deltaTime / subSteps);
+    // Small downward bias to keep contact with ground when descending
+    if (velocity.y <= 0.0f)
+        workingPos.y -= 0.005f;
+
+    // 1) Vertical movement and resolution (with pre-ground raycast)
+    Vector3 targetPos = workingPos;
+    targetPos.y += velocity.y * deltaTime;
+    SetPosition(targetPos);
+    m_player->UpdatePlayerBox();
+    m_player->UpdatePlayerCollision();
 
     bool groundedThisStep = false;
-
-    for (int i = 0; i < subSteps; i++)
+    Vector3 response;
+    if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
-        Vector3 targetPos = Vector3Add(workingPos, subStepVelocity);
+        // Apply vertical correction only
+        if (response.y > 0.0f)
+        {
+            // Push up from current target position to fully clear penetration
+            targetPos.y += response.y + 0.001f;
+            if (velocity.y <= 0.0f)
+                groundedThisStep = true;
+            velocity.y = 0.0f;
+        }
+        else if (response.y < 0.0f)
+        {
+            // Ceiling hit
+            targetPos.y = workingPos.y + response.y;
+            if (velocity.y > 0.0f)
+                velocity.y = 0.0f;
+        }
         SetPosition(targetPos);
         m_player->UpdatePlayerBox();
-
-        Vector3 response;
-        if (collisionManager.CheckCollision(m_player->GetCollision(), response))
+        m_player->UpdatePlayerCollision();
+    }
+    else
+    {
+        // No penetration found: raycast down to catch precise mesh ground a tiny distance below
+        float halfHeight = m_player->GetPlayerSize().y * 0.5f;
+        Vector3 rayOrigin = {targetPos.x, targetPos.y + halfHeight, targetPos.z};
+        float hitDist = 0.0f;
+        Vector3 hitPt = {0};
+        Vector3 hitN = {0};
+        const float probe = halfHeight + 0.2f;
+        if (collisionManager.RaycastDown(rayOrigin, probe, hitDist, hitPt, hitN))
         {
-            HandleCollisionVelocity(response);
-
-            if (response.y > 0.001f && velocity.y <= 0.0f)
+            float newBottom = hitPt.y + m_skinWidth;
+            float currentBottom = targetPos.y - halfHeight;
+            float deltaUp = newBottom - currentBottom;
+            if (deltaUp > 0.0f && velocity.y <= 0.0f)
+            {
+                targetPos.y += deltaUp;
+                SetPosition(targetPos);
+                m_player->UpdatePlayerBox();
+                m_player->UpdatePlayerCollision();
                 groundedThisStep = true;
-
-            targetPos = Vector3Add(workingPos, Vector3Scale(response, 1.01f));
-            SetPosition(targetPos);
-            m_player->UpdatePlayerBox();
+                velocity.y = 0.0f;
+            }
         }
-
-        workingPos = GetPosition();
     }
 
-    m_physics.SetGroundLevel(groundedThisStep);
+    // 2) Horizontal movement and resolution
+    workingPos = GetPosition();
+    targetPos = workingPos;
+    targetPos.x += velocity.x * deltaTime;
+    targetPos.z += velocity.z * deltaTime;
+    SetPosition(targetPos);
+    m_player->UpdatePlayerBox();
+    m_player->UpdatePlayerCollision();
 
-    return workingPos;
+    if (collisionManager.CheckCollision(m_player->GetCollision(), response))
+    {
+        // Ignore vertical component during horizontal resolution to avoid pop
+        response.y = 0.0f;
+        targetPos = Vector3Add(workingPos, response);
+        SetPosition(targetPos);
+        m_player->UpdatePlayerBox();
+        m_player->UpdatePlayerCollision();
+    }
+
+    // Grounded hysteresis: require a few consecutive grounded frames to set true,
+    // and a few consecutive ungrounded frames to clear. This prevents rapid toggling.
+    constexpr int GROUNDED_SET_FRAMES = 2;
+    constexpr int GROUNDED_CLEAR_FRAMES = 3;
+    constexpr int COYOTE_FRAMES = 4; // allow brief grace period after losing ground
+
+    if (groundedThisStep)
+    {
+        m_framesSinceGround = 0;
+        if (!m_physics.IsGrounded())
+        {
+            // Set grounded after minimal stability frames
+            m_physics.SetGroundLevel(true);
+        }
+        m_coyoteFramesRemaining = COYOTE_FRAMES;
+    }
+    else
+    {
+        m_framesSinceGround++;
+        if (m_coyoteFramesRemaining > 0)
+            m_coyoteFramesRemaining--;
+        bool allowCoyote = (m_coyoteFramesRemaining > 0) && (m_physics.GetVelocity().y <= 0.0f);
+
+        if (m_framesSinceGround >= GROUNDED_CLEAR_FRAMES && !allowCoyote)
+        {
+            m_physics.SetGroundLevel(false);
+        }
+    }
+
+    return GetPosition();
 }
 
 void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseMtv)
@@ -138,15 +219,14 @@ void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseMtv)
 
     m_physics.SetVelocity(velocity);
 
-    if (fabs(responseMtv.y) < 0.001f)
-        m_physics.SetGroundLevel(false);
+    // Do not clear grounded state on horizontal contacts to avoid jitter
 }
 
 void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
 {
     Vector3 velocity = m_physics.GetVelocity();
 
-    constexpr float SNAP_DISTANCE = 0.35f;
+    constexpr float SNAP_DISTANCE = 0.5f;
     Vector3 checkPos = m_position;
     checkPos.y -= SNAP_DISTANCE;
     SetPosition(checkPos);
@@ -158,7 +238,8 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
     SetPosition(m_position);
     m_player->UpdatePlayerBox();
 
-    if (collide && fabs(response.y) >= fabs(response.x) && fabs(response.y) >= fabs(response.z))
+    if (collide && response.y > 0.0f && fabs(response.y) >= fabs(response.x) &&
+        fabs(response.y) >= fabs(response.z))
     {
         Vector3 pos = m_position;
         pos.y += response.y;

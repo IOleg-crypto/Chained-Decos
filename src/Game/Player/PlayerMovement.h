@@ -3,7 +3,7 @@
 #define PLAYER_MOVEMENT_H
 
 #include <Collision/CollisionManager.h>
-#include <World/World/Physics.h>
+#include <World/Physics.h>
 #include <iostream>
 #include <raylib.h>
 #include <raymath.h>
@@ -52,6 +52,15 @@ private:
 
     // Reference to the engine's collision manager
     const CollisionManager *m_lastCollisionManager = nullptr;
+
+    // Hysteresis for grounded state to prevent flicker and push-offs
+    int m_framesSinceGround = 0;
+    int m_coyoteFramesRemaining = 0;
+
+    // Character controller tuning
+    float m_stepHeight = 0.35f;      // max height we can step up
+    float m_skinWidth = 0.01f;       // small separation to avoid re-penetration
+    float m_maxSlopeDegrees = 50.0f; // reserved for future slope handling
 };
 
 #endif // PLAYER_MOVEMENT_H

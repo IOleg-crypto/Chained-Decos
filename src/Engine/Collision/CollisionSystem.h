@@ -14,6 +14,7 @@
 #include <vector>
 
 struct ModelFileConfig;
+
 class Octree;
 
 //
@@ -31,7 +32,7 @@ public:
     // Initialize collision box by center position and size (half-extents)
     Collision(const Vector3 &center, const Vector3 &size);
 
-    // Copy constructor and assignment operator (needed due to std::unique_ptr)
+    // Забороняємо копіювання, дозволяємо тільки move
     Collision(const Collision &other);
     Collision &operator=(const Collision &other);
 
