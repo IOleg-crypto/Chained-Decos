@@ -47,8 +47,6 @@ Engine::~Engine()
     TraceLog(LOG_INFO, "Engine destructor completed");
 }
 
-// ==================== MAIN API ====================
-
 void Engine::Init()
 {
     TraceLog(LOG_INFO, "Initializing Engine...");
@@ -57,7 +55,7 @@ void Engine::Init()
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     m_windowInitialized = true;
     SetTargetFPS(60);
-    SetExitKey(KEY_NULL); // To avoid closing the window - escape key
+    SetExitKey(KEY_NULL);
 
     m_renderManager.Initialize();
 
@@ -79,9 +77,6 @@ void Engine::Render()
 {
     m_renderManager.BeginFrame();
     ClearBackground(RAYWHITE);
-
-    // Render game components here via RenderManager by Game class
-
     m_renderManager.EndFrame();
 }
 
