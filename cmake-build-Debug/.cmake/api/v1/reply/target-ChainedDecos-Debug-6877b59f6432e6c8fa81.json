@@ -89,7 +89,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-g -std=gnu++20 -fdiagnostics-color=always"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				}
 			],
 			"defines" : 
@@ -259,106 +259,114 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-g",
+				"fragment" : "-O0 -g -Xclang -gcodeview -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Xlinker /subsystem:console",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-fuse-ld=lld-link",
 				"role" : "flags"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src\\Game\\libChainedDecosGame.a",
+				"fragment" : "src\\Game\\ChainedDecosGame.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "libimguilib.a",
+				"fragment" : "imguilib.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "src\\Engine\\libChainedDecosEngine.a",
+				"fragment" : "src\\Engine\\ChainedDecosEngine.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Engine\\Input\\libinput.a",
+				"fragment" : "src\\Engine\\Input\\input.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Engine\\Render\\librender.a",
+				"fragment" : "src\\Engine\\Render\\render.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Engine\\CameraController\\libcameracontroller.a",
+				"fragment" : "src\\Engine\\CameraController\\cameracontroller.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Engine\\World\\libworld.a",
+				"fragment" : "src\\Engine\\World\\world.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "src\\Game\\Player\\libplayer.a",
+				"fragment" : "src\\Game\\Player\\player.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Engine\\Collision\\libcollision.a",
+				"fragment" : "src\\Engine\\Collision\\collision.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Engine\\Model\\libmodel.a",
+				"fragment" : "src\\Engine\\Model\\model.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Engine\\Collision\\libcollision.a",
+				"fragment" : "src\\Engine\\Collision\\collision.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Engine\\Model\\libmodel.a",
+				"fragment" : "src\\Engine\\Model\\model.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "src\\Game\\Menu\\libmenu.a",
+				"fragment" : "src\\Game\\Menu\\menu.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "libimguilib.a",
+				"fragment" : "imguilib.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "src\\Game\\Map\\libmapmod.a",
+				"fragment" : "src\\Game\\Map\\mapmod.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "\"D:\\gitnext\\Chained Decos\\.deps\\raylib-build\\raylib\\libraylib.a\"",
+				"fragment" : "\"D:\\gitnext\\Chained Decos\\.deps\\raylib-build\\raylib\\raylib.lib\"",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 8,
-				"fragment" : "-lopengl32",
+				"fragment" : "-lopengl32.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 8,
-				"fragment" : "-lglu32",
+				"fragment" : "-lglu32.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 8,
-				"fragment" : "-lwinmm",
+				"fragment" : "-lwinmm.lib",
 				"role" : "libraries"
 			},
 			{
-				"fragment" : "-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32",
+				"fragment" : "-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 -loldnames",
 				"role" : "libraries"
 			}
 		],

@@ -54,7 +54,7 @@
 						3
 					],
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.deps.raylib-src.src-Debug-6422722bfcfaabfcdb0e.json",
+					"jsonFile" : "directory-.deps.raylib-src.src-Debug-8ec2ce5157ad243fc38c.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.5"
@@ -389,98 +389,98 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ChainedDecos-Debug-0567bd1f1e83de7ee4a9.json",
+					"jsonFile" : "target-ChainedDecos-Debug-6877b59f6432e6c8fa81.json",
 					"name" : "ChainedDecos",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 6,
 					"id" : "ChainedDecosEngine::@57eeced369f002faad1a",
-					"jsonFile" : "target-ChainedDecosEngine-Debug-d831df607ebbe383237e.json",
+					"jsonFile" : "target-ChainedDecosEngine-Debug-366df0b3f1ac4b0d7dc9.json",
 					"name" : "ChainedDecosEngine",
 					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 13,
 					"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94",
-					"jsonFile" : "target-ChainedDecosGame-Debug-a21216358c078faae051.json",
+					"jsonFile" : "target-ChainedDecosGame-Debug-df1d4d8762c181ccf225.json",
 					"name" : "ChainedDecosGame",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 11,
 					"id" : "cameracontroller::@d7306d29326ff25263b1",
-					"jsonFile" : "target-cameracontroller-Debug-f861ae41eb0178669177.json",
+					"jsonFile" : "target-cameracontroller-Debug-16d7c521874ea4568a88.json",
 					"name" : "cameracontroller",
 					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 7,
 					"id" : "collision::@c7f3438d24a996a0c811",
-					"jsonFile" : "target-collision-Debug-7e300bdb224b94af22ec.json",
+					"jsonFile" : "target-collision-Debug-e802e115467d1d25b92c.json",
 					"name" : "collision",
 					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 4,
 					"id" : "glfw::@4755506f38bf45259394",
-					"jsonFile" : "target-glfw-Debug-fbcde44f3b60f69b3dec.json",
+					"jsonFile" : "target-glfw-Debug-4e11e442ff67666a9779.json",
 					"name" : "glfw",
 					"projectIndex" : 2
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "imguilib::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-imguilib-Debug-cede86f7813c91a06531.json",
+					"jsonFile" : "target-imguilib-Debug-aa15aa4b9bbd0b2d8061.json",
 					"name" : "imguilib",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 8,
 					"id" : "input::@d967885210040d4ce616",
-					"jsonFile" : "target-input-Debug-f991e7aeb773cf0f60c7.json",
+					"jsonFile" : "target-input-Debug-2b5e0482310e2c7a1647.json",
 					"name" : "input",
 					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 14,
 					"id" : "mapmod::@e87daa19a0aaec6b83ad",
-					"jsonFile" : "target-mapmod-Debug-d59412e641a3629f27d2.json",
+					"jsonFile" : "target-mapmod-Debug-8c5b7720c03536b5ea87.json",
 					"name" : "mapmod",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 15,
 					"id" : "menu::@508c1ec0f6a4eb8a79d5",
-					"jsonFile" : "target-menu-Debug-f59e24a3a96f154557e4.json",
+					"jsonFile" : "target-menu-Debug-cc9d01a039d71523f5a5.json",
 					"name" : "menu",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 9,
 					"id" : "model::@821f8439338a0146b4f1",
-					"jsonFile" : "target-model-Debug-c93e8d507ce14fb24684.json",
+					"jsonFile" : "target-model-Debug-9593bf6b0972d33902a5.json",
 					"name" : "model",
 					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 16,
 					"id" : "player::@6497c05e8667515fbef8",
-					"jsonFile" : "target-player-Debug-0135711239d5f336a146.json",
+					"jsonFile" : "target-player-Debug-1cb87da7768ac97081a7.json",
 					"name" : "player",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 2,
 					"id" : "raylib::@af39a1529cb2ee18778c",
-					"jsonFile" : "target-raylib-Debug-2342be1c2e95760a1ef9.json",
+					"jsonFile" : "target-raylib-Debug-6aecaf4bcf97b0154425.json",
 					"name" : "raylib",
 					"projectIndex" : 1
 				},
 				{
 					"directoryIndex" : 10,
 					"id" : "render::@1c5ce05080cbaa0376c6",
-					"jsonFile" : "target-render-Debug-91fbe6178a2b31a683e4.json",
+					"jsonFile" : "target-render-Debug-63f004e2ae295ab5b049.json",
 					"name" : "render",
 					"projectIndex" : 4
 				},
@@ -501,7 +501,7 @@
 				{
 					"directoryIndex" : 12,
 					"id" : "world::@c98633f6e372857301bf",
-					"jsonFile" : "target-world-Debug-48ea72d5d025b652f97c.json",
+					"jsonFile" : "target-world-Debug-6ae85e8d2710ff0a816b.json",
 					"name" : "world",
 					"projectIndex" : 4
 				}

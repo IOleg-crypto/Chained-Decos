@@ -1,21 +1,12 @@
 #ifndef MENU_H
 #define MENU_H
 
-// ВАЖЛИВО: Переконайтесь, що include path для raylib прописаний у CMakeLists.txt
 #include <raylib.h>
 #include <rlImGui.h>
 #include <string>
 #include <vector>
 
-// Menu не залежить від Engine
-
-// # ----------------------------------------------------------------------------
-// # Menu - handles rendering and logic for main menu
-// # ----------------------------------------------------------------------------
-
-// class Engine; // Видалено
-
-enum class MenuAction
+enum class MenuAction : uint8_t
 {
     None,
     StartGame,
@@ -33,7 +24,7 @@ enum class MenuAction
     ExitGame
 };
 
-enum class MenuState
+enum class MenuState : uint8_t
 {
     Main,
     GameMode,
@@ -79,7 +70,6 @@ private:
 
 public:
     Menu();
-    ~Menu();
 
 public:
     float Lerp(float a, float b, float t) const;

@@ -42,7 +42,7 @@ public:
     void Init();
     void Update();
     void Render();
-    bool ShouldClose() const;
+    [[nodiscard]] bool ShouldClose() const;
     void Shutdown() const;
 
     // ==================== Public Getters for Engine Services ====================
