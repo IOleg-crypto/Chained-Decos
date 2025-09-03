@@ -6,7 +6,7 @@
 #include "imgui.h"
 #include "raylib.h"
 
-Game::Game(Engine &engine) : m_engine(engine), m_showMenu(true), m_isGameInitialized(false)
+Game::Game(Engine &engine) : m_engine(engine), m_showMenu(true), m_isGameInitialized(false) , m_isDebugInfo(false)
 {
     TraceLog(LOG_INFO, "Game class initialized.");
 }
@@ -41,10 +41,8 @@ void Game::Run()
 
 void Game::Update()
 {
-
     m_engine.Update();
 
-    HandleKeyboardShortcuts();
     m_engine.GetInputManager().ProcessInput();
 
     if (m_showMenu)
@@ -60,12 +58,11 @@ void Game::Update()
 
 void Game::Render()
 {
-
     m_engine.GetRenderManager()->BeginFrame();
 
     if (m_showMenu)
     {
-        m_engine.GetRenderManager()->RenderMenu(m_menu);
+        RenderManager::RenderMenu(m_menu);
     }
     else
     {
@@ -79,7 +76,7 @@ void Game::Render()
         m_engine.GetRenderManager()->RenderDebugInfo(m_player, m_models, m_collisionManager);
     }
 
-    m_engine.GetRenderManager()->EndFrame();
+    RenderManager::EndFrame();
 }
 
 void Game::ToggleMenu()
@@ -98,7 +95,6 @@ void Game::ToggleMenu()
 
 void Game::RequestExit() const
 {
-
     m_engine.RequestExit();
     TraceLog(LOG_INFO, "Game exit requested.");
 }
@@ -110,14 +106,14 @@ void Game::InitInput()
     TraceLog(LOG_INFO, "Game::InitInput() - Setting up game-specific input bindings...");
 
     m_engine.GetInputManager().RegisterAction(KEY_F1,
-                                              [this]()
+                                              [this]
                                               {
                                                   m_showMenu = true;
                                                   EnableCursor();
                                               });
 
     m_engine.GetInputManager().RegisterAction(KEY_ESCAPE,
-                                              [this]()
+                                              [this]
                                               {
                                                   if (!m_showMenu)
                                                   {
@@ -126,6 +122,10 @@ void Game::InitInput()
                                                       EnableCursor();
                                                   }
                                               });
+    m_engine.GetInputManager().RegisterAction(KEY_F2, [this] {
+        m_isDebugInfo = !m_isDebugInfo;
+        m_engine.GetRenderManager()->SetDebugInfo(m_isDebugInfo);
+    });
     TraceLog(LOG_INFO, "Game::InitInput() - Game input bindings configured.");
 }
 
@@ -216,11 +216,12 @@ void Game::UpdatePhysicsLogic()
     }
 }
 
-void Game::HandleKeyboardShortcuts()
-{
-    // Engine-level shortcuts are handled by Engine::HandleEngineInput()
-    // Game-specific shortcuts can be handled here or registered in InputManager
-}
+// Can be used for dynamic binding of menu
+// void Game::HandleKeyboardShortcuts()
+// {
+//     // Engine-level shortcuts are handled by Engine::HandleEngineInput()
+//     // Game-specific shortcuts can be handled here or registered in InputManager
+// }
 
 void Game::HandleMenuActions()
 {

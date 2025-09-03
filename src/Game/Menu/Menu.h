@@ -88,14 +88,15 @@ public:
     void GetEngine(Engine *engine);
     void ResetAction();
     void RenderSettingsMenu();
-    void RenderCredits();
-    void RenderMods();
+    static void RenderCredits();
+
+    static void RenderMods();
     void ExecuteAction();
     void HandleMouseSelection();
     void HandleKeyboardNavigation();
     void HandleVideoNavigation();
     void HandleConfirmExit();
-    void RenderConfirmExit() const;
+    static void RenderConfirmExit() ;
 };
 
 #endif

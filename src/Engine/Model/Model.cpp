@@ -9,14 +9,14 @@
 
 #include <Color/ColorParser.h>
 
-Models::Models() : m_cache(std::make_shared<ModelCache>())
+ModelLoader::ModelLoader() : m_cache(std::make_shared<ModelCache>())
 {
     // Initialize statistics
     m_stats = LoadingStats{};
     TraceLog(LOG_INFO, "Models Manager initialized (instance: %p)", this);
 }
 
-Models::~Models()
+ModelLoader::~ModelLoader()
 {
     // Legacy cleanup
     for (auto &[name, modelPtr] : m_modelByName)
@@ -36,7 +36,7 @@ Models::~Models()
     TraceLog(LOG_INFO, "Enhanced Models Manager destroyed (instance: %p)", this);
 }
 
-void Models::LoadModelsFromJson(const std::string &path)
+void ModelLoader::LoadModelsFromJson(const std::string &path)
 {
     auto startTime = std::chrono::steady_clock::now();
     TraceLog(LOG_INFO, "Loading enhanced models from: %s", path.c_str());
@@ -115,7 +115,7 @@ void Models::LoadModelsFromJson(const std::string &path)
 }
 
 // Legacy compatible method for config processing
-bool Models::ProcessModelConfigLegacy(const ModelFileConfig &config)
+bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
 {
     std::string modelPath = config.path;
 
@@ -134,20 +134,19 @@ bool Models::ProcessModelConfigLegacy(const ModelFileConfig &config)
     }
 
     // Store for legacy compatibility
-    auto pModel = new Model(loadedModel);
+    const auto pModel = new Model(loadedModel);
     m_modelByName[config.name] = pModel;
 
     // Load animations
     Animation newAnimation;
-    bool animationLoaded = newAnimation.LoadAnimations(modelPath);
-    if (animationLoaded)
+    if (bool animationLoaded = newAnimation.LoadAnimations(modelPath))
     {
-        m_animations[config.name] = std::move(newAnimation);
+        m_animations[config.name] = newAnimation;
     }
 
     // Create instances using legacy method for compatibility
     Animation *animPtr = nullptr;
-    auto itAnim = m_animations.find(config.name);
+    const auto itAnim = m_animations.find(config.name);
     if (itAnim != m_animations.end())
     {
         animPtr = &itAnim->second;
@@ -182,7 +181,7 @@ bool Models::ProcessModelConfigLegacy(const ModelFileConfig &config)
     return true;
 }
 
-void Models::DrawAllModels() const
+void ModelLoader::DrawAllModels() const
 {
     for (const auto &instance : m_instances)
     {
@@ -199,19 +198,19 @@ void Models::DrawAllModels() const
     }
 }
 
-Model &Models::GetModelByName(const std::string &name)
+Model &ModelLoader::GetModelByName(const std::string &name)
 {
-    static Model dummyModel = {0};
+    static Model dummyModel = {};
     const auto it = m_modelByName.find(name);
     if (it == m_modelByName.end())
     {
         TraceLog(LOG_WARNING, "Model name '%s' not found. Returning dummy model.", name.c_str());
         return dummyModel;
     }
-    return *(it->second);
+    return *it->second;
 }
 
-void Models::AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
+void ModelLoader::AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
                          Animation *animation)
 
 {
@@ -224,7 +223,7 @@ void Models::AddInstance(const json &instanceJson, Model *modelPtr, const std::s
 
     Vector3 pos = {0.0f, 0.0f, 0.0f};
     float scaleModel = 1.0f;
-    Color color = WHITE;
+    auto color = WHITE;
 
     if (instanceJson.contains("position"))
     {
@@ -260,7 +259,7 @@ void Models::AddInstance(const json &instanceJson, Model *modelPtr, const std::s
         m_instances.emplace_back(pos, modelPtr, scaleModel, modelName, color);
 }
 
-bool Models::AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config)
+bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config)
 {
     Model *model = nullptr;
 
@@ -307,7 +306,7 @@ bool Models::AddInstanceEx(const std::string &modelName, const ModelInstanceConf
     return true;
 }
 
-bool Models::LoadSingleModel(const std::string &name, const std::string &path, bool preload)
+bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &path, bool preload)
 {
     std::string fullPath = PROJECT_ROOT_DIR + path;
 
@@ -340,7 +339,7 @@ bool Models::LoadSingleModel(const std::string &name, const std::string &path, b
     return true;
 }
 
-bool Models::UnloadModel(const std::string &name)
+bool ModelLoader::UnloadModel(const std::string &name)
 {
     auto it = m_modelByName.find(name);
     if (it == m_modelByName.end())
@@ -350,10 +349,9 @@ bool Models::UnloadModel(const std::string &name)
     }
 
     // Remove all instances of this model
-    m_instances.erase(std::remove_if(m_instances.begin(), m_instances.end(),
-                                     [&name](const ModelInstance &instance)
-                                     { return instance.GetModelName() == name; }),
-                      m_instances.end());
+    std::erase_if(m_instances,
+                  [&name](const ModelInstance &instance)
+                  { return instance.GetModelName() == name; });
 
     // Remove model
     if (it->second)
@@ -373,7 +371,7 @@ bool Models::UnloadModel(const std::string &name)
     return true;
 }
 
-std::vector<ModelInstance *> Models::GetInstancesByTag(const std::string &tag)
+std::vector<ModelInstance *> ModelLoader::GetInstancesByTag(const std::string &tag)
 {
     std::vector<ModelInstance *> result;
 
@@ -389,7 +387,7 @@ std::vector<ModelInstance *> Models::GetInstancesByTag(const std::string &tag)
     return result;
 }
 
-std::vector<ModelInstance *> Models::GetInstancesByCategory(const std::string &category)
+std::vector<ModelInstance *> ModelLoader::GetInstancesByCategory(const std::string &category)
 {
     std::vector<ModelInstance *> result;
 
@@ -406,12 +404,12 @@ std::vector<ModelInstance *> Models::GetInstancesByCategory(const std::string &c
     return result;
 }
 
-std::vector<std::string> Models::GetAvailableModels() const
+std::vector<std::string> ModelLoader::GetAvailableModels() const
 {
     std::vector<std::string> models;
     models.reserve(m_modelByName.size());
 
-    for (const auto &[name, model] : m_modelByName)
+    for (const auto &name: m_modelByName | std::views::keys)
     {
         models.push_back(name);
     }
@@ -419,7 +417,7 @@ std::vector<std::string> Models::GetAvailableModels() const
     return models;
 }
 
-bool Models::HasCollision(const std::string &modelName) const
+bool ModelLoader::HasCollision(const std::string &modelName) const
 {
     auto configIt = m_configs.find(modelName);
     if (configIt != m_configs.end())
@@ -431,7 +429,9 @@ bool Models::HasCollision(const std::string &modelName) const
     return false;
 }
 
-void Models::PrintStatistics() const
+const LoadingStats & ModelLoader::GetLoadingStats() const { return m_stats; }
+
+void ModelLoader::PrintStatistics() const
 {
     TraceLog(LOG_INFO, "=== Enhanced Model Manager Statistics ===");
     TraceLog(LOG_INFO, "Total models processed: %d", m_stats.totalModels);
@@ -444,7 +444,7 @@ void Models::PrintStatistics() const
     TraceLog(LOG_INFO, "LOD enabled: %s", m_lodEnabled ? "Yes" : "No");
 }
 
-void Models::PrintCacheInfo() const
+void ModelLoader::PrintCacheInfo() const
 {
     if (m_cache && m_cacheEnabled)
     {
@@ -456,8 +456,9 @@ void Models::PrintCacheInfo() const
     }
 }
 
-void Models::SetMaxCacheSize(size_t maxSize)
-{
+void ModelLoader::SetCacheEnabled(const bool enabled) { m_cacheEnabled = enabled; }
+
+void ModelLoader::SetMaxCacheSize(const size_t maxSize) const {
     if (m_cache)
     {
         m_cache->SetMaxCacheSize(maxSize);
@@ -465,8 +466,9 @@ void Models::SetMaxCacheSize(size_t maxSize)
     }
 }
 
-void Models::CleanupUnusedModels()
-{
+void ModelLoader::EnableLOD(bool enabled) { m_lodEnabled = enabled; }
+
+void ModelLoader::CleanupUnusedModels() const {
     if (m_cache && m_cacheEnabled)
     {
         m_cache->CleanupUnusedModels();
@@ -474,8 +476,7 @@ void Models::CleanupUnusedModels()
     }
 }
 
-void Models::OptimizeCache()
-{
+void ModelLoader::OptimizeCache() const {
     if (m_cache && m_cacheEnabled)
     {
         m_cache->CleanupUnusedModels(60); // More aggressive cleanup
@@ -483,7 +484,7 @@ void Models::OptimizeCache()
     }
 }
 
-bool Models::ValidateModelPath(const std::string &path) const
+bool ModelLoader::ValidateModelPath(const std::string &path) const
 {
     if (path.empty())
     {
@@ -492,8 +493,7 @@ bool Models::ValidateModelPath(const std::string &path) const
     }
 
     // Check if file exists
-    std::ifstream file(path);
-    if (!file.good())
+    if (const std::ifstream file(path); !file.good())
     {
         TraceLog(LOG_ERROR, "Model file not found: %s", path.c_str());
         return false;
@@ -501,10 +501,10 @@ bool Models::ValidateModelPath(const std::string &path) const
 
     // Check extension
     std::string ext = std::filesystem::path(path).extension().string();
-    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    std::ranges::transform(ext, ext.begin(), ::tolower);
 
-    std::vector<std::string> supportedExts = {".glb", ".gltf", ".obj", ".fbx", ".dae"};
-    if (std::find(supportedExts.begin(), supportedExts.end(), ext) == supportedExts.end())
+    std::vector<std::string> supportedExtensions = {".glb", ".gltf", ".obj", ".fbx", ".dae"};
+    if (std::ranges::find(supportedExtensions, ext) == supportedExtensions.end())
     {
         TraceLog(LOG_WARNING, "Potentially unsupported model format: %s", ext.c_str());
     }
@@ -512,7 +512,7 @@ bool Models::ValidateModelPath(const std::string &path) const
     return true;
 }
 
-bool Models::ReloadModel(const std::string &name)
+bool ModelLoader::ReloadModel(const std::string &name)
 {
     auto configIt = m_configs.find(name);
     if (configIt == m_configs.end())
@@ -533,9 +533,9 @@ bool Models::ReloadModel(const std::string &name)
     return LoadSingleModel(name, configIt->second.path, true);
 }
 
-const ModelFileConfig *Models::GetModelConfig(const std::string &modelName) const
+const ModelFileConfig *ModelLoader::GetModelConfig(const std::string &modelName) const
 {
-    auto it = m_configs.find(modelName);
+    const auto it = m_configs.find(modelName);
     if (it != m_configs.end())
     {
         return &it->second;

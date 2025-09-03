@@ -178,7 +178,7 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
     return collided;
 }
 
-void CollisionManager::CreateAutoCollisionsFromModels(Models &models)
+void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
 {
     TraceLog(LOG_INFO, "Starting automatic collision generation for all models...");
 
@@ -279,7 +279,7 @@ std::string CollisionManager::MakeCollisionCacheKey(const std::string &modelName
 }
 
 bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::string &modelName,
-                                                Vector3 position, float scale, const Models &models)
+                                                Vector3 position, float scale, const ModelLoader &models)
 {
     TraceLog(LOG_INFO,
              "Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",

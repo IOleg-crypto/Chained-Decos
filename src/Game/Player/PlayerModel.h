@@ -19,7 +19,7 @@ public:
     void ToggleModelRendering(bool useModel);
 
     // Get model manager
-    Models &GetModelManager();
+    ModelLoader &GetModelManager();
 
     // Check if model is being used
     bool IsModelUsed() const;
@@ -30,7 +30,7 @@ public:
 private:
     Model *m_model = nullptr;
     bool m_useModel = false;
-    Models m_modelManager;
+    ModelLoader m_modelManager;
     float m_rotationModelY;
 };
 

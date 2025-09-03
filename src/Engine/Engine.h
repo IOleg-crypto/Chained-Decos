@@ -40,7 +40,7 @@ public:
     void Shutdown() const;
 
     // ==================== Public Getters for Engine Services ====================
-    RenderManager *GetRenderManager();
+    RenderManager *GetRenderManager() const;
 
     InputManager &GetInputManager();
 

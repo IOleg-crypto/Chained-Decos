@@ -50,6 +50,6 @@ Call Stack (most recent call first):
 This warning is for project developers.  Use -Wno-dev to suppress it.
 
 -- Using the multi-header code from D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include/
--- Configuring done (0.9s)
+-- Configuring done (12.1s)
 -- Generating done (0.1s)
 -- Build files have been written to: D:/gitnext/Chained Decos/cmake-build-Debug

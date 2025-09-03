@@ -87,7 +87,7 @@ void Engine::Shutdown() const
     TraceLog(LOG_INFO, "Engine shutdown complete!");
 }
 
-RenderManager *Engine::GetRenderManager() { return m_renderManager; }
+RenderManager *Engine::GetRenderManager() const { return m_renderManager; }
 
 InputManager &Engine::GetInputManager() { return m_inputManager; }
 

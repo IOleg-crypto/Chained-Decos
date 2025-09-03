@@ -29,7 +29,7 @@ private:
     bool m_showPropertiesPanel;                           // Show/hide properties panel
     bool m_shouldAddObject;                               // Add cube , cylinder or sphere
     std::string m_mapFileName;                            // Current map file name
-    Models m_models;                            // Model manager for loading and rendering models
+    ModelLoader m_models;                            // Model manager for loading and rendering models
     std::vector<std::string> m_availableModels; // List of available models
     std::string m_selectedModelName;            // Currently selected model for adding
     bool m_modelsInitialized;                   // Flag to track if models are loaded

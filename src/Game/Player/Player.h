@@ -58,7 +58,7 @@ public:
     // Delegate to PlayerModel
     void SetPlayerModel(Model *model) const;        // Set 3D model
     void ToggleModelRendering(bool useModel) const; // Show/hide model
-    Models &GetModelManager() const;                // Get model manager
+    ModelLoader &GetModelManager() const;                // Get model manager
     void SetRotationY(float rotationY) const;
 
     // Getters/Setters

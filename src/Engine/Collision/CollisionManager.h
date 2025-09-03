@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-class Models;
+class ModelLoader;
 //
 // CollisionManager
 // Manages all collision boxes in the game.
@@ -41,12 +41,12 @@ public:
     bool RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
                      Vector3 &hitPoint, Vector3 &hitNormal) const;
     // Create collision for models automatically
-    void CreateAutoCollisionsFromModels(Models &models);
+    void CreateAutoCollisionsFromModels(ModelLoader &models);
     // Helper function to create cache key
     [[nodiscard]] std::string MakeCollisionCacheKey(const std::string &modelName,
                                                     float scale) const;
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
-                                  Vector3 position, float scale, const Models &models);
+                                  Vector3 position, float scale, const ModelLoader &models);
     std::shared_ptr<Collision> CreateBaseCollision(const Model &model, const std::string &modelName,
                                                    const ModelFileConfig *config,
                                                    bool needsPreciseCollision);
