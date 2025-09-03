@@ -478,7 +478,7 @@ void Menu::HandleConfirmExit()
     }
 }
 
-void Menu::RenderConfirmExit() const
+void Menu::RenderConfirmExit()
 {
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.55f));
     const char *msg = "Out of game?";

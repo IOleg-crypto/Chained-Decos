@@ -16,11 +16,12 @@ private:
     Engine &m_engine;
     Player m_player;
     CollisionManager m_collisionManager;
-    Models m_models;
+    ModelLoader m_models;
     Menu m_menu;
-
+private:
     bool m_showMenu;
     bool m_isGameInitialized;
+    bool m_isDebugInfo;
 
 public:
     explicit Game(Engine &engine);
@@ -42,7 +43,7 @@ private:
     void LoadGameModels();
     void UpdatePlayerLogic();
     void UpdatePhysicsLogic();
-    void HandleKeyboardShortcuts();
+    //void HandleKeyboardShortcuts(); maybe implemented in the future
     void HandleMenuActions();
     void RenderGameWorld() const;
     void RenderGameUI();

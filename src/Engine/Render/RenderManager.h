@@ -30,41 +30,46 @@ public:
 
     // Initialization
     void Initialize();
-    void InitializeImGuiFont(const std::string &fontPath, float fontSize);
+
+    static void InitializeImGuiFont(const std::string &fontPath, float fontSize);
 
     // Main rendering methods
-    void BeginFrame();
-    void EndFrame();
+    void BeginFrame() const;
+    static void EndFrame();
     void Render();
 
-    void RenderGame(const Player &player, const Models &models,
+    void RenderGame(const Player &player, const ModelLoader &models,
                     const CollisionManager &collisionManager, bool showCollisionDebug = false);
-    void RenderMenu(Menu &menu);
-    void RenderDebugInfo(const Player &player, const Models &models,
+    static void RenderMenu(Menu &menu);
+    void RenderDebugInfo(const Player &player, const ModelLoader &models,
                          const CollisionManager &collisionManager);
 
     // 3D Scene rendering
     void BeginMode3D(const Camera &camera);
     void EndMode3D();
-    void DrawScene3D(const Models &models);
-    void DrawPlayer(const Player &player, const Models &models);
+    void DrawScene3D(const ModelLoader &models);
+    void DrawPlayer(const Player &player, const ModelLoader &models);
 
     // Debug rendering
     void RenderCollisionDebug(const CollisionManager &collisionManager, const Player &player) const;
 
     // Utility methods
     void SetBackgroundColor(Color color);
-    void ToggleDebugInfo() { m_showDebugInfo = !m_showDebugInfo; }
-    void ToggleCollisionDebug() { m_showCollisionDebug = !m_showCollisionDebug; }
-    void ForceCollisionDebugNextFrame() { m_forceCollisionDebugNextFrame = true; }
+    void ToggleDebugInfo();
+
+    void ToggleCollisionDebug();
+
+    void ForceCollisionDebugNextFrame();
 
     // Setters for debug modes
-    void SetDebugInfo(bool enabled) { m_showDebugInfo = enabled; }
-    void SetCollisionDebug(bool enabled) { m_showCollisionDebug = enabled; }
+    void SetDebugInfo(bool enabled);
+
+    void SetCollisionDebug(bool enabled);
 
     // Getters
-    bool IsDebugInfoVisible() const { return m_showDebugInfo; }
-    bool IsCollisionDebugVisible() const { return m_showCollisionDebug; }
+    [[nodiscard]] bool IsDebugInfoVisible() const;
+
+    [[nodiscard]] bool IsCollisionDebugVisible() const;
 
     void ShowMetersPlayer(const Player &player) const;
 
@@ -73,10 +78,10 @@ private:
     std::unique_ptr<CollisionDebugRenderer> m_collisionDebugRenderer;
 
     // Private helper methods for debug info
-    void DrawDebugInfoWindow(const Player &player, const Models &models,
+    void DrawDebugInfoWindow(const Player &player, const ModelLoader &models,
                              const CollisionManager &collisionManager);
     void DrawCameraInfo(const Camera &camera, int cameraMode);
-    void DrawModelManagerInfo(const Models &models);
+    void DrawModelManagerInfo(const ModelLoader &models);
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager);
     void DrawControlsInfo();
 
