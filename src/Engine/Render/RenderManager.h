@@ -1,5 +1,5 @@
-#ifndef RENDER_MANAGER_H
-#define RENDER_MANAGER_H
+#ifndef RENDERMANAGER_H
+#define RENDERMANAGER_H
 
 #include <memory>
 #include <raylib.h>
@@ -9,7 +9,6 @@
 #include "Engine/Collision/CollisionManager.h"
 #include "Game/Menu/Menu.h"
 #include "Engine/Model/Model.h"
-#include "Engine/World/Physics.h"
 
 //
 // RenderManager - Handles all rendering operations
@@ -35,12 +34,12 @@ public:
 
     // Main rendering methods
     void BeginFrame() const;
-    static void EndFrame();
+    void EndFrame();
     void Render();
 
     void RenderGame(const Player &player, const ModelLoader &models,
                     const CollisionManager &collisionManager, bool showCollisionDebug = false);
-    static void RenderMenu(Menu &menu);
+    void RenderMenu(Menu &menu);
     void RenderDebugInfo(const Player &player, const ModelLoader &models,
                          const CollisionManager &collisionManager);
 
@@ -82,11 +81,13 @@ private:
                              const CollisionManager &collisionManager);
     void DrawCameraInfo(const Camera &camera, int cameraMode);
     void DrawModelManagerInfo(const ModelLoader &models);
+
+
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager);
     void DrawControlsInfo();
 
     // Debug state
-    bool m_showDebugInfo = false;
+    bool m_showDebugInfo = true;
     bool m_showCollisionDebug = false;
     bool m_forceCollisionDebugNextFrame = false;
 

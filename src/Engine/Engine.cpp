@@ -6,12 +6,13 @@
 #include "Render/RenderManager.h"
 // Raylib & ImGui
 #include <raylib.h>
+#include <rlImGui.h>
 
 Engine::Engine() : Engine(800, 600) {}
 
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
-      m_windowInitialized(false), m_renderManager(new RenderManager()), m_shouldExit(false),
+      m_windowInitialized(false), m_renderManager(std::make_shared<RenderManager>()), m_shouldExit(false),
       m_showDebug(false), m_showCollisionDebug(false), m_isEngineInit(false)
 {
     if (m_screenX <= 0 || m_screenY <= 0)
@@ -34,7 +35,7 @@ Engine::~Engine()
     if (m_windowInitialized && IsWindowReady())
     {
         TraceLog(LOG_INFO, "Closing window...");
-        delete m_renderManager;
+        rlImGuiShutdown();
         CloseWindow();
     }
 
@@ -48,7 +49,6 @@ void Engine::Init()
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     m_windowInitialized = true;
-    SetTargetFPS(60);
     SetExitKey(KEY_NULL);
 
     m_renderManager->Initialize();
@@ -87,7 +87,7 @@ void Engine::Shutdown() const
     TraceLog(LOG_INFO, "Engine shutdown complete!");
 }
 
-RenderManager *Engine::GetRenderManager() const { return m_renderManager; }
+RenderManager *Engine::GetRenderManager() const { return m_renderManager.get(); }
 
 InputManager &Engine::GetInputManager() { return m_inputManager; }
 
@@ -104,15 +104,16 @@ bool Engine::IsCollisionDebugVisible() const { return m_showCollisionDebug; }
 // ==================== Private Engine Input Handling ====================
 void Engine::HandleEngineInput()
 {
-    // Example: Toggle debug info (Game class can also register actions for F2/F3)
     if (IsKeyPressed(KEY_F2))
     {
         m_showDebug = !m_showDebug;
+        m_renderManager->SetDebugInfo(m_showDebug);
         TraceLog(LOG_INFO, "Debug info: %s", m_showDebug ? "ON" : "OFF");
     }
     if (IsKeyPressed(KEY_F3))
     {
         m_showCollisionDebug = !m_showCollisionDebug;
+        m_renderManager->SetCollisionDebug(m_showCollisionDebug);
         TraceLog(LOG_INFO, "Collision debug: %s", m_showCollisionDebug ? "ON" : "OFF");
     }
 }
