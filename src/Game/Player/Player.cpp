@@ -91,7 +91,7 @@ void Player::ApplyInput() const { m_input->ProcessInput(); }
 
 std::shared_ptr<CameraController> Player::GetCameraController() const { return m_cameraController; }
 
-Models &Player::GetModelManager() const { return m_model->GetModelManager(); }
+ModelLoader &Player::GetModelManager() const { return m_model->GetModelManager(); }
 
 void Player::SetPlayerModel(Model *model) const { m_model->SetModel(model); }
 

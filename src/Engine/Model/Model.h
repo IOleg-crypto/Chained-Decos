@@ -23,15 +23,15 @@ using json = nlohmann::json;
 
 // Enhanced Models Manager with caching, statistics and better organization
 // Features: model caching, loading stats, categorization, LOD support, error handling
-class Models
+class ModelLoader
 {
 public:
     // Model constants
     static constexpr int CACHE_SIZE = 20;
     static constexpr bool LOD_ENABLED = false;
     static constexpr bool CACHE_ENABLED = true;
-    Models();
-    ~Models();
+    ModelLoader();
+    ~ModelLoader();
 
     // ==================== CORE METHODS ====================
 
@@ -67,21 +67,23 @@ public:
     [[nodiscard]] bool HasCollision(const std::string &modelName) const;
 
     // Statistics and monitoring
-    [[nodiscard]] const LoadingStats &GetLoadingStats() const { return m_stats; }
+    [[nodiscard]] const LoadingStats &GetLoadingStats() const;
+
     void PrintStatistics() const;
     void PrintCacheInfo() const;
 
     // Settings
-    void SetCacheEnabled(bool enabled) { m_cacheEnabled = enabled; }
-    void SetMaxCacheSize(size_t maxSize);
-    void EnableLOD(bool enabled) { m_lodEnabled = enabled; }
+    void SetCacheEnabled(bool enabled);
+
+    void SetMaxCacheSize(size_t maxSize) const;
+    void EnableLOD(bool enabled);
 
     // Configuration access
     [[nodiscard]] const ModelFileConfig *GetModelConfig(const std::string &modelName) const;
 
     // Cleanup and optimization
-    void CleanupUnusedModels();
-    void OptimizeCache();
+    void CleanupUnusedModels() const;
+    void OptimizeCache() const;
 
 private:
     // ==================== LEGACY FIELDS ====================
@@ -101,16 +103,9 @@ private:
     float m_lodDistance = 100.0f;
 
     // ==================== PRIVATE HELPER METHODS ====================
-    bool LoadModelFromFile(const std::string &name, const std::string &path);
-    void ProcessModelConfig(const ModelFileConfig &config);
     bool ProcessModelConfigLegacy(const ModelFileConfig &config); // Legacy compatibility
-    void CreateInstancesFromConfig(const ModelFileConfig &config, Model *model);
     bool ValidateModelPath(const std::string &path) const;
-    void UpdateStatistics();
 
-    // Legacy helpers
-    Vector3 ParseVector3FromJson(const json &j, const Vector3 &defaultValue = {0, 0, 0});
-    Color ParseColorFromJson(const json &j, const Color &defaultValue = WHITE);
 };
 
 #endif // MODEL_H
