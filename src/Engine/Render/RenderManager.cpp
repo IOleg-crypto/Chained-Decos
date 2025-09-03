@@ -73,15 +73,14 @@ void RenderManager::InitializeImGuiFont(const std::string &fontPath, float fontS
     TraceLog(LOG_INFO, "ImGui font loaded: %s (%.1fpx)", fontPath.c_str(), fontSize);
 }
 
-void RenderManager::BeginFrame()
-{
+void RenderManager::BeginFrame() const {
     BeginDrawing();
     ClearBackground(m_backgroundColor);
 }
 
 void RenderManager::EndFrame() { EndDrawing(); }
 
-void RenderManager::RenderGame(const Player &player, const Models &models,
+void RenderManager::RenderGame(const Player &player, const ModelLoader &models,
                                const CollisionManager &collisionManager, bool showCollisionDebug)
 {
     // Begin 3D rendering
@@ -92,10 +91,10 @@ void RenderManager::RenderGame(const Player &player, const Models &models,
     DrawPlayer(player, models);
 
     // Update player collision for next frame
-    const_cast<Player &>(player).UpdatePlayerCollision();
+    player.UpdatePlayerCollision();
 
     // Draw collision debug if enabled
-    if (showCollisionDebug || m_showCollisionDebug || m_forceCollisionDebugNextFrame)
+    if (showCollisionDebug)
     {
         RenderCollisionDebug(collisionManager, player);
         m_forceCollisionDebugNextFrame = false;
@@ -113,7 +112,7 @@ void RenderManager::RenderMenu(Menu &menu)
     menu.Render();
 }
 
-void RenderManager::RenderDebugInfo(const Player &player, const Models &models,
+void RenderManager::RenderDebugInfo(const Player &player, const ModelLoader &models,
                                     const CollisionManager &collisionManager)
 {
     if (m_showDebugInfo)
@@ -126,7 +125,7 @@ void RenderManager::BeginMode3D(const Camera &camera) { ::BeginMode3D(camera); }
 
 void RenderManager::EndMode3D() { ::EndMode3D(); }
 
-void RenderManager::DrawScene3D(const Models &models)
+void RenderManager::DrawScene3D(const ModelLoader &models)
 {
     // // Draw ground plane using constants from PhysicsComponent
     DrawPlane(PhysicsComponent::GROUND_POSITION, PhysicsComponent::GROUND_SIZE, LIGHTGRAY);
@@ -135,10 +134,10 @@ void RenderManager::DrawScene3D(const Models &models)
     models.DrawAllModels();
 }
 
-void RenderManager::DrawPlayer(const Player &player, const Models &models)
+void RenderManager::DrawPlayer(const Player &player, const ModelLoader &models)
 {
     // Get player model from models cache
-    Model &playerModel = const_cast<Models &>(models).GetModelByName("player");
+    Model &playerModel = const_cast<ModelLoader &>(models).GetModelByName("player");
 
     // Apply player rotation
     playerModel.transform = MatrixRotateY(DEG2RAD * player.GetRotationY());
@@ -180,7 +179,9 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
 
 void RenderManager::SetBackgroundColor(Color color) { m_backgroundColor = color; }
 
-void RenderManager::DrawDebugInfoWindow(const Player &player, const Models &models,
+void RenderManager::ToggleDebugInfo() { m_showDebugInfo = !m_showDebugInfo; }
+
+void RenderManager::DrawDebugInfoWindow(const Player &player, const ModelLoader &models,
                                         const CollisionManager &collisionManager)
 {
     rlImGuiBegin();
@@ -232,7 +233,7 @@ void RenderManager::DrawCameraInfo(const Camera &camera, int cameraMode)
     ImGui::Text("FPS: %d", GetFPS());
 }
 
-void RenderManager::DrawModelManagerInfo(const Models &models)
+void RenderManager::DrawModelManagerInfo(const ModelLoader &models)
 {
     ImGui::Text("Model Manager:");
 
@@ -260,7 +261,7 @@ void RenderManager::DrawModelManagerInfo(const Models &models)
     ImGui::SameLine();
     if (ImGui::Button("Cleanup Cache"))
     {
-        const_cast<Models &>(models).CleanupUnusedModels();
+        models.CleanupUnusedModels();
     }
 }
 
@@ -301,6 +302,18 @@ void RenderManager::DrawControlsInfo()
     ImGui::Text("- F2: Toggle Debug Info");
     ImGui::Text("- F3: Toggle Collision Debug");
 }
+
+void RenderManager::ToggleCollisionDebug() { m_showCollisionDebug = !m_showCollisionDebug; }
+
+void RenderManager::ForceCollisionDebugNextFrame() { m_forceCollisionDebugNextFrame = true; }
+
+void RenderManager::SetDebugInfo(bool enabled) { m_showDebugInfo = enabled; }
+
+void RenderManager::SetCollisionDebug(bool enabled) { m_showCollisionDebug = enabled; }
+
+bool RenderManager::IsDebugInfoVisible() const { return m_showDebugInfo; }
+
+bool RenderManager::IsCollisionDebugVisible() const { return m_showCollisionDebug; }
 
 void RenderManager::ShowMetersPlayer(const Player &player) const
 {
