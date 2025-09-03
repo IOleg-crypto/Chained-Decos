@@ -6,7 +6,7 @@
 #include "imgui.h"
 #include "raylib.h"
 
-Game::Game(Engine &engine) : m_engine(engine), m_showMenu(true), m_isGameInitialized(false) , m_isDebugInfo(false)
+Game::Game(Engine &engine) : m_engine(engine), m_showMenu(true), m_isGameInitialized(false) , m_isDebugInfo(true)
 {
     TraceLog(LOG_INFO, "Game class initialized.");
 }
@@ -62,7 +62,7 @@ void Game::Render()
 
     if (m_showMenu)
     {
-        RenderManager::RenderMenu(m_menu);
+        m_engine.GetRenderManager()->RenderMenu(m_menu);
     }
     else
     {
@@ -70,13 +70,13 @@ void Game::Render()
         RenderGameUI();
     }
 
-    if (m_engine.IsDebugInfoVisible())
+    if (m_engine.IsDebugInfoVisible() && !m_showMenu)
     {
-
         m_engine.GetRenderManager()->RenderDebugInfo(m_player, m_models, m_collisionManager);
     }
 
-    RenderManager::EndFrame();
+
+    m_engine.GetRenderManager()->EndFrame();
 }
 
 void Game::ToggleMenu()
@@ -122,10 +122,6 @@ void Game::InitInput()
                                                       EnableCursor();
                                                   }
                                               });
-    m_engine.GetInputManager().RegisterAction(KEY_F2, [this] {
-        m_isDebugInfo = !m_isDebugInfo;
-        m_engine.GetRenderManager()->SetDebugInfo(m_isDebugInfo);
-    });
     TraceLog(LOG_INFO, "Game::InitInput() - Game input bindings configured.");
 }
 

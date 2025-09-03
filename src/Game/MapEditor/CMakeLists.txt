@@ -31,16 +31,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    engine
-    player
-    model
-    menu
-    input
-    mapmod
-    cameracontroller
-    color
-    world
-    raylib
-    nlohmann_json::nlohmann_json
-    imguilib
+    ChainedDecosEngine ChainedDecosGame
 )

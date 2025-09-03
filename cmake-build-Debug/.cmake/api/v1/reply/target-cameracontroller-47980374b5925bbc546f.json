@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/Input/input.lib"
+			"path" : "src/Engine/CameraController/libcameracontroller.a"
 		}
 	],
 	"backtrace" : 1,
@@ -19,7 +19,7 @@
 		],
 		"files" : 
 		[
-			"src/Engine/Input/CMakeLists.txt",
+			"src/Engine/CameraController/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -68,7 +68,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-std=gnu++20"
 				}
 			],
 			"defines" : 
@@ -94,7 +94,7 @@
 			[
 				{
 					"backtrace" : 6,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Input"
+					"path" : "D:/gitnext/Chained Decos/src/Engine/CameraController"
 				},
 				{
 					"backtrace" : 2,
@@ -131,13 +131,13 @@
 			"id" : "glfw::@4755506f38bf45259394"
 		}
 	],
-	"id" : "input::@d967885210040d4ce616",
-	"name" : "input",
-	"nameOnDisk" : "input.lib",
+	"id" : "cameracontroller::@d7306d29326ff25263b1",
+	"name" : "cameracontroller",
+	"nameOnDisk" : "libcameracontroller.a",
 	"paths" : 
 	{
-		"build" : "src/Engine/Input",
-		"source" : "src/Engine/Input"
+		"build" : "src/Engine/CameraController",
+		"source" : "src/Engine/CameraController"
 	},
 	"sourceGroups" : 
 	[
@@ -161,12 +161,12 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Engine/Input/InputManager.cpp",
+			"path" : "src/Engine/CameraController/CameraController.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Input/InputManager.h",
+			"path" : "src/Engine/CameraController/CameraController.h",
 			"sourceGroupIndex" : 1
 		}
 	],
