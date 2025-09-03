@@ -40,7 +40,7 @@ public:
     void Shutdown() const;
 
     // ==================== Public Getters for Engine Services ====================
-    RenderManager *GetRenderManager() const;
+    [[nodiscard]] RenderManager *GetRenderManager() const;
 
     InputManager &GetInputManager();
 
@@ -62,7 +62,7 @@ private:
 
     // Core Engine Services
     InputManager m_inputManager;
-    RenderManager *m_renderManager;
+    std::shared_ptr<RenderManager>m_renderManager;
 
     // Engine State
     bool m_shouldExit;

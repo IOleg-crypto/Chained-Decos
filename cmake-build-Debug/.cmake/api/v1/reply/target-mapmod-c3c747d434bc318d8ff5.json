@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Game/Map/mapmod.lib"
+			"path" : "src/Game/Map/libmapmod.a"
 		}
 	],
 	"backtrace" : 1,
@@ -61,7 +61,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-std=gnu++20"
 				}
 			],
 			"defines" : 
@@ -126,7 +126,7 @@
 	],
 	"id" : "mapmod::@e87daa19a0aaec6b83ad",
 	"name" : "mapmod",
-	"nameOnDisk" : "mapmod.lib",
+	"nameOnDisk" : "libmapmod.a",
 	"paths" : 
 	{
 		"build" : "src/Game/Map",

@@ -1,14 +1,11 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include "Engine/Engine.h"
-#include <raylib.h>
-#include <rlImGui.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 
 class Engine;
-
 
 enum class MenuAction : uint8_t
 {
@@ -51,7 +48,7 @@ struct MenuOption
 {
     std::string label;
     std::vector<std::string> values;
-    int selectedIndex;
+    int selectedIndex = 0;
 };
 
 class Menu
@@ -61,42 +58,38 @@ private:
     MenuAction m_action = MenuAction::None;
     MenuState m_state = MenuState::Main;
     mutable std::vector<float> m_buttonScales;
-    std::vector<MenuItem> m_currentMenu;
 
-private:
+    const std::vector<MenuItem> *m_currentMenu = nullptr;
+
     std::vector<MenuItem> m_mainMenu;
     std::vector<MenuItem> m_optionsMenu;
     std::vector<MenuItem> m_SetGameMode;
-    std::vector<MenuItem> m_videoMenu;
     std::vector<MenuItem> m_audioMenu;
     std::vector<MenuItem> m_controlsMenu;
     std::vector<MenuOption> m_videoOptions;
-private:
-    Engine *m_engine;
+
+    Engine *m_engine = nullptr;
 
 public:
     Menu();
 
-public:
     float Lerp(float a, float b, float t) const;
     [[nodiscard]] MenuAction GetAction() const;
     void RenderMenu() const;
 
-public:
     void Update();
-    void Render();
+    void Render() const;
     void GetEngine(Engine *engine);
     void ResetAction();
-    void RenderSettingsMenu();
+    void RenderSettingsMenu() const;
     static void RenderCredits();
-
     static void RenderMods();
     void ExecuteAction();
     void HandleMouseSelection();
     void HandleKeyboardNavigation();
     void HandleVideoNavigation();
     void HandleConfirmExit();
-    static void RenderConfirmExit() ;
+    static void RenderConfirmExit();
 };
 
-#endif
+#endif // MENU_H
