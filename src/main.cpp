@@ -6,7 +6,7 @@
 // # --------
 int main()
 {
-    Engine engine;
+    Engine engine(1280, 720);
     Game game(engine);
 
     game.Init();

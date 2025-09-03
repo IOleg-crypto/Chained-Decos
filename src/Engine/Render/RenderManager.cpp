@@ -17,7 +17,7 @@
 // ==================== CONSTANTS ====================
 
 RenderManager::RenderManager()
-    : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>()), m_showDebugInfo(false)
+    : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>())
 {
     m_font = {0};
     TraceLog(LOG_INFO, "RenderManager created");
@@ -78,7 +78,10 @@ void RenderManager::BeginFrame() const {
     ClearBackground(m_backgroundColor);
 }
 
-void RenderManager::EndFrame() { EndDrawing(); }
+void RenderManager::EndFrame() {
+
+    EndDrawing();
+}
 
 void RenderManager::RenderGame(const Player &player, const ModelLoader &models,
                                const CollisionManager &collisionManager, bool showCollisionDebug)
