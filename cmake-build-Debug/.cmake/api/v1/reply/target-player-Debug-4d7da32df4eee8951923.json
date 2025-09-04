@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Game/Player/libplayer.a"
+			"path" : "src/Game/Player/player.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -45,13 +45,13 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 68,
+				"line" : 67,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 69,
+				"line" : 68,
 				"parent" : 3
 			},
 			{
@@ -68,7 +68,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-std=gnu++20"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				}
 			],
 			"defines" : 
@@ -157,7 +157,7 @@
 	],
 	"id" : "player::@6497c05e8667515fbef8",
 	"name" : "player",
-	"nameOnDisk" : "libplayer.a",
+	"nameOnDisk" : "player.lib",
 	"paths" : 
 	{
 		"build" : "src/Game/Player",

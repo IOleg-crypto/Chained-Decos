@@ -7,8 +7,6 @@ add_library(collision STATIC
     CollisionManager.h
     CollisionDebugRenderer.cpp
     CollisionDebugRenderer.h
-    Octree.cpp
-    Octree.h
 )
 
 target_include_directories(collision PUBLIC

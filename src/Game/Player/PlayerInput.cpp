@@ -47,8 +47,7 @@ void PlayerInput::ProcessInput()
     }
 }
 
-void PlayerInput::HandleJumpInput()
-{
+void PlayerInput::HandleJumpInput() const {
     if (IsKeyDown(KEY_SPACE) && m_player->GetPhysics().IsGrounded())
     {
         float jumpImpulse = m_player->GetPhysics().GetJumpStrength() * 3.0f;
@@ -56,8 +55,7 @@ void PlayerInput::HandleJumpInput()
     }
 }
 
-void PlayerInput::HandleEmergencyReset()
-{
+void PlayerInput::HandleEmergencyReset() const {
     if (IsKeyPressed(KEY_T))
     {
         m_player->SetPlayerPosition(Player::DEFAULT_SPAWN_POSITION);

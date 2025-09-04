@@ -36,7 +36,7 @@ public:
 private:
     Player* m_player;
     Collision m_collision;
-    BoundingBox m_boundingBox;
+    BoundingBox m_boundingBox{};
     bool m_isJumpCollision = false;
 };
 
