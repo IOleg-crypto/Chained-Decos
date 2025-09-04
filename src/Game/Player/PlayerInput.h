@@ -21,10 +21,10 @@ public:
     void ProcessInput();
 
     // Handle jump input
-    void HandleJumpInput();
+    void HandleJumpInput() const;
 
     // Handle emergency reset
-    void HandleEmergencyReset();
+    void HandleEmergencyReset() const;
 
     // Get input direction vector
     Vector3 GetInputDirection();

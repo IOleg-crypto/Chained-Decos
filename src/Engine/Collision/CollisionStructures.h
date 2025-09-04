@@ -1,6 +1,3 @@
-//
-// CollisionStructures.h - Common structures for collision system
-
 #ifndef COLLISIONSTRUCTURES_H
 #define COLLISIONSTRUCTURES_H
 
@@ -13,23 +10,14 @@
 //
 // CollisionTriangle - represents a triangle in 3D space for collision detection
 //
-struct CollisionTriangle
+class CollisionTriangle
 {
-    Vector3 v0, v1, v2;   // Triangle vertices
-    Vector3 min{}, max{}; // Bounding Box;
-    Vector3 normal{};     // Triangle normal
-    Vector3 center{};     // Cached triangle center
-    float area;           // Cached area
-
-    // Cached edge vectors and dot products for barycentric coordinates
-    Vector3 e0{}, e1{}; // e0 = v1-v0, e1 = v2-v0
-    float dot00, dot01, dot11;
-
+public:
     CollisionTriangle() = default;
     CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c);
 
     // Ray-triangle intersection using Möller-Trumbore algorithm
-    bool Intersects(const struct CollisionRay &ray, float &t) const;
+    bool Intersects(const class CollisionRay &ray, float &t) const;
     bool Intersects(const Vector3 &origin, const Vector3 &direction, float &t) const;
 
     // Triangle-triangle intersection
@@ -43,18 +31,39 @@ struct CollisionTriangle
     Vector3 GetMin() const;
     Vector3 GetMax() const;
     float GetArea() const;
+    Vector3 GetNormal() const;
+
+    const Vector3 &V0() const;
+    const Vector3 &V1() const;
+    const Vector3 &V2() const;
+
+private:
+    Vector3 m_v0{}, m_v1{}, m_v2{}; // Triangle vertices
+    Vector3 m_min{}, m_max{};       // Bounding Box
+    Vector3 m_normal{};             // Triangle normal
+    Vector3 m_center{};             // Cached triangle center
+    float m_area{};                 // Cached area
+
+    // Cached edge vectors and dot products for barycentric coordinates
+    Vector3 m_e0{}, m_e1{};
+    float m_dot00{}, m_dot01{}, m_dot11{};
 };
 
 //
 // CollisionRay - represents a ray for ray casting
 //
-struct CollisionRay
+class CollisionRay
 {
-    Vector3 origin;
-    Vector3 direction; // Should be normalized
-
+public:
     CollisionRay() = default;
     CollisionRay(const Vector3 &orig, const Vector3 &dir);
+
+    const Vector3 &GetOrigin() const;
+    const Vector3 &GetDirection() const;
+
+private:
+    Vector3 m_origin{};
+    Vector3 m_direction{};
 };
 
 //
@@ -63,29 +72,41 @@ struct CollisionRay
 enum class CollisionType : uint8_t
 {
     AABB_ONLY,       // Simple AABB collision (fast, less precise)
-    OCTREE_ONLY,     // Octree collision (slower, more precise)
+    BVH_ONLY,        // BVH-based collision (precise, scalable)
     HYBRID_AUTO,     // Automatically choose based on model complexity
-    IMPROVED_AABB,   // Smaller AABB blocks within octree (balanced)
-    TRIANGLE_PRECISE // Triangle-to-triangle collision (most precise)
+    TRIANGLE_PRECISE // Brute force (triangle-to-triangle)
 };
 
 //
 // CollisionComplexity - helper to determine model complexity
 //
-struct CollisionComplexity
+class CollisionComplexity
 {
-    size_t triangleCount = 0;
-    float surfaceArea = 0.0f;
-    float boundingVolume = 0.0f;
-    bool hasComplexGeometry = false;
+public:
+    CollisionComplexity() = default;
 
-    // Thresholds for complexity determination
-    static constexpr size_t SIMPLE_TRIANGLE_THRESHOLD = 100;
-    static constexpr float SIMPLE_AREA_THRESHOLD = 1000.0f;
+    void SetTriangleCount(size_t count);
+    void SetSurfaceArea(float area);
+    void SetBoundingVolume(float volume);
+    void SetHasComplexGeometry(bool complex);
+
+    size_t GetTriangleCount() const;
+    float GetSurfaceArea() const;
+    float GetBoundingVolume() const;
+    bool HasComplexGeometry() const;
 
     [[nodiscard]] bool IsSimple() const;
 
     [[nodiscard]] bool IsComplex() const;
+
+    static constexpr size_t SIMPLE_TRIANGLE_THRESHOLD = 100;
+    static constexpr float SIMPLE_AREA_THRESHOLD = 1000.0f;
+
+private:
+    size_t m_triangleCount = 0;
+    float m_surfaceArea = 0.0f;
+    float m_boundingVolume = 0.0f;
+    bool m_hasComplexGeometry = false;
 };
 
 #endif // COLLISIONSTRUCTURES_H
