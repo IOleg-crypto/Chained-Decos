@@ -62,7 +62,7 @@ public:
     void SetRotationY(float rotationY) const;
 
     // Getters/Setters
-    [[nodiscard]] float GetSpeed();             // Get current speed
+    [[nodiscard]] float GetSpeed() const;             // Get current speed
     [[nodiscard]] float GetRotationY() const;   // Get Y rotation
     void SetSpeed(float speed) const;           // Set speed
     Vector3 GetPlayerPosition() const;          // Get position

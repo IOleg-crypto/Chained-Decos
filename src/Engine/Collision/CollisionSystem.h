@@ -1,183 +1,142 @@
-//
-// Collision System - Hybrid AABB + Octree Implementation
-// Automatically chooses optimal collision method based on model complexity
-//
 
 #ifndef COLLISIONSYSTEM_H
 #define COLLISIONSYSTEM_H
 
-#include "CollisionStructures.h"
-#include <cfloat>
+#include <algorithm>
+#include <cstdint>
+#include <limits>
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
 
-struct ModelFileConfig;
+#include "CollisionStructures.h"
 
-class Octree;
+struct BVHNode
+{
+    Vector3 min;
+    Vector3 max;
+    std::vector<CollisionTriangle> triangles;
+    std::unique_ptr<BVHNode> left;
+    std::unique_ptr<BVHNode> right;
 
-//
-// Collision
-// Hybrid collision detection system that automatically chooses between:
-// - AABB: Fast collision for simple models (< 100 triangles)
-// - Octree: Precise collision for complex models (>= 100 triangles)
-// - Manual override available for specific use cases
-//
+    bool IsLeaf() const;
+};
+
+struct RayHit
+{
+    bool hit = false;
+    float distance = std::numeric_limits<float>::infinity();
+    Vector3 position{};
+    Vector3 normal{};
+};
+
+// ------------------ Collision class ------------------
 class Collision
 {
 public:
     Collision();
-
-    // Initialize collision box by center position and size (half-extents)
-    Collision(const Vector3 &center, const Vector3 &size);
-
-    // Забороняємо копіювання, дозволяємо тільки move
+    Collision(const Vector3 &center, const Vector3 &halfSize);
+    ~Collision();
     Collision(const Collision &other);
     Collision &operator=(const Collision &other);
-
-    // Move constructor and assignment operator
     Collision(Collision &&other) noexcept;
     Collision &operator=(Collision &&other) noexcept;
 
-    // Custom destructor (needed for unique_ptr<Octree> with forward declaration)
-    ~Collision();
-
-    // -------------------- Getters --------------------
-
-    // Get minimum corner of bounding box
+public:
+    // AABB getters
     Vector3 GetMin() const;
-
-    // Get maximum corner of bounding box
     Vector3 GetMax() const;
-
-    // Get center of bounding box
     Vector3 GetCenter() const;
-
-    // Get size of bounding box
     Vector3 GetSize() const;
 
-    // -------------------- Update --------------------
+    // Update AABB
+    void Update(const Vector3 &center, const Vector3 &halfSize);
 
-    // Update bounding box position and size
-    void Update(const Vector3 &center, const Vector3 &size);
+    // AABB tests
+    bool IntersectsAABB(const Collision &other) const;
+    bool ContainsPointAABB(const Vector3 &point) const;
 
-    // -------------------- AABB Collision Checks --------------------
+    // Build from model (replace Model* with твою структуру)
+    void BuildFromModel(void *model, const Matrix &transform = MatrixIdentity());
+    void BuildFromModelWithType(void *model, CollisionType type,
+                                const Matrix &transform = MatrixIdentity());
+    void CalculateFromModel(void *model, const Matrix &transform = MatrixIdentity());
 
-    // Check if this collision box intersects with another (AABB)
-    bool Intersects(const Collision &other) const;
-
-    // Check if this collision box contains a point (AABB)
-    bool Contains(const Vector3 &point) const;
-
-    // -------------------- Hybrid Model Collision --------------------
-
-    // Build collision from model with automatic complexity detection
-    void BuildFromModel(Model *model, const Matrix &transform = MatrixIdentity());
-
-    // Build collision with specific type (override automatic detection)
-    void BuildFromModel(Model *model, CollisionType type,
-                        const Matrix &transform = MatrixIdentity());
-
-    // Build collision from model config (uses precision setting from config)
-    void BuildFromModelConfig(Model *model, const struct ModelFileConfig &config,
-                              const Matrix &transform = MatrixIdentity());
-
-    // Legacy methods (for backward compatibility)
-    void CalculateFromModel(Model *model);
-    void CalculateFromModel(Model *model, const Matrix &transform);
-
-    // -------------------- Collision Type Management --------------------
-
-    // Get current collision type
+    // Collision type control
     CollisionType GetCollisionType() const { return m_collisionType; }
-
-    // Set collision type (will rebuild if necessary)
     void SetCollisionType(CollisionType type);
 
-    // Get model complexity analysis
     const CollisionComplexity &GetComplexity() const { return m_complexity; }
 
-    // -------------------- Octree Methods --------------------
+    // BVH methods
+    void BuildBVHFromTriangles();
+    size_t GetTriangleCount() const;
+    bool HasTriangleData() const;
 
-    // Build Octree from model for precise collision detection
-    void BuildOctree(Model *model);
-    void BuildOctree(Model *model, const Matrix &transform);
+    // Initialize BVH (compat wrapper for manager)
+    void InitializeBVH() { BuildBVHFromTriangles(); }
 
-    // Check collision using Octree (more precise than AABB)
-    bool IntersectsOctree(const Collision &other) const;
+    // Raycast using BVH (returns true if hit within maxDistance)
+    bool RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxDistance,
+                    RayHit &outHit) const;
 
-    // Point-in-mesh test using Octree
-    bool ContainsOctree(const Vector3 &point) const;
+    // Point-in-mesh using BVH (raycast trick)
+    bool ContainsPointBVH(const Vector3 &point) const;
 
-    // Ray casting with Octree
-    bool RaycastOctree(const Vector3 &origin, const Vector3 &direction, float maxDistance,
+    // Intersection with another Collision (broad-phase AABB then BVH narrow-phase)
+    bool Intersects(const Collision &other) const;
+
+    // Compatibility helpers expected by CollisionManager (legacy Octree paths)
+    bool IntersectsBVH(const Collision &other) const { return Intersects(other); }
+    bool IsUsingBVH() const { return m_bvhRoot != nullptr; }
+    bool IsUsingOctree() const { return IsUsingBVH(); }
+    bool RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
                        float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const;
 
-    // Enable/disable Octree usage (legacy)
-    void SetUseOctree(bool useOctree);
-    bool IsUsingOctree() const;
-
-    // Force initialization of octree if needed
-    void InitializeOctree() const;
-
-    // Get triangle count
-    size_t GetTriangleCount() const;
-
-    // Get debug information
-    size_t GetNodeCount() const;
-    int GetMaxDepth() const;
-
-    // -------------------- Triangle Access --------------------
-    Octree *GetOctree() const;
-
-    // -------------------- Verification --------------------
-    bool HasTriangleData() const;
-    void VerifyTriangleData(const char *context = nullptr) const;
-
-    // -------------------- Performance Methods --------------------
-
-    // Get collision detection performance stats
+    // Debug / stats
     struct PerformanceStats
     {
         float lastCheckTime = 0.0f;
         size_t checksPerformed = 0;
         CollisionType typeUsed = CollisionType::AABB_ONLY;
     };
-
-    const PerformanceStats &GetPerformanceStats() const { return m_stats; }
+    const PerformanceStats &GetPerformanceStats() const;
 
 private:
-    // AABB data (always maintained for broad-phase)
-    Vector3 m_min{}; // Minimum corner of AABB
-    Vector3 m_max{}; // Maximum corner of AABB
+    // AABB
+    Vector3 m_min{};
+    Vector3 m_max{};
 
-    // Collision system data
     CollisionType m_collisionType = CollisionType::HYBRID_AUTO;
     CollisionComplexity m_complexity;
     std::vector<CollisionTriangle> m_triangles;
 
-    // Octree data for precise collision detection
-    mutable std::unique_ptr<Octree> m_octree;
+    // BVH root
+    std::unique_ptr<BVHNode> m_bvhRoot;
 
-    // Caching to prevent duplicate processing
-    size_t m_modelHash = 0;
+    // Cached flags
     bool m_isBuilt = false;
 
-    // Performance tracking
+    // Perf stats
     mutable PerformanceStats m_stats;
 
-    // Helper methods
-    void UpdateAABBFromOctree();
+private:
+    // Helpers
     void UpdateAABBFromTriangles();
-    void AnalyzeModelComplexity(Model *model, const Matrix &transform);
-    void EnsureOctree() const; // Build octree from triangles if needed
-    CollisionType DetermineOptimalCollisionType() const;
-    void ExtractTrianglesFromModel(const Model *model, const Matrix &transform);
+    std::unique_ptr<BVHNode> BuildBVHNode(std::vector<CollisionTriangle> &tris, int depth = 0);
+    bool RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const Vector3 &dir,
+                        float maxDistance, RayHit &outHit) const;
 
-    // Performance measurement helpers
-    void StartPerformanceTimer() const;
-    void EndPerformanceTimer(CollisionType typeUsed) const;
+    // Triangle / AABB helpers
+    static void ExpandAABB(Vector3 &minOut, Vector3 &maxOut, const Vector3 &p);
+    static void TriangleBounds(const CollisionTriangle &t, Vector3 &outMin, Vector3 &outMax);
+    static bool AABBIntersectRay(const Vector3 &min, const Vector3 &max, const Vector3 &origin,
+                                 const Vector3 &dir, float maxDistance);
+
+    // Moller-Trumbore ray/triangle
+    static bool RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
+                                      const CollisionTriangle &tri, RayHit &outHit);
 };
 
 #endif // COLLISIONSYSTEM_H

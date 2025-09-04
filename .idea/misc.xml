@@ -6,7 +6,7 @@
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
     <sourceRoots>
-      <file path="$PROJECT_DIR$/cmake-build-Debug" />
+      <file path="$PROJECT_DIR$/cmake-build-debug" />
     </sourceRoots>
     <excludeRoots>
       <file path="$PROJECT_DIR$/.cache" />

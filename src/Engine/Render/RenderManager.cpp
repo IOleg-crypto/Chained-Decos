@@ -5,14 +5,14 @@
 #include "RenderManager.h"
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
-#include <Collision/Octree.h>
 #include <Engine/World/Physics.h>
-#include <Game/Player/Player.h>
 #include <Game/Menu/Menu.h>
+#include <Game/Player/Player.h>
 #include <Model/Model.h>
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
+
 
 // ==================== CONSTANTS ====================
 
@@ -46,7 +46,7 @@ void RenderManager::Initialize()
     InitializeImGuiFont(defaultFontPath, fontSize);
 
     // Init default font for raylib with higher resolution for smoother rendering
-    m_font = LoadFontEx(defaultFontPath.c_str(), 128, NULL, 0);
+    m_font = LoadFontEx(defaultFontPath.c_str(), 128, nullptr, 0);
     if (m_font.texture.id != 0)
     {
         // Set texture filter to linear for smoother scaling
@@ -73,15 +73,13 @@ void RenderManager::InitializeImGuiFont(const std::string &fontPath, float fontS
     TraceLog(LOG_INFO, "ImGui font loaded: %s (%.1fpx)", fontPath.c_str(), fontSize);
 }
 
-void RenderManager::BeginFrame() const {
+void RenderManager::BeginFrame() const
+{
     BeginDrawing();
     ClearBackground(m_backgroundColor);
 }
 
-void RenderManager::EndFrame() {
-
-    EndDrawing();
-}
+void RenderManager::EndFrame() { EndDrawing(); }
 
 void RenderManager::RenderGame(const Player &player, const ModelLoader &models,
                                const CollisionManager &collisionManager, bool showCollisionDebug)
@@ -105,8 +103,6 @@ void RenderManager::RenderGame(const Player &player, const ModelLoader &models,
 
     // End 3D rendering
     EndMode3D();
-
-    ShowMetersPlayer(player);
 }
 
 void RenderManager::RenderMenu(Menu &menu)
@@ -161,23 +157,29 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
     DrawCubeWires(PhysicsComponent::DEBUG_CUBE_POSITION, PhysicsComponent::DEBUG_CUBE_SIZE.x,
                   PhysicsComponent::DEBUG_CUBE_SIZE.y, PhysicsComponent::DEBUG_CUBE_SIZE.z, YELLOW);
 
-    if (m_collisionDebugRenderer)
-    {
-        const auto &colliders = collisionManager.GetColliders();
-        m_collisionDebugRenderer->RenderAllCollisions(colliders);
-        m_collisionDebugRenderer->RenderPlayerCollision(player.GetCollision());
-        for (const auto &collider : colliders)
-        {
-            auto *octree = collider->GetOctree();
-            if (octree)
-            {
-                octree->DebugDraw(GREEN);
-            }
-        }
+    if (!m_collisionDebugRenderer)
+        return;
 
-        TraceLog(LOG_DEBUG,
-                 "Collision debug rendered via CollisionDebugRenderer with Octree debug");
-    }
+    const auto &colliders = collisionManager.GetColliders();
+
+    // Render all collisions
+    m_collisionDebugRenderer->RenderAllCollisions(colliders);
+
+    // Render player collision
+    m_collisionDebugRenderer->RenderPlayerCollision(player.GetCollision());
+
+    // // Optional: debug draw individual colliders / BVH / Octree
+    // for (const auto &collider : colliders)
+    // {
+    //     if (!collider)
+    //         continue;
+
+    //     // If collider has DebugDraw method
+    //     collider->;
+    // }
+
+    TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer with %zu colliders",
+             colliders.size());
 }
 
 void RenderManager::SetBackgroundColor(Color color) { m_backgroundColor = color; }
@@ -398,4 +400,7 @@ void RenderManager::ShowMetersPlayer(const Player &player) const
                    LIGHTGRAY);
     }
 }
+
+Font RenderManager::GetFont() const { return m_font; }
+
 void RenderManager::Render() {}

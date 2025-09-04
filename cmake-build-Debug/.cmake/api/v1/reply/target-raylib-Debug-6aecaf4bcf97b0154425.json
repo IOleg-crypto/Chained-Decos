@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/libraylib.a"
+			"path" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/raylib.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -129,7 +129,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -std=gnu99"
+					"fragment" : "-fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				}
 			],
 			"defines" : 
@@ -203,7 +203,7 @@
 		}
 	},
 	"name" : "raylib",
-	"nameOnDisk" : "libraylib.a",
+	"nameOnDisk" : "raylib.lib",
 	"paths" : 
 	{
 		"build" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib",

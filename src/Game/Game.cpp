@@ -248,4 +248,26 @@ void Game::RenderGameWorld() const {
                                            m_engine.IsCollisionDebugVisible());
 }
 
-void Game::RenderGameUI() {}
+void Game::RenderGameUI() const {
+    if (m_engine.GetRenderManager())
+    {
+        m_engine.GetRenderManager()->ShowMetersPlayer(m_player);
+    }
+
+    static float gameTime = 0.0f;
+    gameTime += GetFrameTime();
+
+    int minutes = static_cast<int>(gameTime) / 60;
+    int seconds = static_cast<int>(gameTime) % 60;
+    int milliseconds = static_cast<int>((gameTime - static_cast<int>(gameTime)) * 1000);
+
+    std::string timerText = TextFormat("%02d:%02d:%03d", minutes, seconds, milliseconds);
+
+    int timerX = 300;
+    int timerY = 20;
+
+    Font fontToUse = (m_engine.GetRenderManager() && m_engine.GetRenderManager()->GetFont().texture.id != 0)
+                         ? m_engine.GetRenderManager()->GetFont()
+                         : GetFontDefault();
+    DrawTextEx(fontToUse, timerText.c_str(), {static_cast<float>(timerX), static_cast<float>(timerY)}, 20, 2.0f, WHITE);
+}

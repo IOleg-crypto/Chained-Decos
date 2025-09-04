@@ -72,10 +72,8 @@ public:
 
     void ShowMetersPlayer(const Player &player) const;
 
+    [[nodiscard]] Font GetFont() const;
 private:
-    // Debug rendering
-    std::unique_ptr<CollisionDebugRenderer> m_collisionDebugRenderer;
-
     // Private helper methods for debug info
     void DrawDebugInfoWindow(const Player &player, const ModelLoader &models,
                              const CollisionManager &collisionManager);
@@ -85,7 +83,9 @@ private:
 
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager);
     void DrawControlsInfo();
-
+private:
+    // Debug rendering
+    std::unique_ptr<CollisionDebugRenderer> m_collisionDebugRenderer;
     // Debug state
     bool m_showDebugInfo = true;
     bool m_showCollisionDebug = false;

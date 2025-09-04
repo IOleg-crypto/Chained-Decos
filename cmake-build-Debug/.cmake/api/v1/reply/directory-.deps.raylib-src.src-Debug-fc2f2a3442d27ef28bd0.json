@@ -60,10 +60,10 @@
 			"destination" : "lib",
 			"paths" : 
 			[
-				"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/libraylib.a"
+				"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/raylib.lib"
 			],
 			"targetId" : "raylib::@af39a1529cb2ee18778c",
-			"targetIndex" : 12,
+			"targetIndex" : 13,
 			"type" : "target"
 		},
 		{

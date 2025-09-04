@@ -107,7 +107,7 @@
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 268,
+				"line" : 283,
 				"parent" : 0
 			},
 			{
@@ -154,7 +154,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -std=c99"
+					"fragment" : "-fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				},
 				{
 					"backtrace" : 2,
@@ -169,7 +169,7 @@
 				},
 				{
 					"backtrace" : 4,
-					"define" : "WINVER=0x0501"
+					"define" : "_CRT_SECURE_NO_WARNINGS"
 				},
 				{
 					"backtrace" : 5,

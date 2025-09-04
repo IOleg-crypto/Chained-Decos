@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/World/libworld.a"
+			"path" : "src/Engine/World/world.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -45,13 +45,13 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 68,
+				"line" : 67,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 69,
+				"line" : 68,
 				"parent" : 3
 			},
 			{
@@ -68,7 +68,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-std=gnu++20"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				}
 			],
 			"defines" : 
@@ -137,7 +137,7 @@
 	],
 	"id" : "world::@c98633f6e372857301bf",
 	"name" : "world",
-	"nameOnDisk" : "libworld.a",
+	"nameOnDisk" : "world.lib",
 	"paths" : 
 	{
 		"build" : "src/Engine/World",
