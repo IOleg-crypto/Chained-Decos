@@ -7,7 +7,7 @@
   },
   {
     "name": "arena_test",
-    "path": "/resources/arena.glb",
+    "path": "/resources/doric_arena.glb",
     "spawn": true,
     "hasCollision" : true,
     "collisionPrecision": "triangle",

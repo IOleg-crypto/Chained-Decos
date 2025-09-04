@@ -20,7 +20,7 @@ enum class CollisionPrecision
 {
     AUTO = -1,           // Automatically choose based on model complexity (recommended)
     AABB_ONLY = 0,       // Simple bounding box (fastest)
-    OCTREE_ONLY = 1,     // Octree-based collision (precise, good performance)
+    BVH_ONLY = 1,     // Octree-based collision (precise, good performance)
     IMPROVED_AABB = 2,   // Smaller AABB blocks within octree (balanced)
     TRIANGLE_PRECISE = 3 // Triangle-to-triangle collision (most precise)
 };

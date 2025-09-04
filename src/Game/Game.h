@@ -46,7 +46,7 @@ private:
     //void HandleKeyboardShortcuts(); maybe implemented in the future
     void HandleMenuActions();
     void RenderGameWorld() const;
-    void RenderGameUI();
+    void RenderGameUI() const;
 };
 
 #endif // GAME_H

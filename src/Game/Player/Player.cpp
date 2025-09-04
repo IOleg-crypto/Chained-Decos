@@ -78,7 +78,7 @@ void Player::Update(const CollisionManager &collisionManager)
     }
 }
 
-float Player::GetSpeed() { return m_movement->GetSpeed(); }
+float Player::GetSpeed() const { return m_movement->GetSpeed(); }
 
 float Player::GetRotationY() const { return m_movement->GetRotationY(); }
 
