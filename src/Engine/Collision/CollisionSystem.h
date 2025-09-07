@@ -1,4 +1,3 @@
-
 #ifndef COLLISIONSYSTEM_H
 #define COLLISIONSYSTEM_H
 
@@ -64,10 +63,13 @@ public:
     void CalculateFromModel(void *model, const Matrix &transform = MatrixIdentity());
 
     // Collision type control
-    CollisionType GetCollisionType() const { return m_collisionType; }
+    CollisionType GetCollisionType() const;
     void SetCollisionType(CollisionType type);
 
-    const CollisionComplexity &GetComplexity() const { return m_complexity; }
+    const CollisionComplexity &GetComplexity() const;
+
+    const CollisionTriangle &GetTriangle(size_t idx) const;
+    const std::vector<CollisionTriangle> &GetTriangles() const;
 
     // BVH methods
     void BuildBVHFromTriangles();
@@ -75,7 +77,7 @@ public:
     bool HasTriangleData() const;
 
     // Initialize BVH (compat wrapper for manager)
-    void InitializeBVH() { BuildBVHFromTriangles(); }
+    void InitializeBVH();
 
     // Raycast using BVH (returns true if hit within maxDistance)
     bool RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxDistance,
@@ -88,9 +90,9 @@ public:
     bool Intersects(const Collision &other) const;
 
     // Compatibility helpers expected by CollisionManager (legacy Octree paths)
-    bool IntersectsBVH(const Collision &other) const { return Intersects(other); }
-    bool IsUsingBVH() const { return m_bvhRoot != nullptr; }
-    bool IsUsingOctree() const { return IsUsingBVH(); }
+    bool IntersectsBVH(const Collision &other) const;
+    bool IsUsingBVH() const;
+    bool IsUsingOctree() const;
     bool RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
                        float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const;
 
@@ -102,6 +104,8 @@ public:
         CollisionType typeUsed = CollisionType::AABB_ONLY;
     };
     const PerformanceStats &GetPerformanceStats() const;
+
+    bool CheckCollisionWithBVH(const Collision& other, Vector3& outResponse) const;
 
 private:
     // AABB

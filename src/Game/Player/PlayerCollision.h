@@ -1,43 +1,38 @@
-
 #ifndef PLAYER_COLLISION_H
 #define PLAYER_COLLISION_H
 
 #include <raylib.h>
 #include <Collision/CollisionSystem.h>
+#include <vector>
 
 // Forward declarations
 class Player;
 
 // PlayerCollision: handles collision detection and response
-class PlayerCollision
-{
+class PlayerCollision : public Collision {
 public:
-    PlayerCollision(Player* player);
+    explicit PlayerCollision(Player* player);
     ~PlayerCollision() = default;
     
-    // Update collision data
+    void InitializeCollision();
     void Update();
-    
-    // Get collision data
-    const Collision& GetCollision() const;
-    
-    // Get player bounding box
     BoundingBox GetBoundingBox() const;
-    
-    // Update bounding box
     void UpdateBoundingBox();
-    
-    // Check if player is in jump collision
     bool IsJumpCollision() const;
-    
-    // Set jump collision flag
     void SetJumpCollision(bool isJumpCollision);
     
+    // BVH collision methods
+    void EnableBVHCollision(bool enable);
+    bool IsUsingBVH() const;
+    bool CheckCollisionWithBVH(const Collision& other, Vector3& outResponse);
+
 private:
     Player* m_player;
-    Collision m_collision;
     BoundingBox m_boundingBox{};
     bool m_isJumpCollision = false;
+    std::vector<Vector3> m_collisionPoints;
+    
+    void UpdateCollisionPoints();
 };
 
 #endif // PLAYER_COLLISION_H

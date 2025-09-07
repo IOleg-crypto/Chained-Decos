@@ -6,6 +6,7 @@ add_library(model STATIC
         Animation.cpp
         Animation.h
         ModelConfig.h
+        ModelConfig.cpp
         JsonHelper.cpp
         JsonHelper.h
         ModelCache.cpp

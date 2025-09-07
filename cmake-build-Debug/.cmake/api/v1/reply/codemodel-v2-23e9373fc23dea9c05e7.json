@@ -1,0 +1,608 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						5,
+						6,
+						15,
+						19
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						8
+					]
+				},
+				{
+					"build" : "D:/gitnext/Chained Decos/.deps/raylib-build",
+					"childIndexes" : 
+					[
+						2
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.deps.raylib-src-Debug-3045ac5e273d0d73ed30.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : ".deps/raylib-src",
+					"targetIndexes" : 
+					[
+						17
+					]
+				},
+				{
+					"build" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib",
+					"childIndexes" : 
+					[
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.deps.raylib-src.src-Debug-5bca6b80398e6f58b5ca.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : ".deps/raylib-src/src",
+					"targetIndexes" : 
+					[
+						15
+					]
+				},
+				{
+					"build" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw",
+					"childIndexes" : 
+					[
+						4
+					],
+					"jsonFile" : "directory-.deps.raylib-src.src.external.glfw-Debug-0011fff0ae06d551c09b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.4"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 2,
+					"source" : ".deps/raylib-src/src/external/glfw"
+				},
+				{
+					"build" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src",
+					"jsonFile" : "directory-.deps.raylib-src.src.external.glfw.src-Debug-071c79fd7db2c1ff0ae7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.4"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 2,
+					"source" : ".deps/raylib-src/src/external/glfw/src",
+					"targetIndexes" : 
+					[
+						7,
+						18
+					]
+				},
+				{
+					"build" : "D:/gitnext/Chained Decos/.deps/nlohmann_json-build",
+					"jsonFile" : "directory-.deps.nlohmann_json-src-Debug-3d5a53cbac1922334c1c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : ".deps/nlohmann_json-src"
+				},
+				{
+					"build" : "src/Engine",
+					"childIndexes" : 
+					[
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14
+					],
+					"jsonFile" : "directory-src.Engine-Debug-d99704a6717bda53cd9a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 4,
+					"source" : "src/Engine",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "src/Engine/Collision",
+					"jsonFile" : "directory-src.Engine.Collision-Debug-8988ff19804e45de58a9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 4,
+					"source" : "src/Engine/Collision",
+					"targetIndexes" : 
+					[
+						5
+					]
+				},
+				{
+					"build" : "src/Engine/Input",
+					"jsonFile" : "directory-src.Engine.Input-Debug-6b42449f553efeb601a7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 4,
+					"source" : "src/Engine/Input",
+					"targetIndexes" : 
+					[
+						9
+					]
+				},
+				{
+					"build" : "src/Engine/Model",
+					"jsonFile" : "directory-src.Engine.Model-Debug-b5b45cc2e6ed46d22928.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 4,
+					"source" : "src/Engine/Model",
+					"targetIndexes" : 
+					[
+						12
+					]
+				},
+				{
+					"build" : "src/Engine/Render",
+					"jsonFile" : "directory-src.Engine.Render-Debug-3488492eb6e93af8a42a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 4,
+					"source" : "src/Engine/Render",
+					"targetIndexes" : 
+					[
+						16
+					]
+				},
+				{
+					"build" : "src/Engine/CameraController",
+					"jsonFile" : "directory-src.Engine.CameraController-Debug-92367470f063390d172f.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 4,
+					"source" : "src/Engine/CameraController",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "src/Engine/Physics",
+					"jsonFile" : "directory-src.Engine.Physics-Debug-52438a60599c7022777f.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 4,
+					"source" : "src/Engine/Physics",
+					"targetIndexes" : 
+					[
+						13
+					]
+				},
+				{
+					"build" : "src/Engine/World",
+					"jsonFile" : "directory-src.Engine.World-Debug-deb46fe44c71d8a6ee2e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 4,
+					"source" : "src/Engine/World",
+					"targetIndexes" : 
+					[
+						19
+					]
+				},
+				{
+					"build" : "src/Engine/Core",
+					"jsonFile" : "directory-src.Engine.Core-Debug-a128082d7c35b01a08fe.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 4,
+					"source" : "src/Engine/Core",
+					"targetIndexes" : 
+					[
+						6
+					]
+				},
+				{
+					"build" : "src/Game",
+					"childIndexes" : 
+					[
+						16,
+						17,
+						18
+					],
+					"jsonFile" : "directory-src.Game-Debug-acba60ce328241d23e92.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Game",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "src/Game/Map",
+					"jsonFile" : "directory-src.Game.Map-Debug-e8b128bdda741a0b848e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 15,
+					"projectIndex" : 0,
+					"source" : "src/Game/Map",
+					"targetIndexes" : 
+					[
+						10
+					]
+				},
+				{
+					"build" : "src/Game/Menu",
+					"jsonFile" : "directory-src.Game.Menu-Debug-84efc2ed74c795508a81.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 15,
+					"projectIndex" : 0,
+					"source" : "src/Game/Menu",
+					"targetIndexes" : 
+					[
+						11
+					]
+				},
+				{
+					"build" : "src/Game/Player",
+					"jsonFile" : "directory-src.Game.Player-Debug-512fe46273c17d7e5c1b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 15,
+					"projectIndex" : 0,
+					"source" : "src/Game/Player",
+					"targetIndexes" : 
+					[
+						14
+					]
+				},
+				{
+					"build" : "src/Game/MapEditor",
+					"jsonFile" : "directory-src.Game.MapEditor-Debug-d9bab7bb6f28d37dfb32.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 5,
+					"source" : "src/Game/MapEditor",
+					"targetIndexes" : 
+					[
+						3
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						3,
+						4,
+						5
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						15,
+						16,
+						17,
+						18
+					],
+					"name" : "ChainedDecos",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						8,
+						10,
+						11,
+						14
+					]
+				},
+				{
+					"childIndexes" : 
+					[
+						2
+					],
+					"directoryIndexes" : 
+					[
+						1,
+						2
+					],
+					"name" : "raylib",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						15,
+						17
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3,
+						4
+					],
+					"name" : "GLFW",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						7,
+						18
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						5
+					],
+					"name" : "nlohmann_json",
+					"parentIndex" : 0
+				},
+				{
+					"directoryIndexes" : 
+					[
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14
+					],
+					"name" : "ChainedDecosEngine",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1,
+						4,
+						5,
+						6,
+						9,
+						12,
+						13,
+						16,
+						19
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						19
+					],
+					"name" : "ChainedDecosMapEditor",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						3
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ChainedDecos-Debug-c93752414da8c22e7b9e.json",
+					"name" : "ChainedDecos",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "ChainedDecosEngine::@57eeced369f002faad1a",
+					"jsonFile" : "target-ChainedDecosEngine-Debug-9e9b4301abc62526e0a7.json",
+					"name" : "ChainedDecosEngine",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 15,
+					"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94",
+					"jsonFile" : "target-ChainedDecosGame-Debug-de98c08beec69a790542.json",
+					"name" : "ChainedDecosGame",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 19,
+					"id" : "ChainedDecosMapEditor::@55121233932d6d4fa567",
+					"jsonFile" : "target-ChainedDecosMapEditor-Debug-8b8af7ab9c9c27cfd58f.json",
+					"name" : "ChainedDecosMapEditor",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 11,
+					"id" : "cameracontroller::@d7306d29326ff25263b1",
+					"jsonFile" : "target-cameracontroller-Debug-c0bfca75175fb1a90bbc.json",
+					"name" : "cameracontroller",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "collision::@c7f3438d24a996a0c811",
+					"jsonFile" : "target-collision-Debug-fef44d1e05a12385bfca.json",
+					"name" : "collision",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 14,
+					"id" : "core::@4f6386a7aa3d52961998",
+					"jsonFile" : "target-core-Debug-aab59fc1b26ce26becef.json",
+					"name" : "core",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "glfw::@4755506f38bf45259394",
+					"jsonFile" : "target-glfw-Debug-4e11e442ff67666a9779.json",
+					"name" : "glfw",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "imguilib::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-imguilib-Debug-e2e81ab868901b1c010c.json",
+					"name" : "imguilib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 8,
+					"id" : "input::@d967885210040d4ce616",
+					"jsonFile" : "target-input-Debug-1739d522f337fd24f290.json",
+					"name" : "input",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 16,
+					"id" : "mapmod::@e87daa19a0aaec6b83ad",
+					"jsonFile" : "target-mapmod-Debug-5281958e9cfabd237532.json",
+					"name" : "mapmod",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 17,
+					"id" : "menu::@508c1ec0f6a4eb8a79d5",
+					"jsonFile" : "target-menu-Debug-7deb6e279f8f82edc9b4.json",
+					"name" : "menu",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "model::@821f8439338a0146b4f1",
+					"jsonFile" : "target-model-Debug-d38aa9256545d42bca38.json",
+					"name" : "model",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 12,
+					"id" : "physics::@e27c3d6556b677b24ea2",
+					"jsonFile" : "target-physics-Debug-c021535304e303765c4a.json",
+					"name" : "physics",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 18,
+					"id" : "player::@6497c05e8667515fbef8",
+					"jsonFile" : "target-player-Debug-ac5a8e7e9ac77d8d51aa.json",
+					"name" : "player",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "raylib::@af39a1529cb2ee18778c",
+					"jsonFile" : "target-raylib-Debug-6aecaf4bcf97b0154425.json",
+					"name" : "raylib",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 10,
+					"id" : "render::@1c5ce05080cbaa0376c6",
+					"jsonFile" : "target-render-Debug-10b7ca795a671cd666ab.json",
+					"name" : "render",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "uninstall::@49babf7f2f58d6386fe9",
+					"jsonFile" : "target-uninstall-Debug-748bf2a889eb23e00e0c.json",
+					"name" : "uninstall",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "update_mappings::@4755506f38bf45259394",
+					"jsonFile" : "target-update_mappings-Debug-e646f80e7f2189783b3d.json",
+					"name" : "update_mappings",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 13,
+					"id" : "world::@c98633f6e372857301bf",
+					"jsonFile" : "target-world-Debug-7229e3e8b59f0a7bf146.json",
+					"name" : "world",
+					"projectIndex" : 4
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/gitnext/Chained Decos/cmake-build-debug",
+		"source" : "D:/gitnext/Chained Decos"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 8
+	}
+}

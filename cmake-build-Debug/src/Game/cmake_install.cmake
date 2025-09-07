@@ -39,22 +39,22 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Map/cmake_install.cmake")
+  include("D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Map/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Menu/cmake_install.cmake")
+  include("D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Menu/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Player/cmake_install.cmake")
+  include("D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Player/cmake_install.cmake")
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/install_local_manifest.txt"
+  file(WRITE "D:/gitnext/Chained Decos/cmake-build-debug/src/Game/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

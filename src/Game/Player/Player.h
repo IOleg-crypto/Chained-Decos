@@ -10,7 +10,7 @@
 #include <CameraController/CameraController.h>
 #include <Collision/CollisionManager.h>
 #include <Collision/CollisionSystem.h>
-#include <World/Physics.h>
+#include <World/World.h>
 #include <Model/Model.h>
 
 // Include new component headers
@@ -58,7 +58,7 @@ public:
     // Delegate to PlayerModel
     void SetPlayerModel(Model *model) const;        // Set 3D model
     void ToggleModelRendering(bool useModel) const; // Show/hide model
-    ModelLoader &GetModelManager() const;                // Get model manager
+    [[nodiscard]] ModelLoader &GetModelManager() const;                // Get model manager
     void SetRotationY(float rotationY) const;
 
     // Getters/Setters
@@ -67,6 +67,7 @@ public:
     void SetSpeed(float speed) const;           // Set speed
     Vector3 GetPlayerPosition() const;          // Get position
     Vector3 GetPlayerSize() const;              // Get player size
+    PlayerCollision &GetCollisionMutable();           // Add this method
     const Collision &GetCollision() const;      // Get collision info
     bool IsJumpCollision() const;               // Check jump collision flag
     BoundingBox GetPlayerBoundingBox() const;   // Get bounding box

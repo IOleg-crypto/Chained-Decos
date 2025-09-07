@@ -1,0 +1,23 @@
+[
+  {
+    "name": "player",
+    "path": "/resources/player_low.glb",
+    "spawn": false,
+    "hasAnimations": false
+  },
+  {
+    "name": "arena_test",
+    "path": "/resources/doric_arena.glb",
+    "spawn": true,
+    "hasCollision" : true,
+    "collisionPrecision": "bvh_only",
+    "hasAnimations": false,
+    "instances": [
+      {
+        "position": { "x": 5, "y": 1.5, "z": 10 },
+        "scale": 2.5,
+        "color": "WHITE"
+      }
+    ]
+  } 
+]

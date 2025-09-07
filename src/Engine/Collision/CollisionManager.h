@@ -27,6 +27,9 @@ public:
 
     // Add a new collider to the manager
     void AddCollider(Collision &&collider);
+    
+    // Add an existing collider reference
+    void AddColliderRef(Collision* collider);
 
     // Remove all colliders
     void ClearColliders();

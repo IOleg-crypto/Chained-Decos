@@ -30,6 +30,7 @@ if(NOT raylib_FOUND)
     FetchContent_Declare(
         raylib
         URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
@@ -44,6 +45,7 @@ if(NOT nlohmann_json_FOUND)
     FetchContent_Declare(
         nlohmann_json
         URL https://github.com/nlohmann/json/archive/refs/tags/v${NLOHMANN_JSON_VERSION}.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
     FetchContent_MakeAvailable(nlohmann_json)
 endif()

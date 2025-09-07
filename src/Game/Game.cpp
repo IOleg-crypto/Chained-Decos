@@ -130,14 +130,27 @@ void Game::InitCollisions()
     TraceLog(LOG_INFO, "Game::InitCollisions() - Initializing collision system...");
     m_collisionManager.ClearColliders();
 
+    // Ground plane
     Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
     Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
-    Collision groundPlane{groundCenter, groundSize};
-    groundPlane.SetCollisionType(CollisionType::AABB_ONLY);
+    Collision groundPlane{groundCenter, Vector3Scale(groundSize, 0.5f)};
+    groundPlane.SetCollisionType(CollisionType::BVH_ONLY);
+    groundPlane.BuildFromModelWithType(nullptr, CollisionType::BVH_ONLY);
     m_collisionManager.AddCollider(std::move(groundPlane));
 
-    m_collisionManager.CreateAutoCollisionsFromModels(m_models);
+    // Initialize ground collider first
     m_collisionManager.Initialize();
+
+    // Load model collisions
+    m_collisionManager.CreateAutoCollisionsFromModels(m_models);
+
+    // Reinitialize after adding all model colliders
+    m_collisionManager.Initialize();
+
+    // Initialize player collision
+    auto& playerCollision = m_player.GetCollisionMutable();
+    playerCollision.InitializeCollision();
+
     TraceLog(LOG_INFO, "Game::InitCollisions() - Collision system initialized with %zu colliders.",
              m_collisionManager.GetColliders().size());
 }
@@ -145,12 +158,15 @@ void Game::InitCollisions()
 void Game::InitPlayer() const
 {
     TraceLog(LOG_INFO, "Game::InitPlayer() - Initializing player...");
+    
+    // Set initial position before anything else
+    Vector3 safePosition = {0.0f, 5.0f, 0.0f}; 
+    m_player.SetPlayerPosition(safePosition);
+    
+    // Setup collision and physics
     m_player.GetMovement()->SetCollisionManager(&m_collisionManager);
     m_player.UpdatePlayerBox();
     m_player.UpdatePlayerCollision();
-
-    Vector3 safePosition = {0.0f, 2.0f, 0.0f};
-    m_player.SetPlayerPosition(safePosition);
 
     TraceLog(LOG_INFO, "Game::InitPlayer() - Player initialized at (%.2f, %.2f, %.2f).",
              safePosition.x, safePosition.y, safePosition.z);
@@ -159,7 +175,7 @@ void Game::InitPlayer() const
 void Game::LoadGameModels()
 {
     TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading game models...");
-    const std::string modelsJsonPath = PROJECT_ROOT_DIR "/src/models.json";
+    const std::string modelsJsonPath = PROJECT_ROOT_DIR "/src/Game/Resource/models.json";
     m_models.SetCacheEnabled(true);
     m_models.SetMaxCacheSize(50);
     m_models.EnableLOD(true);

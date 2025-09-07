@@ -1,7 +1,7 @@
 #include "PlayerMovement.h"
 #include <CameraController/CameraController.h>
 #include <Player.h>
-#include <World/Physics.h>
+#include <World/World.h>
 #include <memory>
 
 // Define player constants
@@ -22,6 +22,7 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_input = std::make_unique<PlayerInput>(this);
     m_model = std::make_unique<PlayerModel>();
     m_collision = std::make_unique<PlayerCollision>(this);
+
 
     // Initialize player position
     SetPlayerPosition(DEFAULT_SPAWN_POSITION);
@@ -111,7 +112,7 @@ void Player::ToggleModelRendering(const bool useModel) const
 
 void Player::SetPlayerPosition(const Vector3 &pos) const { m_movement->SetPosition(pos); }
 
-const Collision &Player::GetCollision() const { return m_collision->GetCollision(); }
+const Collision &Player::GetCollision() const { return *m_collision; }
 
 bool Player::IsJumpCollision() const { return m_collision->IsJumpCollision(); }
 
@@ -159,3 +160,7 @@ PhysicsComponent &Player::GetPhysics() { return m_movement->GetPhysics(); }
 void Player::SetRotationY(const float rotationY) const { m_movement->SetRotationY(rotationY); }
 
 PlayerMovement *Player::GetMovement() const { return m_movement.get(); }
+PlayerCollision& Player::GetCollisionMutable() { 
+    return *m_collision; 
+}
+
