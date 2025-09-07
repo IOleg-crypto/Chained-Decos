@@ -19,25 +19,38 @@ Collision::Collision(const Collision& other)
 {
     m_min = other.m_min;
     m_max = other.m_max;
-    m_collisionType = other.m_collisionType;
+    m_collisionType = other.m_collisionType; 
     m_complexity = other.m_complexity;
-    m_triangles = other.m_triangles; // копіюємо тріанґли
-    m_bvhRoot = nullptr;             // BVH можна побудувати заново
+    m_triangles = other.m_triangles;
     m_isBuilt = other.m_isBuilt;
     m_stats = other.m_stats;
+
+    // Копіюємо BVH тільки якщо він використовується
+    if (other.m_bvhRoot && other.IsUsingBVH()) {
+        BuildBVHFromTriangles();
+    }
 }
 
 Collision& Collision::operator=(const Collision& other)
 {
     if (this == &other) return *this;
+    
     m_min = other.m_min;
     m_max = other.m_max;
     m_collisionType = other.m_collisionType;
     m_complexity = other.m_complexity;
     m_triangles = other.m_triangles;
-    m_bvhRoot = nullptr;
     m_isBuilt = other.m_isBuilt;
     m_stats = other.m_stats;
+
+    // Якщо є трикутники і тип BVH - перебудовуємо BVH
+    if (!m_triangles.empty() && 
+        (m_collisionType == CollisionType::BVH_ONLY || 
+         m_collisionType == CollisionType::TRIANGLE_PRECISE))
+    {
+        BuildBVHFromTriangles();
+    }
+    
     return *this;
 }
 
@@ -95,8 +108,65 @@ bool Collision::ContainsPointAABB(const Vector3 &point) const
 // ----------------- Build from model (stub) -----------------
 void Collision::BuildFromModel(void *model, const Matrix &transform)
 {
+    // Додаємо трикутники з трансформацією
+    Model *rayModel = static_cast<Model *>(model);
+    if (rayModel)
+    {
+        for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
+        {
+            Mesh &mesh = rayModel->meshes[meshIdx];
+            if (!mesh.vertices || !mesh.indices) continue;
+            for (int i = 0; i < mesh.triangleCount; ++i)
+            {
+                int i0 = mesh.indices[i * 3 + 0];
+                int i1 = mesh.indices[i * 3 + 1];
+                int i2 = mesh.indices[i * 3 + 2];
+                Vector3 v0 = { mesh.vertices[i0 * 3 + 0], mesh.vertices[i0 * 3 + 1], mesh.vertices[i0 * 3 + 2] };
+                Vector3 v1 = { mesh.vertices[i1 * 3 + 0], mesh.vertices[i1 * 3 + 1], mesh.vertices[i1 * 3 + 2] };
+                Vector3 v2 = { mesh.vertices[i2 * 3 + 0], mesh.vertices[i2 * 3 + 1], mesh.vertices[i2 * 3 + 2] };
+                // Трансформуємо у світові координати
+                v0 = Vector3Transform(v0, transform);
+                v1 = Vector3Transform(v1, transform);
+                v2 = Vector3Transform(v2, transform);
+                m_triangles.emplace_back(v0, v1, v2);
+            }
+        }
+        TraceLog(LOG_INFO, "Collision triangles: %zu", m_triangles.size());
+    }
+
+    // Try to build BVH from triangles if available
     UpdateAABBFromTriangles();
     BuildBVHFromTriangles();
+
+    // If we have no triangles/BVH, fall back to model's bounding box
+    if (!m_bvhRoot)
+    {
+        Model *rayModel = static_cast<Model *>(model);
+        if (rayModel)
+        {
+            BoundingBox bb = GetModelBoundingBox(*rayModel);
+            // Compute 8 corners of the original AABB
+            Vector3 corners[8] = {
+                {bb.min.x, bb.min.y, bb.min.z}, {bb.max.x, bb.min.y, bb.min.z},
+                {bb.min.x, bb.max.y, bb.min.z}, {bb.min.x, bb.min.y, bb.max.z},
+                {bb.max.x, bb.max.y, bb.min.z}, {bb.min.x, bb.max.y, bb.max.z},
+                {bb.max.x, bb.min.y, bb.max.z}, {bb.max.x, bb.max.y, bb.max.z}};
+
+            // Transform corners
+            Vector3 tmin = {FLT_MAX, FLT_MAX, FLT_MAX};
+            Vector3 tmax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+            for (auto &c : corners)
+            {
+                Vector3 tc = Vector3Transform(c, transform);
+                tmin.x = fminf(tmin.x, tc.x); tmin.y = fminf(tmin.y, tc.y); tmin.z = fminf(tmin.z, tc.z);
+                tmax.x = fmaxf(tmax.x, tc.x); tmax.y = fmaxf(tmax.y, tc.y); tmax.z = fmaxf(tmax.z, tc.z);
+            }
+
+            m_min = tmin;
+            m_max = tmax;
+        }
+    }
+
     m_isBuilt = true;
 }
 
@@ -427,4 +497,49 @@ bool Collision::RaycastOctree(const Vector3 &origin, const Vector3 &dir, float m
     hitPoint = hit.position;
     hitNormal = hit.normal;
     return true;
+}
+CollisionType Collision::GetCollisionType() const { return m_collisionType; }
+const CollisionComplexity &Collision::GetComplexity() const { return m_complexity; }
+void Collision::InitializeBVH() { BuildBVHFromTriangles(); }
+bool Collision::IntersectsBVH(const Collision &other) const { return Intersects(other); }
+bool Collision::IsUsingBVH() const { return m_bvhRoot != nullptr; }
+bool Collision::IsUsingOctree() const { return IsUsingBVH(); }
+const CollisionTriangle &Collision::GetTriangle(size_t idx) const { return m_triangles[idx]; }
+const std::vector<CollisionTriangle> &Collision::GetTriangles() const { return m_triangles; }
+bool Collision::CheckCollisionWithBVH(const Collision& other, Vector3& outResponse) const {
+    if (!other.IsUsingBVH() || !IntersectsAABB(other)) {
+        return false;
+    }
+
+    // Get the center point of this collision
+    Vector3 center = GetCenter();
+    Vector3 size = GetSize();
+    
+    // Check points around the AABB
+    const float checkDistance = size.y + 1.0f;
+    bool hasCollision = false;
+    float minY = FLT_MAX;
+    
+    // Check center and corners
+    Vector3 checkPoints[] = {
+        center,  // Center
+        {center.x - size.x*0.5f, center.y, center.z}, // Left
+        {center.x + size.x*0.5f, center.y, center.z}, // Right
+        {center.x, center.y, center.z - size.z*0.5f}, // Front
+        {center.x, center.y, center.z + size.z*0.5f}  // Back
+    };
+
+    for (const auto& point : checkPoints) {
+        RayHit hit;
+        Vector3 dir = {0, -1, 0};
+        if (other.RaycastBVH(point, dir, checkDistance, hit)) {
+            if (hit.hit && hit.distance < minY) {
+                minY = hit.distance;
+                outResponse = {0, hit.position.y - (center.y - size.y*0.5f), 0};
+                hasCollision = true;
+            }
+        }
+    }
+
+    return hasCollision;
 }

@@ -5,10 +5,11 @@
 #include "RenderManager.h"
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
-#include <Engine/World/Physics.h>
+#include <Engine/World/World.h>
 #include <Game/Menu/Menu.h>
 #include <Game/Player/Player.h>
 #include <Model/Model.h>
+#include <Physics/PhysicsComponent.h>
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
@@ -126,8 +127,11 @@ void RenderManager::EndMode3D() { ::EndMode3D(); }
 
 void RenderManager::DrawScene3D(const ModelLoader &models)
 {
-    // // Draw ground plane using constants from PhysicsComponent
-    DrawPlane(PhysicsComponent::GROUND_POSITION, PhysicsComponent::GROUND_SIZE, LIGHTGRAY);
+    // Draw ground plane using PhysicsComponent constants
+    const Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
+    const Vector3 groundSize3 = PhysicsComponent::GROUND_COLLISION_SIZE;
+    const Vector2 groundSize2 = {groundSize3.x, groundSize3.z};
+    DrawPlane(groundCenter, groundSize2, LIGHTGRAY);
 
     // Draw all models
     models.DrawAllModels();
@@ -153,9 +157,9 @@ void RenderManager::DrawPlayer(const Player &player, const ModelLoader &models)
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
                                          const Player &player) const
 {
-    // Draw debug cube using constants from PhysicsComponent
-    DrawCubeWires(PhysicsComponent::DEBUG_CUBE_POSITION, PhysicsComponent::DEBUG_CUBE_SIZE.x,
-                  PhysicsComponent::DEBUG_CUBE_SIZE.y, PhysicsComponent::DEBUG_CUBE_SIZE.z, YELLOW);
+    // Draw small debug cube near the ground for reference
+    const Vector3 dbgPos = {0.0f, PhysicsComponent::WORLD_FLOOR_Y + 0.5f, 0.0f};
+    DrawCubeWires(dbgPos, 1.0f, 1.0f, 1.0f, YELLOW);
 
     if (!m_collisionDebugRenderer)
         return;

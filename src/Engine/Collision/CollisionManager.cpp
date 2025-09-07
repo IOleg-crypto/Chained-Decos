@@ -35,6 +35,21 @@ void CollisionManager::AddCollider(Collision &&collider)
     TraceLog(LOG_INFO, "Added collider, total count: %zu", m_collisions.size());
 }
 
+void CollisionManager::AddColliderRef(Collision* collider)
+{
+    if (!collider) return;
+    
+    m_collisions.push_back(std::unique_ptr<Collision>(collider));
+    
+    if (collider->GetCollisionType() == CollisionType::BVH_ONLY ||
+        collider->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
+    {
+        collider->InitializeBVH();
+    }
+    
+    TraceLog(LOG_INFO, "Added collider reference, total count: %zu", m_collisions.size());
+}
+
 void CollisionManager::ClearColliders() { m_collisions.clear(); }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision) const
@@ -79,6 +94,25 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         if (!hit)
             continue;
         collided = true;
+
+        // --- Додаємо raycast вниз по BVH ---
+        if (collider->IsUsingBVH()) {
+            Vector3 origin = playerCenter;
+            Vector3 dir = {0.0f, -1.0f, 0.0f};
+            float rayMax = (playerMax.y - playerMin.y) + 1.0f;
+            RayHit rayHit;
+            if (collider->RaycastBVH(origin, dir, rayMax, rayHit) && rayHit.hit) {
+                float deltaUp = rayHit.position.y - playerMin.y;
+                if (deltaUp > 0.0f && deltaUp < rayMax) {
+                    Vector3 refined = {0.0f, deltaUp, 0.0f};
+                    if (!hasGroundMTV || fabsf(refined.y) < fabsf(groundMTV.y)) {
+                        groundMTV = refined;
+                        hasGroundMTV = true;
+                    }
+                }
+            }
+        }
+        // --- залишаємо старий AABB для fallback ---
         const Vector3 colliderMin = collider->GetMin();
         const Vector3 colliderMax = collider->GetMax();
         const Vector3 colliderCenter = {(colliderMin.x + colliderMax.x) * 0.5f,
@@ -135,29 +169,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
                 bestLenSq = lenSq;
                 bestMTV = mtv;
                 hasBest = true;
-            }
-        }
-        if (collider->IsUsingOctree())
-        {
-            const float rayMax = (playerMax.y - playerMin.y) + 1.0f;
-            Vector3 origin = playerCenter;
-            Vector3 dir = {0.0f, -1.0f, 0.0f};
-            float hitDistance = 0.0f;
-            Vector3 hitPoint = {0};
-            Vector3 hitNormal = {0};
-            if (playerCollision.RaycastOctree(origin, dir, rayMax, hitDistance, hitPoint,
-                                              hitNormal))
-            {
-                float deltaUp = hitPoint.y - playerMin.y;
-                if (deltaUp > 0.0f && deltaUp < rayMax)
-                {
-                    Vector3 refined = {0.0f, deltaUp, 0.0f};
-                    if (!hasGroundMTV || fabsf(refined.y) < fabsf(groundMTV.y))
-                    {
-                        groundMTV = refined;
-                        hasGroundMTV = true;
-                    }
-                }
             }
         }
     }
@@ -321,6 +332,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     // --- STEP 3: Create instance collision from cached collision ---
     Collision instanceCollision;
     CollisionType cachedType = cachedCollision->GetCollisionType();
+    TraceLog(LOG_INFO , "Cached collision type for '%s' is %d", modelName.c_str(),
+             static_cast<int>(cachedType));
 
     bool usePreciseForInstance =
         needsPreciseCollision &&
@@ -500,8 +513,12 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
 {
     Collision instanceCollision;
 
-    Matrix transform = MatrixMultiply(MatrixTranslate(position.x, position.y, position.z),
-                                      MatrixScale(scale, scale, scale));
+    // Масштаб -> (обертання) -> зсув
+    Matrix transform = MatrixIdentity();
+    transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
+    // Якщо є rotation:
+    // transform = MatrixMultiply(transform, MatrixRotateXYZ(rotation));
+    transform = MatrixMultiply(transform, MatrixTranslate(position.x, position.y, position.z));
 
     Model modelCopy = model;
 
@@ -519,19 +536,13 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
 Collision CollisionManager::CreateSimpleAABBInstanceCollision(const Collision &cachedCollision,
                                                               const Vector3 &position, float scale)
 {
-
-    Collision instanceCollision = cachedCollision;
-
+    Collision instanceCollision = cachedCollision;  // тут копіюються трикутники, але BVH губиться
     Vector3 transformedCenter =
         Vector3Add(Vector3Scale(cachedCollision.GetCenter(), scale), position);
     Vector3 scaledSize = Vector3Scale(cachedCollision.GetSize(), scale);
 
-    instanceCollision.Update(transformedCenter, scaledSize);
-
-    instanceCollision.SetCollisionType(CollisionType::AABB_ONLY);
-
-    TraceLog(LOG_INFO, "Created AABB collision for instance at (%.2f, %.2f, %.2f)", position.x,
-             position.y, position.z);
+    instanceCollision.Update(transformedCenter, scaledSize);  // оновлюється тільки AABB
+    instanceCollision.SetCollisionType(CollisionType::AABB_ONLY);  // явно встановлюється AABB_ONLY
 
     return instanceCollision;
 }

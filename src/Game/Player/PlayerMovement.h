@@ -2,9 +2,10 @@
 #define PLAYER_MOVEMENT_H
 
 #include <Collision/CollisionManager.h>
-#include <World/Physics.h>
+#include <World/World.h>
 #include <raylib.h>
 #include <raymath.h>
+#include <Physics/PhysicsComponent.h>
 
 // Forward declarations
 class Player;
