@@ -20,7 +20,8 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
 
     // Min/Max
     m_min.x = std::min(std::min(m_v0.x, m_v1.x), m_v2.x);
-    m_min.y = std::min(std::min(m_v0.y, m_v1.y), m_v2.z);
+    m_min.y = std::min(std::min(m_v0.y, m_v1.y), m_v2.y); // FIXED
+    m_min.z = std::min(std::min(m_v0.z, m_v1.z), m_v2.z);
 
     m_max.x = std::max(std::max(m_v0.x, m_v1.x), m_v2.x);
     m_max.y = std::max(std::max(m_v0.y, m_v1.y), m_v2.y);
@@ -43,7 +44,7 @@ bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
 {
     // Möller-Trumbore ray-triangle intersection algorithm
     Vector3 edge1 = Vector3Subtract(m_v1, m_v0);
-    Vector3 edge2 = Vector3Subtract(m_v1, m_v0);
+    Vector3 edge2 = Vector3Subtract(m_v2, m_v0); // FIXED
     Vector3 h = Vector3CrossProduct(ray.GetDirection(), edge2);
     float a = Vector3DotProduct(edge1, h);
 
@@ -124,8 +125,8 @@ bool CollisionTriangle::IntersectsAABB(const Vector3 &boxMin, const Vector3 &box
 
     // Translate triangle to box center
     Vector3 tv0 = Vector3Subtract(m_v0, boxCenter);
-    Vector3 tv1 = Vector3Subtract(m_v0, boxCenter);
-    Vector3 tv2 = Vector3Subtract(m_v0, boxCenter);
+    Vector3 tv1 = Vector3Subtract(m_v1, boxCenter); // FIXED
+    Vector3 tv2 = Vector3Subtract(m_v2, boxCenter); // FIXED
 
     // Test triangle normal as separating axis
     float r = boxExtents.x * fabsf(m_normal.x) + boxExtents.y * fabsf(m_normal.y) +

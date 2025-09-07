@@ -16,12 +16,25 @@ void CollisionDebugRenderer::RenderCollisionBox(const Collision &collision, Colo
     }
 }
 
+void CollisionDebugRenderer::RenderCollisionTriangles(const Collision &collision, Color color) const
+{
+    for (size_t i = 0; i < collision.GetTriangleCount(); ++i)
+    {
+        const auto& tri = collision.GetTriangle(i);
+        DrawLine3D(tri.V0(), tri.V1(), color);
+        DrawLine3D(tri.V1(), tri.V2(), color);
+        DrawLine3D(tri.V2(), tri.V0(), color);
+    }
+}
+
 void CollisionDebugRenderer::RenderAllCollisions(const std::vector<std::unique_ptr<Collision>> &collisions) const
 {
     for (size_t i = 0; i < collisions.size(); i++)
     {
         Color color = (i == 0) ? m_groundColor : m_obstacleColor;
-        RenderCollisionBox(*collisions[i], color);
+        RenderCollisionBox(*collisions[i].get(), color);
+        // Додаємо малювання трикутників для реальної форми колізії
+        RenderCollisionTriangles(*collisions[i], RED);
     }
 }
 
@@ -50,3 +63,4 @@ void CollisionDebugRenderer::DrawCollisionSolid(const Vector3 &center, const Vec
     DrawCube(center, size.x, size.y, size.z, transparentColor);
     DrawCubeWires(center, size.x, size.y, size.z, color);
 }
+void CollisionDebugRenderer::SetWireframeMode(bool wireframe) { m_wireframe = wireframe; }
