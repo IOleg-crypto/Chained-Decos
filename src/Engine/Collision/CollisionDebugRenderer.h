@@ -16,7 +16,9 @@ public:
     void RenderAllCollisions(const std::vector<std::unique_ptr<Collision>> &collisions) const;
     void RenderPlayerCollision(const Collision &playerCollision) const;
 
-    void SetWireframeMode(bool wireframe) { m_wireframe = wireframe; }
+    void RenderCollisionTriangles(const Collision &collision, Color color) const;
+
+    void SetWireframeMode(bool wireframe);
     void SetDefaultColors(Color ground, Color obstacles, Color player);
 
 private:

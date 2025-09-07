@@ -52,10 +52,7 @@ struct LoadingStats
     int totalInstances = 0;
     float loadingTime = 0.0f;
 
-    float GetSuccessRate() const
-    {
-        return totalModels > 0 ? (float)loadedModels / totalModels : 0.0f;
-    }
+    [[nodiscard]] float GetSuccessRate() const;
 };
 
 #endif /* MODELINSTANCE_H */
