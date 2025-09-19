@@ -1,11 +1,9 @@
 add_library(ChainedDecosGame STATIC
-        Game.cpp
-        Game.h
+    Game.cpp
 )
 
-
 target_include_directories(ChainedDecosGame
-        PUBLIC
+    PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/include
 )
@@ -15,12 +13,12 @@ add_subdirectory(Menu)
 add_subdirectory(Player)
 
 target_link_libraries(ChainedDecosGame
-        PUBLIC
+    PUBLIC
         ChainedDecosEngine
         player
         menu
         mapmod
         raylib
         imguilib
-        nlohmann_json::nlohmann_json
+        nlohmann_json
 )

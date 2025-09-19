@@ -19,6 +19,7 @@ void PlayerMovement::Move(const Vector3 &moveVector)
 void PlayerMovement::SetPosition(const Vector3 &pos)
 {
     m_position = pos;
+    // Sync collision only when position actually changes
     m_player->SyncCollision();
 }
 
@@ -71,79 +72,49 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
 {
     float dt = GetFrameTime();
     Vector3 vel = m_physics.GetVelocity();
-    Vector3 targetPos = Vector3Add(m_position, Vector3Scale(vel, dt));
+    Vector3 targetPos = m_position;
 
-
-    SetPosition({targetPos.x, targetPos.y, targetPos.z});
-    m_player->UpdatePlayerBox();
-    m_player->UpdatePlayerCollision();
-
+    // 1) Vertical movement
+    targetPos.y += vel.y * dt;
+    SetPosition(targetPos);
+    
     Vector3 response = {0};
-    bool hasCollision = false;
-    float minPenetration = std::numeric_limits<float>::max();
-
-
-    for (const auto &collider : collisionManager.GetColliders())
+    if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
-        Vector3 currentResponse = {0};
-        bool currentCollision = false;
-        
-
-        if (collider->IsUsingBVH())
+        if (fabsf(response.y) > 0.0001f)
         {
-            currentCollision = m_player->GetCollision().CheckCollisionWithBVH(*collider, currentResponse);
-        }
-        
-
-        if (!currentCollision)
-        {
-            currentCollision = collisionManager.CheckCollision(m_player->GetCollision(), currentResponse);
-        }
-        
-
-        if (currentCollision)
-        {
-            float penetration = Vector3Length(currentResponse);
-            if (penetration < minPenetration)
+            targetPos.y += response.y;
+            SetPosition(targetPos);
+            // Landing or ceiling hit
+            if (vel.y <= 0.0f && response.y > 0.0f)
             {
-                response = currentResponse;
-                minPenetration = penetration;
-                hasCollision = true;
+                vel.y = 0.0f;
+                m_physics.SetGroundLevel(true);
+            }
+            else if (vel.y > 0.0f && response.y < 0.0f)
+            {
+                vel.y = 0.0f;
             }
         }
     }
 
-    if (hasCollision)
-    {
-        // Оновлюємо позицію
-        targetPos = Vector3Add(m_position, response);
-        
-        // Обробляємо вертикальну колізію
-        if (fabs(response.y) > 0.001f)
-        {
-            vel.y = 0.0f;
-            m_physics.SetGroundLevel(response.y > 0.0f);
-        }
-        
-        // Застосовуємо зміни
-        SetPosition(targetPos);
-        m_physics.SetVelocity(vel);
-    }
-
-    // Горизонтальна колізія
-    targetPos.x = m_position.x + vel.x * dt;
-    targetPos.z = m_position.z + vel.z * dt;
+    // 2) Horizontal movement
+    targetPos.x += vel.x * dt;
+    targetPos.z += vel.z * dt;
     SetPosition(targetPos);
-    m_player->UpdatePlayerBox();
-    m_player->UpdatePlayerCollision();
 
     if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
-        response.y = 0.0f; // ігнор вертикалі
-        SetPosition(Vector3Add(m_position, response));
-        m_player->UpdatePlayerBox();
+        response.y = 0.0f;
+        targetPos = Vector3Add(m_position, response);
+        SetPosition(targetPos);
     }
 
+    m_physics.SetVelocity(vel);
+
+    // 3) Update grounded state
+    UpdateGrounded(collisionManager);
+    
     return m_position;
 }
 
@@ -169,53 +140,59 @@ void PlayerMovement::HandleCollisionVelocity(const Vector3 &responseMtv)
     m_physics.SetVelocity(vel);
 }
 
+void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
+{
+    const Vector3 size = m_player->GetPlayerSize();
+    const Vector3 center = m_position;
+    const float maxDistance = size.y + 1.0f;
+    float hitDist = 0.0f;
+    Vector3 hitPoint = {0};
+    Vector3 hitNormal = {0};
+    bool grounded = false;
+    
+    if (collisionManager.RaycastDown(center, maxDistance, hitDist, hitPoint, hitNormal))
+    {
+        float bottom = center.y - size.y * 0.5f;
+        float gap = hitPoint.y - bottom;
+        // Only consider grounded when moving down/standing to avoid breaking jumps
+        if (m_physics.GetVelocity().y <= 0.0f)
+        {
+            grounded = (gap >= 0.0f && gap <= 0.4f);
+        }
+    }
+    m_physics.SetGroundLevel(grounded);
+}
+
 void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
 {
-    Vector3 checkPos = m_position;
-    checkPos.y -= 0.5f; // невелике опускання
-    SetPosition(checkPos);
-    m_player->UpdatePlayerBox();
+    // Raycast down without changing position
+    const Vector3 size = m_player->GetPlayerSize();
+    const Vector3 center = m_position;
+    const float maxDistance = size.y + 1.0f;
+    float hitDist = 0.0f;
+    Vector3 hitPoint = {0};
+    Vector3 hitNormal = {0};
 
-    Vector3 response;
-    bool hasCollision = false;
-
-    // Спочатку перевіряємо BVH-колізію
-    for (const auto &collider : collisionManager.GetColliders())
+    if (collisionManager.RaycastDown(center, maxDistance, hitDist, hitPoint, hitNormal))
     {
-        if (collider->IsUsingBVH())
+        // If close to ground — snap to it
+        const float snapThreshold = 0.6f;
+        float bottom = center.y - size.y * 0.5f;
+        float gap = hitPoint.y - bottom;
+        if (gap >= 0.0f && gap <= snapThreshold)
         {
-            Vector3 bvhResponse;
-            if (m_player->GetCollision().CheckCollisionWithBVH(*collider, bvhResponse))
-            {
-                if (bvhResponse.y > 0.0f)
-                {
-                    response = bvhResponse;
-                    hasCollision = true;
-                    break;
-                }
-            }
+            Vector3 newPos = m_position;
+            newPos.y = hitPoint.y + size.y * 0.5f;
+            SetPosition(newPos);
+            Vector3 vel = m_physics.GetVelocity();
+            vel.y = 0.0f;
+            m_physics.SetVelocity(vel);
+            m_physics.SetGroundLevel(true);
+            return;
         }
     }
 
-    // Якщо BVH не спрацював, використовуємо звичайну AABB
-    if (!hasCollision)
-    {
-        hasCollision = collisionManager.CheckCollision(m_player->GetCollision(), response) && response.y > 0.0f;
-    }
-
-    if (hasCollision)
-    {
-        m_position.y += response.y;
-        SetPosition(m_position);
-        m_physics.SetGroundLevel(true);
-        Vector3 vel = m_physics.GetVelocity();
-        vel.y = 0.0f;
-        m_physics.SetVelocity(vel);
-    }
-    else
-    {
-        m_physics.SetGroundLevel(false);
-    }
+    m_physics.SetGroundLevel(false);
 }
 
 bool PlayerMovement::ExtractFromCollider()
@@ -226,13 +203,11 @@ bool PlayerMovement::ExtractFromCollider()
     if (!m_physics.IsGrounded() || fabsf(m_physics.GetVelocity().y) > 0.1f)
         return false;
 
-    m_player->UpdatePlayerBox();
     Vector3 response;
     if (!m_lastCollisionManager->CheckCollision(m_player->GetCollision(), response))
         return false;
 
     SetPosition(Vector3Add(m_position, {0, 0.5f, 0}));
-    m_player->UpdatePlayerBox();
 
     if (!m_lastCollisionManager->CheckCollision(m_player->GetCollision(), response))
         return true;

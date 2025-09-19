@@ -1,6 +1,7 @@
 #include "CollisionSystem.h"
 #include <cassert>
 #include <cmath>
+#include <cfloat>
 
 #include "CollisionStructures.h"
 
@@ -214,6 +215,16 @@ void Collision::UpdateAABBFromTriangles()
     }
     m_min = minP;
     m_max = maxP;
+}
+
+void Collision::AddTriangle(const CollisionTriangle &triangle)
+{
+    m_triangles.push_back(triangle);
+}
+
+void Collision::AddTriangles(const std::vector<CollisionTriangle> &triangles)
+{
+    m_triangles.insert(m_triangles.end(), triangles.begin(), triangles.end());
 }
 
 // ----------------- BVH build -----------------
@@ -442,36 +453,56 @@ bool Collision::ContainsPointBVH(const Vector3 &point) const
 }
 
 // ----------------- Intersects (AABB broad, BVH narrow) -----------------
+// Helper: check if other's BVH has any leaf AABB overlapping this Collision's AABB
+static bool BVHOverlapsAABB(const BVHNode* node, const Collision& aabbCollider)
+{
+    if (!node) return false;
+    // Quick reject: node AABB vs collider AABB
+    Collision nodeBox{ Vector3Scale(Vector3Add(node->min, node->max), 0.5f),
+                       Vector3Scale(Vector3Subtract(node->max, node->min), 0.5f) };
+    if (!nodeBox.IntersectsAABB(aabbCollider))
+        return false;
+    if (node->IsLeaf())
+    {
+        // Leaf contains triangles bounded by node AABB; treat as overlap
+        return !node->triangles.empty();
+    }
+    return BVHOverlapsAABB(node->left.get(), aabbCollider) ||
+           BVHOverlapsAABB(node->right.get(), aabbCollider);
+}
+
 bool Collision::Intersects(const Collision &other) const
 {
-    // broad-phase
+    // Broad-phase AABB
     if (!IntersectsAABB(other))
         return false;
 
-    // narrow-phase: if both have BVH, check triangle-triangle intersections (expensive).
-    // For performance, we can test each leaf tri AABB against other's BVH.
-    if (m_bvhRoot && other.m_bvhRoot)
+    const bool thisHasBVH = (m_bvhRoot != nullptr);
+    const bool otherHasBVH = (other.m_bvhRoot != nullptr);
+
+    // If both have BVH: use BVH node-vs-AABB overlap as a better narrow-phase
+    if (thisHasBVH && otherHasBVH)
     {
-        // naive: traverse my leaves and test triangles vs other's BVH AABB
-        std::vector<const BVHNode *> stack;
-        stack.push_back(m_bvhRoot.get());
-        while (!stack.empty())
-        {
-            const BVHNode *n = stack.back();
-            stack.pop_back();
-            if (!IntersectsAABB(Collision{Vector3Scale(Vector3Add(n->min, n->max), 0.5f),
-                                          Vector3Scale(Vector3Subtract(n->max, n->min), 0.5f)}))
-            {
-                // this AABB vs THIS object's AABB - but we need to test against other: quick AABB
-                // vs other root
-            }
-            // For brevity: fallback to coarse check: return true (since AABB overlapped).
-            // In production: implement detailed triangle-vs-BVH overlap test here.
-            return true;
-        }
+        // Check if any of other's leaf nodes overlaps this AABB and vice versa
+        bool otherIntoThis = BVHOverlapsAABB(other.m_bvhRoot.get(), *this);
+        if (!otherIntoThis) return false;
+        bool thisIntoOther = BVHOverlapsAABB(m_bvhRoot.get(), other);
+        return thisIntoOther;
     }
 
-    // if no BVH or detailed check not implemented, fall back to AABB result
+    // If only other has BVH, ensure some BVH leaf overlaps our AABB; otherwise reject
+    if (!thisHasBVH && otherHasBVH)
+    {
+        return BVHOverlapsAABB(other.m_bvhRoot.get(), *this);
+    }
+
+    // If only this has BVH, mirror the test
+    if (thisHasBVH && !otherHasBVH)
+    {
+        return BVHOverlapsAABB(m_bvhRoot.get(), other);
+    }
+
+    // No BVH on either side: AABB overlap is our best answer
     return true;
 }
 

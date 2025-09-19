@@ -48,6 +48,13 @@ void PlayerCollision::UpdateBoundingBox() {
     
     m_boundingBox.min = Vector3Subtract(position, Vector3Scale(size, 0.5f));
     m_boundingBox.max = Vector3Add(position, Vector3Scale(size, 0.5f));
+
+    // Keep base Collision AABB in sync with the player bounding box
+    // so collision queries use the latest extents
+    Collision::Update(
+        Vector3Scale(Vector3Add(m_boundingBox.min, m_boundingBox.max), 0.5f),
+        Vector3Scale(Vector3Subtract(m_boundingBox.max, m_boundingBox.min), 0.5f)
+    );
 }
 
 bool PlayerCollision::IsJumpCollision() const {

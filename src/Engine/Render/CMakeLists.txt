@@ -1,5 +1,4 @@
-# Render Module
-# Handles all rendering operations
+
 
 add_library(render STATIC
     RenderManager.cpp
@@ -19,5 +18,5 @@ target_link_libraries(render PUBLIC
     menu
     model
     world
-    nlohmann_json::nlohmann_json
+    nlohmann_json
 )

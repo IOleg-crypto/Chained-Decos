@@ -7,6 +7,8 @@ add_library(collision STATIC
     CollisionManager.h
     CollisionDebugRenderer.cpp
     CollisionDebugRenderer.h
+    GroundColliderFactory.cpp
+    GroundColliderFactory.h
 )
 
 target_include_directories(collision PUBLIC
