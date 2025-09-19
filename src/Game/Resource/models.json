@@ -14,8 +14,8 @@
     "hasAnimations": false,
     "instances": [
       {
-        "position": { "x": 5, "y": 1.5, "z": 10 },
-        "scale": 2.5,
+        "position": { "x": 1, "y": 0, "z": 9 },
+        "scale": 4.5,
         "color": "WHITE"
       }
     ]

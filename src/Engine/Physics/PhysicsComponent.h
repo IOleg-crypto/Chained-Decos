@@ -1,26 +1,24 @@
-#ifndef PHYSICS_COMPONENT
-#define PHYSICS_COMPONENT
+#ifndef PHYSICS_COMPONENT_H
+#define PHYSICS_COMPONENT_H
 
 #include <memory>
 #include <vector>
-#include "../Core/Entity.h"
 #include <raylib.h>
 #include <raymath.h>
 #include "SurfaceComponent.h"
 
 
 
-
-class PhysicsComponent : public Component {
+class PhysicsComponent {
 public:
     // World physics constants
     static constexpr float WORLD_FLOOR_Y = -10.0f;
-    static constexpr Vector3 GROUND_COLLISION_CENTER = {0, 1, 0};
-    static constexpr Vector3 GROUND_COLLISION_SIZE = {2000, 2, 2000};
+    static constexpr Vector3 GROUND_COLLISION_CENTER = {0.0f, WORLD_FLOOR_Y + 1.0f, 0.0f};
+    static constexpr Vector3 GROUND_COLLISION_SIZE = {2000.0f, 2.0f, 2000.0f};
 
     PhysicsComponent();
 
-    void Update(float deltaTime) override;
+    void Update(float deltaTime);
 
     // Physics state
     bool IsGrounded() const;
@@ -90,5 +88,4 @@ private:
     void ApplyDrag(float deltaTime);
     void IntegrateForces(float deltaTime);
 };
-
 #endif

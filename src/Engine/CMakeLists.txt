@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.20)
-project(ChainedDecosEngine LANGUAGES CXX C)
 
 add_subdirectory(Collision)
 add_subdirectory(Input)
@@ -8,7 +6,6 @@ add_subdirectory(Render)
 add_subdirectory(CameraController)
 add_subdirectory(Physics)
 add_subdirectory(World)
-add_subdirectory(Core)
 
 add_library(ChainedDecosEngine STATIC
         Engine.cpp
@@ -16,11 +13,10 @@ add_library(ChainedDecosEngine STATIC
 )
 target_include_directories(ChainedDecosEngine
         PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(ChainedDecosEngine
         PUBLIC
-        core
         collision
         input
         model
