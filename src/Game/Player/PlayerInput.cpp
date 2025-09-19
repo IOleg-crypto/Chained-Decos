@@ -48,7 +48,7 @@ void PlayerInput::ProcessInput()
 }
 
 void PlayerInput::HandleJumpInput() const {
-    if (IsKeyDown(KEY_SPACE) && m_player->GetPhysics().IsGrounded())
+    if (IsKeyPressed(KEY_SPACE))
     {
         float jumpImpulse = m_player->GetPhysics().GetJumpStrength() * 3.0f;
         m_player->ApplyJumpImpulse(jumpImpulse);

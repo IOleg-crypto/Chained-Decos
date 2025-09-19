@@ -5,19 +5,17 @@
 #include <raylib.h>
 #include <string>
 
-#include "Engine/Collision/CollisionDebugRenderer.h"
-#include "Engine/Collision/CollisionManager.h"
-#include "Game/Menu/Menu.h"
-#include "Engine/Model/Model.h"
+// Minimize includes to reduce coupling and avoid cycles
+class Player;
+class Menu;
+class ModelLoader;
+class CollisionManager;
+class CollisionDebugRenderer;
 
 //
 // RenderManager - Handles all rendering operations
 // Separates rendering logic from the main Engine class
 //
-
-class Player;
-class Menu;
-
 class RenderManager
 {
 public:
@@ -80,12 +78,11 @@ private:
     void DrawCameraInfo(const Camera &camera, int cameraMode);
     void DrawModelManagerInfo(const ModelLoader &models);
 
-
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager);
     void DrawControlsInfo();
 private:
     // Debug rendering
-    std::unique_ptr<CollisionDebugRenderer> m_collisionDebugRenderer;
+    std::unique_ptr<CollisionDebugRenderer> m_collisionDebugRenderer; // incomplete type is fine here
     // Debug state
     bool m_showDebugInfo = true;
     bool m_showCollisionDebug = false;

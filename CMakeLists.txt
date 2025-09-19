@@ -66,8 +66,10 @@ target_include_directories(imguilib PUBLIC
 )
 target_link_libraries(imguilib PRIVATE raylib)
 
+if(WIN32)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+endif()
 add_compile_definitions(PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}")
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 add_subdirectory(src/Engine)
 add_subdirectory(src/Game)
@@ -77,9 +79,6 @@ target_link_libraries(ChainedDecos PRIVATE
     ChainedDecosGame
     imguilib
 )
-
-add_compile_definitions(PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}")
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 if(BUILD_TESTS)
     add_subdirectory(tests)
