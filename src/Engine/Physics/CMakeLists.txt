@@ -7,7 +7,7 @@ add_library(physics STATIC
 
 target_include_directories(physics
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
 )
 

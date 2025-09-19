@@ -7,6 +7,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <cfloat>
 
 void CollisionManager::Initialize() const
 {
@@ -293,29 +294,18 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
              "Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
              modelName.c_str(), position.x, position.y, position.z, scale);
 
-    // --- STEP 1: Get model configuration and determine collision type ---
+    // Get model configuration
     const ModelFileConfig *config = models.GetModelConfig(modelName);
-    bool needsPreciseCollision = false;
+    bool needsPreciseCollision = config && (
+        config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE ||
+        config->collisionPrecision == CollisionPrecision::BVH_ONLY ||
+        config->collisionPrecision == CollisionPrecision::IMPROVED_AABB ||
+        config->collisionPrecision == CollisionPrecision::AUTO);
 
-    if (config)
-    {
-        // Check if model needs precise collision based on its configuration
-        needsPreciseCollision =
-            (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE ||
-             config->collisionPrecision == CollisionPrecision::BVH_ONLY ||
-             config->collisionPrecision == CollisionPrecision::IMPROVED_AABB ||
-             config->collisionPrecision == CollisionPrecision::AUTO);
-    }
-    else
-    {
-        TraceLog(LOG_WARNING, "No config found for model '%s'", modelName.c_str());
-    }
-
-    // --- STEP 2: Check collision cache or create new collision ---
+    // Get or create cached collision
     std::string cacheKey = MakeCollisionCacheKey(modelName, scale);
     std::shared_ptr<Collision> cachedCollision;
-
-    // Try to find in cache first
+    
     auto cacheIt = m_collisionCache.find(cacheKey);
     if (cacheIt != m_collisionCache.end())
     {
@@ -324,67 +314,49 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     }
     else
     {
-        // Need to build a new collision
         cachedCollision = CreateBaseCollision(model, modelName, config, needsPreciseCollision);
         m_collisionCache[cacheKey] = cachedCollision;
     }
 
-    // --- STEP 3: Create instance collision from cached collision ---
+    // Create instance collision
     Collision instanceCollision;
-    CollisionType cachedType = cachedCollision->GetCollisionType();
-    TraceLog(LOG_INFO , "Cached collision type for '%s' is %d", modelName.c_str(),
-             static_cast<int>(cachedType));
+    bool usePreciseForInstance = needsPreciseCollision && 
+        (cachedCollision->GetCollisionType() == CollisionType::BVH_ONLY || 
+         cachedCollision->GetCollisionType() == CollisionType::TRIANGLE_PRECISE);
 
-    bool usePreciseForInstance =
-        needsPreciseCollision &&
-        (cachedType == CollisionType::BVH_ONLY || cachedType == CollisionType::TRIANGLE_PRECISE);
-
-    if (usePreciseForInstance)
+    if (usePreciseForInstance && m_preciseCollisionCount[modelName] < MAX_PRECISE_COLLISIONS_PER_MODEL)
     {
-        // Check if we've reached the limit for precise collisions for this model
-        int &preciseCount = m_preciseCollisionCount[modelName];
-
-        if (preciseCount <
-            MAX_PRECISE_COLLISIONS_PER_MODEL) // Only use precise collision for "arc" model
+        // Use precise collision (prefer cached triangles)
+        if (cachedCollision->HasTriangleData())
         {
-            // Create precise collision with full transformation
-            instanceCollision = CreatePreciseInstanceCollision(model, position, scale, config);
-            preciseCount++;
+            instanceCollision = CreatePreciseInstanceCollisionFromCached(*cachedCollision, position, scale);
         }
         else
         {
-            // Fallback to AABB if we reached the limit
-            TraceLog(LOG_WARNING,
-                     "Reached limit of %d precise collisions for model '%s', using AABB",
+            instanceCollision = CreatePreciseInstanceCollision(model, position, scale, config);
+        }
+        m_preciseCollisionCount[modelName]++;
+    }
+    else
+    {
+        // Use simple AABB collision
+        instanceCollision = CreateSimpleAABBInstanceCollision(*cachedCollision, position, scale);
+        if (usePreciseForInstance)
+        {
+            TraceLog(LOG_WARNING, "Reached limit of %d precise collisions for model '%s', using AABB",
                      MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
-            instanceCollision =
-                CreateSimpleAABBInstanceCollision(*cachedCollision, position, scale);
         }
     }
-    else
-    {
-        // Create simple AABB collision
-        instanceCollision = CreateSimpleAABBInstanceCollision(*cachedCollision, position, scale);
-    }
 
-    // Add the instance collision to collision manager
+    // Add to collision manager
     size_t beforeCount = GetColliders().size();
     AddCollider(std::move(instanceCollision));
-    size_t afterCount = GetColliders().size();
-
-    if (afterCount > beforeCount)
-    {
-        TraceLog(LOG_INFO,
-                 "Successfully created instance collision for '%s', collider count: %zu -> %zu",
-                 modelName.c_str(), beforeCount, afterCount);
-        return true;
-    }
-    else
-    {
-        TraceLog(LOG_ERROR, "FAILED to add collision for '%s', collider count unchanged: %zu",
-                 modelName.c_str(), beforeCount);
-        return false;
-    }
+    
+    bool success = GetColliders().size() > beforeCount;
+    TraceLog(LOG_INFO, "%s created instance collision for '%s', collider count: %zu -> %zu",
+             success ? "Successfully" : "FAILED to", modelName.c_str(), beforeCount, GetColliders().size());
+    
+    return success;
 }
 
 const std::vector<std::unique_ptr<Collision>> &CollisionManager::GetColliders() const
@@ -404,21 +376,45 @@ bool CollisionManager::RaycastDown(const Vector3 &origin, float maxDistance, flo
 
     for (const auto &collider : m_collisions)
     {
-        if (!collider->IsUsingBVH())
-            continue;
-
-        RayHit hit;
-        hit.hit = false;
-        hit.distance = maxDistance;
-
-        if (collider->RaycastBVH(origin, dir, maxDistance, hit))
+        if (collider->IsUsingBVH())
         {
-            if (hit.distance < bestDist)
+            RayHit hit;
+            hit.hit = false;
+            hit.distance = maxDistance;
+            if (collider->RaycastBVH(origin, dir, maxDistance, hit))
             {
-                bestDist = hit.distance;
-                bestPoint = hit.position;
-                bestNormal = hit.normal;
-                anyHit = true;
+                if (hit.distance < bestDist)
+                {
+                    bestDist = hit.distance;
+                    bestPoint = hit.position;
+                    bestNormal = hit.normal;
+                    anyHit = true;
+                }
+            }
+        }
+        else
+        {
+            // AABB-only fallback: intersect ray with top face of AABB
+            const Vector3 mn = collider->GetMin();
+            const Vector3 mx = collider->GetMax();
+            // Ray is vertical down. Intersect at y = mx.y (top face)
+            if (origin.y >= mx.y)
+            {
+                float dist = origin.y - mx.y;
+                if (dist <= maxDistance)
+                {
+                    // Check if x,z are inside bounds at that y
+                    if (origin.x >= mn.x && origin.x <= mx.x && origin.z >= mn.z && origin.z <= mx.z)
+                    {
+                        if (dist < bestDist)
+                        {
+                            bestDist = dist;
+                            bestPoint = {origin.x, mx.y, origin.z};
+                            bestNormal = {0, 1, 0};
+                            anyHit = true;
+                        }
+                    }
+                }
             }
         }
     }
@@ -533,16 +529,44 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
     return instanceCollision;
 }
 
+Collision CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
+                                                                     Vector3 position, float scale)
+{
+    // Створюємо інстанс з уже наявних трикутників без повторного читання mesh'ів
+    Collision instance;
+
+    // Побудуємо трансформацію інстанса (масштаб -> зсув)
+    Matrix transform = MatrixIdentity();
+    transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
+    transform = MatrixMultiply(transform, MatrixTranslate(position.x, position.y, position.z));
+
+    // Скопіюємо трикутники та застосуємо трансформацію
+    const auto &tris = cachedCollision.GetTriangles();
+    instance = Collision{};
+    for (const auto &t : tris)
+    {
+        Vector3 v0 = Vector3Transform(t.V0(), transform);
+        Vector3 v1 = Vector3Transform(t.V1(), transform);
+        Vector3 v2 = Vector3Transform(t.V2(), transform);
+        instance.AddTriangle(CollisionTriangle(v0, v1, v2));
+    }
+
+    // Оновимо AABB і зберемо BVH
+    instance.UpdateAABBFromTriangles();
+    instance.InitializeBVH();
+    instance.SetCollisionType(CollisionType::BVH_ONLY);
+    return instance;
+}
+
 Collision CollisionManager::CreateSimpleAABBInstanceCollision(const Collision &cachedCollision,
                                                               const Vector3 &position, float scale)
 {
-    Collision instanceCollision = cachedCollision;  // тут копіюються трикутники, але BVH губиться
+    // Створюємо чисту AABB без трикутників та BVH, щоб інстанс був суто AABB_ONLY
     Vector3 transformedCenter =
         Vector3Add(Vector3Scale(cachedCollision.GetCenter(), scale), position);
     Vector3 scaledSize = Vector3Scale(cachedCollision.GetSize(), scale);
 
-    instanceCollision.Update(transformedCenter, scaledSize);  // оновлюється тільки AABB
-    instanceCollision.SetCollisionType(CollisionType::AABB_ONLY);  // явно встановлюється AABB_ONLY
-
+    Collision instanceCollision(transformedCenter, scaledSize);
+    instanceCollision.SetCollisionType(CollisionType::AABB_ONLY);
     return instanceCollision;
 }

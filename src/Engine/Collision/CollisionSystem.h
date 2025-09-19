@@ -70,6 +70,8 @@ public:
 
     const CollisionTriangle &GetTriangle(size_t idx) const;
     const std::vector<CollisionTriangle> &GetTriangles() const;
+    void AddTriangle(const CollisionTriangle &triangle);
+    void AddTriangles(const std::vector<CollisionTriangle> &triangles);
 
     // BVH methods
     void BuildBVHFromTriangles();
@@ -106,7 +108,8 @@ public:
     const PerformanceStats &GetPerformanceStats() const;
 
     bool CheckCollisionWithBVH(const Collision& other, Vector3& outResponse) const;
-
+    
+    void UpdateAABBFromTriangles();
 private:
     // AABB
     Vector3 m_min{};
@@ -127,7 +130,6 @@ private:
 
 private:
     // Helpers
-    void UpdateAABBFromTriangles();
     std::unique_ptr<BVHNode> BuildBVHNode(std::vector<CollisionTriangle> &tris, int depth = 0);
     bool RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const Vector3 &dir,
                         float maxDistance, RayHit &outHit) const;

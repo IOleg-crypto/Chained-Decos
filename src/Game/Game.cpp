@@ -1,10 +1,11 @@
-#include "Game/Game.h"
+#include "Game.h"
 #include "Engine/Collision/CollisionManager.h"
+#include "Engine/Collision/GroundColliderFactory.h"
 #include "Engine/Engine.h"
 #include "Engine/Model/Model.h"
 #include "Game/Menu/Menu.h"
+#include "Engine/Render/RenderManager.h"
 #include "imgui.h"
-#include "raylib.h"
 
 Game::Game(Engine &engine) : m_engine(engine), m_showMenu(true), m_isGameInitialized(false) , m_isDebugInfo(true)
 {
@@ -130,12 +131,8 @@ void Game::InitCollisions()
     TraceLog(LOG_INFO, "Game::InitCollisions() - Initializing collision system...");
     m_collisionManager.ClearColliders();
 
-    // Ground plane
-    Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-    Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
-    Collision groundPlane{groundCenter, Vector3Scale(groundSize, 0.5f)};
-    groundPlane.SetCollisionType(CollisionType::BVH_ONLY);
-    groundPlane.BuildFromModelWithType(nullptr, CollisionType::BVH_ONLY);
+    // Create ground using factory
+    Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
     m_collisionManager.AddCollider(std::move(groundPlane));
 
     // Initialize ground collider first
@@ -218,10 +215,7 @@ void Game::UpdatePhysicsLogic()
         }
 
         // Create emergency ground plane if no colliders exist
-        Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-        Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
-        Collision plane{groundCenter, groundSize};
-        plane.SetCollisionType(CollisionType::AABB_ONLY);
+        Collision plane = GroundColliderFactory::CreateDefaultGameGround();
         m_collisionManager.AddCollider(std::move(plane));
 
         TraceLog(LOG_WARNING, "Game::UpdatePhysicsLogic() - Created emergency ground plane.");

@@ -6,12 +6,11 @@
 #define ENGINE_H
 
 #include <string>
+#include <memory>
 // Project headers
 #include "Input/InputManager.h"
-#include "Render/RenderManager.h"
 
-
-class RenderManager; // To bad!!!
+class RenderManager; // forward declaration to avoid heavy include and cycles
 /**
  * Main Engine class - manages the core application window and rendering
  *

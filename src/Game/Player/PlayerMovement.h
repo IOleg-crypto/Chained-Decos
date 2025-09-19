@@ -26,6 +26,9 @@ public:
     void ApplyGravity(float deltaTime);
     Vector3 StepMovement(const CollisionManager &collisionManager);
     void SnapToGround(const CollisionManager &collisionManager);
+    
+    // Unified grounded detection using raycast
+    void UpdateGrounded(const CollisionManager &collisionManager);
     void HandleCollisionVelocity(const Vector3 &responseNormal);
     bool ExtractFromCollider();
 

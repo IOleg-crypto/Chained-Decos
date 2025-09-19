@@ -67,6 +67,10 @@ public:
     Collision CreatePreciseInstanceCollision(const Model &model, Vector3 position, float scale,
                                              const ModelFileConfig *config);
 
+    // Create precise collision from cached triangles to avoid re-reading model meshes
+    Collision CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
+                                                       Vector3 position, float scale);
+
     // Create simple AABB collision for an instance
     Collision CreateSimpleAABBInstanceCollision(
        const Collision &cachedCollision,  const Vector3 &position, float scale);
