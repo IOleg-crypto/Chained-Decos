@@ -46,7 +46,7 @@
 16	757	7786826340707891	src/Engine/Collision/CMakeFiles/collision.dir/Octree.cpp.obj	2fe84e461e7c24b2
 2930	3239	7789642790427279	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/raylib.lib	3967a2bac4af3cf4
 38	2149	7785171739509706	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/Application.cpp.obj	f6d87daf69639460
-6815	8702	7787055120148224	src/Game/CMakeFiles/ChainedDecosGame.dir/Game.cpp.obj	20cc44776b2da292
+10	2056	7789668057676649	src/Game/CMakeFiles/ChainedDecosGame.dir/Game.cpp.obj	64304fc31bbb5eea
 2705	4484	7785171766183029	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/MapFileManager/MapFileManager.cpp.obj	3e75921ad944ed7b
 2301	4709	7785171762142296	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/Editor/Editor.cpp.obj	cf00146249558ff3
 34	2972	7785171739469716	src/Game/CMakeFiles/ChainedDecosGame.dir/Map/MapLoader.cpp.obj	a2c069a147754946
@@ -65,13 +65,13 @@
 2475	5567	7787802431663929	src/Engine/Model/CMakeFiles/model.dir/Model.cpp.obj	3127a63a62120e16
 2688	4883	7787802433794617	src/Engine/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj	18452cb59c6cc061
 3278	3402	7789642793912674	src/Engine/Model/model.lib	d2a7fb621830fc4f
-8	14657	7789648299909910	build.ninja	8cff361c9e924f7a
+8	14657	7801462123252087	build.ninja	8cff361c9e924f7a
 18	11779	7786978241764310	D:/gitnext/Chained Decos/cmake-build-Debug/cmake_install.cmake	625d84f1bc718986
-18	11779	7789648299585494	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	625d84f1bc718986
-18	11779	7789648299605496	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	625d84f1bc718986
-18	11779	7789648299617190	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	625d84f1bc718986
-18	11779	7789648299647249	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	625d84f1bc718986
-18	11779	7789648299647249	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	625d84f1bc718986
+18	11779	7801462122743532	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	625d84f1bc718986
+18	11779	7801462122790911	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	625d84f1bc718986
+18	11779	7801462122800989	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	625d84f1bc718986
+18	11779	7801462122862186	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	625d84f1bc718986
+18	11779	7801462122872174	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241857407	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241867407	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Collision/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241887386	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Input/cmake_install.cmake	625d84f1bc718986
@@ -80,18 +80,18 @@
 18	11779	7786978241918460	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Render/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241928399	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/CameraController/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241959143	D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/cmake_install.cmake	625d84f1bc718986
-18	11779	7789648299585494	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	625d84f1bc718986
-18	11779	7789648299605496	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	625d84f1bc718986
-8702	8760	7787055139022094	src/Game/ChainedDecosGame.lib	9a95bb2d8318db2d
-5732	7581	7787802464239873	src/Engine/CMakeFiles/ChainedDecosEngine.dir/Engine.cpp.obj	85b717c948268e01
+18	11779	7801462122743532	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	625d84f1bc718986
+18	11779	7801462122790911	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	625d84f1bc718986
+2056	2111	7789668078132013	src/Game/ChainedDecosGame.lib	b7d2f4e20b0a737
+876	2741	7789648626329942	src/Engine/CMakeFiles/ChainedDecosEngine.dir/Engine.cpp.obj	dd8eb5d3fb36c4c4
 4231	6272	7787802449229215	src/Engine/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj	b3a669eb6d87bcbb
-6755	6815	7787055119544352	src/Engine/ChainedDecosEngine.lib	fb96f7dc8c17b021
+2035	2094	7789665785279211	src/Engine/ChainedDecosEngine.lib	ff8dcb39d0c0a401
 3402	3502	7789642795153357	src/Engine/Collision/collision.lib	35fffd83c9a7e4ae
-3248	5185	7787055084479411	src/Engine/Render/CMakeFiles/render.dir/RenderManager.cpp.obj	6e2489ac0386c3ca
+10	1968	7789665765021433	src/Engine/Render/CMakeFiles/render.dir/RenderManager.cpp.obj	353f21d04d4ecd5d
 31	2879	7785154767973326	src/Engine/Menu/CMakeFiles/menu.dir/Menu.cpp.obj	2053741bee7f2843
 7474	7732	7785148328497066	src/Engine/Menu/menu.lib	308d3e126d9f51dd
-5259	5318	7787055104587120	src/Engine/Render/render.lib	ab73e430f7e9e92
-7073	8820	7787055122738981	CMakeFiles/ChainedDecos.dir/src/main.cpp.obj	7eae7df5e6f65cba
+1969	2035	7789665784618683	src/Engine/Render/render.lib	4041cc75008510fe
+125	2081	7789666102230711	CMakeFiles/ChainedDecos.dir/src/main.cpp.obj	d1ff80e4940db1e8
 8073	8345	7786748030283020	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/libraylib.a	6d8d8db89d974965
 8633	8750	7786748035880621	libimguilib.a	cf729a61a0d3cae4
 12608	12675	7786748075633869	src/Engine/Input/libinput.a	ed94d2560d2cd131
@@ -104,8 +104,8 @@
 3748	3810	7786827030382620	src/Game/libChainedDecosGame.a	9773ea0c1687179f
 2075	3620	7786972675879901	src/Engine/World/CMakeFiles/world.dir/Physics.cpp.obj	8471b8f3082e0da3
 12156	12223	7786748071113227	src/Engine/World/libworld.a	7b764968f1087763
-1842	2241	7786827501030976	ChainedDecos.exe	57c25f9659e105
-3571	3628	7789642796834411	src/Engine/World/world.lib	dfd1d43b0496684e
+2111	2322	7789668078682918	ChainedDecos.exe	cff07b8d2c0b4637
+635	707	7789665114753038	src/Engine/World/world.lib	dfd1d43b0496684e
 18	11779	7786978241938391	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/World/cmake_install.cmake	625d84f1bc718986
 2972	3696	7785171768851640	src/Game/CMakeFiles/ChainedDecosGame.dir/Menu/Menu.cpp.obj	e8114b18ea03d7bd
 18	11779	7786978241969122	D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Map/cmake_install.cmake	625d84f1bc718986
@@ -116,15 +116,15 @@
 2557	6003	7786972680706407	src/Game/Map/CMakeFiles/mapmod.dir/MapLoader.cpp.obj	d8a1c999f80689e5
 14	11403	7786978242019054	D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Player/cmake_install.cmake	625d84f1bc718986
 15821	15945	7786748107766422	src/Game/Map/libmapmod.a	e7c39e776457abcd
-5242	7100	7787055104417130	src/Game/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj	65cedc58f9f52b71
-5185	7073	7787055103847136	src/Game/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj	58898f424848512d
-4838	6755	7787055100379301	src/Game/Player/CMakeFiles/player.dir/Player.cpp.obj	bfe37cf6d331a9ea
-5318	7208	7787055105187140	src/Game/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj	93e807c9a7a59a58
-91	5156	7787045701664730	src/Game/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj	6977021bf54c077c
+17	2252	7789665786824577	src/Game/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj	65cedc58f9f52b71
+13	2210	7789665786793244	src/Game/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj	58898f424848512d
+9	1969	7789666101071440	src/Game/Player/CMakeFiles/player.dir/Player.cpp.obj	bfe37cf6d331a9ea
+9	1829	7789666417497086	src/Game/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj	93e807c9a7a59a58
+21	2219	7789665786865593	src/Game/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj	6977021bf54c077c
 1759	1842	7786827500190943	src/Game/Player/libplayer.a	f1bb2439c154c771
 3502	3576	7789642796144397	src/Game/Menu/menu.lib	42cbe333e898dbd9
-114	419	7786976610924858	src/Game/Map/mapmod.lib	e2fc1fa405d98045
-7208	7265	7787055124080246	src/Game/Player/player.lib	780465acf6c4c489
+22	125	7789666101193393	src/Game/Map/mapmod.lib	d9ca1a566114d46e
+1829	1898	7789666435695667	src/Game/Player/player.lib	24aabb96139725c7
 112	1439	7786974183539923	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj	366b970c762318b6
 107	5219	7787045701829592	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj	b9d5a9b78a36b22d
 112	5466	7787045701869729	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj	1e68a42e99b69a9
@@ -134,44 +134,11 @@
 116	5283	7787045701909940	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj	b895a283526dd432
 8761	9001	7787055139603258	src/Game/MapEditor/ChainedDecosMapEditor.exe	b5d1b152f48f475f
 2676	3153	7787802433684620	src/Engine/Model/CMakeFiles/model.dir/ModelConfig.cpp.obj	136ac219a46fe22a
-2680	3278	7789642787928469	src/Engine/Physics/CMakeFiles/physics.dir/PhysicsComponent.cpp.obj	9591c4d6fb1cf5ea
-2900	3488	7789642790123828	src/Engine/Physics/CMakeFiles/physics.dir/SurfaceComponent.cpp.obj	14100261a31df10e
-3488	3560	7789642796004394	src/Engine/Physics/physics.lib	dcd263a4db32d4d0
-2916	3571	7789642790286268	src/Engine/World/CMakeFiles/world.dir/World.cpp.obj	dd3efdcb8425869e
+10	638	7789664676921306	src/Engine/Physics/CMakeFiles/physics.dir/PhysicsComponent.cpp.obj	9591c4d6fb1cf5ea
+14	719	7789664191128720	src/Engine/Physics/CMakeFiles/physics.dir/SurfaceComponent.cpp.obj	14100261a31df10e
+639	787	7789664683206859	src/Engine/Physics/physics.lib	dcd263a4db32d4d0
+10	635	7789665108509867	src/Engine/World/CMakeFiles/world.dir/World.cpp.obj	dd3efdcb8425869e
 3560	4062	7789642796734398	src/Engine/CMakeFiles/ChainedDecosEngine.dir/Core/Component.cpp.obj	cf81731f45e2b932
-13	637	7789648617698290	src/Engine/Physics/CMakeFiles/physics.dir/SurfaceComponent.cpp.obj	14100261a31df10e
-9	675	7789648617658283	src/Engine/Physics/CMakeFiles/physics.dir/PhysicsComponent.cpp.obj	9591c4d6fb1cf5ea
-16	699	7789648617718267	src/Engine/World/CMakeFiles/world.dir/World.cpp.obj	dd3efdcb8425869e
-675	817	7789648624321236	src/Engine/Physics/physics.lib	dcd263a4db32d4d0
-817	876	7789648625739201	src/Engine/World/world.lib	dfd1d43b0496684e
 637	1085	7789648623938786	src/Engine/Core/CMakeFiles/core.dir/Component.cpp.obj	46de6f06ea43d917
 699	1271	7789648624563074	src/Engine/Core/CMakeFiles/core.dir/Entity.cpp.obj	3c54391eb6d6ff97
 1271	1330	7789648630284543	src/Engine/Core/core.lib	6c63ef23ba190f44
-876	2741	7789648626329942	src/Engine/CMakeFiles/ChainedDecosEngine.dir/Engine.cpp.obj	dd8eb5d3fb36c4c4
-14	719	7789664191128720	src/Engine/Physics/CMakeFiles/physics.dir/SurfaceComponent.cpp.obj	14100261a31df10e
-18	762	7789664191169567	src/Engine/World/CMakeFiles/world.dir/World.cpp.obj	dd3efdcb8425869e
-10	638	7789664676921306	src/Engine/Physics/CMakeFiles/physics.dir/PhysicsComponent.cpp.obj	9591c4d6fb1cf5ea
-639	787	7789664683206859	src/Engine/Physics/physics.lib	dcd263a4db32d4d0
-787	844	7789664684688426	src/Engine/World/world.lib	dfd1d43b0496684e
-10	635	7789665108509867	src/Engine/World/CMakeFiles/world.dir/World.cpp.obj	dd3efdcb8425869e
-635	707	7789665114753038	src/Engine/World/world.lib	dfd1d43b0496684e
-10	1968	7789665765021433	src/Engine/Render/CMakeFiles/render.dir/RenderManager.cpp.obj	353f21d04d4ecd5d
-1969	2035	7789665784618683	src/Engine/Render/render.lib	4041cc75008510fe
-2035	2094	7789665785279211	src/Engine/ChainedDecosEngine.lib	ff8dcb39d0c0a401
-13	2210	7789665786793244	src/Game/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj	58898f424848512d
-21	2219	7789665786865593	src/Game/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj	6977021bf54c077c
-17	2252	7789665786824577	src/Game/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj	65cedc58f9f52b71
-22	125	7789666101193393	src/Game/Map/mapmod.lib	d9ca1a566114d46e
-9	1969	7789666101071440	src/Game/Player/CMakeFiles/player.dir/Player.cpp.obj	bfe37cf6d331a9ea
-125	2081	7789666102230711	CMakeFiles/ChainedDecos.dir/src/main.cpp.obj	d1ff80e4940db1e8
-9	1829	7789666417497086	src/Game/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj	93e807c9a7a59a58
-1829	1898	7789666435695667	src/Game/Player/player.lib	24aabb96139725c7
-14	1998	7789666417548192	src/Game/CMakeFiles/ChainedDecosGame.dir/Game.cpp.obj	64304fc31bbb5eea
-1998	2055	7789666437385089	src/Game/ChainedDecosGame.lib	b7d2f4e20b0a737
-2055	2413	7789666437959611	ChainedDecos.exe	cff07b8d2c0b4637
-9	1960	7789667781238859	src/Game/CMakeFiles/ChainedDecosGame.dir/Game.cpp.obj	64304fc31bbb5eea
-1960	2021	7789667800751705	src/Game/ChainedDecosGame.lib	b7d2f4e20b0a737
-2021	2222	7789667801352557	ChainedDecos.exe	cff07b8d2c0b4637
-10	2056	7789668057676649	src/Game/CMakeFiles/ChainedDecosGame.dir/Game.cpp.obj	64304fc31bbb5eea
-2056	2111	7789668078132013	src/Game/ChainedDecosGame.lib	b7d2f4e20b0a737
-2111	2322	7789668078682918	ChainedDecos.exe	cff07b8d2c0b4637

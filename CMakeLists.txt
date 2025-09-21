@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 option(FAST_CONFIG "Reduce CMake configure time" ON)
 option(BUILD_TESTS "Build unit tests" OFF)
-option(BUILD_MAP_EDITOR "Build MapEditor tools" OFF)
+option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
 
 if(FAST_CONFIG)
     set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/.deps" CACHE PATH "Deps cache")
