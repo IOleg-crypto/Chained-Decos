@@ -14,7 +14,6 @@
 			"add_library",
 			"target_link_libraries",
 			"add_compile_definitions",
-			"add_definitions",
 			"target_include_directories"
 		],
 		"files" : 
@@ -30,13 +29,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 13,
+				"line" : 10,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 21,
+				"line" : 18,
 				"parent" : 0
 			},
 			{
@@ -45,19 +44,19 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 69,
+				"line" : 72,
 				"parent" : 3
 			},
 			{
-				"command" : 3,
+				"command" : 2,
 				"file" : 1,
 				"line" : 70,
 				"parent" : 3
 			},
 			{
-				"command" : 4,
+				"command" : 3,
 				"file" : 0,
-				"line" : 17,
+				"line" : 14,
 				"parent" : 0
 			}
 		]
@@ -94,11 +93,11 @@
 			[
 				{
 					"backtrace" : 6,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/src"
+					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Core"
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Collision"
 				},
 				{
 					"backtrace" : 2,
@@ -107,14 +106,6 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Collision"
-				},
-				{
-					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
 					"backtrace" : 2,
@@ -158,7 +149,7 @@
 				},
 				{
 					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Physics/.."
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Physics/src"
 				},
 				{
 					"backtrace" : 2,
@@ -212,15 +203,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "world::@c98633f6e372857301bf"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "physics::@e27c3d6556b677b24ea2"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "core::@4f6386a7aa3d52961998"
+			"id" : "world::@c98633f6e372857301bf"
 		},
 		{
 			"backtrace" : 2,

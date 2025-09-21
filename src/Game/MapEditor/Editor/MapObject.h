@@ -34,6 +34,7 @@ public:
     [[nodiscard]] Color GetColor() const;
     [[nodiscard]] std::string GetName() const;
     [[nodiscard]] int &GetType();
+    [[nodiscard]] int GetType() const;
     [[nodiscard]] bool IsSelected() const;
     [[nodiscard]] Vector2 GetSize() const;
     [[nodiscard]] float GetRadiusV() const;

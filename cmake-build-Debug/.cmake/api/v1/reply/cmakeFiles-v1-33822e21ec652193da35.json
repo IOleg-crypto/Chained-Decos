@@ -496,9 +496,6 @@
 			"path" : "src/Engine/World/CMakeLists.txt"
 		},
 		{
-			"path" : "src/Engine/Core/CMakeLists.txt"
-		},
-		{
 			"path" : "src/Game/CMakeLists.txt"
 		},
 		{

@@ -15,6 +15,7 @@ Vector3 MapObject::GetRotation() const { return rotation; }
 Color MapObject::GetColor() const { return color; }
 std::string MapObject::GetName() const { return name; }
 int &MapObject::GetType() { return type; }
+int MapObject::GetType() const { return type; }
 bool MapObject::IsSelected() const { return selected; }
 Vector2 MapObject::GetSize() const { return size; }
 float MapObject::GetRadiusV() const { return radiusV; }

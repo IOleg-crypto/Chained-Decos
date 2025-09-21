@@ -15,8 +15,23 @@ add_executable(${PROJECT_NAME}
     Editor/MapObject.h
     Editor/ObjectTransform.h
     Editor/ObjectTransform.cpp
+    Editor/UndoRedo.h
+    Editor/UndoRedo.cpp
+    Editor/ClipboardManager.h
+    Editor/ClipboardManager.cpp
+    Editor/LayerManager.h
+    Editor/LayerManager.cpp
+    Editor/ShortcutManager.h
+    Editor/ShortcutManager.cpp
+    Editor/ObjectFilter.h
+    Editor/ObjectFilter.cpp
+    Editor/StatusBar.h
+    Editor/StatusBar.cpp
+    Editor/EnhancedEditor.h
     MapFileManager/MapFileManager.h
     MapFileManager/MapFileManager.cpp
+    MapFileManager/JsonMapFileManager.h
+    MapFileManager/JsonMapFileManager.cpp
     main.cpp
 )
 
