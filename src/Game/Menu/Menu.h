@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <raylib.h>
 
 class Engine;
 
@@ -22,13 +23,18 @@ enum class MenuAction : uint8_t
     SinglePlayer,
     MultiPlayer,
     OpenGameModeMenu,
-    ExitGame
+    ExitGame,
+    StartGameWithMap,  // New action for starting game with selected map
+    SelectMap1,        // Map selection actions
+    SelectMap2,
+    SelectMap3
 };
 
 enum class MenuState : uint8_t
 {
     Main,
     GameMode,
+    MapSelection,
     Options,
     Video,
     Audio,
@@ -51,6 +57,16 @@ struct MenuOption
     int selectedIndex = 0;
 };
 
+struct MapInfo
+{
+    std::string name;
+    std::string displayName;
+    std::string description;
+    std::string previewImage; // Path to preview image
+    Color themeColor;
+    bool isAvailable;
+};
+
 class Menu
 {
 private:
@@ -67,6 +83,19 @@ private:
     std::vector<MenuItem> m_audioMenu;
     std::vector<MenuItem> m_controlsMenu;
     std::vector<MenuOption> m_videoOptions;
+
+    // Map selection data
+    std::vector<MapInfo> m_availableMaps;
+    int m_selectedMap = 0;
+
+    // Console functionality
+    bool m_consoleOpen = false;
+    std::string m_consoleInput;
+    std::vector<std::string> m_consoleHistory;
+    std::vector<std::string> m_consoleOutput;
+    size_t m_consoleHistoryIndex = 0;
+    static const size_t MAX_CONSOLE_LINES = 100;
+    static const size_t MAX_HISTORY_LINES = 50;
 
     Engine *m_engine = nullptr;
 
@@ -89,7 +118,23 @@ public:
     void HandleKeyboardNavigation();
     void HandleVideoNavigation();
     void HandleConfirmExit();
+    void HandleMapSelection();
     static void RenderConfirmExit();
+
+    // Map selection methods
+    void InitializeMaps();
+    void RenderMapSelection() const;
+    [[nodiscard]] const MapInfo* GetSelectedMap() const;
+    [[nodiscard]] std::string GetSelectedMapName() const;
+
+    // Console functionality
+    void ToggleConsole();
+    void HandleConsoleInput();
+    void RenderConsole() const;
+    void ExecuteConsoleCommand(const std::string& command);
+    void AddConsoleOutput(const std::string& text);
+    [[nodiscard]] bool IsConsoleOpen() const { return m_consoleOpen; }
+    [[nodiscard]] std::string GetCurrentSettingValue(const std::string& settingName) const;
 };
 
 #endif // MENU_H

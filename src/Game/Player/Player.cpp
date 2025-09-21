@@ -5,8 +5,8 @@
 #include <memory>
 
 // Define player constants
-const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 11.f,
-                                                0.0f}; // Lowered spawn position for large model
+const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 5.0f,
+                                                0.0f}; // Safe spawn position above ground
 const float Player::MODEL_Y_OFFSET = -1.f;
 const float Player::MODEL_SCALE = 1.1f;
 
@@ -24,8 +24,78 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_collision = std::make_unique<PlayerCollision>(this);
 
 
-    // Initialize player position
-    SetPlayerPosition(DEFAULT_SPAWN_POSITION);
+    // Initialize player position - use safe position above ground
+    Vector3 safePosition = {0.0f, 5.0f, 0.0f};
+    SetPlayerPosition(safePosition);
+
+    TraceLog(LOG_INFO, "Player::Player() - Player initialized at safe position (%.2f, %.2f, %.2f)",
+               safePosition.x, safePosition.y, safePosition.z);
+
+    // Ensure physics starts properly
+    m_movement->GetPhysics().SetGroundLevel(true);
+    m_movement->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
+
+    // Additional safety check
+    Vector3 currentPos = GetPlayerPosition();
+    TraceLog(LOG_INFO, "Player::Player() - Player current position after init: (%.2f, %.2f, %.2f)",
+               currentPos.x, currentPos.y, currentPos.z);
+
+    // Force update collision system
+    UpdatePlayerBox();
+    UpdatePlayerCollision();
+
+    // Final position verification
+    Vector3 finalPos = GetPlayerPosition();
+    TraceLog(LOG_INFO, "Player::Player() - Player final position: (%.2f, %.2f, %.2f)",
+               finalPos.x, finalPos.y, finalPos.z);
+
+    // Ensure player is properly grounded
+    if (finalPos.y < 5.0f)
+    {
+        Vector3 correctedPos = {finalPos.x, 5.0f, finalPos.z};
+        SetPlayerPosition(correctedPos);
+        TraceLog(LOG_WARNING, "Player::Player() - Player position corrected to (%.2f, %.2f, %.2f)",
+                   correctedPos.x, correctedPos.y, correctedPos.z);
+    }
+
+    // Final verification
+    Vector3 verifiedPos = GetPlayerPosition();
+    TraceLog(LOG_INFO, "Player::Player() - Player verified final position: (%.2f, %.2f, %.2f)",
+               verifiedPos.x, verifiedPos.y, verifiedPos.z);
+
+    // Ensure player stays at safe height
+    if (verifiedPos.y < 5.0f)
+    {
+        Vector3 safeCorrectedPos = {verifiedPos.x, 5.0f, verifiedPos.z};
+        SetPlayerPosition(safeCorrectedPos);
+        TraceLog(LOG_ERROR, "Player::Player() - Player position force-corrected to safe height (%.2f, %.2f, %.2f)",
+                   safeCorrectedPos.x, safeCorrectedPos.y, safeCorrectedPos.z);
+    }
+
+    // Final safety check - ensure player is at correct height
+    Vector3 finalCheckPos = GetPlayerPosition();
+    if (finalCheckPos.y < 5.0f)
+    {
+        Vector3 emergencyPos = {finalCheckPos.x, 5.0f, finalCheckPos.z};
+        SetPlayerPosition(emergencyPos);
+        TraceLog(LOG_ERROR, "Player::Player() - EMERGENCY: Player position corrected to (%.2f, %.2f, %.2f)",
+                   emergencyPos.x, emergencyPos.y, emergencyPos.z);
+    }
+
+    // Ultimate safety check
+    Vector3 ultimatePos = GetPlayerPosition();
+    if (ultimatePos.y < 5.0f)
+    {
+        Vector3 ultimateSafePos = {ultimatePos.x, 5.0f, ultimatePos.z};
+        SetPlayerPosition(ultimateSafePos);
+        TraceLog(LOG_ERROR, "Player::Player() - ULTIMATE SAFETY: Player position corrected to (%.2f, %.2f, %.2f)",
+                   ultimateSafePos.x, ultimateSafePos.y, ultimateSafePos.z);
+    }
+
+    // Final position confirmation
+    Vector3 finalConfirmedPos = GetPlayerPosition();
+    TraceLog(LOG_INFO, "Player::Player() - Player final confirmed position: (%.2f, %.2f, %.2f)",
+               finalConfirmedPos.x, finalConfirmedPos.y, finalConfirmedPos.z);
 }
 
 Player::~Player() = default;
@@ -73,9 +143,28 @@ void Player::Update(const CollisionManager &collisionManager)
         m_movement->SnapToGround(collisionManager);
     }
 
+    // Force ground state if player is very close to ground and not moving up
+    if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 1.0f)
+    {
+        Vector3 playerPos = GetPlayerPosition();
+        if (playerPos.y <= 1.0f) // Very close to ground level
+        {
+            m_movement->GetPhysics().SetGroundLevel(true);
+            m_movement->GetPhysics().SetVelocityY(0.0f);
+            TraceLog(LOG_INFO, "Player::Update() - Force grounded player at low Y position: %.2f", playerPos.y);
+        }
+    }
+
     if (m_movement->GetPhysics().IsGrounded())
     {
         m_isJumping = false;
+        // Ensure velocity is zero when grounded to prevent sliding
+        Vector3 currentVel = m_movement->GetPhysics().GetVelocity();
+        if (fabsf(currentVel.y) < 0.1f)
+        {
+            currentVel.y = 0.0f;
+            m_movement->GetPhysics().SetVelocity(currentVel);
+        }
     }
 }
 

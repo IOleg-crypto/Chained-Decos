@@ -162,6 +162,15 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
                 hasGroundMTV = true;
             }
         }
+        else if (axis == 1 && mtv.y < 0 && (playerCenter.y - colliderCenter.y) <= -0.1f)
+        {
+            // Prevent pushing player down through ground
+            if (!hasGroundMTV || fabsf(mtv.y) < fabsf(groundMTV.y))
+            {
+                groundMTV = mtv;
+                hasGroundMTV = true;
+            }
+        }
         else
         {
             float lenSq = mtv.x * mtv.x + mtv.y * mtv.y + mtv.z * mtv.z;
@@ -411,6 +420,25 @@ bool CollisionManager::RaycastDown(const Vector3 &origin, float maxDistance, flo
                             bestDist = dist;
                             bestPoint = {origin.x, mx.y, origin.z};
                             bestNormal = {0, 1, 0};
+                            anyHit = true;
+                        }
+                    }
+                }
+            }
+            // Also check bottom face for ground collision
+            else if (origin.y <= mn.y)
+            {
+                float dist = mn.y - origin.y;
+                if (dist <= maxDistance)
+                {
+                    // Check if x,z are inside bounds at that y
+                    if (origin.x >= mn.x && origin.x <= mx.x && origin.z >= mn.z && origin.z <= mx.z)
+                    {
+                        if (dist < bestDist)
+                        {
+                            bestDist = dist;
+                            bestPoint = {origin.x, mn.y, origin.z};
+                            bestNormal = {0, -1, 0};
                             anyHit = true;
                         }
                     }

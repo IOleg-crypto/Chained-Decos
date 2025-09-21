@@ -81,14 +81,13 @@ bool PlayerCollision::CheckCollisionWithBVH(const Collision& other, Vector3& out
     bool hasCollision = false;
     Vector3 totalResponse = {0};
     
-    // Перевіряємо всі напрямки
     const Vector3 directions[] = {
-        {0, -1, 0},  // вниз
-        {0, 1, 0},   // вгору
-        {1, 0, 0},   // вправо
-        {-1, 0, 0},  // вліво
-        {0, 0, 1},   // вперед
-        {0, 0, -1}   // назад
+        {0, -1, 0},  
+        {0, 1, 0},   
+        {1, 0, 0},   
+        {-1, 0, 0},  
+        {0, 0, 1},   
+        {0, 0, -1}   
     };
     
     for (const auto& point : m_collisionPoints) {
@@ -96,14 +95,14 @@ bool PlayerCollision::CheckCollisionWithBVH(const Collision& other, Vector3& out
             RayHit hit;
             if (other.RaycastBVH(point, dir, 2.0f, hit)) {
                 if (hit.hit) {
-                    // Обчислюємо вектор відповіді для цього напрямку
+                    
                     Vector3 response;
                     float penetration = 2.0f - hit.distance;
                     response.x = dir.x * penetration;
                     response.y = dir.y * penetration;
                     response.z = dir.z * penetration;
                     
-                    // Якщо це перша колізія або нова колізія ближча
+         
                     if (!hasCollision || Vector3Length(response) < Vector3Length(totalResponse)) {
                         totalResponse = response;
                         hasCollision = true;

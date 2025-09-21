@@ -13,7 +13,7 @@ Engine::Engine() : Engine(800, 600) {}
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
       m_windowInitialized(false), m_renderManager(std::make_shared<RenderManager>()), m_shouldExit(false),
-      m_showDebug(false), m_showCollisionDebug(false), m_isEngineInit(false)
+      m_showDebug(false), m_showCollisionDebug(true), m_isEngineInit(false)
 {
     if (m_screenX <= 0 || m_screenY <= 0)
     {
@@ -52,6 +52,7 @@ void Engine::Init()
     SetExitKey(KEY_NULL);
 
     m_renderManager->Initialize();
+    m_renderManager->SetCollisionDebug(m_showCollisionDebug);
 
     // Register engine-level input actions
     m_inputManager.RegisterAction(KEY_F11, ToggleFullscreen);
