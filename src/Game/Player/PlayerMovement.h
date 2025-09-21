@@ -31,6 +31,7 @@ public:
     void UpdateGrounded(const CollisionManager &collisionManager);
     void HandleCollisionVelocity(const Vector3 &responseNormal);
     bool ExtractFromCollider();
+    Vector3 ValidateCollisionResponse(const Vector3& response, const Vector3& currentPosition);
 
     // Getters/Setters
     [[nodiscard]] float GetRotationY() const;

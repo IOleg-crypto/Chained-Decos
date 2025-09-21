@@ -10,12 +10,13 @@ Collision GroundColliderFactory::CreateAabbGround(const Vector3& center, const V
 
 Collision GroundColliderFactory::CreateDefaultGameGround()
 {
-    Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-    Vector3 groundSize = PhysicsComponent::GROUND_COLLISION_SIZE;
-    
-    float halfX = groundSize.x * 50.0f;
-    float halfZ = groundSize.z * 1.75f;
+    // Fix ground positioning - place it at the world floor level
+    Vector3 groundCenter = {0.0f, PhysicsComponent::WORLD_FLOOR_Y + 1.0f, 0.0f};
+    Vector3 groundSize = {2000.0f, 2.0f, 2000.0f};
+
+    float halfX = groundSize.x * 0.5f;
+    float halfZ = groundSize.z * 0.5f;
     Vector3 halfSize = {halfX, groundSize.y * 0.5f, halfZ};
-    
+
     return CreateAabbGround(groundCenter, halfSize);
 }

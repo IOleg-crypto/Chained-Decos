@@ -7,7 +7,6 @@
 
 #include "Animation.h"
 
-class Model;
 #include <raylib.h>
 #include <string>
 

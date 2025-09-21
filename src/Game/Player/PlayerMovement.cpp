@@ -77,10 +77,13 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     // 1) Vertical movement
     targetPos.y += vel.y * dt;
     SetPosition(targetPos);
-    
+
     Vector3 response = {0};
     if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
+        // Validate collision response to prevent invalid movements
+        response = ValidateCollisionResponse(response, targetPos);
+
         if (fabsf(response.y) > 0.0001f)
         {
             targetPos.y += response.y;
@@ -90,6 +93,8 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
             {
                 vel.y = 0.0f;
                 m_physics.SetGroundLevel(true);
+                // Ensure player is properly positioned on ground
+                m_position.y = targetPos.y;
             }
             else if (vel.y > 0.0f && response.y < 0.0f)
             {
@@ -106,6 +111,8 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
         response.y = 0.0f;
+        // Validate horizontal collision response
+        response = ValidateCollisionResponse(response, targetPos);
         targetPos = Vector3Add(m_position, response);
         SetPosition(targetPos);
     }
@@ -144,12 +151,13 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
 {
     const Vector3 size = m_player->GetPlayerSize();
     const Vector3 center = m_position;
-    const float maxDistance = size.y + 1.0f;
+    // Increase raycast distance to ensure we can reach the ground
+    const float maxDistance = size.y + 15.0f; // Increased from 1.0f to 15.0f
     float hitDist = 0.0f;
     Vector3 hitPoint = {0};
     Vector3 hitNormal = {0};
     bool grounded = false;
-    
+
     if (collisionManager.RaycastDown(center, maxDistance, hitDist, hitPoint, hitNormal))
     {
         float bottom = center.y - size.y * 0.5f;
@@ -157,9 +165,21 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
         // Only consider grounded when moving down/standing to avoid breaking jumps
         if (m_physics.GetVelocity().y <= 0.0f)
         {
-            grounded = (gap >= 0.0f && gap <= 0.4f);
+            // Increase tolerance for ground detection and add minimum gap check
+            grounded = (gap >= -0.1f && gap <= 0.8f); // Allow slight penetration and larger tolerance
         }
     }
+
+    // Additional check: if we're very close to ground level and not moving up fast, consider grounded
+    if (!grounded && m_physics.GetVelocity().y <= 1.0f)
+    {
+        float bottom = center.y - size.y * 0.5f;
+        if (bottom <= 0.5f) // Close to ground level
+        {
+            grounded = true;
+        }
+    }
+
     m_physics.SetGroundLevel(grounded);
 }
 
@@ -168,7 +188,8 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
     // Raycast down without changing position
     const Vector3 size = m_player->GetPlayerSize();
     const Vector3 center = m_position;
-    const float maxDistance = size.y + 1.0f;
+    // Increase raycast distance to ensure we can reach the ground
+    const float maxDistance = size.y + 15.0f; // Increased from 1.0f to 15.0f
     float hitDist = 0.0f;
     Vector3 hitPoint = {0};
     Vector3 hitNormal = {0};
@@ -176,7 +197,7 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
     if (collisionManager.RaycastDown(center, maxDistance, hitDist, hitPoint, hitNormal))
     {
         // If close to ground — snap to it
-        const float snapThreshold = 0.6f;
+        const float snapThreshold = 0.8f; // Increased from 0.6f to 0.8f
         float bottom = center.y - size.y * 0.5f;
         float gap = hitPoint.y - bottom;
         if (gap >= 0.0f && gap <= snapThreshold)
@@ -216,5 +237,37 @@ bool PlayerMovement::ExtractFromCollider()
     m_physics.SetVelocity({0, 0, 0});
     m_physics.SetGroundLevel(false);
     return true;
+}
+
+// New function to validate collision response and prevent invalid movements
+Vector3 PlayerMovement::ValidateCollisionResponse(const Vector3& response, const Vector3& currentPosition)
+{
+    Vector3 validatedResponse = response;
+
+    // Don't allow responses that would push player below ground level
+    if (response.y < 0.0f && (currentPosition.y + response.y) < -5.0f)
+    {
+        validatedResponse.y = 0.0f;
+        TraceLog(LOG_WARNING, "PlayerMovement::ValidateCollisionResponse() - Prevented player from going below ground");
+    }
+
+    // Don't allow large upward responses that could cause teleportation
+    if (response.y > 0.0f && response.y > 2.0f)
+    {
+        validatedResponse.y = 2.0f;
+        TraceLog(LOG_WARNING, "PlayerMovement::ValidateCollisionResponse() - Clamped excessive upward response");
+    }
+
+    // Don't allow large horizontal responses that could cause teleportation
+    float horizontalMagnitude = sqrtf(response.x * response.x + response.z * response.z);
+    if (horizontalMagnitude > 1.5f)
+    {
+        float scale = 1.5f / horizontalMagnitude;
+        validatedResponse.x *= scale;
+        validatedResponse.z *= scale;
+        TraceLog(LOG_WARNING, "PlayerMovement::ValidateCollisionResponse() - Clamped excessive horizontal response");
+    }
+
+    return validatedResponse;
 }
 

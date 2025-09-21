@@ -1,11 +1,10 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Engine.h"
-#include "Engine/Model/Model.h"
-#include "Game/Menu/Menu.h"
-#include "Model/Model.h"
+#include "../Engine/Collision/CollisionManager.h"
+#include "../Engine/Engine.h"
+#include "../Engine/Model/Model.h"
+#include "Menu/Menu.h"
 #include "Player/Player.h"
 
 class Engine;
@@ -39,7 +38,7 @@ private:
     void Render();
     void InitInput();
     void InitCollisions();
-    void InitPlayer() const;
+    void InitPlayer();
     void LoadGameModels();
     void UpdatePlayerLogic();
     void UpdatePhysicsLogic();
@@ -47,6 +46,9 @@ private:
     void HandleMenuActions();
     void RenderGameWorld() const;
     void RenderGameUI() const;
+    
+    // Parkour test map creation
+    void CreateParkourTestMap();
 };
 
 #endif // GAME_H

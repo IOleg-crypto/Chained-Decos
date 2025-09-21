@@ -10,6 +10,20 @@ Chained Decos is a fast-paced parkour game built with modern C++20 and [raylib](
 > [!WARNING]
 > Configuration can occasionally be unstable. If you hit issues, see the Troubleshooting section.
 
+## 🔧 Recent Updates
+
+### Bug Fixes
+- **Fixed collision bug**: Players can no longer fall through the ground after touching collision objects
+- **Improved ground detection**: Enhanced physics system to better detect ground after collisions
+- **Fixed settings menu overlap**: Video settings now display current and selected values without overlapping
+- **Added collision response validation**: Prevents invalid player movements that could cause teleportation
+
+### New Features
+- **Developer Console**: In-game command console with Source engine-style commands
+- **Command Line Support**: Launch options like `-fullscreen`, `-width`, `-height`, etc.
+- **Game Pause on Console**: Game automatically pauses when console is open
+- **Enhanced Settings Display**: Settings menu shows both current system values and selected options
+
 ---
 
 ## 🚀 Features
@@ -19,6 +33,8 @@ Chained Decos is a fast-paced parkour game built with modern C++20 and [raylib](
 - **Modular architecture**: Engine/Game separation with clean interfaces
 - **Built-in map editor** for level creation and testing
 - **Comprehensive debugging**: collision visualization, performance metrics, real-time tweaking
+- **Developer console**: In-game command console with Source engine-style commands
+- **Command line support**: Launch options like `-fullscreen`, `-width`, `-height`, etc.
 - **Singleplayer** and *(planned)* **Multiplayer**
 - **Modern C++20**
 
@@ -206,6 +222,37 @@ Remove-Item -Recurse -Force build
 - **F4**: Exit game
 - **F11**: Toggle fullscreen
 - **ESC**: Pause/return to menu
+- **~ (Tilde)**: Toggle developer console
+
+### Console Commands
+Open the console with **~** and type commands:
+- `help` - Show available commands
+- `clear` - Clear console output
+- `quit/exit` - Exit game
+- `fps` - Show current FPS
+- `map <name>` - Load specific map
+- `res <width>x<height>` - Set resolution
+- `fullscreen` - Toggle fullscreen mode
+- `vsync <on/off>` - Toggle VSync
+- `noclip` - Toggle noclip mode (planned)
+
+### Command Line Arguments
+Launch with command line options:
+```bash
+ChainedDecos.exe -fullscreen -width 1920 -height 1080 -novsync
+```
+
+Available options:
+- `-width <width>` - Set window width
+- `-height <height>` - Set window height
+- `-fullscreen` - Start in fullscreen mode
+- `-windowed` - Start in windowed mode
+- `-noborder` - Start in borderless window mode
+- `-novsync` - Disable VSync
+- `-fps <fps>` - Set target FPS (0 for unlimited)
+- `-map <mapname>` - Load specific map
+- `-dev` - Enable developer mode
+- `-help` - Show all available options
 
 ---
 

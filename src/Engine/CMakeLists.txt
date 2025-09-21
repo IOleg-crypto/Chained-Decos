@@ -6,6 +6,7 @@ add_subdirectory(Render)
 add_subdirectory(CameraController)
 add_subdirectory(Physics)
 add_subdirectory(World)
+add_subdirectory(CommandLineHandler)
 
 add_library(ChainedDecosEngine STATIC
         Engine.cpp
@@ -26,4 +27,5 @@ target_link_libraries(ChainedDecosEngine
         world
         raylib
         imguilib
+        cmdhandler
 )
