@@ -2,7 +2,7 @@
 // Created by I#Oleg.
 //
 #include "raylib.h"
-#include <MapEditor/Application.h>
+#include "Application.h"
 
 Application::Application(const int width, const int height)
     : m_width(width), m_height(height), m_windowName("ChainedEditor"),
