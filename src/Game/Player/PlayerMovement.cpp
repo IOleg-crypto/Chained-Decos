@@ -56,7 +56,7 @@ void PlayerMovement::ApplyGravity(float deltaTime)
     {
         vel.y -= m_physics.GetGravity() * deltaTime;
         // Clamp fall speed softly
-        const float MAX_FALL_SPEED = -25.0f;
+        const float MAX_FALL_SPEED = -60.0f;
         vel.y = std::max(vel.y, MAX_FALL_SPEED);
         m_physics.SetVelocity(vel);
     }
@@ -81,6 +81,39 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     Vector3 response = {0};
     if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
+        // De-jitter: damp tiny horizontal corrections while walking
+        if (fabsf(response.y) < 1e-4f)
+        {
+            float horiz = sqrtf(response.x*response.x + response.z*response.z);
+            if (horiz > 0.0f && horiz <= 0.15f)
+            {
+                response.x = 0.0f;
+                response.z = 0.0f;
+            }
+        }
+        // Step-up heuristic: if horizontal collision and small step ahead while moving forward
+        if (fabsf(response.y) < 1e-4f)
+        {
+            const float stepMax = 0.85f; // max step height
+            Vector3 forward = { vel.x, 0.0f, vel.z };
+            float speed = sqrtf(forward.x*forward.x + forward.z*forward.z);
+            if (speed > 0.01f)
+            {
+                // probe slightly ahead and up
+                Vector3 probePos = targetPos;
+                probePos.y += stepMax;
+                SetPosition(probePos);
+                Vector3 probeResp = {0};
+                if (!collisionManager.CheckCollision(m_player->GetCollision(), probeResp))
+                {
+                    // allow stepping up: cancel horizontal pushback
+                    response.x = 0.0f;
+                    response.z = 0.0f;
+                }
+                SetPosition(targetPos); // restore before applying validated response
+            }
+        }
+
         // Validate collision response to prevent invalid movements
         response = ValidateCollisionResponse(response, targetPos);
 
@@ -111,6 +144,28 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
         response.y = 0.0f;
+        // Shape horizontal MTV to be stable: correct only opposite to movement direction
+        {
+            Vector3 horiz = {response.x, 0.0f, response.z};
+            float horizLen = sqrtf(horiz.x*horiz.x + horiz.z*horiz.z);
+            Vector3 move = {vel.x, 0.0f, vel.z};
+            float speed = sqrtf(move.x*move.x + move.z*move.z);
+            if (horizLen > 0.0f && speed > 0.01f)
+            {
+                // Desired correction along -move direction
+                move.x /= speed; move.z /= speed; // normalize
+                float proj = -(horiz.x*move.x + horiz.z*move.z); // magnitude opposite movement
+                if (proj < 0.0f) proj = -proj; // ensure positive magnitude
+                response.x = -move.x * proj;
+                response.z = -move.z * proj;
+            }
+            else if (horizLen <= 0.15f)
+            {
+                // Ignore tiny lateral nudges to avoid left-right jitter
+                response.x = 0.0f;
+                response.z = 0.0f;
+            }
+        }
         // Validate horizontal collision response
         response = ValidateCollisionResponse(response, targetPos);
         targetPos = Vector3Add(m_position, response);
@@ -151,36 +206,95 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
 {
     const Vector3 size = m_player->GetPlayerSize();
     const Vector3 center = m_position;
-    // Increase raycast distance to ensure we can reach the ground
-    const float maxDistance = size.y + 15.0f; // Increased from 1.0f to 15.0f
+    // Set reasonable raycast distance - should be enough to reach ground but not excessive
+    const float maxDistance = size.y + 2.0f;
     float hitDist = 0.0f;
     Vector3 hitPoint = {0};
     Vector3 hitNormal = {0};
     bool grounded = false;
 
-    if (collisionManager.RaycastDown(center, maxDistance, hitDist, hitPoint, hitNormal))
+    // Multi-sample footprint to bridge tiny holes
+    const Vector3 offsets[] = {
+        {0.0f, 0.0f, 0.0f},
+        { size.x * 0.25f, 0.0f, 0.0f},
+        {-size.x * 0.25f, 0.0f, 0.0f},
+        {0.0f, 0.0f,  size.z * 0.25f},
+        {0.0f, 0.0f, -size.z * 0.25f},
+        { size.x * 0.25f, 0.0f,  size.z * 0.25f},
+        {-size.x * 0.25f, 0.0f,  size.z * 0.25f},
+        { size.x * 0.25f, 0.0f, -size.z * 0.25f},
+        {-size.x * 0.25f, 0.0f, -size.z * 0.25f}
+    };
+
+    float bestGap = 1e9f;
+    Vector3 bestPoint = {0};
+    Vector3 bestNormal = {0};
+
+    for (const Vector3 &off : offsets)
     {
-        float bottom = center.y - size.y * 0.5f;
-        float gap = hitPoint.y - bottom;
-        // Only consider grounded when moving down/standing to avoid breaking jumps
-        if (m_physics.GetVelocity().y <= 0.0f)
+        Vector3 probe = { center.x + off.x, center.y, center.z + off.z };
+        float d = 0.0f; Vector3 p = {0}; Vector3 n = {0};
+        if (collisionManager.RaycastDown(probe, maxDistance, d, p, n))
         {
-            // Increase tolerance for ground detection and add minimum gap check
-            grounded = (gap >= -0.1f && gap <= 0.8f); // Allow slight penetration and larger tolerance
+            float bottom = center.y - size.y * 0.5f;
+            float gap = p.y - bottom;
+            if (gap < bestGap) { bestGap = gap; bestPoint = p; bestNormal = n; }
+
+            if (m_physics.GetVelocity().y <= 0.0f)
+            {
+                const float maxSlopeDeg = 60.0f; // Increased from 55.0f to 60.0f for better slope handling
+                const float maxSlopeCos = cosf(maxSlopeDeg * DEG2RAD);
+                float upDot = Vector3DotProduct(n, {0.0f, 1.0f, 0.0f});
+                bool withinGap = (gap >= -0.2f && gap <= 1.0f); // More generous gap range
+                bool withinSlope = (upDot >= maxSlopeCos);
+                if (withinGap && withinSlope)
+                {
+                    grounded = true;
+                    hitPoint = p;
+                    hitNormal = n;
+                    break;
+                }
+            }
         }
+    }
+
+    if (!grounded && bestGap < 0.5f && m_physics.GetVelocity().y <= 0.0f)
+    {
+        grounded = true;
+        hitPoint = bestPoint;
+        hitNormal = bestNormal;
     }
 
     // Additional check: if we're very close to ground level and not moving up fast, consider grounded
     if (!grounded && m_physics.GetVelocity().y <= 1.0f)
     {
         float bottom = center.y - size.y * 0.5f;
-        if (bottom <= 0.5f) // Close to ground level
+        if (bottom <= 1.0f) // Close to ground level (increased from 0.5f)
         {
             grounded = true;
         }
     }
 
     m_physics.SetGroundLevel(grounded);
+
+    // Last safe position to avoid falling through tiny gaps
+    static Vector3 s_lastSafePos = {0};
+    static bool s_hasSafe = false;
+    if (grounded)
+    {
+        s_lastSafePos = { center.x, hitPoint.y + size.y * 0.5f, center.z };
+        s_hasSafe = true;
+    }
+    else if (s_hasSafe && m_physics.GetVelocity().y <= 0.0f)
+    {
+        float drop = s_lastSafePos.y - center.y;
+        if (drop >= -0.2f && drop <= 0.4f)
+        {
+            Vector3 newPos = m_position;
+            newPos.y = s_lastSafePos.y;
+            SetPosition(newPos);
+        }
+    }
 }
 
 void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
@@ -188,8 +302,8 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
     // Raycast down without changing position
     const Vector3 size = m_player->GetPlayerSize();
     const Vector3 center = m_position;
-    // Increase raycast distance to ensure we can reach the ground
-    const float maxDistance = size.y + 15.0f; // Increased from 1.0f to 15.0f
+    // Set reasonable raycast distance - should be enough to reach ground but not excessive
+    const float maxDistance = size.y + 2.0f;
     float hitDist = 0.0f;
     Vector3 hitPoint = {0};
     Vector3 hitNormal = {0};
@@ -197,7 +311,7 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
     if (collisionManager.RaycastDown(center, maxDistance, hitDist, hitPoint, hitNormal))
     {
         // If close to ground — snap to it
-        const float snapThreshold = 0.8f; // Increased from 0.6f to 0.8f
+        const float snapThreshold = 1.2f; // Increased for better snapping
         float bottom = center.y - size.y * 0.5f;
         float gap = hitPoint.y - bottom;
         if (gap >= 0.0f && gap <= snapThreshold)
@@ -243,6 +357,17 @@ bool PlayerMovement::ExtractFromCollider()
 Vector3 PlayerMovement::ValidateCollisionResponse(const Vector3& response, const Vector3& currentPosition)
 {
     Vector3 validatedResponse = response;
+
+    // Ignore small horizontal pushbacks while airborne and moving upward (BVH false positives in narrow gaps)
+    if (!m_physics.IsGrounded() && m_physics.GetVelocity().y > 0.0f)
+    {
+        float horizMag = sqrtf(response.x * response.x + response.z * response.z);
+        if (fabsf(response.y) < 1e-4f && horizMag > 0.0f && horizMag <= 0.35f)
+        {
+            validatedResponse.x = 0.0f;
+            validatedResponse.z = 0.0f;
+        }
+    }
 
     // Don't allow responses that would push player below ground level
     if (response.y < 0.0f && (currentPosition.y + response.y) < -5.0f)

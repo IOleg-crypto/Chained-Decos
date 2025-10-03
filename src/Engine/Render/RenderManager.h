@@ -19,6 +19,8 @@ class CollisionDebugRenderer;
 class RenderManager
 {
 public:
+    // Kernel service interface
+    const char *GetName() const { return "RenderManager"; }
     // Constructor
     explicit RenderManager();
 
