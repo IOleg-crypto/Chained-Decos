@@ -1,5 +1,6 @@
 #include "LightingSystem.h"
 #include <raylib.h>
+#include <raymath.h>
 #include <cmath>
 #include <algorithm>
 #include <iostream>
