@@ -882,36 +882,6 @@ rule CXX_STATIC_LIBRARY_LINKER__player_Debug
 
 
 #############################################
-# Rule for generating CXX dependencies.
-
-rule CXX_SCAN__ChainedDecosMapEditor_Debug
-  depfile = $DEP_FILE
-  command = C:\WINDOWS\system32\cmd.exe /C ""C:/LLVM/bin/clang-scan-deps.exe" -format=p1689 -- C:\LLVM\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -x c++ $in -c -o $OBJ_FILE -resource-dir "C:/LLVM/lib/clang/21" -MT $DYNDEP_INTERMEDIATE_FILE -MD -MF $DEP_FILE > $DYNDEP_INTERMEDIATE_FILE.tmp && "D:/CLion 2025.2.1/bin/cmake/win/x64/bin/cmake.exe" -E rename $DYNDEP_INTERMEDIATE_FILE.tmp $DYNDEP_INTERMEDIATE_FILE"
-  description = Scanning $in for CXX dependencies
-
-
-#############################################
-# Rule to generate ninja dyndep files for CXX.
-
-rule CXX_DYNDEP__ChainedDecosMapEditor_Debug
-  command = "D:\CLion 2025.2.1\bin\cmake\win\x64\bin\cmake.exe" -E cmake_ninja_dyndep --tdi=src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\CXXDependInfo.json --lang=CXX --modmapfmt=clang --dd=$out @$out.rsp
-  description = Generating CXX dyndep file $out
-  rspfile = $out.rsp
-  rspfile_content = $in
-  restat = 1
-
-
-#############################################
-# Rule for compiling CXX files.
-
-rule CXX_COMPILER__ChainedDecosMapEditor_scanned_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\LLVM\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE @$DYNDEP_MODULE_MAP_FILE -o $out -c $in
-  description = Building CXX object $out
-
-
-#############################################
 # Rule for compiling CXX files.
 
 rule CXX_COMPILER__ChainedDecosMapEditor_unscanned_Debug

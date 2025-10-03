@@ -27,7 +27,7 @@ struct PrefabProperties
     std::string description;
     PrefabType type;
     std::string thumbnailPath;
-    Texture2D thumbnail;
+    Texture thumbnail;
     bool thumbnailLoaded;
 
     // Source information

@@ -1,5 +1,6 @@
 #include "ParticleEditor.h"
 #include <raylib.h>
+#include <raymath.h>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -760,7 +761,7 @@ bool ParticleEditor::LoadTextureInternal(ParticleProperties& properties, const s
     }
 
     properties.texture = LoadTexture(texturePath.c_str());
-    properties.resourcesLoaded = properties.texture.id != 0;
+    properties.resourcesLoaded = (properties.texture.id != 0);
     properties.texturePath = texturePath;
 
     if (properties.resourcesLoaded)
@@ -783,7 +784,7 @@ bool ParticleEditor::LoadModelInternal(ParticleProperties& properties, const std
     }
 
     properties.model = LoadModel(modelPath.c_str());
-    properties.resourcesLoaded = properties.model.meshCount > 0;
+    properties.resourcesLoaded = (properties.model.meshCount > 0);
     properties.modelPath = modelPath;
 
     if (properties.resourcesLoaded)
