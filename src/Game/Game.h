@@ -1,29 +1,30 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "../Engine/Collision/CollisionManager.h"
-#include "../Engine/Engine.h"
-#include "../Engine/Model/Model.h"
+#include "Engine/Collision/CollisionManager.h"
+#include "Engine/Engine.h"
+#include "Engine/Model/Model.h"
+#include "Engine/World/World.h"
 #include "Menu/Menu.h"
 #include "Player/Player.h"
-
-class Engine;
 
 class Game
 {
 private:
-    Engine &m_engine;
     Player m_player;
     CollisionManager m_collisionManager;
     ModelLoader m_models;
+    WorldManager m_world;
     Menu m_menu;
+    Engine *m_engine = nullptr;
+
 private:
     bool m_showMenu;
     bool m_isGameInitialized;
     bool m_isDebugInfo;
 
 public:
-    explicit Game(Engine &engine);
+    Game(Engine *engine);
     ~Game();
 
     void Init();
@@ -33,7 +34,6 @@ public:
     void RequestExit() const;
     bool IsRunning() const;
 
-private:
     void Update();
     void Render();
     void InitInput();

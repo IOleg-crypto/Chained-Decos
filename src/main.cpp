@@ -2,9 +2,6 @@
 #include "Game/Game.h"
 #include "Engine/CommandLineHandler/CommandLineHandler.h"
 
-// # --------
-// # int main - init game
-// # --------
 int main(int argc, char* argv[])
 {
     // Parse command line arguments
@@ -16,14 +13,12 @@ int main(int argc, char* argv[])
         CommandLineHandler::ShowConfig(config);
     }
 
-    // Initialize engine with parsed configuration
+    // Create and initialize engine
     Engine engine(config.width, config.height);
+    engine.Init();
 
-    // Apply configuration to engine
-    CommandLineHandler::ApplyConfigToEngine(config);
-
-    Game game(engine);
-
+    // Create and initialize game
+    Game game(&engine);
     game.Init();
     game.Run();
 

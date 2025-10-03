@@ -12,7 +12,10 @@
 class PhysicsComponent {
 public:
     // World physics constants
-    static constexpr float WORLD_FLOOR_Y = -10.0f;
+    // Set floor so that the top of ground collider aligns with Y=0
+    // Ground collider height is 2, centered at WORLD_FLOOR_Y + 1 => top = (WORLD_FLOOR_Y + 1) + 1 = WORLD_FLOOR_Y + 2
+    // To make top = 0, set WORLD_FLOOR_Y = -2
+    static constexpr float WORLD_FLOOR_Y = -2.0f;
     static constexpr Vector3 GROUND_COLLISION_CENTER = {0.0f, WORLD_FLOOR_Y + 1.0f, 0.0f};
     static constexpr Vector3 GROUND_COLLISION_SIZE = {2000.0f, 2.0f, 2000.0f};
 

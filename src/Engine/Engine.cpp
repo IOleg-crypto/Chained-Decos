@@ -4,6 +4,7 @@
 
 #include "Engine.h"
 #include "Render/RenderManager.h"
+#include "Kernel/Kernel.h"
 // Raylib & ImGui
 #include <raylib.h>
 #include <rlImGui.h>
@@ -58,6 +59,19 @@ void Engine::Init()
     m_inputManager.RegisterAction(KEY_F11, ToggleFullscreen);
 
     m_isEngineInit = true;
+
+    // Kernel: register core services so other modules can fetch them
+    Kernel &kernel = Kernel::GetInstance();
+    // Wrap RenderManager with a small IKernelService adapter to satisfy interface without changing RenderManager
+    struct RenderServiceAdapter : public IKernelService {
+        std::shared_ptr<RenderManager> rm;
+        explicit RenderServiceAdapter(std::shared_ptr<RenderManager> r) : rm(std::move(r)) {}
+        bool Initialize() override { return rm != nullptr; }
+        void Shutdown() override {}
+        void Render() override { /* optional: could call debug hooks */ }
+        const char *GetName() const override { return "RenderServiceAdapter"; }
+    };
+    kernel.RegisterService<RenderServiceAdapter>(Kernel::ServiceType::Render, std::make_shared<RenderServiceAdapter>(m_renderManager));
 
     TraceLog(LOG_INFO, "Engine initialization complete!");
 }

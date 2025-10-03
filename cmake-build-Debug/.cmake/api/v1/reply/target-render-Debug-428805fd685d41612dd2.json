@@ -145,6 +145,10 @@
 				},
 				{
 					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/CommandLineHandler"
+				},
+				{
+					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/Physics/src"
 				}
 			],

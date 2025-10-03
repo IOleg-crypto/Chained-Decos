@@ -31,8 +31,8 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     TraceLog(LOG_INFO, "Player::Player() - Player initialized at safe position (%.2f, %.2f, %.2f)",
                safePosition.x, safePosition.y, safePosition.z);
 
-    // Ensure physics starts properly
-    m_movement->GetPhysics().SetGroundLevel(true);
+    // Let physics detect ground; start ungrounded so gravity can act
+    m_movement->GetPhysics().SetGroundLevel(false);
     m_movement->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
 
     // Additional safety check

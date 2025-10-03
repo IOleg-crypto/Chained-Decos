@@ -51,10 +51,9 @@ void PlayerCollision::UpdateBoundingBox() {
 
     // Keep base Collision AABB in sync with the player bounding box
     // so collision queries use the latest extents
-    Collision::Update(
-        Vector3Scale(Vector3Add(m_boundingBox.min, m_boundingBox.max), 0.5f),
-        Vector3Scale(Vector3Subtract(m_boundingBox.max, m_boundingBox.min), 0.5f)
-    );
+    Vector3 center = Vector3Scale(Vector3Add(m_boundingBox.min, m_boundingBox.max), 0.5f);
+    Vector3 halfSize = Vector3Scale(Vector3Subtract(m_boundingBox.max, m_boundingBox.min), 0.5f);
+    Collision::Update(center, halfSize);
 }
 
 bool PlayerCollision::IsJumpCollision() const {
@@ -95,17 +94,22 @@ bool PlayerCollision::CheckCollisionWithBVH(const Collision& other, Vector3& out
             RayHit hit;
             if (other.RaycastBVH(point, dir, 2.0f, hit)) {
                 if (hit.hit) {
-                    
+                    // Calculate proper collision response
+                    // The response should push the player away from the collision surface
                     Vector3 response;
-                    float penetration = 2.0f - hit.distance;
-                    response.x = dir.x * penetration;
-                    response.y = dir.y * penetration;
-                    response.z = dir.z * penetration;
-                    
-         
-                    if (!hasCollision || Vector3Length(response) < Vector3Length(totalResponse)) {
-                        totalResponse = response;
-                        hasCollision = true;
+                    float penetration = hit.distance;
+
+                    // Response should be opposite to the surface normal, not ray direction
+                    response.x = -hit.normal.x * penetration;
+                    response.y = -hit.normal.y * penetration;
+                    response.z = -hit.normal.z * penetration;
+
+                    // Only consider significant penetrations to avoid jitter
+                    if (penetration > 0.01f) {
+                        if (!hasCollision || Vector3Length(response) < Vector3Length(totalResponse)) {
+                            totalResponse = response;
+                            hasCollision = true;
+                        }
                     }
                 }
             }

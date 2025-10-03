@@ -44,7 +44,7 @@ Collision& Collision::operator=(const Collision& other)
     m_isBuilt = other.m_isBuilt;
     m_stats = other.m_stats;
 
-    // Якщо є трикутники і тип BVH - перебудовуємо BVH
+
     if (!m_triangles.empty() && 
         (m_collisionType == CollisionType::BVH_ONLY || 
          m_collisionType == CollisionType::TRIANGLE_PRECISE))
@@ -229,7 +229,7 @@ void Collision::AddTriangles(const std::vector<CollisionTriangle> &triangles)
 
 // ----------------- BVH build -----------------
 static int const MAX_TRIANGLES_PER_LEAF = 8;
-static int const MAX_BVH_DEPTH = 48;
+static int const MAX_BVH_DEPTH = 90;
 
 std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> &tris, int depth)
 {
@@ -307,12 +307,13 @@ void Collision::BuildBVHFromTriangles()
 bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
                                       const CollisionTriangle &tri, RayHit &outHit)
 {
+    // Use a consistent small epsilon and guard against near-parallel cases
     const float EPS = 1e-6f;
     Vector3 edge1 = Vector3Subtract(tri.V1(), tri.V0());
     Vector3 edge2 = Vector3Subtract(tri.V2(), tri.V0());
     Vector3 h = Vector3CrossProduct(dir, edge2);
     float a = Vector3DotProduct(edge1, h);
-    if (a > -EPSILON && a < EPSILON)
+    if (a > -EPS && a < EPS)
         return false; // parallel
     float f = 1.0f / a;
     Vector3 s = Vector3Subtract(orig, tri.V0());
@@ -344,17 +345,28 @@ bool Collision::AABBIntersectRay(const Vector3 &min, const Vector3 &max, const V
 
     for (int i = 0; i < 3; ++i)
     {
-        float invD = 1.0f / ((i == 0) ? dir.x : (i == 1 ? dir.y : dir.z));
+        float d = (i == 0) ? dir.x : (i == 1 ? dir.y : dir.z);
         float o = (i == 0) ? origin.x : (i == 1 ? origin.y : origin.z);
         float mn = (i == 0) ? min.x : (i == 1 ? min.y : min.z);
         float mx = (i == 0) ? max.x : (i == 1 ? max.y : max.z);
+
+        if (fabsf(d) < 1e-8f)
+        {
+            // Ray is parallel to slab; reject if origin not within slab
+            if (o < mn || o > mx)
+                return false;
+            // Otherwise, slab does not constrain t
+            continue;
+        }
+
+        float invD = 1.0f / d;
         float t0 = (mn - o) * invD;
         float t1 = (mx - o) * invD;
         if (invD < 0.0f)
             std::swap(t0, t1);
         tmin = std::max(tmin, t0);
         tmax = std::min(tmax, t1);
-        if (tmax <= tmin)
+        if (tmax < tmin)
             return false;
     }
     return true;
@@ -400,7 +412,9 @@ bool Collision::RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxD
         return false;
     outHit.hit = false;
     outHit.distance = std::numeric_limits<float>::infinity();
-    bool ok = RaycastBVHNode(m_bvhRoot.get(), origin, dir, maxDistance, outHit);
+    // Ensure we use a normalized direction to keep distances consistent
+    Vector3 ndir = Vector3Normalize(dir);
+    bool ok = RaycastBVHNode(m_bvhRoot.get(), origin, ndir, maxDistance, outHit);
     return ok;
 }
 
@@ -408,7 +422,7 @@ bool Collision::RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxD
 bool Collision::ContainsPointBVH(const Vector3 &point) const
 {
     // Cast ray in +X direction and count intersections
-    Vector3 dir = {1.0f, 0.0001f, 0.0002f}; // slight offset to avoid coplanar degeneracy
+    Vector3 dir = Vector3Normalize((Vector3){1.0f, 0.0001f, 0.0002f}); // slight offset to avoid coplanar degeneracy
     RayHit hit;
     int count = 0;
     const float MAX_DIST = 1e6f;
@@ -454,6 +468,65 @@ bool Collision::ContainsPointBVH(const Vector3 &point) const
 
 // ----------------- Intersects (AABB broad, BVH narrow) -----------------
 // Helper: check if other's BVH has any leaf AABB overlapping this Collision's AABB
+// Robust Triangle-AABB SAT test
+static bool TriangleAABBOverlapSAT(const CollisionTriangle &tri, const Vector3 &bmin, const Vector3 &bmax)
+{
+    // Centered box with half extents
+    Vector3 c = { (bmin.x + bmax.x) * 0.5f, (bmin.y + bmax.y) * 0.5f, (bmin.z + bmax.z) * 0.5f };
+    Vector3 h = { (bmax.x - bmin.x) * 0.5f, (bmax.y - bmin.y) * 0.5f, (bmax.z - bmin.z) * 0.5f };
+
+    // Triangle vertices relative to box center
+    Vector3 v0 = Vector3Subtract(tri.V0(), c);
+    Vector3 v1 = Vector3Subtract(tri.V1(), c);
+    Vector3 v2 = Vector3Subtract(tri.V2(), c);
+
+    // Box axes
+    const Vector3 ax = {1.0f, 0.0f, 0.0f};
+    const Vector3 ay = {0.0f, 1.0f, 0.0f};
+    const Vector3 az = {0.0f, 0.0f, 1.0f};
+
+    auto axisTest = [&](const Vector3 &axis) -> bool
+    {
+        float len = Vector3Length(axis);
+        if (len < 1e-8f)
+            return true; // skip near-zero axis
+        Vector3 n = Vector3Scale(axis, 1.0f / len);
+        float p0 = Vector3DotProduct(v0, n);
+        float p1 = Vector3DotProduct(v1, n);
+        float p2 = Vector3DotProduct(v2, n);
+        float triMin = fminf(p0, fminf(p1, p2));
+        float triMax = fmaxf(p0, fmaxf(p1, p2));
+        float r = h.x * fabsf(n.x) + h.y * fabsf(n.y) + h.z * fabsf(n.z);
+        return !(triMin > r || triMax < -r);
+    };
+
+    // 1) Test box axes
+    if (!axisTest(ax)) return false;
+    if (!axisTest(ay)) return false;
+    if (!axisTest(az)) return false;
+
+    // 2) Test triangle plane normal
+    Vector3 e0 = Vector3Subtract(v1, v0);
+    Vector3 e1 = Vector3Subtract(v2, v0);
+    Vector3 n = Vector3CrossProduct(e0, e1);
+    if (!axisTest(n)) return false;
+
+    // 3) Test cross products of triangle edges with box axes (9 axes)
+    Vector3 e2 = Vector3Subtract(v2, v1);
+    const Vector3 edges[3] = { e0, e1, e2 };
+    const Vector3 boxAxes[3] = { ax, ay, az };
+    for (const Vector3 &e : edges)
+    {
+        for (const Vector3 &ba : boxAxes)
+        {
+            Vector3 a = Vector3CrossProduct(e, ba);
+            if (!axisTest(a)) return false;
+        }
+    }
+
+    return true; // no separating axis found
+}
+
 static bool BVHOverlapsAABB(const BVHNode* node, const Collision& aabbCollider)
 {
     if (!node) return false;
@@ -464,8 +537,17 @@ static bool BVHOverlapsAABB(const BVHNode* node, const Collision& aabbCollider)
         return false;
     if (node->IsLeaf())
     {
-        // Leaf contains triangles bounded by node AABB; treat as overlap
-        return !node->triangles.empty();
+        // Check each triangle's AABB against collider AABB for a tighter test
+        Vector3 otherMin = aabbCollider.GetMin();
+        Vector3 otherMax = aabbCollider.GetMax();
+        for (const auto &tri : node->triangles)
+        {
+            if (TriangleAABBOverlapSAT(tri, otherMin, otherMax))
+            {
+                return true;
+            }
+        }
+        return false;
     }
     return BVHOverlapsAABB(node->left.get(), aabbCollider) ||
            BVHOverlapsAABB(node->right.get(), aabbCollider);

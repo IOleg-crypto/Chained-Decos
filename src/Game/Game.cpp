@@ -2,26 +2,37 @@
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Collision/GroundColliderFactory.h"
 #include "Engine/Engine.h"
+#include "Engine/Kernel/Kernel.h"
+#include "Engine/Kernel/KernelServices.h"
 #include "Engine/Model/Model.h"
 #include "Game/Menu/Menu.h"
 #include "Engine/Render/RenderManager.h"
 #include "imgui.h"
 
-Game::Game(Engine &engine) : m_engine(engine), m_showMenu(true), m_isGameInitialized(false) , m_isDebugInfo(true)
+Game::Game(Engine *engine) : m_showMenu(true), m_isGameInitialized(false), m_isDebugInfo(true)
 {
+    m_engine = engine;
     TraceLog(LOG_INFO, "Game class initialized.");
 }
 
 Game::~Game() { TraceLog(LOG_INFO, "Game class destructor called."); }
+
 void Game::Init()
 {
     TraceLog(LOG_INFO, "Game::Init() - Initializing game components...");
 
-    m_engine.Init();
-    m_menu.GetEngine(&m_engine); // To get menu
+    // Initialize menu with engine reference
+    m_menu.GetEngine(m_engine);
+
+    // Kernel boot and service registration
+    Kernel &kernel = Kernel::GetInstance();
+    kernel.Initialize();
+    kernel.RegisterService<InputService>(Kernel::ServiceType::Input, std::make_shared<InputService>(&m_engine->GetInputManager()));
+    kernel.RegisterService<ModelsService>(Kernel::ServiceType::Models, std::make_shared<ModelsService>(&m_models));
+    kernel.RegisterService<WorldService>(Kernel::ServiceType::World, std::make_shared<WorldService>(&m_world));
+    // CollisionManager and WorldManager will be registered after creation/initialization
 
     LoadGameModels();
-    InitCollisions();
     InitPlayer();
     InitInput();
 
@@ -32,17 +43,23 @@ void Game::Init()
 void Game::Run()
 {
     TraceLog(LOG_INFO, "Game::Run() - Starting game loop...");
-    while (!m_engine.ShouldClose())
+
+    while (!m_engine->ShouldClose())
     {
         Update();
         Render();
     }
+
     TraceLog(LOG_INFO, "Game::Run() - Game loop ended.");
 }
 
 void Game::Update()
 {
-    m_engine.Update();
+    // Update engine (handles window and timing)
+    m_engine->Update();
+
+    // Update kernel services each frame
+    Kernel::GetInstance().Update(GetFrameTime());
 
     // Handle console input (works in both menu and gameplay)
     if (IsKeyPressed(KEY_GRAVE)) // ~ key
@@ -54,7 +71,7 @@ void Game::Update()
     // Only process other input if console is not open
     if (!m_menu.IsConsoleOpen())
     {
-        m_engine.GetInputManager().ProcessInput();
+        m_engine->GetInputManager().ProcessInput();
     }
 
     if (m_showMenu)
@@ -74,11 +91,11 @@ void Game::Update()
 
 void Game::Render()
 {
-    m_engine.GetRenderManager()->BeginFrame();
+    m_engine->GetRenderManager()->BeginFrame();
 
     if (m_showMenu)
     {
-        m_engine.GetRenderManager()->RenderMenu(m_menu);
+        m_engine->GetRenderManager()->RenderMenu(m_menu);
     }
     else
     {
@@ -86,15 +103,17 @@ void Game::Render()
         RenderGameUI();
     }
 
-    if (m_engine.IsDebugInfoVisible() && !m_showMenu)
+    if (m_engine->IsDebugInfoVisible() && !m_showMenu)
     {
-        m_engine.GetRenderManager()->RenderDebugInfo(m_player, m_models, m_collisionManager);
+        m_engine->GetRenderManager()->RenderDebugInfo(m_player, m_models, m_collisionManager);
     }
 
     // Render console on top of everything
     m_menu.RenderConsole();
 
-    m_engine.GetRenderManager()->EndFrame();
+    m_engine->GetRenderManager()->EndFrame();
+    // Optional kernel render pass hook
+    Kernel::GetInstance().Render();
 }
 
 void Game::ToggleMenu()
@@ -113,33 +132,36 @@ void Game::ToggleMenu()
 
 void Game::RequestExit() const
 {
-    m_engine.RequestExit();
+    m_engine->RequestExit();
     TraceLog(LOG_INFO, "Game exit requested.");
 }
 
-bool Game::IsRunning() const { return !m_engine.ShouldClose(); }
+bool Game::IsRunning() const
+{
+    return !m_engine->ShouldClose();
+}
 
 void Game::InitInput()
 {
     TraceLog(LOG_INFO, "Game::InitInput() - Setting up game-specific input bindings...");
 
-    m_engine.GetInputManager().RegisterAction(KEY_F1,
-                                              [this]
-                                              {
-                                                  m_showMenu = true;
-                                                  EnableCursor();
-                                              });
+    m_engine->GetInputManager().RegisterAction(KEY_F1,
+                                               [this]
+                                               {
+                                                   m_showMenu = true;
+                                                   EnableCursor();
+                                               });
 
-    m_engine.GetInputManager().RegisterAction(KEY_ESCAPE,
-                                              [this]
-                                              {
-                                                  if (!m_showMenu)
-                                                  {
-                                                      m_menu.ResetAction();
-                                                      ToggleMenu();
-                                                      EnableCursor();
-                                                  }
-                                              });
+    m_engine->GetInputManager().RegisterAction(KEY_ESCAPE,
+                                               [this]
+                                               {
+                                                   if (!m_showMenu)
+                                                   {
+                                                       m_menu.ResetAction();
+                                                       ToggleMenu();
+                                                       EnableCursor();
+                                                   }
+                                               });
     TraceLog(LOG_INFO, "Game::InitInput() - Game input bindings configured.");
 }
 
@@ -160,6 +182,8 @@ void Game::InitCollisions()
 
     // Initialize ground collider first
     m_collisionManager.Initialize();
+    // Register collision service once initialized
+    Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(&m_collisionManager));
 
     // Load model collisions
     m_collisionManager.CreateAutoCollisionsFromModels(m_models);
@@ -204,8 +228,8 @@ void Game::InitPlayer()
     m_player.UpdatePlayerBox();
     m_player.UpdatePlayerCollision();
 
-    // Ensure physics starts with grounded state
-    m_player.GetPhysics().SetGroundLevel(true);
+    // Allow physics to determine grounded state; start ungrounded so gravity applies
+    m_player.GetPhysics().SetGroundLevel(false);
     m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
 
     // Load player model
@@ -255,12 +279,13 @@ void Game::UpdatePlayerLogic()
     const ImGuiIO &io = ImGui::GetIO();
     if (io.WantCaptureMouse)
     {
-        m_engine.GetRenderManager()->ShowMetersPlayer(m_player);
+        m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
         return;
     }
 
     m_player.Update(m_collisionManager);
-    m_engine.GetRenderManager()->ShowMetersPlayer(m_player);
+
+    m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
 }
 
 void Game::UpdatePhysicsLogic()
@@ -302,6 +327,7 @@ void Game::HandleMenuActions()
     case MenuAction::SelectMap3:
         {
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting game with selected map...");
+            InitCollisions();
             std::string selectedMap = m_menu.GetSelectedMapName();
             TraceLog(LOG_INFO, "Selected map: %s", selectedMap.c_str());
 
@@ -319,7 +345,7 @@ void Game::HandleMenuActions()
 
     case MenuAction::ExitGame:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Exit game requested from menu.");
-        m_engine.RequestExit();
+        m_engine->RequestExit();
         m_menu.ResetAction();
         break;
 
@@ -329,16 +355,12 @@ void Game::HandleMenuActions()
 }
 
 void Game::RenderGameWorld() const {
-
-    m_engine.GetRenderManager()->RenderGame(m_player, m_models, m_collisionManager,
-                                           m_engine.IsCollisionDebugVisible());
+    m_engine->GetRenderManager()->RenderGame(m_player, m_models, m_collisionManager,
+                                            m_engine->IsCollisionDebugVisible());
 }
 
 void Game::RenderGameUI() const {
-    if (m_engine.GetRenderManager())
-    {
-        m_engine.GetRenderManager()->ShowMetersPlayer(m_player);
-    }
+    m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
 
     static float gameTime = 0.0f;
     gameTime += GetFrameTime();
@@ -352,15 +374,14 @@ void Game::RenderGameUI() const {
     int timerX = 300;
     int timerY = 20;
 
-    Font fontToUse = (m_engine.GetRenderManager() && m_engine.GetRenderManager()->GetFont().texture.id != 0)
-                         ? m_engine.GetRenderManager()->GetFont()
+    Font fontToUse = (m_engine->GetRenderManager() && m_engine->GetRenderManager()->GetFont().texture.id != 0)
+                         ? m_engine->GetRenderManager()->GetFont()
                          : GetFontDefault();
     DrawTextEx(fontToUse, timerText.c_str(), {static_cast<float>(timerX), static_cast<float>(timerY)}, 20, 2.0f, WHITE);
 }
 
 void Game::CreateParkourTestMap()
 {
-    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Creating parkour test obstacles...");
 
     Collision startPlatform({0.0f, 2.0f, 0.0f}, {3.0f, 0.5f, 3.0f});
     DrawPlane({0.0f, 2.0f, 0.0f}, {5, 8} , RED);
@@ -376,194 +397,4 @@ void Game::CreateParkourTestMap()
     platform2.SetCollisionType(CollisionType::AABB_ONLY);
     m_collisionManager.AddCollider(std::move(platform2));
     DrawCube({14.0f, 3.0f, 0.0f}, 1.0f, 0.5f, 1.0f, YELLOW);
-
-    Collision platform3({18.0f, 4.0f, 0.0f}, {0.8f, 0.5f, 0.8f});
-    platform3.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(platform3));
-    DrawCube({18.0f, 4.0f, 0.0f}, 0.8f, 0.5f, 0.8f, ORANGE);
-
-    Collision highPlatform1({25.0f, 6.0f, 0.0f}, {1.5f, 0.5f, 1.5f});
-    highPlatform1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(highPlatform1));
-    DrawCube({25.0f, 6.0f, 0.0f}, 1.5f, 0.5f, 1.5f, PURPLE);
-
-    Collision highPlatform2({32.0f, 8.0f, 0.0f}, {1.0f, 0.5f, 1.0f});
-    highPlatform2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(highPlatform2));
-    DrawCube({32.0f, 8.0f, 0.0f}, 1.0f, 0.5f, 1.0f, PINK);
-    
-    Collision smallCube1({6.0f, 1.5f, 3.0f}, {0.5f, 0.5f, 0.5f});
-    smallCube1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(smallCube1));
-    DrawCube({6.0f, 1.5f, 3.0f}, 0.5f, 0.5f, 0.5f, RED);
-
-    Collision smallCube2({10.0f, 2.5f, -2.0f}, {0.4f, 0.4f, 0.4f});
-    smallCube2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(smallCube2));
-    DrawCube({10.0f, 2.5f, -2.0f}, 0.4f, 0.4f, 0.4f, RED);
-
-    Collision smallCube3({16.0f, 3.5f, 2.5f}, {0.3f, 0.3f, 0.3f});
-    smallCube3.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(smallCube3));
-    DrawCube({16.0f, 3.5f, 2.5f}, 0.3f, 0.3f, 0.3f, RED);
-
-    Collision mediumCube1({12.0f, 4.0f, -4.0f}, {0.8f, 0.8f, 0.8f});
-    mediumCube1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(mediumCube1));
-    DrawCube({12.0f, 4.0f, -4.0f}, 0.8f, 0.8f, 0.8f, MAROON);
-
-    Collision mediumCube2({20.0f, 5.0f, 4.0f}, {0.7f, 0.7f, 0.7f});
-    mediumCube2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(mediumCube2));
-    DrawCube({20.0f, 5.0f, 4.0f}, 0.7f, 0.7f, 0.7f, MAROON);
-
-    Collision bigCube1({28.0f, 7.0f, -3.0f}, {1.2f, 1.2f, 1.2f});
-    bigCube1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(bigCube1));
-    DrawCube({28.0f, 7.0f, -3.0f}, 1.2f, 1.2f, 1.2f, DARKBROWN);
-    
-
-    Collision smallSphere1({5.0f, 1.0f, -5.0f}, {0.6f, 0.6f, 0.6f});
-    DrawSphere(smallCube1.GetCenter(), smallCube1.GetSize().x, RED);
-    smallSphere1.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(smallSphere1));
-    
-    Collision smallSphere2({11.0f, 2.0f, 5.0f}, {0.5f, 0.5f, 0.5f});
-    smallSphere2.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(smallSphere2));
-    
-    Collision smallSphere3({17.0f, 3.0f, -6.0f}, {0.4f, 0.4f, 0.4f});
-    smallSphere3.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(smallSphere3));
-    
-    Collision mediumSphere1({13.0f, 4.5f, 6.0f}, {0.8f, 0.8f, 0.8f});
-    mediumSphere1.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(mediumSphere1));
-    
-    Collision mediumSphere2({21.0f, 5.5f, -7.0f}, {0.7f, 0.7f, 0.7f});
-    mediumSphere2.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(mediumSphere2));
-    
-    Collision bigSphere1({29.0f, 7.5f, 7.0f}, {1.0f, 1.0f, 1.0f});
-    bigSphere1.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(bigSphere1));
-    
-    Collision bigSphere2({35.0f, 9.0f, -8.0f}, {1.2f, 1.2f, 1.2f});
-    bigSphere2.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(bigSphere2));
-    
-    
-    Collision wall1({22.0f, 3.0f, -10.0f}, {0.5f, 2.0f, 0.5f});
-    wall1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(wall1));
-    DrawCube({22.0f, 3.0f, -10.0f}, 0.5f, 2.0f, 0.5f, GRAY);
-
-    Collision wall2({22.0f, 3.0f, 10.0f}, {0.5f, 2.0f, 0.5f});
-    wall2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(wall2));
-    DrawCube({22.0f, 3.0f, 10.0f}, 0.5f, 2.0f, 0.5f, GRAY);
-
-    Collision hangingPlatform({30.0f, 10.0f, 0.0f}, {1.0f, 0.3f, 1.0f});
-    hangingPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(hangingPlatform));
-    DrawCube({30.0f, 10.0f, 0.0f}, 1.0f, 0.3f, 1.0f, SKYBLUE);
-
-    Collision finishPlatform({40.0f, 12.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
-    finishPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(finishPlatform));
-    DrawCube({40.0f, 12.0f, 0.0f}, 4.0f, 1.0f, 4.0f, GOLD);
-
-
-    Collision barrier1({-2.0f, 1.0f, -10.0f}, {0.2f, 2.0f, 20.0f});
-    barrier1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(barrier1));
-    DrawCube({-2.0f, 1.0f, -10.0f}, 0.2f, 2.0f, 20.0f, DARKGRAY);
-
-    Collision barrier2({-2.0f, 1.0f, 10.0f}, {0.2f, 2.0f, 20.0f});
-    barrier2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(barrier2));
-    DrawCube({-2.0f, 1.0f, 10.0f}, 0.2f, 2.0f, 20.0f, DARKGRAY);
-
-    Collision sidePlatform1({-10.0f, 3.0f, 5.0f}, {2.0f, 0.5f, 2.0f});
-    sidePlatform1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(sidePlatform1));
-    DrawCube({-10.0f, 3.0f, 5.0f}, 2.0f, 0.5f, 2.0f, LIME);
-
-    Collision sidePlatform2({-15.0f, 5.0f, -3.0f}, {1.5f, 0.5f, 1.5f});
-    sidePlatform2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(sidePlatform2));
-    DrawCube({-15.0f, 5.0f, -3.0f}, 1.5f, 0.5f, 1.5f, LIME);
-
-    Collision bridge1({20.0f, 5.0f, 0.0f}, {8.0f, 0.3f, 1.0f});
-    bridge1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(bridge1));
-    DrawCube({20.0f, 5.0f, 0.0f}, 8.0f, 0.3f, 1.0f, BROWN);
-
-    Collision bridge2({35.0f, 10.0f, 0.0f}, {6.0f, 0.3f, 1.0f});
-    bridge2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(bridge2));
-    DrawCube({35.0f, 10.0f, 0.0f}, 6.0f, 0.3f, 1.0f, BROWN);
-    
-    
-    Collision longPlatform1({-5.0f, 1.0f, 0.0f}, {2.0f, 0.3f, 0.5f});
-    longPlatform1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(longPlatform1));
-    DrawCube({-5.0f, 1.0f, 0.0f}, 2.0f, 0.3f, 0.5f, VIOLET);
-
-    Collision longPlatform2({-8.0f, 2.0f, 0.0f}, {1.5f, 0.3f, 0.4f});
-    longPlatform2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(longPlatform2));
-    DrawCube({-8.0f, 2.0f, 0.0f}, 1.5f, 0.3f, 0.4f, VIOLET);
-
-    Collision precisionCube1({15.0f, 2.0f, -8.0f}, {0.2f, 0.2f, 0.2f});
-    precisionCube1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(precisionCube1));
-    DrawCube({15.0f, 2.0f, -8.0f}, 0.2f, 0.2f, 0.2f, MAGENTA);
-
-    Collision precisionCube2({19.0f, 3.0f, 8.0f}, {0.25f, 0.25f, 0.25f});
-    precisionCube2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(precisionCube2));
-    DrawCube({19.0f, 3.0f, 8.0f}, 0.25f, 0.25f, 0.25f, MAGENTA);
-    
-    Collision trickySphere1({23.0f, 4.0f, -12.0f}, {0.3f, 0.3f, 0.3f});
-    trickySphere1.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(trickySphere1));
-    
-    Collision trickySphere2({27.0f, 5.0f, 12.0f}, {0.35f, 0.35f, 0.35f});
-    trickySphere2.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(trickySphere2));
-    
-
-    Collision visualPlatform1({5.0f, 1.5f, 8.0f}, {2.5f, 0.4f, 0.8f});
-    visualPlatform1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(visualPlatform1));
-    DrawCube({5.0f, 1.5f, 8.0f}, 2.5f, 0.4f, 0.8f, BEIGE);
-
-    Collision visualPlatform2({25.0f, 4.5f, -5.0f}, {1.8f, 0.4f, 1.8f});
-    visualPlatform2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(visualPlatform2));
-    DrawCube({25.0f, 4.5f, -5.0f}, 1.8f, 0.4f, 1.8f, BEIGE);
-
-    Collision displaySphere1({8.0f, 3.0f, 6.0f}, {0.8f, 0.8f, 0.8f});
-    displaySphere1.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(displaySphere1));
-    DrawSphere({8.0f, 3.0f, 6.0f}, 0.8f, WHITE);
-
-    Collision displaySphere2({32.0f, 6.0f, -4.0f}, {0.6f, 0.6f, 0.6f});
-    DrawSphere(displaySphere2.GetCenter(), displaySphere2.GetSize().x, GREEN);
-    displaySphere2.SetCollisionType(CollisionType::BVH_ONLY);
-    m_collisionManager.AddCollider(std::move(displaySphere2));
-
-    Collision demoCube1({12.0f, 2.0f, 10.0f}, {0.5f, 0.5f, 0.5f});
-    demoCube1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(demoCube1));
-    DrawCube({12.0f, 2.0f, 10.0f}, 0.5f, 0.5f, 0.5f, LIGHTGRAY);
-
-    Collision demoCube2({28.0f, 5.0f, 8.0f}, {0.7f, 0.7f, 0.7f});
-    demoCube2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(demoCube2));
-    DrawCube({28.0f, 5.0f, 8.0f}, 0.7f, 0.7f, 0.7f, LIGHTGRAY);
-
-    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Created %zu parkour obstacles",
-              m_collisionManager.GetColliders().size() - 1); // -1 for ground plane
 }

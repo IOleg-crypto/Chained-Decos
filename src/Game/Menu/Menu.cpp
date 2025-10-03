@@ -1,6 +1,7 @@
 #include "Menu.h"
 #include "Engine/Engine.h"
 #include <cstdio> // sscanf
+#include <cmath>
 #include <iostream>
 #include <raylib.h>
 #include <rlImGui.h>
@@ -15,6 +16,9 @@
 
 Menu::Menu()
 {
+    // Load configuration file
+    //LoadSettings();
+
     // Main Menu
     m_mainMenu = {{"Start Game", MenuAction::StartGame},
                   {"Options", MenuAction::OpenOptions},
@@ -176,11 +180,15 @@ void Menu::HandleVideoNavigation()
         {
             int w = 0, h = 0;
             sscanf(opt.values[opt.selectedIndex].c_str(), "%dx%d", &w, &h);
+            m_config.SetResolution(w, h);
             SetWindowSize(w, h);
         }
         else if (opt.label == "Display Mode")
         {
             std::string mode = opt.values[opt.selectedIndex];
+            bool fullscreen = (mode == "Fullscreen" || mode == "Borderless");
+            m_config.SetFullscreen(fullscreen);
+
             if (mode == "Fullscreen")
                 SetWindowState(FLAG_FULLSCREEN_MODE);
             else if (mode == "Windowed")
@@ -193,7 +201,10 @@ void Menu::HandleVideoNavigation()
         }
         else if (opt.label == "VSync")
         {
-            if (opt.values[opt.selectedIndex] == "On")
+            bool vsync = (opt.values[opt.selectedIndex] == "On");
+            m_config.SetVSync(vsync);
+
+            if (vsync)
             {
                 SetWindowState(FLAG_VSYNC_HINT);
                 SetTargetFPS(0);
@@ -208,10 +219,9 @@ void Menu::HandleVideoNavigation()
         {
             const std::string val = opt.values[opt.selectedIndex];
             ClearWindowState(FLAG_VSYNC_HINT);
-            if (val == "Unlimited")
-                SetTargetFPS(0);
-            else
-                SetTargetFPS(std::stoi(val));
+
+            int fps = (val == "Unlimited") ? 0 : std::stoi(val);
+            SetTargetFPS(fps);
         }
     }
 }
@@ -330,15 +340,34 @@ void Menu::HandleConfirmExit()
 }
 
 void Menu::Render() const {
-
+    // Modern gradient background with multiple layers
     for (int i = 0; i < GetScreenHeight(); ++i)
     {
         float t = (float)i / GetScreenHeight();
-        DrawLine(0, i, GetScreenWidth(), i,
-                 Color{(unsigned char)(15 + 25 * t), (unsigned char)(15 + 30 * t),
-                       (unsigned char)(40 + 90 * t), 255});
+
+        // Main gradient background
+        Color gradientColor = Color{
+            (unsigned char)(10 + 15 * t),    // R: Dark blue to lighter
+            (unsigned char)(20 + 40 * t),    // G: Dark purple to lighter
+            (unsigned char)(50 + 80 * t),    // B: Dark to lighter blue
+            255
+        };
+        DrawLine(0, i, GetScreenWidth(), i, gradientColor);
     }
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.25f));
+
+    // Add subtle animated overlay pattern
+    static float time = 0.0f;
+    time += GetFrameTime();
+
+    for (int i = 0; i < 20; i++)
+    {
+        float y = (GetScreenHeight() / 20) * i + sinf(time + i * 0.5f) * 10;
+        DrawLine(0, (int)y, GetScreenWidth(), (int)y,
+                 Fade(Color{100, 150, 255, 255}, 0.1f + sinf(time * 2 + i) * 0.05f));
+    }
+
+    // Dark overlay for better text readability
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.3f));
 
     switch (m_state)
     {
@@ -378,13 +407,37 @@ void Menu::RenderMenu() const
         return;
 
     Vector2 mousePos = GetMousePosition();
-    constexpr int kBtnW = 200, kBtnH = 50, kStartY = 300, kSpacing = 70;
+    constexpr int kBtnW = 280, kBtnH = 65, kStartY = 320, kSpacing = 85;
 
-    const char *title =
-        (m_state == MenuState::Main) ? "Chained Decos" : (*m_currentMenu)[m_selected].label;
-    int tw = MeasureText(title, 56);
-    DrawText(title, GetScreenWidth() / 2 - tw / 2 + 4, 104, 56, Fade(BLACK, 0.75f));
-    DrawText(title, GetScreenWidth() / 2 - tw / 2, 100, 56, RAYWHITE);
+    // Modern title with glow effect
+    const char *title = (m_state == MenuState::Main) ? "CHAINED DECOS" : (*m_currentMenu)[m_selected].label;
+
+    // Draw title glow/shadow
+    int tw = MeasureText(title, 60);
+    int titleX = GetScreenWidth() / 2 - tw / 2;
+    int titleY = 80;
+
+    // Multiple glow layers for depth
+    for (int i = 3; i >= 1; i--)
+    {
+        DrawText(title, titleX + i, titleY + i, 60, Fade(Color{0, 100, 255, 255}, 0.3f / i));
+    }
+
+    // Main title with gradient effect
+    DrawText(title, titleX, titleY, 60, Color{255, 255, 255, 255});
+
+    // Subtitle for main menu
+    if (m_state == MenuState::Main)
+    {
+        const char *subtitle = "Modern 3D Platformer";
+        int stw = MeasureText(subtitle, 24);
+        DrawText(subtitle, GetScreenWidth() / 2 - stw / 2, titleY + 50, 24, Fade(Color{150, 200, 255, 255}, 0.8f));
+
+        // Version info in bottom corner
+        const char *version = "v1.0.0";
+        int vw = MeasureText(version, 16);
+        DrawText(version, GetScreenWidth() - vw - 20, GetScreenHeight() - 25, 16, Fade(Color{120, 140, 160, 255}, 0.7f));
+    }
 
     if (m_buttonScales.size() != m_currentMenu->size())
         m_buttonScales.assign(m_currentMenu->size(), 1.0f);
@@ -398,8 +451,8 @@ void Menu::RenderMenu() const
 
         bool hovered = CheckCollisionPointRec(mousePos, rect);
         bool selected = (static_cast<int>(i) == m_selected);
-        float targetScale = (hovered || selected) ? 1.10f : 1.0f;
-        m_buttonScales[i] = Lerp(m_buttonScales[i], targetScale, 0.15f);
+        float targetScale = (hovered || selected) ? 1.15f : 1.0f; // Increased scale for more dramatic effect
+        m_buttonScales[i] = Lerp(m_buttonScales[i], targetScale, 0.2f); // Faster animation
 
         int w = static_cast<int>(kBtnW * m_buttonScales[i]);
         int h = static_cast<int>(kBtnH * m_buttonScales[i]);
@@ -407,73 +460,143 @@ void Menu::RenderMenu() const
         int y = baseY - (h - kBtnH) / 2;
         Rectangle btnRect = {(float)x, (float)y, (float)w, (float)h};
 
-        DrawRectangle(x + 5, y + 6, w, h, Fade(BLACK, 0.35f));
+        // Modern button design with multiple layers
+        Color baseColor, accentColor, glowColor;
 
-        Color topColor, bottomColor, borderColor;
         if (selected)
         {
-            topColor = {255, 240, 200, 255};
-            bottomColor = {220, 175, 90, 255};
-            borderColor = ORANGE;
+            baseColor = {255, 200, 100, 255};    // Bright gold
+            accentColor = {255, 150, 50, 255};   // Orange accent
+            glowColor = {255, 255, 150, 200};    // Yellow glow
         }
         else if (hovered)
         {
-            topColor = {245, 220, 165, 255};
-            bottomColor = {205, 150, 85, 255};
-            borderColor = {50, 35, 25, 255};
+            baseColor = {200, 220, 255, 255};    // Light blue
+            accentColor = {150, 200, 255, 255};  // Blue accent
+            glowColor = {150, 200, 255, 150};    // Blue glow
         }
         else
         {
-            topColor = {200, 200, 200, 255};
-            bottomColor = {130, 130, 130, 255};
-            borderColor = {35, 35, 35, 255};
+            baseColor = {180, 190, 210, 255};    // Neutral gray-blue
+            accentColor = {140, 150, 170, 255};  // Darker accent
+            glowColor = {0, 0, 0, 0};           // No glow
         }
 
+        // Draw glow effect for selected/hovered buttons
+        if (selected || hovered)
+        {
+            for (int g = 8; g >= 2; g -= 2)
+            {
+                float alpha = (selected) ? 0.4f / (g/2) : 0.2f / (g/2);
+                DrawRectangle(x - g, y - g, w + g*2, h + g*2,
+                             Fade(glowColor, alpha));
+            }
+        }
+
+        // Main button background with gradient
         for (int j = 0; j < h; ++j)
         {
             float t = (float)j / h;
-            Color c = {(unsigned char)(topColor.r + t * (bottomColor.r - topColor.r)),
-                       (unsigned char)(topColor.g + t * (bottomColor.g - topColor.g)),
-                       (unsigned char)(topColor.b + t * (bottomColor.b - topColor.b)), 255};
+            float intensity = 1.0f - t * 0.3f; // Darker at bottom
+            Color c = {
+                (unsigned char)(baseColor.r * intensity),
+                (unsigned char)(baseColor.g * intensity),
+                (unsigned char)(baseColor.b * intensity),
+                baseColor.a
+            };
             DrawLine(x, y + j, x + w, y + j, c);
         }
 
-        DrawRectangle(x + 1, y + 1, w, static_cast<int>(h * 0.4f), Fade(WHITE, 0.06f));
+        // Highlight/shine effect
+        DrawRectangle(x + 2, y + 2, w - 4, h/3, Fade(WHITE, 0.3f));
 
+        // Modern border with rounded corners effect
         if (selected)
         {
-            DrawRectangleLinesEx(btnRect, 4, borderColor);
-            DrawRectangleLinesEx(
-                Rectangle{btnRect.x - 4, btnRect.y - 4, btnRect.width + 8, btnRect.height + 8}, 2,
-                Fade(borderColor, 0.3f));
+            DrawRectangleLinesEx(btnRect, 3, accentColor);
+            // Double border for selected
+            DrawRectangleLinesEx(Rectangle{btnRect.x - 2, btnRect.y - 2, btnRect.width + 4, btnRect.height + 4}, 1, Fade(accentColor, 0.5f));
+        }
+        else if (hovered)
+        {
+            DrawRectangleLinesEx(btnRect, 2, accentColor);
         }
         else
-            DrawRectangleLinesEx(btnRect, 2, borderColor);
+        {
+            DrawRectangleLinesEx(btnRect, 1, Color{120, 130, 150, 255});
+        }
 
-        int textW = MeasureText(item.label, 28);
+        // Modern text with better font and effects
+        int textSize = selected ? 32 : (hovered ? 30 : 28);
+        Color textColor = selected ? Color{50, 50, 80, 255} : (hovered ? Color{30, 30, 50, 255} : Color{40, 40, 60, 255});
+
+        int textW = MeasureText(item.label, textSize);
         int textX = x + w / 2 - textW / 2;
-        int textY = y + h / 2 - 28 / 2;
-        DrawText(item.label, textX + 2, textY + 2, 28, Fade(BLACK, 0.7f));
-        DrawText(item.label, textX, textY, 28, RAYWHITE);
+        int textY = y + h / 2 - textSize / 2;
+
+        // Text shadow for depth
+        DrawText(item.label, textX + 2, textY + 2, textSize, Fade(BLACK, 0.5f));
+
+        // Main text with modern color
+        DrawText(item.label, textX, textY, textSize, textColor);
     }
 
-    const char *footer = "[Enter] Select   [Esc] Back   [↑/↓] Navigate   [Mouse] Click";
-    int fw = MeasureText(footer, 24);
-    DrawText(footer, GetScreenWidth() / 2 - fw / 2, GetScreenHeight() - 40, 24, GRAY);
+    // Modern footer with better styling
+    const char *footer = "ENTER Select    ESC Back    ↑↓ Navigate    MOUSE Click";
+    int fw = MeasureText(footer, 20);
+    int footerX = GetScreenWidth() / 2 - fw / 2;
+    int footerY = GetScreenHeight() - 35;
+
+    // Footer background
+    DrawRectangle(footerX - 10, footerY - 5, fw + 20, 30, Fade(Color{0, 0, 0, 255}, 0.4f));
+    DrawRectangleLines(footerX - 10, footerY - 5, fw + 20, 30, Fade(Color{100, 120, 140, 255}, 0.5f));
+
+    // Modern footer text with color coding
+    DrawText("ENTER", footerX, footerY, 20, Color{150, 255, 150, 255});
+    DrawText(" Select    ", footerX + 70, footerY, 20, Color{200, 200, 200, 255});
+    DrawText("ESC", footerX + 150, footerY, 20, Color{255, 150, 150, 255});
+    DrawText(" Back    ", footerX + 185, footerY, 20, Color{200, 200, 200, 255});
+    DrawText("↑↓", footerX + 245, footerY, 20, Color{150, 150, 255, 255});
+    DrawText(" Navigate    ", footerX + 275, footerY, 20, Color{200, 200, 200, 255});
+    DrawText("MOUSE", footerX + 380, footerY, 20, Color{255, 200, 100, 255});
+    DrawText(" Click", footerX + 460, footerY, 20, Color{200, 200, 200, 255});
 }
 
 void Menu::RenderSettingsMenu() const {
-    int startY = 150, spacing = 70, fontSize = 28; // Increased spacing to prevent overlap
-    DrawText("Video Settings", 80, 50, 40, ORANGE);
+    int startY = 150, spacing = 80, fontSize = 30;
+
+    // Modern settings title with glow
+    const char* settingsTitle = "SETTINGS";
+    int titleW = MeasureText(settingsTitle, 45);
+    int titleX = 80;
+
+    // Title glow effect
+    for (int i = 2; i >= 1; i--)
+    {
+        DrawText(settingsTitle, titleX + i, 45 + i, 45, Fade(Color{255, 150, 50, 255}, 0.5f / i));
+    }
+    DrawText(settingsTitle, titleX, 45, 45, Color{255, 200, 100, 255});
 
     for (size_t i = 0; i < m_videoOptions.size(); ++i)
     {
         auto &opt = m_videoOptions[i];
         int y = startY + static_cast<int>(i) * spacing;
 
-        // Draw setting label
-        DrawText(opt.label.c_str(), 80, y, fontSize,
-                 (static_cast<int>(i) == m_selected) ? ORANGE : RAYWHITE);
+        bool isSelected = (static_cast<int>(i) == m_selected);
+        Color labelColor = isSelected ? Color{255, 220, 150, 255} : Color{200, 210, 230, 255};
+
+        // Modern setting container
+        if (isSelected)
+        {
+            // Background highlight for selected option
+            DrawRectangle(60, y - 5, GetScreenWidth() - 120, spacing - 10, Fade(Color{100, 150, 255, 255}, 0.2f));
+            DrawRectangleLines(60, y - 5, GetScreenWidth() - 120, spacing - 10, Color{150, 200, 255, 255});
+        }
+
+        // Draw setting label with modern typography
+        const char* label = opt.label.c_str();
+        int labelW = MeasureText(label, fontSize);
+        DrawText(label, 80, y + 5, fontSize, labelColor);
 
         if (!opt.values.empty())
         {
@@ -483,81 +606,215 @@ void Menu::RenderSettingsMenu() const {
             // Show current value (smaller font, different position)
             if (!currentValue.empty())
             {
-                int currentWidth = MeasureText(currentValue.c_str(), fontSize - 6);
-                DrawText(currentValue.c_str(), 80 + 300, y + 5, fontSize - 6,
-                         (static_cast<int>(i) == m_selected) ? Fade(GOLD, 0.8f) : Fade(YELLOW, 0.8f));
+                int currentWidth = MeasureText(currentValue.c_str(), fontSize - 8);
+                DrawText(currentValue.c_str(), 80 + 320, y + 8, fontSize - 8,
+                          isSelected ? Fade(Color{255, 255, 150, 255}, 0.9f) : Fade(Color{180, 200, 150, 255}, 0.7f));
             }
 
-            // Show selected value with arrows
+            // Show selected value with modern styling
             std::string displayValue;
             if (opt.selectedIndex < opt.values.size())
             {
-                displayValue = "< " + opt.values[opt.selectedIndex] + " >";
+                displayValue = opt.values[opt.selectedIndex];
             }
 
             if (!displayValue.empty())
             {
+                // Modern value display with background
                 int textWidth = MeasureText(displayValue.c_str(), fontSize);
-                int xPos = GetScreenWidth() - textWidth - 80;
-                DrawText(displayValue.c_str(), xPos, y, fontSize,
-                         (static_cast<int>(i) == m_selected) ? GOLD : YELLOW);
+                int xPos = GetScreenWidth() - textWidth - 100;
+
+                if (isSelected)
+                {
+                    // Background for selected value
+                    DrawRectangle(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Fade(Color{255, 200, 100, 255}, 0.3f));
+                    DrawRectangleLines(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Color{255, 180, 80, 255});
+                }
+
+                DrawText(displayValue.c_str(), xPos, y + 5, fontSize,
+                          isSelected ? Color{255, 255, 180, 255} : Color{220, 230, 200, 255});
             }
         }
     }
 
-    std::string footer = "[Enter] Apply/Select [←/→] Change [↑/↓] Navigate [Esc] Back";
-    int fw = MeasureText(footer.c_str(), 24);
-    DrawText(footer.c_str(), GetScreenWidth() / 2 - fw / 2, GetScreenHeight() - 40, 24, GRAY);
+    // Modern settings footer
+    std::string footer = "ENTER Apply/Select    ←→ Change    ↑↓ Navigate    ESC Back";
+    int fw = MeasureText(footer.c_str(), 18);
+    int footerX = GetScreenWidth() / 2 - fw / 2;
+    int footerY = GetScreenHeight() - 30;
+
+    // Footer background
+    DrawRectangle(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{0, 0, 0, 255}, 0.4f));
+    DrawRectangleLines(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
+
+    // Color-coded footer text
+    DrawText("ENTER", footerX, footerY, 18, Color{150, 255, 150, 255});
+    DrawText(" Apply/Select    ", footerX + 65, footerY, 18, Color{200, 200, 200, 255});
+    DrawText("←→", footerX + 190, footerY, 18, Color{150, 150, 255, 255});
+    DrawText(" Change    ", footerX + 210, footerY, 18, Color{200, 200, 200, 255});
+    DrawText("↑↓", footerX + 290, footerY, 18, Color{150, 150, 255, 255});
+    DrawText(" Navigate    ", footerX + 310, footerY, 18, Color{200, 200, 200, 255});
+    DrawText("ESC", footerX + 410, footerY, 18, Color{255, 150, 150, 255});
+    DrawText(" Back", footerX + 440, footerY, 18, Color{200, 200, 200, 255});
 }
 
 void Menu::RenderCredits()
 {
-    const char *title = "Credits";
-    int tw = MeasureText(title, 48);
-    DrawText(title, GetScreenWidth() / 2 - tw / 2, 80, 48, ORANGE);
+    // Modern credits title with glow
+    const char *title = "CREDITS";
+    int tw = MeasureText(title, 50);
+    int titleX = GetScreenWidth() / 2 - tw / 2;
+    int titleY = 80;
 
-    int y = 160, fs = 26;
-    DrawText("Developer: I#Oleg", 80, y, fs, RAYWHITE);
-    y += 36;
-    DrawText("Engine: raylib + rlImGui", 80, y, fs, RAYWHITE);
-    y += 36;
-    DrawText("UI: Custom styled buttons", 80, y, fs, RAYWHITE);
+    // Title glow effect
+    for (int i = 2; i >= 1; i--)
+    {
+        DrawText(title, titleX + i, titleY + i, 50, Fade(Color{255, 150, 100, 255}, 0.5f / i));
+    }
+    DrawText(title, titleX, titleY, 50, Color{255, 200, 150, 255});
 
-    const char *footer = "[Esc] Back";
-    int fw2 = MeasureText(footer, 24);
-    DrawText(footer, GetScreenWidth() / 2 - fw2 / 2, GetScreenHeight() - 40, 24, GRAY);
+    // Modern credits content with better layout
+    int y = 180, fs = 28;
+
+    // Developer credit with modern styling
+    DrawText("DEVELOPER", 80, y, 24, Color{200, 220, 255, 255});
+    DrawText("I#Oleg", 80, y + 30, fs, Color{255, 255, 200, 255});
+
+    y += 100;
+    DrawText("ENGINE", 80, y, 24, Color{200, 220, 255, 255});
+    DrawText("raylib + rlImGui", 80, y + 30, fs, Color{255, 255, 200, 255});
+
+    y += 100;
+    DrawText("UI DESIGN", 80, y, 24, Color{200, 220, 255, 255});
+    DrawText("Modern Interface", 80, y + 30, fs, Color{255, 255, 200, 255});
+
+    // Modern footer
+    const char *footer = "ESC Back";
+    int fw2 = MeasureText(footer, 20);
+    int footerX = GetScreenWidth() / 2 - fw2 / 2;
+    int footerY = GetScreenHeight() - 30;
+
+    DrawRectangle(footerX - 8, footerY - 3, fw2 + 16, 26, Fade(Color{0, 0, 0, 255}, 0.4f));
+    DrawRectangleLines(footerX - 8, footerY - 3, fw2 + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
+
+    DrawText("ESC", footerX, footerY, 20, Color{255, 150, 150, 255});
+    DrawText(" Back", footerX + 35, footerY, 20, Color{200, 200, 200, 255});
 }
 
 void Menu::RenderMods()
 {
-    const char *title = "Mods";
-    int tw = MeasureText(title, 48);
-    DrawText(title, GetScreenWidth() / 2 - tw / 2, 80, 48, ORANGE);
+    // Modern mods title with glow
+    const char *title = "MODS";
+    int tw = MeasureText(title, 50);
+    int titleX = GetScreenWidth() / 2 - tw / 2;
+    int titleY = 80;
 
-    int fs = 24;
-    DrawText("No mods detected.", 80, 160, fs, RAYWHITE);
-    DrawText("Place your mods in the 'resources/mods' folder.", 80, 200, fs, RAYWHITE);
+    // Title glow effect
+    for (int i = 2; i >= 1; i--)
+    {
+        DrawText(title, titleX + i, titleY + i, 50, Fade(Color{200, 100, 255, 255}, 0.5f / i));
+    }
+    DrawText(title, titleX, titleY, 50, Color{220, 150, 255, 255});
 
-    const char *footer = "[Esc] Back";
-    int fw2 = MeasureText(footer, 24);
-    DrawText(footer, GetScreenWidth() / 2 - fw2 / 2, GetScreenHeight() - 40, 24, GRAY);
+    // Modern content layout
+    int y = 180, fs = 26;
+
+    // No mods message with modern styling
+    const char* noModsMsg = "NO MODS DETECTED";
+    int noModsW = MeasureText(noModsMsg, 28);
+    int noModsX = GetScreenWidth() / 2 - noModsW / 2;
+    DrawText(noModsMsg, noModsX, y, 28, Color{255, 200, 150, 255});
+
+    y += 80;
+    const char* instructionMsg = "Place your mods in the 'resources/mods' folder";
+    int instructionW = MeasureText(instructionMsg, fs);
+    int instructionX = GetScreenWidth() / 2 - instructionW / 2;
+    DrawText(instructionMsg, instructionX, y, fs, Color{180, 200, 220, 255});
+
+    // Modern footer
+    const char *footer = "ESC Back";
+    int fw2 = MeasureText(footer, 20);
+    int footerX = GetScreenWidth() / 2 - fw2 / 2;
+    int footerY = GetScreenHeight() - 30;
+
+    DrawRectangle(footerX - 8, footerY - 3, fw2 + 16, 26, Fade(Color{0, 0, 0, 255}, 0.4f));
+    DrawRectangleLines(footerX - 8, footerY - 3, fw2 + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
+
+    DrawText("ESC", footerX, footerY, 20, Color{255, 150, 150, 255});
+    DrawText(" Back", footerX + 35, footerY, 20, Color{200, 200, 200, 255});
 }
 
 void Menu::RenderConfirmExit()
 {
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.55f));
+    // Modern modal background with blur effect
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(Color{0, 0, 0, 180}, 0.7f));
 
-    const char *msg = "Out of game?";
-    int tw = MeasureText(msg, 48);
-    DrawText(msg, GetScreenWidth() / 2 - tw / 2, GetScreenHeight() / 2 - 80, 48, ORANGE);
+    // Modal dialog container
+    int modalWidth = 500;
+    int modalHeight = 300;
+    int modalX = GetScreenWidth() / 2 - modalWidth / 2;
+    int modalY = GetScreenHeight() / 2 - modalHeight / 2;
 
-    const char *yes = "[Y/Enter] Yes";
-    const char *no = "[N/Esc] No";
-    int yw = MeasureText(yes, 32);
-    int nw = MeasureText(no, 32);
+    // Modal background with gradient
+    for (int i = 0; i < modalHeight; i++)
+    {
+        float t = (float)i / modalHeight;
+        Color c = {
+            (unsigned char)(60 + 40 * t),
+            (unsigned char)(40 + 30 * t),
+            (unsigned char)(80 + 60 * t),
+            220
+        };
+        DrawLine(modalX, modalY + i, modalX + modalWidth, modalY + i, c);
+    }
 
-    DrawText(yes, GetScreenWidth() / 2 - yw - 20, GetScreenHeight() / 2, 32, RAYWHITE);
-    DrawText(no, GetScreenWidth() / 2 + 20, GetScreenHeight() / 2, 32, RAYWHITE);
+    // Modal border with glow
+    for (int g = 3; g >= 1; g--)
+    {
+        DrawRectangleLines(modalX - g, modalY - g, modalWidth + g*2, modalHeight + g*2,
+                          Fade(Color{150, 100, 255, 255}, 0.3f / g));
+    }
+
+    // Modern title
+    const char *msg = "EXIT GAME?";
+    int tw = MeasureText(msg, 40);
+    int titleX = modalX + modalWidth / 2 - tw / 2;
+    int titleY = modalY + 40;
+
+    // Title glow
+    for (int i = 2; i >= 1; i--)
+    {
+        DrawText(msg, titleX + i, titleY + i, 40, Fade(Color{255, 100, 100, 255}, 0.6f / i));
+    }
+    DrawText(msg, titleX, titleY, 40, Color{255, 150, 150, 255});
+
+    // Modern buttons with better styling
+    const char *yes = "YES";
+    const char *no = "NO";
+    int yw = MeasureText(yes, 28);
+    int nw = MeasureText(no, 28);
+
+    int buttonY = modalY + modalHeight - 80;
+
+    // YES button (left)
+    int yesX = modalX + modalWidth / 2 - yw - 40;
+    DrawRectangle(yesX - 15, buttonY - 10, yw + 30, 40, Fade(Color{255, 100, 100, 255}, 0.8f));
+    DrawRectangleLines(yesX - 15, buttonY - 10, yw + 30, 40, Color{255, 150, 150, 255});
+    DrawText(yes, yesX, buttonY + 2, 28, Color{255, 255, 200, 255});
+
+    // NO button (right)
+    int noX = modalX + modalWidth / 2 + 40;
+    DrawRectangle(noX - 15, buttonY - 10, nw + 30, 40, Fade(Color{100, 150, 100, 255}, 0.8f));
+    DrawRectangleLines(noX - 15, buttonY - 10, nw + 30, 40, Color{150, 200, 150, 255});
+    DrawText(no, noX, buttonY + 2, 28, Color{200, 255, 200, 255});
+
+    // Instructions
+    const char *instructions = "Y/ENTER = Yes    N/ESC = No";
+    int iw = MeasureText(instructions, 20);
+    int instX = modalX + modalWidth / 2 - iw / 2;
+    int instY = modalY + modalHeight - 30;
+
+    DrawText(instructions, instX, instY, 20, Color{180, 190, 210, 255});
 }
 
 void Menu::HandleMapSelection()
@@ -845,6 +1102,7 @@ void Menu::ExecuteConsoleCommand(const std::string& command)
                 AddConsoleOutput("  res <width>x<height> - Set resolution");
                 AddConsoleOutput("  fullscreen - Toggle fullscreen");
                 AddConsoleOutput("  vsync <on/off> - Toggle VSync");
+                AddConsoleOutput("  savecfg - Save current settings");
                 AddConsoleOutput("  noclip - Toggle noclip mode");
             }
             else
@@ -950,17 +1208,31 @@ void Menu::ExecuteConsoleCommand(const std::string& command)
                 if (args == "on" || args == "1")
                 {
                     SetWindowState(FLAG_VSYNC_HINT);
+                    m_config.SetVSync(true);
                     AddConsoleOutput("VSync enabled");
                 }
                 else if (args == "off" || args == "0")
                 {
                     ClearWindowState(FLAG_VSYNC_HINT);
+                    m_config.SetVSync(false);
                     AddConsoleOutput("VSync disabled");
                 }
                 else
                 {
                     AddConsoleOutput("Usage: vsync <on/off>");
                 }
+            }
+            else
+            {
+                AddConsoleOutput("Unknown command: " + cmd + ". Type 'help' for available commands.");
+            }
+            break;
+
+        case 's':
+            if (cmd == "savecfg")
+            {
+                SaveSettings();
+                AddConsoleOutput("Settings saved to game.cfg");
             }
             else
             {
@@ -1098,4 +1370,73 @@ std::string Menu::GetCurrentSettingValue(const std::string& settingName) const
     }
 
     return "";
+}
+
+void Menu::LoadSettings()
+{
+    // Load configuration from file (try current directory first, then build directory)
+    try
+    {
+        if (!m_config.LoadFromFile("game.cfg"))
+        {
+            // Try loading from build directory if not found in current directory
+            if (!m_config.LoadFromFile("build/game.cfg"))
+            {
+                TraceLog(LOG_WARNING, "Menu::Menu() - Could not load game.cfg, will use default settings");
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Menu::Menu() - Exception while loading config: %s", e.what());
+        TraceLog(LOG_INFO, "Menu::Menu() - Continuing with default settings");
+    }
+
+    // Apply loaded settings to the game
+    int width, height;
+    m_config.GetResolution(width, height);
+    SetWindowSize(width, height);
+
+    if (m_config.IsFullscreen())
+    {
+        SetWindowState(FLAG_FULLSCREEN_MODE);
+    }
+
+    if (m_config.IsVSync())
+    {
+        SetWindowState(FLAG_VSYNC_HINT);
+    }
+}
+
+void Menu::SaveSettings()
+{
+    try
+    {
+        // Save current window settings
+        m_config.SetResolution(GetScreenWidth(), GetScreenHeight());
+        m_config.SetFullscreen(IsWindowFullscreen());
+        m_config.SetVSync(IsWindowState(FLAG_VSYNC_HINT));
+
+        // Save to file (try current directory first, then build directory)
+        if (!m_config.SaveToFile("game.cfg"))
+        {
+            // Try saving to build directory if not found in current directory
+            if (!m_config.SaveToFile("build/game.cfg"))
+            {
+                TraceLog(LOG_WARNING, "Menu::SaveSettings() - Could not save game.cfg");
+            }
+            else
+            {
+                TraceLog(LOG_INFO, "Menu::SaveSettings() - Settings saved to build/game.cfg");
+            }
+        }
+        else
+        {
+            TraceLog(LOG_INFO, "Menu::SaveSettings() - Settings saved to game.cfg");
+        }
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Menu::SaveSettings() - Exception while saving settings: %s", e.what());
+    }
 }

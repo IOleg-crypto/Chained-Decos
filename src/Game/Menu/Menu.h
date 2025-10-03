@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <raylib.h>
+#include <Config/ConfigManager.h>
 
 class Engine;
 
@@ -98,6 +99,7 @@ private:
     static const size_t MAX_HISTORY_LINES = 50;
 
     Engine *m_engine = nullptr;
+    ConfigManager m_config;
 
 public:
     Menu();
@@ -135,6 +137,10 @@ public:
     void AddConsoleOutput(const std::string& text);
     [[nodiscard]] bool IsConsoleOpen() const { return m_consoleOpen; }
     [[nodiscard]] std::string GetCurrentSettingValue(const std::string& settingName) const;
+
+    // Configuration management
+    void LoadSettings();
+    void SaveSettings();
 };
 
 #endif // MENU_H

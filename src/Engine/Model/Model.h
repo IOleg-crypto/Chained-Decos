@@ -21,6 +21,9 @@
 
 using json = nlohmann::json;
 
+// Define project root directory for asset loading
+#define PROJECT_ROOT_DIR "D:/gitnext/Chained Decos"
+
 // Enhanced Models Manager with caching, statistics and better organization
 // Features: model caching, loading stats, categorization, LOD support, error handling
 class ModelLoader

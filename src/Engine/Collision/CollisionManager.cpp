@@ -154,6 +154,39 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         default:
             break;
         }
+
+        // For BVH colliders: align MTV with triangle normal to better handle slopes/uneven surfaces
+        if (collider->IsUsingBVH())
+        {
+            Vector3 dir = mtv;
+            float dirLen = sqrtf(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+            if (dirLen > 1e-5f)
+            {
+                dir.x /= dirLen; dir.y /= dirLen; dir.z /= dirLen;
+                // Cast from player center opposite to MTV to find nearest contact and normal
+                RayHit nhit; nhit.hit = false;
+                if (collider->RaycastBVH(playerCenter, (Vector3){-dir.x, -dir.y, -dir.z}, fminf(dirLen + 0.5f, 2.0f), nhit) && nhit.hit)
+                {
+                    Vector3 n = nhit.normal;
+                    float ndotmtv = n.x * mtv.x + n.y * mtv.y + n.z * mtv.z;
+                    if (ndotmtv > 0.0f)
+                    {
+                        // Project MTV onto the surface normal
+                        mtv.x = n.x * ndotmtv;
+                        mtv.y = n.y * ndotmtv;
+                        mtv.z = n.z * ndotmtv;
+                    }
+                }
+            }
+        }
+        // Ignore micro-overlaps (contact offset)
+        {
+            float mtvLen = sqrtf(mtv.x*mtv.x + mtv.y*mtv.y + mtv.z*mtv.z);
+            const float contactSkin = 0.06f; // small contact buffer to reduce jitter
+            if (mtvLen < contactSkin)
+                continue;
+        }
+
         if (axis == 1 && mtv.y > 0 && (playerCenter.y - colliderCenter.y) >= 0.1f)
         {
             if (!hasGroundMTV || fabsf(mtv.y) < fabsf(groundMTV.y))
@@ -173,6 +206,13 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         }
         else
         {
+            // Additional jitter guard for small horizontal nudges
+            if (fabsf(mtv.y) < 1e-4f)
+            {
+                float horiz = sqrtf(mtv.x*mtv.x + mtv.z*mtv.z);
+                if (horiz < 0.15f) // ignore tiny side pushes while walking
+                    continue;
+            }
             float lenSq = mtv.x * mtv.x + mtv.y * mtv.y + mtv.z * mtv.z;
             if (!hasBest || lenSq < bestLenSq)
             {
@@ -489,7 +529,8 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
                           (modelBounds.max.y + modelBounds.min.y) * 0.5f,
                           (modelBounds.max.z + modelBounds.min.z) * 0.5f};
 
-        collision = std::make_shared<Collision>(center, size);
+        // Collision expects half-size extents
+        collision = std::make_shared<Collision>(center, Vector3Scale(size, 0.5f));
         collision->SetCollisionType(CollisionType::AABB_ONLY);
     }
     else
@@ -594,7 +635,8 @@ Collision CollisionManager::CreateSimpleAABBInstanceCollision(const Collision &c
         Vector3Add(Vector3Scale(cachedCollision.GetCenter(), scale), position);
     Vector3 scaledSize = Vector3Scale(cachedCollision.GetSize(), scale);
 
-    Collision instanceCollision(transformedCenter, scaledSize);
+    // Collision expects half-size extents
+    Collision instanceCollision(transformedCenter, Vector3Scale(scaledSize, 0.5f));
     instanceCollision.SetCollisionType(CollisionType::AABB_ONLY);
     return instanceCollision;
 }
