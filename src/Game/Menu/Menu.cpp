@@ -133,25 +133,30 @@ void Menu::Update()
 
 void Menu::HandleKeyboardNavigation()
 {
-    if (!m_currentMenu)
-        return;
-    if (m_state == MenuState::Credits || m_state == MenuState::Mods || m_state == MenuState::Video)
-        return;
-
-    if (IsKeyPressed(KEY_DOWN))
-        m_selected = (m_selected + 1) % m_currentMenu->size();
-    if (IsKeyPressed(KEY_UP))
-        m_selected = (m_selected + m_currentMenu->size() - 1) % m_currentMenu->size();
-
-    if (IsKeyPressed(KEY_ENTER))
-        m_action = (*m_currentMenu)[m_selected].action;
-
-    if (IsKeyPressed(KEY_ESCAPE))
+    switch (m_state)
     {
-        if (m_state == MenuState::Options || m_state == MenuState::GameMode)
-            m_state = MenuState::Main;
-        else if (m_state == MenuState::Main)
-            m_action = MenuAction::ExitGame;
+    case MenuState::Main:
+    case MenuState::Options:
+    case MenuState::GameMode:
+    case MenuState::Audio:
+    case MenuState::Controls:
+        HandleMainMenuKeyboardNavigation();
+        break;
+    case MenuState::Video:
+        HandleVideoMenuKeyboardNavigation();
+        break;
+    case MenuState::Credits:
+    case MenuState::Mods:
+        HandleSimpleScreenKeyboardNavigation();
+        break;
+    case MenuState::MapSelection:
+        HandleMapSelectionKeyboardNavigation();
+        break;
+    case MenuState::ConfirmExit:
+        HandleConfirmExitKeyboardNavigation();
+        break;
+    default:
+        break;
     }
 }
 
@@ -228,30 +233,35 @@ void Menu::HandleVideoNavigation()
 
 void Menu::HandleMouseSelection()
 {
-    if (!m_currentMenu)
-        return;
-    if (m_state == MenuState::Credits || m_state == MenuState::Mods || m_state == MenuState::MapSelection)
-        return;
-
     Vector2 mousePos = GetMousePosition();
-    constexpr int kBtnW = 200, kBtnH = 50, kStartY = 300, kSpacing = 70;
     bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 
-    for (size_t i = 0; i < m_currentMenu->size(); ++i)
+    switch (m_state)
     {
-        int x = GetScreenWidth() / 2 - kBtnW / 2;
-        int y = kStartY + static_cast<int>(i) * kSpacing;
-        Rectangle rect = {(float)x, (float)y, (float)kBtnW, (float)kBtnH};
-
-        if (CheckCollisionPointRec(mousePos, rect))
-        {
-            m_selected = static_cast<int>(i);
-            if (clicked)
-            {
-                m_action = (*m_currentMenu)[m_selected].action;
-                break;
-            }
-        }
+    case MenuState::Main:
+    case MenuState::Options:
+    case MenuState::GameMode:
+    case MenuState::Audio:
+    case MenuState::Controls:
+        HandleMainMenuMouseSelection(mousePos, clicked);
+        break;
+    case MenuState::Video:
+        HandleVideoMenuMouseSelection(mousePos, clicked);
+        break;
+    case MenuState::Credits:
+        HandleCreditsMouseSelection(mousePos, clicked);
+        break;
+    case MenuState::Mods:
+        HandleModsMouseSelection(mousePos, clicked);
+        break;
+    case MenuState::MapSelection:
+        HandleMapSelectionMouseSelection(mousePos, clicked);
+        break;
+    case MenuState::ConfirmExit:
+        HandleConfirmExitMouseSelection(mousePos, clicked);
+        break;
+    default:
+        break;
     }
 }
 
@@ -326,6 +336,391 @@ void Menu::ExecuteAction()
 }
 
 void Menu::HandleConfirmExit()
+{
+    if (IsKeyPressed(KEY_Y) || IsKeyPressed(KEY_ENTER))
+    {
+        m_action = MenuAction::ExitGame;
+        if (m_engine)
+            m_engine->RequestExit();
+    }
+    else if (IsKeyPressed(KEY_N) || IsKeyPressed(KEY_ESCAPE))
+    {
+        m_state = MenuState::Main;
+    }
+}
+
+void Menu::HandleMainMenuMouseSelection(Vector2 mousePos, bool clicked)
+{
+    if (!m_currentMenu)
+        return;
+
+    constexpr int kBtnW = 200, kBtnH = 50, kStartY = 300, kSpacing = 70;
+
+    for (size_t i = 0; i < m_currentMenu->size(); ++i)
+    {
+        int x = GetScreenWidth() / 2 - kBtnW / 2;
+        int y = kStartY + static_cast<int>(i) * kSpacing;
+        Rectangle rect = {(float)x, (float)y, (float)kBtnW, (float)kBtnH};
+
+        if (CheckCollisionPointRec(mousePos, rect))
+        {
+            m_selected = static_cast<int>(i);
+            if (clicked)
+            {
+                m_action = (*m_currentMenu)[m_selected].action;
+                break;
+            }
+        }
+    }
+}
+
+void Menu::HandleVideoMenuMouseSelection(Vector2 mousePos, bool clicked)
+{
+    constexpr int startY = 150, spacing = 80;
+
+    for (size_t i = 0; i < m_videoOptions.size(); ++i)
+    {
+        int y = startY + static_cast<int>(i) * spacing;
+        Rectangle rect = {60.0f, (float)(y - 5), (float)(GetScreenWidth() - 120), (float)(spacing - 10)};
+
+        if (CheckCollisionPointRec(mousePos, rect))
+        {
+            m_selected = static_cast<int>(i);
+            if (clicked)
+            {
+                auto &opt = m_videoOptions[m_selected];
+                if (opt.label == "Back")
+                    m_state = MenuState::Options;
+                else if (opt.label == "Resolution")
+                {
+                    int w = 0, h = 0;
+                    sscanf(opt.values[opt.selectedIndex].c_str(), "%dx%d", &w, &h);
+                    m_config.SetResolution(w, h);
+                    SetWindowSize(w, h);
+                }
+                else if (opt.label == "Display Mode")
+                {
+                    std::string mode = opt.values[opt.selectedIndex];
+                    bool fullscreen = (mode == "Fullscreen" || mode == "Borderless");
+                    m_config.SetFullscreen(fullscreen);
+
+                    if (mode == "Fullscreen")
+                        SetWindowState(FLAG_FULLSCREEN_MODE);
+                    else if (mode == "Windowed")
+                    {
+                        ClearWindowState(FLAG_FULLSCREEN_MODE);
+                        ClearWindowState(FLAG_WINDOW_UNDECORATED);
+                    }
+                    else if (mode == "Borderless")
+                        SetWindowState(FLAG_FULLSCREEN_MODE | FLAG_WINDOW_UNDECORATED);
+                }
+                else if (opt.label == "VSync")
+                {
+                    bool vsync = (opt.values[opt.selectedIndex] == "On");
+                    m_config.SetVSync(vsync);
+
+                    if (vsync)
+                    {
+                        SetWindowState(FLAG_VSYNC_HINT);
+                        SetTargetFPS(0);
+                    }
+                    else
+                    {
+                        ClearWindowState(FLAG_VSYNC_HINT);
+                        SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+                    }
+                }
+                else if (opt.label == "Target FPS")
+                {
+                    const std::string val = opt.values[opt.selectedIndex];
+                    ClearWindowState(FLAG_VSYNC_HINT);
+
+                    int fps = (val == "Unlimited") ? 0 : std::stoi(val);
+                    SetTargetFPS(fps);
+                }
+            }
+            break;
+        }
+    }
+}
+
+void Menu::HandleCreditsMouseSelection(Vector2 mousePos, bool clicked)
+{
+    // Credits screen - mouse click anywhere goes back to main menu
+    if (clicked)
+    {
+        m_state = MenuState::Main;
+    }
+}
+
+void Menu::HandleModsMouseSelection(Vector2 mousePos, bool clicked)
+{
+    // Mods screen - mouse click anywhere goes back to main menu
+    if (clicked)
+    {
+        m_state = MenuState::Main;
+    }
+}
+
+void Menu::HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked)
+{
+    if (m_availableMaps.empty())
+        return;
+
+    // Calculate layout
+    const int mapsPerRow = 3;
+    const int mapWidth = 280;
+    const int mapHeight = 200;
+    const int spacing = 40;
+    const int startY = 120;
+
+    int totalWidth = mapsPerRow * mapWidth + (mapsPerRow - 1) * spacing;
+    int startX = (GetScreenWidth() - totalWidth) / 2;
+
+    // Check each map for mouse interaction
+    for (size_t i = 0; i < m_availableMaps.size(); ++i)
+    {
+        int row = static_cast<int>(i) / mapsPerRow;
+        int col = static_cast<int>(i) % mapsPerRow;
+
+        int x = startX + col * (mapWidth + spacing);
+        int y = startY + row * (mapHeight + spacing);
+        Rectangle rect = {(float)x, (float)y, (float)mapWidth, (float)mapHeight};
+
+        if (CheckCollisionPointRec(mousePos, rect))
+        {
+            m_selectedMap = static_cast<int>(i);
+            if (clicked)
+            {
+                // Start the game with selected map
+                const MapInfo* selectedMap = GetSelectedMap();
+                if (selectedMap)
+                {
+                    std::cout << "Starting game with map: " << selectedMap->name << std::endl;
+                    // Set action to start game with selected map
+                    switch (m_selectedMap)
+                    {
+                        case 0:
+                            m_action = MenuAction::SelectMap1;
+                            break;
+                        case 1:
+                            m_action = MenuAction::SelectMap2;
+                            break;
+                        case 2:
+                            m_action = MenuAction::SelectMap3;
+                            break;
+                        default:
+                            m_action = MenuAction::StartGameWithMap;
+                            break;
+                    }
+                }
+            }
+            break;
+        }
+    }
+}
+
+void Menu::HandleConfirmExitMouseSelection(Vector2 mousePos, bool clicked)
+{
+    if (!clicked)
+        return;
+
+    // Modal dialog container
+    int modalWidth = 500;
+    int modalHeight = 300;
+    int modalX = GetScreenWidth() / 2 - modalWidth / 2;
+    int modalY = GetScreenHeight() / 2 - modalHeight / 2;
+
+    // YES button (left)
+    int yesX = modalX + modalWidth / 2 - 100;
+    int buttonY = modalY + modalHeight - 80;
+    Rectangle yesRect = {(float)(yesX - 15), (float)(buttonY - 10), 80.0f, 40.0f};
+
+    // NO button (right)
+    int noX = modalX + modalWidth / 2 + 40;
+    Rectangle noRect = {(float)(noX - 15), (float)(buttonY - 10), 80.0f, 40.0f};
+
+    if (CheckCollisionPointRec(mousePos, yesRect))
+    {
+        m_action = MenuAction::ExitGame;
+        if (m_engine)
+            m_engine->RequestExit();
+    }
+    else if (CheckCollisionPointRec(mousePos, noRect))
+    {
+        m_state = MenuState::Main;
+    }
+}
+
+void Menu::HandleMainMenuKeyboardNavigation()
+{
+    if (!m_currentMenu)
+        return;
+
+    if (IsKeyPressed(KEY_DOWN))
+        m_selected = (m_selected + 1) % m_currentMenu->size();
+    if (IsKeyPressed(KEY_UP))
+        m_selected = (m_selected + m_currentMenu->size() - 1) % m_currentMenu->size();
+
+    if (IsKeyPressed(KEY_ENTER))
+        m_action = (*m_currentMenu)[m_selected].action;
+
+    if (IsKeyPressed(KEY_ESCAPE))
+    {
+        if (m_state == MenuState::Options || m_state == MenuState::GameMode)
+            m_state = MenuState::Main;
+        else if (m_state == MenuState::Main)
+            m_action = MenuAction::ExitGame;
+    }
+}
+
+void Menu::HandleVideoMenuKeyboardNavigation()
+{
+    if (IsKeyPressed(KEY_DOWN))
+        m_selected = (m_selected + 1) % m_videoOptions.size();
+    if (IsKeyPressed(KEY_UP))
+        m_selected = (m_selected + m_videoOptions.size() - 1) % m_videoOptions.size();
+
+    if (!m_videoOptions[m_selected].values.empty())
+    {
+        auto &opt = m_videoOptions[m_selected];
+        if (IsKeyPressed(KEY_RIGHT))
+            opt.selectedIndex = (opt.selectedIndex + 1) % opt.values.size();
+        if (IsKeyPressed(KEY_LEFT))
+            opt.selectedIndex = (opt.selectedIndex + opt.values.size() - 1) % opt.values.size();
+    }
+
+    if (IsKeyPressed(KEY_ENTER))
+    {
+        auto &opt = m_videoOptions[m_selected];
+        if (opt.label == "Back")
+            m_state = MenuState::Options;
+        else if (opt.label == "Resolution")
+        {
+            int w = 0, h = 0;
+            sscanf(opt.values[opt.selectedIndex].c_str(), "%dx%d", &w, &h);
+            m_config.SetResolution(w, h);
+            SetWindowSize(w, h);
+        }
+        else if (opt.label == "Display Mode")
+        {
+            std::string mode = opt.values[opt.selectedIndex];
+            bool fullscreen = (mode == "Fullscreen" || mode == "Borderless");
+            m_config.SetFullscreen(fullscreen);
+
+            if (mode == "Fullscreen")
+                SetWindowState(FLAG_FULLSCREEN_MODE);
+            else if (mode == "Windowed")
+            {
+                ClearWindowState(FLAG_FULLSCREEN_MODE);
+                ClearWindowState(FLAG_WINDOW_UNDECORATED);
+            }
+            else if (mode == "Borderless")
+                SetWindowState(FLAG_FULLSCREEN_MODE | FLAG_WINDOW_UNDECORATED);
+        }
+        else if (opt.label == "VSync")
+        {
+            bool vsync = (opt.values[opt.selectedIndex] == "On");
+            m_config.SetVSync(vsync);
+
+            if (vsync)
+            {
+                SetWindowState(FLAG_VSYNC_HINT);
+                SetTargetFPS(0);
+            }
+            else
+            {
+                ClearWindowState(FLAG_VSYNC_HINT);
+                SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+            }
+        }
+        else if (opt.label == "Target FPS")
+        {
+            const std::string val = opt.values[opt.selectedIndex];
+            ClearWindowState(FLAG_VSYNC_HINT);
+
+            int fps = (val == "Unlimited") ? 0 : std::stoi(val);
+            SetTargetFPS(fps);
+        }
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE))
+        m_state = MenuState::Options;
+}
+
+void Menu::HandleSimpleScreenKeyboardNavigation()
+{
+    // For Credits and Mods screens - ESC goes back to main menu
+    if (IsKeyPressed(KEY_ESCAPE))
+        m_state = MenuState::Main;
+}
+
+void Menu::HandleMapSelectionKeyboardNavigation()
+{
+    if (m_availableMaps.empty())
+        return;
+
+    const int mapsPerRow = 3;
+    int currentRow = m_selectedMap / mapsPerRow;
+    int currentCol = m_selectedMap % mapsPerRow;
+    int totalRows = (static_cast<int>(m_availableMaps.size()) + mapsPerRow - 1) / mapsPerRow;
+
+    if (IsKeyPressed(KEY_DOWN) && currentRow < totalRows - 1)
+    {
+        int newRow = currentRow + 1;
+        int newIndex = newRow * mapsPerRow + currentCol;
+        if (newIndex < static_cast<int>(m_availableMaps.size()))
+            m_selectedMap = newIndex;
+    }
+    if (IsKeyPressed(KEY_UP) && currentRow > 0)
+    {
+        int newRow = currentRow - 1;
+        int newIndex = newRow * mapsPerRow + currentCol;
+        if (newIndex < static_cast<int>(m_availableMaps.size()))
+            m_selectedMap = newIndex;
+    }
+    if (IsKeyPressed(KEY_LEFT) && currentCol > 0)
+    {
+        m_selectedMap--;
+    }
+    if (IsKeyPressed(KEY_RIGHT) && currentCol < mapsPerRow - 1)
+    {
+        int newIndex = currentRow * mapsPerRow + currentCol + 1;
+        if (newIndex < static_cast<int>(m_availableMaps.size()))
+            m_selectedMap = newIndex;
+    }
+
+    if (IsKeyPressed(KEY_ENTER) && !m_availableMaps.empty())
+    {
+        // Start the game with selected map
+        const MapInfo* selectedMap = GetSelectedMap();
+        if (selectedMap)
+        {
+            std::cout << "Starting game with map: " << selectedMap->name << std::endl;
+            // Set action to start game with selected map
+            switch (m_selectedMap)
+            {
+                case 0:
+                    m_action = MenuAction::SelectMap1;
+                    break;
+                case 1:
+                    m_action = MenuAction::SelectMap2;
+                    break;
+                case 2:
+                    m_action = MenuAction::SelectMap3;
+                    break;
+                default:
+                    m_action = MenuAction::StartGameWithMap;
+                    break;
+            }
+        }
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE))
+        m_state = MenuState::GameMode;
+}
+
+void Menu::HandleConfirmExitKeyboardNavigation()
 {
     if (IsKeyPressed(KEY_Y) || IsKeyPressed(KEY_ENTER))
     {
@@ -866,32 +1261,62 @@ void Menu::InitializeMaps()
     m_availableMaps.clear();
     m_selectedMap = 0;
 
-    // Add default parkour test map
+    // Parkour Test Map 1 - Basic Shapes
     m_availableMaps.push_back({
-        "parkour_test",
-        "Parkour Test Arena",
-        "Classic parkour challenges with platforms, cubes, and spheres",
-        "/resources/map_previews/parkour_test.png",
+        "parkour_shapes_basic",
+        "Basic Shapes Parkour",
+        "Learn parkour fundamentals with cubes, spheres, and platforms",
+        "/resources/map_previews/parkour_shapes_basic.png",
+        SKYBLUE,
+        true
+    });
+
+    // Parkour Test Map 2 - Geometric Challenge
+    m_availableMaps.push_back({
+        "parkour_geometric",
+        "Geometric Challenge",
+        "Advanced parkour with complex geometric arrangements",
+        "/resources/map_previews/parkour_geometric.png",
+        LIME,
+        true
+    });
+
+    // Parkour Test Map 3 - Precision Platforming
+    m_availableMaps.push_back({
+        "parkour_precision",
+        "Precision Platforming",
+        "Test your precision with small platforms and tight jumps",
+        "/resources/map_previews/parkour_precision.png",
+        YELLOW,
+        true
+    });
+
+    // Parkour Test Map 4 - Vertical Challenge
+    m_availableMaps.push_back({
+        "parkour_vertical",
+        "Vertical Ascension",
+        "Climb to new heights with vertical raylib shape challenges",
+        "/resources/map_previews/parkour_vertical.png",
+        PURPLE,
+        true
+    });
+
+    // Parkour Test Map 5 - Speed Run
+    m_availableMaps.push_back({
+        "parkour_speedrun",
+        "Speed Runner's Gauntlet",
+        "Fast-paced parkour course with moving platforms",
+        "/resources/map_previews/parkour_speedrun.png",
         ORANGE,
         true
     });
 
-    // Add arena map
+    // Training Ground - Beginner Map
     m_availableMaps.push_back({
-        "arena_test",
-        "Doric Arena",
-        "Ancient arena with challenging obstacles and precise jumps",
-        "/resources/map_previews/arena_test.png",
-        GOLD,
-        true
-    });
-
-    // Add more maps as needed
-    m_availableMaps.push_back({
-        "training_ground",
-        "Training Ground",
-        "Beginner-friendly map for learning basic mechanics",
-        "/resources/map_previews/training_ground.png",
+        "training_shapes",
+        "Shape Training Ground",
+        "Learn basic parkour mechanics with simple raylib shapes",
+        "/resources/map_previews/training_shapes.png",
         GREEN,
         true
     });

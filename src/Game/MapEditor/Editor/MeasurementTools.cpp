@@ -399,7 +399,20 @@ Vector3 MeasurementTools::GetClosestEdge(const Vector3& point, const std::vector
             {
                 Vector3 edgeStart = vertices[edges[i][0]];
                 Vector3 edgeEnd = vertices[edges[i][1]];
-                Vector3 edgePoint = Vector3ClosestPointOnLine(point, edgeStart, edgeEnd);
+                // Calculate closest point on line segment
+                Vector3 lineDir = Vector3Subtract(edgeEnd, edgeStart);
+                Vector3 pointDir = Vector3Subtract(point, edgeStart);
+                Vector3 edgePoint;
+
+                float lineLength = Vector3Length(lineDir);
+                if (lineLength < 0.001f) {
+                    edgePoint = edgeStart;
+                } else {
+                    Vector3 normalizedDir = Vector3Scale(lineDir, 1.0f / lineLength);
+                    float projection = Vector3DotProduct(pointDir, normalizedDir);
+                    projection = std::max(0.0f, std::min(lineLength, projection));
+                    edgePoint = Vector3Add(edgeStart, Vector3Scale(normalizedDir, projection));
+                }
 
                 float distance = Vector3Distance(point, edgePoint);
                 if (distance < minDistance)
