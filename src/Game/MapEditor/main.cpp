@@ -1,4 +1,4 @@
-#include <MapEditor/Application.h>
+#include "Application.h"
 // # --------
 // # int main - init map editor
 // # --------

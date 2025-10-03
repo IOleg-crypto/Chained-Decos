@@ -45,7 +45,7 @@
 					"source" : ".deps/raylib-src",
 					"targetIndexes" : 
 					[
-						19
+						20
 					]
 				},
 				{
@@ -96,7 +96,7 @@
 					"targetIndexes" : 
 					[
 						8,
-						20
+						21
 					]
 				},
 				{
@@ -255,7 +255,7 @@
 					"source" : "src/Engine/World",
 					"targetIndexes" : 
 					[
-						21
+						22
 					]
 				},
 				{
@@ -356,17 +356,19 @@
 				},
 				{
 					"build" : "src/Game/MapEditor",
-					"jsonFile" : "directory-src.Game.MapEditor-Debug-d9bab7bb6f28d37dfb32.json",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-src.Game.MapEditor-Debug-45ed7f5f876d03b2a3e0.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.16"
 					},
 					"parentIndex" : 0,
 					"projectIndex" : 4,
 					"source" : "src/Game/MapEditor",
 					"targetIndexes" : 
 					[
-						3
+						3,
+						19
 					]
 				}
 			],
@@ -418,7 +420,7 @@
 						15,
 						16,
 						18,
-						21
+						22
 					]
 				},
 				{
@@ -436,7 +438,7 @@
 					"targetIndexes" : 
 					[
 						17,
-						19
+						20
 					]
 				},
 				{
@@ -450,7 +452,7 @@
 					"targetIndexes" : 
 					[
 						8,
-						20
+						21
 					]
 				},
 				{
@@ -470,7 +472,8 @@
 					"parentIndex" : 0,
 					"targetIndexes" : 
 					[
-						3
+						3,
+						19
 					]
 				}
 			],
@@ -479,28 +482,28 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ChainedDecos-Debug-eb17f796bd79c4195f10.json",
+					"jsonFile" : "target-ChainedDecos-Debug-2abe40ff86ebe820010a.json",
 					"name" : "ChainedDecos",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 6,
 					"id" : "ChainedDecosEngine::@57eeced369f002faad1a",
-					"jsonFile" : "target-ChainedDecosEngine-Debug-fdf02a17c2de7e52fb81.json",
+					"jsonFile" : "target-ChainedDecosEngine-Debug-633b0690ee37109cbef5.json",
 					"name" : "ChainedDecosEngine",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 17,
 					"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94",
-					"jsonFile" : "target-ChainedDecosGame-Debug-91ef6ead75fcd4e1868c.json",
+					"jsonFile" : "target-ChainedDecosGame-Debug-787942d207f37c63aad6.json",
 					"name" : "ChainedDecosGame",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 21,
 					"id" : "ChainedDecosMapEditor::@55121233932d6d4fa567",
-					"jsonFile" : "target-ChainedDecosMapEditor-Debug-4b91719d79c3aa811d72.json",
+					"jsonFile" : "target-ChainedDecosMapEditor-Debug-359059cf7375ecc625c0.json",
 					"name" : "ChainedDecosMapEditor",
 					"projectIndex" : 4
 				},
@@ -570,7 +573,7 @@
 				{
 					"directoryIndex" : 19,
 					"id" : "menu::@508c1ec0f6a4eb8a79d5",
-					"jsonFile" : "target-menu-Debug-8d945ae460a0a921b1d0.json",
+					"jsonFile" : "target-menu-Debug-4b72962967bfc66c9eb4.json",
 					"name" : "menu",
 					"projectIndex" : 0
 				},
@@ -605,9 +608,16 @@
 				{
 					"directoryIndex" : 11,
 					"id" : "render::@1c5ce05080cbaa0376c6",
-					"jsonFile" : "target-render-Debug-428805fd685d41612dd2.json",
+					"jsonFile" : "target-render-Debug-135bb99e2f77a602b434.json",
 					"name" : "render",
 					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 21,
+					"id" : "run_mapeditor::@55121233932d6d4fa567",
+					"jsonFile" : "target-run_mapeditor-Debug-81af2b0ec195858b5a39.json",
+					"name" : "run_mapeditor",
+					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 1,

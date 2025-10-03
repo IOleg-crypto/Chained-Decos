@@ -1,4 +1,5 @@
 #include "MeasurementTools.h"
+#include <raylib.h>
 #include <raymath.h>
 #include <algorithm>
 #include <cmath>

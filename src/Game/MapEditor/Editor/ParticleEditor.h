@@ -78,7 +78,7 @@ struct ParticleProperties
     // Texture/Model properties
     std::string texturePath;
     std::string modelPath;
-    Texture2D texture;
+    Texture texture;
     Model model;
     bool resourcesLoaded;
 
