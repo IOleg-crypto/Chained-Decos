@@ -141,6 +141,21 @@ public:
     // Configuration management
     void LoadSettings();
     void SaveSettings();
+
+    // Keyboard navigation handlers
+    void HandleMainMenuKeyboardNavigation();
+    void HandleVideoMenuKeyboardNavigation();
+    void HandleSimpleScreenKeyboardNavigation();
+    void HandleMapSelectionKeyboardNavigation();
+    void HandleConfirmExitKeyboardNavigation();
+
+    // Mouse selection handlers
+    void HandleMainMenuMouseSelection(Vector2 mousePos, bool clicked);
+    void HandleVideoMenuMouseSelection(Vector2 mousePos, bool clicked);
+    void HandleCreditsMouseSelection(Vector2 mousePos, bool clicked);
+    void HandleModsMouseSelection(Vector2 mousePos, bool clicked);
+    void HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked);
+    void HandleConfirmExitMouseSelection(Vector2 mousePos, bool clicked);
 };
 
 #endif // MENU_H

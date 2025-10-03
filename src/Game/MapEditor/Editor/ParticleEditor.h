@@ -238,8 +238,8 @@ public:
     bool ExportParticleSystem(int index, const std::string& filePath);
 
     // Rendering
-    void Render();
-    void RenderParticleSystem(int systemIndex);
+    void Render(Camera3D camera = Camera3D{});
+    void RenderParticleSystem(int systemIndex, Camera3D camera = Camera3D{});
     void RenderEmitterGizmo(int systemIndex);
     void RenderPreview();
 

@@ -1,66 +1,4 @@
 # ninja log v7
-<<<<<<< HEAD
-2	53	7812059510527257	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	78928aeaa0f70abf
-2	53	7812059510527257	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	78928aeaa0f70abf
-53	2329	7812059533292933	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	af0846c54d62fa15
-53	2329	7812059533292933	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	af0846c54d62fa15
-2329	2384	7812059533833291	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update_disconnected	3f4b361aa59cd589
-2329	2384	7812059533833291	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update_disconnected	3f4b361aa59cd589
-2384	2434	7812059534339816	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch_disconnected	3fbd91153aa865dc
-2384	2434	7812059534339816	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch_disconnected	3fbd91153aa865dc
-2434	2487	7812059534802482	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure	9709e1af0236fb8d
-2434	2487	7812059534802482	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure	9709e1af0236fb8d
-2487	2531	7812059535314967	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build	94485893d1395661
-2487	2531	7812059535314967	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build	94485893d1395661
-2531	2588	7812059535810535	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install	524b2f3679623989
-2531	2588	7812059535810535	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install	524b2f3679623989
-2588	2635	7812059536340560	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test	4253f6f1f4e3a256
-2588	2635	7812059536340560	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test	4253f6f1f4e3a256
-2635	2706	7812059537075569	CMakeFiles/nlohmann_json-populate-complete	db50c906bf7fcf8c
-2635	2706	7812059537075569	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	db50c906bf7fcf8c
-2635	2706	7812059537075569	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/CMakeFiles/nlohmann_json-populate-complete	db50c906bf7fcf8c
-2635	2706	7812059537075569	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	db50c906bf7fcf8c
-2	47	7812142282690474	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	6299fd33fac8e671
-2	47	7812142282690474	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	6299fd33fac8e671
-47	3075	7812142312836444	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	391020a8db4aa183
-47	3075	7812142312836444	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	391020a8db4aa183
-3075	3117	7812142313402121	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update_disconnected	452bd0548f964bca
-3075	3117	7812142313402121	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update_disconnected	452bd0548f964bca
-3117	3161	7812142313826979	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch_disconnected	3ff955764cb8ea2
-3117	3161	7812142313826979	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch_disconnected	3ff955764cb8ea2
-3161	3206	7812142314291151	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure	9b9997d9135602f0
-3161	3206	7812142314291151	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure	9b9997d9135602f0
-3206	3247	7812142314708141	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build	4b3178b635b112c2
-3206	3247	7812142314708141	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build	4b3178b635b112c2
-3248	3296	7812142315188424	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install	f5693a0e0c92ea41
-3248	3296	7812142315188424	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install	f5693a0e0c92ea41
-3296	3336	7812142315598574	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test	46bdad239cf2b64e
-3296	3336	7812142315598574	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test	46bdad239cf2b64e
-3336	3398	7812142316208883	CMakeFiles/nlohmann_json-populate-complete	728ed26a09701fe9
-3336	3398	7812142316208883	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	728ed26a09701fe9
-3336	3398	7812142316208883	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/CMakeFiles/nlohmann_json-populate-complete	728ed26a09701fe9
-3336	3398	7812142316208883	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	728ed26a09701fe9
-=======
-2	47	7812050839164959	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	78928aeaa0f70abf
-2	47	7812050839164959	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	78928aeaa0f70abf
-48	4159	7812050880280189	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	af0846c54d62fa15
-48	4159	7812050880280189	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	af0846c54d62fa15
-4159	4202	7812050880697568	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update_disconnected	3f4b361aa59cd589
-4159	4202	7812050880697568	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update_disconnected	3f4b361aa59cd589
-4202	4246	7812050881153980	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch_disconnected	3fbd91153aa865dc
-4202	4246	7812050881153980	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch_disconnected	3fbd91153aa865dc
-4246	4289	7812050881577396	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure	9709e1af0236fb8d
-4246	4289	7812050881577396	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure	9709e1af0236fb8d
-4289	4342	7812050882112148	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build	94485893d1395661
-4289	4342	7812050882112148	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build	94485893d1395661
-4343	4388	7812050882567600	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install	524b2f3679623989
-4343	4388	7812050882567600	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install	524b2f3679623989
-4388	4444	7812050883126379	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test	4253f6f1f4e3a256
-4388	4444	7812050883126379	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test	4253f6f1f4e3a256
-4444	4503	7812050883713539	CMakeFiles/nlohmann_json-populate-complete	db50c906bf7fcf8c
-4444	4503	7812050883713539	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	db50c906bf7fcf8c
-4444	4503	7812050883713539	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/CMakeFiles/nlohmann_json-populate-complete	db50c906bf7fcf8c
-4444	4503	7812050883713539	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	db50c906bf7fcf8c
 2	47	7812052309812872	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	510ce04e206cc369
 2	47	7812052309812872	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	510ce04e206cc369
 47	2580	7812052335134916	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	9054c6117dafa62b
@@ -81,4 +19,23 @@
 2879	2944	7812052338769801	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	c5cec2ad01304798
 2879	2944	7812052338769801	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/CMakeFiles/nlohmann_json-populate-complete	c5cec2ad01304798
 2879	2944	7812052338769801	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	c5cec2ad01304798
->>>>>>> feature/advanced-mapeditor
+2	62	7812151444987498	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	6299fd33fac8e671
+2	62	7812151444987498	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-mkdir	6299fd33fac8e671
+62	2995	7812151474321508	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	391020a8db4aa183
+62	2995	7812151474321508	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download	391020a8db4aa183
+2995	3037	7812151474748630	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update_disconnected	452bd0548f964bca
+2995	3037	7812151474748630	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-update_disconnected	452bd0548f964bca
+3037	3095	7812151475318770	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch_disconnected	3ff955764cb8ea2
+3037	3095	7812151475318770	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-patch_disconnected	3ff955764cb8ea2
+3095	3141	7812151475776234	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure	9b9997d9135602f0
+3095	3141	7812151475776234	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-configure	9b9997d9135602f0
+3141	3192	7812151476286190	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build	4b3178b635b112c2
+3141	3192	7812151476286190	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-build	4b3178b635b112c2
+3192	3233	7812151476698228	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install	f5693a0e0c92ea41
+3192	3233	7812151476698228	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-install	f5693a0e0c92ea41
+3233	3291	7812151477268367	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test	46bdad239cf2b64e
+3233	3291	7812151477268367	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-test	46bdad239cf2b64e
+3291	3349	7812151477865707	CMakeFiles/nlohmann_json-populate-complete	728ed26a09701fe9
+3291	3349	7812151477865707	nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	728ed26a09701fe9
+3291	3349	7812151477865707	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/CMakeFiles/nlohmann_json-populate-complete	728ed26a09701fe9
+3291	3349	7812151477865707	D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-done	728ed26a09701fe9
