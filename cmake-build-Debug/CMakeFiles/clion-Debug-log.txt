@@ -21,7 +21,150 @@ CMake Deprecation Warning at .deps/raylib-src/CMakeLists.txt:1 (cmake_minimum_re
 --   PLATFORM=PLATFORM_DESKTOP
 --   GRAPHICS=GRAPHICS_API_OPENGL_33
 -- nlohmann_json not found, fetching...
+<<<<<<< HEAD
 -- Using the multi-header code from D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include/
 -- Configuring done (16.1s)
 -- Generating done (0.2s)
 -- Build files have been written to: D:/gitnext/Chained Decos/cmake-build-debug
+=======
+[1/9] Creating directories for 'nlohmann_json-populate'
+[1/9] Performing download step (download, verify and extract) for 'nlohmann_json-populate'
+-- File already exists but no hash specified (use URL_HASH):
+  file='D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/v3.12.0.zip'
+Old file will be removed and new file downloaded from URL.
+-- Downloading...
+   dst='D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/v3.12.0.zip'
+   timeout='none'
+   inactivity timeout='none'
+-- Using src='https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.zip'
+-- [download 0% complete]
+-- [download 1% complete]
+-- [download 2% complete]
+-- [download 3% complete]
+-- [download 4% complete]
+-- [download 5% complete]
+-- [download 6% complete]
+-- [download 7% complete]
+-- [download 8% complete]
+-- [download 9% complete]
+-- [download 10% complete]
+-- [download 11% complete]
+-- [download 12% complete]
+-- [download 13% complete]
+-- [download 14% complete]
+-- [download 15% complete]
+-- [download 16% complete]
+-- [download 17% complete]
+-- [download 18% complete]
+-- [download 19% complete]
+-- [download 20% complete]
+-- [download 21% complete]
+-- [download 22% complete]
+-- [download 23% complete]
+-- [download 24% complete]
+-- [download 25% complete]
+-- [download 26% complete]
+-- [download 27% complete]
+-- [download 28% complete]
+-- [download 29% complete]
+-- [download 30% complete]
+-- [download 31% complete]
+-- [download 32% complete]
+-- [download 33% complete]
+-- [download 34% complete]
+-- [download 35% complete]
+-- [download 36% complete]
+-- [download 37% complete]
+-- [download 38% complete]
+-- [download 39% complete]
+-- [download 40% complete]
+-- [download 41% complete]
+-- [download 42% complete]
+-- [download 43% complete]
+-- [download 44% complete]
+-- [download 45% complete]
+-- [download 46% complete]
+-- [download 47% complete]
+-- [download 48% complete]
+-- [download 49% complete]
+-- [download 50% complete]
+-- [download 51% complete]
+-- [download 52% complete]
+-- [download 53% complete]
+-- [download 54% complete]
+-- [download 55% complete]
+-- [download 56% complete]
+-- [download 57% complete]
+-- [download 58% complete]
+-- [download 59% complete]
+-- [download 60% complete]
+-- [download 61% complete]
+-- [download 62% complete]
+-- [download 63% complete]
+-- [download 64% complete]
+-- [download 65% complete]
+-- [download 66% complete]
+-- [download 67% complete]
+-- [download 68% complete]
+-- [download 69% complete]
+-- [download 70% complete]
+-- [download 71% complete]
+-- [download 72% complete]
+-- [download 73% complete]
+-- [download 74% complete]
+-- [download 75% complete]
+-- [download 76% complete]
+-- [download 77% complete]
+-- [download 78% complete]
+-- [download 79% complete]
+-- [download 80% complete]
+-- [download 81% complete]
+-- [download 82% complete]
+-- [download 83% complete]
+-- [download 84% complete]
+-- [download 85% complete]
+-- [download 86% complete]
+-- [download 87% complete]
+-- [download 88% complete]
+-- [download 89% complete]
+-- [download 90% complete]
+-- [download 91% complete]
+-- [download 92% complete]
+-- [download 93% complete]
+-- [download 94% complete]
+-- [download 95% complete]
+-- [download 96% complete]
+-- [download 97% complete]
+-- [download 98% complete]
+-- [download 99% complete]
+-- [download 100% complete]
+-- Downloading... done
+-- extracting...
+     src='D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/v3.12.0.zip'
+     dst='D:/gitnext/Chained Decos/.deps/nlohmann_json-src'
+-- extracting... [tar xfz]
+CMake Error: Problem with archive_read_next_header(): Damaged Zip archive
+CMake Error: Problem extracting tar: D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/v3.12.0.zip
+-- extracting... [error clean up]
+CMake Error at nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/extract-nlohmann_json-populate.cmake:40 (message):
+  Extract of 'D:/gitnext/Chained
+  Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/v3.12.0.zip'
+  failed
+
+
+FAILED: [code=1] nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download 
+C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\.deps" && "D:\CLion 2025.2.1\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P "D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/download-nlohmann_json-populate.cmake" && "D:\CLion 2025.2.1\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P "D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/verify-nlohmann_json-populate.cmake" && "D:\CLion 2025.2.1\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P "D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/extract-nlohmann_json-populate.cmake" && "D:\CLion 2025.2.1\bin\cmake\win\x64\bin\cmake.exe" -E touch "D:/gitnext/Chained Decos/.deps/nlohmann_json-subbuild/nlohmann_json-populate-prefix/src/nlohmann_json-populate-stamp/nlohmann_json-populate-download""
+ninja: build stopped: subcommand failed.
+
+CMake Error at D:/CLion 2025.2.1/bin/cmake/win/x64/share/cmake-4.0/Modules/FetchContent.cmake:1918 (message):
+  Build step for nlohmann_json failed: 1
+Call Stack (most recent call first):
+  D:/CLion 2025.2.1/bin/cmake/win/x64/share/cmake-4.0/Modules/FetchContent.cmake:1609 (__FetchContent_populateSubbuild)
+  D:/CLion 2025.2.1/bin/cmake/win/x64/share/cmake-4.0/Modules/FetchContent.cmake:2145:EVAL:2 (__FetchContent_doPopulation)
+  D:/CLion 2025.2.1/bin/cmake/win/x64/share/cmake-4.0/Modules/FetchContent.cmake:2145 (cmake_language)
+  D:/CLion 2025.2.1/bin/cmake/win/x64/share/cmake-4.0/Modules/FetchContent.cmake:2384 (__FetchContent_Populate)
+  CMakeLists.txt:50 (FetchContent_MakeAvailable)
+
+
+-- Configuring incomplete, errors occurred!
+>>>>>>> feature/advanced-mapeditor
