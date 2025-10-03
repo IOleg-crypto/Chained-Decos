@@ -36,7 +36,7 @@ struct MaterialTexture
 {
     TextureType type;
     std::string filePath;
-    Texture2D texture;
+    Texture texture;
     bool loaded;
     Vector2 scale;
     Vector2 offset;

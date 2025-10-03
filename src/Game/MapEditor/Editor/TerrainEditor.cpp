@@ -1,5 +1,6 @@
 #include "TerrainEditor.h"
 #include <raylib.h>
+#include <raymath.h>
 #include <cmath>
 #include <algorithm>
 #include <fstream>
@@ -76,20 +77,23 @@ bool TerrainEditor::GenerateTerrain()
         UnloadModel(m_terrainModel);
     }
 
+    // Create image from heightmap data for GenMeshHeightmap
+    Image heightmapImage = {
+        .data = m_heightmap.heights.data(),
+        .width = m_heightmap.width,
+        .height = m_heightmap.height,
+        .mipmaps = 1,
+        .format = PIXELFORMAT_UNCOMPRESSED_R32
+    };
+
     // Create terrain mesh from heightmap
-    m_terrainMesh = GenMeshHeightmap(m_heightmap.heights.data(),
-                                   m_heightmap.width, m_heightmap.height,
-                                   m_heightScale);
+    m_terrainMesh = GenMeshHeightmap(heightmapImage, {m_terrainScale.x, m_heightScale, m_terrainScale.z});
 
     // Update normals for proper lighting
     UpdateTerrainNormals();
 
     // Create model from mesh
     m_terrainModel = LoadModelFromMesh(m_terrainMesh);
-
-    // Set default material
-    m_terrainModel.materials[0].shader = GetShaderDefault();
-    m_terrainModel.materials[0].maps[0].color = WHITE;
 
     m_terrainGenerated = true;
     return true;

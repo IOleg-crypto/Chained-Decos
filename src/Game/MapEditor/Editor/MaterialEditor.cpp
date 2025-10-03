@@ -506,7 +506,7 @@ void MaterialEditor::UpdateMaterialShader(int materialIndex)
 bool MaterialEditor::LoadTextureInternal(const std::string& filePath, MaterialTexture& texture)
 {
     texture.texture = LoadTexture(filePath.c_str());
-    texture.loaded = texture.texture.id != 0;
+    texture.loaded = (texture.texture.id != 0);
     texture.filePath = filePath;
 
     if (texture.loaded)

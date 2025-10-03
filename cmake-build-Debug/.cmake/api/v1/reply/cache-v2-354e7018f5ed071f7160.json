@@ -26,6 +26,18 @@
 			"value" : "OFF"
 		},
 		{
+			"name" : "BUILD_MAPEDITOR_TESTS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Build MapEditor tests"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
 			"name" : "BUILD_MAP_EDITOR",
 			"properties" : 
 			[

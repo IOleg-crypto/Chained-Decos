@@ -518,6 +518,12 @@
 		},
 		{
 			"path" : "src/Game/MapEditor/CMakeLists.txt"
+		},
+		{
+			"path" : "resources/icons/ChainedDecosMapEditor.png"
+		},
+		{
+			"path" : "imgui.ini"
 		}
 	],
 	"kind" : "cmakeFiles",

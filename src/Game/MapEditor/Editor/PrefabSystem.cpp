@@ -1,5 +1,6 @@
 #include "PrefabSystem.h"
 #include <raylib.h>
+#include <raymath.h>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -493,7 +494,7 @@ void PrefabSystem::LoadThumbnail(PrefabProperties& prefab)
     if (fs::exists(thumbnailPath))
     {
         prefab.thumbnail = LoadTexture(thumbnailPath.c_str());
-        prefab.thumbnailLoaded = prefab.thumbnail.id != 0;
+        prefab.thumbnailLoaded = (prefab.thumbnail.id != 0);
         prefab.thumbnailPath = thumbnailPath;
     }
     else
@@ -528,7 +529,7 @@ void PrefabSystem::GenerateDefaultThumbnail(PrefabProperties& prefab)
     }
 
     prefab.thumbnail = LoadTextureFromImage(img);
-    prefab.thumbnailLoaded = prefab.thumbnail.id != 0;
+    prefab.thumbnailLoaded = (prefab.thumbnail.id != 0);
     UnloadImage(img);
 }
 
@@ -678,7 +679,7 @@ void PrefabSystem::LoadPreviewModel(const std::string& prefabName)
     }
 
     m_previewModel = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
-    m_previewLoaded = true;
+    m_previewLoaded = (m_previewModel.meshCount > 0);
 }
 
 void PrefabSystem::UnloadPreviewModel()
