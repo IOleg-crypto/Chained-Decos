@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/ChainedDecosEngine.lib"
+			"path" : "src/Game/ChainedDecosGame.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -18,7 +18,7 @@
 		],
 		"files" : 
 		[
-			"src/Engine/CMakeLists.txt",
+			"src/Game/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -29,13 +29,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 13,
+				"line" : 1,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 21,
+				"line" : 15,
 				"parent" : 0
 			},
 			{
@@ -56,7 +56,7 @@
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 17,
+				"line" : 5,
 				"parent" : 0
 			}
 		]
@@ -93,6 +93,14 @@
 			[
 				{
 					"backtrace" : 6,
+					"path" : "D:/gitnext/Chained Decos/src/Game"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "D:/gitnext/Chained Decos/include"
+				},
+				{
+					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
@@ -149,10 +157,6 @@
 				},
 				{
 					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/include"
-				},
-				{
-					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/CommandLineHandler"
 				},
 				{
@@ -166,6 +170,10 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/Kernel"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/src/Game/Player"
 				}
 			],
 			"language" : "CXX",
@@ -199,6 +207,10 @@
 		},
 		{
 			"backtrace" : 2,
+			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
+		},
+		{
+			"backtrace" : 2,
 			"id" : "collision::@c7f3438d24a996a0c811"
 		},
 		{
@@ -215,11 +227,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "physics::@e27c3d6556b677b24ea2"
+			"id" : "cameracontroller::@d7306d29326ff25263b1"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "cameracontroller::@d7306d29326ff25263b1"
+			"id" : "physics::@e27c3d6556b677b24ea2"
 		},
 		{
 			"backtrace" : 2,
@@ -235,16 +247,24 @@
 		},
 		{
 			"backtrace" : 2,
+			"id" : "mapmod::@e87daa19a0aaec6b83ad"
+		},
+		{
+			"backtrace" : 2,
 			"id" : "menu::@508c1ec0f6a4eb8a79d5"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "player::@6497c05e8667515fbef8"
 		}
 	],
-	"id" : "ChainedDecosEngine::@57eeced369f002faad1a",
-	"name" : "ChainedDecosEngine",
-	"nameOnDisk" : "ChainedDecosEngine.lib",
+	"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94",
+	"name" : "ChainedDecosGame",
+	"nameOnDisk" : "ChainedDecosGame.lib",
 	"paths" : 
 	{
-		"build" : "src/Engine",
-		"source" : "src/Engine"
+		"build" : "src/Game",
+		"source" : "src/Game"
 	},
 	"sourceGroups" : 
 	[
@@ -254,13 +274,6 @@
 			[
 				0
 			]
-		},
-		{
-			"name" : "Header Files",
-			"sourceIndexes" : 
-			[
-				1
-			]
 		}
 	],
 	"sources" : 
@@ -268,13 +281,8 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Engine/Engine.cpp",
+			"path" : "src/Game/Game.cpp",
 			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Engine.h",
-			"sourceGroupIndex" : 1
 		}
 	],
 	"type" : "STATIC_LIBRARY"

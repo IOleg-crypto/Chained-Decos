@@ -22,6 +22,6 @@ CMake Deprecation Warning at .deps/raylib-src/CMakeLists.txt:1 (cmake_minimum_re
 --   GRAPHICS=GRAPHICS_API_OPENGL_33
 -- nlohmann_json not found, fetching...
 -- Using the multi-header code from D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include/
--- Configuring done (18.3s)
--- Generating done (0.1s)
+-- Configuring done (16.1s)
+-- Generating done (0.2s)
 -- Build files have been written to: D:/gitnext/Chained Decos/cmake-build-debug
