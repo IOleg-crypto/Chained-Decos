@@ -1,47 +1,89 @@
-cmake_minimum_required(VERSION 3.20)
-project(ChainedDecosMapEditor)
+cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# MapEditor project - depends on ChainedDecosEngine
+project(ChainedDecosMapEditor VERSION 1.0.0)
 
-add_executable(${PROJECT_NAME}
-    Application.cpp
-    Application.h
-    Editor/Editor.h
-    Editor/Editor.cpp
-    Editor/CameraModes.h
-    Editor/CameraModes.cpp
-    Editor/MapObject.cpp
-    Editor/MapObject.h
-    Editor/ObjectTransform.h
-    Editor/ObjectTransform.cpp
-    Editor/UndoRedo.h
-    Editor/UndoRedo.cpp
-    Editor/ClipboardManager.h
-    Editor/ClipboardManager.cpp
-    Editor/LayerManager.h
-    Editor/LayerManager.cpp
-    Editor/ShortcutManager.h
-    Editor/ShortcutManager.cpp
-    Editor/ObjectFilter.h
-    Editor/ObjectFilter.cpp
-    Editor/StatusBar.h
-    Editor/StatusBar.cpp
-    Editor/EnhancedEditor.h
-    MapFileManager/MapFileManager.h
-    MapFileManager/MapFileManager.cpp
-    MapFileManager/JsonMapFileManager.h
-    MapFileManager/JsonMapFileManager.cpp
+# Raylib is provided by parent project
+# No need to find_package here as it's already available
+
+# MapEditor source files
+set(MAPEDITOR_SOURCES
     main.cpp
+    Application.cpp
+    Editor/Editor.cpp
+    Editor/MapObject.cpp
+    Editor/CameraModes.cpp
+    Editor/ClipboardManager.cpp
+    Editor/LayerManager.cpp
+    Editor/ObjectFilter.cpp
+    Editor/ObjectTransform.cpp
+    Editor/ShortcutManager.cpp
+    Editor/StatusBar.cpp
+    Editor/UndoRedo.cpp
+    MapFileManager/JsonMapFileManager.cpp
+    MapFileManager/MapFileManager.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src/
-    ${CMAKE_SOURCE_DIR}/src/Engine
-    ${CMAKE_SOURCE_DIR}/src/Game
+# Advanced MapEditor features
+set(ADVANCED_EDITOR_SOURCES
+    Editor/TerrainEditor.cpp
+    Editor/LightingSystem.cpp
+    Editor/MaterialEditor.cpp
+    Editor/PrefabSystem.cpp
+    Editor/ParticleEditor.cpp
+    Editor/MeasurementTools.cpp
+)
+
+# Combine all sources
+set(ALL_SOURCES ${MAPEDITOR_SOURCES} ${ADVANCED_EDITOR_SOURCES})
+
+# Create MapEditor executable
+add_executable(ChainedDecosMapEditor ${ALL_SOURCES})
+
+# Include directories
+target_include_directories(ChainedDecosMapEditor PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    ChainedDecosEngine ChainedDecosGame
+# Link with ChainedDecosEngine and raylib
+target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib)
+
+# Compiler definitions
+target_compile_definitions(ChainedDecosMapEditor PRIVATE
+    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
 )
+
+# Set C++ standard
+set_target_properties(ChainedDecosMapEditor PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+
+# Copy resources to build directory
+configure_file(${CMAKE_SOURCE_DIR}/resources/icons/ChainedDecosMapEditor.png ${CMAKE_BINARY_DIR}/resources/icons/ChainedDecosMapEditor.png COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/imgui.ini ${CMAKE_BINARY_DIR}/imgui.ini COPYONLY)
+
+# Installation
+install(TARGETS ChainedDecosMapEditor
+    RUNTIME DESTINATION bin
+)
+
+# Custom target for running MapEditor
+add_custom_target(run_mapeditor
+    COMMAND ChainedDecosMapEditor
+    DEPENDS ChainedDecosMapEditor
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running ChainedDecos MapEditor"
+)
+
+# Documentation
+set(DOXYGEN_INPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(DOXYGEN_OUTPUT_DIR ${CMAKE_BINARY_DIR}/doc/mapeditor)
+
+# Optional: Enable testing
+option(BUILD_MAPEDITOR_TESTS "Build MapEditor tests" OFF)
+if(BUILD_MAPEDITOR_TESTS)
+    add_subdirectory(tests)
+endif()
