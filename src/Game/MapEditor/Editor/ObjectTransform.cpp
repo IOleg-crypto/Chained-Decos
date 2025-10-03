@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <cmath>
+#include <cfloat>
 
 void ObjectTransform::DrawGizmo(Vector3 position, Vector3 scale, Vector3 rotation, GizmoMode mode)
 {

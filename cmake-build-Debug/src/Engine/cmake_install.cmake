@@ -44,6 +44,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Config/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Input/cmake_install.cmake")
 endif()
 
@@ -70,6 +75,16 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
   include("D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/World/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/CommandLineHandler/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Kernel/cmake_install.cmake")
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT

@@ -71,6 +71,9 @@ public:
     // Get the instance's position in the world
     [[nodiscard]] Vector3 GetModelPosition() const;
 
+    // Get rotation in degrees (Euler XYZ)
+    [[nodiscard]] Vector3 GetRotationDegrees() const;
+
     // Get the model's texture (if assigned)
     [[nodiscard]] Texture2D GetTexture() const;
 
@@ -78,6 +81,9 @@ public:
     [[nodiscard]] std::string GetTexturePath() const;
 
     [[nodiscard]] Animation GetAnimation() const;
+
+    // Set rotation in degrees
+    void SetRotationDegrees(const Vector3 &rotationDeg);
 
 private:
     Vector3 m_position;         // Position in world space (x, y, z)
@@ -88,6 +94,7 @@ private:
     std::string m_modelTexture; // Path to texture file
     Color m_color;              // Model color
     Animation m_animation;      // Animation data for the model instance
+    Vector3 m_rotationDeg = {0.0f, 0.0f, 0.0f}; // Rotation (degrees)
 };
 
 #endif // MODELINSTANCE_H

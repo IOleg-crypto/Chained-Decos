@@ -57,3 +57,10 @@ Texture2D ModelInstance::GetTexture() const { return this->m_texture; }
 std::string ModelInstance::GetTexturePath() const { return m_modelTexture; }
 
 Animation ModelInstance::GetAnimation() const { return m_animation; }
+
+Vector3 ModelInstance::GetRotationDegrees() const { return m_rotationDeg; }
+
+void ModelInstance::SetRotationDegrees(const Vector3 &rotationDeg)
+{
+    m_rotationDeg = rotationDeg;
+}

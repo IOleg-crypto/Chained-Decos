@@ -172,15 +172,14 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
     // Render player collision
     m_collisionDebugRenderer->RenderPlayerCollision(player.GetCollision());
 
-    // // Optional: debug draw individual colliders / BVH / Octree
-    // for (const auto &collider : colliders)
-    // {
-    //     if (!collider)
-    //         continue;
-
-    //     // If collider has DebugDraw method
-    //     collider->;
-    // }
+    // Extra: show triangle counts for quick sanity
+    int y = 10;
+    for (const auto &c : colliders)
+    {
+        DrawText(TextFormat("tri:%zu", c->GetTriangleCount()), 10, y, 10, YELLOW);
+        y += 12;
+        if (y > 200) break;
+    }
 
     TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer with %zu colliders",
              colliders.size());

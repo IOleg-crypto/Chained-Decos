@@ -7,14 +7,14 @@
   },
   {
     "name": "arena_test",
-    "path": "/resources/doric_arena.glb",
+    "path": "/resources/arena.glb",
     "spawn": true,
     "hasCollision" : true,
     "collisionPrecision": "bvh_only",
     "hasAnimations": false,
     "instances": [
       {
-        "position": { "x": 1, "y": 0, "z": 9 },
+        "position": { "x": 1, "y": 5, "z": 9 },
         "scale": 4.5,
         "color": "WHITE"
       }

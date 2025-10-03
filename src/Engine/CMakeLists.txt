@@ -1,5 +1,6 @@
 
 add_subdirectory(Collision)
+add_subdirectory(Config)
 add_subdirectory(Input)
 add_subdirectory(Model)
 add_subdirectory(Render)
@@ -7,6 +8,7 @@ add_subdirectory(CameraController)
 add_subdirectory(Physics)
 add_subdirectory(World)
 add_subdirectory(CommandLineHandler)
+add_subdirectory(Kernel)
 
 add_library(ChainedDecosEngine STATIC
         Engine.cpp
@@ -19,12 +21,14 @@ target_include_directories(ChainedDecosEngine
 target_link_libraries(ChainedDecosEngine
         PUBLIC
         collision
+        config
         input
         model
         render
         cameracontroller
         physics
         world
+        kernel
         raylib
         imguilib
         cmdhandler

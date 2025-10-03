@@ -188,8 +188,19 @@ void ModelLoader::DrawAllModels() const
         Model *modelPtr = instance.GetModel();
         if (modelPtr != nullptr && modelPtr->meshCount > 0)
         {
-            DrawModel(*modelPtr, instance.GetModelPosition(), instance.GetScale(),
-                      instance.GetColor());
+            // Build transform with rotation from instance (degrees -> radians)
+            Vector3 rotDeg = instance.GetRotationDegrees();
+            Vector3 rotRad = { DEG2RAD * rotDeg.x, DEG2RAD * rotDeg.y, DEG2RAD * rotDeg.z };
+            Matrix rotation = MatrixRotateXYZ(rotRad);
+            Matrix translation = MatrixTranslate(instance.GetModelPosition().x,
+                                                instance.GetModelPosition().y,
+                                                instance.GetModelPosition().z);
+            Matrix transform = MatrixMultiply(rotation, translation);
+
+            // Draw with transform and uniform scale
+            DrawModelEx(*modelPtr, instance.GetModelPosition(), {0,1,0}, rotDeg.y,
+                        {instance.GetScale(), instance.GetScale(), instance.GetScale()},
+                        instance.GetColor());
         }
         else
         {
@@ -237,6 +248,24 @@ void ModelLoader::AddInstance(const json &instanceJson, Model *modelPtr, const s
         scaleModel = instanceJson["scale"].get<float>();
     }
 
+    // Optional rotation in degrees
+    Vector3 rotationDeg = {0.0f, 0.0f, 0.0f};
+    if (instanceJson.contains("rotation"))
+    {
+        if (instanceJson["rotation"].is_number())
+        {
+            // If single number provided, assume Yaw (Y-axis) rotation
+            rotationDeg.y = instanceJson["rotation"].get<float>();
+        }
+        else if (instanceJson["rotation"].is_object())
+        {
+            const auto &rotJson = instanceJson["rotation"];
+            rotationDeg.x = rotJson.value("x", 0.0f);
+            rotationDeg.y = rotJson.value("y", 0.0f);
+            rotationDeg.z = rotJson.value("z", 0.0f);
+        }
+    }
+
     if (instanceJson.contains("color"))
     {
         if (instanceJson["color"].is_string())
@@ -257,6 +286,12 @@ void ModelLoader::AddInstance(const json &instanceJson, Model *modelPtr, const s
         m_instances.emplace_back(pos, modelPtr, scaleModel, modelName, color, *animation);
     else
         m_instances.emplace_back(pos, modelPtr, scaleModel, modelName, color);
+
+    // Apply rotation to the last instance
+    if (!m_instances.empty())
+    {
+        m_instances.back().SetRotationDegrees(rotationDeg);
+    }
 }
 
 bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config)

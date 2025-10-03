@@ -478,6 +478,9 @@
 			"path" : "src/Engine/Collision/CMakeLists.txt"
 		},
 		{
+			"path" : "src/Engine/Config/CMakeLists.txt"
+		},
+		{
 			"path" : "src/Engine/Input/CMakeLists.txt"
 		},
 		{
@@ -494,6 +497,12 @@
 		},
 		{
 			"path" : "src/Engine/World/CMakeLists.txt"
+		},
+		{
+			"path" : "src/Engine/CommandLineHandler/CMakeLists.txt"
+		},
+		{
+			"path" : "src/Engine/Kernel/CMakeLists.txt"
 		},
 		{
 			"path" : "src/Game/CMakeLists.txt"
