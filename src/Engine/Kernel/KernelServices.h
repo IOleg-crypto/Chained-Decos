@@ -6,6 +6,9 @@
 #include "../Collision/CollisionManager.h"
 #include "../Model/Model.h"
 #include "../World/World.h"
+#include "../Audio/AudioManager.h"
+#include "../Event/EventSystem.h"
+#include "../Asset/AssetManager.h"
 
 struct InputService : public IKernelService
 {
@@ -43,6 +46,24 @@ struct WorldService : public IKernelService
     void Shutdown() override {}
     void Update(float dt) override { if (world) world->Update(dt); }
     const char *GetName() const override { return "WorldService"; }
+};
+
+struct AudioService : public IKernelService
+{
+    AudioManager *audio = nullptr;
+    explicit AudioService(AudioManager *a) : audio(a) {}
+    bool Initialize() override { return audio != nullptr && audio->Initialize(); }
+    void Shutdown() override { if (audio) audio->UnloadAll(); }
+    const char *GetName() const override { return "AudioService"; }
+};
+
+struct AssetService : public IKernelService
+{
+    AssetManager *assets = nullptr;
+    explicit AssetService(AssetManager *a) : assets(a) {}
+    bool Initialize() override { return assets != nullptr; }
+    void Shutdown() override { if (assets) assets->UnloadAll(); }
+    const char *GetName() const override { return "AssetService"; }
 };
 
 #endif // KERNELSERVICES_H

@@ -28,7 +28,15 @@ enum class MenuAction : uint8_t
     StartGameWithMap,  // New action for starting game with selected map
     SelectMap1,        // Map selection actions
     SelectMap2,
-    SelectMap3
+    SelectMap3,
+    AdjustMasterVolume, // Audio control actions
+    AdjustMusicVolume,
+    AdjustSFXVolume,
+    ToggleMute,
+    OpenKeyBinding,     // Controls actions
+    AdjustMouseSensitivity,
+    ToggleInvertY,
+    ToggleController
 };
 
 enum class MenuState : uint8_t
@@ -101,6 +109,17 @@ private:
     Engine *m_engine = nullptr;
     ConfigManager m_config;
     Font m_font; // Alan Sans font for menu text
+
+    // Audio settings
+    float m_masterVolume = 1.0f;
+    float m_musicVolume = 0.7f;
+    float m_sfxVolume = 0.8f;
+    bool m_audioMuted = false;
+
+    // Control settings
+    float m_mouseSensitivity = 1.0f;
+    bool m_invertYAxis = false;
+    bool m_controllerSupport = true;
 
 public:
     Menu();

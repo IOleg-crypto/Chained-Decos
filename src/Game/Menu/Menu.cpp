@@ -64,15 +64,18 @@ Menu::Menu()
         {"Target FPS", {"30", "60", "120", "144", "165", "180", "240", "Unlimited"}, 1},
         {"Back", {}, 0}};
 
-    // Audio Menu
-    m_audioMenu = {{"Master Volume", MenuAction::None},
-                   {"Music Volume", MenuAction::None},
-                   {"SFX Volume", MenuAction::None},
+    // Audio Menu with volume controls
+    m_audioMenu = {{"Master Volume", MenuAction::AdjustMasterVolume},
+                   {"Music Volume", MenuAction::AdjustMusicVolume},
+                   {"SFX Volume", MenuAction::AdjustSFXVolume},
+                   {"Mute Audio", MenuAction::ToggleMute},
                    {"Back", MenuAction::BackToMainMenu}};
 
-    // Controls Menu
-    m_controlsMenu = {{"Rebind Keys", MenuAction::None},
-                      {"Invert Y Axis", MenuAction::None},
+    // Controls Menu with proper actions
+    m_controlsMenu = {{"Rebind Keys", MenuAction::OpenKeyBinding},
+                      {"Mouse Sensitivity", MenuAction::AdjustMouseSensitivity},
+                      {"Invert Y Axis", MenuAction::ToggleInvertY},
+                      {"Controller Support", MenuAction::ToggleController},
                       {"Back", MenuAction::BackToMainMenu}};
 
     m_currentMenu = &m_mainMenu;
@@ -111,6 +114,9 @@ void Menu::Update()
         break;
     case MenuState::Audio:
         m_currentMenu = &m_audioMenu;
+        // Initialize audio menu selection if needed
+        if (m_selected >= static_cast<int>(m_audioMenu.size()))
+            m_selected = 0;
         break;
     case MenuState::Controls:
         m_currentMenu = &m_controlsMenu;
@@ -322,6 +328,38 @@ void Menu::ExecuteAction()
         m_state = MenuState::Controls;
         ResetAction();
         break;
+    case MenuAction::AdjustMasterVolume:
+        // Volume adjustment is handled in real-time via keyboard input
+        break;
+    case MenuAction::AdjustMusicVolume:
+        // Volume adjustment is handled in real-time via keyboard input
+        break;
+    case MenuAction::AdjustSFXVolume:
+        // Volume adjustment is handled in real-time via keyboard input
+        break;
+    case MenuAction::ToggleMute:
+        m_audioMuted = !m_audioMuted;
+        // TODO: Apply mute to audio system
+        AddConsoleOutput(m_audioMuted ? "Audio muted" : "Audio unmuted");
+        ResetAction();
+        break;
+    case MenuAction::OpenKeyBinding:
+        AddConsoleOutput("Key binding not implemented yet");
+        ResetAction();
+        break;
+    case MenuAction::AdjustMouseSensitivity:
+        // Sensitivity adjustment is handled in real-time via keyboard input
+        break;
+    case MenuAction::ToggleInvertY:
+        m_invertYAxis = !m_invertYAxis;
+        AddConsoleOutput(m_invertYAxis ? "Y-axis inverted" : "Y-axis normal");
+        ResetAction();
+        break;
+    case MenuAction::ToggleController:
+        m_controllerSupport = !m_controllerSupport;
+        AddConsoleOutput(m_controllerSupport ? "Controller support enabled" : "Controller support disabled");
+        ResetAction();
+        break;
     case MenuAction::OpenCredits:
         m_state = MenuState::Credits;
         ResetAction();
@@ -376,11 +414,26 @@ void Menu::HandleMainMenuMouseSelection(Vector2 mousePos, bool clicked)
     if (!m_currentMenu)
         return;
 
-    constexpr int kBtnW = 200, kBtnH = 50, kStartY = 300, kSpacing = 70;
+    // Dynamic sizing based on screen resolution
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+
+    // Scale button dimensions based on screen size
+    float scaleFactor = screenWidth / 1920.0f;  // Base on 1920p
+    int kBtnW = static_cast<int>(280 * scaleFactor);
+    int kBtnH = static_cast<int>(65 * scaleFactor);
+    int kStartY = static_cast<int>(320 * scaleFactor);
+    int kSpacing = static_cast<int>(85 * scaleFactor);
+
+    // Ensure minimum usable sizes
+    if (kBtnW < 200) kBtnW = 200;
+    if (kBtnH < 50) kBtnH = 50;
+    if (kStartY < 250) kStartY = 250;
+    if (kSpacing < 60) kSpacing = 60;
 
     for (size_t i = 0; i < m_currentMenu->size(); ++i)
     {
-        int x = GetScreenWidth() / 2 - kBtnW / 2;
+        int x = screenWidth / 2 - kBtnW / 2;
         int y = kStartY + static_cast<int>(i) * kSpacing;
         Rectangle rect = {(float)x, (float)y, (float)kBtnW, (float)kBtnH};
 
@@ -669,6 +722,65 @@ void Menu::HandleVideoMenuKeyboardNavigation()
 
     if (IsKeyPressed(KEY_ESCAPE))
         m_state = MenuState::Options;
+
+    // Handle volume adjustments in Audio menu
+    if (m_state == MenuState::Audio)
+    {
+        const float volumeStep = 0.1f;
+
+        if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_RIGHT))
+        {
+            float* currentVolume = nullptr;
+            std::string volumeName;
+
+            switch (m_selected)
+            {
+                case 0: // Master Volume
+                    currentVolume = &m_masterVolume;
+                    volumeName = "Master";
+                    break;
+                case 1: // Music Volume
+                    currentVolume = &m_musicVolume;
+                    volumeName = "Music";
+                    break;
+                case 2: // SFX Volume
+                    currentVolume = &m_sfxVolume;
+                    volumeName = "SFX";
+                    break;
+            }
+
+            if (currentVolume)
+            {
+                if (IsKeyPressed(KEY_RIGHT) && *currentVolume < 1.0f)
+                {
+                    *currentVolume = std::min(1.0f, *currentVolume + volumeStep);
+                    AddConsoleOutput(volumeName + " volume: " + std::to_string(static_cast<int>(*currentVolume * 100)) + "%");
+                }
+                else if (IsKeyPressed(KEY_LEFT) && *currentVolume > 0.0f)
+                {
+                    *currentVolume = std::max(0.0f, *currentVolume - volumeStep);
+                    AddConsoleOutput(volumeName + " volume: " + std::to_string(static_cast<int>(*currentVolume * 100)) + "%");
+                }
+            }
+        }
+    }
+
+    // Handle sensitivity adjustments in Controls menu
+    if (m_state == MenuState::Controls && m_selected == 1) // Mouse Sensitivity option
+    {
+        const float sensitivityStep = 0.1f;
+
+        if (IsKeyPressed(KEY_LEFT) && m_mouseSensitivity > 0.1f)
+        {
+            m_mouseSensitivity = std::max(0.1f, m_mouseSensitivity - sensitivityStep);
+            AddConsoleOutput("Mouse sensitivity: " + std::to_string(m_mouseSensitivity));
+        }
+        else if (IsKeyPressed(KEY_RIGHT) && m_mouseSensitivity < 3.0f)
+        {
+            m_mouseSensitivity = std::min(3.0f, m_mouseSensitivity + sensitivityStep);
+            AddConsoleOutput("Mouse sensitivity: " + std::to_string(m_mouseSensitivity));
+        }
+    }
 }
 
 void Menu::HandleSimpleScreenKeyboardNavigation()
@@ -839,36 +951,71 @@ void Menu::RenderMenu() const
     }
 
     Vector2 mousePos = GetMousePosition();
-    constexpr int kBtnW = 280, kBtnH = 65, kStartY = 320, kSpacing = 85;
+
+    // Dynamic sizing based on screen resolution
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    float scaleFactor = screenWidth / 1920.0f;  // Base on 1920p
+
+    int kBtnW = static_cast<int>(280 * scaleFactor);
+    int kBtnH = static_cast<int>(65 * scaleFactor);
+    int kStartY = static_cast<int>(320 * scaleFactor);
+    int kSpacing = static_cast<int>(85 * scaleFactor);
+
+    // Ensure minimum usable sizes
+    if (kBtnW < 200) kBtnW = 200;
+    if (kBtnH < 50) kBtnH = 50;
+    if (kStartY < 250) kStartY = 250;
+    if (kSpacing < 60) kSpacing = 60;
 
     // Modern title with glow effect
     const char *title = (m_state == MenuState::Main) ? "CHAINED DECOS" : (*m_currentMenu)[m_selected].label;
 
+    // Dynamic title sizing
+    float titleFontSize = 60.0f * scaleFactor;
+    if (titleFontSize < 40.0f) titleFontSize = 40.0f;
+    if (titleFontSize > 80.0f) titleFontSize = 80.0f;
+
     // Draw title glow/shadow
-    int tw = MeasureTextEx(m_font, title, 60, 2.0f).x;
-    int titleX = GetScreenWidth() / 2 - tw / 2;
-    int titleY = 80;
+    int tw = MeasureTextEx(m_font, title, titleFontSize, 2.0f).x;
+    int titleX = screenWidth / 2 - tw / 2;
+    int titleY = static_cast<int>(80 * scaleFactor);
+    if (titleY < 60) titleY = 60;
 
     // Multiple glow layers for depth
     for (int i = 3; i >= 1; i--)
     {
-        DrawTextEx(m_font, title, Vector2{(float)titleX + i, (float)titleY + i}, 60, 2.0f, Fade(Color{100, 150, 255, 255}, 0.3f / i));
+        DrawTextEx(m_font, title, Vector2{(float)titleX + i, (float)titleY + i}, titleFontSize, 2.0f, Fade(Color{100, 150, 255, 255}, 0.3f / i));
     }
 
     // Main title with modern color
-    DrawTextEx(m_font, title, Vector2{(float)titleX, (float)titleY}, 60, 2.0f, Color{220, 220, 220, 255});
+    DrawTextEx(m_font, title, Vector2{(float)titleX, (float)titleY}, titleFontSize, 2.0f, Color{220, 220, 220, 255});
 
     // Subtitle for main menu
     if (m_state == MenuState::Main)
     {
         const char *subtitle = "Modern 3D Platformer";
-        int stw = MeasureTextEx(m_font, subtitle, 24, 2.0f).x;
-        DrawTextEx(m_font, subtitle, Vector2{(float)(GetScreenWidth() / 2 - stw / 2), (float)(titleY + 50)}, 24, 2.0f, Fade(Color{150, 180, 220, 255}, 0.8f));
+        float subtitleFontSize = 24.0f * scaleFactor;
+        if (subtitleFontSize < 18.0f) subtitleFontSize = 18.0f;
+        if (subtitleFontSize > 36.0f) subtitleFontSize = 36.0f;
+
+        int stw = MeasureTextEx(m_font, subtitle, subtitleFontSize, 2.0f).x;
+        int subtitleY = titleY + static_cast<int>(50 * scaleFactor);
+        if (subtitleY < titleY + 40) subtitleY = titleY + 40;
+
+        DrawTextEx(m_font, subtitle, Vector2{(float)(screenWidth / 2 - stw / 2), (float)subtitleY}, subtitleFontSize, 2.0f, Fade(Color{150, 180, 220, 255}, 0.8f));
 
         // Version info in bottom corner
+        float versionFontSize = 16.0f * scaleFactor;
+        if (versionFontSize < 12.0f) versionFontSize = 12.0f;
+        if (versionFontSize > 24.0f) versionFontSize = 24.0f;
+
         const char *version = "v1.0.0";
-        int vw = MeasureTextEx(m_font, version, 16, 2.0f).x;
-        DrawTextEx(m_font, version, Vector2{(float)(GetScreenWidth() - vw - 20), (float)(GetScreenHeight() - 25)}, 16, 2.0f, Fade(Color{120, 140, 160, 255}, 0.7f));
+        int vw = MeasureTextEx(m_font, version, versionFontSize, 2.0f).x;
+        int versionY = screenHeight - static_cast<int>(25 * scaleFactor);
+        if (versionY > screenHeight - 20) versionY = screenHeight - 20;
+
+        DrawTextEx(m_font, version, Vector2{(float)(screenWidth - vw - 20), (float)versionY}, versionFontSize, 2.0f, Fade(Color{120, 140, 160, 255}, 0.7f));
     }
 
     if (m_buttonScales.size() != m_currentMenu->size())
@@ -958,13 +1105,17 @@ void Menu::RenderMenu() const
             DrawRectangleLinesEx(btnRect, 1, Color{60, 70, 80, 255});
         }
 
-        // Modern text with better font and effects
-        int textSize = selected ? 30 : (hovered ? 28 : 26);
+        // Modern text with better font and effects - dynamic sizing
+        float baseTextSize = selected ? 30.0f : (hovered ? 28.0f : 26.0f);
+        float textSize = baseTextSize * scaleFactor;
+        if (textSize < 20.0f) textSize = 20.0f;
+        if (textSize > 40.0f) textSize = 40.0f;
+
         Color textColor = selected ? Color{220, 230, 255, 255} : (hovered ? Color{200, 210, 230, 255} : Color{180, 190, 210, 255});
 
         int textW = MeasureTextEx(m_font, item.label, textSize, 2.0f).x;
         int textX = x + w / 2 - textW / 2;
-        int textY = y + h / 2 - textSize / 2;
+        int textY = y + h / 2 - static_cast<int>(textSize / 2);
 
         // Text shadow for depth
         DrawTextEx(m_font, item.label, Vector2{(float)textX + 1, (float)textY + 1}, textSize, 2.0f, Fade(Color{0, 0, 0, 255}, 0.6f));
@@ -973,25 +1124,41 @@ void Menu::RenderMenu() const
         DrawTextEx(m_font, item.label, Vector2{(float)textX, (float)textY}, textSize, 2.0f, textColor);
     }
 
-    // Modern footer with dark theme styling
+    // Modern footer with dark theme styling - dynamic sizing
+    float footerFontSize = 18.0f * scaleFactor;
+    if (footerFontSize < 14.0f) footerFontSize = 14.0f;
+    if (footerFontSize > 26.0f) footerFontSize = 26.0f;
+
     const char *footer = "ENTER Select    ESC Back    ↑↓ Navigate    MOUSE Click";
-    int fw = MeasureTextEx(m_font, footer, 18, 2.0f).x;
-    int footerX = GetScreenWidth() / 2 - fw / 2;
-    int footerY = GetScreenHeight() - 35;
+    int fw = MeasureTextEx(m_font, footer, footerFontSize, 2.0f).x;
+    int footerX = screenWidth / 2 - fw / 2;
+    int footerY = screenHeight - static_cast<int>(35 * scaleFactor);
+    if (footerY > screenHeight - 25) footerY = screenHeight - 25;
 
     // Footer background
-    DrawRectangle(footerX - 10, footerY - 5, fw + 20, 28, Fade(Color{0, 0, 0, 255}, 0.5f));
-    DrawRectangleLines(footerX - 10, footerY - 5, fw + 20, 28, Fade(Color{80, 90, 100, 255}, 0.6f));
+    int footerHeight = static_cast<int>(28 * scaleFactor);
+    if (footerHeight < 22) footerHeight = 22;
+    DrawRectangle(footerX - 10, footerY - 5, fw + 20, footerHeight, Fade(Color{0, 0, 0, 255}, 0.5f));
+    DrawRectangleLines(footerX - 10, footerY - 5, fw + 20, footerHeight, Fade(Color{80, 90, 100, 255}, 0.6f));
 
-    // Modern footer text with color coding
-    DrawTextEx(m_font, "ENTER", Vector2{(float)footerX, (float)footerY}, 18, 2.0f, Color{100, 200, 120, 255});
-    DrawTextEx(m_font, " Select    ", Vector2{(float)footerX + 65, (float)footerY}, 18, 2.0f, Color{180, 190, 200, 255});
-    DrawTextEx(m_font, "ESC", Vector2{(float)footerX + 140, (float)footerY}, 18, 2.0f, Color{200, 100, 100, 255});
-    DrawTextEx(m_font, " Back    ", Vector2{(float)footerX + 170, (float)footerY}, 18, 2.0f, Color{180, 190, 200, 255});
-    DrawTextEx(m_font, "↑↓", Vector2{(float)footerX + 220, (float)footerY}, 18, 2.0f, Color{120, 150, 200, 255});
-    DrawTextEx(m_font, " Navigate    ", Vector2{(float)footerX + 240, (float)footerY}, 18, 2.0f, Color{180, 190, 200, 255});
-    DrawTextEx(m_font, "MOUSE", Vector2{(float)footerX + 350, (float)footerY}, 18, 2.0f, Color{200, 180, 100, 255});
-    DrawTextEx(m_font, " Click", Vector2{(float)footerX + 410, (float)footerY}, 18, 2.0f, Color{180, 190, 200, 255});
+    // Modern footer text with color coding - dynamic positioning
+    float enterWidth = MeasureTextEx(m_font, "ENTER", footerFontSize, 2.0f).x;
+    float selectWidth = MeasureTextEx(m_font, " Select    ", footerFontSize, 2.0f).x;
+    float escWidth = MeasureTextEx(m_font, "ESC", footerFontSize, 2.0f).x;
+    float backWidth = MeasureTextEx(m_font, " Back    ", footerFontSize, 2.0f).x;
+    float navWidth = MeasureTextEx(m_font, "↑↓", footerFontSize, 2.0f).x;
+    float navigateWidth = MeasureTextEx(m_font, " Navigate    ", footerFontSize, 2.0f).x;
+    float mouseWidth = MeasureTextEx(m_font, "MOUSE", footerFontSize, 2.0f).x;
+    float clickWidth = MeasureTextEx(m_font, " Click", footerFontSize, 2.0f).x;
+
+    DrawTextEx(m_font, "ENTER", Vector2{(float)footerX, (float)footerY}, footerFontSize, 2.0f, Color{100, 200, 120, 255});
+    DrawTextEx(m_font, " Select    ", Vector2{(float)footerX + enterWidth, (float)footerY}, footerFontSize, 2.0f, Color{180, 190, 200, 255});
+    DrawTextEx(m_font, "ESC", Vector2{(float)footerX + enterWidth + selectWidth, (float)footerY}, footerFontSize, 2.0f, Color{200, 100, 100, 255});
+    DrawTextEx(m_font, " Back    ", Vector2{(float)footerX + enterWidth + selectWidth + escWidth, (float)footerY}, footerFontSize, 2.0f, Color{180, 190, 200, 255});
+    DrawTextEx(m_font, "↑↓", Vector2{(float)footerX + enterWidth + selectWidth + escWidth + backWidth, (float)footerY}, footerFontSize, 2.0f, Color{120, 150, 200, 255});
+    DrawTextEx(m_font, " Navigate    ", Vector2{(float)footerX + enterWidth + selectWidth + escWidth + backWidth + navWidth, (float)footerY}, footerFontSize, 2.0f, Color{180, 190, 200, 255});
+    DrawTextEx(m_font, "MOUSE", Vector2{(float)footerX + enterWidth + selectWidth + escWidth + backWidth + navWidth + navigateWidth, (float)footerY}, footerFontSize, 2.0f, Color{200, 180, 100, 255});
+    DrawTextEx(m_font, " Click", Vector2{(float)footerX + enterWidth + selectWidth + escWidth + backWidth + navWidth + navigateWidth + mouseWidth, (float)footerY}, footerFontSize, 2.0f, Color{180, 190, 200, 255});
 }
 
 void Menu::RenderSettingsMenu() const {
@@ -1181,11 +1348,22 @@ void Menu::RenderConfirmExit()
     // Modern modal background with blur effect
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(Color{0, 0, 0, 180}, 0.7f));
 
-    // Modal dialog container
-    int modalWidth = 500;
-    int modalHeight = 300;
-    int modalX = GetScreenWidth() / 2 - modalWidth / 2;
-    int modalY = GetScreenHeight() / 2 - modalHeight / 2;
+    // Modal dialog container - dynamic sizing
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    float scaleFactor = screenWidth / 1920.0f;
+
+    int modalWidth = static_cast<int>(500 * scaleFactor);
+    int modalHeight = static_cast<int>(300 * scaleFactor);
+
+    // Ensure minimum usable sizes
+    if (modalWidth < 400) modalWidth = 400;
+    if (modalHeight < 250) modalHeight = 250;
+    if (modalWidth > screenWidth - 100) modalWidth = screenWidth - 100;
+    if (modalHeight > screenHeight - 100) modalHeight = screenHeight - 100;
+
+    int modalX = screenWidth / 2 - modalWidth / 2;
+    int modalY = screenHeight / 2 - modalHeight / 2;
 
     // Modal background with gradient
     for (int i = 0; i < modalHeight; i++)
@@ -1207,46 +1385,68 @@ void Menu::RenderConfirmExit()
                           Fade(Color{150, 100, 255, 255}, 0.3f / g));
     }
 
-    // Modern title
+    // Modern title - dynamic sizing
+    float titleFontSize = 40.0f * scaleFactor;
+    if (titleFontSize < 30.0f) titleFontSize = 30.0f;
+    if (titleFontSize > 60.0f) titleFontSize = 60.0f;
+
     const char *msg = "EXIT GAME?";
-    int tw = MeasureTextEx(m_font, msg, 40, 2.0f).x;
+    int tw = MeasureTextEx(m_font, msg, titleFontSize, 2.0f).x;
     int titleX = modalX + modalWidth / 2 - tw / 2;
-    int titleY = modalY + 40;
+    int titleY = modalY + static_cast<int>(40 * scaleFactor);
+    if (titleY < modalY + 30) titleY = modalY + 30;
 
     // Title glow
     for (int i = 2; i >= 1; i--)
     {
-        DrawTextEx(m_font, msg, Vector2{(float)titleX + i, (float)titleY + i}, 40, 2.0f, Fade(Color{255, 100, 100, 255}, 0.6f / i));
+        DrawTextEx(m_font, msg, Vector2{(float)titleX + i, (float)titleY + i}, titleFontSize, 2.0f, Fade(Color{255, 100, 100, 255}, 0.6f / i));
     }
-    DrawTextEx(m_font, msg, Vector2{(float)titleX, (float)titleY}, 40, 2.0f, Color{255, 150, 150, 255});
+    DrawTextEx(m_font, msg, Vector2{(float)titleX, (float)titleY}, titleFontSize, 2.0f, Color{255, 150, 150, 255});
 
-    // Modern buttons with better styling
+    // Modern buttons with better styling - dynamic sizing
+    float buttonFontSize = 28.0f * scaleFactor;
+    if (buttonFontSize < 22.0f) buttonFontSize = 22.0f;
+    if (buttonFontSize > 40.0f) buttonFontSize = 40.0f;
+
     const char *yes = "YES";
     const char *no = "NO";
-    int yw = MeasureTextEx(m_font, yes, 28, 2.0f).x;
-    int nw = MeasureTextEx(m_font, no, 28, 2.0f).x;
+    int yw = MeasureTextEx(m_font, yes, buttonFontSize, 2.0f).x;
+    int nw = MeasureTextEx(m_font, no, buttonFontSize, 2.0f).x;
 
-    int buttonY = modalY + modalHeight - 80;
+    int buttonY = modalY + modalHeight - static_cast<int>(80 * scaleFactor);
+    if (buttonY > modalY + modalHeight - 60) buttonY = modalY + modalHeight - 60;
+
+    int buttonHeight = static_cast<int>(40 * scaleFactor);
+    if (buttonHeight < 32) buttonHeight = 32;
 
     // YES button (left)
-    int yesX = modalX + modalWidth / 2 - yw - 40;
-    DrawRectangle(yesX - 15, buttonY - 10, yw + 30, 40, Fade(Color{255, 100, 100, 255}, 0.8f));
-    DrawRectangleLines(yesX - 15, buttonY - 10, yw + 30, 40, Color{255, 150, 150, 255});
-    DrawTextEx(m_font, yes, Vector2{(float)yesX, (float)buttonY + 2}, 28, 2.0f, Color{255, 255, 200, 255});
+    int yesX = modalX + modalWidth / 2 - yw - static_cast<int>(40 * scaleFactor);
+    if (yesX < modalX + 20) yesX = modalX + 20;
+
+    DrawRectangle(yesX - 15, buttonY - 10, yw + 30, buttonHeight, Fade(Color{255, 100, 100, 255}, 0.8f));
+    DrawRectangleLines(yesX - 15, buttonY - 10, yw + 30, buttonHeight, Color{255, 150, 150, 255});
+    DrawTextEx(m_font, yes, Vector2{(float)yesX, (float)buttonY + 2}, buttonFontSize, 2.0f, Color{255, 255, 200, 255});
 
     // NO button (right)
-    int noX = modalX + modalWidth / 2 + 40;
-    DrawRectangle(noX - 15, buttonY - 10, nw + 30, 40, Fade(Color{100, 150, 100, 255}, 0.8f));
-    DrawRectangleLines(noX - 15, buttonY - 10, nw + 30, 40, Color{150, 200, 150, 255});
-    DrawTextEx(m_font, no, Vector2{(float)noX, (float)buttonY + 2}, 28, 2.0f, Color{200, 255, 200, 255});
+    int noX = modalX + modalWidth / 2 + static_cast<int>(40 * scaleFactor);
+    if (noX + nw + 15 > modalX + modalWidth - 20) noX = modalX + modalWidth - nw - 35;
 
-    // Instructions
+    DrawRectangle(noX - 15, buttonY - 10, nw + 30, buttonHeight, Fade(Color{100, 150, 100, 255}, 0.8f));
+    DrawRectangleLines(noX - 15, buttonY - 10, nw + 30, buttonHeight, Color{150, 200, 150, 255});
+    DrawTextEx(m_font, no, Vector2{(float)noX, (float)buttonY + 2}, buttonFontSize, 2.0f, Color{200, 255, 200, 255});
+
+    // Instructions - dynamic sizing
+    float instFontSize = 20.0f * scaleFactor;
+    if (instFontSize < 16.0f) instFontSize = 16.0f;
+    if (instFontSize > 28.0f) instFontSize = 28.0f;
+
     const char *instructions = "Y/ENTER = Yes    N/ESC = No";
-    int iw = MeasureTextEx(m_font, instructions, 20, 2.0f).x;
+    int iw = MeasureTextEx(m_font, instructions, instFontSize, 2.0f).x;
     int instX = modalX + modalWidth / 2 - iw / 2;
-    int instY = modalY + modalHeight - 30;
+    int instY = modalY + modalHeight - static_cast<int>(30 * scaleFactor);
+    if (instY > modalY + modalHeight - 20) instY = modalY + modalHeight - 20;
 
-    DrawTextEx(m_font, instructions, Vector2{(float)instX, (float)instY}, 20, 2.0f, Color{180, 190, 210, 255});
+    DrawTextEx(m_font, instructions, Vector2{(float)instX, (float)instY}, instFontSize, 2.0f, Color{180, 190, 210, 255});
 }
 
 void Menu::HandleMapSelection()
@@ -1353,39 +1553,56 @@ void Menu::InitializeMaps()
 
 void Menu::RenderMapSelection() const
 {
+    // Dynamic sizing based on screen resolution
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    float scaleFactor = screenWidth / 1920.0f;
+
     // Background
-    for (int i = 0; i < GetScreenHeight(); ++i)
+    for (int i = 0; i < screenHeight; ++i)
     {
-        float t = (float)i / GetScreenHeight();
-        DrawLine(0, i, GetScreenWidth(), i,
+        float t = (float)i / screenHeight;
+        DrawLine(0, i, screenWidth, i,
                  Color{(unsigned char)(15 + 25 * t), (unsigned char)(15 + 30 * t),
                        (unsigned char)(40 + 90 * t), 255});
     }
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.25f));
+    DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.25f));
 
-    // Title
+    // Title - dynamic sizing
+    float titleFontSize = 56.0f * scaleFactor;
+    if (titleFontSize < 40.0f) titleFontSize = 40.0f;
+    if (titleFontSize > 80.0f) titleFontSize = 80.0f;
+
     const char* title = "Select Map";
-    int tw = MeasureTextEx(m_font, title, 56, 2.0f).x;
-    DrawTextEx(m_font, title, Vector2{(float)(GetScreenWidth() / 2 - tw / 2 + 4), 54.0f}, 56, 2.0f, Fade(BLACK, 0.75f));
-    DrawTextEx(m_font, title, Vector2{(float)(GetScreenWidth() / 2 - tw / 2), 50.0f}, 56, 2.0f, RAYWHITE);
+    int tw = MeasureTextEx(m_font, title, titleFontSize, 2.0f).x;
+    int titleY = static_cast<int>(50.0f * scaleFactor);
+    if (titleY < 40) titleY = 40;
+
+    DrawTextEx(m_font, title, Vector2{(float)(screenWidth / 2 - tw / 2 + 4), (float)titleY + 4}, titleFontSize, 2.0f, Fade(BLACK, 0.75f));
+    DrawTextEx(m_font, title, Vector2{(float)(screenWidth / 2 - tw / 2), (float)titleY}, titleFontSize, 2.0f, RAYWHITE);
 
     if (m_availableMaps.empty())
     {
         const char* noMaps = "No maps available";
-        int nw = MeasureText(noMaps, 32);
+        int nw = MeasureTextEx(m_font, noMaps, 32, 2.0f).x;
         DrawText(noMaps, GetScreenWidth() / 2 - nw / 2, GetScreenHeight() / 2, 32, RED);
         return;
     }
 
-    // Calculate layout
     const int mapsPerRow = 3;
-    const int mapWidth = 280;
-    const int mapHeight = 200;
-    const int spacing = 40;
-    const int startY = 120;
+    int mapWidth = static_cast<int>(280 * scaleFactor);
+    int mapHeight = static_cast<int>(200 * scaleFactor);
+    int spacing = static_cast<int>(40 * scaleFactor);
+    int startY = static_cast<int>(120 * scaleFactor);
+
+    // Ensure minimum usable sizes
+    if (mapWidth < 220) mapWidth = 220;
+    if (mapHeight < 160) mapHeight = 160;
+    if (spacing < 30) spacing = 30;
+    if (startY < 100) startY = 100;
 
     int totalWidth = mapsPerRow * mapWidth + (mapsPerRow - 1) * spacing;
-    int startX = (GetScreenWidth() - totalWidth) / 2;
+    int startX = (screenWidth - totalWidth) / 2;
 
     // Render maps in grid layout
     for (size_t i = 0; i < m_availableMaps.size(); ++i)
@@ -1407,18 +1624,32 @@ void Menu::RenderMapSelection() const
         // Map preview (placeholder for now)
         DrawRectangle(x + 10, y + 10, mapWidth - 20, mapHeight - 60, Fade(BLACK, 0.5f));
 
-        // Map name
-        int nameW = MeasureTextEx(m_font, map.displayName.c_str(), 24, 2.0f).x;
-        int nameX = x + mapWidth / 2 - nameW / 2;
-        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX + 1, (float)y + mapHeight - 40 + 1}, 24, 2.0f, Fade(BLACK, 0.7f));
-        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX, (float)y + mapHeight - 40}, 24, 2.0f, WHITE);
+        // Map name - dynamic sizing
+        float nameFontSize = 24.0f * scaleFactor;
+        if (nameFontSize < 18.0f) nameFontSize = 18.0f;
+        if (nameFontSize > 32.0f) nameFontSize = 32.0f;
 
-        // Map description (truncated)
+        int nameW = MeasureTextEx(m_font, map.displayName.c_str(), nameFontSize, 2.0f).x;
+        int nameX = x + mapWidth / 2 - nameW / 2;
+        int nameY = y + mapHeight - static_cast<int>(40 * scaleFactor);
+        if (nameY > y + mapHeight - 30) nameY = y + mapHeight - 30;
+
+        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX + 1, (float)nameY + 1}, nameFontSize, 2.0f, Fade(BLACK, 0.7f));
+        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX, (float)nameY}, nameFontSize, 2.0f, WHITE);
+
+        // Map description (truncated) - dynamic sizing
+        float descFontSize = 16.0f * scaleFactor;
+        if (descFontSize < 12.0f) descFontSize = 12.0f;
+        if (descFontSize > 22.0f) descFontSize = 22.0f;
+
         std::string desc = map.description;
-        if (desc.length() > 40) desc = desc.substr(0, 37) + "...";
-        int descW = MeasureTextEx(m_font, desc.c_str(), 16, 2.0f).x;
+        if (desc.length() > static_cast<int>(40 * scaleFactor)) desc = desc.substr(0, static_cast<int>(37 * scaleFactor)) + "...";
+        int descW = MeasureTextEx(m_font, desc.c_str(), descFontSize, 2.0f).x;
         int descX = x + mapWidth / 2 - descW / 2;
-        DrawTextEx(m_font, desc.c_str(), Vector2{(float)descX, (float)y + mapHeight - 15}, 16, 2.0f, Fade(WHITE, 0.8f));
+        int descY = y + mapHeight - static_cast<int>(15 * scaleFactor);
+        if (descY > y + mapHeight - 10) descY = y + mapHeight - 10;
+
+        DrawTextEx(m_font, desc.c_str(), Vector2{(float)descX, (float)descY}, descFontSize, 2.0f, Fade(WHITE, 0.8f));
 
         // Selection indicator
         if (isSelected)
@@ -1428,10 +1659,17 @@ void Menu::RenderMapSelection() const
         }
     }
 
-    // Instructions
+    // Instructions - dynamic sizing
+    float instFontSize = 20.0f * scaleFactor;
+    if (instFontSize < 16.0f) instFontSize = 16.0f;
+    if (instFontSize > 28.0f) instFontSize = 28.0f;
+
     const char* instructions = "[←/→] Navigate   [Enter] Select   [Esc] Back";
-    int iw = MeasureTextEx(m_font, instructions, 20, 2.0f).x;
-    DrawTextEx(m_font, instructions, Vector2{(float)(GetScreenWidth() / 2 - iw / 2), (float)(GetScreenHeight() - 30)}, 20, 2.0f, GRAY);
+    int iw = MeasureTextEx(m_font, instructions, instFontSize, 2.0f).x;
+    int instY = screenHeight - static_cast<int>(30 * scaleFactor);
+    if (instY > screenHeight - 20) instY = screenHeight - 20;
+
+    DrawTextEx(m_font, instructions, Vector2{(float)(screenWidth / 2 - iw / 2), (float)instY}, instFontSize, 2.0f, GRAY);
 }
 
 
@@ -1822,6 +2060,30 @@ std::string Menu::GetCurrentSettingValue(const std::string& settingName) const
             return "21:9";
         else
             return TextFormat("%.2f:1", aspect);
+    }
+    else if (settingName == "Master Volume")
+    {
+        return TextFormat("%.0f%%", m_masterVolume * 100);
+    }
+    else if (settingName == "Music Volume")
+    {
+        return TextFormat("%.0f%%", m_musicVolume * 100);
+    }
+    else if (settingName == "SFX Volume")
+    {
+        return TextFormat("%.0f%%", m_sfxVolume * 100);
+    }
+    else if (settingName == "Mouse Sensitivity")
+    {
+        return TextFormat("%.1fx", m_mouseSensitivity);
+    }
+    else if (settingName == "Invert Y Axis")
+    {
+        return m_invertYAxis ? "On" : "Off";
+    }
+    else if (settingName == "Controller Support")
+    {
+        return m_controllerSupport ? "On" : "Off";
     }
 
     return "";

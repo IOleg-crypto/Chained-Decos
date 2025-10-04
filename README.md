@@ -27,16 +27,27 @@ Chained Decos is a fast-paced parkour game built with modern C++20 and [raylib](
 ---
 
 ## 🚀 Features
-- **Parkour gameplay**: run, jump, vault, chain moves
-- **Custom physics engine** with gravity, collision detection, and ground snapping
-- **Advanced collision system**: BVH for precise mesh collisions, AABB for performance
-- **Modular architecture**: Engine/Game separation with clean interfaces
-- **Built-in map editor** for level creation and testing
-- **Comprehensive debugging**: collision visualization, performance metrics, real-time tweaking
-- **Developer console**: In-game command console with Source engine-style commands
-- **Command line support**: Launch options like `-fullscreen`, `-width`, `-height`, etc.
-- **Singleplayer** and *(planned)* **Multiplayer**
-- **Modern C++20**
+
+### Core Gameplay
+- **3D Parkour Mechanics**: Fluid movement system with momentum-based physics
+- **Dynamic Map Generation**: Procedurally generated parkour courses with multiple difficulty levels
+- **Real-time Physics**: Advanced collision detection and response system
+- **Multiple Game Modes**: Test, Easy, Medium, Hard, and Speedrun difficulties
+- **Timer System**: Cross-platform timer display with dynamic font scaling
+
+### Development Tools
+- **Integrated Map Editor**: Full-featured level editor with real-time preview
+- **Particle System**: Dynamic visual effects for enhanced gameplay
+- **Lighting System**: Advanced lighting with multiple light sources and shadows
+- **Material Editor**: Comprehensive material system for visual customization
+
+### Technical Features
+- **High-Performance Engine**: Optimized rendering and physics systems
+- **Cross-Platform Support**: Windows, macOS, and Linux compatibility
+- **Modular Architecture**: Clean separation of engine, game logic, and tools
+- **Comprehensive Testing**: Unit tests and performance benchmarks
+- **Advanced Debugging**: Collision visualization, performance metrics, real-time tweaking
+- **Developer Console**: In-game command console with Source engine-style commands
 
 ---
 
@@ -254,6 +265,67 @@ Available options:
 - `-dev` - Enable developer mode
 - `-help` - Show all available options
 
+## 🎯 Gameplay Guide
+
+### Game Modes
+
+1. **Test Mode**: Basic parkour course for testing and development
+2. **Easy**: Beginner-friendly course with forgiving platform placement
+3. **Medium**: Balanced difficulty with challenging but fair obstacles
+4. **Hard**: Expert-level course requiring precise movement and timing
+5. **Speedrun**: Time-based challenge with optimal route design
+
+### Tips for Success
+
+- **Momentum is Key**: Build and maintain speed for longer jumps
+- **Look Ahead**: Plan your next few moves while executing current ones
+- **Use All Movement Options**: Sprint, jump, and chain movements together
+- **Learn Platform Layouts**: Each difficulty has unique platform arrangements
+
+## ⚙️ Configuration
+
+### Game Settings (`game.cfg`)
+
+```ini
+# Graphics settings
+window_width=1920
+window_height=1080
+fullscreen=false
+vsync=true
+
+# Audio settings
+master_volume=0.8
+music_volume=0.6
+sfx_volume=0.9
+
+# Gameplay settings
+mouse_sensitivity=1.0
+invert_mouse=false
+show_fps=true
+show_timer=true
+```
+
+### Build Configuration Options
+
+The CMake build system supports extensive configuration:
+
+```bash
+# Development build with debug info
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_DEBUG_INFO=ON
+
+# Optimized release build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPTIMIZATIONS=ON
+
+# Build with testing and benchmarks
+cmake .. -DBUILD_TESTS=ON -DBUILD_BENCHMARKS=ON
+
+# Enable profiling and sanitizers
+cmake .. -DENABLE_PROFILING=ON -DENABLE_SANITIZERS=ON
+
+# Unity build for faster compilation
+cmake .. -DENABLE_UNITY_BUILD=ON
+```
+
 ---
 
 ## 🏗️ Architecture
@@ -289,12 +361,114 @@ Available options:
 
 ---
 
+## 📊 Performance
+
+### Optimization Features
+
+- **Unity Build**: Reduced compilation times for faster development
+- **Profiling Support**: Built-in performance analysis tools
+- **Memory Management**: Smart pointers and efficient allocation strategies
+- **Multithreading**: Parallel processing where beneficial
+- **BVH Optimization**: Efficient collision detection with bounding volume hierarchies
+
+### Performance Tips
+
+- **Collision Visualization**: Use F3 to visualize collision complexity
+- **AABB for Simple Objects**: Use axis-aligned bounding boxes for simple shapes
+- **BVH for Complex Meshes**: Use bounding volume hierarchies for detailed models
+- **LOD System**: Level-of-detail rendering for distant objects (planned)
+
+### Benchmarks
+
+Run performance benchmarks:
+```bash
+cmake .. -DBUILD_BENCHMARKS=ON
+cmake --build .
+./bin/benchmarks
+```
+
+## 📦 Packaging and Distribution
+
+### Creating Release Packages
+
+```bash
+# Configure for packaging
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCPACK_GENERATOR=ZIP
+
+# Build and package
+cmake --build . --target package
+```
+
+### Supported Platforms
+
+- **Windows**: ZIP and NSIS installer packages
+- **macOS**: Drag-and-drop application bundle
+- **Linux**: TAR.GZ and DEB packages
+
+### Installation
+
+After packaging, users can:
+
+1. **Windows**: Run the NSIS installer or extract the ZIP archive
+2. **macOS**: Drag the .app bundle to Applications folder
+3. **Linux**: Install the DEB package or extract TAR.GZ to preferred location
+
+## 🔧 API Documentation
+
+### Engine Architecture
+
+#### Core Systems
+- **PhysicsComponent**: Handles gravity, velocity, and jump mechanics
+- **CollisionSystem**: Manages BVH tree construction and traversal
+- **CollisionManager**: Coordinates collision detection and response
+- **ModelLoader**: Loads 3D models with automatic collision generation
+- **RenderManager**: Manages rendering pipeline with debug visualization
+
+#### Key Classes
+
+```cpp
+// Example: Player movement integration
+class Player {
+    std::shared_ptr<PhysicsComponent> physics;
+    std::shared_ptr<CollisionComponent> collision;
+    std::shared_ptr<ModelComponent> model;
+};
+
+// Example: Map generation
+class ParkourMapGenerator {
+    void GeneratePlatforms(DifficultyLevel level);
+    void SetupCollisions();
+    void AddVisualEffects();
+};
+```
+
+### Extension Points
+
+#### Adding New Game Modes
+1. Create new difficulty class inheriting from `BaseDifficulty`
+2. Implement platform generation logic
+3. Add collision setup for new objects
+4. Register with the game mode system
+
+#### Custom Physics Components
+1. Inherit from `PhysicsComponent`
+2. Override movement calculation methods
+3. Add custom collision response logic
+4. Register with the component system
+
 ## 📚 Resources
-- [raylib docs](https://www.raylib.com/cheatsheet/cheatsheet.html)
-- [ImGui wiki](https://github.com/ocornut/imgui/wiki)
-- [rlImGui](https://github.com/raylib-extras/rlImGui)
-- [nlohmann/json](https://github.com/nlohmann/json)
-- [BVH collision detection](https://en.wikipedia.org/wiki/Bounding_volume_hierarchy)
+
+### Official Documentation
+- [raylib Game Development Framework](https://www.raylib.com/cheatsheet/cheatsheet.html)
+- [ImGui Immediate Mode GUI](https://github.com/ocornut/imgui/wiki)
+- [rlImGui Raylib ImGui Integration](https://github.com/raylib-extras/rlImGui)
+- [nlohmann/json Modern C++ JSON Library](https://github.com/nlohmann/json)
+
+### Technical References
+- [Bounding Volume Hierarchy (BVH)](https://en.wikipedia.org/wiki/Bounding_volume_hierarchy)
+- [Axis-Aligned Bounding Box (AABB)](https://en.wikipedia.org/wiki/Minimum_bounding_box#Axis-aligned_minimum_bounding_box)
+- [Modern C++ Best Practices](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines)
+- [CMake Documentation](https://cmake.org/documentation/)
 
 ---
 

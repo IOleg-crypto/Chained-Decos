@@ -9,13 +9,59 @@
 #include "Engine/Render/RenderManager.h"
 #include "imgui.h"
 
+// Game constants
+namespace GameConstants {
+    constexpr float DEFAULT_PLATFORM_HEIGHT = 1.0f;
+    constexpr float DEFAULT_PLATFORM_SPACING = 8.0f;
+    constexpr int MAX_MAP_OBJECTS = 1000;
+    constexpr float PLAYER_SAFE_SPAWN_HEIGHT = 2.0f;
+}
+
 Game::Game(Engine *engine) : m_showMenu(true), m_isGameInitialized(false), m_isDebugInfo(true)
 {
     m_engine = engine;
     TraceLog(LOG_INFO, "Game class initialized.");
 }
 
-Game::~Game() { TraceLog(LOG_INFO, "Game class destructor called."); }
+/**
+ * @brief Cleanup function to properly release resources
+ * Called during game shutdown to ensure clean resource management
+ */
+void Game::Cleanup()
+{
+    TraceLog(LOG_INFO, "Game::Cleanup() - Cleaning up game resources...");
+
+    // Clear collision system
+    if (m_collisionManager.GetColliders().size() > 0)
+    {
+        m_collisionManager.ClearColliders();
+        TraceLog(LOG_INFO, "Game::Cleanup() - Collision system cleared");
+    }
+
+    // Reset player state
+    m_player.SetPlayerPosition({0.0f, 0.0f, 0.0f});
+    m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
+
+    // Clear any loaded maps
+    if (!m_gameMap.objects.empty())
+    {
+        m_gameMap.Cleanup();
+        TraceLog(LOG_INFO, "Game::Cleanup() - Editor map cleared");
+    }
+
+    // Reset game state
+    m_showMenu = true;
+    m_isGameInitialized = false;
+
+    TraceLog(LOG_INFO, "Game::Cleanup() - Game resources cleaned up successfully");
+}
+
+Game::~Game()
+{
+    TraceLog(LOG_INFO, "Game class destructor called.");
+    // Note: Cleanup() should be called explicitly before destruction
+    // as destructors should not throw exceptions
+}
 
 void Game::Init()
 {
@@ -168,7 +214,14 @@ void Game::InitInput()
 void Game::InitCollisions()
 {
     TraceLog(LOG_INFO, "Game::InitCollisions() - Initializing collision system...");
-    m_collisionManager.ClearColliders();
+
+    // Clear existing colliders if any
+    size_t previousColliderCount = m_collisionManager.GetColliders().size();
+    if (previousColliderCount > 0)
+    {
+        TraceLog(LOG_INFO, "Game::InitCollisions() - Clearing %zu existing colliders", previousColliderCount);
+        m_collisionManager.ClearColliders();
+    }
 
     // Create ground using factory
     Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
@@ -209,13 +262,9 @@ void Game::InitCollisions()
     // Load arena model if available
     try
     {
-        Model& arenaModel = m_models.GetModelByName("arena_test");
-    
-        TraceLog(LOG_INFO, "Game::InitCollisions() - Arena model loaded successfully."); 
-        // else
-        // {
-        //     TraceLog(LOG_WARNING, "Game::InitCollisions() - Arena model not found!");
-        // }
+        [[maybe_unused]] Model& arenaModel = m_models.GetModelByName("arena_test");
+
+        TraceLog(LOG_INFO, "Game::InitCollisions() - Arena model loaded successfully.");
     }
     catch (const std::exception& e)
     {
@@ -238,7 +287,7 @@ void Game::InitPlayer()
     TraceLog(LOG_INFO, "Game::InitPlayer() - Initializing player...");
 
     // Set initial position on the first platform (mix of ground and floating platforms)
-    Vector3 safePosition = {0.0f, 0.0f, 0.0f}; // Start on ground level with mixed platform heights
+    Vector3 safePosition = {0.0f, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, 0.0f};
     m_player.SetPlayerPosition(safePosition);
 
     // Setup collision and physics
@@ -250,26 +299,45 @@ void Game::InitPlayer()
     m_player.GetPhysics().SetGroundLevel(false);
     m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
 
-    // Load player model
+    // Load player model with improved error handling
     try
     {
         Model* playerModel = &m_models.GetModelByName("player");
-        m_player.SetPlayerModel(playerModel);
-        TraceLog(LOG_INFO, "Game::InitPlayer() - Player model loaded successfully.");
-
+        if (playerModel && playerModel->meshCount > 0)
+        {
+            m_player.SetPlayerModel(playerModel);
+            TraceLog(LOG_INFO, "Game::InitPlayer() - Player model loaded successfully.");
+        }
+        else
+        {
+            TraceLog(LOG_ERROR, "Game::InitPlayer() - Player model is invalid or has no meshes");
+        }
     }
     catch (const std::exception& e)
     {
         TraceLog(LOG_ERROR, "Game::InitPlayer() - Failed to load player model: %s", e.what());
+        TraceLog(LOG_WARNING, "Game::InitPlayer() - Player will use default rendering");
     }
 
     TraceLog(LOG_INFO, "Game::InitPlayer() - Player initialized at (%.2f, %.2f, %.2f).",
-               safePosition.x, safePosition.y, safePosition.z);
+                safePosition.x, safePosition.y, safePosition.z);
 
     // Additional safety check - ensure player is properly positioned
     Vector3 currentPos = m_player.GetPlayerPosition();
     TraceLog(LOG_INFO, "Game::InitPlayer() - Player current position: (%.2f, %.2f, %.2f)",
-               currentPos.x, currentPos.y, currentPos.z);
+                currentPos.x, currentPos.y, currentPos.z);
+
+    // Validate player position is safe (above ground but not too high)
+    if (currentPos.y < 0.0f)
+    {
+        TraceLog(LOG_WARNING, "Game::InitPlayer() - Player position below ground level, adjusting");
+        m_player.SetPlayerPosition({currentPos.x, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
+    }
+    else if (currentPos.y > 50.0f)
+    {
+        TraceLog(LOG_WARNING, "Game::InitPlayer() - Player position too high, adjusting");
+        m_player.SetPlayerPosition({currentPos.x, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
+    }
 }
 
 void Game::LoadGameModels()
@@ -285,10 +353,26 @@ void Game::LoadGameModels()
         m_models.LoadModelsFromJson(modelsJsonPath);
         m_models.PrintStatistics();
         TraceLog(LOG_INFO, "Game::LoadGameModels() - Models loaded successfully.");
+
+        // Validate that we have essential models
+        auto availableModels = m_models.GetAvailableModels();
+        bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
+        bool hasArenaModel = std::find(availableModels.begin(), availableModels.end(), "arena_test") != availableModels.end();
+
+        if (!hasPlayerModel)
+        {
+            TraceLog(LOG_WARNING, "Game::LoadGameModels() - Player model not found, player may not render correctly");
+        }
+
+        if (!hasArenaModel)
+        {
+            TraceLog(LOG_INFO, "Game::LoadGameModels() - Arena model not found, using procedural generation");
+        }
     }
     catch (const std::exception &e)
     {
         TraceLog(LOG_ERROR, "Game::LoadGameModels() - Failed to load models: %s", e.what());
+        TraceLog(LOG_ERROR, "Game::LoadGameModels() - Game may not function correctly without models");
     }
 }
 
@@ -306,9 +390,17 @@ void Game::UpdatePlayerLogic()
     m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
 }
 
+/**
+ * @brief Updates physics-related game logic
+ *
+ * Ensures collision system is properly initialized and handles
+ * edge cases where collision data might be missing.
+ */
 void Game::UpdatePhysicsLogic()
 {
-    if (m_collisionManager.GetColliders().empty())
+    const auto& colliders = m_collisionManager.GetColliders();
+
+    if (colliders.empty())
     {
         static bool warningShown = false;
         if (!warningShown)
@@ -319,10 +411,25 @@ void Game::UpdatePhysicsLogic()
         }
 
         // Create emergency ground plane if no colliders exist
-        Collision plane = GroundColliderFactory::CreateDefaultGameGround();
-        //m_collisionManager.AddCollider(std::move(plane));
-
-        TraceLog(LOG_WARNING, "Game::UpdatePhysicsLogic() - Created emergency ground plane.");
+        try
+        {
+            Collision plane = GroundColliderFactory::CreateDefaultGameGround();
+            m_collisionManager.AddCollider(std::move(plane));
+            TraceLog(LOG_WARNING, "Game::UpdatePhysicsLogic() - Created emergency ground plane.");
+        }
+        catch (const std::exception& e)
+        {
+            TraceLog(LOG_ERROR, "Game::UpdatePhysicsLogic() - Failed to create emergency ground plane: %s", e.what());
+        }
+    }
+    else if (colliders.size() < 2) // Only ground plane exists
+    {
+        static bool infoShown = false;
+        if (!infoShown)
+        {
+            TraceLog(LOG_INFO, "Game::UpdatePhysicsLogic() - Only ground plane available, no gameplay platforms");
+            infoShown = true;
+        }
     }
 }
 
@@ -383,6 +490,44 @@ void Game::RenderGameWorld() {
     }
 }
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * @brief Creates a platform with collision box at specified position
+ * @param position Platform center position in 3D space
+ * @param size Platform dimensions (width, height, depth)
+ * @param color Platform render color
+ * @param collisionType Type of collision detection to use
+ *
+ * This helper function reduces code duplication in map creation functions
+ * and ensures consistent platform creation across all map types.
+ */
+void Game::CreatePlatform(const Vector3& position, const Vector3& size, Color color, CollisionType collisionType)
+{
+    DrawCube(position, size.x, size.y, size.z, color);
+
+    Collision collision(position, size);
+    collision.SetCollisionType(collisionType);
+    m_collisionManager.AddCollider(std::move(collision));
+}
+
+/**
+ * @brief Calculates dynamic font size based on screen resolution
+ * @param baseSize Base font size for 1920p resolution
+ * @return Scaled font size clamped to reasonable bounds
+ */
+float Game::CalculateDynamicFontSize(float baseSize) const
+{
+    int screenWidth = GetScreenWidth();
+    float scaleFactor = static_cast<float>(screenWidth) / 1920.0f;
+    float dynamicSize = baseSize * scaleFactor;
+
+    // Clamp to reasonable bounds
+    return std::max(18.0f, std::min(48.0f, dynamicSize));
+}
+
 void Game::RenderGameUI() const {
     m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
 
@@ -391,117 +536,413 @@ void Game::RenderGameUI() const {
 
     int minutes = static_cast<int>(gameTime) / 60;
     int seconds = static_cast<int>(gameTime) % 60;
-    int milliseconds = static_cast<int>((gameTime - static_cast<int>(gameTime)) * 1000);
+    int milliseconds = static_cast<int>((gameTime - static_cast<float>(static_cast<int>(gameTime))) * 1000);
 
-    std::string timerText = TextFormat("%02d:%02d:%03d", minutes, seconds, milliseconds);
+    // Add timer icon using ASCII art timer (works on all systems)
+    const char* timerIcon = "[TIMER] ";
+    std::string timerText = TextFormat("%s%02d:%02d:%03d", timerIcon, minutes, seconds, milliseconds);
 
-    int timerX = 300;
-    int timerY = 20;
+    Vector2 timerPos = {300.0f, 20.0f};
 
     Font fontToUse = (m_engine->GetRenderManager() && m_engine->GetRenderManager()->GetFont().texture.id != 0)
                          ? m_engine->GetRenderManager()->GetFont()
                          : GetFontDefault();
-    // Use larger font size for better readability with Alan Sans
-    DrawTextEx(fontToUse, timerText.c_str(), {static_cast<float>(timerX), static_cast<float>(timerY)}, 24, 2.0f, WHITE);
+
+    float fontSize = CalculateDynamicFontSize(24.0f);
+    DrawTextEx(fontToUse, timerText.c_str(), timerPos, fontSize, 2.0f, WHITE);
 }
 
-// Helper function to simplify platform creation
-void Game::AddPlatform(float x, float y, float z, float sizeX, float sizeY, float sizeZ)
-{
-    Collision platform({x, y, z}, {sizeX, sizeY, sizeZ});
-    platform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(platform));
-}
 
 void Game::CreateParkourTestMap()
 {
-    // Simplified test map - using helper function
-    AddPlatform(0.0f, 0.0f, 0.0f, 3.0f, 0.5f, 3.0f);  // Ground start
-    AddPlatform(8.0f, 0.0f, 0.0f, 1.5f, 0.5f, 1.5f);  // Ground
-    AddPlatform(14.0f, 3.0f, 0.0f, 1.0f, 0.5f, 1.0f); // Low floating
-    AddPlatform(20.0f, 0.0f, 2.0f, 1.3f, 0.5f, 1.3f); // Ground
-    AddPlatform(26.0f, 4.0f, 1.0f, 1.8f, 0.5f, 1.8f); // Mid floating
-    AddPlatform(32.0f, 0.0f, -1.0f, 1.2f, 0.5f, 1.2f); // Ground finish
+    // Advanced test map using Raylib functions directly
+    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Creating test parkour map");
+
+    // Starting platform - larger for safe landing
+    CreatePlatform({0.0f, 0.0f, 0.0f}, {4.0f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 4.0f}, DARKGREEN, CollisionType::AABB_ONLY);
+
+    // First jump platform
+    CreatePlatform({8.0f, 0.0f, 2.0f}, {2.0f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 2.0f}, DARKBLUE, CollisionType::AABB_ONLY);
+
+    // Floating challenge platform
+    CreatePlatform({14.0f, 4.0f, 1.0f}, {1.5f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 1.5f}, DARKPURPLE, CollisionType::AABB_ONLY);
+
+    // Mid-way platform
+    CreatePlatform({20.0f, 1.0f, -1.0f}, {2.5f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 2.5f}, DARKBROWN, CollisionType::AABB_ONLY);
+
+    // High precision platform
+    CreatePlatform({26.0f, 6.0f, 0.0f}, {1.2f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 1.2f}, RED, CollisionType::AABB_ONLY);
+
+    // Final platform
+    CreatePlatform({32.0f, 2.0f, -2.0f}, {3.0f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 3.0f}, GOLD, CollisionType::AABB_ONLY);
+
+    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Test map created successfully");
 }
 
 void Game::CreateEasyParkourMap()
 {
-    // Simplified Easy parkour map using helper function
-    AddPlatform(0.0f, 0.0f, 0.0f, 4.0f, 0.5f, 4.0f);  // Ground start
-    AddPlatform(8.0f, 0.0f, 3.0f, 2.5f, 0.5f, 2.5f);  // Ground
-    AddPlatform(16.0f, 3.0f, 1.0f, 2.0f, 0.5f, 2.0f); // Low floating
-    AddPlatform(24.0f, 0.0f, -2.0f, 2.2f, 0.5f, 2.2f); // Ground
-    AddPlatform(32.0f, 4.0f, 2.0f, 1.8f, 0.5f, 1.8f); // Mid floating
-    AddPlatform(40.0f, 0.0f, 0.0f, 2.0f, 0.5f, 2.0f);  // Ground
-    AddPlatform(48.0f, 5.0f, -1.5f, 1.9f, 0.5f, 1.9f); // Higher floating
-    AddPlatform(56.0f, 0.0f, 1.5f, 2.1f, 0.5f, 2.1f);  // Ground
-    AddPlatform(64.0f, 3.5f, -0.5f, 1.7f, 0.5f, 1.7f); // Low floating
-    AddPlatform(72.0f, 0.0f, 2.5f, 2.3f, 0.5f, 2.3f);  // Ground
-    AddPlatform(80.0f, 0.0f, 0.0f, 4.0f, 0.5f, 4.0f);  // Ground finish
+    // Advanced Easy parkour map using Raylib functions
+    Vector3 startPos = {0.0f, 0.0f, 0.0f};
+
+    // Starting area
+    DrawCube(startPos, 5.0f, 1.0f, 5.0f, DARKGREEN);
+    Collision startPlatform({0.0f, 0.0f, 0.0f}, {5.0f, 1.0f, 5.0f});
+    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(startPlatform));
+
+    // Gentle first platforms
+    Vector3 plat1 = {10.0f, 0.0f, 4.0f};
+    DrawCube(plat1, 3.0f, 1.0f, 3.0f, DARKBLUE);
+    Collision c1({10.0f, 0.0f, 4.0f}, {3.0f, 1.0f, 3.0f});
+    c1.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c1));
+
+    // Low floating platform
+    Vector3 plat2 = {20.0f, 3.0f, 2.0f};
+    DrawCube(plat2, 2.5f, 1.0f, 2.5f, DARKPURPLE);
+    Collision c2({20.0f, 3.0f, 2.0f}, {2.5f, 1.0f, 2.5f});
+    c2.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c2));
+
+    // Ground platform with ramp approach
+    Vector3 plat3 = {30.0f, 0.0f, -1.0f};
+    DrawCube(plat3, 3.5f, 1.0f, 3.5f, DARKBROWN);
+    Collision c3({30.0f, 0.0f, -1.0f}, {3.5f, 1.0f, 3.5f});
+    c3.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c3));
+
+    // Medium height challenge
+    Vector3 plat4 = {42.0f, 5.0f, 1.0f};
+    DrawCube(plat4, 2.2f, 1.0f, 2.2f, RED);
+    Collision c4({42.0f, 5.0f, 1.0f}, {2.2f, 1.0f, 2.2f});
+    c4.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c4));
+
+    // Rest platform
+    Vector3 plat5 = {52.0f, 1.0f, -2.0f};
+    DrawCube(plat5, 3.0f, 1.0f, 3.0f, DARKGRAY);
+    Collision c5({52.0f, 1.0f, -2.0f}, {3.0f, 1.0f, 3.0f});
+    c5.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c5));
+
+    // Higher challenge platform
+    Vector3 plat6 = {62.0f, 7.0f, 0.0f};
+    DrawCube(plat6, 2.0f, 1.0f, 2.0f, ORANGE);
+    Collision c6({62.0f, 7.0f, 0.0f}, {2.0f, 1.0f, 2.0f});
+    c6.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c6));
+
+    // Descent platforms
+    Vector3 plat7 = {72.0f, 3.0f, 2.0f};
+    DrawCube(plat7, 2.8f, 1.0f, 2.8f, DARKBLUE);
+    Collision c7({72.0f, 3.0f, 2.0f}, {2.8f, 1.0f, 2.8f});
+    c7.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c7));
+
+    Vector3 plat8 = {82.0f, 1.0f, -1.0f};
+    DrawCube(plat8, 2.5f, 1.0f, 2.5f, DARKPURPLE);
+    Collision c8({82.0f, 1.0f, -1.0f}, {2.5f, 1.0f, 2.5f});
+    c8.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c8));
+
+    // Final platform
+    Vector3 endPos = {92.0f, 0.0f, 1.0f};
+    DrawCube(endPos, 4.0f, 1.0f, 4.0f, GOLD);
+    Collision endPlatform({92.0f, 0.0f, 1.0f}, {4.0f, 1.0f, 4.0f});
+    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(endPlatform));
 }
 
 void Game::CreateMediumParkourMap()
 {
-    // Simplified Medium difficulty using helper function
-    AddPlatform(0.0f, 0.0f, 0.0f, 3.5f, 0.5f, 3.5f);  // Ground start
-    AddPlatform(9.0f, 0.0f, 4.0f, 1.8f, 0.5f, 1.8f);  // Ground
-    AddPlatform(18.0f, 4.0f, 2.0f, 1.6f, 0.5f, 1.6f); // Mid floating
-    AddPlatform(27.0f, 0.0f, -1.0f, 1.9f, 0.5f, 1.9f); // Ground
-    AddPlatform(36.0f, 5.0f, 3.0f, 1.4f, 0.5f, 1.4f); // Higher floating
-    AddPlatform(45.0f, 0.0f, 1.0f, 1.7f, 0.5f, 1.7f);  // Ground
-    AddPlatform(54.0f, 6.0f, -2.0f, 1.3f, 0.5f, 1.3f); // High floating
-    AddPlatform(63.0f, 3.0f, 2.5f, 1.5f, 0.5f, 1.5f);  // Low-mid floating
-    AddPlatform(72.0f, 0.0f, 0.5f, 1.2f, 0.5f, 1.2f);  // Ground
-    AddPlatform(81.0f, 4.5f, -1.5f, 1.6f, 0.5f, 1.6f); // Mid floating
-    AddPlatform(90.0f, 0.0f, 1.8f, 1.1f, 0.5f, 1.1f);  // Ground
-    AddPlatform(99.0f, 5.5f, -0.8f, 1.4f, 0.5f, 1.4f); // High floating
-    AddPlatform(108.0f, 0.0f, 0.0f, 4.5f, 0.5f, 4.5f); // Ground finish
+    // Advanced Medium difficulty using Raylib functions
+    Vector3 startPos = {0.0f, 0.0f, 0.0f};
+
+    // Large starting area
+    DrawCube(startPos, 4.0f, 1.0f, 4.0f, DARKGREEN);
+    Collision startPlatform({0.0f, 0.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
+    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(startPlatform));
+
+    // Challenging platform sequence
+    Vector3 plat1 = {12.0f, 0.0f, 5.0f};
+    DrawCube(plat1, 2.2f, 1.0f, 2.2f, DARKBLUE);
+    Collision c1({12.0f, 0.0f, 5.0f}, {2.2f, 1.0f, 2.2f});
+    c1.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c1));
+
+    // Precision jump platform
+    Vector3 plat2 = {22.0f, 5.0f, 3.0f};
+    DrawCube(plat2, 1.8f, 1.0f, 1.8f, DARKPURPLE);
+    Collision c2({22.0f, 5.0f, 3.0f}, {1.8f, 1.0f, 1.8f});
+    c2.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c2));
+
+    // Moving platform simulation (static but challenging position)
+    Vector3 plat3 = {32.0f, 2.0f, -2.0f};
+    DrawCube(plat3, 2.0f, 1.0f, 2.0f, DARKBROWN);
+    Collision c3({32.0f, 2.0f, -2.0f}, {2.0f, 1.0f, 2.0f});
+    c3.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c3));
+
+    // High altitude challenge
+    Vector3 plat4 = {44.0f, 8.0f, 1.0f};
+    DrawCube(plat4, 1.5f, 1.0f, 1.5f, RED);
+    Collision c4({44.0f, 8.0f, 1.0f}, {1.5f, 1.0f, 1.5f});
+    c4.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c4));
+
+    // Recovery platform
+    Vector3 plat5 = {54.0f, 3.0f, -1.0f};
+    DrawCube(plat5, 2.5f, 1.0f, 2.5f, DARKGRAY);
+    Collision c5({54.0f, 3.0f, -1.0f}, {2.5f, 1.0f, 2.5f});
+    c5.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c5));
+
+    // Very high precision platform
+    Vector3 plat6 = {66.0f, 10.0f, 2.0f};
+    DrawCube(plat6, 1.2f, 1.0f, 1.2f, ORANGE);
+    Collision c6({66.0f, 10.0f, 2.0f}, {1.2f, 1.0f, 1.2f});
+    c6.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c6));
+
+    // Descent platform 1
+    Vector3 plat7 = {76.0f, 6.0f, 0.0f};
+    DrawCube(plat7, 2.0f, 1.0f, 2.0f, DARKBLUE);
+    Collision c7({76.0f, 6.0f, 0.0f}, {2.0f, 1.0f, 2.0f});
+    c7.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c7));
+
+    // Descent platform 2
+    Vector3 plat8 = {86.0f, 3.0f, -3.0f};
+    DrawCube(plat8, 1.8f, 1.0f, 1.8f, DARKPURPLE);
+    Collision c8({86.0f, 3.0f, -3.0f}, {1.8f, 1.0f, 1.8f});
+    c8.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c8));
+
+    // Final challenge before finish
+    Vector3 plat9 = {96.0f, 7.0f, 1.0f};
+    DrawCube(plat9, 1.5f, 1.0f, 1.5f, RED);
+    Collision c9({96.0f, 7.0f, 1.0f}, {1.5f, 1.0f, 1.5f});
+    c9.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c9));
+
+    // Victory platform
+    Vector3 endPos = {108.0f, 2.0f, -1.0f};
+    DrawCube(endPos, 5.0f, 1.0f, 5.0f, GOLD);
+    Collision endPlatform({108.0f, 2.0f, -1.0f}, {5.0f, 1.0f, 5.0f});
+    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(endPlatform));
 }
 
 void Game::CreateHardParkourMap()
 {
-    // Simplified Hard difficulty using helper function
-    AddPlatform(0.0f, 0.0f, 0.0f, 2.8f, 0.5f, 2.8f);  // Ground start
-    AddPlatform(8.0f, 0.0f, 5.0f, 0.9f, 0.5f, 0.9f);   // Ground
-    AddPlatform(14.0f, 6.0f, 4.2f, 0.7f, 0.5f, 0.7f);  // High floating
-    AddPlatform(20.0f, 0.0f, 3.8f, 0.8f, 0.5f, 0.8f);  // Ground
-    AddPlatform(26.0f, 4.0f, 4.5f, 0.6f, 0.5f, 0.6f);  // Mid floating
-    AddPlatform(32.0f, 0.0f, 3.9f, 0.5f, 0.5f, 0.5f);  // Ground
-    AddPlatform(38.0f, 7.0f, 4.3f, 0.7f, 0.5f, 0.7f);  // Very high floating
-    AddPlatform(44.0f, 3.0f, 3.5f, 0.8f, 0.5f, 0.8f);  // Low-mid floating
-    AddPlatform(50.0f, 0.0f, 2.8f, 0.6f, 0.5f, 0.6f);  // Ground
-    AddPlatform(56.0f, 5.0f, 2.1f, 0.9f, 0.5f, 0.9f);  // High floating
-    AddPlatform(62.0f, 0.0f, 3.2f, 0.7f, 0.5f, 0.7f);  // Ground
-    AddPlatform(68.0f, 6.5f, 2.4f, 0.5f, 0.5f, 0.5f);  // Very high floating
-    AddPlatform(74.0f, 0.0f, 1.7f, 0.8f, 0.5f, 0.8f);  // Ground
-    AddPlatform(80.0f, 4.0f, 2.9f, 0.6f, 0.5f, 0.6f);  // Mid floating
-    AddPlatform(86.0f, 0.0f, 2.2f, 0.7f, 0.5f, 0.7f);  // Ground
-    AddPlatform(92.0f, 5.5f, 1.5f, 0.5f, 0.5f, 0.5f);  // High floating
-    AddPlatform(98.0f, 0.0f, 0.8f, 0.8f, 0.5f, 0.8f);  // Ground
-    AddPlatform(105.0f, 0.0f, 0.0f, 4.0f, 0.5f, 4.0f); // Ground finish
+    // Advanced Hard difficulty using Raylib functions
+    Vector3 startPos = {0.0f, 0.0f, 0.0f};
+
+    // Compact starting area for hard mode
+    DrawCube(startPos, 3.0f, 1.0f, 3.0f, DARKGREEN);
+    Collision startPlatform({0.0f, 0.0f, 0.0f}, {3.0f, 1.0f, 3.0f});
+    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(startPlatform));
+
+    // Extreme precision challenges
+    Vector3 plat1 = {10.0f, 0.0f, 6.0f};
+    DrawCube(plat1, 1.2f, 1.0f, 1.2f, DARKBLUE);
+    Collision c1({10.0f, 0.0f, 6.0f}, {1.2f, 1.0f, 1.2f});
+    c1.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c1));
+
+    // Very high precision platform
+    Vector3 plat2 = {18.0f, 8.0f, 4.0f};
+    DrawCube(plat2, 0.9f, 1.0f, 0.9f, DARKPURPLE);
+    Collision c2({18.0f, 8.0f, 4.0f}, {0.9f, 1.0f, 0.9f});
+    c2.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c2));
+
+    // Narrow bridge platform
+    Vector3 plat3 = {26.0f, 3.0f, 2.0f};
+    DrawCube(plat3, 1.0f, 1.0f, 1.0f, DARKBROWN);
+    Collision c3({26.0f, 3.0f, 2.0f}, {1.0f, 1.0f, 1.0f});
+    c3.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c3));
+
+    // Extreme height challenge
+    Vector3 plat4 = {34.0f, 12.0f, 0.0f};
+    DrawCube(plat4, 0.8f, 1.0f, 0.8f, RED);
+    Collision c4({34.0f, 12.0f, 0.0f}, {0.8f, 1.0f, 0.8f});
+    c4.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c4));
+
+    // Recovery but still challenging
+    Vector3 plat5 = {42.0f, 5.0f, -2.0f};
+    DrawCube(plat5, 1.5f, 1.0f, 1.5f, DARKGRAY);
+    Collision c5({42.0f, 5.0f, -2.0f}, {1.5f, 1.0f, 1.5f});
+    c5.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c5));
+
+    // Another extreme height
+    Vector3 plat6 = {50.0f, 15.0f, 1.0f};
+    DrawCube(plat6, 0.7f, 1.0f, 0.7f, ORANGE);
+    Collision c6({50.0f, 15.0f, 1.0f}, {0.7f, 1.0f, 0.7f});
+    c6.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c6));
+
+    // Very narrow connecting platform
+    Vector3 plat7 = {58.0f, 8.0f, -1.0f};
+    DrawCube(plat7, 1.0f, 1.0f, 1.0f, DARKBLUE);
+    Collision c7({58.0f, 8.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
+    c7.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c7));
+
+    // Final extreme challenge
+    Vector3 plat8 = {66.0f, 18.0f, 2.0f};
+    DrawCube(plat8, 0.6f, 1.0f, 0.6f, DARKPURPLE);
+    Collision c8({66.0f, 18.0f, 2.0f}, {0.6f, 1.0f, 0.6f});
+    c8.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c8));
+
+    // Descent precision platforms
+    Vector3 plat9 = {74.0f, 12.0f, 0.0f};
+    DrawCube(plat9, 1.2f, 1.0f, 1.2f, DARKBROWN);
+    Collision c9({74.0f, 12.0f, 0.0f}, {1.2f, 1.0f, 1.2f});
+    c9.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c9));
+
+    Vector3 plat10 = {82.0f, 7.0f, -2.0f};
+    DrawCube(plat10, 1.0f, 1.0f, 1.0f, RED);
+    Collision c10({82.0f, 7.0f, -2.0f}, {1.0f, 1.0f, 1.0f});
+    c10.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c10));
+
+    Vector3 plat11 = {90.0f, 4.0f, 1.0f};
+    DrawCube(plat11, 0.8f, 1.0f, 0.8f, DARKGRAY);
+    Collision c11({90.0f, 4.0f, 1.0f}, {0.8f, 1.0f, 0.8f});
+    c11.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c11));
+
+    // Final platform
+    Vector3 endPos = {98.0f, 1.0f, -1.0f};
+    DrawCube(endPos, 4.0f, 1.0f, 4.0f, GOLD);
+    Collision endPlatform({98.0f, 1.0f, -1.0f}, {4.0f, 1.0f, 4.0f});
+    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(endPlatform));
 }
 
 void Game::CreateSpeedrunParkourMap()
 {
-    // Simplified Speedrun map using helper function
-    AddPlatform(0.0f, 0.0f, 0.0f, 3.5f, 0.5f, 3.5f);  // Ground start
-    AddPlatform(7.0f, 0.0f, 2.5f, 2.8f, 0.5f, 1.8f);   // Ground
-    AddPlatform(14.0f, 3.0f, 4.0f, 2.3f, 0.5f, 2.0f);  // Low floating
-    AddPlatform(21.0f, 0.0f, 5.2f, 2.1f, 0.5f, 2.2f);  // Ground
-    AddPlatform(28.0f, 4.0f, 4.8f, 2.4f, 0.5f, 1.9f);  // Mid floating
-    AddPlatform(35.0f, 0.0f, 3.5f, 2.6f, 0.5f, 1.7f);  // Ground
-    AddPlatform(42.0f, 5.0f, 2.0f, 2.8f, 0.5f, 1.5f);  // High floating
-    AddPlatform(49.0f, 0.0f, 0.5f, 3.0f, 0.5f, 1.3f);   // Ground
-    AddPlatform(56.0f, 3.5f, -1.0f, 3.2f, 0.5f, 1.1f); // Low-mid floating
-    AddPlatform(63.0f, 0.0f, -2.5f, 2.9f, 0.5f, 1.6f); // Ground
-    AddPlatform(70.0f, 4.5f, -4.0f, 2.7f, 0.5f, 1.8f); // Mid floating
-    AddPlatform(77.0f, 0.0f, -5.5f, 2.5f, 0.5f, 2.0f); // Ground
-    AddPlatform(84.0f, 6.0f, -4.8f, 2.3f, 0.5f, 2.2f); // High floating
-    AddPlatform(91.0f, 0.0f, -3.5f, 2.1f, 0.5f, 2.4f); // Ground
-    AddPlatform(98.0f, 3.0f, -2.0f, 2.0f, 0.5f, 2.6f); // Low floating
-    AddPlatform(105.0f, 0.0f, -0.5f, 1.8f, 0.5f, 2.8f); // Ground
-    AddPlatform(112.0f, 4.0f, 1.0f, 1.6f, 0.5f, 3.0f);  // Mid floating
-    AddPlatform(120.0f, 0.0f, 0.0f, 5.0f, 0.5f, 5.0f); // Ground finish
+    // Advanced Speedrun map using Raylib functions - optimized for fast times
+    Vector3 startPos = {0.0f, 0.0f, 0.0f};
+
+    // Speedrun-optimized starting platform
+    DrawCube(startPos, 4.0f, 1.0f, 4.0f, DARKGREEN);
+    Collision startPlatform({0.0f, 0.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
+    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(startPlatform));
+
+    // Fast track platforms - optimized for speed
+    Vector3 plat1 = {8.0f, 0.0f, 3.0f};
+    DrawCube(plat1, 3.2f, 1.0f, 2.2f, DARKBLUE);
+    Collision c1({8.0f, 0.0f, 3.0f}, {3.2f, 1.0f, 2.2f});
+    c1.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c1));
+
+    // Quick jump platform
+    Vector3 plat2 = {16.0f, 3.5f, 5.0f};
+    DrawCube(plat2, 2.8f, 1.0f, 2.4f, DARKPURPLE);
+    Collision c2({16.0f, 3.5f, 5.0f}, {2.8f, 1.0f, 2.4f});
+    c2.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c2));
+
+    // Sprint platform
+    Vector3 plat3 = {24.0f, 1.0f, 6.5f};
+    DrawCube(plat3, 3.0f, 1.0f, 2.6f, DARKBROWN);
+    Collision c3({24.0f, 1.0f, 6.5f}, {3.0f, 1.0f, 2.6f});
+    c3.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c3));
+
+    // Speed jump platform
+    Vector3 plat4 = {32.0f, 4.5f, 5.8f};
+    DrawCube(plat4, 2.6f, 1.0f, 2.8f, RED);
+    Collision c4({32.0f, 4.5f, 5.8f}, {2.6f, 1.0f, 2.8f});
+    c4.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c4));
+
+    // Long platform for building speed
+    Vector3 plat5 = {40.0f, 0.5f, 4.2f};
+    DrawCube(plat5, 3.4f, 1.0f, 2.0f, DARKGRAY);
+    Collision c5({40.0f, 0.5f, 4.2f}, {3.4f, 1.0f, 2.0f});
+    c5.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c5));
+
+    // High speed challenge
+    Vector3 plat6 = {48.0f, 6.0f, 2.5f};
+    DrawCube(plat6, 2.4f, 1.0f, 3.0f, ORANGE);
+    Collision c6({48.0f, 6.0f, 2.5f}, {2.4f, 1.0f, 3.0f});
+    c6.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c6));
+
+    // Technical precision for speedrunners
+    Vector3 plat7 = {56.0f, 2.0f, 0.8f};
+    DrawCube(plat7, 2.8f, 1.0f, 1.8f, DARKBLUE);
+    Collision c7({56.0f, 2.0f, 0.8f}, {2.8f, 1.0f, 1.8f});
+    c7.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c7));
+
+    // Risk-reward platform
+    Vector3 plat8 = {64.0f, 7.5f, -1.2f};
+    DrawCube(plat8, 2.2f, 1.0f, 2.6f, DARKPURPLE);
+    Collision c8({64.0f, 7.5f, -1.2f}, {2.2f, 1.0f, 2.6f});
+    c8.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c8));
+
+    // Speed tunnel platform
+    Vector3 plat9 = {72.0f, 3.0f, -3.5f};
+    DrawCube(plat9, 3.2f, 1.0f, 2.0f, DARKBROWN);
+    Collision c9({72.0f, 3.0f, -3.5f}, {3.2f, 1.0f, 2.0f});
+    c9.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c9));
+
+    // Advanced speed platform
+    Vector3 plat10 = {80.0f, 8.0f, -5.8f};
+    DrawCube(plat10, 2.0f, 1.0f, 2.8f, RED);
+    Collision c10({80.0f, 8.0f, -5.8f}, {2.0f, 1.0f, 2.8f});
+    c10.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c10));
+
+    // Final sprint platforms
+    Vector3 plat11 = {88.0f, 4.0f, -4.2f};
+    DrawCube(plat11, 2.6f, 1.0f, 2.4f, DARKGRAY);
+    Collision c11({88.0f, 4.0f, -4.2f}, {2.6f, 1.0f, 2.4f});
+    c11.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c11));
+
+    Vector3 plat12 = {96.0f, 1.5f, -2.5f};
+    DrawCube(plat12, 2.4f, 1.0f, 2.2f, DARKBLUE);
+    Collision c12({96.0f, 1.5f, -2.5f}, {2.4f, 1.0f, 2.2f});
+    c12.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c12));
+
+    // Ultimate speed platform
+    Vector3 plat13 = {104.0f, 5.0f, -0.8f};
+    DrawCube(plat13, 2.0f, 1.0f, 2.0f, DARKPURPLE);
+    Collision c13({104.0f, 5.0f, -0.8f}, {2.0f, 1.0f, 2.0f});
+    c13.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c13));
+
+    // Final victory platform
+    Vector3 plat14 = {112.0f, 2.0f, 0.5f};
+    DrawCube(plat14, 2.8f, 1.0f, 2.8f, DARKBROWN);
+    Collision c14({112.0f, 2.0f, 0.5f}, {2.8f, 1.0f, 2.8f});
+    c14.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c14));
+
+    // Grand finish platform
+    Vector3 endPos = {122.0f, 0.0f, -1.0f};
+    DrawCube(endPos, 6.0f, 1.0f, 6.0f, GOLD);
+    Collision endPlatform({122.0f, 0.0f, -1.0f}, {6.0f, 1.0f, 6.0f});
+    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(endPlatform));
 }
 
 // ============================================================================

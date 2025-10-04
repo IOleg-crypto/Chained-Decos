@@ -1,0 +1,40 @@
+# Asset CMakeLists.txt
+
+# Collect source files
+file(GLOB ASSET_SOURCES
+    "*.cpp"
+)
+
+file(GLOB ASSET_HEADERS
+    "*.h"
+)
+
+# Create library
+add_library(AdvancedAssetManager STATIC
+    ${ASSET_SOURCES}
+    ${ASSET_HEADERS}
+)
+
+# Include directories
+target_include_directories(AdvancedAssetManager PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+# Link dependencies
+target_link_libraries(AdvancedAssetManager PRIVATE
+    raylib
+    ErrorHandling
+)
+
+# Compiler definitions
+target_compile_definitions(AdvancedAssetManager PRIVATE
+    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
+)
+
+# Organize in IDE
+source_group("Source Files" FILES ${ASSET_SOURCES})
+source_group("Header Files" FILES ${ASSET_HEADERS})
+
+# Output messages
+message(STATUS "AdvancedAssetManager: Added ${ASSET_SOURCES}")
