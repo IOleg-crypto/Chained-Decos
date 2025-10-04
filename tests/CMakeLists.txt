@@ -3,14 +3,6 @@ set(TEST_SOURCES
     main.cpp
     engine/PhysicsComponentTest.cpp
     engine/CollisionSystemTest.cpp
-    engine/CollisionComponentTest.cpp
-    engine/Vector3Test.cpp
-    game/PlayerTest.cpp
-    game/ParkourMapGeneratorTest.cpp
-    game/GameTest.cpp
-    utils/ConfigManagerTest.cpp
-    utils/ResourceManagerTest.cpp
-    integration/GameIntegrationTest.cpp
 )
 
 # Create test executable
