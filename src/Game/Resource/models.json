@@ -4,20 +4,5 @@
     "path": "/resources/player_low.glb",
     "spawn": false,
     "hasAnimations": false
-  },
-  {
-    "name": "arena_test",
-    "path": "/resources/arena.glb",
-    "spawn": true,
-    "hasCollision" : true,
-    "collisionPrecision": "bvh_only",
-    "hasAnimations": false,
-    "instances": [
-      {
-        "position": { "x": 1, "y": 5, "z": 9 },
-        "scale": 4.5,
-        "color": "WHITE"
-      }
-    ]
-  } 
+  }
 ]

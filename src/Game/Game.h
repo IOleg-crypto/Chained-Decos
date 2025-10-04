@@ -7,6 +7,7 @@
 #include "Engine/World/World.h"
 #include "Menu/Menu.h"
 #include "Player/Player.h"
+#include "Map/MapLoader.h"  // For loading editor-created maps
 
 class Game
 {
@@ -17,6 +18,10 @@ private:
     WorldManager m_world;
     Menu m_menu;
     Engine *m_engine = nullptr;
+
+    // Map loading system
+    std::vector<MapLoader> m_mapObjects;  // Legacy support
+    GameMap m_gameMap;                   // New comprehensive map system
 
 private:
     bool m_showMenu;
@@ -44,11 +49,15 @@ public:
     void UpdatePhysicsLogic();
     //void HandleKeyboardShortcuts(); maybe implemented in the future
     void HandleMenuActions();
-    void RenderGameWorld() const;
+    void RenderGameWorld();
     void RenderGameUI() const;
     
     // Parkour test map creation
     void CreateParkourTestMap();
+
+    // Map loading and rendering
+    void LoadEditorMap(const std::string& mapPath);
+    void RenderEditorMap();
 };
 
 #endif // GAME_H

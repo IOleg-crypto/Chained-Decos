@@ -269,7 +269,9 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
     if (!grounded && m_physics.GetVelocity().y <= 1.0f)
     {
         float bottom = center.y - size.y * 0.5f;
-        if (bottom <= 1.0f) // Close to ground level (increased from 0.5f)
+        // Account for MODEL_Y_OFFSET when checking ground proximity
+        // The visual model is offset by -1.0f, so we need to check against a higher threshold
+        if (bottom <= (1.0f - Player::MODEL_Y_OFFSET)) // Close to ground level, accounting for visual offset
         {
             grounded = true;
         }
@@ -282,7 +284,8 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
     static bool s_hasSafe = false;
     if (grounded)
     {
-        s_lastSafePos = { center.x, hitPoint.y + size.y * 0.5f, center.z };
+        // Account for MODEL_Y_OFFSET when calculating safe position
+        s_lastSafePos = { center.x, hitPoint.y + size.y * 0.5f + Player::MODEL_Y_OFFSET, center.z };
         s_hasSafe = true;
     }
     else if (s_hasSafe && m_physics.GetVelocity().y <= 0.0f)
