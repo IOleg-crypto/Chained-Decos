@@ -109,6 +109,8 @@ jobs:
           -DBUILD_BENCHMARKS=OFF \
           -DENABLE_OPTIMIZATIONS=ON \
           -DENABLE_WARNINGS=ON \
+          -DENABLE_DEV_TOOLS=OFF \
+          -DENABLE_DEBUG_INFO=OFF \
           -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
           -S "${{ github.workspace }}"
 

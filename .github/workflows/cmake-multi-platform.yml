@@ -120,6 +120,8 @@ jobs:
           -DBUILD_BENCHMARKS=ON \
           -DENABLE_WARNINGS=ON \
           -DENABLE_OPTIMIZATIONS=ON \
+          -DENABLE_DEV_TOOLS=ON \
+          -DENABLE_DEBUG_INFO=ON \
           ${{ matrix.cmake_options }} \
           -S "${{ github.workspace }}"
 
@@ -127,7 +129,7 @@ jobs:
       run: |
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config ${{ matrix.build_type }} \
-          --target ChainedDecos ChainedDecosMapEditor \
+          --target ChainedDecos ChainedDecosMapEditor unit_tests \
           --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
     - name: Install project
