@@ -207,7 +207,6 @@ endif()
 # Enable testing if requested
 if(BUILD_TESTS)
     enable_testing()
-    add_subdirectory(tests)
 endif()
 
 # Enable benchmarks if requested

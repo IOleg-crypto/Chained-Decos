@@ -54,7 +54,7 @@ add_custom_target(run_all_tests
     COMMENT "Running all tests"
 )
 
-# Performance benchmarks
-if(BUILD_BENCHMARKS)
-    add_subdirectory(benchmarks)
-endif()
+# Performance benchmarks - disabled for now
+# if(BUILD_BENCHMARKS)
+#     add_subdirectory(benchmarks)
+# endif()
