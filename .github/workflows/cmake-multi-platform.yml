@@ -129,7 +129,7 @@ jobs:
       run: |
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config ${{ matrix.build_type }} \
-          --target ChainedDecos ChainedDecosMapEditor unit_tests \
+          --target ChainedDecos ChainedDecosMapEditor ChainedDecosTests \
           --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
     - name: Install project
