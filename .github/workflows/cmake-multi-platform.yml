@@ -103,6 +103,12 @@ jobs:
         brew install cmake ninja ccache
 
     # ---------------- Common build steps ----------------
+    - name: Clear CMake cache
+      run: |
+        rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
+        rm -rf ".deps"
+        rm -f CMakeCache.txt cmake_install.cmake CMakeFiles/
+
     - name: Create build directory
       run: |
         mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
