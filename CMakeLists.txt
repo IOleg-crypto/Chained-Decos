@@ -148,6 +148,23 @@ if(NOT nlohmann_json_FOUND)
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
+# GoogleTest (for unit tests)
+if(BUILD_TESTS)
+    find_package(GTest CONFIG QUIET)
+
+    if(NOT GTest_FOUND)
+        message(STATUS "GoogleTest not found, fetching...")
+        FetchContent_Declare(
+            googletest
+            URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        )
+        # Prevent overriding the parent project's compiler/linker on Windows
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(googletest)
+    endif()
+endif()
+
 add_library(imguilib STATIC
     include/rlImGui/rlImGui.cpp
     include/rlImGui/rlImGui.h
