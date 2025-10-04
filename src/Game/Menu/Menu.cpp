@@ -17,7 +17,25 @@
 Menu::Menu()
 {
     // Load configuration file
-    //LoadSettings();
+    LoadSettings();
+
+    // Load Alan Sans font for menu text
+    const std::string alanSansFontPath = PROJECT_ROOT_DIR "/resources/font/AlanSans.ttf";
+    m_font = LoadFontEx(alanSansFontPath.c_str(), 64, nullptr, 0);
+
+    if (m_font.texture.id == 0)
+    {
+        TraceLog(LOG_WARNING, "Menu::Menu() - Failed to load Alan Sans font: %s, using default font",
+                 alanSansFontPath.c_str());
+        m_font = GetFontDefault();
+    }
+    else
+    {
+        // Set texture filter for smooth scaling
+        SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
+        TraceLog(LOG_INFO, "Menu::Menu() - Alan Sans font loaded successfully: %s",
+                 alanSansFontPath.c_str());
+    }
 
     // Main Menu
     m_mainMenu = {{"Start Game", MenuAction::StartGame},
@@ -60,6 +78,10 @@ Menu::Menu()
     m_currentMenu = &m_mainMenu;
     m_buttonScales.assign(m_currentMenu->size(), 1.0f);
 }
+
+
+    
+
 
 float Menu::Lerp(float a, float b, float t) const { return a + (b - a) * t; }
 
@@ -735,7 +757,7 @@ void Menu::HandleConfirmExitKeyboardNavigation()
     }
 }
 
-void Menu::Render() const {
+void Menu::Render() {
     // Dark theme background matching the provided design
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{23, 23, 23, 255});
 
@@ -823,30 +845,30 @@ void Menu::RenderMenu() const
     const char *title = (m_state == MenuState::Main) ? "CHAINED DECOS" : (*m_currentMenu)[m_selected].label;
 
     // Draw title glow/shadow
-    int tw = MeasureText(title, 60);
+    int tw = MeasureTextEx(m_font, title, 60, 2.0f).x;
     int titleX = GetScreenWidth() / 2 - tw / 2;
     int titleY = 80;
 
     // Multiple glow layers for depth
     for (int i = 3; i >= 1; i--)
     {
-        DrawText(title, titleX + i, titleY + i, 60, Fade(Color{100, 150, 255, 255}, 0.3f / i));
+        DrawTextEx(m_font, title, Vector2{(float)titleX + i, (float)titleY + i}, 60, 2.0f, Fade(Color{100, 150, 255, 255}, 0.3f / i));
     }
 
     // Main title with modern color
-    DrawText(title, titleX, titleY, 60, Color{220, 220, 220, 255});
+    DrawTextEx(m_font, title, Vector2{(float)titleX, (float)titleY}, 60, 2.0f, Color{220, 220, 220, 255});
 
     // Subtitle for main menu
     if (m_state == MenuState::Main)
     {
         const char *subtitle = "Modern 3D Platformer";
-        int stw = MeasureText(subtitle, 24);
-        DrawText(subtitle, GetScreenWidth() / 2 - stw / 2, titleY + 50, 24, Fade(Color{150, 180, 220, 255}, 0.8f));
+        int stw = MeasureTextEx(m_font, subtitle, 24, 2.0f).x;
+        DrawTextEx(m_font, subtitle, Vector2{(float)(GetScreenWidth() / 2 - stw / 2), (float)(titleY + 50)}, 24, 2.0f, Fade(Color{150, 180, 220, 255}, 0.8f));
 
         // Version info in bottom corner
         const char *version = "v1.0.0";
-        int vw = MeasureText(version, 16);
-        DrawText(version, GetScreenWidth() - vw - 20, GetScreenHeight() - 25, 16, Fade(Color{120, 140, 160, 255}, 0.7f));
+        int vw = MeasureTextEx(m_font, version, 16, 2.0f).x;
+        DrawTextEx(m_font, version, Vector2{(float)(GetScreenWidth() - vw - 20), (float)(GetScreenHeight() - 25)}, 16, 2.0f, Fade(Color{120, 140, 160, 255}, 0.7f));
     }
 
     if (m_buttonScales.size() != m_currentMenu->size())
@@ -940,20 +962,20 @@ void Menu::RenderMenu() const
         int textSize = selected ? 30 : (hovered ? 28 : 26);
         Color textColor = selected ? Color{220, 230, 255, 255} : (hovered ? Color{200, 210, 230, 255} : Color{180, 190, 210, 255});
 
-        int textW = MeasureText(item.label, textSize);
+        int textW = MeasureTextEx(m_font, item.label, textSize, 2.0f).x;
         int textX = x + w / 2 - textW / 2;
         int textY = y + h / 2 - textSize / 2;
 
         // Text shadow for depth
-        DrawText(item.label, textX + 1, textY + 1, textSize, Fade(Color{0, 0, 0, 255}, 0.6f));
+        DrawTextEx(m_font, item.label, Vector2{(float)textX + 1, (float)textY + 1}, textSize, 2.0f, Fade(Color{0, 0, 0, 255}, 0.6f));
 
         // Main text with modern color
-        DrawText(item.label, textX, textY, textSize, textColor);
+        DrawTextEx(m_font, item.label, Vector2{(float)textX, (float)textY}, textSize, 2.0f, textColor);
     }
 
     // Modern footer with dark theme styling
     const char *footer = "ENTER Select    ESC Back    ↑↓ Navigate    MOUSE Click";
-    int fw = MeasureText(footer, 18);
+    int fw = MeasureTextEx(m_font, footer, 18, 2.0f).x;
     int footerX = GetScreenWidth() / 2 - fw / 2;
     int footerY = GetScreenHeight() - 35;
 
@@ -962,14 +984,14 @@ void Menu::RenderMenu() const
     DrawRectangleLines(footerX - 10, footerY - 5, fw + 20, 28, Fade(Color{80, 90, 100, 255}, 0.6f));
 
     // Modern footer text with color coding
-    DrawText("ENTER", footerX, footerY, 18, Color{100, 200, 120, 255});
-    DrawText(" Select    ", footerX + 65, footerY, 18, Color{180, 190, 200, 255});
-    DrawText("ESC", footerX + 140, footerY, 18, Color{200, 100, 100, 255});
-    DrawText(" Back    ", footerX + 170, footerY, 18, Color{180, 190, 200, 255});
-    DrawText("↑↓", footerX + 220, footerY, 18, Color{120, 150, 200, 255});
-    DrawText(" Navigate    ", footerX + 240, footerY, 18, Color{180, 190, 200, 255});
-    DrawText("MOUSE", footerX + 350, footerY, 18, Color{200, 180, 100, 255});
-    DrawText(" Click", footerX + 410, footerY, 18, Color{180, 190, 200, 255});
+    DrawTextEx(m_font, "ENTER", Vector2{(float)footerX, (float)footerY}, 18, 2.0f, Color{100, 200, 120, 255});
+    DrawTextEx(m_font, " Select    ", Vector2{(float)footerX + 65, (float)footerY}, 18, 2.0f, Color{180, 190, 200, 255});
+    DrawTextEx(m_font, "ESC", Vector2{(float)footerX + 140, (float)footerY}, 18, 2.0f, Color{200, 100, 100, 255});
+    DrawTextEx(m_font, " Back    ", Vector2{(float)footerX + 170, (float)footerY}, 18, 2.0f, Color{180, 190, 200, 255});
+    DrawTextEx(m_font, "↑↓", Vector2{(float)footerX + 220, (float)footerY}, 18, 2.0f, Color{120, 150, 200, 255});
+    DrawTextEx(m_font, " Navigate    ", Vector2{(float)footerX + 240, (float)footerY}, 18, 2.0f, Color{180, 190, 200, 255});
+    DrawTextEx(m_font, "MOUSE", Vector2{(float)footerX + 350, (float)footerY}, 18, 2.0f, Color{200, 180, 100, 255});
+    DrawTextEx(m_font, " Click", Vector2{(float)footerX + 410, (float)footerY}, 18, 2.0f, Color{180, 190, 200, 255});
 }
 
 void Menu::RenderSettingsMenu() const {
@@ -977,15 +999,15 @@ void Menu::RenderSettingsMenu() const {
 
     // Modern settings title with glow
     const char* settingsTitle = "SETTINGS";
-    int titleW = MeasureText(settingsTitle, 45);
+    int titleW = MeasureTextEx(m_font, settingsTitle, 45, 2.0f).x;
     int titleX = 80;
 
     // Title glow effect
     for (int i = 2; i >= 1; i--)
     {
-        DrawText(settingsTitle, titleX + i, 45 + i, 45, Fade(Color{255, 150, 50, 255}, 0.5f / i));
+        DrawTextEx(m_font, settingsTitle, Vector2{(float)titleX + i, (float)45 + i}, 45, 2.0f, Fade(Color{255, 150, 50, 255}, 0.5f / i));
     }
-    DrawText(settingsTitle, titleX, 45, 45, Color{255, 200, 100, 255});
+    DrawTextEx(m_font, settingsTitle, Vector2{(float)titleX, (float)45}, 45, 2.0f, Color{255, 200, 100, 255});
 
     for (size_t i = 0; i < m_videoOptions.size(); ++i)
     {
@@ -1005,8 +1027,8 @@ void Menu::RenderSettingsMenu() const {
 
         // Draw setting label with modern typography
         const char* label = opt.label.c_str();
-        int labelW = MeasureText(label, fontSize);
-        DrawText(label, 80, y + 5, fontSize, labelColor);
+        int labelW = MeasureTextEx(m_font, label, fontSize, 2.0f).x;
+        DrawTextEx(m_font, label, Vector2{80.0f, (float)y + 5}, fontSize, 2.0f, labelColor);
 
         if (!opt.values.empty())
         {
@@ -1016,8 +1038,8 @@ void Menu::RenderSettingsMenu() const {
             // Show current value (smaller font, different position)
             if (!currentValue.empty())
             {
-                int currentWidth = MeasureText(currentValue.c_str(), fontSize - 8);
-                DrawText(currentValue.c_str(), 80 + 320, y + 8, fontSize - 8,
+                int currentWidth = MeasureTextEx(m_font, currentValue.c_str(), fontSize - 8, 2.0f).x;
+                DrawTextEx(m_font, currentValue.c_str(), Vector2{(float)80 + 320, (float)y + 8}, fontSize - 8, 2.0f,
                           isSelected ? Fade(Color{255, 255, 150, 255}, 0.9f) : Fade(Color{180, 200, 150, 255}, 0.7f));
             }
 
@@ -1031,7 +1053,7 @@ void Menu::RenderSettingsMenu() const {
             if (!displayValue.empty())
             {
                 // Modern value display with background
-                int textWidth = MeasureText(displayValue.c_str(), fontSize);
+                int textWidth = MeasureTextEx(m_font, displayValue.c_str(), fontSize, 2.0f).x;
                 int xPos = GetScreenWidth() - textWidth - 100;
 
                 if (isSelected)
@@ -1041,7 +1063,7 @@ void Menu::RenderSettingsMenu() const {
                     DrawRectangleLines(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Color{255, 180, 80, 255});
                 }
 
-                DrawText(displayValue.c_str(), xPos, y + 5, fontSize,
+                DrawTextEx(m_font, displayValue.c_str(), Vector2{(float)xPos, (float)y + 5}, fontSize, 2.0f,
                           isSelected ? Color{255, 255, 180, 255} : Color{220, 230, 200, 255});
             }
         }
@@ -1049,7 +1071,7 @@ void Menu::RenderSettingsMenu() const {
 
     // Modern settings footer
     std::string footer = "ENTER Apply/Select    ←→ Change    ↑↓ Navigate    ESC Back";
-    int fw = MeasureText(footer.c_str(), 18);
+    int fw = MeasureTextEx(m_font, footer.c_str(), 18, 2.0f).x;
     int footerX = GetScreenWidth() / 2 - fw / 2;
     int footerY = GetScreenHeight() - 30;
 
@@ -1058,100 +1080,100 @@ void Menu::RenderSettingsMenu() const {
     DrawRectangleLines(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
 
     // Color-coded footer text
-    DrawText("ENTER", footerX, footerY, 18, Color{150, 255, 150, 255});
-    DrawText(" Apply/Select    ", footerX + 65, footerY, 18, Color{200, 200, 200, 255});
-    DrawText("←→", footerX + 190, footerY, 18, Color{150, 150, 255, 255});
-    DrawText(" Change    ", footerX + 210, footerY, 18, Color{200, 200, 200, 255});
-    DrawText("↑↓", footerX + 290, footerY, 18, Color{150, 150, 255, 255});
-    DrawText(" Navigate    ", footerX + 310, footerY, 18, Color{200, 200, 200, 255});
-    DrawText("ESC", footerX + 410, footerY, 18, Color{255, 150, 150, 255});
-    DrawText(" Back", footerX + 440, footerY, 18, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "ENTER", Vector2{(float)footerX, (float)footerY}, 18, 2.0f, Color{150, 255, 150, 255});
+    DrawTextEx(m_font, " Apply/Select    ", Vector2{(float)footerX + 65, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "←→", Vector2{(float)footerX + 190, (float)footerY}, 18, 2.0f, Color{150, 150, 255, 255});
+    DrawTextEx(m_font, " Change    ", Vector2{(float)footerX + 210, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "↑↓", Vector2{(float)footerX + 290, (float)footerY}, 18, 2.0f, Color{150, 150, 255, 255});
+    DrawTextEx(m_font, " Navigate    ", Vector2{(float)footerX + 310, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "ESC", Vector2{(float)footerX + 410, (float)footerY}, 18, 2.0f, Color{255, 150, 150, 255});
+    DrawTextEx(m_font, " Back", Vector2{(float)footerX + 440, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
 }
 
 void Menu::RenderCredits()
 {
     // Modern credits title with glow
     const char *title = "CREDITS";
-    int tw = MeasureText(title, 50);
+    int tw = MeasureTextEx(m_font, title, 50, 2.0f).x;
     int titleX = GetScreenWidth() / 2 - tw / 2;
     int titleY = 80;
 
     // Title glow effect
     for (int i = 2; i >= 1; i--)
     {
-        DrawText(title, titleX + i, titleY + i, 50, Fade(Color{255, 150, 100, 255}, 0.5f / i));
+        DrawTextEx(m_font, title, Vector2{(float)titleX + i, (float)titleY + i}, 50, 2.0f, Fade(Color{255, 150, 100, 255}, 0.5f / i));
     }
-    DrawText(title, titleX, titleY, 50, Color{255, 200, 150, 255});
+    DrawTextEx(m_font, title, Vector2{(float)titleX, (float)titleY}, 50, 2.0f, Color{255, 200, 150, 255});
 
     // Modern credits content with better layout
     int y = 180, fs = 28;
 
     // Developer credit with modern styling
-    DrawText("DEVELOPER", 80, y, 24, Color{200, 220, 255, 255});
-    DrawText("I#Oleg", 80, y + 30, fs, Color{255, 255, 200, 255});
+    DrawTextEx(m_font, "DEVELOPER", Vector2{80.0f, (float)y}, 24, 2.0f, Color{200, 220, 255, 255});
+    DrawTextEx(m_font, "I#Oleg", Vector2{80.0f, (float)y + 30}, fs, 2.0f, Color{255, 255, 200, 255});
 
     y += 100;
-    DrawText("ENGINE", 80, y, 24, Color{200, 220, 255, 255});
-    DrawText("raylib + rlImGui", 80, y + 30, fs, Color{255, 255, 200, 255});
+    DrawTextEx(m_font, "ENGINE", Vector2{80.0f, (float)y}, 24, 2.0f, Color{200, 220, 255, 255});
+    DrawTextEx(m_font, "raylib + rlImGui", Vector2{80.0f, (float)y + 30}, fs, 2.0f, Color{255, 255, 200, 255});
 
     y += 100;
-    DrawText("UI DESIGN", 80, y, 24, Color{200, 220, 255, 255});
-    DrawText("Modern Interface", 80, y + 30, fs, Color{255, 255, 200, 255});
+    DrawTextEx(m_font, "UI DESIGN", Vector2{80.0f, (float)y}, 24, 2.0f, Color{200, 220, 255, 255});
+    DrawTextEx(m_font, "Modern Interface", Vector2{80.0f, (float)y + 30}, fs, 2.0f, Color{255, 255, 200, 255});
 
     // Modern footer
     const char *footer = "ESC Back";
-    int fw2 = MeasureText(footer, 20);
+    int fw2 = MeasureTextEx(m_font, footer, 20, 2.0f).x;
     int footerX = GetScreenWidth() / 2 - fw2 / 2;
     int footerY = GetScreenHeight() - 30;
 
     DrawRectangle(footerX - 8, footerY - 3, fw2 + 16, 26, Fade(Color{0, 0, 0, 255}, 0.4f));
     DrawRectangleLines(footerX - 8, footerY - 3, fw2 + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
 
-    DrawText("ESC", footerX, footerY, 20, Color{255, 150, 150, 255});
-    DrawText(" Back", footerX + 35, footerY, 20, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "ESC", Vector2{(float)footerX, (float)footerY}, 20, 2.0f, Color{255, 150, 150, 255});
+    DrawTextEx(m_font, " Back", Vector2{(float)footerX + 35, (float)footerY}, 20, 2.0f, Color{200, 200, 200, 255});
 }
 
 void Menu::RenderMods()
 {
     // Modern mods title with glow
     const char *title = "MODS";
-    int tw = MeasureText(title, 50);
+    int tw = MeasureTextEx(m_font, title, 50, 2.0f).x;
     int titleX = GetScreenWidth() / 2 - tw / 2;
     int titleY = 80;
 
     // Title glow effect
     for (int i = 2; i >= 1; i--)
     {
-        DrawText(title, titleX + i, titleY + i, 50, Fade(Color{200, 100, 255, 255}, 0.5f / i));
+        DrawTextEx(m_font, title, Vector2{(float)titleX + i, (float)titleY + i}, 50, 2.0f, Fade(Color{200, 100, 255, 255}, 0.5f / i));
     }
-    DrawText(title, titleX, titleY, 50, Color{220, 150, 255, 255});
+    DrawTextEx(m_font, title, Vector2{(float)titleX, (float)titleY}, 50, 2.0f, Color{220, 150, 255, 255});
 
     // Modern content layout
     int y = 180, fs = 26;
 
     // No mods message with modern styling
     const char* noModsMsg = "NO MODS DETECTED";
-    int noModsW = MeasureText(noModsMsg, 28);
+    int noModsW = MeasureTextEx(m_font, noModsMsg, 28, 2.0f).x;
     int noModsX = GetScreenWidth() / 2 - noModsW / 2;
-    DrawText(noModsMsg, noModsX, y, 28, Color{255, 200, 150, 255});
+    DrawTextEx(m_font, noModsMsg, Vector2{(float)noModsX, (float)y}, 28, 2.0f, Color{255, 200, 150, 255});
 
     y += 80;
     const char* instructionMsg = "Place your mods in the 'resources/mods' folder";
-    int instructionW = MeasureText(instructionMsg, fs);
+    int instructionW = MeasureTextEx(m_font, instructionMsg, fs, 2.0f).x;
     int instructionX = GetScreenWidth() / 2 - instructionW / 2;
-    DrawText(instructionMsg, instructionX, y, fs, Color{180, 200, 220, 255});
+    DrawTextEx(m_font, instructionMsg, Vector2{(float)instructionX, (float)y}, fs, 2.0f, Color{180, 200, 220, 255});
 
     // Modern footer
     const char *footer = "ESC Back";
-    int fw2 = MeasureText(footer, 20);
+    int fw2 = MeasureTextEx(m_font, footer, 20, 2.0f).x;
     int footerX = GetScreenWidth() / 2 - fw2 / 2;
     int footerY = GetScreenHeight() - 30;
 
     DrawRectangle(footerX - 8, footerY - 3, fw2 + 16, 26, Fade(Color{0, 0, 0, 255}, 0.4f));
     DrawRectangleLines(footerX - 8, footerY - 3, fw2 + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
 
-    DrawText("ESC", footerX, footerY, 20, Color{255, 150, 150, 255});
-    DrawText(" Back", footerX + 35, footerY, 20, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "ESC", Vector2{(float)footerX, (float)footerY}, 20, 2.0f, Color{255, 150, 150, 255});
+    DrawTextEx(m_font, " Back", Vector2{(float)footerX + 35, (float)footerY}, 20, 2.0f, Color{200, 200, 200, 255});
 }
 
 void Menu::RenderConfirmExit()
@@ -1187,22 +1209,22 @@ void Menu::RenderConfirmExit()
 
     // Modern title
     const char *msg = "EXIT GAME?";
-    int tw = MeasureText(msg, 40);
+    int tw = MeasureTextEx(m_font, msg, 40, 2.0f).x;
     int titleX = modalX + modalWidth / 2 - tw / 2;
     int titleY = modalY + 40;
 
     // Title glow
     for (int i = 2; i >= 1; i--)
     {
-        DrawText(msg, titleX + i, titleY + i, 40, Fade(Color{255, 100, 100, 255}, 0.6f / i));
+        DrawTextEx(m_font, msg, Vector2{(float)titleX + i, (float)titleY + i}, 40, 2.0f, Fade(Color{255, 100, 100, 255}, 0.6f / i));
     }
-    DrawText(msg, titleX, titleY, 40, Color{255, 150, 150, 255});
+    DrawTextEx(m_font, msg, Vector2{(float)titleX, (float)titleY}, 40, 2.0f, Color{255, 150, 150, 255});
 
     // Modern buttons with better styling
     const char *yes = "YES";
     const char *no = "NO";
-    int yw = MeasureText(yes, 28);
-    int nw = MeasureText(no, 28);
+    int yw = MeasureTextEx(m_font, yes, 28, 2.0f).x;
+    int nw = MeasureTextEx(m_font, no, 28, 2.0f).x;
 
     int buttonY = modalY + modalHeight - 80;
 
@@ -1210,21 +1232,21 @@ void Menu::RenderConfirmExit()
     int yesX = modalX + modalWidth / 2 - yw - 40;
     DrawRectangle(yesX - 15, buttonY - 10, yw + 30, 40, Fade(Color{255, 100, 100, 255}, 0.8f));
     DrawRectangleLines(yesX - 15, buttonY - 10, yw + 30, 40, Color{255, 150, 150, 255});
-    DrawText(yes, yesX, buttonY + 2, 28, Color{255, 255, 200, 255});
+    DrawTextEx(m_font, yes, Vector2{(float)yesX, (float)buttonY + 2}, 28, 2.0f, Color{255, 255, 200, 255});
 
     // NO button (right)
     int noX = modalX + modalWidth / 2 + 40;
     DrawRectangle(noX - 15, buttonY - 10, nw + 30, 40, Fade(Color{100, 150, 100, 255}, 0.8f));
     DrawRectangleLines(noX - 15, buttonY - 10, nw + 30, 40, Color{150, 200, 150, 255});
-    DrawText(no, noX, buttonY + 2, 28, Color{200, 255, 200, 255});
+    DrawTextEx(m_font, no, Vector2{(float)noX, (float)buttonY + 2}, 28, 2.0f, Color{200, 255, 200, 255});
 
     // Instructions
     const char *instructions = "Y/ENTER = Yes    N/ESC = No";
-    int iw = MeasureText(instructions, 20);
+    int iw = MeasureTextEx(m_font, instructions, 20, 2.0f).x;
     int instX = modalX + modalWidth / 2 - iw / 2;
     int instY = modalY + modalHeight - 30;
 
-    DrawText(instructions, instX, instY, 20, Color{180, 190, 210, 255});
+    DrawTextEx(m_font, instructions, Vector2{(float)instX, (float)instY}, 20, 2.0f, Color{180, 190, 210, 255});
 }
 
 void Menu::HandleMapSelection()
@@ -1277,63 +1299,53 @@ void Menu::InitializeMaps()
     m_availableMaps.clear();
     m_selectedMap = 0;
 
-    // Parkour Test Map 1 - Basic Shapes
+    // Easy Parkour Map - Gentle progression
     m_availableMaps.push_back({
-        "parkour_shapes_basic",
-        "Basic Shapes Parkour",
-        "Learn parkour fundamentals with cubes, spheres, and platforms",
-        "/resources/map_previews/parkour_shapes_basic.png",
+        "easy_parkour",
+        "Easy Parkour",
+        "Perfect for beginners - large platforms, gentle progression",
+        "/resources/map_previews/easy_parkour.png",
         SKYBLUE,
         true
     });
 
-    // Parkour Test Map 2 - Geometric Challenge
+    // Medium Parkour Map - Balanced challenge
     m_availableMaps.push_back({
-        "parkour_geometric",
-        "Geometric Challenge",
-        "Advanced parkour with complex geometric arrangements",
-        "/resources/map_previews/parkour_geometric.png",
+        "medium_parkour",
+        "Medium Parkour",
+        "Balanced difficulty with varied heights and moderate gaps",
+        "/resources/map_previews/medium_parkour.png",
         LIME,
         true
     });
 
-    // Parkour Test Map 3 - Precision Platforming
+    // Hard Parkour Map - Precision platforming
     m_availableMaps.push_back({
-        "parkour_precision",
-        "Precision Platforming",
-        "Test your precision with small platforms and tight jumps",
-        "/resources/map_previews/parkour_precision.png",
+        "hard_parkour",
+        "Hard Parkour",
+        "Challenging precision jumps and small platforms",
+        "/resources/map_previews/hard_parkour.png",
         YELLOW,
         true
     });
 
-    // Parkour Test Map 4 - Vertical Challenge
+    // Speedrun Parkour Map - Flow-focused
     m_availableMaps.push_back({
-        "parkour_vertical",
-        "Vertical Ascension",
-        "Climb to new heights with vertical raylib shape challenges",
-        "/resources/map_previews/parkour_vertical.png",
-        PURPLE,
-        true
-    });
-
-    // Parkour Test Map 5 - Speed Run
-    m_availableMaps.push_back({
-        "parkour_speedrun",
-        "Speed Runner's Gauntlet",
-        "Fast-paced parkour course with moving platforms",
-        "/resources/map_previews/parkour_speedrun.png",
+        "speedrun_parkour",
+        "Speedrun Parkour",
+        "Fast-paced flowing movement for speed runners",
+        "/resources/map_previews/speedrun_parkour.png",
         ORANGE,
         true
     });
 
-    // Training Ground - Beginner Map
+    // Classic Test Map - Original design
     m_availableMaps.push_back({
-        "training_shapes",
-        "Shape Training Ground",
-        "Learn basic parkour mechanics with simple raylib shapes",
-        "/resources/map_previews/training_shapes.png",
-        GREEN,
+        "classic_parkour",
+        "Classic Parkour",
+        "The original parkour test map with basic shapes",
+        "/resources/map_previews/classic_parkour.png",
+        PURPLE,
         true
     });
 }
@@ -1353,9 +1365,9 @@ void Menu::RenderMapSelection() const
 
     // Title
     const char* title = "Select Map";
-    int tw = MeasureText(title, 56);
-    DrawText(title, GetScreenWidth() / 2 - tw / 2 + 4, 54, 56, Fade(BLACK, 0.75f));
-    DrawText(title, GetScreenWidth() / 2 - tw / 2, 50, 56, RAYWHITE);
+    int tw = MeasureTextEx(m_font, title, 56, 2.0f).x;
+    DrawTextEx(m_font, title, Vector2{(float)(GetScreenWidth() / 2 - tw / 2 + 4), 54.0f}, 56, 2.0f, Fade(BLACK, 0.75f));
+    DrawTextEx(m_font, title, Vector2{(float)(GetScreenWidth() / 2 - tw / 2), 50.0f}, 56, 2.0f, RAYWHITE);
 
     if (m_availableMaps.empty())
     {
@@ -1396,17 +1408,17 @@ void Menu::RenderMapSelection() const
         DrawRectangle(x + 10, y + 10, mapWidth - 20, mapHeight - 60, Fade(BLACK, 0.5f));
 
         // Map name
-        int nameW = MeasureText(map.displayName.c_str(), 24);
+        int nameW = MeasureTextEx(m_font, map.displayName.c_str(), 24, 2.0f).x;
         int nameX = x + mapWidth / 2 - nameW / 2;
-        DrawText(map.displayName.c_str(), nameX + 1, y + mapHeight - 40 + 1, 24, Fade(BLACK, 0.7f));
-        DrawText(map.displayName.c_str(), nameX, y + mapHeight - 40, 24, WHITE);
+        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX + 1, (float)y + mapHeight - 40 + 1}, 24, 2.0f, Fade(BLACK, 0.7f));
+        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX, (float)y + mapHeight - 40}, 24, 2.0f, WHITE);
 
         // Map description (truncated)
         std::string desc = map.description;
         if (desc.length() > 40) desc = desc.substr(0, 37) + "...";
-        int descW = MeasureText(desc.c_str(), 16);
+        int descW = MeasureTextEx(m_font, desc.c_str(), 16, 2.0f).x;
         int descX = x + mapWidth / 2 - descW / 2;
-        DrawText(desc.c_str(), descX, y + mapHeight - 15, 16, Fade(WHITE, 0.8f));
+        DrawTextEx(m_font, desc.c_str(), Vector2{(float)descX, (float)y + mapHeight - 15}, 16, 2.0f, Fade(WHITE, 0.8f));
 
         // Selection indicator
         if (isSelected)
@@ -1418,8 +1430,8 @@ void Menu::RenderMapSelection() const
 
     // Instructions
     const char* instructions = "[←/→] Navigate   [Enter] Select   [Esc] Back";
-    int iw = MeasureText(instructions, 20);
-    DrawText(instructions, GetScreenWidth() / 2 - iw / 2, GetScreenHeight() - 30, 20, GRAY);
+    int iw = MeasureTextEx(m_font, instructions, 20, 2.0f).x;
+    DrawTextEx(m_font, instructions, Vector2{(float)(GetScreenWidth() / 2 - iw / 2), (float)(GetScreenHeight() - 30)}, 20, 2.0f, GRAY);
 }
 
 
@@ -1725,10 +1737,10 @@ void Menu::RenderConsole() const
     DrawRectangleLines(0, 0, GetScreenWidth(), consoleHeight, WHITE);
 
     // Title
-    DrawText("Console", 10, 10, 20, YELLOW);
+    DrawTextEx(m_font, "Console", Vector2{10.0f, 10.0f}, 20, 2.0f, YELLOW);
 
     // Pause indicator
-    DrawText("GAME PAUSED", GetScreenWidth() - 150, 10, 16, RED);
+    DrawTextEx(m_font, "GAME PAUSED", Vector2{(float)(GetScreenWidth() - 150), 10.0f}, 16, 2.0f, RED);
 
     // Output lines
     int startY = 40;
@@ -1738,25 +1750,25 @@ void Menu::RenderConsole() const
     for (size_t i = startLine; i < m_consoleOutput.size(); ++i)
     {
         int y = startY + (i - startLine) * lineHeight;
-        DrawText(m_consoleOutput[i].c_str(), 10, y, 16, WHITE);
+        DrawTextEx(m_font, m_consoleOutput[i].c_str(), Vector2{10.0f, (float)y}, 16, 2.0f, WHITE);
     }
 
     // Input line
     int inputY = consoleHeight - 30;
-    DrawText("]", 10, inputY, 16, GREEN);
-    DrawText(m_consoleInput.c_str(), 25, inputY, 16, WHITE);
+    DrawTextEx(m_font, "]", Vector2{10.0f, (float)inputY}, 16, 2.0f, GREEN);
+    DrawTextEx(m_font, m_consoleInput.c_str(), Vector2{25.0f, (float)inputY}, 16, 2.0f, WHITE);
 
     // Blinking cursor
     if ((int)(GetTime() * 2) % 2 == 0)
     {
-        int cursorX = 25 + MeasureText(m_consoleInput.c_str(), 16);
-        DrawText("_", cursorX, inputY, 16, WHITE);
+        int cursorX = 25 + MeasureTextEx(m_font, m_consoleInput.c_str(), 16, 2.0f).x;
+        DrawTextEx(m_font, "_", Vector2{(float)cursorX, (float)inputY}, 16, 2.0f, WHITE);
     }
 
     // Instructions
     const char* instructions = "[~] Toggle Console [↑/↓] History [Enter] Execute";
-    int iw = MeasureText(instructions, 14);
-    DrawText(instructions, GetScreenWidth() - iw - 10, GetScreenHeight() - 20, 14, GRAY);
+    int iw = MeasureTextEx(m_font, instructions, 14, 2.0f).x;
+    DrawTextEx(m_font, instructions, Vector2{(float)(GetScreenWidth() - iw - 10), (float)(GetScreenHeight() - 20)}, 14, 2.0f, GRAY);
 }
 
 std::string Menu::GetCurrentSettingValue(const std::string& settingName) const

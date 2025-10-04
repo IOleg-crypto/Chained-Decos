@@ -85,18 +85,17 @@ class CollisionComplexity
 public:
     CollisionComplexity() = default;
 
-    void SetTriangleCount(size_t count);
-    void SetSurfaceArea(float area);
-    void SetBoundingVolume(float volume);
-    void SetHasComplexGeometry(bool complex);
+    void SetTriangleCount(size_t count) { m_triangleCount = count; }
+    void SetSurfaceArea(float area) { m_surfaceArea = area; }
+    void SetBoundingVolume(float volume) { m_boundingVolume = volume; }
+    void SetHasComplexGeometry(bool complex) { m_hasComplexGeometry = complex; }
 
-    size_t GetTriangleCount() const;
-    float GetSurfaceArea() const;
-    float GetBoundingVolume() const;
-    bool HasComplexGeometry() const;
+    size_t GetTriangleCount() const { return m_triangleCount; }
+    float GetSurfaceArea() const { return m_surfaceArea; }
+    float GetBoundingVolume() const { return m_boundingVolume; }
+    bool HasComplexGeometry() const { return m_hasComplexGeometry; }
 
     [[nodiscard]] bool IsSimple() const;
-
     [[nodiscard]] bool IsComplex() const;
 
     static constexpr size_t SIMPLE_TRIANGLE_THRESHOLD = 100;
