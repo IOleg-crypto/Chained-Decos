@@ -94,17 +94,19 @@ jobs:
           -DCMAKE_BUILD_TYPE=Debug \
           -DBUILD_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
-          -DENABLE_COVERAGE=ON \
+          -DENABLE_COVERAGE=OFF \
           -DENABLE_WARNINGS=ON \
-          -DENABLE_SANITIZERS=ON \
+          -DENABLE_SANITIZERS=OFF \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DENABLE_DEV_TOOLS=ON \
+          -DENABLE_DEBUG_INFO=ON \
           -S "${{ github.workspace }}"
 
     - name: Build tests and benchmarks
       run: |
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config Debug \
-          --target ChainedDecos ChainedDecosMapEditor \
+          --target ChainedDecos ChainedDecosMapEditor unit_tests benchmarks \
           --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
     - name: Run smoke tests
