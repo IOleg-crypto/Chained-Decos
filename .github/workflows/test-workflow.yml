@@ -57,7 +57,7 @@ jobs:
           libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
           libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
           libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-          pkg-config ccache lcov
+          pkg-config ccache
 
     - name: Set up GCC (Ubuntu)
       if: matrix.compiler == 'gcc' && startsWith(matrix.os, 'ubuntu')
@@ -83,7 +83,7 @@ jobs:
       if: startsWith(matrix.os, 'macos')
       run: |
         brew update
-        brew install cmake ninja ccache lcov
+        brew install cmake ninja ccache
 
     - name: Clear CMake cache
       run: |
