@@ -1,0 +1,182 @@
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name'
+        required: true
+        type: string
+      release_name:
+        description: 'Release name'
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CI: true
+
+jobs:
+  release:
+    name: Create Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            name: linux
+            extension: ""
+
+          - os: windows-2022
+            name: windows
+            extension: ".exe"
+
+          - os: macos-12
+            name: macos
+            extension: ""
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Get version from tag
+      shell: bash
+      id: version
+      run: |
+        if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+          VERSION="${{ github.event.inputs.tag_name }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/}"
+        fi
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "Version: $VERSION"
+
+    - name: Set up build environment
+      shell: bash
+      id: build-env
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "package-dir=${{ github.workspace }}/package" >> "$GITHUB_OUTPUT"
+
+    # ---------------- Linux setup ----------------
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-22.04'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build \
+          libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+          libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+          libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
+          pkg-config ccache zip
+
+    # ---------------- Windows setup ----------------
+    - name: Set up MSVC (Windows)
+      if: matrix.os == 'windows-2022'
+      uses: microsoft/setup-msbuild@v1.1
+      with:
+        vs-version: '[17.0,18.0)'
+
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-2022'
+      run: |
+        choco install cmake ninja ccache zip --no-progress
+
+    # ---------------- macOS setup ----------------
+    - name: Install dependencies (macOS)
+      if: matrix.os == 'macos-12'
+      run: |
+        brew update
+        brew install cmake ninja ccache create-dmg
+
+    - name: Create build and package directories
+      run: |
+        mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
+        mkdir -p "${{ steps.build-env.outputs.package-dir }}"
+
+    - name: Configure CMake for release
+      run: |
+        cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
+          -DBUILD_TESTS=OFF \
+          -DBUILD_BENCHMARKS=OFF \
+          -DENABLE_OPTIMIZATIONS=ON \
+          -DENABLE_WARNINGS=ON \
+          -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
+          -S "${{ github.workspace }}"
+
+    - name: Build release binaries
+      run: |
+        cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
+          --config Release \
+          --target ChainedDecos ChainedDecosMapEditor \
+          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+
+    - name: Install to package directory
+      run: |
+        cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
+          --config Release \
+          --component Runtime
+
+    - name: Package binaries
+      shell: bash
+      run: |
+        cd "${{ steps.build-env.outputs.package-dir }}"
+
+        # Create platform-specific package name
+        PACKAGE_NAME="ChainedDecos-${{ steps.version.outputs.version }}-${{ matrix.name }}"
+
+        if [ "${{ matrix.os }}" = "windows-2022" ]; then
+          # Windows: Create ZIP package
+          7z a -tzip "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip" \
+            bin/*.exe bin/*.dll share/ || \
+          powershell -Command "Compress-Archive -Path bin/*,share/ -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip'"
+        elif [ "${{ matrix.os }}" = "macos-12" ]; then
+          # macOS: Create DMG package
+          create-dmg \
+            --volname "ChainedDecos ${{ steps.version.outputs.version }}" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --app-drop-link 600 185 \
+            "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.dmg" \
+            bin/ share/ || \
+          # Fallback to tar.gz
+          tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
+            -C bin . -C ../share .
+        else
+          # Linux: Create tar.gz package
+          tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
+            -C bin . -C ../share .
+        fi
+
+    - name: Upload release assets
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ matrix.name }}
+        path: |
+          ${{ steps.build-env.outputs.package-dir }}/*.zip
+          ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
+          ${{ steps.build-env.outputs.package-dir }}/*.dmg
+        retention-days: 30
+
+    - name: Create GitHub release (main job only)
+      if: matrix.os == 'ubuntu-22.04' && github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ steps.build-env.outputs.package-dir }}/*.zip
+          ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
+          ${{ steps.build-env.outputs.package-dir }}/*.dmg
+        generate_release_notes: true
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
