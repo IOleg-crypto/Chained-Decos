@@ -61,6 +61,9 @@ set_target_properties(ChainedDecosMapEditor PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
+# Create resources directory in build directory
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/resources/icons)
+
 # Copy resources to build directory
 configure_file(${CMAKE_SOURCE_DIR}/resources/icons/ChainedDecosMapEditor.png ${CMAKE_BINARY_DIR}/resources/icons/ChainedDecosMapEditor.png COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/imgui.ini ${CMAKE_BINARY_DIR}/imgui.ini COPYONLY)
