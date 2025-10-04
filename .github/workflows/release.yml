@@ -35,9 +35,6 @@ jobs:
             name: windows
             extension: ".exe"
 
-          - os: macos-12
-            name: macos
-            extension: ""
 
     steps:
     - name: Checkout repository
@@ -88,12 +85,6 @@ jobs:
       run: |
         choco install cmake ninja ccache zip --no-progress
 
-    # ---------------- macOS setup ----------------
-    - name: Install dependencies (macOS)
-      if: matrix.os == 'macos-12'
-      run: |
-        brew update
-        brew install cmake ninja ccache create-dmg
 
     - name: Clear CMake cache
       run: |
@@ -146,19 +137,6 @@ jobs:
           7z a -tzip "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip" \
             bin/*.exe bin/*.dll share/ || \
           powershell -Command "Compress-Archive -Path bin/*,share/ -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip'"
-        elif [ "${{ matrix.os }}" = "macos-12" ]; then
-          # macOS: Create DMG package
-          create-dmg \
-            --volname "ChainedDecos ${{ steps.version.outputs.version }}" \
-            --window-pos 200 120 \
-            --window-size 800 400 \
-            --icon-size 100 \
-            --app-drop-link 600 185 \
-            "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.dmg" \
-            bin/ share/ || \
-          # Fallback to tar.gz
-          tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
-            -C bin . -C ../share .
         else
           # Linux: Create tar.gz package
           tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
@@ -172,7 +150,6 @@ jobs:
         path: |
           ${{ steps.build-env.outputs.package-dir }}/*.zip
           ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
-          ${{ steps.build-env.outputs.package-dir }}/*.dmg
         retention-days: 30
 
     - name: Create GitHub release (main job only)
@@ -182,7 +159,6 @@ jobs:
         files: |
           ${{ steps.build-env.outputs.package-dir }}/*.zip
           ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
-          ${{ steps.build-env.outputs.package-dir }}/*.dmg
         generate_release_notes: true
         draft: false
         prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}

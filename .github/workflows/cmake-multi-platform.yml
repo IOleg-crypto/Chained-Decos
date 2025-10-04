@@ -43,13 +43,6 @@ jobs:
             generator: "Visual Studio 17 2022"
             cmake_options: ""
 
-          # macOS with Clang
-          - os: macos-12
-            compiler: clang
-            version: apple
-            build_type: Release
-            generator: "Unix Makefiles"
-            cmake_options: ""
 
     steps:
     - name: Checkout repository
@@ -95,12 +88,6 @@ jobs:
       with:
         vs-version: '[17.0,18.0)'
 
-    # ---------------- macOS setup ----------------
-    - name: Install dependencies (macOS)
-      if: startsWith(matrix.os, 'macos')
-      run: |
-        brew update
-        brew install cmake ninja ccache
 
     # ---------------- Common build steps ----------------
     - name: Clear CMake cache

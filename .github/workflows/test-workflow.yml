@@ -31,9 +31,6 @@ jobs:
             compiler: msvc
             version: 2022
 
-          - os: macos-12
-            compiler: clang
-            version: apple
 
     steps:
     - name: Checkout repository
@@ -78,12 +75,6 @@ jobs:
       with:
         vs-version: '[17.0,18.0)'
 
-    # ---------------- macOS setup ----------------
-    - name: Install dependencies (macOS)
-      if: startsWith(matrix.os, 'macos')
-      run: |
-        brew update
-        brew install cmake ninja ccache
 
     - name: Clear CMake cache
       run: |
@@ -155,8 +146,8 @@ jobs:
       run: |
         echo "🔍 Running static analysis..."
 
-        # Check for common issues in source files
-        if [ "${{ matrix.os }}" != "windows-2022" ]; then
+        # Check for common issues in source files (Ubuntu only)
+        if [ "${{ matrix.os }}" = "ubuntu-22.04" ]; then
           # Count warnings in build output
           echo "📊 Build completed successfully"
 
@@ -165,8 +156,8 @@ jobs:
           find src -name "*.cpp" -o -name "*.h" | wc -l | xargs echo "Found files to analyze:"
         fi
 
-    - name: Generate coverage report (Ubuntu only)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.compiler == 'gcc'
+    - name: Generate coverage report (Ubuntu GCC only)
+      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
       run: |
         echo "📊 Generating coverage report..."
         # Coverage would be generated here if we had tests with coverage instrumentation
@@ -184,7 +175,7 @@ jobs:
 
     - name: Upload coverage report (Ubuntu GCC only)
       uses: actions/upload-artifact@v4
-      if: startsWith(matrix.os, 'ubuntu') && matrix.compiler == 'gcc' && always()
+      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc' && always()
       with:
         name: coverage-report-${{ matrix.os }}-${{ matrix.compiler }}
         path: |
