@@ -209,10 +209,10 @@ if(BUILD_TESTS)
     enable_testing()
 endif()
 
-# Enable benchmarks if requested
-if(BUILD_BENCHMARKS)
-    add_subdirectory(benchmarks)
-endif()
+# Enable benchmarks if requested (disabled for now)
+# if(BUILD_BENCHMARKS)
+#     add_subdirectory(benchmarks)
+# endif()
 
 # Installation configuration
 install(TARGETS ChainedDecos
