@@ -54,6 +54,13 @@ public:
     
     // Parkour test map creation
     void CreateParkourTestMap();
+    void CreateEasyParkourMap();
+    void CreateMediumParkourMap();
+    void CreateHardParkourMap();
+    void CreateSpeedrunParkourMap();
+
+    // Helper function for simplified platform creation
+    void AddPlatform(float x, float y, float z, float sizeX, float sizeY, float sizeZ);
 
     // Map loading and rendering
     void LoadEditorMap(const std::string& mapPath);

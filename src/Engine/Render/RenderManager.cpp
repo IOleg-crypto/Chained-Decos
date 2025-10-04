@@ -13,6 +13,7 @@
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
+#include <fstream>
 
 
 // ==================== CONSTANTS ====================
@@ -41,37 +42,71 @@ void RenderManager::Initialize()
     // Initialize ImGui
     rlImGuiSetup(true);
 
-    // Use default font path - we'll make this configurable later
-    const std::string defaultFontPath = PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf";
-    float fontSize = 16.0f;
-    InitializeImGuiFont(defaultFontPath, fontSize);
+    // Use Alan Sans font for the entire game UI
+    const std::string alanSansFontPath = PROJECT_ROOT_DIR "/resources/font/AlanSans.ttf";
+    float fontSize = 18.0f; // Slightly larger for better readability
+
+    // Initialize ImGui font first
+    InitializeImGuiFont(alanSansFontPath, fontSize);
 
     // Init default font for raylib with higher resolution for smoother rendering
-    m_font = LoadFontEx(defaultFontPath.c_str(), 128, nullptr, 0);
-    if (m_font.texture.id != 0)
+    if (FileExists(alanSansFontPath.c_str()))
     {
-        // Set texture filter to linear for smoother scaling
-        SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
-        TraceLog(LOG_INFO, "Default font loaded successfully with smooth filtering: %s",
-                 defaultFontPath.c_str());
+        m_font = LoadFontEx(alanSansFontPath.c_str(), 128, nullptr, 0);
+        if (m_font.texture.id != 0)
+        {
+            // Set texture filter to linear for smoother scaling
+            SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
+            TraceLog(LOG_INFO, "Alan Sans font loaded successfully with smooth filtering: %s",
+                     alanSansFontPath.c_str());
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Failed to load Alan Sans font for raylib: %s, using default font",
+                     alanSansFontPath.c_str());
+            m_font = GetFontDefault();
+        }
     }
     else
     {
-        TraceLog(LOG_WARNING, "Failed to load font: %s, using default font",
-                 defaultFontPath.c_str());
+        TraceLog(LOG_WARNING, "Alan Sans font file not found for raylib: %s, using default font",
+                 alanSansFontPath.c_str());
         m_font = GetFontDefault();
     }
 
     TraceLog(LOG_INFO, "Render manager initialized successfully");
 }
 
+
 void RenderManager::InitializeImGuiFont(const std::string &fontPath, float fontSize)
 {
-    const ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
+
+    // Check if font file exists first
+    if (FileExists(fontPath.c_str()))
+    {
+        // Try to load Alan Sans font for ImGui
+        ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
+        if (font != nullptr)
+        {
+            io.Fonts->Build();
+            TraceLog(LOG_INFO, "Alan Sans font loaded for ImGui: %s (%.1fpx)", fontPath.c_str(), fontSize);
+            return;
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Failed to load Alan Sans font for ImGui: %s, using default ImGui font", fontPath.c_str());
+        }
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "Alan Sans font file not found: %s, using default ImGui font", fontPath.c_str());
+    }
+
+    // Add default font as fallback
+    io.Fonts->AddFontDefault();
     io.Fonts->Build();
-    TraceLog(LOG_INFO, "ImGui font loaded: %s (%.1fpx)", fontPath.c_str(), fontSize);
 }
 
 void RenderManager::BeginFrame() const
@@ -127,11 +162,10 @@ void RenderManager::EndMode3D() { ::EndMode3D(); }
 
 void RenderManager::DrawScene3D(const ModelLoader &models)
 {
-    // Draw ground plane using PhysicsComponent constants
-    const Vector3 groundCenter = PhysicsComponent::GROUND_COLLISION_CENTER;
-    const Vector3 groundSize3 = PhysicsComponent::GROUND_COLLISION_SIZE;
-    const Vector2 groundSize2 = {groundSize3.x, groundSize3.z};
-    DrawPlane(groundCenter, groundSize2, LIGHTGRAY);
+    // Draw ground plane for visual reference
+    const Vector3 groundCenter = {0.0f, PhysicsComponent::WORLD_FLOOR_Y + 1.0f, 0.0f};
+    const Vector2 groundSize = {2000.0f, 2000.0f};
+    DrawPlane(groundCenter, groundSize, LIGHTGRAY);
 
     // Draw all models
     models.DrawAllModels();
@@ -155,11 +189,12 @@ void RenderManager::DrawPlayer(const Player &player, const ModelLoader &models)
 }
 
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
-                                         const Player &player) const
+                                          const Player &player) const
 {
-    // Draw small debug cube near the ground for reference
-    const Vector3 dbgPos = {0.0f, PhysicsComponent::WORLD_FLOOR_Y + 0.5f, 0.0f};
-    DrawCubeWires(dbgPos, 1.0f, 1.0f, 1.0f, YELLOW);
+    // Draw small debug cube at player position for reference (less intrusive)
+    const Vector3 playerPos = player.GetPlayerPosition();
+    const Vector3 dbgPos = {playerPos.x, playerPos.y - 2.0f, playerPos.z}; // Below player
+    DrawCubeWires(dbgPos, 0.5f, 0.5f, 0.5f, YELLOW);
 
     if (!m_collisionDebugRenderer)
         return;
@@ -172,13 +207,16 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
     // Render player collision
     m_collisionDebugRenderer->RenderPlayerCollision(player.GetCollision());
 
-    // Extra: show triangle counts for quick sanity
-    int y = 10;
+    // Extra: show triangle counts for quick sanity (moved to bottom-right to avoid timer overlap)
+    int y = GetScreenHeight() - 100; // Start from bottom
+    int x = GetScreenWidth() - 150;  // Right side, away from timer
+    int count = 0;
     for (const auto &c : colliders)
     {
-        DrawText(TextFormat("tri:%zu", c->GetTriangleCount()), 10, y, 10, YELLOW);
+        if (count >= 8) break; // Limit to 8 entries max
+        DrawText(TextFormat("tri:%zu", c->GetTriangleCount()), x, y, 10, YELLOW);
         y += 12;
-        if (y > 200) break;
+        count++;
     }
 
     TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer with %zu colliders",

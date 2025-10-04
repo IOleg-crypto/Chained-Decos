@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <functional>
 
 TerrainEditor::TerrainEditor()
     : m_terrainGenerated(false)
@@ -433,6 +434,28 @@ Vector2 TerrainEditor::WorldToHeightmapCoords(int worldX, int worldZ) const
     return {x, z};
 }
 
+void TerrainEditor::ApplyBrushToArea(int centerX, int centerZ, std::function<void(int, int, float)> applyEffect)
+{
+    int radius = static_cast<int>(m_brushSize);
+    int startX = std::max(0, centerX - radius);
+    int endX = std::min(m_terrainResolution - 1, centerX + radius);
+    int startZ = std::max(0, centerZ - radius);
+    int endZ = std::min(m_terrainResolution - 1, centerZ + radius);
+
+    for (int z = startZ; z <= endZ; ++z) {
+        for (int x = startX; x <= endX; ++x) {
+            float dx = static_cast<float>(x - centerX);
+            float dz = static_cast<float>(z - centerZ);
+            float distance = std::sqrt(dx * dx + dz * dz);
+
+            float weight = GetBrushWeight(distance);
+            if (weight > 0.0f) {
+                applyEffect(x, z, weight);
+            }
+        }
+    }
+}
+
 void TerrainEditor::ApplyHeightBrush(int centerX, int centerZ)
 {
     int brushRadius = static_cast<int>(m_brushSize);
@@ -460,75 +483,37 @@ void TerrainEditor::ApplyHeightBrush(int centerX, int centerZ)
 
 void TerrainEditor::ApplySmoothBrush(int centerX, int centerZ)
 {
-    // Smooth brush implementation
-    int brushRadius = static_cast<int>(m_brushSize);
-    int startX = std::max(0, centerX - brushRadius);
-    int endX = std::min(m_terrainResolution - 1, centerX + brushRadius);
-    int startZ = std::max(0, centerZ - brushRadius);
-    int endZ = std::min(m_terrainResolution - 1, centerZ + brushRadius);
+    ApplyBrushToArea(centerX, centerZ, [&](int x, int z, float weight) {
+        float sum = 0.0f;
+        int count = 0;
 
-    for (int z = startZ; z <= endZ; ++z)
-    {
-        for (int x = startX; x <= endX; ++x)
-        {
-            float distance = std::sqrt(static_cast<float>((x - centerX) * (x - centerX) +
-                                                        (z - centerZ) * (z - centerZ)));
-            float weight = GetBrushWeight(distance);
-            if (weight > 0.0f)
-            {
-                // Average neighboring heights for smoothing
-                float sum = 0.0f;
-                int count = 0;
-
-                for (int dz = -1; dz <= 1; ++dz)
-                {
-                    for (int dx = -1; dx <= 1; ++dx)
-                    {
-                        int nx = x + dx;
-                        int nz = z + dz;
-                        if (nx >= 0 && nx < m_terrainResolution && nz >= 0 && nz < m_terrainResolution)
-                        {
-                            sum += m_heightmap.GetHeight(nx, nz);
-                            count++;
-                        }
-                    }
-                }
-
-                if (count > 0)
-                {
-                    float averageHeight = sum / count;
-                    float currentHeight = m_heightmap.GetHeight(x, z);
-                    float smoothedHeight = currentHeight * (1.0f - weight) + averageHeight * weight;
-                    m_heightmap.SetHeight(x, z, smoothedHeight);
+        for (int dz = -1; dz <= 1; ++dz) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                int nx = x + dx;
+                int nz = z + dz;
+                if (nx >= 0 && nx < m_terrainResolution && nz >= 0 && nz < m_terrainResolution) {
+                    sum += m_heightmap.GetHeight(nx, nz);
+                    count++;
                 }
             }
         }
-    }
+
+        if (count > 0) {
+            float averageHeight = sum / count;
+            float currentHeight = m_heightmap.GetHeight(x, z);
+            float smoothedHeight = currentHeight * (1.0f - weight) + averageHeight * weight;
+            m_heightmap.SetHeight(x, z, smoothedHeight);
+        }
+    });
 }
 
 void TerrainEditor::ApplyFlattenBrush(int centerX, int centerZ)
 {
-    int brushRadius = static_cast<int>(m_brushSize);
-    int startX = std::max(0, centerX - brushRadius);
-    int endX = std::min(m_terrainResolution - 1, centerX + brushRadius);
-    int startZ = std::max(0, centerZ - brushRadius);
-    int endZ = std::min(m_terrainResolution - 1, centerZ + brushRadius);
-
-    for (int z = startZ; z <= endZ; ++z)
-    {
-        for (int x = startX; x <= endX; ++x)
-        {
-            float distance = std::sqrt(static_cast<float>((x - centerX) * (x - centerX) +
-                                                        (z - centerZ) * (z - centerZ)));
-            float weight = GetBrushWeight(distance);
-            if (weight > 0.0f)
-            {
-                float currentHeight = m_heightmap.GetHeight(x, z);
-                float flattenedHeight = currentHeight * (1.0f - weight) + m_targetHeight * weight;
-                m_heightmap.SetHeight(x, z, flattenedHeight);
-            }
-        }
-    }
+    ApplyBrushToArea(centerX, centerZ, [&](int x, int z, float weight) {
+        float currentHeight = m_heightmap.GetHeight(x, z);
+        float flattenedHeight = currentHeight * (1.0f - weight) + m_targetHeight * weight;
+        m_heightmap.SetHeight(x, z, flattenedHeight);
+    });
 }
 
 void TerrainEditor::ApplyNoiseBrush(int centerX, int centerZ)
@@ -539,23 +524,7 @@ void TerrainEditor::ApplyNoiseBrush(int centerX, int centerZ)
 
 void TerrainEditor::ApplySetHeightBrush(int centerX, int centerZ)
 {
-    int brushRadius = static_cast<int>(m_brushSize);
-    int startX = std::max(0, centerX - brushRadius);
-    int endX = std::min(m_terrainResolution - 1, centerX + brushRadius);
-    int startZ = std::max(0, centerZ - brushRadius);
-    int endZ = std::min(m_terrainResolution - 1, centerZ + brushRadius);
-
-    for (int z = startZ; z <= endZ; ++z)
-    {
-        for (int x = startX; x <= endX; ++x)
-        {
-            float distance = std::sqrt(static_cast<float>((x - centerX) * (x - centerX) +
-                                                        (z - centerZ) * (z - centerZ)));
-            float weight = GetBrushWeight(distance);
-            if (weight > 0.0f)
-            {
-                m_heightmap.SetHeight(x, z, m_targetHeight);
-            }
-        }
-    }
+    ApplyBrushToArea(centerX, centerZ, [&](int x, int z, float weight) {
+        m_heightmap.SetHeight(x, z, m_targetHeight);
+    });
 }

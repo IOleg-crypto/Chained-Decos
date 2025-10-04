@@ -3,6 +3,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <unordered_map>
 
 bool ConfigManager::LoadFromFile(const std::string& filename)
 {
@@ -88,6 +89,7 @@ bool ConfigManager::SaveToFile(const std::string& filename)
     }
 }
 
+// Simplified helper methods for cleaner code
 int ConfigManager::GetInt(const std::string& key, int defaultValue) const
 {
     auto it = m_settings.find(ToLower(key));
@@ -243,28 +245,25 @@ bool ConfigManager::GetInvertY() const
 
 void ConfigManager::Trim(std::string& str) const
 {
-    str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
-    str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), str.end());
+    size_t start = str.find_first_not_of(" \t\n\r");
+    size_t end = str.find_last_not_of(" \t\n\r");
+    if (start != std::string::npos && end != std::string::npos) {
+        str = str.substr(start, end - start + 1);
+    } else {
+        str.clear();
+    }
 }
 
 std::string ConfigManager::ToLower(const std::string& str) const
 {
     std::string result = str;
-    std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+    for (char& c : result) {
+        c = std::tolower(c);
+    }
     return result;
 }
 
 bool ConfigManager::IsCommentOrEmpty(const std::string& line) const
 {
-    if (line.empty())
-        return true;
-
-    if (line[0] == '#' || line[0] == ';' || line[0] == '/')
-        return true;
-
-    return false;
+    return line.empty() || line[0] == '#' || line[0] == ';' || line[0] == '/';
 }

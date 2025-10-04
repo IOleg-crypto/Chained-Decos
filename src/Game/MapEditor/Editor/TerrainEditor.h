@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 
 #include "MapObject.h"
 
@@ -148,6 +149,7 @@ private:
     void UpdateTerrainNormals();
     float GetBrushWeight(float distance) const;
     Vector2 WorldToHeightmapCoords(int worldX, int worldZ) const;
+    void ApplyBrushToArea(int centerX, int centerZ, std::function<void(int, int, float)> applyEffect);
     void ApplyHeightBrush(int centerX, int centerZ);
     void ApplySmoothBrush(int centerX, int centerZ);
     void ApplyFlattenBrush(int centerX, int centerZ);

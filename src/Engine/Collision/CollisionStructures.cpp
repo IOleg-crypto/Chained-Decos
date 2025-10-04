@@ -168,11 +168,3 @@ const Vector3 &CollisionTriangle::V2() const { return m_v2; }
 
 const Vector3 &CollisionRay::GetOrigin() const { return m_origin; }
 const Vector3 &CollisionRay::GetDirection() const { return m_direction; }
-void CollisionComplexity::SetTriangleCount(size_t count) { m_triangleCount = count; }
-void CollisionComplexity::SetSurfaceArea(float area) { m_surfaceArea = area; }
-void CollisionComplexity::SetBoundingVolume(float volume) { m_boundingVolume = volume; }
-void CollisionComplexity::SetHasComplexGeometry(bool complex) { m_hasComplexGeometry = complex; }
-size_t CollisionComplexity::GetTriangleCount() const { return m_triangleCount; }
-float CollisionComplexity::GetSurfaceArea() const { return m_surfaceArea; }
-float CollisionComplexity::GetBoundingVolume() const { return m_boundingVolume; }
-bool CollisionComplexity::HasComplexGeometry() const { return m_hasComplexGeometry; }
