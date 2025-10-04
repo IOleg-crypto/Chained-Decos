@@ -9,6 +9,8 @@ add_subdirectory(Physics)
 add_subdirectory(World)
 add_subdirectory(CommandLineHandler)
 add_subdirectory(Kernel)
+add_subdirectory(Audio)
+add_subdirectory(Event)
 
 add_library(ChainedDecosEngine STATIC
         Engine.cpp
@@ -19,17 +21,19 @@ target_include_directories(ChainedDecosEngine
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(ChainedDecosEngine
-        PUBLIC
-        collision
-        config
-        input
-        model
-        render
-        cameracontroller
-        physics
-        world
-        kernel
-        raylib
-        imguilib
-        cmdhandler
-)
+           PUBLIC
+           collision
+           config
+           input
+           model
+           render
+           cameracontroller
+           physics
+           world
+           kernel
+           audio
+           event
+           raylib
+           imguilib
+           cmdhandler
+   )
