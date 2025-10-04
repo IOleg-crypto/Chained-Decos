@@ -552,6 +552,7 @@ void Menu::HandleConfirmExitMouseSelection(Vector2 mousePos, bool clicked)
     }
 }
 
+
 void Menu::HandleMainMenuKeyboardNavigation()
 {
     if (!m_currentMenu)
@@ -735,16 +736,17 @@ void Menu::HandleConfirmExitKeyboardNavigation()
 }
 
 void Menu::Render() const {
-    // Modern gradient background with multiple layers
+    // Dark theme background matching the provided design
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{23, 23, 23, 255});
+
+    // Subtle gradient overlay
     for (int i = 0; i < GetScreenHeight(); ++i)
     {
         float t = (float)i / GetScreenHeight();
-
-        // Main gradient background
         Color gradientColor = Color{
-            (unsigned char)(10 + 15 * t),    // R: Dark blue to lighter
-            (unsigned char)(20 + 40 * t),    // G: Dark purple to lighter
-            (unsigned char)(50 + 80 * t),    // B: Dark to lighter blue
+            (unsigned char)(23 + 10 * t),
+            (unsigned char)(23 + 10 * t),
+            (unsigned char)(23 + 15 * t),
             255
         };
         DrawLine(0, i, GetScreenWidth(), i, gradientColor);
@@ -754,15 +756,12 @@ void Menu::Render() const {
     static float time = 0.0f;
     time += GetFrameTime();
 
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 15; i++)
     {
-        float y = (GetScreenHeight() / 20) * i + sinf(time + i * 0.5f) * 10;
+        float y = (GetScreenHeight() / 15) * i + sinf(time + i * 0.3f) * 5;
         DrawLine(0, (int)y, GetScreenWidth(), (int)y,
-                 Fade(Color{100, 150, 255, 255}, 0.1f + sinf(time * 2 + i) * 0.05f));
+                 Fade(Color{60, 80, 120, 255}, 0.05f + sinf(time * 1.5f + i) * 0.03f));
     }
-
-    // Dark overlay for better text readability
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.3f));
 
     switch (m_state)
     {
@@ -801,6 +800,22 @@ void Menu::RenderMenu() const
     if (!m_currentMenu)
         return;
 
+    // Dark theme background matching the provided design
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{23, 23, 23, 255});
+
+    // Subtle gradient overlay
+    for (int i = 0; i < GetScreenHeight(); ++i)
+    {
+        float t = (float)i / GetScreenHeight();
+        Color gradientColor = Color{
+            (unsigned char)(23 + 10 * t),
+            (unsigned char)(23 + 10 * t),
+            (unsigned char)(23 + 15 * t),
+            255
+        };
+        DrawLine(0, i, GetScreenWidth(), i, gradientColor);
+    }
+
     Vector2 mousePos = GetMousePosition();
     constexpr int kBtnW = 280, kBtnH = 65, kStartY = 320, kSpacing = 85;
 
@@ -815,18 +830,18 @@ void Menu::RenderMenu() const
     // Multiple glow layers for depth
     for (int i = 3; i >= 1; i--)
     {
-        DrawText(title, titleX + i, titleY + i, 60, Fade(Color{0, 100, 255, 255}, 0.3f / i));
+        DrawText(title, titleX + i, titleY + i, 60, Fade(Color{100, 150, 255, 255}, 0.3f / i));
     }
 
-    // Main title with gradient effect
-    DrawText(title, titleX, titleY, 60, Color{255, 255, 255, 255});
+    // Main title with modern color
+    DrawText(title, titleX, titleY, 60, Color{220, 220, 220, 255});
 
     // Subtitle for main menu
     if (m_state == MenuState::Main)
     {
         const char *subtitle = "Modern 3D Platformer";
         int stw = MeasureText(subtitle, 24);
-        DrawText(subtitle, GetScreenWidth() / 2 - stw / 2, titleY + 50, 24, Fade(Color{150, 200, 255, 255}, 0.8f));
+        DrawText(subtitle, GetScreenWidth() / 2 - stw / 2, titleY + 50, 24, Fade(Color{150, 180, 220, 255}, 0.8f));
 
         // Version info in bottom corner
         const char *version = "v1.0.0";
@@ -846,8 +861,8 @@ void Menu::RenderMenu() const
 
         bool hovered = CheckCollisionPointRec(mousePos, rect);
         bool selected = (static_cast<int>(i) == m_selected);
-        float targetScale = (hovered || selected) ? 1.15f : 1.0f; // Increased scale for more dramatic effect
-        m_buttonScales[i] = Lerp(m_buttonScales[i], targetScale, 0.2f); // Faster animation
+        float targetScale = (hovered || selected) ? 1.05f : 1.0f;
+        m_buttonScales[i] = Lerp(m_buttonScales[i], targetScale, 0.2f);
 
         int w = static_cast<int>(kBtnW * m_buttonScales[i]);
         int h = static_cast<int>(kBtnH * m_buttonScales[i]);
@@ -855,44 +870,44 @@ void Menu::RenderMenu() const
         int y = baseY - (h - kBtnH) / 2;
         Rectangle btnRect = {(float)x, (float)y, (float)w, (float)h};
 
-        // Modern button design with multiple layers
+        // Dark theme button design
         Color baseColor, accentColor, glowColor;
 
         if (selected)
         {
-            baseColor = {255, 200, 100, 255};    // Bright gold
-            accentColor = {255, 150, 50, 255};   // Orange accent
-            glowColor = {255, 255, 150, 200};    // Yellow glow
+            baseColor = {80, 100, 140, 255};     // Dark blue selection
+            accentColor = {120, 150, 200, 255};  // Light blue accent
+            glowColor = {150, 180, 255, 150};    // Blue glow
         }
         else if (hovered)
         {
-            baseColor = {200, 220, 255, 255};    // Light blue
-            accentColor = {150, 200, 255, 255};  // Blue accent
-            glowColor = {150, 200, 255, 150};    // Blue glow
+            baseColor = {60, 70, 90, 255};       // Dark gray-blue hover
+            accentColor = {90, 110, 140, 255};   // Medium blue accent
+            glowColor = {120, 140, 180, 100};    // Subtle blue glow
         }
         else
         {
-            baseColor = {180, 190, 210, 255};    // Neutral gray-blue
-            accentColor = {140, 150, 170, 255};  // Darker accent
+            baseColor = {45, 50, 60, 255};       // Dark neutral
+            accentColor = {70, 80, 100, 255};    // Darker accent
             glowColor = {0, 0, 0, 0};           // No glow
         }
 
         // Draw glow effect for selected/hovered buttons
         if (selected || hovered)
         {
-            for (int g = 8; g >= 2; g -= 2)
+            for (int g = 6; g >= 2; g -= 2)
             {
-                float alpha = (selected) ? 0.4f / (g/2) : 0.2f / (g/2);
+                float alpha = (selected) ? 0.3f / (g/2) : 0.15f / (g/2);
                 DrawRectangle(x - g, y - g, w + g*2, h + g*2,
                              Fade(glowColor, alpha));
             }
         }
 
-        // Main button background with gradient
+        // Main button background with subtle gradient
         for (int j = 0; j < h; ++j)
         {
             float t = (float)j / h;
-            float intensity = 1.0f - t * 0.3f; // Darker at bottom
+            float intensity = 1.0f - t * 0.2f; // Slightly darker at bottom
             Color c = {
                 (unsigned char)(baseColor.r * intensity),
                 (unsigned char)(baseColor.g * intensity),
@@ -902,59 +917,59 @@ void Menu::RenderMenu() const
             DrawLine(x, y + j, x + w, y + j, c);
         }
 
-        // Highlight/shine effect
-        DrawRectangle(x + 2, y + 2, w - 4, h/3, Fade(WHITE, 0.3f));
+        // Subtle highlight/shine effect
+        DrawRectangle(x + 2, y + 2, w - 4, h/4, Fade(Color{255, 255, 255, 255}, 0.1f));
 
-        // Modern border with rounded corners effect
+        // Modern border
         if (selected)
         {
-            DrawRectangleLinesEx(btnRect, 3, accentColor);
+            DrawRectangleLinesEx(btnRect, 2, accentColor);
             // Double border for selected
-            DrawRectangleLinesEx(Rectangle{btnRect.x - 2, btnRect.y - 2, btnRect.width + 4, btnRect.height + 4}, 1, Fade(accentColor, 0.5f));
+            DrawRectangleLinesEx(Rectangle{btnRect.x - 1, btnRect.y - 1, btnRect.width + 2, btnRect.height + 2}, 1, Fade(accentColor, 0.6f));
         }
         else if (hovered)
         {
-            DrawRectangleLinesEx(btnRect, 2, accentColor);
+            DrawRectangleLinesEx(btnRect, 1, accentColor);
         }
         else
         {
-            DrawRectangleLinesEx(btnRect, 1, Color{120, 130, 150, 255});
+            DrawRectangleLinesEx(btnRect, 1, Color{60, 70, 80, 255});
         }
 
         // Modern text with better font and effects
-        int textSize = selected ? 32 : (hovered ? 30 : 28);
-        Color textColor = selected ? Color{50, 50, 80, 255} : (hovered ? Color{30, 30, 50, 255} : Color{40, 40, 60, 255});
+        int textSize = selected ? 30 : (hovered ? 28 : 26);
+        Color textColor = selected ? Color{220, 230, 255, 255} : (hovered ? Color{200, 210, 230, 255} : Color{180, 190, 210, 255});
 
         int textW = MeasureText(item.label, textSize);
         int textX = x + w / 2 - textW / 2;
         int textY = y + h / 2 - textSize / 2;
 
         // Text shadow for depth
-        DrawText(item.label, textX + 2, textY + 2, textSize, Fade(BLACK, 0.5f));
+        DrawText(item.label, textX + 1, textY + 1, textSize, Fade(Color{0, 0, 0, 255}, 0.6f));
 
         // Main text with modern color
         DrawText(item.label, textX, textY, textSize, textColor);
     }
 
-    // Modern footer with better styling
+    // Modern footer with dark theme styling
     const char *footer = "ENTER Select    ESC Back    ↑↓ Navigate    MOUSE Click";
-    int fw = MeasureText(footer, 20);
+    int fw = MeasureText(footer, 18);
     int footerX = GetScreenWidth() / 2 - fw / 2;
     int footerY = GetScreenHeight() - 35;
 
     // Footer background
-    DrawRectangle(footerX - 10, footerY - 5, fw + 20, 30, Fade(Color{0, 0, 0, 255}, 0.4f));
-    DrawRectangleLines(footerX - 10, footerY - 5, fw + 20, 30, Fade(Color{100, 120, 140, 255}, 0.5f));
+    DrawRectangle(footerX - 10, footerY - 5, fw + 20, 28, Fade(Color{0, 0, 0, 255}, 0.5f));
+    DrawRectangleLines(footerX - 10, footerY - 5, fw + 20, 28, Fade(Color{80, 90, 100, 255}, 0.6f));
 
     // Modern footer text with color coding
-    DrawText("ENTER", footerX, footerY, 20, Color{150, 255, 150, 255});
-    DrawText(" Select    ", footerX + 70, footerY, 20, Color{200, 200, 200, 255});
-    DrawText("ESC", footerX + 150, footerY, 20, Color{255, 150, 150, 255});
-    DrawText(" Back    ", footerX + 185, footerY, 20, Color{200, 200, 200, 255});
-    DrawText("↑↓", footerX + 245, footerY, 20, Color{150, 150, 255, 255});
-    DrawText(" Navigate    ", footerX + 275, footerY, 20, Color{200, 200, 200, 255});
-    DrawText("MOUSE", footerX + 380, footerY, 20, Color{255, 200, 100, 255});
-    DrawText(" Click", footerX + 460, footerY, 20, Color{200, 200, 200, 255});
+    DrawText("ENTER", footerX, footerY, 18, Color{100, 200, 120, 255});
+    DrawText(" Select    ", footerX + 65, footerY, 18, Color{180, 190, 200, 255});
+    DrawText("ESC", footerX + 140, footerY, 18, Color{200, 100, 100, 255});
+    DrawText(" Back    ", footerX + 170, footerY, 18, Color{180, 190, 200, 255});
+    DrawText("↑↓", footerX + 220, footerY, 18, Color{120, 150, 200, 255});
+    DrawText(" Navigate    ", footerX + 240, footerY, 18, Color{180, 190, 200, 255});
+    DrawText("MOUSE", footerX + 350, footerY, 18, Color{200, 180, 100, 255});
+    DrawText(" Click", footerX + 410, footerY, 18, Color{180, 190, 200, 255});
 }
 
 void Menu::RenderSettingsMenu() const {
@@ -1256,6 +1271,7 @@ void Menu::HandleMapSelection()
     }
 }
 
+
 void Menu::InitializeMaps()
 {
     m_availableMaps.clear();
@@ -1321,6 +1337,7 @@ void Menu::InitializeMaps()
         true
     });
 }
+
 
 void Menu::RenderMapSelection() const
 {
@@ -1404,6 +1421,7 @@ void Menu::RenderMapSelection() const
     int iw = MeasureText(instructions, 20);
     DrawText(instructions, GetScreenWidth() / 2 - iw / 2, GetScreenHeight() - 30, 20, GRAY);
 }
+
 
 const MapInfo* Menu::GetSelectedMap() const
 {

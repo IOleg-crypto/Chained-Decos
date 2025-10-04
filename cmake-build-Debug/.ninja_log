@@ -1,80 +1,42 @@
 # ninja log v7
-<<<<<<< HEAD
-604	696	7812032148959342	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj	799e2856ce58fc45
-19	251	7812032143096519	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	3fcd797367c3c331
-252	470	7812032145425190	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj	779b3b169ca8de60
-1289	1565	7812032155792468	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj	c0f732aec3cd8ec9
-1579	1842	7812032158703238	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj	d9be2fcf3b096b46
-1829	2067	7812032161203251	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	a569036749c0739a
-1842	2100	7812032161333087	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	5b8ba9fa25b06d9b
-1565	1816	7812032158561354	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj	599a873025e8da0a
-1319	1579	7812032156102512	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj	82eb18d2c1f8801d
-1733	1969	7812032160247818	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj	b54af6e5c012e3df
-1034	1288	7812032153251354	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	b74f928f5c89b84e
-1816	2087	7812032161073207	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj	e294585162ac8939
-1444	1733	7812032157348474	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	ec92b947815d67bd
-696	998	7812032149876743	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	b12e9160e5ed17c
-767	1034	7812032150580883	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	ec0371a53adf1214
-1547	1829	7812032158381416	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj	ce4c1c2c31fce246
-998	1319	7812032152887264	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj	43df784a5bd5ccd0
-16	604	7812032143076653	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	c1c0987e5f1cff33
-1969	2204	7812032162608259	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj	4a768487d5b1f66e
-2067	2292	7812032163579826	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj	3f157b5c507694f2
-2087	2329	7812032163780619	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj	40508cc0a2288ecd
-2100	2364	7812032163908509	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	ef9e20646a70c8be
-2292	2565	7812032165837050	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	25b400eaab5c2c20
-2329	2578	7812032166207539	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	4deeaef2702f630e
+598	696	7812167498488881	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj	799e2856ce58fc45
+14	246	7812167492658678	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	3fcd797367c3c331
+246	475	7812167494970626	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj	779b3b169ca8de60
+1191	1469	7812167504424840	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj	c0f732aec3cd8ec9
+1567	1817	7812167508187809	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj	d9be2fcf3b096b46
+1728	1958	7812167509785187	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	a569036749c0739a
+1817	2057	7812167510672502	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	5b8ba9fa25b06d9b
+1469	1728	7812167507201199	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj	599a873025e8da0a
+1208	1457	7812167504594701	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj	82eb18d2c1f8801d
+1645	1881	7812167508968311	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj	b54af6e5c012e3df
+935	1208	7812167501853150	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	b74f928f5c89b84e
+1714	1973	7812167509645180	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj	e294585162ac8939
+1378	1645	7812167506283870	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	ec92b947815d67bd
+617	906	7812167498678875	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	b12e9160e5ed17c
+696	935	7812167499466168	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	ec0371a53adf1214
+1457	1714	7812167507081663	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj	ce4c1c2c31fce246
+906	1191	7812167501573165	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj	43df784a5bd5ccd0
+11	598	7812167492618692	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	c1c0987e5f1cff33
+1881	2122	7812167511321562	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj	4a768487d5b1f66e
+1958	2180	7812167512088869	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj	3f157b5c507694f2
+1973	2215	7812167512238902	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj	40508cc0a2288ecd
+2057	2314	7812167513082758	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	ef9e20646a70c8be
+2180	2446	7812167514303709	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	25b400eaab5c2c20
+2215	2458	7812167514663779	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	4deeaef2702f630e
 1107	2075	7786972666210265	CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj	cb8ce8baebebda4
-2204	2604	7812032164955013	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj	ade080fe5c7ef3c4
-=======
-630	707	7812048055589222	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj	799e2856ce58fc45
-80	323	7812048050077114	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	3fcd797367c3c331
-324	497	7812048052524269	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj	779b3b169ca8de60
-1263	1517	7812048061917165	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj	c0f732aec3cd8ec9
-1605	1902	7812048065327547	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj	d9be2fcf3b096b46
-1840	2134	7812048067681873	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	a569036749c0739a
-1902	2168	7812048068303371	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	5b8ba9fa25b06d9b
-1562	1840	7812048064900781	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj	599a873025e8da0a
-1296	1562	7812048062248238	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj	82eb18d2c1f8801d
-1808	2120	7812048067361862	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj	b54af6e5c012e3df
-1007	1296	7812048059353026	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	b74f928f5c89b84e
-1824	2103	7812048067521867	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj	e294585162ac8939
-1517	1824	7812048064450813	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	ec92b947815d67bd
-701	1007	7812048056289690	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	b12e9160e5ed17c
-707	972	7812048056352205	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	ec0371a53adf1214
-1548	1808	7812048064760795	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj	ce4c1c2c31fce246
-972	1263	7812048059006674	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj	43df784a5bd5ccd0
-77	630	7812048050047121	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	c1c0987e5f1cff33
-2103	2353	7812048070316047	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj	4a768487d5b1f66e
-2120	2395	7812048070483512	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj	3f157b5c507694f2
-2134	2381	7812048070623262	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj	40508cc0a2288ecd
-2169	2444	7812048070963541	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	ef9e20646a70c8be
-2381	2758	7812048073088098	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	25b400eaab5c2c20
-2395	2732	7812048073229312	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	4deeaef2702f630e
-1107	2075	7786972666210265	CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj	cb8ce8baebebda4
-2353	2869	7812048072808300	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj	ade080fe5c7ef3c4
->>>>>>> feature/advanced-mapeditor
+2122	2528	7812167513731802	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj	ade080fe5c7ef3c4
 1090	2194	7786972666048983	CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj	6bf40190acd21b62
 1124	2283	7786972666372741	CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj	23c8d319aa4c1924
 1442	2672	7786972669552204	src/Engine/Model/CMakeFiles/model.dir/Animation.cpp.obj	9d66060ee5b44105
 1027	2386	7786972665405577	CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj	70c5969483e4b0da
 1059	2557	7786972665736949	CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj	115cdb3d6f9d69f3
-<<<<<<< HEAD
-13	767	7812032143046333	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj	f0dea1809f7559ee
-=======
-74	701	7812048050017620	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj	f0dea1809f7559ee
->>>>>>> feature/advanced-mapeditor
+8	617	7812167492588685	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj	f0dea1809f7559ee
 1075	2816	7786972665881592	CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj	8bad54f63272c4eb
 3060	3641	7812032173512270	src/Engine/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj	f1c730c6ce421908
 3641	4193	7812032179325598	src/Engine/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj	265364d62cf8cae6
 1043	3484	7786972665576929	CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj	dbf0fe87392e6763
-<<<<<<< HEAD
-470	1547	7812032147620099	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	b44fd59a86fabda8
-10	1444	7812032143003297	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj	7dd3dec5eea9972
-=======
-497	1604	7812048054241733	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	b44fd59a86fabda8
-5	1548	7812048049327191	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj	7dd3dec5eea9972
->>>>>>> feature/advanced-mapeditor
+475	1567	7812167497261854	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	b44fd59a86fabda8
+5	1377	7812167492558675	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj	7dd3dec5eea9972
 1474	4128	7786972669882031	src/Engine/Model/CMakeFiles/model.dir/ModelCache.cpp.obj	af2e67d67377684e
 2386	2666	7786972678994748	src/Engine/CameraController/CMakeFiles/cameracontroller.dir/CameraController.cpp.obj	837a0fd3b68cde6f
 2149	2558	7785171760619678	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/Editor/CameraModes.cpp.obj	9ac8aa75647db98d
@@ -82,15 +44,9 @@
 2387	2705	7785171763005930	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/Editor/MapObject.cpp.obj	7ec0733fbe711f07
 2194	3555	7786972677075233	src/Engine/Input/CMakeFiles/input.dir/InputManager.cpp.obj	8e73c2cb61ace5dd
 16	757	7786826340707891	src/Engine/Collision/CMakeFiles/collision.dir/Octree.cpp.obj	2fe84e461e7c24b2
-<<<<<<< HEAD
-2604	2987	7812032168953324	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/raylib.lib	3967a2bac4af3cf4
-38	2149	7785171739509706	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/Application.cpp.obj	f6d87daf69639460
-8101	9900	7812032223915913	src/Game/CMakeFiles/ChainedDecosGame.dir/Game.cpp.obj	c910c3cadfabc783
-=======
-2869	3110	7812048077971490	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/raylib.lib	3967a2bac4af3cf4
+2528	2867	7812167517785498	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/raylib.lib	3967a2bac4af3cf4
 38	2149	7785171739509706	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/Application.cpp.obj	f6d87daf69639460
 3768	5652	7812048120087063	src/Game/CMakeFiles/ChainedDecosGame.dir/Game.cpp.obj	c910c3cadfabc783
->>>>>>> feature/advanced-mapeditor
 2705	4484	7785171766183029	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/MapFileManager/MapFileManager.cpp.obj	3e75921ad944ed7b
 2301	4709	7785171762142296	src/Game/CMakeFiles/ChainedDecosGame.dir/MapEditor/Editor/Editor.cpp.obj	cf00146249558ff3
 34	2972	7785171739469716	src/Game/CMakeFiles/ChainedDecosGame.dir/Map/MapLoader.cpp.obj	a2c069a147754946
@@ -106,29 +62,16 @@
 5719	7518	7785171796321297	src/Game/CMakeFiles/ChainedDecosGame.dir/Player/PlayerMovement.cpp.obj	aeece221470a053e
 2565	3060	7812032168560651	src/Engine/Model/CMakeFiles/model.dir/ModelInstance.cpp.obj	e0436c7dd58da68a
 3056	3726	7812032173472223	src/Engine/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj	482a96183d4d2fc1
-<<<<<<< HEAD
-2364	5216	7812032166547056	src/Engine/Model/CMakeFiles/model.dir/Model.cpp.obj	3127a63a62120e16
+22	3729	7812167525625847	src/Engine/Model/CMakeFiles/model.dir/Model.cpp.obj	3127a63a62120e16
 2688	4883	7787802433794617	src/Engine/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj	18452cb59c6cc061
-5216	5329	7812032195071546	src/Engine/Model/model.lib	d2a7fb621830fc4f
-8	14657	7812059532640668	build.ninja	8cff361c9e924f7a
+3729	3812	7812167562700610	src/Engine/Model/model.lib	d2a7fb621830fc4f
+4	12226	7812173036492049	build.ninja	8af5474e792deadc
 18	11779	7786978241764310	D:/gitnext/Chained Decos/cmake-build-Debug/cmake_install.cmake	625d84f1bc718986
-18	11779	7812059531984989	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	625d84f1bc718986
-18	11779	7812059532018654	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	625d84f1bc718986
-18	11779	7812059532038296	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	625d84f1bc718986
-18	11779	7812059532090862	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	625d84f1bc718986
-18	11779	7812059532100787	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	625d84f1bc718986
-=======
-18	2747	7812048082592967	src/Engine/Model/CMakeFiles/model.dir/Model.cpp.obj	3127a63a62120e16
-2688	4883	7787802433794617	src/Engine/Model/CMakeFiles/model.dir/JsonHelper.cpp.obj	18452cb59c6cc061
-2747	2842	7812048109881168	src/Engine/Model/model.lib	d2a7fb621830fc4f
-8	14657	7812052339732008	build.ninja	8cff361c9e924f7a
-18	11779	7786978241764310	D:/gitnext/Chained Decos/cmake-build-Debug/cmake_install.cmake	625d84f1bc718986
-18	11779	7812052339394995	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	625d84f1bc718986
-18	11779	7812052339414846	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	625d84f1bc718986
-18	11779	7812052339424970	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	625d84f1bc718986
-18	11779	7812052339454948	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	625d84f1bc718986
-18	11779	7812052339465198	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	625d84f1bc718986
->>>>>>> feature/advanced-mapeditor
+4	12226	7812173036101615	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036131535	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036141744	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036161718	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036161718	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	8af5474e792deadc
 18	11779	7786978241857407	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241867407	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Collision/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241887386	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Input/cmake_install.cmake	625d84f1bc718986
@@ -137,33 +80,18 @@
 18	11779	7786978241918460	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/Render/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241928399	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/CameraController/cmake_install.cmake	625d84f1bc718986
 18	11779	7786978241959143	D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/cmake_install.cmake	625d84f1bc718986
-<<<<<<< HEAD
-18	11779	7812059531990964	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	625d84f1bc718986
-18	11779	7812059532028142	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	625d84f1bc718986
-9900	9964	7812032241906766	src/Game/ChainedDecosGame.lib	b7d2f4e20b0a737
-5796	6511	7812032200867654	src/Engine/CMakeFiles/ChainedDecosEngine.dir/Engine.cpp.obj	5b7b8eca74e4f9f3
-3422	5440	7812032177136526	src/Engine/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj	b3a669eb6d87bcbb
-8038	8101	7812032223289292	src/Engine/ChainedDecosEngine.lib	ff8dcb39d0c0a401
-5440	5509	7812032197317550	src/Engine/Collision/collision.lib	2de2b458bfe92c35
-5225	7148	7812032195161614	src/Engine/Render/CMakeFiles/render.dir/RenderManager.cpp.obj	3ca463657a9e1ee2
-31	2879	7785154767973326	src/Engine/Menu/CMakeFiles/menu.dir/Menu.cpp.obj	2053741bee7f2843
-7474	7732	7785148328497066	src/Engine/Menu/menu.lib	308d3e126d9f51dd
-7148	7220	7812032214386385	src/Engine/Render/render.lib	4041cc75008510fe
-8	1751	7812032369774787	CMakeFiles/ChainedDecos.dir/src/main.cpp.obj	6d02e86c73b506e1
-=======
-18	11779	7812052339404995	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	625d84f1bc718986
-18	11779	7812052339424970	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	625d84f1bc718986
+4	12226	7812173036111490	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	8af5474e792deadc
+4	12226	7812173036131535	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	8af5474e792deadc
 5652	5703	7812048138933833	src/Game/ChainedDecosGame.lib	b7d2f4e20b0a737
 5796	6511	7812032200867654	src/Engine/CMakeFiles/ChainedDecosEngine.dir/Engine.cpp.obj	5b7b8eca74e4f9f3
-22	1983	7812048082632942	src/Engine/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj	b3a669eb6d87bcbb
+28	2810	7812167525685522	src/Engine/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj	b3a669eb6d87bcbb
 8038	8101	7812032223289292	src/Engine/ChainedDecosEngine.lib	ff8dcb39d0c0a401
-2842	2901	7812048110828474	src/Engine/Collision/collision.lib	2de2b458bfe92c35
-900	2732	7812048091409893	src/Engine/Render/CMakeFiles/render.dir/RenderManager.cpp.obj	3ca463657a9e1ee2
+3813	3903	7812167563530139	src/Engine/Collision/collision.lib	2de2b458bfe92c35
+1354	3808	7812167538949966	src/Engine/Render/CMakeFiles/render.dir/RenderManager.cpp.obj	3ca463657a9e1ee2
 31	2879	7785154767973326	src/Engine/Menu/CMakeFiles/menu.dir/Menu.cpp.obj	2053741bee7f2843
 7474	7732	7785148328497066	src/Engine/Menu/menu.lib	308d3e126d9f51dd
-2901	2961	7812048111418640	src/Engine/Render/render.lib	4041cc75008510fe
+3903	3973	7812167564442926	src/Engine/Render/render.lib	4041cc75008510fe
 4477	6023	7812048127181764	CMakeFiles/ChainedDecos.dir/src/main.cpp.obj	6d02e86c73b506e1
->>>>>>> feature/advanced-mapeditor
 8073	8345	7786748030283020	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/libraylib.a	6d8d8db89d974965
 8633	8750	7786748035880621	libimguilib.a	cf729a61a0d3cae4
 12608	12675	7786748075633869	src/Engine/Input/libinput.a	ed94d2560d2cd131
@@ -176,63 +104,35 @@
 3748	3810	7786827030382620	src/Game/libChainedDecosGame.a	9773ea0c1687179f
 2075	3620	7786972675879901	src/Engine/World/CMakeFiles/world.dir/Physics.cpp.obj	8471b8f3082e0da3
 12156	12223	7786748071113227	src/Engine/World/libworld.a	7b764968f1087763
-<<<<<<< HEAD
-1751	1987	7812032387204457	ChainedDecos.exe	a6c75379a9ffa3e5
-=======
 6023	6237	7812048142640988	ChainedDecos.exe	a6c75379a9ffa3e5
->>>>>>> feature/advanced-mapeditor
 5330	5391	7812032196209709	src/Engine/World/world.lib	dfd1d43b0496684e
 18	11779	7786978241938391	D:/gitnext/Chained Decos/cmake-build-Debug/src/Engine/World/cmake_install.cmake	625d84f1bc718986
 2972	3696	7785171768851640	src/Game/CMakeFiles/ChainedDecosGame.dir/Menu/Menu.cpp.obj	e8114b18ea03d7bd
 18	11779	7786978241969122	D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Map/cmake_install.cmake	625d84f1bc718986
 14	11403	7786978242059049	D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/MapEditor/cmake_install.cmake	625d84f1bc718986
 14	11403	7786978241989061	D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Menu/cmake_install.cmake	625d84f1bc718986
-<<<<<<< HEAD
-4273	5225	7812032185644004	src/Game/Menu/CMakeFiles/menu.dir/Menu.cpp.obj	d415687649f113bb
-=======
-26	928	7812048082672950	src/Game/Menu/CMakeFiles/menu.dir/Menu.cpp.obj	d415687649f113bb
->>>>>>> feature/advanced-mapeditor
+32	1473	7812167525725510	src/Game/Menu/CMakeFiles/menu.dir/Menu.cpp.obj	d415687649f113bb
 2509	2579	7786826365630810	src/Game/Menu/libmenu.a	7ef64a0b92ad065a
 2557	6003	7786972680706407	src/Game/Map/CMakeFiles/mapmod.dir/MapLoader.cpp.obj	d8a1c999f80689e5
 14	11403	7786978242019054	D:/gitnext/Chained Decos/cmake-build-Debug/src/Game/Player/cmake_install.cmake	625d84f1bc718986
 15821	15945	7786748107766422	src/Game/Map/libmapmod.a	e7c39e776457abcd
-<<<<<<< HEAD
-6511	8371	7812032208019948	src/Game/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj	65cedc58f9f52b71
-6224	8013	7812032205146826	src/Game/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj	58898f424848512d
-6197	8038	7812032204880329	src/Game/Player/CMakeFiles/player.dir/Player.cpp.obj	bfe37cf6d331a9ea
-8013	9611	7812032223036657	src/Game/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj	93e807c9a7a59a58
-7220	8940	7812032215114227	src/Game/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj	6977021bf54c077c
-1759	1842	7786827500190943	src/Game/Player/libplayer.a	f1bb2439c154c771
-5734	5796	7812032200248484	src/Game/Menu/menu.lib	42cbe333e898dbd9
-22	125	7789666101193393	src/Game/Map/mapmod.lib	d9ca1a566114d46e
-9611	9662	7812032239024074	src/Game/Player/player.lib	24aabb96139725c7
-112	1439	7786974183539923	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj	366b970c762318b6
-107	5219	7787045701829592	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj	b9d5a9b78a36b22d
-112	5466	7787045701869729	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj	1e68a42e99b69a9
-252	1336	7786976612294332	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj	704f0fa143e191d7
-302	1450	7786976612799519	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj	99f759bd06b15096
-121	5170	7787045701967424	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj	f753b7829c5b2711
-116	5283	7787045701909940	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj	b895a283526dd432
-8761	9001	7787055139603258	src/Game/MapEditor/ChainedDecosMapEditor.exe	b5d1b152f48f475f
-=======
 2732	4477	7812048109731161	src/Game/Player/CMakeFiles/player.dir/PlayerInput.cpp.obj	65cedc58f9f52b71
 1983	3768	7812048102237156	src/Game/Player/CMakeFiles/player.dir/PlayerCollision.cpp.obj	58898f424848512d
 1062	2878	7812048093036640	src/Game/Player/CMakeFiles/player.dir/Player.cpp.obj	bfe37cf6d331a9ea
 2961	4661	7812048112014966	src/Game/Player/CMakeFiles/player.dir/PlayerMovement.cpp.obj	93e807c9a7a59a58
 2878	4595	7812048111188118	src/Game/Player/CMakeFiles/player.dir/PlayerModel.cpp.obj	6977021bf54c077c
 1759	1842	7786827500190943	src/Game/Player/libplayer.a	f1bb2439c154c771
-928	1002	7812048091689907	src/Game/Menu/menu.lib	42cbe333e898dbd9
-22	125	7789666101193393	src/Game/Map/mapmod.lib	d9ca1a566114d46e
+1474	1562	7812167540147546	src/Game/Menu/menu.lib	42cbe333e898dbd9
+3021	3081	7812167522718491	src/Game/Map/mapmod.lib	1478c7c806513e53
 4662	4727	7812048129026860	src/Game/Player/player.lib	24aabb96139725c7
-15	546	7812048335310815	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj	bbb2cd3a76ac3967
-9	1777	7812048335250825	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj	a6e4a67fa3348b33
-12	1968	7812048335281033	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj	c39e9d5523b448af
-18	496	7812048335340825	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj	436e742029f6e021
-497	970	7812048340132039	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj	4d50b4fcba35b450
-2660	4247	7812048361762658	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj	e5d18522eed950ee
-2132	3848	7812048356482398	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj	8dd3917f21f0c2da
-4247	4432	7812048377638878	src/Game/MapEditor/ChainedDecosMapEditor.exe	7a4d53bf99a0ee07
->>>>>>> feature/advanced-mapeditor
+3973	4528	7812167565145148	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj	60bf20ff39dab5b6
+2810	4212	7812167553506811	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj	4c674881331b4365
+2906	4490	7812167554467506	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj	fe0ece480b5e4b5f
+3808	4335	7812167563490406	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj	2fa8f2f55371d715
+4528	5049	7812167570691476	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj	7d16e00bf50b53d8
+1646	2906	7812167541870056	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj	b7da4efc4b60db4a
+5697	6799	7812167582379433	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj	1782f152a1de0af5
+7427	7707	7812167599680196	src/Game/MapEditor/ChainedDecosMapEditor.exe	2d810c932c87f593
 2676	3153	7787802433684620	src/Engine/Model/CMakeFiles/model.dir/ModelConfig.cpp.obj	136ac219a46fe22a
 2578	3056	7812032168691529	src/Engine/Physics/CMakeFiles/physics.dir/PhysicsComponent.cpp.obj	f9137545cce2953c
 2987	3422	7812032172779561	src/Engine/Physics/CMakeFiles/physics.dir/SurfaceComponent.cpp.obj	6f21c7a3ee4a4dc3
@@ -243,97 +143,100 @@
 699	1271	7789648624563074	src/Engine/Core/CMakeFiles/core.dir/Entity.cpp.obj	3c54391eb6d6ff97
 1271	1330	7789648630284543	src/Engine/Core/core.lib	6c63ef23ba190f44
 3726	4273	7812032180175201	src/Engine/Collision/CMakeFiles/collision.dir/GroundColliderFactory.cpp.obj	e48845ccfed55da3
-<<<<<<< HEAD
-4804	5734	7812032190944830	src/Engine/Config/CMakeFiles/config.dir/ConfigManager.cpp.obj	792975f89931c539
-=======
-29	899	7812048082702991	src/Engine/Config/CMakeFiles/config.dir/ConfigManager.cpp.obj	792975f89931c539
->>>>>>> feature/advanced-mapeditor
+36	1354	7812167525765847	src/Engine/Config/CMakeFiles/config.dir/ConfigManager.cpp.obj	792975f89931c539
 5391	6068	7812032196820264	src/Engine/CommandLineHandler/CMakeFiles/cmdhandler.dir/CommandLineHandler.cpp.obj	14fe9dd22a5bbfe5
-1002	1062	7812048092436653	src/Engine/Config/config.lib	9cbf4ee7b2a9e43e
+1563	1646	7812167541038558	src/Engine/Config/config.lib	9cbf4ee7b2a9e43e
 5509	6160	7812032198005292	src/Engine/Kernel/CMakeFiles/kernel.dir/Kernel.cpp.obj	2e2affc10124184
 6127	6197	7812032204175501	src/Engine/CommandLineHandler/cmdhandler.lib	4b0d226413a209a8
 6160	6224	7812032204515455	src/Engine/Kernel/kernel.lib	31eeaf624fcbcf63
-<<<<<<< HEAD
-=======
-546	1286	7812048340622097	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/UndoRedo.cpp.obj	c96357cbf5040d01
-970	1608	7812048344853720	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ClipboardManager.cpp.obj	9c63d4e93dc7c110
-1286	2132	7812048348027666	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/LayerManager.cpp.obj	4ab0d9af66b1c37a
-1608	2529	7812048351238995	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ShortcutManager.cpp.obj	2ab6cbf355970cdc
-1968	2660	7812048354839697	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/StatusBar.cpp.obj	471f61aea629ef28
-1777	2731	7812048352936638	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectFilter.cpp.obj	8a0af3b9edb39559
-2529	3903	7812048360450279	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/JsonMapFileManager.cpp.obj	4c634036795ad47c
-4	12226	7812052339732008	build.ninja	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Collision/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Config/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Input/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Model/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Render/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/CameraController/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Physics/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/World/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/CommandLineHandler/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Kernel/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Map/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Menu/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Player/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/MapEditor/cmake_install.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	8af5474e792deadc
-4	12226	7812052339732008	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	8af5474e792deadc
-41	159	7812052342324092	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	3fcd797367c3c331
-160	382	7812052343515011	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj	779b3b169ca8de60
-39	620	7812052342294131	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	c1c0987e5f1cff33
-620	707	7812052348117143	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj	799e2856ce58fc45
-36	788	7812052342274330	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj	f0dea1809f7559ee
-707	1001	7812052348985026	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	b12e9160e5ed17c
-788	1064	7812052349791962	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	ec0371a53adf1214
-1001	1338	7812052351925480	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj	43df784a5bd5ccd0
-1064	1358	7812052352552462	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	b74f928f5c89b84e
-382	1573	7812052345736796	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	b44fd59a86fabda8
-33	1616	7812052342234359	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj	7dd3dec5eea9972
-1338	1635	7812052355290774	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj	c0f732aec3cd8ec9
-1358	1696	7812052355494133	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj	82eb18d2c1f8801d
-1635	1882	7812052358254512	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj	599a873025e8da0a
-1573	1896	7812052357643287	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	ec92b947815d67bd
-1616	1908	7812052358074386	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj	ce4c1c2c31fce246
-1696	1960	7812052358865956	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj	d9be2fcf3b096b46
-1908	2138	7812052360998968	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	a569036749c0739a
-1882	2154	7812052360729090	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj	b54af6e5c012e3df
-1896	2203	7812052360868753	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj	e294585162ac8939
-1960	2234	7812052361508798	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	5b8ba9fa25b06d9b
-2154	2384	7812052363458817	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj	3f157b5c507694f2
-2138	2398	7812052363294471	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj	4a768487d5b1f66e
-2203	2463	7812052363942017	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj	40508cc0a2288ecd
-2234	2504	7812052364252694	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	ef9e20646a70c8be
-2398	2680	7812052365892459	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	25b400eaab5c2c20
-2463	2708	7812052366537518	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	4deeaef2702f630e
-2384	2787	7812052365748771	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj	ade080fe5c7ef3c4
-2787	3033	7812052369787391	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/raylib.lib	3967a2bac4af3cf4
-24	483	7812052373607101	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MapObject.cpp.obj	2fa8f2f55371d715
-20	1691	7812052373576944	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj	fe0ece480b5e4b5f
-15	456	7812052510081546	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/CameraModes.cpp.obj	60bf20ff39dab5b6
-18	487	7812052510111446	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ClipboardManager.cpp.obj	23ff4822133757a9
-12	1075	7812052510058488	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj	4c674881331b4365
-9	1095	7812052510021599	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj	b7da4efc4b60db4a
-456	1137	7812052514496710	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/LayerManager.cpp.obj	5a0ddce4841d3261
-487	1290	7812052514796911	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectFilter.cpp.obj	cd67c1f25aa919bb
-1075	1469	7812052520679435	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectTransform.cpp.obj	7d16e00bf50b53d8
-1138	1727	7812052521308313	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/StatusBar.cpp.obj	407b3589e765da9a
-1290	1835	7812052522825073	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/UndoRedo.cpp.obj	d219db9f9d830268
-1095	1877	7812052520881628	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ShortcutManager.cpp.obj	b1a8fc92f71b63c3
-1469	2381	7812052524621135	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/JsonMapFileManager.cpp.obj	c46268265a3e2e16
-1727	2793	7812052527198090	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/MapFileManager.cpp.obj	1782f152a1de0af5
-10	1223	7812052951791906	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj	b7da4efc4b60db4a
-13	1243	7812052951821963	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj	4c674881331b4365
-19	722	7812054786275658	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/LightingSystem.cpp.obj	2ec516471ea1fd4f
-13	764	7812054786220896	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/TerrainEditor.cpp.obj	d972232878312fe1
-27	1124	7812054786358743	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/PrefabSystem.cpp.obj	82dc6923de550df6
-12	974	7812056008745135	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/PrefabSystem.cpp.obj	82dc6923de550df6
->>>>>>> feature/advanced-mapeditor
+5180	5783	7812167577214049	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/UndoRedo.cpp.obj	d219db9f9d830268
+4212	4816	7812167567528475	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ClipboardManager.cpp.obj	23ff4822133757a9
+4335	5180	7812167568756196	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/LayerManager.cpp.obj	5a0ddce4841d3261
+4816	5702	7812167573576251	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ShortcutManager.cpp.obj	b1a8fc92f71b63c3
+5049	5696	7812167575898690	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/StatusBar.cpp.obj	407b3589e765da9a
+4490	5451	7812167570311468	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ObjectFilter.cpp.obj	cd67c1f25aa919bb
+5451	6387	7812167579913549	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/MapFileManager/JsonMapFileManager.cpp.obj	c46268265a3e2e16
+4	12226	7812173036092115	D:/gitnext/Chained Decos/cmake-build-debug/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036181559	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036191518	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Collision/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036201763	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Config/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036221499	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Input/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036231493	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Model/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036251499	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Render/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036261557	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/CameraController/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036271490	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Physics/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036291489	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/World/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036311767	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/CommandLineHandler/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036321683	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Kernel/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036341490	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036361489	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Map/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036382041	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Menu/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036392171	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Player/cmake_install.cmake	8af5474e792deadc
+4	12226	7812173036442042	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/MapEditor/cmake_install.cmake	8af5474e792deadc
+5783	6403	7812167583244763	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/LightingSystem.cpp.obj	2ec516471ea1fd4f
+5702	6364	7812167582429626	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/TerrainEditor.cpp.obj	d972232878312fe1
+6387	7367	7812167589279521	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/PrefabSystem.cpp.obj	82dc6923de550df6
+2315	3020	7812167515650938	src/Game/Map/CMakeFiles/mapmod.dir/ParkourMapGenerator.cpp.obj	2a449e51de434c1a
+6403	7099	7812167589439504	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/ParticleEditor.cpp.obj	1605a6f2579a104b
+6365	7103	7812167589053153	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MaterialEditor.cpp.obj	359d494ff43293fa
+6799	7427	7812167593393182	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/MeasurementTools.cpp.obj	193557106647cb66
+4	12471	7812173036492049	build.ninja	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Collision/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Config/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Input/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Model/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Render/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/CameraController/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Physics/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/World/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/CommandLineHandler/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Kernel/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Map/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Menu/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Player/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/cmake-build-debug/src/Game/MapEditor/cmake_install.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	8af5474e792deadc
+4	12471	7812173036492049	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	8af5474e792deadc
+41	150	7812173038693593	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	3fcd797367c3c331
+150	352	7812173039780555	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj	779b3b169ca8de60
+39	528	7812173038663626	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	c1c0987e5f1cff33
+528	612	7812173043567974	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj	799e2856ce58fc45
+36	723	7812173038633628	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj	f0dea1809f7559ee
+612	908	7812173044398555	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	b12e9160e5ed17c
+723	1002	7812173045517138	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	ec0371a53adf1214
+908	1213	7812173047357797	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj	43df784a5bd5ccd0
+1002	1249	7812173048294959	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	b74f928f5c89b84e
+352	1345	7812173041794056	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	b44fd59a86fabda8
+33	1415	7812173038603903	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj	7dd3dec5eea9972
+1213	1460	7812173050416104	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj	c0f732aec3cd8ec9
+1249	1505	7812173050762701	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj	82eb18d2c1f8801d
+1345	1608	7812173051730065	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	ec92b947815d67bd
+1416	1688	7812173052430621	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj	ce4c1c2c31fce246
+1460	1712	7812173052872195	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj	599a873025e8da0a
+1505	1762	7812173053332180	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj	d9be2fcf3b096b46
+1608	1854	7812173054358915	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj	b54af6e5c012e3df
+1688	1925	7812173055165817	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj	e294585162ac8939
+1712	1942	7812173055395977	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	a569036749c0739a
+1762	1994	7812173055897516	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	5b8ba9fa25b06d9b
+1854	2109	7812173056821484	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj	4a768487d5b1f66e
+1925	2166	7812173057532053	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj	3f157b5c507694f2
+1943	2210	7812173057708349	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj	40508cc0a2288ecd
+1995	2255	7812173058228381	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	ef9e20646a70c8be
+2167	2433	7812173059942878	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	25b400eaab5c2c20
+2211	2449	7812173060382875	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	4deeaef2702f630e
+2109	2515	7812173059365530	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj	ade080fe5c7ef3c4
+2515	2763	7812173063423329	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/raylib.lib	3967a2bac4af3cf4
+2255	4617	7812173060829584	src/Game/Map/CMakeFiles/mapmod.dir/MapLoader.cpp.obj	d8a1c999f80689e5
+4617	4675	7812173084447079	src/Game/Map/mapmod.lib	1478c7c806513e53
+9	1140	7812173086260650	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/main.cpp.obj	b7da4efc4b60db4a
+14	1176	7812173086310795	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Application.cpp.obj	4c674881331b4365
+18	1398	7812173086350355	src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Editor/Editor.cpp.obj	fe0ece480b5e4b5f
+1398	1594	7812173100147564	src/Game/MapEditor/ChainedDecosMapEditor.exe	827cb4357d09c3e8

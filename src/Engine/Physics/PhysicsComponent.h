@@ -12,10 +12,11 @@
 class PhysicsComponent {
 public:
     // World physics constants
-    // Set floor so that the top of ground collider aligns with Y=0
+    // Set floor so that the top of ground collider aligns with visual ground at Y=0
     // Ground collider height is 2, centered at WORLD_FLOOR_Y + 1 => top = (WORLD_FLOOR_Y + 1) + 1 = WORLD_FLOOR_Y + 2
     // To make top = 0, set WORLD_FLOOR_Y = -2
-    static constexpr float WORLD_FLOOR_Y = -2.0f;
+    // Account for player's visual MODEL_Y_OFFSET (-1.0f) by adjusting ground position
+    static constexpr float WORLD_FLOOR_Y = -1.0f; // Adjusted for visual offset
     static constexpr Vector3 GROUND_COLLISION_CENTER = {0.0f, WORLD_FLOOR_Y + 1.0f, 0.0f};
     static constexpr Vector3 GROUND_COLLISION_SIZE = {2000.0f, 2.0f, 2000.0f};
 

@@ -3,7 +3,9 @@
 
 #include "Editor.h"
 #include "../MapFileManager/MapFileManager.h"
+#include "../../Game/Map/MapLoader.h"  // Include the new comprehensive map loader
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -23,7 +25,7 @@ Editor::Editor()
       m_currentTool(SELECT), m_showImGui(true), m_showObjectPanel(true),
       m_showPropertiesPanel(true), m_shouldAddObject(false), m_modelsInitialized(false),
       m_showFileDialog(false), m_isLoadDialog(true), m_showNewFolderDialog(false),
-      m_showDeleteDialog(false)
+      m_showDeleteDialog(false), m_showParkourDialog(false), m_selectedParkourMap(0)
 {
     // Initialize file dialog to project root
     m_currentDirectory = PROJECT_ROOT_DIR;
@@ -79,6 +81,9 @@ void Editor::RenderImGui()
 
     // Render delete confirmation dialog if shown
     RenderDeleteConfirmDialog();
+
+    // Render parkour map dialog if shown
+    RenderParkourMapDialog();
 
     rlImGuiEnd();
 }
@@ -214,7 +219,6 @@ void Editor::LoadMap(const std::string &filename)
             obj.SetType(type);
             obj.SetModelName(modelName);
             obj.SetSelected(false);
-            // Add to scene
 
             m_objects.push_back(obj);
         }
@@ -224,6 +228,74 @@ void Editor::LoadMap(const std::string &filename)
     else
     {
         std::cout << "Failed to load map!" << std::endl;
+    }
+}
+
+void Editor::ExportMapForGame(const std::string &filename)
+{
+    // Create a GameMap from current editor objects
+    GameMap gameMap;
+
+    // Set basic metadata
+    gameMap.metadata.name = m_mapFileName.empty() ? "exported_map" : m_mapFileName;
+    gameMap.metadata.displayName = "Exported Map";
+    gameMap.metadata.description = "Map exported from editor";
+    gameMap.metadata.author = "Map Editor";
+    gameMap.metadata.version = "1.0";
+    gameMap.metadata.difficulty = 1.0f;
+    gameMap.metadata.skyColor = SKYBLUE;
+    gameMap.metadata.groundColor = DARKGREEN;
+
+    // Convert MapObjects to MapObjectData
+    for (const auto& obj : m_objects)
+    {
+        MapObjectData objectData;
+
+        objectData.name = obj.GetName();
+        objectData.position = obj.GetPosition();
+        objectData.rotation = obj.GetRotation();
+        objectData.scale = obj.GetScale();
+        objectData.color = obj.GetColor();
+        objectData.modelName = obj.GetModelName();
+
+        // Convert type (MapObject uses 0-5, MapObjectData uses enum)
+        switch (obj.GetType())
+        {
+            case 0: objectData.type = MapObjectType::CUBE; break;
+            case 1: objectData.type = MapObjectType::SPHERE; break;
+            case 2: objectData.type = MapObjectType::CYLINDER; break;
+            case 3: objectData.type = MapObjectType::PLANE; break;
+            case 5: objectData.type = MapObjectType::MODEL; break;
+            default: objectData.type = MapObjectType::CUBE; break;
+        }
+
+        // Set shape-specific properties
+        switch (obj.GetType())
+        {
+            case 1: // Sphere
+                objectData.radius = obj.GetRadiusSphere();
+                break;
+            case 2: // Cylinder
+                objectData.radius = obj.GetScale().x;
+                objectData.height = obj.GetScale().y;
+                break;
+            case 3: // Plane
+                objectData.size = obj.GetSize();
+                break;
+        }
+
+        gameMap.objects.push_back(objectData);
+    }
+
+    // Save using the new comprehensive format
+    if (SaveGameMap(gameMap, filename))
+    {
+        std::cout << "Map exported for game successfully!" << std::endl;
+        std::cout << "Saved " << gameMap.objects.size() << " objects" << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to export map for game!" << std::endl;
     }
 }
 
@@ -460,6 +532,29 @@ void Editor::RenderImGuiToolbar()
         if (ImGui::Button("Quick Save") && !m_mapFileName.empty())
         {
             SaveMap(m_mapFileName);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Export for Game"))
+        {
+            // Open save dialog for game export
+            m_isLoadDialog = false;
+            m_showFileDialog = true;
+            m_selectedFile.clear();
+            m_newFileName = "game_map.json";
+            RefreshDirectoryItems();
+        }
+
+        ImGui::Separator();
+
+        // Parkour map tools
+        if (ImGui::Button("Load Parkour Map"))
+        {
+            ShowParkourMapSelector();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Generate Parkour Map"))
+        {
+            ShowParkourMapSelector();
         }
 
         // Show current file path
@@ -1116,6 +1211,14 @@ void Editor::RenderFileDialog()
             m_showFileDialog = false;
         }
 
+        // Handle export for game (when not in load dialog mode)
+        if (!m_isLoadDialog && ImGui::Button("Export for Game", mainButtonSize) && canProceed)
+        {
+            std::string fullPath = (fs::path(m_currentDirectory) / m_selectedFile).string();
+            ExportMapForGame(fullPath);
+            m_showFileDialog = false;
+        }
+
         ImGui::SameLine();
 
         if (ImGui::Button("Cancel", mainButtonSize))
@@ -1199,6 +1302,147 @@ void Editor::RenderNewFolderDialog()
         }
         ImGui::End();
     }
+}
+
+void Editor::RenderParkourMapDialog()
+{
+    if (m_showParkourDialog)
+    {
+        ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() * 0.5f - 250, GetScreenHeight() * 0.5f - 200),
+                               ImGuiCond_FirstUseEver);
+
+        if (ImGui::Begin("Parkour Maps", &m_showParkourDialog, ImGuiWindowFlags_NoCollapse))
+        {
+            ImGui::Text("Select a Parkour Map:");
+            ImGui::Separator();
+
+            // List all available parkour maps
+            for (int i = 0; i < m_parkourMaps.size(); i++)
+            {
+                const auto& parkourMap = m_parkourMaps[i];
+
+                char buffer[256];
+                snprintf(buffer, sizeof(buffer), "%s (%.1f/5.0)", parkourMap.displayName.c_str(), parkourMap.difficulty);
+                if (ImGui::Selectable(buffer, m_selectedParkourMap == i))
+                {
+                    m_selectedParkourMap = i;
+                }
+
+                // Show tooltip with description on hover
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::Text("%s", parkourMap.description.c_str());
+                    ImGui::Text("Elements: %zu", parkourMap.elements.size());
+                    ImGui::EndTooltip();
+                }
+            }
+
+            ImGui::Separator();
+
+            // Action buttons
+            if (ImGui::Button("Load Selected Map", ImVec2(150, 30)))
+            {
+                if (m_selectedParkourMap >= 0 && m_selectedParkourMap < m_parkourMaps.size())
+                {
+                    LoadParkourMap(m_parkourMaps[m_selectedParkourMap].name);
+                    m_showParkourDialog = false;
+                }
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(100, 30)))
+            {
+                m_showParkourDialog = false;
+            }
+
+            // Show selected map details
+            if (m_selectedParkourMap >= 0 && m_selectedParkourMap < m_parkourMaps.size())
+            {
+                const auto& selectedParkourMap = m_parkourMaps[m_selectedParkourMap];
+                ImGui::Separator();
+                ImGui::Text("Selected Map Details:");
+                ImGui::Text("Name: %s", selectedParkourMap.displayName.c_str());
+                ImGui::Text("Description: %s", selectedParkourMap.description.c_str());
+                ImGui::Text("Difficulty: %.1f/5.0", selectedParkourMap.difficulty);
+                ImGui::Text("Elements: %zu", selectedParkourMap.elements.size());
+                ImGui::Text("Start: (%.1f, %.1f, %.1f)", selectedParkourMap.startPosition.x,
+                          selectedParkourMap.startPosition.y, selectedParkourMap.startPosition.z);
+                ImGui::Text("End: (%.1f, %.1f, %.1f)", selectedParkourMap.endPosition.x,
+                          selectedParkourMap.endPosition.y, selectedParkourMap.endPosition.z);
+            }
+        }
+        ImGui::End();
+    }
+}
+
+void Editor::LoadParkourMap(const std::string& mapName)
+{
+    // Get the parkour map by name
+    ParkourTestMap parkourMap = ParkourMapGenerator::GetMapByName(mapName);
+
+    // Clear current scene
+    m_objects.clear();
+    m_selectedObjectIndex = -1;
+
+    // Convert parkour elements to MapObjects
+    for (const auto& element : parkourMap.elements)
+    {
+        MapObject obj;
+
+        // Set basic properties
+        obj.SetPosition(element.position);
+        obj.SetColor(element.color);
+        obj.SetName("Parkour_" + std::to_string(m_objects.size()));
+
+        // Convert parkour shape type to MapObject type
+        switch (element.type)
+        {
+            case ParkourShapeType::Cube:
+                obj.SetType(0); // Cube
+                obj.SetScale(element.size);
+                break;
+            case ParkourShapeType::Sphere:
+                obj.SetType(1); // Sphere
+                obj.SetRadiusSphere(element.size.x);
+                break;
+            case ParkourShapeType::Cylinder:
+                obj.SetType(2); // Cylinder
+                obj.SetScale(element.size);
+                break;
+            case ParkourShapeType::Plane:
+                obj.SetType(3); // Plane
+                obj.SetSize({element.size.x, element.size.z});
+                obj.SetPosition({element.position.x, element.position.y, element.position.z});
+                break;
+            case ParkourShapeType::Capsule:
+                obj.SetType(2); // Use cylinder as approximation
+                obj.SetScale(element.size);
+                break;
+            case ParkourShapeType::Torus:
+                obj.SetType(0); // Use cube as approximation
+                obj.SetScale(element.size);
+                break;
+        }
+
+        m_objects.push_back(obj);
+    }
+
+    TraceLog(LOG_INFO, "Loaded parkour map '%s' with %d elements", mapName.c_str(), m_objects.size());
+}
+
+void Editor::GenerateParkourMap(const std::string& mapName)
+{
+    LoadParkourMap(mapName);
+}
+
+void Editor::ShowParkourMapSelector()
+{
+    // Load available parkour maps
+    m_parkourMaps = ParkourMapGenerator::GetAllParkourMaps();
+    m_selectedParkourMap = 0;
+    m_showParkourDialog = true;
 }
 
 void Editor::DeleteFolder(const std::string &selectedItem)

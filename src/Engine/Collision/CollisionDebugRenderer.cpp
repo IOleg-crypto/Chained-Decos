@@ -33,7 +33,6 @@ void CollisionDebugRenderer::RenderAllCollisions(const std::vector<std::unique_p
     {
         Color color = (i == 0) ? m_groundColor : m_obstacleColor;
         RenderCollisionBox(*collisions[i].get(), color);
-        // Додаємо малювання трикутників для реальної форми колізії
         RenderCollisionTriangles(*collisions[i], RED);
     }
 }

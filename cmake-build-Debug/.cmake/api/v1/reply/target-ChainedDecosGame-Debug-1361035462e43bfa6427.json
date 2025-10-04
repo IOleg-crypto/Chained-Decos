@@ -195,11 +195,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "raylib::@af39a1529cb2ee18778c"
+			"id" : "imguilib::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "imguilib::@6890427a1f51a3e7e1df"
+			"id" : "raylib::@af39a1529cb2ee18778c"
 		},
 		{
 			"backtrace" : 2,
@@ -227,22 +227,15 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "cameracontroller::@d7306d29326ff25263b1"
-<<<<<<<< HEAD:cmake-build-Debug/.cmake/api/v1/reply/target-ChainedDecosGame-Debug-194c44bb9f986d308dba.json
+			"id" : "physics::@e27c3d6556b677b24ea2"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "physics::@e27c3d6556b677b24ea2"
-========
->>>>>>>> feature/advanced-mapeditor:cmake-build-Debug/.cmake/api/v1/reply/target-ChainedDecosGame-Debug-787942d207f37c63aad6.json
+			"id" : "cameracontroller::@d7306d29326ff25263b1"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "world::@c98633f6e372857301bf"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "physics::@e27c3d6556b677b24ea2"
 		},
 		{
 			"backtrace" : 2,

@@ -96,7 +96,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
             continue;
         collided = true;
 
-        // --- Додаємо raycast вниз по BVH ---
         if (collider->IsUsingBVH()) {
             Vector3 origin = playerCenter;
             Vector3 dir = {0.0f, -1.0f, 0.0f};
@@ -113,7 +112,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
                 }
             }
         }
-        // --- залишаємо старий AABB для fallback ---
         const Vector3 colliderMin = collider->GetMin();
         const Vector3 colliderMax = collider->GetMax();
         const Vector3 colliderCenter = {(colliderMin.x + colliderMax.x) * 0.5f,
@@ -421,7 +419,7 @@ bool CollisionManager::RaycastDown(const Vector3 &origin, float maxDistance, flo
     Vector3 bestPoint = {0};
     Vector3 bestNormal = {0};
 
-    Vector3 dir = {0.0f, -1.0f, 0.0f}; // вниз
+    Vector3 dir = {0.0f, -3.0f, 0.0f}; 
 
     for (const auto &collider : m_collisions)
     {

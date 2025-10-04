@@ -250,28 +250,19 @@
 	[
 		{
 			"backtrace" : 3,
-			"id" : "raylib::@af39a1529cb2ee18778c"
+			"id" : "imguilib::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 3,
-			"id" : "imguilib::@6890427a1f51a3e7e1df"
+			"id" : "raylib::@af39a1529cb2ee18778c"
 		},
 		{
 			"backtrace" : 3,
 			"id" : "glfw::@4755506f38bf45259394"
 		},
 		{
-<<<<<<<< HEAD:cmake-build-Debug/.cmake/api/v1/reply/target-ChainedDecosMapEditor-Debug-e99cc8a57d256059ffbe.json
-			"backtrace" : 2,
-			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "collision::@c7f3438d24a996a0c811"
-========
 			"backtrace" : 3,
 			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
->>>>>>>> feature/advanced-mapeditor:cmake-build-Debug/.cmake/api/v1/reply/target-ChainedDecosMapEditor-Debug-359059cf7375ecc625c0.json
 		},
 		{
 			"backtrace" : 3,
@@ -290,25 +281,16 @@
 			"id" : "render::@1c5ce05080cbaa0376c6"
 		},
 		{
-<<<<<<<< HEAD:cmake-build-Debug/.cmake/api/v1/reply/target-ChainedDecosMapEditor-Debug-e99cc8a57d256059ffbe.json
-			"backtrace" : 2,
-			"id" : "cameracontroller::@d7306d29326ff25263b1"
+			"backtrace" : 3,
+			"id" : "physics::@e27c3d6556b677b24ea2"
 		},
 		{
-			"backtrace" : 2,
-			"id" : "physics::@e27c3d6556b677b24ea2"
-========
 			"backtrace" : 3,
 			"id" : "cameracontroller::@d7306d29326ff25263b1"
->>>>>>>> feature/advanced-mapeditor:cmake-build-Debug/.cmake/api/v1/reply/target-ChainedDecosMapEditor-Debug-359059cf7375ecc625c0.json
 		},
 		{
 			"backtrace" : 3,
 			"id" : "world::@c98633f6e372857301bf"
-		},
-		{
-			"backtrace" : 3,
-			"id" : "physics::@e27c3d6556b677b24ea2"
 		},
 		{
 			"backtrace" : 3,
@@ -319,19 +301,11 @@
 			"id" : "kernel::@5d86515e568759735271"
 		},
 		{
-<<<<<<<< HEAD:cmake-build-Debug/.cmake/api/v1/reply/target-ChainedDecosMapEditor-Debug-e99cc8a57d256059ffbe.json
-			"backtrace" : 2,
+			"backtrace" : 3,
 			"id" : "mapmod::@e87daa19a0aaec6b83ad"
 		},
 		{
-			"backtrace" : 2,
-			"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94"
-		},
-		{
-			"backtrace" : 2,
-========
 			"backtrace" : 3,
->>>>>>>> feature/advanced-mapeditor:cmake-build-Debug/.cmake/api/v1/reply/target-ChainedDecosMapEditor-Debug-359059cf7375ecc625c0.json
 			"id" : "menu::@508c1ec0f6a4eb8a79d5"
 		}
 	],
@@ -374,6 +348,11 @@
 			{
 				"backtrace" : 3,
 				"fragment" : "\"D:\\gitnext\\Chained Decos\\.deps\\raylib-build\\raylib\\raylib.lib\"",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "src\\Game\\Map\\mapmod.lib",
 				"role" : "libraries"
 			},
 			{

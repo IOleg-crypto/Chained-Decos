@@ -47,8 +47,8 @@ target_include_directories(ChainedDecosMapEditor PRIVATE
     ${CMAKE_SOURCE_DIR}/include
 )
 
-# Link with ChainedDecosEngine and raylib
-target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib)
+# Link with ChainedDecosEngine, raylib, and mapmod for map loading functionality
+target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib mapmod nlohmann_json)
 
 # Compiler definitions
 target_compile_definitions(ChainedDecosMapEditor PRIVATE

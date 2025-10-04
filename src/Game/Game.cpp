@@ -354,9 +354,15 @@ void Game::HandleMenuActions()
     }
 }
 
-void Game::RenderGameWorld() const {
+void Game::RenderGameWorld() {
     m_engine->GetRenderManager()->RenderGame(m_player, m_models, m_collisionManager,
-                                            m_engine->IsCollisionDebugVisible());
+                                             m_engine->IsCollisionDebugVisible());
+
+    // Render editor-created map if available
+    if (!m_gameMap.objects.empty())
+    {
+        RenderEditorMap();
+    }
 }
 
 void Game::RenderGameUI() const {
@@ -382,19 +388,100 @@ void Game::RenderGameUI() const {
 
 void Game::CreateParkourTestMap()
 {
-
     Collision startPlatform({0.0f, 2.0f, 0.0f}, {3.0f, 0.5f, 3.0f});
     DrawPlane({0.0f, 2.0f, 0.0f}, {5, 8} , RED);
     startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
     m_collisionManager.AddCollider(std::move(startPlatform));
-    
+
     Collision platform1({8.0f, 2.0f, 0.0f}, {1.5f, 0.5f, 1.5f});
     platform1.SetCollisionType(CollisionType::AABB_ONLY);
     m_collisionManager.AddCollider(std::move(platform1));
     DrawCube({8.0f, 2.0f, 0.0f}, 1.5f, 0.5f, 1.5f, BLUE);
-    
+
     Collision platform2({14.0f, 3.0f, 0.0f}, {1.0f, 0.5f, 1.0f});
     platform2.SetCollisionType(CollisionType::AABB_ONLY);
     m_collisionManager.AddCollider(std::move(platform2));
     DrawCube({14.0f, 3.0f, 0.0f}, 1.0f, 0.5f, 1.0f, YELLOW);
+}
+
+// ============================================================================
+// Editor Map Loading System
+// ============================================================================
+
+void Game::LoadEditorMap(const std::string& mapPath)
+{
+    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Loading map from: %s", mapPath.c_str());
+
+    // Clear previous map data
+    m_gameMap.Cleanup();
+    m_gameMap = GameMap{};
+
+    // Load the new comprehensive map format
+    m_gameMap = LoadGameMap(mapPath);
+
+    if (m_gameMap.objects.empty())
+    {
+        TraceLog(LOG_ERROR, "Game::LoadEditorMap() - No objects loaded from map");
+        return;
+    }
+
+    // Create collision boxes for all objects in the map
+    for (const auto& object : m_gameMap.objects)
+    {
+        Vector3 colliderSize = object.scale;
+
+        // Adjust collider size based on object type
+        switch (object.type)
+        {
+            case MapObjectType::SPHERE:
+                // For spheres, use radius for all dimensions
+                colliderSize = Vector3{object.radius, object.radius, object.radius};
+                break;
+            case MapObjectType::CYLINDER:
+                // For cylinders, use radius for x/z and height for y
+                colliderSize = Vector3{object.radius, object.height, object.radius};
+                break;
+            case MapObjectType::PLANE:
+                // For planes, use size for x/z and small height for y
+                colliderSize = Vector3{object.size.x, 0.1f, object.size.y};
+                break;
+            default:
+                // For cubes and other types, use scale as-is
+                break;
+        }
+
+        Collision collision(object.position, colliderSize);
+        collision.SetCollisionType(CollisionType::AABB_ONLY);
+        m_collisionManager.AddCollider(std::move(collision));
+
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f)",
+                 object.name.c_str(), object.position.x, object.position.y, object.position.z);
+    }
+
+    // Set player start position if specified in map metadata
+    if (m_gameMap.metadata.startPosition.x != 0.0f ||
+        m_gameMap.metadata.startPosition.y != 0.0f ||
+        m_gameMap.metadata.startPosition.z != 0.0f)
+    {
+        m_player.SetPlayerPosition(m_gameMap.metadata.startPosition);
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Set player start position to (%.2f, %.2f, %.2f)",
+                 m_gameMap.metadata.startPosition.x, m_gameMap.metadata.startPosition.y, m_gameMap.metadata.startPosition.z);
+    }
+
+    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded map with %d objects", m_gameMap.objects.size());
+}
+
+void Game::RenderEditorMap()
+{
+    // Get camera from player for rendering
+    Camera3D camera = m_player.GetCameraController()->GetCamera();
+
+    // Render the loaded map
+    RenderGameMap(m_gameMap, camera);
+
+    // Also render any legacy map objects for backward compatibility
+    for (const auto& mapObj : m_mapObjects)
+    {
+        DrawModel(mapObj.loadedModel, Vector3{0, 0, 0}, 1.0f, WHITE);
+    }
 }

@@ -15,6 +15,7 @@
 #include "Engine/CameraController/CameraController.h" // Коректний шлях
 #include "Engine/Model/Model.h"                       // Коректний шлях
 #include "MapObject.h"
+#include "../Map/ParkourMapGenerator.h"               // Add parkour map generator
 
 // Main editor class for the map editor
 class Editor
@@ -45,6 +46,11 @@ private:
     bool m_showNewFolderDialog;                // Show/hide new folder dialog
     bool m_showDeleteDialog;                   // Show/hide delete confirmation dialog
     std::string m_itemToDelete;                // Item to delete
+
+    // Parkour map dialog
+    bool m_showParkourDialog;                  // Show/hide parkour map dialog
+    std::vector<ParkourTestMap> m_parkourMaps; // Available parkour maps
+    int m_selectedParkourMap;                  // Index of selected parkour map
 
     // Available editing tools
     enum Tool
@@ -78,8 +84,14 @@ public:
     void ClearSelection();                // Clear current selection
 
     // File operations
-    void SaveMap(const std::string &filename); // Save map to file
-    void LoadMap(const std::string &filename); // Load map from file
+    void SaveMap(const std::string &filename); // Save map to file (editor format)
+    void LoadMap(const std::string &filename); // Load map from file (editor format)
+    void ExportMapForGame(const std::string &filename); // Export map for game engine
+
+    // Parkour map operations
+    void LoadParkourMap(const std::string& mapName); // Load a parkour map into editor
+    void GenerateParkourMap(const std::string& mapName); // Generate a new parkour map
+    void ShowParkourMapSelector(); // Show parkour map selection dialog
 
 private:
     // Rendering functions
@@ -87,6 +99,7 @@ private:
     void RenderImGuiObjectPanel();     // Render object list panel
     void RenderImGuiPropertiesPanel(); // Render properties panel
     void RenderImGuiToolbar();         // Render toolbar
+    void RenderParkourMapDialog();     // Render parkour map selection dialog
 
     // Input handling
     void PickObject();          // Handle mouse input
