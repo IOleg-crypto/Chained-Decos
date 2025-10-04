@@ -6,9 +6,26 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Build configuration options
 option(FAST_CONFIG "Reduce CMake configure time" ON)
 option(BUILD_TESTS "Build unit tests" OFF)
 option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
+option(BUILD_BENCHMARKS "Build performance benchmarks" OFF)
+option(ENABLE_PROFILING "Enable profiling support" OFF)
+option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
+option(ENABLE_WARNINGS "Enable strict compiler warnings" ON)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(ENABLE_UNITY_BUILD "Enable unity build for faster compilation" OFF)
+
+# Platform-specific options
+option(ENABLE_OPENGL_DEBUG "Enable OpenGL debug context" OFF)
+option(ENABLE_AUDIO "Enable audio support" ON)
+option(ENABLE_MULTITHREADING "Enable multithreading support" ON)
+
+# Development options
+option(ENABLE_DEV_TOOLS "Enable development tools" OFF)
+option(ENABLE_DEBUG_INFO "Enable debug information" ON)
+option(ENABLE_SANITIZERS "Enable sanitizers for debugging" OFF)
 
 if(FAST_CONFIG)
     set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/.deps" CACHE PATH "Deps cache")
@@ -17,6 +34,87 @@ if(FAST_CONFIG)
 endif()
 
 include(FetchContent)
+
+# Set build type if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    if(ENABLE_OPTIMIZATIONS)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+    else()
+        set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
+    endif()
+endif()
+
+# Compiler-specific settings
+if(MSVC)
+    # MSVC-specific settings
+    add_compile_options(
+        $<$<CONFIG:Debug>:/Od>
+        $<$<CONFIG:Release>:/O2>
+        $<$<CONFIG:Release>:/DNDEBUG>
+    )
+
+    if(ENABLE_WARNINGS)
+        add_compile_options(/W4 /permissive-)
+        if(ENABLE_DEBUG_INFO)
+            add_compile_options(/Zi)
+        endif()
+    endif()
+
+    if(ENABLE_SANITIZERS)
+        add_compile_options(/fsanitize=address)
+    endif()
+
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # GCC/Clang settings
+    add_compile_options(
+        $<$<CONFIG:Debug>:-O0>
+        $<$<CONFIG:Debug>:-g>
+        $<$<CONFIG:Release>:-O3>
+        $<$<CONFIG:Release>:-DNDEBUG>
+    )
+
+    if(ENABLE_WARNINGS)
+        add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            add_compile_options(-Wmost -Wno-missing-braces)
+        endif()
+    endif()
+
+    if(ENABLE_DEBUG_INFO)
+        add_compile_options(-g)
+    endif()
+
+    if(ENABLE_SANITIZERS)
+        add_compile_options(-fsanitize=address -fsanitize=undefined)
+        add_link_options(-fsanitize=address -fsanitize=undefined)
+    endif()
+
+    if(ENABLE_PROFILING)
+        add_compile_options(-pg)
+        add_link_options(-pg)
+    endif()
+endif()
+
+# Platform-specific settings
+if(WIN32)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
+    add_compile_definitions(NOMINMAX)
+endif()
+
+if(APPLE)
+    add_compile_definitions(GL_SILENCE_DEPRECATION)
+endif()
+
+if(ENABLE_MULTITHREADING)
+    find_package(Threads REQUIRED)
+endif()
+
+# Unity build configuration
+if(ENABLE_UNITY_BUILD)
+    set(CMAKE_UNITY_BUILD ON)
+    set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
+endif()
 
 # --- Fetch external dependencies ---
 set(RAYLIB_VERSION "5.5")
@@ -86,4 +184,96 @@ endif()
 
 if(BUILD_MAP_EDITOR)
     add_subdirectory(src/Game/MapEditor)
+endif()
+
+# Set the target properties
+set_target_properties(ChainedDecos PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    POSITION_INDEPENDENT_CODE ON
+)
+
+# Set output name based on build type
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos_debug")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos")
+endif()
+
+# Enable testing if requested
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
+# Enable benchmarks if requested
+if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif()
+
+# Installation configuration
+install(TARGETS ChainedDecos
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
+# Install resources
+install(DIRECTORY resources/
+    DESTINATION share/ChainedDecos/resources
+    FILES_MATCHING PATTERN "*"
+)
+
+# Install configuration files
+install(FILES game.cfg
+    DESTINATION share/ChainedDecos
+)
+
+# Package configuration
+if(NOT FAST_CONFIG)
+    set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
+    export(TARGETS ChainedDecos
+        NAMESPACE ChainedDecos::
+        FILE ChainedDecosConfig.cmake
+    )
+
+    # Generate package version file
+    include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfigVersion.cmake"
+        VERSION 1.0.0
+        COMPATIBILITY AnyNewerVersion
+    )
+
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfigVersion.cmake"
+        DESTINATION lib/cmake/ChainedDecos
+    )
+endif()
+
+# CPack configuration for packaging
+if(NOT FAST_CONFIG)
+    set(CPACK_PACKAGE_NAME "ChainedDecos")
+    set(CPACK_PACKAGE_VERSION "1.0.0")
+    set(CPACK_PACKAGE_DESCRIPTION "Chained Decos - 3D Parkour Game")
+    set(CPACK_PACKAGE_VENDOR "Chained Decos Team")
+    set(CPACK_PACKAGE_CONTACT "contact@chaineddecos.com")
+
+    if(WIN32)
+        set(CPACK_GENERATOR "ZIP;NSIS")
+        set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-windows")
+    elseif(APPLE)
+        set(CPACK_GENERATOR "DragNDrop")
+        set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-macos")
+    else()
+        set(CPACK_GENERATOR "TGZ;DEB")
+        set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-linux")
+    endif()
+
+    include(CPack)
 endif()

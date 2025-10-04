@@ -26,7 +26,7 @@ private:
 private:
     bool m_showMenu;
     bool m_isGameInitialized;
-    bool m_isDebugInfo;
+    [[maybe_unused]] bool m_isDebugInfo;
 
 public:
     Game(Engine *engine);
@@ -47,10 +47,15 @@ public:
     void LoadGameModels();
     void UpdatePlayerLogic();
     void UpdatePhysicsLogic();
+    void Cleanup(); // Resource cleanup
     //void HandleKeyboardShortcuts(); maybe implemented in the future
     void HandleMenuActions();
     void RenderGameWorld();
     void RenderGameUI() const;
+
+    // Helper functions for code quality and reduced duplication
+    void CreatePlatform(const Vector3& position, const Vector3& size, Color color, CollisionType collisionType);
+    float CalculateDynamicFontSize(float baseSize) const;
     
     // Parkour test map creation
     void CreateParkourTestMap();
@@ -59,8 +64,6 @@ public:
     void CreateHardParkourMap();
     void CreateSpeedrunParkourMap();
 
-    // Helper function for simplified platform creation
-    void AddPlatform(float x, float y, float z, float sizeX, float sizeY, float sizeZ);
 
     // Map loading and rendering
     void LoadEditorMap(const std::string& mapPath);
