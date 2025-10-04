@@ -174,9 +174,27 @@ void Game::InitCollisions()
     Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
     m_collisionManager.AddCollider(std::move(groundPlane));
 
-    // Create parkour test map
-    if(m_menu.GetAction() == MenuAction::SelectMap1)
+    // Create parkour test map based on menu selection
+    MenuAction action = m_menu.GetAction();
+    if(action == MenuAction::SelectMap1)
     {
+        CreateEasyParkourMap();
+    }
+    else if(action == MenuAction::SelectMap2)
+    {
+        CreateMediumParkourMap();
+    }
+    else if(action == MenuAction::SelectMap3)
+    {
+        CreateHardParkourMap();
+    }
+    else if(action == MenuAction::StartGameWithMap)
+    {
+        CreateSpeedrunParkourMap();
+    }
+    else
+    {
+        // Default fallback to original test map
         CreateParkourTestMap();
     }
 
@@ -219,8 +237,8 @@ void Game::InitPlayer()
 {
     TraceLog(LOG_INFO, "Game::InitPlayer() - Initializing player...");
 
-    // Set initial position above ground (ground is at Y = -10.0f, so 5.0f above ground)
-    Vector3 safePosition = {0.0f, 5.0f, 0.0f};
+    // Set initial position on the first platform (mix of ground and floating platforms)
+    Vector3 safePosition = {0.0f, 0.0f, 0.0f}; // Start on ground level with mixed platform heights
     m_player.SetPlayerPosition(safePosition);
 
     // Setup collision and physics
@@ -302,7 +320,7 @@ void Game::UpdatePhysicsLogic()
 
         // Create emergency ground plane if no colliders exist
         Collision plane = GroundColliderFactory::CreateDefaultGameGround();
-        m_collisionManager.AddCollider(std::move(plane));
+        //m_collisionManager.AddCollider(std::move(plane));
 
         TraceLog(LOG_WARNING, "Game::UpdatePhysicsLogic() - Created emergency ground plane.");
     }
@@ -383,25 +401,107 @@ void Game::RenderGameUI() const {
     Font fontToUse = (m_engine->GetRenderManager() && m_engine->GetRenderManager()->GetFont().texture.id != 0)
                          ? m_engine->GetRenderManager()->GetFont()
                          : GetFontDefault();
-    DrawTextEx(fontToUse, timerText.c_str(), {static_cast<float>(timerX), static_cast<float>(timerY)}, 20, 2.0f, WHITE);
+    // Use larger font size for better readability with Alan Sans
+    DrawTextEx(fontToUse, timerText.c_str(), {static_cast<float>(timerX), static_cast<float>(timerY)}, 24, 2.0f, WHITE);
+}
+
+// Helper function to simplify platform creation
+void Game::AddPlatform(float x, float y, float z, float sizeX, float sizeY, float sizeZ)
+{
+    Collision platform({x, y, z}, {sizeX, sizeY, sizeZ});
+    platform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(platform));
 }
 
 void Game::CreateParkourTestMap()
 {
-    Collision startPlatform({0.0f, 2.0f, 0.0f}, {3.0f, 0.5f, 3.0f});
-    DrawPlane({0.0f, 2.0f, 0.0f}, {5, 8} , RED);
-    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(startPlatform));
+    // Simplified test map - using helper function
+    AddPlatform(0.0f, 0.0f, 0.0f, 3.0f, 0.5f, 3.0f);  // Ground start
+    AddPlatform(8.0f, 0.0f, 0.0f, 1.5f, 0.5f, 1.5f);  // Ground
+    AddPlatform(14.0f, 3.0f, 0.0f, 1.0f, 0.5f, 1.0f); // Low floating
+    AddPlatform(20.0f, 0.0f, 2.0f, 1.3f, 0.5f, 1.3f); // Ground
+    AddPlatform(26.0f, 4.0f, 1.0f, 1.8f, 0.5f, 1.8f); // Mid floating
+    AddPlatform(32.0f, 0.0f, -1.0f, 1.2f, 0.5f, 1.2f); // Ground finish
+}
 
-    Collision platform1({8.0f, 2.0f, 0.0f}, {1.5f, 0.5f, 1.5f});
-    platform1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(platform1));
-    DrawCube({8.0f, 2.0f, 0.0f}, 1.5f, 0.5f, 1.5f, BLUE);
+void Game::CreateEasyParkourMap()
+{
+    // Simplified Easy parkour map using helper function
+    AddPlatform(0.0f, 0.0f, 0.0f, 4.0f, 0.5f, 4.0f);  // Ground start
+    AddPlatform(8.0f, 0.0f, 3.0f, 2.5f, 0.5f, 2.5f);  // Ground
+    AddPlatform(16.0f, 3.0f, 1.0f, 2.0f, 0.5f, 2.0f); // Low floating
+    AddPlatform(24.0f, 0.0f, -2.0f, 2.2f, 0.5f, 2.2f); // Ground
+    AddPlatform(32.0f, 4.0f, 2.0f, 1.8f, 0.5f, 1.8f); // Mid floating
+    AddPlatform(40.0f, 0.0f, 0.0f, 2.0f, 0.5f, 2.0f);  // Ground
+    AddPlatform(48.0f, 5.0f, -1.5f, 1.9f, 0.5f, 1.9f); // Higher floating
+    AddPlatform(56.0f, 0.0f, 1.5f, 2.1f, 0.5f, 2.1f);  // Ground
+    AddPlatform(64.0f, 3.5f, -0.5f, 1.7f, 0.5f, 1.7f); // Low floating
+    AddPlatform(72.0f, 0.0f, 2.5f, 2.3f, 0.5f, 2.3f);  // Ground
+    AddPlatform(80.0f, 0.0f, 0.0f, 4.0f, 0.5f, 4.0f);  // Ground finish
+}
 
-    Collision platform2({14.0f, 3.0f, 0.0f}, {1.0f, 0.5f, 1.0f});
-    platform2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(platform2));
-    DrawCube({14.0f, 3.0f, 0.0f}, 1.0f, 0.5f, 1.0f, YELLOW);
+void Game::CreateMediumParkourMap()
+{
+    // Simplified Medium difficulty using helper function
+    AddPlatform(0.0f, 0.0f, 0.0f, 3.5f, 0.5f, 3.5f);  // Ground start
+    AddPlatform(9.0f, 0.0f, 4.0f, 1.8f, 0.5f, 1.8f);  // Ground
+    AddPlatform(18.0f, 4.0f, 2.0f, 1.6f, 0.5f, 1.6f); // Mid floating
+    AddPlatform(27.0f, 0.0f, -1.0f, 1.9f, 0.5f, 1.9f); // Ground
+    AddPlatform(36.0f, 5.0f, 3.0f, 1.4f, 0.5f, 1.4f); // Higher floating
+    AddPlatform(45.0f, 0.0f, 1.0f, 1.7f, 0.5f, 1.7f);  // Ground
+    AddPlatform(54.0f, 6.0f, -2.0f, 1.3f, 0.5f, 1.3f); // High floating
+    AddPlatform(63.0f, 3.0f, 2.5f, 1.5f, 0.5f, 1.5f);  // Low-mid floating
+    AddPlatform(72.0f, 0.0f, 0.5f, 1.2f, 0.5f, 1.2f);  // Ground
+    AddPlatform(81.0f, 4.5f, -1.5f, 1.6f, 0.5f, 1.6f); // Mid floating
+    AddPlatform(90.0f, 0.0f, 1.8f, 1.1f, 0.5f, 1.1f);  // Ground
+    AddPlatform(99.0f, 5.5f, -0.8f, 1.4f, 0.5f, 1.4f); // High floating
+    AddPlatform(108.0f, 0.0f, 0.0f, 4.5f, 0.5f, 4.5f); // Ground finish
+}
+
+void Game::CreateHardParkourMap()
+{
+    // Simplified Hard difficulty using helper function
+    AddPlatform(0.0f, 0.0f, 0.0f, 2.8f, 0.5f, 2.8f);  // Ground start
+    AddPlatform(8.0f, 0.0f, 5.0f, 0.9f, 0.5f, 0.9f);   // Ground
+    AddPlatform(14.0f, 6.0f, 4.2f, 0.7f, 0.5f, 0.7f);  // High floating
+    AddPlatform(20.0f, 0.0f, 3.8f, 0.8f, 0.5f, 0.8f);  // Ground
+    AddPlatform(26.0f, 4.0f, 4.5f, 0.6f, 0.5f, 0.6f);  // Mid floating
+    AddPlatform(32.0f, 0.0f, 3.9f, 0.5f, 0.5f, 0.5f);  // Ground
+    AddPlatform(38.0f, 7.0f, 4.3f, 0.7f, 0.5f, 0.7f);  // Very high floating
+    AddPlatform(44.0f, 3.0f, 3.5f, 0.8f, 0.5f, 0.8f);  // Low-mid floating
+    AddPlatform(50.0f, 0.0f, 2.8f, 0.6f, 0.5f, 0.6f);  // Ground
+    AddPlatform(56.0f, 5.0f, 2.1f, 0.9f, 0.5f, 0.9f);  // High floating
+    AddPlatform(62.0f, 0.0f, 3.2f, 0.7f, 0.5f, 0.7f);  // Ground
+    AddPlatform(68.0f, 6.5f, 2.4f, 0.5f, 0.5f, 0.5f);  // Very high floating
+    AddPlatform(74.0f, 0.0f, 1.7f, 0.8f, 0.5f, 0.8f);  // Ground
+    AddPlatform(80.0f, 4.0f, 2.9f, 0.6f, 0.5f, 0.6f);  // Mid floating
+    AddPlatform(86.0f, 0.0f, 2.2f, 0.7f, 0.5f, 0.7f);  // Ground
+    AddPlatform(92.0f, 5.5f, 1.5f, 0.5f, 0.5f, 0.5f);  // High floating
+    AddPlatform(98.0f, 0.0f, 0.8f, 0.8f, 0.5f, 0.8f);  // Ground
+    AddPlatform(105.0f, 0.0f, 0.0f, 4.0f, 0.5f, 4.0f); // Ground finish
+}
+
+void Game::CreateSpeedrunParkourMap()
+{
+    // Simplified Speedrun map using helper function
+    AddPlatform(0.0f, 0.0f, 0.0f, 3.5f, 0.5f, 3.5f);  // Ground start
+    AddPlatform(7.0f, 0.0f, 2.5f, 2.8f, 0.5f, 1.8f);   // Ground
+    AddPlatform(14.0f, 3.0f, 4.0f, 2.3f, 0.5f, 2.0f);  // Low floating
+    AddPlatform(21.0f, 0.0f, 5.2f, 2.1f, 0.5f, 2.2f);  // Ground
+    AddPlatform(28.0f, 4.0f, 4.8f, 2.4f, 0.5f, 1.9f);  // Mid floating
+    AddPlatform(35.0f, 0.0f, 3.5f, 2.6f, 0.5f, 1.7f);  // Ground
+    AddPlatform(42.0f, 5.0f, 2.0f, 2.8f, 0.5f, 1.5f);  // High floating
+    AddPlatform(49.0f, 0.0f, 0.5f, 3.0f, 0.5f, 1.3f);   // Ground
+    AddPlatform(56.0f, 3.5f, -1.0f, 3.2f, 0.5f, 1.1f); // Low-mid floating
+    AddPlatform(63.0f, 0.0f, -2.5f, 2.9f, 0.5f, 1.6f); // Ground
+    AddPlatform(70.0f, 4.5f, -4.0f, 2.7f, 0.5f, 1.8f); // Mid floating
+    AddPlatform(77.0f, 0.0f, -5.5f, 2.5f, 0.5f, 2.0f); // Ground
+    AddPlatform(84.0f, 6.0f, -4.8f, 2.3f, 0.5f, 2.2f); // High floating
+    AddPlatform(91.0f, 0.0f, -3.5f, 2.1f, 0.5f, 2.4f); // Ground
+    AddPlatform(98.0f, 3.0f, -2.0f, 2.0f, 0.5f, 2.6f); // Low floating
+    AddPlatform(105.0f, 0.0f, -0.5f, 1.8f, 0.5f, 2.8f); // Ground
+    AddPlatform(112.0f, 4.0f, 1.0f, 1.6f, 0.5f, 3.0f);  // Mid floating
+    AddPlatform(120.0f, 0.0f, 0.0f, 5.0f, 0.5f, 5.0f); // Ground finish
 }
 
 // ============================================================================

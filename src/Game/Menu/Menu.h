@@ -100,6 +100,7 @@ private:
 
     Engine *m_engine = nullptr;
     ConfigManager m_config;
+    Font m_font; // Alan Sans font for menu text
 
 public:
     Menu();
@@ -109,19 +110,19 @@ public:
     void RenderMenu() const;
 
     void Update();
-    void Render() const;
+    void Render();
     void GetEngine(Engine *engine);
     void ResetAction();
     void RenderSettingsMenu() const;
-    static void RenderCredits();
-    static void RenderMods();
+    void RenderCredits();
+    void RenderMods();
     void ExecuteAction();
     void HandleMouseSelection();
     void HandleKeyboardNavigation();
     void HandleVideoNavigation();
     void HandleConfirmExit();
     void HandleMapSelection();
-    static void RenderConfirmExit();
+    void RenderConfirmExit();
 
     // Map selection methods
     void InitializeMaps();

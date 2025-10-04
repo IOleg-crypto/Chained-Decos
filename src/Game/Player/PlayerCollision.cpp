@@ -20,21 +20,17 @@ void PlayerCollision::Update() {
 }
 
 void PlayerCollision::UpdateCollisionPoints() {
-    Vector3 position = m_player->GetPlayerPosition();
-    Vector3 size = m_player->GetPlayerSize();
-    
-    float dx = size.x * 0.5f;
-    float dy = size.y * 0.5f;
-    float dz = size.z * 0.5f;
-    
+    Vector3 pos = m_player->GetPlayerPosition();
+    Vector3 halfSize = Vector3Scale(m_player->GetPlayerSize(), 0.5f);
+
     m_collisionPoints = {
-        position,                                        // center
-        {position.x - dx, position.y, position.z},      // left
-        {position.x + dx, position.y, position.z},      // right
-        {position.x, position.y, position.z - dz},      // front
-        {position.x, position.y, position.z + dz},      // back
-        {position.x, position.y - dy, position.z},      // bottom
-        {position.x, position.y + dy, position.z}       // top
+        pos,
+        Vector3Subtract(pos, {halfSize.x, 0, 0}),        // left
+        Vector3Add(pos, {halfSize.x, 0, 0}),             // right
+        Vector3Subtract(pos, {0, 0, halfSize.z}),        // front
+        Vector3Add(pos, {0, 0, halfSize.z}),             // back
+        Vector3Subtract(pos, {0, halfSize.y, 0}),        // bottom
+        Vector3Add(pos, {0, halfSize.y, 0})              // top
     };
 }
 
@@ -43,17 +39,14 @@ BoundingBox PlayerCollision::GetBoundingBox() const {
 }
 
 void PlayerCollision::UpdateBoundingBox() {
-    Vector3 position = m_player->GetPlayerPosition();
-    Vector3 size = m_player->GetPlayerSize();
-    
-    m_boundingBox.min = Vector3Subtract(position, Vector3Scale(size, 0.5f));
-    m_boundingBox.max = Vector3Add(position, Vector3Scale(size, 0.5f));
+    Vector3 pos = m_player->GetPlayerPosition();
+    Vector3 halfSize = Vector3Scale(m_player->GetPlayerSize(), 0.5f);
 
-    // Keep base Collision AABB in sync with the player bounding box
-    // so collision queries use the latest extents
-    Vector3 center = Vector3Scale(Vector3Add(m_boundingBox.min, m_boundingBox.max), 0.5f);
-    Vector3 halfSize = Vector3Scale(Vector3Subtract(m_boundingBox.max, m_boundingBox.min), 0.5f);
-    Collision::Update(center, halfSize);
+    m_boundingBox.min = Vector3Subtract(pos, halfSize);
+    m_boundingBox.max = Vector3Add(pos, halfSize);
+
+    // Sync base Collision AABB
+    Collision::Update(pos, halfSize);
 }
 
 bool PlayerCollision::IsJumpCollision() const {
