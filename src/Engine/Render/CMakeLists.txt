@@ -18,5 +18,6 @@ target_link_libraries(render PUBLIC
     menu
     model
     world
+    player
     nlohmann_json
 )
