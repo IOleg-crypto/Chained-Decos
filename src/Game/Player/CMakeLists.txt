@@ -15,4 +15,11 @@ target_include_directories(player PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(player PUBLIC raylib nlohmann_json collision)
+target_link_libraries(player PUBLIC
+    raylib
+    nlohmann_json
+    collision
+    camera_controller
+    model
+    world
+)
