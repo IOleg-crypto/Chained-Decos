@@ -141,7 +141,7 @@ jobs:
           -DBUILD_TESTS=OFF \
           -DBUILD_BENCHMARKS=OFF \
           -DENABLE_OPTIMIZATIONS=ON \
-          -DENABLE_UNITY_BUILD=ON \
+          -DENABLE_UNITY_BUILD=OFF \
           -DENABLE_WARNINGS=OFF \
           -DENABLE_DEV_TOOLS=OFF \
           -DENABLE_DEBUG_INFO=OFF \
@@ -149,6 +149,7 @@ jobs:
           -S "${{ github.workspace }}"
 
     - name: Build release binaries
+      shell: bash
       run: |
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config Release \
@@ -156,6 +157,7 @@ jobs:
           --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
 
     - name: Install to package directory
+      shell: bash
       run: |
         cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
           --config Release \
@@ -173,7 +175,7 @@ jobs:
           # Windows: Create ZIP package
           7z a -tzip "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip" \
             bin/*.exe bin/*.dll share/ || \
-          powershell -Command "Compress-Archive -Path bin/*,share/ -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip'"
+          powershell -Command "Compress-Archive -Path 'bin/*','share/' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip'"
         else
           # Linux: Create tar.gz package
           tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
