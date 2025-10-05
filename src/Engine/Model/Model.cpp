@@ -444,7 +444,8 @@ std::vector<std::string> ModelLoader::GetAvailableModels() const
     std::vector<std::string> models;
     models.reserve(m_modelByName.size());
 
-    for (const auto &name: m_modelByName | std::views::keys)
+    // Use traditional iteration instead of C++20 ranges for GCC compatibility
+    for (const auto &[name, modelPtr] : m_modelByName)
     {
         models.push_back(name);
     }
