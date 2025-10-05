@@ -152,13 +152,14 @@ jobs:
           -DBUILD_BENCHMARKS=ON \
           -DENABLE_WARNINGS=OFF \
           -DENABLE_OPTIMIZATIONS=ON \
-          -DENABLE_UNITY_BUILD=ON \
+          -DENABLE_UNITY_BUILD=OFF \
           -DENABLE_DEV_TOOLS=OFF \
           -DENABLE_DEBUG_INFO=ON \
           ${{ matrix.cmake_options }} \
           -S "${{ github.workspace }}"
 
     - name: Build project
+      shell: bash
       run: |
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config ${{ matrix.build_type }} \
@@ -166,6 +167,7 @@ jobs:
           --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
 
     - name: Install project
+      shell: bash
       run: |
         cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
           --config ${{ matrix.build_type }}
