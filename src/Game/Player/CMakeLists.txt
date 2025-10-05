@@ -19,7 +19,7 @@ target_link_libraries(player PUBLIC
     raylib
     nlohmann_json
     collision
-    camera_controller
+    cameracontroller
     model
     world
 )
