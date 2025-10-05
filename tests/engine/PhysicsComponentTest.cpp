@@ -9,23 +9,13 @@
 class PhysicsComponentTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        collision = std::make_shared<CollisionComponent>();
-        physics = std::make_shared<PhysicsComponent>(collision);
-
-        // Set up basic collision box
-        BoundingBox box = {
-            .min = Vector3{-1, -1, -1},
-            .max = Vector3{ 1,  1,  1}
-        };
-        collision->SetBoundingBox(box);
+        physics = std::make_shared<PhysicsComponent>();
     }
 
     void TearDown() override {
         physics.reset();
-        collision.reset();
     }
 
-    std::shared_ptr<CollisionComponent> collision;
     std::shared_ptr<PhysicsComponent> physics;
 };
 
