@@ -133,12 +133,11 @@ jobs:
           -DBUILD_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DENABLE_COVERAGE=OFF \
-          -DENABLE_WARNINGS=ON \
-          -DWARNINGS_AS_ERRORS=OFF \
+          -DENABLE_WARNINGS=OFF \
           -DENABLE_UNITY_BUILD=ON \
           -DENABLE_SANITIZERS=OFF \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-          -DENABLE_DEV_TOOLS=ON \
+          -DENABLE_DEV_TOOLS=OFF \
           -DENABLE_DEBUG_INFO=ON \
           -S "${{ github.workspace }}"
 

@@ -150,11 +150,10 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -DBUILD_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
-          -DENABLE_WARNINGS=ON \
-          -DWARNINGS_AS_ERRORS=OFF \
+          -DENABLE_WARNINGS=OFF \
           -DENABLE_OPTIMIZATIONS=ON \
           -DENABLE_UNITY_BUILD=ON \
-          -DENABLE_DEV_TOOLS=ON \
+          -DENABLE_DEV_TOOLS=OFF \
           -DENABLE_DEBUG_INFO=ON \
           ${{ matrix.cmake_options }} \
           -S "${{ github.workspace }}"
