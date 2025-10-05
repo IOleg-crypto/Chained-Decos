@@ -6,7 +6,7 @@
 #include "Game/Player/Player.h"
 #include "Game/Map/ParkourMapGenerator.h"
 #include "Engine/Physics/PhysicsComponent.h"
-#include "Engine/Collision/CollisionSystem.h"
+#include "Engine/Collision/CollisionManager.h"
 
 class GameIntegrationTest : public ::testing::Test {
 protected:

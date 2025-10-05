@@ -18,10 +18,13 @@
 		"D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/World/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/CommandLineHandler/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Kernel/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Audio/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-debug/src/Engine/Event/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-debug/src/Game/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Map/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Menu/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-debug/src/Game/Player/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/cmake-build-debug/src/Game/GameFeatures/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/cmake-build-debug/src/Game/MapEditor/cmake_install.cmake"
 	],
 	"Parallel" : false
