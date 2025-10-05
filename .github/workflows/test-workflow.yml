@@ -39,6 +39,28 @@ jobs:
         submodules: recursive
         fetch-depth: 0
 
+    - name: Setup ccache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.ccache
+          C:\ccache
+        key: ccache-test-${{ matrix.os }}-${{ matrix.compiler }}-${{ github.sha }}
+        restore-keys: |
+          ccache-test-${{ matrix.os }}-${{ matrix.compiler }}-
+          ccache-test-${{ matrix.os }}-
+
+    - name: Setup dependency cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          .deps
+          ~/.deps
+        key: deps-test-${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          deps-test-${{ matrix.os }}-${{ matrix.compiler }}-
+          deps-test-${{ matrix.os }}-
+
     - name: Set up build environment
       shell: bash
       id: build-env
@@ -75,6 +97,11 @@ jobs:
       with:
         vs-version: '[17.0,18.0)'
 
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-2022'
+      run: |
+        choco install cmake ninja ccache zip --no-progress
+
 
     - name: Clear CMake cache
       shell: bash
@@ -101,11 +128,14 @@ jobs:
       run: |
         cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -DBUILD_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DENABLE_COVERAGE=OFF \
           -DENABLE_WARNINGS=ON \
           -DWARNINGS_AS_ERRORS=OFF \
+          -DENABLE_UNITY_BUILD=ON \
           -DENABLE_SANITIZERS=OFF \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
           -DENABLE_DEV_TOOLS=ON \
@@ -118,57 +148,34 @@ jobs:
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config Debug \
           --target ChainedDecos ChainedDecosMapEditor ChainedDecosTests benchmarks \
-          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
 
     - name: Run smoke tests
+      shell: bash
       run: |
         echo "🧪 Running smoke tests..."
 
         # Test that executables exist and are runnable
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          if [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/Debug/ChainedDecos.exe" ]; then
-            echo "✅ Main executable built successfully"
-          else
-            echo "❌ Main executable not found"
-            exit 1
-          fi
-
-          if [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/Debug/ChainedDecosMapEditor.exe" ]; then
-            echo "✅ Map editor executable built successfully"
-          else
-            echo "❌ Map editor executable not found"
-            exit 1
-          fi
+          [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/Debug/ChainedDecos.exe" ] && echo "✅ Main executable built successfully" || (echo "❌ Main executable not found" && exit 1)
+          [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/Debug/ChainedDecosMapEditor.exe" ] && echo "✅ Map editor executable built successfully" || (echo "❌ Map editor executable not found" && exit 1)
         else
-          if [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecos" ]; then
-            echo "✅ Main executable built successfully"
-          else
-            echo "❌ Main executable not found"
-            exit 1
-          fi
-
-          if [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecosMapEditor" ]; then
-            echo "✅ Map editor executable built successfully"
-          else
-            echo "❌ Map editor executable not found"
-            exit 1
-          fi
+          [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecos" ] && echo "✅ Main executable built successfully" || (echo "❌ Main executable not found" && exit 1)
+          [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecosMapEditor" ] && echo "✅ Map editor executable built successfully" || (echo "❌ Map editor executable not found" && exit 1)
         fi
 
     - name: Run static analysis
       shell: bash
+      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
       run: |
         echo "🔍 Running static analysis..."
 
-        # Check for common issues in source files (Ubuntu only)
-        if [ "${{ matrix.os }}" = "ubuntu-22.04" ]; then
-          # Count warnings in build output
-          echo "📊 Build completed successfully"
+        # Count warnings in build output
+        echo "📊 Build completed successfully"
 
-          # Check for potential memory leaks or issues
-          echo "🔍 Checking for common C++ issues..."
-          find src -name "*.cpp" -o -name "*.h" | wc -l | xargs echo "Found files to analyze:"
-        fi
+        # Check for potential memory leaks or issues
+        echo "🔍 Checking for common C++ issues..."
+        find src -name "*.cpp" -o -name "*.h" | wc -l | xargs echo "Found files to analyze:"
 
     - name: Generate coverage report (Ubuntu GCC only)
       if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
