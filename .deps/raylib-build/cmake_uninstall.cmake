@@ -1,8 +1,8 @@
-if(NOT EXISTS "D:/gitnext/Chained Decos/build/install_manifest.txt")
-  message(FATAL_ERROR "Cannot find install manifest: D:/gitnext/Chained Decos/build/install_manifest.txt")
+if(NOT EXISTS "D:/gitnext/Chained Decos/cmake-build-debug/install_manifest.txt")
+  message(FATAL_ERROR "Cannot find install manifest: D:/gitnext/Chained Decos/cmake-build-debug/install_manifest.txt")
 endif()
 
-file(READ "D:/gitnext/Chained Decos/build/install_manifest.txt" files)
+file(READ "D:/gitnext/Chained Decos/cmake-build-debug/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 foreach(file ${files})
   message(STATUS "Uninstalling $ENV{DESTDIR}${file}")

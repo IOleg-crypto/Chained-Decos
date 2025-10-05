@@ -3,29 +3,29 @@
 #include <memory>
 #include <vector>
 
-#include "Engine/Collision/CollisionSystem.h"
+#include "Engine/Collision/CollisionManager.h"
 #include "Engine/Collision/CollisionComponent.h"
 #include "Engine/Math/Vector3.h"
 
-class CollisionSystemTest : public ::testing::Test {
+class CollisionManagerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        collisionSystem = std::make_shared<CollisionSystem>();
+        collisionManager = std::make_shared<CollisionManager>();
     }
 
     void TearDown() override {
-        collisionSystem.reset();
+        collisionManager.reset();
     }
 
-    std::shared_ptr<CollisionSystem> collisionSystem;
+    std::shared_ptr<CollisionManager> collisionManager;
 };
 
-TEST_F(CollisionSystemTest, ConstructorInitializesEmpty) {
-    EXPECT_EQ(collisionSystem->GetCollisionPairs().size(), 0);
-    EXPECT_FALSE(collisionSystem->GetBVH().IsBuilt());
+TEST_F(CollisionManagerTest, ConstructorInitializesEmpty) {
+    EXPECT_EQ(collisionManager->GetCollisionPairs().size(), 0);
+    EXPECT_FALSE(collisionManager->GetBVH().IsBuilt());
 }
 
-TEST_F(CollisionSystemTest, AddCollisionComponentWorks) {
+TEST_F(CollisionManagerTest, AddCollisionComponentWorks) {
     auto component = std::make_shared<CollisionComponent>();
     BoundingBox box = {
         .min = Vector3{-1, -1, -1},
@@ -33,12 +33,12 @@ TEST_F(CollisionSystemTest, AddCollisionComponentWorks) {
     };
     component->SetBoundingBox(box);
 
-    collisionSystem->AddCollisionComponent(component);
+    collisionManager->AddCollisionComponent(component);
 
-    EXPECT_EQ(collisionSystem->GetCollisionComponents().size(), 1);
+    EXPECT_EQ(collisionManager->GetCollisionComponents().size(), 1);
 }
 
-TEST_F(CollisionSystemTest, RemoveCollisionComponentWorks) {
+TEST_F(CollisionManagerTest, RemoveCollisionComponentWorks) {
     auto component = std::make_shared<CollisionComponent>();
     BoundingBox box = {
         .min = Vector3{-1, -1, -1},
@@ -46,14 +46,14 @@ TEST_F(CollisionSystemTest, RemoveCollisionComponentWorks) {
     };
     component->SetBoundingBox(box);
 
-    collisionSystem->AddCollisionComponent(component);
-    EXPECT_EQ(collisionSystem->GetCollisionComponents().size(), 1);
+    collisionManager->AddCollisionComponent(component);
+    EXPECT_EQ(collisionManager->GetCollisionComponents().size(), 1);
 
-    collisionSystem->RemoveCollisionComponent(component);
-    EXPECT_EQ(collisionSystem->GetCollisionComponents().size(), 0);
+    collisionManager->RemoveCollisionComponent(component);
+    EXPECT_EQ(collisionManager->GetCollisionComponents().size(), 0);
 }
 
-TEST_F(CollisionSystemTest, BuildBVHCreatesTree) {
+TEST_F(CollisionManagerTest, BuildBVHCreatesTree) {
     std::vector<std::shared_ptr<CollisionComponent>> components;
 
     // Add multiple components
@@ -65,33 +65,33 @@ TEST_F(CollisionSystemTest, BuildBVHCreatesTree) {
         };
         component->SetBoundingBox(box);
         components.push_back(component);
-        collisionSystem->AddCollisionComponent(component);
+        collisionManager->AddCollisionComponent(component);
     }
 
-    collisionSystem->BuildBVH();
+    collisionManager->BuildBVH();
 
-    EXPECT_TRUE(collisionSystem->GetBVH().IsBuilt());
-    EXPECT_GT(collisionSystem->GetBVH().GetNodeCount(), 0);
+    EXPECT_TRUE(collisionManager->GetBVH().IsBuilt());
+    EXPECT_GT(collisionManager->GetBVH().GetNodeCount(), 0);
 }
 
-TEST_F(CollisionSystemTest, UpdateBVHRebuildsTree) {
+TEST_F(CollisionManagerTest, UpdateBVHRebuildsTree) {
     auto component = std::make_shared<CollisionComponent>();
     BoundingBox box = {
         .min = Vector3{-1, -1, -1},
         .max = Vector3{ 1,  1,  1}
     };
     component->SetBoundingBox(box);
-    collisionSystem->AddCollisionComponent(component);
+    collisionManager->AddCollisionComponent(component);
 
-    collisionSystem->BuildBVH();
-    EXPECT_TRUE(collisionSystem->GetBVH().IsBuilt());
+    collisionManager->BuildBVH();
+    EXPECT_TRUE(collisionManager->GetBVH().IsBuilt());
 
     // Update should maintain BVH
-    collisionSystem->UpdateBVH();
-    EXPECT_TRUE(collisionSystem->GetBVH().IsBuilt());
+    collisionManager->UpdateBVH();
+    EXPECT_TRUE(collisionManager->GetBVH().IsBuilt());
 }
 
-TEST_F(CollisionSystemTest, CheckCollisionDetectsOverlappingBoxes) {
+TEST_F(CollisionManagerTest, CheckCollisionDetectsOverlappingBoxes) {
     auto component1 = std::make_shared<CollisionComponent>();
     BoundingBox box1 = {
         .min = Vector3{0, 0, 0},
@@ -106,14 +106,14 @@ TEST_F(CollisionSystemTest, CheckCollisionDetectsOverlappingBoxes) {
     };
     component2->SetBoundingBox(box2);
 
-    collisionSystem->AddCollisionComponent(component1);
-    collisionSystem->AddCollisionComponent(component2);
+    collisionManager->AddCollisionComponent(component1);
+    collisionManager->AddCollisionComponent(component2);
 
-    bool collision = collisionSystem->CheckCollision(*component1, *component2);
+    bool collision = collisionManager->CheckCollision(*component1, *component2);
     EXPECT_TRUE(collision);
 }
 
-TEST_F(CollisionSystemTest, CheckCollisionDetectsNonOverlappingBoxes) {
+TEST_F(CollisionManagerTest, CheckCollisionDetectsNonOverlappingBoxes) {
     auto component1 = std::make_shared<CollisionComponent>();
     BoundingBox box1 = {
         .min = Vector3{0, 0, 0},
@@ -128,14 +128,14 @@ TEST_F(CollisionSystemTest, CheckCollisionDetectsNonOverlappingBoxes) {
     };
     component2->SetBoundingBox(box2);
 
-    collisionSystem->AddCollisionComponent(component1);
-    collisionSystem->AddCollisionComponent(component2);
+    collisionManager->AddCollisionComponent(component1);
+    collisionManager->AddCollisionComponent(component2);
 
-    bool collision = collisionSystem->CheckCollision(*component1, *component2);
+    bool collision = collisionManager->CheckCollision(*component1, *component2);
     EXPECT_FALSE(collision);
 }
 
-TEST_F(CollisionSystemTest, GetCollisionPairsReturnsAllPairs) {
+TEST_F(CollisionManagerTest, GetCollisionPairsReturnsAllPairs) {
     auto component1 = std::make_shared<CollisionComponent>();
     BoundingBox box1 = {
         .min = Vector3{0, 0, 0},
@@ -150,16 +150,16 @@ TEST_F(CollisionSystemTest, GetCollisionPairsReturnsAllPairs) {
     };
     component2->SetBoundingBox(box2);
 
-    collisionSystem->AddCollisionComponent(component1);
-    collisionSystem->AddCollisionComponent(component2);
+    collisionManager->AddCollisionComponent(component1);
+    collisionManager->AddCollisionComponent(component2);
 
-    auto pairs = collisionSystem->GetCollisionPairs();
+    auto pairs = collisionManager->GetCollisionPairs();
     EXPECT_EQ(pairs.size(), 1);
     EXPECT_EQ(pairs[0].first, component1.get());
     EXPECT_EQ(pairs[0].second, component2.get());
 }
 
-TEST_F(CollisionSystemTest, ProcessCollisionsCallsCallbacks) {
+TEST_F(CollisionManagerTest, ProcessCollisionsCallsCallbacks) {
     auto component1 = std::make_shared<CollisionComponent>();
     BoundingBox box1 = {
         .min = Vector3{0, 0, 0},
@@ -174,8 +174,8 @@ TEST_F(CollisionSystemTest, ProcessCollisionsCallsCallbacks) {
     };
     component2->SetBoundingBox(box2);
 
-    collisionSystem->AddCollisionComponent(component1);
-    collisionSystem->AddCollisionComponent(component2);
+    collisionManager->AddCollisionComponent(component1);
+    collisionManager->AddCollisionComponent(component2);
 
     bool callback1Called = false;
     bool callback2Called = false;
@@ -188,71 +188,71 @@ TEST_F(CollisionSystemTest, ProcessCollisionsCallsCallbacks) {
         callback2Called = true;
     });
 
-    collisionSystem->ProcessCollisions();
+    collisionManager->ProcessCollisions();
 
     // Note: In real implementation, collision callbacks would be called
     // This test verifies the system can process collision pairs
-    auto pairs = collisionSystem->GetCollisionPairs();
+    auto pairs = collisionManager->GetCollisionPairs();
     EXPECT_EQ(pairs.size(), 1);
 }
 
-TEST_F(CollisionSystemTest, ClearRemovesAllComponents) {
+TEST_F(CollisionManagerTest, ClearRemovesAllComponents) {
     auto component = std::make_shared<CollisionComponent>();
     BoundingBox box = {
         .min = Vector3{-1, -1, -1},
         .max = Vector3{ 1,  1,  1}
     };
     component->SetBoundingBox(box);
-    collisionSystem->AddCollisionComponent(component);
+    collisionManager->AddCollisionComponent(component);
 
-    EXPECT_EQ(collisionSystem->GetCollisionComponents().size(), 1);
+    EXPECT_EQ(collisionManager->GetCollisionComponents().size(), 1);
 
-    collisionSystem->Clear();
+    collisionManager->Clear();
 
-    EXPECT_EQ(collisionSystem->GetCollisionComponents().size(), 0);
-    EXPECT_FALSE(collisionSystem->GetBVH().IsBuilt());
+    EXPECT_EQ(collisionManager->GetCollisionComponents().size(), 0);
+    EXPECT_FALSE(collisionManager->GetBVH().IsBuilt());
 }
 
-TEST_F(CollisionSystemTest, RaycastDetectsCollisions) {
+TEST_F(CollisionManagerTest, RaycastDetectsCollisions) {
     auto component = std::make_shared<CollisionComponent>();
     BoundingBox box = {
         .min = Vector3{0, 0, 0},
         .max = Vector3{2, 2, 2}
     };
     component->SetBoundingBox(box);
-    collisionSystem->AddCollisionComponent(component);
+    collisionManager->AddCollisionComponent(component);
 
     Ray ray = {
         .position = Vector3{-1, 1, 1},
         .direction = Vector3{1, 0, 0} // Pointing towards the box
     };
 
-    auto hitResult = collisionSystem->Raycast(ray, 10.0f);
+    auto hitResult = collisionManager->Raycast(ray, 10.0f);
 
     EXPECT_TRUE(hitResult.hasHit);
     EXPECT_NEAR(hitResult.distance, 1.0f, 0.1f); // Should hit at distance 1
 }
 
-TEST_F(CollisionSystemTest, RaycastMissesNonIntersectingRays) {
+TEST_F(CollisionManagerTest, RaycastMissesNonIntersectingRays) {
     auto component = std::make_shared<CollisionComponent>();
     BoundingBox box = {
         .min = Vector3{0, 0, 0},
         .max = Vector3{1, 1, 1}
     };
     component->SetBoundingBox(box);
-    collisionSystem->AddCollisionComponent(component);
+    collisionManager->AddCollisionComponent(component);
 
     Ray ray = {
         .position = Vector3{-1, -1, -1},
         .direction = Vector3{0, 0, 1} // Pointing away from the box
     };
 
-    auto hitResult = collisionSystem->Raycast(ray, 10.0f);
+    auto hitResult = collisionManager->Raycast(ray, 10.0f);
 
     EXPECT_FALSE(hitResult.hasHit);
 }
 
-TEST_F(CollisionSystemTest, SphereCollisionDetectionWorks) {
+TEST_F(CollisionManagerTest, SphereCollisionDetectionWorks) {
     auto component1 = std::make_shared<CollisionComponent>();
     component1->SetSphereCollision(1.0f);
     component1->SetPosition(Vector3{0, 0, 0});
@@ -261,14 +261,14 @@ TEST_F(CollisionSystemTest, SphereCollisionDetectionWorks) {
     component2->SetSphereCollision(1.0f);
     component2->SetPosition(Vector3{1.5f, 0, 0}); // Distance of 1.5, sum of radii is 2.0
 
-    collisionSystem->AddCollisionComponent(component1);
-    collisionSystem->AddCollisionComponent(component2);
+    collisionManager->AddCollisionComponent(component1);
+    collisionManager->AddCollisionComponent(component2);
 
-    bool collision = collisionSystem->CheckCollision(*component1, *component2);
+    bool collision = collisionManager->CheckCollision(*component1, *component2);
     EXPECT_TRUE(collision); // Should collide (1.5 < 2.0)
 }
 
-TEST_F(CollisionSystemTest, SphereCollisionDetectionMisses) {
+TEST_F(CollisionManagerTest, SphereCollisionDetectionMisses) {
     auto component1 = std::make_shared<CollisionComponent>();
     component1->SetSphereCollision(1.0f);
     component1->SetPosition(Vector3{0, 0, 0});
@@ -277,14 +277,14 @@ TEST_F(CollisionSystemTest, SphereCollisionDetectionMisses) {
     component2->SetSphereCollision(1.0f);
     component2->SetPosition(Vector3{3.0f, 0, 0}); // Distance of 3.0, sum of radii is 2.0
 
-    collisionSystem->AddCollisionComponent(component1);
-    collisionSystem->AddCollisionComponent(component2);
+    collisionManager->AddCollisionComponent(component1);
+    collisionManager->AddCollisionComponent(component2);
 
-    bool collision = collisionSystem->CheckCollision(*component1, *component2);
+    bool collision = collisionManager->CheckCollision(*component1, *component2);
     EXPECT_FALSE(collision); // Should not collide (3.0 > 2.0)
 }
 
-TEST_F(CollisionSystemTest, MixedCollisionTypesWork) {
+TEST_F(CollisionManagerTest, MixedCollisionTypesWork) {
     auto boxComponent = std::make_shared<CollisionComponent>();
     BoundingBox box = {
         .min = Vector3{0, 0, 0},
@@ -296,14 +296,14 @@ TEST_F(CollisionSystemTest, MixedCollisionTypesWork) {
     sphereComponent->SetSphereCollision(1.0f);
     sphereComponent->SetPosition(Vector3{1, 1, 1}); // Inside the box
 
-    collisionSystem->AddCollisionComponent(boxComponent);
-    collisionSystem->AddCollisionComponent(sphereComponent);
+    collisionManager->AddCollisionComponent(boxComponent);
+    collisionManager->AddCollisionComponent(sphereComponent);
 
-    bool collision = collisionSystem->CheckCollision(*boxComponent, *sphereComponent);
+    bool collision = collisionManager->CheckCollision(*boxComponent, *sphereComponent);
     EXPECT_TRUE(collision); // Sphere should collide with box
 }
 
-TEST_F(CollisionSystemTest, PerformanceWithManyObjects) {
+TEST_F(CollisionManagerTest, PerformanceWithManyObjects) {
     // Add many collision components
     const int objectCount = 1000;
     std::vector<std::shared_ptr<CollisionComponent>> components;
@@ -316,15 +316,15 @@ TEST_F(CollisionSystemTest, PerformanceWithManyObjects) {
         };
         component->SetBoundingBox(box);
         components.push_back(component);
-        collisionSystem->AddCollisionComponent(component);
+        collisionManager->AddCollisionComponent(component);
     }
 
     // Build BVH for performance
-    collisionSystem->BuildBVH();
+    collisionManager->BuildBVH();
 
     // Check that BVH was built efficiently
-    EXPECT_TRUE(collisionSystem->GetBVH().IsBuilt());
-    EXPECT_GT(collisionSystem->GetBVH().GetNodeCount(), 0);
+    EXPECT_TRUE(collisionManager->GetBVH().IsBuilt());
+    EXPECT_GT(collisionManager->GetBVH().GetNodeCount(), 0);
 
     // Test collision query performance
     auto testComponent = std::make_shared<CollisionComponent>();
@@ -335,6 +335,6 @@ TEST_F(CollisionSystemTest, PerformanceWithManyObjects) {
     testComponent->SetBoundingBox(testBox);
 
     // This should be fast with BVH
-    bool collision = collisionSystem->CheckCollision(*testComponent, *components[500]);
+    bool collision = collisionManager->CheckCollision(*testComponent, *components[500]);
     EXPECT_FALSE(collision); // Test component shouldn't collide with distant object
 }
