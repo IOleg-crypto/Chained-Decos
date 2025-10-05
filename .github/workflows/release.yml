@@ -109,6 +109,7 @@ jobs:
         mkdir -p "${{ steps.build-env.outputs.package-dir }}"
 
     - name: Configure CMake for release
+      shell: bash
       run: |
         cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -DCMAKE_BUILD_TYPE=Release \

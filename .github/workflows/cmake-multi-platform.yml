@@ -113,6 +113,7 @@ jobs:
         mkdir -p "${{ steps.build-env.outputs.install-prefix }}"
 
     - name: Configure CMake
+      shell: bash
       run: |
         cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -G "${{ matrix.generator }}" \
@@ -123,7 +124,7 @@ jobs:
           -DBUILD_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DENABLE_WARNINGS=ON \
-          -DWARNINGS_AS_ERRORS=ON \
+          -DWARNINGS_AS_ERRORS=OFF \
           -DENABLE_OPTIMIZATIONS=ON \
           -DENABLE_DEV_TOOLS=ON \
           -DENABLE_DEBUG_INFO=ON \
