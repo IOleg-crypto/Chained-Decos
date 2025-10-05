@@ -51,6 +51,28 @@ jobs:
         submodules: recursive
         fetch-depth: 0
 
+    - name: Setup ccache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.ccache
+          C:\ccache
+        key: ccache-${{ matrix.os }}-${{ matrix.compiler }}-${{ github.sha }}
+        restore-keys: |
+          ccache-${{ matrix.os }}-${{ matrix.compiler }}-
+          ccache-${{ matrix.os }}-
+
+    - name: Setup dependency cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          .deps
+          ~/.deps
+        key: deps-${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          deps-${{ matrix.os }}-${{ matrix.compiler }}-
+          deps-${{ matrix.os }}-
+
     - name: Set up build environment
       shell: bash
       id: build-env
@@ -87,6 +109,11 @@ jobs:
       uses: microsoft/setup-msbuild@v1.1
       with:
         vs-version: '[17.0,18.0)'
+
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-2022'
+      run: |
+        choco install cmake ninja ccache zip --no-progress
 
 
     # ---------------- Common build steps ----------------
@@ -126,6 +153,7 @@ jobs:
           -DENABLE_WARNINGS=ON \
           -DWARNINGS_AS_ERRORS=OFF \
           -DENABLE_OPTIMIZATIONS=ON \
+          -DENABLE_UNITY_BUILD=ON \
           -DENABLE_DEV_TOOLS=ON \
           -DENABLE_DEBUG_INFO=ON \
           ${{ matrix.cmake_options }} \
@@ -136,7 +164,7 @@ jobs:
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config ${{ matrix.build_type }} \
           --target ChainedDecos ChainedDecosMapEditor ChainedDecosTests \
-          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
 
     - name: Install project
       run: |
@@ -144,37 +172,26 @@ jobs:
           --config ${{ matrix.build_type }}
 
     - name: Run basic smoke test
+      shell: bash
       run: |
-        if [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos" ]; then
-          echo "✅ Main executable found"
-        else
-          echo "❌ Main executable not found"
-          exit 1
-        fi
-
-        if [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecosMapEditor" ]; then
-          echo "✅ Map editor executable found"
-        else
-          echo "❌ Map editor executable not found"
-          exit 1
-        fi
+        [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos" ] && echo "✅ Main executable found" || (echo "❌ Main executable not found" && exit 1)
+        [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecosMapEditor" ] && echo "✅ Map editor executable found" || (echo "❌ Map editor executable not found" && exit 1)
 
     - name: Run tests (if available)
+      shell: bash
       run: |
         # Check if tests directory exists and has test executables
         if [ -d "${{ steps.build-env.outputs.build-output-dir }}/tests" ]; then
           echo "🔍 Tests directory found, looking for test executables..."
-          find "${{ steps.build-env.outputs.build-output-dir }}/tests" -type f -executable -name "*test*" | head -5
+          find "${{ steps.build-env.outputs.build-output-dir }}/tests" -type f -executable -name "*test*" | head -3 || echo "ℹ️ No test executables found"
         else
           echo "ℹ️ No tests directory found - skipping tests"
         fi
 
-        # Run basic executable validation
-        echo "🔍 Validating executables..."
-        if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos.exe" --help 2>&1 | head -10 || echo "ℹ️ Help not available"
-        else
-          "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos" --help 2>&1 | head -10 || echo "ℹ️ Help not available"
+        # Run basic executable validation (only for Ubuntu with GCC to save time)
+        if [ "${{ matrix.os }}" = "ubuntu-22.04" ] && [ "${{ matrix.compiler }}" = "gcc" ]; then
+          echo "🔍 Validating executables..."
+          "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos" --help 2>&1 | head -5 || echo "ℹ️ Help not available"
         fi
 
     - name: Upload build artifacts

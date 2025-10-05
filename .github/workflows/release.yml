@@ -43,6 +43,28 @@ jobs:
         submodules: recursive
         fetch-depth: 0
 
+    - name: Setup ccache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.ccache
+          C:\ccache
+        key: ccache-release-${{ matrix.os }}-${{ github.sha }}
+        restore-keys: |
+          ccache-release-${{ matrix.os }}-
+          ccache-release-
+
+    - name: Setup dependency cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          .deps
+          ~/.deps
+        key: deps-release-${{ matrix.os }}-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          deps-release-${{ matrix.os }}-
+          deps-release-
+
     - name: Get version from tag
       shell: bash
       id: version
@@ -113,10 +135,13 @@ jobs:
       run: |
         cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
           -DBUILD_TESTS=OFF \
           -DBUILD_BENCHMARKS=OFF \
           -DENABLE_OPTIMIZATIONS=ON \
+          -DENABLE_UNITY_BUILD=ON \
           -DENABLE_WARNINGS=ON \
           -DENABLE_DEV_TOOLS=OFF \
           -DENABLE_DEBUG_INFO=OFF \
@@ -128,7 +153,7 @@ jobs:
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config Release \
           --target ChainedDecos ChainedDecosMapEditor \
-          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
 
     - name: Install to package directory
       run: |
