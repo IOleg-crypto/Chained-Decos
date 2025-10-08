@@ -12,7 +12,8 @@ add_executable(ChainedDecosTests ${TEST_SOURCES})
 target_link_libraries(ChainedDecosTests
     PRIVATE
         ChainedDecosEngine
-        ChainedDecosGame
+        # Only link specific game components needed for tests, not full ChainedDecosGame
+        # ChainedDecosGame  # Commented out to avoid GLFW dependency in tests
         GTest::gtest_main
         GTest::gmock_main
 )
@@ -31,9 +32,32 @@ set_target_properties(ChainedDecosTests PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
+# Add winmm library for Windows timer functions (needed by raylib)
+if(WIN32)
+    target_link_libraries(ChainedDecosTests PRIVATE winmm)
+endif()
+
 # Enable test discovery
 include(GoogleTest)
-gtest_discover_tests(ChainedDecosTests)
+gtest_discover_tests(ChainedDecosTests
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
+)
+
+# Copy required DLLs for Windows
+if(WIN32)
+    # Find all DLL files in the bin directory and subdirectories
+    file(GLOB_RECURSE DLL_FILES "${CMAKE_BINARY_DIR}/bin/*.dll")
+
+    foreach(DLL_FILE ${DLL_FILES})
+        get_filename_component(DLL_NAME ${DLL_FILE} NAME)
+        add_custom_command(TARGET ChainedDecosTests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${DLL_FILE}
+            $<TARGET_FILE_DIR:ChainedDecosTests>/${DLL_NAME}
+            COMMENT "Copying ${DLL_NAME} to test directory"
+        )
+    endforeach()
+endif()
 
 # Custom test targets
 add_custom_target(run_unit_tests
