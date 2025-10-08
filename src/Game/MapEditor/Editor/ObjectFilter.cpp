@@ -127,15 +127,15 @@ std::vector<SearchResult> ObjectFilter::GetSearchResults() const
 bool ObjectFilter::MatchesFilter(const MapObject& object, const FilterCriteria& criteria) const
 {
     // Name filter
-    if (!criteria.name.empty() && !StringContains(object.GetName(), criteria.name))
+    if (!criteria.name.empty() && !StringContains(object.GetObjectName(), criteria.name))
         return false;
     
     // Type filter
-    if (criteria.type >= 0 && object.GetType() != criteria.type)
+    if (criteria.type >= 0 && object.GetObjectType() != criteria.type)
         return false;
     
     // Model name filter
-    if (!criteria.modelName.empty() && !StringContains(object.GetModelName(), criteria.modelName))
+    if (!criteria.modelName.empty() && !StringContains(object.GetModelAssetName(), criteria.modelName))
         return false;
     
     // Tags filter
@@ -170,25 +170,25 @@ bool ObjectFilter::MatchesSearch(const MapObject& object, const std::string& que
     std::string bestProperty;
     
     // Search in name
-    if (StringContains(object.GetName(), query))
+    if (StringContains(object.GetObjectName(), query))
     {
-        float score = CalculateRelevanceScore(object.GetName(), query);
+        float score = CalculateRelevanceScore(object.GetObjectName(), query);
         if (score > bestScore)
         {
             bestScore = score;
-            bestMatch = object.GetName();
+            bestMatch = object.GetObjectName();
             bestProperty = "Name";
         }
     }
     
     // Search in model name
-    if (StringContains(object.GetModelName(), query))
+    if (StringContains(object.GetModelAssetName(), query))
     {
-        float score = CalculateRelevanceScore(object.GetModelName(), query);
+        float score = CalculateRelevanceScore(object.GetModelAssetName(), query);
         if (score > bestScore)
         {
             bestScore = score;
-            bestMatch = object.GetModelName();
+            bestMatch = object.GetModelAssetName();
             bestProperty = "Model";
         }
     }
@@ -274,10 +274,10 @@ std::vector<SearchResult> ObjectFilter::SearchByName(const std::vector<MapObject
     
     for (size_t i = 0; i < objects.size(); ++i)
     {
-        if (StringContains(objects[i].GetName(), query))
+        if (StringContains(objects[i].GetObjectName(), query))
         {
-            float score = CalculateRelevanceScore(objects[i].GetName(), query);
-            results.emplace_back(static_cast<int>(i), score, "Name", objects[i].GetName());
+            float score = CalculateRelevanceScore(objects[i].GetObjectName(), query);
+            results.emplace_back(static_cast<int>(i), score, "Name", objects[i].GetObjectName());
         }
     }
     
@@ -317,10 +317,10 @@ std::vector<SearchResult> ObjectFilter::SearchByModel(const std::vector<MapObjec
     
     for (size_t i = 0; i < objects.size(); ++i)
     {
-        if (StringContains(objects[i].GetModelName(), query))
+        if (StringContains(objects[i].GetModelAssetName(), query))
         {
-            float score = CalculateRelevanceScore(objects[i].GetModelName(), query);
-            results.emplace_back(static_cast<int>(i), score, "Model", objects[i].GetModelName());
+            float score = CalculateRelevanceScore(objects[i].GetModelAssetName(), query);
+            results.emplace_back(static_cast<int>(i), score, "Model", objects[i].GetModelAssetName());
         }
     }
     

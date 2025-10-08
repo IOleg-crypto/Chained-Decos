@@ -57,11 +57,14 @@ public:
     bool IntersectsAABB(const Collision &other) const;
     bool ContainsPointAABB(const Vector3 &point) const;
 
-    // Build from model (replace Model* with твою структуру)
+  
     void BuildFromModel(void *model, const Matrix &transform = MatrixIdentity());
     void BuildFromModelWithType(void *model, CollisionType type,
                                 const Matrix &transform = MatrixIdentity());
     void CalculateFromModel(void *model, const Matrix &transform = MatrixIdentity());
+
+    // Parallel version for better performance with complex models
+    void BuildFromModelParallel(void *model, const Matrix &transform = MatrixIdentity());
 
     // Optimized collision creation with caching
     static std::shared_ptr<Collision> CreateFromModelCached(void *model, const Matrix &transform = MatrixIdentity());
