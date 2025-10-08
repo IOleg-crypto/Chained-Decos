@@ -335,7 +335,7 @@ Vector3 MeasurementTools::GetClosestVertex(const Vector3& point, const std::vect
         Vector3 objPos = object.GetPosition();
 
         // For cubes, check the 8 vertices
-        if (object.GetType() == 0) // Cube
+        if (object.GetObjectType() == 0) // Cube
         {
             Vector3 halfSize = Vector3Scale(object.GetScale(), 0.5f);
             for (int i = -1; i <= 1; i += 2)
@@ -372,7 +372,7 @@ Vector3 MeasurementTools::GetClosestEdge(const Vector3& point, const std::vector
 
     for (const auto& object : objects)
     {
-        if (object.GetType() == 0) // Cube
+        if (object.GetObjectType() == 0) // Cube
         {
             Vector3 objPos = object.GetPosition();
             Vector3 halfSize = Vector3Scale(object.GetScale(), 0.5f);

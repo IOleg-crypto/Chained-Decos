@@ -3,6 +3,10 @@
 #include <cmath>
 #include <cfloat>
 #include <functional>
+#include <future>
+#include <thread>
+#include <vector>
+#include <algorithm>
 
 #include "CollisionStructures.h"
 
@@ -163,6 +167,160 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
     }
 
     TraceLog(LOG_INFO, "Collision triangles: %zu", m_triangles.size());
+
+    // Build AABB and BVH only if we have triangles
+    if (!m_triangles.empty())
+    {
+        UpdateAABBFromTriangles();
+        BuildBVHFromTriangles();
+    }
+    else
+    {
+        // Fallback to model's bounding box if no triangles
+        BoundingBox bb = GetModelBoundingBox(*rayModel);
+        Vector3 corners[8] = {
+            {bb.min.x, bb.min.y, bb.min.z}, {bb.max.x, bb.min.y, bb.min.z},
+            {bb.min.x, bb.max.y, bb.min.z}, {bb.min.x, bb.min.y, bb.max.z},
+            {bb.max.x, bb.max.y, bb.min.z}, {bb.min.x, bb.max.y, bb.max.z},
+            {bb.max.x, bb.min.y, bb.max.z}, {bb.max.x, bb.max.y, bb.max.z}
+        };
+
+        Vector3 tmin = {FLT_MAX, FLT_MAX, FLT_MAX};
+        Vector3 tmax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+        for (const auto &corner : corners)
+        {
+            Vector3 tc = Vector3Transform(corner, transform);
+            tmin.x = fminf(tmin.x, tc.x); tmin.y = fminf(tmin.y, tc.y); tmin.z = fminf(tmin.z, tc.z);
+            tmax.x = fmaxf(tmax.x, tc.x); tmax.y = fmaxf(tmax.y, tc.y); tmax.z = fmaxf(tmax.z, tc.z);
+        }
+
+        m_min = tmin;
+        m_max = tmax;
+    }
+
+    m_isBuilt = true;
+}
+
+// Structure to hold mesh processing data for parallel processing
+struct MeshProcessingData
+{
+    std::vector<CollisionTriangle> triangles;
+    int meshIndex;
+};
+
+// Function to process a single mesh in parallel
+MeshProcessingData ProcessMeshParallel(const Mesh& mesh, const Matrix& transform, int meshIndex)
+{
+    MeshProcessingData result;
+    result.meshIndex = meshIndex;
+    result.triangles.reserve(mesh.triangleCount);
+
+    if (!mesh.vertices || !mesh.indices) {
+        return result;
+    }
+
+    // Batch process triangles for this mesh
+    const int triangleCount = mesh.triangleCount;
+    const unsigned short* indices = mesh.indices;
+
+    for (int i = 0; i < triangleCount; ++i)
+    {
+        const int idx = i * 3;
+        const int i0 = indices[idx + 0];
+        const int i1 = indices[idx + 1];
+        const int i2 = indices[idx + 2];
+
+        // Get vertex positions
+        const float* v0Ptr = &mesh.vertices[i0 * 3];
+        const float* v1Ptr = &mesh.vertices[i1 * 3];
+        const float* v2Ptr = &mesh.vertices[i2 * 3];
+
+        Vector3 v0 = { v0Ptr[0], v0Ptr[1], v0Ptr[2] };
+        Vector3 v1 = { v1Ptr[0], v1Ptr[1], v1Ptr[2] };
+        Vector3 v2 = { v2Ptr[0], v2Ptr[1], v2Ptr[2] };
+
+        // Transform vertices to world coordinates
+        v0 = Vector3Transform(v0, transform);
+        v1 = Vector3Transform(v1, transform);
+        v2 = Vector3Transform(v2, transform);
+
+        // Use emplace_back for better performance (no copy)
+        result.triangles.emplace_back(v0, v1, v2);
+    }
+
+    return result;
+}
+
+// Parallel version of BuildFromModel for better performance with complex models
+void Collision::BuildFromModelParallel(void *model, const Matrix &transform)
+{
+    Model *rayModel = static_cast<Model *>(model);
+    if (!rayModel) return;
+
+    // Count total triangles across all meshes
+    size_t totalTriangles = 0;
+    for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
+    {
+        Mesh &mesh = rayModel->meshes[meshIdx];
+        if (!mesh.vertices || !mesh.indices) continue;
+        totalTriangles += mesh.triangleCount;
+    }
+
+    // Pre-allocate memory for better performance
+    m_triangles.reserve(totalTriangles);
+
+    // Determine optimal number of threads (leave some cores free for other tasks)
+    unsigned int numThreads = std::min(static_cast<unsigned int>(rayModel->meshCount),
+                                      std::max(1u, std::thread::hardware_concurrency() / 2));
+
+    if (numThreads == 1 || rayModel->meshCount <= 1)
+    {
+        // Fall back to sequential processing for simple cases
+        BuildFromModel(model, transform);
+        return;
+    }
+
+    // Launch mesh processing tasks in parallel
+    std::vector<std::future<MeshProcessingData>> futures;
+    std::vector<MeshProcessingData> meshResults;
+
+    for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
+    {
+        Mesh &mesh = rayModel->meshes[meshIdx];
+        if (!mesh.vertices || !mesh.indices) continue;
+
+        // Distribute tasks across available threads
+        if (futures.size() < numThreads)
+        {
+            futures.push_back(std::async(std::launch::async, ProcessMeshParallel,
+                                       std::ref(mesh), transform, meshIdx));
+        }
+        else
+        {
+            // Wait for one task to complete before starting another
+            meshResults.push_back(futures.back().get());
+            futures.pop_back();
+            futures.push_back(std::async(std::launch::async, ProcessMeshParallel,
+                                       std::ref(mesh), transform, meshIdx));
+        }
+    }
+
+    // Collect remaining results
+    for (auto& future : futures)
+    {
+        meshResults.push_back(future.get());
+    }
+
+    // Combine all mesh results into single triangle list
+    for (auto& meshData : meshResults)
+    {
+        m_triangles.insert(m_triangles.end(),
+                          std::make_move_iterator(meshData.triangles.begin()),
+                          std::make_move_iterator(meshData.triangles.end()));
+    }
+
+    TraceLog(LOG_INFO, "Collision triangles (parallel): %zu", m_triangles.size());
 
     // Build AABB and BVH only if we have triangles
     if (!m_triangles.empty())

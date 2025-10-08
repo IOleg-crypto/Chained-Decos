@@ -6,6 +6,8 @@
 #include <raylib.h>
 #include <raymath.h>
 #include "SurfaceComponent.h"
+#include <future>
+#include <thread>
 
 
 
@@ -17,6 +19,9 @@ public:
     PhysicsComponent();
 
     void Update(float deltaTime);
+
+    // Parallel update for multiple physics components
+    static void UpdatePhysicsComponentsParallel(std::vector<PhysicsComponent*>& components, float deltaTime);
 
     // Physics state
     bool IsGrounded() const;
@@ -68,11 +73,11 @@ private:
     bool m_isGrounded = false;
     bool m_isKinematic = false;
     bool m_isJumping = false;
-    float m_dt = 0.0f;
+    float m_deltaTime = 0.0f;
 
     // Motion
     Vector3 m_velocity{0};
-    Vector3 m_forces{0};
+    Vector3 m_accumulatedForces{0};
 
     // Properties
     float m_gravity = 9.81f;
@@ -84,6 +89,6 @@ private:
     void ApplyPhysics(float deltaTime);
     void ApplyGravity(float deltaTime);
     void ApplyDrag(float deltaTime);
-    void IntegrateForces(float deltaTime);
+    void IntegrateAccumulatedForces(float deltaTime);
 };
 #endif

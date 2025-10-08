@@ -87,7 +87,7 @@ public:
 
 private:
     Vector3 m_position;         // Position in world space (x, y, z)
-    Model *m_pModel;            // Pointer to the base model
+    Model *m_model;             // Pointer to the base model
     float m_scale;              // Model scale factor
     std::string m_modelName;    // Name identifier of the model
     Texture2D m_texture;        // Texture object

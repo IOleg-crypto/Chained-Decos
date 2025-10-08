@@ -7,6 +7,9 @@
 #include <unordered_map>
 #include <vector>
 #include <Model/ModelConfig.h>
+#include <algorithm>
+#include <execution>
+#include <future>
 
 
 class ModelLoader;
@@ -39,6 +42,12 @@ public:
 
     // Check collision and provide collision response vector
     [[nodiscard]] bool CheckCollision(const Collision &playerCollision, Vector3 &response) const;
+
+    // Parallel version of collision checking for better performance with many objects
+    [[nodiscard]] bool CheckCollisionParallel(const Collision &playerCollision) const;
+
+    // Parallel version with response vector
+    [[nodiscard]] bool CheckCollisionParallel(const Collision &playerCollision, Vector3 &response) const;
 
     // Get all colliders
     [[nodiscard]] const std::vector<std::unique_ptr<Collision>> &GetColliders() const;
@@ -73,16 +82,21 @@ public:
 
     // Create simple AABB collision for an instance
     Collision CreateSimpleAABBInstanceCollision(
-       const Collision &cachedCollision,  const Vector3 &position, float scale);
+        const Collision &cachedCollision,  const Vector3 &position, float scale);
+
+    // Helper method to check collision with a single object (for parallel processing)
+    bool CheckCollisionSingleObject(const Collision &playerCollision,
+                                    const Collision &collisionObject,
+                                    Vector3 &response) const;
 
 private:
-    std::vector<std::unique_ptr<Collision>> m_collisions; // All collision objects
+    std::vector<std::unique_ptr<Collision>> m_collisionObjects; // All collision objects
 
     // Cache to prevent rebuilding precise collisions for same models
     std::unordered_map<std::string, std::shared_ptr<Collision>> m_collisionCache;
 
     // Limit the number of precise collisions per model
-    std::unordered_map<std::string, int> m_preciseCollisionCount;
+    std::unordered_map<std::string, int> m_preciseCollisionCountPerModel;
     static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 50;
 };
 

@@ -345,17 +345,13 @@ void Game::LoadGameModels()
         // Validate that we have essential models
         auto availableModels = m_models.GetAvailableModels();
         bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
-        bool hasArenaModel = std::find(availableModels.begin(), availableModels.end(), "arena_test") != availableModels.end();
 
         if (!hasPlayerModel)
         {
             TraceLog(LOG_WARNING, "Game::LoadGameModels() - Player model not found, player may not render correctly");
         }
 
-        if (!hasArenaModel)
-        {
-            TraceLog(LOG_INFO, "Game::LoadGameModels() - Arena model not found, using procedural generation");
-        }
+        
     }
     catch (const std::exception &e)
     {

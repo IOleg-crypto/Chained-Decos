@@ -8,229 +8,232 @@
 #include <string>
 #include <vector>
 #include <cfloat>
+#include <execution>
+#include <future>
+#include <thread>
 
 void CollisionManager::Initialize() const
 {
-    for (auto &collider : m_collisions)
+    for (auto &collisionObject : m_collisionObjects)
     {
-        if (collider->GetCollisionType() == CollisionType::BVH_ONLY ||
-            collider->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
+        if (collisionObject->GetCollisionType() == CollisionType::BVH_ONLY ||
+            collisionObject->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
         {
-            collider->InitializeBVH();
+            collisionObject->InitializeBVH();
         }
     }
 
-    TraceLog(LOG_INFO, "CollisionManager initialized with %zu colliders", m_collisions.size());
+    TraceLog(LOG_INFO, "CollisionManager initialized with %zu collision objects", m_collisionObjects.size());
 }
 
-void CollisionManager::AddCollider(Collision &&collider)
+void CollisionManager::AddCollider(Collision &&collisionObject)
 {
-    m_collisions.push_back(std::make_unique<Collision>(std::move(collider)));
+    m_collisionObjects.push_back(std::make_unique<Collision>(std::move(collisionObject)));
 
-    if (m_collisions.back()->GetCollisionType() == CollisionType::BVH_ONLY ||
-        m_collisions.back()->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
+    if (m_collisionObjects.back()->GetCollisionType() == CollisionType::BVH_ONLY ||
+        m_collisionObjects.back()->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
     {
-        m_collisions.back()->InitializeBVH();
+        m_collisionObjects.back()->InitializeBVH();
     }
 
-    TraceLog(LOG_INFO, "Added collider, total count: %zu", m_collisions.size());
+    TraceLog(LOG_INFO, "Added collision object, total count: %zu", m_collisionObjects.size());
 }
 
-void CollisionManager::AddColliderRef(Collision* collider)
+void CollisionManager::AddColliderRef(Collision* collisionObject)
 {
-    if (!collider) return;
-    
-    m_collisions.push_back(std::unique_ptr<Collision>(collider));
-    
-    if (collider->GetCollisionType() == CollisionType::BVH_ONLY ||
-        collider->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
+    if (!collisionObject) return;
+
+    m_collisionObjects.push_back(std::unique_ptr<Collision>(collisionObject));
+
+    if (collisionObject->GetCollisionType() == CollisionType::BVH_ONLY ||
+        collisionObject->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
     {
-        collider->InitializeBVH();
+        collisionObject->InitializeBVH();
     }
-    
-    TraceLog(LOG_INFO, "Added collider reference, total count: %zu", m_collisions.size());
+
+    TraceLog(LOG_INFO, "Added collision object reference, total count: %zu", m_collisionObjects.size());
 }
 
-void CollisionManager::ClearColliders() { m_collisions.clear(); }
+void CollisionManager::ClearColliders() { m_collisionObjects.clear(); }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 {
-    if (m_collisions.empty())
+    if (m_collisionObjects.empty())
         return false;
 
-    for (const auto &collider : m_collisions)
+    for (const auto &collisionObject : m_collisionObjects)
     {
-        bool hit = false;
+        bool collisionDetected = false;
 
-        if (collider->IsUsingBVH())
-            hit = playerCollision.IntersectsBVH(*collider);
+        if (collisionObject->IsUsingBVH())
+            collisionDetected = playerCollision.IntersectsBVH(*collisionObject);
         else
-            hit = playerCollision.Intersects(*collider);
+            collisionDetected = playerCollision.Intersects(*collisionObject);
 
-        if (hit)
+        if (collisionDetected)
             return true;
     }
     return false;
 }
-bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &response) const
+bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &collisionResponse) const
 {
-    if (m_collisions.empty())
+    if (m_collisionObjects.empty())
         return false;
     const Vector3 playerMin = playerCollision.GetMin();
     const Vector3 playerMax = playerCollision.GetMax();
     const Vector3 playerCenter = {(playerMin.x + playerMax.x) * 0.5f,
-                                  (playerMin.y + playerMax.y) * 0.5f,
-                                  (playerMin.z + playerMax.z) * 0.5f};
-    bool collided = false;
-    response = (Vector3){0, 0, 0};
-    bool hasBest = false;
-    Vector3 bestMTV = {0, 0, 0};
-    float bestLenSq = FLT_MAX;
-    Vector3 groundMTV = {0, 0, 0};
-    bool hasGroundMTV = false;
-    for (const auto &collider : m_collisions)
+                                   (playerMin.y + playerMax.y) * 0.5f,
+                                   (playerMin.z + playerMax.z) * 0.5f};
+    bool collisionDetected = false;
+    collisionResponse = (Vector3){0, 0, 0};
+    bool hasOptimalResponse = false;
+    Vector3 optimalSeparationVector = {0, 0, 0};
+    float optimalSeparationDistanceSquared = FLT_MAX;
+    Vector3 groundSeparationVector = {0, 0, 0};
+    bool hasGroundSeparationVector = false;
+    for (const auto &collisionObject : m_collisionObjects)
     {
-        bool hit = collider->IsUsingBVH() ? playerCollision.IntersectsBVH(*collider)
-                                          : playerCollision.Intersects(*collider);
-        if (!hit)
+        bool collisionDetectedInObject = collisionObject->IsUsingBVH() ? playerCollision.IntersectsBVH(*collisionObject)
+                                           : playerCollision.Intersects(*collisionObject);
+        if (!collisionDetectedInObject)
             continue;
-        collided = true;
+        collisionDetected = true;
 
-        if (collider->IsUsingBVH()) {
-            Vector3 origin = playerCenter;
-            Vector3 dir = {0.0f, -1.0f, 0.0f};
-            float rayMax = (playerMax.y - playerMin.y) + 1.0f;
-            RayHit rayHit;
-            if (collider->RaycastBVH(origin, dir, rayMax, rayHit) && rayHit.hit) {
-                float deltaUp = rayHit.position.y - playerMin.y;
-                if (deltaUp > 0.0f && deltaUp < rayMax) {
-                    Vector3 refined = {0.0f, deltaUp, 0.0f};
-                    if (!hasGroundMTV || fabsf(refined.y) < fabsf(groundMTV.y)) {
-                        groundMTV = refined;
-                        hasGroundMTV = true;
+        if (collisionObject->IsUsingBVH()) {
+            Vector3 raycastOrigin = playerCenter;
+            Vector3 raycastDirection = {0.0f, -1.0f, 0.0f};
+            float maxRaycastDistance = (playerMax.y - playerMin.y) + 1.0f;
+            RayHit raycastHit;
+            if (collisionObject->RaycastBVH(raycastOrigin, raycastDirection, maxRaycastDistance, raycastHit) && raycastHit.hit) {
+                float upwardDelta = raycastHit.position.y - playerMin.y;
+                if (upwardDelta > 0.0f && upwardDelta < maxRaycastDistance) {
+                    Vector3 refinedSeparationVector = {0.0f, upwardDelta, 0.0f};
+                    if (!hasGroundSeparationVector || fabsf(refinedSeparationVector.y) < fabsf(groundSeparationVector.y)) {
+                        groundSeparationVector = refinedSeparationVector;
+                        hasGroundSeparationVector = true;
                     }
                 }
             }
         }
-        const Vector3 colliderMin = collider->GetMin();
-        const Vector3 colliderMax = collider->GetMax();
-        const Vector3 colliderCenter = {(colliderMin.x + colliderMax.x) * 0.5f,
-                                        (colliderMin.y + colliderMax.y) * 0.5f,
-                                        (colliderMin.z + colliderMax.z) * 0.5f};
+        const Vector3 collisionObjectMin = collisionObject->GetMin();
+        const Vector3 collisionObjectMax = collisionObject->GetMax();
+        const Vector3 collisionObjectCenter = {(collisionObjectMin.x + collisionObjectMax.x) * 0.5f,
+                                         (collisionObjectMin.y + collisionObjectMax.y) * 0.5f,
+                                         (collisionObjectMin.z + collisionObjectMax.z) * 0.5f};
         const float overlapX =
-            fminf(playerMax.x, colliderMax.x) - fmaxf(playerMin.x, colliderMin.x);
+            fminf(playerMax.x, collisionObjectMax.x) - fmaxf(playerMin.x, collisionObjectMin.x);
         const float overlapY =
-            fminf(playerMax.y, colliderMax.y) - fmaxf(playerMin.y, colliderMin.y);
+            fminf(playerMax.y, collisionObjectMax.y) - fmaxf(playerMin.y, collisionObjectMin.y);
         const float overlapZ =
-            fminf(playerMax.z, colliderMax.z) - fmaxf(playerMin.z, colliderMin.z);
+            fminf(playerMax.z, collisionObjectMax.z) - fmaxf(playerMin.z, collisionObjectMin.z);
         if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
             continue;
-        float minOverlap = fabsf(overlapX);
-        int axis = 0;
-        if (fabsf(overlapY) < minOverlap)
+        float minimumOverlap = fabsf(overlapX);
+        int collisionAxis = 0;
+        if (fabsf(overlapY) < minimumOverlap)
         {
-            minOverlap = fabsf(overlapY);
-            axis = 1;
+            minimumOverlap = fabsf(overlapY);
+            collisionAxis = 1;
         }
-        if (fabsf(overlapZ) < minOverlap)
+        if (fabsf(overlapZ) < minimumOverlap)
         {
-            minOverlap = fabsf(overlapZ);
-            axis = 2;
+            minimumOverlap = fabsf(overlapZ);
+            collisionAxis = 2;
         }
-        Vector3 mtv = {0, 0, 0};
-        switch (axis)
+        Vector3 minimumTranslationVector = {0, 0, 0};
+        switch (collisionAxis)
         {
         case 0:
-            mtv.x = (playerCenter.x < colliderCenter.x) ? -minOverlap : minOverlap;
+            minimumTranslationVector.x = (playerCenter.x < collisionObjectCenter.x) ? -minimumOverlap : minimumOverlap;
             break;
         case 1:
-            mtv.y = (playerCenter.y < colliderCenter.y) ? -minOverlap : minOverlap;
+            minimumTranslationVector.y = (playerCenter.y < collisionObjectCenter.y) ? -minimumOverlap : minimumOverlap;
             break;
         case 2:
-            mtv.z = (playerCenter.z < colliderCenter.z) ? -minOverlap : minOverlap;
+            minimumTranslationVector.z = (playerCenter.z < collisionObjectCenter.z) ? -minimumOverlap : minimumOverlap;
             break;
         default:
             break;
         }
 
         // For BVH colliders: align MTV with triangle normal to better handle slopes/uneven surfaces
-        if (collider->IsUsingBVH())
+        if (collisionObject->IsUsingBVH())
         {
-            Vector3 dir = mtv;
-            float dirLen = sqrtf(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
-            if (dirLen > 1e-5f)
+            Vector3 surfaceNormalDirection = minimumTranslationVector;
+            float surfaceNormalDirectionLength = sqrtf(surfaceNormalDirection.x * surfaceNormalDirection.x + surfaceNormalDirection.y * surfaceNormalDirection.y + surfaceNormalDirection.z * surfaceNormalDirection.z);
+            if (surfaceNormalDirectionLength > 1e-5f)
             {
-                dir.x /= dirLen; dir.y /= dirLen; dir.z /= dirLen;
+                surfaceNormalDirection.x /= surfaceNormalDirectionLength; surfaceNormalDirection.y /= surfaceNormalDirectionLength; surfaceNormalDirection.z /= surfaceNormalDirectionLength;
                 // Cast from player center opposite to MTV to find nearest contact and normal
-                RayHit nhit; nhit.hit = false;
-                if (collider->RaycastBVH(playerCenter, (Vector3){-dir.x, -dir.y, -dir.z}, fminf(dirLen + 0.5f, 2.0f), nhit) && nhit.hit)
+                RayHit normalHit; normalHit.hit = false;
+                if (collisionObject->RaycastBVH(playerCenter, (Vector3){-surfaceNormalDirection.x, -surfaceNormalDirection.y, -surfaceNormalDirection.z}, fminf(surfaceNormalDirectionLength + 0.5f, 2.0f), normalHit) && normalHit.hit)
                 {
-                    Vector3 n = nhit.normal;
-                    float ndotmtv = n.x * mtv.x + n.y * mtv.y + n.z * mtv.z;
-                    if (ndotmtv > 0.0f)
+                    Vector3 surfaceNormal = normalHit.normal;
+                    float normalDotTranslationVector = surfaceNormal.x * minimumTranslationVector.x + surfaceNormal.y * minimumTranslationVector.y + surfaceNormal.z * minimumTranslationVector.z;
+                    if (normalDotTranslationVector > 0.0f)
                     {
                         // Project MTV onto the surface normal
-                        mtv.x = n.x * ndotmtv;
-                        mtv.y = n.y * ndotmtv;
-                        mtv.z = n.z * ndotmtv;
+                        minimumTranslationVector.x = surfaceNormal.x * normalDotTranslationVector;
+                        minimumTranslationVector.y = surfaceNormal.y * normalDotTranslationVector;
+                        minimumTranslationVector.z = surfaceNormal.z * normalDotTranslationVector;
                     }
                 }
             }
         }
         // Ignore micro-overlaps (contact offset)
         {
-            float mtvLen = sqrtf(mtv.x*mtv.x + mtv.y*mtv.y + mtv.z*mtv.z);
-            const float contactSkin = 0.06f; // small contact buffer to reduce jitter
-            if (mtvLen < contactSkin)
+            float translationVectorLength = sqrtf(minimumTranslationVector.x*minimumTranslationVector.x + minimumTranslationVector.y*minimumTranslationVector.y + minimumTranslationVector.z*minimumTranslationVector.z);
+            const float contactOffset = 0.06f; // small contact buffer to reduce jitter
+            if (translationVectorLength < contactOffset)
                 continue;
         }
 
-        if (axis == 1 && mtv.y > 0 && (playerCenter.y - colliderCenter.y) >= 0.1f)
+        if (collisionAxis == 1 && minimumTranslationVector.y > 0 && (playerCenter.y - collisionObjectCenter.y) >= 0.1f)
         {
-            if (!hasGroundMTV || fabsf(mtv.y) < fabsf(groundMTV.y))
+            if (!hasGroundSeparationVector || fabsf(minimumTranslationVector.y) < fabsf(groundSeparationVector.y))
             {
-                groundMTV = mtv;
-                hasGroundMTV = true;
+                groundSeparationVector = minimumTranslationVector;
+                hasGroundSeparationVector = true;
             }
         }
-        else if (axis == 1 && mtv.y < 0 && (playerCenter.y - colliderCenter.y) <= -0.1f)
+        else if (collisionAxis == 1 && minimumTranslationVector.y < 0 && (playerCenter.y - collisionObjectCenter.y) <= -0.1f)
         {
             // Prevent pushing player down through ground
-            if (!hasGroundMTV || fabsf(mtv.y) < fabsf(groundMTV.y))
+            if (!hasGroundSeparationVector || fabsf(minimumTranslationVector.y) < fabsf(groundSeparationVector.y))
             {
-                groundMTV = mtv;
-                hasGroundMTV = true;
+                groundSeparationVector = minimumTranslationVector;
+                hasGroundSeparationVector = true;
             }
         }
         else
         {
             // Additional jitter guard for small horizontal nudges
-            if (fabsf(mtv.y) < 1e-4f)
+            if (fabsf(minimumTranslationVector.y) < 1e-4f)
             {
-                float horiz = sqrtf(mtv.x*mtv.x + mtv.z*mtv.z);
-                if (horiz < 0.15f) // ignore tiny side pushes while walking
+                float horizontalMagnitude = sqrtf(minimumTranslationVector.x*minimumTranslationVector.x + minimumTranslationVector.z*minimumTranslationVector.z);
+                if (horizontalMagnitude < 0.15f) // ignore tiny side pushes while walking
                     continue;
             }
-            float lenSq = mtv.x * mtv.x + mtv.y * mtv.y + mtv.z * mtv.z;
-            if (!hasBest || lenSq < bestLenSq)
+            float translationVectorLengthSquared = minimumTranslationVector.x * minimumTranslationVector.x + minimumTranslationVector.y * minimumTranslationVector.y + minimumTranslationVector.z * minimumTranslationVector.z;
+            if (!hasOptimalResponse || translationVectorLengthSquared < optimalSeparationDistanceSquared)
             {
-                bestLenSq = lenSq;
-                bestMTV = mtv;
-                hasBest = true;
+                optimalSeparationDistanceSquared = translationVectorLengthSquared;
+                optimalSeparationVector = minimumTranslationVector;
+                hasOptimalResponse = true;
             }
         }
     }
-    if (hasGroundMTV)
+    if (hasGroundSeparationVector)
     {
-        response = groundMTV;
+        collisionResponse = groundSeparationVector;
         return true;
     }
-    if (hasBest)
+    if (hasOptimalResponse)
     {
-        response = bestMTV;
+        collisionResponse = optimalSeparationVector;
         return true;
     }
-    return collided;
+    return collisionDetected;
 }
 
 void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
@@ -242,20 +245,20 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     TraceLog(LOG_INFO, "Found %zu models to check", availableModels.size());
 
     // Track processed models to avoid duplication
-    std::set<std::string> processedModels;
-    int collisionsCreated = 0;
+    std::set<std::string> processedModelNames;
+    int collisionObjectsCreated = 0;
     constexpr size_t MAX_COLLISION_INSTANCES = 3; // Reduced safety limit for better performance
 
     // Process each model
     for (const auto &modelName : availableModels)
     {
         // Skip if already processed
-        if (processedModels.contains(modelName))
+        if (processedModelNames.contains(modelName))
         {
             continue;
         }
 
-        processedModels.insert(modelName);
+        processedModelNames.insert(modelName);
         TraceLog(LOG_INFO, "Processing model: %s", modelName.c_str());
 
         try
@@ -281,7 +284,7 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
                 Vector3 defaultPos = (modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
                 if (CreateCollisionFromModel(model, modelName, defaultPos, 1.0f, models))
                 {
-                    collisionsCreated++;
+                    collisionObjectsCreated++;
                 }
             }
             else
@@ -299,7 +302,7 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
 
                     if (CreateCollisionFromModel(model, modelName, position, scale, models))
                     {
-                        collisionsCreated++;
+                        collisionObjectsCreated++;
                     }
                 }
 
@@ -319,8 +322,8 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     }
 
     TraceLog(LOG_INFO,
-             "Automatic collision generation complete. Created %d collisions from %zu models",
-             collisionsCreated, availableModels.size());
+              "Automatic collision generation complete. Created %d collision objects from %zu models",
+              collisionObjectsCreated, availableModels.size());
 }
 
 // Helper function to create cache key
@@ -371,7 +374,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         (cachedCollision->GetCollisionType() == CollisionType::BVH_ONLY || 
          cachedCollision->GetCollisionType() == CollisionType::TRIANGLE_PRECISE);
 
-    if (usePreciseForInstance && m_preciseCollisionCount[modelName] < MAX_PRECISE_COLLISIONS_PER_MODEL)
+    if (usePreciseForInstance && m_preciseCollisionCountPerModel[modelName] < MAX_PRECISE_COLLISIONS_PER_MODEL)
     {
         // Use precise collision (prefer cached triangles)
         if (cachedCollision->HasTriangleData())
@@ -382,7 +385,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         {
             instanceCollision = CreatePreciseInstanceCollision(model, position, scale, config);
         }
-        m_preciseCollisionCount[modelName]++;
+        m_preciseCollisionCountPerModel[modelName]++;
     }
     else
     {
@@ -390,8 +393,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         instanceCollision = CreateSimpleAABBInstanceCollision(*cachedCollision, position, scale);
         if (usePreciseForInstance)
         {
-            TraceLog(LOG_WARNING, "Reached limit of %d precise collisions for model '%s', using AABB",
-                     MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
+            TraceLog(LOG_WARNING, "Reached limit of %d precise collision objects for model '%s', using AABB",
+                      MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
         }
     }
 
@@ -408,76 +411,76 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
 
 const std::vector<std::unique_ptr<Collision>> &CollisionManager::GetColliders() const
 {
-    return m_collisions;
+    return m_collisionObjects;
 }
 
-bool CollisionManager::RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
-                                   Vector3 &hitPoint, Vector3 &hitNormal) const
+bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycastDistance, float &hitDistance,
+                                    Vector3 &hitPoint, Vector3 &hitNormal) const
 {
-    bool anyHit = false;
-    float bestDist = maxDistance;
-    Vector3 bestPoint = {0};
-    Vector3 bestNormal = {0};
+    bool anyHitDetected = false;
+    float nearestHitDistance = maxRaycastDistance;
+    Vector3 nearestHitPoint = {0};
+    Vector3 nearestHitNormal = {0};
 
-    Vector3 dir = {0.0f, -3.0f, 0.0f}; 
+    Vector3 raycastDirection = {0.0f, -3.0f, 0.0f};
 
-    for (const auto &collider : m_collisions)
+    for (const auto &collisionObject : m_collisionObjects)
     {
-        if (collider->IsUsingBVH())
+        if (collisionObject->IsUsingBVH())
         {
-            RayHit hit;
-            hit.hit = false;
-            hit.distance = maxDistance;
-            if (collider->RaycastBVH(origin, dir, maxDistance, hit))
+            RayHit raycastHit;
+            raycastHit.hit = false;
+            raycastHit.distance = maxRaycastDistance;
+            if (collisionObject->RaycastBVH(raycastOrigin, raycastDirection, maxRaycastDistance, raycastHit))
             {
-                if (hit.distance < bestDist)
+                if (raycastHit.distance < nearestHitDistance)
                 {
-                    bestDist = hit.distance;
-                    bestPoint = hit.position;
-                    bestNormal = hit.normal;
-                    anyHit = true;
+                    nearestHitDistance = raycastHit.distance;
+                    nearestHitPoint = raycastHit.position;
+                    nearestHitNormal = raycastHit.normal;
+                    anyHitDetected = true;
                 }
             }
         }
         else
         {
             // AABB-only fallback: intersect ray with top face of AABB
-            const Vector3 mn = collider->GetMin();
-            const Vector3 mx = collider->GetMax();
+            const Vector3 mn = collisionObject->GetMin();
+            const Vector3 mx = collisionObject->GetMax();
             // Ray is vertical down. Intersect at y = mx.y (top face)
-            if (origin.y >= mx.y)
+            if (raycastOrigin.y >= mx.y)
             {
-                float dist = origin.y - mx.y;
-                if (dist <= maxDistance)
+                float dist = raycastOrigin.y - mx.y;
+                if (dist <= maxRaycastDistance)
                 {
                     // Check if x,z are inside bounds at that y
-                    if (origin.x >= mn.x && origin.x <= mx.x && origin.z >= mn.z && origin.z <= mx.z)
+                    if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x && raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
                     {
-                        if (dist < bestDist)
+                        if (dist < nearestHitDistance)
                         {
-                            bestDist = dist;
-                            bestPoint = {origin.x, mx.y, origin.z};
-                            bestNormal = {0, 1, 0};
-                            anyHit = true;
+                            nearestHitDistance = dist;
+                            nearestHitPoint = {raycastOrigin.x, mx.y, raycastOrigin.z};
+                            nearestHitNormal = {0, 1, 0};
+                            anyHitDetected = true;
                         }
                     }
                 }
             }
             // Also check bottom face for ground collision
-            else if (origin.y <= mn.y)
+            else if (raycastOrigin.y <= mn.y)
             {
-                float dist = mn.y - origin.y;
-                if (dist <= maxDistance)
+                float dist = mn.y - raycastOrigin.y;
+                if (dist <= maxRaycastDistance)
                 {
                     // Check if x,z are inside bounds at that y
-                    if (origin.x >= mn.x && origin.x <= mx.x && origin.z >= mn.z && origin.z <= mx.z)
+                    if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x && raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
                     {
-                        if (dist < bestDist)
+                        if (dist < nearestHitDistance)
                         {
-                            bestDist = dist;
-                            bestPoint = {origin.x, mn.y, origin.z};
-                            bestNormal = {0, -1, 0};
-                            anyHit = true;
+                            nearestHitDistance = dist;
+                            nearestHitPoint = {raycastOrigin.x, mn.y, raycastOrigin.z};
+                            nearestHitNormal = {0, -1, 0};
+                            anyHitDetected = true;
                         }
                     }
                 }
@@ -485,14 +488,196 @@ bool CollisionManager::RaycastDown(const Vector3 &origin, float maxDistance, flo
         }
     }
 
-    if (anyHit)
+    if (anyHitDetected)
     {
-        hitDistance = bestDist;
-        hitPoint = bestPoint;
-        hitNormal = bestNormal;
+        hitDistance = nearestHitDistance;
+        hitPoint = nearestHitPoint;
+        hitNormal = nearestHitNormal;
         return true;
     }
     return false;
+}
+
+// Parallel version of collision checking for better performance with many objects
+bool CollisionManager::CheckCollisionParallel(const Collision &playerCollision) const
+{
+    if (m_collisionObjects.empty())
+        return false;
+
+    // Use parallel execution policy for better performance with many collision objects
+    size_t numObjects = m_collisionObjects.size();
+    const size_t parallelThreshold = 16; // Only use parallel processing if we have enough objects
+
+    if (numObjects < parallelThreshold) {
+        // Fall back to sequential for small numbers of objects
+        return CheckCollision(playerCollision);
+    }
+
+    // Split collision objects into chunks for parallel processing
+    size_t numThreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()), numObjects / 4);
+    numThreads = std::max(numThreads, static_cast<size_t>(1));
+
+    std::vector<std::future<bool>> futures;
+    size_t chunkSize = numObjects / numThreads;
+
+    for (size_t i = 0; i < numThreads; ++i) {
+        size_t startIdx = i * chunkSize;
+        size_t endIdx = (i == numThreads - 1) ? numObjects : (i + 1) * chunkSize;
+
+        futures.push_back(std::async(std::launch::async, [this, &playerCollision, startIdx, endIdx]() {
+            for (size_t j = startIdx; j < endIdx; ++j) {
+                const auto &collisionObject = m_collisionObjects[j];
+                bool collisionDetectedInObject = false;
+
+                if (collisionObject->IsUsingBVH())
+                    collisionDetectedInObject = playerCollision.IntersectsBVH(*collisionObject);
+                else
+                    collisionDetectedInObject = playerCollision.Intersects(*collisionObject);
+
+                if (collisionDetectedInObject)
+                    return true;
+            }
+            return false;
+        }));
+    }
+
+    // Check if any thread found a collision
+    for (auto &future : futures) {
+        if (future.get())
+            return true;
+    }
+
+    return false;
+}
+
+// Parallel version with response vector
+bool CollisionManager::CheckCollisionParallel(const Collision &playerCollision, Vector3 &collisionResponse) const
+{
+    if (m_collisionObjects.empty())
+        return false;
+
+    const size_t parallelThreshold = 16;
+
+    if (m_collisionObjects.size() < parallelThreshold) {
+        return CheckCollision(playerCollision, collisionResponse);
+    }
+
+    // For parallel processing with response, we need to collect all collision data
+    // and then resolve conflicts sequentially to ensure correct physics behavior
+    std::vector<std::future<std::pair<bool, Vector3>>> futures;
+
+    size_t numThreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()), m_collisionObjects.size() / 4);
+    size_t chunkSize = m_collisionObjects.size() / numThreads;
+
+    for (size_t i = 0; i < numThreads; ++i) {
+        size_t startIdx = i * chunkSize;
+        size_t endIdx = (i == numThreads - 1) ? m_collisionObjects.size() : (i + 1) * chunkSize;
+
+        futures.push_back(std::async(std::launch::async, [this, &playerCollision, startIdx, endIdx]() {
+            std::pair<bool, Vector3> result = {false, {0, 0, 0}};
+            Vector3 localResponse = {0, 0, 0};
+
+            for (size_t j = startIdx; j < endIdx; ++j) {
+                const auto &collisionObject = m_collisionObjects[j];
+                if (CheckCollisionSingleObject(playerCollision, *collisionObject, localResponse)) {
+                    result.first = true;
+                    // For now, just use the first collision found
+                    // In a more sophisticated implementation, we could collect all collisions
+                    result.second = localResponse;
+                    break;
+                }
+            }
+
+            return result;
+        }));
+    }
+
+    // Collect results and find the best collision response
+    bool anyCollision = false;
+    Vector3 bestResponse = {0, 0, 0};
+    float bestDistanceSquared = FLT_MAX;
+
+    for (auto &future : futures) {
+        auto [hasCollision, response] = future.get();
+        if (hasCollision) {
+            anyCollision = true;
+            float distanceSquared = response.x * response.x + response.y * response.y + response.z * response.z;
+            if (distanceSquared < bestDistanceSquared) {
+                bestDistanceSquared = distanceSquared;
+                bestResponse = response;
+            }
+        }
+    }
+
+    if (anyCollision) {
+        collisionResponse = bestResponse;
+        return true;
+    }
+
+    return false;
+}
+
+// Helper method to check collision with a single object (extracted for parallel use)
+bool CollisionManager::CheckCollisionSingleObject(const Collision &playerCollision,
+                                                  const Collision &collisionObject,
+                                                  Vector3 &response) const
+{
+    const Vector3 playerMin = playerCollision.GetMin();
+    const Vector3 playerMax = playerCollision.GetMax();
+    const Vector3 playerCenter = {(playerMin.x + playerMax.x) * 0.5f,
+                                   (playerMin.y + playerMax.y) * 0.5f,
+                                   (playerMin.z + playerMax.z) * 0.5f};
+
+    bool collisionDetectedInObject = collisionObject.IsUsingBVH() ?
+        playerCollision.IntersectsBVH(collisionObject) :
+        playerCollision.Intersects(collisionObject);
+
+    if (!collisionDetectedInObject)
+        return false;
+
+    // Calculate MTV for this specific collision
+    const Vector3 collisionObjectMin = collisionObject.GetMin();
+    const Vector3 collisionObjectMax = collisionObject.GetMax();
+    const Vector3 collisionObjectCenter = {(collisionObjectMin.x + collisionObjectMax.x) * 0.5f,
+                                         (collisionObjectMin.y + collisionObjectMax.y) * 0.5f,
+                                         (collisionObjectMin.z + collisionObjectMax.z) * 0.5f};
+
+    const float overlapX = fminf(playerMax.x, collisionObjectMax.x) - fmaxf(playerMin.x, collisionObjectMin.x);
+    const float overlapY = fminf(playerMax.y, collisionObjectMax.y) - fmaxf(playerMin.y, collisionObjectMin.y);
+    const float overlapZ = fminf(playerMax.z, collisionObjectMax.z) - fmaxf(playerMin.z, collisionObjectMin.z);
+
+    if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
+        return false;
+
+    float minimumOverlap = fabsf(overlapX);
+    int collisionAxis = 0;
+
+    if (fabsf(overlapY) < minimumOverlap) {
+        minimumOverlap = fabsf(overlapY);
+        collisionAxis = 1;
+    }
+    if (fabsf(overlapZ) < minimumOverlap) {
+        minimumOverlap = fabsf(overlapZ);
+        collisionAxis = 2;
+    }
+
+    Vector3 minimumTranslationVector = {0, 0, 0};
+    switch (collisionAxis) {
+        case 0:
+            minimumTranslationVector.x = (playerCenter.x < collisionObjectCenter.x) ? -minimumOverlap : minimumOverlap;
+            break;
+        case 1:
+            minimumTranslationVector.y = (playerCenter.y < collisionObjectCenter.y) ? -minimumOverlap : minimumOverlap;
+            break;
+        case 2:
+            minimumTranslationVector.z = (playerCenter.z < collisionObjectCenter.z) ? -minimumOverlap : minimumOverlap;
+            break;
+        default:
+            break;
+    }
+
+    response = minimumTranslationVector;
+    return true;
 }
 
 // Helper method to create base collision for caching

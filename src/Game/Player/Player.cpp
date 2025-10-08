@@ -14,8 +14,8 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
 {
     TraceLog(LOG_INFO, "Creating Player...");
 
-    // Initialize player size
-    m_playerSize = (Vector3){1.0f, 2.5f, 1.0f}; // Adjusted height for large model
+    // Initialize player bounding box size
+    m_boundingBoxSize = (Vector3){1.0f, 2.5f, 1.0f}; // Adjusted height for large model
 
     // Create component objects
     m_movement = std::make_unique<PlayerMovement>(this);
@@ -207,7 +207,7 @@ bool Player::IsJumpCollision() const { return m_collision->IsJumpCollision(); }
 
 Vector3 Player::GetPlayerPosition() const { return m_movement->GetPosition(); }
 
-Vector3 Player::GetPlayerSize() const { return m_playerSize; }
+Vector3 Player::GetPlayerSize() const { return m_boundingBoxSize; }
 
 // Apply jump impulse based on mass and direction
 void Player::ApplyJumpImpulse(float impulse)

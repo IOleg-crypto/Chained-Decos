@@ -1,5 +1,9 @@
 #include "ParkourMapGenerator.h"
 #include <cmath>
+#include <future>
+#include <thread>
+#include <vector>
+#include <algorithm>
 
 ParkourElement ParkourMapGenerator::CreateCube(const Vector3& position, const Vector3& size, const Color& color, bool isPlatform)
 {
@@ -298,6 +302,52 @@ std::vector<ParkourTestMap> ParkourMapGenerator::GetAllParkourMaps()
         CreateSpeedRunnersGauntletMap(),
         CreateShapeTrainingGroundMap()
     };
+}
+
+// Parallel version that generates maps concurrently for better performance
+std::vector<ParkourTestMap> ParkourMapGenerator::GetAllParkourMapsParallel()
+{
+    // Define map generation tasks
+    std::vector<std::function<ParkourTestMap()>> mapGenerators = {
+        []() { return ParkourMapGenerator::CreateBasicShapesMap(); },
+        []() { return ParkourMapGenerator::CreateGeometricChallengeMap(); },
+        []() { return ParkourMapGenerator::CreatePrecisionPlatformingMap(); },
+        []() { return ParkourMapGenerator::CreateVerticalAscensionMap(); },
+        []() { return ParkourMapGenerator::CreateSpeedRunnersGauntletMap(); },
+        []() { return ParkourMapGenerator::CreateShapeTrainingGroundMap(); }
+    };
+
+    // Determine optimal number of threads (leave some cores free for other tasks)
+    unsigned int numThreads = std::min(static_cast<unsigned int>(mapGenerators.size()),
+                                      std::max(1u, std::thread::hardware_concurrency() / 2));
+
+    std::vector<std::future<ParkourTestMap>> futures;
+    std::vector<ParkourTestMap> results;
+
+    // Launch map generation tasks in parallel
+    for (unsigned int i = 0; i < mapGenerators.size(); ++i)
+    {
+        // Distribute tasks across available threads
+        if (futures.size() < numThreads)
+        {
+            futures.push_back(std::async(std::launch::async, mapGenerators[i]));
+        }
+        else
+        {
+            // Wait for one task to complete before starting another
+            results.push_back(futures.back().get());
+            futures.pop_back();
+            futures.push_back(std::async(std::launch::async, mapGenerators[i]));
+        }
+    }
+
+    // Collect remaining results
+    for (auto& future : futures)
+    {
+        results.push_back(future.get());
+    }
+
+    return results;
 }
 
 ParkourTestMap ParkourMapGenerator::GetMapByName(const std::string& name)

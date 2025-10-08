@@ -21,15 +21,15 @@
 namespace fs = std::filesystem;
 
 Editor::Editor()
-    : m_cameraController(std::make_shared<CameraController>()), m_selectedObjectIndex(-1),
-      m_currentTool(SELECT), m_showImGui(true), m_showObjectPanel(true),
-      m_showPropertiesPanel(true), m_shouldAddObject(false), m_modelsInitialized(false),
-      m_showFileDialog(false), m_isLoadDialog(true), m_showNewFolderDialog(false),
-      m_showDeleteDialog(false), m_showParkourDialog(false), m_selectedParkourMap(0)
+    : m_cameraController(std::make_shared<CameraController>()), m_currentlySelectedObjectIndex(-1),
+      m_activeEditorTool(SELECT), m_displayImGuiInterface(true), m_displayObjectListPanel(true),
+      m_displayPropertiesPanel(true), m_pendingObjectCreation(false), m_modelsInitialized(false),
+      m_displayFileDialog(false), m_isFileLoadDialog(true), m_displayNewFolderDialog(false),
+      m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0)
 {
     // Initialize file dialog to project root
-    m_currentDirectory = PROJECT_ROOT_DIR;
-    m_newFileName = "new_map.json";
+    m_currentWorkingDirectory = PROJECT_ROOT_DIR;
+    m_newFileNameInput = "new_map.json";
     RefreshDirectoryItems();
 }
 
@@ -46,7 +46,7 @@ void Editor::Update()
 void Editor::Render()
 {
     // Render all objects in the scene
-    for (auto &obj : m_objects)
+    for (auto &obj : m_editorSceneObjects)
     {
         RenderObject(obj);
     }
@@ -60,18 +60,18 @@ void Editor::RenderImGui()
     // Render all ImGui panels in specific order
     RenderImGuiToolbar();
 
-    if (m_showObjectPanel)
+    if (m_displayObjectListPanel)
     {
         RenderImGuiObjectPanel();
     }
 
-    if (m_selectedObjectIndex >= 0)
+    if (m_currentlySelectedObjectIndex >= 0)
     {
         RenderImGuiPropertiesPanel();
     }
 
     // Render file dialog if shown
-    if (m_showFileDialog)
+    if (m_displayFileDialog)
     {
         RenderFileDialog();
     }
@@ -102,7 +102,7 @@ void Editor::HandleInput()
         }
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
-            if (m_currentTool == SELECT)
+            if (m_activeEditorTool == SELECT)
             {
                 PickObject();
             }
@@ -119,22 +119,22 @@ void Editor::HandleInput()
 void Editor::AddObject(const MapObject &obj)
 {
     // Add new object to the scene
-    m_objects.push_back(obj);
+    m_editorSceneObjects.push_back(obj);
 }
 
 void Editor::RemoveObject(const int index)
 {
     // Remove object by index and update selection
-    if (index >= 0 && index < m_objects.size())
+    if (index >= 0 && index < m_editorSceneObjects.size())
     {
-        m_objects.erase(m_objects.begin() + index);
-        if (m_selectedObjectIndex == index)
+        m_editorSceneObjects.erase(m_editorSceneObjects.begin() + index);
+        if (m_currentlySelectedObjectIndex == index)
         {
-            m_selectedObjectIndex = -1;
+            m_currentlySelectedObjectIndex = -1;
         }
-        else if (m_selectedObjectIndex > index)
+        else if (m_currentlySelectedObjectIndex > index)
         {
-            m_selectedObjectIndex--;
+            m_currentlySelectedObjectIndex--;
         }
     }
 }
@@ -142,28 +142,28 @@ void Editor::RemoveObject(const int index)
 void Editor::SelectObject(const int index)
 {
     // Clear previous selection
-    if (m_selectedObjectIndex >= 0 && m_selectedObjectIndex < m_objects.size())
+    if (m_currentlySelectedObjectIndex >= 0 && m_currentlySelectedObjectIndex < m_editorSceneObjects.size())
     {
-        m_objects[m_selectedObjectIndex].SetSelected(false);
+        m_editorSceneObjects[m_currentlySelectedObjectIndex].SetSelected(false);
     }
 
-    m_selectedObjectIndex = index;
+    m_currentlySelectedObjectIndex = index;
 
     // Set new selection
-    if (index >= 0 && index < m_objects.size())
+    if (index >= 0 && index < m_editorSceneObjects.size())
     {
-        m_objects[index].SetSelected(true);
+        m_editorSceneObjects[index].SetSelected(true);
     }
 }
 
 void Editor::ClearSelection()
 {
     // Clear current object selection
-    if (m_selectedObjectIndex >= 0 && m_selectedObjectIndex < m_objects.size())
+    if (m_currentlySelectedObjectIndex >= 0 && m_currentlySelectedObjectIndex < m_editorSceneObjects.size())
     {
-        m_objects[m_selectedObjectIndex].SetSelected(false);
+        m_editorSceneObjects[m_currentlySelectedObjectIndex].SetSelected(false);
     }
-    m_selectedObjectIndex = -1;
+    m_currentlySelectedObjectIndex = -1;
 }
 
 void Editor::SaveMap(const std::string &filename)
@@ -171,16 +171,16 @@ void Editor::SaveMap(const std::string &filename)
     // Convert MapObjects to SerializableObjects for saving
     std::vector<SerializableObject> serializableObjects;
 
-    for (auto &obj : m_objects)
+    for (auto &obj : m_editorSceneObjects)
     {
         SerializableObject serializableObj;
         serializableObj.position = obj.GetPosition();
         serializableObj.scale = obj.GetScale();
         serializableObj.rotation = obj.GetRotation();
         serializableObj.color = obj.GetColor();
-        serializableObj.name = obj.GetName();
-        serializableObj.type = obj.GetType();
-        serializableObj.modelName = obj.GetModelName();
+        serializableObj.name = obj.GetObjectName();
+        serializableObj.type = obj.GetObjectType();
+        serializableObj.modelName = obj.GetModelAssetName();
         serializableObjects.push_back(serializableObj);
     }
 
@@ -203,8 +203,8 @@ void Editor::LoadMap(const std::string &filename)
     if (MapFileManager::LoadMap(serializableObjects, filename))
     {
         // Clear current scene
-        m_objects.clear();
-        m_selectedObjectIndex = -1;
+        m_editorSceneObjects.clear();
+        m_currentlySelectedObjectIndex = -1;
 
         // Convert SerializableObjects back to MapObjects
         for (const auto &[position, scale, rotation, color, name, type, modelName] :
@@ -215,12 +215,12 @@ void Editor::LoadMap(const std::string &filename)
             obj.SetScale(scale);
             obj.SetRotation(rotation);
             obj.SetColor(color);
-            obj.SetName(name);
-            obj.SetType(type);
-            obj.SetModelName(modelName);
+            obj.SetObjectName(name);
+            obj.SetObjectType(type);
+            obj.SetModelAssetName(modelName);
             obj.SetSelected(false);
 
-            m_objects.push_back(obj);
+            m_editorSceneObjects.push_back(obj);
         }
 
         std::cout << "Map loaded successfully!" << std::endl;
@@ -237,7 +237,7 @@ void Editor::ExportMapForGame(const std::string &filename)
     GameMap gameMap;
 
     // Set basic metadata
-    gameMap.metadata.name = m_mapFileName.empty() ? "exported_map" : m_mapFileName;
+    gameMap.metadata.name = m_currentlyLoadedMapFilePath.empty() ? "exported_map" : m_currentlyLoadedMapFilePath;
     gameMap.metadata.displayName = "Exported Map";
     gameMap.metadata.description = "Map exported from editor";
     gameMap.metadata.author = "Map Editor";
@@ -247,19 +247,19 @@ void Editor::ExportMapForGame(const std::string &filename)
     gameMap.metadata.groundColor = DARKGREEN;
 
     // Convert MapObjects to MapObjectData
-    for (const auto& obj : m_objects)
+    for (const auto& obj : m_editorSceneObjects)
     {
         MapObjectData objectData;
 
-        objectData.name = obj.GetName();
+        objectData.name = obj.GetObjectName();
         objectData.position = obj.GetPosition();
         objectData.rotation = obj.GetRotation();
         objectData.scale = obj.GetScale();
         objectData.color = obj.GetColor();
-        objectData.modelName = obj.GetModelName();
+        objectData.modelName = obj.GetModelAssetName();
 
         // Convert type (MapObject uses 0-5, MapObjectData uses enum)
-        switch (obj.GetType())
+        switch (obj.GetObjectType())
         {
             case 0: objectData.type = MapObjectType::CUBE; break;
             case 1: objectData.type = MapObjectType::SPHERE; break;
@@ -270,17 +270,17 @@ void Editor::ExportMapForGame(const std::string &filename)
         }
 
         // Set shape-specific properties
-        switch (obj.GetType())
+        switch (obj.GetObjectType())
         {
             case 1: // Sphere
-                objectData.radius = obj.GetRadiusSphere();
+                objectData.radius = obj.GetSphereRadius();
                 break;
             case 2: // Cylinder
                 objectData.radius = obj.GetScale().x;
                 objectData.height = obj.GetScale().y;
                 break;
             case 3: // Plane
-                objectData.size = obj.GetSize();
+                objectData.size = obj.GetPlaneSize();
                 break;
         }
 
@@ -316,29 +316,29 @@ void Editor::RenderImGuiObjectPanel()
         if (ImGui::Button("Add Object"))
         {
             MapObject newObj;
-            newObj.SetName("New Object " + std::to_string(m_objects.size()));
+            newObj.SetObjectName("New Object " + std::to_string(m_editorSceneObjects.size()));
             AddObject(newObj);
         }
         ImGui::SameLine();
-        if (ImGui::Button("Remove") && m_selectedObjectIndex >= 0)
+        if (ImGui::Button("Remove") && m_currentlySelectedObjectIndex >= 0)
         {
-            RemoveObject(m_selectedObjectIndex);
+            RemoveObject(m_currentlySelectedObjectIndex);
         }
         ImGui::SameLine();
         if (ImGui::Button("Clear All"))
         {
-            m_objects.clear();
+            m_editorSceneObjects.clear();
         }
 
         ImGui::Separator();
 
         // List all objects
-        for (int i = 0; i < m_objects.size(); i++)
+        for (int i = 0; i < m_editorSceneObjects.size(); i++)
         {
-            auto &obj = m_objects[i];
+            auto &obj = m_editorSceneObjects[i];
 
-            if (const bool isSelected = (i == m_selectedObjectIndex);
-                ImGui::Selectable(obj.GetName().c_str(), isSelected))
+            if (const bool isSelected = (i == m_currentlySelectedObjectIndex);
+                ImGui::Selectable(obj.GetObjectName().c_str(), isSelected))
             {
                 SelectObject(i);
             }
@@ -349,13 +349,13 @@ void Editor::RenderImGuiObjectPanel()
                 ImGui::BeginTooltip();
                 ImGui::Text("Position: %.1f, %.1f, %.1f", obj.GetPosition().x, obj.GetPosition().y,
                             obj.GetPosition().z);
-                ImGui::Text("Type: %s", obj.GetType() == 0   ? "Cube"
-                                        : obj.GetType() == 1 ? "Sphere"
-                                        : obj.GetType() == 2 ? "Cylinder"
-                                        : obj.GetType() == 3 ? "Plane"
-                                        : obj.GetType() == 4 ? "Ellipse"
-                                        : obj.GetType() == 5
-                                            ? ("Model: " + obj.GetModelName()).c_str()
+                ImGui::Text("Type: %s", obj.GetObjectType() == 0   ? "Cube"
+                                        : obj.GetObjectType() == 1 ? "Sphere"
+                                        : obj.GetObjectType() == 2 ? "Cylinder"
+                                        : obj.GetObjectType() == 3 ? "Plane"
+                                        : obj.GetObjectType() == 4 ? "Ellipse"
+                                        : obj.GetObjectType() == 5
+                                            ? ("Model: " + obj.GetModelAssetName()).c_str()
                                             : "Unknown");
                 ImGui::EndTooltip();
             }
@@ -365,7 +365,7 @@ void Editor::RenderImGuiObjectPanel()
     // If window was closed, don't show it next frame
     if (!objectPanelOpen)
     {
-        m_showObjectPanel = false;
+        m_displayObjectListPanel = false;
     }
 
     ImGui::End();
@@ -374,15 +374,15 @@ void Editor::RenderImGuiObjectPanel()
 void Editor::RenderObject(MapObject &obj)
 {
     // Choose color based on selection state
-    Color drawColor = obj.GetSelected() ? YELLOW : obj.GetColor();
+    Color drawColor = obj.IsSelected() ? YELLOW : obj.GetColor();
 
     // Render object based on its type
-    switch (obj.GetType())
+    switch (obj.GetObjectType())
     {
     case 0: // Cube
         DrawCube(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().z,
                  drawColor);
-        if (obj.GetSelected())
+        if (obj.IsSelected())
         {
             DrawCubeWires(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().z,
                           RED);
@@ -390,35 +390,35 @@ void Editor::RenderObject(MapObject &obj)
         break;
     case 1: // Sphere
         DrawSphere(obj.GetPosition(), obj.GetScale().x, drawColor);
-        if (obj.GetSelected())
+        if (obj.IsSelected())
         {
-            DrawSphereWires(obj.GetPosition(), obj.GetRadiusSphere(), 5, 5, RED);
+            DrawSphereWires(obj.GetPosition(), obj.GetSphereRadius(), 5, 5, RED);
         }
         break;
     case 2: // Cylinder
         DrawCylinder(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().y, 8,
                      drawColor);
-        if (obj.GetSelected())
+        if (obj.IsSelected())
         {
             DrawCylinderWires(obj.GetPosition(), obj.GetScale().x, obj.GetScale().x,
                               obj.GetScale().y, 8, RED);
         }
         break;
     case 3:
-        DrawPlane(obj.GetPosition(), obj.GetSize(), drawColor);
+        DrawPlane(obj.GetPosition(), obj.GetPlaneSize(), drawColor);
         break;
     case 4:
-        DrawEllipse(obj.GetPosition().x, obj.GetPosition().y, obj.GetRadiusH(), obj.GetRadiusV(),
+        DrawEllipse(obj.GetPosition().x, obj.GetPosition().y, obj.GetHorizontalRadius(), obj.GetVerticalRadius(),
                     drawColor);
         break;
     case 5: // 3D Model
-        if (!obj.GetModelName().empty())
+        if (!obj.GetModelAssetName().empty())
         {
             // Ensure models are loaded before trying to use them
             EnsureModelsLoaded();
 
             // Get model safely without exceptions
-            Model *modelPtr = GetModelSafe(obj.GetModelName());
+            Model *modelPtr = GetModelSafe(obj.GetModelAssetName());
 
             if (modelPtr != nullptr)
             {
@@ -431,7 +431,7 @@ void Editor::RenderObject(MapObject &obj)
                             obj.GetScale(), drawColor);
 
                 // Draw wireframe if selected
-                if (obj.GetSelected())
+                if (obj.IsSelected())
                 {
                     DrawModelWiresEx(*modelPtr, obj.GetPosition(), rotationAxis, rotationAngle,
                                      obj.GetScale(), RED);
@@ -442,14 +442,14 @@ void Editor::RenderObject(MapObject &obj)
                 // Fallback to drawing a cube if model not found
                 DrawCube(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().z,
                          RED);
-                if (obj.GetSelected())
+                if (obj.IsSelected())
                 {
                     DrawCubeWires(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y,
                                   obj.GetScale().z, RED);
                 }
 
                 // Draw text label to show it's a missing model
-                DrawText(("Missing: " + obj.GetModelName()).c_str(), obj.GetPosition().x - 50,
+                DrawText(("Missing: " + obj.GetModelAssetName()).c_str(), obj.GetPosition().x - 50,
                          obj.GetPosition().y + obj.GetScale().y + 10, 20, RED);
             }
         }
@@ -457,7 +457,7 @@ void Editor::RenderObject(MapObject &obj)
         {
             // No model name specified
             DrawCube(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y, obj.GetScale().z, GRAY);
-            if (obj.GetSelected())
+            if (obj.IsSelected())
             {
                 DrawCubeWires(obj.GetPosition(), obj.GetScale().x, obj.GetScale().y,
                               obj.GetScale().z, RED);
@@ -490,7 +490,7 @@ void Editor::RenderImGuiToolbar()
         for (int i = 0; i < std::size(toolNames); i++)
         {
             // Store current tool state before potential change
-            bool isCurrentTool = (m_currentTool == i);
+            bool isCurrentTool = (m_activeEditorTool == i);
 
             // Highlight current tool
             if (isCurrentTool)
@@ -500,12 +500,12 @@ void Editor::RenderImGuiToolbar()
 
             if (ImGui::Button(toolNames[i]))
             {
-                m_currentTool = static_cast<Tool>(i);
+                m_activeEditorTool = static_cast<Tool>(i);
 
-                if (m_currentTool == ADD_CUBE || m_currentTool == ADD_SPHERE ||
-                    m_currentTool == ADD_CYLINDER || m_currentTool == ADD_MODEL)
+                if (m_activeEditorTool == ADD_CUBE || m_activeEditorTool == ADD_SPHERE ||
+                    m_activeEditorTool == ADD_CYLINDER || m_activeEditorTool == ADD_MODEL)
                 {
-                    m_shouldAddObject = true;
+                    m_pendingObjectCreation = true;
                 }
             }
 
@@ -529,18 +529,18 @@ void Editor::RenderImGuiToolbar()
             OpenFileDialog(true); // true for Load dialog
         }
         ImGui::SameLine();
-        if (ImGui::Button("Quick Save") && !m_mapFileName.empty())
+        if (ImGui::Button("Quick Save") && !m_currentlyLoadedMapFilePath.empty())
         {
-            SaveMap(m_mapFileName);
+            SaveMap(m_currentlyLoadedMapFilePath);
         }
         ImGui::SameLine();
         if (ImGui::Button("Export for Game"))
         {
             // Open save dialog for game export
-            m_isLoadDialog = false;
-            m_showFileDialog = true;
-            m_selectedFile.clear();
-            m_newFileName = "game_map.json";
+            m_isFileLoadDialog = false;
+            m_displayFileDialog = true;
+            m_currentlySelectedFile.clear();
+            m_newFileNameInput = "game_map.json";
             RefreshDirectoryItems();
         }
 
@@ -558,23 +558,23 @@ void Editor::RenderImGuiToolbar()
         }
 
         // Show current file path
-        ImGui::Text("Current: %s", m_mapFileName.c_str());
+        ImGui::Text("Current: %s", m_currentlyLoadedMapFilePath.c_str());
 
         // Model selection dropdown (only show when adding models)
-        if (m_currentTool == ADD_MODEL)
+        if (m_activeEditorTool == ADD_MODEL)
         {
             // Ensure models are loaded for toolbar
             EnsureModelsLoaded();
 
             ImGui::Text("Select Model:");
-            if (ImGui::BeginCombo("##ModelSelect", m_selectedModelName.c_str()))
+            if (ImGui::BeginCombo("##ModelSelect", m_currentlySelectedModelName.c_str()))
             {
-                for (const auto &modelName : m_availableModels)
+                for (const auto &modelName : m_availableModelNamesList)
                 {
-                    bool isSelected = (m_selectedModelName == modelName);
+                    bool isSelected = (m_currentlySelectedModelName == modelName);
                     if (ImGui::Selectable(modelName.c_str(), isSelected))
                     {
-                        m_selectedModelName = modelName;
+                        m_currentlySelectedModelName = modelName;
                     }
                     if (isSelected)
                     {
@@ -587,36 +587,36 @@ void Editor::RenderImGuiToolbar()
 
         ImGui::Separator();
 
-        ImGui::Checkbox("Show Object Panel", &m_showObjectPanel);
+        ImGui::Checkbox("Show Object Panel", &m_displayObjectListPanel);
         ImGui::SameLine();
-        ImGui::Checkbox("Show Properties", &m_showPropertiesPanel);
+        ImGui::Checkbox("Show Properties", &m_displayPropertiesPanel);
 
-        // TraceLog(LOG_INFO, TextFormat("Current Tool: %d", m_currentTool));
+        // TraceLog(LOG_INFO, TextFormat("Current Tool: %d", m_activeEditorTool));
     }
 
-    if (m_shouldAddObject)
+    if (m_pendingObjectCreation)
     {
         MapObject newObj;
-        newObj.SetName("New Object " + std::to_string(m_objects.size()));
+        newObj.SetObjectName("New Object " + std::to_string(m_editorSceneObjects.size()));
 
-        switch (m_currentTool)
+        switch (m_activeEditorTool)
         {
         case ADD_CUBE:
-            newObj.SetType(0);
+            newObj.SetObjectType(0);
             break;
         case ADD_SPHERE:
-            newObj.SetType(1);
+            newObj.SetObjectType(1);
             break;
         case ADD_CYLINDER:
-            newObj.SetType(2);
+            newObj.SetObjectType(2);
             break;
         case ADD_MODEL:
             // Ensure models are loaded before adding model objects
             EnsureModelsLoaded();
 
-            newObj.SetType(5);
-            newObj.SetModelName(m_selectedModelName);
-            newObj.SetName(m_selectedModelName + " " + std::to_string(m_objects.size()));
+            newObj.SetObjectType(5);
+            newObj.SetModelAssetName(m_currentlySelectedModelName);
+            newObj.SetObjectName(m_currentlySelectedModelName + " " + std::to_string(m_editorSceneObjects.size()));
             break;
         default:
             break;
@@ -624,13 +624,13 @@ void Editor::RenderImGuiToolbar()
 
         AddObject(newObj);
 
-        m_shouldAddObject = false;
-        m_currentTool = SELECT;
+        m_pendingObjectCreation = false;
+        m_activeEditorTool = SELECT;
     }
 
     if (!toolbarOpen)
     {
-        m_showImGui = false;
+        m_displayImGuiInterface = false;
     }
 
     ImGui::End();
@@ -644,9 +644,9 @@ void Editor::PickObject()
     int pickedIndex = -1;
     float minDistance = FLT_MAX;
 
-    for (int i = 0; i < m_objects.size(); ++i)
+    for (int i = 0; i < m_editorSceneObjects.size(); ++i)
     {
-        auto &obj = m_objects[i];
+        auto &obj = m_editorSceneObjects[i];
         const BoundingBox box = {
             Vector3{obj.GetPosition().x - obj.GetScale().x, obj.GetPosition().y - obj.GetScale().y,
                     obj.GetPosition().z - obj.GetScale().z},
@@ -661,28 +661,28 @@ void Editor::PickObject()
         }
         // If we have object selected before using properties panel , we cancel coloring other
         // objects , besides object took by mouse(MOUSE_LEFT_BUTTON)
-        if (obj.GetSelected() && pickedIndex != i)
+        if (obj.IsSelected() && pickedIndex != i)
         {
             obj.SetSelected(false);
         }
     }
 
-    m_selectedObjectIndex = pickedIndex;
+    m_currentlySelectedObjectIndex = pickedIndex;
 
-    if (m_selectedObjectIndex != -1)
+    if (m_currentlySelectedObjectIndex != -1)
     {
-        auto &obj = m_objects[m_selectedObjectIndex];
+        auto &obj = m_editorSceneObjects[m_currentlySelectedObjectIndex];
         obj.SetSelected(true);
-        TraceLog(LOG_INFO, "Picked object %d", m_selectedObjectIndex);
+        TraceLog(LOG_INFO, "Picked object %d", m_currentlySelectedObjectIndex);
     }
 }
 
 void Editor::RenderImGuiPropertiesPanel()
 {
-    if (m_selectedObjectIndex < 0 || m_selectedObjectIndex >= m_objects.size())
+    if (m_currentlySelectedObjectIndex < 0 || m_currentlySelectedObjectIndex >= m_editorSceneObjects.size())
         return;
 
-    MapObject &obj = m_objects[m_selectedObjectIndex];
+    MapObject &obj = m_editorSceneObjects[m_currentlySelectedObjectIndex];
     const int screenHeight = GetScreenHeight();
 
     ImGui::SetNextWindowPos(ImVec2(10, static_cast<float>(screenHeight - 400)),
@@ -696,7 +696,7 @@ void Editor::RenderImGuiPropertiesPanel()
     {
         // If nameLabel is empty, initialize it with the object's current name
         if (nameLabel.empty())
-            nameLabel = obj.GetName();
+            nameLabel = obj.GetObjectName();
 
         // InputText requires a char array buffer, so we convert std::string to char[]
         // Alternatively, ImGui::InputText with std::string can be used but requires memory
@@ -710,16 +710,16 @@ void Editor::RenderImGuiPropertiesPanel()
             nameLabel = std::string(buffer);
             if (nameLabel.empty())
             {
-                nameLabel = obj.GetName(); // Prevent empty names
+                nameLabel = obj.GetObjectName(); // Prevent empty names
             }
-            obj.SetName(nameLabel); // Update the object's name
+            obj.SetObjectName(nameLabel); // Update the object's name
         }
 
         const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane", "Ellipse", "Model"};
-        int typeIndex = obj.GetType();
+        int typeIndex = obj.GetObjectType();
         if (ImGui::Combo("Type", &typeIndex, types, IM_ARRAYSIZE(types)))
         {
-            obj.SetType(typeIndex);
+            obj.SetObjectType(typeIndex);
         }
 
         float pos[3] = {obj.GetPosition().x, obj.GetPosition().y, obj.GetPosition().z};
@@ -729,11 +729,11 @@ void Editor::RenderImGuiPropertiesPanel()
         }
 
         float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
-        float size[2] = {obj.GetSize().x, obj.GetSize().y};
-        float radiusEllipse[2] = {obj.GetRadiusH(), obj.GetRadiusV()};
-        float radiusSphere = obj.GetRadiusSphere();
+        float size[2] = {obj.GetPlaneSize().x, obj.GetPlaneSize().y};
+        float radiusEllipse[2] = {obj.GetHorizontalRadius(), obj.GetVerticalRadius()};
+        float radiusSphere = obj.GetSphereRadius();
 
-        switch (obj.GetType())
+        switch (obj.GetObjectType())
         {
         case 0: // Cube
             if (ImGui::DragFloat3("Scale", scale, 0.1f))
@@ -745,7 +745,7 @@ void Editor::RenderImGuiPropertiesPanel()
         case 1: // Sphere
             if (ImGui::DragFloat("Radius", &radiusSphere, 0.1f))
             {
-                obj.SetRadiusSphere(radiusSphere);
+                obj.SetSphereRadius(radiusSphere);
             }
             break;
 
@@ -759,15 +759,15 @@ void Editor::RenderImGuiPropertiesPanel()
         case 3: // Plane
             if (ImGui::DragFloat2("Size", size, 0.1f))
             {
-                obj.SetSize({size[0], size[1]});
+                obj.SetPlaneSize({size[0], size[1]});
             }
             break;
 
         case 4: // Ellipse
             if (ImGui::DragFloat2("Radius H/V", radiusEllipse, 0.1f))
             {
-                obj.SetRadiusH(radiusEllipse[0]);
-                obj.SetRadiusV(radiusEllipse[1]);
+                obj.SetHorizontalRadius(radiusEllipse[0]);
+                obj.SetVerticalRadius(radiusEllipse[1]);
             }
             break;
 
@@ -777,14 +777,14 @@ void Editor::RenderImGuiPropertiesPanel()
 
             // Model selection dropdown
             ImGui::Text("Model:");
-            if (ImGui::BeginCombo("##ModelSelect", obj.GetModelName().c_str()))
+            if (ImGui::BeginCombo("##ModelSelect", obj.GetModelAssetName().c_str()))
             {
-                for (const auto &modelName : m_availableModels)
+                for (const auto &modelName : m_availableModelNamesList)
                 {
-                    bool isSelected = (obj.GetModelName() == modelName);
+                    bool isSelected = (obj.GetModelAssetName() == modelName);
                     if (ImGui::Selectable(modelName.c_str(), isSelected))
                     {
-                        obj.SetModelName(modelName);
+                        obj.SetModelAssetName(modelName);
                     }
                     if (isSelected)
                     {
@@ -823,7 +823,7 @@ void Editor::RenderImGuiPropertiesPanel()
 
     if (!propertiesPanelOpen)
     {
-        m_showPropertiesPanel = false;
+        m_displayPropertiesPanel = false;
     }
 
     ImGui::End();
@@ -832,21 +832,21 @@ void Editor::RenderImGuiPropertiesPanel()
 void Editor::HandleKeyboardInput()
 {
     // Handle keyboard shortcuts for file dialog
-    if (m_showFileDialog && IsKeyPressed(KEY_DELETE) && !m_selectedFile.empty())
+    if (m_displayFileDialog && IsKeyPressed(KEY_DELETE) && !m_currentlySelectedFile.empty())
     {
-        DeleteFolder(m_selectedFile);
+        DeleteFolder(m_currentlySelectedFile);
     }
     // Handle keyboard shortcuts for scene objects
-    else if (!m_showFileDialog && IsKeyPressed(KEY_DELETE) && m_selectedObjectIndex >= 0)
+    else if (!m_displayFileDialog && IsKeyPressed(KEY_DELETE) && m_currentlySelectedObjectIndex >= 0)
     {
-        RemoveObject(m_selectedObjectIndex);
+        RemoveObject(m_currentlySelectedObjectIndex);
     }
 
     if (IsKeyPressed(KEY_ESCAPE))
     {
-        if (m_showFileDialog)
+        if (m_displayFileDialog)
         {
-            m_showFileDialog = false;
+            m_displayFileDialog = false;
         }
         else
         {
@@ -857,12 +857,12 @@ void Editor::HandleKeyboardInput()
     // Toggle UI panels with different keys
     if (IsKeyPressed(KEY_TWO))
     {
-        m_showObjectPanel = !m_showObjectPanel;
+        m_displayObjectListPanel = !m_displayObjectListPanel;
     }
 
     if (IsKeyPressed(KEY_F))
     {
-        m_showPropertiesPanel = !m_showPropertiesPanel;
+        m_displayPropertiesPanel = !m_displayPropertiesPanel;
     }
 }
 
@@ -875,7 +875,7 @@ void Editor::EnsureModelsLoaded()
         bool loadSuccess = false;
         try
         {
-            m_models.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/models.json");
+            m_modelAssetManager.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/models.json");
             loadSuccess = true;
         }
         catch (const std::exception &e)
@@ -888,16 +888,16 @@ void Editor::EnsureModelsLoaded()
         {
             try
             {
-                m_availableModels = m_models.GetAvailableModels();
+                m_availableModelNamesList = m_modelAssetManager.GetAvailableModels();
                 m_modelsInitialized = true;
                 TraceLog(LOG_INFO, "Models loaded successfully! Available models: %zu",
-                         m_availableModels.size());
+                         m_availableModelNamesList.size());
             }
             catch (const std::exception &e)
             {
                 TraceLog(LOG_ERROR, "Failed to get available models list: %s", e.what());
                 // Fallback to hardcoded list if GetAvailableModels fails
-                m_availableModels = {"arc"};
+                m_availableModelNamesList = {"arc"};
                 m_modelsInitialized = true;
                 TraceLog(LOG_WARNING, "Using fallback model list");
             }
@@ -906,7 +906,7 @@ void Editor::EnsureModelsLoaded()
         {
             // Complete failure - use fallback
             TraceLog(LOG_WARNING, "Models failed to load, using fallback model list");
-            m_availableModels = {"arc"};
+            m_availableModelNamesList = {"arc"};
             // Don't set m_modelsInitialized to true, so we can retry later
         }
     }
@@ -920,8 +920,8 @@ Model *Editor::GetModelSafe(const std::string &modelName)
     }
 
     // Check if model exists in available models list first
-    auto it = std::find(m_availableModels.begin(), m_availableModels.end(), modelName);
-    if (it == m_availableModels.end())
+    auto it = std::find(m_availableModelNamesList.begin(), m_availableModelNamesList.end(), modelName);
+    if (it == m_availableModelNamesList.end())
     {
         TraceLog(LOG_WARNING, "Model '%s' not found in available models list", modelName.c_str());
         return nullptr;
@@ -930,7 +930,7 @@ Model *Editor::GetModelSafe(const std::string &modelName)
     // Try to get model, but still handle potential exception safely
     try
     {
-        return &m_models.GetModelByName(modelName);
+        return &m_modelAssetManager.GetModelByName(modelName);
     }
     catch (const std::exception &)
     {
@@ -942,14 +942,14 @@ Model *Editor::GetModelSafe(const std::string &modelName)
 
 void Editor::OpenFileDialog(bool isLoad)
 {
-    m_isLoadDialog = isLoad;
-    m_showFileDialog = true;
-    m_selectedFile.clear();
+    m_isFileLoadDialog = isLoad;
+    m_displayFileDialog = true;
+    m_currentlySelectedFile.clear();
 
     // Reset new file name for save dialog
     if (!isLoad)
     {
-        m_newFileName = "new_map.json";
+        m_newFileNameInput = "new_map.json";
     }
 
     RefreshDirectoryItems();
@@ -957,37 +957,37 @@ void Editor::OpenFileDialog(bool isLoad)
 
 void Editor::RefreshDirectoryItems()
 {
-    m_directoryItems.clear();
+    m_currentDirectoryContents.clear();
 
     try
     {
-        if (!fs::exists(m_currentDirectory) || !fs::is_directory(m_currentDirectory))
+        if (!fs::exists(m_currentWorkingDirectory) || !fs::is_directory(m_currentWorkingDirectory))
         {
-            m_currentDirectory = PROJECT_ROOT_DIR;
+            m_currentWorkingDirectory = PROJECT_ROOT_DIR;
         }
 
         // Add parent directory option (unless we're at root)
-        fs::path currentPath(m_currentDirectory);
+        fs::path currentPath(m_currentWorkingDirectory);
         if (currentPath.has_parent_path() && currentPath != currentPath.root_path())
         {
-            m_directoryItems.push_back("../");
+            m_currentDirectoryContents.push_back("../");
         }
 
         // Add directories first
-        for (const auto &entry : fs::directory_iterator(m_currentDirectory))
+        for (const auto &entry : fs::directory_iterator(m_currentWorkingDirectory))
         {
             if (entry.is_directory())
             {
                 std::string name = entry.path().filename().string();
                 if (!name.empty() && name[0] != '.') // Skip hidden directories
                 {
-                    m_directoryItems.push_back(name + "/");
+                    m_currentDirectoryContents.push_back(name + "/");
                 }
             }
         }
 
         // Add files (only .json files for maps)
-        for (const auto &entry : fs::directory_iterator(m_currentDirectory))
+        for (const auto &entry : fs::directory_iterator(m_currentWorkingDirectory))
         {
             if (entry.is_regular_file())
             {
@@ -997,7 +997,7 @@ void Editor::RefreshDirectoryItems()
                 // Show .json files for maps
                 if (extension == ".json" || extension == ".map")
                 {
-                    m_directoryItems.push_back(fileName);
+                    m_currentDirectoryContents.push_back(fileName);
                 }
             }
         }
@@ -1005,18 +1005,18 @@ void Editor::RefreshDirectoryItems()
     catch (const fs::filesystem_error &e)
     {
         TraceLog(LOG_ERROR, "File system error: %s", e.what());
-        m_currentDirectory = PROJECT_ROOT_DIR;
+        m_currentWorkingDirectory = PROJECT_ROOT_DIR;
         // Try again with project root
         try
         {
-            for (const auto &entry : fs::directory_iterator(m_currentDirectory))
+            for (const auto &entry : fs::directory_iterator(m_currentWorkingDirectory))
             {
                 if (entry.is_directory())
                 {
                     std::string name = entry.path().filename().string();
                     if (!name.empty() && name[0] != '.')
                     {
-                        m_directoryItems.push_back(name + "/");
+                        m_currentDirectoryContents.push_back(name + "/");
                     }
                 }
                 else if (entry.is_regular_file())
@@ -1025,7 +1025,7 @@ void Editor::RefreshDirectoryItems()
                     std::string extension = entry.path().extension().string();
                     if (extension == ".json" || extension == ".map")
                     {
-                        m_directoryItems.push_back(fileName);
+                        m_currentDirectoryContents.push_back(fileName);
                     }
                 }
             }
@@ -1045,16 +1045,16 @@ void Editor::NavigateToDirectory(const std::string &path)
 
         if (path == "../")
         {
-            newPath = fs::path(m_currentDirectory).parent_path();
+            newPath = fs::path(m_currentWorkingDirectory).parent_path();
         }
         else
         {
-            newPath = fs::path(m_currentDirectory) / path;
+            newPath = fs::path(m_currentWorkingDirectory) / path;
         }
 
         if (fs::exists(newPath) && fs::is_directory(newPath))
         {
-            m_currentDirectory = newPath.string();
+            m_currentWorkingDirectory = newPath.string();
             RefreshDirectoryItems();
         }
     }
@@ -1066,16 +1066,16 @@ void Editor::NavigateToDirectory(const std::string &path)
 
 void Editor::RenderFileDialog()
 {
-    const char *title = m_isLoadDialog ? "Load Map" : "Save Map As";
+    const char *title = m_isFileLoadDialog ? "Load Map" : "Save Map As";
 
     ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() * 0.5f - 300, GetScreenHeight() * 0.5f - 200),
                             ImGuiCond_FirstUseEver);
 
-    if (ImGui::Begin(title, &m_showFileDialog, ImGuiWindowFlags_NoCollapse))
+    if (ImGui::Begin(title, &m_displayFileDialog, ImGuiWindowFlags_NoCollapse))
     {
         // Current directory display
-        ImGui::Text("Directory: %s", m_currentDirectory.c_str());
+        ImGui::Text("Directory: %s", m_currentWorkingDirectory.c_str());
 
         // Position buttons in top-right corner
         float buttonWidth = 90.0f;  // Smaller button width
@@ -1093,7 +1093,7 @@ void Editor::RenderFileDialog()
         ImGui::SameLine();
         if (ImGui::Button("Delete", ImVec2(buttonWidth, buttonHeight)))
         {
-            DeleteFolder(m_selectedFile);
+            DeleteFolder(m_currentlySelectedFile);
         }
         ImGui::Separator();
 
@@ -1102,10 +1102,10 @@ void Editor::RenderFileDialog()
         {
             std::string directoryToNavigate; // Store directory to navigate to
 
-            for (const auto &item : m_directoryItems)
+            for (const auto &item : m_currentDirectoryContents)
             {
                 bool isDirectory = !item.empty() && item.back() == '/';
-                bool isSelected = (m_selectedFile == item);
+                bool isSelected = (m_currentlySelectedFile == item);
 
                 if (isDirectory)
                 {
@@ -1122,29 +1122,28 @@ void Editor::RenderFileDialog()
                         {
                             directoryToNavigate = item; // Store for navigation after loop
                         }
-                        m_selectedFile = item;
+                        m_currentlySelectedFile = item;
                     }
                     else
                     {
-                        m_selectedFile = item;
+                        m_currentlySelectedFile = item;
                         if (ImGui::IsMouseDoubleClicked(0))
                         {
                             // Double-click on file - immediate action
-                            if (m_isLoadDialog)
+                            std::string fullPath =
+                                (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
+
+                            if (m_isFileLoadDialog)
                             {
-                                std::string fullPath =
-                                    (fs::path(m_currentDirectory) / m_selectedFile).string();
                                 LoadMap(fullPath);
-                                m_mapFileName = fullPath;
+                                m_currentlyLoadedMapFilePath = fullPath;
                             }
                             else
                             {
-                                std::string fullPath =
-                                    (fs::path(m_currentDirectory) / m_selectedFile).string();
                                 SaveMap(fullPath);
-                                m_mapFileName = fullPath;
+                                m_currentlyLoadedMapFilePath = fullPath;
                             }
-                            m_showFileDialog = false;
+                            m_displayFileDialog = false;
                         }
                     }
                 }
@@ -1166,27 +1165,27 @@ void Editor::RenderFileDialog()
         ImGui::Separator();
 
         // File name input (for save dialog)
-        if (!m_isLoadDialog)
+        if (!m_isFileLoadDialog)
         {
             ImGui::Text("File name:");
-            if (ImGui::InputText("##FileName", &m_newFileName))
+            if (ImGui::InputText("##FileName", &m_newFileNameInput))
             {
-                m_selectedFile = m_newFileName;
+                m_currentlySelectedFile = m_newFileNameInput;
             }
             ImGui::Separator();
         }
 
         bool canProceed = false;
-        if (m_isLoadDialog)
+        if (m_isFileLoadDialog)
         {
-            canProceed = !m_selectedFile.empty();
+            canProceed = !m_currentlySelectedFile.empty();
         }
         else
         {
-            canProceed = !m_selectedFile.empty() || !m_newFileName.empty();
-            if (!canProceed && !m_newFileName.empty())
+            canProceed = !m_currentlySelectedFile.empty() || !m_newFileNameInput.empty();
+            if (!canProceed && !m_newFileNameInput.empty())
             {
-                m_selectedFile = m_newFileName;
+                m_currentlySelectedFile = m_newFileNameInput;
                 canProceed = true;
             }
         }
@@ -1194,84 +1193,83 @@ void Editor::RenderFileDialog()
         // Main action buttons with smaller size
         ImVec2 mainButtonSize(80.0f, 25.0f);
 
-        if (ImGui::Button(m_isLoadDialog ? "Load" : "Save", mainButtonSize) && canProceed)
+        if (ImGui::Button(m_isFileLoadDialog ? "Load" : "Save", mainButtonSize) && canProceed)
         {
-            std::string fullPath = (fs::path(m_currentDirectory) / m_selectedFile).string();
+            std::string fullPath = (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
 
-            if (m_isLoadDialog)
+            if (m_isFileLoadDialog)
             {
                 LoadMap(fullPath);
-                m_mapFileName = fullPath;
+                m_currentlyLoadedMapFilePath = fullPath;
             }
             else
             {
                 SaveMap(fullPath);
-                m_mapFileName = fullPath;
+                m_currentlyLoadedMapFilePath = fullPath;
             }
-            m_showFileDialog = false;
+            m_displayFileDialog = false;
         }
 
         // Handle export for game (when not in load dialog mode)
-        if (!m_isLoadDialog && ImGui::Button("Export for Game", mainButtonSize) && canProceed)
+        if (!m_isFileLoadDialog && ImGui::Button("Export for Game", mainButtonSize) && canProceed)
         {
-            std::string fullPath = (fs::path(m_currentDirectory) / m_selectedFile).string();
+            std::string fullPath = (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
             ExportMapForGame(fullPath);
-            m_showFileDialog = false;
+            m_displayFileDialog = false;
         }
 
         ImGui::SameLine();
 
         if (ImGui::Button("Cancel", mainButtonSize))
         {
-            m_showFileDialog = false;
+            m_displayFileDialog = false;
         }
 
         // Show selected file
-        if (!m_selectedFile.empty())
+        if (!m_currentlySelectedFile.empty())
         {
-            // ImGui::SameLine();
-            ImGui::Text("Selected: %s", m_selectedFile.c_str());
+            ImGui::Text("Selected: %s", m_currentlySelectedFile.c_str());
         }
     }
     ImGui::End();
 
-    if (!m_showFileDialog)
+    if (!m_displayFileDialog)
     {
-        m_selectedFile.clear();
+        m_currentlySelectedFile.clear();
     }
 }
 
 void Editor::AddFolder()
 {
-    m_showNewFolderDialog = true;
-    if (m_newFolderName.empty())
+    m_displayNewFolderDialog = true;
+    if (m_newFolderNameInput.empty())
     {
-        m_newFolderName = "New Folder"; // Initialize default name
+        m_newFolderNameInput = "New Folder"; // Initialize default name
     }
 }
 
 void Editor::RenderNewFolderDialog()
 {
-    if (m_showNewFolderDialog)
+    if (m_displayNewFolderDialog)
     {
         // Center the popup
         ImGui::SetNextWindowPos(
             ImVec2(GetScreenWidth() * 0.5f - 150, GetScreenHeight() * 0.5f - 50));
         ImGui::SetNextWindowSize(ImVec2(300, 120));
 
-        if (ImGui::Begin("Create Folder", &m_showNewFolderDialog,
+        if (ImGui::Begin("Create Folder", &m_displayNewFolderDialog,
                          ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
         {
             ImGui::Text("Enter folder name:");
 
             // Use imgui_stdlib.h for std::string support
-            ImGui::InputText("##FolderName", &m_newFolderName);
+            ImGui::InputText("##FolderName", &m_newFolderNameInput);
 
-            if (ImGui::Button("Create", ImVec2(70, 25)) && !m_newFolderName.empty())
+            if (ImGui::Button("Create", ImVec2(70, 25)) && !m_newFolderNameInput.empty())
             {
                 try
                 {
-                    fs::path newFolderPath = fs::path(m_currentDirectory) / m_newFolderName;
+                    fs::path newFolderPath = fs::path(m_currentWorkingDirectory) / m_newFolderNameInput;
 
                     if (fs::create_directory(newFolderPath))
                     {
@@ -1281,7 +1279,7 @@ void Editor::RenderNewFolderDialog()
                     else
                     {
                         TraceLog(LOG_WARNING, "Folder already exists or failed to create: %s",
-                                 m_newFolderName.c_str());
+                                 m_newFolderNameInput.c_str());
                     }
                 }
                 catch (const fs::filesystem_error &e)
@@ -1289,15 +1287,15 @@ void Editor::RenderNewFolderDialog()
                     TraceLog(LOG_ERROR, "Failed to create folder: %s", e.what());
                 }
 
-                m_showNewFolderDialog = false;
-                m_newFolderName.clear();
+                m_displayNewFolderDialog = false;
+                m_newFolderNameInput.clear();
             }
 
             ImGui::SameLine();
             if (ImGui::Button("Cancel", ImVec2(70, 25)))
             {
-                m_showNewFolderDialog = false;
-                m_newFolderName.clear();
+                m_displayNewFolderDialog = false;
+                m_newFolderNameInput.clear();
             }
         }
         ImGui::End();
@@ -1306,27 +1304,27 @@ void Editor::RenderNewFolderDialog()
 
 void Editor::RenderParkourMapDialog()
 {
-    if (m_showParkourDialog)
+    if (m_displayParkourMapDialog)
     {
         ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() * 0.5f - 250, GetScreenHeight() * 0.5f - 200),
                                ImGuiCond_FirstUseEver);
 
-        if (ImGui::Begin("Parkour Maps", &m_showParkourDialog, ImGuiWindowFlags_NoCollapse))
+        if (ImGui::Begin("Parkour Maps", &m_displayParkourMapDialog, ImGuiWindowFlags_NoCollapse))
         {
             ImGui::Text("Select a Parkour Map:");
             ImGui::Separator();
 
             // List all available parkour maps
-            for (int i = 0; i < m_parkourMaps.size(); i++)
+            for (int i = 0; i < m_availableParkourMaps.size(); i++)
             {
-                const auto& parkourMap = m_parkourMaps[i];
+                const auto& parkourMap = m_availableParkourMaps[i];
 
                 char buffer[256];
                 snprintf(buffer, sizeof(buffer), "%s (%.1f/5.0)", parkourMap.displayName.c_str(), parkourMap.difficulty);
-                if (ImGui::Selectable(buffer, m_selectedParkourMap == i))
+                if (ImGui::Selectable(buffer, m_currentlySelectedParkourMapIndex == i))
                 {
-                    m_selectedParkourMap = i;
+                    m_currentlySelectedParkourMapIndex = i;
                 }
 
                 // Show tooltip with description on hover
@@ -1344,33 +1342,33 @@ void Editor::RenderParkourMapDialog()
             // Action buttons
             if (ImGui::Button("Load Selected Map", ImVec2(150, 30)))
             {
-                if (m_selectedParkourMap >= 0 && m_selectedParkourMap < m_parkourMaps.size())
+                if (m_currentlySelectedParkourMapIndex >= 0 && m_currentlySelectedParkourMapIndex < m_availableParkourMaps.size())
                 {
-                    LoadParkourMap(m_parkourMaps[m_selectedParkourMap].name);
-                    m_showParkourDialog = false;
+                    LoadParkourMap(m_availableParkourMaps[m_currentlySelectedParkourMapIndex].name);
+                    m_displayParkourMapDialog = false;
                 }
             }
 
             ImGui::SameLine();
             if (ImGui::Button("Cancel", ImVec2(100, 30)))
             {
-                m_showParkourDialog = false;
+                m_displayParkourMapDialog = false;
             }
 
             // Show selected map details
-            if (m_selectedParkourMap >= 0 && m_selectedParkourMap < m_parkourMaps.size())
+            if (m_currentlySelectedParkourMapIndex >= 0 && m_currentlySelectedParkourMapIndex < m_availableParkourMaps.size())
             {
-                const auto& selectedParkourMap = m_parkourMaps[m_selectedParkourMap];
+                const auto& selectedParkourMapObj = m_availableParkourMaps[m_currentlySelectedParkourMapIndex];
                 ImGui::Separator();
                 ImGui::Text("Selected Map Details:");
-                ImGui::Text("Name: %s", selectedParkourMap.displayName.c_str());
-                ImGui::Text("Description: %s", selectedParkourMap.description.c_str());
-                ImGui::Text("Difficulty: %.1f/5.0", selectedParkourMap.difficulty);
-                ImGui::Text("Elements: %zu", selectedParkourMap.elements.size());
-                ImGui::Text("Start: (%.1f, %.1f, %.1f)", selectedParkourMap.startPosition.x,
-                          selectedParkourMap.startPosition.y, selectedParkourMap.startPosition.z);
-                ImGui::Text("End: (%.1f, %.1f, %.1f)", selectedParkourMap.endPosition.x,
-                          selectedParkourMap.endPosition.y, selectedParkourMap.endPosition.z);
+                ImGui::Text("Name: %s", selectedParkourMapObj.displayName.c_str());
+                ImGui::Text("Description: %s", selectedParkourMapObj.description.c_str());
+                ImGui::Text("Difficulty: %.1f/5.0", selectedParkourMapObj.difficulty);
+                ImGui::Text("Elements: %zu", selectedParkourMapObj.elements.size());
+                ImGui::Text("Start: (%.1f, %.1f, %.1f)", selectedParkourMapObj.startPosition.x,
+                          selectedParkourMapObj.startPosition.y, selectedParkourMapObj.startPosition.z);
+                ImGui::Text("End: (%.1f, %.1f, %.1f)", selectedParkourMapObj.endPosition.x,
+                          selectedParkourMapObj.endPosition.y, selectedParkourMapObj.endPosition.z);
             }
         }
         ImGui::End();
@@ -1383,8 +1381,8 @@ void Editor::LoadParkourMap(const std::string& mapName)
     ParkourTestMap parkourMap = ParkourMapGenerator::GetMapByName(mapName);
 
     // Clear current scene
-    m_objects.clear();
-    m_selectedObjectIndex = -1;
+    m_editorSceneObjects.clear();
+    m_currentlySelectedObjectIndex = -1;
 
     // Convert parkour elements to MapObjects
     for (const auto& element : parkourMap.elements)
@@ -1394,42 +1392,42 @@ void Editor::LoadParkourMap(const std::string& mapName)
         // Set basic properties
         obj.SetPosition(element.position);
         obj.SetColor(element.color);
-        obj.SetName("Parkour_" + std::to_string(m_objects.size()));
+        obj.SetObjectName("Parkour_" + std::to_string(m_editorSceneObjects.size()));
 
         // Convert parkour shape type to MapObject type
         switch (element.type)
         {
             case ParkourShapeType::Cube:
-                obj.SetType(0); // Cube
+                obj.SetObjectType(0); // Cube
                 obj.SetScale(element.size);
                 break;
             case ParkourShapeType::Sphere:
-                obj.SetType(1); // Sphere
-                obj.SetRadiusSphere(element.size.x);
+                obj.SetObjectType(1); // Sphere
+                obj.SetSphereRadius(element.size.x);
                 break;
             case ParkourShapeType::Cylinder:
-                obj.SetType(2); // Cylinder
+                obj.SetObjectType(2); // Cylinder
                 obj.SetScale(element.size);
                 break;
             case ParkourShapeType::Plane:
-                obj.SetType(3); // Plane
-                obj.SetSize({element.size.x, element.size.z});
+                obj.SetObjectType(3); // Plane
+                obj.SetPlaneSize({element.size.x, element.size.z});
                 obj.SetPosition({element.position.x, element.position.y, element.position.z});
                 break;
             case ParkourShapeType::Capsule:
-                obj.SetType(2); // Use cylinder as approximation
+                obj.SetObjectType(2); // Use cylinder as approximation
                 obj.SetScale(element.size);
                 break;
             case ParkourShapeType::Torus:
-                obj.SetType(0); // Use cube as approximation
+                obj.SetObjectType(0); // Use cube as approximation
                 obj.SetScale(element.size);
                 break;
         }
 
-        m_objects.push_back(obj);
+        m_editorSceneObjects.push_back(obj);
     }
 
-    TraceLog(LOG_INFO, "Loaded parkour map '%s' with %d elements", mapName.c_str(), m_objects.size());
+    TraceLog(LOG_INFO, "Loaded parkour map '%s' with %d elements", mapName.c_str(), m_editorSceneObjects.size());
 }
 
 void Editor::GenerateParkourMap(const std::string& mapName)
@@ -1440,38 +1438,38 @@ void Editor::GenerateParkourMap(const std::string& mapName)
 void Editor::ShowParkourMapSelector()
 {
     // Load available parkour maps
-    m_parkourMaps = ParkourMapGenerator::GetAllParkourMaps();
-    m_selectedParkourMap = 0;
-    m_showParkourDialog = true;
+    m_availableParkourMaps = ParkourMapGenerator::GetAllParkourMaps();
+    m_currentlySelectedParkourMapIndex = 0;
+    m_displayParkourMapDialog = true;
 }
 
 void Editor::DeleteFolder(const std::string &selectedItem)
 {
     // Check if we have something to delete and not already showing dialog
-    if (!selectedItem.empty() && !m_showDeleteDialog)
+    if (!selectedItem.empty() && !m_displayDeleteConfirmationDialog)
     {
-        m_showDeleteDialog = true;
-        m_itemToDelete = selectedItem;
+        m_displayDeleteConfirmationDialog = true;
+        m_itemPendingDeletion = selectedItem;
     }
 }
 
 void Editor::RenderDeleteConfirmDialog()
 {
-    if (m_showDeleteDialog)
+    if (m_displayDeleteConfirmationDialog)
     {
         // Center the popup
         ImGui::SetNextWindowPos(
             ImVec2(GetScreenWidth() * 0.5f - 150, GetScreenHeight() * 0.5f - 75));
         ImGui::SetNextWindowSize(ImVec2(300, 130));
 
-        bool isDirectory = !m_itemToDelete.empty() && m_itemToDelete.back() == '/';
+        bool isDirectory = !m_itemPendingDeletion.empty() && m_itemPendingDeletion.back() == '/';
         const char *windowTitle = isDirectory ? "Delete Folder" : "Delete File";
 
-        if (ImGui::Begin(windowTitle, &m_showDeleteDialog,
+        if (ImGui::Begin(windowTitle, &m_displayDeleteConfirmationDialog,
                          ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
         {
             ImGui::Text("Are you sure you want to delete:");
-            ImGui::TextWrapped("%s", m_itemToDelete.c_str());
+            ImGui::TextWrapped("%s", m_itemPendingDeletion.c_str());
             ImGui::Text("This action cannot be undone!");
 
             ImGui::Separator();
@@ -1480,14 +1478,14 @@ void Editor::RenderDeleteConfirmDialog()
             {
                 try
                 {
-                    std::string itemName = m_itemToDelete;
+                    std::string itemName = m_itemPendingDeletion;
                     if (isDirectory)
                     {
                         // Remove trailing '/' for directories
-                        itemName = m_itemToDelete.substr(0, m_itemToDelete.length() - 1);
+                        itemName = m_itemPendingDeletion.substr(0, m_itemPendingDeletion.length() - 1);
                     }
 
-                    fs::path itemPath = fs::path(m_currentDirectory) / itemName;
+                    fs::path itemPath = fs::path(m_currentWorkingDirectory) / itemName;
 
                     bool success = false;
                     if (isDirectory)
@@ -1504,7 +1502,7 @@ void Editor::RenderDeleteConfirmDialog()
                     if (success)
                     {
                         RefreshDirectoryItems();
-                        m_selectedFile.clear();
+                        m_currentlySelectedFile.clear();
                     }
                     else
                     {
@@ -1517,15 +1515,15 @@ void Editor::RenderDeleteConfirmDialog()
                     TraceLog(LOG_ERROR, "Failed to delete: %s", e.what());
                 }
 
-                m_showDeleteDialog = false;
-                m_itemToDelete.clear();
+                m_displayDeleteConfirmationDialog = false;
+                m_itemPendingDeletion.clear();
             }
 
             ImGui::SameLine();
             if (ImGui::Button("Cancel", ImVec2(80, 25)))
             {
-                m_showDeleteDialog = false;
-                m_itemToDelete.clear();
+                m_displayDeleteConfirmationDialog = false;
+                m_itemPendingDeletion.clear();
             }
         }
         ImGui::End();
