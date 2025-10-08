@@ -2,8 +2,12 @@
 #include <cassert>
 #include <cmath>
 #include <cfloat>
+#include <functional>
 
 #include "CollisionStructures.h"
+
+// Initialize static cache
+std::unordered_map<size_t, std::weak_ptr<Collision>> Collision::collisionCache;
 
 Collision::Collision()
 {
@@ -26,7 +30,6 @@ Collision::Collision(const Collision& other)
     m_isBuilt = other.m_isBuilt;
     m_stats = other.m_stats;
 
-    // Копіюємо BVH тільки якщо він використовується
     if (other.m_bvhRoot && other.IsUsingBVH()) {
         BuildBVHFromTriangles();
     }
@@ -106,66 +109,90 @@ bool Collision::ContainsPointAABB(const Vector3 &point) const
            (point.y >= m_min.y && point.y <= m_max.y) && (point.z >= m_min.z && point.z <= m_max.z);
 }
 
-// ----------------- Build from model (stub) -----------------
+// ----------------- Build from model (optimized) -----------------
 void Collision::BuildFromModel(void *model, const Matrix &transform)
 {
-    // Додаємо трикутники з трансформацією
     Model *rayModel = static_cast<Model *>(model);
-    if (rayModel)
+    if (!rayModel) return;
+
+    size_t totalTriangles = 0;
+    for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
     {
-        for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
-        {
-            Mesh &mesh = rayModel->meshes[meshIdx];
-            if (!mesh.vertices || !mesh.indices) continue;
-            for (int i = 0; i < mesh.triangleCount; ++i)
-            {
-                int i0 = mesh.indices[i * 3 + 0];
-                int i1 = mesh.indices[i * 3 + 1];
-                int i2 = mesh.indices[i * 3 + 2];
-                Vector3 v0 = { mesh.vertices[i0 * 3 + 0], mesh.vertices[i0 * 3 + 1], mesh.vertices[i0 * 3 + 2] };
-                Vector3 v1 = { mesh.vertices[i1 * 3 + 0], mesh.vertices[i1 * 3 + 1], mesh.vertices[i1 * 3 + 2] };
-                Vector3 v2 = { mesh.vertices[i2 * 3 + 0], mesh.vertices[i2 * 3 + 1], mesh.vertices[i2 * 3 + 2] };
-                // Трансформуємо у світові координати
-                v0 = Vector3Transform(v0, transform);
-                v1 = Vector3Transform(v1, transform);
-                v2 = Vector3Transform(v2, transform);
-                m_triangles.emplace_back(v0, v1, v2);
-            }
-        }
-        TraceLog(LOG_INFO, "Collision triangles: %zu", m_triangles.size());
+        Mesh &mesh = rayModel->meshes[meshIdx];
+        if (!mesh.vertices || !mesh.indices) continue;
+        totalTriangles += mesh.triangleCount;
     }
 
-    // Try to build BVH from triangles if available
-    UpdateAABBFromTriangles();
-    BuildBVHFromTriangles();
+    // Pre-allocate memory for better performance
+    m_triangles.reserve(totalTriangles);
 
-    // If we have no triangles/BVH, fall back to model's bounding box
-    if (!m_bvhRoot)
+    // Process all meshes and collect vertices for batch transformation
+    for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
     {
-        Model *rayModel = static_cast<Model *>(model);
-        if (rayModel)
+        Mesh &mesh = rayModel->meshes[meshIdx];
+        if (!mesh.vertices || !mesh.indices) continue;
+
+        // Batch process triangles for this mesh
+        const int triangleCount = mesh.triangleCount;
+        const unsigned short* indices = mesh.indices;
+
+        for (int i = 0; i < triangleCount; ++i)
         {
-            BoundingBox bb = GetModelBoundingBox(*rayModel);
-            // Compute 8 corners of the original AABB
-            Vector3 corners[8] = {
-                {bb.min.x, bb.min.y, bb.min.z}, {bb.max.x, bb.min.y, bb.min.z},
-                {bb.min.x, bb.max.y, bb.min.z}, {bb.min.x, bb.min.y, bb.max.z},
-                {bb.max.x, bb.max.y, bb.min.z}, {bb.min.x, bb.max.y, bb.max.z},
-                {bb.max.x, bb.min.y, bb.max.z}, {bb.max.x, bb.max.y, bb.max.z}};
+            const int idx = i * 3;
+            const int i0 = indices[idx + 0];
+            const int i1 = indices[idx + 1];
+            const int i2 = indices[idx + 2];
 
-            // Transform corners
-            Vector3 tmin = {FLT_MAX, FLT_MAX, FLT_MAX};
-            Vector3 tmax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-            for (auto &c : corners)
-            {
-                Vector3 tc = Vector3Transform(c, transform);
-                tmin.x = fminf(tmin.x, tc.x); tmin.y = fminf(tmin.y, tc.y); tmin.z = fminf(tmin.z, tc.z);
-                tmax.x = fmaxf(tmax.x, tc.x); tmax.y = fmaxf(tmax.y, tc.y); tmax.z = fmaxf(tmax.z, tc.z);
-            }
+            // Get vertex positions
+            const float* v0Ptr = &mesh.vertices[i0 * 3];
+            const float* v1Ptr = &mesh.vertices[i1 * 3];
+            const float* v2Ptr = &mesh.vertices[i2 * 3];
 
-            m_min = tmin;
-            m_max = tmax;
+            Vector3 v0 = { v0Ptr[0], v0Ptr[1], v0Ptr[2] };
+            Vector3 v1 = { v1Ptr[0], v1Ptr[1], v1Ptr[2] };
+            Vector3 v2 = { v2Ptr[0], v2Ptr[1], v2Ptr[2] };
+
+            // Transform vertices to world coordinates
+            v0 = Vector3Transform(v0, transform);
+            v1 = Vector3Transform(v1, transform);
+            v2 = Vector3Transform(v2, transform);
+
+            // Use emplace_back for better performance (no copy)
+            m_triangles.emplace_back(v0, v1, v2);
         }
+    }
+
+    TraceLog(LOG_INFO, "Collision triangles: %zu", m_triangles.size());
+
+    // Build AABB and BVH only if we have triangles
+    if (!m_triangles.empty())
+    {
+        UpdateAABBFromTriangles();
+        BuildBVHFromTriangles();
+    }
+    else
+    {
+        // Fallback to model's bounding box if no triangles
+        BoundingBox bb = GetModelBoundingBox(*rayModel);
+        Vector3 corners[8] = {
+            {bb.min.x, bb.min.y, bb.min.z}, {bb.max.x, bb.min.y, bb.min.z},
+            {bb.min.x, bb.max.y, bb.min.z}, {bb.min.x, bb.min.y, bb.max.z},
+            {bb.max.x, bb.max.y, bb.min.z}, {bb.min.x, bb.max.y, bb.max.z},
+            {bb.max.x, bb.min.y, bb.max.z}, {bb.max.x, bb.max.y, bb.max.z}
+        };
+
+        Vector3 tmin = {FLT_MAX, FLT_MAX, FLT_MAX};
+        Vector3 tmax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+        for (const auto &corner : corners)
+        {
+            Vector3 tc = Vector3Transform(corner, transform);
+            tmin.x = fminf(tmin.x, tc.x); tmin.y = fminf(tmin.y, tc.y); tmin.z = fminf(tmin.z, tc.z);
+            tmax.x = fmaxf(tmax.x, tc.x); tmax.y = fmaxf(tmax.y, tc.y); tmax.z = fmaxf(tmax.z, tc.z);
+        }
+
+        m_min = tmin;
+        m_max = tmax;
     }
 
     m_isBuilt = true;
@@ -205,14 +232,27 @@ void Collision::UpdateAABBFromTriangles()
 {
     if (m_triangles.empty())
         return;
-    Vector3 minP = m_triangles[0].V0();
-    Vector3 maxP = minP;
-    for (const auto &t : m_triangles)
+
+    // Initialize with first triangle vertices
+    const CollisionTriangle& firstTri = m_triangles[0];
+    Vector3 minP = firstTri.V0();
+    Vector3 maxP = firstTri.V0();
+
+    // Unroll first few iterations for better performance
+    ExpandAABB(minP, maxP, firstTri.V1());
+    ExpandAABB(minP, maxP, firstTri.V2());
+
+    // Process remaining triangles in optimized loop
+    const size_t triangleCount = m_triangles.size();
+    for (size_t i = 1; i < triangleCount; ++i)
     {
+        const CollisionTriangle& t = m_triangles[i];
+        // Process all three vertices at once for better cache performance
         ExpandAABB(minP, maxP, t.V0());
         ExpandAABB(minP, maxP, t.V1());
         ExpandAABB(minP, maxP, t.V2());
     }
+
     m_min = minP;
     m_max = maxP;
 }
@@ -298,9 +338,13 @@ void Collision::BuildBVHFromTriangles()
         m_bvhRoot.reset();
         return;
     }
-    // copy triangles so build can reorder
-    std::vector<CollisionTriangle> copy = m_triangles;
-    m_bvhRoot = BuildBVHNode(copy, 0);
+
+    // Move triangles to avoid copy (more efficient than copying)
+    std::vector<CollisionTriangle> triangleCopy = std::move(m_triangles);
+    m_bvhRoot = BuildBVHNode(triangleCopy, 0);
+
+    // Move triangles back to restore original state
+    m_triangles = std::move(triangleCopy);
 }
 
 // ----------------- Ray/triangle (Möller–Trumbore) -----------------
@@ -468,9 +512,28 @@ bool Collision::ContainsPointBVH(const Vector3 &point) const
 
 // ----------------- Intersects (AABB broad, BVH narrow) -----------------
 // Helper: check if other's BVH has any leaf AABB overlapping this Collision's AABB
-// Robust Triangle-AABB SAT test
+// Optimized Triangle-AABB SAT test with early exit optimizations
 static bool TriangleAABBOverlapSAT(const CollisionTriangle &tri, const Vector3 &bmin, const Vector3 &bmax)
 {
+    // Quick AABB-AABB test first (much faster than full SAT)
+    Vector3 triMin = tri.V0();
+    Vector3 triMax = tri.V0();
+
+    // Calculate triangle AABB inline for speed
+    if (tri.V1().x < triMin.x) triMin.x = tri.V1().x; else if (tri.V1().x > triMax.x) triMax.x = tri.V1().x;
+    if (tri.V1().y < triMin.y) triMin.y = tri.V1().y; else if (tri.V1().y > triMax.y) triMax.y = tri.V1().y;
+    if (tri.V1().z < triMin.z) triMin.z = tri.V1().z; else if (tri.V1().z > triMax.z) triMax.z = tri.V1().z;
+
+    if (tri.V2().x < triMin.x) triMin.x = tri.V2().x; else if (tri.V2().x > triMax.x) triMax.x = tri.V2().x;
+    if (tri.V2().y < triMin.y) triMin.y = tri.V2().y; else if (tri.V2().y > triMax.y) triMax.y = tri.V2().y;
+    if (tri.V2().z < triMin.z) triMin.z = tri.V2().z; else if (tri.V2().z > triMax.z) triMax.z = tri.V2().z;
+
+    // Early exit: if triangle AABB doesn't overlap box AABB, no intersection
+    if (triMax.x < bmin.x || triMin.x > bmax.x) return false;
+    if (triMax.y < bmin.y || triMin.y > bmax.y) return false;
+    if (triMax.z < bmin.z || triMin.z > bmax.z) return false;
+
+    // If we get here, AABBs overlap, so we need full SAT test
     // Centered box with half extents
     Vector3 c = { (bmin.x + bmax.x) * 0.5f, (bmin.y + bmax.y) * 0.5f, (bmin.z + bmax.z) * 0.5f };
     Vector3 h = { (bmax.x - bmin.x) * 0.5f, (bmax.y - bmin.y) * 0.5f, (bmax.z - bmin.z) * 0.5f };
@@ -487,20 +550,20 @@ static bool TriangleAABBOverlapSAT(const CollisionTriangle &tri, const Vector3 &
 
     auto axisTest = [&](const Vector3 &axis) -> bool
     {
-        float len = Vector3Length(axis);
+        const float len = Vector3Length(axis);
         if (len < 1e-8f)
             return true; // skip near-zero axis
         Vector3 n = Vector3Scale(axis, 1.0f / len);
-        float p0 = Vector3DotProduct(v0, n);
-        float p1 = Vector3DotProduct(v1, n);
-        float p2 = Vector3DotProduct(v2, n);
-        float triMin = fminf(p0, fminf(p1, p2));
-        float triMax = fmaxf(p0, fmaxf(p1, p2));
-        float r = h.x * fabsf(n.x) + h.y * fabsf(n.y) + h.z * fabsf(n.z);
+        const float p0 = Vector3DotProduct(v0, n);
+        const float p1 = Vector3DotProduct(v1, n);
+        const float p2 = Vector3DotProduct(v2, n);
+        const float triMin = fminf(p0, fminf(p1, p2));
+        const float triMax = fmaxf(p0, fmaxf(p1, p2));
+        const float r = h.x * fabsf(n.x) + h.y * fabsf(n.y) + h.z * fabsf(n.z);
         return !(triMin > r || triMax < -r);
     };
 
-    // 1) Test box axes
+    // 1) Test box axes (most likely to fail first)
     if (!axisTest(ax)) return false;
     if (!axisTest(ay)) return false;
     if (!axisTest(az)) return false;
@@ -655,4 +718,55 @@ bool Collision::CheckCollisionWithBVH(const Collision& other, Vector3& outRespon
     }
 
     return hasCollision;
+}
+
+// ======================================================================================================================
+// Optimized collision creation with caching
+
+std::shared_ptr<Collision> Collision::CreateFromModelCached(void *model, const Matrix &transform)
+{
+    if (!model) return nullptr;
+
+    // Create a hash from model pointer and transform matrix for caching
+    size_t modelHash = std::hash<void*>{}(model);
+
+    // Simple hash of transform matrix (can be improved)
+    size_t transformHash = 0;
+    const float* transformData = reinterpret_cast<const float*>(&transform);
+    for (size_t i = 0; i < sizeof(Matrix) / sizeof(float); ++i)
+    {
+        transformHash = transformHash * 31 + std::hash<float>{}(transformData[i]);
+    }
+
+    size_t cacheKey = modelHash ^ (transformHash << 1);
+
+    // Check if collision already exists in cache
+    auto it = collisionCache.find(cacheKey);
+    if (it != collisionCache.end())
+    {
+        auto cachedCollision = it->second.lock();
+        if (cachedCollision)
+        {
+            return cachedCollision;
+        }
+        else
+        {
+            // Remove expired weak pointer
+            collisionCache.erase(it);
+        }
+    }
+
+    // Create new collision
+    auto newCollision = std::make_shared<Collision>();
+    newCollision->BuildFromModel(model, transform);
+
+    // Cache the new collision
+    collisionCache[cacheKey] = newCollision;
+
+    return newCollision;
+}
+
+void Collision::ClearCollisionCache()
+{
+    collisionCache.clear();
 }

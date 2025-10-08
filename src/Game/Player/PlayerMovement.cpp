@@ -40,13 +40,17 @@ void PlayerMovement::SetCollisionManager(const CollisionManager *collisionManage
 
 void PlayerMovement::ApplyJumpImpulse(float impulse)
 {
-    if (!m_physics.IsGrounded())
+    // More forgiving ground check for jumping
+    if (!m_physics.IsGrounded() && m_physics.GetVelocity().y > 5.0f)
         return;
+
     Vector3 vel = m_physics.GetVelocity();
     vel.y = impulse;
     m_physics.SetVelocity(vel);
     m_physics.SetGroundLevel(false);
     m_player->GetPhysics().SetJumpState(true);
+
+    TraceLog(LOG_DEBUG, "PlayerMovement::ApplyJumpImpulse() - Applied jump impulse: %.2f, velocity y: %.2f", impulse, vel.y);
 }
 
 void PlayerMovement::ApplyGravity(float deltaTime)
@@ -242,10 +246,10 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
 
             if (m_physics.GetVelocity().y <= 0.0f)
             {
-                const float maxSlopeDeg = 60.0f; // Increased from 55.0f to 60.0f for better slope handling
+                const float maxSlopeDeg = 65.0f; // Increased for better slope handling
                 const float maxSlopeCos = cosf(maxSlopeDeg * DEG2RAD);
                 float upDot = Vector3DotProduct(n, {0.0f, 1.0f, 0.0f});
-                bool withinGap = (gap >= -0.2f && gap <= 1.0f); // More generous gap range
+                bool withinGap = (gap >= -0.3f && gap <= 1.2f); // More generous gap range for jumping
                 bool withinSlope = (upDot >= maxSlopeCos);
                 if (withinGap && withinSlope)
                 {
@@ -266,14 +270,15 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
     }
 
     // Additional check: if we're very close to ground level and not moving up fast, consider grounded
-    if (!grounded && m_physics.GetVelocity().y <= 1.0f)
+    if (!grounded && m_physics.GetVelocity().y <= 2.0f)
     {
         float bottom = center.y - size.y * 0.5f;
         // Account for MODEL_Y_OFFSET when checking ground proximity
         // The visual model is offset by -1.0f, so we need to check against a higher threshold
-        if (bottom <= (1.0f - Player::MODEL_Y_OFFSET)) // Close to ground level, accounting for visual offset
+        if (bottom <= (1.5f - Player::MODEL_Y_OFFSET)) // More generous ground proximity for jumping
         {
             grounded = true;
+            TraceLog(LOG_DEBUG, "PlayerMovement::UpdateGrounded() - Force grounded due to proximity: bottom=%.2f", bottom);
         }
     }
 
