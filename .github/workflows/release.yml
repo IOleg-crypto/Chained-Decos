@@ -96,12 +96,6 @@ jobs:
           pkg-config ccache zip
 
     # ---------------- Windows setup ----------------
-    - name: Set up MSVC (Windows)
-      if: matrix.os == 'windows-2022'
-      uses: microsoft/setup-msbuild@v1.1
-      with:
-        vs-version: '[17.0,18.0)'
-
     - name: Install dependencies (Windows)
       if: matrix.os == 'windows-2022'
       run: |
@@ -133,20 +127,40 @@ jobs:
     - name: Configure CMake for release
       shell: bash
       run: |
-        cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
-          -DBUILD_TESTS=OFF \
-          -DBUILD_BENCHMARKS=OFF \
-          -DENABLE_OPTIMIZATIONS=ON \
-          -DENABLE_UNITY_BUILD=OFF \
-          -DENABLE_WARNINGS=OFF \
-          -DENABLE_DEV_TOOLS=OFF \
-          -DENABLE_DEBUG_INFO=OFF \
-          -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
-          -S "${{ github.workspace }}"
+        if [ "${{ matrix.os }}" = "windows-2022" ]; then
+          # Use Ninja generator for Windows
+          cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_BENCHMARKS=OFF \
+            -DENABLE_OPTIMIZATIONS=ON \
+            -DENABLE_UNITY_BUILD=OFF \
+            -DENABLE_WARNINGS=OFF \
+            -DENABLE_DEV_TOOLS=OFF \
+            -DENABLE_DEBUG_INFO=OFF \
+            -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
+            -S "${{ github.workspace }}"
+        else
+          # Use default generator for other platforms
+          cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_BENCHMARKS=OFF \
+            -DENABLE_OPTIMIZATIONS=ON \
+            -DENABLE_UNITY_BUILD=OFF \
+            -DENABLE_WARNINGS=OFF \
+            -DENABLE_DEV_TOOLS=OFF \
+            -DENABLE_DEBUG_INFO=OFF \
+            -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
+            -S "${{ github.workspace }}"
+        fi
 
     - name: Build release binaries
       shell: bash
