@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/CMakeFiles/googlebenchmark-populate"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/CMakeFiles/googlebenchmark-populate.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/CMakeFiles/googlebenchmark-populate-complete.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/googlebenchmark-populate-build.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/googlebenchmark-populate-configure.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/googlebenchmark-populate-download.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/googlebenchmark-populate-install.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/googlebenchmark-populate-mkdir.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/googlebenchmark-populate-patch_disconnected.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/googlebenchmark-populate-test.rule"
+		},
+		{
+			"file" : "D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/googlebenchmark-populate-update_disconnected.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"googlebenchmark-populate"
+		],
+		"name" : "googlebenchmark-populate"
+	}
+}
