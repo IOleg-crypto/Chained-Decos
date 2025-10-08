@@ -1,7 +1,7 @@
-prefix=D:/gitnext/Chained Decos/cmake-build-release/install
+prefix=D:/gitnext/Chained Decos/build/install
 exec_prefix=${prefix}
-includedir=D:/gitnext/Chained Decos/cmake-build-release/install/include
-libdir=D:/gitnext/Chained Decos/cmake-build-release/install/lib
+includedir=D:/gitnext/Chained Decos/build/install/include
+libdir=D:/gitnext/Chained Decos/build/install/lib
 
 Name: GLFW
 Description: A multi-platform library for OpenGL, window and input
