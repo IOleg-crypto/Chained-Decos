@@ -1,5 +1,5 @@
-libdir=C:/Program Files (x86)/ChainedDecos/lib
-includedir=C:/Program Files (x86)/ChainedDecos/include
+libdir=D:/gitnext/Chained Decos/cmake-build-release/install/lib
+includedir=D:/gitnext/Chained Decos/cmake-build-release/install/include
 
 Name: gtest
 Description: GoogleTest (without main() function)
