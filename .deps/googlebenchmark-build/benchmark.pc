@@ -5,7 +5,7 @@ includedir=C:/Program Files (x86)/ChainedDecos/include
 
 Name: benchmark
 Description: Google microbenchmark framework
-Version: 1.8.3
+Version: 1.8.0
 
 Libs: -L${libdir} -lbenchmark
 Libs.private: -lpthread

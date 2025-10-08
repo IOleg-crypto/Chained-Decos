@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-# Performance benchmarks executable
+# Simple performance benchmarks executable
 add_executable(benchmarks PerformanceBenchmark.cpp)
 
 # Include directories
@@ -14,8 +14,6 @@ target_include_directories(benchmarks PRIVATE
 target_link_libraries(benchmarks
     ChainedDecosEngine
     ChainedDecosGame
-    benchmark::benchmark
-    benchmark::benchmark_main
 )
 
 # Set C++ standard

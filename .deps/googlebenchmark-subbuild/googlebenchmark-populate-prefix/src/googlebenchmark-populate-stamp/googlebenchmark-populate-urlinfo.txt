@@ -6,7 +6,7 @@ method=url
 command=C:/Program Files/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/download-googlebenchmark-populate.cmake;COMMAND;C:/Program Files/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/verify-googlebenchmark-populate.cmake;COMMAND;C:/Program Files/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;D:/gitnext/Chained Decos/.deps/googlebenchmark-subbuild/googlebenchmark-populate-prefix/src/googlebenchmark-populate-stamp/extract-googlebenchmark-populate.cmake
 source_dir=D:/gitnext/Chained Decos/.deps/googlebenchmark-src
 work_dir=D:/gitnext/Chained Decos/.deps
-url(s)=https://github.com/google/benchmark/archive/refs/tags/v1.8.3.zip
+url(s)=https://github.com/google/benchmark/archive/refs/tags/v1.8.0.zip
 hash=
       no_extract=
 
