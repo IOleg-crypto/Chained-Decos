@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Build configuration options
 option(FAST_CONFIG "Reduce CMake configure time" ON)
-option(BUILD_TESTS "Build unit tests" OFF)
+option(BUILD_TESTS "Build unit tests" ON)
 option(BUILD_MAP_EDITOR "Build MapEditor tools" OFF)
 option(BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
@@ -16,7 +16,7 @@ option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
 option(ENABLE_WARNINGS "Enable strict compiler warnings" ON)
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-option(ENABLE_UNITY_BUILD "Enable unity build for faster compilation" OFF)
+option(ENABLE_UNITY_BUILD "Enable unity build for faster compilation" ON)
 
 # Platform-specific options
 option(ENABLE_OPENGL_DEBUG "Enable OpenGL debug context" OFF)
