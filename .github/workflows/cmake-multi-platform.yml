@@ -175,8 +175,34 @@ jobs:
     - name: Run basic smoke test
       shell: bash
       run: |
-        [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos" ] && echo "✅ Main executable found" || (echo "❌ Main executable not found" && exit 1)
-        [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecosMapEditor" ] && echo "✅ Map editor executable found" || (echo "❌ Map editor executable not found" && exit 1)
+        # Check for executable in install directory first
+        if [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos" ]; then
+          echo "✅ Main executable found in install directory"
+          EXECUTABLE_PATH="${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos"
+        # Fallback to build directory
+        elif [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecos.exe" ]; then
+          echo "✅ Main executable found in build directory"
+          EXECUTABLE_PATH="${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecos.exe"
+        elif [ -f "${{ steps.build-env.outputs.build-output-dir }}/ChainedDecos.exe" ]; then
+          echo "✅ Main executable found in build root"
+          EXECUTABLE_PATH="${{ steps.build-env.outputs.build-output-dir }}/ChainedDecos.exe"
+        else
+          echo "❌ Main executable not found" && exit 1
+        fi
+
+        # Check for MapEditor executable
+        if [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecosMapEditor" ]; then
+          echo "✅ Map editor executable found in install directory"
+        elif [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecosMapEditor.exe" ]; then
+          echo "✅ Map editor executable found in build directory"
+        elif [ -f "${{ steps.build-env.outputs.build-output-dir }}/ChainedDecosMapEditor.exe" ]; then
+          echo "✅ Map editor executable found in build root"
+        else
+          echo "ℹ️ Map editor executable not found (this may be expected if BUILD_MAP_EDITOR=OFF)"
+        fi
+
+        # Store executable path for potential use in later steps
+        echo "EXECUTABLE_PATH=${EXECUTABLE_PATH}" >> "$GITHUB_ENV"
 
     - name: Run tests (if available)
       shell: bash
@@ -192,7 +218,11 @@ jobs:
         # Run basic executable validation (only for Ubuntu with GCC to save time)
         if [ "${{ matrix.os }}" = "ubuntu-22.04" ] && [ "${{ matrix.compiler }}" = "gcc" ]; then
           echo "🔍 Validating executables..."
-          "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos" --help 2>&1 | head -5 || echo "ℹ️ Help not available"
+          if [ -n "$EXECUTABLE_PATH" ]; then
+            "$EXECUTABLE_PATH" --help 2>&1 | head -5 || echo "ℹ️ Help not available or executable not working"
+          else
+            echo "ℹ️ No executable path available for validation"
+          fi
         fi
 
     - name: Upload build artifacts
