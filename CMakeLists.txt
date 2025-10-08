@@ -172,26 +172,6 @@ if(BUILD_TESTS)
     endif()
 endif()
 
-# Google Benchmark (for performance benchmarks)
-if(BUILD_BENCHMARKS)
-    find_package(benchmark CONFIG QUIET)
-
-    if(NOT benchmark_FOUND)
-        message(STATUS "Google Benchmark not found, fetching...")
-        FetchContent_Declare(
-            googlebenchmark
-            URL https://github.com/google/benchmark/archive/refs/tags/v1.8.3.zip
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-        )
-        # Enable testing for benchmark library
-        set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
-        set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
-        set(BENCHMARK_ENABLE_EXCEPTIONS ON CACHE BOOL "" FORCE)
-        # Disable strict warnings for benchmark library to avoid conflicts
-        set(BENCHMARK_ENABLE_WERROR OFF CACHE BOOL "" FORCE)
-        FetchContent_MakeAvailable(googlebenchmark)
-    endif()
-endif()
 
 add_library(imguilib STATIC
     include/rlImGui/rlImGui.cpp
