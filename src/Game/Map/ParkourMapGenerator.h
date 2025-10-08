@@ -59,6 +59,9 @@ public:
     // Get all available parkour test maps
     static std::vector<ParkourTestMap> GetAllParkourMaps();
 
+    // Get all available parkour test maps using parallel generation for better performance
+    static std::vector<ParkourTestMap> GetAllParkourMapsParallel();
+
     // Get a specific map by name
     static ParkourTestMap GetMapByName(const std::string& name);
 

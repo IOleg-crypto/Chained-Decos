@@ -87,7 +87,7 @@ private:
 
     // Player state
     bool m_isJumping = false;
-    Vector3 m_playerSize{};
+    Vector3 m_boundingBoxSize{};
 };
 
 #endif // PLAYER_H
