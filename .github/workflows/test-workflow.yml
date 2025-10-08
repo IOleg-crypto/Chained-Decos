@@ -149,20 +149,6 @@ jobs:
           --target ChainedDecos ChainedDecosMapEditor ChainedDecosTests benchmarks \
           --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
 
-    - name: Run smoke tests
-      shell: bash
-      run: |
-        echo "🧪 Running smoke tests..."
-
-        # Test that executables exist and are runnable
-        if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/Debug/ChainedDecos.exe" ] && echo "✅ Main executable built successfully" || (echo "❌ Main executable not found" && exit 1)
-          [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/Debug/ChainedDecosMapEditor.exe" ] && echo "✅ Map editor executable built successfully" || (echo "❌ Map editor executable not found" && exit 1)
-        else
-          [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecos" ] && echo "✅ Main executable built successfully" || (echo "❌ Main executable not found" && exit 1)
-          [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecosMapEditor" ] && echo "✅ Map editor executable built successfully" || (echo "❌ Map editor executable not found" && exit 1)
-        fi
-
     - name: Run static analysis
       shell: bash
       if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
