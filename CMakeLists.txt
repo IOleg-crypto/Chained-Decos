@@ -45,6 +45,13 @@ if(NOT CMAKE_BUILD_TYPE)
     endif()
 endif()
 
+# Set install prefix for CI/CD environments
+if(DEFINED ENV{CI})
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefix" FORCE)
+else()
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefix" FORCE)
+endif()
+
 # Compiler-specific settings
 if(MSVC)
     # MSVC-specific settings
