@@ -8,6 +8,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
+#include <unordered_map>
 
 #include "CollisionStructures.h"
 
@@ -61,6 +62,10 @@ public:
     void BuildFromModelWithType(void *model, CollisionType type,
                                 const Matrix &transform = MatrixIdentity());
     void CalculateFromModel(void *model, const Matrix &transform = MatrixIdentity());
+
+    // Optimized collision creation with caching
+    static std::shared_ptr<Collision> CreateFromModelCached(void *model, const Matrix &transform = MatrixIdentity());
+    static void ClearCollisionCache();
 
     // Collision type control
     CollisionType GetCollisionType() const;
@@ -127,6 +132,9 @@ private:
 
     // Perf stats
     mutable PerformanceStats m_stats;
+
+    // Collision cache for performance optimization
+    static std::unordered_map<size_t, std::weak_ptr<Collision>> collisionCache;
 
 private:
     // Helpers

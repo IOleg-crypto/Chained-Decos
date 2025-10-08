@@ -8,6 +8,7 @@
 #include <any>
 #include <typeindex>
 #include <memory>
+#include <algorithm>
 
 class EventSystem
 {

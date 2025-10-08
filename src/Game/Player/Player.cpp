@@ -143,15 +143,15 @@ void Player::Update(const CollisionManager &collisionManager)
         m_movement->SnapToGround(collisionManager);
     }
 
-    // Force ground state if player is very close to ground and not moving up
-    if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 1.0f)
+    // Force ground state if player is very close to ground and not moving up fast
+    if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 2.0f)
     {
         Vector3 playerPos = GetPlayerPosition();
-        if (playerPos.y <= 1.0f) // Very close to ground level
+        if (playerPos.y <= 1.5f) // More generous ground proximity for jumping
         {
             m_movement->GetPhysics().SetGroundLevel(true);
             m_movement->GetPhysics().SetVelocityY(0.0f);
-            TraceLog(LOG_INFO, "Player::Update() - Force grounded player at low Y position: %.2f", playerPos.y);
+            TraceLog(LOG_DEBUG, "Player::Update() - Force grounded player at low Y position: %.2f", playerPos.y);
         }
     }
 
