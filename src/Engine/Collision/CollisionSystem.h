@@ -9,6 +9,13 @@
 #include <raymath.h>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
+#include <queue>
+#include <stack>
+#include <thread>
+#include <future>
+#include <mutex>
+#include <atomic>
 
 #include "CollisionStructures.h"
 
@@ -116,8 +123,26 @@ public:
     const PerformanceStats &GetPerformanceStats() const;
 
     bool CheckCollisionWithBVH(const Collision& other, Vector3& outResponse) const;
-    
+
     void UpdateAABBFromTriangles();
+
+    // Public accessor for cache size
+    static size_t GetCollisionCacheSize() { return collisionCache.size(); }
+
+    // Public methods to reset collision state
+    void ResetCollisionState()
+    {
+        m_triangles.clear();
+        m_bvhRoot.reset();
+        m_isBuilt = false;
+    }
+
+    // Public access to collision cache for pool management
+    static std::unordered_map<size_t, std::weak_ptr<Collision>>& GetCollisionCache()
+    {
+        return collisionCache;
+    }
+
 private:
     // AABB
     Vector3 m_min{};
@@ -155,5 +180,46 @@ private:
     static bool RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
                                       const CollisionTriangle &tri, RayHit &outHit);
 };
+
+// Collision object pool for efficient memory management
+class CollisionPool
+{
+public:
+    static CollisionPool& GetInstance();
+
+    // Pool management
+    std::shared_ptr<Collision> AcquireCollision();
+    void ReleaseCollision(std::shared_ptr<Collision> collision);
+    void ClearPool();
+
+    // Statistics
+    size_t GetPoolSize() const { return m_collisionPool.size(); }
+    size_t GetActiveCollisions() const { return m_activeCollisions.size(); }
+    size_t GetCacheSize() const { return Collision::GetCollisionCacheSize(); }
+
+    // Settings
+    void SetMaxPoolSize(size_t maxSize) { m_maxPoolSize = maxSize; }
+    void SetMaxCacheSize(size_t maxSize) { m_maxCacheSize = maxSize; }
+
+    // Cleanup
+    void CleanupUnusedCollisions();
+    void CleanupExpiredCache();
+
+private:
+    CollisionPool();
+    ~CollisionPool();
+
+    std::stack<std::shared_ptr<Collision>> m_collisionPool;
+    std::unordered_set<std::shared_ptr<Collision>> m_activeCollisions;
+    size_t m_maxPoolSize = 100;
+    size_t m_maxCacheSize = 200;
+    mutable std::mutex m_poolMutex;
+
+    // Prevent copying
+    CollisionPool(const CollisionPool&) = delete;
+    CollisionPool& operator=(const CollisionPool&) = delete;
+};
+
+// CollisionManager is defined in CollisionManager.h
 
 #endif // COLLISIONSYSTEM_H

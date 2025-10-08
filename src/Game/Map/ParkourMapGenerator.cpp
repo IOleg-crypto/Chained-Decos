@@ -409,9 +409,9 @@ void ParkourMapGenerator::RenderParkourMap(const ParkourTestMap& map, Camera3D c
                 {
                     float angle = i * PI/4;
                     Vector3 pos = {
-                        element.position.x + cos(angle) * element.size.x,
+                        element.position.x + static_cast<float>(cos(angle)) * element.size.x,
                         element.position.y,
-                        element.position.z + sin(angle) * element.size.x
+                        element.position.z + static_cast<float>(sin(angle)) * element.size.x
                     };
                     DrawCylinder(pos, element.size.z, element.size.z, element.size.y, 8, element.color);
                 }

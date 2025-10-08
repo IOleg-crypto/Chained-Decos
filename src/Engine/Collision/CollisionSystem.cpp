@@ -7,6 +7,7 @@
 #include <thread>
 #include <vector>
 #include <algorithm>
+#include <chrono>
 
 #include "CollisionStructures.h"
 
@@ -928,3 +929,133 @@ void Collision::ClearCollisionCache()
 {
     collisionCache.clear();
 }
+
+// ==================== COLLISION POOL IMPLEMENTATION ====================
+
+CollisionPool& CollisionPool::GetInstance()
+{
+    static CollisionPool instance;
+    return instance;
+}
+
+CollisionPool::CollisionPool()
+{
+    TraceLog(LOG_INFO, "CollisionPool initialized");
+}
+
+CollisionPool::~CollisionPool()
+{
+    ClearPool();
+    TraceLog(LOG_INFO, "CollisionPool destroyed");
+}
+
+std::shared_ptr<Collision> CollisionPool::AcquireCollision()
+{
+    std::lock_guard<std::mutex> lock(m_poolMutex);
+
+    if (!m_collisionPool.empty())
+    {
+        auto collision = m_collisionPool.top();
+        m_collisionPool.pop();
+        m_activeCollisions.insert(collision);
+
+        // Reset collision state
+        collision->ResetCollisionState();
+
+        TraceLog(LOG_DEBUG, "Acquired collision from pool. Pool size: %zu", m_collisionPool.size());
+        return collision;
+    }
+
+    // Create new collision if pool is empty
+    auto collision = std::make_shared<Collision>();
+    m_activeCollisions.insert(collision);
+
+    TraceLog(LOG_DEBUG, "Created new collision. Active collisions: %zu", m_activeCollisions.size());
+    return collision;
+}
+
+void CollisionPool::ReleaseCollision(std::shared_ptr<Collision> collision)
+{
+    if (!collision) return;
+
+    std::lock_guard<std::mutex> lock(m_poolMutex);
+
+    // Remove from active set
+    m_activeCollisions.erase(collision);
+
+    // Clear collision data
+    collision->ResetCollisionState();
+
+    // Add to pool if under limit
+    if (m_collisionPool.size() < m_maxPoolSize)
+    {
+        m_collisionPool.push(collision);
+        TraceLog(LOG_DEBUG, "Released collision to pool. Pool size: %zu", m_collisionPool.size());
+    }
+    else
+    {
+        TraceLog(LOG_DEBUG, "Pool full, destroying collision");
+    }
+}
+
+void CollisionPool::ClearPool()
+{
+    std::lock_guard<std::mutex> lock(m_poolMutex);
+
+    while (!m_collisionPool.empty())
+    {
+        m_collisionPool.pop();
+    }
+    m_activeCollisions.clear();
+
+    TraceLog(LOG_INFO, "Collision pool cleared");
+}
+
+void CollisionPool::CleanupUnusedCollisions()
+{
+    std::lock_guard<std::mutex> lock(m_poolMutex);
+
+    // Remove expired weak pointers from cache
+    auto& cache = Collision::GetCollisionCache();
+    auto cacheIt = cache.begin();
+    while (cacheIt != cache.end())
+    {
+        if (cacheIt->second.expired())
+        {
+            cacheIt = cache.erase(cacheIt);
+        }
+        else
+        {
+            ++cacheIt;
+        }
+    }
+
+    TraceLog(LOG_DEBUG, "Cleaned up collision cache. Cache size: %zu", Collision::GetCollisionCacheSize());
+}
+
+void CollisionPool::CleanupExpiredCache()
+{
+    auto& cache = Collision::GetCollisionCache();
+    size_t beforeSize = cache.size();
+    auto it = cache.begin();
+
+    while (it != cache.end())
+    {
+        if (it->second.expired())
+        {
+            it = cache.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    size_t afterSize = cache.size();
+    if (beforeSize != afterSize)
+    {
+        TraceLog(LOG_INFO, "Cleaned up collision cache: %zu -> %zu entries", beforeSize, afterSize);
+    }
+}
+
+
