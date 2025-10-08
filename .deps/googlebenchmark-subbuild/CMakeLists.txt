@@ -19,7 +19,7 @@ project(googlebenchmark-populate NONE)
 
 include(ExternalProject)
 ExternalProject_Add(googlebenchmark-populate
-                     "UPDATE_DISCONNECTED" "True" "DOWNLOAD_EXTRACT_TIMESTAMP" "TRUE" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "URL" "https://github.com/google/benchmark/archive/refs/tags/v1.8.3.zip"
+                     "UPDATE_DISCONNECTED" "True" "DOWNLOAD_EXTRACT_TIMESTAMP" "TRUE" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "URL" "https://github.com/google/benchmark/archive/refs/tags/v1.8.0.zip"
                     SOURCE_DIR          "D:/gitnext/Chained Decos/.deps/googlebenchmark-src"
                     BINARY_DIR          "D:/gitnext/Chained Decos/.deps/googlebenchmark-build"
                     CONFIGURE_COMMAND   ""
