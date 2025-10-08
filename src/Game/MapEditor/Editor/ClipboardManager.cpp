@@ -51,7 +51,7 @@ std::vector<MapObject> ClipboardManager::Paste()
     {
         MapObject newObj = *objPtr;
         // Modify names to avoid duplicates
-        newObj.SetName(objPtr->GetName() + " (Copy)");
+        newObj.SetObjectName(objPtr->GetObjectName() + " (Copy)");
         // Offset position slightly
         Vector3 pos = objPtr->GetPosition();
         newObj.SetPosition({pos.x + 1.0f, pos.y, pos.z + 1.0f});
@@ -78,7 +78,7 @@ std::string ClipboardManager::GetClipboardInfo() const
         return "Clipboard is empty";
     
     if (m_clipboard.size() == 1)
-        return "1 object: " + m_clipboard[0]->GetName();
+        return "1 object: " + m_clipboard[0]->GetObjectName();
     
     return std::to_string(m_clipboard.size()) + " objects copied";
 }
@@ -102,7 +102,7 @@ void ClipboardManager::Duplicate(const std::vector<MapObject>& objects, const st
             duplicate.SetPosition({pos.x + offset, pos.y + offset, pos.z + offset});
             
             // Modify name
-            duplicate.SetName(objects[index].GetName() + " (Duplicate)");
+            duplicate.SetObjectName(objects[index].GetObjectName() + " (Duplicate)");
             
             target.push_back(duplicate);
         }

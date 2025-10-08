@@ -36,7 +36,7 @@ void AddObjectOperation::Redo()
 
 std::string AddObjectOperation::GetDescription() const
 {
-    return "Add " + m_addedObject->GetName();
+    return "Add " + m_addedObject->GetObjectName();
 }
 
 // RemoveObjectOperation implementation
@@ -77,7 +77,7 @@ void RemoveObjectOperation::Redo()
 std::string RemoveObjectOperation::GetDescription() const
 {
     if (m_removedObject != nullptr)
-        return "Remove " + m_removedObject->GetName();
+        return "Remove " + m_removedObject->GetObjectName();
     return "Remove object";
 }
 
@@ -116,7 +116,7 @@ void ModifyObjectOperation::Redo()
 std::string ModifyObjectOperation::GetDescription() const
 {
     if (m_oldState != nullptr)
-        return "Modify " + m_oldState->GetName() + " (" + m_propertyName + ")";
+        return "Modify " + m_oldState->GetObjectName() + " (" + m_propertyName + ")";
     return "Modify object";
 }
 

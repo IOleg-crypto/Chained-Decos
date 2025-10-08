@@ -21,36 +21,36 @@
 class Editor
 {
 private:
-    std::shared_ptr<CameraController> m_cameraController; // Camera controller for 3D view
-    std::vector<MapObject> m_objects;                     // List of all objects in the scene
-    int m_selectedObjectIndex;                            // Index of currently selected object
-    int m_currentTool;                                    // Current editing tool
-    bool m_showImGui;                                     // Show/hide ImGui interface
-    bool m_showObjectPanel;                               // Show/hide object list panel
-    bool m_showPropertiesPanel;                           // Show/hide properties panel
-    bool m_shouldAddObject;                               // Add cube , cylinder or sphere
-    std::string m_mapFileName;                            // Current map file name
-    ModelLoader m_models;                            // Model manager for loading and rendering models
-    std::vector<std::string> m_availableModels; // List of available models
-    std::string m_selectedModelName;            // Currently selected model for adding
-    bool m_modelsInitialized;                   // Flag to track if models are loaded
+    std::shared_ptr<CameraController> m_cameraController;           // Camera controller for 3D view
+    std::vector<MapObject> m_editorSceneObjects;                   // List of all objects in the scene
+    int m_currentlySelectedObjectIndex;                             // Index of currently selected object
+    int m_activeEditorTool;                                         // Current editing tool
+    bool m_displayImGuiInterface;                                   // Show/hide ImGui interface
+    bool m_displayObjectListPanel;                                   // Show/hide object list panel
+    bool m_displayPropertiesPanel;                                  // Show/hide properties panel
+    bool m_pendingObjectCreation;                                   // Flag for pending object creation
+    std::string m_currentlyLoadedMapFilePath;                      // Current map file path
+    ModelLoader m_modelAssetManager;                                // Model manager for loading and rendering models
+    std::vector<std::string> m_availableModelNamesList;             // List of available models
+    std::string m_currentlySelectedModelName;                       // Currently selected model for adding
+    bool m_modelsInitialized;                                       // Flag to track if models are loaded
 
     // File dialog
-    bool m_showFileDialog;                     // Show/hide file dialog
-    bool m_isLoadDialog;                       // true for Load, false for Save
-    std::string m_currentDirectory;            // Current directory in file browser
-    std::vector<std::string> m_directoryItems; // Items in current directory
-    std::string m_selectedFile;                // Currently selected file
-    std::string m_newFileName;                 // New file name for save dialog
-    std::string m_newFolderName;               // New folder name for file dialog
-    bool m_showNewFolderDialog;                // Show/hide new folder dialog
-    bool m_showDeleteDialog;                   // Show/hide delete confirmation dialog
-    std::string m_itemToDelete;                // Item to delete
+    bool m_displayFileDialog;                                     // Show/hide file dialog
+    bool m_isFileLoadDialog;                                      // true for Load, false for Save
+    std::string m_currentWorkingDirectory;                        // Current directory in file browser
+    std::vector<std::string> m_currentDirectoryContents;          // Items in current directory
+    std::string m_currentlySelectedFile;                          // Currently selected file
+    std::string m_newFileNameInput;                               // New file name for save dialog
+    std::string m_newFolderNameInput;                             // New folder name for file dialog
+    bool m_displayNewFolderDialog;                                // Show/hide new folder dialog
+    bool m_displayDeleteConfirmationDialog;                       // Show/hide delete confirmation dialog
+    std::string m_itemPendingDeletion;                            // Item to delete
 
     // Parkour map dialog
-    bool m_showParkourDialog;                  // Show/hide parkour map dialog
-    std::vector<ParkourTestMap> m_parkourMaps; // Available parkour maps
-    int m_selectedParkourMap;                  // Index of selected parkour map
+    bool m_displayParkourMapDialog;                               // Show/hide parkour map dialog
+    std::vector<ParkourTestMap> m_availableParkourMaps;           // Available parkour maps
+    int m_currentlySelectedParkourMapIndex;                       // Index of selected parkour map
 
     // Available editing tools
     enum Tool

@@ -1,13 +1,16 @@
 #include "PhysicsComponent.h"
 #include <raylib.h>
 #include <raymath.h>
+#include <future>
+#include <thread>
+#include <algorithm>
 
 
 
 PhysicsComponent::PhysicsComponent() = default;
 
 void PhysicsComponent::Update(float deltaTime) {
-    m_dt = deltaTime;
+    m_deltaTime = deltaTime;
     if (!m_isKinematic) {
         ApplyPhysics(deltaTime);
     }
@@ -16,26 +19,26 @@ void PhysicsComponent::Update(float deltaTime) {
 void PhysicsComponent::ApplyPhysics(float deltaTime) {
     ApplyGravity(deltaTime);
     ApplyDrag(deltaTime);
-    IntegrateForces(deltaTime);
+    IntegrateAccumulatedForces(deltaTime);
 }
 
 void PhysicsComponent::ApplyGravity(float deltaTime) {
     if (!m_isGrounded) {
-        m_forces.y -= m_gravity * deltaTime;
+        m_accumulatedForces.y -= m_gravity * deltaTime;
     }
 }
 
 void PhysicsComponent::ApplyDrag(float deltaTime) {
-    m_forces = Vector3Add(m_forces, Vector3Scale(m_velocity, -m_drag * deltaTime));
+    m_accumulatedForces = Vector3Add(m_accumulatedForces, Vector3Scale(m_velocity, -m_drag * deltaTime));
 }
 
-void PhysicsComponent::IntegrateForces(float deltaTime) {
+void PhysicsComponent::IntegrateAccumulatedForces(float deltaTime) {
     // Apply forces to velocity
-    Vector3 acceleration = Vector3Scale(m_forces, deltaTime);
+    Vector3 acceleration = Vector3Scale(m_accumulatedForces, deltaTime);
     m_velocity = Vector3Add(m_velocity, acceleration);
-    
+
     // Reset forces for next frame
-    m_forces = {0.0f, 0.0f, 0.0f};
+    m_accumulatedForces = {0.0f, 0.0f, 0.0f};
 }
 
 void PhysicsComponent::TryJump() {
@@ -95,5 +98,51 @@ float PhysicsComponent::GetJumpStrength() const { return m_jumpStrength; }
 void PhysicsComponent::SetJumpStrength(float strength) { m_jumpStrength = strength; }
 float PhysicsComponent::GetDrag() const { return m_drag; }
 void PhysicsComponent::SetDrag(float drag) { m_drag = drag; }
-float PhysicsComponent::GetDeltaTime() const { return m_dt; }
+float PhysicsComponent::GetDeltaTime() const { return m_deltaTime; }
 void PhysicsComponent::SetInAir() { m_isGrounded = false; }
+
+// Static method for parallel physics updates
+void PhysicsComponent::UpdatePhysicsComponentsParallel(std::vector<PhysicsComponent*>& physicsComponents, float deltaTime) {
+    if (physicsComponents.empty()) {
+        return;
+    }
+
+    const size_t numComponents = physicsComponents.size();
+    const size_t parallelThreshold = 8; // Only use parallel processing if we have enough components
+
+    if (numComponents < parallelThreshold) {
+        // Fall back to sequential for small numbers of components
+        for (PhysicsComponent* component : physicsComponents) {
+            if (component) {
+                component->Update(deltaTime);
+            }
+        }
+        return;
+    }
+
+    // Split components into chunks for parallel processing
+    size_t numThreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()), static_cast<size_t>(numComponents / 2));
+    numThreads = std::max(numThreads, static_cast<size_t>(1));
+
+    std::vector<std::future<void>> futures;
+    size_t chunkSize = numComponents / numThreads;
+
+    for (size_t i = 0; i < numThreads; ++i) {
+        size_t startIdx = i * chunkSize;
+        size_t endIdx = (i == numThreads - 1) ? numComponents : (i + 1) * chunkSize;
+
+        futures.push_back(std::async(std::launch::async, [startIdx, endIdx, &physicsComponents, deltaTime]() {
+            for (size_t j = startIdx; j < endIdx; ++j) {
+                PhysicsComponent* component = physicsComponents[j];
+                if (component && !component->IsKinematic()) {
+                    component->Update(deltaTime);
+                }
+            }
+        }));
+    }
+
+    // Wait for all threads to complete
+    for (auto &future : futures) {
+        future.wait();
+    }
+}
