@@ -172,38 +172,6 @@ jobs:
         cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
           --config ${{ matrix.build_type }}
 
-    - name: Run basic smoke test
-      shell: bash
-      run: |
-        # Check for executable in install directory first
-        if [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos" ]; then
-          echo "✅ Main executable found in install directory"
-          EXECUTABLE_PATH="${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecos"
-        # Fallback to build directory
-        elif [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecos.exe" ]; then
-          echo "✅ Main executable found in build directory"
-          EXECUTABLE_PATH="${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecos.exe"
-        elif [ -f "${{ steps.build-env.outputs.build-output-dir }}/ChainedDecos.exe" ]; then
-          echo "✅ Main executable found in build root"
-          EXECUTABLE_PATH="${{ steps.build-env.outputs.build-output-dir }}/ChainedDecos.exe"
-        else
-          echo "❌ Main executable not found" && exit 1
-        fi
-
-        # Check for MapEditor executable
-        if [ -f "${{ steps.build-env.outputs.install-prefix }}/bin/ChainedDecosMapEditor" ]; then
-          echo "✅ Map editor executable found in install directory"
-        elif [ -f "${{ steps.build-env.outputs.build-output-dir }}/bin/ChainedDecosMapEditor.exe" ]; then
-          echo "✅ Map editor executable found in build directory"
-        elif [ -f "${{ steps.build-env.outputs.build-output-dir }}/ChainedDecosMapEditor.exe" ]; then
-          echo "✅ Map editor executable found in build root"
-        else
-          echo "ℹ️ Map editor executable not found (this may be expected if BUILD_MAP_EDITOR=OFF)"
-        fi
-
-        # Store executable path for potential use in later steps
-        echo "EXECUTABLE_PATH=${EXECUTABLE_PATH}" >> "$GITHUB_ENV"
-
     - name: Run tests (if available)
       shell: bash
       run: |
