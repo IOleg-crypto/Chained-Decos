@@ -80,5 +80,5 @@ TEST_F(CollisionManagerTest, RaycastDownWorks) {
     Vector3 hitPoint, hitNormal;
     bool hit = collisionManager->RaycastDown(Vector3{0, 1, 0}, 10.0f, hitDistance, hitPoint, hitNormal);
     EXPECT_TRUE(hit);
-    EXPECT_NEAR(hitDistance, 2.0f, 0.1f); // From y=1 to y=-1 (surface at y=-1, half-height 1)
+    EXPECT_NEAR(hitDistance, 1.0f, 0.1f); // From y=1 to y=0 (top of collider at y=0)
 }

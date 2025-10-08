@@ -29,7 +29,10 @@ void PhysicsComponent::ApplyGravity(float deltaTime) {
 }
 
 void PhysicsComponent::ApplyDrag(float deltaTime) {
-    m_accumulatedForces = Vector3Add(m_accumulatedForces, Vector3Scale(m_velocity, -m_drag * deltaTime));
+    // Don't apply drag when grounded (you're not moving through air)
+    if (!m_isGrounded) {
+        m_accumulatedForces = Vector3Add(m_accumulatedForces, Vector3Scale(m_velocity, -m_drag * deltaTime));
+    }
 }
 
 void PhysicsComponent::IntegrateAccumulatedForces(float deltaTime) {

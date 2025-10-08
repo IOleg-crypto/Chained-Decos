@@ -149,6 +149,11 @@ if(NOT raylib_FOUND)
     FetchContent_MakeAvailable(raylib)
 endif()
 
+# Add winmm library for Windows timer functions (needed by raylib)
+if(WIN32)
+    link_libraries(winmm)
+endif()
+
 # nlohmann_json
 find_package(nlohmann_json CONFIG QUIET)
 

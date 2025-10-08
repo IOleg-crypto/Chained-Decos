@@ -9,10 +9,7 @@
 #include <vector>
 
 // Include raylib window functions
-#ifdef _WIN32
-    #define GLFW_INCLUDE_NONE
-    #include <GLFW/glfw3.h>
-#endif
+// Note: GLFW dependency removed as raylib provides all necessary window management
 
 Menu::Menu()
 {
