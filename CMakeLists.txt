@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Build configuration options
 option(FAST_CONFIG "Reduce CMake configure time" ON)
 option(BUILD_TESTS "Build unit tests" ON)
-option(BUILD_MAP_EDITOR "Build MapEditor tools" OFF)
+option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
 option(BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
 option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
