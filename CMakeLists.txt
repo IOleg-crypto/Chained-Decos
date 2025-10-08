@@ -9,8 +9,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Build configuration options
 option(FAST_CONFIG "Reduce CMake configure time" ON)
 option(BUILD_TESTS "Build unit tests" OFF)
-option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
-option(BUILD_BENCHMARKS "Build performance benchmarks" OFF)
+option(BUILD_MAP_EDITOR "Build MapEditor tools" OFF)
+option(BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
 option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
 option(ENABLE_WARNINGS "Enable strict compiler warnings" ON)
@@ -172,6 +172,27 @@ if(BUILD_TESTS)
     endif()
 endif()
 
+# Google Benchmark (for performance benchmarks)
+if(BUILD_BENCHMARKS)
+    find_package(benchmark CONFIG QUIET)
+
+    if(NOT benchmark_FOUND)
+        message(STATUS "Google Benchmark not found, fetching...")
+        FetchContent_Declare(
+            googlebenchmark
+            URL https://github.com/google/benchmark/archive/refs/tags/v1.8.3.zip
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        )
+        # Enable testing for benchmark library
+        set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+        set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
+        set(BENCHMARK_ENABLE_EXCEPTIONS ON CACHE BOOL "" FORCE)
+        # Disable strict warnings for benchmark library to avoid conflicts
+        set(BENCHMARK_ENABLE_WERROR OFF CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(googlebenchmark)
+    endif()
+endif()
+
 add_library(imguilib STATIC
     include/rlImGui/rlImGui.cpp
     include/rlImGui/rlImGui.h
@@ -233,10 +254,10 @@ if(BUILD_TESTS)
     enable_testing()
 endif()
 
-# Enable benchmarks if requested (disabled for now)
-# if(BUILD_BENCHMARKS)
-#     add_subdirectory(benchmarks)
-# endif()
+# Enable benchmarks if requested
+if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif()
 
 # Installation configuration
 install(TARGETS ChainedDecos
