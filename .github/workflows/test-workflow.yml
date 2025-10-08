@@ -124,22 +124,42 @@ jobs:
       run: mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
 
     - name: Configure CMake for testing
-      shell: bash
-      run: |
-        cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
-          -DCMAKE_BUILD_TYPE=Debug \
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-          -DBUILD_TESTS=ON \
-          -DBUILD_BENCHMARKS=ON \
-          -DENABLE_COVERAGE=OFF \
-          -DENABLE_WARNINGS=OFF \
-          -DENABLE_UNITY_BUILD=OFF \
-          -DENABLE_SANITIZERS=OFF \
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-          -DENABLE_DEV_TOOLS=OFF \
-          -DENABLE_DEBUG_INFO=ON \
-          -S "${{ github.workspace }}"
+       shell: bash
+       run: |
+         if [ "${{ matrix.os }}" = "windows-2022" ]; then
+           # Use Ninja generator for Windows
+           cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
+             -GNinja \
+             -DCMAKE_BUILD_TYPE=Debug \
+             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+             -DBUILD_TESTS=ON \
+             -DBUILD_BENCHMARKS=ON \
+             -DENABLE_COVERAGE=OFF \
+             -DENABLE_WARNINGS=OFF \
+             -DENABLE_UNITY_BUILD=OFF \
+             -DENABLE_SANITIZERS=OFF \
+             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+             -DENABLE_DEV_TOOLS=OFF \
+             -DENABLE_DEBUG_INFO=ON \
+             -S "${{ github.workspace }}"
+         else
+           # Use default generator for other platforms
+           cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
+             -DCMAKE_BUILD_TYPE=Debug \
+             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+             -DBUILD_TESTS=ON \
+             -DBUILD_BENCHMARKS=ON \
+             -DENABLE_COVERAGE=OFF \
+             -DENABLE_WARNINGS=OFF \
+             -DENABLE_UNITY_BUILD=OFF \
+             -DENABLE_SANITIZERS=OFF \
+             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+             -DENABLE_DEV_TOOLS=OFF \
+             -DENABLE_DEBUG_INFO=ON \
+             -S "${{ github.workspace }}"
+         fi
 
     - name: Build tests and benchmarks
       shell: bash
