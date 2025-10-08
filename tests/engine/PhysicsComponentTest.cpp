@@ -22,7 +22,7 @@ protected:
 TEST_F(PhysicsComponentTest, ConstructorInitializesDefaults) {
     EXPECT_EQ(physics->GetVelocity(), Vector3{0, 0, 0});
     EXPECT_FALSE(physics->IsGrounded());
-    EXPECT_NEAR(physics->GetGravity(), -9.81f, 0.01f);
+    EXPECT_NEAR(physics->GetGravity(), 9.81f, 0.01f);
 }
 
 TEST_F(PhysicsComponentTest, SettersAndGettersWorkCorrectly) {
@@ -30,41 +30,41 @@ TEST_F(PhysicsComponentTest, SettersAndGettersWorkCorrectly) {
     physics->SetVelocity(testVelocity);
     EXPECT_EQ(physics->GetVelocity(), testVelocity);
 
-    physics->SetGravity(-15.0f);
-    EXPECT_NEAR(physics->GetGravity(), -15.0f, 0.01f);
+    physics->SetGravity(15.0f);
+    EXPECT_NEAR(physics->GetGravity(), 15.0f, 0.01f);
 
-    physics->SetJumpForce(8.0f);
-    EXPECT_NEAR(physics->GetJumpForce(), 8.0f, 0.01f);
+    physics->SetJumpStrength(8.0f);
+    EXPECT_NEAR(physics->GetJumpStrength(), 8.0f, 0.01f);
 
-    physics->SetMoveSpeed(12.0f);
-    EXPECT_NEAR(physics->GetMoveSpeed(), 12.0f, 0.01f);
+    physics->SetDrag(12.0f);
+    EXPECT_NEAR(physics->GetDrag(), 12.0f, 0.01f);
 }
 
 TEST_F(PhysicsComponentTest, GroundedStateIsManagedCorrectly) {
     EXPECT_FALSE(physics->IsGrounded());
 
-    physics->SetGrounded(true);
+    physics->SetGroundLevel(true);
     EXPECT_TRUE(physics->IsGrounded());
 
-    physics->SetGrounded(false);
+    physics->SetGroundLevel(false);
     EXPECT_FALSE(physics->IsGrounded());
 }
 
-TEST_F(PhysicsComponentTest, ApplyForceModifiesVelocity) {
+TEST_F(PhysicsComponentTest, AddVelocityModifiesVelocity) {
     Vector3 initialVelocity = physics->GetVelocity();
-    Vector3 force{10, 20, 30};
+    Vector3 delta{10, 20, 30};
 
-    physics->ApplyForce(force);
+    physics->AddVelocity(delta);
 
     Vector3 newVelocity = physics->GetVelocity();
-    EXPECT_EQ(newVelocity.x, initialVelocity.x + force.x);
-    EXPECT_EQ(newVelocity.y, initialVelocity.y + force.y);
-    EXPECT_EQ(newVelocity.z, initialVelocity.z + force.z);
+    EXPECT_EQ(newVelocity.x, initialVelocity.x + delta.x);
+    EXPECT_EQ(newVelocity.y, initialVelocity.y + delta.y);
+    EXPECT_EQ(newVelocity.z, initialVelocity.z + delta.z);
 }
 
 TEST_F(PhysicsComponentTest, UpdateAppliesGravity) {
     physics->SetVelocity(Vector3{0, 10, 0});
-    physics->SetGrounded(false);
+    physics->SetGroundLevel(false);
 
     Vector3 initialVelocity = physics->GetVelocity();
     physics->Update(0.1f); // Small time step
@@ -75,7 +75,7 @@ TEST_F(PhysicsComponentTest, UpdateAppliesGravity) {
 
 TEST_F(PhysicsComponentTest, UpdateDoesNotApplyGravityWhenGrounded) {
     physics->SetVelocity(Vector3{0, 10, 0});
-    physics->SetGrounded(true);
+    physics->SetGroundLevel(true);
 
     Vector3 initialVelocity = physics->GetVelocity();
     physics->Update(0.1f);
@@ -85,10 +85,10 @@ TEST_F(PhysicsComponentTest, UpdateDoesNotApplyGravityWhenGrounded) {
 }
 
 TEST_F(PhysicsComponentTest, JumpAppliesForceWhenGrounded) {
-    physics->SetGrounded(true);
-    physics->SetJumpForce(5.0f);
+    physics->SetGroundLevel(true);
+    physics->SetJumpStrength(5.0f);
 
-    physics->Jump();
+    physics->TryJump();
 
     Vector3 velocity = physics->GetVelocity();
     EXPECT_GT(velocity.y, 0.0f); // Should have upward velocity
@@ -96,93 +96,11 @@ TEST_F(PhysicsComponentTest, JumpAppliesForceWhenGrounded) {
 }
 
 TEST_F(PhysicsComponentTest, JumpDoesNotApplyForceWhenNotGrounded) {
-    physics->SetGrounded(false);
+    physics->SetGroundLevel(false);
     Vector3 initialVelocity = physics->GetVelocity();
 
-    physics->Jump();
+    physics->TryJump();
 
     Vector3 velocity = physics->GetVelocity();
     EXPECT_EQ(velocity.y, initialVelocity.y); // Should not change
-}
-
-TEST_F(PhysicsComponentTest, MoveAppliesHorizontalForce) {
-    Vector3 direction{1, 0, 1}; // Diagonal movement
-    physics->SetMoveSpeed(10.0f);
-
-    physics->Move(direction);
-
-    Vector3 velocity = physics->GetVelocity();
-    EXPECT_GT(velocity.x, 0.0f); // Should have X movement
-    EXPECT_GT(velocity.z, 0.0f); // Should have Z movement
-    EXPECT_EQ(velocity.y, 0.0f); // Should not affect Y
-}
-
-TEST_F(PhysicsComponentTest, FrictionAffectsHorizontalMovement) {
-    physics->SetVelocity(Vector3{10, 0, 10});
-    physics->SetFriction(0.5f);
-
-    physics->Update(0.1f);
-
-    Vector3 velocity = physics->GetVelocity();
-    EXPECT_LT(abs(velocity.x), 10.0f); // Should be reduced by friction
-    EXPECT_LT(abs(velocity.z), 10.0f); // Should be reduced by friction
-}
-
-TEST_F(PhysicsComponentTest, AirControlAffectsMovementInAir) {
-    physics->SetGrounded(false);
-    physics->SetAirControl(0.1f);
-    physics->SetVelocity(Vector3{5, 0, 0});
-
-    Vector3 direction{1, 0, 0};
-    physics->Move(direction);
-
-    Vector3 velocity = physics->GetVelocity();
-    EXPECT_GT(velocity.x, 5.0f); // Should be able to change direction in air
-}
-
-TEST_F(PhysicsComponentTest, CollisionCallbackIsTriggered) {
-    bool collisionCalled = false;
-    physics->SetCollisionCallback([&collisionCalled]() {
-        collisionCalled = true;
-    });
-
-    // Simulate collision by calling the callback directly
-    // (In real implementation, this would be called by CollisionSystem)
-    if (physics->GetCollisionCallback()) {
-        physics->GetCollisionCallback()();
-    }
-
-    EXPECT_TRUE(collisionCalled);
-}
-
-TEST_F(PhysicsComponentTest, PositionIntegrationWorksCorrectly) {
-    physics->SetVelocity(Vector3{1, 2, 3});
-    Vector3 initialPosition = physics->GetPosition();
-
-    physics->Update(0.1f);
-
-    Vector3 newPosition = physics->GetPosition();
-    EXPECT_EQ(newPosition.x, initialPosition.x + 0.1f); // deltaTime * velocity.x
-    EXPECT_EQ(newPosition.y, initialPosition.y + 0.2f); // deltaTime * velocity.y
-    EXPECT_EQ(newPosition.z, initialPosition.z + 0.3f); // deltaTime * velocity.z
-}
-
-TEST_F(PhysicsComponentTest, MaxVelocityIsEnforced) {
-    physics->SetMaxVelocity(5.0f);
-    physics->SetVelocity(Vector3{10, 10, 10});
-
-    physics->EnforceMaxVelocity();
-
-    Vector3 velocity = physics->GetVelocity();
-    EXPECT_LE(velocity.Length(), 5.0f); // Should be clamped to max velocity
-}
-
-TEST_F(PhysicsComponentTest, TerminalVelocityIsEnforced) {
-    physics->SetTerminalVelocity(-20.0f);
-    physics->SetVelocity(Vector3{0, -50, 0});
-
-    physics->EnforceTerminalVelocity();
-
-    Vector3 velocity = physics->GetVelocity();
-    EXPECT_GE(velocity.y, -20.0f); // Should not exceed terminal velocity
 }

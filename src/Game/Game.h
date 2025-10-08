@@ -63,6 +63,9 @@ public:
     void CreateMediumParkourMap();
     void CreateHardParkourMap();
     void CreateSpeedrunParkourMap();
+    void CreateIceTempleMap();
+    void CreateFireTempleMap();
+    void CreateSkyIslandsMap();
 
 
     // Map loading and rendering
