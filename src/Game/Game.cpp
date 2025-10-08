@@ -259,18 +259,6 @@ void Game::InitCollisions()
     // Load model collisions
     m_collisionManager.CreateAutoCollisionsFromModels(m_models);
 
-    // Load arena model if available
-    try
-    {
-        [[maybe_unused]] Model& arenaModel = m_models.GetModelByName("arena_test");
-
-        TraceLog(LOG_INFO, "Game::InitCollisions() - Arena model loaded successfully.");
-    }
-    catch (const std::exception& e)
-    {
-        TraceLog(LOG_ERROR, "Game::InitCollisions() - Failed to load arena model: %s", e.what());
-    }
-
     // Reinitialize after adding all model colliders
     m_collisionManager.Initialize();
 
@@ -941,6 +929,198 @@ void Game::CreateSpeedrunParkourMap()
     Vector3 endPos = {122.0f, 0.0f, -1.0f};
     DrawCube(endPos, 6.0f, 1.0f, 6.0f, GOLD);
     Collision endPlatform({122.0f, 0.0f, -1.0f}, {6.0f, 1.0f, 6.0f});
+    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(endPlatform));
+}
+
+void Game::CreateIceTempleMap()
+{
+    // Ice-themed parkour map using Raylib functions
+    Vector3 startPos = {0.0f, 0.0f, 0.0f};
+
+    // Icy starting platform
+    DrawCube(startPos, 4.0f, 1.0f, 4.0f, SKYBLUE);
+    Collision startPlatform({0.0f, 0.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
+    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(startPlatform));
+
+    // Ice platforms with slippery theme
+    Vector3 icePlat1 = {12.0f, 0.0f, 6.0f};
+    DrawCube(icePlat1, 3.0f, 1.0f, 3.0f, Color{150, 200, 255, 255});
+    Collision c1({12.0f, 0.0f, 6.0f}, {3.0f, 1.0f, 3.0f});
+    c1.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c1));
+
+    // Crystal formations (decorative)
+    Vector3 crystal1 = {20.0f, 2.0f, 4.0f};
+    DrawCube(crystal1, 0.5f, 4.0f, 0.5f, Color{200, 220, 255, 255});
+    Vector3 crystal2 = {22.0f, 2.0f, 4.0f};
+    DrawCube(crystal2, 0.5f, 4.0f, 0.5f, Color{200, 220, 255, 255});
+
+    // Floating ice platforms
+    Vector3 icePlat2 = {28.0f, 5.0f, 2.0f};
+    DrawCube(icePlat2, 2.5f, 1.0f, 2.5f, Color{180, 220, 255, 255});
+    Collision c2({28.0f, 5.0f, 2.0f}, {2.5f, 1.0f, 2.5f});
+    c2.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c2));
+
+    // Ice bridge
+    Vector3 bridge1 = {38.0f, 2.0f, 0.0f};
+    DrawCube(bridge1, 4.0f, 1.0f, 1.5f, Color{160, 210, 255, 255});
+    Collision c3({38.0f, 2.0f, 0.0f}, {4.0f, 1.0f, 1.5f});
+    c3.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c3));
+
+    // High ice spire platform
+    Vector3 icePlat3 = {50.0f, 8.0f, -2.0f};
+    DrawCube(icePlat3, 2.0f, 1.0f, 2.0f, Color{190, 230, 255, 255});
+    Collision c4({50.0f, 8.0f, -2.0f}, {2.0f, 1.0f, 2.0f});
+    c4.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c4));
+
+    // Spiral ice staircase
+    for (int i = 0; i < 8; i++)
+    {
+        float angle = i * PI / 4;
+        float radius = 60.0f + i * 2.0f;
+        float x = cos(angle) * radius;
+        float z = sin(angle) * radius;
+        float y = 2.0f + i * 1.5f;
+
+        Vector3 spiralPos = {x, y, z};
+        DrawCube(spiralPos, 2.5f, 1.0f, 2.5f, Color{170, 200, 250, 255});
+        Collision spiralColl(spiralPos, {2.5f, 1.0f, 2.5f});
+        spiralColl.SetCollisionType(CollisionType::AABB_ONLY);
+        m_collisionManager.AddCollider(std::move(spiralColl));
+    }
+
+    // Ice cavern platforms
+    Vector3 cavern1 = {75.0f, 3.0f, 5.0f};
+    DrawCube(cavern1, 3.0f, 1.0f, 3.0f, Color{140, 190, 240, 255});
+    Collision c5({75.0f, 3.0f, 5.0f}, {3.0f, 1.0f, 3.0f});
+    c5.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c5));
+
+    // Final frozen platform
+    Vector3 endPos = {90.0f, 1.0f, 0.0f};
+    DrawCube(endPos, 5.0f, 1.0f, 5.0f, Color{220, 240, 255, 255});
+    Collision endPlatform({90.0f, 1.0f, 0.0f}, {5.0f, 1.0f, 5.0f});
+    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(endPlatform));
+}
+
+void Game::CreateFireTempleMap()
+{
+    // Fire-themed parkour map using Raylib functions
+    Vector3 startPos = {0.0f, 0.0f, 0.0f};
+
+    // Volcanic starting platform
+    DrawCube(startPos, 4.0f, 1.0f, 4.0f, Color{50, 25, 25, 255});
+    Collision startPlatform({0.0f, 0.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
+    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(startPlatform));
+
+    // Lava flow platforms
+    Vector3 lavaPlat1 = {15.0f, 0.0f, 8.0f};
+    DrawCube(lavaPlat1, 3.5f, 1.0f, 3.5f, Color{100, 30, 20, 255});
+    Collision c1({15.0f, 0.0f, 8.0f}, {3.5f, 1.0f, 3.5f});
+    c1.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c1));
+
+    // Rising platforms (simulated with stepped design)
+    for (int i = 0; i < 6; i++)
+    {
+        Vector3 risePos = {30.0f + i * 3.0f, 1.0f + i * 2.0f, 5.0f};
+        Color fireColor = Color{static_cast<unsigned char>(80 + i * 20), 20, 10, 255};
+        DrawCube(risePos, 2.8f, 1.0f, 2.8f, fireColor);
+        Collision riseColl(risePos, {2.8f, 1.0f, 2.8f});
+        riseColl.SetCollisionType(CollisionType::AABB_ONLY);
+        m_collisionManager.AddCollider(std::move(riseColl));
+    }
+
+    // Fire pit crossing (narrow bridges)
+    Vector3 bridge1 = {50.0f, 4.0f, 2.0f};
+    DrawCube(bridge1, 6.0f, 1.0f, 1.2f, Color{60, 20, 15, 255});
+    Collision c2({50.0f, 4.0f, 2.0f}, {6.0f, 1.0f, 1.2f});
+    c2.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c2));
+
+    // Ascending fire platforms
+    Vector3 firePlat2 = {65.0f, 8.0f, -1.0f};
+    DrawCube(firePlat2, 2.2f, 1.0f, 2.2f, Color{120, 40, 25, 255});
+    Collision c3({65.0f, 8.0f, -1.0f}, {2.2f, 1.0f, 2.2f});
+    c3.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c3));
+
+    // Magma chamber platforms
+    Vector3 magma1 = {80.0f, 5.0f, 3.0f};
+    DrawCube(magma1, 3.0f, 1.0f, 3.0f, Color{90, 25, 15, 255});
+    Collision c4({80.0f, 5.0f, 3.0f}, {3.0f, 1.0f, 3.0f});
+    c4.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c4));
+
+    // Final volcanic platform
+    Vector3 endPos = {100.0f, 2.0f, 0.0f};
+    DrawCube(endPos, 5.0f, 1.0f, 5.0f, Color{70, 20, 10, 255});
+    Collision endPlatform({100.0f, 2.0f, 0.0f}, {5.0f, 1.0f, 5.0f});
+    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(endPlatform));
+}
+
+void Game::CreateSkyIslandsMap()
+{
+    // Sky islands floating parkour map using Raylib functions
+    Vector3 startPos = {0.0f, 10.0f, 0.0f};
+
+    // Cloud starting platform
+    DrawCube(startPos, 4.0f, 1.0f, 4.0f, WHITE);
+    Collision startPlatform({0.0f, 10.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
+    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(startPlatform));
+
+    // Floating island chain
+    for (int i = 0; i < 10; i++)
+    {
+        float x = 15.0f + i * 8.0f;
+        float y = 10.0f + sin(i * 0.5f) * 3.0f;
+        float z = sin(i * 0.3f) * 5.0f;
+
+        Vector3 islandPos = {x, y, z};
+        Color islandColor = Color{static_cast<unsigned char>(200 + i * 5), 220, 240, 255};
+        DrawCube(islandPos, 3.0f, 1.0f, 3.0f, islandColor);
+        Collision islandColl(islandPos, {3.0f, 1.0f, 3.0f});
+        islandColl.SetCollisionType(CollisionType::AABB_ONLY);
+        m_collisionManager.AddCollider(std::move(islandColl));
+    }
+
+    // Cloud bridges
+    Vector3 cloudBridge1 = {45.0f, 12.0f, 2.0f};
+    DrawCube(cloudBridge1, 8.0f, 1.0f, 2.0f, Color{240, 240, 255, 255});
+    Collision c1({45.0f, 12.0f, 2.0f}, {8.0f, 1.0f, 2.0f});
+    c1.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c1));
+
+    // High altitude challenge
+    Vector3 highPlat = {70.0f, 18.0f, -3.0f};
+    DrawCube(highPlat, 2.5f, 1.0f, 2.5f, Color{220, 230, 250, 255});
+    Collision c2({70.0f, 18.0f, -3.0f}, {2.5f, 1.0f, 2.5f});
+    c2.SetCollisionType(CollisionType::AABB_ONLY);
+    m_collisionManager.AddCollider(std::move(c2));
+
+    // Descending cloud platforms
+    for (int i = 0; i < 6; i++)
+    {
+        Vector3 descendPos = {85.0f + i * 4.0f, 15.0f - i * 1.5f, 1.0f};
+        DrawCube(descendPos, 2.8f, 1.0f, 2.8f, Color{210, 220, 245, 255});
+        Collision descendColl(descendPos, {2.8f, 1.0f, 2.8f});
+        descendColl.SetCollisionType(CollisionType::AABB_ONLY);
+        m_collisionManager.AddCollider(std::move(descendColl));
+    }
+
+    // Final landing platform
+    Vector3 endPos = {110.0f, 8.0f, -1.0f};
+    DrawCube(endPos, 6.0f, 1.0f, 6.0f, Color{255, 255, 255, 255});
+    Collision endPlatform({110.0f, 8.0f, -1.0f}, {6.0f, 1.0f, 6.0f});
     endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
     m_collisionManager.AddCollider(std::move(endPlatform));
 }

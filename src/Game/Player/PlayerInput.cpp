@@ -50,8 +50,9 @@ void PlayerInput::ProcessInput()
 void PlayerInput::HandleJumpInput() const {
     if (IsKeyPressed(KEY_SPACE))
     {
-        float jumpImpulse = m_player->GetPhysics().GetJumpStrength() * 1.0f;
+        float jumpImpulse = m_player->GetPhysics().GetJumpStrength() * 1.2f; // Slightly stronger jump
         m_player->ApplyJumpImpulse(jumpImpulse);
+        TraceLog(LOG_DEBUG, "PlayerInput::HandleJumpInput() - Jump key pressed, impulse: %.2f", jumpImpulse);
     }
 }
 
