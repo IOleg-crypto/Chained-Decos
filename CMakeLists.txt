@@ -253,11 +253,13 @@ install(TARGETS ChainedDecos
     ARCHIVE DESTINATION lib
 )
 
-# Install resources
-install(DIRECTORY resources/
-    DESTINATION share/ChainedDecos/resources
-    FILES_MATCHING PATTERN "*"
-)
+# # Install resources (only if directory exists)
+# if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
+#     install(DIRECTORY resources/
+#         DESTINATION share/ChainedDecos/resources
+#         FILES_MATCHING PATTERN "*"
+#     )
+# endif()
 
 # Install configuration files
 install(FILES game.cfg
