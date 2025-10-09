@@ -14,7 +14,7 @@ Engine::Engine() : Engine(800, 600) {}
 Engine::Engine(const int screenX, const int screenY)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
       m_windowInitialized(false), m_renderManager(std::make_shared<RenderManager>()), m_shouldExit(false),
-      m_showDebug(false), m_showCollisionDebug(true), m_isEngineInit(false)
+      m_showDebug(false), m_showCollisionDebug(false), m_isEngineInit(false)
 {
     if (m_screenX <= 0 || m_screenY <= 0)
     {
