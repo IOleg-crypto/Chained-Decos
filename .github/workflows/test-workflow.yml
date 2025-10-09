@@ -1,4 +1,4 @@
-name: Test Suite
+name: CI/CD Pipeline
 
 on:
   workflow_dispatch:
@@ -9,11 +9,62 @@ on:
 
 env:
   CI: true
+  BUILD_TYPE: Debug
 
 jobs:
+  # Security and dependency scanning
+  security-scan:
+    name: Security & Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run security scan
+        uses: securecodewarrior/github-action-gosec@master
+        with:
+          args: ./...
+
+      - name: Dependency vulnerability scan
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'ChainedDecos'
+          path: .
+          format: 'ALL'
+
+  # Code quality checks
+  quality-checks:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install clang-format and clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-14 clang-tidy-14
+
+      - name: Check code formatting
+        run: |
+          find src -name "*.cpp" -o -name "*.h" | xargs clang-format-14 --dry-run --Werror
+
+      - name: Run clang-tidy
+        run: |
+          mkdir -p build/tidy
+          cd build/tidy
+          cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../..
+          find ../../src -name "*.cpp" -exec clang-tidy-14 -p . {} \; || true
+
+  # Main test matrix
   test:
-    name: Run Tests (${{ matrix.os }}, ${{ matrix.compiler }})
+    name: Tests (${{ matrix.os }}, ${{ matrix.compiler }})
     runs-on: ${{ matrix.os }}
+    needs: [security-scan, quality-checks]
 
     strategy:
       fail-fast: false
@@ -22,280 +73,282 @@ jobs:
           - os: ubuntu-22.04
             compiler: gcc
             version: 11
+            generator: "Unix Makefiles"
 
           - os: ubuntu-22.04
             compiler: clang
             version: 14
+            generator: "Unix Makefiles"
 
           - os: windows-2022
             compiler: msvc
             version: 2022
-
+            generator: "Ninja"
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-    - name: Setup ccache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.ccache
-          C:\ccache
-        key: ccache-test-${{ matrix.os }}-${{ matrix.compiler }}-${{ github.sha }}
-        restore-keys: |
-          ccache-test-${{ matrix.os }}-${{ matrix.compiler }}-
-          ccache-test-${{ matrix.os }}-
+      - name: Set up build environment
+        id: build-env
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$(date -u +'%Y%m%d-%H%M%S')" >> "$GITHUB_OUTPUT"
 
-    - name: Setup dependency cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          .deps
-          ~/.deps
-        key: deps-test-${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
-        restore-keys: |
-          deps-test-${{ matrix.os }}-${{ matrix.compiler }}-
-          deps-test-${{ matrix.os }}-
+      # Optimized caching strategy
+      - name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            C:\ccache
+          key: ccache-${{ matrix.os }}-${{ matrix.compiler }}-${{ steps.build-env.outputs.timestamp }}
+          restore-keys: |
+            ccache-${{ matrix.os }}-${{ matrix.compiler }}-
+            ccache-${{ matrix.os }}-
 
-    - name: Set up build environment
-      shell: bash
-      id: build-env
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+      - name: Setup dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .deps
+            ~/.deps
+            build/.deps
+          key: deps-${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt', '**/cmake/*.cmake') }}
+          restore-keys: |
+            deps-${{ matrix.os }}-${{ matrix.compiler }}-
+            deps-${{ matrix.os }}-
 
-    # ---------------- Linux (Ubuntu) setup ----------------
-    - name: Install dependencies (Ubuntu)
-      if: startsWith(matrix.os, 'ubuntu')
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build \
-          libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-          libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-          libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-          pkg-config ccache
+      # Platform-specific setup
+      - name: Install dependencies (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build ccache \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev pkg-config
 
-    - name: Set up GCC (Ubuntu)
-      if: matrix.compiler == 'gcc' && startsWith(matrix.os, 'ubuntu')
-      run: |
-        echo "CC=gcc-${{ matrix.version }}" >> "$GITHUB_ENV"
-        echo "CXX=g++-${{ matrix.version }}" >> "$GITHUB_ENV"
+      - name: Set compiler environment (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        shell: bash
+        run: |
+          if [ "${{ matrix.compiler }}" = "gcc" ]; then
+            echo "CC=gcc-${{ matrix.version }}" >> "$GITHUB_ENV"
+            echo "CXX=g++-${{ matrix.version }}" >> "$GITHUB_ENV"
+          else
+            echo "CC=clang-${{ matrix.version }}" >> "$GITHUB_ENV"
+            echo "CXX=clang++-${{ matrix.version }}" >> "$GITHUB_ENV"
+          fi
 
-    - name: Set up Clang (Ubuntu)
-      if: matrix.compiler == 'clang' && startsWith(matrix.os, 'ubuntu')
-      run: |
-        echo "CC=clang-${{ matrix.version }}" >> "$GITHUB_ENV"
-        echo "CXX=clang++-${{ matrix.version }}" >> "$GITHUB_ENV"
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-2022'
+        shell: cmd
+        run: |
+          choco install cmake ninja ccache --no-progress -y
 
-    # ---------------- Windows setup ----------------
-    - name: Install dependencies (Windows)
-      if: matrix.os == 'windows-2022'
-      run: |
-        choco install cmake ninja ccache zip --no-progress
-
-
-    - name: Clear CMake cache
-      shell: bash
-      run: |
-        if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          # Windows commands
-          rm -rf "${{ steps.build-env.outputs.build-output-dir }}" 2>/dev/null || echo "Build dir not found or already clean"
-          rm -rf ".deps" 2>/dev/null || echo "Deps dir not found or already clean"
-          rm -f CMakeCache.txt cmake_install.cmake 2>/dev/null || echo "Cache files not found or already clean"
-          # Remove any remaining CMakeFiles directories
-          find . -name "CMakeFiles" -type d -exec rm -rf {} + 2>/dev/null || echo "No CMakeFiles dirs found"
-        else
-          # Unix/Linux commands
+      # Clean build environment
+      - name: Clean build environment
+        shell: bash
+        run: |
+          echo "Cleaning build environment..."
           rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
           rm -rf ".deps"
-          rm -f CMakeCache.txt cmake_install.cmake CMakeFiles/
-        fi
+          rm -f CMakeCache.txt cmake_install.cmake
+          find . -name "CMakeFiles" -type d -exec rm -rf {} + 2>/dev/null || true
 
-    - name: Create build directory
-      run: mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
+      # Configure CMake
+      - name: Configure CMake
+        shell: bash
+        run: |
+          mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
+          cd "${{ steps.build-env.outputs.build-output-dir }}"
 
-    - name: Configure CMake for testing
-       shell: bash
-       run: |
-         if [ "${{ matrix.os }}" = "windows-2022" ]; then
-           # Use Ninja generator for Windows with x64 architecture
-           cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
-             -GNinja \
-             -DCMAKE_BUILD_TYPE=Debug \
-             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-             -DCMAKE_SYSTEM_VERSION=10.0 \
-             -DCMAKE_VS_PLATFORM_NAME=x64 \
-             -DBUILD_TESTS=ON \
-             -DBUILD_BENCHMARKS=OFF \
-             -DENABLE_COVERAGE=OFF \
-             -DENABLE_WARNINGS=OFF \
-             -DENABLE_UNITY_BUILD=OFF \
-             -DENABLE_SANITIZERS=OFF \
-             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-             -DENABLE_DEV_TOOLS=OFF \
-             -DENABLE_DEBUG_INFO=ON \
-             -DGTEST_FORCE_SHARED_CRT=OFF \
-             -S "${{ github.workspace }}"
-         else
-           # Use default generator for other platforms
-           cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
-             -DCMAKE_BUILD_TYPE=Debug \
-             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-             -DBUILD_TESTS=ON \
-             -DBUILD_BENCHMARKS=OFF \
-             -DENABLE_COVERAGE=OFF \
-             -DENABLE_WARNINGS=OFF \
-             -DENABLE_UNITY_BUILD=ON \
-             -DENABLE_SANITIZERS=OFF \
-             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-             -DENABLE_DEV_TOOLS=OFF \
-             -DENABLE_DEBUG_INFO=ON \
-             -S "${{ github.workspace }}"
-         fi
-
-    - name: Build tests and benchmarks
-      shell: bash
-      run: |
-        cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
-          --config Debug \
-          --target ChainedDecos ChainedDecosMapEditor ChainedDecosTests benchmarks \
-          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
-
-    - name: Set up test environment (Windows)
-      if: matrix.os == 'windows-2022'
-      shell: bash
-      run: |
-        echo "Setting up Windows test environment..."
-
-        # Create a directory for test artifacts
-        mkdir -p "${{ steps.build-env.outputs.build-output-dir }}/test_results"
-
-        # Since tests are now self-contained (no raylib dependency), we mainly need to ensure
-        # the test executable is properly built and can run in its own directory
-        TEST_BIN_DIR="${{ steps.build-env.outputs.build-output-dir }}/bin/tests/Debug"
-
-        if [ -d "$TEST_BIN_DIR" ]; then
-          echo "Test binary directory found: $TEST_BIN_DIR"
-
-          # Check if test executable exists
-          if [ -f "$TEST_BIN_DIR/ChainedDecosTests.exe" ]; then
-            echo "Test executable found, checking dependencies..."
-
-            # Use objdump (if available) or just verify the file exists and is executable
-            ls -la "$TEST_BIN_DIR/ChainedDecosTests.exe"
-
-            # Since we've removed raylib dependency, the test should be self-contained
-            echo "Tests are configured to be self-contained (no external DLL dependencies)"
+          if [ "${{ matrix.os }}" = "windows-2022" ]; then
+            # Windows configuration
+            cmake -G "${{ matrix.generator }}" \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+              -DCMAKE_SYSTEM_VERSION=10.0 \
+              -DCMAKE_VS_PLATFORM_NAME=x64 \
+              -DBUILD_TESTS=ON \
+              -DBUILD_BENCHMARKS=ON \
+              -DENABLE_COVERAGE=${{ matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc' }} \
+              -DENABLE_WARNINGS=ON \
+              -DENABLE_UNITY_BUILD=ON \
+              -DENABLE_SANITIZERS=${{ startsWith(matrix.os, 'ubuntu') }} \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DENABLE_DEV_TOOLS=ON \
+              -DENABLE_DEBUG_INFO=ON \
+              -S "${{ github.workspace }}"
           else
-            echo "Test executable not found yet, it will be created during build"
-            echo "Available files in test directory:"
-            ls -la "$TEST_BIN_DIR" 2>/dev/null || echo "Directory is empty"
-          fi
-        else
-          echo "Test binary directory does not exist yet, will be created during build"
-        fi
-
-    - name: Run tests (Windows)
-      if: matrix.os == 'windows-2022'
-      shell: bash
-      run: |
-        echo "Running tests on Windows..."
-
-        # Set up environment variables
-        TEST_BIN_DIR="${{ steps.build-env.outputs.build-output-dir }}/bin/tests/Debug"
-
-        if [ -d "$TEST_BIN_DIR" ]; then
-          echo "Test directory: $TEST_BIN_DIR"
-
-          # Since tests are now self-contained (no raylib DLL dependency), we can run them directly
-          cd "$TEST_BIN_DIR"
-
-          # First try with CTest (recommended approach)
-          echo "Running tests with CTest..."
-          ctest --output-on-failure --build-config Debug -V --no-compress-output || echo "CTest execution completed with issues"
-
-          # Also verify the test executable exists and is runnable
-          if [ -f "ChainedDecosTests.exe" ]; then
-            echo "Found test executable: ChainedDecosTests.exe"
-            echo "Running test executable directly to verify it works..."
-            ./ChainedDecosTests.exe --gtest_output=xml:test_results.xml || echo "Direct execution failed (this is OK if CTest worked)"
-
-            # List the generated test results
-            echo "Test result files:"
-            ls -la ./*test*.xml 2>/dev/null || echo "No test result XML files found"
-          else
-            echo "Test executable not found!"
-            echo "Available files in test directory:"
-            ls -la . 2>/dev/null || echo "Directory is empty"
+            # Unix/Linux configuration
+            cmake -G "${{ matrix.generator }}" \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+              -DBUILD_TESTS=ON \
+              -DBUILD_BENCHMARKS=ON \
+              -DENABLE_COVERAGE=${{ matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc' }} \
+              -DENABLE_WARNINGS=ON \
+              -DENABLE_UNITY_BUILD=ON \
+              -DENABLE_SANITIZERS=ON \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DENABLE_DEV_TOOLS=ON \
+              -DENABLE_DEBUG_INFO=ON \
+              -S "${{ github.workspace }}"
           fi
 
-          # Copy test results to artifacts directory
-          cp -r ./*test*.xml "${{ steps.build-env.outputs.build-output-dir }}/test_results/" 2>/dev/null || echo "No test result files to copy"
-          cp -r ./*results*.xml "${{ steps.build-env.outputs.build-output-dir }}/test_results/" 2>/dev/null || echo "No additional result files to copy"
-        else
-          echo "Test directory not found: $TEST_BIN_DIR"
-          echo "Available directories:"
-          find "${{ steps.build-env.outputs.build-output-dir }}/bin" -type d 2>/dev/null || echo "No bin directories found"
-        fi
+      # Build
+      - name: Build project
+        shell: bash
+        run: |
+          cd "${{ steps.build-env.outputs.build-output-dir }}"
+          cpu_cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
-    - name: Run tests (Ubuntu)
-      if: startsWith(matrix.os, 'ubuntu')
-      shell: bash
-      run: |
-        echo "Running tests on Ubuntu..."
+          cmake --build . \
+            --config ${{ env.BUILD_TYPE }} \
+            --target ChainedDecos ChainedDecosMapEditor ChainedDecosTests benchmarks \
+            --parallel $cpu_cores \
+            --verbose
 
-        # Create test results directory
-        mkdir -p "${{ steps.build-env.outputs.build-output-dir }}/test_results"
+      # Run tests
+      - name: Run tests
+        shell: bash
+        run: |
+          cd "${{ steps.build-env.outputs.build-output-dir }}"
+          mkdir -p test_results
 
-        # Run tests using ctest
-        cd "${{ steps.build-env.outputs.build-output-dir }}"
-        ctest --output-on-failure --build-config Debug -V
+          echo "Running tests on ${{ matrix.os }} with ${{ matrix.compiler }}..."
 
-        # Copy test results
-        find . -name "*test*.xml" -type f -exec cp {} test_results/ \; 2>/dev/null || echo "No test result files found"
+          # Run CTest with comprehensive output
+          ctest --output-on-failure \
+                --build-config ${{ env.BUILD_TYPE }} \
+                --output-junit test_results/junit.xml \
+                --timeout 300
 
-    - name: Run static analysis
-      shell: bash
-      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
-      run: |
-        echo "🔍 Running static analysis..."
+          # Copy all test artifacts
+          find . -name "*test*.xml" -type f -exec cp {} test_results/ \; 2>/dev/null || true
+          find . -name "*results*.xml" -type f -exec cp {} test_results/ \; 2>/dev/null || true
 
-        # Count warnings in build output
-        echo "📊 Build completed successfully"
+      # Generate coverage report (Ubuntu GCC only)
+      - name: Generate coverage report
+        if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
+        shell: bash
+        run: |
+          cd "${{ steps.build-env.outputs.build-output-dir }}"
+          mkdir -p coverage
 
-        # Check for potential memory leaks or issues
-        echo "🔍 Checking for common C++ issues..."
-        find src -name "*.cpp" -o -name "*.h" | wc -l | xargs echo "Found files to analyze:"
+          # Install lcov if not present
+          sudo apt-get install -y lcov
 
-    - name: Generate coverage report (Ubuntu GCC only)
-      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
-      shell: bash
-      run: |
-        echo "📊 Generating coverage report..."
-        # Coverage would be generated here if we had tests with coverage instrumentation
-        echo "ℹ️ Coverage report generation skipped (no tests with coverage)"
+          # Generate coverage report
+          lcov --capture --directory . --output-file coverage.info --exclude '/usr/*' --exclude '*/tests/*' --exclude '*/test/*'
+          lcov --remove coverage.info '*/tests/*' '*/test/*' --output-file coverage.info
+          lcov --list coverage.info
 
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-${{ matrix.os }}-${{ matrix.compiler }}
-        path: |
-          ${{ steps.build-env.outputs.build-output-dir }}/Testing/
-          ${{ steps.build-env.outputs.build-output-dir }}/test_results/
-          ${{ steps.build-env.outputs.build-output-dir }}/compile_commands.json
-        retention-days: 7
+          # Generate HTML report
+          genhtml coverage.info --output-directory coverage/html --title "ChainedDecos Coverage Report"
 
-    - name: Upload coverage report (Ubuntu GCC only)
-      uses: actions/upload-artifact@v4
-      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc' && always()
-      with:
-        name: coverage-report-${{ matrix.os }}-${{ matrix.compiler }}
-        path: |
-          ${{ steps.build-env.outputs.build-output-dir }}/coverage/
-        retention-days: 30
+      # Upload test results
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.compiler }}-${{ steps.build-env.outputs.timestamp }}
+          path: |
+            ${{ steps.build-env.outputs.build-output-dir }}/test_results/
+            ${{ steps.build-env.outputs.build-output-dir }}/Testing/
+          retention-days: 7
+
+      # Upload coverage report
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc' && always()
+        with:
+          name: coverage-report-${{ matrix.os }}-${{ matrix.compiler }}-${{ steps.build-env.outputs.timestamp }}
+          path: ${{ steps.build-env.outputs.build-output-dir }}/coverage/
+          retention-days: 30
+
+      # Upload build artifacts (for releases)
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: build-artifacts-${{ matrix.os }}-${{ matrix.compiler }}-${{ steps.build-env.outputs.timestamp }}
+          path: |
+            ${{ steps.build-env.outputs.build-output-dir }}/bin/
+          retention-days: 90
+
+  # Performance benchmarks
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-22.04
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build ccache \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev pkg-config
+
+      - name: Set up build environment
+        id: build-env
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-benchmark-${{ github.sha }}
+          restore-keys: ccache-benchmark-
+
+      - name: Configure and build benchmarks
+        shell: bash
+        run: |
+          mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
+          cd "${{ steps.build-env.outputs.build-output-dir }}"
+
+          cmake -G "Unix Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_BENCHMARKS=ON \
+            -DENABLE_WARNINGS=ON \
+            -DENABLE_UNITY_BUILD=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -S "${{ github.workspace }}"
+
+          cmake --build . --config Release --target benchmarks --parallel $(nproc)
+
+      - name: Run benchmarks
+        shell: bash
+        run: |
+          cd "${{ steps.build-env.outputs.build-output-dir }}"
+          ./bin/benchmarks --benchmark_out=benchmark_results.json --benchmark_out_format=json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: ${{ steps.build-env.outputs.build-output-dir }}/benchmark_results.json
+          retention-days: 90
