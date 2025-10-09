@@ -114,6 +114,9 @@ if(WIN32)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
     add_compile_definitions(NOMINMAX)
+
+    # Ensure proper DLL loading on Windows
+    add_compile_definitions(_WIN32_WINNT=0x0601)  # Windows 7+
 endif()
 
 if(APPLE)
