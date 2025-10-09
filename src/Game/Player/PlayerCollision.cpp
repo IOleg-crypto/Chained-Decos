@@ -1,5 +1,6 @@
 #include "Player.h"
 #include "PlayerCollision.h"
+#include <cmath>
 
 PlayerCollision::PlayerCollision(Player* player) 
     : m_player(player) {
@@ -93,9 +94,23 @@ bool PlayerCollision::CheckCollisionWithBVH(const Collision& other, Vector3& out
                     float penetration = hit.distance;
 
                     // Response should be opposite to the surface normal, not ray direction
+                    // Account for MODEL_Y_OFFSET in collision response
                     response.x = -hit.normal.x * penetration;
                     response.y = -hit.normal.y * penetration;
                     response.z = -hit.normal.z * penetration;
+
+                    // Special handling for ground collision (when normal is mostly upward)
+                    if (hit.normal.y > 0.7f && fabsf(hit.normal.x) < 0.3f && fabsf(hit.normal.z) < 0.3f)
+                    {
+                        // For ground collision, ensure the collision box is positioned correctly
+                        // relative to the visual model's offset
+                        float modelOffset = Player::MODEL_Y_OFFSET; // -1.0f
+                        if (response.y > 0.0f) // Pushing upward (away from ground penetration)
+                        {
+                            // Adjust response to account for model offset
+                            response.y += fabsf(modelOffset) * 0.1f;
+                        }
+                    }
 
                     // Only consider significant penetrations to avoid jitter
                     if (penetration > 0.01f) {

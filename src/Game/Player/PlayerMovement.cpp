@@ -275,7 +275,8 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
         float bottom = center.y - size.y * 0.5f;
         // Account for MODEL_Y_OFFSET when checking ground proximity
         // The visual model is offset by -1.0f, so we need to check against a higher threshold
-        if (bottom <= (1.5f - Player::MODEL_Y_OFFSET)) // More generous ground proximity for jumping
+        // The effective ground level for the collision box should be MODEL_Y_OFFSET higher than visual ground
+        if (bottom <= (1.5f + fabsf(Player::MODEL_Y_OFFSET)))
         {
             grounded = true;
             TraceLog(LOG_DEBUG, "PlayerMovement::UpdateGrounded() - Force grounded due to proximity: bottom=%.2f", bottom);
@@ -325,12 +326,16 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
         if (gap >= 0.0f && gap <= snapThreshold)
         {
             Vector3 newPos = m_position;
-            newPos.y = hitPoint.y + size.y * 0.5f;
+            // Account for MODEL_Y_OFFSET when positioning collision box
+            // The collision box should be positioned so the visual model (offset by -1.0f) sits on the ground
+            newPos.y = hitPoint.y + size.y * 0.5f - Player::MODEL_Y_OFFSET;
             SetPosition(newPos);
             Vector3 vel = m_physics.GetVelocity();
             vel.y = 0.0f;
             m_physics.SetVelocity(vel);
             m_physics.SetGroundLevel(true);
+            TraceLog(LOG_DEBUG, "PlayerMovement::SnapToGround() - Snapped to ground: collision_box_y=%.2f, visual_model_y=%.2f",
+                     newPos.y, newPos.y + Player::MODEL_Y_OFFSET);
             return;
         }
     }
