@@ -130,7 +130,7 @@ jobs:
              -DCMAKE_SYSTEM_VERSION=10.0 \
              -DCMAKE_VS_PLATFORM_NAME=x64 \
              -DBUILD_TESTS=ON \
-             -DBUILD_BENCHMARKS=ON \
+             -DBUILD_BENCHMARKS=OFF \
              -DENABLE_COVERAGE=OFF \
              -DENABLE_WARNINGS=OFF \
              -DENABLE_UNITY_BUILD=OFF \
@@ -147,10 +147,10 @@ jobs:
              -DCMAKE_C_COMPILER_LAUNCHER=ccache \
              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
              -DBUILD_TESTS=ON \
-             -DBUILD_BENCHMARKS=ON \
+             -DBUILD_BENCHMARKS=OFF \
              -DENABLE_COVERAGE=OFF \
              -DENABLE_WARNINGS=OFF \
-             -DENABLE_UNITY_BUILD=OFF \
+             -DENABLE_UNITY_BUILD=ON \
              -DENABLE_SANITIZERS=OFF \
              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
              -DENABLE_DEV_TOOLS=OFF \
