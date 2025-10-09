@@ -29,8 +29,8 @@ CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=D:/gitnext/Chained Decos/.deps/nlohmann_
 //Install path prefix, prepended onto install directories.
 CMAKE_INSTALL_PREFIX:PATH=C:/Program Files (x86)/nlohmann_json-populate
 
-//make program
-CMAKE_MAKE_PROGRAM:FILEPATH=D:/CLion 2025.2.1/bin/ninja/win/x64/ninja.exe
+//No help, variable specified on the command line.
+CMAKE_MAKE_PROGRAM:FILEPATH=C:/Users/olegg/AppData/Local/Microsoft/WinGet/Packages/Ninja-build.Ninja_Microsoft.Winget.Source_8wekyb3d8bbwe/ninja.exe
 
 //Value Computed by CMake
 CMAKE_PROJECT_COMPAT_VERSION:STATIC=
