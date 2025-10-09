@@ -8,10 +8,25 @@ set(TEST_SOURCES
 # Create test executable
 add_executable(ChainedDecosTests ${TEST_SOURCES})
 
-# Link with main libraries
+# Create a minimal test library with only the components needed for testing
+add_library(ChainedDecosTestComponents STATIC
+    # Only include the specific components that tests actually need
+    ../src/Engine/Math/Vector3.cpp
+    ../src/Engine/Physics/PhysicsComponent.cpp
+    ../src/Engine/Collision/CollisionManager.cpp
+    ../src/Engine/Collision/CollisionStructures.cpp
+)
+
+target_include_directories(ChainedDecosTestComponents
+    PUBLIC
+        ../src
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Link tests with only the minimal components needed (no raylib dependencies)
 target_link_libraries(ChainedDecosTests
     PRIVATE
-        ChainedDecosEngine
+        ChainedDecosTestComponents
         # Only link specific game components needed for tests, not full ChainedDecosGame
         # ChainedDecosGame  # Commented out to avoid GLFW dependency in tests
         GTest::gtest_main
@@ -40,13 +55,23 @@ if(WIN32)
         CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded"
     )
 
+    set_target_properties(ChainedDecosTestComponents PROPERTIES
+        MSVC_RUNTIME_LIBRARY "MultiThreaded"
+        CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded"
+    )
+
     # Add compile definitions to force static linking
     target_compile_definitions(ChainedDecosTests PRIVATE
         GTEST_LINKED_AS_SHARED_LIBRARY=0
         GTEST_CREATE_SHARED_LIBRARY=0
     )
 
-    # Add winmm library for Windows timer functions (needed by raylib)
+    # Define that we're building without raylib to avoid any raylib-specific code paths
+    target_compile_definitions(ChainedDecosTestComponents PRIVATE
+        TEST_BUILD_NO_RAYLIB
+    )
+
+    # Add winmm library for Windows timer functions (needed by some system functions)
     target_link_libraries(ChainedDecosTests PRIVATE winmm)
 endif()
 
