@@ -32,8 +32,21 @@ set_target_properties(ChainedDecosTests PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
-# Add winmm library for Windows timer functions (needed by raylib)
+# Force static linking on Windows to avoid DLL issues
 if(WIN32)
+    # Add static linking flags for Windows
+    set_target_properties(ChainedDecosTests PROPERTIES
+        MSVC_RUNTIME_LIBRARY "MultiThreaded"
+        CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded"
+    )
+
+    # Add compile definitions to force static linking
+    target_compile_definitions(ChainedDecosTests PRIVATE
+        GTEST_LINKED_AS_SHARED_LIBRARY=0
+        GTEST_CREATE_SHARED_LIBRARY=0
+    )
+
+    # Add winmm library for Windows timer functions (needed by raylib)
     target_link_libraries(ChainedDecosTests PRIVATE winmm)
 endif()
 
@@ -61,61 +74,6 @@ add_custom_target(run_tests_with_correct_dir
     COMMENT "Running tests from correct working directory"
 )
 
-# Copy required DLLs for Windows
-if(WIN32)
-    # Find all DLL files in multiple possible locations for different build environments
-    file(GLOB_RECURSE DLL_FILES
-        "${CMAKE_BINARY_DIR}/bin/*.dll"
-        "${CMAKE_BINARY_DIR}/*.dll"
-        "${CMAKE_SOURCE_DIR}/.deps/*/bin/*.dll"
-        "${CMAKE_SOURCE_DIR}/.deps/*/*.dll"
-        # CI environment paths
-        "D:/a/*/build/bin/*.dll"
-        "D:/a/*/*.dll"
-    )
-
-    # Also copy specific essential DLLs that might be in subdirectories
-    set(ESSENTIAL_DLLS
-        "raylib.dll"
-        "glfw3.dll"
-        "openal32.dll"
-        "winmm.dll"
-    )
-
-    foreach(DLL_FILE ${DLL_FILES})
-        get_filename_component(DLL_NAME ${DLL_FILE} NAME)
-        add_custom_command(TARGET ChainedDecosTests POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${DLL_FILE}
-            $<TARGET_FILE_DIR:ChainedDecosTests>/${DLL_NAME}
-            COMMENT "Copying ${DLL_NAME} to test directory"
-        )
-    endforeach()
-
-    # Additional step to ensure essential DLLs are copied from common locations
-    foreach(ESSENTIAL_DLL ${ESSENTIAL_DLLS})
-        if(EXISTS "${CMAKE_BINARY_DIR}/bin/${ESSENTIAL_DLL}")
-            add_custom_command(TARGET ChainedDecosTests POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CMAKE_BINARY_DIR}/bin/${ESSENTIAL_DLL}"
-                $<TARGET_FILE_DIR:ChainedDecosTests>/${ESSENTIAL_DLL}
-                COMMENT "Ensuring ${ESSENTIAL_DLL} is available"
-            )
-        endif()
-    endforeach()
-
-    # Also try to copy from raylib installation directory
-    if(EXISTS "C:/Program Files/raylib/bin/${ESSENTIAL_DLLS}")
-        foreach(ESSENTIAL_DLL ${ESSENTIAL_DLLS})
-            add_custom_command(TARGET ChainedDecosTests POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "C:/Program Files/raylib/bin/${ESSENTIAL_DLL}"
-                $<TARGET_FILE_DIR:ChainedDecosTests>/${ESSENTIAL_DLL}
-                COMMENT "Copying ${ESSENTIAL_DLL} from raylib installation"
-            )
-        endforeach()
-    endif()
-endif()
 
 # Custom test targets
 add_custom_target(run_unit_tests

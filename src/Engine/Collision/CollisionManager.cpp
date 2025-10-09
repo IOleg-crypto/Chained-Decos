@@ -11,19 +11,78 @@
 #include <execution>
 #include <future>
 #include <thread>
+#include <unordered_map>
+#include <array>
 
 void CollisionManager::Initialize() const
 {
+    // Batch BVH initialization for better performance
+    std::vector<Collision*> bvhObjects;
+    bvhObjects.reserve(m_collisionObjects.size());
+
+    // Collect objects that need BVH initialization
     for (auto &collisionObject : m_collisionObjects)
     {
         if (collisionObject->GetCollisionType() == CollisionType::BVH_ONLY ||
             collisionObject->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
         {
-            collisionObject->InitializeBVH();
+            bvhObjects.push_back(collisionObject.get());
         }
     }
 
-    TraceLog(LOG_INFO, "CollisionManager initialized with %zu collision objects", m_collisionObjects.size());
+    // Initialize BVH for collected objects in parallel if many
+    if (bvhObjects.size() > 8)
+    {
+        std::for_each(std::execution::par, bvhObjects.begin(), bvhObjects.end(),
+                     [](Collision* obj) { obj->InitializeBVH(); });
+    }
+    else
+    {
+        for (Collision* obj : bvhObjects)
+        {
+            obj->InitializeBVH();
+        }
+    }
+
+    TraceLog(LOG_INFO, "CollisionManager initialized with %zu collision objects (%zu with BVH)",
+             m_collisionObjects.size(), bvhObjects.size());
+}
+
+// Spatial partitioning optimization
+void CollisionManager::UpdateSpatialPartitioning()
+{
+    if (m_collisionObjects.empty()) return;
+
+    // Clear existing spatial grid
+    m_spatialGrid.clear();
+
+    // Grid cell size (adjust based on typical object sizes)
+    const float cellSize = 10.0f;
+
+    for (size_t i = 0; i < m_collisionObjects.size(); ++i)
+    {
+        const auto& collisionObject = m_collisionObjects[i];
+        Vector3 min = collisionObject->GetMin();
+        Vector3 max = collisionObject->GetMax();
+
+        // Calculate grid cells this object spans
+        int minX = static_cast<int>(floorf(min.x / cellSize));
+        int maxX = static_cast<int>(floorf(max.x / cellSize));
+        int minZ = static_cast<int>(floorf(min.z / cellSize));
+        int maxZ = static_cast<int>(floorf(max.z / cellSize));
+
+        // Add object to all cells it spans
+        for (int x = minX; x <= maxX; ++x)
+        {
+            for (int z = minZ; z <= maxZ; ++z)
+            {
+                GridKey key = {x, z};
+                m_spatialGrid[key].push_back(i);
+            }
+        }
+    }
+
+    TraceLog(LOG_DEBUG, "Updated spatial partitioning: %zu cells created", m_spatialGrid.size());
 }
 
 void CollisionManager::AddCollider(Collision &&collisionObject)
@@ -37,6 +96,12 @@ void CollisionManager::AddCollider(Collision &&collisionObject)
     }
 
     TraceLog(LOG_INFO, "Added collision object, total count: %zu", m_collisionObjects.size());
+
+    // Update spatial partitioning periodically for better performance
+    if (m_collisionObjects.size() % 16 == 0) // Update every 16 objects
+    {
+        UpdateSpatialPartitioning();
+    }
 }
 
 void CollisionManager::AddColliderRef(Collision* collisionObject)
@@ -61,6 +126,13 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision) const
     if (m_collisionObjects.empty())
         return false;
 
+    // Use spatial partitioning for faster collision queries
+    if (!m_spatialGrid.empty())
+    {
+        return CheckCollisionSpatial(playerCollision);
+    }
+
+    // Fallback to original method if spatial partitioning not available
     for (const auto &collisionObject : m_collisionObjects)
     {
         bool collisionDetected = false;
@@ -247,7 +319,7 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     // Track processed models to avoid duplication
     std::set<std::string> processedModelNames;
     int collisionObjectsCreated = 0;
-    constexpr size_t MAX_COLLISION_INSTANCES = 3; // Reduced safety limit for better performance
+    constexpr size_t MAX_COLLISION_INSTANCES = 5; // Increased for better coverage
 
     // Process each model
     for (const auto &modelName : availableModels)
@@ -322,17 +394,27 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     }
 
     TraceLog(LOG_INFO,
-              "Automatic collision generation complete. Created %d collision objects from %zu models",
-              collisionObjectsCreated, availableModels.size());
+               "Automatic collision generation complete. Created %d collision objects from %zu models",
+               collisionObjectsCreated, availableModels.size());
+
+    // Final spatial partitioning update for optimal performance
+    UpdateSpatialPartitioning();
+
+    TraceLog(LOG_INFO, "Spatial partitioning updated with %zu cells", m_spatialGrid.size());
 }
 
 // Helper function to create cache key
 std::string CollisionManager::MakeCollisionCacheKey(const std::string &modelName, float scale) const
 {
-    // Round scale to 1 decimal place to avoid cache misses for tiny differences
-    int scaledInt = static_cast<int>(scale * 10.0f);
+    // Round scale to 2 decimal places for better precision while avoiding cache misses
+    int scaledInt = static_cast<int>(roundf(scale * 100.0f));
     std::string key = modelName + "_s" + std::to_string(scaledInt);
-    TraceLog(LOG_INFO, "Generated cache key: %s", key.c_str());
+
+    // Limit key length for performance
+    if (key.length() > 64) {
+        key = key.substr(0, 64);
+    }
+
     return key;
 }
 
@@ -352,20 +434,28 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         config->collisionPrecision == CollisionPrecision::IMPROVED_AABB ||
         config->collisionPrecision == CollisionPrecision::AUTO);
 
-    // Get or create cached collision
+    // Get or create cached collision with improved caching strategy
     std::string cacheKey = MakeCollisionCacheKey(modelName, scale);
     std::shared_ptr<Collision> cachedCollision;
-    
+
     auto cacheIt = m_collisionCache.find(cacheKey);
     if (cacheIt != m_collisionCache.end())
     {
         cachedCollision = cacheIt->second;
-        TraceLog(LOG_INFO, "Using cached collision for '%s'", cacheKey.c_str());
+        TraceLog(LOG_DEBUG, "Using cached collision for '%s'", cacheKey.c_str());
     }
     else
     {
+        // Create collision with optimized settings
         cachedCollision = CreateBaseCollision(model, modelName, config, needsPreciseCollision);
-        m_collisionCache[cacheKey] = cachedCollision;
+
+        // Only cache if it's actually useful (has geometry or is AABB)
+        if (cachedCollision && (cachedCollision->GetCollisionType() != CollisionType::AABB_ONLY ||
+            cachedCollision->GetSize().x > 1.0f || cachedCollision->GetSize().z > 1.0f))
+        {
+            m_collisionCache[cacheKey] = cachedCollision;
+            TraceLog(LOG_INFO, "Cached collision for '%s' (cache size: %zu)", cacheKey.c_str(), m_collisionCache.size());
+        }
     }
 
     // Create instance collision
@@ -495,6 +585,58 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
         hitNormal = nearestHitNormal;
         return true;
     }
+    return false;
+}
+
+// Spatial partitioning optimized collision checking
+bool CollisionManager::CheckCollisionSpatial(const Collision &playerCollision) const
+{
+    const Vector3 playerMin = playerCollision.GetMin();
+    const Vector3 playerMax = playerCollision.GetMax();
+
+    // Calculate grid cells the player spans
+    const float cellSize = 10.0f;
+    int playerMinX = static_cast<int>(floorf(playerMin.x / cellSize));
+    int playerMaxX = static_cast<int>(floorf(playerMax.x / cellSize));
+    int playerMinZ = static_cast<int>(floorf(playerMin.z / cellSize));
+    int playerMaxZ = static_cast<int>(floorf(playerMax.z / cellSize));
+
+    // Check only objects in overlapping grid cells
+    std::unordered_set<size_t> objectsToCheck;
+
+    for (int x = playerMinX; x <= playerMaxX; ++x)
+    {
+        for (int z = playerMinZ; z <= playerMaxZ; ++z)
+        {
+            GridKey key = {x, z};
+            auto it = m_spatialGrid.find(key);
+            if (it != m_spatialGrid.end())
+            {
+                for (size_t objIndex : it->second)
+                {
+                    objectsToCheck.insert(objIndex);
+                }
+            }
+        }
+    }
+
+    // Check collision against objects in relevant cells
+    for (size_t objIndex : objectsToCheck)
+    {
+        if (objIndex >= m_collisionObjects.size()) continue;
+
+        const auto &collisionObject = m_collisionObjects[objIndex];
+        bool collisionDetected = false;
+
+        if (collisionObject->IsUsingBVH())
+            collisionDetected = playerCollision.IntersectsBVH(*collisionObject);
+        else
+            collisionDetected = playerCollision.Intersects(*collisionObject);
+
+        if (collisionDetected)
+            return true;
+    }
+
     return false;
 }
 

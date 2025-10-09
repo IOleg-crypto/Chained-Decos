@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <execution>
 #include <future>
+#include <array>
 
 
 class ModelLoader;
@@ -28,6 +29,9 @@ public:
     // Initialize the collision system
     void Initialize() const;
 
+    // Update spatial partitioning for optimized collision queries
+    void UpdateSpatialPartitioning();
+
     // Add a new collider to the manager
     void AddCollider(Collision &&collider);
     
@@ -39,6 +43,9 @@ public:
 
     // Check if a collision intersects with any collider
     [[nodiscard]] bool CheckCollision(const Collision &playerCollision) const;
+
+    // Spatial partitioning optimized collision checking
+    [[nodiscard]] bool CheckCollisionSpatial(const Collision &playerCollision) const;
 
     // Check collision and provide collision response vector
     [[nodiscard]] bool CheckCollision(const Collision &playerCollision, Vector3 &response) const;
@@ -98,6 +105,22 @@ private:
     // Limit the number of precise collisions per model
     std::unordered_map<std::string, int> m_preciseCollisionCountPerModel;
     static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 50;
+
+    // Spatial partitioning for faster collision queries
+    struct GridKey {
+        int x, z;
+        bool operator==(const GridKey& other) const {
+            return x == other.x && z == other.z;
+        }
+    };
+
+    struct GridKeyHash {
+        std::size_t operator()(const GridKey& key) const {
+            return std::hash<int>()(key.x) ^ (std::hash<int>()(key.z) << 1);
+        }
+    };
+
+    std::unordered_map<GridKey, std::vector<size_t>, GridKeyHash> m_spatialGrid;
 };
 
 #endif // COLLISIONMANAGER_H
