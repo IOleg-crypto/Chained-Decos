@@ -13,11 +13,11 @@
 #include <World/World.h>
 #include <Model/Model.h>
 
-// Include new component headers
+// Include component headers - PlayerMovement.h must be included for member declarations
+#include "PlayerMovement.h"
 #include "PlayerCollision.h"
 #include "PlayerInput.h"
 #include "PlayerModel.h"
-#include "PlayerMovement.h"
 
 // Player: main player class that uses component classes
 class Player

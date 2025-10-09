@@ -11,12 +11,10 @@
 #include <string>
 #include <vector>
 
-
-#include "Engine/CameraController/CameraController.h" // Коректний шлях
-#include "Engine/Model/Model.h"                       // Коректний шлях
+#include "Engine/CameraController/CameraController.h" 
+#include "Engine/Model/Model.h"                       
 #include "MapObject.h"
-#include "../Map/ParkourMapGenerator.h"               // Add parkour map generator
-
+#include "../Map/ParkourMapGenerator.h"               
 // Main editor class for the map editor
 class Editor
 {
@@ -34,6 +32,8 @@ private:
     std::vector<std::string> m_availableModelNamesList;             // List of available models
     std::string m_currentlySelectedModelName;                       // Currently selected model for adding
     bool m_modelsInitialized;                                       // Flag to track if models are loaded
+    int m_gridSizes;
+
 
     // File dialog
     bool m_displayFileDialog;                                     // Show/hide file dialog
@@ -92,6 +92,7 @@ public:
     void LoadParkourMap(const std::string& mapName); // Load a parkour map into editor
     void GenerateParkourMap(const std::string& mapName); // Generate a new parkour map
     void ShowParkourMapSelector(); // Show parkour map selection dialog
+    int GetGridSize() const; // Get editor grid size
 
 private:
     // Rendering functions

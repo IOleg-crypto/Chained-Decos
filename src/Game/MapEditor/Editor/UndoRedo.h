@@ -9,9 +9,7 @@
 #include <string>
 #include <memory>
 #include <functional>
-
-// Forward declarations
-class MapObject;
+#include "MapObject.h"
 
 // Base class for undo/redo operations
 class UndoRedoOperation
@@ -28,12 +26,11 @@ class AddObjectOperation : public UndoRedoOperation
 {
 private:
     std::vector<MapObject>& m_objects;
-    MapObject* m_addedObject;
+    std::unique_ptr<MapObject> m_addedObject;
     int m_objectIndex;
 
 public:
     AddObjectOperation(std::vector<MapObject>& objects, const MapObject& obj, int index);
-    ~AddObjectOperation();
     void Undo() override;
     void Redo() override;
     std::string GetDescription() const override;
@@ -44,12 +41,11 @@ class RemoveObjectOperation : public UndoRedoOperation
 {
 private:
     std::vector<MapObject>& m_objects;
-    MapObject* m_removedObject;
+    std::unique_ptr<MapObject> m_removedObject;
     int m_objectIndex;
 
 public:
     RemoveObjectOperation(std::vector<MapObject>& objects, int index);
-    ~RemoveObjectOperation();
     void Undo() override;
     void Redo() override;
     std::string GetDescription() const override;
@@ -61,15 +57,14 @@ class ModifyObjectOperation : public UndoRedoOperation
 private:
     std::vector<MapObject>& m_objects;
     int m_objectIndex;
-    MapObject* m_oldState;
-    MapObject* m_newState;
+    std::unique_ptr<MapObject> m_oldState;
+    std::unique_ptr<MapObject> m_newState;
     std::string m_propertyName;
 
 public:
-    ModifyObjectOperation(std::vector<MapObject>& objects, int index, 
-                         const MapObject& oldState, const MapObject& newState, 
+    ModifyObjectOperation(std::vector<MapObject>& objects, int index,
+                         const MapObject& oldState, const MapObject& newState,
                          const std::string& propertyName);
-    ~ModifyObjectOperation();
     void Undo() override;
     void Redo() override;
     std::string GetDescription() const override;

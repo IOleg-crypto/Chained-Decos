@@ -5,17 +5,13 @@
 #include <iostream>
 #include <raylib.h>
 #include <raymath.h>
-
-
-// Forward declarations
-class Player;
+#include "Player.h"
 
 // PlayerInput: handles all input-related functionality
 class PlayerInput
 {
 public:
     PlayerInput(Player *player);
-    ~PlayerInput() = default;
 
     // Process input and apply movement
     void ProcessInput();

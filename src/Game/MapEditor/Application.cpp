@@ -23,7 +23,6 @@ void Application::Init() const
     // Configure window settings
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(m_width, m_height, m_windowName.c_str());
-    SetTargetFPS(60);
 
     // Check if window was created successfully
     if (!IsWindowReady())
@@ -99,7 +98,7 @@ void Application::Run() const
         // Render 3D scene
         BeginMode3D(m_editor->GetCameraController()->GetCamera());
         m_editor->GetCameraController()->SetCameraMode(CAMERA_FREE);
-        DrawGrid(50, 1.0f); // Draw reference grid
+        DrawGrid(m_editor->GetGridSize(), 1.0f); // Draw reference grid
 
         // Render all editor objects
         m_editor->Render();

@@ -86,7 +86,7 @@ int main() {
 
         // Test collision checking
         Collision testCollision(Vector3{50, 0, 0}, Vector3{1, 1, 1});
-        collisionManager->CheckCollision(testCollision);
+        [[maybe_unused]] bool hasCollision = collisionManager->CheckCollision(testCollision);
     }, 1000);
 
     // Vector3 Operations Benchmark

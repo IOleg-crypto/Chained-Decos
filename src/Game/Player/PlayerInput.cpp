@@ -1,7 +1,7 @@
 #include <Player.h>
 #include <PlayerInput.h>
 
-PlayerInput::PlayerInput(Player *player) : m_player(player) {}
+PlayerInput::PlayerInput(Player *player) : m_player(player), m_walkSpeed(8.1f) {}
 
 void PlayerInput::ProcessInput()
 {

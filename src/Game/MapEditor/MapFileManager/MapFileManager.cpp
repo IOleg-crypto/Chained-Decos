@@ -3,13 +3,64 @@
 //
 
 #include "MapFileManager.h"
+#include "nlohmann/json.hpp"
 #include <fstream>
 #include <iostream>
+
+using json = nlohmann::json;
 
 bool MapFileManager::SaveMap(const std::vector<SerializableObject> &objects,
                              const std::string &filename)
 {
-    // Simple text-based save for now
+    json j;
+
+    // Save objects array
+    json objectsArray = json::array();
+    for (const auto &obj : objects)
+    {
+        json object;
+        object["name"] = obj.name;
+        object["type"] = obj.type;
+
+        // Position
+        object["position"] = {
+            {"x", obj.position.x},
+            {"y", obj.position.y},
+            {"z", obj.position.z}
+        };
+
+        // Scale
+        object["scale"] = {
+            {"x", obj.scale.x},
+            {"y", obj.scale.y},
+            {"z", obj.scale.z}
+        };
+
+        // Rotation
+        object["rotation"] = {
+            {"x", obj.rotation.x},
+            {"y", obj.rotation.y},
+            {"z", obj.rotation.z}
+        };
+
+        // Color
+        object["color"] = {
+            {"r", obj.color.r},
+            {"g", obj.color.g},
+            {"b", obj.color.b},
+            {"a", obj.color.a}
+        };
+
+        // Model name (for MODEL type)
+        if (!obj.modelName.empty())
+            object["modelName"] = obj.modelName;
+
+        objectsArray.push_back(object);
+    }
+
+    j["objects"] = objectsArray;
+
+    // Write to file with pretty formatting
     std::ofstream file(filename);
     if (!file.is_open())
     {
@@ -17,24 +68,7 @@ bool MapFileManager::SaveMap(const std::vector<SerializableObject> &objects,
         return false;
     }
 
-    file << "Map File v1.0" << std::endl;
-    file << "ObjectCount: " << objects.size() << std::endl;
-
-    for (const auto &obj : objects)
-    {
-        file << "Object:" << std::endl;
-        file << "  Name: " << obj.name << std::endl;
-        file << "  Type: " << obj.type << std::endl;
-        file << "  Position: " << obj.position.x << " " << obj.position.y << " " << obj.position.z
-             << std::endl;
-        file << "  Scale: " << obj.scale.x << " " << obj.scale.y << " " << obj.scale.z << std::endl;
-        file << "  Rotation: " << obj.rotation.x << " " << obj.rotation.y << " " << obj.rotation.z
-             << std::endl;
-        file << "  Color: " << (int)obj.color.r << " " << (int)obj.color.g << " "
-             << (int)obj.color.b << " " << (int)obj.color.a << std::endl;
-        file << "  ModelName: " << obj.modelName << std::endl;
-    }
-
+    file << j.dump(4); // Pretty print with 4 spaces indentation
     file.close();
     std::cout << "Map saved successfully to: " << filename << std::endl;
     return true;
@@ -42,7 +76,6 @@ bool MapFileManager::SaveMap(const std::vector<SerializableObject> &objects,
 
 bool MapFileManager::LoadMap(std::vector<SerializableObject> &objects, const std::string &filename)
 {
-    // Simple text-based load for now
     std::ifstream file(filename);
     if (!file.is_open())
     {
@@ -51,45 +84,78 @@ bool MapFileManager::LoadMap(std::vector<SerializableObject> &objects, const std
     }
 
     objects.clear();
-    std::string line;
 
-    // Skip header
-    std::getline(file, line); // "Map File v1.0"
-    std::getline(file, line); // "ObjectCount: X"
-
-    while (std::getline(file, line))
+    json j;
+    try
     {
-        if (line == "Object:")
+        file >> j;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Failed to parse map JSON: " << e.what() << std::endl;
+        return false;
+    }
+
+    // Load objects
+    if (j.contains("objects"))
+    {
+        for (const auto& obj : j["objects"])
         {
-            SerializableObject obj;
+            SerializableObject objectData;
 
-            // Read object properties
-            std::getline(file, line); // Name
-            obj.name = line.substr(line.find(": ") + 2);
+            // Basic properties
+            objectData.name = obj.value("name", "unnamed_object");
+            objectData.type = obj.value("type", 0);
 
-            std::getline(file, line); // Type
-            obj.type = std::stoi(line.substr(line.find(": ") + 2));
+            // Position
+            if (obj.contains("position"))
+            {
+                auto& pos = obj["position"];
+                objectData.position = Vector3{
+                    pos.value("x", 0.0f),
+                    pos.value("y", 0.0f),
+                    pos.value("z", 0.0f)
+                };
+            }
 
-            std::getline(file, line); // Position
-            sscanf(line.c_str(), "  Position: %f %f %f", &obj.position.x, &obj.position.y,
-                   &obj.position.z);
+            // Scale
+            if (obj.contains("scale"))
+            {
+                auto& scl = obj["scale"];
+                objectData.scale = Vector3{
+                    scl.value("x", 1.0f),
+                    scl.value("y", 1.0f),
+                    scl.value("z", 1.0f)
+                };
+            }
 
-            std::getline(file, line); // Scale
-            sscanf(line.c_str(), "  Scale: %f %f %f", &obj.scale.x, &obj.scale.y, &obj.scale.z);
+            // Rotation
+            if (obj.contains("rotation"))
+            {
+                auto& rot = obj["rotation"];
+                objectData.rotation = Vector3{
+                    rot.value("x", 0.0f),
+                    rot.value("y", 0.0f),
+                    rot.value("z", 0.0f)
+                };
+            }
 
-            std::getline(file, line); // Rotation
-            sscanf(line.c_str(), "  Rotation: %f %f %f", &obj.rotation.x, &obj.rotation.y,
-                   &obj.rotation.z);
+            // Color
+            if (obj.contains("color"))
+            {
+                auto& col = obj["color"];
+                objectData.color = Color{
+                    static_cast<unsigned char>(col.value("r", 255)),
+                    static_cast<unsigned char>(col.value("g", 255)),
+                    static_cast<unsigned char>(col.value("b", 255)),
+                    static_cast<unsigned char>(col.value("a", 255))
+                };
+            }
 
-            std::getline(file, line); // Color
-            int r, g, b, a;
-            sscanf(line.c_str(), "  Color: %d %d %d %d", &r, &g, &b, &a);
-            obj.color = {(unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a};
+            // Model name (for MODEL type)
+            objectData.modelName = obj.value("modelName", "");
 
-            std::getline(file, line); // ModelName
-            obj.modelName = line.substr(line.find(": ") + 2);
-
-            objects.push_back(obj);
+            objects.push_back(objectData);
         }
     }
 

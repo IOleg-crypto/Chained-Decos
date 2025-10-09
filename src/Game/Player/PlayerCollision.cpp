@@ -2,7 +2,7 @@
 #include "PlayerCollision.h"
 #include <cmath>
 
-PlayerCollision::PlayerCollision(Player* player) 
+PlayerCollision::PlayerCollision(Player* player)
     : m_player(player) {
     UpdateBoundingBox();
 }

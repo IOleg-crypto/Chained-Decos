@@ -431,7 +431,7 @@ void RenderGameMap(const GameMap& map, Camera3D camera)
     EndMode3D();
 }
 
-void RenderMapObject(const MapObjectData& object, Camera3D camera)
+void RenderMapObject(const MapObjectData& object, [[maybe_unused]] Camera3D camera)
 {
     // Apply object transformations
     Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);

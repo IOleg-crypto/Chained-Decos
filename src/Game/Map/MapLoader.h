@@ -91,7 +91,7 @@ struct MapLoader
     Model loadedModel;
 
     MapLoader()
-        : modelName(""), position{0, 0, 0}, rotation{0, 0, 0}, scale{1, 1, 1}, loadedModel{0, 0, {0}}
+        : modelName(""), position{0, 0, 0}, rotation{0, 0, 0}, scale{1, 1, 1}, loadedModel{0}
     {}
 };
 

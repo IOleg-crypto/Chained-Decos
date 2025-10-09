@@ -10,9 +10,7 @@
 #include <functional>
 #include <raylib.h>
 #include <memory>
-
-// Forward declaration
-class MapObject;
+#include "MapObject.h"
 
 // Filter criteria for object filtering
 struct FilterCriteria
