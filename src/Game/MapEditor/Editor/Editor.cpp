@@ -25,7 +25,7 @@ Editor::Editor()
       m_activeEditorTool(SELECT), m_displayImGuiInterface(true), m_displayObjectListPanel(true),
       m_displayPropertiesPanel(true), m_pendingObjectCreation(false), m_modelsInitialized(false),
       m_displayFileDialog(false), m_isFileLoadDialog(true), m_displayNewFolderDialog(false),
-      m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0)
+      m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0) , m_gridSizes(50)
 {
     // Initialize file dialog to project root
     m_currentWorkingDirectory = PROJECT_ROOT_DIR;
@@ -590,6 +590,14 @@ void Editor::RenderImGuiToolbar()
         ImGui::Checkbox("Show Object Panel", &m_displayObjectListPanel);
         ImGui::SameLine();
         ImGui::Checkbox("Show Properties", &m_displayPropertiesPanel);
+        ImGui::SameLine();
+        if(ImGui::SliderInt("Increase/Decrease editor grid" , &m_gridSizes , 50 , 600))
+        {
+            if(m_gridSizes < 50)
+            {
+                m_gridSizes = 50;
+            }
+        }
 
         // TraceLog(LOG_INFO, TextFormat("Current Tool: %d", m_activeEditorTool));
     }
@@ -875,7 +883,7 @@ void Editor::EnsureModelsLoaded()
         bool loadSuccess = false;
         try
         {
-            m_modelAssetManager.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/models.json");
+            m_modelAssetManager.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/Game/Resource/models.json");
             loadSuccess = true;
         }
         catch (const std::exception &e)
@@ -1301,6 +1309,8 @@ void Editor::RenderNewFolderDialog()
         ImGui::End();
     }
 }
+
+int Editor::GetGridSize() const { return m_gridSizes; }
 
 void Editor::RenderParkourMapDialog()
 {
