@@ -39,14 +39,48 @@ endif()
 
 # Enable test discovery
 include(GoogleTest)
+
+# Use a more robust working directory configuration
+if(DEFINED ENV{CI} OR DEFINED ENV{GITHUB_ACTIONS})
+    # In CI environments, use a more specific path
+    set(TEST_WORKING_DIR "${CMAKE_BINARY_DIR}/bin/tests")
+else()
+    # In local development, use the target file directory
+    set(TEST_WORKING_DIR "$<TARGET_FILE_DIR:ChainedDecosTests>")
+endif()
+
 gtest_discover_tests(ChainedDecosTests
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
+    WORKING_DIRECTORY "${TEST_WORKING_DIR}"
+)
+
+# Additional custom command to ensure tests run from correct directory
+add_custom_target(run_tests_with_correct_dir
+    COMMAND ${CMAKE_COMMAND} -E echo "Running tests from: $<TARGET_FILE_DIR:ChainedDecosTests>"
+    COMMAND cd $<TARGET_FILE_DIR:ChainedDecosTests> && $<TARGET_FILE:ChainedDecosTests>
+    DEPENDS ChainedDecosTests
+    COMMENT "Running tests from correct working directory"
 )
 
 # Copy required DLLs for Windows
 if(WIN32)
-    # Find all DLL files in the bin directory and subdirectories
-    file(GLOB_RECURSE DLL_FILES "${CMAKE_BINARY_DIR}/bin/*.dll")
+    # Find all DLL files in multiple possible locations for different build environments
+    file(GLOB_RECURSE DLL_FILES
+        "${CMAKE_BINARY_DIR}/bin/*.dll"
+        "${CMAKE_BINARY_DIR}/*.dll"
+        "${CMAKE_SOURCE_DIR}/.deps/*/bin/*.dll"
+        "${CMAKE_SOURCE_DIR}/.deps/*/*.dll"
+        # CI environment paths
+        "D:/a/*/build/bin/*.dll"
+        "D:/a/*/*.dll"
+    )
+
+    # Also copy specific essential DLLs that might be in subdirectories
+    set(ESSENTIAL_DLLS
+        "raylib.dll"
+        "glfw3.dll"
+        "openal32.dll"
+        "winmm.dll"
+    )
 
     foreach(DLL_FILE ${DLL_FILES})
         get_filename_component(DLL_NAME ${DLL_FILE} NAME)
@@ -57,6 +91,30 @@ if(WIN32)
             COMMENT "Copying ${DLL_NAME} to test directory"
         )
     endforeach()
+
+    # Additional step to ensure essential DLLs are copied from common locations
+    foreach(ESSENTIAL_DLL ${ESSENTIAL_DLLS})
+        if(EXISTS "${CMAKE_BINARY_DIR}/bin/${ESSENTIAL_DLL}")
+            add_custom_command(TARGET ChainedDecosTests POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_BINARY_DIR}/bin/${ESSENTIAL_DLL}"
+                $<TARGET_FILE_DIR:ChainedDecosTests>/${ESSENTIAL_DLL}
+                COMMENT "Ensuring ${ESSENTIAL_DLL} is available"
+            )
+        endif()
+    endforeach()
+
+    # Also try to copy from raylib installation directory
+    if(EXISTS "C:/Program Files/raylib/bin/${ESSENTIAL_DLLS}")
+        foreach(ESSENTIAL_DLL ${ESSENTIAL_DLLS})
+            add_custom_command(TARGET ChainedDecosTests POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "C:/Program Files/raylib/bin/${ESSENTIAL_DLL}"
+                $<TARGET_FILE_DIR:ChainedDecosTests>/${ESSENTIAL_DLL}
+                COMMENT "Copying ${ESSENTIAL_DLL} from raylib installation"
+            )
+        endforeach()
+    endif()
 endif()
 
 # Custom test targets
