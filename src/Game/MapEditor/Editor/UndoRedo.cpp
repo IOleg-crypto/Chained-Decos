@@ -10,17 +10,12 @@
 AddObjectOperation::AddObjectOperation(std::vector<MapObject>& objects, const MapObject& obj, int index)
     : m_objects(objects), m_objectIndex(index)
 {
-    m_addedObject = new MapObject(obj);
-}
-
-AddObjectOperation::~AddObjectOperation()
-{
-    delete m_addedObject;
+    m_addedObject = std::make_unique<MapObject>(obj);
 }
 
 void AddObjectOperation::Undo()
 {
-    if (m_objectIndex >= 0 && m_objectIndex < m_objects.size())
+    if (m_objectIndex >= 0 && static_cast<size_t>(m_objectIndex) < m_objects.size())
     {
         m_objects.erase(m_objects.begin() + m_objectIndex);
     }
@@ -28,7 +23,7 @@ void AddObjectOperation::Undo()
 
 void AddObjectOperation::Redo()
 {
-    if (m_objectIndex <= m_objects.size())
+    if (static_cast<size_t>(m_objectIndex) <= m_objects.size() && m_addedObject)
     {
         m_objects.insert(m_objects.begin() + m_objectIndex, *m_addedObject);
     }
@@ -43,24 +38,15 @@ std::string AddObjectOperation::GetDescription() const
 RemoveObjectOperation::RemoveObjectOperation(std::vector<MapObject>& objects, int index)
     : m_objects(objects), m_objectIndex(index)
 {
-    if (index >= 0 && index < objects.size())
+    if (index >= 0 && static_cast<size_t>(index) < objects.size())
     {
-        m_removedObject = new MapObject(objects[index]);
+        m_removedObject = std::make_unique<MapObject>(objects[static_cast<size_t>(index)]);
     }
-    else
-    {
-        m_removedObject = nullptr;
-    }
-}
-
-RemoveObjectOperation::~RemoveObjectOperation()
-{
-    delete m_removedObject;
 }
 
 void RemoveObjectOperation::Undo()
 {
-    if (m_objectIndex <= m_objects.size() && m_removedObject != nullptr)
+    if (static_cast<size_t>(m_objectIndex) <= m_objects.size() && m_removedObject)
     {
         m_objects.insert(m_objects.begin() + m_objectIndex, *m_removedObject);
     }
@@ -68,7 +54,7 @@ void RemoveObjectOperation::Undo()
 
 void RemoveObjectOperation::Redo()
 {
-    if (m_objectIndex >= 0 && m_objectIndex < m_objects.size())
+    if (m_objectIndex >= 0 && static_cast<size_t>(m_objectIndex) < m_objects.size())
     {
         m_objects.erase(m_objects.begin() + m_objectIndex);
     }
@@ -76,46 +62,40 @@ void RemoveObjectOperation::Redo()
 
 std::string RemoveObjectOperation::GetDescription() const
 {
-    if (m_removedObject != nullptr)
+    if (m_removedObject)
         return "Remove " + m_removedObject->GetObjectName();
     return "Remove object";
 }
 
 // ModifyObjectOperation implementation
-ModifyObjectOperation::ModifyObjectOperation(std::vector<MapObject>& objects, int index, 
-                                           const MapObject& oldState, const MapObject& newState, 
+ModifyObjectOperation::ModifyObjectOperation(std::vector<MapObject>& objects, int index,
+                                           const MapObject& oldState, const MapObject& newState,
                                            const std::string& propertyName)
     : m_objects(objects), m_objectIndex(index), m_propertyName(propertyName)
 {
-    m_oldState = new MapObject(oldState);
-    m_newState = new MapObject(newState);
-}
-
-ModifyObjectOperation::~ModifyObjectOperation()
-{
-    delete m_oldState;
-    delete m_newState;
+    m_oldState = std::make_unique<MapObject>(oldState);
+    m_newState = std::make_unique<MapObject>(newState);
 }
 
 void ModifyObjectOperation::Undo()
 {
-    if (m_objectIndex >= 0 && m_objectIndex < m_objects.size() && m_oldState != nullptr)
+    if (m_objectIndex >= 0 && static_cast<size_t>(m_objectIndex) < m_objects.size() && m_oldState)
     {
-        m_objects[m_objectIndex] = *m_oldState;
+        m_objects[static_cast<size_t>(m_objectIndex)] = *m_oldState;
     }
 }
 
 void ModifyObjectOperation::Redo()
 {
-    if (m_objectIndex >= 0 && m_objectIndex < m_objects.size() && m_newState != nullptr)
+    if (m_objectIndex >= 0 && static_cast<size_t>(m_objectIndex) < m_objects.size() && m_newState)
     {
-        m_objects[m_objectIndex] = *m_newState;
+        m_objects[static_cast<size_t>(m_objectIndex)] = *m_newState;
     }
 }
 
 std::string ModifyObjectOperation::GetDescription() const
 {
-    if (m_oldState != nullptr)
+    if (m_oldState)
         return "Modify " + m_oldState->GetObjectName() + " (" + m_propertyName + ")";
     return "Modify object";
 }

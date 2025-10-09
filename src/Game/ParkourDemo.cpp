@@ -3,6 +3,9 @@
 #include <memory>
 #include <cmath>
 
+// Forward declaration for DemoPlayer
+class DemoPlayer;
+
 // Simple Player Controller for Parkour Demo
 class DemoPlayer
 {
@@ -206,7 +209,7 @@ private:
     int currentMapIndex;
     std::vector<ParkourTestMap> availableMaps;
     bool showMapSelection;
-    DemoPlayer* player;
+    std::unique_ptr<DemoPlayer> player;
 
 public:
     ParkourDemo(int width, int height) : screenWidth(width), screenHeight(height), currentMapIndex(0), showMapSelection(true)
@@ -216,11 +219,11 @@ public:
         if (!availableMaps.empty())
         {
             currentMap = availableMaps[0];
-            player = new DemoPlayer(currentMap.startPosition);
+            player = std::make_unique<DemoPlayer>(currentMap.startPosition);
         }
         else
         {
-            player = new DemoPlayer({0, 2, 0});
+            player = std::make_unique<DemoPlayer>(Vector3{0, 2, 0});
         }
     }
 
@@ -252,8 +255,7 @@ public:
             currentMap = availableMaps[currentMapIndex];
             if (player)
             {
-                delete player;
-                player = new DemoPlayer(currentMap.startPosition);
+                player = std::make_unique<DemoPlayer>(currentMap.startPosition);
             }
             showMapSelection = false;
         }
@@ -357,10 +359,6 @@ public:
 
     ~ParkourDemo()
     {
-        if (player)
-        {
-            delete player;
-        }
         CloseWindow();
     }
 };

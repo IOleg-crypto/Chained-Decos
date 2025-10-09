@@ -12,8 +12,8 @@
 // Game constants
 namespace GameConstants {
     constexpr float DEFAULT_PLATFORM_HEIGHT = 1.0f;
-    constexpr float DEFAULT_PLATFORM_SPACING = 8.0f;
-    constexpr int MAX_MAP_OBJECTS = 1000;
+    [[maybe_unused]] constexpr float DEFAULT_PLATFORM_SPACING = 8.0f;
+    [[maybe_unused]] constexpr int MAX_MAP_OBJECTS = 1000;
     constexpr float PLAYER_SAFE_SPAWN_HEIGHT = 2.0f;
 }
 

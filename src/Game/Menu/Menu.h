@@ -6,8 +6,7 @@
 #include <vector>
 #include <raylib.h>
 #include <Config/ConfigManager.h>
-
-class Engine;
+#include <Engine/Engine.h>
 
 enum class MenuAction : uint8_t
 {

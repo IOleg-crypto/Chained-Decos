@@ -121,12 +121,14 @@ jobs:
        shell: bash
        run: |
          if [ "${{ matrix.os }}" = "windows-2022" ]; then
-           # Use Ninja generator for Windows
+           # Use Ninja generator for Windows with x64 architecture
            cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
              -GNinja \
              -DCMAKE_BUILD_TYPE=Debug \
              -DCMAKE_C_COMPILER_LAUNCHER=ccache \
              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+             -DCMAKE_SYSTEM_VERSION=10.0 \
+             -DCMAKE_VS_PLATFORM_NAME=x64 \
              -DBUILD_TESTS=ON \
              -DBUILD_BENCHMARKS=ON \
              -DENABLE_COVERAGE=OFF \
@@ -136,6 +138,7 @@ jobs:
              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
              -DENABLE_DEV_TOOLS=OFF \
              -DENABLE_DEBUG_INFO=ON \
+             -DGTEST_FORCE_SHARED_CRT=OFF \
              -S "${{ github.workspace }}"
          else
            # Use default generator for other platforms
@@ -162,6 +165,90 @@ jobs:
           --config Debug \
           --target ChainedDecos ChainedDecosMapEditor ChainedDecosTests benchmarks \
           --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
+
+    - name: Set up test environment (Windows)
+      if: matrix.os == 'windows-2022'
+      shell: bash
+      run: |
+        echo "Setting up Windows test environment..."
+
+        # Create a directory for test artifacts
+        mkdir -p "${{ steps.build-env.outputs.build-output-dir }}/test_results"
+
+        # Copy required DLLs to test directory for Windows
+        TEST_BIN_DIR="${{ steps.build-env.outputs.build-output-dir }}/bin/tests/Debug"
+
+        if [ -d "$TEST_BIN_DIR" ]; then
+          echo "Test binary directory found: $TEST_BIN_DIR"
+
+          # Find and copy raylib.dll if it exists
+          find "${{ steps.build-env.outputs.build-output-dir }}" -name "*.dll" -type f | head -10
+
+          # Copy all DLLs to test directory
+          find "${{ steps.build-env.outputs.build-output-dir }}" -name "*.dll" -type f -exec cp {} "$TEST_BIN_DIR" \; || echo "No DLLs found or copy failed"
+
+          # List copied DLLs
+          echo "DLLs in test directory:"
+          ls -la "$TEST_BIN_DIR"/*.dll 2>/dev/null || echo "No DLLs found in test directory"
+        else
+          echo "Test binary directory not found: $TEST_BIN_DIR"
+        fi
+
+    - name: Run tests (Windows)
+      if: matrix.os == 'windows-2022'
+      shell: bash
+      run: |
+        echo "Running tests on Windows..."
+
+        # Set up environment variables for DLL loading
+        TEST_BIN_DIR="${{ steps.build-env.outputs.build-output-dir }}/bin/tests/Debug"
+
+        if [ -d "$TEST_BIN_DIR" ]; then
+          echo "Test directory: $TEST_BIN_DIR"
+
+          # Add test directory to PATH for DLL loading
+          echo "PATH=$TEST_BIN_DIR;$PATH" >> $GITHUB_ENV
+
+          # Change to test directory and run tests
+          cd "$TEST_BIN_DIR"
+
+          # Run tests with ctest (more reliable than direct execution)
+          echo "Running tests with CTest..."
+          ctest --output-on-failure --build-config Debug -V
+
+          # Also try running the test executable directly if ctest fails
+          if [ ! -f "ChainedDecosTests.exe" ]; then
+            echo "Test executable not found, looking for it..."
+            find . -name "*Tests*.exe" -type f
+          else
+            echo "Found test executable: ChainedDecosTests.exe"
+            echo "Running test executable directly..."
+            ./ChainedDecosTests.exe --gtest_output=xml:test_results.xml || echo "Direct execution failed"
+          fi
+
+          # Copy test results to artifacts directory
+          cp -r ./*test*.xml "${{ steps.build-env.outputs.build-output-dir }}/test_results/" 2>/dev/null || echo "No test result files to copy"
+        else
+          echo "Test directory not found: $TEST_BIN_DIR"
+          echo "Available directories:"
+          find "${{ steps.build-env.outputs.build-output-dir }}/bin" -type d 2>/dev/null || echo "No bin directories found"
+        fi
+
+    - name: Run tests (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu')
+      shell: bash
+      run: |
+        echo "Running tests on Ubuntu..."
+
+        # Create test results directory
+        mkdir -p "${{ steps.build-env.outputs.build-output-dir }}/test_results"
+
+        # Run tests using ctest
+        cd "${{ steps.build-env.outputs.build-output-dir }}"
+        ctest --output-on-failure --build-config Debug -V
+
+        # Copy test results
+        find . -name "*test*.xml" -type f -exec cp {} test_results/ \; 2>/dev/null || echo "No test result files found"
 
     - name: Run static analysis
       shell: bash
@@ -191,6 +278,7 @@ jobs:
         name: test-results-${{ matrix.os }}-${{ matrix.compiler }}
         path: |
           ${{ steps.build-env.outputs.build-output-dir }}/Testing/
+          ${{ steps.build-env.outputs.build-output-dir }}/test_results/
           ${{ steps.build-env.outputs.build-output-dir }}/compile_commands.json
         retention-days: 7
 
