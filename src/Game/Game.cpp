@@ -52,6 +52,7 @@ void Game::Cleanup()
     // Reset game state
     m_showMenu = true;
     m_isGameInitialized = false;
+    m_menu.SetGameInProgress(false); // Clear game state when cleaning up
 
     TraceLog(LOG_INFO, "Game::Cleanup() - Game resources cleaned up successfully");
 }
@@ -192,22 +193,29 @@ void Game::InitInput()
     TraceLog(LOG_INFO, "Game::InitInput() - Setting up game-specific input bindings...");
 
     m_engine->GetInputManager().RegisterAction(KEY_F1,
-                                               [this]
-                                               {
-                                                   m_showMenu = true;
-                                                   EnableCursor();
-                                               });
+                                                 [this]
+                                                 {
+                                                     // Set game as in progress when going to menu from game
+                                                     if (!m_showMenu)
+                                                     {
+                                                         m_menu.SetGameInProgress(true);
+                                                     }
+                                                     m_showMenu = true;
+                                                     EnableCursor();
+                                                 });
 
     m_engine->GetInputManager().RegisterAction(KEY_ESCAPE,
-                                               [this]
-                                               {
-                                                   if (!m_showMenu)
-                                                   {
-                                                       m_menu.ResetAction();
-                                                       ToggleMenu();
-                                                       EnableCursor();
-                                                   }
-                                               });
+                                                 [this]
+                                                 {
+                                                     if (!m_showMenu)
+                                                     {
+                                                         m_menu.ResetAction();
+                                                         // Set game as in progress when going to menu from game
+                                                         m_menu.SetGameInProgress(true);
+                                                         ToggleMenu();
+                                                         EnableCursor();
+                                                     }
+                                                 });
     TraceLog(LOG_INFO, "Game::InitInput() - Game input bindings configured.");
 }
 
@@ -232,21 +240,28 @@ void Game::InitCollisions()
     if(action == MenuAction::SelectMap1)
     {
         CreateEasyParkourMap();
+        m_isGameInitialized = true;
     }
     else if(action == MenuAction::SelectMap2)
     {
         CreateMediumParkourMap();
+        m_isGameInitialized = true;
     }
     else if(action == MenuAction::SelectMap3)
     {
         CreateHardParkourMap();
+        m_isGameInitialized = true;
+
     }
     else if(action == MenuAction::StartGameWithMap)
     {
+        m_isGameInitialized = true;
         CreateSpeedrunParkourMap();
     }
     else
     {
+        m_isGameInitialized = true;
+
         // Default fallback to original test map
         CreateParkourTestMap();
     }
@@ -424,25 +439,71 @@ void Game::HandleMenuActions()
     {
     case MenuAction::SinglePlayer:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting singleplayer...");
+        m_menu.SetGameInProgress(true);
         ToggleMenu();
         InitCollisions();
         InitPlayer();
+        m_isGameInitialized = true; // Mark game as initialized
         m_menu.ResetAction();
         break;
 
+    case MenuAction::ResumeGame:
+        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resuming game...");
+        m_menu.SetAction(MenuAction::SinglePlayer);
+        // Ensure game is properly initialized for resume
+        if (!m_isGameInitialized)
+        {
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing game for resume...");
+            InitCollisions();
+            InitPlayer();
+
+        }
+        
+        else
+        {
+            // Game is already initialized, just ensure collision system is ready
+            if (m_collisionManager.GetColliders().empty())
+            {
+                TraceLog(LOG_WARNING, "Game::HandleMenuActions() - No colliders found, reinitializing...");
+                InitCollisions();
+            }
+
+            // Ensure player is properly positioned and set up
+            if (m_player.GetPlayerPosition().x == 0.0f &&
+                m_player.GetPlayerPosition().y == 0.0f &&
+                m_player.GetPlayerPosition().z == 0.0f)
+            {
+                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player position is origin, resetting to safe position");
+                m_player.SetPlayerPosition({0.0f, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, 0.0f});
+            }
+
+            // Re-setup player collision and movement
+            m_player.GetMovement()->SetCollisionManager(&m_collisionManager);
+            m_player.UpdatePlayerBox();
+            m_player.UpdatePlayerCollision();
+        }
+
+        // Hide the menu and resume the game
+        m_showMenu = false;
+        HideCursor();
+        m_menu.ResetAction();
+        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Game resumed successfully");
+        // Keep game in progress state when resuming
+        break;
     case MenuAction::StartGameWithMap:
     case MenuAction::SelectMap1:
     case MenuAction::SelectMap2:
     case MenuAction::SelectMap3:
         {
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting game with selected map...");
-            InitCollisions();
+            m_menu.SetGameInProgress(true);
             std::string selectedMap = m_menu.GetSelectedMapName();
             TraceLog(LOG_INFO, "Selected map: %s", selectedMap.c_str());
 
             // Initialize game components first
             InitCollisions();
             InitPlayer();
+            m_isGameInitialized = true; // Mark game as initialized
 
             // Hide menu and start the game
             m_showMenu = false;
@@ -454,6 +515,9 @@ void Game::HandleMenuActions()
 
     case MenuAction::ExitGame:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Exit game requested from menu.");
+        // Clear game state when exiting
+        m_menu.SetGameInProgress(false);
+        m_showMenu = true; // Show menu one last time before exit
         m_engine->RequestExit();
         m_menu.ResetAction();
         break;
