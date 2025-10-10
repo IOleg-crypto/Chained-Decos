@@ -12,8 +12,8 @@
 
 namespace fs = std::filesystem;
 
-bool JsonMapFileManager::SaveMap(const std::vector<JsonSerializableObject>& objects, 
-                                const std::string& filename, 
+bool JsonMapFileManager::SaveMap(const std::vector<JsonSerializableObject>& objects,
+                                const std::string& filename,
                                 const MapMetadata& metadata)
 {
     std::ofstream file(filename);
@@ -77,9 +77,9 @@ bool JsonMapFileManager::SaveMap(const std::vector<JsonSerializableObject>& obje
     return true;
 }
 
-bool JsonMapFileManager::LoadMap(std::vector<JsonSerializableObject>& objects, 
-                                const std::string& filename, 
-                                MapMetadata& metadata)
+bool JsonMapFileManager::LoadMap(std::vector<JsonSerializableObject>& objects,
+                                       const std::string& filename,
+                                       MapMetadata& metadata)
 {
     std::ifstream file(filename);
     if (!file.is_open())
@@ -88,20 +88,80 @@ bool JsonMapFileManager::LoadMap(std::vector<JsonSerializableObject>& objects,
         return false;
     }
 
-    // Simple JSON parsing (in a real implementation, you'd use a proper JSON library)
+    // Read entire file content
     std::string content((std::istreambuf_iterator<char>(file)),
                        std::istreambuf_iterator<char>());
     file.close();
 
-    // This is a simplified parser - in production, use nlohmann/json or similar
+    // Parse JSON manually (simple implementation)
     objects.clear();
-    
-    // For now, we'll use a basic approach
-    // In a real implementation, you would parse the JSON properly
-    std::cout << "Map loaded successfully from: " << filename << std::endl;
-    std::cout << "Note: This is a simplified JSON parser. Consider using a proper JSON library." << std::endl;
-    
-    return true;
+
+    try
+    {
+        // Parse metadata section
+        size_t metadataStart = content.find("\"metadata\"");
+        if (metadataStart != std::string::npos)
+        {
+            metadataStart = content.find("{", metadataStart);
+            size_t metadataEnd = content.find("}", metadataStart);
+
+            std::string metadataJson = content.substr(metadataStart, metadataEnd - metadataStart + 1);
+
+            // Parse metadata fields
+            ParseMetadataField(metadataJson, "\"version\"", metadata.version);
+            ParseMetadataField(metadataJson, "\"name\"", metadata.name);
+            ParseMetadataField(metadataJson, "\"description\"", metadata.description);
+            ParseMetadataField(metadataJson, "\"author\"", metadata.author);
+            ParseMetadataField(metadataJson, "\"createdDate\"", metadata.createdDate);
+            ParseMetadataField(metadataJson, "\"modifiedDate\"", metadata.modifiedDate);
+            ParseMetadataField(metadataJson, "\"skyboxTexture\"", metadata.skyboxTexture);
+
+            // Parse world bounds
+            size_t boundsStart = metadataJson.find("\"worldBounds\"");
+            if (boundsStart != std::string::npos)
+            {
+                boundsStart = metadataJson.find("[", boundsStart);
+                size_t boundsEnd = metadataJson.find("]", boundsStart);
+                std::string boundsStr = metadataJson.substr(boundsStart, boundsEnd - boundsStart + 1);
+                metadata.worldBounds = ParseVector3(boundsStr);
+            }
+
+            // Parse background color
+            size_t colorStart = metadataJson.find("\"backgroundColor\"");
+            if (colorStart != std::string::npos)
+            {
+                colorStart = metadataJson.find("[", colorStart);
+                size_t colorEnd = metadataJson.find("]", colorStart);
+                std::string colorStr = metadataJson.substr(colorStart, colorEnd - colorStart + 1);
+                metadata.backgroundColor = ParseColor(colorStr);
+            }
+        }
+
+        // Parse objects section
+        size_t objectsStart = content.find("\"objects\"");
+        if (objectsStart != std::string::npos)
+        {
+            objectsStart = content.find("[", objectsStart);
+            size_t objectsEnd = content.find("]", objectsStart);
+
+            if (objectsEnd == std::string::npos)
+                objectsEnd = content.length() - 1;
+
+            std::string objectsJson = content.substr(objectsStart, objectsEnd - objectsStart + 1);
+
+            // Parse individual objects
+            ParseObjectsArray(objectsJson, objects);
+        }
+
+        std::cout << "Map loaded successfully from: " << filename << std::endl;
+        std::cout << "Loaded " << objects.size() << " objects" << std::endl;
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+        return false;
+    }
 }
 
 bool JsonMapFileManager::ValidateMapFile(const std::string& filename)
@@ -123,14 +183,20 @@ MapMetadata JsonMapFileManager::CreateDefaultMetadata()
     MapMetadata metadata;
     metadata.version = "1.0";
     metadata.name = "Untitled Map";
+    metadata.displayName = "Untitled Map";
     metadata.description = "Created with ChainedDecos Map Editor";
     metadata.author = "Unknown";
+    metadata.startPosition = {0.0f, 2.0f, 0.0f};
+    metadata.endPosition = {0.0f, 2.0f, 0.0f};
+    metadata.skyColor = SKYBLUE;
+    metadata.groundColor = DARKGREEN;
+    metadata.difficulty = 1.0f;
     metadata.createdDate = GetCurrentTimestamp();
     metadata.modifiedDate = GetCurrentTimestamp();
     metadata.worldBounds = {100.0f, 100.0f, 100.0f};
     metadata.backgroundColor = {50, 50, 50, 255};
     metadata.skyboxTexture = "";
-    
+
     return metadata;
 }
 
@@ -140,8 +206,8 @@ std::string JsonMapFileManager::GetMapVersion(const std::string& filename)
     return "1.0";
 }
 
-bool JsonMapFileManager::ExportToOBJ(const std::vector<JsonSerializableObject>& objects, 
-                                    const std::string& filename)
+bool JsonMapFileManager::ExportToOBJ(const std::vector<JsonSerializableObject>& objects,
+                                           const std::string& filename)
 {
     std::ofstream file(filename);
     if (!file.is_open())
@@ -164,12 +230,141 @@ bool JsonMapFileManager::ExportToOBJ(const std::vector<JsonSerializableObject>& 
     return true;
 }
 
-bool JsonMapFileManager::ImportFromOBJ(const std::string& filename, 
-                                      std::vector<JsonSerializableObject>& objects)
+bool JsonMapFileManager::ImportFromOBJ(const std::string& filename,
+                                              std::vector<JsonSerializableObject>& objects)
 {
     // Simplified OBJ import
     std::cout << "OBJ import not fully implemented yet" << std::endl;
     return false;
+}
+
+bool JsonMapFileManager::ExportGameMap(const std::vector<JsonSerializableObject>& objects,
+                                              const std::string& filename,
+                                              const MapMetadata& metadata)
+{
+    std::ofstream file(filename);
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return false;
+    }
+
+    // Start JSON structure similar to models.json format
+    file << "[\n";
+
+    for (size_t i = 0; i < objects.size(); ++i)
+    {
+        const auto& obj = objects[i];
+
+        file << "  {\n";
+        file << "    \"name\": \"" << obj.name << "\",\n";
+        file << "    \"type\": \"" << GetObjectTypeString(obj.type) << "\",\n";
+        file << "    \"modelPath\": \"" << obj.modelName << "\",\n";
+        file << "    \"position\": " << Vector3ToJson(obj.position) << ",\n";
+        file << "    \"rotation\": " << Vector3ToJson(obj.rotation) << ",\n";
+        file << "    \"scale\": " << Vector3ToJson(obj.scale) << ",\n";
+        file << "    \"color\": " << ColorToJson(obj.color) << ",\n";
+
+        // Add shape-specific properties
+        if (obj.type == 1) // SPHERE
+            file << "    \"radius\": " << obj.radiusSphere << ",\n";
+        else if (obj.type == 2) // CYLINDER
+            file << "    \"radius\": " << obj.radiusH << ",\n    \"height\": " << obj.radiusV << ",\n";
+        else if (obj.type == 3) // PLANE
+            file << "    \"size\": " << Vector2ToJson(obj.size) << ",\n";
+
+        file << "    \"visible\": " << (obj.visible ? "true" : "false") << ",\n";
+        file << "    \"layer\": \"" << obj.layer << "\",\n";
+        file << "    \"tags\": \"" << obj.tags << "\"\n";
+
+        if (i < objects.size() - 1)
+            file << "  },\n";
+        else
+            file << "  }\n";
+    }
+
+    file << "]\n";
+    file.close();
+
+    std::cout << "Game map exported successfully to: " << filename << std::endl;
+    return true;
+}
+
+bool JsonMapFileManager::ImportGameMap(std::vector<JsonSerializableObject>& objects,
+                                              const std::string& filename,
+                                              MapMetadata& metadata)
+{
+    std::ifstream file(filename);
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open file for reading: " << filename << std::endl;
+        return false;
+    }
+
+    // Read entire file content
+    std::string content((std::istreambuf_iterator<char>(file)),
+                       std::istreambuf_iterator<char>());
+    file.close();
+
+    objects.clear();
+
+    try
+    {
+        // Check if this is the editor format (with metadata) or game format (direct array)
+        size_t metadataStart = content.find("\"metadata\"");
+        size_t arrayStart = content.find("[");
+
+        if (metadataStart != std::string::npos)
+        {
+            // This is the editor format with metadata - use LoadMap instead
+            std::cout << "Detected editor format, using LoadMap parser" << std::endl;
+            return LoadMap(objects, filename, metadata);
+        }
+        else if (arrayStart != std::string::npos)
+        {
+            // This is the game format (direct array)
+            std::cout << "Detected game format, using game map parser" << std::endl;
+
+            size_t pos = arrayStart + 1;
+            std::string searchStr = "{";
+            size_t objectStart = content.find(searchStr, pos);
+
+            while (objectStart != std::string::npos)
+            {
+                // Find the matching closing brace
+                size_t objectEnd = FindMatchingBrace(content, objectStart);
+
+                if (objectEnd != std::string::npos)
+                {
+                    std::string objectJson = content.substr(objectStart, objectEnd - objectStart + 1);
+                    JsonSerializableObject obj;
+                    ParseGameMapObject(objectJson, obj);
+                    objects.push_back(obj);
+
+                    pos = objectEnd + 1;
+                    objectStart = content.find(searchStr, pos);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            std::cerr << "Error: No valid JSON structure found" << std::endl;
+            return false;
+        }
+
+        std::cout << "Game map imported successfully from: " << filename << std::endl;
+        std::cout << "Imported " << objects.size() << " objects" << std::endl;
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error parsing game map JSON: " << e.what() << std::endl;
+        return false;
+    }
 }
 
 bool JsonMapFileManager::CreateBackup(const std::string& filename)
@@ -239,6 +434,302 @@ bool JsonMapFileManager::RestoreFromBackup(const std::string& backupFilename, co
     }
 }
 
+// JSON parsing helper functions
+void JsonMapFileManager::ParseMetadataField(const std::string& json, const std::string& fieldName, std::string& target)
+{
+    size_t start = json.find(fieldName);
+    if (start != std::string::npos)
+    {
+        start = json.find("\"", start + fieldName.length());
+        if (start != std::string::npos)
+        {
+            size_t end = json.find("\"", start + 1);
+            if (end != std::string::npos)
+            {
+                target = json.substr(start + 1, end - start - 1);
+            }
+        }
+    }
+}
+
+Vector3 JsonMapFileManager::ParseVector3(const std::string& json)
+{
+    Vector3 result = {0, 0, 0};
+
+    // Simple parsing: [x, y, z]
+    size_t start = json.find("[");
+    size_t end = json.find("]");
+
+    if (start != std::string::npos && end != std::string::npos)
+    {
+        std::string values = json.substr(start + 1, end - start - 1);
+
+        // Parse comma-separated values
+        std::stringstream ss(values);
+        std::string token;
+
+        if (std::getline(ss, token, ','))
+            result.x = std::stof(token);
+        if (std::getline(ss, token, ','))
+            result.y = std::stof(token);
+        if (std::getline(ss, token, ','))
+            result.z = std::stof(token);
+    }
+
+    return result;
+}
+
+Color JsonMapFileManager::ParseColor(const std::string& json)
+{
+    Color result = {255, 255, 255, 255};
+
+    // Simple parsing: [r, g, b, a]
+    size_t start = json.find("[");
+    size_t end = json.find("]");
+
+    if (start != std::string::npos && end != std::string::npos)
+    {
+        std::string values = json.substr(start + 1, end - start - 1);
+
+        // Parse comma-separated values
+        std::stringstream ss(values);
+        std::string token;
+
+        if (std::getline(ss, token, ','))
+            result.r = static_cast<unsigned char>(std::stoi(token));
+        if (std::getline(ss, token, ','))
+            result.g = static_cast<unsigned char>(std::stoi(token));
+        if (std::getline(ss, token, ','))
+            result.b = static_cast<unsigned char>(std::stoi(token));
+        if (std::getline(ss, token, ','))
+            result.a = static_cast<unsigned char>(std::stoi(token));
+    }
+
+    return result;
+}
+
+void JsonMapFileManager::ParseObjectsArray(const std::string& json, std::vector<JsonSerializableObject>& objects)
+{
+    size_t pos = 0;
+    std::string searchStr = "{";
+    size_t objectStart = json.find(searchStr, pos);
+
+    while (objectStart != std::string::npos)
+    {
+        // Find the matching closing brace
+        size_t objectEnd = FindMatchingBrace(json, objectStart);
+
+        if (objectEnd != std::string::npos)
+        {
+            std::string objectJson = json.substr(objectStart, objectEnd - objectStart + 1);
+            JsonSerializableObject obj;
+            ParseObject(objectJson, obj);
+            objects.push_back(obj);
+
+            pos = objectEnd + 1;
+            objectStart = json.find(searchStr, pos);
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+size_t JsonMapFileManager::FindMatchingBrace(const std::string& json, size_t startPos)
+{
+    int braceCount = 0;
+    size_t pos = startPos;
+
+    while (pos < json.length())
+    {
+        if (json[pos] == '{')
+            braceCount++;
+        else if (json[pos] == '}')
+        {
+            braceCount--;
+            if (braceCount == 0)
+                return pos;
+        }
+        pos++;
+    }
+
+    return std::string::npos;
+}
+
+void JsonMapFileManager::ParseObject(const std::string& json, JsonSerializableObject& obj)
+{
+    // Parse basic fields
+    ParseMetadataField(json, "\"id\"", obj.id);
+    ParseMetadataField(json, "\"name\"", obj.name);
+    ParseMetadataField(json, "\"modelName\"", obj.modelName);
+    ParseMetadataField(json, "\"layer\"", obj.layer);
+    ParseMetadataField(json, "\"tags\"", obj.tags);
+
+    // Parse numeric fields
+    obj.type = ParseIntField(json, "\"type\"");
+    obj.visible = ParseBoolField(json, "\"visible\"");
+    obj.radiusH = ParseFloatField(json, "\"radiusH\"");
+    obj.radiusV = ParseFloatField(json, "\"radiusV\"");
+    obj.radiusSphere = ParseFloatField(json, "\"radiusSphere\"");
+
+    // Parse vectors and colors
+    size_t pos = json.find("\"position\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string vecStr = json.substr(pos, end - pos + 1);
+            obj.position = ParseVector3(vecStr);
+        }
+    }
+
+    pos = json.find("\"scale\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string vecStr = json.substr(pos, end - pos + 1);
+            obj.scale = ParseVector3(vecStr);
+        }
+    }
+
+    pos = json.find("\"rotation\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string vecStr = json.substr(pos, end - pos + 1);
+            obj.rotation = ParseVector3(vecStr);
+        }
+    }
+
+    pos = json.find("\"color\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string colorStr = json.substr(pos, end - pos + 1);
+            obj.color = ParseColor(colorStr);
+        }
+    }
+
+    pos = json.find("\"size\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string sizeStr = json.substr(pos, end - pos + 1);
+            obj.size = ParseVector2(sizeStr);
+        }
+    }
+}
+
+int JsonMapFileManager::ParseIntField(const std::string& json, const std::string& fieldName)
+{
+    size_t start = json.find(fieldName);
+    if (start != std::string::npos)
+    {
+        start = json.find(":", start);
+        if (start != std::string::npos)
+        {
+            start++;
+            // Skip whitespace
+            while (start < json.length() && (json[start] == ' ' || json[start] == '\t'))
+                start++;
+
+            size_t end = start;
+            while (end < json.length() && json[end] != ',' && json[end] != '}')
+                end++;
+
+            std::string value = json.substr(start, end - start);
+            return std::stoi(value);
+        }
+    }
+    return 0;
+}
+
+float JsonMapFileManager::ParseFloatField(const std::string& json, const std::string& fieldName)
+{
+    size_t start = json.find(fieldName);
+    if (start != std::string::npos)
+    {
+        start = json.find(":", start);
+        if (start != std::string::npos)
+        {
+            start++;
+            // Skip whitespace
+            while (start < json.length() && (json[start] == ' ' || json[start] == '\t'))
+                start++;
+
+            size_t end = start;
+            while (end < json.length() && json[end] != ',' && json[end] != '}')
+                end++;
+
+            std::string value = json.substr(start, end - start);
+            return std::stof(value);
+        }
+    }
+    return 0.0f;
+}
+
+bool JsonMapFileManager::ParseBoolField(const std::string& json, const std::string& fieldName)
+{
+    size_t start = json.find(fieldName);
+    if (start != std::string::npos)
+    {
+        start = json.find(":", start);
+        if (start != std::string::npos)
+        {
+            start++;
+            // Skip whitespace
+            while (start < json.length() && (json[start] == ' ' || json[start] == '\t'))
+                start++;
+
+            if (json.substr(start, 4) == "true")
+                return true;
+            else if (json.substr(start, 5) == "false")
+                return false;
+        }
+    }
+    return false;
+}
+
+Vector2 JsonMapFileManager::ParseVector2(const std::string& json)
+{
+    Vector2 result = {0, 0};
+
+    // Simple parsing: [x, y]
+    size_t start = json.find("[");
+    size_t end = json.find("]");
+
+    if (start != std::string::npos && end != std::string::npos)
+    {
+        std::string values = json.substr(start + 1, end - start - 1);
+
+        // Parse comma-separated values
+        std::stringstream ss(values);
+        std::string token;
+
+        if (std::getline(ss, token, ','))
+            result.x = std::stof(token);
+        if (std::getline(ss, token, ','))
+            result.y = std::stof(token);
+    }
+
+    return result;
+}
+
 // Helper functions
 std::string JsonMapFileManager::Vector3ToJson(const Vector3& vec)
 {
@@ -292,11 +783,215 @@ std::string JsonMapFileManager::GetCurrentTimestamp()
     return oss.str();
 }
 
-std::string JsonMapFileManager::GenerateUniqueId()
+std::string JsonMapFileManager::GetUniqueId()
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> dis(1000, 9999);
-    
+
     return "obj_" + std::to_string(dis(gen)) + "_" + std::to_string(std::time(nullptr));
+}
+
+std::string JsonMapFileManager::GetObjectTypeString(int type)
+{
+    switch (type)
+    {
+        case 0: return "CUBE";
+        case 1: return "SPHERE";
+        case 2: return "CYLINDER";
+        case 3: return "PLANE";
+        case 4: return "MODEL";
+        case 5: return "LIGHT";
+        default: return "UNKNOWN";
+    }
+}
+
+void JsonMapFileManager::ParseGameMapObject(const std::string& json, JsonSerializableObject& obj)
+{
+    // Parse basic string fields
+    ParseMetadataField(json, "\"name\"", obj.name);
+
+    // Parse type as string first, then convert to int
+    std::string typeStr;
+    ParseMetadataField(json, "\"type\"", typeStr);
+    if (typeStr == "CUBE") obj.type = 0;
+    else if (typeStr == "SPHERE") obj.type = 1;
+    else if (typeStr == "CYLINDER") obj.type = 2;
+    else if (typeStr == "PLANE") obj.type = 3;
+    else if (typeStr == "MODEL") obj.type = 4;
+    else if (typeStr == "LIGHT") obj.type = 5;
+    else obj.type = 0;
+
+    ParseMetadataField(json, "\"modelPath\"", obj.modelName);
+    ParseMetadataField(json, "\"layer\"", obj.layer);
+    ParseMetadataField(json, "\"tags\"", obj.tags);
+
+    // Parse boolean field
+    obj.visible = ParseBoolField(json, "\"visible\"");
+
+    // Parse numeric fields
+    obj.radiusSphere = ParseFloatField(json, "\"radius\"");
+    obj.radiusH = ParseFloatField(json, "\"radius\"");
+    obj.radiusV = ParseFloatField(json, "\"height\"");
+
+    // Parse vectors and colors
+    size_t pos = json.find("\"position\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string vecStr = json.substr(pos, end - pos + 1);
+            obj.position = ParseVector3(vecStr);
+        }
+    }
+
+    pos = json.find("\"rotation\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string vecStr = json.substr(pos, end - pos + 1);
+            obj.rotation = ParseVector3(vecStr);
+        }
+    }
+
+    pos = json.find("\"scale\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string vecStr = json.substr(pos, end - pos + 1);
+            obj.scale = ParseVector3(vecStr);
+        }
+    }
+
+    pos = json.find("\"color\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string colorStr = json.substr(pos, end - pos + 1);
+            obj.color = ParseColor(colorStr);
+        }
+    }
+
+    pos = json.find("\"size\"");
+    if (pos != std::string::npos)
+    {
+        pos = json.find("[", pos);
+        size_t end = json.find("]", pos);
+        if (pos != std::string::npos && end != std::string::npos)
+        {
+            std::string sizeStr = json.substr(pos, end - pos + 1);
+            obj.size = ParseVector2(sizeStr);
+        }
+    }
+
+    // Generate unique ID if not present
+    if (obj.id.empty())
+    {
+        obj.id = GetUniqueId();
+    }
+}
+
+bool JsonMapFileManager::TestRoundTrip(const std::vector<JsonSerializableObject>& originalObjects,
+                                              const std::string& testFilePath)
+{
+    std::cout << "Testing JSON export/import round-trip..." << std::endl;
+
+    // Create test metadata
+    MapMetadata metadata;
+    metadata.version = "1.0";
+    metadata.name = "Test Map";
+    metadata.displayName = "Test Map";
+    metadata.description = "Test map for round-trip validation";
+    metadata.author = "Test System";
+    metadata.startPosition = {0.0f, 2.0f, 0.0f};
+    metadata.endPosition = {0.0f, 2.0f, 0.0f};
+    metadata.skyColor = SKYBLUE;
+    metadata.groundColor = DARKGREEN;
+    metadata.difficulty = 1.0f;
+    metadata.createdDate = GetCurrentTimestamp();
+    metadata.modifiedDate = GetCurrentTimestamp();
+    metadata.worldBounds = {100.0f, 100.0f, 100.0f};
+    metadata.backgroundColor = {50, 50, 50, 255};
+    metadata.skyboxTexture = "";
+
+    // Export to JSON
+    if (!JsonMapFileManager::ExportGameMap(originalObjects, testFilePath, metadata))
+    {
+        std::cout << "ERROR: Failed to export test map" << std::endl;
+        return false;
+    }
+
+    std::cout << "✓ Exported " << originalObjects.size() << " objects to JSON" << std::endl;
+
+    // Import from JSON
+    std::vector<JsonSerializableObject> importedObjects;
+    MapMetadata importedMetadata;
+
+    if (!ImportGameMap(importedObjects, testFilePath, importedMetadata))
+    {
+        std::cout << "ERROR: Failed to import test map" << std::endl;
+        return false;
+    }
+
+    std::cout << "✓ Imported " << importedObjects.size() << " objects from JSON" << std::endl;
+
+    // Validate that we have the same number of objects
+    if (originalObjects.size() != importedObjects.size())
+    {
+        std::cout << "ERROR: Object count mismatch! Original: " << originalObjects.size()
+                  << ", Imported: " << importedObjects.size() << std::endl;
+        return false;
+    }
+
+    // Validate each object
+    bool allValid = true;
+    for (size_t i = 0; i < originalObjects.size(); ++i)
+    {
+        const auto& original = originalObjects[i];
+        const auto& imported = importedObjects[i];
+
+        if (original.name != imported.name ||
+            original.type != imported.type ||
+            std::abs(original.position.x - imported.position.x) > 0.01f ||
+            std::abs(original.position.y - imported.position.y) > 0.01f ||
+            std::abs(original.position.z - imported.position.z) > 0.01f ||
+            std::abs(original.scale.x - imported.scale.x) > 0.01f ||
+            std::abs(original.scale.y - imported.scale.y) > 0.01f ||
+            std::abs(original.scale.z - imported.scale.z) > 0.01f ||
+            original.color.r != imported.color.r ||
+            original.color.g != imported.color.g ||
+            original.color.b != imported.color.b ||
+            original.color.a != imported.color.a)
+        {
+            std::cout << "ERROR: Object " << i << " data mismatch!" << std::endl;
+            std::cout << "  Original: " << original.name << " at (" << original.position.x << ", "
+                      << original.position.y << ", " << original.position.z << ")" << std::endl;
+            std::cout << "  Imported: " << imported.name << " at (" << imported.position.x << ", "
+                      << imported.position.y << ", " << imported.position.z << ")" << std::endl;
+            allValid = false;
+        }
+    }
+
+    if (allValid)
+    {
+        std::cout << "✓ All objects validated successfully!" << std::endl;
+        std::cout << "✓ Round-trip test PASSED!" << std::endl;
+    }
+    else
+    {
+        std::cout << "✗ Round-trip test FAILED!" << std::endl;
+    }
+
+    return allValid;
 }

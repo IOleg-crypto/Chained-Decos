@@ -31,19 +31,8 @@ struct JsonSerializableObject
     std::string tags;       // Comma-separated tags
 };
 
-// Map metadata structure
-struct MapMetadata
-{
-    std::string version;
-    std::string name;
-    std::string description;
-    std::string author;
-    std::string createdDate;
-    std::string modifiedDate;
-    Vector3 worldBounds;    // World size bounds
-    Color backgroundColor;
-    std::string skyboxTexture;
-};
+// Include MapLoader.h for MapMetadata definition
+#include "../../Map/MapLoader.h"
 
 // JSON-based map file manager
 class JsonMapFileManager
@@ -63,10 +52,22 @@ public:
     static std::string GetMapVersion(const std::string& filename);
     
     // Import/Export operations
-    static bool ExportToOBJ(const std::vector<JsonSerializableObject>& objects, 
-                           const std::string& filename);
-    static bool ImportFromOBJ(const std::string& filename, 
-                             std::vector<JsonSerializableObject>& objects);
+    static bool ExportToOBJ(const std::vector<JsonSerializableObject>& objects,
+                            const std::string& filename);
+    static bool ImportFromOBJ(const std::string& filename,
+                              std::vector<JsonSerializableObject>& objects);
+
+    // Game-compatible export operations
+    static bool ExportGameMap(const std::vector<JsonSerializableObject>& objects,
+                              const std::string& filename,
+                              const MapMetadata& metadata = MapMetadata());
+    static bool ImportGameMap(std::vector<JsonSerializableObject>& objects,
+                              const std::string& filename,
+                              MapMetadata& metadata);
+
+    // Testing and validation
+    static bool TestRoundTrip(const std::vector<JsonSerializableObject>& originalObjects,
+                             const std::string& testFilePath);
     
     // Backup operations
     static bool CreateBackup(const std::string& filename);
@@ -81,8 +82,23 @@ private:
     static Vector3 JsonToVector3(const std::string& json);
     static Vector2 JsonToVector2(const std::string& json);
     static Color JsonToColor(const std::string& json);
+
+    // JSON parsing helper functions
+    static void ParseMetadataField(const std::string& json, const std::string& fieldName, std::string& target);
+    static Vector3 ParseVector3(const std::string& json);
+    static Color ParseColor(const std::string& json);
+    static void ParseObjectsArray(const std::string& json, std::vector<JsonSerializableObject>& objects);
+    static size_t FindMatchingBrace(const std::string& json, size_t startPos);
+    static void ParseObject(const std::string& json, JsonSerializableObject& obj);
+    static int ParseIntField(const std::string& json, const std::string& fieldName);
+    static float ParseFloatField(const std::string& json, const std::string& fieldName);
+    static bool ParseBoolField(const std::string& json, const std::string& fieldName);
+    static Vector2 ParseVector2(const std::string& json);
+
     static std::string GetCurrentTimestamp();
-    static std::string GenerateUniqueId();
+    static std::string GetUniqueId();
+    static std::string GetObjectTypeString(int type);
+    static void ParseGameMapObject(const std::string& json, JsonSerializableObject& obj);
 };
 
 #endif // JSONMAPFILEMANAGER_H

@@ -194,6 +194,7 @@ public:
     void RenderMapSelection() const;
     [[nodiscard]] const MapInfo* GetSelectedMap() const;
     [[nodiscard]] std::string GetSelectedMapName() const;
+    void ScanForJsonMaps();
 
     // Helper method for dynamic menu items
     [[nodiscard]] const std::vector<MenuItem>* GetCurrentMenuWithDynamicItems() const;

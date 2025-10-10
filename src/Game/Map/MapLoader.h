@@ -53,10 +53,18 @@ struct MapMetadata
     Color groundColor;
     float difficulty;
 
+    // Additional fields for JSON export compatibility
+    std::string createdDate;
+    std::string modifiedDate;
+    Vector3 worldBounds;
+    Color backgroundColor;
+    std::string skyboxTexture;
+
     MapMetadata()
         : name(""), displayName(""), description(""), author(""), version("1.0"),
           startPosition{0, 0, 0}, endPosition{0, 0, 0}, skyColor{SKYBLUE},
-          groundColor{DARKGREEN}, difficulty(1.0f)
+          groundColor{DARKGREEN}, difficulty(1.0f), createdDate(""), modifiedDate(""),
+          worldBounds{100.0f, 100.0f, 100.0f}, backgroundColor{50, 50, 50, 255}, skyboxTexture("")
     {}
 };
 

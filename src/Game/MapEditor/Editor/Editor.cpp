@@ -3,7 +3,10 @@
 
 #include "Editor.h"
 #include "../MapFileManager/MapFileManager.h"
+#include "../MapFileManager/JsonMapFileManager.h"
 #include "../../Game/Map/MapLoader.h"  // Include the new comprehensive map loader
+#include <cstdlib>
+#include <ctime>
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -24,7 +27,7 @@ Editor::Editor()
     : m_cameraController(std::make_shared<CameraController>()), m_currentlySelectedObjectIndex(-1),
       m_activeEditorTool(SELECT), m_displayImGuiInterface(true), m_displayObjectListPanel(true),
       m_displayPropertiesPanel(true), m_pendingObjectCreation(false), m_modelsInitialized(false),
-      m_displayFileDialog(false), m_isFileLoadDialog(true), m_displayNewFolderDialog(false),
+      m_displayFileDialog(false), m_isFileLoadDialog(true), m_isJsonExportDialog(false), m_displayNewFolderDialog(false),
       m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0) , m_gridSizes(50)
 {
     // Initialize file dialog to project root
@@ -242,9 +245,11 @@ void Editor::ExportMapForGame(const std::string &filename)
     gameMap.metadata.description = "Map exported from editor";
     gameMap.metadata.author = "Map Editor";
     gameMap.metadata.version = "1.0";
-    gameMap.metadata.difficulty = 1.0f;
+    gameMap.metadata.startPosition = {0.0f, 2.0f, 0.0f};
+    gameMap.metadata.endPosition = {0.0f, 2.0f, 0.0f};
     gameMap.metadata.skyColor = SKYBLUE;
     gameMap.metadata.groundColor = DARKGREEN;
+    gameMap.metadata.difficulty = 1.0f;
 
     // Convert MapObjects to MapObjectData
     for (const auto& obj : m_editorSceneObjects)
@@ -296,6 +301,75 @@ void Editor::ExportMapForGame(const std::string &filename)
     else
     {
         std::cout << "Failed to export map for game!" << std::endl;
+    }
+}
+
+void Editor::ExportMapAsJSON(const std::string &filename)
+{
+    // Convert MapObjects to JsonSerializableObjects for JSON export
+    std::vector<JsonSerializableObject> jsonObjects;
+
+    for (const auto& obj : m_editorSceneObjects)
+    {
+        JsonSerializableObject jsonObj;
+
+        jsonObj.position = obj.GetPosition();
+        jsonObj.scale = obj.GetScale();
+        jsonObj.rotation = obj.GetRotation();
+        jsonObj.color = obj.GetColor();
+        jsonObj.name = obj.GetObjectName();
+        jsonObj.type = obj.GetObjectType();
+        jsonObj.modelName = obj.GetModelAssetName();
+        jsonObj.visible = true; // Default to visible
+        jsonObj.layer = "default";
+        jsonObj.tags = "exported";
+        jsonObj.id = "obj_" + std::to_string(rand() % 9000 + 1000) + "_" + std::to_string(time(nullptr));
+
+        // Set shape-specific properties
+        switch (obj.GetObjectType())
+        {
+            case 1: // Sphere
+                jsonObj.radiusSphere = obj.GetSphereRadius();
+                break;
+            case 2: // Cylinder
+                jsonObj.radiusH = obj.GetScale().x;
+                jsonObj.radiusV = obj.GetScale().y;
+                break;
+            case 3: // Plane
+                jsonObj.size = obj.GetPlaneSize();
+                break;
+        }
+
+        jsonObjects.push_back(jsonObj);
+    }
+
+    // Create metadata
+    MapMetadata metadata;
+    metadata.version = "1.0";
+    metadata.name = m_currentlyLoadedMapFilePath.empty() ? "exported_map" : m_currentlyLoadedMapFilePath;
+    metadata.displayName = "Exported Map";
+    metadata.description = "Map exported from ChainedDecos Map Editor as JSON";
+    metadata.author = "Map Editor";
+    metadata.startPosition = {0.0f, 2.0f, 0.0f};
+    metadata.endPosition = {0.0f, 2.0f, 0.0f};
+    metadata.skyColor = SKYBLUE;
+    metadata.groundColor = DARKGREEN;
+    metadata.difficulty = 1.0f;
+    metadata.createdDate = "2024-01-01T00:00:00Z"; // Default timestamp
+    metadata.modifiedDate = "2024-01-01T00:00:00Z"; // Default timestamp
+    metadata.worldBounds = {100.0f, 100.0f, 100.0f};
+    metadata.backgroundColor = {50, 50, 50, 255};
+    metadata.skyboxTexture = "";
+
+    // Export using JsonMapFileManager
+    if (JsonMapFileManager::ExportGameMap(jsonObjects, filename, metadata))
+    {
+        std::cout << "Map exported as JSON successfully!" << std::endl;
+        std::cout << "Saved " << jsonObjects.size() << " objects" << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to export map as JSON!" << std::endl;
     }
 }
 
@@ -541,6 +615,17 @@ void Editor::RenderImGuiToolbar()
             m_displayFileDialog = true;
             m_currentlySelectedFile.clear();
             m_newFileNameInput = "game_map.json";
+            RefreshDirectoryItems();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Export as JSON"))
+        {
+            // Open save dialog for JSON export
+            m_isFileLoadDialog = false;
+            m_isJsonExportDialog = true;
+            m_displayFileDialog = true;
+            m_currentlySelectedFile.clear();
+            m_newFileNameInput = "exported_map.json";
             RefreshDirectoryItems();
         }
 
@@ -1219,11 +1304,20 @@ void Editor::RenderFileDialog()
         }
 
         // Handle export for game (when not in load dialog mode)
-        if (!m_isFileLoadDialog && ImGui::Button("Export for Game", mainButtonSize) && canProceed)
+        if (!m_isFileLoadDialog && !m_isJsonExportDialog && ImGui::Button("Export for Game", mainButtonSize) && canProceed)
         {
             std::string fullPath = (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
             ExportMapForGame(fullPath);
             m_displayFileDialog = false;
+        }
+
+        // Handle JSON export (when JSON export dialog mode)
+        if (!m_isFileLoadDialog && m_isJsonExportDialog && ImGui::Button("Export as JSON", mainButtonSize) && canProceed)
+        {
+            std::string fullPath = (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
+            ExportMapAsJSON(fullPath);
+            m_displayFileDialog = false;
+            m_isJsonExportDialog = false;
         }
 
         ImGui::SameLine();
@@ -1231,6 +1325,7 @@ void Editor::RenderFileDialog()
         if (ImGui::Button("Cancel", mainButtonSize))
         {
             m_displayFileDialog = false;
+            m_isJsonExportDialog = false;
         }
 
         // Show selected file
@@ -1244,6 +1339,7 @@ void Editor::RenderFileDialog()
     if (!m_displayFileDialog)
     {
         m_currentlySelectedFile.clear();
+        m_isJsonExportDialog = false;
     }
 }
 

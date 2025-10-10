@@ -38,6 +38,7 @@ private:
     // File dialog
     bool m_displayFileDialog;                                     // Show/hide file dialog
     bool m_isFileLoadDialog;                                      // true for Load, false for Save
+    bool m_isJsonExportDialog;                                    // true for JSON export
     std::string m_currentWorkingDirectory;                        // Current directory in file browser
     std::vector<std::string> m_currentDirectoryContents;          // Items in current directory
     std::string m_currentlySelectedFile;                          // Currently selected file
@@ -87,6 +88,7 @@ public:
     void SaveMap(const std::string &filename); // Save map to file (editor format)
     void LoadMap(const std::string &filename); // Load map from file (editor format)
     void ExportMapForGame(const std::string &filename); // Export map for game engine
+    void ExportMapAsJSON(const std::string &filename); // Export map as JSON format
 
     // Parkour map operations
     void LoadParkourMap(const std::string& mapName); // Load a parkour map into editor

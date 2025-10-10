@@ -7,6 +7,7 @@
 #include <rlImGui.h>
 #include <string>
 #include <vector>
+#include <filesystem> // For directory scanning
 
 // Include raylib window functions
 // Note: GLFW dependency removed as raylib provides all necessary window management
@@ -148,15 +149,15 @@ void Menu::SetGameInProgress(bool inProgress)
 
 void Menu::Update()
 {
-    // If game is in progress and we're not in a submenu, ensure we're in main menu to show resume option
-    if (m_gameInProgress && m_state != MenuState::Options && m_state != MenuState::Gameplay &&
-        m_state != MenuState::ParkourControls && m_state != MenuState::Video &&
-        m_state != MenuState::Audio && m_state != MenuState::Controls &&
-        m_state != MenuState::Credits && m_state != MenuState::Mods &&
-        m_state != MenuState::MapSelection && m_state != MenuState::ConfirmExit)
-    {
-        m_state = MenuState::Main;
-    }
+    // // If game is in progress and we're not in a submenu, ensure we're in main menu to show resume option
+    // if (m_gameInProgress && m_state != MenuState::Options && m_state != MenuState::Gameplay &&
+    //     m_state != MenuState::ParkourControls && m_state != MenuState::Video &&
+    //     m_state != MenuState::Audio && m_state != MenuState::Controls &&
+    //     m_state != MenuState::Credits && m_state != MenuState::Mods &&
+    //     m_state != MenuState::MapSelection && m_state != MenuState::ConfirmExit)
+    // {
+    //     m_state = MenuState::Main;
+    // }
 
     // Update current menu based on state
     switch (m_state)
@@ -718,7 +719,7 @@ void Menu::HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked)
     int startX = (screenWidth - totalWidth) / 2;
 
     // Check each card for mouse interaction
-    for (int i = 0; i < numCards && i < static_cast<int>(m_availableMaps.size()); ++i)
+    for (int i = 0; i < static_cast<int>(m_availableMaps.size()) && i < numCards; ++i)
     {
         int x = startX + i * (cardWidth + spacing);
         int y = startY;
@@ -1192,12 +1193,12 @@ void Menu::HandleMapSelectionKeyboardNavigation()
         if (m_selectedMap > 0)
             m_selectedMap--;
         else
-            m_selectedMap = std::min(numCards - 1, static_cast<int>(m_availableMaps.size()) - 1);
+            m_selectedMap = std::min(2, static_cast<int>(m_availableMaps.size()) - 1);
     }
 
     if (IsKeyPressed(KEY_RIGHT))
     {
-        if (m_selectedMap < std::min(numCards - 1, static_cast<int>(m_availableMaps.size()) - 1))
+        if (m_selectedMap < std::min(2, static_cast<int>(m_availableMaps.size()) - 1))
             m_selectedMap++;
         else
             m_selectedMap = 0;
@@ -1209,7 +1210,7 @@ void Menu::HandleMapSelectionKeyboardNavigation()
         const MapInfo* selectedMap = GetSelectedMap();
         if (selectedMap)
         {
-            std::cout << "Starting game with map: " << selectedMap->name << std::endl;
+            std::cout << "Starting game with map: " << selectedMap->displayName << std::endl;
             // Set action to start game with selected map
             switch (m_selectedMap)
             {
@@ -2205,7 +2206,7 @@ void Menu::HandleMapSelection()
         const MapInfo* selectedMap = GetSelectedMap();
         if (selectedMap)
         {
-            std::cout << "Starting game with map: " << selectedMap->name << std::endl;
+            std::cout << "Starting game with map: " << selectedMap->displayName << std::endl;
             // Set action to start game with selected map
             switch (m_selectedMap)
             {
@@ -2232,55 +2233,38 @@ void Menu::InitializeMaps()
     m_availableMaps.clear();
     m_selectedMap = 0;
 
-    // Easy Parkour Map - Gentle progression
+    // Main Parkour Map
     m_availableMaps.push_back({
-        "easy_parkour",
-        "Easy Parkour",
-        "Perfect for beginners - large platforms, gentle progression",
-        "/resources/map_previews/easy_parkour.png",
+        "/src/Game/Resource/parkourmap.json",
+        "Main Parkour",
+        "The primary parkour map with varied challenges",
+        "/resources/map_previews/main_parkour.png",
         SKYBLUE,
         true
     });
 
-    // Medium Parkour Map - Balanced challenge
+    // Test Map
     m_availableMaps.push_back({
-        "medium_parkour",
-        "Medium Parkour",
-        "Balanced difficulty with varied heights and moderate gaps",
-        "/resources/map_previews/medium_parkour.png",
+        "/src/Game/Resource/maps/test.json",
+        "Test Map",
+        "Test map for development and experimentation",
+        "/resources/map_previews/test_map.png",
         LIME,
         true
     });
 
-    // Hard Parkour Map - Precision platforming
+    // Default Built-in Map (fallback)
     m_availableMaps.push_back({
-        "hard_parkour",
-        "Hard Parkour",
-        "Challenging precision jumps and small platforms",
-        "/resources/map_previews/hard_parkour.png",
+        "parkour_test",
+        "Built-in Parkour",
+        "Default parkour level with basic platforming",
+        "/resources/map_previews/builtin_parkour.png",
         YELLOW,
         true
     });
 
-    // Speedrun Parkour Map - Flow-focused
-    m_availableMaps.push_back({
-        "speedrun_parkour",
-        "Speedrun Parkour",
-        "Fast-paced flowing movement for speed runners",
-        "/resources/map_previews/speedrun_parkour.png",
-        ORANGE,
-        true
-    });
-
-    // Classic Test Map - Original design
-    m_availableMaps.push_back({
-        "classic_parkour",
-        "Classic Parkour",
-        "The original parkour test map with basic shapes",
-        "/resources/map_previews/classic_parkour.png",
-        PURPLE,
-        true
-    });
+    // Scan for JSON maps in the maps directory
+    ScanForJsonMaps();
 }
 
 
@@ -2312,7 +2296,7 @@ void Menu::RenderMapSelection() const
     if (titleFontSize < 40.0f) titleFontSize = 40.0f;
     if (titleFontSize > 80.0f) titleFontSize = 80.0f;
 
-    const char* title = "SELECT CHAPTER";
+    const char* title = "SELECT MAP";
     int tw = MeasureTextEx(m_font, title, titleFontSize, 2.0f).x;
     int titleY = static_cast<int>(50.0f * scaleFactor);
     if (titleY < 40) titleY = 40;
@@ -2332,8 +2316,8 @@ void Menu::RenderMapSelection() const
         return;
     }
 
-    // Card-based layout - horizontal arrangement like the image
-    const int numCards = 3; // Show 3 cards like in the image
+    // Card-based layout - horizontal arrangement
+    const int numCards = std::min(3, static_cast<int>(m_availableMaps.size())); // Show up to 3 cards
     int cardWidth = static_cast<int>(400 * scaleFactor);
     int cardHeight = static_cast<int>(280 * scaleFactor);
     int spacing = static_cast<int>(60 * scaleFactor);
@@ -2349,7 +2333,7 @@ void Menu::RenderMapSelection() const
     int startX = (screenWidth - totalWidth) / 2;
 
     // Render cards in horizontal layout
-    for (int i = 0; i < numCards && i < static_cast<int>(m_availableMaps.size()); ++i)
+    for (int i = 0; i < static_cast<int>(m_availableMaps.size()) && i < numCards; ++i)
     {
         int x = startX + i * (cardWidth + spacing);
         int y = startY;
@@ -2403,18 +2387,18 @@ void Menu::RenderMapSelection() const
         if (previewHeight < 120) previewHeight = 120;
         DrawRectangle(cardX + 20, cardY + 20, scaledWidth - 40, previewHeight, Fade(BLACK, 0.7f));
 
-        // Chapter number/title overlay
-        std::string chapterText = "CHAPTER " + std::to_string(i + 1);
+        // Map name overlay
+        std::string mapNameText = map.displayName;
         float chapterFontSize = 18.0f * scaleFactor;
         if (chapterFontSize < 14.0f) chapterFontSize = 14.0f;
         if (chapterFontSize > 24.0f) chapterFontSize = 24.0f;
 
-        int chapterW = MeasureTextEx(m_font, chapterText.c_str(), chapterFontSize, 2.0f).x;
-        int chapterX = cardX + 30;
-        int chapterY = cardY + 30;
+        int mapNameW = MeasureTextEx(m_font, mapNameText.c_str(), chapterFontSize, 2.0f).x;
+        int mapNameX = cardX + 30;
+        int mapNameY = cardY + 30;
 
-        DrawTextEx(m_font, chapterText.c_str(), Vector2{(float)chapterX + 1, (float)chapterY + 1}, chapterFontSize, 2.0f, Fade(BLACK, 0.8f));
-        DrawTextEx(m_font, chapterText.c_str(), Vector2{(float)chapterX, (float)chapterY}, chapterFontSize, 2.0f, Color{255, 255, 255, 255});
+        DrawTextEx(m_font, mapNameText.c_str(), Vector2{(float)mapNameX + 1, (float)mapNameY + 1}, chapterFontSize, 2.0f, Fade(BLACK, 0.8f));
+        DrawTextEx(m_font, mapNameText.c_str(), Vector2{(float)mapNameX, (float)mapNameY}, chapterFontSize, 2.0f, Color{255, 255, 255, 255});
 
         // Map name (large, prominent)
         float nameFontSize = 28.0f * scaleFactor;
@@ -2474,7 +2458,7 @@ void Menu::RenderMapSelection() const
     if (instFontSize < 14.0f) instFontSize = 14.0f;
     if (instFontSize > 24.0f) instFontSize = 24.0f;
 
-    const char* instructions = "[←/→] Navigate Chapters   [Enter] Select Chapter   [Esc] Back to Menu";
+    const char* instructions = "[←/→] Navigate Maps   [Enter] Select Map   [Esc] Back to Menu";
     int iw = MeasureTextEx(m_font, instructions, instFontSize, 2.0f).x;
     int instY = screenHeight - static_cast<int>(25 * scaleFactor);
     if (instY > screenHeight - 20) instY = screenHeight - 20;
@@ -2497,9 +2481,86 @@ std::string Menu::GetSelectedMapName() const
     const MapInfo* selectedMap = GetSelectedMap();
     if (selectedMap)
     {
-        return selectedMap->name;
+        // Check if this is a JSON map (indicated by file path starting with "maps/")
+        if (selectedMap->name.find("maps/") == 0 || selectedMap->name.find(".json") != std::string::npos)
+        {
+            // Return the full path for JSON maps
+            return PROJECT_ROOT_DIR + selectedMap->name;
+        }
+        else
+        {
+            // Return the map name for built-in maps
+            return selectedMap->name;
+        }
     }
     return "parkour_test"; // Default fallback
+}
+
+void Menu::ScanForJsonMaps()
+{
+    try
+    {
+        // Create maps directory path
+        std::string mapsDir = PROJECT_ROOT_DIR "/src/Game/Resource/maps";
+
+        // Check if maps directory exists
+        if (!DirectoryExists(mapsDir.c_str()))
+        {
+            TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Maps directory not found: %s", mapsDir.c_str());
+            // Create the directory if it doesn't exist
+            // Note: In a real implementation, you might want to create it
+            return;
+        }
+
+        // Scan for JSON files in the maps directory
+        namespace fs = std::filesystem;
+        std::string rootDir = PROJECT_ROOT_DIR;
+
+        // For now, let's scan the Resource directory for any .json files
+        std::string resourceDir = rootDir + "/src/Game/Resource";
+
+        if (fs::exists(resourceDir) && fs::is_directory(resourceDir))
+        {
+            for (const auto& entry : fs::directory_iterator(resourceDir))
+            {
+                if (entry.is_regular_file())
+                {
+                    std::string filename = entry.path().filename().string();
+                    std::string extension = entry.path().extension().string();
+
+                    // Look for .json files (excluding models.json)
+                    if (extension == ".json" && filename != "models.json")
+                    {
+                        std::string mapPath = "/src/Game/Resource/" + filename;
+
+                        // Extract display name from filename (remove .json extension)
+                        std::string displayName = filename.substr(0, filename.length() - 5); // Remove .json
+                        displayName[0] = toupper(displayName[0]); // Capitalize first letter
+
+                        // Create a more descriptive name
+                        std::string fullDisplayName = displayName + " (JSON)";
+
+                        m_availableMaps.push_back({
+                            mapPath,  // Store the relative path
+                            fullDisplayName,
+                            "Custom map created in map editor",
+                            "/resources/map_previews/custom_map.png",
+                            Color{255, 200, 100, 255},  // Orange color for JSON maps
+                            true
+                        });
+
+                        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Added JSON map: %s", mapPath.c_str());
+                    }
+                }
+            }
+        }
+
+        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scan completed");
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Menu::ScanForJsonMaps() - Error scanning for JSON maps: %s", e.what());
+    }
 }
 
 void Menu::ToggleConsole()
