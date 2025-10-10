@@ -50,6 +50,10 @@ bool ConfigManager::LoadFromFile(const std::string& filename)
 
         file.close();
         TraceLog(LOG_INFO, "ConfigManager::LoadFromFile() - Successfully loaded %zu settings from %s", m_settings.size(), filename.c_str());
+
+        // Validate settings and set defaults for invalid values
+        ValidateAndSetDefaults();
+
         return true;
     }
     catch (const std::exception& e)
@@ -241,6 +245,270 @@ void ConfigManager::SetInvertY(bool invert)
 bool ConfigManager::GetInvertY() const
 {
     return GetBool("controls_invert_y", false);
+}
+
+// Parkour-specific control settings
+void ConfigManager::SetWallRunSensitivity(float sensitivity)
+{
+    SetFloat("parkour_wallrun_sensitivity", sensitivity);
+}
+
+float ConfigManager::GetWallRunSensitivity() const
+{
+    return GetFloat("parkour_wallrun_sensitivity", 1.0f);
+}
+
+void ConfigManager::SetJumpTiming(float timing)
+{
+    SetFloat("parkour_jump_timing", timing);
+}
+
+float ConfigManager::GetJumpTiming() const
+{
+    return GetFloat("parkour_jump_timing", 1.0f);
+}
+
+void ConfigManager::SetSlideControl(float control)
+{
+    SetFloat("parkour_slide_control", control);
+}
+
+float ConfigManager::GetSlideControl() const
+{
+    return GetFloat("parkour_slide_control", 1.0f);
+}
+
+void ConfigManager::SetGrappleSensitivity(float sensitivity)
+{
+    SetFloat("parkour_grapple_sensitivity", sensitivity);
+}
+
+float ConfigManager::GetGrappleSensitivity() const
+{
+    return GetFloat("parkour_grapple_sensitivity", 1.0f);
+}
+
+// Gameplay settings
+void ConfigManager::SetDifficultyLevel(int level)
+{
+    SetInt("gameplay_difficulty", level);
+}
+
+int ConfigManager::GetDifficultyLevel() const
+{
+    return GetInt("gameplay_difficulty", 2); // Default to medium
+}
+
+void ConfigManager::SetTimerEnabled(bool enabled)
+{
+    SetBool("gameplay_timer_enabled", enabled);
+}
+
+bool ConfigManager::IsTimerEnabled() const
+{
+    return GetBool("gameplay_timer_enabled", true);
+}
+
+void ConfigManager::SetCheckpointsEnabled(bool enabled)
+{
+    SetBool("gameplay_checkpoints_enabled", enabled);
+}
+
+bool ConfigManager::AreCheckpointsEnabled() const
+{
+    return GetBool("gameplay_checkpoints_enabled", true);
+}
+
+void ConfigManager::SetAutoSaveEnabled(bool enabled)
+{
+    SetBool("gameplay_autosave_enabled", enabled);
+}
+
+bool ConfigManager::IsAutoSaveEnabled() const
+{
+    return GetBool("gameplay_autosave_enabled", true);
+}
+
+void ConfigManager::SetSpeedrunMode(bool enabled)
+{
+    SetBool("gameplay_speedrun_mode", enabled);
+}
+
+bool ConfigManager::IsSpeedrunMode() const
+{
+    return GetBool("gameplay_speedrun_mode", false);
+}
+
+// Graphics quality settings for parkour
+void ConfigManager::SetShadowQuality(int quality)
+{
+    SetInt("graphics_shadow_quality", quality);
+}
+
+int ConfigManager::GetShadowQuality() const
+{
+    return GetInt("graphics_shadow_quality", 2); // Default to medium
+}
+
+void ConfigManager::SetParticleEffects(bool enabled)
+{
+    SetBool("graphics_particle_effects", enabled);
+}
+
+bool ConfigManager::AreParticleEffectsEnabled() const
+{
+    return GetBool("graphics_particle_effects", true);
+}
+
+void ConfigManager::SetAntiAliasing(int level)
+{
+    SetInt("graphics_antialiasing", level);
+}
+
+int ConfigManager::GetAntiAliasing() const
+{
+    return GetInt("graphics_antialiasing", 2); // Default to medium
+}
+
+void ConfigManager::SetTextureQuality(int quality)
+{
+    SetInt("graphics_texture_quality", quality);
+}
+
+int ConfigManager::GetTextureQuality() const
+{
+    return GetInt("graphics_texture_quality", 2); // Default to medium
+}
+
+void ConfigManager::SetRenderDistance(float distance)
+{
+    SetFloat("graphics_render_distance", distance);
+}
+
+float ConfigManager::GetRenderDistance() const
+{
+    return GetFloat("graphics_render_distance", 100.0f);
+}
+
+// Game progression settings
+void ConfigManager::SetCompletedLevels(const std::string& levels)
+{
+    SetString("progression_completed_levels", levels);
+}
+
+std::string ConfigManager::GetCompletedLevels() const
+{
+    return GetString("progression_completed_levels", "");
+}
+
+void ConfigManager::SetUnlockedMaps(const std::string& maps)
+{
+    SetString("progression_unlocked_maps", maps);
+}
+
+std::string ConfigManager::GetUnlockedMaps() const
+{
+    return GetString("progression_unlocked_maps", "Easy,Medium");
+}
+
+void ConfigManager::SetBestTimes(const std::string& times)
+{
+    SetString("progression_best_times", times);
+}
+
+std::string ConfigManager::GetBestTimes() const
+{
+    return GetString("progression_best_times", "");
+}
+
+void ConfigManager::SetTotalPlayTime(float time)
+{
+    SetFloat("progression_total_playtime", time);
+}
+
+float ConfigManager::GetTotalPlayTime() const
+{
+    return GetFloat("progression_total_playtime", 0.0f);
+}
+
+// Advanced parkour settings
+void ConfigManager::SetWallRunEnabled(bool enabled)
+{
+    SetBool("parkour_wallrun_enabled", enabled);
+}
+
+bool ConfigManager::IsWallRunEnabled() const
+{
+    return GetBool("parkour_wallrun_enabled", true);
+}
+
+void ConfigManager::SetDoubleJumpEnabled(bool enabled)
+{
+    SetBool("parkour_doublejump_enabled", enabled);
+}
+
+bool ConfigManager::IsDoubleJumpEnabled() const
+{
+    return GetBool("parkour_doublejump_enabled", false);
+}
+
+void ConfigManager::SetSlideEnabled(bool enabled)
+{
+    SetBool("parkour_slide_enabled", enabled);
+}
+
+bool ConfigManager::IsSlideEnabled() const
+{
+    return GetBool("parkour_slide_enabled", true);
+}
+
+void ConfigManager::SetGrappleEnabled(bool enabled)
+{
+    SetBool("parkour_grapple_enabled", enabled);
+}
+
+bool ConfigManager::IsGrappleEnabled() const
+{
+    return GetBool("parkour_grapple_enabled", false);
+}
+
+void ConfigManager::SetSlowMotionOnTrick(bool enabled)
+{
+    SetBool("parkour_slowmotion_trick", enabled);
+}
+
+bool ConfigManager::IsSlowMotionOnTrick() const
+{
+    return GetBool("parkour_slowmotion_trick", false);
+}
+
+// Settings validation and default value management
+void ConfigManager::ValidateAndSetDefaults()
+{
+    // Video settings validation
+    if (GetInt("video_width", 0) < 800) SetInt("video_width", 1280);
+    if (GetInt("video_height", 0) < 600) SetInt("video_height", 720);
+    if (GetFloat("audio_master", -1.0f) < 0.0f || GetFloat("audio_master", 2.0f) > 1.0f) SetFloat("audio_master", 1.0f);
+    if (GetFloat("audio_music", -1.0f) < 0.0f || GetFloat("audio_music", 2.0f) > 1.0f) SetFloat("audio_music", 0.7f);
+    if (GetFloat("audio_sfx", -1.0f) < 0.0f || GetFloat("audio_sfx", 2.0f) > 1.0f) SetFloat("audio_sfx", 0.8f);
+
+    // Control settings validation
+    if (GetFloat("controls_sensitivity", 0.0f) < 0.1f || GetFloat("controls_sensitivity", 10.0f) > 5.0f) SetFloat("controls_sensitivity", 1.0f);
+
+    // Parkour control settings validation
+    if (GetFloat("parkour_wallrun_sensitivity", 0.0f) < 0.1f || GetFloat("parkour_wallrun_sensitivity", 10.0f) > 5.0f) SetFloat("parkour_wallrun_sensitivity", 1.0f);
+    if (GetFloat("parkour_jump_timing", 0.0f) < 0.1f || GetFloat("parkour_jump_timing", 10.0f) > 5.0f) SetFloat("parkour_jump_timing", 1.0f);
+    if (GetFloat("parkour_slide_control", 0.0f) < 0.1f || GetFloat("parkour_slide_control", 10.0f) > 5.0f) SetFloat("parkour_slide_control", 1.0f);
+    if (GetFloat("parkour_grapple_sensitivity", 0.0f) < 0.1f || GetFloat("parkour_grapple_sensitivity", 10.0f) > 5.0f) SetFloat("parkour_grapple_sensitivity", 1.0f);
+
+    // Gameplay settings validation
+    if (GetInt("gameplay_difficulty", 0) < 1 || GetInt("gameplay_difficulty", 4) > 3) SetInt("gameplay_difficulty", 2);
+
+    // Graphics settings validation
+    if (GetInt("graphics_shadow_quality", 0) < 1 || GetInt("graphics_shadow_quality", 4) > 3) SetInt("graphics_shadow_quality", 2);
+    if (GetInt("graphics_antialiasing", 0) < 1 || GetInt("graphics_antialiasing", 5) > 4) SetInt("graphics_antialiasing", 2);
+    if (GetInt("graphics_texture_quality", 0) < 1 || GetInt("graphics_texture_quality", 4) > 3) SetInt("graphics_texture_quality", 2);
+    if (GetFloat("graphics_render_distance", 0.0f) < 10.0f || GetFloat("graphics_render_distance", 1000.0f) > 500.0f) SetFloat("graphics_render_distance", 100.0f);
 }
 
 void ConfigManager::Trim(std::string& str) const

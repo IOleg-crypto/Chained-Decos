@@ -15,3 +15,8 @@ target_link_libraries(physics
     PUBLIC
     raylib
 )
+
+# Add raylib include directories for FetchContent
+if(NOT raylib_FOUND)
+    target_include_directories(physics PUBLIC ${raylib_SOURCE_DIR}/src)
+endif()

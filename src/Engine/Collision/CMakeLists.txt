@@ -17,3 +17,8 @@ target_include_directories(collision PUBLIC
 )
 
 target_link_libraries(collision PUBLIC raylib model)
+
+# Add raylib include directories for FetchContent
+if(NOT raylib_FOUND)
+    target_include_directories(collision PUBLIC ${raylib_SOURCE_DIR}/src)
+endif()

@@ -1,4 +1,4 @@
-#include <CollisionManager.h>
+#include "CollisionManager.h"
 #include <CollisionSystem.h>
 #include <Model/Model.h>
 #include <algorithm>
@@ -53,8 +53,9 @@ void CollisionManager::UpdateSpatialPartitioning()
 {
     if (m_collisionObjects.empty()) return;
 
-    // Clear existing spatial grid
+    // Reserve space for better performance
     m_spatialGrid.clear();
+    m_spatialGrid.reserve(m_collisionObjects.size() * 4); // Estimate 4 cells per object
 
     // Grid cell size (adjust based on typical object sizes)
     const float cellSize = 10.0f;
@@ -71,7 +72,7 @@ void CollisionManager::UpdateSpatialPartitioning()
         int minZ = static_cast<int>(floorf(min.z / cellSize));
         int maxZ = static_cast<int>(floorf(max.z / cellSize));
 
-        // Add object to all cells it spans
+        // Add object to all cells it spans (optimized loop)
         for (int x = minX; x <= maxX; ++x)
         {
             for (int z = minZ; z <= maxZ; ++z)
@@ -82,7 +83,8 @@ void CollisionManager::UpdateSpatialPartitioning()
         }
     }
 
-    TraceLog(LOG_DEBUG, "Updated spatial partitioning: %zu cells created", m_spatialGrid.size());
+    TraceLog(LOG_DEBUG, "Updated spatial partitioning: %zu cells created for %zu objects",
+             m_spatialGrid.size(), m_collisionObjects.size());
 }
 
 void CollisionManager::AddCollider(Collision &&collisionObject)
@@ -97,8 +99,8 @@ void CollisionManager::AddCollider(Collision &&collisionObject)
 
     TraceLog(LOG_INFO, "Added collision object, total count: %zu", m_collisionObjects.size());
 
-    // Update spatial partitioning periodically for better performance
-    if (m_collisionObjects.size() % 16 == 0) // Update every 16 objects
+    // Update spatial partitioning more frequently for better performance
+    if (m_collisionObjects.size() % 8 == 0) // Update every 8 objects for better accuracy
     {
         UpdateSpatialPartitioning();
     }
@@ -151,11 +153,22 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
 {
     if (m_collisionObjects.empty())
         return false;
+
+    // Check prediction cache first
+    size_t cacheHash = const_cast<CollisionManager*>(this)->GetPredictionCacheHash(playerCollision);
+    auto cacheIt = m_predictionCache.find(cacheHash);
+    if (cacheIt != m_predictionCache.end() &&
+        m_currentFrame - cacheIt->second.frameCount < CACHE_LIFETIME_FRAMES)
+    {
+        collisionResponse = cacheIt->second.response;
+        return cacheIt->second.hasCollision;
+    }
+
     const Vector3 playerMin = playerCollision.GetMin();
     const Vector3 playerMax = playerCollision.GetMax();
     const Vector3 playerCenter = {(playerMin.x + playerMax.x) * 0.5f,
-                                   (playerMin.y + playerMax.y) * 0.5f,
-                                   (playerMin.z + playerMax.z) * 0.5f};
+                                    (playerMin.y + playerMax.y) * 0.5f,
+                                    (playerMin.z + playerMax.z) * 0.5f};
     bool collisionDetected = false;
     collisionResponse = (Vector3){0, 0, 0};
     bool hasOptimalResponse = false;
@@ -298,13 +311,34 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
     if (hasGroundSeparationVector)
     {
         collisionResponse = groundSeparationVector;
+
+        // Cache the result and manage cache size
+        const_cast<CollisionManager*>(this)->m_predictionCache[cacheHash] = {
+            true, collisionResponse, const_cast<CollisionManager*>(this)->m_currentFrame
+        };
+        const_cast<CollisionManager*>(this)->ManageCacheSize();
+
         return true;
     }
     if (hasOptimalResponse)
     {
         collisionResponse = optimalSeparationVector;
+
+        // Cache the result and manage cache size
+        const_cast<CollisionManager*>(this)->m_predictionCache[cacheHash] = {
+            true, collisionResponse, const_cast<CollisionManager*>(this)->m_currentFrame
+        };
+        const_cast<CollisionManager*>(this)->ManageCacheSize();
+
         return true;
     }
+
+    // Cache negative result too and manage cache size
+    const_cast<CollisionManager*>(this)->m_predictionCache[cacheHash] = {
+        collisionDetected, collisionResponse, const_cast<CollisionManager*>(this)->m_currentFrame
+    };
+    const_cast<CollisionManager*>(this)->ManageCacheSize();
+
     return collisionDetected;
 }
 
@@ -321,76 +355,115 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     int collisionObjectsCreated = 0;
     constexpr size_t MAX_COLLISION_INSTANCES = 5; // Increased for better coverage
 
-    // Process each model
+    // Structure to hold model processing data for parallel processing
+    struct ModelCollisionTask {
+        std::string modelName;
+        Model* model;
+        bool hasCollision;
+        std::vector<ModelInstance*> instances;
+        int createdCollisions = 0;
+    };
+
+    std::vector<ModelCollisionTask> tasks;
+
+    // Prepare tasks for parallel processing
     for (const auto &modelName : availableModels)
     {
-        // Skip if already processed
         if (processedModelNames.contains(modelName))
-        {
             continue;
-        }
 
         processedModelNames.insert(modelName);
-        TraceLog(LOG_INFO, "Processing model: %s", modelName.c_str());
 
         try
         {
-            // Get the model and check if it should have collision
             Model &model = models.GetModelByName(modelName);
             bool hasCollision = models.HasCollision(modelName);
 
-            // Skip models without collision or meshes
             if (!hasCollision || model.meshCount == 0)
-            {
-                TraceLog(LOG_INFO, "Skipping model '%s': hasCollision=%s, meshCount=%d",
-                         modelName.c_str(), hasCollision ? "true" : "false", model.meshCount);
                 continue;
-            }
 
-            // Find instances of this model
-            auto instances = models.GetInstancesByTag(modelName);
-
-            if (instances.empty())
-            {
-                // No instances found, create default collision
-                Vector3 defaultPos = (modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
-                if (CreateCollisionFromModel(model, modelName, defaultPos, 1.0f, models))
-                {
-                    collisionObjectsCreated++;
-                }
-            }
-            else
-            {
-                // Create collisions for each instance (up to the limit)
-                size_t instanceLimit = std::min(instances.size(), MAX_COLLISION_INSTANCES);
-                TraceLog(LOG_INFO, "Processing %zu/%zu instances for model '%s'", instanceLimit,
-                         instances.size(), modelName.c_str());
-
-                for (size_t i = 0; i < instanceLimit; i++)
-                {
-                    auto *instance = instances[i];
-                    Vector3 position = instance->GetModelPosition();
-                    float scale = instance->GetScale();
-
-                    if (CreateCollisionFromModel(model, modelName, position, scale, models))
-                    {
-                        collisionObjectsCreated++;
-                    }
-                }
-
-                if (instances.size() > MAX_COLLISION_INSTANCES)
-                {
-                    TraceLog(LOG_WARNING,
-                             "Limited collisions for model '%s' to %zu (of %zu instances)",
-                             modelName.c_str(), MAX_COLLISION_INSTANCES, instances.size());
-                }
-            }
+            ModelCollisionTask task;
+            task.modelName = modelName;
+            task.model = &model;
+            task.hasCollision = hasCollision;
+            task.instances = models.GetInstancesByTag(modelName);
+            tasks.push_back(task);
         }
         catch (const std::exception &e)
         {
-            TraceLog(LOG_ERROR, "Failed to create collision for model '%s': %s", modelName.c_str(),
-                     e.what());
+            TraceLog(LOG_ERROR, "Failed to prepare collision task for model '%s': %s", modelName.c_str(), e.what());
         }
+    }
+
+    // Process models in parallel
+    const size_t numThreads = std::min(tasks.size(), static_cast<size_t>(std::thread::hardware_concurrency()));
+    std::vector<std::future<int>> futures;
+
+    // Split tasks into chunks for parallel processing
+    size_t chunkSize = tasks.size() / numThreads;
+    if (chunkSize == 0) chunkSize = 1;
+
+    for (size_t threadIdx = 0; threadIdx < numThreads; ++threadIdx)
+    {
+        size_t startIdx = threadIdx * chunkSize;
+        size_t endIdx = (threadIdx == numThreads - 1) ? tasks.size() : (threadIdx + 1) * chunkSize;
+
+        if (startIdx >= tasks.size()) break;
+
+        futures.push_back(std::async(std::launch::async, [this, &models, &tasks, startIdx, endIdx, MAX_COLLISION_INSTANCES]() {
+            int localCollisionsCreated = 0;
+
+            for (size_t i = startIdx; i < endIdx; ++i)
+            {
+                const auto& task = tasks[i];
+
+                TraceLog(LOG_INFO, "Processing model: %s", task.modelName.c_str());
+
+                if (task.instances.empty())
+                {
+                    // No instances found, create default collision
+                    Vector3 defaultPos = (task.modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
+                    if (CreateCollisionFromModel(*task.model, task.modelName, defaultPos, 1.0f, models))
+                    {
+                        localCollisionsCreated++;
+                    }
+                }
+                else
+                {
+                    // Create collisions for each instance (up to the limit)
+                    size_t instanceLimit = std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
+                    TraceLog(LOG_INFO, "Processing %zu/%zu instances for model '%s'", instanceLimit,
+                             task.instances.size(), task.modelName.c_str());
+
+                    for (size_t j = 0; j < instanceLimit; j++)
+                    {
+                        auto *instance = task.instances[j];
+                        Vector3 position = instance->GetModelPosition();
+                        float scale = instance->GetScale();
+
+                        if (CreateCollisionFromModel(*task.model, task.modelName, position, scale, models))
+                        {
+                            localCollisionsCreated++;
+                        }
+                    }
+
+                    if (task.instances.size() > MAX_COLLISION_INSTANCES)
+                    {
+                        TraceLog(LOG_WARNING,
+                                 "Limited collisions for model '%s' to %zu (of %zu instances)",
+                                 task.modelName.c_str(), MAX_COLLISION_INSTANCES, task.instances.size());
+                    }
+                }
+            }
+
+            return localCollisionsCreated;
+        }));
+    }
+
+    // Collect results from all threads
+    for (auto& future : futures)
+    {
+        collisionObjectsCreated += future.get();
     }
 
     TraceLog(LOG_INFO,
@@ -406,8 +479,8 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
 // Helper function to create cache key
 std::string CollisionManager::MakeCollisionCacheKey(const std::string &modelName, float scale) const
 {
-    // Round scale to 2 decimal places for better precision while avoiding cache misses
-    int scaledInt = static_cast<int>(roundf(scale * 100.0f));
+    // Round scale to 3 decimal places for better precision while avoiding cache misses
+    int scaledInt = static_cast<int>(roundf(scale * 1000.0f));
     std::string key = modelName + "_s" + std::to_string(scaledInt);
 
     // Limit key length for performance
@@ -964,4 +1037,59 @@ Collision CollisionManager::CreateSimpleAABBInstanceCollision(const Collision &c
     Collision instanceCollision(transformedCenter, Vector3Scale(scaledSize, 0.5f));
     instanceCollision.SetCollisionType(CollisionType::AABB_ONLY);
     return instanceCollision;
+}
+
+// Prediction cache management
+void CollisionManager::UpdateFrameCache()
+{
+    m_currentFrame++;
+    if (m_currentFrame % 60 == 0) // Clean cache every 60 frames
+    {
+        ClearExpiredCache();
+    }
+}
+
+void CollisionManager::ClearExpiredCache()
+{
+    auto it = m_predictionCache.begin();
+    while (it != m_predictionCache.end())
+    {
+        if (m_currentFrame - it->second.frameCount > CACHE_LIFETIME_FRAMES)
+        {
+            it = m_predictionCache.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+size_t CollisionManager::GetPredictionCacheHash(const Collision &playerCollision) const
+{
+    // Simple hash based on player collision bounds and position
+    Vector3 min = playerCollision.GetMin();
+    Vector3 max = playerCollision.GetMax();
+
+    // Use a simple combination of position and size for hashing
+    size_t hash = 0;
+    hash = std::hash<float>{}(min.x) ^ std::hash<float>{}(min.y) ^ std::hash<float>{}(min.z);
+    hash = hash * 31 + std::hash<float>{}(max.x) ^ std::hash<float>{}(max.y) ^ std::hash<float>{}(max.z);
+
+    return hash;
+}
+
+void CollisionManager::ManageCacheSize()
+{
+    if (m_predictionCache.size() > MAX_PREDICTION_CACHE_SIZE)
+    {
+        // Remove oldest entries (simple LRU-like behavior)
+        size_t entriesToRemove = m_predictionCache.size() - MAX_PREDICTION_CACHE_SIZE;
+        auto it = m_predictionCache.begin();
+
+        for (size_t i = 0; i < entriesToRemove && it != m_predictionCache.end(); ++i)
+        {
+            it = m_predictionCache.erase(it);
+        }
+    }
 }
