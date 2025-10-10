@@ -54,49 +54,6 @@
       }
     ]
   },
-  {
-    "name": "column",
-    "path": "/resources/arc_column.glb",
-    "category": "decoration",
-    "spawn": true, 
-    "preload": false,
-    "priority": 3,
-    "lodDistance": 80.0,
-    "instances": [
-      {
-        "position": { "x": 15.0, "y": 0.0, "z": 15.0 },
-        "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-        "scale": 1.0,
-        "color": "white",
-        "tag": "decoration",
-        "spawn": true
-      },
-      {
-        "position": { "x": -15.0, "y": 0.0, "z": 15.0 },
-        "rotation": { "x": 0.0, "y": 90.0, "z": 0.0 },
-        "scale": 1.0,
-        "color": "white",
-        "tag": "decoration", 
-        "spawn": true
-      },
-      {
-        "position": { "x": 15.0, "y": 0.0, "z": -15.0 },
-        "rotation": { "x": 0.0, "y": 180.0, "z": 0.0 },
-        "scale": 1.0,
-        "color": "white",
-        "tag": "decoration",
-        "spawn": true
-      },
-      {
-        "position": { "x": -15.0, "y": 0.0, "z": -15.0 },
-        "rotation": { "x": 0.0, "y": 270.0, "z": 0.0 },
-        "scale": 1.0,
-        "color": "white", 
-        "tag": "decoration",
-        "spawn": true
-      }
-    ]
-  },
 {
   "name": "arc",
   "path": "/resources/doric_arena.glb",
