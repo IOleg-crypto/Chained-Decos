@@ -10,9 +10,6 @@
 #include <memory>
 #include <map>
 
-// Forward declaration
-class MapObject;
-
 // Layer structure for organizing objects
 struct Layer
 {
