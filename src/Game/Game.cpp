@@ -6,6 +6,7 @@
 #include "Engine/Kernel/KernelServices.h"
 #include "Engine/Model/Model.h"
 #include "Game/Menu/Menu.h"
+#include "Game/MapEditor/MapFileManager/JsonMapFileManager.h"
 #include "Engine/Render/RenderManager.h"
 #include "imgui.h"
 
@@ -114,6 +115,14 @@ void Game::Update()
         m_menu.ToggleConsole();
     }
     m_menu.HandleConsoleInput();
+
+    // Test JSON loading with F2 key (development only)
+    if (IsKeyPressed(KEY_F2))
+    {
+        std::string testMapPath = PROJECT_ROOT_DIR "/src/Game/Resource/test.json";
+        TraceLog(LOG_INFO, "Testing JSON map loading: %s", testMapPath.c_str());
+        LoadEditorMap(testMapPath);
+    }
 
     // Only process other input if console is not open
     if (!m_menu.IsConsoleOpen())
@@ -237,33 +246,29 @@ void Game::InitCollisions()
 
     // Create parkour test map based on menu selection
     MenuAction action = m_menu.GetAction();
-    if(action == MenuAction::SelectMap1)
+    switch(action)
     {
-        CreateEasyParkourMap();
-        m_isGameInitialized = true;
-    }
-    else if(action == MenuAction::SelectMap2)
-    {
-        CreateMediumParkourMap();
-        m_isGameInitialized = true;
-    }
-    else if(action == MenuAction::SelectMap3)
-    {
-        CreateHardParkourMap();
-        m_isGameInitialized = true;
-
-    }
-    else if(action == MenuAction::StartGameWithMap)
-    {
-        m_isGameInitialized = true;
-        CreateSpeedrunParkourMap();
-    }
-    else
-    {
-        m_isGameInitialized = true;
-
-        // Default fallback to original test map
-        CreateParkourTestMap();
+        case MenuAction::SelectMap1:
+            CreateEasyParkourMap();
+            m_isGameInitialized = true;
+            break;
+        case MenuAction::SelectMap2:
+            CreateMediumParkourMap();
+            m_isGameInitialized = true;
+            break;
+        case MenuAction::SelectMap3:
+            CreateHardParkourMap();
+            m_isGameInitialized = true;
+            break;
+        case MenuAction::StartGameWithMap:
+            m_isGameInitialized = true;
+            CreateSpeedrunParkourMap();
+            break;
+        default:
+            m_isGameInitialized = true;
+            // Default fallback to original test map
+            CreateParkourTestMap();
+            break;
     }
 
     // Initialize ground collider first
@@ -440,9 +445,23 @@ void Game::HandleMenuActions()
     case MenuAction::SinglePlayer:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting singleplayer...");
         m_menu.SetGameInProgress(true);
-        ToggleMenu();
+
+        // Load test JSON map instead of default parkour map
+        {
+            std::string testMapPath = PROJECT_ROOT_DIR "/src/Game/Resource/test.json";
+            TraceLog(LOG_INFO, "Loading test JSON map for singleplayer: %s", testMapPath.c_str());
+
+        // Initialize basic collision system first
         InitCollisions();
+
+            // Load the test map
+            LoadEditorMap(testMapPath);
+        }
+
+        // Initialize player after map is loaded
         InitPlayer();
+
+        ToggleMenu();
         m_isGameInitialized = true; // Mark game as initialized
         m_menu.ResetAction();
         break;
@@ -1197,8 +1216,85 @@ void Game::LoadEditorMap(const std::string& mapPath)
     m_gameMap.Cleanup();
     m_gameMap = GameMap{};
 
-    // Load the new comprehensive map format
-    m_gameMap = LoadGameMap(mapPath);
+    // Check if this is a JSON file exported from map editor
+    std::string extension = mapPath.substr(mapPath.find_last_of(".") + 1);
+    if (extension == "json")
+    {
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Detected JSON format, using JSON loader");
+
+        // Load using JSON format
+        std::vector<JsonSerializableObject> jsonObjects;
+        MapMetadata metadata;
+
+        if (JsonMapFileManager::ImportGameMap(jsonObjects, mapPath, metadata))
+        {
+            // Convert JsonSerializableObject to MapObjectData
+            for (const auto& jsonObj : jsonObjects)
+            {
+                MapObjectData objectData;
+
+                objectData.name = jsonObj.name;
+                objectData.position = jsonObj.position;
+                objectData.rotation = jsonObj.rotation;
+                objectData.scale = jsonObj.scale;
+                objectData.color = jsonObj.color;
+                objectData.modelName = jsonObj.modelName;
+
+                // Convert type from int to enum
+                switch (jsonObj.type)
+                {
+                    case 0: objectData.type = MapObjectType::CUBE; break;
+                    case 1: objectData.type = MapObjectType::SPHERE; break;
+                    case 2: objectData.type = MapObjectType::CYLINDER; break;
+                    case 3: objectData.type = MapObjectType::PLANE; break;
+                    case 4: objectData.type = MapObjectType::MODEL; break;
+                    case 5: objectData.type = MapObjectType::LIGHT; break;
+                    default: objectData.type = MapObjectType::CUBE; break;
+                }
+
+                // Set shape-specific properties
+                switch (jsonObj.type)
+                {
+                    case 1: // Sphere
+                        objectData.radius = jsonObj.radiusSphere;
+                        break;
+                    case 2: // Cylinder
+                        objectData.radius = jsonObj.radiusH;
+                        objectData.height = jsonObj.radiusV;
+                        break;
+                    case 3: // Plane
+                        objectData.size = jsonObj.size;
+                        break;
+                }
+
+                m_gameMap.objects.push_back(objectData);
+            }
+
+            // Set metadata
+            m_gameMap.metadata.name = metadata.name;
+            m_gameMap.metadata.displayName = metadata.name;
+            m_gameMap.metadata.description = metadata.description;
+            m_gameMap.metadata.author = metadata.author;
+            m_gameMap.metadata.version = metadata.version;
+            m_gameMap.metadata.startPosition = {0.0f, 2.0f, 0.0f}; // Default start position
+            m_gameMap.metadata.skyColor = SKYBLUE;
+            m_gameMap.metadata.groundColor = DARKGREEN;
+            m_gameMap.metadata.difficulty = 1.0f;
+
+            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded JSON map with %d objects", m_gameMap.objects.size());
+        }
+        else
+        {
+            TraceLog(LOG_ERROR, "Game::LoadEditorMap() - Failed to load JSON map");
+            return;
+        }
+    }
+    else
+    {
+        // Load using the original game map format
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Using original game map format");
+        m_gameMap = LoadGameMap(mapPath);
+    }
 
     if (m_gameMap.objects.empty())
     {
@@ -1254,11 +1350,77 @@ void Game::LoadEditorMap(const std::string& mapPath)
 
 void Game::RenderEditorMap()
 {
-    // Get camera from player for rendering
-    Camera3D camera = m_player.GetCameraController()->GetCamera();
+    // Render the loaded map objects
+    for (const auto& object : m_gameMap.objects)
+    {
+        // Render based on object type
+        switch (object.type)
+        {
+            case MapObjectType::CUBE:
+                DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+                break;
 
-    // Render the loaded map
-    RenderGameMap(m_gameMap, camera);
+            case MapObjectType::SPHERE:
+                DrawSphere(object.position, object.radius, object.color);
+                break;
+
+            case MapObjectType::CYLINDER:
+                // Draw cylinder using multiple spheres for approximation
+                // For better cylinder rendering, you might want to use a 3D model
+                DrawSphere(object.position, object.radius, object.color);
+                DrawSphere(Vector3{object.position.x, object.position.y + object.height, object.position.z}, object.radius, object.color);
+                break;
+
+            case MapObjectType::PLANE:
+                // Draw plane as a thin cube
+                DrawCube(object.position, object.size.x, 0.1f, object.size.y, object.color);
+                break;
+
+            case MapObjectType::MODEL:
+                // For model objects, we would need to load and render the actual model
+                // For now, draw a placeholder cube
+                if (!object.modelName.empty())
+                {
+                    try
+                    {
+                        Model* model = &m_models.GetModelByName(object.modelName.c_str());
+                        if (model && model->meshCount > 0)
+                        {
+                            DrawModelEx(*model, object.position,
+                                      Vector3{object.rotation.x, object.rotation.y, object.rotation.z},
+                                      object.rotation.y, Vector3{object.scale.x, object.scale.y, object.scale.z},
+                                      object.color);
+                        }
+                        else
+                        {
+                            // Fallback to cube if model not found
+                            DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+                        }
+                    }
+                    catch (const std::exception& e)
+                    {
+                        // Fallback to cube if model loading fails
+                        DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+                    }
+                }
+                else
+                {
+                    // No model name specified, draw as cube
+                    DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+                }
+                break;
+
+            case MapObjectType::LIGHT:
+                // For light objects, just draw a small glowing cube
+                DrawCube(object.position, 0.5f, 0.5f, 0.5f, YELLOW);
+                break;
+
+            default:
+                // Unknown type, draw as cube
+                DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+                break;
+        }
+    }
 
     // Also render any legacy map objects for backward compatibility
     for (const auto& mapObj : m_mapObjects)
