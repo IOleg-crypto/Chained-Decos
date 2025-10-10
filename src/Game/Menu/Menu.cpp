@@ -34,7 +34,7 @@ Menu::Menu()
                  alanSansFontPath.c_str());
     }
 
-    // Main Menu
+    // Main Menu - Resume Game will be added dynamically if game is in progress
     m_mainMenu = {{"Start Game", MenuAction::StartGame},
                   {"Options", MenuAction::OpenOptions},
                   {"Mods", MenuAction::OpenMods},
@@ -43,9 +43,11 @@ Menu::Menu()
 
     // Options Menu
     m_optionsMenu = {{"Video", MenuAction::OpenVideoMode},
-                     {"Audio", MenuAction::OpenAudio},
-                     {"Controls", MenuAction::OpenControls},
-                     {"Back", MenuAction::BackToMainMenu}};
+                      {"Audio", MenuAction::OpenAudio},
+                      {"Controls", MenuAction::OpenControls},
+                      {"Gameplay", MenuAction::OpenGameplay},
+                      {"Parkour Controls", MenuAction::OpenParkourControls},
+                      {"Back", MenuAction::BackToMainMenu}};
 
     // Game Mode Menu
     m_SetGameMode = {{"Singleplayer", MenuAction::SinglePlayer},
@@ -70,13 +72,42 @@ Menu::Menu()
 
     // Controls Menu with proper actions
     m_controlsMenu = {{"Rebind Keys", MenuAction::OpenKeyBinding},
-                      {"Mouse Sensitivity", MenuAction::AdjustMouseSensitivity},
-                      {"Invert Y Axis", MenuAction::ToggleInvertY},
-                      {"Controller Support", MenuAction::ToggleController},
-                      {"Back", MenuAction::BackToMainMenu}};
+                       {"Mouse Sensitivity", MenuAction::AdjustMouseSensitivity},
+                       {"Invert Y Axis", MenuAction::ToggleInvertY},
+                       {"Controller Support", MenuAction::ToggleController},
+                       {"Back", MenuAction::BackToMainMenu}};
+
+    // Gameplay Options - using MenuOption structure like video settings
+    m_gameplayOptions = {
+        {"Difficulty", {"Easy", "Medium", "Hard"}, 1},
+        {"Timer", {"Off", "On"}, 1},
+        {"Checkpoints", {"Off", "On"}, 1},
+        {"Auto Save", {"Off", "On"}, 1},
+        {"Speedrun Mode", {"Off", "On"}, 0},
+        {"Back", {}, 0}
+    };
+
+    // Parkour Controls Options - using MenuOption structure
+    m_parkourControlsOptions = {
+        {"Wall Run Sensitivity", {"0.1x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x", "5.0x"}, 2},
+        {"Jump Timing", {"0.1x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x", "5.0x"}, 2},
+        {"Slide Control", {"0.1x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x", "5.0x"}, 2},
+        {"Grapple Sensitivity", {"0.1x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x", "5.0x"}, 2},
+        {"Wall Run", {"Off", "On"}, 1},
+        {"Double Jump", {"Off", "On"}, 0},
+        {"Slide", {"Off", "On"}, 1},
+        {"Grapple", {"Off", "On"}, 0},
+        {"Slow Motion on Trick", {"Off", "On"}, 0},
+        {"Trick Camera", {"Off", "On"}, 1},
+        {"Auto Wall Run", {"Off", "On"}, 1},
+        {"Back", {}, 0}
+    };
 
     m_currentMenu = &m_mainMenu;
     m_buttonScales.assign(m_currentMenu->size(), 1.0f);
+
+    // Ensure we start at the main menu state
+    m_state = MenuState::Main;
 }
 
 
@@ -91,8 +122,42 @@ void Menu::ResetAction() { m_action = MenuAction::None; }
 
 void Menu::GetEngine(Engine *engine) { m_engine = engine; }
 
+// Helper function to get current menu with dynamic items
+const std::vector<MenuItem>* Menu::GetCurrentMenuWithDynamicItems() const
+{
+    if (m_state == MenuState::Main && m_gameInProgress)
+    {
+        // Create a static dynamic menu for main menu with resume option
+        static std::vector<MenuItem> dynamicMainMenu;
+        dynamicMainMenu = {{"Resume Game", MenuAction::ResumeGame},
+                          {"Start Game", MenuAction::StartGame},
+                          {"Options", MenuAction::OpenOptions},
+                          {"Mods", MenuAction::OpenMods},
+                          {"Credits", MenuAction::OpenCredits},
+                          {"Quit", MenuAction::ExitGame}};
+        return &dynamicMainMenu;
+    }
+    return m_currentMenu;
+}
+
+void Menu::SetGameInProgress(bool inProgress)
+{
+    m_gameInProgress = inProgress;
+    TraceLog(LOG_INFO, "Menu::SetGameInProgress() - Game state set to: %s", inProgress ? "IN PROGRESS" : "NOT IN PROGRESS");
+}
+
 void Menu::Update()
 {
+    // If game is in progress and we're not in a submenu, ensure we're in main menu to show resume option
+    if (m_gameInProgress && m_state != MenuState::Options && m_state != MenuState::Gameplay &&
+        m_state != MenuState::ParkourControls && m_state != MenuState::Video &&
+        m_state != MenuState::Audio && m_state != MenuState::Controls &&
+        m_state != MenuState::Credits && m_state != MenuState::Mods &&
+        m_state != MenuState::MapSelection && m_state != MenuState::ConfirmExit)
+    {
+        m_state = MenuState::Main;
+    }
+
     // Update current menu based on state
     switch (m_state)
     {
@@ -117,6 +182,12 @@ void Menu::Update()
         break;
     case MenuState::Controls:
         m_currentMenu = &m_controlsMenu;
+        break;
+    case MenuState::Gameplay:
+        // Use options-based system like video settings
+        break;
+    case MenuState::ParkourControls:
+        // Use options-based system like video settings
         break;
     default:
         m_currentMenu = nullptr;
@@ -166,6 +237,12 @@ void Menu::HandleKeyboardNavigation()
     case MenuState::Audio:
     case MenuState::Controls:
         HandleMainMenuKeyboardNavigation();
+        break;
+    case MenuState::Gameplay:
+        HandleGameplayNavigation();
+        break;
+    case MenuState::ParkourControls:
+        HandleParkourControlsNavigation();
         break;
     case MenuState::Video:
         HandleVideoMenuKeyboardNavigation();
@@ -270,6 +347,12 @@ void Menu::HandleMouseSelection()
     case MenuState::Controls:
         HandleMainMenuMouseSelection(mousePos, clicked);
         break;
+    case MenuState::Gameplay:
+        HandleGameplayMouseSelection(mousePos, clicked);
+        break;
+    case MenuState::ParkourControls:
+        HandleParkourControlsMouseSelection(mousePos, clicked);
+        break;
     case MenuState::Video:
         HandleVideoMenuMouseSelection(mousePos, clicked);
         break;
@@ -301,6 +384,11 @@ void Menu::ExecuteAction()
         m_state = MenuState::GameMode;
         ResetAction();
         break;
+    case MenuAction::ResumeGame:
+        TraceLog(LOG_INFO, "Menu::ExecuteAction() - Resuming game...");
+        // Resume game will be handled by Game class
+        ResetAction();
+        break;
     case MenuAction::SinglePlayer:
         m_state = MenuState::MapSelection;
         InitializeMaps();
@@ -323,6 +411,14 @@ void Menu::ExecuteAction()
         break;
     case MenuAction::OpenControls:
         m_state = MenuState::Controls;
+        ResetAction();
+        break;
+    case MenuAction::OpenGameplay:
+        m_state = MenuState::Gameplay;
+        ResetAction();
+        break;
+    case MenuAction::OpenParkourControls:
+        m_state = MenuState::ParkourControls;
         ResetAction();
         break;
     case MenuAction::AdjustMasterVolume:
@@ -367,17 +463,28 @@ void Menu::ExecuteAction()
         break;
     case MenuAction::BackToMainMenu:
         m_state = (m_state == MenuState::Video || m_state == MenuState::Audio ||
-                   m_state == MenuState::Controls)
+                   m_state == MenuState::Controls || m_state == MenuState::Gameplay ||
+                   m_state == MenuState::ParkourControls)
                       ? MenuState::Options
                       : MenuState::Main;
         ResetAction();
         break;
     case MenuAction::ExitGame:
-        if (m_state == MenuState::ConfirmExit && m_engine)
-            m_engine->RequestExit();
+        if (m_state == MenuState::ConfirmExit)
+        {
+            // User confirmed exit, actually exit the game
+            if (m_engine)
+                m_engine->RequestExit();
+            // Set game state to not in progress when exiting
+            m_gameInProgress = false;
+            ResetAction();
+        }
         else
+        {
+            // Show confirmation dialog
             m_state = MenuState::ConfirmExit;
-        ResetAction();
+            // Don't reset action, we need it for confirmation
+        }
         break;
     case MenuAction::StartGameWithMap:
     case MenuAction::SelectMap1:
@@ -392,23 +499,74 @@ void Menu::ExecuteAction()
     }
 }
 
+void Menu::HandleGameplayMouseSelection(Vector2 mousePos, bool clicked)
+{
+    constexpr int startY = 150, spacing = 80;
+
+    for (size_t i = 0; i < m_gameplayOptions.size(); ++i)
+    {
+        int y = startY + static_cast<int>(i) * spacing;
+        Rectangle rect = {60.0f, (float)(y - 5), (float)(GetScreenWidth() - 120), (float)(spacing - 10)};
+
+        if (CheckCollisionPointRec(mousePos, rect))
+        {
+            m_selected = static_cast<int>(i);
+            if (clicked)
+            {
+                auto &opt = m_gameplayOptions[m_selected];
+                if (opt.label == "Back")
+                    m_state = MenuState::Options;
+                else
+                    ApplyGameplayOption(opt);
+            }
+            break;
+        }
+    }
+}
+
+void Menu::HandleParkourControlsMouseSelection(Vector2 mousePos, bool clicked)
+{
+    constexpr int startY = 150, spacing = 80;
+
+    for (size_t i = 0; i < m_parkourControlsOptions.size(); ++i)
+    {
+        int y = startY + static_cast<int>(i) * spacing;
+        Rectangle rect = {60.0f, (float)(y - 5), (float)(GetScreenWidth() - 120), (float)(spacing - 10)};
+
+        if (CheckCollisionPointRec(mousePos, rect))
+        {
+            m_selected = static_cast<int>(i);
+            if (clicked)
+            {
+                auto &opt = m_parkourControlsOptions[m_selected];
+                if (opt.label == "Back")
+                    m_state = MenuState::Options;
+                else
+                    ApplyParkourControlsOption(opt);
+            }
+            break;
+        }
+    }
+}
+
 void Menu::HandleConfirmExit()
 {
     if (IsKeyPressed(KEY_Y) || IsKeyPressed(KEY_ENTER))
     {
         m_action = MenuAction::ExitGame;
-        if (m_engine)
-            m_engine->RequestExit();
+        // ExecuteAction will handle the actual exit
     }
     else if (IsKeyPressed(KEY_N) || IsKeyPressed(KEY_ESCAPE))
     {
         m_state = MenuState::Main;
+        ResetAction();
     }
 }
 
 void Menu::HandleMainMenuMouseSelection(Vector2 mousePos, bool clicked)
 {
-    if (!m_currentMenu)
+    const std::vector<MenuItem>* menuToUse = GetCurrentMenuWithDynamicItems();
+    if (!menuToUse)
         return;
 
     // Dynamic sizing based on screen resolution
@@ -428,7 +586,7 @@ void Menu::HandleMainMenuMouseSelection(Vector2 mousePos, bool clicked)
     if (kStartY < 250) kStartY = 250;
     if (kSpacing < 60) kSpacing = 60;
 
-    for (size_t i = 0; i < m_currentMenu->size(); ++i)
+    for (size_t i = 0; i < menuToUse->size(); ++i)
     {
         int x = screenWidth / 2 - kBtnW / 2;
         int y = kStartY + static_cast<int>(i) * kSpacing;
@@ -439,7 +597,7 @@ void Menu::HandleMainMenuMouseSelection(Vector2 mousePos, bool clicked)
             m_selected = static_cast<int>(i);
             if (clicked)
             {
-                m_action = (*m_currentMenu)[m_selected].action;
+                m_action = (*menuToUse)[m_selected].action;
                 break;
             }
         }
@@ -539,29 +697,46 @@ void Menu::HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked)
     if (m_availableMaps.empty())
         return;
 
-    // Calculate layout
-    const int mapsPerRow = 3;
-    const int mapWidth = 280;
-    const int mapHeight = 200;
-    const int spacing = 40;
-    const int startY = 120;
+    // Dynamic sizing based on screen resolution
+    int screenWidth = GetScreenWidth();
+    float scaleFactor = screenWidth / 1920.0f;
 
-    int totalWidth = mapsPerRow * mapWidth + (mapsPerRow - 1) * spacing;
-    int startX = (GetScreenWidth() - totalWidth) / 2;
+    // Card-based layout - horizontal arrangement
+    const int numCards = 3;
+    int cardWidth = static_cast<int>(400 * scaleFactor);
+    int cardHeight = static_cast<int>(280 * scaleFactor);
+    int spacing = static_cast<int>(60 * scaleFactor);
+    int startY = static_cast<int>(140 * scaleFactor);
 
-    // Check each map for mouse interaction
-    for (size_t i = 0; i < m_availableMaps.size(); ++i)
+    // Ensure minimum usable sizes
+    if (cardWidth < 300) cardWidth = 300;
+    if (cardHeight < 200) cardHeight = 200;
+    if (spacing < 40) spacing = 40;
+    if (startY < 120) startY = 120;
+
+    int totalWidth = numCards * cardWidth + (numCards - 1) * spacing;
+    int startX = (screenWidth - totalWidth) / 2;
+
+    // Check each card for mouse interaction
+    for (int i = 0; i < numCards && i < static_cast<int>(m_availableMaps.size()); ++i)
     {
-        int row = static_cast<int>(i) / mapsPerRow;
-        int col = static_cast<int>(i) % mapsPerRow;
+        int x = startX + i * (cardWidth + spacing);
+        int y = startY;
 
-        int x = startX + col * (mapWidth + spacing);
-        int y = startY + row * (mapHeight + spacing);
-        Rectangle rect = {(float)x, (float)y, (float)mapWidth, (float)mapHeight};
+        // Apply hover/selection scaling
+        bool isSelected = (i == m_selectedMap);
+        float cardScale = isSelected ? 1.05f : 1.0f;
+
+        int scaledWidth = static_cast<int>(cardWidth * cardScale);
+        int scaledHeight = static_cast<int>(cardHeight * cardScale);
+        int cardX = x + (cardWidth - scaledWidth) / 2;
+        int cardY = y + (cardHeight - scaledHeight) / 2;
+
+        Rectangle rect = {(float)cardX, (float)cardY, (float)scaledWidth, (float)scaledHeight};
 
         if (CheckCollisionPointRec(mousePos, rect))
         {
-            m_selectedMap = static_cast<int>(i);
+            m_selectedMap = i;
             if (clicked)
             {
                 // Start the game with selected map
@@ -590,6 +765,25 @@ void Menu::HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked)
             break;
         }
     }
+
+    // Handle back button click
+    float backFontSize = 24.0f * scaleFactor;
+    if (backFontSize < 18.0f) backFontSize = 18.0f;
+    if (backFontSize > 32.0f) backFontSize = 32.0f;
+
+    const char* backText = "Back";
+    int backW = MeasureTextEx(m_font, backText, backFontSize, 2.0f).x;
+    int backX = static_cast<int>(30 * scaleFactor);
+    if (backX < 20) backX = 20;
+    int backY = GetScreenHeight() - static_cast<int>(50 * scaleFactor);
+    if (backY > GetScreenHeight() - 40) backY = GetScreenHeight() - 40;
+
+    Rectangle backRect = {(float)backX - 10, (float)backY - 5, (float)backW + 20, (float)backFontSize + 10};
+
+    if (CheckCollisionPointRec(mousePos, backRect) && clicked)
+    {
+        m_state = MenuState::GameMode;
+    }
 }
 
 void Menu::HandleConfirmExitMouseSelection(Vector2 mousePos, bool clicked)
@@ -597,46 +791,66 @@ void Menu::HandleConfirmExitMouseSelection(Vector2 mousePos, bool clicked)
     if (!clicked)
         return;
 
-    // Modal dialog container
-    int modalWidth = 500;
-    int modalHeight = 300;
-    int modalX = GetScreenWidth() / 2 - modalWidth / 2;
-    int modalY = GetScreenHeight() / 2 - modalHeight / 2;
+    // Dynamic sizing based on screen resolution
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    float scaleFactor = screenWidth / 1920.0f;
+
+    int modalWidth = static_cast<int>(500 * scaleFactor);
+    int modalHeight = static_cast<int>(300 * scaleFactor);
+
+    // Ensure minimum usable sizes
+    if (modalWidth < 400) modalWidth = 400;
+    if (modalHeight < 250) modalHeight = 250;
+    if (modalWidth > screenWidth - 100) modalWidth = screenWidth - 100;
+    if (modalHeight > screenHeight - 100) modalHeight = screenHeight - 100;
+
+    int modalX = screenWidth / 2 - modalWidth / 2;
+    int modalY = screenHeight / 2 - modalHeight / 2;
 
     // YES button (left)
-    int yesX = modalX + modalWidth / 2 - 100;
-    int buttonY = modalY + modalHeight - 80;
-    Rectangle yesRect = {(float)(yesX - 15), (float)(buttonY - 10), 80.0f, 40.0f};
+    int yesX = modalX + modalWidth / 2 - static_cast<int>(100 * scaleFactor);
+    int buttonY = modalY + modalHeight - static_cast<int>(80 * scaleFactor);
+    int buttonWidth = static_cast<int>(80 * scaleFactor);
+    int buttonHeight = static_cast<int>(40 * scaleFactor);
+
+    if (buttonWidth < 60) buttonWidth = 60;
+    if (buttonHeight < 32) buttonHeight = 32;
+    if (yesX < modalX + 20) yesX = modalX + 20;
+
+    Rectangle yesRect = {(float)(yesX - 15), (float)(buttonY - 10), (float)buttonWidth, (float)buttonHeight};
 
     // NO button (right)
-    int noX = modalX + modalWidth / 2 + 40;
-    Rectangle noRect = {(float)(noX - 15), (float)(buttonY - 10), 80.0f, 40.0f};
+    int noX = modalX + modalWidth / 2 + static_cast<int>(40 * scaleFactor);
+    if (noX + buttonWidth + 15 > modalX + modalWidth - 20) noX = modalX + modalWidth - buttonWidth - 35;
+    Rectangle noRect = {(float)(noX - 15), (float)(buttonY - 10), (float)buttonWidth, (float)buttonHeight};
 
     if (CheckCollisionPointRec(mousePos, yesRect))
     {
         m_action = MenuAction::ExitGame;
-        if (m_engine)
-            m_engine->RequestExit();
+        // ExecuteAction will handle the actual exit
     }
     else if (CheckCollisionPointRec(mousePos, noRect))
     {
         m_state = MenuState::Main;
+        ResetAction();
     }
 }
 
 
 void Menu::HandleMainMenuKeyboardNavigation()
 {
-    if (!m_currentMenu)
+    const std::vector<MenuItem>* menuToUse = GetCurrentMenuWithDynamicItems();
+    if (!menuToUse)
         return;
 
     if (IsKeyPressed(KEY_DOWN))
-        m_selected = (m_selected + 1) % m_currentMenu->size();
+        m_selected = (m_selected + 1) % menuToUse->size();
     if (IsKeyPressed(KEY_UP))
-        m_selected = (m_selected + m_currentMenu->size() - 1) % m_currentMenu->size();
+        m_selected = (m_selected + menuToUse->size() - 1) % menuToUse->size();
 
     if (IsKeyPressed(KEY_ENTER))
-        m_action = (*m_currentMenu)[m_selected].action;
+        m_action = (*menuToUse)[m_selected].action;
 
     if (IsKeyPressed(KEY_ESCAPE))
     {
@@ -778,6 +992,184 @@ void Menu::HandleVideoMenuKeyboardNavigation()
             AddConsoleOutput("Mouse sensitivity: " + std::to_string(m_mouseSensitivity));
         }
     }
+
+}
+
+void Menu::HandleGameplayNavigation()
+{
+    if (IsKeyPressed(KEY_DOWN))
+        m_selected = (m_selected + 1) % m_gameplayOptions.size();
+    if (IsKeyPressed(KEY_UP))
+        m_selected = (m_selected + m_gameplayOptions.size() - 1) % m_gameplayOptions.size();
+
+    if (!m_gameplayOptions[m_selected].values.empty())
+    {
+        auto &opt = m_gameplayOptions[m_selected];
+        if (IsKeyPressed(KEY_RIGHT))
+            opt.selectedIndex = (opt.selectedIndex + 1) % opt.values.size();
+        if (IsKeyPressed(KEY_LEFT))
+            opt.selectedIndex = (opt.selectedIndex + opt.values.size() - 1) % opt.values.size();
+    }
+
+    if (IsKeyPressed(KEY_ENTER))
+    {
+        auto &opt = m_gameplayOptions[m_selected];
+        if (opt.label == "Back")
+        {
+            m_state = MenuState::Options;
+        }
+        else
+        {
+            // Apply the selected option immediately
+            ApplyGameplayOption(opt);
+        }
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE))
+        m_state = MenuState::Options;
+}
+
+void Menu::HandleParkourControlsNavigation()
+{
+    if (IsKeyPressed(KEY_DOWN))
+        m_selected = (m_selected + 1) % m_parkourControlsOptions.size();
+    if (IsKeyPressed(KEY_UP))
+        m_selected = (m_selected + m_parkourControlsOptions.size() - 1) % m_parkourControlsOptions.size();
+
+    if (!m_parkourControlsOptions[m_selected].values.empty())
+    {
+        auto &opt = m_parkourControlsOptions[m_selected];
+        if (IsKeyPressed(KEY_RIGHT))
+            opt.selectedIndex = (opt.selectedIndex + 1) % opt.values.size();
+        if (IsKeyPressed(KEY_LEFT))
+            opt.selectedIndex = (opt.selectedIndex + opt.values.size() - 1) % opt.values.size();
+    }
+
+    if (IsKeyPressed(KEY_ENTER))
+    {
+        auto &opt = m_parkourControlsOptions[m_selected];
+        if (opt.label == "Back")
+        {
+            m_state = MenuState::Options;
+        }
+        else
+        {
+            // Apply the selected option immediately
+            ApplyParkourControlsOption(opt);
+        }
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE))
+        m_state = MenuState::Options;
+}
+
+void Menu::ApplyGameplayOption(MenuOption& opt)
+{
+    if (opt.label == "Difficulty")
+    {
+        std::string difficulty = opt.values[opt.selectedIndex];
+        if (difficulty == "Easy") m_difficultyLevel = 1;
+        else if (difficulty == "Medium") m_difficultyLevel = 2;
+        else if (difficulty == "Hard") m_difficultyLevel = 3;
+
+        m_config.SetDifficultyLevel(m_difficultyLevel);
+        AddConsoleOutput("Difficulty set to: " + difficulty);
+    }
+    else if (opt.label == "Timer")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_timerEnabled = enabled;
+        m_config.SetTimerEnabled(enabled);
+        AddConsoleOutput("Timer " + std::string(enabled ? "enabled" : "disabled"));
+    }
+    else if (opt.label == "Checkpoints")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_checkpointsEnabled = enabled;
+        m_config.SetCheckpointsEnabled(enabled);
+        AddConsoleOutput("Checkpoints " + std::string(enabled ? "enabled" : "disabled"));
+    }
+    else if (opt.label == "Auto Save")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_autoSaveEnabled = enabled;
+        m_config.SetAutoSaveEnabled(enabled);
+        AddConsoleOutput("Auto save " + std::string(enabled ? "enabled" : "disabled"));
+    }
+    else if (opt.label == "Speedrun Mode")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_speedrunMode = enabled;
+        m_config.SetSpeedrunMode(enabled);
+        AddConsoleOutput("Speedrun mode " + std::string(enabled ? "enabled" : "disabled"));
+    }
+}
+
+void Menu::ApplyParkourControlsOption(MenuOption& opt)
+{
+    if (opt.label == "Wall Run Sensitivity")
+    {
+        float sensitivity = std::stof(opt.values[opt.selectedIndex].substr(0, opt.values[opt.selectedIndex].find('x')));
+        m_wallRunSensitivity = sensitivity;
+        m_config.SetWallRunSensitivity(sensitivity);
+        AddConsoleOutput("Wall run sensitivity: " + opt.values[opt.selectedIndex]);
+    }
+    else if (opt.label == "Jump Timing")
+    {
+        float timing = std::stof(opt.values[opt.selectedIndex].substr(0, opt.values[opt.selectedIndex].find('x')));
+        m_jumpTiming = timing;
+        m_config.SetJumpTiming(timing);
+        AddConsoleOutput("Jump timing: " + opt.values[opt.selectedIndex]);
+    }
+    else if (opt.label == "Slide Control")
+    {
+        float control = std::stof(opt.values[opt.selectedIndex].substr(0, opt.values[opt.selectedIndex].find('x')));
+        m_slideControl = control;
+        m_config.SetSlideControl(control);
+        AddConsoleOutput("Slide control: " + opt.values[opt.selectedIndex]);
+    }
+    else if (opt.label == "Grapple Sensitivity")
+    {
+        float sensitivity = std::stof(opt.values[opt.selectedIndex].substr(0, opt.values[opt.selectedIndex].find('x')));
+        m_grappleSensitivity = sensitivity;
+        m_config.SetGrappleSensitivity(sensitivity);
+        AddConsoleOutput("Grapple sensitivity: " + opt.values[opt.selectedIndex]);
+    }
+    else if (opt.label == "Wall Run")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_wallRunEnabled = enabled;
+        m_config.SetWallRunEnabled(enabled);
+        AddConsoleOutput("Wall run " + std::string(enabled ? "enabled" : "disabled"));
+    }
+    else if (opt.label == "Double Jump")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_doubleJumpEnabled = enabled;
+        m_config.SetDoubleJumpEnabled(enabled);
+        AddConsoleOutput("Double jump " + std::string(enabled ? "enabled" : "disabled"));
+    }
+    else if (opt.label == "Slide")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_slideEnabled = enabled;
+        m_config.SetSlideEnabled(enabled);
+        AddConsoleOutput("Slide " + std::string(enabled ? "enabled" : "disabled"));
+    }
+    else if (opt.label == "Grapple")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_grappleEnabled = enabled;
+        m_config.SetGrappleEnabled(enabled);
+        AddConsoleOutput("Grapple " + std::string(enabled ? "enabled" : "disabled"));
+    }
+    else if (opt.label == "Slow Motion on Trick")
+    {
+        bool enabled = (opt.values[opt.selectedIndex] == "On");
+        m_slowMotionOnTrick = enabled;
+        m_config.SetSlowMotionOnTrick(enabled);
+        AddConsoleOutput("Slow motion on trick " + std::string(enabled ? "enabled" : "disabled"));
+    }
 }
 
 void Menu::HandleSimpleScreenKeyboardNavigation()
@@ -792,34 +1184,23 @@ void Menu::HandleMapSelectionKeyboardNavigation()
     if (m_availableMaps.empty())
         return;
 
-    const int mapsPerRow = 3;
-    int currentRow = m_selectedMap / mapsPerRow;
-    int currentCol = m_selectedMap % mapsPerRow;
-    int totalRows = (static_cast<int>(m_availableMaps.size()) + mapsPerRow - 1) / mapsPerRow;
+    // Horizontal card-based navigation (left/right only)
+    const int numCards = 3;
 
-    if (IsKeyPressed(KEY_DOWN) && currentRow < totalRows - 1)
+    if (IsKeyPressed(KEY_LEFT))
     {
-        int newRow = currentRow + 1;
-        int newIndex = newRow * mapsPerRow + currentCol;
-        if (newIndex < static_cast<int>(m_availableMaps.size()))
-            m_selectedMap = newIndex;
+        if (m_selectedMap > 0)
+            m_selectedMap--;
+        else
+            m_selectedMap = std::min(numCards - 1, static_cast<int>(m_availableMaps.size()) - 1);
     }
-    if (IsKeyPressed(KEY_UP) && currentRow > 0)
+
+    if (IsKeyPressed(KEY_RIGHT))
     {
-        int newRow = currentRow - 1;
-        int newIndex = newRow * mapsPerRow + currentCol;
-        if (newIndex < static_cast<int>(m_availableMaps.size()))
-            m_selectedMap = newIndex;
-    }
-    if (IsKeyPressed(KEY_LEFT) && currentCol > 0)
-    {
-        m_selectedMap--;
-    }
-    if (IsKeyPressed(KEY_RIGHT) && currentCol < mapsPerRow - 1)
-    {
-        int newIndex = currentRow * mapsPerRow + currentCol + 1;
-        if (newIndex < static_cast<int>(m_availableMaps.size()))
-            m_selectedMap = newIndex;
+        if (m_selectedMap < std::min(numCards - 1, static_cast<int>(m_availableMaps.size()) - 1))
+            m_selectedMap++;
+        else
+            m_selectedMap = 0;
     }
 
     if (IsKeyPressed(KEY_ENTER) && !m_availableMaps.empty())
@@ -899,9 +1280,17 @@ void Menu::Render() {
     case MenuState::Main:
     case MenuState::Options:
     case MenuState::GameMode:
+        RenderMenu();
+        break;
     case MenuState::Audio:
     case MenuState::Controls:
         RenderMenu();
+        break;
+    case MenuState::Gameplay:
+        RenderGameplayMenu();
+        break;
+    case MenuState::ParkourControls:
+        RenderParkourControlsMenu();
         break;
     case MenuState::Video:
         RenderSettingsMenu();
@@ -965,8 +1354,13 @@ void Menu::RenderMenu() const
     if (kStartY < 250) kStartY = 250;
     if (kSpacing < 60) kSpacing = 60;
 
+    // Get current menu with dynamic items
+    const std::vector<MenuItem>* menuToRender = GetCurrentMenuWithDynamicItems();
+    if (!menuToRender)
+        return;
+
     // Modern title with glow effect
-    const char *title = (m_state == MenuState::Main) ? "CHAINED DECOS" : (*m_currentMenu)[m_selected].label;
+    const char *title = (m_state == MenuState::Main) ? "CHAINED DECOS" : (*menuToRender)[m_selected].label;
 
     // Dynamic title sizing
     float titleFontSize = 60.0f * scaleFactor;
@@ -1015,12 +1409,12 @@ void Menu::RenderMenu() const
         DrawTextEx(m_font, version, Vector2{(float)(screenWidth - vw - 20), (float)versionY}, versionFontSize, 2.0f, Fade(Color{120, 140, 160, 255}, 0.7f));
     }
 
-    if (m_buttonScales.size() != m_currentMenu->size())
-        m_buttonScales.assign(m_currentMenu->size(), 1.0f);
+    if (m_buttonScales.size() != menuToRender->size())
+        m_buttonScales.assign(menuToRender->size(), 1.0f);
 
-    for (size_t i = 0; i < m_currentMenu->size(); ++i)
+    for (size_t i = 0; i < menuToRender->size(); ++i)
     {
-        const auto &item = (*m_currentMenu)[i];
+        const auto &item = (*menuToRender)[i];
         int baseX = GetScreenWidth() / 2 - kBtnW / 2;
         int baseY = kStartY + static_cast<int>(i) * kSpacing;
         Rectangle rect = {(float)baseX, (float)baseY, (float)kBtnW, (float)kBtnH};
@@ -1198,8 +1592,6 @@ void Menu::RenderSettingsMenu() const {
         {
             // Get current system value for display
             std::string currentValue = GetCurrentSettingValue(opt.label);
-
-            // Show current value (smaller font, different position)
             if (!currentValue.empty())
             {
                 int currentWidth = MeasureTextEx(m_font, currentValue.c_str(), fontSize - 8, 2.0f).x;
@@ -1338,6 +1730,350 @@ void Menu::RenderMods()
 
     DrawTextEx(m_font, "ESC", Vector2{(float)footerX, (float)footerY}, 20, 2.0f, Color{255, 150, 150, 255});
     DrawTextEx(m_font, " Back", Vector2{(float)footerX + 35, (float)footerY}, 20, 2.0f, Color{200, 200, 200, 255});
+}
+
+void Menu::RenderGameplayMenu()
+{
+    int startY = 150, spacing = 80, fontSize = 30;
+
+    // Modern gameplay settings title with glow
+    const char* settingsTitle = "GAMEPLAY SETTINGS";
+    int titleW = MeasureTextEx(m_font, settingsTitle, 45, 2.0f).x;
+    int titleX = 80;
+
+    // Title glow effect
+    for (int i = 2; i >= 1; i--)
+    {
+        DrawTextEx(m_font, settingsTitle, Vector2{(float)titleX + i, (float)45 + i}, 45, 2.0f, Fade(Color{100, 255, 150, 255}, 0.5f / i));
+    }
+    DrawTextEx(m_font, settingsTitle, Vector2{(float)titleX, (float)45}, 45, 2.0f, Color{150, 255, 200, 255});
+
+    for (size_t i = 0; i < m_gameplayOptions.size(); ++i)
+    {
+        auto &opt = m_gameplayOptions[i];
+        int y = startY + static_cast<int>(i) * spacing;
+
+        bool isSelected = (static_cast<int>(i) == m_selected);
+        Color labelColor = isSelected ? Color{255, 220, 150, 255} : Color{200, 210, 230, 255};
+
+        // Modern setting container
+        if (isSelected)
+        {
+            // Background highlight for selected option
+            DrawRectangle(60, y - 5, GetScreenWidth() - 120, spacing - 10, Fade(Color{100, 255, 150, 255}, 0.2f));
+            DrawRectangleLines(60, y - 5, GetScreenWidth() - 120, spacing - 10, Color{150, 255, 200, 255});
+        }
+
+        // Draw setting label with modern typography
+        const char* label = opt.label.c_str();
+        int labelW = MeasureTextEx(m_font, label, fontSize, 2.0f).x;
+        DrawTextEx(m_font, label, Vector2{80.0f, (float)y + 5}, fontSize, 2.0f, labelColor);
+
+        if (!opt.values.empty())
+        {
+            // Show current value (smaller font, different position)
+            std::string currentValue = GetGameplaySettingValue(opt.label);
+            if (!currentValue.empty())
+            {
+                int currentWidth = MeasureTextEx(m_font, currentValue.c_str(), fontSize - 8, 2.0f).x;
+                DrawTextEx(m_font, currentValue.c_str(), Vector2{(float)80 + 320, (float)y + 8}, fontSize - 8, 2.0f,
+                          isSelected ? Fade(Color{255, 255, 150, 255}, 0.9f) : Fade(Color{180, 200, 150, 255}, 0.7f));
+            }
+
+            // Show selected value with modern styling
+            std::string displayValue;
+            if (opt.selectedIndex < opt.values.size())
+            {
+                displayValue = opt.values[opt.selectedIndex];
+            }
+
+            if (!displayValue.empty())
+            {
+                // Modern value display with background
+                int textWidth = MeasureTextEx(m_font, displayValue.c_str(), fontSize, 2.0f).x;
+                int xPos = GetScreenWidth() - textWidth - 100;
+
+                if (isSelected)
+                {
+                    // Background for selected value
+                    DrawRectangle(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Fade(Color{255, 200, 100, 255}, 0.3f));
+                    DrawRectangleLines(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Color{255, 180, 80, 255});
+                }
+
+                DrawTextEx(m_font, displayValue.c_str(), Vector2{(float)xPos, (float)y + 5}, fontSize, 2.0f,
+                          isSelected ? Color{255, 255, 180, 255} : Color{220, 230, 200, 255});
+            }
+        }
+    }
+
+    // Modern settings footer
+    std::string footer = "ENTER Apply/Select    ←→ Change    ↑↓ Navigate    ESC Back";
+    int fw = MeasureTextEx(m_font, footer.c_str(), 18, 2.0f).x;
+    int footerX = GetScreenWidth() / 2 - fw / 2;
+    int footerY = GetScreenHeight() - 30;
+
+    // Footer background
+    DrawRectangle(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{0, 0, 0, 255}, 0.4f));
+    DrawRectangleLines(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
+
+    // Color-coded footer text
+    DrawTextEx(m_font, "ENTER", Vector2{(float)footerX, (float)footerY}, 18, 2.0f, Color{150, 255, 150, 255});
+    DrawTextEx(m_font, " Apply/Select    ", Vector2{(float)footerX + 65, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "←→", Vector2{(float)footerX + 190, (float)footerY}, 18, 2.0f, Color{150, 150, 255, 255});
+    DrawTextEx(m_font, " Change    ", Vector2{(float)footerX + 210, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "↑↓", Vector2{(float)footerX + 290, (float)footerY}, 18, 2.0f, Color{150, 150, 255, 255});
+    DrawTextEx(m_font, " Navigate    ", Vector2{(float)footerX + 310, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "ESC", Vector2{(float)footerX + 410, (float)footerY}, 18, 2.0f, Color{255, 150, 150, 255});
+    DrawTextEx(m_font, " Back", Vector2{(float)footerX + 440, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+}
+
+void Menu::RenderParkourControlsMenu()
+{
+    int startY = 150, spacing = 80, fontSize = 30;
+
+    // Modern parkour controls title with glow
+    const char* settingsTitle = "PARKOUR CONTROLS";
+    int titleW = MeasureTextEx(m_font, settingsTitle, 45, 2.0f).x;
+    int titleX = 80;
+
+    // Title glow effect
+    for (int i = 2; i >= 1; i--)
+    {
+        DrawTextEx(m_font, settingsTitle, Vector2{(float)titleX + i, (float)45 + i}, 45, 2.0f, Fade(Color{255, 150, 100, 255}, 0.5f / i));
+    }
+    DrawTextEx(m_font, settingsTitle, Vector2{(float)titleX, (float)45}, 45, 2.0f, Color{255, 200, 150, 255});
+
+    for (size_t i = 0; i < m_parkourControlsOptions.size(); ++i)
+    {
+        auto &opt = m_parkourControlsOptions[i];
+        int y = startY + static_cast<int>(i) * spacing;
+
+        bool isSelected = (static_cast<int>(i) == m_selected);
+        Color labelColor = isSelected ? Color{255, 220, 150, 255} : Color{200, 210, 230, 255};
+
+        // Modern setting container
+        if (isSelected)
+        {
+            // Background highlight for selected option
+            DrawRectangle(60, y - 5, GetScreenWidth() - 120, spacing - 10, Fade(Color{255, 150, 100, 255}, 0.2f));
+            DrawRectangleLines(60, y - 5, GetScreenWidth() - 120, spacing - 10, Color{255, 200, 150, 255});
+        }
+
+        // Draw setting label with modern typography
+        const char* label = opt.label.c_str();
+        int labelW = MeasureTextEx(m_font, label, fontSize, 2.0f).x;
+        DrawTextEx(m_font, label, Vector2{80.0f, (float)y + 5}, fontSize, 2.0f, labelColor);
+
+        if (!opt.values.empty())
+        {
+            // Show current value (smaller font, different position)
+            std::string currentValue = GetParkourControlsSettingValue(opt.label);
+            if (!currentValue.empty())
+            {
+                int currentWidth = MeasureTextEx(m_font, currentValue.c_str(), fontSize - 8, 2.0f).x;
+                DrawTextEx(m_font, currentValue.c_str(), Vector2{(float)80 + 320, (float)y + 8}, fontSize - 8, 2.0f,
+                          isSelected ? Fade(Color{255, 255, 150, 255}, 0.9f) : Fade(Color{180, 200, 150, 255}, 0.7f));
+            }
+
+            // Show selected value with modern styling
+            std::string displayValue;
+            if (opt.selectedIndex < opt.values.size())
+            {
+                displayValue = opt.values[opt.selectedIndex];
+            }
+
+            if (!displayValue.empty())
+            {
+                // Modern value display with background
+                int textWidth = MeasureTextEx(m_font, displayValue.c_str(), fontSize, 2.0f).x;
+                int xPos = GetScreenWidth() - textWidth - 100;
+
+                if (isSelected)
+                {
+                    // Background for selected value
+                    DrawRectangle(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Fade(Color{255, 200, 100, 255}, 0.3f));
+                    DrawRectangleLines(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Color{255, 180, 80, 255});
+                }
+
+                DrawTextEx(m_font, displayValue.c_str(), Vector2{(float)xPos, (float)y + 5}, fontSize, 2.0f,
+                          isSelected ? Color{255, 255, 180, 255} : Color{220, 230, 200, 255});
+            }
+        }
+    }
+
+    // Modern settings footer
+    std::string footer = "ENTER Apply/Select    ←→ Change    ↑↓ Navigate    ESC Back";
+    int fw = MeasureTextEx(m_font, footer.c_str(), 18, 2.0f).x;
+    int footerX = GetScreenWidth() / 2 - fw / 2;
+    int footerY = GetScreenHeight() - 30;
+
+    // Footer background
+    DrawRectangle(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{0, 0, 0, 255}, 0.4f));
+    DrawRectangleLines(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
+
+    // Color-coded footer text
+    DrawTextEx(m_font, "ENTER", Vector2{(float)footerX, (float)footerY}, 18, 2.0f, Color{150, 255, 150, 255});
+    DrawTextEx(m_font, " Apply/Select    ", Vector2{(float)footerX + 65, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "←→", Vector2{(float)footerX + 190, (float)footerY}, 18, 2.0f, Color{150, 150, 255, 255});
+    DrawTextEx(m_font, " Change    ", Vector2{(float)footerX + 210, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "↑↓", Vector2{(float)footerX + 290, (float)footerY}, 18, 2.0f, Color{150, 150, 255, 255});
+    DrawTextEx(m_font, " Navigate    ", Vector2{(float)footerX + 310, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+    DrawTextEx(m_font, "ESC", Vector2{(float)footerX + 410, (float)footerY}, 18, 2.0f, Color{255, 150, 150, 255});
+    DrawTextEx(m_font, " Back", Vector2{(float)footerX + 440, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
+}
+
+
+std::string Menu::GetGameplaySettingValue(const std::string& settingName) const
+{
+   if (settingName == "Difficulty")
+   {
+       switch (m_difficultyLevel)
+       {
+           case 1: return "Easy";
+           case 2: return "Medium";
+           case 3: return "Hard";
+           default: return "Medium";
+       }
+   }
+   else if (settingName == "Timer")
+   {
+       return m_timerEnabled ? "On" : "Off";
+   }
+   else if (settingName == "Checkpoints")
+   {
+       return m_checkpointsEnabled ? "On" : "Off";
+   }
+   else if (settingName == "Auto Save")
+   {
+       return m_autoSaveEnabled ? "On" : "Off";
+   }
+   else if (settingName == "Speedrun Mode")
+   {
+       return m_speedrunMode ? "On" : "Off";
+   }
+
+   return "";
+}
+
+std::string Menu::GetParkourControlsSettingValue(const std::string& settingName) const
+{
+   if (settingName == "Wall Run Sensitivity")
+   {
+       return TextFormat("%.1fx", m_wallRunSensitivity);
+   }
+   else if (settingName == "Jump Timing")
+   {
+       return TextFormat("%.1fx", m_jumpTiming);
+   }
+   else if (settingName == "Slide Control")
+   {
+       return TextFormat("%.1fx", m_slideControl);
+   }
+   else if (settingName == "Grapple Sensitivity")
+   {
+       return TextFormat("%.1fx", m_grappleSensitivity);
+   }
+   else if (settingName == "Wall Run")
+   {
+       return m_wallRunEnabled ? "On" : "Off";
+   }
+   else if (settingName == "Double Jump")
+   {
+       return m_doubleJumpEnabled ? "On" : "Off";
+   }
+   else if (settingName == "Slide")
+   {
+       return m_slideEnabled ? "On" : "Off";
+   }
+   else if (settingName == "Grapple")
+   {
+       return m_grappleEnabled ? "On" : "Off";
+   }
+   else if (settingName == "Slow Motion on Trick")
+   {
+       return m_slowMotionOnTrick ? "On" : "Off";
+   }
+
+   return "";
+}
+
+std::string Menu::GetCurrentSettingValue(const std::string& settingName) const
+{
+   if (settingName == "Resolution")
+   {
+       int width = GetScreenWidth();
+       int height = GetScreenHeight();
+       return TextFormat("%dx%d", width, height);
+   }
+   else if (settingName == "Display Mode")
+   {
+       // Check if we're in fullscreen mode
+       bool isFullscreen = IsWindowFullscreen();
+       if (isFullscreen)
+       {
+           // Check if window is decorated (not borderless)
+           bool isDecorated = !IsWindowState(FLAG_WINDOW_UNDECORATED);
+           if (isDecorated)
+               return "Fullscreen";
+           else
+               return "Borderless";
+       }
+       else
+           return "Windowed";
+   }
+   else if (settingName == "VSync")
+   {
+       return (FLAG_VSYNC_HINT) ? "On" : "Off";
+   }
+   else if (settingName == "Target FPS")
+   {
+       int targetFPS = GetFPS();
+       if (targetFPS == 0)
+           return "Unlimited";
+       else
+           return TextFormat("%d", targetFPS);
+   }
+   else if (settingName == "Aspect Ratio")
+   {
+       int width = GetScreenWidth();
+       int height = GetScreenHeight();
+       float aspect = (float)width / (float)height;
+
+       if (fabsf(aspect - 16.0f/9.0f) < 0.1f)
+           return "16:9";
+       else if (fabsf(aspect - 4.0f/3.0f) < 0.1f)
+           return "4:3";
+       else if (fabsf(aspect - 21.0f/9.0f) < 0.1f)
+           return "21:9";
+       else
+           return TextFormat("%.2f:1", aspect);
+   }
+   else if (settingName == "Master Volume")
+   {
+       return TextFormat("%.0f%%", m_masterVolume * 100);
+   }
+   else if (settingName == "Music Volume")
+   {
+       return TextFormat("%.0f%%", m_musicVolume * 100);
+   }
+   else if (settingName == "SFX Volume")
+   {
+       return TextFormat("%.0f%%", m_sfxVolume * 100);
+   }
+   else if (settingName == "Mouse Sensitivity")
+   {
+       return TextFormat("%.1fx", m_mouseSensitivity);
+   }
+   else if (settingName == "Invert Y Axis")
+   {
+       return m_invertYAxis ? "On" : "Off";
+   }
+   else if (settingName == "Controller Support")
+   {
+       return m_controllerSupport ? "On" : "Off";
+   }
+
+   return "";
 }
 
 void Menu::RenderConfirmExit()
@@ -1555,118 +2291,195 @@ void Menu::RenderMapSelection() const
     int screenHeight = GetScreenHeight();
     float scaleFactor = screenWidth / 1920.0f;
 
-    // Background
+    // Modern dark theme background with subtle gradient
+    DrawRectangle(0, 0, screenWidth, screenHeight, Color{23, 23, 23, 255});
+
+    // Subtle gradient overlay
     for (int i = 0; i < screenHeight; ++i)
     {
         float t = (float)i / screenHeight;
-        DrawLine(0, i, screenWidth, i,
-                 Color{(unsigned char)(15 + 25 * t), (unsigned char)(15 + 30 * t),
-                       (unsigned char)(40 + 90 * t), 255});
+        Color gradientColor = Color{
+            (unsigned char)(23 + 10 * t),
+            (unsigned char)(23 + 10 * t),
+            (unsigned char)(23 + 15 * t),
+            255
+        };
+        DrawLine(0, i, screenWidth, i, gradientColor);
     }
-    DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.25f));
 
     // Title - dynamic sizing
     float titleFontSize = 56.0f * scaleFactor;
     if (titleFontSize < 40.0f) titleFontSize = 40.0f;
     if (titleFontSize > 80.0f) titleFontSize = 80.0f;
 
-    const char* title = "Select Map";
+    const char* title = "SELECT CHAPTER";
     int tw = MeasureTextEx(m_font, title, titleFontSize, 2.0f).x;
     int titleY = static_cast<int>(50.0f * scaleFactor);
     if (titleY < 40) titleY = 40;
 
-    DrawTextEx(m_font, title, Vector2{(float)(screenWidth / 2 - tw / 2 + 4), (float)titleY + 4}, titleFontSize, 2.0f, Fade(BLACK, 0.75f));
-    DrawTextEx(m_font, title, Vector2{(float)(screenWidth / 2 - tw / 2), (float)titleY}, titleFontSize, 2.0f, RAYWHITE);
+    // Title glow effect
+    for (int i = 2; i >= 1; i--)
+    {
+        DrawTextEx(m_font, title, Vector2{(float)(screenWidth / 2 - tw / 2 + i), (float)titleY + i}, titleFontSize, 2.0f, Fade(Color{100, 150, 255, 255}, 0.3f / i));
+    }
+    DrawTextEx(m_font, title, Vector2{(float)(screenWidth / 2 - tw / 2), (float)titleY}, titleFontSize, 2.0f, Color{220, 220, 220, 255});
 
     if (m_availableMaps.empty())
     {
-        const char* noMaps = "No maps available";
+        const char* noMaps = "No chapters available";
         int nw = MeasureTextEx(m_font, noMaps, 32, 2.0f).x;
-        DrawText(noMaps, GetScreenWidth() / 2 - nw / 2, GetScreenHeight() / 2, 32, RED);
+        DrawTextEx(m_font, noMaps, Vector2{(float)(screenWidth / 2 - nw / 2), (float)(screenHeight / 2)}, 32, 2.0f, Color{255, 100, 100, 255});
         return;
     }
 
-    const int mapsPerRow = 3;
-    int mapWidth = static_cast<int>(280 * scaleFactor);
-    int mapHeight = static_cast<int>(200 * scaleFactor);
-    int spacing = static_cast<int>(40 * scaleFactor);
-    int startY = static_cast<int>(120 * scaleFactor);
+    // Card-based layout - horizontal arrangement like the image
+    const int numCards = 3; // Show 3 cards like in the image
+    int cardWidth = static_cast<int>(400 * scaleFactor);
+    int cardHeight = static_cast<int>(280 * scaleFactor);
+    int spacing = static_cast<int>(60 * scaleFactor);
+    int startY = static_cast<int>(140 * scaleFactor);
 
     // Ensure minimum usable sizes
-    if (mapWidth < 220) mapWidth = 220;
-    if (mapHeight < 160) mapHeight = 160;
-    if (spacing < 30) spacing = 30;
-    if (startY < 100) startY = 100;
+    if (cardWidth < 300) cardWidth = 300;
+    if (cardHeight < 200) cardHeight = 200;
+    if (spacing < 40) spacing = 40;
+    if (startY < 120) startY = 120;
 
-    int totalWidth = mapsPerRow * mapWidth + (mapsPerRow - 1) * spacing;
+    int totalWidth = numCards * cardWidth + (numCards - 1) * spacing;
     int startX = (screenWidth - totalWidth) / 2;
 
-    // Render maps in grid layout
-    for (size_t i = 0; i < m_availableMaps.size(); ++i)
+    // Render cards in horizontal layout
+    for (int i = 0; i < numCards && i < static_cast<int>(m_availableMaps.size()); ++i)
     {
-        int row = static_cast<int>(i) / mapsPerRow;
-        int col = static_cast<int>(i) % mapsPerRow;
-
-        int x = startX + col * (mapWidth + spacing);
-        int y = startY + row * (mapHeight + spacing);
+        int x = startX + i * (cardWidth + spacing);
+        int y = startY;
 
         const MapInfo& map = m_availableMaps[i];
-        bool isSelected = (static_cast<int>(i) == m_selectedMap);
+        bool isSelected = (i == m_selectedMap);
 
-        // Map background
-        Color bgColor = isSelected ? map.themeColor : Fade(map.themeColor, 0.3f);
-        DrawRectangle(x, y, mapWidth, mapHeight, bgColor);
-        DrawRectangleLines(x, y, mapWidth, mapHeight, isSelected ? WHITE : Fade(WHITE, 0.5f));
+        // Card hover/selection animation
+        float cardScale = 1.0f;
+        if (isSelected)
+        {
+            cardScale = 1.05f;
+        }
 
-        // Map preview (placeholder for now)
-        DrawRectangle(x + 10, y + 10, mapWidth - 20, mapHeight - 60, Fade(BLACK, 0.5f));
+        int scaledWidth = static_cast<int>(cardWidth * cardScale);
+        int scaledHeight = static_cast<int>(cardHeight * cardScale);
+        int cardX = x + (cardWidth - scaledWidth) / 2;
+        int cardY = y + (cardHeight - scaledHeight) / 2;
 
-        // Map name - dynamic sizing
-        float nameFontSize = 24.0f * scaleFactor;
-        if (nameFontSize < 18.0f) nameFontSize = 18.0f;
-        if (nameFontSize > 32.0f) nameFontSize = 32.0f;
+        // Card shadow/glow effect
+        if (isSelected)
+        {
+            for (int g = 8; g >= 2; g -= 2)
+            {
+                float alpha = 0.4f / (g/2);
+                DrawRectangle(cardX - g, cardY - g, scaledWidth + g*2, scaledHeight + g*2,
+                             Fade(Color{100, 150, 255, 255}, alpha));
+            }
+        }
+
+        // Main card background with gradient
+        Color cardColor = isSelected ? Color{60, 80, 120, 255} : Color{45, 50, 65, 255};
+        for (int cy = 0; cy < scaledHeight; ++cy)
+        {
+            float t = (float)cy / scaledHeight;
+            float intensity = 1.0f - t * 0.2f;
+            Color c = {
+                (unsigned char)(cardColor.r * intensity),
+                (unsigned char)(cardColor.g * intensity),
+                (unsigned char)(cardColor.b * intensity),
+                cardColor.a
+            };
+            DrawLine(cardX, cardY + cy, cardX + scaledWidth, cardY + cy, c);
+        }
+
+        // Card border
+        DrawRectangleLines(cardX, cardY, scaledWidth, scaledHeight, isSelected ? Color{150, 200, 255, 255} : Color{80, 90, 110, 255});
+
+        // Card preview area (larger, more prominent)
+        int previewHeight = static_cast<int>(160 * scaleFactor);
+        if (previewHeight < 120) previewHeight = 120;
+        DrawRectangle(cardX + 20, cardY + 20, scaledWidth - 40, previewHeight, Fade(BLACK, 0.7f));
+
+        // Chapter number/title overlay
+        std::string chapterText = "CHAPTER " + std::to_string(i + 1);
+        float chapterFontSize = 18.0f * scaleFactor;
+        if (chapterFontSize < 14.0f) chapterFontSize = 14.0f;
+        if (chapterFontSize > 24.0f) chapterFontSize = 24.0f;
+
+        int chapterW = MeasureTextEx(m_font, chapterText.c_str(), chapterFontSize, 2.0f).x;
+        int chapterX = cardX + 30;
+        int chapterY = cardY + 30;
+
+        DrawTextEx(m_font, chapterText.c_str(), Vector2{(float)chapterX + 1, (float)chapterY + 1}, chapterFontSize, 2.0f, Fade(BLACK, 0.8f));
+        DrawTextEx(m_font, chapterText.c_str(), Vector2{(float)chapterX, (float)chapterY}, chapterFontSize, 2.0f, Color{255, 255, 255, 255});
+
+        // Map name (large, prominent)
+        float nameFontSize = 28.0f * scaleFactor;
+        if (nameFontSize < 20.0f) nameFontSize = 20.0f;
+        if (nameFontSize > 36.0f) nameFontSize = 36.0f;
 
         int nameW = MeasureTextEx(m_font, map.displayName.c_str(), nameFontSize, 2.0f).x;
-        int nameX = x + mapWidth / 2 - nameW / 2;
-        int nameY = y + mapHeight - static_cast<int>(40 * scaleFactor);
-        if (nameY > y + mapHeight - 30) nameY = y + mapHeight - 30;
+        int nameX = cardX + scaledWidth / 2 - nameW / 2;
+        int nameY = cardY + scaledHeight - static_cast<int>(70 * scaleFactor);
+        if (nameY > cardY + scaledHeight - 50) nameY = cardY + scaledHeight - 50;
 
-        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX + 1, (float)nameY + 1}, nameFontSize, 2.0f, Fade(BLACK, 0.7f));
-        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX, (float)nameY}, nameFontSize, 2.0f, WHITE);
+        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX + 1, (float)nameY + 1}, nameFontSize, 2.0f, Fade(BLACK, 0.8f));
+        DrawTextEx(m_font, map.displayName.c_str(), Vector2{(float)nameX, (float)nameY}, nameFontSize, 2.0f, Color{255, 255, 255, 255});
 
-        // Map description (truncated) - dynamic sizing
+        // Map description
         float descFontSize = 16.0f * scaleFactor;
         if (descFontSize < 12.0f) descFontSize = 12.0f;
         if (descFontSize > 22.0f) descFontSize = 22.0f;
 
         std::string desc = map.description;
-        if (desc.length() > static_cast<int>(40 * scaleFactor)) desc = desc.substr(0, static_cast<int>(37 * scaleFactor)) + "...";
+        if (desc.length() > static_cast<int>(35 * scaleFactor)) desc = desc.substr(0, static_cast<int>(32 * scaleFactor)) + "...";
         int descW = MeasureTextEx(m_font, desc.c_str(), descFontSize, 2.0f).x;
-        int descX = x + mapWidth / 2 - descW / 2;
-        int descY = y + mapHeight - static_cast<int>(15 * scaleFactor);
-        if (descY > y + mapHeight - 10) descY = y + mapHeight - 10;
+        int descX = cardX + scaledWidth / 2 - descW / 2;
+        int descY = cardY + scaledHeight - static_cast<int>(35 * scaleFactor);
+        if (descY > cardY + scaledHeight - 25) descY = cardY + scaledHeight - 25;
 
-        DrawTextEx(m_font, desc.c_str(), Vector2{(float)descX, (float)descY}, descFontSize, 2.0f, Fade(WHITE, 0.8f));
+        DrawTextEx(m_font, desc.c_str(), Vector2{(float)descX, (float)descY}, descFontSize, 2.0f, Fade(Color{255, 255, 255, 255}, 0.8f));
 
         // Selection indicator
         if (isSelected)
         {
-            DrawRectangleLines(x - 3, y - 3, mapWidth + 6, mapHeight + 6, YELLOW);
-            DrawRectangleLines(x - 6, y - 6, mapWidth + 12, mapHeight + 12, Fade(YELLOW, 0.5f));
+            DrawRectangleLines(cardX - 2, cardY - 2, scaledWidth + 4, scaledHeight + 4, Color{255, 220, 100, 255});
+            DrawRectangleLines(cardX - 4, cardY - 4, scaledWidth + 8, scaledHeight + 8, Fade(Color{255, 220, 100, 255}, 0.5f));
         }
     }
 
-    // Instructions - dynamic sizing
-    float instFontSize = 20.0f * scaleFactor;
-    if (instFontSize < 16.0f) instFontSize = 16.0f;
-    if (instFontSize > 28.0f) instFontSize = 28.0f;
+    // Back button (bottom left, like in the image)
+    float backFontSize = 24.0f * scaleFactor;
+    if (backFontSize < 18.0f) backFontSize = 18.0f;
+    if (backFontSize > 32.0f) backFontSize = 32.0f;
 
-    const char* instructions = "[←/→] Navigate   [Enter] Select   [Esc] Back";
+    const char* backText = "Back";
+    int backW = MeasureTextEx(m_font, backText, backFontSize, 2.0f).x;
+    int backX = static_cast<int>(30 * scaleFactor);
+    if (backX < 20) backX = 20;
+    int backY = screenHeight - static_cast<int>(50 * scaleFactor);
+    if (backY > screenHeight - 40) backY = screenHeight - 40;
+
+    // Back button background
+    DrawRectangle(backX - 10, backY - 5, backW + 20, static_cast<int>(backFontSize + 10), Fade(Color{80, 60, 60, 255}, 0.8f));
+    DrawRectangleLines(backX - 10, backY - 5, backW + 20, static_cast<int>(backFontSize + 10), Color{200, 100, 100, 255});
+
+    DrawTextEx(m_font, backText, Vector2{(float)backX, (float)backY}, backFontSize, 2.0f, Color{255, 150, 150, 255});
+
+    // Instructions - dynamic sizing
+    float instFontSize = 18.0f * scaleFactor;
+    if (instFontSize < 14.0f) instFontSize = 14.0f;
+    if (instFontSize > 24.0f) instFontSize = 24.0f;
+
+    const char* instructions = "[←/→] Navigate Chapters   [Enter] Select Chapter   [Esc] Back to Menu";
     int iw = MeasureTextEx(m_font, instructions, instFontSize, 2.0f).x;
-    int instY = screenHeight - static_cast<int>(30 * scaleFactor);
+    int instY = screenHeight - static_cast<int>(25 * scaleFactor);
     if (instY > screenHeight - 20) instY = screenHeight - 20;
 
-    DrawTextEx(m_font, instructions, Vector2{(float)(screenWidth / 2 - iw / 2), (float)instY}, instFontSize, 2.0f, GRAY);
+    DrawTextEx(m_font, instructions, Vector2{(float)(screenWidth / 2 - iw / 2), (float)instY}, instFontSize, 2.0f, Color{150, 160, 180, 255});
 }
 
 
@@ -2006,85 +2819,6 @@ void Menu::RenderConsole() const
     DrawTextEx(m_font, instructions, Vector2{(float)(GetScreenWidth() - iw - 10), (float)(GetScreenHeight() - 20)}, 14, 2.0f, GRAY);
 }
 
-std::string Menu::GetCurrentSettingValue(const std::string& settingName) const
-{
-    if (settingName == "Resolution")
-    {
-        int width = GetScreenWidth();
-        int height = GetScreenHeight();
-        return TextFormat("%dx%d", width, height);
-    }
-    else if (settingName == "Display Mode")
-    {
-        // Check if we're in fullscreen mode
-        bool isFullscreen = IsWindowFullscreen();
-        if (isFullscreen)
-        {
-            // Check if window is decorated (not borderless)
-            bool isDecorated = !IsWindowState(FLAG_WINDOW_UNDECORATED);
-            if (isDecorated)
-                return "Fullscreen";
-            else
-                return "Borderless";
-        }
-        else
-            return "Windowed";
-    }
-    else if (settingName == "VSync")
-    {
-        //unsigned int flags = GetWindowState();
-        return (FLAG_VSYNC_HINT) ? "On" : "Off";
-    }
-    else if (settingName == "Target FPS")
-    {
-        int targetFPS = GetFPS();
-        if (targetFPS == 0)
-            return "Unlimited";
-        else
-            return TextFormat("%d", targetFPS);
-    }
-    else if (settingName == "Aspect Ratio")
-    {
-        int width = GetScreenWidth();
-        int height = GetScreenHeight();
-        float aspect = (float)width / (float)height;
-
-        if (fabsf(aspect - 16.0f/9.0f) < 0.1f)
-            return "16:9";
-        else if (fabsf(aspect - 4.0f/3.0f) < 0.1f)
-            return "4:3";
-        else if (fabsf(aspect - 21.0f/9.0f) < 0.1f)
-            return "21:9";
-        else
-            return TextFormat("%.2f:1", aspect);
-    }
-    else if (settingName == "Master Volume")
-    {
-        return TextFormat("%.0f%%", m_masterVolume * 100);
-    }
-    else if (settingName == "Music Volume")
-    {
-        return TextFormat("%.0f%%", m_musicVolume * 100);
-    }
-    else if (settingName == "SFX Volume")
-    {
-        return TextFormat("%.0f%%", m_sfxVolume * 100);
-    }
-    else if (settingName == "Mouse Sensitivity")
-    {
-        return TextFormat("%.1fx", m_mouseSensitivity);
-    }
-    else if (settingName == "Invert Y Axis")
-    {
-        return m_invertYAxis ? "On" : "Off";
-    }
-    else if (settingName == "Controller Support")
-    {
-        return m_controllerSupport ? "On" : "Off";
-    }
-
-    return "";
-}
 
 void Menu::LoadSettings()
 {
@@ -2120,6 +2854,24 @@ void Menu::LoadSettings()
     {
         SetWindowState(FLAG_VSYNC_HINT);
     }
+
+    // Load parkour-specific settings
+    m_wallRunSensitivity = m_config.GetWallRunSensitivity();
+    m_jumpTiming = m_config.GetJumpTiming();
+    m_slideControl = m_config.GetSlideControl();
+    m_grappleSensitivity = m_config.GetGrappleSensitivity();
+
+    m_difficultyLevel = m_config.GetDifficultyLevel();
+    m_timerEnabled = m_config.IsTimerEnabled();
+    m_checkpointsEnabled = m_config.AreCheckpointsEnabled();
+    m_autoSaveEnabled = m_config.IsAutoSaveEnabled();
+    m_speedrunMode = m_config.IsSpeedrunMode();
+
+    m_wallRunEnabled = m_config.IsWallRunEnabled();
+    m_doubleJumpEnabled = m_config.IsDoubleJumpEnabled();
+    m_slideEnabled = m_config.IsSlideEnabled();
+    m_grappleEnabled = m_config.IsGrappleEnabled();
+    m_slowMotionOnTrick = m_config.IsSlowMotionOnTrick();
 }
 
 void Menu::SaveSettings()
@@ -2130,6 +2882,24 @@ void Menu::SaveSettings()
         m_config.SetResolution(GetScreenWidth(), GetScreenHeight());
         m_config.SetFullscreen(IsWindowFullscreen());
         m_config.SetVSync(IsWindowState(FLAG_VSYNC_HINT));
+
+        // Save parkour-specific settings
+        m_config.SetWallRunSensitivity(m_wallRunSensitivity);
+        m_config.SetJumpTiming(m_jumpTiming);
+        m_config.SetSlideControl(m_slideControl);
+        m_config.SetGrappleSensitivity(m_grappleSensitivity);
+
+        m_config.SetDifficultyLevel(m_difficultyLevel);
+        m_config.SetTimerEnabled(m_timerEnabled);
+        m_config.SetCheckpointsEnabled(m_checkpointsEnabled);
+        m_config.SetAutoSaveEnabled(m_autoSaveEnabled);
+        m_config.SetSpeedrunMode(m_speedrunMode);
+
+        m_config.SetWallRunEnabled(m_wallRunEnabled);
+        m_config.SetDoubleJumpEnabled(m_doubleJumpEnabled);
+        m_config.SetSlideEnabled(m_slideEnabled);
+        m_config.SetGrappleEnabled(m_grappleEnabled);
+        m_config.SetSlowMotionOnTrick(m_slowMotionOnTrick);
 
         // Save to file (try current directory first, then build directory)
         if (!m_config.SaveToFile("game.cfg"))
@@ -2153,4 +2923,9 @@ void Menu::SaveSettings()
     {
         TraceLog(LOG_ERROR, "Menu::SaveSettings() - Exception while saving settings: %s", e.what());
     }
+}
+
+void Menu::SetAction(MenuAction type)
+{
+    m_action = type;
 }

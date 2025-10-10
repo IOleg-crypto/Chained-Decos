@@ -12,11 +12,14 @@ enum class MenuAction : uint8_t
 {
     None,
     StartGame,
+    ResumeGame,        // New action to resume current game
     OpenOptions,
     OpenCredits,
     OpenVideoMode,
     OpenAudio,
     OpenControls,
+    OpenGameplay,
+    OpenParkourControls,
     OpenLanguage,
     OpenMods,
     BackToMainMenu,
@@ -35,7 +38,21 @@ enum class MenuAction : uint8_t
     OpenKeyBinding,     // Controls actions
     AdjustMouseSensitivity,
     ToggleInvertY,
-    ToggleController
+    ToggleController,
+    AdjustDifficulty,   // Gameplay actions
+    ToggleTimer,
+    ToggleCheckpoints,
+    ToggleAutoSave,
+    ToggleSpeedrunMode,
+    AdjustWallRunSensitivity,  // Parkour control actions
+    AdjustJumpTiming,
+    AdjustSlideControl,
+    AdjustGrappleSensitivity,
+    ToggleWallRun,
+    ToggleDoubleJump,
+    ToggleSlide,
+    ToggleGrapple,
+    ToggleSlowMotionTrick
 };
 
 enum class MenuState : uint8_t
@@ -47,6 +64,8 @@ enum class MenuState : uint8_t
     Video,
     Audio,
     Controls,
+    Gameplay,
+    ParkourControls,
     Credits,
     Mods,
     ConfirmExit
@@ -90,11 +109,18 @@ private:
     std::vector<MenuItem> m_SetGameMode;
     std::vector<MenuItem> m_audioMenu;
     std::vector<MenuItem> m_controlsMenu;
+    std::vector<MenuItem> m_gameplayMenu;
+    std::vector<MenuItem> m_parkourControlsMenu;
     std::vector<MenuOption> m_videoOptions;
+    std::vector<MenuOption> m_gameplayOptions;
+    std::vector<MenuOption> m_parkourControlsOptions;
 
     // Map selection data
     std::vector<MapInfo> m_availableMaps;
     int m_selectedMap = 0;
+
+    // Game state tracking
+    bool m_gameInProgress = false;
 
     // Console functionality
     bool m_consoleOpen = false;
@@ -120,6 +146,26 @@ private:
     bool m_invertYAxis = false;
     bool m_controllerSupport = true;
 
+    // Parkour-specific control settings
+    float m_wallRunSensitivity = 1.0f;
+    float m_jumpTiming = 1.0f;
+    float m_slideControl = 1.0f;
+    float m_grappleSensitivity = 1.0f;
+
+    // Gameplay settings
+    int m_difficultyLevel = 2;
+    bool m_timerEnabled = true;
+    bool m_checkpointsEnabled = true;
+    bool m_autoSaveEnabled = true;
+    bool m_speedrunMode = false;
+
+    // Advanced parkour settings
+    bool m_wallRunEnabled = true;
+    bool m_doubleJumpEnabled = false;
+    bool m_slideEnabled = true;
+    bool m_grappleEnabled = false;
+    bool m_slowMotionOnTrick = false;
+
 public:
     Menu();
 
@@ -141,12 +187,16 @@ public:
     void HandleConfirmExit();
     void HandleMapSelection();
     void RenderConfirmExit();
+    void SetAction(MenuAction type);
 
     // Map selection methods
     void InitializeMaps();
     void RenderMapSelection() const;
     [[nodiscard]] const MapInfo* GetSelectedMap() const;
     [[nodiscard]] std::string GetSelectedMapName() const;
+
+    // Helper method for dynamic menu items
+    [[nodiscard]] const std::vector<MenuItem>* GetCurrentMenuWithDynamicItems() const;
 
     // Console functionality
     void ToggleConsole();
@@ -160,6 +210,10 @@ public:
     // Configuration management
     void LoadSettings();
     void SaveSettings();
+
+    // Game state management
+    void SetGameInProgress(bool inProgress);
+    [[nodiscard]] bool IsGameInProgress() const { return m_gameInProgress; }
 
     // Keyboard navigation handlers
     void HandleMainMenuKeyboardNavigation();
@@ -175,6 +229,18 @@ public:
     void HandleModsMouseSelection(Vector2 mousePos, bool clicked);
     void HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked);
     void HandleConfirmExitMouseSelection(Vector2 mousePos, bool clicked);
+    void HandleGameplayMouseSelection(Vector2 mousePos, bool clicked);
+    void HandleParkourControlsMouseSelection(Vector2 mousePos, bool clicked);
+
+    // New navigation and rendering functions for options-based menus
+    void HandleGameplayNavigation();
+    void HandleParkourControlsNavigation();
+    void RenderGameplayMenu();
+    void RenderParkourControlsMenu();
+    void ApplyGameplayOption(MenuOption& opt);
+    void ApplyParkourControlsOption(MenuOption& opt);
+    std::string GetGameplaySettingValue(const std::string& settingName) const;
+    std::string GetParkourControlsSettingValue(const std::string& settingName) const;
 };
 
 #endif // MENU_H

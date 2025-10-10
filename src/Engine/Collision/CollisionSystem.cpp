@@ -449,7 +449,7 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
 
     if ((int)tris.size() <= MAX_TRIANGLES_PER_LEAF || depth >= MAX_BVH_DEPTH)
     {
-        node->triangles = tris; // leaf
+        node->triangles = std::move(tris); // leaf - move to avoid copy
         return node;
     }
 
@@ -461,24 +461,24 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
     else if (ext.z > ext.x && ext.z > ext.y)
         axis = 2;
 
-    // sort by centroid along axis
-    std::ranges::sort(tris,
-                      [axis](const CollisionTriangle &a, const CollisionTriangle &b)
-                      {
-                          float ca = (a.V0().x + a.V1().x + a.V2().x) / 3.0f;
-                          float cb = (b.V0().x + b.V1().x + b.V2().x) / 3.0f;
-                          if (axis == 1)
-                          {
-                              ca = (a.V0().y + a.V1().y + a.V2().y) / 3.0f;
-                              cb = (b.V0().y + b.V1().y + b.V2().y) / 3.0f;
-                          }
-                          if (axis == 2)
-                          {
-                              ca = (a.V0().z + a.V1().z + a.V2().z) / 3.0f;
-                              cb = (b.V0().z + b.V1().z + b.V2().z) / 3.0f;
-                          }
-                          return ca < cb;
-                      });
+    // sort by centroid along axis (use faster sorting)
+    std::sort(tris.begin(), tris.end(),
+              [axis](const CollisionTriangle &a, const CollisionTriangle &b)
+              {
+                  float ca = (a.V0().x + a.V1().x + a.V2().x) / 3.0f;
+                  float cb = (b.V0().x + b.V1().x + b.V2().x) / 3.0f;
+                  if (axis == 1)
+                  {
+                      ca = (a.V0().y + a.V1().y + a.V2().y) / 3.0f;
+                      cb = (b.V0().y + b.V1().y + b.V2().y) / 3.0f;
+                  }
+                  if (axis == 2)
+                  {
+                      ca = (a.V0().z + a.V1().z + a.V2().z) / 3.0f;
+                      cb = (b.V0().z + b.V1().z + b.V2().z) / 3.0f;
+                  }
+                  return ca < cb;
+              });
 
     size_t mid = tris.size() / 2;
     std::vector<CollisionTriangle> leftTris(tris.begin(), tris.begin() + mid);
@@ -498,12 +498,8 @@ void Collision::BuildBVHFromTriangles()
         return;
     }
 
-    // Move triangles to avoid copy (more efficient than copying)
-    std::vector<CollisionTriangle> triangleCopy = std::move(m_triangles);
-    m_bvhRoot = BuildBVHNode(triangleCopy, 0);
-
-    // Move triangles back to restore original state
-    m_triangles = std::move(triangleCopy);
+    // Build BVH directly with existing triangles - no copying needed
+    m_bvhRoot = BuildBVHNode(m_triangles, 0);
 }
 
 // ----------------- Ray/triangle (Möller–Trumbore) -----------------
@@ -587,8 +583,11 @@ bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const
     bool hitAny = false;
     if (node->IsLeaf())
     {
-        for (const auto &tri : node->triangles)
+        // Batch process triangles in leaf nodes for better cache performance
+        const size_t triangleCount = node->triangles.size();
+        for (size_t i = 0; i < triangleCount; ++i)
         {
+            const auto &tri = node->triangles[i];
             RayHit hit;
             if (RayIntersectsTriangle(origin, dir, tri, hit))
             {

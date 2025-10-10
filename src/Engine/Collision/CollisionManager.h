@@ -96,6 +96,11 @@ public:
                                     const Collision &collisionObject,
                                     Vector3 &response) const;
 
+    // Prediction cache management
+    void UpdateFrameCache();
+    void ClearExpiredCache();
+    size_t GetPredictionCacheHash(const Collision &playerCollision) const;
+
 private:
     std::vector<std::unique_ptr<Collision>> m_collisionObjects; // All collision objects
 
@@ -121,6 +126,21 @@ private:
     };
 
     std::unordered_map<GridKey, std::vector<size_t>, GridKeyHash> m_spatialGrid;
+
+    // Collision prediction cache for frequently checked objects
+    struct PredictionCacheEntry {
+        bool hasCollision;
+        Vector3 response;
+        size_t frameCount;
+    };
+
+    std::unordered_map<size_t, PredictionCacheEntry> m_predictionCache;
+    size_t m_currentFrame = 0;
+    static constexpr size_t CACHE_LIFETIME_FRAMES = 5;
+    static constexpr size_t MAX_PREDICTION_CACHE_SIZE = 1000;
+
+    // Cache size management
+    void ManageCacheSize();
 };
 
 #endif // COLLISIONMANAGER_H
