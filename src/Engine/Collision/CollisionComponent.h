@@ -1,9 +1,9 @@
 #ifndef COLLISION_COMPONENT_H
 #define COLLISION_COMPONENT_H
 
-#include <raylib.h>
 #include <functional>
 #include <memory>
+#include <raylib.h>
 
 // Simple CollisionComponent class for testing
 class CollisionComponent {

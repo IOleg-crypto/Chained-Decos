@@ -6,6 +6,7 @@
 #include <raylib.h>
 #include <rlImGui.h>
 #include <string>
+#include <algorithm>
 #include <vector>
 #include <filesystem> // For directory scanning
 
@@ -488,10 +489,7 @@ void Menu::ExecuteAction()
         }
         break;
     case MenuAction::StartGameWithMap:
-    case MenuAction::SelectMap1:
-    case MenuAction::SelectMap2:
-    case MenuAction::SelectMap3:
-        // These actions are handled by the Game system, don't reset them here
+        // This action is handled by the Game system, don't reset it here
         // The Game system will handle the transition and reset the action
         break;
     default:
@@ -719,7 +717,7 @@ void Menu::HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked)
     int startX = (screenWidth - totalWidth) / 2;
 
     // Check each card for mouse interaction
-    for (int i = 0; i < static_cast<int>(m_availableMaps.size()) && i < numCards; ++i)
+    for (int i = 0; i < static_cast<int>(m_availableMaps.size()); ++i)
     {
         int x = startX + i * (cardWidth + spacing);
         int y = startY;
@@ -746,21 +744,7 @@ void Menu::HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked)
                 {
                     std::cout << "Starting game with map: " << selectedMap->name << std::endl;
                     // Set action to start game with selected map
-                    switch (m_selectedMap)
-                    {
-                        case 0:
-                            m_action = MenuAction::SelectMap1;
-                            break;
-                        case 1:
-                            m_action = MenuAction::SelectMap2;
-                            break;
-                        case 2:
-                            m_action = MenuAction::SelectMap3;
-                            break;
-                        default:
-                            m_action = MenuAction::StartGameWithMap;
-                            break;
-                    }
+                    m_action = MenuAction::StartGameWithMap;
                 }
             }
             break;
@@ -1193,12 +1177,12 @@ void Menu::HandleMapSelectionKeyboardNavigation()
         if (m_selectedMap > 0)
             m_selectedMap--;
         else
-            m_selectedMap = std::min(2, static_cast<int>(m_availableMaps.size()) - 1);
+            m_selectedMap = static_cast<int>(m_availableMaps.size()) - 1;
     }
 
     if (IsKeyPressed(KEY_RIGHT))
     {
-        if (m_selectedMap < std::min(2, static_cast<int>(m_availableMaps.size()) - 1))
+        if (m_selectedMap < static_cast<int>(m_availableMaps.size()) - 1)
             m_selectedMap++;
         else
             m_selectedMap = 0;
@@ -1212,21 +1196,7 @@ void Menu::HandleMapSelectionKeyboardNavigation()
         {
             std::cout << "Starting game with map: " << selectedMap->displayName << std::endl;
             // Set action to start game with selected map
-            switch (m_selectedMap)
-            {
-                case 0:
-                    m_action = MenuAction::SelectMap1;
-                    break;
-                case 1:
-                    m_action = MenuAction::SelectMap2;
-                    break;
-                case 2:
-                    m_action = MenuAction::SelectMap3;
-                    break;
-                default:
-                    m_action = MenuAction::StartGameWithMap;
-                    break;
-            }
+            m_action = MenuAction::StartGameWithMap;
         }
     }
 
@@ -2208,21 +2178,7 @@ void Menu::HandleMapSelection()
         {
             std::cout << "Starting game with map: " << selectedMap->displayName << std::endl;
             // Set action to start game with selected map
-            switch (m_selectedMap)
-            {
-                case 0:
-                    m_action = MenuAction::SelectMap1;
-                    break;
-                case 1:
-                    m_action = MenuAction::SelectMap2;
-                    break;
-                case 2:
-                    m_action = MenuAction::SelectMap3;
-                    break;
-                default:
-                    m_action = MenuAction::StartGameWithMap;
-                    break;
-            }
+            m_action = MenuAction::StartGameWithMap;
         }
     }
 }
@@ -2233,38 +2189,26 @@ void Menu::InitializeMaps()
     m_availableMaps.clear();
     m_selectedMap = 0;
 
-    // Main Parkour Map
-    m_availableMaps.push_back({
-        "/src/Game/Resource/parkourmap.json",
-        "Main Parkour",
-        "The primary parkour map with varied challenges",
-        "/resources/map_previews/main_parkour.png",
-        SKYBLUE,
-        true
-    });
-
-    // Test Map
-    m_availableMaps.push_back({
-        "/src/Game/Resource/maps/test.json",
-        "Test Map",
-        "Test map for development and experimentation",
-        "/resources/map_previews/test_map.png",
-        LIME,
-        true
-    });
-
-    // Default Built-in Map (fallback)
-    m_availableMaps.push_back({
-        "parkour_test",
-        "Built-in Parkour",
-        "Default parkour level with basic platforming",
-        "/resources/map_previews/builtin_parkour.png",
-        YELLOW,
-        true
-    });
-
-    // Scan for JSON maps in the maps directory
+    // First, scan for all available JSON maps automatically
     ScanForJsonMaps();
+
+    // If no JSON maps found, add a fallback built-in map
+    if (m_availableMaps.empty())
+    {
+        TraceLog(LOG_WARNING, "Menu::InitializeMaps() - No JSON maps found, adding fallback built-in map");
+        m_availableMaps.push_back({
+            "parkour_test",
+            "Built-in Parkour",
+            "Default parkour level with basic platforming",
+            "/resources/map_previews/builtin_parkour.png",
+            YELLOW,
+            true
+        });
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "Menu::InitializeMaps() - Found %d maps automatically", m_availableMaps.size());
+    }
 }
 
 
@@ -2317,7 +2261,8 @@ void Menu::RenderMapSelection() const
     }
 
     // Card-based layout - horizontal arrangement
-    const int numCards = std::min(3, static_cast<int>(m_availableMaps.size())); // Show up to 3 cards
+    const int maxCards = 5; // Allow up to 5 cards
+    const int numCards = std::min(maxCards, static_cast<int>(m_availableMaps.size())); // Show available cards
     int cardWidth = static_cast<int>(400 * scaleFactor);
     int cardHeight = static_cast<int>(280 * scaleFactor);
     int spacing = static_cast<int>(60 * scaleFactor);
@@ -2333,7 +2278,7 @@ void Menu::RenderMapSelection() const
     int startX = (screenWidth - totalWidth) / 2;
 
     // Render cards in horizontal layout
-    for (int i = 0; i < static_cast<int>(m_availableMaps.size()) && i < numCards; ++i)
+    for (int i = 0; i < static_cast<int>(m_availableMaps.size()); ++i)
     {
         int x = startX + i * (cardWidth + spacing);
         int y = startY;
@@ -2500,62 +2445,102 @@ void Menu::ScanForJsonMaps()
 {
     try
     {
-        // Create maps directory path
-        std::string mapsDir = PROJECT_ROOT_DIR "/src/Game/Resource/maps";
-
-        // Check if maps directory exists
-        if (!DirectoryExists(mapsDir.c_str()))
-        {
-            TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Maps directory not found: %s", mapsDir.c_str());
-            // Create the directory if it doesn't exist
-            // Note: In a real implementation, you might want to create it
-            return;
-        }
-
-        // Scan for JSON files in the maps directory
         namespace fs = std::filesystem;
         std::string rootDir = PROJECT_ROOT_DIR;
 
-        // For now, let's scan the Resource directory for any .json files
-        std::string resourceDir = rootDir + "/src/Game/Resource";
+        // Scan multiple potential map directories
+        std::vector<std::string> searchDirectories = {
+            rootDir + "/src/Game/Resource",
+            rootDir + "/src/Game/Resource/maps",
+            rootDir + "/resources/maps",
+            rootDir + "/maps"
+        };
 
-        if (fs::exists(resourceDir) && fs::is_directory(resourceDir))
+        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scanning for JSON map files...");
+
+        for (const std::string& dir : searchDirectories)
         {
-            for (const auto& entry : fs::directory_iterator(resourceDir))
+            if (!fs::exists(dir) || !fs::is_directory(dir))
             {
-                if (entry.is_regular_file())
+                TraceLog(LOG_DEBUG, "Menu::ScanForJsonMaps() - Directory not found: %s", dir.c_str());
+                continue;
+            }
+
+            TraceLog(LOG_DEBUG, "Menu::ScanForJsonMaps() - Scanning directory: %s", dir.c_str());
+
+            for (const auto& entry : fs::directory_iterator(dir))
+            {
+                if (!entry.is_regular_file())
+                    continue;
+
+                std::string filename = entry.path().filename().string();
+                std::string extension = entry.path().extension().string();
+
+                // Look for .json files (excluding models.json and other system files)
+                if (extension == ".json" &&
+                    filename != "models.json" &&
+                    filename != "game.cfg" &&
+                    filename != "config.json")
                 {
-                    std::string filename = entry.path().filename().string();
-                    std::string extension = entry.path().extension().string();
-
-                    // Look for .json files (excluding models.json)
-                    if (extension == ".json" && filename != "models.json")
+                    std::string mapPath = entry.path().string();
+                    // Convert to relative path from project root
+                    if (mapPath.find(rootDir) == 0)
                     {
-                        std::string mapPath = "/src/Game/Resource/" + filename;
-
-                        // Extract display name from filename (remove .json extension)
-                        std::string displayName = filename.substr(0, filename.length() - 5); // Remove .json
-                        displayName[0] = toupper(displayName[0]); // Capitalize first letter
-
-                        // Create a more descriptive name
-                        std::string fullDisplayName = displayName + " (JSON)";
-
-                        m_availableMaps.push_back({
-                            mapPath,  // Store the relative path
-                            fullDisplayName,
-                            "Custom map created in map editor",
-                            "/resources/map_previews/custom_map.png",
-                            Color{255, 200, 100, 255},  // Orange color for JSON maps
-                            true
-                        });
-
-                        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Added JSON map: %s", mapPath.c_str());
+                        mapPath = mapPath.substr(rootDir.length());
                     }
+
+                    // Extract display name from filename (remove .json extension)
+                    std::string displayName = filename.substr(0, filename.length() - 5); // Remove .json
+
+                    // Capitalize first letter and improve formatting
+                    if (!displayName.empty())
+                    {
+                        displayName[0] = toupper(displayName[0]);
+                    }
+
+                    // Replace underscores with spaces for better readability
+                    std::replace(displayName.begin(), displayName.end(), '_', ' ');
+
+                    // Create a more descriptive name
+                    std::string fullDisplayName = displayName + " (Map)";
+
+                    // Generate description based on file location or name
+                    std::string description = "Custom map";
+                    if (mapPath.find("test") != std::string::npos)
+                    {
+                        description = "Test map for development";
+                    }
+                    else if (mapPath.find("parkour") != std::string::npos)
+                    {
+                        description = "Parkour challenge map";
+                    }
+
+                    // Assign color based on map type or name
+                    Color mapColor = Color{255, 200, 100, 255}; // Default orange
+                    if (displayName.find("Test") != std::string::npos)
+                    {
+                        mapColor = LIME; // Green for test maps
+                    }
+                    else if (displayName.find("Parkour") != std::string::npos)
+                    {
+                        mapColor = SKYBLUE; // Blue for parkour maps
+                    }
+
+                    m_availableMaps.push_back({
+                        mapPath,  // Store the relative path
+                        fullDisplayName,
+                        description,
+                        "/resources/map_previews/custom_map.png",
+                        mapColor,
+                        true
+                    });
+
+                    TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Added map: %s (%s)", fullDisplayName.c_str(), mapPath.c_str());
                 }
             }
         }
 
-        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scan completed");
+        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scan completed, found %d maps", m_availableMaps.size());
     }
     catch (const std::exception& e)
     {

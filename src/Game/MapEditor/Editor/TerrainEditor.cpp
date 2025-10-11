@@ -7,6 +7,23 @@
 #include <iostream>
 #include <functional>
 
+// HeightmapData struct implementation
+float HeightmapData::GetHeight(int x, int z) const
+{
+    if (x < 0 || x >= width || z < 0 || z >= height)
+        return 0.0f;
+    return heights[z * width + x];
+}
+
+void HeightmapData::SetHeight(int x, int z, float height)
+{
+    if (x < 0 || x >= width || z < 0 || z >= height)
+        return;
+    heights[z * width + x] = height;
+    if (height < minHeight) minHeight = height;
+    if (height > maxHeight) maxHeight = height;
+}
+
 TerrainEditor::TerrainEditor()
     : m_terrainGenerated(false)
     , m_currentBrush(BrushType::RAISE_LOWER)

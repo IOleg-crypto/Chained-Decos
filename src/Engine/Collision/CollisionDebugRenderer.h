@@ -2,8 +2,8 @@
 #define COLLISION_DEBUG_RENDERER_H
 
 #include "CollisionSystem.h"
-#include <raylib.h>
 #include <vector>
+#include <raylib.h>
 
 // Only Render collision
 class CollisionDebugRenderer

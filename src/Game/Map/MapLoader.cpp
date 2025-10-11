@@ -6,6 +6,17 @@
 
 using json = nlohmann::json;
 
+// GameMap struct implementation
+void GameMap::Cleanup()
+{
+    for (auto& model : loadedModels)
+    {
+        if (model.meshCount > 0)
+            UnloadModel(model);
+    }
+    loadedModels.clear();
+}
+
 // ============================================================================
 // Legacy MapLoader functions (for backward compatibility)
 // ============================================================================

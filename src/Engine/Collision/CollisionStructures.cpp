@@ -15,8 +15,19 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
     m_e0 = Vector3Subtract(m_v1, m_v0);
     m_e1 = Vector3Subtract(m_v2, m_v0);
 
-    // Normal
-    m_normal = Vector3Normalize(Vector3CrossProduct(m_e0, m_e1));
+    // Normal (with safety check)
+    Vector3 normalCross = Vector3CrossProduct(m_e0, m_e1);
+    float normalLength = Vector3Length(normalCross);
+
+    if (std::isfinite(normalLength) && normalLength > 1e-12f)
+    {
+        m_normal = Vector3Scale(normalCross, 1.0f / normalLength);
+    }
+    else
+    {
+        // Fallback normal for degenerate triangles
+        m_normal = {0.0f, 1.0f, 0.0f};
+    }
 
     // Min/Max
     m_min.x = std::min(std::min(m_v0.x, m_v1.x), m_v2.x);
@@ -27,12 +38,34 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
     m_max.y = std::max(std::max(m_v0.y, m_v1.y), m_v2.y);
     m_max.z = std::max(std::max(m_v0.z, m_v1.z), m_v2.z);
 
-    // Center
-    m_center = {(m_v0.x + m_v1.x + m_v2.x) / 3.0f, (m_v0.y + m_v1.y + m_v2.y) / 3.0f,
-                (m_v0.z + m_v1.z + m_v2.z) / 3.0f};
+    // Center (with safety checks)
+    float centerX = (m_v0.x + m_v1.x + m_v2.x) / 3.0f;
+    float centerY = (m_v0.y + m_v1.y + m_v2.y) / 3.0f;
+    float centerZ = (m_v0.z + m_v1.z + m_v2.z) / 3.0f;
 
-    // Area
-    m_area = 0.5f * Vector3Length(Vector3CrossProduct(m_e0, m_e1));
+    // Check for finite values
+    if (!std::isfinite(centerX) || !std::isfinite(centerY) || !std::isfinite(centerZ))
+    {
+        // Fallback to first vertex if centroid calculation fails
+        m_center = m_v0;
+    }
+    else
+    {
+        m_center = {centerX, centerY, centerZ};
+    }
+
+    // Area (with safety check)
+    Vector3 crossProduct = Vector3CrossProduct(m_e0, m_e1);
+    float crossLength = Vector3Length(crossProduct);
+
+    if (std::isfinite(crossLength))
+    {
+        m_area = 0.5f * crossLength;
+    }
+    else
+    {
+        m_area = 0.0f; // Degenerate triangle
+    }
 
     // Precompute dot products for barycentric coordinates
     m_dot00 = Vector3DotProduct(m_e1, m_e1);
@@ -42,16 +75,28 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
 
 bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
 {
-    // Möller-Trumbore ray-triangle intersection algorithm
+    // Möller-Trumbore ray-triangle intersection algorithm with enhanced safety checks
     Vector3 edge1 = Vector3Subtract(m_v1, m_v0);
-    Vector3 edge2 = Vector3Subtract(m_v2, m_v0); // FIXED
+    Vector3 edge2 = Vector3Subtract(m_v2, m_v0);
+
+    // Check for degenerate triangles
+    if (Vector3LengthSqr(edge1) < 1e-12f || Vector3LengthSqr(edge2) < 1e-12f)
+        return false; // Degenerate triangle
+
     Vector3 h = Vector3CrossProduct(ray.GetDirection(), edge2);
     float a = Vector3DotProduct(edge1, h);
 
-    if (a > -EPS && a < EPS)
+    // Enhanced check for parallel rays with better epsilon handling
+    const float EPS_PARALLEL = 1e-8f;
+    if (fabsf(a) < EPS_PARALLEL)
         return false; // Ray is parallel to triangle
 
     float f = 1.0f / a;
+
+    // Check for invalid division result
+    if (!std::isfinite(f))
+        return false;
+
     Vector3 s = Vector3Subtract(ray.GetOrigin(), m_v0);
     float u = f * Vector3DotProduct(s, h);
 
@@ -65,11 +110,21 @@ bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
         return false;
 
     t = f * Vector3DotProduct(edge2, q);
+
+    // Check for valid intersection distance
+    if (!std::isfinite(t) || t <= EPS)
+        return false;
+
     return t > EPS; // Ray intersection
 }
 
 bool CollisionTriangle::Intersects(const Vector3 &origin, const Vector3 &direction, float &t) const
 {
+    // Validate direction vector before creating ray
+    float dirLengthSqr = Vector3LengthSqr(direction);
+    if (dirLengthSqr < 1e-12f)
+        return false; // Invalid direction vector
+
     const CollisionRay ray(origin, direction);
     return Intersects(ray, t);
 }
@@ -153,8 +208,18 @@ bool CollisionComplexity::IsSimple() const
 // ================== CollisionRay Implementation ==================
 
 CollisionRay::CollisionRay(const Vector3 &orig, const Vector3 &dir)
-    : m_origin(orig), m_direction(Vector3Normalize(dir))
+    : m_origin(orig)
 {
+    float dirLengthSqr = Vector3LengthSqr(dir);
+    if (dirLengthSqr > 1e-12f)
+    {
+        m_direction = Vector3Normalize(dir);
+    }
+    else
+    {
+        // Default direction if input is zero-length
+        m_direction = {1.0f, 0.0f, 0.0f};
+    }
 }
 bool CollisionComplexity::IsComplex() const { return !IsSimple(); }
 Vector3 CollisionTriangle::GetCenter() const { return m_center; }

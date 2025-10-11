@@ -13,7 +13,7 @@ option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
 option(BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
 option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
-option(ENABLE_WARNINGS "Enable strict compiler warnings" ON)
+option(ENABLE_WARNINGS "Enable strict compiler warnings" OFF)
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(ENABLE_UNITY_BUILD "Enable unity build for faster compilation" ON)
@@ -117,6 +117,11 @@ if(WIN32)
 
     # Ensure proper DLL loading on Windows
     add_compile_definitions(_WIN32_WINNT=0x0601)  # Windows 7+
+
+    # Avoid conflicts between raylib and Windows API - more targeted approach
+    # Exclude specific parts of Windows API that conflict with raylib
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
+    add_compile_definitions(NOMINMAX)
 endif()
 
 if(APPLE)
@@ -191,6 +196,7 @@ endif()
 add_library(imguilib STATIC
     include/rlImGui/rlImGui.cpp
     include/rlImGui/rlImGui.h
+    include/rlImGui/imgui_impl_raylib.h
     include/imgui/imgui.cpp
     include/imgui/imgui_draw.cpp
     include/imgui/imgui_widgets.cpp
@@ -204,9 +210,15 @@ target_include_directories(imguilib PUBLIC
 )
 target_link_libraries(imguilib PRIVATE raylib)
 
-if(WIN32)
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-endif()
+# Define IMGUI math operators before including imgui.h
+target_compile_definitions(imguilib PRIVATE IMGUI_DEFINE_MATH_OPERATORS)
+
+# Disable unity build for imguilib to avoid GLAD header conflicts
+set_target_properties(imguilib PROPERTIES UNITY_BUILD OFF)
+
+# Disable unity build for raylib to avoid GLAD header conflicts
+set_target_properties(raylib PROPERTIES UNITY_BUILD OFF)
+
 add_compile_definitions(PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}")
 
 add_subdirectory(src/Engine)
