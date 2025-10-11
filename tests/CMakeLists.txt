@@ -12,7 +12,7 @@ add_executable(ChainedDecosTests ${TEST_SOURCES})
 add_library(ChainedDecosTestComponents STATIC
     # Only include the specific components that tests actually need
     ../src/Engine/Math/Vector3.cpp
-    ../src/Engine/Collision/CollisionStructures.cpp
+    # Note: CollisionStructures.cpp depends on raylib and should be mocked or tested separately
     # Note: PhysicsComponent.cpp and CollisionManager.cpp depend on raylib
     # and should be mocked or tested separately in integration tests
 )
