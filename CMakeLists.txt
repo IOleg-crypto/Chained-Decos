@@ -219,7 +219,9 @@ set_target_properties(imguilib PROPERTIES UNITY_BUILD OFF)
 # Disable unity build for raylib to avoid GLAD header conflicts
 set_target_properties(raylib PROPERTIES UNITY_BUILD OFF)
 
-add_compile_definitions(PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}")
+# Use forward slashes for cross-platform compatibility
+file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
+add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
 
 add_subdirectory(src/Engine)
 add_subdirectory(src/Game)

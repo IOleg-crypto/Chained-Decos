@@ -46,7 +46,7 @@ jobs:
       with:
         path: |
           ~/.ccache
-          C:\ccache
+          ${{ runner.os == 'Windows' && 'C:/ccache' || '~/.ccache' }}
         key: ccache-release-${{ matrix.os }}-${{ github.sha }}
         restore-keys: |
           ccache-release-${{ matrix.os }}-
@@ -132,10 +132,17 @@ jobs:
     - name: Build release binaries
       shell: bash
       run: |
+        # Determine number of CPU cores for parallel builds
+        if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+          PARALLEL_JOBS=8
+        else
+          PARALLEL_JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
+        fi
+
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
           --config Release \
           --target ChainedDecos ChainedDecosMapEditor \
-          --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
+          --parallel "$PARALLEL_JOBS"
 
     - name: Install to package directory
       shell: bash

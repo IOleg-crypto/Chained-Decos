@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Game/MapEditor/ChainedDecosMapEditor.exe"
+			"path" : "bin/ChainedDecos_debug.exe"
 		},
 		{
-			"path" : "src/Game/MapEditor/ChainedDecosMapEditor.pdb"
+			"path" : "bin/ChainedDecos_debug.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -17,17 +17,14 @@
 			"install",
 			"target_link_libraries",
 			"add_compile_options",
-			"add_compile_definitions",
-			"target_compile_definitions",
-			"target_include_directories"
+			"add_compile_definitions"
 		],
 		"files" : 
 		[
-			"src/Game/MapEditor/CMakeLists.txt",
+			"CMakeLists.txt",
+			"src/Game/CMakeLists.txt",
 			"src/Engine/CMakeLists.txt",
-			"src/Engine/Render/CMakeLists.txt",
-			".deps/raylib-src/src/CMakeLists.txt",
-			"CMakeLists.txt"
+			".deps/raylib-src/src/CMakeLists.txt"
 		],
 		"nodes" : 
 		[
@@ -37,19 +34,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 40,
+				"line" : 229,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 75,
+				"line" : 272,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 50,
+				"line" : 230,
 				"parent" : 0
 			},
 			{
@@ -58,7 +55,7 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 23,
+				"line" : 16,
 				"parent" : 4
 			},
 			{
@@ -67,7 +64,7 @@
 			{
 				"command" : 2,
 				"file" : 2,
-				"line" : 14,
+				"line" : 23,
 				"parent" : 6
 			},
 			{
@@ -80,48 +77,39 @@
 				"parent" : 8
 			},
 			{
-				"file" : 4
-			},
-			{
 				"command" : 3,
-				"file" : 4,
-				"line" : 77,
-				"parent" : 10
-			},
-			{
-				"command" : 4,
-				"file" : 4,
-				"line" : 116,
-				"parent" : 10
-			},
-			{
-				"command" : 5,
 				"file" : 0,
-				"line" : 53,
+				"line" : 77,
 				"parent" : 0
 			},
 			{
 				"command" : 4,
-				"file" : 4,
-				"line" : 115,
-				"parent" : 10
-			},
-			{
-				"command" : 4,
-				"file" : 4,
-				"line" : 114,
-				"parent" : 10
-			},
-			{
-				"command" : 4,
-				"file" : 4,
-				"line" : 119,
-				"parent" : 10
-			},
-			{
-				"command" : 6,
 				"file" : 0,
-				"line" : 43,
+				"line" : 116,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 224,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 115,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 114,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 119,
 				"parent" : 0
 			}
 		]
@@ -132,14 +120,14 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++17 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				},
 				{
-					"backtrace" : 11,
+					"backtrace" : 10,
 					"fragment" : "-O0"
 				},
 				{
-					"backtrace" : 11,
+					"backtrace" : 10,
 					"fragment" : "-g"
 				}
 			],
@@ -150,7 +138,7 @@
 					"define" : "GRAPHICS_API_OPENGL_33"
 				},
 				{
-					"backtrace" : 12,
+					"backtrace" : 11,
 					"define" : "NOMINMAX"
 				},
 				{
@@ -158,34 +146,30 @@
 					"define" : "PLATFORM_DESKTOP"
 				},
 				{
-					"backtrace" : 13,
+					"backtrace" : 12,
 					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
 				},
 				{
-					"backtrace" : 14,
+					"backtrace" : 13,
 					"define" : "WIN32_LEAN_AND_MEAN"
 				},
 				{
-					"backtrace" : 15,
+					"backtrace" : 14,
 					"define" : "_CRT_SECURE_NO_WARNINGS"
 				},
 				{
-					"backtrace" : 16,
+					"backtrace" : 15,
 					"define" : "_WIN32_WINNT=0x0601"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 17,
-					"path" : "D:/gitnext/Chained Decos/src/Game/MapEditor"
+					"backtrace" : 3,
+					"path" : "D:/gitnext/Chained Decos/src/Game"
 				},
 				{
-					"backtrace" : 17,
-					"path" : "D:/gitnext/Chained Decos/src"
-				},
-				{
-					"backtrace" : 17,
+					"backtrace" : 3,
 					"path" : "D:/gitnext/Chained Decos/include"
 				},
 				{
@@ -223,6 +207,10 @@
 				{
 					"backtrace" : 3,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/Render"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "D:/gitnext/Chained Decos/src"
 				},
 				{
 					"backtrace" : 3,
@@ -271,6 +259,10 @@
 				{
 					"backtrace" : 3,
 					"path" : "D:/gitnext/Chained Decos/src/Game/Map"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "D:/gitnext/Chained Decos/src/Game/GameFeatures"
 				}
 			],
 			"language" : "CXX",
@@ -280,12 +272,11 @@
 				[
 					3
 				],
-				"standard" : "17"
+				"standard" : "20"
 			},
 			"sourceIndexes" : 
 			[
-				0,
-				1
+				0
 			]
 		}
 	],
@@ -349,14 +340,22 @@
 		},
 		{
 			"backtrace" : 3,
+			"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94"
+		},
+		{
+			"backtrace" : 3,
 			"id" : "mapmod::@e87daa19a0aaec6b83ad"
 		},
 		{
 			"backtrace" : 3,
 			"id" : "player::@6497c05e8667515fbef8"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "GameFeatures::@3472a93c03200552aca0"
 		}
 	],
-	"id" : "ChainedDecosMapEditor::@55121233932d6d4fa567",
+	"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
 	"install" : 
 	{
 		"destinations" : 
@@ -394,121 +393,131 @@
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "src\\Engine\\ChainedDecosEngine.lib",
+				"fragment" : "src\\Game\\ChainedDecosGame.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "\"D:\\gitnext\\Chained Decos\\.deps\\raylib-build\\raylib\\raylib.lib\"",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 3,
-				"fragment" : "src\\Game\\Map\\mapmod.lib",
+				"fragment" : "imguilib.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 5,
-				"fragment" : "src\\Engine\\Render\\render.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 7,
-				"fragment" : "src\\Game\\Menu\\menu.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 3,
 				"fragment" : "src\\Engine\\ChainedDecosEngine.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 5,
+				"fragment" : "src\\Game\\Menu\\menu.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "src\\Engine\\Render\\render.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "src\\Engine\\ChainedDecosEngine.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "src\\Game\\Menu\\menu.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
 				"fragment" : "src\\Engine\\Render\\render.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 7,
-				"fragment" : "src\\Game\\Menu\\menu.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 5,
 				"fragment" : "src\\Engine\\Input\\input.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 5,
+				"backtrace" : 7,
 				"fragment" : "src\\Engine\\Kernel\\kernel.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 5,
+				"backtrace" : 7,
 				"fragment" : "src\\Engine\\Audio\\audio.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 5,
+				"backtrace" : 7,
 				"fragment" : "src\\Engine\\Event\\event.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 5,
+				"backtrace" : 7,
 				"fragment" : "src\\Engine\\CommandLineHandler\\cmdhandler.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 7,
+				"fragment" : "src\\Engine\\Config\\config.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "imguilib.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
 				"fragment" : "src\\Game\\Player\\player.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 5,
-				"fragment" : "src\\Engine\\Collision\\collision.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 5,
-				"fragment" : "src\\Engine\\Model\\model.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 5,
-				"fragment" : "src\\Engine\\Collision\\collision.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 5,
-				"fragment" : "src\\Engine\\Model\\model.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 5,
+				"backtrace" : 7,
 				"fragment" : "src\\Engine\\CameraController\\cameracontroller.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 5,
+				"backtrace" : 7,
+				"fragment" : "src\\Engine\\Collision\\collision.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "src\\Engine\\Model\\model.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "src\\Engine\\Collision\\collision.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "src\\Engine\\Model\\model.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
 				"fragment" : "src\\Engine\\World\\world.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 5,
+				"backtrace" : 7,
 				"fragment" : "src\\Engine\\Physics\\physics.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 5,
-				"fragment" : "src\\Engine\\Config\\config.lib",
+				"fragment" : "src\\Game\\Map\\mapmod.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 5,
-				"fragment" : "imguilib.lib",
+				"fragment" : "src\\Game\\GameFeatures\\GameFeatures.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 3,
+				"backtrace" : 5,
 				"fragment" : "\"D:\\gitnext\\Chained Decos\\.deps\\raylib-build\\raylib\\raylib.lib\"",
 				"role" : "libraries"
 			},
@@ -534,12 +543,12 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "ChainedDecosMapEditor",
-	"nameOnDisk" : "ChainedDecosMapEditor.exe",
+	"name" : "ChainedDecos",
+	"nameOnDisk" : "ChainedDecos_debug.exe",
 	"paths" : 
 	{
-		"build" : "src/Game/MapEditor",
-		"source" : "src/Game/MapEditor"
+		"build" : ".",
+		"source" : "."
 	},
 	"sourceGroups" : 
 	[
@@ -548,26 +557,7 @@
 			"sourceIndexes" : 
 			[
 				0,
-				1,
-				2,
-				3,
-				4,
-				5,
-				6,
-				7,
-				8,
-				9,
-				10,
-				11,
-				12,
-				13,
-				14,
-				15,
-				16,
-				17,
-				18,
-				19,
-				20
+				1
 			]
 		}
 	],
@@ -576,108 +566,12 @@
 		{
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "build/src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_1_cxx.cxx",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 0,
-			"compileGroupIndex" : 0,
-			"path" : "build/src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_0_cxx.cxx",
+			"path" : "build/CMakeFiles/ChainedDecos.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/main.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Application.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/Editor.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/MapObject.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/CameraModes.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/ClipboardManager.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/LayerManager.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/ObjectFilter.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/ObjectTransform.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/ShortcutManager.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/StatusBar.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/UndoRedo.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/MapFileManager/MapFileManager.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/TerrainEditor.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/LightingSystem.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/MaterialEditor.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/PrefabSystem.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/ParticleEditor.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/MapEditor/Editor/MeasurementTools.cpp",
+			"path" : "src/main.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],
