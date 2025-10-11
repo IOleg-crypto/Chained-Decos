@@ -102,12 +102,76 @@ jobs:
         choco install cmake ninja ccache --no-progress
 
     - name: Clear CMake cache
-      shell: bash
-      run: |
-        rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
-        rm -rf ".deps"
-        rm -rf "${{ github.workspace }}/.deps"
-        rm -f CMakeCache.txt cmake_install.cmake CMakeFiles/
+       shell: bash
+       run: |
+         echo "🧹 Starting comprehensive cache cleanup..."
+
+         # Clear build directory completely
+         rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
+         rm -rf ".deps"
+         rm -rf "${{ github.workspace }}/.deps"
+         rm -rf "${{ github.workspace }}/build"
+
+         # Clear any leftover CMake cache files in workspace (with verbose output)
+         echo "📁 Searching for CMake cache files..."
+         find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
+         find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + -print 2>/dev/null || true
+         find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
+         find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + -print 2>/dev/null || true
+
+         # Windows-specific cleanup (Visual Studio files)
+         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+           echo "🪟 Performing comprehensive Windows-specific cleanup..."
+           find "${{ github.workspace }}" -name "*.vcxproj" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.vcxproj.filters" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.sln" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "x64" -type d -exec rm -rf {} + -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "Win32" -type d -exec rm -rf {} + -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.dir" -type d -exec rm -rf {} + -print 2>/dev/null || true
+
+           # Additional Windows-specific patterns
+           find "${{ github.workspace }}" -name "*.vcxproj.user" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.pdb" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.ilk" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.exe" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.obj" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.lib" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.exp" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.idb" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.ipdb" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.iobj" -delete -print 2>/dev/null || true
+
+           # Remove any Visual Studio solution user files
+           find "${{ github.workspace }}" -name "*.suo" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "*.user" -delete -print 2>/dev/null || true
+
+           # Remove CMake files that might contain generator information
+           find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
+           find "${{ github.workspace }}" -name "compile_commands.json" -delete -print 2>/dev/null || true
+
+           # Remove any hidden CMake directories
+           find "${{ github.workspace }}" -type d -name "CMakeFiles" -exec rm -rf {} + -print 2>/dev/null || true
+         fi
+
+         # Clear any hidden CMake files
+         find "${{ github.workspace }}" -name ".cmake" -type d -exec rm -rf {} + 2>/dev/null || true
+
+         # Clear dependency cache directories that might contain cached generators
+         rm -rf "${{ github.workspace }}/cmake-build-*"
+         rm -rf "${{ github.workspace }}/build"
+         rm -rf "${{ github.workspace }}/.cache"
+         rm -rf "${{ github.workspace }}/CMakeFiles"
+
+         # Final verification - list any remaining CMake files
+         echo "🔍 Checking for any remaining CMake files..."
+         find "${{ github.workspace }}" -name "CMakeCache.txt" 2>/dev/null || echo "No CMakeCache.txt found"
+         find "${{ github.workspace }}" -name "CMakeFiles" -type d 2>/dev/null || echo "No CMakeFiles directories found"
+
+         echo "✅ CMake cache cleared completely"
 
     - name: Create build and package directories
       run: |
@@ -117,6 +181,16 @@ jobs:
     - name: Configure CMake for release
       shell: bash
       run: |
+        echo "🔧 Configuring CMake for release with the following settings:"
+        echo "  Build type: Release"
+        echo "  OS: ${{ matrix.os }}"
+
+        if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+          echo "  Generator: Ninja"
+        else
+          echo "  Generator: Unix Makefiles"
+        fi
+
         cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
@@ -130,7 +204,10 @@ jobs:
           -DENABLE_DEV_TOOLS=OFF \
           -DENABLE_DEBUG_INFO=OFF \
           -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
-          -S "${{ github.workspace }}"
+          -S "${{ github.workspace }}" \
+          ${{ matrix.os == 'windows-2022' && '-G Ninja' || '' }}
+
+        echo "✅ CMake configuration completed"
 
     - name: Build release binaries
       shell: bash
