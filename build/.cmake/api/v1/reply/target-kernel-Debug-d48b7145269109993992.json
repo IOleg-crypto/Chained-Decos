@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/Audio/audio.lib"
+			"path" : "src/Engine/Kernel/kernel.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -19,7 +19,7 @@
 		],
 		"files" : 
 		[
-			"src/Engine/Audio/CMakeLists.txt",
+			"src/Engine/Kernel/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -36,7 +36,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 11,
+				"line" : 13,
 				"parent" : 0
 			},
 			{
@@ -45,31 +45,31 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 77,
+				"line" : 80,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 88,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 116,
+				"line" : 121,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 251,
+				"line" : 256,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 115,
-				"parent" : 3
-			},
-			{
-				"command" : 3,
-				"file" : 1,
-				"line" : 114,
+				"line" : 120,
 				"parent" : 3
 			},
 			{
@@ -79,9 +79,15 @@
 				"parent" : 3
 			},
 			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 124,
+				"parent" : 3
+			},
+			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 6,
+				"line" : 8,
 				"parent" : 0
 			}
 		]
@@ -101,6 +107,10 @@
 				{
 					"backtrace" : 4,
 					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-w"
 				}
 			],
 			"defines" : 
@@ -110,7 +120,7 @@
 					"define" : "GRAPHICS_API_OPENGL_33"
 				},
 				{
-					"backtrace" : 5,
+					"backtrace" : 6,
 					"define" : "NOMINMAX"
 				},
 				{
@@ -118,31 +128,27 @@
 					"define" : "PLATFORM_DESKTOP"
 				},
 				{
-					"backtrace" : 6,
+					"backtrace" : 7,
 					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
 				},
 				{
-					"backtrace" : 7,
+					"backtrace" : 8,
 					"define" : "WIN32_LEAN_AND_MEAN"
 				},
 				{
-					"backtrace" : 8,
+					"backtrace" : 9,
 					"define" : "_CRT_SECURE_NO_WARNINGS"
 				},
 				{
-					"backtrace" : 9,
+					"backtrace" : 10,
 					"define" : "_WIN32_WINNT=0x0601"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 10,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Audio"
-				},
-				{
-					"backtrace" : 10,
-					"path" : "D:/gitnext/Chained Decos/src/Engine"
+					"backtrace" : 11,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Kernel"
 				},
 				{
 					"backtrace" : 2,
@@ -179,13 +185,13 @@
 			"id" : "glfw::@4755506f38bf45259394"
 		}
 	],
-	"id" : "audio::@9d441780e288f3c71fb0",
-	"name" : "audio",
-	"nameOnDisk" : "audio.lib",
+	"id" : "kernel::@5d86515e568759735271",
+	"name" : "kernel",
+	"nameOnDisk" : "kernel.lib",
 	"paths" : 
 	{
-		"build" : "src/Engine/Audio",
-		"source" : "src/Engine/Audio"
+		"build" : "src/Engine/Kernel",
+		"source" : "src/Engine/Kernel"
 	},
 	"sourceGroups" : 
 	[
@@ -201,7 +207,9 @@
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				2
+				2,
+				3,
+				4
 			]
 		}
 	],
@@ -210,17 +218,27 @@
 		{
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "build/src/Engine/Audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx",
+			"path" : "build/src/Engine/Kernel/CMakeFiles/kernel.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Audio/AudioManager.cpp",
+			"path" : "src/Engine/Kernel/Kernel.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Audio/AudioManager.h",
+			"path" : "src/Engine/Kernel/Kernel.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Engine/Kernel/IKernelService.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Engine/Kernel/KernelServices.h",
 			"sourceGroupIndex" : 1
 		}
 	],

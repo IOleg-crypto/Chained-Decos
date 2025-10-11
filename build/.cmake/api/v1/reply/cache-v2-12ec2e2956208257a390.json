@@ -1910,6 +1910,18 @@
 			"value" : "D:/gitnext/Chained Decos"
 		},
 		{
+			"name" : "DISABLE_ALL_WARNINGS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Disable all compiler warnings"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
 			"name" : "ENABLE_ASAN",
 			"properties" : 
 			[
