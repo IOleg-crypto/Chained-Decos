@@ -127,7 +127,7 @@ jobs:
 
         # Windows-specific cleanup (Visual Studio files)
         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-          echo "🪟 Performing Windows-specific cleanup..."
+          echo "🪟 Performing comprehensive Windows-specific cleanup..."
           find "${{ github.workspace }}" -name "*.vcxproj" -delete -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "*.vcxproj.filters" -delete -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "*.sln" -delete -print 2>/dev/null || true
@@ -135,6 +135,7 @@ jobs:
           find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "x64" -type d -exec rm -rf {} + -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "Win32" -type d -exec rm -rf {} + -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "*.dir" -type d -exec rm -rf {} + -print 2>/dev/null || true
 
           # Additional Windows-specific patterns
@@ -144,6 +145,22 @@ jobs:
           find "${{ github.workspace }}" -name "*.exe" -delete -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "*.obj" -delete -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "*.lib" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.exp" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.idb" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.ipdb" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.iobj" -delete -print 2>/dev/null || true
+
+          # Remove any Visual Studio solution user files
+          find "${{ github.workspace }}" -name "*.suo" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.user" -delete -print 2>/dev/null || true
+
+          # Remove CMake files that might contain generator information
+          find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "compile_commands.json" -delete -print 2>/dev/null || true
+
+          # Remove any hidden CMake directories
+          find "${{ github.workspace }}" -type d -name "CMakeFiles" -exec rm -rf {} + -print 2>/dev/null || true
         fi
 
         # Clear any hidden CMake files
