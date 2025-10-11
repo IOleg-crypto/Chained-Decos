@@ -114,9 +114,41 @@ jobs:
       run: |
         mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
 
+    # Ensure raylib and other dependencies are properly downloaded
+    - name: Download dependencies
+      shell: bash
+      run: |
+        # Pre-download dependencies to ensure they're available
+        echo "📥 Downloading external dependencies..."
+        cd "${{ steps.build-env.outputs.build-output-dir }}"
+
+        # Configure with verbose output to see dependency download progress
+        cmake --fresh -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF \
+          -DENABLE_WARNINGS=OFF -DENABLE_DEV_TOOLS=OFF \
+          -DFETCHCONTENT_QUIET=OFF \
+          -DFETCHCONTENT_UPDATES_DISCONNECTED=OFF ..
+
+        # Verify that raylib was downloaded successfully
+        if [[ -d "${{ github.workspace }}/.deps/raylib-src" ]]; then
+          echo "✅ Raylib downloaded successfully"
+        else
+          echo "⚠️ Raylib not found in .deps, checking alternative locations..."
+          find . -name "raylib" -type d 2>/dev/null || echo "❌ Raylib not found"
+        fi
+
+        echo "✅ Dependencies downloaded successfully"
+
     - name: Configure CMake
       shell: bash
       run: |
+        echo "🔧 Configuring CMake for tests with the following settings:"
+        echo "  Build type: ${{ matrix.build_type }}"
+        echo "  Generator: ${{ matrix.generator }}"
+        echo "  Compiler: ${{ matrix.compiler }}"
+        echo "  OS: ${{ matrix.os }}"
+
+        # Configure CMake with verbose output for dependency issues
         cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -G "${{ matrix.generator }}" \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
@@ -129,7 +161,10 @@ jobs:
           -DENABLE_UNITY_BUILD=OFF \
           -DENABLE_DEV_TOOLS=ON \
           -DENABLE_DEBUG_INFO=ON \
+          -DFETCHCONTENT_VERBOSE=ON \
           -S "${{ github.workspace }}"
+
+        echo "✅ CMake configuration completed"
 
     - name: Build project
       shell: bash
