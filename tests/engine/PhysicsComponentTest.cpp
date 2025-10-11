@@ -76,10 +76,10 @@ TEST_F(PhysicsComponentTest, SettersAndGettersWorkCorrectly) {
 TEST_F(PhysicsComponentTest, GroundedStateIsManagedCorrectly) {
     EXPECT_FALSE(physics->IsGrounded());
 
-    physics->SetGroundLevel(true);
+    physics->SetGrounded(true);
     EXPECT_TRUE(physics->IsGrounded());
 
-    physics->SetGroundLevel(false);
+    physics->SetGrounded(false);
     EXPECT_FALSE(physics->IsGrounded());
 }
 
