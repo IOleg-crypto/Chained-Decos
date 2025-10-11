@@ -105,10 +105,18 @@ jobs:
     - name: Clear CMake cache
       shell: bash
       run: |
+        # Clear build directory completely
         rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
         rm -rf ".deps"
         rm -rf "${{ github.workspace }}/.deps"
-        rm -f CMakeCache.txt cmake_install.cmake CMakeFiles/
+
+        # Clear any leftover CMake cache files in workspace
+        find "${{ github.workspace }}" -name "CMakeCache.txt" -delete
+        find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + 2>/dev/null || true
+        find "${{ github.workspace }}" -name "cmake_install.cmake" -delete
+        find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + 2>/dev/null || true
+
+        echo "✅ CMake cache cleared completely"
 
     - name: Create build directory
       run: |
