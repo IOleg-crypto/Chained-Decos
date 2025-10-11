@@ -105,29 +105,55 @@ jobs:
     - name: Clear CMake cache
       shell: bash
       run: |
+        echo "🧹 Starting comprehensive cache cleanup..."
+
         # Clear build directory completely
         rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
         rm -rf ".deps"
         rm -rf "${{ github.workspace }}/.deps"
+        rm -rf "${{ github.workspace }}/build"
 
-        # Clear any leftover CMake cache files in workspace
-        find "${{ github.workspace }}" -name "CMakeCache.txt" -delete
-        find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + 2>/dev/null || true
-        find "${{ github.workspace }}" -name "cmake_install.cmake" -delete
-        find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + 2>/dev/null || true
+        # Clear any leftover CMake cache files in workspace (with verbose output)
+        echo "📁 Searching for CMake cache files..."
+        find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
+        find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + -print 2>/dev/null || true
+        find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
+        find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + -print 2>/dev/null || true
 
         # Windows-specific cleanup (Visual Studio files)
         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
           echo "🪟 Performing Windows-specific cleanup..."
-          find "${{ github.workspace }}" -name "*.vcxproj" -delete 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.vcxproj.filters" -delete 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.sln" -delete 2>/dev/null || true
-          find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + 2>/dev/null || true
-          find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + 2>/dev/null || true
-          find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + 2>/dev/null || true
-          find "${{ github.workspace }}" -name "x64" -type d -exec rm -rf {} + 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.dir" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.vcxproj" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.vcxproj.filters" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.sln" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "x64" -type d -exec rm -rf {} + -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.dir" -type d -exec rm -rf {} + -print 2>/dev/null || true
+
+          # Additional Windows-specific patterns
+          find "${{ github.workspace }}" -name "*.vcxproj.user" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.pdb" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.ilk" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.exe" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.obj" -delete -print 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.lib" -delete -print 2>/dev/null || true
         fi
+
+        # Clear any hidden CMake files
+        find "${{ github.workspace }}" -name ".cmake" -type d -exec rm -rf {} + 2>/dev/null || true
+
+        # Clear dependency cache directories that might contain cached generators
+        rm -rf "${{ github.workspace }}/cmake-build-*"
+        rm -rf "${{ github.workspace }}/build"
+        rm -rf "${{ github.workspace }}/.cache"
+        rm -rf "${{ github.workspace }}/CMakeFiles"
+
+        # Final verification - list any remaining CMake files
+        echo "🔍 Checking for any remaining CMake files..."
+        find "${{ github.workspace }}" -name "CMakeCache.txt" 2>/dev/null || echo "No CMakeCache.txt found"
+        find "${{ github.workspace }}" -name "CMakeFiles" -type d 2>/dev/null || echo "No CMakeFiles directories found"
 
         echo "✅ CMake cache cleared completely"
 
