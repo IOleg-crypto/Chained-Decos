@@ -31,6 +31,12 @@ target_compile_definitions(GameFeatures PRIVATE
     PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
 )
 
+# Use forward slashes for cross-platform compatibility
+file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
+target_compile_definitions(GameFeatures PRIVATE
+    PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
+)
+
 # Organize in IDE
 source_group("Source Files" FILES ${GAME_FEATURES_SOURCES})
 source_group("Header Files" FILES ${GAME_FEATURES_HEADERS})

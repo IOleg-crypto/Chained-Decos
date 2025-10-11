@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/Input/input.lib"
+			"path" : "src/Engine/Audio/audio.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -19,7 +19,7 @@
 		],
 		"files" : 
 		[
-			"src/Engine/Input/CMakeLists.txt",
+			"src/Engine/Audio/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -36,7 +36,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 10,
+				"line" : 11,
 				"parent" : 0
 			},
 			{
@@ -57,7 +57,7 @@
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 222,
+				"line" : 224,
 				"parent" : 3
 			},
 			{
@@ -138,7 +138,11 @@
 			[
 				{
 					"backtrace" : 10,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Input"
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Audio"
+				},
+				{
+					"backtrace" : 10,
+					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
 					"backtrace" : 2,
@@ -175,13 +179,13 @@
 			"id" : "glfw::@4755506f38bf45259394"
 		}
 	],
-	"id" : "input::@d967885210040d4ce616",
-	"name" : "input",
-	"nameOnDisk" : "input.lib",
+	"id" : "audio::@9d441780e288f3c71fb0",
+	"name" : "audio",
+	"nameOnDisk" : "audio.lib",
 	"paths" : 
 	{
-		"build" : "src/Engine/Input",
-		"source" : "src/Engine/Input"
+		"build" : "src/Engine/Audio",
+		"source" : "src/Engine/Audio"
 	},
 	"sourceGroups" : 
 	[
@@ -206,17 +210,17 @@
 		{
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "build/src/Engine/Input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx",
+			"path" : "build/src/Engine/Audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Input/InputManager.cpp",
+			"path" : "src/Engine/Audio/AudioManager.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Input/InputManager.h",
+			"path" : "src/Engine/Audio/AudioManager.h",
 			"sourceGroupIndex" : 1
 		}
 	],

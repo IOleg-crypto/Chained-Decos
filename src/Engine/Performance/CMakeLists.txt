@@ -31,6 +31,12 @@ target_compile_definitions(PerformanceManager PRIVATE
     PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
 )
 
+# Use forward slashes for cross-platform compatibility
+file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
+target_compile_definitions(PerformanceManager PRIVATE
+    PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
+)
+
 # Organize in IDE
 source_group("Source Files" FILES ${PERFORMANCE_SOURCES})
 source_group("Header Files" FILES ${PERFORMANCE_HEADERS})
