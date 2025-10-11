@@ -160,8 +160,9 @@ if(NOT raylib_FOUND)
     # Platform-specific raylib options
     if(UNIX AND NOT APPLE)
         set(USE_WAYLAND OFF CACHE BOOL "" FORCE)  # Use X11 on Linux
-        set(PLATFORM DRM CACHE STRING "" FORCE)  # Use DRM platform
+        set(PLATFORM GLFW CACHE STRING "" FORCE)  # Use GLFW platform for better compatibility
         set(OPENGL_VERSION "3.3" CACHE STRING "" FORCE)
+        set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)  # Ensure X11 support in GLFW
     endif()
 
     FetchContent_MakeAvailable(raylib)
