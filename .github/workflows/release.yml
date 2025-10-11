@@ -91,7 +91,7 @@ jobs:
           libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
           libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
           libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-          pkg-config ccache
+          pkg-config ccache libgtk-3-dev libdrm-dev libgbm-dev
 
     # ---------------- Windows setup ----------------
     - name: Install dependencies (Windows)
@@ -104,6 +104,7 @@ jobs:
       run: |
         rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
         rm -rf ".deps"
+        rm -rf "${{ github.workspace }}/.deps"
         rm -f CMakeCache.txt cmake_install.cmake CMakeFiles/
 
     - name: Create build and package directories

@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/Input/input.lib"
+			"path" : "src/Engine/Config/config.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -19,7 +19,7 @@
 		],
 		"files" : 
 		[
-			"src/Engine/Input/CMakeLists.txt",
+			"src/Engine/Config/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -36,7 +36,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 10,
+				"line" : 11,
 				"parent" : 0
 			},
 			{
@@ -57,7 +57,7 @@
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 224,
+				"line" : 234,
 				"parent" : 3
 			},
 			{
@@ -138,7 +138,7 @@
 			[
 				{
 					"backtrace" : 10,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Input"
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Config"
 				},
 				{
 					"backtrace" : 2,
@@ -175,13 +175,13 @@
 			"id" : "glfw::@4755506f38bf45259394"
 		}
 	],
-	"id" : "input::@d967885210040d4ce616",
-	"name" : "input",
-	"nameOnDisk" : "input.lib",
+	"id" : "config::@28a42e3ebd48eb13e177",
+	"name" : "config",
+	"nameOnDisk" : "config.lib",
 	"paths" : 
 	{
-		"build" : "src/Engine/Input",
-		"source" : "src/Engine/Input"
+		"build" : "src/Engine/Config",
+		"source" : "src/Engine/Config"
 	},
 	"sourceGroups" : 
 	[
@@ -206,17 +206,17 @@
 		{
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "build/src/Engine/Input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx",
+			"path" : "build/src/Engine/Config/CMakeFiles/config.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Input/InputManager.cpp",
+			"path" : "src/Engine/Config/ConfigManager.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Input/InputManager.h",
+			"path" : "src/Engine/Config/ConfigManager.h",
 			"sourceGroupIndex" : 1
 		}
 	],

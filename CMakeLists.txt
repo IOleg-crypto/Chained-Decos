@@ -152,8 +152,18 @@ if(NOT raylib_FOUND)
         URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.zip
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
+
+    # Raylib build configuration
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+
+    # Platform-specific raylib options
+    if(UNIX AND NOT APPLE)
+        set(USE_WAYLAND OFF CACHE BOOL "" FORCE)  # Use X11 on Linux
+        set(PLATFORM DRM CACHE STRING "" FORCE)  # Use DRM platform
+        set(OPENGL_VERSION "3.3" CACHE STRING "" FORCE)
+    endif()
+
     FetchContent_MakeAvailable(raylib)
 endif()
 
