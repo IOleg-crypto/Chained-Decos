@@ -93,15 +93,15 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O3 -DNDEBUG -std=gnu++20 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				},
 				{
 					"backtrace" : 4,
-					"fragment" : "-O3"
+					"fragment" : "-O0"
 				},
 				{
 					"backtrace" : 4,
-					"fragment" : "-DNDEBUG"
+					"fragment" : "-g"
 				}
 			],
 			"defines" : 
