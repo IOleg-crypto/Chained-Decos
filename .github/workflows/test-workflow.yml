@@ -116,6 +116,19 @@ jobs:
         find "${{ github.workspace }}" -name "cmake_install.cmake" -delete
         find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + 2>/dev/null || true
 
+        # Windows-specific cleanup (Visual Studio files)
+        if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+          echo "🪟 Performing Windows-specific cleanup..."
+          find "${{ github.workspace }}" -name "*.vcxproj" -delete 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.vcxproj.filters" -delete 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.sln" -delete 2>/dev/null || true
+          find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "${{ github.workspace }}" -name "x64" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "${{ github.workspace }}" -name "*.dir" -type d -exec rm -rf {} + 2>/dev/null || true
+        fi
+
         echo "✅ CMake cache cleared completely"
 
     - name: Create build directory
