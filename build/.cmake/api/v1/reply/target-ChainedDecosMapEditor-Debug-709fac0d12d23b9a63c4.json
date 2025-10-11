@@ -132,15 +132,15 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O3 -DNDEBUG -std=gnu++17 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++17 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				},
 				{
 					"backtrace" : 11,
-					"fragment" : "-O3"
+					"fragment" : "-O0"
 				},
 				{
 					"backtrace" : 11,
-					"fragment" : "-DNDEBUG"
+					"fragment" : "-g"
 				}
 			],
 			"defines" : 
@@ -309,11 +309,11 @@
 		},
 		{
 			"backtrace" : 3,
-			"id" : "collision::@c7f3438d24a996a0c811"
+			"id" : "config::@28a42e3ebd48eb13e177"
 		},
 		{
 			"backtrace" : 3,
-			"id" : "config::@28a42e3ebd48eb13e177"
+			"id" : "collision::@c7f3438d24a996a0c811"
 		},
 		{
 			"backtrace" : 3,
@@ -337,11 +337,11 @@
 		},
 		{
 			"backtrace" : 3,
-			"id" : "kernel::@5d86515e568759735271"
+			"id" : "audio::@9d441780e288f3c71fb0"
 		},
 		{
 			"backtrace" : 3,
-			"id" : "audio::@9d441780e288f3c71fb0"
+			"id" : "kernel::@5d86515e568759735271"
 		},
 		{
 			"backtrace" : 3,
@@ -376,7 +376,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt",
+				"fragment" : "-O0 -g -Xclang -gcodeview -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd",
 				"role" : "flags"
 			},
 			{

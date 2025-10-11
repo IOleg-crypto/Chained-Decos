@@ -15,7 +15,7 @@
 						24
 					],
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.-Release-66d49661e71d31f9d259.json",
+					"jsonFile" : "directory-.-Debug-9f83a3f4de1128dbaa68.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -35,7 +35,7 @@
 						2
 					],
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.deps.raylib-src-Release-3045ac5e273d0d73ed30.json",
+					"jsonFile" : "directory-.deps.raylib-src-Debug-3045ac5e273d0d73ed30.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.5"
@@ -55,7 +55,7 @@
 						3
 					],
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.deps.raylib-src.src-Release-df0ca6f86f81e331c55d.json",
+					"jsonFile" : "directory-.deps.raylib-src.src-Debug-df0ca6f86f81e331c55d.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.5"
@@ -74,7 +74,7 @@
 					[
 						4
 					],
-					"jsonFile" : "directory-.deps.raylib-src.src.external.glfw-Release-0011fff0ae06d551c09b.json",
+					"jsonFile" : "directory-.deps.raylib-src.src.external.glfw-Debug-0011fff0ae06d551c09b.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.4"
@@ -85,7 +85,7 @@
 				},
 				{
 					"build" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src",
-					"jsonFile" : "directory-.deps.raylib-src.src.external.glfw.src-Release-071c79fd7db2c1ff0ae7.json",
+					"jsonFile" : "directory-.deps.raylib-src.src.external.glfw.src-Debug-071c79fd7db2c1ff0ae7.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.4"
@@ -101,7 +101,7 @@
 				},
 				{
 					"build" : "D:/gitnext/Chained Decos/.deps/nlohmann_json-build",
-					"jsonFile" : "directory-.deps.nlohmann_json-src-Release-3d5a53cbac1922334c1c.json",
+					"jsonFile" : "directory-.deps.nlohmann_json-src-Debug-3d5a53cbac1922334c1c.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.5"
@@ -127,7 +127,7 @@
 						17,
 						18
 					],
-					"jsonFile" : "directory-src.Engine-Release-d99704a6717bda53cd9a.json",
+					"jsonFile" : "directory-src.Engine-Debug-d99704a6717bda53cd9a.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -142,7 +142,7 @@
 				},
 				{
 					"build" : "src/Engine/Collision",
-					"jsonFile" : "directory-src.Engine.Collision-Release-8988ff19804e45de58a9.json",
+					"jsonFile" : "directory-src.Engine.Collision-Debug-8988ff19804e45de58a9.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -157,7 +157,7 @@
 				},
 				{
 					"build" : "src/Engine/Config",
-					"jsonFile" : "directory-src.Engine.Config-Release-93d6e848b78575b6e423.json",
+					"jsonFile" : "directory-src.Engine.Config-Debug-93d6e848b78575b6e423.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -172,7 +172,7 @@
 				},
 				{
 					"build" : "src/Engine/Input",
-					"jsonFile" : "directory-src.Engine.Input-Release-6b42449f553efeb601a7.json",
+					"jsonFile" : "directory-src.Engine.Input-Debug-6b42449f553efeb601a7.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -187,7 +187,7 @@
 				},
 				{
 					"build" : "src/Engine/Model",
-					"jsonFile" : "directory-src.Engine.Model-Release-b5b45cc2e6ed46d22928.json",
+					"jsonFile" : "directory-src.Engine.Model-Debug-b5b45cc2e6ed46d22928.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -202,7 +202,7 @@
 				},
 				{
 					"build" : "src/Engine/Render",
-					"jsonFile" : "directory-src.Engine.Render-Release-3488492eb6e93af8a42a.json",
+					"jsonFile" : "directory-src.Engine.Render-Debug-3488492eb6e93af8a42a.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -217,7 +217,7 @@
 				},
 				{
 					"build" : "src/Engine/CameraController",
-					"jsonFile" : "directory-src.Engine.CameraController-Release-92367470f063390d172f.json",
+					"jsonFile" : "directory-src.Engine.CameraController-Debug-92367470f063390d172f.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -232,7 +232,7 @@
 				},
 				{
 					"build" : "src/Engine/Physics",
-					"jsonFile" : "directory-src.Engine.Physics-Release-52438a60599c7022777f.json",
+					"jsonFile" : "directory-src.Engine.Physics-Debug-52438a60599c7022777f.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -247,7 +247,7 @@
 				},
 				{
 					"build" : "src/Engine/World",
-					"jsonFile" : "directory-src.Engine.World-Release-deb46fe44c71d8a6ee2e.json",
+					"jsonFile" : "directory-src.Engine.World-Debug-deb46fe44c71d8a6ee2e.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -262,7 +262,7 @@
 				},
 				{
 					"build" : "src/Engine/CommandLineHandler",
-					"jsonFile" : "directory-src.Engine.CommandLineHandler-Release-26914e727d097019567d.json",
+					"jsonFile" : "directory-src.Engine.CommandLineHandler-Debug-26914e727d097019567d.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -277,7 +277,7 @@
 				},
 				{
 					"build" : "src/Engine/Kernel",
-					"jsonFile" : "directory-src.Engine.Kernel-Release-779767e96e7f60dc5209.json",
+					"jsonFile" : "directory-src.Engine.Kernel-Debug-779767e96e7f60dc5209.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -292,7 +292,7 @@
 				},
 				{
 					"build" : "src/Engine/Audio",
-					"jsonFile" : "directory-src.Engine.Audio-Release-b7438261d71101a0053b.json",
+					"jsonFile" : "directory-src.Engine.Audio-Debug-b7438261d71101a0053b.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -307,7 +307,7 @@
 				},
 				{
 					"build" : "src/Engine/Event",
-					"jsonFile" : "directory-src.Engine.Event-Release-4f6961ca6a149efc275f.json",
+					"jsonFile" : "directory-src.Engine.Event-Debug-4f6961ca6a149efc275f.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -329,7 +329,7 @@
 						22,
 						23
 					],
-					"jsonFile" : "directory-src.Game-Release-acba60ce328241d23e92.json",
+					"jsonFile" : "directory-src.Game-Debug-acba60ce328241d23e92.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -344,7 +344,7 @@
 				},
 				{
 					"build" : "src/Game/Map",
-					"jsonFile" : "directory-src.Game.Map-Release-e8b128bdda741a0b848e.json",
+					"jsonFile" : "directory-src.Game.Map-Debug-e8b128bdda741a0b848e.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -359,7 +359,7 @@
 				},
 				{
 					"build" : "src/Game/Menu",
-					"jsonFile" : "directory-src.Game.Menu-Release-84efc2ed74c795508a81.json",
+					"jsonFile" : "directory-src.Game.Menu-Debug-84efc2ed74c795508a81.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -374,7 +374,7 @@
 				},
 				{
 					"build" : "src/Game/Player",
-					"jsonFile" : "directory-src.Game.Player-Release-512fe46273c17d7e5c1b.json",
+					"jsonFile" : "directory-src.Game.Player-Debug-512fe46273c17d7e5c1b.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -389,7 +389,7 @@
 				},
 				{
 					"build" : "src/Game/GameFeatures",
-					"jsonFile" : "directory-src.Game.GameFeatures-Release-6bab26f8c92c3ff218ee.json",
+					"jsonFile" : "directory-src.Game.GameFeatures-Debug-6bab26f8c92c3ff218ee.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -405,7 +405,7 @@
 				{
 					"build" : "src/Game/MapEditor",
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-src.Game.MapEditor-Release-14c55477bd9b2b4bc71e.json",
+					"jsonFile" : "directory-src.Game.MapEditor-Debug-14c55477bd9b2b4bc71e.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.16"
@@ -420,7 +420,7 @@
 					]
 				}
 			],
-			"name" : "Release",
+			"name" : "Debug",
 			"projects" : 
 			[
 				{
@@ -536,182 +536,182 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ChainedDecos-Release-a327d2f4bfc71ced0eeb.json",
+					"jsonFile" : "target-ChainedDecos-Debug-545ee45478071371b278.json",
 					"name" : "ChainedDecos",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 6,
 					"id" : "ChainedDecosEngine::@57eeced369f002faad1a",
-					"jsonFile" : "target-ChainedDecosEngine-Release-1e04920b10dec006fe98.json",
+					"jsonFile" : "target-ChainedDecosEngine-Debug-c4123520ecfb69319ac9.json",
 					"name" : "ChainedDecosEngine",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 19,
 					"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94",
-					"jsonFile" : "target-ChainedDecosGame-Release-3bf3432393faede187e1.json",
+					"jsonFile" : "target-ChainedDecosGame-Debug-0f7ea5e0df4275cf3be3.json",
 					"name" : "ChainedDecosGame",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 24,
 					"id" : "ChainedDecosMapEditor::@55121233932d6d4fa567",
-					"jsonFile" : "target-ChainedDecosMapEditor-Release-b831982442487602d46b.json",
+					"jsonFile" : "target-ChainedDecosMapEditor-Debug-709fac0d12d23b9a63c4.json",
 					"name" : "ChainedDecosMapEditor",
 					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 23,
 					"id" : "GameFeatures::@3472a93c03200552aca0",
-					"jsonFile" : "target-GameFeatures-Release-06c6b98d2f7f8668ed58.json",
+					"jsonFile" : "target-GameFeatures-Debug-01d8a4178e7d21ebae4c.json",
 					"name" : "GameFeatures",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 17,
 					"id" : "audio::@9d441780e288f3c71fb0",
-					"jsonFile" : "target-audio-Release-d9a1ad32451267495a68.json",
+					"jsonFile" : "target-audio-Debug-0a8da24431a3852edee1.json",
 					"name" : "audio",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 12,
 					"id" : "cameracontroller::@d7306d29326ff25263b1",
-					"jsonFile" : "target-cameracontroller-Release-f9966d79179d7c436e2e.json",
+					"jsonFile" : "target-cameracontroller-Debug-fc7f1c3a210516944268.json",
 					"name" : "cameracontroller",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 15,
 					"id" : "cmdhandler::@539fffaf613aa1a67690",
-					"jsonFile" : "target-cmdhandler-Release-a0bab41d67799eeabaca.json",
+					"jsonFile" : "target-cmdhandler-Debug-5b06794ec9680117cddf.json",
 					"name" : "cmdhandler",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 7,
 					"id" : "collision::@c7f3438d24a996a0c811",
-					"jsonFile" : "target-collision-Release-0b29880b567df068dded.json",
+					"jsonFile" : "target-collision-Debug-61dd4f6fa1a58a24b9b6.json",
 					"name" : "collision",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 8,
 					"id" : "config::@28a42e3ebd48eb13e177",
-					"jsonFile" : "target-config-Release-01a7da0e2df6c2e3200c.json",
+					"jsonFile" : "target-config-Debug-1ce7e336c6913b2d88d1.json",
 					"name" : "config",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 18,
 					"id" : "event::@ac78cbc803f0e3d902f4",
-					"jsonFile" : "target-event-Release-638b44a57a986c22fed6.json",
+					"jsonFile" : "target-event-Debug-7f7003f0bc658f995889.json",
 					"name" : "event",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 4,
 					"id" : "glfw::@4755506f38bf45259394",
-					"jsonFile" : "target-glfw-Release-cd65c438b45e6d54e4fc.json",
+					"jsonFile" : "target-glfw-Debug-6e86e53ad95aaf891f63.json",
 					"name" : "glfw",
 					"projectIndex" : 2
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "imguilib::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-imguilib-Release-316a4fd1e0a0b4aca6c2.json",
+					"jsonFile" : "target-imguilib-Debug-325fc39249d795e160cc.json",
 					"name" : "imguilib",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 9,
 					"id" : "input::@d967885210040d4ce616",
-					"jsonFile" : "target-input-Release-890ddf32f174fe4010d1.json",
+					"jsonFile" : "target-input-Debug-84d44a42687cc8c9c66c.json",
 					"name" : "input",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 16,
 					"id" : "kernel::@5d86515e568759735271",
-					"jsonFile" : "target-kernel-Release-8d018ff9264d61960c7b.json",
+					"jsonFile" : "target-kernel-Debug-b20ccdb8989bd2906c02.json",
 					"name" : "kernel",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 20,
 					"id" : "mapmod::@e87daa19a0aaec6b83ad",
-					"jsonFile" : "target-mapmod-Release-b259a8e9adaae784d681.json",
+					"jsonFile" : "target-mapmod-Debug-5b66f8090a5de738bf67.json",
 					"name" : "mapmod",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 21,
 					"id" : "menu::@508c1ec0f6a4eb8a79d5",
-					"jsonFile" : "target-menu-Release-16b723cecc0c0a6225d8.json",
+					"jsonFile" : "target-menu-Debug-7cd7206734f4efa545ab.json",
 					"name" : "menu",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 10,
 					"id" : "model::@821f8439338a0146b4f1",
-					"jsonFile" : "target-model-Release-e6b840c231057670f983.json",
+					"jsonFile" : "target-model-Debug-ca858036c7abb5ecf69a.json",
 					"name" : "model",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 13,
 					"id" : "physics::@e27c3d6556b677b24ea2",
-					"jsonFile" : "target-physics-Release-2bbbd7f24abac87f2b56.json",
+					"jsonFile" : "target-physics-Debug-a0deb24794c5d797dcdd.json",
 					"name" : "physics",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 22,
 					"id" : "player::@6497c05e8667515fbef8",
-					"jsonFile" : "target-player-Release-a90795abd78cbb67df56.json",
+					"jsonFile" : "target-player-Debug-44d970a248dc3293caa9.json",
 					"name" : "player",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 2,
 					"id" : "raylib::@af39a1529cb2ee18778c",
-					"jsonFile" : "target-raylib-Release-80dc84f2063c6da1f294.json",
+					"jsonFile" : "target-raylib-Debug-55f7cad95eb4ae01c9f7.json",
 					"name" : "raylib",
 					"projectIndex" : 1
 				},
 				{
 					"directoryIndex" : 11,
 					"id" : "render::@1c5ce05080cbaa0376c6",
-					"jsonFile" : "target-render-Release-8f2759735235d3c598d0.json",
+					"jsonFile" : "target-render-Debug-6a5427134ec579de0536.json",
 					"name" : "render",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 24,
 					"id" : "run_mapeditor::@55121233932d6d4fa567",
-					"jsonFile" : "target-run_mapeditor-Release-aea9f5dadfe7ec462c8e.json",
+					"jsonFile" : "target-run_mapeditor-Debug-aea9f5dadfe7ec462c8e.json",
 					"name" : "run_mapeditor",
 					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 1,
 					"id" : "uninstall::@49babf7f2f58d6386fe9",
-					"jsonFile" : "target-uninstall-Release-748bf2a889eb23e00e0c.json",
+					"jsonFile" : "target-uninstall-Debug-748bf2a889eb23e00e0c.json",
 					"name" : "uninstall",
 					"projectIndex" : 1
 				},
 				{
 					"directoryIndex" : 4,
 					"id" : "update_mappings::@4755506f38bf45259394",
-					"jsonFile" : "target-update_mappings-Release-e646f80e7f2189783b3d.json",
+					"jsonFile" : "target-update_mappings-Debug-e646f80e7f2189783b3d.json",
 					"name" : "update_mappings",
 					"projectIndex" : 2
 				},
 				{
 					"directoryIndex" : 14,
 					"id" : "world::@c98633f6e372857301bf",
-					"jsonFile" : "target-world-Release-ed92b81fdfbf5d9ffc29.json",
+					"jsonFile" : "target-world-Debug-8b607c7b7810011bddec.json",
 					"name" : "world",
 					"projectIndex" : 0
 				}
