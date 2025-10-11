@@ -356,6 +356,9 @@ ChainedDecos_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 ChainedDecos_SOURCE_DIR:STATIC=D:/gitnext/Chained Decos
 
+//Disable all compiler warnings
+DISABLE_ALL_WARNINGS:BOOL=ON
+
 //Enable AddressSanitizer (ASAN) for debugging (degrades performance)
 ENABLE_ASAN:BOOL=OFF
 

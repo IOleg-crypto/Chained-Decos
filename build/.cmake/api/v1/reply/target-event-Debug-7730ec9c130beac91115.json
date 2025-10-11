@@ -38,37 +38,43 @@
 			{
 				"command" : 1,
 				"file" : 1,
-				"line" : 77,
+				"line" : 80,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 88,
 				"parent" : 2
 			},
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 116,
+				"line" : 121,
 				"parent" : 2
 			},
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 251,
+				"line" : 256,
 				"parent" : 2
 			},
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 115,
-				"parent" : 2
-			},
-			{
-				"command" : 2,
-				"file" : 1,
-				"line" : 114,
+				"line" : 120,
 				"parent" : 2
 			},
 			{
 				"command" : 2,
 				"file" : 1,
 				"line" : 119,
+				"parent" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 124,
 				"parent" : 2
 			},
 			{
@@ -94,39 +100,43 @@
 				{
 					"backtrace" : 3,
 					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-w"
 				}
 			],
 			"defines" : 
 			[
 				{
-					"backtrace" : 4,
+					"backtrace" : 5,
 					"define" : "NOMINMAX"
 				},
 				{
-					"backtrace" : 5,
+					"backtrace" : 6,
 					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
 				},
 				{
-					"backtrace" : 6,
+					"backtrace" : 7,
 					"define" : "WIN32_LEAN_AND_MEAN"
 				},
 				{
-					"backtrace" : 7,
+					"backtrace" : 8,
 					"define" : "_CRT_SECURE_NO_WARNINGS"
 				},
 				{
-					"backtrace" : 8,
+					"backtrace" : 9,
 					"define" : "_WIN32_WINNT=0x0601"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 9,
+					"backtrace" : 10,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/Event"
 				},
 				{
-					"backtrace" : 9,
+					"backtrace" : 10,
 					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				}
 			],

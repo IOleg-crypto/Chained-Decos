@@ -45,37 +45,43 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 77,
+				"line" : 80,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 88,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 116,
+				"line" : 121,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 251,
+				"line" : 256,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 115,
-				"parent" : 3
-			},
-			{
-				"command" : 3,
-				"file" : 1,
-				"line" : 114,
+				"line" : 120,
 				"parent" : 3
 			},
 			{
 				"command" : 3,
 				"file" : 1,
 				"line" : 119,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 124,
 				"parent" : 3
 			},
 			{
@@ -101,6 +107,10 @@
 				{
 					"backtrace" : 4,
 					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-w"
 				}
 			],
 			"defines" : 
@@ -110,7 +120,7 @@
 					"define" : "GRAPHICS_API_OPENGL_33"
 				},
 				{
-					"backtrace" : 5,
+					"backtrace" : 6,
 					"define" : "NOMINMAX"
 				},
 				{
@@ -118,34 +128,34 @@
 					"define" : "PLATFORM_DESKTOP"
 				},
 				{
-					"backtrace" : 6,
+					"backtrace" : 7,
 					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
 				},
 				{
-					"backtrace" : 7,
+					"backtrace" : 8,
 					"define" : "WIN32_LEAN_AND_MEAN"
 				},
 				{
-					"backtrace" : 8,
+					"backtrace" : 9,
 					"define" : "_CRT_SECURE_NO_WARNINGS"
 				},
 				{
-					"backtrace" : 9,
+					"backtrace" : 10,
 					"define" : "_WIN32_WINNT=0x0601"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 10,
+					"backtrace" : 11,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/Model"
 				},
 				{
-					"backtrace" : 10,
+					"backtrace" : 11,
 					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
-					"backtrace" : 10,
+					"backtrace" : 11,
 					"path" : "D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
 				},
 				{

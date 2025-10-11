@@ -44,7 +44,13 @@
 			{
 				"command" : 1,
 				"file" : 1,
-				"line" : 77,
+				"line" : 80,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 88,
 				"parent" : 2
 			},
 			{
@@ -56,7 +62,7 @@
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 116,
+				"line" : 121,
 				"parent" : 2
 			},
 			{
@@ -68,7 +74,7 @@
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 115,
+				"line" : 120,
 				"parent" : 2
 			},
 			{
@@ -86,7 +92,7 @@
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 119,
+				"line" : 124,
 				"parent" : 2
 			},
 			{
@@ -139,52 +145,56 @@
 				},
 				{
 					"backtrace" : 4,
+					"fragment" : "-w"
+				},
+				{
+					"backtrace" : 5,
 					"fragment" : "-Wall"
 				}
 			],
 			"defines" : 
 			[
 				{
-					"backtrace" : 5,
+					"backtrace" : 6,
 					"define" : "NOMINMAX"
 				},
 				{
-					"backtrace" : 6,
+					"backtrace" : 7,
 					"define" : "UNICODE"
 				},
 				{
-					"backtrace" : 7,
+					"backtrace" : 8,
 					"define" : "WIN32_LEAN_AND_MEAN"
 				},
 				{
-					"backtrace" : 8,
+					"backtrace" : 9,
 					"define" : "_CRT_SECURE_NO_WARNINGS"
 				},
 				{
-					"backtrace" : 9,
+					"backtrace" : 10,
 					"define" : "_GLFW_WIN32"
 				},
 				{
-					"backtrace" : 6,
+					"backtrace" : 7,
 					"define" : "_UNICODE"
 				},
 				{
-					"backtrace" : 10,
+					"backtrace" : 11,
 					"define" : "_WIN32_WINNT=0x0601"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 11,
+					"backtrace" : 12,
 					"path" : "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
 				},
 				{
-					"backtrace" : 12,
+					"backtrace" : 13,
 					"path" : "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/src"
 				},
 				{
-					"backtrace" : 12,
+					"backtrace" : 13,
 					"path" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src"
 				}
 			],
@@ -193,7 +203,7 @@
 			{
 				"backtraces" : 
 				[
-					13
+					14
 				],
 				"standard" : "99"
 			},
@@ -379,62 +389,62 @@
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 14,
+			"backtrace" : 15,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_time.h",
 			"sourceGroupIndex" : 1
 		},
 		{
-			"backtrace" : 14,
+			"backtrace" : 15,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_thread.h",
 			"sourceGroupIndex" : 1
 		},
 		{
-			"backtrace" : 14,
+			"backtrace" : 15,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_module.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 14,
+			"backtrace" : 15,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_time.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 14,
+			"backtrace" : 15,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_thread.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 15,
+			"backtrace" : 16,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_platform.h",
 			"sourceGroupIndex" : 1
 		},
 		{
-			"backtrace" : 15,
+			"backtrace" : 16,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_joystick.h",
 			"sourceGroupIndex" : 1
 		},
 		{
-			"backtrace" : 15,
+			"backtrace" : 16,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_init.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 15,
+			"backtrace" : 16,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_joystick.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 15,
+			"backtrace" : 16,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_monitor.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 15,
+			"backtrace" : 16,
 			"path" : ".deps/raylib-src/src/external/glfw/src/win32_window.c",
 			"sourceGroupIndex" : 0
 		},
 		{
-			"backtrace" : 15,
+			"backtrace" : 16,
 			"path" : ".deps/raylib-src/src/external/glfw/src/wgl_context.c",
 			"sourceGroupIndex" : 0
 		}

@@ -156,7 +156,7 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -DBUILD_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
-          -DENABLE_WARNINGS=ON \
+          -DDISABLE_ALL_WARNINGS=ON \
           -DENABLE_OPTIMIZATIONS=OFF \
           -DENABLE_UNITY_BUILD=OFF \
           -DENABLE_DEV_TOOLS=ON \
