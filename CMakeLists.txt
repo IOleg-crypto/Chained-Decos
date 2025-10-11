@@ -166,6 +166,22 @@ if(NOT raylib_FOUND)
     endif()
 
     FetchContent_MakeAvailable(raylib)
+
+    # Ensure raylib include directories are available for all targets
+    if(raylib_POPULATED)
+        message(STATUS "Raylib fetched successfully, setting up include directories...")
+        set(raylib_INCLUDE_DIRS "${raylib_SOURCE_DIR}/src")
+        message(STATUS "Raylib include dirs: ${raylib_INCLUDE_DIRS}")
+    endif()
+endif()
+
+# Ensure raylib is available even if found via find_package
+if(raylib_FOUND OR raylib_POPULATED)
+    message(STATUS "Raylib is available")
+    if(raylib_POPULATED)
+        # For FetchContent, ensure include directories are set
+        set_target_properties(raylib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${raylib_SOURCE_DIR}/src")
+    endif()
 endif()
 
 # Add winmm library for Windows timer functions (needed by raylib)
