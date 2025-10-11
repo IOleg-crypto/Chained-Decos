@@ -10,6 +10,8 @@
 #include <chrono>
 
 #include "CollisionStructures.h"
+#include <raylib.h>
+#include <raymath.h>
 
 // Initialize static cache
 std::unordered_map<size_t, std::weak_ptr<Collision>> Collision::collisionCache;
@@ -135,7 +137,29 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
     for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
     {
         Mesh &mesh = rayModel->meshes[meshIdx];
-        if (!mesh.vertices || !mesh.indices) continue;
+
+        // Enhanced validation for mesh data
+        if (!mesh.vertices || !mesh.indices)
+        {
+            TraceLog(LOG_WARNING, "Mesh %d has null vertex or index data, skipping", meshIdx);
+            continue;
+        }
+
+        if (mesh.vertexCount == 0 || mesh.triangleCount == 0)
+        {
+            TraceLog(LOG_WARNING, "Mesh %d has no vertices or triangles, skipping", meshIdx);
+            continue;
+        }
+
+        // Validate mesh data integrity
+        size_t expectedVertexDataSize = mesh.vertexCount * 3 * sizeof(float);
+        size_t expectedIndexDataSize = mesh.triangleCount * 3 * sizeof(unsigned short);
+
+        if (mesh.vertices == nullptr || mesh.indices == nullptr)
+        {
+            TraceLog(LOG_ERROR, "Mesh %d: Invalid mesh data pointers", meshIdx);
+            continue;
+        }
 
         // Batch process triangles for this mesh
         const int triangleCount = mesh.triangleCount;
@@ -144,18 +168,52 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
         for (int i = 0; i < triangleCount; ++i)
         {
             const int idx = i * 3;
+
+            // Bounds check for indices
+            if (idx + 2 >= mesh.triangleCount * 3)
+            {
+                TraceLog(LOG_ERROR, "Mesh %d: Index out of bounds at triangle %d", meshIdx, i);
+                break;
+            }
+
             const int i0 = indices[idx + 0];
             const int i1 = indices[idx + 1];
             const int i2 = indices[idx + 2];
 
-            // Get vertex positions
+            // Validate vertex indices are within bounds
+            if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount)
+            {
+                TraceLog(LOG_ERROR, "Mesh %d: Vertex index out of bounds (i0=%d, i1=%d, i2=%d, vertexCount=%d)",
+                         meshIdx, i0, i1, i2, mesh.vertexCount);
+                continue;
+            }
+
+            // Get vertex positions with bounds checking
             const float* v0Ptr = &mesh.vertices[i0 * 3];
             const float* v1Ptr = &mesh.vertices[i1 * 3];
             const float* v2Ptr = &mesh.vertices[i2 * 3];
 
+            // Validate vertex data pointers
+            if (v0Ptr < mesh.vertices || v0Ptr >= mesh.vertices + (mesh.vertexCount * 3) ||
+                v1Ptr < mesh.vertices || v1Ptr >= mesh.vertices + (mesh.vertexCount * 3) ||
+                v2Ptr < mesh.vertices || v2Ptr >= mesh.vertices + (mesh.vertexCount * 3))
+            {
+                TraceLog(LOG_ERROR, "Mesh %d: Vertex data pointer out of bounds", meshIdx);
+                continue;
+            }
+
             Vector3 v0 = { v0Ptr[0], v0Ptr[1], v0Ptr[2] };
             Vector3 v1 = { v1Ptr[0], v1Ptr[1], v1Ptr[2] };
             Vector3 v2 = { v2Ptr[0], v2Ptr[1], v2Ptr[2] };
+
+            // Validate vertex data is finite (not NaN or inf)
+            if (!std::isfinite(v0.x) || !std::isfinite(v0.y) || !std::isfinite(v0.z) ||
+                !std::isfinite(v1.x) || !std::isfinite(v1.y) || !std::isfinite(v1.z) ||
+                !std::isfinite(v2.x) || !std::isfinite(v2.y) || !std::isfinite(v2.z))
+            {
+                TraceLog(LOG_WARNING, "Mesh %d: Invalid vertex data (NaN or inf) at triangle %d", meshIdx, i);
+                continue;
+            }
 
             // Transform vertices to world coordinates
             v0 = Vector3Transform(v0, transform);
@@ -228,18 +286,52 @@ MeshProcessingData ProcessMeshParallel(const Mesh& mesh, const Matrix& transform
     for (int i = 0; i < triangleCount; ++i)
     {
         const int idx = i * 3;
+
+        // Bounds check for indices
+        if (idx + 2 >= mesh.triangleCount * 3)
+        {
+            TraceLog(LOG_ERROR, "ProcessMeshParallel: Index out of bounds at triangle %d", i);
+            break;
+        }
+
         const int i0 = indices[idx + 0];
         const int i1 = indices[idx + 1];
         const int i2 = indices[idx + 2];
 
-        // Get vertex positions
+        // Validate vertex indices are within bounds
+        if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount)
+        {
+            TraceLog(LOG_ERROR, "ProcessMeshParallel: Vertex index out of bounds (i0=%d, i1=%d, i2=%d, vertexCount=%d)",
+                     i0, i1, i2, mesh.vertexCount);
+            continue;
+        }
+
+        // Get vertex positions with bounds checking
         const float* v0Ptr = &mesh.vertices[i0 * 3];
         const float* v1Ptr = &mesh.vertices[i1 * 3];
         const float* v2Ptr = &mesh.vertices[i2 * 3];
 
+        // Validate vertex data pointers
+        if (v0Ptr < mesh.vertices || v0Ptr >= mesh.vertices + (mesh.vertexCount * 3) ||
+            v1Ptr < mesh.vertices || v1Ptr >= mesh.vertices + (mesh.vertexCount * 3) ||
+            v2Ptr < mesh.vertices || v2Ptr >= mesh.vertices + (mesh.vertexCount * 3))
+        {
+            TraceLog(LOG_ERROR, "ProcessMeshParallel: Vertex data pointer out of bounds");
+            continue;
+        }
+
         Vector3 v0 = { v0Ptr[0], v0Ptr[1], v0Ptr[2] };
         Vector3 v1 = { v1Ptr[0], v1Ptr[1], v1Ptr[2] };
         Vector3 v2 = { v2Ptr[0], v2Ptr[1], v2Ptr[2] };
+
+        // Validate vertex data is finite (not NaN or inf)
+        if (!std::isfinite(v0.x) || !std::isfinite(v0.y) || !std::isfinite(v0.z) ||
+            !std::isfinite(v1.x) || !std::isfinite(v1.y) || !std::isfinite(v1.z) ||
+            !std::isfinite(v2.x) || !std::isfinite(v2.y) || !std::isfinite(v2.z))
+        {
+            TraceLog(LOG_WARNING, "ProcessMeshParallel: Invalid vertex data (NaN or inf) at triangle %d", i);
+            continue;
+        }
 
         // Transform vertices to world coordinates
         v0 = Vector3Transform(v0, transform);
@@ -461,23 +553,41 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
     else if (ext.z > ext.x && ext.z > ext.y)
         axis = 2;
 
-    // sort by centroid along axis (use faster sorting)
+    // sort by centroid along axis (use faster sorting with safety checks)
     std::sort(tris.begin(), tris.end(),
               [axis](const CollisionTriangle &a, const CollisionTriangle &b)
               {
-                  float ca = (a.V0().x + a.V1().x + a.V2().x) / 3.0f;
-                  float cb = (b.V0().x + b.V1().x + b.V2().x) / 3.0f;
-                  if (axis == 1)
+                  // Safely calculate centroids with finite value checks
+                  Vector3 ca = Vector3Add(Vector3Add(a.V0(), a.V1()), a.V2());
+                  Vector3 cb = Vector3Add(Vector3Add(b.V0(), b.V1()), b.V2());
+
+                  float ca_val = 0.0f, cb_val = 0.0f;
+
+                  switch (axis)
                   {
-                      ca = (a.V0().y + a.V1().y + a.V2().y) / 3.0f;
-                      cb = (b.V0().y + b.V1().y + b.V2().y) / 3.0f;
+                  case 0:
+                      ca_val = ca.x / 3.0f;
+                      cb_val = cb.x / 3.0f;
+                      break;
+                  case 1:
+                      ca_val = ca.y / 3.0f;
+                      cb_val = cb.y / 3.0f;
+                      break;
+                  case 2:
+                      ca_val = ca.z / 3.0f;
+                      cb_val = cb.z / 3.0f;
+                      break;
+                  default:
+                      ca_val = ca.x / 3.0f;
+                      cb_val = cb.x / 3.0f;
+                      break;
                   }
-                  if (axis == 2)
-                  {
-                      ca = (a.V0().z + a.V1().z + a.V2().z) / 3.0f;
-                      cb = (b.V0().z + b.V1().z + b.V2().z) / 3.0f;
-                  }
-                  return ca < cb;
+
+                  // Handle NaN/inf values
+                  if (!std::isfinite(ca_val)) ca_val = 0.0f;
+                  if (!std::isfinite(cb_val)) cb_val = 0.0f;
+
+                  return ca_val < cb_val;
               });
 
     size_t mid = tris.size() / 2;
@@ -504,32 +614,62 @@ void Collision::BuildBVHFromTriangles()
 
 // ----------------- Ray/triangle (Möller–Trumbore) -----------------
 bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
-                                      const CollisionTriangle &tri, RayHit &outHit)
+                                       const CollisionTriangle &tri, RayHit &outHit)
 {
-    // Use a consistent small epsilon and guard against near-parallel cases
-    const float EPS = 1e-6f;
+    // Enhanced Möller-Trumbore with safety checks
+    const float EPS_PARALLEL = 1e-8f;
     Vector3 edge1 = Vector3Subtract(tri.V1(), tri.V0());
     Vector3 edge2 = Vector3Subtract(tri.V2(), tri.V0());
+
+    // Check for degenerate triangles
+    if (Vector3LengthSqr(edge1) < 1e-12f || Vector3LengthSqr(edge2) < 1e-12f)
+        return false;
+
     Vector3 h = Vector3CrossProduct(dir, edge2);
     float a = Vector3DotProduct(edge1, h);
-    if (a > -EPS && a < EPS)
+
+    // Enhanced parallel check
+    if (fabsf(a) < EPS_PARALLEL)
         return false; // parallel
+
     float f = 1.0f / a;
+
+    // Check for invalid division result
+    if (!std::isfinite(f))
+        return false;
+
     Vector3 s = Vector3Subtract(orig, tri.V0());
     float u = f * Vector3DotProduct(s, h);
+
     if (u < 0.0f || u > 1.0f)
         return false;
+
     Vector3 q = Vector3CrossProduct(s, edge1);
     float v = f * Vector3DotProduct(dir, q);
+
     if (v < 0.0f || u + v > 1.0f)
         return false;
+
     float t = f * Vector3DotProduct(edge2, q);
-    if (t > EPS)
+
+    // Check for valid intersection distance and finite values
+    if (std::isfinite(t) && t > 1e-6f)
     {
         outHit.hit = true;
         outHit.distance = t;
         outHit.position = Vector3Add(orig, Vector3Scale(dir, t));
-        outHit.normal = Vector3Normalize(Vector3CrossProduct(edge1, edge2));
+
+        // Safely compute normal
+        Vector3 normal = Vector3CrossProduct(edge1, edge2);
+        float normalLengthSqr = Vector3LengthSqr(normal);
+        if (normalLengthSqr > 1e-12f)
+        {
+            outHit.normal = Vector3Scale(normal, 1.0f / sqrtf(normalLengthSqr));
+        }
+        else
+        {
+            outHit.normal = {0.0f, 1.0f, 0.0f}; // Fallback normal
+        }
         return true;
     }
     return false;
@@ -608,14 +748,20 @@ bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const
 }
 
 bool Collision::RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxDistance,
-                           RayHit &outHit) const
+                            RayHit &outHit) const
 {
     if (!m_bvhRoot)
         return false;
+
     outHit.hit = false;
     outHit.distance = std::numeric_limits<float>::infinity();
-    // Ensure we use a normalized direction to keep distances consistent
-    Vector3 ndir = Vector3Normalize(dir);
+
+    // Safely normalize direction vector
+    float dirLengthSqr = Vector3LengthSqr(dir);
+    if (dirLengthSqr < 1e-12f)
+        return false; // Invalid direction vector
+
+    Vector3 ndir = Vector3Scale(dir, 1.0f / sqrtf(dirLengthSqr));
     bool ok = RaycastBVHNode(m_bvhRoot.get(), origin, ndir, maxDistance, outHit);
     return ok;
 }
@@ -812,8 +958,14 @@ bool Collision::Intersects(const Collision &other) const
 // ======================================================================================================================
 void Collision::SetCollisionType(CollisionType type) { m_collisionType = type; }
 bool BVHNode::IsLeaf() const { return !left && !right; }
-Vector3 Collision::GetSize() const { return Vector3Subtract(m_max, m_min); }
-Vector3 Collision::GetCenter() const { return Vector3Scale(Vector3Add(m_min, m_max), 0.5f); }
+Vector3 Collision::GetSize() const
+{
+    return Vector3Subtract(m_max, m_min);
+}
+Vector3 Collision::GetCenter() const
+{
+    return Vector3Scale(Vector3Add(m_min, m_max), 0.5f);
+}
 Vector3 Collision::GetMax() const { return m_max; }
 Vector3 Collision::GetMin() const { return m_min; }
 size_t Collision::GetTriangleCount() const { return m_triangles.size(); }
@@ -853,7 +1005,7 @@ bool Collision::CheckCollisionWithBVH(const Collision& other, Vector3& outRespon
     const float checkDistance = size.y + 1.0f;
     bool hasCollision = false;
     float minY = FLT_MAX;
-    
+
     // Check center and corners
     Vector3 checkPoints[] = {
         center,  // Center

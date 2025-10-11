@@ -1,12 +1,14 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
+#include <raylib.h>
+#include <raymath.h>
+#include "Model/ModelConfig.h"
 #include "CollisionSystem.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <Model/ModelConfig.h>
 #include <algorithm>
 #include <execution>
 #include <future>
@@ -66,22 +68,25 @@ public:
     // Automatically create collisions for all models
     void CreateAutoCollisionsFromModels(ModelLoader &models);
 
+    // Create collisions only for specific models
+    void CreateAutoCollisionsFromModelsSelective(ModelLoader &models, const std::vector<std::string> &modelNames);
+
     // Helper function to create cache key
     [[nodiscard]] std::string MakeCollisionCacheKey(const std::string &modelName,
                                                     float scale) const;
 
     // Create collision for a specific model instance
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
-                                  Vector3 position, float scale, const ModelLoader &models);
+                                     Vector3 position, float scale, const ModelLoader &models);
 
     // Create a base collision for caching (AABB or BVH)
     std::shared_ptr<Collision> CreateBaseCollision(const Model &model, const std::string &modelName,
-                                                   const ModelFileConfig *config,
-                                                   bool needsPreciseCollision);
+                                                      const ModelFileConfig *config,
+                                                      bool needsPreciseCollision);
 
     // Create precise collision (Triangle/BVH) for an instance
     Collision CreatePreciseInstanceCollision(const Model &model, Vector3 position, float scale,
-                                             const ModelFileConfig *config);
+                                              const ModelFileConfig *config);
 
     // Create precise collision from cached triangles to avoid re-reading model meshes
     Collision CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,

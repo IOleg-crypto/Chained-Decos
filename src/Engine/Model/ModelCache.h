@@ -26,12 +26,7 @@ struct CachedModelInfo
     bool isLoading = false; // For async loading
     std::future<std::unique_ptr<Model>> loadingFuture; // Async loading future
 
-    void UpdateAccess()
-    {
-        lastAccessed = std::chrono::steady_clock::now();
-        accessCount++;
-        isFrequentlyUsed = accessCount > 5; // Frequent use threshold
-    }
+    void UpdateAccess();
 };
 
 // Async loading task
@@ -44,10 +39,7 @@ struct ModelLoadingTask
     int priority = 0; // Higher number = higher priority
 
     // Comparator for priority queue (higher priority first)
-    bool operator<(const ModelLoadingTask& other) const
-    {
-        return priority < other.priority;
-    }
+    bool operator<(const ModelLoadingTask& other) const;
 };
 
 // Model cache with automatic memory management and async loading
