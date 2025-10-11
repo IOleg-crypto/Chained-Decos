@@ -4,6 +4,19 @@
 #include <iostream>
 #include <fstream>
 
+// CachedModelInfo struct implementation
+void CachedModelInfo::UpdateAccess()
+{
+    lastAccessed = std::chrono::steady_clock::now();
+    accessCount++;
+    isFrequentlyUsed = accessCount > 5; // Frequent use threshold
+}
+
+// ModelLoadingTask struct implementation
+bool ModelLoadingTask::operator<(const ModelLoadingTask& other) const
+{
+    return priority < other.priority;
+}
 
 ModelCache::~ModelCache()
 {

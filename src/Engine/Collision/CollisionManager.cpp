@@ -4,9 +4,11 @@
 #include <algorithm>
 #include <compare>
 #include <raylib.h>
+#include <raymath.h>
 #include <set>
 #include <string>
 #include <vector>
+#include <thread>
 #include <cfloat>
 #include <execution>
 #include <future>
@@ -476,6 +478,150 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     TraceLog(LOG_INFO, "Spatial partitioning updated with %zu cells", m_spatialGrid.size());
 }
 
+void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &models, const std::vector<std::string> &modelNames)
+{
+    TraceLog(LOG_INFO, "Starting selective automatic collision generation for %zu specified models...", modelNames.size());
+
+    // Create a set for faster lookup
+    std::set<std::string> modelSet(modelNames.begin(), modelNames.end());
+
+    // Get all available models
+    auto availableModels = models.GetAvailableModels();
+    TraceLog(LOG_INFO, "Found %zu models available, filtering to %zu specified models", availableModels.size(), modelNames.size());
+
+    // Track processed models to avoid duplication
+    std::set<std::string> processedModelNames;
+    int collisionObjectsCreated = 0;
+    constexpr size_t MAX_COLLISION_INSTANCES = 5; // Increased for better coverage
+
+    // Structure to hold model processing data for parallel processing
+    struct ModelCollisionTask {
+        std::string modelName;
+        Model* model;
+        bool hasCollision;
+        std::vector<ModelInstance*> instances;
+        int createdCollisions = 0;
+    };
+
+    std::vector<ModelCollisionTask> tasks;
+
+    // Prepare tasks for parallel processing (only for specified models)
+    for (const auto &modelName : availableModels)
+    {
+        // Skip models not in our selective list
+        if (modelSet.find(modelName) == modelSet.end())
+        {
+            TraceLog(LOG_DEBUG, "Skipping collision creation for model '%s' (not in selective list)", modelName.c_str());
+            continue;
+        }
+
+        if (processedModelNames.contains(modelName))
+            continue;
+
+        processedModelNames.insert(modelName);
+
+        try
+        {
+            Model &model = models.GetModelByName(modelName);
+            bool hasCollision = models.HasCollision(modelName);
+
+            if (!hasCollision || model.meshCount == 0)
+                continue;
+
+            ModelCollisionTask task;
+            task.modelName = modelName;
+            task.model = &model;
+            task.hasCollision = hasCollision;
+            task.instances = models.GetInstancesByTag(modelName);
+            tasks.push_back(task);
+        }
+        catch (const std::exception &e)
+        {
+            TraceLog(LOG_ERROR, "Failed to prepare selective collision task for model '%s': %s", modelName.c_str(), e.what());
+        }
+    }
+
+    // Process models in parallel
+    const size_t numThreads = std::min(tasks.size(), static_cast<size_t>(std::thread::hardware_concurrency()));
+    std::vector<std::future<int>> futures;
+
+    // Split tasks into chunks for parallel processing
+    size_t chunkSize = tasks.size() / numThreads;
+    if (chunkSize == 0) chunkSize = 1;
+
+    for (size_t threadIdx = 0; threadIdx < numThreads; ++threadIdx)
+    {
+        size_t startIdx = threadIdx * chunkSize;
+        size_t endIdx = (threadIdx == numThreads - 1) ? tasks.size() : (threadIdx + 1) * chunkSize;
+
+        if (startIdx >= tasks.size()) break;
+
+        futures.push_back(std::async(std::launch::async, [this, &models, &tasks, startIdx, endIdx, MAX_COLLISION_INSTANCES]() {
+            int localCollisionsCreated = 0;
+
+            for (size_t i = startIdx; i < endIdx; ++i)
+            {
+                const auto& task = tasks[i];
+
+                TraceLog(LOG_INFO, "Processing selective model: %s", task.modelName.c_str());
+
+                if (task.instances.empty())
+                {
+                    // No instances found, create default collision
+                    Vector3 defaultPos = (task.modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
+                    if (CreateCollisionFromModel(*task.model, task.modelName, defaultPos, 1.0f, models))
+                    {
+                        localCollisionsCreated++;
+                    }
+                }
+                else
+                {
+                    // Create collisions for each instance (up to the limit)
+                    size_t instanceLimit = std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
+                    TraceLog(LOG_INFO, "Processing %zu/%zu instances for selective model '%s'", instanceLimit,
+                             task.instances.size(), task.modelName.c_str());
+
+                    for (size_t j = 0; j < instanceLimit; j++)
+                    {
+                        auto *instance = task.instances[j];
+                        Vector3 position = instance->GetModelPosition();
+                        float scale = instance->GetScale();
+
+                        if (CreateCollisionFromModel(*task.model, task.modelName, position, scale, models))
+                        {
+                            localCollisionsCreated++;
+                        }
+                    }
+
+                    if (task.instances.size() > MAX_COLLISION_INSTANCES)
+                    {
+                        TraceLog(LOG_WARNING,
+                                 "Limited collisions for selective model '%s' to %zu (of %zu instances)",
+                                 task.modelName.c_str(), MAX_COLLISION_INSTANCES, task.instances.size());
+                    }
+                }
+            }
+
+            return localCollisionsCreated;
+        }));
+    }
+
+    // Collect results from all threads
+    for (auto& future : futures)
+    {
+        collisionObjectsCreated += future.get();
+    }
+
+    TraceLog(LOG_INFO,
+               "Selective automatic collision generation complete. Created %d collision objects from %zu specified models",
+               collisionObjectsCreated, modelNames.size());
+
+    // Final spatial partitioning update for optimal performance
+    UpdateSpatialPartitioning();
+
+    TraceLog(LOG_INFO, "Spatial partitioning updated with %zu cells", m_spatialGrid.size());
+}
+
 // Helper function to create cache key
 std::string CollisionManager::MakeCollisionCacheKey(const std::string &modelName, float scale) const
 {
@@ -498,6 +644,48 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     TraceLog(LOG_INFO,
              "Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
              modelName.c_str(), position.x, position.y, position.z, scale);
+
+    // Validate model data before proceeding
+    if (model.meshCount == 0)
+    {
+        TraceLog(LOG_ERROR, "Model '%s' has no meshes, cannot create collision", modelName.c_str());
+        return false;
+    }
+
+    // Check if model has any valid geometry
+    bool hasValidGeometry = false;
+    for (int i = 0; i < model.meshCount; i++)
+    {
+        const Mesh &mesh = model.meshes[i];
+        if (mesh.vertices && mesh.indices && mesh.vertexCount > 0 && mesh.triangleCount > 0)
+        {
+            hasValidGeometry = true;
+            break;
+        }
+    }
+
+    if (!hasValidGeometry)
+    {
+        TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback AABB collision", modelName.c_str());
+
+        // Create fallback AABB collision using model bounds
+        BoundingBox modelBounds = GetModelBoundingBox(model);
+        Vector3 size = {modelBounds.max.x - modelBounds.min.x,
+                        modelBounds.max.y - modelBounds.min.y,
+                        modelBounds.max.z - modelBounds.min.z};
+        Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
+                          (modelBounds.max.y + modelBounds.min.y) * 0.5f,
+                          (modelBounds.max.z + modelBounds.min.z) * 0.5f};
+
+        Collision fallbackCollision(center, Vector3Scale(size, 0.5f * scale));
+        fallbackCollision.SetCollisionType(CollisionType::AABB_ONLY);
+
+        // Transform to instance position and scale
+        fallbackCollision.Update(Vector3Add(center, position), Vector3Scale(Vector3Scale(size, 0.5f), scale));
+
+        AddCollider(std::move(fallbackCollision));
+        return true;
+    }
 
     // Get model configuration
     const ModelFileConfig *config = models.GetModelConfig(modelName);
@@ -903,68 +1091,113 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
 {
     std::shared_ptr<Collision> collision;
 
-    // Перевіряємо, чи модель має геометрію
-    bool hasValidGeometry = false;
-    for (int i = 0; i < model.meshCount; i++)
+    try
     {
-        if (model.meshes[i].vertices && model.meshes[i].vertexCount > 0)
+        // Validate model data before proceeding
+        if (model.meshCount == 0)
         {
-            hasValidGeometry = true;
-            break;
+            TraceLog(LOG_ERROR, "Model '%s' has no meshes, creating fallback collision", modelName.c_str());
+            BoundingBox modelBounds = GetModelBoundingBox(model);
+            Vector3 size = {modelBounds.max.x - modelBounds.min.x,
+                            modelBounds.max.y - modelBounds.min.y,
+                            modelBounds.max.z - modelBounds.min.z};
+            Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
+                              (modelBounds.max.y + modelBounds.min.y) * 0.5f,
+                              (modelBounds.max.z + modelBounds.min.z) * 0.5f};
+
+            collision = std::make_shared<Collision>(center, Vector3Scale(size, 0.5f));
+            collision->SetCollisionType(CollisionType::AABB_ONLY);
+            return collision;
         }
-    }
 
-    if (!hasValidGeometry)
-    {
-        // Фолбек AABB для моделей без геометрії
-        TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback collision",
-                 modelName.c_str());
-        BoundingBox modelBounds = GetModelBoundingBox(model);
-        Vector3 size = {modelBounds.max.x - modelBounds.min.x,
-                        modelBounds.max.y - modelBounds.min.y,
-                        modelBounds.max.z - modelBounds.min.z};
-        Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
-                          (modelBounds.max.y + modelBounds.min.y) * 0.5f,
-                          (modelBounds.max.z + modelBounds.min.z) * 0.5f};
-
-        // Collision expects half-size extents
-        collision = std::make_shared<Collision>(center, Vector3Scale(size, 0.5f));
-        collision->SetCollisionType(CollisionType::AABB_ONLY);
-    }
-    else
-    {
-        // Колізія з геометрії моделі
-        collision = std::make_shared<Collision>();
-        Model modelCopy = model; // копія для побудови колізії
-
-        if (config)
-            collision->BuildFromModel(&modelCopy, MatrixIdentity());
-
-        // Встановлюємо тип колізії
-        if (needsPreciseCollision && config)
+        // Check if model has any valid geometry
+        bool hasValidGeometry = false;
+        for (int i = 0; i < model.meshCount; i++)
         {
-            CollisionType targetType = CollisionType::HYBRID_AUTO;
-
-            switch (config->collisionPrecision)
+            const Mesh &mesh = model.meshes[i];
+            if (mesh.vertices && mesh.indices && mesh.vertexCount > 0 && mesh.triangleCount > 0)
             {
-            case CollisionPrecision::TRIANGLE_PRECISE:
-                targetType = CollisionType::TRIANGLE_PRECISE;
-                break;
-            case CollisionPrecision::BVH_ONLY:
-                targetType = CollisionType::BVH_ONLY;
-                break;
-            case CollisionPrecision::AUTO:
-            default:
-                targetType = CollisionType::HYBRID_AUTO;
+                hasValidGeometry = true;
                 break;
             }
+        }
 
-            collision->SetCollisionType(targetType);
+        if (!hasValidGeometry)
+        {
+            // Fallback AABB for models without geometry
+            TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback collision", modelName.c_str());
+            BoundingBox modelBounds = GetModelBoundingBox(model);
+            Vector3 size = {modelBounds.max.x - modelBounds.min.x,
+                            modelBounds.max.y - modelBounds.min.y,
+                            modelBounds.max.z - modelBounds.min.z};
+            Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
+                              (modelBounds.max.y + modelBounds.min.y) * 0.5f,
+                              (modelBounds.max.z + modelBounds.min.z) * 0.5f};
+
+            collision = std::make_shared<Collision>(center, Vector3Scale(size, 0.5f));
+            collision->SetCollisionType(CollisionType::AABB_ONLY);
         }
         else
         {
-            collision->SetCollisionType(CollisionType::AABB_ONLY);
+            // Create collision from model geometry with error handling
+            collision = std::make_shared<Collision>();
+
+            try
+            {
+                Model modelCopy = model; // Create a copy for collision building
+                collision->BuildFromModel(&modelCopy, MatrixIdentity());
+
+                // Set collision type based on configuration
+                if (needsPreciseCollision && config)
+                {
+                    CollisionType targetType = CollisionType::HYBRID_AUTO;
+
+                    switch (config->collisionPrecision)
+                    {
+                    case CollisionPrecision::TRIANGLE_PRECISE:
+                        targetType = CollisionType::TRIANGLE_PRECISE;
+                        break;
+                    case CollisionPrecision::BVH_ONLY:
+                        targetType = CollisionType::BVH_ONLY;
+                        break;
+                    case CollisionPrecision::AUTO:
+                    default:
+                        targetType = CollisionType::HYBRID_AUTO;
+                        break;
+                    }
+
+                    collision->SetCollisionType(targetType);
+                }
+                else
+                {
+                    collision->SetCollisionType(CollisionType::AABB_ONLY);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                TraceLog(LOG_ERROR, "Failed to build collision from model '%s': %s", modelName.c_str(), e.what());
+
+                // Fallback to AABB collision
+                BoundingBox modelBounds = GetModelBoundingBox(model);
+                Vector3 size = {modelBounds.max.x - modelBounds.min.x,
+                                modelBounds.max.y - modelBounds.min.y,
+                                modelBounds.max.z - modelBounds.min.z};
+                Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
+                                  (modelBounds.max.y + modelBounds.min.y) * 0.5f,
+                                  (modelBounds.max.z + modelBounds.min.z) * 0.5f};
+
+                *collision = Collision(center, Vector3Scale(size, 0.5f));
+                collision->SetCollisionType(CollisionType::AABB_ONLY);
+            }
         }
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Critical error creating collision for model '%s': %s", modelName.c_str(), e.what());
+
+        // Create emergency fallback collision
+        collision = std::make_shared<Collision>(Vector3{0, 0, 0}, Vector3{1, 1, 1});
+        collision->SetCollisionType(CollisionType::AABB_ONLY);
     }
 
     return collision;

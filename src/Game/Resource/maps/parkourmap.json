@@ -1,0 +1,77 @@
+[
+  {
+    "name": "platform_1",
+    "type": "CUBE",
+    "modelPath": "",
+    "position": [0.0, 0.0, 0.0],
+    "rotation": [0.0, 0.0, 0.0],
+    "scale": [4.0, 1.0, 4.0],
+    "color": [0, 255, 0, 255],
+    "visible": true,
+    "layer": "default",
+    "tags": ""
+  },
+  {
+    "name": "platform_2",
+    "type": "CUBE",
+    "modelPath": "",
+    "position": [8.0, 0.0, 2.0],
+    "rotation": [0.0, 0.0, 0.0],
+    "scale": [2.0, 1.0, 2.0],
+    "color": [0, 0, 255, 255],
+    "visible": true,
+    "layer": "default",
+    "tags": ""
+  },
+  {
+    "name": "platform_3",
+    "type": "CUBE",
+    "modelPath": "",
+    "position": [16.0, 2.0, 1.0],
+    "rotation": [0.0, 0.0, 0.0],
+    "scale": [1.5, 1.0, 1.5],
+    "color": [255, 0, 255, 255],
+    "visible": true,
+    "layer": "default",
+    "tags": ""
+  },
+  {
+    "name": "cylinder_obstacle",
+    "type": "CYLINDER",
+    "modelPath": "",
+    "position": [24.0, 1.0, -1.0],
+    "rotation": [0.0, 0.0, 0.0],
+    "scale": [1.0, 2.0, 1.0],
+    "color": [255, 165, 0, 255],
+    "radius": 1.0,
+    "height": 2.0,
+    "visible": true,
+    "layer": "default",
+    "tags": ""
+  },
+  {
+    "name": "sphere_obstacle",
+    "type": "SPHERE",
+    "modelPath": "",
+    "position": [32.0, 1.5, 0.0],
+    "rotation": [0.0, 0.0, 0.0],
+    "scale": [1.0, 1.0, 1.0],
+    "color": [255, 0, 0, 255],
+    "radius": 1.0,
+    "visible": true,
+    "layer": "default",
+    "tags": ""
+  },
+  {
+    "name": "final_platform",
+    "type": "CUBE",
+    "modelPath": "",
+    "position": [40.0, 1.0, -2.0],
+    "rotation": [0.0, 0.0, 0.0],
+    "scale": [3.0, 1.0, 3.0],
+    "color": [255, 215, 0, 255],
+    "visible": true,
+    "layer": "default",
+    "tags": ""
+  }
+]

@@ -112,7 +112,4 @@ private:
     std::unordered_map<std::string, std::shared_ptr<EventSubscribers>> m_subscribers;
 };
 
-// Global event system instance
-extern EventSystem g_eventSystem;
-
 #endif // EVENTSYSTEM_H

@@ -28,9 +28,6 @@ enum class MenuAction : uint8_t
     OpenGameModeMenu,
     ExitGame,
     StartGameWithMap,  // New action for starting game with selected map
-    SelectMap1,        // Map selection actions
-    SelectMap2,
-    SelectMap3,
     AdjustMasterVolume, // Audio control actions
     AdjustMusicVolume,
     AdjustSFXVolume,

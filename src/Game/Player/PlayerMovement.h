@@ -7,7 +7,7 @@
 #include <raymath.h>
 #include <Physics/PhysicsComponent.h>
 
-// Forward declarations
+// Forward declaration - necessary for circular dependency with Player
 class Player;
 
 class PlayerMovement

@@ -37,6 +37,12 @@ public:
     // Load models from JSON config
     void LoadModelsFromJson(const std::string &path);
 
+    // Load only specific models from JSON config
+    void LoadModelsFromJsonSelective(const std::string &path, const std::vector<std::string> &modelNames);
+
+    // Set selective loading mode
+    void SetSelectiveMode(bool enabled);
+
     // Render all model instances
     void DrawAllModels() const;
 
@@ -100,6 +106,7 @@ private:
     bool m_cacheEnabled = true;
     bool m_lodEnabled = false;
     float m_lodDistance = 100.0f;
+    bool m_selectiveMode = false;
 
     // ==================== PRIVATE HELPER METHODS ====================
     bool ProcessModelConfigLegacy(const ModelFileConfig &config); // Legacy compatibility

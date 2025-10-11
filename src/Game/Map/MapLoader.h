@@ -78,15 +78,8 @@ struct GameMap
     GameMap() = default;
     ~GameMap() { Cleanup(); }
 
-    void Cleanup()
-    {
-        for (auto& model : loadedModels)
-        {
-            if (model.meshCount > 0)
-                UnloadModel(model);
-        }
-        loadedModels.clear();
-    }
+    void Cleanup();
+
 };
 
 // Legacy support - old MapLoader structure

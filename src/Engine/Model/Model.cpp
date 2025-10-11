@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <unordered_set>
 
 #include <Color/ColorParser.h>
 
@@ -40,6 +41,9 @@ void ModelLoader::LoadModelsFromJson(const std::string &path)
 {
     auto startTime = std::chrono::steady_clock::now();
     TraceLog(LOG_INFO, "Loading enhanced models from: %s", path.c_str());
+
+    // Disable selective mode for regular loading
+    m_selectiveMode = false;
 
     std::ifstream file(path);
     if (!file.is_open())
@@ -77,7 +81,7 @@ void ModelLoader::LoadModelsFromJson(const std::string &path)
         {
             // Parse using new helper
             ModelFileConfig config = JsonHelper::ParseModelConfig(modelEntry);
-            config.path = PROJECT_ROOT_DIR + config.path;
+            config.path = std::string(PROJECT_ROOT_DIR) + "/" + config.path;
 
             // Store configuration
             m_configs[config.name] = config;
@@ -111,6 +115,110 @@ void ModelLoader::LoadModelsFromJson(const std::string &path)
     if (m_stats.failedModels > 0)
     {
         TraceLog(LOG_WARNING, "Failed to load %d models", m_stats.failedModels);
+    }
+}
+
+void ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std::vector<std::string> &modelNames)
+{
+    auto startTime = std::chrono::steady_clock::now();
+    TraceLog(LOG_INFO, "Loading selective models from: %s (models: %d)", path.c_str(), modelNames.size());
+
+    // Enable selective mode to prevent auto-spawning of unwanted models
+    m_selectiveMode = true;
+
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        TraceLog(LOG_ERROR, "Failed to open model list JSON: %s", path.c_str());
+        m_stats.failedModels++;
+        return;
+    }
+
+    json j;
+    try
+    {
+        file >> j;
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_ERROR, "JSON parsing error: %s", e.what());
+        m_stats.failedModels++;
+        return;
+    }
+
+    // Create a set for faster lookup
+    std::unordered_set<std::string> modelSet(modelNames.begin(), modelNames.end());
+
+    for (const auto &modelEntry : j)
+    {
+        m_stats.totalModels++;
+
+        // Get model name from the entry
+        std::string modelName;
+        if (modelEntry.contains("name") && modelEntry["name"].is_string())
+        {
+            modelName = modelEntry["name"].get<std::string>();
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Model entry missing name field, skipping");
+            m_stats.failedModels++;
+            continue;
+        }
+
+        // Check if this model is in our selective list
+        if (modelSet.find(modelName) == modelSet.end())
+        {
+            TraceLog(LOG_INFO, "Skipping model '%s' (not in selective list)", modelName.c_str());
+            continue;
+        }
+
+        // Use enhanced parsing
+        if (!JsonHelper::ValidateModelEntry(modelEntry))
+        {
+            TraceLog(LOG_WARNING, "Invalid model entry for '%s', skipping", modelName.c_str());
+            m_stats.failedModels++;
+            continue;
+        }
+
+        try
+        {
+            // Parse using new helper
+            ModelFileConfig config = JsonHelper::ParseModelConfig(modelEntry);
+            config.path = std::string(PROJECT_ROOT_DIR) + "/" + config.path;
+
+            // Store configuration
+            m_configs[config.name] = config;
+
+            // Load model
+            if (ProcessModelConfigLegacy(config))
+            {
+                m_stats.loadedModels++;
+                TraceLog(LOG_INFO, "Successfully loaded selective model: %s", config.name.c_str());
+            }
+            else
+            {
+                m_stats.failedModels++;
+            }
+        }
+        catch (const std::exception &e)
+        {
+            TraceLog(LOG_ERROR, "Error processing selective model entry '%s': %s", modelName.c_str(), e.what());
+            m_stats.failedModels++;
+        }
+    }
+
+    // Calculate loading time
+    auto endTime = std::chrono::steady_clock::now();
+    m_stats.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+
+    // Print statistics
+    TraceLog(LOG_INFO, "Selective loading completed: %d/%d models loaded in %.2f seconds",
+             m_stats.loadedModels, m_stats.totalModels, m_stats.loadingTime);
+
+    if (m_stats.failedModels > 0)
+    {
+        TraceLog(LOG_WARNING, "Failed to load %d selective models", m_stats.failedModels);
     }
 }
 
@@ -152,30 +260,44 @@ bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
         animPtr = &itAnim->second;
     }
 
-    // Process instances
-    if (!config.instances.empty())
-    {
-        for (const auto &instanceConfig : config.instances)
-        {
-            if (instanceConfig.spawn)
-            {
-                // Convert to legacy JSON format
-                json instanceJson;
-                instanceJson["position"]["x"] = instanceConfig.position.x;
-                instanceJson["position"]["y"] = instanceConfig.position.y;
-                instanceJson["position"]["z"] = instanceConfig.position.z;
-                instanceJson["scale"] = instanceConfig.scale;
-                instanceJson["spawn"] = instanceConfig.spawn;
+    // Process instances only if this model should be spawned
+    // For selective loading, we need to check if this model was explicitly requested
+    bool shouldSpawnModel = true;
 
-                AddInstance(instanceJson, pModel, config.name, animPtr);
-                m_stats.totalInstances++;
+    // Check if we're in selective loading mode
+    if (m_selectiveMode)
+    {
+        // In selective mode, only spawn essential models (like player) or models that don't auto-spawn
+        shouldSpawnModel = (config.name == "player") || !config.spawn;
+    }
+
+    if (shouldSpawnModel)
+    {
+        // Process instances
+        if (!config.instances.empty())
+        {
+            for (const auto &instanceConfig : config.instances)
+            {
+                if (instanceConfig.spawn)
+                {
+                    // Convert to legacy JSON format
+                    json instanceJson;
+                    instanceJson["position"]["x"] = instanceConfig.position.x;
+                    instanceJson["position"]["y"] = instanceConfig.position.y;
+                    instanceJson["position"]["z"] = instanceConfig.position.z;
+                    instanceJson["scale"] = instanceConfig.scale;
+                    instanceJson["spawn"] = instanceConfig.spawn;
+
+                    AddInstance(instanceJson, pModel, config.name, animPtr);
+                    m_stats.totalInstances++;
+                }
             }
         }
-    }
-    else if (config.spawn)
-    {
-        AddInstance(json::object(), pModel, config.name, animPtr);
-        m_stats.totalInstances++;
+        else if (config.spawn)
+        {
+            AddInstance(json::object(), pModel, config.name, animPtr);
+            m_stats.totalInstances++;
+        }
     }
 
     return true;
@@ -343,7 +465,7 @@ bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanc
 
 bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &path, bool preload)
 {
-    std::string fullPath = PROJECT_ROOT_DIR + path;
+    std::string fullPath = std::string(PROJECT_ROOT_DIR) + "/" + path;
 
     if (!ValidateModelPath(fullPath))
     {
@@ -503,6 +625,8 @@ void ModelLoader::SetMaxCacheSize(const size_t maxSize) const {
 }
 
 void ModelLoader::EnableLOD(bool enabled) { m_lodEnabled = enabled; }
+
+void ModelLoader::SetSelectiveMode(bool enabled) { m_selectiveMode = enabled; }
 
 void ModelLoader::CleanupUnusedModels() const {
     if (m_cache && m_cacheEnabled)

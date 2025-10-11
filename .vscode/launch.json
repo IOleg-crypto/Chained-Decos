@@ -16,26 +16,48 @@
       "name": "Debug with LLDB",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/cmake-build-debug/ChainedDecos.exe",
+      "program": "${workspaceFolder}/build/bin/ChainedDecos_debug.exe",
       "args": [],
-      "cwd": "${workspaceFolder}/cmake-build-debug/",
+      "cwd": "${workspaceFolder}/build",
       "stopOnEntry": true,
       "sourceMap": {
         "${workspaceFolder}": "${workspaceFolder}"
-      }
+      },
+      "setupCommands": [
+        {
+          "description": "Load debug symbols",
+          "text": "target symbols add \"${workspaceFolder}/build/bin/ChainedDecos_debug.exe\"",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set source path",
+          "text": "settings set target.source-map . \"${workspaceFolder}\"",
+          "ignoreFailures": true
+        }
+      ]
     },
     {
       "name": "Debug with GDB",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/cmake-build-debug/ChainedDecos.exe",
+      "program": "${workspaceFolder}/build/bin/ChainedDecos_debug.exe",
       "args": [],
-      "cwd": "${workspaceFolder}/cmake-build-debug/",
+      "cwd": "${workspaceFolder}/build",
       "stopOnEntry": true,
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",
           "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Load debug symbols",
+          "text": "symbol-file \"${workspaceFolder}/build/bin/ChainedDecos_debug.exe\"",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set source directory",
+          "text": "directory \"${workspaceFolder}\"",
           "ignoreFailures": true
         }
       ]
