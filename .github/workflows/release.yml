@@ -91,7 +91,9 @@ jobs:
           libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
           libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
           libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-          pkg-config ccache libgtk-3-dev libdrm-dev libgbm-dev
+          pkg-config ccache libgtk-3-dev libdrm-dev libgbm-dev \
+          libxext-dev libxfixes-dev libxrender-dev libxcomposite-dev \
+          libxdamage-dev libxtst-dev libxss-dev libgconf-2-4
 
     # ---------------- Windows setup ----------------
     - name: Install dependencies (Windows)
