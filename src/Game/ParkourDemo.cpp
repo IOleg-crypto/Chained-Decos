@@ -3,9 +3,6 @@
 #include <memory>
 #include <cmath>
 
-// Forward declaration for DemoPlayer
-class DemoPlayer;
-
 // Simple Player Controller for Parkour Demo
 class DemoPlayer
 {

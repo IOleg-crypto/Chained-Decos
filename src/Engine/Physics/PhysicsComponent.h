@@ -1,10 +1,11 @@
 #ifndef PHYSICS_COMPONENT_H
 #define PHYSICS_COMPONENT_H
 
-#include <memory>
-#include <vector>
 #include <raylib.h>
 #include <raymath.h>
+
+#include <memory>
+#include <vector>
 #include "SurfaceComponent.h"
 #include <future>
 #include <thread>

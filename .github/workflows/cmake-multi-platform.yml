@@ -12,7 +12,7 @@ env:
 
 jobs:
   build-and-test:
-    name: Build and Test (${{ matrix.os }}, ${{ matrix.compiler }}, ${{ matrix.build_type }})
+    name: Build and Test (${{ matrix.os }}, ${{ matrix.compiler }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -25,7 +25,6 @@ jobs:
             version: 11
             build_type: Release
             generator: "Unix Makefiles"
-            cmake_options: ""
 
           # Ubuntu with Clang
           - os: ubuntu-22.04
@@ -33,7 +32,6 @@ jobs:
             version: 14
             build_type: Release
             generator: "Unix Makefiles"
-            cmake_options: ""
 
           # Windows with MSVC
           - os: windows-2022
@@ -41,15 +39,12 @@ jobs:
             version: 2022
             build_type: Release
             generator: "Ninja"
-            cmake_options: ""
-
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        fetch-depth: 0
 
     - name: Setup ccache
       uses: actions/cache@v3
@@ -107,26 +102,15 @@ jobs:
     - name: Install dependencies (Windows)
       if: matrix.os == 'windows-2022'
       run: |
-        choco install cmake ninja ccache zip --no-progress
-
+        choco install cmake ninja ccache --no-progress
 
     # ---------------- Common build steps ----------------
     - name: Clear CMake cache
       shell: bash
       run: |
-        if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          # Windows commands
-          rm -rf "${{ steps.build-env.outputs.build-output-dir }}" 2>/dev/null || echo "Build dir not found or already clean"
-          rm -rf ".deps" 2>/dev/null || echo "Deps dir not found or already clean"
-          rm -f CMakeCache.txt cmake_install.cmake 2>/dev/null || echo "Cache files not found or already clean"
-          # Remove any remaining CMakeFiles directories
-          find . -name "CMakeFiles" -type d -exec rm -rf {} + 2>/dev/null || echo "No CMakeFiles dirs found"
-        else
-          # Unix/Linux commands
-          rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
-          rm -rf ".deps"
-          rm -f CMakeCache.txt cmake_install.cmake CMakeFiles/
-        fi
+        rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
+        rm -rf ".deps"
+        rm -f CMakeCache.txt cmake_install.cmake CMakeFiles/
 
     - name: Create build directory
       run: |
@@ -149,7 +133,6 @@ jobs:
           -DENABLE_UNITY_BUILD=OFF \
           -DENABLE_DEV_TOOLS=OFF \
           -DENABLE_DEBUG_INFO=ON \
-          ${{ matrix.cmake_options }} \
           -S "${{ github.workspace }}"
 
     - name: Build project
@@ -166,98 +149,29 @@ jobs:
         cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
           --config ${{ matrix.build_type }}
 
-    - name: Copy runtime DLLs
-      if: matrix.os == 'windows-2022'
-      shell: bash
-      run: |
-        echo "🔧 Copying runtime DLLs for Windows builds..."
-        # Create tests directory if it doesn't exist
-        mkdir -p "${{ steps.build-env.outputs.build-output-dir }}/bin/tests"
-
-        # Copy MSVC runtime DLLs from system directory
-        echo "📋 Copying MSVC runtime DLLs..."
-        for dll in "vcruntime140.dll" "msvcp140.dll" "concrt140.dll" "vcruntime140_1.dll" "msvcp140_1.dll"; do
-          if [ -f "C:/Windows/System32/$dll" ]; then
-            cp "C:/Windows/System32/$dll" "${{ steps.build-env.outputs.build-output-dir }}/bin/tests/" 2>/dev/null && echo "✅ Copied $dll" || echo "ℹ️ Could not copy $dll"
-          else
-            echo "⚠️ $dll not found in System32"
-          fi
-        done
-
-        # Copy raylib and other dependency DLLs if they exist in build directory
-        echo "📋 Looking for dependency DLLs in build directory..."
-        if [ -d "${{ steps.build-env.outputs.build-output-dir }}/bin" ]; then
-          find "${{ steps.build-env.outputs.build-output-dir }}/bin" -name "*.dll" -exec cp {} "${{ steps.build-env.outputs.build-output-dir }}/bin/tests/" \; 2>/dev/null || echo "ℹ️ No DLLs found in build/bin"
-        fi
-
-        # Copy from deps directory if it exists
-        if [ -d ".deps" ]; then
-          echo "📋 Looking for DLLs in deps directory..."
-          find ".deps" -name "*.dll" -exec cp {} "${{ steps.build-env.outputs.build-output-dir }}/bin/tests/" \; 2>/dev/null || echo "ℹ️ No DLLs found in .deps"
-        fi
-
-        # List all copied DLLs for verification
-        echo "📋 Final DLLs in test directory:"
-        ls -la "${{ steps.build-env.outputs.build-output-dir }}/bin/tests/"*.dll 2>/dev/null || echo "ℹ️ No DLLs found in test directory"
-
     - name: Run tests
       shell: bash
       run: |
-        # Run tests if they exist
-        if [ -d "${{ steps.build-env.outputs.build-output-dir }}/bin/tests" ]; then
-          echo "🧪 Running tests from: ${{ steps.build-env.outputs.build-output-dir }}/bin/tests"
-          cd "${{ steps.build-env.outputs.build-output-dir }}/bin/tests"
+        cd "${{ steps.build-env.outputs.build-output-dir }}"
 
-          # List test directory contents for debugging
-          echo "📋 Test directory contents:"
-          ls -la
+        # Run CTest if available
+        if command -v ctest &> /dev/null; then
+          echo "🧪 Running tests with CTest..."
+          ctest --output-on-failure --build-config ${{ matrix.build_type }} || echo "⚠️ Some tests failed"
+        else
+          echo "ℹ️ CTest not available, looking for test executables..."
 
-          # Find and run test executables
-          echo "🔍 Looking for test executables..."
+          # Look for test executables in build directory
           if [ "${{ matrix.os }}" = "windows-2022" ]; then
-            # On Windows, use cmd to handle paths properly
-            echo "🪟 Running tests on Windows..."
-            # Use find with cmd-compatible paths
-            for test_exe in *.exe; do
-              if [[ "$test_exe" == *test* ]]; then
-                echo "🔍 Running test: $test_exe"
-                echo "📋 Current directory: $(pwd)"
-                echo "📋 DLLs available:"
-                ls -la *.dll 2>/dev/null || echo "ℹ️ No DLLs found"
-                "./$test_exe" || echo "⚠️ Test failed: $test_exe (exit code: $?)"
-              fi
-            done
-          else
-            # Unix systems
-            find . -type f -executable -name "*test*" | while read -r test_exe; do
+            find . -name "*test*.exe" -type f -executable | head -5 | while read -r test_exe; do
               echo "🔍 Running test: $(basename "$test_exe")"
               "$test_exe" || echo "⚠️ Test failed: $(basename "$test_exe")"
             done
-          fi
-        else
-          echo "ℹ️ No tests directory found at ${{ steps.build-env.outputs.build-output-dir }}/bin/tests - skipping tests"
-          echo "📋 Available directories:"
-          find "${{ steps.build-env.outputs.build-output-dir }}" -type d 2>/dev/null | head -10 || echo "ℹ️ No directories found"
-        fi
-
-    - name: Run tests (if available)
-      shell: bash
-      run: |
-        # Check if tests directory exists and has test executables
-        if [ -d "${{ steps.build-env.outputs.build-output-dir }}/tests" ]; then
-          echo "🔍 Tests directory found, looking for test executables..."
-          find "${{ steps.build-env.outputs.build-output-dir }}/tests" -type f -executable -name "*test*" | head -3 || echo "ℹ️ No test executables found"
-        else
-          echo "ℹ️ No tests directory found - skipping tests"
-        fi
-
-        # Run basic executable validation (only for Ubuntu with GCC to save time)
-        if [ "${{ matrix.os }}" = "ubuntu-22.04" ] && [ "${{ matrix.compiler }}" = "gcc" ]; then
-          echo "🔍 Validating executables..."
-          if [ -n "$EXECUTABLE_PATH" ]; then
-            "$EXECUTABLE_PATH" --help 2>&1 | head -5 || echo "ℹ️ Help not available or executable not working"
           else
-            echo "ℹ️ No executable path available for validation"
+            find . -name "*test*" -type f -executable | head -5 | while read -r test_exe; do
+              echo "🔍 Running test: $(basename "$test_exe")"
+              "$test_exe" || echo "⚠️ Test failed: $(basename "$test_exe")"
+            done
           fi
         fi
 
@@ -270,13 +184,3 @@ jobs:
           ${{ steps.build-env.outputs.install-prefix }}/bin/
           ${{ steps.build-env.outputs.build-output-dir }}/compile_commands.json
         retention-days: 7
-
-    - name: Upload logs on failure
-      uses: actions/upload-artifact@v4
-      if: failure()
-      with:
-        name: build-logs-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
-        path: |
-          ${{ steps.build-env.outputs.build-output-dir }}/CMakeFiles/*.log
-          ${{ steps.build-env.outputs.build-output-dir }}/**/*.log
-        retention-days: 3

@@ -43,8 +43,12 @@ public:
     void Render();
     void InitInput();
     void InitCollisions();
+    void InitCollisionsWithModels(const std::vector<std::string>& requiredModels);
     void InitPlayer();
     void LoadGameModels();
+    void LoadGameModelsSelective(const std::vector<std::string>& modelNames);
+    std::string GetModelNameForObjectType(int objectType);
+    std::vector<std::string> GetModelsRequiredForMap(const std::string& mapIdentifier);
     void UpdatePlayerLogic();
     void UpdatePhysicsLogic();
     void Cleanup(); // Resource cleanup

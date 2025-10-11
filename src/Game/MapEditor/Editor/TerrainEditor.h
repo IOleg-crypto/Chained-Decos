@@ -43,21 +43,9 @@ struct HeightmapData
 
     HeightmapData() : width(0), height(0), minHeight(0.0f), maxHeight(0.0f) {}
 
-    float GetHeight(int x, int z) const
-    {
-        if (x < 0 || x >= width || z < 0 || z >= height)
-            return 0.0f;
-        return heights[z * width + x];
-    }
+    float GetHeight(int x, int z) const;
+    void SetHeight(int x, int z, float height);
 
-    void SetHeight(int x, int z, float height)
-    {
-        if (x < 0 || x >= width || z < 0 || z >= height)
-            return;
-        heights[z * width + x] = height;
-        if (height < minHeight) minHeight = height;
-        if (height > maxHeight) maxHeight = height;
-    }
 };
 
 // Terrain editor for heightmap-based terrain editing

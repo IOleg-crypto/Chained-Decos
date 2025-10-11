@@ -1,7 +1,7 @@
 [
   {
     "name": "player",
-    "path": "/resources/player_low.glb",
+    "path": "resources/player_low.glb",
     "spawn": false,
     "hasAnimations": false,
     "instances": [
@@ -14,7 +14,7 @@
   },
   {
     "name": "arena",
-    "path": "/resources/arena.glb",
+    "path": "resources/arena.glb",
     "spawn": true,
     "hasCollision": true,
     "collisionPrecision": "bvh_only",
@@ -29,7 +29,7 @@
   },
   {
     "name": "arc",
-    "path": "/resources/arc.glb",
+    "path": "resources/arc.glb",
     "spawn": true,
     "hasCollision": true,
     "collisionPrecision": "bvh_only",
@@ -44,7 +44,7 @@
   },
   {
     "name": "doric_arena",
-    "path": "/resources/doric_arena.glb",
+    "path": "resources/doric_arena.glb",
     "spawn": true,
     "hasCollision": true,
     "collisionPrecision": "bvh_only",
@@ -59,7 +59,7 @@
   },
   {
     "name": "tavern",
-    "path": "/resources/TaverGLTF.gltf",
+    "path": "resources/TaverGLTF.gltf",
     "spawn": true,
     "hasCollision": true,
     "collisionPrecision": "bvh_only",
