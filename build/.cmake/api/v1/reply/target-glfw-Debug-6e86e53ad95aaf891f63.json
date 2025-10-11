@@ -127,15 +127,15 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt"
+					"fragment" : "-fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
 				},
 				{
 					"backtrace" : 3,
-					"fragment" : "-O3"
+					"fragment" : "-O0"
 				},
 				{
 					"backtrace" : 3,
-					"fragment" : "-DNDEBUG"
+					"fragment" : "-g"
 				},
 				{
 					"backtrace" : 4,

@@ -36,7 +36,7 @@
 			"destination" : "bin",
 			"paths" : 
 			[
-				"bin/ChainedDecos.exe"
+				"bin/ChainedDecos_debug.exe"
 			],
 			"targetId" : "ChainedDecos::@6890427a1f51a3e7e1df",
 			"targetIndex" : 0,
