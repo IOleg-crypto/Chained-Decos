@@ -68,7 +68,13 @@
 			{
 				"command" : 4,
 				"file" : 2,
-				"line" : 77,
+				"line" : 80,
+				"parent" : 6
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 88,
 				"parent" : 6
 			},
 			{
@@ -79,42 +85,42 @@
 			},
 			{
 				"file" : 3,
-				"parent" : 8
+				"parent" : 9
 			},
 			{
 				"command" : 5,
 				"file" : 3,
 				"line" : 3,
-				"parent" : 9
+				"parent" : 10
 			},
 			{
 				"command" : 6,
 				"file" : 2,
-				"line" : 116,
+				"line" : 121,
 				"parent" : 6
 			},
 			{
 				"command" : 5,
 				"file" : 3,
 				"line" : 2,
-				"parent" : 9
+				"parent" : 10
 			},
 			{
 				"command" : 6,
 				"file" : 2,
-				"line" : 115,
-				"parent" : 6
-			},
-			{
-				"command" : 6,
-				"file" : 2,
-				"line" : 114,
+				"line" : 120,
 				"parent" : 6
 			},
 			{
 				"command" : 6,
 				"file" : 2,
 				"line" : 119,
+				"parent" : 6
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 124,
 				"parent" : 6
 			},
 			{
@@ -131,13 +137,13 @@
 			},
 			{
 				"file" : 4,
-				"parent" : 17
+				"parent" : 18
 			},
 			{
 				"command" : 8,
 				"file" : 4,
 				"line" : 30,
-				"parent" : 18
+				"parent" : 19
 			}
 		]
 	},
@@ -156,43 +162,47 @@
 				{
 					"backtrace" : 7,
 					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 8,
+					"fragment" : "-w"
 				}
 			],
 			"defines" : 
 			[
 				{
-					"backtrace" : 10,
+					"backtrace" : 11,
 					"define" : "GRAPHICS_API_OPENGL_33"
 				},
 				{
-					"backtrace" : 11,
+					"backtrace" : 12,
 					"define" : "NOMINMAX"
 				},
 				{
-					"backtrace" : 12,
+					"backtrace" : 13,
 					"define" : "PLATFORM_DESKTOP"
 				},
 				{
-					"backtrace" : 13,
+					"backtrace" : 14,
 					"define" : "WIN32_LEAN_AND_MEAN"
 				},
 				{
-					"backtrace" : 14,
+					"backtrace" : 15,
 					"define" : "_CRT_SECURE_NO_WARNINGS"
 				},
 				{
-					"backtrace" : 15,
+					"backtrace" : 16,
 					"define" : "_WIN32_WINNT=0x0601"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 16,
+					"backtrace" : 17,
 					"path" : "D:/gitnext/Chained Decos/.deps/raylib-src/src"
 				},
 				{
-					"backtrace" : 19,
+					"backtrace" : 20,
 					"isSystem" : true,
 					"path" : "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
 				}

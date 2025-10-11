@@ -53,7 +53,7 @@ build CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj: CXX_COMPILER__img
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DIMGUI_DEFINE_MATH_OPERATORS -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\imguilib.dir\include\rlImGui\rlImGui.cpp.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\rlImGui
@@ -64,7 +64,7 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj: CXX_COMPILER__imguili
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DIMGUI_DEFINE_MATH_OPERATORS -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\imguilib.dir\include\imgui\imgui.cpp.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
@@ -75,7 +75,7 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj: CXX_COMPILER__im
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DIMGUI_DEFINE_MATH_OPERATORS -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\imguilib.dir\include\imgui\imgui_draw.cpp.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
@@ -86,7 +86,7 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj: CXX_COMPILER_
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DIMGUI_DEFINE_MATH_OPERATORS -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\imguilib.dir\include\imgui\imgui_widgets.cpp.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
@@ -97,7 +97,7 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj: CXX_COMPILER__
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DIMGUI_DEFINE_MATH_OPERATORS -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\imguilib.dir\include\imgui\imgui_tables.cpp.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
@@ -108,7 +108,7 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj: CXX_COMPILER__im
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DIMGUI_DEFINE_MATH_OPERATORS -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\imguilib.dir\include\imgui\imgui_demo.cpp.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
@@ -119,7 +119,7 @@ build CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj: CXX_C
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DIMGUI_DEFINE_MATH_OPERATORS -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\imguilib.dir\include\imgui\misc\cpp\imgui_stdlib.cpp.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui\misc\cpp
@@ -157,7 +157,7 @@ build CMakeFiles/ChainedDecos.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__Chain
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\ChainedDecos.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=c++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map" -I"D:/gitnext/Chained Decos/src/Game/GameFeatures"
   OBJECT_DIR = CMakeFiles\ChainedDecos.dir
   OBJECT_FILE_DIR = CMakeFiles\ChainedDecos.dir\Unity
@@ -401,7 +401,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raudio.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
@@ -413,7 +413,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rcore.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
@@ -425,7 +425,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rmodels.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
@@ -437,7 +437,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rshapes.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
@@ -449,7 +449,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rtext.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
@@ -461,7 +461,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rtextures.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
@@ -473,7 +473,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\utils.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=gnu99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
@@ -702,7 +702,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/CMa
   CONFIG = Debug
   DEFINES = -DNOMINMAX -DUNICODE -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\Unity\unity_1_c.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -Wall
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w -Wall
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/src" -I"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\Unity"
@@ -714,7 +714,7 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/CMa
   CONFIG = Debug
   DEFINES = -DNOMINMAX -DUNICODE -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_GLFW_WIN32 -D_UNICODE -D_WIN32_WINNT=0x0601
   DEP_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\Unity\unity_0_c.c.obj.d"
-  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -Wall
+  FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O0 -g -Xclang -gcodeview -std=c99 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w -Wall
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/src" -I"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\Unity"
@@ -946,7 +946,7 @@ build src/Engine/CMakeFiles/ChainedDecosEngine.dir/Unity/unity_0_cxx.cxx.obj: CX
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\CMakeFiles\ChainedDecosEngine.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Player"
   OBJECT_DIR = src\Engine\CMakeFiles\ChainedDecosEngine.dir
   OBJECT_FILE_DIR = src\Engine\CMakeFiles\ChainedDecosEngine.dir\Unity
@@ -1079,7 +1079,7 @@ build src/Engine/Collision/CMakeFiles/collision.dir/Unity/unity_0_cxx.cxx.obj: C
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Collision\CMakeFiles\collision.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
   OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir
   OBJECT_FILE_DIR = src\Engine\Collision\CMakeFiles\collision.dir\Unity
@@ -1212,7 +1212,7 @@ build src/Engine/Config/CMakeFiles/config.dir/Unity/unity_0_cxx.cxx.obj: CXX_COM
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Config\CMakeFiles\config.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Config\CMakeFiles\config.dir
   OBJECT_FILE_DIR = src\Engine\Config\CMakeFiles\config.dir\Unity
@@ -1345,7 +1345,7 @@ build src/Engine/Input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Input\CMakeFiles\input.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Input\CMakeFiles\input.dir
   OBJECT_FILE_DIR = src\Engine\Input\CMakeFiles\input.dir\Unity
@@ -1478,7 +1478,7 @@ build src/Engine/Model/CMakeFiles/model.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Model\CMakeFiles\model.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Collision"
   OBJECT_DIR = src\Engine\Model\CMakeFiles\model.dir
   OBJECT_FILE_DIR = src\Engine\Model\CMakeFiles\model.dir\Unity
@@ -1611,7 +1611,7 @@ build src/Engine/Render/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj: CXX_COM
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Render\CMakeFiles\render.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event"
   OBJECT_DIR = src\Engine\Render\CMakeFiles\render.dir
   OBJECT_FILE_DIR = src\Engine\Render\CMakeFiles\render.dir\Unity
@@ -1744,7 +1744,7 @@ build src/Engine/CameraController/CMakeFiles/cameracontroller.dir/Unity/unity_0_
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\CameraController\CMakeFiles\cameracontroller.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\CameraController\CMakeFiles\cameracontroller.dir
   OBJECT_FILE_DIR = src\Engine\CameraController\CMakeFiles\cameracontroller.dir\Unity
@@ -1877,7 +1877,7 @@ build src/Engine/Physics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj: CXX_C
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Physics\CMakeFiles\physics.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Physics\CMakeFiles\physics.dir
   OBJECT_FILE_DIR = src\Engine\Physics\CMakeFiles\physics.dir\Unity
@@ -2010,7 +2010,7 @@ build src/Engine/World/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\World\CMakeFiles\world.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src"
   OBJECT_DIR = src\Engine\World\CMakeFiles\world.dir
   OBJECT_FILE_DIR = src\Engine\World\CMakeFiles\world.dir\Unity
@@ -2143,7 +2143,7 @@ build src/Engine/CommandLineHandler/CMakeFiles/cmdhandler.dir/Unity/unity_0_cxx.
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\CommandLineHandler\CMakeFiles\cmdhandler.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\CommandLineHandler\CMakeFiles\cmdhandler.dir
   OBJECT_FILE_DIR = src\Engine\CommandLineHandler\CMakeFiles\cmdhandler.dir\Unity
@@ -2276,7 +2276,7 @@ build src/Engine/Kernel/CMakeFiles/kernel.dir/Unity/unity_0_cxx.cxx.obj: CXX_COM
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Kernel\CMakeFiles\kernel.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Kernel\CMakeFiles\kernel.dir
   OBJECT_FILE_DIR = src\Engine\Kernel\CMakeFiles\kernel.dir\Unity
@@ -2409,7 +2409,7 @@ build src/Engine/Audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Audio\CMakeFiles\audio.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Audio\CMakeFiles\audio.dir
   OBJECT_FILE_DIR = src\Engine\Audio\CMakeFiles\audio.dir\Unity
@@ -2542,7 +2542,7 @@ build src/Engine/Event/CMakeFiles/event.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   CONFIG = Debug
   DEFINES = -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Event\CMakeFiles\event.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Engine"
   OBJECT_DIR = src\Engine\Event\CMakeFiles\event.dir
   OBJECT_FILE_DIR = src\Engine\Event\CMakeFiles\event.dir\Unity
@@ -2675,7 +2675,7 @@ build src/Game/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx.obj: CXX_CO
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Game\CMakeFiles\ChainedDecosGame.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map" -I"D:/gitnext/Chained Decos/src/Game/GameFeatures"
   OBJECT_DIR = src\Game\CMakeFiles\ChainedDecosGame.dir
   OBJECT_FILE_DIR = src\Game\CMakeFiles\ChainedDecosGame.dir\Unity
@@ -2808,7 +2808,7 @@ build src/Game/Map/CMakeFiles/mapmod.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Game\Map\CMakeFiles\mapmod.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/Map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
   OBJECT_DIR = src\Game\Map\CMakeFiles\mapmod.dir
   OBJECT_FILE_DIR = src\Game\Map\CMakeFiles\mapmod.dir\Unity
@@ -2941,7 +2941,7 @@ build src/Game/Menu/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER_
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Game\Menu\CMakeFiles\menu.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event"
   OBJECT_DIR = src\Game\Menu\CMakeFiles\menu.dir
   OBJECT_FILE_DIR = src\Game\Menu\CMakeFiles\menu.dir\Unity
@@ -3074,7 +3074,7 @@ build src/Game/Player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Game\Player\CMakeFiles\player.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src"
   OBJECT_DIR = src\Game\Player\CMakeFiles\player.dir
   OBJECT_FILE_DIR = src\Game\Player\CMakeFiles\player.dir\Unity
@@ -3207,7 +3207,7 @@ build src/Game/GameFeatures/CMakeFiles/GameFeatures.dir/Unity/unity_0_cxx.cxx.ob
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Game\GameFeatures\CMakeFiles\GameFeatures.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/GameFeatures" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Game\GameFeatures\CMakeFiles\GameFeatures.dir
   OBJECT_FILE_DIR = src\Game\GameFeatures\CMakeFiles\GameFeatures.dir\Unity
@@ -3340,7 +3340,7 @@ build src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_1_cxx.
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\Unity\unity_1_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++17 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++17 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/MapEditor" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map"
   OBJECT_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir
   OBJECT_FILE_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\Unity
@@ -3351,7 +3351,7 @@ build src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_0_cxx.
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\Unity\unity_0_cxx.cxx.obj.d
-  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++17 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g
+  FLAGS = -O0 -g -Xclang -gcodeview -std=gnu++17 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -O0 -g -w
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/MapEditor" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map"
   OBJECT_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir
   OBJECT_FILE_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\Unity
