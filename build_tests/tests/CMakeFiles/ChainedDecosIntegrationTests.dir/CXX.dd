@@ -1,0 +1,5 @@
+ninja_dyndep_version = 1.0
+build tests/CMakeFiles/ChainedDecosIntegrationTests.dir/game/ParkourMapGeneratorTest.cpp.obj: dyndep
+
+build tests/CMakeFiles/ChainedDecosIntegrationTests.dir/integration/GameIntegrationTest.cpp.obj: dyndep
+

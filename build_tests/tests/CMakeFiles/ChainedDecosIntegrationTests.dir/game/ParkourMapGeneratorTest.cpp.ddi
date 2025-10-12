@@ -1,0 +1,11 @@
+{
+"rules": [
+{
+"primary-output": "tests/CMakeFiles/ChainedDecosIntegrationTests.dir/game/ParkourMapGeneratorTest.cpp.o",
+"requires": [
+]
+}
+],
+"version": 0,
+"revision": 0
+}
