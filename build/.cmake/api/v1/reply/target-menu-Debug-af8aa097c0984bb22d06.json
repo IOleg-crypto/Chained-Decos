@@ -258,14 +258,6 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "raylib::@af39a1529cb2ee18778c"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "glfw::@4755506f38bf45259394"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "collision::@c7f3438d24a996a0c811"
 		},
 		{
@@ -307,6 +299,14 @@
 		{
 			"backtrace" : 2,
 			"id" : "player::@6497c05e8667515fbef8"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "raylib::@af39a1529cb2ee18778c"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@4755506f38bf45259394"
 		}
 	],
 	"id" : "menu::@508c1ec0f6a4eb8a79d5",
