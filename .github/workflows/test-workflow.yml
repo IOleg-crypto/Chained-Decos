@@ -107,70 +107,25 @@ jobs:
       run: |
         echo "🧹 Starting comprehensive cache cleanup..."
 
-        # Clear build directory completely
         rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
         rm -rf ".deps"
         rm -rf "${{ github.workspace }}/.deps"
         rm -rf "${{ github.workspace }}/build"
 
-        # Clear any leftover CMake cache files in workspace (with verbose output)
         echo "📁 Searching for CMake cache files..."
         find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
         find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + -print 2>/dev/null || true
         find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
         find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + -print 2>/dev/null || true
 
-        # Windows-specific cleanup (Visual Studio files)
         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-          echo "🪟 Performing comprehensive Windows-specific cleanup..."
+          echo "🪟 Performing Windows-specific cleanup..."
           find "${{ github.workspace }}" -name "*.vcxproj" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.vcxproj.filters" -delete -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "*.sln" -delete -print 2>/dev/null || true
           find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + -print 2>/dev/null || true
           find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "x64" -type d -exec rm -rf {} + -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "Win32" -type d -exec rm -rf {} + -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.dir" -type d -exec rm -rf {} + -print 2>/dev/null || true
-
-          # Additional Windows-specific patterns
-          find "${{ github.workspace }}" -name "*.vcxproj.user" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.pdb" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.ilk" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.exe" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.obj" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.lib" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.exp" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.idb" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.ipdb" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.iobj" -delete -print 2>/dev/null || true
-
-          # Remove any Visual Studio solution user files
-          find "${{ github.workspace }}" -name "*.suo" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "*.user" -delete -print 2>/dev/null || true
-
-          # Remove CMake files that might contain generator information
-          find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "compile_commands.json" -delete -print 2>/dev/null || true
-
-          # Remove any hidden CMake directories
-          find "${{ github.workspace }}" -type d -name "CMakeFiles" -exec rm -rf {} + -print 2>/dev/null || true
         fi
-
-        # Clear any hidden CMake files
-        find "${{ github.workspace }}" -name ".cmake" -type d -exec rm -rf {} + 2>/dev/null || true
-
-        # Clear dependency cache directories that might contain cached generators
-        rm -rf "${{ github.workspace }}/cmake-build-*"
-        rm -rf "${{ github.workspace }}/build"
-        rm -rf "${{ github.workspace }}/.cache"
-        rm -rf "${{ github.workspace }}/CMakeFiles"
-
-        # Final verification - list any remaining CMake files
-        echo "🔍 Checking for any remaining CMake files..."
-        find "${{ github.workspace }}" -name "CMakeCache.txt" 2>/dev/null || echo "No CMakeCache.txt found"
-        find "${{ github.workspace }}" -name "CMakeFiles" -type d 2>/dev/null || echo "No CMakeFiles directories found"
 
         echo "✅ CMake cache cleared completely"
 
@@ -178,46 +133,18 @@ jobs:
       run: |
         mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
 
-    # Ensure raylib and other dependencies are properly downloaded
     - name: Download dependencies
       shell: bash
       run: |
-        # Pre-download dependencies to ensure they're available
         echo "📥 Downloading external dependencies..."
         cd "${{ steps.build-env.outputs.build-output-dir }}"
-
-        # Configure with verbose output to see dependency download progress
         cmake --fresh -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
           -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF \
           -DENABLE_WARNINGS=OFF -DENABLE_DEV_TOOLS=OFF \
-          -DFETCHCONTENT_QUIET=OFF \
-          -DFETCHCONTENT_UPDATES_DISCONNECTED=OFF ..
-
-        # Verify that raylib was downloaded successfully
-        if [[ -d "${{ github.workspace }}/.deps/raylib-src" ]]; then
-          echo "✅ Raylib downloaded successfully"
-        else
-          echo "⚠️ Raylib not found in .deps, checking alternative locations..."
-          find . -name "raylib" -type d 2>/dev/null || echo "❌ Raylib not found"
-        fi
-
+          -DFETCHCONTENT_QUIET=OFF -DFETCHCONTENT_UPDATES_DISCONNECTED=OFF ..
         echo "✅ Dependencies downloaded successfully"
 
-    - name: Configure CMake
-      shell: bash
-      run: |
-        echo "🔧 Configuring CMake for tests with the following settings:"
-        echo "  Build type: ${{ matrix.build_type }}"
-        echo "  Generator: ${{ matrix.generator }}"
-        echo "  Compiler: ${{ matrix.compiler }}"
-        echo "  OS: ${{ matrix.os }}"
-
-        # Clean previous CMake cache just in case
-        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/CMakeCache.txt"
-        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/CMakeFiles"
-
-
-        - name: Clean FetchContent subprojects
+    - name: Clean FetchContent subprojects
       shell: bash
       run: |
         echo "🧹 Removing old FetchContent subprojects (raylib, etc.)..."
@@ -233,7 +160,18 @@ jobs:
         rm -rf "${{ steps.build-env.outputs.build-output-dir }}/_deps/raylib-subbuild"
         echo "✅ raylib subbuild cleaned"
 
-        # Configure CMake
+    - name: Configure CMake
+      shell: bash
+      run: |
+        echo "🔧 Configuring CMake for tests with the following settings:"
+        echo "  Build type: ${{ matrix.build_type }}"
+        echo "  Generator: ${{ matrix.generator }}"
+        echo "  Compiler: ${{ matrix.compiler }}"
+        echo "  OS: ${{ matrix.os }}"
+
+        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/CMakeCache.txt"
+        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/CMakeFiles"
+
         cmake --fresh -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -G "${{ matrix.generator }}" \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
@@ -254,7 +192,6 @@ jobs:
     - name: Build project
       shell: bash
       run: |
-        # Determine number of CPU cores for parallel builds
         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
           PARALLEL_JOBS=8
         else
@@ -270,15 +207,11 @@ jobs:
       shell: bash
       run: |
         cd "${{ steps.build-env.outputs.build-output-dir }}"
-
-        # Run CTest if available
         if command -v ctest &> /dev/null; then
           echo "🧪 Running tests with CTest..."
           ctest --output-on-failure --build-config ${{ matrix.build_type }} || echo "⚠️ Some tests failed"
         else
           echo "ℹ️ CTest not available, looking for test executables..."
-
-          # Look for test executables in build directory
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             find . -name "*test*.exe" -type f | head -5 | while read -r test_exe; do
               echo "🔍 Running test: $(basename "$test_exe")"
