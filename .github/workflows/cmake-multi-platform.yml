@@ -179,6 +179,35 @@ jobs:
 
         echo "✅ CMake cache cleared completely"
 
+    - name: Clean FetchContent subprojects
+      shell: bash
+      run: |
+        echo "🧹 Removing old FetchContent subprojects (raylib, etc.)..."
+        find "${{ github.workspace }}" -type d -name ".deps" -exec rm -rf {} + 2>/dev/null || true
+        echo "✅ .deps directories removed"
+
+    - name: Force clean all previous builds (Windows)
+      if: matrix.os == 'windows-2022'
+      shell: bash
+      run: |
+        echo "🧨 Full cleanup before new generator"
+        rm -rf "${{ github.workspace }}/build"
+        rm -rf "${{ github.workspace }}/.deps"
+        rm -rf "${{ github.workspace }}/_deps"
+        rm -rf "${{ github.workspace }}/CMakeFiles"
+        rm -f  "${{ github.workspace }}/CMakeCache.txt"
+        find "${{ github.workspace }}" -type d -name "_deps" -exec rm -rf {} +
+        echo "✅ Fully cleaned old CMake and FetchContent directories"
+
+    - name: Extra clean Raylib subbuild (Windows)
+      if: matrix.os == 'windows-2022'
+      shell: bash
+      run: |
+        echo "🧹 Cleaning raylib subbuild..."
+        rm -rf "${{ github.workspace }}/.deps/raylib-subbuild"
+        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/_deps/raylib-subbuild"
+        echo "✅ raylib subbuild cleaned"
+
     - name: Create build directory
       run: |
         mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"

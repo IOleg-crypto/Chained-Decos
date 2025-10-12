@@ -18,7 +18,7 @@
 					"jsonFile" : "directory-.-Debug-e339bcd049840d0b26ec.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"projectIndex" : 0,
 					"source" : ".",
@@ -130,7 +130,7 @@
 					"jsonFile" : "directory-src.Engine-Debug-d99704a6717bda53cd9a.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 0,
 					"projectIndex" : 0,
@@ -145,7 +145,7 @@
 					"jsonFile" : "directory-src.Engine.Collision-Debug-8988ff19804e45de58a9.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -160,7 +160,7 @@
 					"jsonFile" : "directory-src.Engine.Config-Debug-93d6e848b78575b6e423.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -175,7 +175,7 @@
 					"jsonFile" : "directory-src.Engine.Input-Debug-6b42449f553efeb601a7.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -190,7 +190,7 @@
 					"jsonFile" : "directory-src.Engine.Model-Debug-b5b45cc2e6ed46d22928.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -205,7 +205,7 @@
 					"jsonFile" : "directory-src.Engine.Render-Debug-3488492eb6e93af8a42a.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -220,7 +220,7 @@
 					"jsonFile" : "directory-src.Engine.CameraController-Debug-92367470f063390d172f.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -235,7 +235,7 @@
 					"jsonFile" : "directory-src.Engine.Physics-Debug-52438a60599c7022777f.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -250,7 +250,7 @@
 					"jsonFile" : "directory-src.Engine.World-Debug-deb46fe44c71d8a6ee2e.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -265,7 +265,7 @@
 					"jsonFile" : "directory-src.Engine.CommandLineHandler-Debug-26914e727d097019567d.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -280,7 +280,7 @@
 					"jsonFile" : "directory-src.Engine.Kernel-Debug-779767e96e7f60dc5209.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -295,7 +295,7 @@
 					"jsonFile" : "directory-src.Engine.Audio-Debug-b7438261d71101a0053b.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -310,7 +310,7 @@
 					"jsonFile" : "directory-src.Engine.Event-Debug-4f6961ca6a149efc275f.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 6,
 					"projectIndex" : 0,
@@ -332,7 +332,7 @@
 					"jsonFile" : "directory-src.Game-Debug-acba60ce328241d23e92.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 0,
 					"projectIndex" : 0,
@@ -347,7 +347,7 @@
 					"jsonFile" : "directory-src.Game.Map-Debug-e8b128bdda741a0b848e.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 19,
 					"projectIndex" : 0,
@@ -362,7 +362,7 @@
 					"jsonFile" : "directory-src.Game.Menu-Debug-84efc2ed74c795508a81.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 19,
 					"projectIndex" : 0,
@@ -377,7 +377,7 @@
 					"jsonFile" : "directory-src.Game.Player-Debug-512fe46273c17d7e5c1b.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 19,
 					"projectIndex" : 0,
@@ -392,7 +392,7 @@
 					"jsonFile" : "directory-src.Game.GameFeatures-Debug-6bab26f8c92c3ff218ee.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.20"
+						"string" : "3.25"
 					},
 					"parentIndex" : 19,
 					"projectIndex" : 0,
@@ -536,154 +536,154 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ChainedDecos-Debug-587943436945624e5b74.json",
+					"jsonFile" : "target-ChainedDecos-Debug-7fdc8cd3e5c9c93d1366.json",
 					"name" : "ChainedDecos",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 6,
 					"id" : "ChainedDecosEngine::@57eeced369f002faad1a",
-					"jsonFile" : "target-ChainedDecosEngine-Debug-840a1b94a2baa2cc1c47.json",
+					"jsonFile" : "target-ChainedDecosEngine-Debug-6644cdf836af0301de6a.json",
 					"name" : "ChainedDecosEngine",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 19,
 					"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94",
-					"jsonFile" : "target-ChainedDecosGame-Debug-487b5276bb119676050d.json",
+					"jsonFile" : "target-ChainedDecosGame-Debug-0592970cf666c1aabcd7.json",
 					"name" : "ChainedDecosGame",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 24,
 					"id" : "ChainedDecosMapEditor::@55121233932d6d4fa567",
-					"jsonFile" : "target-ChainedDecosMapEditor-Debug-50dfc83cfb6a54d05b81.json",
+					"jsonFile" : "target-ChainedDecosMapEditor-Debug-e8cf59249b2ad428bdcc.json",
 					"name" : "ChainedDecosMapEditor",
 					"projectIndex" : 4
 				},
 				{
 					"directoryIndex" : 23,
 					"id" : "GameFeatures::@3472a93c03200552aca0",
-					"jsonFile" : "target-GameFeatures-Debug-752b80e082248b05e19b.json",
+					"jsonFile" : "target-GameFeatures-Debug-d30be1c55a151f621ad4.json",
 					"name" : "GameFeatures",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 17,
 					"id" : "audio::@9d441780e288f3c71fb0",
-					"jsonFile" : "target-audio-Debug-21488862e5b5d43eb374.json",
+					"jsonFile" : "target-audio-Debug-78569c4b479e9b5772a7.json",
 					"name" : "audio",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 12,
 					"id" : "cameracontroller::@d7306d29326ff25263b1",
-					"jsonFile" : "target-cameracontroller-Debug-afb5d4669612acaa80b9.json",
+					"jsonFile" : "target-cameracontroller-Debug-40e15808e4c079d9052d.json",
 					"name" : "cameracontroller",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 15,
 					"id" : "cmdhandler::@539fffaf613aa1a67690",
-					"jsonFile" : "target-cmdhandler-Debug-d720c6008f7c06b6fe64.json",
+					"jsonFile" : "target-cmdhandler-Debug-1a427eba1186876ef4c8.json",
 					"name" : "cmdhandler",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 7,
 					"id" : "collision::@c7f3438d24a996a0c811",
-					"jsonFile" : "target-collision-Debug-27c26c2928368af584ad.json",
+					"jsonFile" : "target-collision-Debug-31153207996a3a7790af.json",
 					"name" : "collision",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 8,
 					"id" : "config::@28a42e3ebd48eb13e177",
-					"jsonFile" : "target-config-Debug-c5038ac0ec1de5205176.json",
+					"jsonFile" : "target-config-Debug-a703536ff20f1ae6bda2.json",
 					"name" : "config",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 18,
 					"id" : "event::@ac78cbc803f0e3d902f4",
-					"jsonFile" : "target-event-Debug-7730ec9c130beac91115.json",
+					"jsonFile" : "target-event-Debug-369a3389679cce68fade.json",
 					"name" : "event",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 4,
 					"id" : "glfw::@4755506f38bf45259394",
-					"jsonFile" : "target-glfw-Debug-6fec3b0ecc23acf6d172.json",
+					"jsonFile" : "target-glfw-Debug-16d5dc1053b4069924b9.json",
 					"name" : "glfw",
 					"projectIndex" : 2
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "imguilib::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-imguilib-Debug-fd19e644b14c53bc2322.json",
+					"jsonFile" : "target-imguilib-Debug-1c35eb2c9d57e9294c3b.json",
 					"name" : "imguilib",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 9,
 					"id" : "input::@d967885210040d4ce616",
-					"jsonFile" : "target-input-Debug-1498dcec54094ad3926c.json",
+					"jsonFile" : "target-input-Debug-85f394d4dba5f97b5470.json",
 					"name" : "input",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 16,
 					"id" : "kernel::@5d86515e568759735271",
-					"jsonFile" : "target-kernel-Debug-d48b7145269109993992.json",
+					"jsonFile" : "target-kernel-Debug-92859c069ede5c7f1ed1.json",
 					"name" : "kernel",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 20,
 					"id" : "mapmod::@e87daa19a0aaec6b83ad",
-					"jsonFile" : "target-mapmod-Debug-d50b9cba3342052e97e0.json",
+					"jsonFile" : "target-mapmod-Debug-e2645ee73efdbef0cf1e.json",
 					"name" : "mapmod",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 21,
 					"id" : "menu::@508c1ec0f6a4eb8a79d5",
-					"jsonFile" : "target-menu-Debug-af8aa097c0984bb22d06.json",
+					"jsonFile" : "target-menu-Debug-417759c6256b79005ca8.json",
 					"name" : "menu",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 10,
 					"id" : "model::@821f8439338a0146b4f1",
-					"jsonFile" : "target-model-Debug-342f70cac093212bf681.json",
+					"jsonFile" : "target-model-Debug-e016a6006764e22bfb98.json",
 					"name" : "model",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 13,
 					"id" : "physics::@e27c3d6556b677b24ea2",
-					"jsonFile" : "target-physics-Debug-ab0eb906d69afb4196d0.json",
+					"jsonFile" : "target-physics-Debug-d5d7ca3b327523490ffe.json",
 					"name" : "physics",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 22,
 					"id" : "player::@6497c05e8667515fbef8",
-					"jsonFile" : "target-player-Debug-2b8fad92a736702f0ead.json",
+					"jsonFile" : "target-player-Debug-1f0d09c558b8f017522b.json",
 					"name" : "player",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 2,
 					"id" : "raylib::@af39a1529cb2ee18778c",
-					"jsonFile" : "target-raylib-Debug-e312e1d53e5c505ab407.json",
+					"jsonFile" : "target-raylib-Debug-1c8d1d947cafd5f995c0.json",
 					"name" : "raylib",
 					"projectIndex" : 1
 				},
 				{
 					"directoryIndex" : 11,
 					"id" : "render::@1c5ce05080cbaa0376c6",
-					"jsonFile" : "target-render-Debug-55e71736289e2c9b8b50.json",
+					"jsonFile" : "target-render-Debug-288f772ddca3c80411f5.json",
 					"name" : "render",
 					"projectIndex" : 0
 				},
@@ -711,7 +711,7 @@
 				{
 					"directoryIndex" : 14,
 					"id" : "world::@c98633f6e372857301bf",
-					"jsonFile" : "target-world-Debug-f7be666328ae6501081f.json",
+					"jsonFile" : "target-world-Debug-803d36c1241c512ffd99.json",
 					"name" : "world",
 					"projectIndex" : 0
 				}

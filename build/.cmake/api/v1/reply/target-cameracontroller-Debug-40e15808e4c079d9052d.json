@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/Kernel/kernel.lib"
+			"path" : "src/Engine/CameraController/cameracontroller.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -19,7 +19,7 @@
 		],
 		"files" : 
 		[
-			"src/Engine/Kernel/CMakeLists.txt",
+			"src/Engine/CameraController/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -36,7 +36,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 13,
+				"line" : 10,
 				"parent" : 0
 			},
 			{
@@ -87,7 +87,7 @@
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 8,
+				"line" : 6,
 				"parent" : 0
 			}
 		]
@@ -98,7 +98,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview"
 				},
 				{
 					"backtrace" : 4,
@@ -148,7 +148,7 @@
 			[
 				{
 					"backtrace" : 11,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Kernel"
+					"path" : "D:/gitnext/Chained Decos/src/Engine/CameraController"
 				},
 				{
 					"backtrace" : 2,
@@ -185,13 +185,13 @@
 			"id" : "glfw::@4755506f38bf45259394"
 		}
 	],
-	"id" : "kernel::@5d86515e568759735271",
-	"name" : "kernel",
-	"nameOnDisk" : "kernel.lib",
+	"id" : "cameracontroller::@d7306d29326ff25263b1",
+	"name" : "cameracontroller",
+	"nameOnDisk" : "cameracontroller.lib",
 	"paths" : 
 	{
-		"build" : "src/Engine/Kernel",
-		"source" : "src/Engine/Kernel"
+		"build" : "src/Engine/CameraController",
+		"source" : "src/Engine/CameraController"
 	},
 	"sourceGroups" : 
 	[
@@ -207,9 +207,7 @@
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				2,
-				3,
-				4
+				2
 			]
 		}
 	],
@@ -218,27 +216,17 @@
 		{
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "build/src/Engine/Kernel/CMakeFiles/kernel.dir/Unity/unity_0_cxx.cxx",
+			"path" : "build/src/Engine/CameraController/CMakeFiles/cameracontroller.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Kernel/Kernel.cpp",
+			"path" : "src/Engine/CameraController/CameraController.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Kernel/Kernel.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Kernel/IKernelService.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Kernel/KernelServices.h",
+			"path" : "src/Engine/CameraController/CameraController.h",
 			"sourceGroupIndex" : 1
 		}
 	],

@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Engine/Collision/collision.lib"
+			"path" : "src/Engine/Render/render.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -19,7 +19,7 @@
 		],
 		"files" : 
 		[
-			"src/Engine/Collision/CMakeLists.txt",
+			"src/Engine/Render/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -30,7 +30,7 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 1,
+				"line" : 3,
 				"parent" : 0
 			},
 			{
@@ -51,7 +51,7 @@
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 19,
+				"line" : 14,
 				"parent" : 0
 			},
 			{
@@ -87,13 +87,7 @@
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 14,
-				"parent" : 0
-			},
-			{
-				"command" : 4,
-				"file" : 0,
-				"line" : 23,
+				"line" : 8,
 				"parent" : 0
 			}
 		]
@@ -104,7 +98,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview"
 				},
 				{
 					"backtrace" : 3,
@@ -154,14 +148,18 @@
 			[
 				{
 					"backtrace" : 11,
-					"path" : "D:/gitnext/Chained Decos/src/Engine/Collision"
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Render"
 				},
 				{
 					"backtrace" : 11,
 					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
-					"backtrace" : 12,
+					"backtrace" : 11,
+					"path" : "D:/gitnext/Chained Decos/src"
+				},
+				{
+					"backtrace" : 5,
 					"path" : "D:/gitnext/Chained Decos/.deps/raylib-src/src"
 				},
 				{
@@ -170,11 +168,71 @@
 				},
 				{
 					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/include/imgui"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/include/rlImGui"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Collision"
+				},
+				{
+					"backtrace" : 5,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/Model"
 				},
 				{
 					"backtrace" : 5,
 					"path" : "D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Game/Menu"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Config"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Input"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/World"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/CommandLineHandler"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Physics/src"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Game/Player"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/CameraController"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Kernel"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Audio"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Event"
 				}
 			],
 			"language" : "CXX",
@@ -195,16 +253,16 @@
 	"dependencies" : 
 	[
 		{
-			"id" : "model::@821f8439338a0146b4f1"
+			"id" : "menu::@508c1ec0f6a4eb8a79d5"
 		}
 	],
-	"id" : "collision::@c7f3438d24a996a0c811",
-	"name" : "collision",
-	"nameOnDisk" : "collision.lib",
+	"id" : "render::@1c5ce05080cbaa0376c6",
+	"name" : "render",
+	"nameOnDisk" : "render.lib",
 	"paths" : 
 	{
-		"build" : "src/Engine/Collision",
-		"source" : "src/Engine/Collision"
+		"build" : "src/Engine/Render",
+		"source" : "src/Engine/Render"
 	},
 	"sourceGroups" : 
 	[
@@ -213,22 +271,14 @@
 			"sourceIndexes" : 
 			[
 				0,
-				1,
-				3,
-				5,
-				7,
-				9
+				1
 			]
 		},
 		{
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				2,
-				4,
-				6,
-				8,
-				10
+				2
 			]
 		}
 	],
@@ -237,57 +287,17 @@
 		{
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "build/src/Engine/Collision/CMakeFiles/collision.dir/Unity/unity_0_cxx.cxx",
+			"path" : "build/src/Engine/Render/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Collision/CollisionSystem.cpp",
+			"path" : "src/Engine/Render/RenderManager.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Engine/Collision/CollisionSystem.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Collision/CollisionStructures.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Collision/CollisionStructures.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Collision/CollisionManager.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Collision/CollisionManager.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Collision/CollisionDebugRenderer.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Collision/CollisionDebugRenderer.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Collision/GroundColliderFactory.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Engine/Collision/GroundColliderFactory.h",
+			"path" : "src/Engine/Render/RenderManager.h",
 			"sourceGroupIndex" : 1
 		}
 	],

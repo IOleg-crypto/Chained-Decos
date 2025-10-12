@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.25)
 project(ChainedDecos VERSION 1.0.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -292,7 +292,7 @@ endif()
 
 # Enable testing if requested
 if(BUILD_TESTS)
-    enable_testing()
+    add_subdirectory(tests)
 endif()
 
 # Enable benchmarks if requested

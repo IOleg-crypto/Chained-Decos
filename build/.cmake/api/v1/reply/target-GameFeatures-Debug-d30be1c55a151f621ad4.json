@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "imguilib.lib"
+			"path" : "src/Game/GameFeatures/GameFeatures.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -14,12 +14,13 @@
 			"add_library",
 			"target_link_libraries",
 			"add_compile_options",
-			"target_compile_definitions",
 			"add_compile_definitions",
+			"target_compile_definitions",
 			"target_include_directories"
 		],
 		"files" : 
 		[
+			"src/Game/GameFeatures/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -30,67 +31,64 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 228,
+				"line" : 13,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 243,
+				"line" : 25,
 				"parent" : 0
 			},
 			{
+				"file" : 1
+			},
+			{
 				"command" : 2,
-				"file" : 0,
+				"file" : 1,
 				"line" : 80,
-				"parent" : 0
+				"parent" : 3
 			},
 			{
 				"command" : 2,
-				"file" : 0,
+				"file" : 1,
 				"line" : 88,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 121,
+				"parent" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 30,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
-				"file" : 0,
-				"line" : 246,
-				"parent" : 0
-			},
-			{
-				"command" : 4,
-				"file" : 0,
-				"line" : 121,
-				"parent" : 0
-			},
-			{
-				"command" : 4,
-				"file" : 0,
-				"line" : 256,
-				"parent" : 0
-			},
-			{
-				"command" : 4,
-				"file" : 0,
+				"file" : 1,
 				"line" : 120,
-				"parent" : 0
+				"parent" : 3
 			},
 			{
-				"command" : 4,
-				"file" : 0,
+				"command" : 3,
+				"file" : 1,
 				"line" : 119,
-				"parent" : 0
+				"parent" : 3
 			},
 			{
-				"command" : 4,
-				"file" : 0,
+				"command" : 3,
+				"file" : 1,
 				"line" : 124,
-				"parent" : 0
+				"parent" : 3
 			},
 			{
 				"command" : 5,
 				"file" : 0,
-				"line" : 239,
+				"line" : 19,
 				"parent" : 0
 			}
 		]
@@ -101,18 +99,18 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
-				},
-				{
-					"backtrace" : 3,
-					"fragment" : "-O0"
-				},
-				{
-					"backtrace" : 3,
-					"fragment" : "-g"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview"
 				},
 				{
 					"backtrace" : 4,
+					"fragment" : "-O0"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 5,
 					"fragment" : "-w"
 				}
 			],
@@ -121,10 +119,6 @@
 				{
 					"backtrace" : 2,
 					"define" : "GRAPHICS_API_OPENGL_33"
-				},
-				{
-					"backtrace" : 5,
-					"define" : "IMGUI_DEFINE_MATH_OPERATORS"
 				},
 				{
 					"backtrace" : 6,
@@ -155,11 +149,11 @@
 			[
 				{
 					"backtrace" : 11,
-					"path" : "D:/gitnext/Chained Decos/include/imgui"
+					"path" : "D:/gitnext/Chained Decos/src/Game/GameFeatures"
 				},
 				{
 					"backtrace" : 11,
-					"path" : "D:/gitnext/Chained Decos/include/rlImGui"
+					"path" : "D:/gitnext/Chained Decos/src"
 				},
 				{
 					"backtrace" : 2,
@@ -181,13 +175,7 @@
 			},
 			"sourceIndexes" : 
 			[
-				0,
-				3,
-				4,
-				5,
-				6,
-				7,
-				8
+				0
 			]
 		}
 	],
@@ -202,13 +190,13 @@
 			"id" : "glfw::@4755506f38bf45259394"
 		}
 	],
-	"id" : "imguilib::@6890427a1f51a3e7e1df",
-	"name" : "imguilib",
-	"nameOnDisk" : "imguilib.lib",
+	"id" : "GameFeatures::@3472a93c03200552aca0",
+	"name" : "GameFeatures",
+	"nameOnDisk" : "GameFeatures.lib",
 	"paths" : 
 	{
-		"build" : ".",
-		"source" : "."
+		"build" : "src/Game/GameFeatures",
+		"source" : "src/Game/GameFeatures"
 	},
 	"sourceGroups" : 
 	[
@@ -217,76 +205,58 @@
 			"sourceIndexes" : 
 			[
 				0,
-				3,
-				4,
-				5,
-				6,
-				7,
-				8
+				1,
+				2,
+				3
 			]
 		},
 		{
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				1,
-				2
+				4,
+				5,
+				6
 			]
 		}
 	],
 	"sources" : 
 	[
 		{
-			"backtrace" : 1,
+			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "include/rlImGui/rlImGui.cpp",
+			"path" : "build/src/Game/GameFeatures/CMakeFiles/GameFeatures.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "include/rlImGui/rlImGui.h",
+			"path" : "src/Game/GameFeatures/CheckpointSystem.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Game/GameFeatures/PowerUpSystem.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Game/GameFeatures/ScoringSystem.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Game/GameFeatures/CheckpointSystem.h",
 			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 1,
-			"path" : "include/rlImGui/imgui_impl_raylib.h",
+			"path" : "src/Game/GameFeatures/PowerUpSystem.h",
 			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "include/imgui/imgui.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "include/imgui/imgui_draw.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "include/imgui/imgui_widgets.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "include/imgui/imgui_tables.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "include/imgui/imgui_demo.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "include/imgui/misc/cpp/imgui_stdlib.cpp",
-			"sourceGroupIndex" : 0
+			"path" : "src/Game/GameFeatures/ScoringSystem.h",
+			"sourceGroupIndex" : 1
 		}
 	],
 	"type" : "STATIC_LIBRARY"

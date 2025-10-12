@@ -3,7 +3,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "src/Game/GameFeatures/GameFeatures.lib"
+			"path" : "src/Engine/Audio/audio.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -15,12 +15,11 @@
 			"target_link_libraries",
 			"add_compile_options",
 			"add_compile_definitions",
-			"target_compile_definitions",
 			"target_include_directories"
 		],
 		"files" : 
 		[
-			"src/Game/GameFeatures/CMakeLists.txt",
+			"src/Engine/Audio/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
 		"nodes" : 
@@ -31,13 +30,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 13,
+				"line" : 1,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 25,
+				"line" : 11,
 				"parent" : 0
 			},
 			{
@@ -62,10 +61,10 @@
 				"parent" : 3
 			},
 			{
-				"command" : 4,
-				"file" : 0,
-				"line" : 30,
-				"parent" : 0
+				"command" : 3,
+				"file" : 1,
+				"line" : 256,
+				"parent" : 3
 			},
 			{
 				"command" : 3,
@@ -86,9 +85,9 @@
 				"parent" : 3
 			},
 			{
-				"command" : 5,
+				"command" : 4,
 				"file" : 0,
-				"line" : 19,
+				"line" : 6,
 				"parent" : 0
 			}
 		]
@@ -99,7 +98,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd"
+					"fragment" : "-O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview"
 				},
 				{
 					"backtrace" : 4,
@@ -149,11 +148,11 @@
 			[
 				{
 					"backtrace" : 11,
-					"path" : "D:/gitnext/Chained Decos/src/Game/GameFeatures"
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Audio"
 				},
 				{
 					"backtrace" : 11,
-					"path" : "D:/gitnext/Chained Decos/src"
+					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
 					"backtrace" : 2,
@@ -190,13 +189,13 @@
 			"id" : "glfw::@4755506f38bf45259394"
 		}
 	],
-	"id" : "GameFeatures::@3472a93c03200552aca0",
-	"name" : "GameFeatures",
-	"nameOnDisk" : "GameFeatures.lib",
+	"id" : "audio::@9d441780e288f3c71fb0",
+	"name" : "audio",
+	"nameOnDisk" : "audio.lib",
 	"paths" : 
 	{
-		"build" : "src/Game/GameFeatures",
-		"source" : "src/Game/GameFeatures"
+		"build" : "src/Engine/Audio",
+		"source" : "src/Engine/Audio"
 	},
 	"sourceGroups" : 
 	[
@@ -205,18 +204,14 @@
 			"sourceIndexes" : 
 			[
 				0,
-				1,
-				2,
-				3
+				1
 			]
 		},
 		{
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				4,
-				5,
-				6
+				2
 			]
 		}
 	],
@@ -225,37 +220,17 @@
 		{
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "build/src/Game/GameFeatures/CMakeFiles/GameFeatures.dir/Unity/unity_0_cxx.cxx",
+			"path" : "build/src/Engine/Audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Game/GameFeatures/CheckpointSystem.cpp",
+			"path" : "src/Engine/Audio/AudioManager.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/Game/GameFeatures/PowerUpSystem.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/GameFeatures/ScoringSystem.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/GameFeatures/CheckpointSystem.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/GameFeatures/PowerUpSystem.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/Game/GameFeatures/ScoringSystem.h",
+			"path" : "src/Engine/Audio/AudioManager.h",
 			"sourceGroupIndex" : 1
 		}
 	],
