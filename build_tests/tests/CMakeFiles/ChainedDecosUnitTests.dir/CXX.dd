@@ -1,7 +1,0 @@
-ninja_dyndep_version = 1.0
-build tests/CMakeFiles/ChainedDecosUnitTests.dir/main.cpp.obj: dyndep
-
-build tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/PhysicsComponentTest.cpp.obj: dyndep
-
-build tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/CollisionSystemTest.cpp.obj: dyndep
-
