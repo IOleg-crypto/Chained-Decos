@@ -212,8 +212,12 @@ jobs:
         echo "  Compiler: ${{ matrix.compiler }}"
         echo "  OS: ${{ matrix.os }}"
 
-        # Configure CMake with verbose output for dependency issues
-        cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
+        # Clean previous CMake cache just in case
+        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/CMakeCache.txt"
+        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/CMakeFiles"
+
+        # Configure CMake
+        cmake --fresh -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -G "${{ matrix.generator }}" \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
