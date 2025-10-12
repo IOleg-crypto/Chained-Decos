@@ -216,6 +216,23 @@ jobs:
         rm -rf "${{ steps.build-env.outputs.build-output-dir }}/CMakeCache.txt"
         rm -rf "${{ steps.build-env.outputs.build-output-dir }}/CMakeFiles"
 
+
+        - name: Clean FetchContent subprojects
+      shell: bash
+      run: |
+        echo "🧹 Removing old FetchContent subprojects (raylib, etc.)..."
+        find "${{ github.workspace }}" -type d -name "_deps" -exec rm -rf {} + 2>/dev/null || true
+        echo "✅ _deps directories removed"
+
+    - name: Extra clean Raylib subbuild (Windows)
+      if: matrix.os == 'windows-2022'
+      shell: bash
+      run: |
+        echo "🧹 Cleaning raylib subbuild..."
+        rm -rf "${{ github.workspace }}/.deps/raylib-subbuild"
+        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/_deps/raylib-subbuild"
+        echo "✅ raylib subbuild cleaned"
+
         # Configure CMake
         cmake --fresh -B "${{ steps.build-env.outputs.build-output-dir }}" \
           -G "${{ matrix.generator }}" \
