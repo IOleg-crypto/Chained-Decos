@@ -1,413 +1,336 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <memory>
+#include <algorithm>
+#include <set>
+#include <iostream>
 
 #include "Game/Map/ParkourMapGenerator.h"
-#include "Game/Map/MapLoader.h"
 
 class ParkourMapGeneratorTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        generator = std::make_shared<ParkourMapGenerator>();
+        // No setup needed for static class
     }
 
     void TearDown() override {
-        generator.reset();
+        // No cleanup needed
     }
-
-    std::shared_ptr<ParkourMapGenerator> generator;
 };
 
-TEST_F(ParkourMapGeneratorTest, ConstructorInitializesDefaults) {
-    EXPECT_EQ(generator->GetPlatformCount(), 0);
-    EXPECT_EQ(generator->GetDifficulty(), DifficultyLevel::Test);
-    EXPECT_FALSE(generator->IsGenerated());
-}
+TEST_F(ParkourMapGeneratorTest, GetAllParkourMapsReturnsMaps) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
+    EXPECT_GT(maps.size(), 0);
 
-TEST_F(ParkourMapGeneratorTest, SetDifficultyChangesLevel) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    EXPECT_EQ(generator->GetDifficulty(), DifficultyLevel::Easy);
-
-    generator->SetDifficulty(DifficultyLevel::Hard);
-    EXPECT_EQ(generator->GetDifficulty(), DifficultyLevel::Hard);
-}
-
-TEST_F(ParkourMapGeneratorTest, GenerateMapCreatesPlatforms) {
-    generator->SetDifficulty(DifficultyLevel::Test);
-    generator->GenerateMap();
-
-    EXPECT_TRUE(generator->IsGenerated());
-    EXPECT_GT(generator->GetPlatformCount(), 0);
-
-    auto platforms = generator->GetPlatforms();
-    EXPECT_GT(platforms.size(), 0);
-}
-
-TEST_F(ParkourMapGeneratorTest, TestDifficultyCreatesMinimalPlatforms) {
-    generator->SetDifficulty(DifficultyLevel::Test);
-    generator->GenerateMap();
-
-    auto platforms = generator->GetPlatforms();
-    EXPECT_GE(platforms.size(), 3); // At least start, middle, end platforms
-    EXPECT_LE(platforms.size(), 10); // Not too many for test level
-}
-
-TEST_F(ParkourMapGeneratorTest, EasyDifficultyCreatesReasonablePlatforms) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-
-    auto platforms = generator->GetPlatforms();
-    EXPECT_GE(platforms.size(), 5);
-    EXPECT_LE(platforms.size(), 15);
-}
-
-TEST_F(ParkourMapGeneratorTest, MediumDifficultyCreatesModeratePlatforms) {
-    generator->SetDifficulty(DifficultyLevel::Medium);
-    generator->GenerateMap();
-
-    auto platforms = generator->GetPlatforms();
-    EXPECT_GE(platforms.size(), 10);
-    EXPECT_LE(platforms.size(), 25);
-}
-
-TEST_F(ParkourMapGeneratorTest, HardDifficultyCreatesManyPlatforms) {
-    generator->SetDifficulty(DifficultyLevel::Hard);
-    generator->GenerateMap();
-
-    auto platforms = generator->GetPlatforms();
-    EXPECT_GE(platforms.size(), 15);
-    EXPECT_LE(platforms.size(), 40);
-}
-
-TEST_F(ParkourMapGeneratorTest, SpeedrunDifficultyOptimizesForTime) {
-    generator->SetDifficulty(DifficultyLevel::Speedrun);
-    generator->GenerateMap();
-
-    auto platforms = generator->GetPlatforms();
-    EXPECT_GE(platforms.size(), 8);
-    EXPECT_LE(platforms.size(), 20);
-
-    // Speedrun should have optimal platform placement
-    auto map = generator->GetGeneratedMap();
-    EXPECT_TRUE(map->IsOptimizedForSpeedrun());
-}
-
-TEST_F(ParkourMapGeneratorTest, PlatformsHaveValidPositions) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-
-    auto platforms = generator->GetPlatforms();
-
-    for (const auto& platform : platforms) {
-        EXPECT_FALSE(std::isnan(platform.position.x));
-        EXPECT_FALSE(std::isnan(platform.position.y));
-        EXPECT_FALSE(std::isnan(platform.position.z));
-
-        EXPECT_FALSE(std::isinf(platform.position.x));
-        EXPECT_FALSE(std::isinf(platform.position.y));
-        EXPECT_FALSE(std::isinf(platform.position.z));
-
-        EXPECT_GT(platform.size.x, 0.0f);
-        EXPECT_GT(platform.size.y, 0.0f);
-        EXPECT_GT(platform.size.z, 0.0f);
+    // Check that all maps have valid data
+    for (const auto& map : maps) {
+        EXPECT_FALSE(map.name.empty());
+        EXPECT_FALSE(map.displayName.empty());
+        EXPECT_FALSE(map.description.empty());
+        EXPECT_GT(map.elements.size(), 0);
+        EXPECT_GT(map.difficulty, 0.0f);
     }
 }
 
-TEST_F(ParkourMapGeneratorTest, PlatformsHaveValidSizes) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
+TEST_F(ParkourMapGeneratorTest, GetMapByNameReturnsCorrectMap) {
+    // Test getting a specific map by name
+    auto map = ParkourMapGenerator::GetMapByName("basic_shapes");
+    EXPECT_FALSE(map.name.empty());
 
-    auto platforms = generator->GetPlatforms();
+    // Test getting non-existent map (should return empty map)
+    auto emptyMap = ParkourMapGenerator::GetMapByName("non_existent");
+    EXPECT_TRUE(emptyMap.name.empty());
+}
 
-    for (const auto& platform : platforms) {
-        EXPECT_GT(platform.size.x, 0.5f); // Minimum reasonable size
-        EXPECT_GT(platform.size.y, 0.1f);
-        EXPECT_GT(platform.size.z, 0.5f);
+TEST_F(ParkourMapGeneratorTest, CreateCubeCreatesValidElement) {
+    Vector3 position = {0, 0, 0};
+    Vector3 size = {2, 1, 2};
+    Color color = RED;
 
-        EXPECT_LT(platform.size.x, 20.0f); // Maximum reasonable size
-        EXPECT_LT(platform.size.y, 10.0f);
-        EXPECT_LT(platform.size.z, 20.0f);
+    auto cube = ParkourMapGenerator::CreateCube(position, size, color, true);
+
+    EXPECT_EQ(cube.type, ParkourShapeType::Cube);
+    EXPECT_EQ(cube.position.x, position.x);
+    EXPECT_EQ(cube.position.y, position.y);
+    EXPECT_EQ(cube.position.z, position.z);
+    EXPECT_EQ(cube.size.x, size.x);
+    EXPECT_EQ(cube.size.y, size.y);
+    EXPECT_EQ(cube.size.z, size.z);
+    EXPECT_EQ(cube.color.r, color.r);
+    EXPECT_TRUE(cube.isPlatform);
+}
+
+TEST_F(ParkourMapGeneratorTest, CreateSphereCreatesValidElement) {
+    Vector3 position = {5, 3, 5};
+    float radius = 1.5f;
+    Color color = BLUE;
+
+    auto sphere = ParkourMapGenerator::CreateSphere(position, radius, color, false);
+
+    EXPECT_EQ(sphere.type, ParkourShapeType::Sphere);
+    EXPECT_EQ(sphere.position.x, position.x);
+    EXPECT_EQ(sphere.position.y, position.y);
+    EXPECT_EQ(sphere.position.z, position.z);
+    EXPECT_FALSE(sphere.isPlatform);
+    EXPECT_FALSE(sphere.isObstacle);
+}
+
+TEST_F(ParkourMapGeneratorTest, CreatePlatformCreatesPlatformElement) {
+    Vector3 position = {0, 5, 0};
+    Vector3 size = {4, 0.5f, 4};
+    Color color = GREEN;
+
+    auto platform = ParkourMapGenerator::CreatePlatform(position, size, color);
+
+    EXPECT_EQ(platform.type, ParkourShapeType::Cube);
+    EXPECT_TRUE(platform.isPlatform);
+    EXPECT_FALSE(platform.isObstacle);
+    EXPECT_EQ(platform.color.r, color.r);
+    EXPECT_EQ(platform.color.g, color.g);
+    EXPECT_EQ(platform.color.b, color.b);
+}
+
+TEST_F(ParkourMapGeneratorTest, MapsHaveValidElements) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
+
+    for (const auto& map : maps) {
+        EXPECT_FALSE(map.name.empty());
+        EXPECT_FALSE(map.displayName.empty());
+        EXPECT_GT(map.elements.size(), 0);
+
+        // Check that all elements have valid positions and sizes
+        for (const auto& element : map.elements) {
+            EXPECT_FALSE(std::isnan(element.position.x));
+            EXPECT_FALSE(std::isnan(element.position.y));
+            EXPECT_FALSE(std::isnan(element.position.z));
+
+            EXPECT_GT(element.size.x, 0.0f);
+            EXPECT_GT(element.size.y, 0.0f);
+            EXPECT_GT(element.size.z, 0.0f);
+        }
+
+        // Check difficulty is in valid range
+        EXPECT_GT(map.difficulty, 0.0f);
+        EXPECT_LE(map.difficulty, 5.0f);
     }
 }
 
-TEST_F(ParkourMapGeneratorTest, PlatformsHaveReasonableGaps) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
+TEST_F(ParkourMapGeneratorTest, MapsHaveReasonableDifficultyProgression) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
 
-    auto platforms = generator->GetPlatforms();
+    // Sort maps by difficulty
+    std::sort(maps.begin(), maps.end(),
+              [](const ParkourTestMap& a, const ParkourTestMap& b) {
+                  return a.difficulty < b.difficulty;
+              });
 
-    for (size_t i = 1; i < platforms.size(); i++) {
-        const auto& prev = platforms[i - 1];
-        const auto& curr = platforms[i];
+    // Check that difficulty increases gradually
+    for (size_t i = 1; i < maps.size(); i++) {
+        float prevDifficulty = maps[i - 1].difficulty;
+        float currDifficulty = maps[i].difficulty;
 
-        float gapX = abs(curr.position.x - prev.position.x);
-        float gapY = abs(curr.position.y - prev.position.y);
-        float gapZ = abs(curr.position.z - prev.position.z);
+        // Difficulty should not decrease
+        EXPECT_GE(currDifficulty, prevDifficulty);
 
-        // Gaps should be reasonable for jumping
-        EXPECT_GT(gapX, 0.1f); // Not overlapping
-        EXPECT_LT(gapX, 15.0f); // Not too far
-
-        EXPECT_LT(gapY, 10.0f); // Not too high
-
-        EXPECT_GT(gapZ, 0.1f); // Not overlapping
-        EXPECT_LT(gapZ, 15.0f); // Not too far
+        // Difficulty increase should be reasonable (not more than 2.0)
+        if (currDifficulty > prevDifficulty) {
+            EXPECT_LE(currDifficulty - prevDifficulty, 2.0f);
+        }
     }
 }
 
-TEST_F(ParkourMapGeneratorTest, CheckpointsAreCreated) {
-    generator->SetDifficulty(DifficultyLevel::Medium);
-    generator->GenerateMap();
+TEST_F(ParkourMapGeneratorTest, MapElementsHaveValidColors) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
 
-    auto checkpoints = generator->GetCheckpoints();
-    EXPECT_GT(checkpoints.size(), 0);
+    for (const auto& map : maps) {
+        // Check that map has valid colors
+        EXPECT_NE(map.skyColor.r, 0);
+        EXPECT_NE(map.skyColor.g, 0);
+        EXPECT_NE(map.skyColor.b, 0);
+        EXPECT_EQ(map.skyColor.a, 255);
 
-    // First checkpoint should be at start
-    EXPECT_NEAR(checkpoints[0].position.x, 0.0f, 1.0f);
-    EXPECT_NEAR(checkpoints[0].position.y, 0.0f, 1.0f);
-    EXPECT_NEAR(checkpoints[0].position.z, 0.0f, 1.0f);
-}
+        EXPECT_NE(map.groundColor.r, 0);
+        EXPECT_NE(map.groundColor.g, 0);
+        EXPECT_NE(map.groundColor.b, 0);
+        EXPECT_EQ(map.groundColor.a, 255);
 
-TEST_F(ParkourMapGeneratorTest, DeathZonesAreCreated) {
-    generator->SetDifficulty(DifficultyLevel::Medium);
-    generator->GenerateMap();
-
-    auto deathZones = generator->GetDeathZones();
-    EXPECT_GT(deathZones.size(), 0);
-
-    // Death zones should be below platforms
-    for (const auto& zone : deathZones) {
-        EXPECT_LT(zone.position.y, -5.0f); // Well below ground level
+        // Check that elements have valid colors
+        for (const auto& element : map.elements) {
+            EXPECT_GE(element.color.r, 0);
+            EXPECT_GE(element.color.g, 0);
+            EXPECT_GE(element.color.b, 0);
+            EXPECT_GE(element.color.a, 0);
+        }
     }
 }
 
-TEST_F(ParkourMapGeneratorTest, MapHasValidBounds) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
+TEST_F(ParkourMapGeneratorTest, MapHasStartAndEndPositions) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
 
-    auto bounds = generator->GetMapBounds();
+    for (const auto& map : maps) {
+        // Check that start and end positions are defined
+        EXPECT_FALSE(std::isnan(map.startPosition.x));
+        EXPECT_FALSE(std::isnan(map.startPosition.y));
+        EXPECT_FALSE(std::isnan(map.startPosition.z));
 
-    EXPECT_GT(bounds.max.x, bounds.min.x);
-    EXPECT_GT(bounds.max.y, bounds.min.y);
-    EXPECT_GT(bounds.max.z, bounds.min.z);
+        EXPECT_FALSE(std::isnan(map.endPosition.x));
+        EXPECT_FALSE(std::isnan(map.endPosition.y));
+        EXPECT_FALSE(std::isnan(map.endPosition.z));
 
-    // Map should be reasonably sized
-    EXPECT_GT(bounds.max.x - bounds.min.x, 5.0f);
-    EXPECT_GT(bounds.max.z - bounds.min.z, 5.0f);
+        // Start should be at reasonable height
+        EXPECT_GT(map.startPosition.y, -5.0f);
+        EXPECT_LT(map.startPosition.y, 50.0f);
+
+        // End should be reachable (not too high or too low)
+        EXPECT_GT(map.endPosition.y, -10.0f);
+        EXPECT_LT(map.endPosition.y, 100.0f);
+    }
 }
 
-TEST_F(ParkourMapGeneratorTest, MapCanBeSavedAndLoaded) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
+TEST_F(ParkourMapGeneratorTest, MapNamesAreUnique) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
 
-    // Save map
-    std::string filename = "test_map.json";
-    bool saved = generator->SaveMap(filename);
-    EXPECT_TRUE(saved);
+    // Check that all map names are unique
+    std::set<std::string> names;
+    for (const auto& map : maps) {
+        EXPECT_TRUE(names.find(map.name) == names.end())
+            << "Duplicate map name found: " << map.name;
+        names.insert(map.name);
+    }
 
-    // Load map
-    auto mapLoader = std::make_shared<MapLoader>();
-    auto loadedMap = mapLoader->LoadMap(filename);
-
-    EXPECT_TRUE(loadedMap != nullptr);
-    EXPECT_GT(loadedMap->GetPlatforms().size(), 0);
-
-    // Clean up
-    std::remove(filename.c_str());
+    // Check that display names are also unique
+    std::set<std::string> displayNames;
+    for (const auto& map : maps) {
+        EXPECT_TRUE(displayNames.find(map.displayName) == displayNames.end())
+            << "Duplicate display name found: " << map.displayName;
+        displayNames.insert(map.displayName);
+    }
 }
 
-TEST_F(ParkourMapGeneratorTest, DifferentSeedsProduceDifferentMaps) {
-    generator->SetSeed(12345);
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-    auto platforms1 = generator->GetPlatforms();
+TEST_F(ParkourMapGeneratorTest, AllShapeTypesAreRepresented) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
 
-    generator->SetSeed(54321); // Different seed
-    generator->GenerateMap();
-    auto platforms2 = generator->GetPlatforms();
+    // Check that different shape types are used across all maps
+    std::set<ParkourShapeType> usedShapes;
 
-    // Maps should be different (not guaranteed, but very likely)
-    bool areDifferent = platforms1.size() != platforms2.size();
-    if (platforms1.size() == platforms2.size()) {
-        // If same size, check if any platform is different
-        for (size_t i = 0; i < platforms1.size() && !areDifferent; i++) {
-            if (platforms1[i].position != platforms2[i].position) {
-                areDifferent = true;
+    for (const auto& map : maps) {
+        for (const auto& element : map.elements) {
+            usedShapes.insert(element.type);
+        }
+    }
+
+    // Should have at least Cube and maybe other shapes
+    EXPECT_GE(usedShapes.size(), 1);
+
+    // Log which shapes are used for debugging
+    std::cout << "Used shape types: ";
+    for (auto shape : usedShapes) {
+        switch (shape) {
+            case ParkourShapeType::Cube: std::cout << "Cube "; break;
+            case ParkourShapeType::Sphere: std::cout << "Sphere "; break;
+            case ParkourShapeType::Cylinder: std::cout << "Cylinder "; break;
+            case ParkourShapeType::Plane: std::cout << "Plane "; break;
+            case ParkourShapeType::Capsule: std::cout << "Capsule "; break;
+            case ParkourShapeType::Torus: std::cout << "Torus "; break;
+        }
+    }
+    std::cout << std::endl;
+}
+
+TEST_F(ParkourMapGeneratorTest, MapDescriptionsAreInformative) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
+
+    for (const auto& map : maps) {
+        // Descriptions should be meaningful (not empty and reasonably long)
+        EXPECT_FALSE(map.description.empty());
+        EXPECT_GT(map.description.length(), 10); // At least 10 characters
+
+        // Descriptions should contain relevant keywords
+        std::string lowerDesc = map.description;
+        std::transform(lowerDesc.begin(), lowerDesc.end(), lowerDesc.begin(), ::tolower);
+
+        // Should mention parkour or related terms
+        bool hasRelevantContent = lowerDesc.find("parkour") != std::string::npos ||
+                                 lowerDesc.find("platform") != std::string::npos ||
+                                 lowerDesc.find("jump") != std::string::npos ||
+                                 lowerDesc.find("challenge") != std::string::npos;
+
+        EXPECT_TRUE(hasRelevantContent) << "Description lacks relevant content: " << map.description;
+    }
+}
+
+TEST_F(ParkourMapGeneratorTest, MapElementsHaveConsistentTypes) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
+
+    for (const auto& map : maps) {
+        for (const auto& element : map.elements) {
+            // Check that element properties are consistent with its type
+            switch (element.type) {
+                case ParkourShapeType::Cube:
+                    // Cubes should have reasonable dimensions
+                    EXPECT_GT(element.size.x, 0.1f);
+                    EXPECT_GT(element.size.y, 0.1f);
+                    EXPECT_GT(element.size.z, 0.1f);
+                    break;
+
+                case ParkourShapeType::Sphere:
+                    // Spheres should have radius in size.x
+                    EXPECT_GT(element.size.x, 0.1f); // radius
+                    break;
+
+                case ParkourShapeType::Cylinder:
+                    // Cylinders should have radius and height
+                    EXPECT_GT(element.size.x, 0.1f); // radius
+                    EXPECT_GT(element.size.y, 0.1f); // height
+                    break;
+
+                default:
+                    // Other shapes should have valid sizes
+                    EXPECT_GT(element.size.x, 0.0f);
+                    EXPECT_GT(element.size.y, 0.0f);
+                    EXPECT_GT(element.size.z, 0.0f);
+                    break;
             }
         }
     }
-
-    EXPECT_TRUE(areDifferent);
 }
 
-TEST_F(ParkourMapGeneratorTest, SameSeedsProduceIdenticalMaps) {
-    generator->SetSeed(99999);
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-    auto platforms1 = generator->GetPlatforms();
+TEST_F(ParkourMapGeneratorTest, MapDifficultyCorrelatesWithElementCount) {
+    auto maps = ParkourMapGenerator::GetAllParkourMaps();
 
-    generator->SetSeed(99999); // Same seed
-    generator->GenerateMap();
-    auto platforms2 = generator->GetPlatforms();
+    // Sort maps by difficulty
+    std::sort(maps.begin(), maps.end(),
+              [](const ParkourTestMap& a, const ParkourTestMap& b) {
+                  return a.difficulty < b.difficulty;
+              });
 
-    EXPECT_EQ(platforms1.size(), platforms2.size());
+    // Higher difficulty maps should generally have more elements
+    for (size_t i = 1; i < maps.size(); i++) {
+        int prevElementCount = maps[i - 1].elements.size();
+        int currElementCount = maps[i].elements.size();
 
-    for (size_t i = 0; i < platforms1.size(); i++) {
-        EXPECT_EQ(platforms1[i].position.x, platforms2[i].position.x);
-        EXPECT_EQ(platforms1[i].position.y, platforms2[i].position.y);
-        EXPECT_EQ(platforms1[i].position.z, platforms2[i].position.z);
-    }
-}
-
-TEST_F(ParkourMapGeneratorTest, MapGenerationIsDeterministicWithSeed) {
-    generator->SetSeed(77777);
-    generator->SetDifficulty(DifficultyLevel::Medium);
-
-    // Generate multiple times with same seed
-    for (int i = 0; i < 5; i++) {
-        generator->GenerateMap();
-        auto platforms = generator->GetPlatforms();
-
-        EXPECT_GT(platforms.size(), 0);
-
-        // All generations should be identical
-        if (i > 0) {
-            auto prevPlatforms = generator->GetPlatforms();
-            EXPECT_EQ(platforms.size(), prevPlatforms.size());
+        // If difficulty increases, element count should not decrease significantly
+        if (maps[i].difficulty > maps[i - 1].difficulty) {
+            // Allow some flexibility in element count vs difficulty correlation
+            float elementRatio = static_cast<float>(currElementCount) / prevElementCount;
+            EXPECT_GE(elementRatio, 0.5f) << "Element count drops too drastically between difficulties";
         }
     }
 }
 
-TEST_F(ParkourMapGeneratorTest, ClearResetsGenerator) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
+TEST_F(ParkourMapGeneratorTest, StaticClassMethodsWorkCorrectly) {
+    // Test that static methods work without instance
+    EXPECT_NO_THROW({
+        auto maps = ParkourMapGenerator::GetAllParkourMaps();
+        EXPECT_GT(maps.size(), 0);
+    });
 
-    EXPECT_TRUE(generator->IsGenerated());
-    EXPECT_GT(generator->GetPlatformCount(), 0);
+    EXPECT_NO_THROW({
+        auto map = ParkourMapGenerator::GetMapByName("nonexistent");
+        EXPECT_TRUE(map.name.empty());
+    });
 
-    generator->Clear();
-
-    EXPECT_FALSE(generator->IsGenerated());
-    EXPECT_EQ(generator->GetPlatformCount(), 0);
-}
-
-TEST_F(ParkourMapGeneratorTest, GetPlatformByIndexWorks) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-
-    int platformCount = generator->GetPlatformCount();
-    EXPECT_GT(platformCount, 0);
-
-    for (int i = 0; i < platformCount; i++) {
-        auto platform = generator->GetPlatform(i);
-        EXPECT_TRUE(platform != nullptr);
-
-        // Platform should have valid properties
-        EXPECT_GT(platform->size.x, 0.0f);
-        EXPECT_GT(platform->size.y, 0.0f);
-        EXPECT_GT(platform->size.z, 0.0f);
-    }
-}
-
-TEST_F(ParkourMapGeneratorTest, GetPlatformByInvalidIndexReturnsNull) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-
-    auto invalidPlatform = generator->GetPlatform(-1);
-    EXPECT_TRUE(invalidPlatform == nullptr);
-
-    invalidPlatform = generator->GetPlatform(99999);
-    EXPECT_TRUE(invalidPlatform == nullptr);
-}
-
-TEST_F(ParkourMapGeneratorTest, MapHasStartAndEndPlatforms) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-
-    auto platforms = generator->GetPlatforms();
-    EXPECT_GT(platforms.size(), 1);
-
-    // First platform should be at reasonable starting position
-    EXPECT_NEAR(platforms[0].position.y, 0.0f, 2.0f); // Near ground level
-    EXPECT_NEAR(platforms[0].position.x, 0.0f, 2.0f); // Near origin
-    EXPECT_NEAR(platforms[0].position.z, 0.0f, 2.0f); // Near origin
-
-    // Last platform should be reachable
-    const auto& last = platforms.back();
-    EXPECT_GT(last.position.y, 0.0f); // Above ground
-    EXPECT_LT(last.position.y, 50.0f); // Not too high
-}
-
-TEST_F(ParkourMapGeneratorTest, PlatformColorsAreAssigned) {
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-
-    auto platforms = generator->GetPlatforms();
-
-    for (const auto& platform : platforms) {
-        // Color should be valid (not black unless specified)
-        bool hasColor = platform.color.r > 0 || platform.color.g > 0 ||
-                       platform.color.b > 0 || platform.color.a > 0;
-        EXPECT_TRUE(hasColor);
-    }
-}
-
-TEST_F(ParkourMapGeneratorTest, MovingPlatformsAreCreatedForHigherDifficulties) {
-    // Test difficulty should not have moving platforms
-    generator->SetDifficulty(DifficultyLevel::Test);
-    generator->GenerateMap();
-    auto testMovingPlatforms = generator->GetMovingPlatforms();
-    EXPECT_EQ(testMovingPlatforms.size(), 0);
-
-    // Easy might have some moving platforms
-    generator->SetDifficulty(DifficultyLevel::Easy);
-    generator->GenerateMap();
-    auto easyMovingPlatforms = generator->GetMovingPlatforms();
-
-    // Medium should have more moving platforms
-    generator->SetDifficulty(DifficultyLevel::Medium);
-    generator->GenerateMap();
-    auto mediumMovingPlatforms = generator->GetMovingPlatforms();
-
-    // Hard should have the most moving platforms
-    generator->SetDifficulty(DifficultyLevel::Hard);
-    generator->GenerateMap();
-    auto hardMovingPlatforms = generator->GetMovingPlatforms();
-
-    // Higher difficulties should have more moving platforms
-    EXPECT_GE(mediumMovingPlatforms.size(), easyMovingPlatforms.size());
-    EXPECT_GE(hardMovingPlatforms.size(), mediumMovingPlatforms.size());
-}
-
-TEST_F(ParkourMapGeneratorTest, BreakablePlatformsAreCreated) {
-    generator->SetDifficulty(DifficultyLevel::Hard);
-    generator->GenerateMap();
-
-    auto breakablePlatforms = generator->GetBreakablePlatforms();
-    EXPECT_GT(breakablePlatforms.size(), 0);
-
-    for (const auto& platform : breakablePlatforms) {
-        EXPECT_GT(platform.health, 0);
-        EXPECT_GT(platform.respawnTime, 0.0f);
-    }
-}
-
-TEST_F(ParkourMapGeneratorTest, MapDifficultyAffectsComplexity) {
-    std::vector<DifficultyLevel> difficulties = {
-        DifficultyLevel::Test, DifficultyLevel::Easy,
-        DifficultyLevel::Medium, DifficultyLevel::Hard
-    };
-
-    std::vector<int> platformCounts;
-
-    for (auto difficulty : difficulties) {
-        generator->SetDifficulty(difficulty);
-        generator->GenerateMap();
-        platformCounts.push_back(generator->GetPlatformCount());
-    }
-
-    // Higher difficulties should generally have more platforms
-    EXPECT_GE(platformCounts[1], platformCounts[0]); // Easy >= Test
-    EXPECT_GE(platformCounts[2], platformCounts[1]); // Medium >= Easy
-    EXPECT_GE(platformCounts[3], platformCounts[2]); // Hard >= Medium
+    EXPECT_NO_THROW({
+        auto cube = ParkourMapGenerator::CreateCube({0, 0, 0}, {1, 1, 1}, RED);
+        EXPECT_EQ(cube.type, ParkourShapeType::Cube);
+    });
 }
