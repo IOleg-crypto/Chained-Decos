@@ -1,5 +1,0 @@
-if(EXISTS "D:/gitnext/Chained Decos/build/tests/ChainedDecosTests[1]_tests.cmake")
-  include("D:/gitnext/Chained Decos/build/tests/ChainedDecosTests[1]_tests.cmake")
-else()
-  add_test(ChainedDecosTests_NOT_BUILT ChainedDecosTests_NOT_BUILT)
-endif()
