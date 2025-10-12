@@ -298,7 +298,15 @@ jobs:
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             if [[ -f "bin/tests/ChainedDecosUnitTests.exe" ]]; then
               echo "=== UNIT TESTS RESULTS ==="
-              bin/tests/ChainedDecosUnitTests.exe --gtest_output="xml:unit_test_results.xml" || echo "⚠️ Unit tests failed with exit code $?"
+              echo "Running: bin/tests/ChainedDecosUnitTests.exe"
+              bin/tests/ChainedDecosUnitTests.exe
+              unit_test_exit_code=$?
+              echo "Unit tests exit code: $unit_test_exit_code"
+              if [[ $unit_test_exit_code -ne 0 ]]; then
+                echo "⚠️ Unit tests failed with exit code $unit_test_exit_code"
+              else
+                echo "✅ Unit tests passed"
+              fi
               echo "=== END UNIT TESTS ==="
             else
               echo "❌ ChainedDecosUnitTests.exe not found in bin/tests/"
@@ -309,7 +317,15 @@ jobs:
             echo "🧪 Running integration tests..."
             if [[ -f "bin/tests/ChainedDecosIntegrationTests.exe" ]]; then
               echo "=== INTEGRATION TESTS RESULTS ==="
-              bin/tests/ChainedDecosIntegrationTests.exe --gtest_output="xml:integration_test_results.xml" || echo "⚠️ Integration tests failed with exit code $?"
+              echo "Running: bin/tests/ChainedDecosIntegrationTests.exe"
+              bin/tests/ChainedDecosIntegrationTests.exe
+              integration_test_exit_code=$?
+              echo "Integration tests exit code: $integration_test_exit_code"
+              if [[ $integration_test_exit_code -ne 0 ]]; then
+                echo "⚠️ Integration tests failed with exit code $integration_test_exit_code"
+              else
+                echo "✅ Integration tests passed"
+              fi
               echo "=== END INTEGRATION TESTS ==="
             else
               echo "❌ ChainedDecosIntegrationTests.exe not found in bin/tests/"
@@ -319,7 +335,15 @@ jobs:
           else
             if [[ -f "bin/tests/ChainedDecosUnitTests" ]]; then
               echo "=== UNIT TESTS RESULTS ==="
-              bin/tests/ChainedDecosUnitTests --gtest_output="xml:unit_test_results.xml" || echo "⚠️ Unit tests failed with exit code $?"
+              echo "Running: bin/tests/ChainedDecosUnitTests"
+              bin/tests/ChainedDecosUnitTests
+              unit_test_exit_code=$?
+              echo "Unit tests exit code: $unit_test_exit_code"
+              if [[ $unit_test_exit_code -ne 0 ]]; then
+                echo "⚠️ Unit tests failed with exit code $unit_test_exit_code"
+              else
+                echo "✅ Unit tests passed"
+              fi
               echo "=== END UNIT TESTS ==="
             else
               echo "❌ ChainedDecosUnitTests not found in bin/tests/"
@@ -330,7 +354,15 @@ jobs:
             echo "🧪 Running integration tests..."
             if [[ -f "bin/tests/ChainedDecosIntegrationTests" ]]; then
               echo "=== INTEGRATION TESTS RESULTS ==="
-              bin/tests/ChainedDecosIntegrationTests --gtest_output="xml:integration_test_results.xml" || echo "⚠️ Integration tests failed with exit code $?"
+              echo "Running: bin/tests/ChainedDecosIntegrationTests"
+              bin/tests/ChainedDecosIntegrationTests
+              integration_test_exit_code=$?
+              echo "Integration tests exit code: $integration_test_exit_code"
+              if [[ $integration_test_exit_code -ne 0 ]]; then
+                echo "⚠️ Integration tests failed with exit code $integration_test_exit_code"
+              else
+                echo "✅ Integration tests passed"
+              fi
               echo "=== END INTEGRATION TESTS ==="
             else
               echo "❌ ChainedDecosIntegrationTests not found in bin/tests/"
@@ -341,14 +373,13 @@ jobs:
 
           echo "📊 Test execution completed"
 
-     - name: Upload test results
+     - name: Upload test artifacts
        uses: actions/upload-artifact@v4
        if: always()
        with:
-         name: test-results-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
+         name: test-artifacts-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
          path: |
-           ${{ steps.build-env.outputs.build-output-dir }}/unit_test_results.xml
-           ${{ steps.build-env.outputs.build-output-dir }}/integration_test_results.xml
+           ${{ steps.build-env.outputs.build-output-dir }}/bin/tests/
          retention-days: 7
 
      - name: Upload build artifacts
