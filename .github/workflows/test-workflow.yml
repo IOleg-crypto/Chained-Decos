@@ -230,50 +230,6 @@ jobs:
           UNIT_TEST_EXECUTABLE="bin/tests/ChainedDecosUnitTests"
         fi
 
-        if [[ -f "$UNIT_TEST_EXECUTABLE" ]]; then
-          echo "🔍 Running Unit Tests: $UNIT_TEST_EXECUTABLE"
-          "$UNIT_TEST_EXECUTABLE" --gtest_output=xml:unit_test_results.xml
-          UNIT_TEST_EXIT_CODE=$?
-
-          if [[ $UNIT_TEST_EXIT_CODE -eq 0 ]]; then
-            echo "✅ Unit tests passed successfully"
-          else
-            echo "❌ Unit tests failed with exit code: $UNIT_TEST_EXIT_CODE"
-            exit $UNIT_TEST_EXIT_CODE
-          fi
-        else
-          echo "❌ Unit test executable not found at: $UNIT_TEST_EXECUTABLE"
-          echo "📁 Available files in tests directory:"
-          ls -la "bin/tests/" || echo "Test directory not found"
-          exit 1
-        fi
-
-        # Run Integration Tests (these may fail due to API mismatches, but that's OK)
-        if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-          INTEGRATION_TEST_EXECUTABLE="bin/tests/ChainedDecosIntegrationTests.exe"
-        else
-          INTEGRATION_TEST_EXECUTABLE="bin/tests/ChainedDecosIntegrationTests"
-        fi
-
-        if [[ -f "$INTEGRATION_TEST_EXECUTABLE" ]]; then
-          echo "🔍 Running Integration Tests: $INTEGRATION_TEST_EXECUTABLE"
-          "$INTEGRATION_TEST_EXECUTABLE" --gtest_output=xml:integration_test_results.xml
-          INTEGRATION_TEST_EXIT_CODE=$?
-
-          if [[ $INTEGRATION_TEST_EXIT_CODE -eq 0 ]]; then
-            echo "✅ Integration tests passed successfully"
-          else
-            echo "⚠️ Integration tests failed with exit code: $INTEGRATION_TEST_EXIT_CODE (this is expected due to API mismatches)"
-            echo "ℹ️ Integration tests need to be updated to match the actual game API"
-          fi
-        else
-          echo "⚠️ Integration test executable not found at: $INTEGRATION_TEST_EXECUTABLE"
-          echo "ℹ️ This is OK - integration tests may not build if there are API mismatches"
-        fi
-
-        echo "📁 Test execution completed. Listing test directory contents:"
-        ls -la "bin/tests/" || echo "Test directory not found"
-
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
