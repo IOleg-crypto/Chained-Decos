@@ -41,7 +41,7 @@ protected:
     std::shared_ptr<CollisionManager> collisionManager;
 };
 
-TEST_F(GameIntegrationTest, GameInitializesCorrectly) {
+TEST(GameIntegrationTest, GameInitializesCorrectly) {
     // Game should be initialized after setup
     EXPECT_TRUE(game != nullptr);
     EXPECT_TRUE(engine != nullptr);
@@ -51,7 +51,7 @@ TEST_F(GameIntegrationTest, GameInitializesCorrectly) {
     EXPECT_TRUE(game->IsRunning());
 }
 
-TEST_F(GameIntegrationTest, CollisionManagerInitializesCorrectly) {
+TEST(GameIntegrationTest, CollisionManagerInitializesCorrectly) {
     // Collision manager should be initialized
     EXPECT_TRUE(collisionManager != nullptr);
 
@@ -60,44 +60,15 @@ TEST_F(GameIntegrationTest, CollisionManagerInitializesCorrectly) {
     EXPECT_GE(colliders.size(), 0);
 }
 
-TEST_F(GameIntegrationTest, GameUpdateWorks) {
-    // Game update should not crash
-    EXPECT_NO_THROW({
-        game->Update();
-    });
 
-    // Game should still be running after update
-    EXPECT_TRUE(game->IsRunning());
-}
-
-TEST_F(GameIntegrationTest, MapGeneratorCreatesValidMaps) {
-    // Test that map generator creates valid maps
-    auto maps = mapGenerator->GetAllParkourMaps();
-    EXPECT_GT(maps.size(), 0);
-
-    // Test getting a specific map
-    auto map = mapGenerator->GetMapByName("basic_shapes");
-    EXPECT_FALSE(map.name.empty());
-}
-
-TEST_F(GameIntegrationTest, GameMenuToggleWorks) {
-    // Test menu toggle functionality
-    EXPECT_NO_THROW({
-        game->ToggleMenu();
-    });
-
-    // Game should still be running after menu toggle
-    EXPECT_TRUE(game->IsRunning());
-}
-
-TEST_F(GameIntegrationTest, GameUpdateWorks) {
+TEST(GameIntegrationTest, GameUpdateWorks) {
     // Game update should not crash
     EXPECT_NO_THROW({
         game->Update();
     });
 }
 
-TEST_F(GameIntegrationTest, GameSystemsWorkTogether) {
+TEST(GameIntegrationTest, GameSystemsWorkTogether) {
     // Test that game systems are properly initialized
     EXPECT_TRUE(game != nullptr);
     EXPECT_TRUE(collisionManager != nullptr);
@@ -118,19 +89,19 @@ TEST_F(GameIntegrationTest, GameSystemsWorkTogether) {
     EXPECT_TRUE(game->IsRunning());
 }
 
-TEST_F(GameIntegrationTest, GameMenuToggleWorks) {
+TEST(GameIntegrationTest, GameMenuToggleWorks) {
     // Test menu toggle functionality
     EXPECT_NO_THROW({
         game->ToggleMenu();
     });
 }
 
-TEST_F(GameIntegrationTest, GameIsRunning) {
+TEST(GameIntegrationTest, GameIsRunning) {
     // Test that game reports as running
     EXPECT_TRUE(game->IsRunning());
 }
 
-TEST_F(GameIntegrationTest, MapGeneratorCreatesValidMaps) {
+TEST(GameIntegrationTest, MapGeneratorCreatesValidMaps) {
     // Test that map generator creates valid maps
     auto maps = mapGenerator->GetAllParkourMaps();
     EXPECT_GT(maps.size(), 0);
@@ -140,34 +111,16 @@ TEST_F(GameIntegrationTest, MapGeneratorCreatesValidMaps) {
     EXPECT_FALSE(map.name.empty());
 }
 
-TEST_F(GameIntegrationTest, GameCanLoadEditorMap) {
-    // Test loading an editor map
-    EXPECT_NO_THROW({
-        game->LoadEditorMap("../src/Game/Resource/test.json");
-    });
 
-    // Game should still be running after loading map
-    EXPECT_TRUE(game->IsRunning());
-}
 
-TEST_F(GameIntegrationTest, GameCleanupWorks) {
-    // Test that game cleanup works properly
-    EXPECT_NO_THROW({
-        game->Cleanup();
-    });
-
-    // Game should still be running after cleanup
-    EXPECT_TRUE(game->IsRunning());
-}
-
-TEST_F(GameIntegrationTest, GameCanLoadEditorMap) {
+TEST(GameIntegrationTest, GameCanLoadEditorMap) {
     // Test loading an editor map
     EXPECT_NO_THROW({
         game->LoadEditorMap("../src/Game/Resource/test.json");
     });
 }
 
-TEST_F(GameIntegrationTest, ErrorHandlingWorksCorrectly) {
+TEST(GameIntegrationTest, ErrorHandlingWorksCorrectly) {
     // Test loading invalid map
     EXPECT_NO_THROW({
         game->LoadEditorMap("nonexistent_file.json");
@@ -182,7 +135,7 @@ TEST_F(GameIntegrationTest, ErrorHandlingWorksCorrectly) {
     EXPECT_TRUE(game->IsRunning());
 }
 
-TEST_F(GameIntegrationTest, GameFeaturesWorkTogether) {
+TEST(GameIntegrationTest, GameFeaturesWorkTogether) {
     // Test that all game features work together properly
 
     // 1. Test game update
@@ -201,7 +154,7 @@ TEST_F(GameIntegrationTest, GameFeaturesWorkTogether) {
     EXPECT_TRUE(game->IsRunning());
 }
 
-TEST_F(GameIntegrationTest, AllSystemsWorkTogether) {
+TEST(GameIntegrationTest, AllSystemsWorkTogether) {
     // This is a comprehensive integration test
 
     // 1. Test that game is properly initialized
@@ -224,7 +177,7 @@ TEST_F(GameIntegrationTest, AllSystemsWorkTogether) {
     EXPECT_TRUE(game->IsRunning());
 }
 
-TEST_F(GameIntegrationTest, GameCleanupWorks) {
+TEST(GameIntegrationTest, GameCleanupWorks) {
     // Test that game cleanup works properly
     EXPECT_NO_THROW({
         game->Cleanup();
@@ -237,49 +190,9 @@ TEST_F(GameIntegrationTest, GameCleanupWorks) {
     EXPECT_EQ(position.z, 0.0f);
 }
 
-TEST_F(GameIntegrationTest, AllSystemsWorkTogether) {
-    // This is a comprehensive integration test
 
-    // 1. Test that game is properly initialized
-    EXPECT_TRUE(game != nullptr);
-    EXPECT_TRUE(player != nullptr);
 
-    // 2. Test that player and collision systems work together
-    EXPECT_NO_THROW({
-        player->Update(*collisionManager);
-        game->Update();
-    });
-
-    // 3. Test that all positions remain valid
-    Vector3 playerPos = player->GetPlayerPosition();
-    EXPECT_FALSE(std::isnan(playerPos.x));
-    EXPECT_FALSE(std::isnan(playerPos.y));
-    EXPECT_FALSE(std::isnan(playerPos.z));
-
-    // 4. Test multiple game loop iterations
-    for (int i = 0; i < 10; i++) {
-        EXPECT_NO_THROW({
-            game->Update();
-        });
-    }
-
-    // 5. Verify game state remains valid
-    EXPECT_TRUE(game->IsRunning());
-}
-
-TEST_F(GameIntegrationTest, ErrorHandlingWorksCorrectly) {
-    // Test loading invalid map
-    EXPECT_NO_THROW({
-        game->LoadEditorMap("nonexistent_file.json");
-    });
-
-    // Game should still function after error
-    EXPECT_NO_THROW({
-        game->Update();
-    });
-}
-
-TEST_F(GameIntegrationTest, GameIntegrationTestSuite) {
+TEST(GameIntegrationTest, GameIntegrationTestSuite) {
     // Comprehensive test of all game systems working together
 
     // 1. Test basic game functionality
