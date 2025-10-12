@@ -223,12 +223,63 @@ jobs:
         cd "${{ steps.build-env.outputs.build-output-dir }}"
         echo "🧪 Running Google Tests..."
 
-        # Run Unit Tests (these should work perfectly)
+        # Determine executable names based on OS
         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
           UNIT_TEST_EXECUTABLE="bin/tests/ChainedDecosUnitTests.exe"
+          INTEGRATION_TEST_EXECUTABLE="bin/tests/ChainedDecosIntegrationTests.exe"
         else
           UNIT_TEST_EXECUTABLE="bin/tests/ChainedDecosUnitTests"
+          INTEGRATION_TEST_EXECUTABLE="bin/tests/ChainedDecosIntegrationTests"
         fi
+
+        echo "🔍 Looking for test executables..."
+        echo "   Unit tests: $UNIT_TEST_EXECUTABLE"
+        echo "   Integration tests: $INTEGRATION_TEST_EXECUTABLE"
+
+        # Run Unit Tests
+        if [[ -f "$UNIT_TEST_EXECUTABLE" ]]; then
+          echo "=== UNIT TESTS RESULTS ==="
+          echo "Running: $UNIT_TEST_EXECUTABLE"
+          "$UNIT_TEST_EXECUTABLE"
+          unit_test_exit_code=$?
+          echo ""
+          echo "Unit tests exit code: $unit_test_exit_code"
+          if [[ $unit_test_exit_code -ne 0 ]]; then
+            echo "⚠️ Unit tests failed with exit code $unit_test_exit_code"
+          else
+            echo "✅ Unit tests passed"
+          fi
+          echo "=== END UNIT TESTS ==="
+        else
+          echo "❌ Unit test executable not found: $UNIT_TEST_EXECUTABLE"
+          find . -name "*test*" -type f -executable
+          exit 1
+        fi
+
+        echo ""
+
+        # Run Integration Tests
+        if [[ -f "$INTEGRATION_TEST_EXECUTABLE" ]]; then
+          echo "=== INTEGRATION TESTS RESULTS ==="
+          echo "Running: $INTEGRATION_TEST_EXECUTABLE"
+          "$INTEGRATION_TEST_EXECUTABLE"
+          integration_test_exit_code=$?
+          echo ""
+          echo "Integration tests exit code: $integration_test_exit_code"
+          if [[ $integration_test_exit_code -ne 0 ]]; then
+            echo "⚠️ Integration tests failed with exit code $integration_test_exit_code"
+          else
+            echo "✅ Integration tests passed"
+          fi
+          echo "=== END INTEGRATION TESTS ==="
+        else
+          echo "❌ Integration test executable not found: $INTEGRATION_TEST_EXECUTABLE"
+          find . -name "*test*" -type f -executable
+          exit 1
+        fi
+
+        echo ""
+        echo "📊 All tests completed"
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
