@@ -265,7 +265,7 @@ target_link_libraries(ChainedDecos PRIVATE
 )
 
 if(BUILD_TESTS)
-    add_subdirectory(tests)
+    add_subdirectory(tests ${CMAKE_CURRENT_BINARY_DIR}/tests)
 endif()
 
 if(BUILD_MAP_EDITOR)
@@ -288,11 +288,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos_debug")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos")
-endif()
-
-# Enable testing if requested
-if(BUILD_TESTS)
-    add_subdirectory(tests)
 endif()
 
 # Enable benchmarks if requested
