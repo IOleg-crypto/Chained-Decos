@@ -4,22 +4,22 @@
 #include <vector>
 
 // Test-specific types to avoid raylib dependency
-struct TestVector3 {
+struct CollisionTestVector3 {
     float x, y, z;
-    TestVector3() : x(0), y(0), z(0) {}
-    TestVector3(float x, float y, float z) : x(x), y(y), z(z) {}
+    CollisionTestVector3() : x(0), y(0), z(0) {}
+    CollisionTestVector3(float x, float y, float z) : x(x), y(y), z(z) {}
 
-    bool operator==(const TestVector3& other) const {
+    bool operator==(const CollisionTestVector3& other) const {
         return x == other.x && y == other.y && z == other.z;
     }
 };
 
 struct TestCollision {
-    TestVector3 position;
-    TestVector3 size;
+    CollisionTestVector3 position;
+    CollisionTestVector3 size;
 
     TestCollision() = default;
-    TestCollision(TestVector3 pos, TestVector3 sz) : position(pos), size(sz) {}
+    TestCollision(CollisionTestVector3 pos, CollisionTestVector3 sz) : position(pos), size(sz) {}
 
     bool Intersects(const TestCollision& other) const {
         return !(position.x + size.x/2 < other.position.x - other.size.x/2 ||
@@ -77,7 +77,7 @@ TEST_F(CollisionManagerTest, ConstructorInitializesEmpty) {
 }
 
 TEST_F(CollisionManagerTest, AddColliderWorks) {
-    TestCollision collider(TestVector3{0, 0, 0}, TestVector3{1, 1, 1});
+    TestCollision collider(CollisionTestVector3{0, 0, 0}, CollisionTestVector3{1, 1, 1});
 
     collisionManager->AddCollider(collider);
 
@@ -85,7 +85,7 @@ TEST_F(CollisionManagerTest, AddColliderWorks) {
 }
 
 TEST_F(CollisionManagerTest, ClearCollidersWorks) {
-    TestCollision collider(TestVector3{0, 0, 0}, TestVector3{1, 1, 1});
+    TestCollision collider(CollisionTestVector3{0, 0, 0}, CollisionTestVector3{1, 1, 1});
     collisionManager->AddCollider(collider);
     EXPECT_EQ(collisionManager->GetColliders().size(), 1);
 
@@ -94,8 +94,8 @@ TEST_F(CollisionManagerTest, ClearCollidersWorks) {
 }
 
 TEST_F(CollisionManagerTest, CheckCollisionDetectsOverlappingBoxes) {
-    TestCollision collider1(TestVector3{0, 0, 0}, TestVector3{1, 1, 1});
-    TestCollision collider2(TestVector3{0.5f, 0.5f, 0.5f}, TestVector3{1, 1, 1});
+    TestCollision collider1(CollisionTestVector3{0, 0, 0}, CollisionTestVector3{1, 1, 1});
+    TestCollision collider2(CollisionTestVector3{0.5f, 0.5f, 0.5f}, CollisionTestVector3{1, 1, 1});
 
     collisionManager->AddCollider(collider1);
 
@@ -104,8 +104,8 @@ TEST_F(CollisionManagerTest, CheckCollisionDetectsOverlappingBoxes) {
 }
 
 TEST_F(CollisionManagerTest, CheckCollisionDetectsNonOverlappingBoxes) {
-    TestCollision collider1(TestVector3{0, 0, 0}, TestVector3{1, 1, 1});
-    TestCollision collider2(TestVector3{3, 3, 3}, TestVector3{1, 1, 1});
+    TestCollision collider1(CollisionTestVector3{0, 0, 0}, CollisionTestVector3{1, 1, 1});
+    TestCollision collider2(CollisionTestVector3{3, 3, 3}, CollisionTestVector3{1, 1, 1});
 
     collisionManager->AddCollider(collider1);
 
@@ -114,9 +114,9 @@ TEST_F(CollisionManagerTest, CheckCollisionDetectsNonOverlappingBoxes) {
 }
 
 TEST_F(CollisionManagerTest, MultipleCollidersWork) {
-    TestCollision collider1(TestVector3{0, 0, 0}, TestVector3{1, 1, 1});
-    TestCollision collider2(TestVector3{2, 2, 2}, TestVector3{1, 1, 1});
-    TestCollision collider3(TestVector3{1, 1, 1}, TestVector3{1, 1, 1});
+    TestCollision collider1(CollisionTestVector3{0, 0, 0}, CollisionTestVector3{1, 1, 1});
+    TestCollision collider2(CollisionTestVector3{2, 2, 2}, CollisionTestVector3{1, 1, 1});
+    TestCollision collider3(CollisionTestVector3{1, 1, 1}, CollisionTestVector3{1, 1, 1});
 
     collisionManager->AddCollider(collider1);
     collisionManager->AddCollider(collider2);
@@ -128,7 +128,7 @@ TEST_F(CollisionManagerTest, MultipleCollidersWork) {
     EXPECT_TRUE(collision1); // Should collide with collider2
 
     // Test collision with overlapping collider
-    TestCollision collider4(TestVector3{10, 10, 10}, TestVector3{1, 1, 1});
+    TestCollision collider4(CollisionTestVector3{10, 10, 10}, CollisionTestVector3{1, 1, 1});
     bool collision2 = collisionManager->CheckCollision(collider4);
     EXPECT_FALSE(collision2); // Should not collide with any
 }
