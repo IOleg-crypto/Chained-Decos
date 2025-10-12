@@ -1,0 +1,2 @@
+D:/gitnext/Chained Decos/build/Ninja/CMakeFiles/CMakeScratch/TryCompile-hwkavt/CMakeFiles/cmTC_f92f1.dir
+D:/gitnext/Chained Decos/build/Ninja/CMakeFiles/CMakeScratch/TryCompile-hwkavt/CMakeFiles/ALL_BUILD.dir
