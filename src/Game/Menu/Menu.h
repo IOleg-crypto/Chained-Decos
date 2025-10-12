@@ -239,6 +239,9 @@ public:
     void ApplyParkourControlsOption(MenuOption& opt);
     std::string GetGameplaySettingValue(const std::string& settingName) const;
     std::string GetParkourControlsSettingValue(const std::string& settingName) const;
+
+    // Test accessor method
+    [[nodiscard]] bool IsVisible() const { return m_state != MenuState::Main || m_gameInProgress; }
 };
 
 #endif // MENU_H
