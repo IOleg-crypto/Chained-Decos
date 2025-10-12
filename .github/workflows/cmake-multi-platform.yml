@@ -181,6 +181,7 @@ jobs:
 
     - name: Clean FetchContent subprojects
       shell: bash
+      if: matrix.os == 'windows-2022'
       run: |
         echo "🧹 Removing old FetchContent subprojects (raylib, etc.)..."
         find "${{ github.workspace }}" -type d -name ".deps" -exec rm -rf {} + 2>/dev/null || true
