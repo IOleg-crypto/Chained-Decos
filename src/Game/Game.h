@@ -75,6 +75,15 @@ public:
     // Map loading and rendering
     void LoadEditorMap(const std::string& mapPath);
     void RenderEditorMap();
+
+    // Test accessor methods - public for testing purposes
+    Player& GetPlayer() { return m_player; }
+    CollisionManager& GetCollisionManager() { return m_collisionManager; }
+    ModelLoader& GetModels() { return m_models; }
+    WorldManager& GetWorld() { return m_world; }
+    Menu& GetMenu() { return m_menu; }
+    GameMap& GetGameMap() { return m_gameMap; }
+    bool IsInitialized() const { return m_isGameInitialized; }
 };
 
 #endif // GAME_H

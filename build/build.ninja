@@ -57,8 +57,6 @@ build CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj: CXX_COMPILER__img
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\rlImGui
-  TARGET_COMPILE_PDB = CMakeFiles\imguilib.dir\imguilib.pdb
-  TARGET_PDB = libimguilib.pdb
 
 build CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj: CXX_COMPILER__imguilib_unscanned_Debug D$:/gitnext/Chained$ Decos/include/imgui/imgui.cpp || cmake_object_order_depends_target_imguilib
   CONFIG = Debug
@@ -68,8 +66,6 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj: CXX_COMPILER__imguili
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
-  TARGET_COMPILE_PDB = CMakeFiles\imguilib.dir\imguilib.pdb
-  TARGET_PDB = libimguilib.pdb
 
 build CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj: CXX_COMPILER__imguilib_unscanned_Debug D$:/gitnext/Chained$ Decos/include/imgui/imgui_draw.cpp || cmake_object_order_depends_target_imguilib
   CONFIG = Debug
@@ -79,8 +75,6 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj: CXX_COMPILER__im
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
-  TARGET_COMPILE_PDB = CMakeFiles\imguilib.dir\imguilib.pdb
-  TARGET_PDB = libimguilib.pdb
 
 build CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj: CXX_COMPILER__imguilib_unscanned_Debug D$:/gitnext/Chained$ Decos/include/imgui/imgui_widgets.cpp || cmake_object_order_depends_target_imguilib
   CONFIG = Debug
@@ -90,8 +84,6 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj: CXX_COMPILER_
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
-  TARGET_COMPILE_PDB = CMakeFiles\imguilib.dir\imguilib.pdb
-  TARGET_PDB = libimguilib.pdb
 
 build CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj: CXX_COMPILER__imguilib_unscanned_Debug D$:/gitnext/Chained$ Decos/include/imgui/imgui_tables.cpp || cmake_object_order_depends_target_imguilib
   CONFIG = Debug
@@ -101,8 +93,6 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj: CXX_COMPILER__
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
-  TARGET_COMPILE_PDB = CMakeFiles\imguilib.dir\imguilib.pdb
-  TARGET_PDB = libimguilib.pdb
 
 build CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj: CXX_COMPILER__imguilib_unscanned_Debug D$:/gitnext/Chained$ Decos/include/imgui/imgui_demo.cpp || cmake_object_order_depends_target_imguilib
   CONFIG = Debug
@@ -112,8 +102,6 @@ build CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj: CXX_COMPILER__im
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui
-  TARGET_COMPILE_PDB = CMakeFiles\imguilib.dir\imguilib.pdb
-  TARGET_PDB = libimguilib.pdb
 
 build CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj: CXX_COMPILER__imguilib_unscanned_Debug D$:/gitnext/Chained$ Decos/include/imgui/misc/cpp/imgui_stdlib.cpp || cmake_object_order_depends_target_imguilib
   CONFIG = Debug
@@ -123,8 +111,6 @@ build CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj: CXX_C
   INCLUDES = -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = CMakeFiles\imguilib.dir
   OBJECT_FILE_DIR = CMakeFiles\imguilib.dir\include\imgui\misc\cpp
-  TARGET_COMPILE_PDB = CMakeFiles\imguilib.dir\imguilib.pdb
-  TARGET_PDB = libimguilib.pdb
 
 
 # =============================================================================
@@ -140,9 +126,8 @@ build libimguilib.a: CXX_STATIC_LIBRARY_LINKER__imguilib_Debug CMakeFiles/imguil
   OBJECT_DIR = CMakeFiles\imguilib.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = CMakeFiles\imguilib.dir\imguilib.pdb
   TARGET_FILE = libimguilib.a
-  TARGET_PDB = libimguilib.pdb
+  TARGET_PDB = imguilib.a.dbg
 
 # =============================================================================
 # Object build statements for EXECUTABLE target ChainedDecos
@@ -161,8 +146,6 @@ build CMakeFiles/ChainedDecos.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__Chain
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map" -I"D:/gitnext/Chained Decos/src/Game/GameFeatures"
   OBJECT_DIR = CMakeFiles\ChainedDecos.dir
   OBJECT_FILE_DIR = CMakeFiles\ChainedDecos.dir\Unity
-  TARGET_COMPILE_PDB = CMakeFiles\ChainedDecos.dir\
-  TARGET_PDB = bin\ChainedDecos_debug.pdb
 
 
 # =============================================================================
@@ -179,10 +162,9 @@ build bin/ChainedDecos_debug.exe: CXX_EXECUTABLE_LINKER__ChainedDecos_Debug CMak
   OBJECT_DIR = CMakeFiles\ChainedDecos.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = CMakeFiles\ChainedDecos.dir\
   TARGET_FILE = bin\ChainedDecos_debug.exe
   TARGET_IMPLIB = lib\libChainedDecos_debug.dll.a
-  TARGET_PDB = bin\ChainedDecos_debug.pdb
+  TARGET_PDB = ChainedDecos_debug.exe.dbg
 
 
 #############################################
@@ -404,8 +386,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raylib.pdb"
-  TARGET_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.pdb"
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raudio.c.obj.d
 
 build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj: C_COMPILER__raylib_unscanned_Debug D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/rcore.c || cmake_object_order_depends_target_raylib
@@ -416,8 +396,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raylib.pdb"
-  TARGET_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.pdb"
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rcore.c.obj.d
 
 build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj: C_COMPILER__raylib_unscanned_Debug D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/rmodels.c || cmake_object_order_depends_target_raylib
@@ -428,8 +406,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raylib.pdb"
-  TARGET_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.pdb"
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rmodels.c.obj.d
 
 build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj: C_COMPILER__raylib_unscanned_Debug D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/rshapes.c || cmake_object_order_depends_target_raylib
@@ -440,8 +416,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raylib.pdb"
-  TARGET_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.pdb"
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rshapes.c.obj.d
 
 build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj: C_COMPILER__raylib_unscanned_Debug D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/rtext.c || cmake_object_order_depends_target_raylib
@@ -452,8 +426,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raylib.pdb"
-  TARGET_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.pdb"
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rtext.c.obj.d
 
 build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj: C_COMPILER__raylib_unscanned_Debug D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/rtextures.c || cmake_object_order_depends_target_raylib
@@ -464,8 +436,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raylib.pdb"
-  TARGET_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.pdb"
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\rtextures.c.obj.d
 
 build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj: C_COMPILER__raylib_unscanned_Debug D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/utils.c || cmake_object_order_depends_target_raylib
@@ -476,8 +446,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CMakeFiles/raylib.dir
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -isystem "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raylib.pdb"
-  TARGET_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.pdb"
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\utils.c.obj.d
 
 
@@ -494,9 +462,8 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/libraylib.a: C_STATIC
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir"
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\CMakeFiles\raylib.dir\raylib.pdb"
   TARGET_FILE = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.a"
-  TARGET_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\libraylib.pdb"
+  TARGET_PDB = raylib.a.dbg
 
 
 #############################################
@@ -705,8 +672,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/CMa
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/src" -I"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\Unity"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\\"
-  TARGET_PDB = ""
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\Unity\unity_1_c.c.obj.d
 
 build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_0_c.c.obj: C_COMPILER__glfw_unscanned_Debug D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_0_c.c || cmake_object_order_depends_target_glfw
@@ -717,8 +682,6 @@ build D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/CMa
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/src" -I"D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\Unity"
-  TARGET_COMPILE_PDB = "D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\\"
-  TARGET_PDB = ""
   depfile = D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\CMakeFiles\glfw.dir\Unity\unity_0_c.c.obj.d
 
 
@@ -1044,8 +1007,6 @@ build D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/CMakeFiles/gm
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include" -I"D:/gitnext/Chained Decos/.deps/googletest-src/googlemock" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googlemock\CMakeFiles\gmock.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googlemock\CMakeFiles\gmock.dir\Unity"
-  TARGET_COMPILE_PDB = lib\libgmockpdb_debug_postfix-NOTFOUND.pdb
-  TARGET_PDB = bin\libgmockpdb_debug_postfix-NOTFOUND.pdb
   depfile = D:\gitnext\Chained Decos\.deps\googletest-build\googlemock\CMakeFiles\gmock.dir\Unity\unity_0_cxx.cxx.obj.d
 
 
@@ -1062,9 +1023,8 @@ build lib/libgmock.a: CXX_STATIC_LIBRARY_LINKER__gmock_Debug D$:/gitnext/Chained
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googlemock\CMakeFiles\gmock.dir"
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = lib\libgmockpdb_debug_postfix-NOTFOUND.pdb
   TARGET_FILE = lib\libgmock.a
-  TARGET_PDB = bin\libgmockpdb_debug_postfix-NOTFOUND.pdb
+  TARGET_PDB = gmock.a.dbg
 
 # =============================================================================
 # Object build statements for STATIC_LIBRARY target gmock_main
@@ -1083,8 +1043,6 @@ build D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/CMakeFiles/gm
   INCLUDES = -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\Unity"
-  TARGET_COMPILE_PDB = lib\libgmock_mainpdb_debug_postfix-NOTFOUND.pdb
-  TARGET_PDB = bin\libgmock_mainpdb_debug_postfix-NOTFOUND.pdb
   depfile = D:\gitnext\Chained Decos\.deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir\Unity\unity_0_cxx.cxx.obj.d
 
 
@@ -1101,9 +1059,8 @@ build lib/libgmock_main.a: CXX_STATIC_LIBRARY_LINKER__gmock_main_Debug D$:/gitne
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googlemock\CMakeFiles\gmock_main.dir"
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = lib\libgmock_mainpdb_debug_postfix-NOTFOUND.pdb
   TARGET_FILE = lib\libgmock_main.a
-  TARGET_PDB = bin\libgmock_mainpdb_debug_postfix-NOTFOUND.pdb
+  TARGET_PDB = gmock_main.a.dbg
 
 
 #############################################
@@ -1217,8 +1174,6 @@ build D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/CMakeFiles/gt
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -I"D:/gitnext/Chained Decos/.deps/googletest-src/googletest"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googletest\CMakeFiles\gtest.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googletest\CMakeFiles\gtest.dir\Unity"
-  TARGET_COMPILE_PDB = lib\libgtestpdb_debug_postfix-NOTFOUND.pdb
-  TARGET_PDB = bin\libgtestpdb_debug_postfix-NOTFOUND.pdb
   depfile = D:\gitnext\Chained Decos\.deps\googletest-build\googletest\CMakeFiles\gtest.dir\Unity\unity_0_cxx.cxx.obj.d
 
 
@@ -1235,9 +1190,8 @@ build lib/libgtest.a: CXX_STATIC_LIBRARY_LINKER__gtest_Debug D$:/gitnext/Chained
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googletest\CMakeFiles\gtest.dir"
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = lib\libgtestpdb_debug_postfix-NOTFOUND.pdb
   TARGET_FILE = lib\libgtest.a
-  TARGET_PDB = bin\libgtestpdb_debug_postfix-NOTFOUND.pdb
+  TARGET_PDB = gtest.a.dbg
 
 # =============================================================================
 # Object build statements for STATIC_LIBRARY target gtest_main
@@ -1256,8 +1210,6 @@ build D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/CMakeFiles/gt
   INCLUDES = -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest"
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googletest\CMakeFiles\gtest_main.dir"
   OBJECT_FILE_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googletest\CMakeFiles\gtest_main.dir\Unity"
-  TARGET_COMPILE_PDB = lib\libgtest_mainpdb_debug_postfix-NOTFOUND.pdb
-  TARGET_PDB = bin\libgtest_mainpdb_debug_postfix-NOTFOUND.pdb
   depfile = D:\gitnext\Chained Decos\.deps\googletest-build\googletest\CMakeFiles\gtest_main.dir\Unity\unity_0_cxx.cxx.obj.d
 
 
@@ -1274,9 +1226,8 @@ build lib/libgtest_main.a: CXX_STATIC_LIBRARY_LINKER__gtest_main_Debug D$:/gitne
   OBJECT_DIR = "D:\gitnext\Chained Decos\.deps\googletest-build\googletest\CMakeFiles\gtest_main.dir"
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = lib\libgtest_mainpdb_debug_postfix-NOTFOUND.pdb
   TARGET_FILE = lib\libgtest_main.a
-  TARGET_PDB = bin\libgtest_mainpdb_debug_postfix-NOTFOUND.pdb
+  TARGET_PDB = gtest_main.a.dbg
 
 
 #############################################
@@ -1390,8 +1341,6 @@ build src/Engine/CMakeFiles/ChainedDecosEngine.dir/Unity/unity_0_cxx.cxx.obj: CX
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Player"
   OBJECT_DIR = src\Engine\CMakeFiles\ChainedDecosEngine.dir
   OBJECT_FILE_DIR = src\Engine\CMakeFiles\ChainedDecosEngine.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\CMakeFiles\ChainedDecosEngine.dir\ChainedDecosEngine.pdb
-  TARGET_PDB = src\Engine\libChainedDecosEngine.pdb
 
 
 # =============================================================================
@@ -1407,9 +1356,8 @@ build src/Engine/libChainedDecosEngine.a: CXX_STATIC_LIBRARY_LINKER__ChainedDeco
   OBJECT_DIR = src\Engine\CMakeFiles\ChainedDecosEngine.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\CMakeFiles\ChainedDecosEngine.dir\ChainedDecosEngine.pdb
   TARGET_FILE = src\Engine\libChainedDecosEngine.a
-  TARGET_PDB = src\Engine\libChainedDecosEngine.pdb
+  TARGET_PDB = ChainedDecosEngine.a.dbg
 
 
 #############################################
@@ -1523,8 +1471,6 @@ build src/Engine/Collision/CMakeFiles/collision.dir/Unity/unity_0_cxx.cxx.obj: C
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
   OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir
   OBJECT_FILE_DIR = src\Engine\Collision\CMakeFiles\collision.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Collision\CMakeFiles\collision.dir\collision.pdb
-  TARGET_PDB = src\Engine\Collision\libcollision.pdb
 
 
 # =============================================================================
@@ -1540,9 +1486,8 @@ build src/Engine/Collision/libcollision.a: CXX_STATIC_LIBRARY_LINKER__collision_
   OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Collision\CMakeFiles\collision.dir\collision.pdb
   TARGET_FILE = src\Engine\Collision\libcollision.a
-  TARGET_PDB = src\Engine\Collision\libcollision.pdb
+  TARGET_PDB = collision.a.dbg
 
 
 #############################################
@@ -1656,8 +1601,6 @@ build src/Engine/Config/CMakeFiles/config.dir/Unity/unity_0_cxx.cxx.obj: CXX_COM
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Config\CMakeFiles\config.dir
   OBJECT_FILE_DIR = src\Engine\Config\CMakeFiles\config.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Config\CMakeFiles\config.dir\config.pdb
-  TARGET_PDB = src\Engine\Config\libconfig.pdb
 
 
 # =============================================================================
@@ -1673,9 +1616,8 @@ build src/Engine/Config/libconfig.a: CXX_STATIC_LIBRARY_LINKER__config_Debug src
   OBJECT_DIR = src\Engine\Config\CMakeFiles\config.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Config\CMakeFiles\config.dir\config.pdb
   TARGET_FILE = src\Engine\Config\libconfig.a
-  TARGET_PDB = src\Engine\Config\libconfig.pdb
+  TARGET_PDB = config.a.dbg
 
 
 #############################################
@@ -1789,8 +1731,6 @@ build src/Engine/Input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Input\CMakeFiles\input.dir
   OBJECT_FILE_DIR = src\Engine\Input\CMakeFiles\input.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Input\CMakeFiles\input.dir\input.pdb
-  TARGET_PDB = src\Engine\Input\libinput.pdb
 
 
 # =============================================================================
@@ -1806,9 +1746,8 @@ build src/Engine/Input/libinput.a: CXX_STATIC_LIBRARY_LINKER__input_Debug src/En
   OBJECT_DIR = src\Engine\Input\CMakeFiles\input.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Input\CMakeFiles\input.dir\input.pdb
   TARGET_FILE = src\Engine\Input\libinput.a
-  TARGET_PDB = src\Engine\Input\libinput.pdb
+  TARGET_PDB = input.a.dbg
 
 
 #############################################
@@ -1922,8 +1861,6 @@ build src/Engine/Model/CMakeFiles/model.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Collision"
   OBJECT_DIR = src\Engine\Model\CMakeFiles\model.dir
   OBJECT_FILE_DIR = src\Engine\Model\CMakeFiles\model.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Model\CMakeFiles\model.dir\model.pdb
-  TARGET_PDB = src\Engine\Model\libmodel.pdb
 
 
 # =============================================================================
@@ -1939,9 +1876,8 @@ build src/Engine/Model/libmodel.a: CXX_STATIC_LIBRARY_LINKER__model_Debug src/En
   OBJECT_DIR = src\Engine\Model\CMakeFiles\model.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Model\CMakeFiles\model.dir\model.pdb
   TARGET_FILE = src\Engine\Model\libmodel.a
-  TARGET_PDB = src\Engine\Model\libmodel.pdb
+  TARGET_PDB = model.a.dbg
 
 
 #############################################
@@ -2055,8 +1991,6 @@ build src/Engine/Render/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj: CXX_COM
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event"
   OBJECT_DIR = src\Engine\Render\CMakeFiles\render.dir
   OBJECT_FILE_DIR = src\Engine\Render\CMakeFiles\render.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Render\CMakeFiles\render.dir\render.pdb
-  TARGET_PDB = src\Engine\Render\librender.pdb
 
 
 # =============================================================================
@@ -2072,9 +2006,8 @@ build src/Engine/Render/librender.a: CXX_STATIC_LIBRARY_LINKER__render_Debug src
   OBJECT_DIR = src\Engine\Render\CMakeFiles\render.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Render\CMakeFiles\render.dir\render.pdb
   TARGET_FILE = src\Engine\Render\librender.a
-  TARGET_PDB = src\Engine\Render\librender.pdb
+  TARGET_PDB = render.a.dbg
 
 
 #############################################
@@ -2188,8 +2121,6 @@ build src/Engine/CameraController/CMakeFiles/cameracontroller.dir/Unity/unity_0_
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\CameraController\CMakeFiles\cameracontroller.dir
   OBJECT_FILE_DIR = src\Engine\CameraController\CMakeFiles\cameracontroller.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\CameraController\CMakeFiles\cameracontroller.dir\cameracontroller.pdb
-  TARGET_PDB = src\Engine\CameraController\libcameracontroller.pdb
 
 
 # =============================================================================
@@ -2205,9 +2136,8 @@ build src/Engine/CameraController/libcameracontroller.a: CXX_STATIC_LIBRARY_LINK
   OBJECT_DIR = src\Engine\CameraController\CMakeFiles\cameracontroller.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\CameraController\CMakeFiles\cameracontroller.dir\cameracontroller.pdb
   TARGET_FILE = src\Engine\CameraController\libcameracontroller.a
-  TARGET_PDB = src\Engine\CameraController\libcameracontroller.pdb
+  TARGET_PDB = cameracontroller.a.dbg
 
 
 #############################################
@@ -2321,8 +2251,6 @@ build src/Engine/Physics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj: CXX_C
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Physics\CMakeFiles\physics.dir
   OBJECT_FILE_DIR = src\Engine\Physics\CMakeFiles\physics.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Physics\CMakeFiles\physics.dir\physics.pdb
-  TARGET_PDB = src\Engine\Physics\libphysics.pdb
 
 
 # =============================================================================
@@ -2338,9 +2266,8 @@ build src/Engine/Physics/libphysics.a: CXX_STATIC_LIBRARY_LINKER__physics_Debug 
   OBJECT_DIR = src\Engine\Physics\CMakeFiles\physics.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Physics\CMakeFiles\physics.dir\physics.pdb
   TARGET_FILE = src\Engine\Physics\libphysics.a
-  TARGET_PDB = src\Engine\Physics\libphysics.pdb
+  TARGET_PDB = physics.a.dbg
 
 
 #############################################
@@ -2454,8 +2381,6 @@ build src/Engine/World/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src"
   OBJECT_DIR = src\Engine\World\CMakeFiles\world.dir
   OBJECT_FILE_DIR = src\Engine\World\CMakeFiles\world.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\World\CMakeFiles\world.dir\world.pdb
-  TARGET_PDB = src\Engine\World\libworld.pdb
 
 
 # =============================================================================
@@ -2471,9 +2396,8 @@ build src/Engine/World/libworld.a: CXX_STATIC_LIBRARY_LINKER__world_Debug src/En
   OBJECT_DIR = src\Engine\World\CMakeFiles\world.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\World\CMakeFiles\world.dir\world.pdb
   TARGET_FILE = src\Engine\World\libworld.a
-  TARGET_PDB = src\Engine\World\libworld.pdb
+  TARGET_PDB = world.a.dbg
 
 
 #############################################
@@ -2587,8 +2511,6 @@ build src/Engine/CommandLineHandler/CMakeFiles/cmdhandler.dir/Unity/unity_0_cxx.
   INCLUDES = -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\CommandLineHandler\CMakeFiles\cmdhandler.dir
   OBJECT_FILE_DIR = src\Engine\CommandLineHandler\CMakeFiles\cmdhandler.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\CommandLineHandler\CMakeFiles\cmdhandler.dir\cmdhandler.pdb
-  TARGET_PDB = src\Engine\CommandLineHandler\libcmdhandler.pdb
 
 
 # =============================================================================
@@ -2604,9 +2526,8 @@ build src/Engine/CommandLineHandler/libcmdhandler.a: CXX_STATIC_LIBRARY_LINKER__
   OBJECT_DIR = src\Engine\CommandLineHandler\CMakeFiles\cmdhandler.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\CommandLineHandler\CMakeFiles\cmdhandler.dir\cmdhandler.pdb
   TARGET_FILE = src\Engine\CommandLineHandler\libcmdhandler.a
-  TARGET_PDB = src\Engine\CommandLineHandler\libcmdhandler.pdb
+  TARGET_PDB = cmdhandler.a.dbg
 
 
 #############################################
@@ -2720,8 +2641,6 @@ build src/Engine/Kernel/CMakeFiles/kernel.dir/Unity/unity_0_cxx.cxx.obj: CXX_COM
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Kernel\CMakeFiles\kernel.dir
   OBJECT_FILE_DIR = src\Engine\Kernel\CMakeFiles\kernel.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Kernel\CMakeFiles\kernel.dir\kernel.pdb
-  TARGET_PDB = src\Engine\Kernel\libkernel.pdb
 
 
 # =============================================================================
@@ -2737,9 +2656,8 @@ build src/Engine/Kernel/libkernel.a: CXX_STATIC_LIBRARY_LINKER__kernel_Debug src
   OBJECT_DIR = src\Engine\Kernel\CMakeFiles\kernel.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Kernel\CMakeFiles\kernel.dir\kernel.pdb
   TARGET_FILE = src\Engine\Kernel\libkernel.a
-  TARGET_PDB = src\Engine\Kernel\libkernel.pdb
+  TARGET_PDB = kernel.a.dbg
 
 
 #############################################
@@ -2853,8 +2771,6 @@ build src/Engine/Audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Engine\Audio\CMakeFiles\audio.dir
   OBJECT_FILE_DIR = src\Engine\Audio\CMakeFiles\audio.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Audio\CMakeFiles\audio.dir\audio.pdb
-  TARGET_PDB = src\Engine\Audio\libaudio.pdb
 
 
 # =============================================================================
@@ -2870,9 +2786,8 @@ build src/Engine/Audio/libaudio.a: CXX_STATIC_LIBRARY_LINKER__audio_Debug src/En
   OBJECT_DIR = src\Engine\Audio\CMakeFiles\audio.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Audio\CMakeFiles\audio.dir\audio.pdb
   TARGET_FILE = src\Engine\Audio\libaudio.a
-  TARGET_PDB = src\Engine\Audio\libaudio.pdb
+  TARGET_PDB = audio.a.dbg
 
 
 #############################################
@@ -2986,8 +2901,6 @@ build src/Engine/Event/CMakeFiles/event.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Engine"
   OBJECT_DIR = src\Engine\Event\CMakeFiles\event.dir
   OBJECT_FILE_DIR = src\Engine\Event\CMakeFiles\event.dir\Unity
-  TARGET_COMPILE_PDB = src\Engine\Event\CMakeFiles\event.dir\event.pdb
-  TARGET_PDB = src\Engine\Event\libevent.pdb
 
 
 # =============================================================================
@@ -3003,9 +2916,8 @@ build src/Engine/Event/libevent.a: CXX_STATIC_LIBRARY_LINKER__event_Debug src/En
   OBJECT_DIR = src\Engine\Event\CMakeFiles\event.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Engine\Event\CMakeFiles\event.dir\event.pdb
   TARGET_FILE = src\Engine\Event\libevent.a
-  TARGET_PDB = src\Engine\Event\libevent.pdb
+  TARGET_PDB = event.a.dbg
 
 
 #############################################
@@ -3119,8 +3031,6 @@ build src/Game/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx.obj: CXX_CO
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map" -I"D:/gitnext/Chained Decos/src/Game/GameFeatures"
   OBJECT_DIR = src\Game\CMakeFiles\ChainedDecosGame.dir
   OBJECT_FILE_DIR = src\Game\CMakeFiles\ChainedDecosGame.dir\Unity
-  TARGET_COMPILE_PDB = src\Game\CMakeFiles\ChainedDecosGame.dir\ChainedDecosGame.pdb
-  TARGET_PDB = src\Game\libChainedDecosGame.pdb
 
 
 # =============================================================================
@@ -3136,9 +3046,8 @@ build src/Game/libChainedDecosGame.a: CXX_STATIC_LIBRARY_LINKER__ChainedDecosGam
   OBJECT_DIR = src\Game\CMakeFiles\ChainedDecosGame.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Game\CMakeFiles\ChainedDecosGame.dir\ChainedDecosGame.pdb
   TARGET_FILE = src\Game\libChainedDecosGame.a
-  TARGET_PDB = src\Game\libChainedDecosGame.pdb
+  TARGET_PDB = ChainedDecosGame.a.dbg
 
 
 #############################################
@@ -3252,8 +3161,6 @@ build src/Game/Map/CMakeFiles/mapmod.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/Map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
   OBJECT_DIR = src\Game\Map\CMakeFiles\mapmod.dir
   OBJECT_FILE_DIR = src\Game\Map\CMakeFiles\mapmod.dir\Unity
-  TARGET_COMPILE_PDB = src\Game\Map\CMakeFiles\mapmod.dir\mapmod.pdb
-  TARGET_PDB = src\Game\Map\libmapmod.pdb
 
 
 # =============================================================================
@@ -3269,9 +3176,8 @@ build src/Game/Map/libmapmod.a: CXX_STATIC_LIBRARY_LINKER__mapmod_Debug src/Game
   OBJECT_DIR = src\Game\Map\CMakeFiles\mapmod.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Game\Map\CMakeFiles\mapmod.dir\mapmod.pdb
   TARGET_FILE = src\Game\Map\libmapmod.a
-  TARGET_PDB = src\Game\Map\libmapmod.pdb
+  TARGET_PDB = mapmod.a.dbg
 
 
 #############################################
@@ -3385,8 +3291,6 @@ build src/Game/Menu/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER_
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event"
   OBJECT_DIR = src\Game\Menu\CMakeFiles\menu.dir
   OBJECT_FILE_DIR = src\Game\Menu\CMakeFiles\menu.dir\Unity
-  TARGET_COMPILE_PDB = src\Game\Menu\CMakeFiles\menu.dir\menu.pdb
-  TARGET_PDB = src\Game\Menu\libmenu.pdb
 
 
 # =============================================================================
@@ -3402,9 +3306,8 @@ build src/Game/Menu/libmenu.a: CXX_STATIC_LIBRARY_LINKER__menu_Debug src/Game/Me
   OBJECT_DIR = src\Game\Menu\CMakeFiles\menu.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Game\Menu\CMakeFiles\menu.dir\menu.pdb
   TARGET_FILE = src\Game\Menu\libmenu.a
-  TARGET_PDB = src\Game\Menu\libmenu.pdb
+  TARGET_PDB = menu.a.dbg
 
 
 #############################################
@@ -3518,8 +3421,6 @@ build src/Game/Player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPI
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src"
   OBJECT_DIR = src\Game\Player\CMakeFiles\player.dir
   OBJECT_FILE_DIR = src\Game\Player\CMakeFiles\player.dir\Unity
-  TARGET_COMPILE_PDB = src\Game\Player\CMakeFiles\player.dir\player.pdb
-  TARGET_PDB = src\Game\Player\libplayer.pdb
 
 
 # =============================================================================
@@ -3535,9 +3436,8 @@ build src/Game/Player/libplayer.a: CXX_STATIC_LIBRARY_LINKER__player_Debug src/G
   OBJECT_DIR = src\Game\Player\CMakeFiles\player.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Game\Player\CMakeFiles\player.dir\player.pdb
   TARGET_FILE = src\Game\Player\libplayer.a
-  TARGET_PDB = src\Game\Player\libplayer.pdb
+  TARGET_PDB = player.a.dbg
 
 
 #############################################
@@ -3651,8 +3551,6 @@ build src/Game/GameFeatures/CMakeFiles/GameFeatures.dir/Unity/unity_0_cxx.cxx.ob
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/GameFeatures" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
   OBJECT_DIR = src\Game\GameFeatures\CMakeFiles\GameFeatures.dir
   OBJECT_FILE_DIR = src\Game\GameFeatures\CMakeFiles\GameFeatures.dir\Unity
-  TARGET_COMPILE_PDB = src\Game\GameFeatures\CMakeFiles\GameFeatures.dir\GameFeatures.pdb
-  TARGET_PDB = src\Game\GameFeatures\libGameFeatures.pdb
 
 
 # =============================================================================
@@ -3668,9 +3566,8 @@ build src/Game/GameFeatures/libGameFeatures.a: CXX_STATIC_LIBRARY_LINKER__GameFe
   OBJECT_DIR = src\Game\GameFeatures\CMakeFiles\GameFeatures.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Game\GameFeatures\CMakeFiles\GameFeatures.dir\GameFeatures.pdb
   TARGET_FILE = src\Game\GameFeatures\libGameFeatures.a
-  TARGET_PDB = src\Game\GameFeatures\libGameFeatures.pdb
+  TARGET_PDB = GameFeatures.a.dbg
 
 
 #############################################
@@ -3784,8 +3681,6 @@ build tests/CMakeFiles/ChainedDecosUnitTests.dir/Unity/unity_0_cxx.cxx.obj: CXX_
   INCLUDES = -I"D:/gitnext/Chained Decos/tests" -I"D:/gitnext/Chained Decos/src" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock"
   OBJECT_DIR = tests\CMakeFiles\ChainedDecosUnitTests.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\ChainedDecosUnitTests.dir\Unity
-  TARGET_COMPILE_PDB = tests\CMakeFiles\ChainedDecosUnitTests.dir\
-  TARGET_PDB = bin\tests\ChainedDecosUnitTests.pdb
 
 
 # =============================================================================
@@ -3802,10 +3697,9 @@ build bin/tests/ChainedDecosUnitTests.exe: CXX_EXECUTABLE_LINKER__ChainedDecosUn
   OBJECT_DIR = tests\CMakeFiles\ChainedDecosUnitTests.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = tests\CMakeFiles\ChainedDecosUnitTests.dir\
   TARGET_FILE = bin\tests\ChainedDecosUnitTests.exe
   TARGET_IMPLIB = tests\libChainedDecosUnitTests.dll.a
-  TARGET_PDB = bin\tests\ChainedDecosUnitTests.pdb
+  TARGET_PDB = ChainedDecosUnitTests.exe.dbg
 
 # =============================================================================
 # Object build statements for EXECUTABLE target ChainedDecosIntegrationTests
@@ -3824,8 +3718,6 @@ build tests/CMakeFiles/ChainedDecosIntegrationTests.dir/Unity/unity_0_cxx.cxx.ob
   INCLUDES = -I"D:/gitnext/Chained Decos/tests" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/src/Game" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map" -I"D:/gitnext/Chained Decos/src/Game/GameFeatures" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock"
   OBJECT_DIR = tests\CMakeFiles\ChainedDecosIntegrationTests.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\ChainedDecosIntegrationTests.dir\Unity
-  TARGET_COMPILE_PDB = tests\CMakeFiles\ChainedDecosIntegrationTests.dir\
-  TARGET_PDB = bin\tests\ChainedDecosIntegrationTests.pdb
 
 
 # =============================================================================
@@ -3842,10 +3734,9 @@ build bin/tests/ChainedDecosIntegrationTests.exe: CXX_EXECUTABLE_LINKER__Chained
   OBJECT_DIR = tests\CMakeFiles\ChainedDecosIntegrationTests.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = tests\CMakeFiles\ChainedDecosIntegrationTests.dir\
   TARGET_FILE = bin\tests\ChainedDecosIntegrationTests.exe
   TARGET_IMPLIB = tests\libChainedDecosIntegrationTests.dll.a
-  TARGET_PDB = bin\tests\ChainedDecosIntegrationTests.pdb
+  TARGET_PDB = ChainedDecosIntegrationTests.exe.dbg
 
 
 #############################################
@@ -4015,8 +3906,6 @@ build src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_1_cxx.
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/MapEditor" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map"
   OBJECT_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir
   OBJECT_FILE_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\Unity
-  TARGET_COMPILE_PDB = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\
-  TARGET_PDB = src\Game\MapEditor\ChainedDecosMapEditor.pdb
 
 build src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__ChainedDecosMapEditor_unscanned_Debug D$:/gitnext/Chained$ Decos/build/src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_ChainedDecosMapEditor
   CONFIG = Debug
@@ -4026,8 +3915,6 @@ build src/Game/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_0_cxx.
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Game/MapEditor" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map"
   OBJECT_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir
   OBJECT_FILE_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\Unity
-  TARGET_COMPILE_PDB = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\
-  TARGET_PDB = src\Game\MapEditor\ChainedDecosMapEditor.pdb
 
 
 # =============================================================================
@@ -4044,10 +3931,9 @@ build src/Game/MapEditor/ChainedDecosMapEditor.exe: CXX_EXECUTABLE_LINKER__Chain
   OBJECT_DIR = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = src\Game\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir\
   TARGET_FILE = src\Game\MapEditor\ChainedDecosMapEditor.exe
   TARGET_IMPLIB = src\Game\MapEditor\libChainedDecosMapEditor.dll.a
-  TARGET_PDB = src\Game\MapEditor\ChainedDecosMapEditor.pdb
+  TARGET_PDB = ChainedDecosMapEditor.exe.dbg
 
 
 #############################################
@@ -4175,8 +4061,6 @@ build benchmarks/CMakeFiles/benchmarks.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPIL
   INCLUDES = -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src/Game" -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/src/Engine/Input" -I"D:/gitnext/Chained Decos/src/Engine/Render" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/src/Game/Menu" -I"D:/gitnext/Chained Decos/src/Engine/World" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/src/Engine/CommandLineHandler" -I"D:/gitnext/Chained Decos/src/Engine/Physics/src" -I"D:/gitnext/Chained Decos/src/Game/Player" -I"D:/gitnext/Chained Decos/src/Engine/CameraController" -I"D:/gitnext/Chained Decos/src/Engine/Kernel" -I"D:/gitnext/Chained Decos/src/Engine/Audio" -I"D:/gitnext/Chained Decos/src/Engine/Event" -I"D:/gitnext/Chained Decos/src/Game/Map" -I"D:/gitnext/Chained Decos/src/Game/GameFeatures"
   OBJECT_DIR = benchmarks\CMakeFiles\benchmarks.dir
   OBJECT_FILE_DIR = benchmarks\CMakeFiles\benchmarks.dir\Unity
-  TARGET_COMPILE_PDB = benchmarks\CMakeFiles\benchmarks.dir\
-  TARGET_PDB = benchmarks\benchmarks.pdb
 
 
 # =============================================================================
@@ -4193,10 +4077,9 @@ build benchmarks/benchmarks.exe: CXX_EXECUTABLE_LINKER__benchmarks_Debug benchma
   OBJECT_DIR = benchmarks\CMakeFiles\benchmarks.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = benchmarks\CMakeFiles\benchmarks.dir\
   TARGET_FILE = benchmarks\benchmarks.exe
   TARGET_IMPLIB = benchmarks\libbenchmarks.dll.a
-  TARGET_PDB = benchmarks\benchmarks.pdb
+  TARGET_PDB = benchmarks.exe.dbg
 
 
 #############################################
@@ -4641,14 +4524,14 @@ build tests/all: phony bin/tests/ChainedDecosUnitTests.exe bin/tests/ChainedDeco
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja D$:/gitnext/Chained$ Decos/build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Collision/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Config/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Input/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Model/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Render/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/CameraController/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Physics/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/World/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/CommandLineHandler/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Kernel/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Audio/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Event/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/Map/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/Menu/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/Player/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/GameFeatures/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/tests/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/MapEditor/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/benchmarks/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/CTestTestfile.cmake: RERUN_CMAKE | C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCCompilerABI.c C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXCompilerABI.cpp C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCompilerIdDetection.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDependentOption.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCXXCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCompilerABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCompilerId.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCompilerSupport.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineRCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeFindBinUtils.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeNinjaFindMake.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakePackageConfigHelpers.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeParseImplicitIncludeInfo.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeParseImplicitLinkInfo.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeParseLibraryArchitecture.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystem.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeTestCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeTestCXXCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeTestCompilerCommon.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeTestRCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPack.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPackComponent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckIncludeFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckLibraryExists.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/ADSP-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/ARMCC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/ARMClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/AppleClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Borland-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Bruce-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Clang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Clang-DetermineCompilerInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Compaq-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Cray-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CrayClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Diab-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Embarcadero-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Fujitsu-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GHS-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX-CXXImportStd.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-FindBinUtils.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/HP-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/HP-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IAR-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IBMClang-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IBMClang-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Intel-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/LCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/LCC-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/MSVC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/NVHPC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/NVIDIA-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/OrangeC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/PGI-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/PathScale-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Renesas-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/SCO-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/SDCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/SunPro-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/TI-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/TIClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Tasking-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Watcom-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/XL-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/XL-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/XLClang-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/zOS-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject/shared_internal_commands.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent/CMakeLists.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindOpenGL.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageHandleStandardArgs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageMessage.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython3.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindThreads.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/GNUInstallDirs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeDetermineLinkerId.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeInspectCLinker.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeInspectCXXLinker.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckFlagCommonConfig.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/FeatureTesting.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Determine-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/WindowsPaths.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/WriteBasicConfigVersionFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/4.1.1/CMakeCCompiler.cmake CMakeFiles/4.1.1/CMakeCXXCompiler.cmake CMakeFiles/4.1.1/CMakeRCCompiler.cmake CMakeFiles/4.1.1/CMakeSystem.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/cmake/gmock.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/cmake/gmock_main.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/Config.cmake.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/gtest.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/gtest_main.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/internal_utils.cmake D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/config.cmake.in D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/pkg-config.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/CMakeOptions.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/AddIfFlagCompiles.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/CompileDefinitions.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/CompilerFlags.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/EnumOption.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/GlfwImport.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/InstallConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/JoinPaths.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/LibraryConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/PackConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/ParseConfigHeader.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/Uninstall.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/raylib-config-version.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/raylib.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/src/CMakeLists.txt D$:/gitnext/Chained$ Decos/CMakeLists.txt D$:/gitnext/Chained$ Decos/benchmarks/CMakeLists.txt D$:/gitnext/Chained$ Decos/imgui.ini D$:/gitnext/Chained$ Decos/resources/icons/ChainedDecosMapEditor.png D$:/gitnext/Chained$ Decos/src/Engine/Audio/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CameraController/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Collision/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CommandLineHandler/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Config/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Event/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Input/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Kernel/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Model/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Physics/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Render/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/World/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/GameFeatures/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/MapEditor/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Map/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Menu/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Player/CMakeLists.txt D$:/gitnext/Chained$ Decos/tests/CMakeLists.txt
+build build.ninja D$:/gitnext/Chained$ Decos/build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Collision/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Config/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Input/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Model/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Render/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/CameraController/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Physics/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/World/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/CommandLineHandler/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Kernel/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Audio/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Engine/Event/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/Map/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/Menu/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/Player/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/GameFeatures/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/tests/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/src/Game/MapEditor/cmake_install.cmake D$:/gitnext/Chained$ Decos/build/benchmarks/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/CTestTestfile.cmake: RERUN_CMAKE | C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDependentOption.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakePackageConfigHelpers.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPack.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPackComponent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckIncludeFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckLibraryExists.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject/shared_internal_commands.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent/CMakeLists.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindOpenGL.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageHandleStandardArgs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageMessage.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython3.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindThreads.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/GNUInstallDirs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckFlagCommonConfig.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/WindowsPaths.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/WriteBasicConfigVersionFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/4.1.1/CMakeCCompiler.cmake CMakeFiles/4.1.1/CMakeCXXCompiler.cmake CMakeFiles/4.1.1/CMakeRCCompiler.cmake CMakeFiles/4.1.1/CMakeSystem.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/cmake/gmock.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/cmake/gmock_main.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/Config.cmake.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/gtest.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/gtest_main.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/internal_utils.cmake D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/config.cmake.in D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/pkg-config.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/CMakeOptions.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/AddIfFlagCompiles.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/CompileDefinitions.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/CompilerFlags.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/EnumOption.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/GlfwImport.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/InstallConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/JoinPaths.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/LibraryConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/PackConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/ParseConfigHeader.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/Uninstall.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/raylib-config-version.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/raylib.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/src/CMakeLists.txt D$:/gitnext/Chained$ Decos/CMakeLists.txt D$:/gitnext/Chained$ Decos/benchmarks/CMakeLists.txt D$:/gitnext/Chained$ Decos/imgui.ini D$:/gitnext/Chained$ Decos/resources/icons/ChainedDecosMapEditor.png D$:/gitnext/Chained$ Decos/src/Engine/Audio/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CameraController/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Collision/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CommandLineHandler/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Config/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Event/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Input/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Kernel/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Model/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Physics/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Render/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/World/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/GameFeatures/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/MapEditor/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Map/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Menu/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Player/CMakeLists.txt D$:/gitnext/Chained$ Decos/tests/CMakeLists.txt
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCCompilerABI.c C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXCompilerABI.cpp C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCompilerIdDetection.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDependentOption.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCXXCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCompilerABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCompilerId.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineCompilerSupport.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineRCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDetermineSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeFindBinUtils.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeNinjaFindMake.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakePackageConfigHelpers.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeParseImplicitIncludeInfo.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeParseImplicitLinkInfo.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeParseLibraryArchitecture.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystem.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeTestCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeTestCXXCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeTestCompilerCommon.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeTestRCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPack.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPackComponent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckIncludeFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckLibraryExists.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/ADSP-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/ARMCC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/ARMClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/AppleClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Borland-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Bruce-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Clang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Clang-DetermineCompilerInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Compaq-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Cray-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CrayClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Diab-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Embarcadero-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Fujitsu-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GHS-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX-CXXImportStd.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-FindBinUtils.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/HP-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/HP-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IAR-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IBMClang-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IBMClang-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Intel-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/LCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/LCC-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/MSVC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/NVHPC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/NVIDIA-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/OrangeC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/PGI-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/PathScale-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Renesas-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/SCO-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/SDCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/SunPro-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/TI-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/TIClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Tasking-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/Watcom-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/XL-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/XL-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/XLClang-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/zOS-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject/shared_internal_commands.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent/CMakeLists.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindOpenGL.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageHandleStandardArgs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageMessage.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython3.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindThreads.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/GNUInstallDirs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeDetermineLinkerId.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeInspectCLinker.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeInspectCXXLinker.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckFlagCommonConfig.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/FeatureTesting.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Determine-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/WindowsPaths.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/WriteBasicConfigVersionFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/4.1.1/CMakeCCompiler.cmake CMakeFiles/4.1.1/CMakeCXXCompiler.cmake CMakeFiles/4.1.1/CMakeRCCompiler.cmake CMakeFiles/4.1.1/CMakeSystem.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/cmake/gmock.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/cmake/gmock_main.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/Config.cmake.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/gtest.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/gtest_main.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/internal_utils.cmake D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/config.cmake.in D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/pkg-config.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/CMakeOptions.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/AddIfFlagCompiles.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/CompileDefinitions.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/CompilerFlags.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/EnumOption.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/GlfwImport.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/InstallConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/JoinPaths.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/LibraryConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/PackConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/ParseConfigHeader.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/Uninstall.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/raylib-config-version.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/raylib.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/src/CMakeLists.txt D$:/gitnext/Chained$ Decos/CMakeLists.txt D$:/gitnext/Chained$ Decos/benchmarks/CMakeLists.txt D$:/gitnext/Chained$ Decos/imgui.ini D$:/gitnext/Chained$ Decos/resources/icons/ChainedDecosMapEditor.png D$:/gitnext/Chained$ Decos/src/Engine/Audio/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CameraController/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Collision/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CommandLineHandler/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Config/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Event/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Input/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Kernel/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Model/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Physics/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Render/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/World/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/GameFeatures/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/MapEditor/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Map/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Menu/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Player/CMakeLists.txt D$:/gitnext/Chained$ Decos/tests/CMakeLists.txt: phony
+build C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDependentOption.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakePackageConfigHelpers.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPack.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPackComponent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckIncludeFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckLibraryExists.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject/shared_internal_commands.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent/CMakeLists.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindOpenGL.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageHandleStandardArgs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageMessage.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython3.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindThreads.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/GNUInstallDirs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckFlagCommonConfig.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/WindowsPaths.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/WriteBasicConfigVersionFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/4.1.1/CMakeCCompiler.cmake CMakeFiles/4.1.1/CMakeCXXCompiler.cmake CMakeFiles/4.1.1/CMakeRCCompiler.cmake CMakeFiles/4.1.1/CMakeSystem.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/cmake/gmock.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googlemock/cmake/gmock_main.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/Config.cmake.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/gtest.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/gtest_main.pc.in D$:/gitnext/Chained$ Decos/.deps/googletest-src/googletest/cmake/internal_utils.cmake D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/config.cmake.in D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-src/cmake/pkg-config.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/CMakeOptions.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/AddIfFlagCompiles.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/CompileDefinitions.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/CompilerFlags.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/EnumOption.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/GlfwImport.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/InstallConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/JoinPaths.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/LibraryConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/PackConfigurations.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/ParseConfigHeader.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/Uninstall.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/cmake/raylib-config-version.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-src/raylib.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMakeLists.txt D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in D$:/gitnext/Chained$ Decos/.deps/raylib-src/src/external/glfw/src/CMakeLists.txt D$:/gitnext/Chained$ Decos/CMakeLists.txt D$:/gitnext/Chained$ Decos/benchmarks/CMakeLists.txt D$:/gitnext/Chained$ Decos/imgui.ini D$:/gitnext/Chained$ Decos/resources/icons/ChainedDecosMapEditor.png D$:/gitnext/Chained$ Decos/src/Engine/Audio/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CameraController/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Collision/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/CommandLineHandler/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Config/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Event/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Input/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Kernel/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Model/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Physics/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/Render/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Engine/World/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/GameFeatures/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/MapEditor/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Map/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Menu/CMakeLists.txt D$:/gitnext/Chained$ Decos/src/Game/Player/CMakeLists.txt D$:/gitnext/Chained$ Decos/tests/CMakeLists.txt: phony
 
 
 #############################################

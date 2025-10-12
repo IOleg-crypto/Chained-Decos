@@ -1,7 +1,7 @@
-prefix=D:/gitnext/Chained Decos/build_tests/install
+prefix=D:/gitnext/Chained Decos/build/install
 exec_prefix=${prefix}
-includedir=D:/gitnext/Chained Decos/build_tests/install/include
-libdir=D:/gitnext/Chained Decos/build_tests/install/lib
+includedir=D:/gitnext/Chained Decos/build/install/include
+libdir=D:/gitnext/Chained Decos/build/install/lib
 
 Name: GLFW
 Description: A multi-platform library for OpenGL, window and input
