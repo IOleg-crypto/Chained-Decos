@@ -307,18 +307,6 @@
 		},
 		{
 			"backtrace" : 3,
-			"id" : "raylib::@af39a1529cb2ee18778c"
-		},
-		{
-			"backtrace" : 3,
-			"id" : "glfw::@4755506f38bf45259394"
-		},
-		{
-			"backtrace" : 3,
-			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
-		},
-		{
-			"backtrace" : 3,
 			"id" : "collision::@c7f3438d24a996a0c811"
 		},
 		{
@@ -364,6 +352,18 @@
 		{
 			"backtrace" : 3,
 			"id" : "player::@6497c05e8667515fbef8"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "raylib::@af39a1529cb2ee18778c"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "glfw::@4755506f38bf45259394"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
 		}
 	],
 	"id" : "ChainedDecosMapEditor::@55121233932d6d4fa567",

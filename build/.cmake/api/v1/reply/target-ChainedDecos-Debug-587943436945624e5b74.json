@@ -298,18 +298,6 @@
 		},
 		{
 			"backtrace" : 3,
-			"id" : "raylib::@af39a1529cb2ee18778c"
-		},
-		{
-			"backtrace" : 3,
-			"id" : "glfw::@4755506f38bf45259394"
-		},
-		{
-			"backtrace" : 3,
-			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
-		},
-		{
-			"backtrace" : 3,
 			"id" : "collision::@c7f3438d24a996a0c811"
 		},
 		{
@@ -346,11 +334,11 @@
 		},
 		{
 			"backtrace" : 3,
-			"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94"
+			"id" : "event::@ac78cbc803f0e3d902f4"
 		},
 		{
 			"backtrace" : 3,
-			"id" : "event::@ac78cbc803f0e3d902f4"
+			"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94"
 		},
 		{
 			"backtrace" : 3,
@@ -363,6 +351,18 @@
 		{
 			"backtrace" : 3,
 			"id" : "GameFeatures::@3472a93c03200552aca0"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "raylib::@af39a1529cb2ee18778c"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "glfw::@4755506f38bf45259394"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
 		}
 	],
 	"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
