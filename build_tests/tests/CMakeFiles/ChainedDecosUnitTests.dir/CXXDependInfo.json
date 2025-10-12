@@ -1,0 +1,45 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "GNU",
+	"compiler-simulate-id" : "",
+	"config" : "Release",
+	"cxx-modules" : {},
+	"database-info" : null,
+	"dir-cur-bld" : "D:/gitnext/Chained Decos/build_tests/tests",
+	"dir-cur-src" : "D:/gitnext/Chained Decos/tests",
+	"dir-top-bld" : "D:/gitnext/Chained Decos/build_tests",
+	"dir-top-src" : "D:/gitnext/Chained Decos",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : 
+	[
+		"D:\\gitnext\\Chained Decos\\tests",
+		"D:\\gitnext\\Chained Decos\\src",
+		"D:\\gitnext\\Chained Decos\\.deps\\googletest-src\\googletest\\include",
+		"D:\\gitnext\\Chained Decos\\.deps\\googletest-src\\googletest",
+		"D:\\gitnext\\Chained Decos\\.deps\\googletest-src\\googlemock\\include",
+		"D:\\gitnext\\Chained Decos\\.deps\\googletest-src\\googlemock"
+	],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "D:/gitnext/Chained Decos/build_tests/tests/CMakeFiles/ChainedDecosUnitTests.dir",
+	"sources" : 
+	{
+		"tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/CollisionSystemTest.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/tests/engine/CollisionSystemTest.cpp"
+		},
+		"tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/PhysicsComponentTest.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/tests/engine/PhysicsComponentTest.cpp"
+		},
+		"tests/CMakeFiles/ChainedDecosUnitTests.dir/main.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/tests/main.cpp"
+		}
+	}
+}

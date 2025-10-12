@@ -1,47 +1,61 @@
 # Test configuration
-set(TEST_SOURCES
+cmake_minimum_required(VERSION 4.1)
+
+set(UNIT_TEST_SOURCES
     main.cpp
     engine/PhysicsComponentTest.cpp
     engine/CollisionSystemTest.cpp
 )
 
-# Create test executable
-add_executable(ChainedDecosTests ${TEST_SOURCES})
-
-# Create a minimal test library with only the components needed for testing
-add_library(ChainedDecosTestComponents STATIC
-    # Only include the specific components that tests actually need
-    ../src/Engine/Math/Vector3.cpp
-    # Note: CollisionStructures.cpp depends on raylib and should be mocked or tested separately
-    # Note: PhysicsComponent.cpp and CollisionManager.cpp depend on raylib
-    # and should be mocked or tested separately in integration tests
+set(INTEGRATION_TEST_SOURCES
+    game/ParkourMapGeneratorTest.cpp
+    integration/GameIntegrationTest.cpp
 )
 
-target_include_directories(ChainedDecosTestComponents
-    PUBLIC
-        ../src
-        ${CMAKE_CURRENT_SOURCE_DIR}
-)
+# Create unit test executable (no raylib dependencies)
+add_executable(ChainedDecosUnitTests ${UNIT_TEST_SOURCES})
 
-# Link tests with only the minimal components needed (no raylib dependencies)
-target_link_libraries(ChainedDecosTests
+# Link unit tests - no need for additional libraries since tests use mocks
+target_link_libraries(ChainedDecosUnitTests
     PRIVATE
-        ChainedDecosTestComponents
-        # Only link specific game components needed for tests, not full ChainedDecosGame
-        # ChainedDecosGame  # Commented out to avoid GLFW dependency in tests
         GTest::gtest_main
         GTest::gmock_main
 )
 
-# Include directories
-target_include_directories(ChainedDecosTests
+# Create integration test executable (with full game dependencies)
+add_executable(ChainedDecosIntegrationTests ${INTEGRATION_TEST_SOURCES})
+
+# Link integration tests with full game
+target_link_libraries(ChainedDecosIntegrationTests
+    PRIVATE
+        GTest::gtest_main
+        GTest::gmock_main
+        ChainedDecosGame
+)
+
+# Include directories for unit tests
+target_include_directories(ChainedDecosUnitTests
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src
 )
 
-# Test properties
-set_target_properties(ChainedDecosTests PROPERTIES
+# Include directories for integration tests
+target_include_directories(ChainedDecosIntegrationTests
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src
+)
+
+# Test properties for unit tests
+set_target_properties(ChainedDecosUnitTests PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+)
+
+# Test properties for integration tests
+set_target_properties(ChainedDecosIntegrationTests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
@@ -49,74 +63,63 @@ set_target_properties(ChainedDecosTests PROPERTIES
 
 # Force static linking on Windows to avoid DLL issues
 if(WIN32)
-    # Add static linking flags for Windows
-    set_target_properties(ChainedDecosTests PROPERTIES
+    # Add static linking flags for Windows - unit tests
+    set_target_properties(ChainedDecosUnitTests PROPERTIES
         MSVC_RUNTIME_LIBRARY "MultiThreaded"
         CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded"
     )
 
-    set_target_properties(ChainedDecosTestComponents PROPERTIES
+    # Add static linking flags for Windows - integration tests
+    set_target_properties(ChainedDecosIntegrationTests PROPERTIES
         MSVC_RUNTIME_LIBRARY "MultiThreaded"
         CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded"
     )
 
-    # Add compile definitions to force static linking
-    target_compile_definitions(ChainedDecosTests PRIVATE
+    # Add compile definitions to force static linking - unit tests
+    target_compile_definitions(ChainedDecosUnitTests PRIVATE
         GTEST_LINKED_AS_SHARED_LIBRARY=0
         GTEST_CREATE_SHARED_LIBRARY=0
     )
 
-    # Define that we're building without raylib to avoid any raylib-specific code paths
-    target_compile_definitions(ChainedDecosTestComponents PRIVATE
-        TEST_BUILD_NO_RAYLIB
+    # Add compile definitions to force static linking - integration tests
+    target_compile_definitions(ChainedDecosIntegrationTests PRIVATE
+        GTEST_LINKED_AS_SHARED_LIBRARY=0
+        GTEST_CREATE_SHARED_LIBRARY=0
     )
 
     # Add winmm library for Windows timer functions (needed by some system functions)
-    target_link_libraries(ChainedDecosTests PRIVATE winmm)
+    target_link_libraries(ChainedDecosUnitTests PRIVATE winmm)
 endif()
 
-# Enable test discovery
-include(GoogleTest)
+# Custom test targets that run Google Test executables directly
 
-# Use a more robust working directory configuration
-if(DEFINED ENV{CI} OR DEFINED ENV{GITHUB_ACTIONS})
-    # In CI environments, use a more specific path
-    set(TEST_WORKING_DIR "${CMAKE_BINARY_DIR}/bin/tests")
-else()
-    # In local development, use the target file directory
-    set(TEST_WORKING_DIR "$<TARGET_FILE_DIR:ChainedDecosTests>")
-endif()
-
-gtest_discover_tests(ChainedDecosTests
-    WORKING_DIRECTORY "${TEST_WORKING_DIR}"
-)
-
-# Additional custom command to ensure tests run from correct directory
-add_custom_target(run_tests_with_correct_dir
-    COMMAND ${CMAKE_COMMAND} -E echo "Running tests from: $<TARGET_FILE_DIR:ChainedDecosTests>"
-    COMMAND cd $<TARGET_FILE_DIR:ChainedDecosTests> && $<TARGET_FILE:ChainedDecosTests>
-    DEPENDS ChainedDecosTests
-    COMMENT "Running tests from correct working directory"
-)
-
-
-# Custom test targets
-add_custom_target(run_unit_tests
-    COMMAND ${CMAKE_CTEST_COMMAND} -R "Unit" --output-on-failure
-    DEPENDS ChainedDecosTests
+# Main test target - runs unit tests
+add_custom_target(test
+    COMMAND $<TARGET_FILE:ChainedDecosUnitTests>
+    DEPENDS ChainedDecosUnitTests
     COMMENT "Running unit tests"
 )
 
+# Run unit tests specifically
+add_custom_target(run_unit_tests
+    COMMAND $<TARGET_FILE:ChainedDecosUnitTests>
+    DEPENDS ChainedDecosUnitTests
+    COMMENT "Running unit tests"
+)
+
+# Run integration tests specifically
 add_custom_target(run_integration_tests
-    COMMAND ${CMAKE_CTEST_COMMAND} -R "Integration" --output-on-failure
-    DEPENDS ChainedDecosTests
+    COMMAND $<TARGET_FILE:ChainedDecosIntegrationTests>
+    DEPENDS ChainedDecosIntegrationTests
     COMMENT "Running integration tests"
 )
 
+# Run all tests (both unit and integration)
 add_custom_target(run_all_tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS ChainedDecosTests
-    COMMENT "Running all tests"
+    COMMAND $<TARGET_FILE:ChainedDecosUnitTests>
+    COMMAND $<TARGET_FILE:ChainedDecosIntegrationTests>
+    DEPENDS ChainedDecosUnitTests ChainedDecosIntegrationTests
+    COMMENT "Running all tests (unit and integration)"
 )
 
 # Performance benchmarks - disabled for now

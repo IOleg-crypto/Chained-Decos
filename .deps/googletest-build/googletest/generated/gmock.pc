@@ -1,5 +1,5 @@
-libdir=D:/gitnext/Chained Decos/build/install/lib
-includedir=D:/gitnext/Chained Decos/build/install/include
+libdir=D:/gitnext/Chained Decos/build_tests/install/lib
+includedir=D:/gitnext/Chained Decos/build_tests/install/include
 
 Name: gmock
 Description: GoogleMock (without main() function)
