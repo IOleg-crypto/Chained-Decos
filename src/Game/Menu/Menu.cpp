@@ -18,22 +18,42 @@ Menu::Menu()
     // Load configuration file
     LoadSettings();
 
-    // Load Alan Sans font for menu text
+    // Load Alan Sans font for menu text (only if graphics are available)
     const std::string alanSansFontPath = PROJECT_ROOT_DIR "/resources/font/AlanSans.ttf";
-    m_font = LoadFontEx(alanSansFontPath.c_str(), 64, nullptr, 0);
 
-    if (m_font.texture.id == 0)
-    {
-        TraceLog(LOG_WARNING, "Menu::Menu() - Failed to load Alan Sans font: %s, using default font",
-                 alanSansFontPath.c_str());
-        m_font = GetFontDefault();
+    // Check if we're in a headless environment (no graphics)
+    bool graphicsAvailable = true;
+    try {
+        // Try to detect if graphics are available by checking if we can get screen dimensions
+        int screenWidth = GetScreenWidth();
+        int screenHeight = GetScreenHeight();
+        if (screenWidth <= 0 || screenHeight <= 0) {
+            graphicsAvailable = false;
+        }
+    } catch (...) {
+        graphicsAvailable = false;
     }
-    else
-    {
-        // Set texture filter for smooth scaling
-        SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
-        TraceLog(LOG_INFO, "Menu::Menu() - Alan Sans font loaded successfully: %s",
-                 alanSansFontPath.c_str());
+
+    if (graphicsAvailable) {
+        m_font = LoadFontEx(alanSansFontPath.c_str(), 64, nullptr, 0);
+
+        if (m_font.texture.id == 0)
+        {
+            TraceLog(LOG_WARNING, "Menu::Menu() - Failed to load Alan Sans font: %s, using default font",
+                     alanSansFontPath.c_str());
+            m_font = GetFontDefault();
+        }
+        else
+        {
+            // Set texture filter for smooth scaling
+            SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
+            TraceLog(LOG_INFO, "Menu::Menu() - Alan Sans font loaded successfully: %s",
+                     alanSansFontPath.c_str());
+        }
+    } else {
+        // Headless environment - use default font without loading
+        TraceLog(LOG_INFO, "Menu::Menu() - Headless environment detected, using default font");
+        m_font = GetFontDefault();
     }
 
     // Main Menu - Resume Game will be added dynamically if game is in progress
