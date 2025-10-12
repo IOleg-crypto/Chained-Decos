@@ -289,8 +289,8 @@ jobs:
           --config ${{ matrix.build_type }}
 
     - name: Run tests
-       shell: bash
-       run: |
+      shell: bash
+      run: |
          cd "${{ steps.build-env.outputs.build-output-dir }}"
 
          echo "🧪 Running unit tests..."
