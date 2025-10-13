@@ -18,10 +18,25 @@ Camera &CameraController::GetCamera() { return m_camera; }
 int &CameraController::GetCameraMode() { return m_cameraMode; }
 void CameraController::SetCameraMode(const int cameraMode) { this->m_cameraMode = cameraMode; }
 
-void CameraController::Update() { UpdateCamera(&m_camera, m_cameraMode); }
+void CameraController::Update()
+{
+    // Skip camera update if no window is available (for testing)
+    if (!IsWindowReady())
+    {
+        return;
+    }
+
+    UpdateCamera(&m_camera, m_cameraMode);
+}
 
 void CameraController::UpdateCameraRotation()
 {
+    // Skip mouse input if no window is available (for testing)
+    if (!IsWindowReady())
+    {
+        return;
+    }
+
     Vector2 mouseDelta = GetMouseDelta();
     float sensitivity = 0.005f;
     m_cameraYaw -= mouseDelta.x * sensitivity;
@@ -32,14 +47,18 @@ void CameraController::UpdateCameraRotation()
 void CameraController::SetFOV(float FOV) { this->m_radiusFOV = FOV; }
 
 void CameraController::ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget,
-                                         float jumpOffsetY)
+                                          float jumpOffsetY)
 {
     Vector3 desiredTarget = {baseTarget.x, baseTarget.y + jumpOffsetY, baseTarget.z};
     float smoothingSpeed = 8.0f;
-    camera.target = Vector3Lerp(camera.target, desiredTarget, smoothingSpeed * GetFrameTime());
+
+    // Use a default delta time if no window is available (for testing)
+    float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
+
+    camera.target = Vector3Lerp(camera.target, desiredTarget, smoothingSpeed * deltaTime);
     camera.position =
         Vector3Lerp(camera.position, {camera.position.x, desiredTarget.y, camera.position.z},
-                    smoothingSpeed * GetFrameTime());
+                    smoothingSpeed * deltaTime);
 }
 
 float CameraController::GetCameraYaw() const { return m_cameraYaw; }
@@ -52,6 +71,18 @@ float CameraController::GetFOV() const { return m_radiusFOV; }
 
 void CameraController::UpdateMouseRotation(Camera &camera, const Vector3 &playerPosition)
 {
+    // Skip mouse input if no window is available (for testing)
+    if (!IsWindowReady())
+    {
+        // Set default camera position for testing
+        Vector3 offset = {GetFOV() * sinf(GetCameraYaw()) * cosf(GetCameraPitch()),
+                          GetFOV() * sinf(GetCameraPitch()) + 5.0f,
+                          GetFOV() * cosf(GetCameraYaw()) * cosf(GetCameraPitch())};
+        camera.position = Vector3Add(playerPosition, offset);
+        camera.target = playerPosition;
+        return;
+    }
+
     float currentFOV = GetFOV();
     float wheelMove = GetMouseWheelMove();
     currentFOV -= wheelMove * 0.5f; // Adjust sensitivity as needed

@@ -74,7 +74,8 @@ void PlayerMovement::ApplyGravity(float deltaTime)
 
 Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
 {
-    float dt = GetFrameTime();
+    // Use default delta time if no window is available (for testing)
+    float dt = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
     Vector3 vel = m_physics.GetVelocity();
     Vector3 targetPos = m_position;
 

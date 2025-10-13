@@ -39,6 +39,10 @@ public:
     void RequestExit() const;
     bool IsRunning() const;
 
+    // Cursor management
+    void EnableCursor();
+    void HideCursor();
+
     void Update();
     void Render();
     void InitInput();
@@ -83,7 +87,15 @@ public:
     WorldManager& GetWorld() { return m_world; }
     Menu& GetMenu() { return m_menu; }
     GameMap& GetGameMap() { return m_gameMap; }
-    bool IsInitialized() const { return m_isGameInitialized; }
+    bool IsInitialized() const
+    {
+        // Return false if no engine is available (for testing)
+        if (!m_engine)
+        {
+            return false;
+        }
+        return m_isGameInitialized;
+    }
 };
 
 #endif // GAME_H

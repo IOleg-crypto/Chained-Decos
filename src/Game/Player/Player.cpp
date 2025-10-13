@@ -113,7 +113,7 @@ void Player::Update(const CollisionManager &collisionManager)
     m_cameraController->Update();
 
     // Apply physics
-    float deltaTime = GetFrameTime();
+    float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
     m_movement->SetCollisionManager(&collisionManager);
 
     HandleJumpInput();

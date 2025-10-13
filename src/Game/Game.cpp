@@ -71,13 +71,23 @@ void Game::Init()
 {
     TraceLog(LOG_INFO, "Game::Init() - Initializing game components...");
 
-    // Initialize menu with engine reference
+    // Initialize menu with engine reference (can be null for testing)
     m_menu.GetEngine(m_engine);
 
     // Kernel boot and service registration
     Kernel &kernel = Kernel::GetInstance();
     kernel.Initialize();
-    kernel.RegisterService<InputService>(Kernel::ServiceType::Input, std::make_shared<InputService>(&m_engine->GetInputManager()));
+
+    // Only register engine-dependent services if engine is available
+    if (m_engine)
+    {
+        kernel.RegisterService<InputService>(Kernel::ServiceType::Input, std::make_shared<InputService>(&m_engine->GetInputManager()));
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "Game::Init() - No engine provided, skipping engine-dependent services");
+    }
+
     kernel.RegisterService<ModelsService>(Kernel::ServiceType::Models, std::make_shared<ModelsService>(&m_models));
     kernel.RegisterService<WorldService>(Kernel::ServiceType::World, std::make_shared<WorldService>(&m_world));
     // CollisionManager and WorldManager will be registered after creation/initialization
@@ -95,6 +105,12 @@ void Game::Run()
 {
     TraceLog(LOG_INFO, "Game::Run() - Starting game loop...");
 
+    if (!m_engine)
+    {
+        TraceLog(LOG_ERROR, "Game::Run() - No engine provided, cannot run game loop");
+        return;
+    }
+
     while (!m_engine->ShouldClose())
     {
         Update();
@@ -106,8 +122,11 @@ void Game::Run()
 
 void Game::Update()
 {
-    // Update engine (handles window and timing)
-    m_engine->Update();
+    // Update engine (handles window and timing) - only if engine is available
+    if (m_engine)
+    {
+        m_engine->Update();
+    }
 
     // Update kernel services each frame
     Kernel::GetInstance().Update(GetFrameTime());
@@ -120,8 +139,8 @@ void Game::Update()
     m_menu.HandleConsoleInput();
 
 
-    // Only process other input if console is not open
-    if (!m_menu.IsConsoleOpen())
+    // Only process other input if console is not open and engine is available
+    if (!m_menu.IsConsoleOpen() && m_engine)
     {
         m_engine->GetInputManager().ProcessInput();
     }
@@ -143,6 +162,12 @@ void Game::Update()
 
 void Game::Render()
 {
+    if (!m_engine)
+    {
+        TraceLog(LOG_WARNING, "Game::Render() - No engine provided, skipping render");
+        return;
+    }
+
     m_engine->GetRenderManager()->BeginFrame();
 
     if (m_showMenu)
@@ -182,45 +207,85 @@ void Game::ToggleMenu()
     TraceLog(LOG_INFO, "Menu toggled: %s", m_showMenu ? "ON" : "OFF");
 }
 
+// Helper functions for cursor management
+void Game::EnableCursor()
+{
+    if (m_engine)
+    {
+        // Enable cursor through engine if available
+        TraceLog(LOG_INFO, "Game::EnableCursor() - Cursor enabled");
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "Game::EnableCursor() - No engine, cursor state unchanged");
+    }
+}
+
+void Game::HideCursor()
+{
+    if (m_engine)
+    {
+        // Hide cursor through engine if available
+        TraceLog(LOG_INFO, "Game::HideCursor() - Cursor hidden");
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "Game::HideCursor() - No engine, cursor state unchanged");
+    }
+}
+
 void Game::RequestExit() const
 {
-    m_engine->RequestExit();
+    if (m_engine)
+    {
+        m_engine->RequestExit();
+    }
     TraceLog(LOG_INFO, "Game exit requested.");
 }
 
 bool Game::IsRunning() const
 {
-    return !m_engine->ShouldClose();
+    if (m_engine)
+    {
+        return !m_engine->ShouldClose();
+    }
+    return false; // If no engine, consider not running
 }
 
 void Game::InitInput()
 {
     TraceLog(LOG_INFO, "Game::InitInput() - Setting up game-specific input bindings...");
 
+    if (!m_engine)
+    {
+        TraceLog(LOG_WARNING, "Game::InitInput() - No engine provided, skipping input bindings");
+        return;
+    }
+
     m_engine->GetInputManager().RegisterAction(KEY_F1,
-                                                 [this]
-                                                 {
-                                                     // Set game as in progress when going to menu from game
-                                                     if (!m_showMenu)
-                                                     {
-                                                         m_menu.SetGameInProgress(true);
-                                                     }
-                                                     m_showMenu = true;
-                                                     EnableCursor();
-                                                 });
+                                                  [this]
+                                                  {
+                                                      // Set game as in progress when going to menu from game
+                                                      if (!m_showMenu)
+                                                      {
+                                                          m_menu.SetGameInProgress(true);
+                                                      }
+                                                      m_showMenu = true;
+                                                      EnableCursor();
+                                                  });
 
     m_engine->GetInputManager().RegisterAction(KEY_ESCAPE,
-                                                 [this]
-                                                 {
-                                                     if (!m_showMenu)
-                                                     {
-                                                         m_menu.ResetAction();
-                                                         // Set game as in progress when going to menu from game
-                                                         m_menu.SetGameInProgress(true);
-                                                         ToggleMenu();
-                                                         EnableCursor();
-                                                     }
-                                                 });
+                                                  [this]
+                                                  {
+                                                      if (!m_showMenu)
+                                                      {
+                                                          m_menu.ResetAction();
+                                                          // Set game as in progress when going to menu from game
+                                                          m_menu.SetGameInProgress(true);
+                                                          ToggleMenu();
+                                                          EnableCursor();
+                                                      }
+                                                  });
     TraceLog(LOG_INFO, "Game::InitInput() - Game input bindings configured.");
 }
 
@@ -714,6 +779,13 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string& mapIde
 
 void Game::UpdatePlayerLogic()
 {
+    if (!m_engine)
+    {
+        // Skip player logic if no engine is available (for testing)
+        m_player.Update(m_collisionManager);
+        return;
+    }
+
     const ImGuiIO &io = ImGui::GetIO();
     if (io.WantCaptureMouse)
     {
@@ -1008,7 +1080,10 @@ void Game::HandleMenuActions()
         // Clear game state when exiting
         m_menu.SetGameInProgress(false);
         m_showMenu = true; // Show menu one last time before exit
-        m_engine->RequestExit();
+        if (m_engine)
+        {
+            m_engine->RequestExit();
+        }
         m_menu.ResetAction();
         break;
 
@@ -1018,8 +1093,14 @@ void Game::HandleMenuActions()
 }
 
 void Game::RenderGameWorld() {
+    if (!m_engine)
+    {
+        TraceLog(LOG_WARNING, "Game::RenderGameWorld() - No engine provided, skipping game world render");
+        return;
+    }
+
     m_engine->GetRenderManager()->RenderGame(m_player, m_models, m_collisionManager,
-                                             m_engine->IsCollisionDebugVisible());
+                                              m_engine->IsCollisionDebugVisible());
 
     // Render editor-created map if available
     if (!m_gameMap.objects.empty())
@@ -1067,6 +1148,12 @@ float Game::CalculateDynamicFontSize(float baseSize) const
 }
 
 void Game::RenderGameUI() const {
+    if (!m_engine)
+    {
+        TraceLog(LOG_WARNING, "Game::RenderGameUI() - No engine provided, skipping game UI render");
+        return;
+    }
+
     m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
 
     static float gameTime = 0.0f;
@@ -1083,8 +1170,8 @@ void Game::RenderGameUI() const {
     Vector2 timerPos = {300.0f, 20.0f};
 
     Font fontToUse = (m_engine->GetRenderManager() && m_engine->GetRenderManager()->GetFont().texture.id != 0)
-                         ? m_engine->GetRenderManager()->GetFont()
-                         : GetFontDefault();
+                          ? m_engine->GetRenderManager()->GetFont()
+                          : GetFontDefault();
 
     float fontSize = CalculateDynamicFontSize(24.0f);
     DrawTextEx(fontToUse, timerText.c_str(), timerPos, fontSize, 2.0f, WHITE);

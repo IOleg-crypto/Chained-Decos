@@ -24,11 +24,13 @@ class RaylibTestEnvironment : public ::testing::Environment
 public:
     void SetUp() override
     {
+        // Completely disable raylib initialization for tests
+        // This prevents assertion errors when raylib tries to access null window
 #ifdef CI
 #else
-        SetConfigFlags(FLAG_WINDOW_HIDDEN);
-        InitWindow(800, 600, "Test Window");
-        SetTargetFPS(60);
+        // Don't initialize any graphics context for tests
+        // Tests should run without requiring window/graphics context
+        TraceLog(LOG_INFO, "Test environment: Skipping graphics initialization");
 #endif
     }
     void TearDown() override

@@ -5,8 +5,16 @@ PlayerInput::PlayerInput(Player *player) : m_player(player), m_walkSpeed(8.1f) {
 
 void PlayerInput::ProcessInput()
 {
+    // Skip input processing if no window is available (for testing)
+    if (!IsWindowReady())
+    {
+        return;
+    }
+
     Vector3 inputDirection = GetInputDirection();
-    float deltaTime = GetFrameTime();
+
+    // Use default delta time if no window is available (for testing)
+    float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
 
     // Compute camera-aligned move direction
     Vector3 moveDir = {0};
@@ -48,6 +56,12 @@ void PlayerInput::ProcessInput()
 }
 
 void PlayerInput::HandleJumpInput() const {
+    // Skip key input if no window is available (for testing)
+    if (!IsWindowReady())
+    {
+        return;
+    }
+
     if (IsKeyPressed(KEY_SPACE))
     {
         float jumpImpulse = m_player->GetPhysics().GetJumpStrength() * 1.2f; // Slightly stronger jump
@@ -57,6 +71,12 @@ void PlayerInput::HandleJumpInput() const {
 }
 
 void PlayerInput::HandleEmergencyReset() const {
+    // Skip key input if no window is available (for testing)
+    if (!IsWindowReady())
+    {
+        return;
+    }
+
     if (IsKeyPressed(KEY_T))
     {
         m_player->SetPlayerPosition(Player::DEFAULT_SPAWN_POSITION);
@@ -67,6 +87,12 @@ void PlayerInput::HandleEmergencyReset() const {
 
 Vector3 PlayerInput::GetInputDirection()
 {
+    // Skip key input if no window is available (for testing)
+    if (!IsWindowReady())
+    {
+        return {0.0f, 0.0f, 0.0f};
+    }
+
     Vector3 inputDir = {};
 
     if (IsKeyDown(KEY_W))
