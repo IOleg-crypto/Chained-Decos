@@ -42,7 +42,7 @@ public:
         colliders.clear();
     }
 
-    const std::vector<TestCollision>& GetColliders() const {
+    [[nodiscard]] const std::vector<TestCollision>& GetColliders() const {
         return colliders;
     }
 

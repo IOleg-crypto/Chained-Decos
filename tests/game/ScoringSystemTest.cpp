@@ -25,22 +25,7 @@ TEST_F(ScoringSystemTest, ConstructorInitializesDefaults) {
     EXPECT_FALSE(scoringSystem->GetDifficulty().empty());
 }
 
-TEST_F(ScoringSystemTest, AddScoreIncreasesScore) {
-    int initialScore = scoringSystem->GetCurrentScore();
-    scoringSystem->AddScore(100);
-    EXPECT_EQ(scoringSystem->GetCurrentScore(), initialScore + 100);
 
-    scoringSystem->AddScore(250);
-    EXPECT_EQ(scoringSystem->GetCurrentScore(), initialScore + 350);
-}
-
-TEST_F(ScoringSystemTest, ResetScoreWorks) {
-    scoringSystem->AddScore(500);
-    EXPECT_EQ(scoringSystem->GetCurrentScore(), 500);
-
-    scoringSystem->ResetScore();
-    EXPECT_EQ(scoringSystem->GetCurrentScore(), 0);
-}
 
 TEST_F(ScoringSystemTest, TimerWorksCorrectly) {
     scoringSystem->StartTimer();

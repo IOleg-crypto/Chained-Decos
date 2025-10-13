@@ -68,7 +68,6 @@ Menu::Menu()
                       {"Audio", MenuAction::OpenAudio},
                       {"Controls", MenuAction::OpenControls},
                       {"Gameplay", MenuAction::OpenGameplay},
-                      {"Parkour Controls", MenuAction::OpenParkourControls},
                       {"Back", MenuAction::BackToMainMenu}};
 
     // Game Mode Menu
@@ -109,21 +108,6 @@ Menu::Menu()
         {"Back", {}, 0}
     };
 
-    // Parkour Controls Options - using MenuOption structure
-    m_parkourControlsOptions = {
-        {"Wall Run Sensitivity", {"0.1x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x", "5.0x"}, 2},
-        {"Jump Timing", {"0.1x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x", "5.0x"}, 2},
-        {"Slide Control", {"0.1x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x", "5.0x"}, 2},
-        {"Grapple Sensitivity", {"0.1x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x", "5.0x"}, 2},
-        {"Wall Run", {"Off", "On"}, 1},
-        {"Double Jump", {"Off", "On"}, 0},
-        {"Slide", {"Off", "On"}, 1},
-        {"Grapple", {"Off", "On"}, 0},
-        {"Slow Motion on Trick", {"Off", "On"}, 0},
-        {"Trick Camera", {"Off", "On"}, 1},
-        {"Auto Wall Run", {"Off", "On"}, 1},
-        {"Back", {}, 0}
-    };
 
     m_currentMenu = &m_mainMenu;
     m_buttonScales.assign(m_currentMenu->size(), 1.0f);
@@ -131,9 +115,6 @@ Menu::Menu()
     // Ensure we start at the main menu state
     m_state = MenuState::Main;
 }
-
-
-    
 
 
 float Menu::Lerp(float a, float b, float t) const { return a + (b - a) * t; }
@@ -207,16 +188,17 @@ void Menu::Update()
         break;
     case MenuState::Gameplay:
         // Use options-based system like video settings
-        break;
-    case MenuState::ParkourControls:
-        // Use options-based system like video settings
+        // Initialize gameplay menu selection if needed
+        if (m_selected < 0 || m_selected >= static_cast<int>(m_gameplayOptions.size()))
+            m_selected = 0;
+        HandleGameplayNavigation();    
         break;
     default:
         m_currentMenu = nullptr;
         break;
     }
 
-    if (m_currentMenu && m_selected >= static_cast<int>(m_currentMenu->size()))
+    if (m_currentMenu && (m_selected < 0 || m_selected >= static_cast<int>(m_currentMenu->size())))
         m_selected = 0;
 
     // Handle input
@@ -262,9 +244,6 @@ void Menu::HandleKeyboardNavigation()
         break;
     case MenuState::Gameplay:
         HandleGameplayNavigation();
-        break;
-    case MenuState::ParkourControls:
-        HandleParkourControlsNavigation();
         break;
     case MenuState::Video:
         HandleVideoMenuKeyboardNavigation();
@@ -372,9 +351,6 @@ void Menu::HandleMouseSelection()
     case MenuState::Gameplay:
         HandleGameplayMouseSelection(mousePos, clicked);
         break;
-    case MenuState::ParkourControls:
-        HandleParkourControlsMouseSelection(mousePos, clicked);
-        break;
     case MenuState::Video:
         HandleVideoMenuMouseSelection(mousePos, clicked);
         break;
@@ -437,10 +413,6 @@ void Menu::ExecuteAction()
         break;
     case MenuAction::OpenGameplay:
         m_state = MenuState::Gameplay;
-        ResetAction();
-        break;
-    case MenuAction::OpenParkourControls:
-        m_state = MenuState::ParkourControls;
         ResetAction();
         break;
     case MenuAction::AdjustMasterVolume:
@@ -532,41 +504,21 @@ void Menu::HandleGameplayMouseSelection(Vector2 mousePos, bool clicked)
             m_selected = static_cast<int>(i);
             if (clicked)
             {
-                auto &opt = m_gameplayOptions[m_selected];
-                if (opt.label == "Back")
-                    m_state = MenuState::Options;
-                else
-                    ApplyGameplayOption(opt);
+                // Ensure m_selected is within bounds before accessing vector
+                if (m_selected >= 0 && m_selected < static_cast<int>(m_gameplayOptions.size()))
+                {
+                    auto &opt = m_gameplayOptions[m_selected];
+                    if (opt.label == "Back")
+                        m_state = MenuState::Options;
+                    else
+                        ApplyGameplayOption(opt);
+                }
             }
             break;
         }
     }
 }
 
-void Menu::HandleParkourControlsMouseSelection(Vector2 mousePos, bool clicked)
-{
-    constexpr int startY = 150, spacing = 80;
-
-    for (size_t i = 0; i < m_parkourControlsOptions.size(); ++i)
-    {
-        int y = startY + static_cast<int>(i) * spacing;
-        Rectangle rect = {60.0f, (float)(y - 5), (float)(GetScreenWidth() - 120), (float)(spacing - 10)};
-
-        if (CheckCollisionPointRec(mousePos, rect))
-        {
-            m_selected = static_cast<int>(i);
-            if (clicked)
-            {
-                auto &opt = m_parkourControlsOptions[m_selected];
-                if (opt.label == "Back")
-                    m_state = MenuState::Options;
-                else
-                    ApplyParkourControlsOption(opt);
-            }
-            break;
-        }
-    }
-}
 
 void Menu::HandleConfirmExit()
 {
@@ -616,7 +568,11 @@ void Menu::HandleMainMenuMouseSelection(Vector2 mousePos, bool clicked)
             m_selected = static_cast<int>(i);
             if (clicked)
             {
-                m_action = (*menuToUse)[m_selected].action;
+                // Ensure m_selected is within bounds before accessing vector
+                if (m_selected >= 0 && m_selected < static_cast<int>(menuToUse->size()))
+                {
+                    m_action = (*menuToUse)[m_selected].action;
+                }
                 break;
             }
         }
@@ -855,7 +811,13 @@ void Menu::HandleMainMenuKeyboardNavigation()
         m_selected = (m_selected + menuToUse->size() - 1) % menuToUse->size();
 
     if (IsKeyPressed(KEY_ENTER))
-        m_action = (*menuToUse)[m_selected].action;
+    {
+        // Ensure m_selected is within bounds before accessing vector
+        if (m_selected >= 0 && m_selected < static_cast<int>(menuToUse->size()))
+        {
+            m_action = (*menuToUse)[m_selected].action;
+        }
+    }
 
     if (IsKeyPressed(KEY_ESCAPE))
     {
@@ -1007,66 +969,37 @@ void Menu::HandleGameplayNavigation()
     if (IsKeyPressed(KEY_UP))
         m_selected = (m_selected + m_gameplayOptions.size() - 1) % m_gameplayOptions.size();
 
-    if (!m_gameplayOptions[m_selected].values.empty())
+    if (m_selected >= 0 && m_selected < static_cast<int>(m_gameplayOptions.size()))
     {
-        auto &opt = m_gameplayOptions[m_selected];
-        if (IsKeyPressed(KEY_RIGHT))
-            opt.selectedIndex = (opt.selectedIndex + 1) % opt.values.size();
-        if (IsKeyPressed(KEY_LEFT))
-            opt.selectedIndex = (opt.selectedIndex + opt.values.size() - 1) % opt.values.size();
-    }
-
-    if (IsKeyPressed(KEY_ENTER))
-    {
-        auto &opt = m_gameplayOptions[m_selected];
-        if (opt.label == "Back")
+        if (!m_gameplayOptions[m_selected].values.empty())
         {
-            m_state = MenuState::Options;
+            auto &opt = m_gameplayOptions[m_selected];
+            if (IsKeyPressed(KEY_RIGHT))
+                opt.selectedIndex = (opt.selectedIndex + 1) % opt.values.size();
+            if (IsKeyPressed(KEY_LEFT))
+                opt.selectedIndex = (opt.selectedIndex + opt.values.size() - 1) % opt.values.size();
         }
-        else
+
+        if (IsKeyPressed(KEY_ENTER))
         {
-            // Apply the selected option immediately
-            ApplyGameplayOption(opt);
-        }
-    }
-
-    if (IsKeyPressed(KEY_ESCAPE))
-        m_state = MenuState::Options;
-}
-
-void Menu::HandleParkourControlsNavigation()
-{
-    if (IsKeyPressed(KEY_DOWN))
-        m_selected = (m_selected + 1) % m_parkourControlsOptions.size();
-    if (IsKeyPressed(KEY_UP))
-        m_selected = (m_selected + m_parkourControlsOptions.size() - 1) % m_parkourControlsOptions.size();
-
-    if (!m_parkourControlsOptions[m_selected].values.empty())
-    {
-        auto &opt = m_parkourControlsOptions[m_selected];
-        if (IsKeyPressed(KEY_RIGHT))
-            opt.selectedIndex = (opt.selectedIndex + 1) % opt.values.size();
-        if (IsKeyPressed(KEY_LEFT))
-            opt.selectedIndex = (opt.selectedIndex + opt.values.size() - 1) % opt.values.size();
-    }
-
-    if (IsKeyPressed(KEY_ENTER))
-    {
-        auto &opt = m_parkourControlsOptions[m_selected];
-        if (opt.label == "Back")
-        {
-            m_state = MenuState::Options;
-        }
-        else
-        {
-            // Apply the selected option immediately
-            ApplyParkourControlsOption(opt);
+            auto &opt = m_gameplayOptions[m_selected];
+            if (opt.label == "Back")
+            {
+                m_state = MenuState::Options;
+            }
+            else
+            {
+                // Apply the selected option immediately
+                ApplyGameplayOption(opt);
+            }
         }
     }
 
     if (IsKeyPressed(KEY_ESCAPE))
         m_state = MenuState::Options;
 }
+
+
 
 void Menu::ApplyGameplayOption(MenuOption& opt)
 {
@@ -1110,72 +1043,7 @@ void Menu::ApplyGameplayOption(MenuOption& opt)
     }
 }
 
-void Menu::ApplyParkourControlsOption(MenuOption& opt)
-{
-    if (opt.label == "Wall Run Sensitivity")
-    {
-        float sensitivity = std::stof(opt.values[opt.selectedIndex].substr(0, opt.values[opt.selectedIndex].find('x')));
-        m_wallRunSensitivity = sensitivity;
-        m_config.SetWallRunSensitivity(sensitivity);
-        AddConsoleOutput("Wall run sensitivity: " + opt.values[opt.selectedIndex]);
-    }
-    else if (opt.label == "Jump Timing")
-    {
-        float timing = std::stof(opt.values[opt.selectedIndex].substr(0, opt.values[opt.selectedIndex].find('x')));
-        m_jumpTiming = timing;
-        m_config.SetJumpTiming(timing);
-        AddConsoleOutput("Jump timing: " + opt.values[opt.selectedIndex]);
-    }
-    else if (opt.label == "Slide Control")
-    {
-        float control = std::stof(opt.values[opt.selectedIndex].substr(0, opt.values[opt.selectedIndex].find('x')));
-        m_slideControl = control;
-        m_config.SetSlideControl(control);
-        AddConsoleOutput("Slide control: " + opt.values[opt.selectedIndex]);
-    }
-    else if (opt.label == "Grapple Sensitivity")
-    {
-        float sensitivity = std::stof(opt.values[opt.selectedIndex].substr(0, opt.values[opt.selectedIndex].find('x')));
-        m_grappleSensitivity = sensitivity;
-        m_config.SetGrappleSensitivity(sensitivity);
-        AddConsoleOutput("Grapple sensitivity: " + opt.values[opt.selectedIndex]);
-    }
-    else if (opt.label == "Wall Run")
-    {
-        bool enabled = (opt.values[opt.selectedIndex] == "On");
-        m_wallRunEnabled = enabled;
-        m_config.SetWallRunEnabled(enabled);
-        AddConsoleOutput("Wall run " + std::string(enabled ? "enabled" : "disabled"));
-    }
-    else if (opt.label == "Double Jump")
-    {
-        bool enabled = (opt.values[opt.selectedIndex] == "On");
-        m_doubleJumpEnabled = enabled;
-        m_config.SetDoubleJumpEnabled(enabled);
-        AddConsoleOutput("Double jump " + std::string(enabled ? "enabled" : "disabled"));
-    }
-    else if (opt.label == "Slide")
-    {
-        bool enabled = (opt.values[opt.selectedIndex] == "On");
-        m_slideEnabled = enabled;
-        m_config.SetSlideEnabled(enabled);
-        AddConsoleOutput("Slide " + std::string(enabled ? "enabled" : "disabled"));
-    }
-    else if (opt.label == "Grapple")
-    {
-        bool enabled = (opt.values[opt.selectedIndex] == "On");
-        m_grappleEnabled = enabled;
-        m_config.SetGrappleEnabled(enabled);
-        AddConsoleOutput("Grapple " + std::string(enabled ? "enabled" : "disabled"));
-    }
-    else if (opt.label == "Slow Motion on Trick")
-    {
-        bool enabled = (opt.values[opt.selectedIndex] == "On");
-        m_slowMotionOnTrick = enabled;
-        m_config.SetSlowMotionOnTrick(enabled);
-        AddConsoleOutput("Slow motion on trick " + std::string(enabled ? "enabled" : "disabled"));
-    }
-}
+
 
 void Menu::HandleSimpleScreenKeyboardNavigation()
 {
@@ -1280,9 +1148,6 @@ void Menu::Render() {
     case MenuState::Gameplay:
         RenderGameplayMenu();
         break;
-    case MenuState::ParkourControls:
-        RenderParkourControlsMenu();
-        break;
     case MenuState::Video:
         RenderSettingsMenu();
         break;
@@ -1306,7 +1171,7 @@ void Menu::Render() {
     RenderConsole();
 }
 
-void Menu::RenderMenu() const
+void Menu::RenderMenu()
 {
     if (!m_currentMenu)
         return;
@@ -1351,7 +1216,9 @@ void Menu::RenderMenu() const
         return;
 
     // Modern title with glow effect
-    const char *title = (m_state == MenuState::Main) ? "CHAINED DECOS" : (*menuToRender)[m_selected].label;
+    const char *title = (m_state == MenuState::Main) ? "CHAINED DECOS" :
+                       (m_selected >= 0 && m_selected < static_cast<int>(menuToRender->size())) ?
+                       (*menuToRender)[m_selected].label : "UNKNOWN";
 
     // Dynamic title sizing
     float titleFontSize = 60.0f * scaleFactor;
@@ -1401,19 +1268,29 @@ void Menu::RenderMenu() const
     }
 
     if (m_buttonScales.size() != menuToRender->size())
+    {
         m_buttonScales.assign(menuToRender->size(), 1.0f);
+        // Ensure m_selected is within bounds after resizing
+        if (m_selected >= static_cast<int>(menuToRender->size()))
+            m_selected = static_cast<int>(menuToRender->size()) - 1;
+        if (m_selected < 0)
+            m_selected = 0;
+    }
 
     for (size_t i = 0; i < menuToRender->size(); ++i)
     {
-        const auto &item = (*menuToRender)[i];
+        const auto &item = (i < menuToRender->size()) ? (*menuToRender)[i] : (*menuToRender)[0];
         int baseX = GetScreenWidth() / 2 - kBtnW / 2;
         int baseY = kStartY + static_cast<int>(i) * kSpacing;
         Rectangle rect = {(float)baseX, (float)baseY, (float)kBtnW, (float)kBtnH};
 
         bool hovered = CheckCollisionPointRec(mousePos, rect);
-        bool selected = (static_cast<int>(i) == m_selected);
+        bool selected = (m_selected >= 0 && m_selected < static_cast<int>(menuToRender->size()) && static_cast<int>(i) == m_selected);
         float targetScale = (hovered || selected) ? 1.05f : 1.0f;
-        m_buttonScales[i] = Lerp(m_buttonScales[i], targetScale, 0.2f);
+        if (i < m_buttonScales.size())
+        {
+            m_buttonScales[i] = Lerp(m_buttonScales[i], targetScale, 0.2f);
+        }
 
         int w = static_cast<int>(kBtnW * m_buttonScales[i]);
         int h = static_cast<int>(kBtnH * m_buttonScales[i]);
@@ -1495,15 +1372,15 @@ void Menu::RenderMenu() const
 
         Color textColor = selected ? Color{220, 230, 255, 255} : (hovered ? Color{200, 210, 230, 255} : Color{180, 190, 210, 255});
 
-        int textW = MeasureTextEx(m_font, item.label, textSize, 2.0f).x;
+        int textW = MeasureTextEx(m_font, (i < menuToRender->size()) ? item.label : "UNKNOWN", textSize, 2.0f).x;
         int textX = x + w / 2 - textW / 2;
         int textY = y + h / 2 - static_cast<int>(textSize / 2);
 
         // Text shadow for depth
-        DrawTextEx(m_font, item.label, Vector2{(float)textX + 1, (float)textY + 1}, textSize, 2.0f, Fade(Color{0, 0, 0, 255}, 0.6f));
+        DrawTextEx(m_font, (i < menuToRender->size()) ? item.label : "UNKNOWN", Vector2{(float)textX + 1, (float)textY + 1}, textSize, 2.0f, Fade(Color{0, 0, 0, 255}, 0.6f));
 
         // Main text with modern color
-        DrawTextEx(m_font, item.label, Vector2{(float)textX, (float)textY}, textSize, 2.0f, textColor);
+        DrawTextEx(m_font, (i < menuToRender->size()) ? item.label : "UNKNOWN", Vector2{(float)textX, (float)textY}, textSize, 2.0f, textColor);
     }
 
     // Modern footer with dark theme styling - dynamic sizing
@@ -1617,7 +1494,7 @@ void Menu::RenderSettingsMenu() const {
     }
 
     // Modern settings footer
-    std::string footer = "ENTER Apply/Select    ←→ Change    ↑↓ Navigate    ESC Back";
+    std::string footer = "ENTER Apply/Select    Arrow L/R Change    ↑↓ Navigate    ESC Back";
     int fw = MeasureTextEx(m_font, footer.c_str(), 18, 2.0f).x;
     int footerX = GetScreenWidth() / 2 - fw / 2;
     int footerY = GetScreenHeight() - 30;
@@ -1773,102 +1650,7 @@ void Menu::RenderGameplayMenu()
 
             // Show selected value with modern styling
             std::string displayValue;
-            if (opt.selectedIndex < opt.values.size())
-            {
-                displayValue = opt.values[opt.selectedIndex];
-            }
-
-            if (!displayValue.empty())
-            {
-                // Modern value display with background
-                int textWidth = MeasureTextEx(m_font, displayValue.c_str(), fontSize, 2.0f).x;
-                int xPos = GetScreenWidth() - textWidth - 100;
-
-                if (isSelected)
-                {
-                    // Background for selected value
-                    DrawRectangle(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Fade(Color{255, 200, 100, 255}, 0.3f));
-                    DrawRectangleLines(xPos - 10, y - 2, textWidth + 20, fontSize + 8, Color{255, 180, 80, 255});
-                }
-
-                DrawTextEx(m_font, displayValue.c_str(), Vector2{(float)xPos, (float)y + 5}, fontSize, 2.0f,
-                          isSelected ? Color{255, 255, 180, 255} : Color{220, 230, 200, 255});
-            }
-        }
-    }
-
-    // Modern settings footer
-    std::string footer = "ENTER Apply/Select    ←→ Change    ↑↓ Navigate    ESC Back";
-    int fw = MeasureTextEx(m_font, footer.c_str(), 18, 2.0f).x;
-    int footerX = GetScreenWidth() / 2 - fw / 2;
-    int footerY = GetScreenHeight() - 30;
-
-    // Footer background
-    DrawRectangle(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{0, 0, 0, 255}, 0.4f));
-    DrawRectangleLines(footerX - 8, footerY - 3, fw + 16, 26, Fade(Color{120, 140, 160, 255}, 0.5f));
-
-    // Color-coded footer text
-    DrawTextEx(m_font, "ENTER", Vector2{(float)footerX, (float)footerY}, 18, 2.0f, Color{150, 255, 150, 255});
-    DrawTextEx(m_font, " Apply/Select    ", Vector2{(float)footerX + 65, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
-    DrawTextEx(m_font, "←→", Vector2{(float)footerX + 190, (float)footerY}, 18, 2.0f, Color{150, 150, 255, 255});
-    DrawTextEx(m_font, " Change    ", Vector2{(float)footerX + 210, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
-    DrawTextEx(m_font, "↑↓", Vector2{(float)footerX + 290, (float)footerY}, 18, 2.0f, Color{150, 150, 255, 255});
-    DrawTextEx(m_font, " Navigate    ", Vector2{(float)footerX + 310, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
-    DrawTextEx(m_font, "ESC", Vector2{(float)footerX + 410, (float)footerY}, 18, 2.0f, Color{255, 150, 150, 255});
-    DrawTextEx(m_font, " Back", Vector2{(float)footerX + 440, (float)footerY}, 18, 2.0f, Color{200, 200, 200, 255});
-}
-
-void Menu::RenderParkourControlsMenu()
-{
-    int startY = 150, spacing = 80, fontSize = 30;
-
-    // Modern parkour controls title with glow
-    const char* settingsTitle = "PARKOUR CONTROLS";
-    int titleW = MeasureTextEx(m_font, settingsTitle, 45, 2.0f).x;
-    int titleX = 80;
-
-    // Title glow effect
-    for (int i = 2; i >= 1; i--)
-    {
-        DrawTextEx(m_font, settingsTitle, Vector2{(float)titleX + i, (float)45 + i}, 45, 2.0f, Fade(Color{255, 150, 100, 255}, 0.5f / i));
-    }
-    DrawTextEx(m_font, settingsTitle, Vector2{(float)titleX, (float)45}, 45, 2.0f, Color{255, 200, 150, 255});
-
-    for (size_t i = 0; i < m_parkourControlsOptions.size(); ++i)
-    {
-        auto &opt = m_parkourControlsOptions[i];
-        int y = startY + static_cast<int>(i) * spacing;
-
-        bool isSelected = (static_cast<int>(i) == m_selected);
-        Color labelColor = isSelected ? Color{255, 220, 150, 255} : Color{200, 210, 230, 255};
-
-        // Modern setting container
-        if (isSelected)
-        {
-            // Background highlight for selected option
-            DrawRectangle(60, y - 5, GetScreenWidth() - 120, spacing - 10, Fade(Color{255, 150, 100, 255}, 0.2f));
-            DrawRectangleLines(60, y - 5, GetScreenWidth() - 120, spacing - 10, Color{255, 200, 150, 255});
-        }
-
-        // Draw setting label with modern typography
-        const char* label = opt.label.c_str();
-        int labelW = MeasureTextEx(m_font, label, fontSize, 2.0f).x;
-        DrawTextEx(m_font, label, Vector2{80.0f, (float)y + 5}, fontSize, 2.0f, labelColor);
-
-        if (!opt.values.empty())
-        {
-            // Show current value (smaller font, different position)
-            std::string currentValue = GetParkourControlsSettingValue(opt.label);
-            if (!currentValue.empty())
-            {
-                int currentWidth = MeasureTextEx(m_font, currentValue.c_str(), fontSize - 8, 2.0f).x;
-                DrawTextEx(m_font, currentValue.c_str(), Vector2{(float)80 + 320, (float)y + 8}, fontSize - 8, 2.0f,
-                          isSelected ? Fade(Color{255, 255, 150, 255}, 0.9f) : Fade(Color{180, 200, 150, 255}, 0.7f));
-            }
-
-            // Show selected value with modern styling
-            std::string displayValue;
-            if (opt.selectedIndex < opt.values.size())
+            if (opt.selectedIndex >= 0 && opt.selectedIndex < static_cast<int>(opt.values.size()))
             {
                 displayValue = opt.values[opt.selectedIndex];
             }
@@ -1946,47 +1728,6 @@ std::string Menu::GetGameplaySettingValue(const std::string& settingName) const
    return "";
 }
 
-std::string Menu::GetParkourControlsSettingValue(const std::string& settingName) const
-{
-   if (settingName == "Wall Run Sensitivity")
-   {
-       return TextFormat("%.1fx", m_wallRunSensitivity);
-   }
-   else if (settingName == "Jump Timing")
-   {
-       return TextFormat("%.1fx", m_jumpTiming);
-   }
-   else if (settingName == "Slide Control")
-   {
-       return TextFormat("%.1fx", m_slideControl);
-   }
-   else if (settingName == "Grapple Sensitivity")
-   {
-       return TextFormat("%.1fx", m_grappleSensitivity);
-   }
-   else if (settingName == "Wall Run")
-   {
-       return m_wallRunEnabled ? "On" : "Off";
-   }
-   else if (settingName == "Double Jump")
-   {
-       return m_doubleJumpEnabled ? "On" : "Off";
-   }
-   else if (settingName == "Slide")
-   {
-       return m_slideEnabled ? "On" : "Off";
-   }
-   else if (settingName == "Grapple")
-   {
-       return m_grappleEnabled ? "On" : "Off";
-   }
-   else if (settingName == "Slow Motion on Trick")
-   {
-       return m_slowMotionOnTrick ? "On" : "Off";
-   }
-
-   return "";
-}
 
 std::string Menu::GetCurrentSettingValue(const std::string& settingName) const
 {
@@ -2220,7 +1961,7 @@ void Menu::InitializeMaps()
             "parkour_test",
             "Built-in Parkour",
             "Default parkour level with basic platforming",
-            "/resources/map_previews/builtin_parkour.png",
+            NULL,
             YELLOW,
             true
         });
@@ -2423,7 +2164,7 @@ void Menu::RenderMapSelection() const
     if (instFontSize < 14.0f) instFontSize = 14.0f;
     if (instFontSize > 24.0f) instFontSize = 24.0f;
 
-    const char* instructions = "[←/→] Navigate Maps   [Enter] Select Map   [Esc] Back to Menu";
+    const char* instructions = "[Arrow Left/Arrow Right] Navigate Maps   [Enter] Select Map   [Esc] Back to Menu";
     int iw = MeasureTextEx(m_font, instructions, instFontSize, 2.0f).x;
     int instY = screenHeight - static_cast<int>(25 * scaleFactor);
     if (instY > screenHeight - 20) instY = screenHeight - 20;
@@ -2458,7 +2199,7 @@ std::string Menu::GetSelectedMapName() const
             return selectedMap->name;
         }
     }
-    return "parkour_test"; // Default fallback
+    return ""; // Default fallback
 }
 
 void Menu::ScanForJsonMaps()

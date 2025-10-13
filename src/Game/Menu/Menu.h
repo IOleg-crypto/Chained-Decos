@@ -130,7 +130,7 @@ private:
 
     Engine *m_engine = nullptr;
     ConfigManager m_config;
-    Font m_font; // Alan Sans font for menu text
+    Font m_font{}; // Alan Sans font for menu text
 
     // Audio settings
     float m_masterVolume = 1.0f;
@@ -168,7 +168,7 @@ public:
 
     float Lerp(float a, float b, float t) const;
     [[nodiscard]] MenuAction GetAction() const;
-    void RenderMenu() const;
+    void RenderMenu();
 
     void Update();
     void Render();
@@ -228,17 +228,12 @@ public:
     void HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked);
     void HandleConfirmExitMouseSelection(Vector2 mousePos, bool clicked);
     void HandleGameplayMouseSelection(Vector2 mousePos, bool clicked);
-    void HandleParkourControlsMouseSelection(Vector2 mousePos, bool clicked);
 
     // New navigation and rendering functions for options-based menus
     void HandleGameplayNavigation();
-    void HandleParkourControlsNavigation();
     void RenderGameplayMenu();
-    void RenderParkourControlsMenu();
     void ApplyGameplayOption(MenuOption& opt);
-    void ApplyParkourControlsOption(MenuOption& opt);
     std::string GetGameplaySettingValue(const std::string& settingName) const;
-    std::string GetParkourControlsSettingValue(const std::string& settingName) const;
 
     // Test accessor method
     [[nodiscard]] bool IsVisible() const { return m_state != MenuState::Main || m_gameInProgress; }
