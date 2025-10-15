@@ -289,7 +289,7 @@ jobs:
           --config ${{ matrix.build_type }}
 
     - name: Run tests
-       shell: bash
+      shell: bash
        run: |
           cd "${{ steps.build-env.outputs.build-output-dir }}"
 
