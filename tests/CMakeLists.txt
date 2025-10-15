@@ -63,19 +63,33 @@ set_target_properties(ChainedDecosIntegrationTests PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
-# Ensure consistent debug settings on Windows
+# Ensure consistent CRT settings on Windows
 if(WIN32)
-    # Use dynamic linking for better Windows compatibility - unit tests
-    set_target_properties(ChainedDecosUnitTests PROPERTIES
-        MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
-        CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
-    )
+    # Use appropriate CRT based on build type - unit tests
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(ChainedDecosUnitTests PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL"
+            CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL"
+        )
+    else()
+        set_target_properties(ChainedDecosUnitTests PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
+            CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
+        )
+    endif()
 
-    # Use dynamic linking for better Windows compatibility - integration tests
-    set_target_properties(ChainedDecosIntegrationTests PROPERTIES
-        MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
-        CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
-    )
+    # Use appropriate CRT based on build type - integration tests
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(ChainedDecosIntegrationTests PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL"
+            CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL"
+        )
+    else()
+        set_target_properties(ChainedDecosIntegrationTests PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
+            CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
+        )
+    endif()
 
     # Force consistent debug levels for both test targets
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")

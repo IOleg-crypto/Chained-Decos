@@ -71,6 +71,13 @@ if(MSVC)
         endif()
     endif()
 
+    # Set consistent CRT settings for all targets
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_compile_options(/MDd)  # MultiThreadedDebugDLL
+    else()
+        add_compile_options(/MD)   # MultiThreadedDLL
+    endif()
+
     if(ENABLE_SANITIZERS)
         add_compile_options(/fsanitize=address)
     endif()
@@ -221,11 +228,13 @@ if(BUILD_TESTS)
         # Use dynamic CRT for better Windows compatibility and consistent debug levels
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-        # Force GoogleTest to use the same debug settings as the main project
+        # Force GoogleTest to use the same CRT settings as the main project
         if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             add_compile_definitions(_DEBUG)
+            set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         else()
             add_compile_definitions(NDEBUG)
+            set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         endif()
         FetchContent_MakeAvailable(googletest)
     endif()
