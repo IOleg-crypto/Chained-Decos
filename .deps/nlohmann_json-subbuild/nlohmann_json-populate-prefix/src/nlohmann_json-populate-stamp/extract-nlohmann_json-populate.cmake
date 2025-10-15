@@ -28,8 +28,8 @@ file(MAKE_DIRECTORY "${ut_dir}")
 
 # Extract it:
 #
-message(VERBOSE "extracting... [tar xfz]")
-execute_process(COMMAND ${CMAKE_COMMAND} -E tar xfz ${filename} 
+message(VERBOSE "extracting... [tar xf]")
+execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf ${filename} 
   WORKING_DIRECTORY ${ut_dir}
   RESULT_VARIABLE rv
 )

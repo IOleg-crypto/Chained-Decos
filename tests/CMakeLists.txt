@@ -65,28 +65,28 @@ set_target_properties(ChainedDecosIntegrationTests PROPERTIES
 
 # Force static linking on Windows to avoid DLL issues
 if(WIN32)
-    # Add static linking flags for Windows - unit tests
+    # Use dynamic linking for better Windows compatibility - unit tests
     set_target_properties(ChainedDecosUnitTests PROPERTIES
-        MSVC_RUNTIME_LIBRARY "MultiThreaded"
-        CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded"
+        MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
+        CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
     )
 
-    # Add static linking flags for Windows - integration tests
+    # Use dynamic linking for better Windows compatibility - integration tests
     set_target_properties(ChainedDecosIntegrationTests PROPERTIES
-        MSVC_RUNTIME_LIBRARY "MultiThreaded"
-        CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded"
+        MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
+        CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
     )
 
-    # Add compile definitions to force static linking - unit tests
+    # Add compile definitions for dynamic linking - unit tests
     target_compile_definitions(ChainedDecosUnitTests PRIVATE
-        GTEST_LINKED_AS_SHARED_LIBRARY=0
-        GTEST_CREATE_SHARED_LIBRARY=0
+        GTEST_LINKED_AS_SHARED_LIBRARY=1
+        GTEST_CREATE_SHARED_LIBRARY=1
     )
 
-    # Add compile definitions to force static linking - integration tests
+    # Add compile definitions for dynamic linking - integration tests
     target_compile_definitions(ChainedDecosIntegrationTests PRIVATE
-        GTEST_LINKED_AS_SHARED_LIBRARY=0
-        GTEST_CREATE_SHARED_LIBRARY=0
+        GTEST_LINKED_AS_SHARED_LIBRARY=1
+        GTEST_CREATE_SHARED_LIBRARY=1
     )
 
     # Add winmm library for Windows timer functions (needed by some system functions)
