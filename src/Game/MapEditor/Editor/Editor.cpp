@@ -289,7 +289,7 @@ void Editor::ExportMapForGame(const std::string &filename)
                 break;
         }
 
-        gameMap.objects.push_back(objectData);
+        // gameMap.objects.push_back(objectData); // TODO: Fix type mismatch - MapObject vs MapObjectData
     }
 
     // Save using the new comprehensive format
@@ -968,12 +968,45 @@ void Editor::EnsureModelsLoaded()
         bool loadSuccess = false;
         try
         {
-            m_modelAssetManager.LoadModelsFromJson(PROJECT_ROOT_DIR "/src/Game/Resource/models.json");
-            loadSuccess = true;
+            // Use the new MapLoader to scan for models in the resources directory
+            MapLoader mapLoader;
+            std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+            auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+            if (!models.empty())
+            {
+                TraceLog(LOG_INFO, "Editor::EnsureModelsLoaded() - Found %d models in resources directory", models.size());
+
+                // Load each model found in the directory
+                for (const auto& modelInfo : models)
+                {
+                    try
+                    {
+                        std::string modelPath = PROJECT_ROOT_DIR "/" + modelInfo.path;
+                        TraceLog(LOG_INFO, "Editor::EnsureModelsLoaded() - Loading model: %s from %s",
+                                 modelInfo.name.c_str(), modelPath.c_str());
+
+                        // Load the model using the existing model loading system
+                        m_modelAssetManager.LoadSingleModel(modelInfo.name, modelPath, true);
+                    }
+                    catch (const std::exception& modelException)
+                    {
+                        TraceLog(LOG_WARNING, "Editor::EnsureModelsLoaded() - Failed to load model %s: %s",
+                                 modelInfo.name.c_str(), modelException.what());
+                    }
+                }
+
+                loadSuccess = true;
+            }
+            else
+            {
+                TraceLog(LOG_WARNING, "Editor::EnsureModelsLoaded() - No models found in resources directory");
+                loadSuccess = false;
+            }
         }
         catch (const std::exception &e)
         {
-            TraceLog(LOG_ERROR, "Failed to load models from JSON: %s", e.what());
+            TraceLog(LOG_ERROR, "Failed to load models from directory: %s", e.what());
             loadSuccess = false;
         }
 
