@@ -218,8 +218,15 @@ if(BUILD_TESTS)
             URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
             DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         )
-        # Use dynamic CRT for better Windows compatibility
+        # Use dynamic CRT for better Windows compatibility and consistent debug levels
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+        # Force GoogleTest to use the same debug settings as the main project
+        if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+            add_compile_definitions(_DEBUG)
+        else()
+            add_compile_definitions(NDEBUG)
+        endif()
         FetchContent_MakeAvailable(googletest)
     endif()
 endif()
