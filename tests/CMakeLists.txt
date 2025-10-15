@@ -63,7 +63,7 @@ set_target_properties(ChainedDecosIntegrationTests PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
-# Force static linking on Windows to avoid DLL issues
+# Ensure consistent debug settings on Windows
 if(WIN32)
     # Use dynamic linking for better Windows compatibility - unit tests
     set_target_properties(ChainedDecosUnitTests PROPERTIES
@@ -76,6 +76,15 @@ if(WIN32)
         MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
         CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
     )
+
+    # Force consistent debug levels for both test targets
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_definitions(ChainedDecosUnitTests PRIVATE _DEBUG)
+        target_compile_definitions(ChainedDecosIntegrationTests PRIVATE _DEBUG)
+    else()
+        target_compile_definitions(ChainedDecosUnitTests PRIVATE NDEBUG)
+        target_compile_definitions(ChainedDecosIntegrationTests PRIVATE NDEBUG)
+    endif()
 
     # Add compile definitions for dynamic linking - unit tests
     target_compile_definitions(ChainedDecosUnitTests PRIVATE
