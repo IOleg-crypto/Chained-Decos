@@ -206,9 +206,9 @@ jobs:
       shell: bash
       run: |
         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-          PARALLEL_JOBS=8
+           PARALLEL_JOBS=4
         else
-          PARALLEL_JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
+           PARALLEL_JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
         fi
 
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \

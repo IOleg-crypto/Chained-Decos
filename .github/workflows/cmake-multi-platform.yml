@@ -34,11 +34,10 @@ jobs:
             generator: "Unix Makefiles"
 
           # Windows with MSVC
-          - os: windows-2022
             compiler: msvc
             version: 2022
             build_type: Release
-            generator: "Visual Studio 17 2022"
+            generator: "Ninja"
 
     steps:
     - name: Checkout repository
@@ -272,9 +271,9 @@ jobs:
       run: |
         # Determine number of CPU cores for parallel builds
         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-          PARALLEL_JOBS=8
+           PARALLEL_JOBS=4
         else
-          PARALLEL_JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
+           PARALLEL_JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
         fi
 
         cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
