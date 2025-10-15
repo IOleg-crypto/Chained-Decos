@@ -218,38 +218,57 @@ jobs:
            --verbose
 
     - name: Run tests
-      shell: bash
-      run: |
-        cd "${{ steps.build-env.outputs.build-output-dir }}"
-        echo "🧪 Running Google Tests..."
+      shell: ${{ matrix.os == 'windows-2022' && 'pwsh' || 'bash' }}
+  run: |
+    cd "${{ steps.build-env.outputs.build-output-dir }}"
+    echo "🧪 Running Google Tests..."
 
-        if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-        UNIT_TEST_EXECUTABLE="./bin/tests/ChainedDecosUnitTests.exe"
-        INTEGRATION_TEST_EXECUTABLE="./bin/tests/ChainedDecosIntegrationTests.exe"
-        else
-        UNIT_TEST_EXECUTABLE="./bin/tests/ChainedDecosUnitTests"
-        INTEGRATION_TEST_EXECUTABLE="./bin/tests/ChainedDecosIntegrationTests"
-        fi
+    if ($env:RUNNER_OS -eq "Windows") {
+      $unit = "bin/tests/ChainedDecosUnitTests.exe"
+      $integration = "bin/tests/ChainedDecosIntegrationTests.exe"
 
-        echo "=== UNIT TESTS ==="
-        if [[ -f "$UNIT_TEST_EXECUTABLE" ]]; then
-        echo "Running: $UNIT_TEST_EXECUTABLE"
-        "$UNIT_TEST_EXECUTABLE" || exit $?
-        else
-        echo "❌ Unit test not found: $UNIT_TEST_EXECUTABLE"
+      Write-Host "=== UNIT TESTS ==="
+      if (Test-Path $unit) {
+        & $unit
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      } else {
+        Write-Error "❌ Unit test not found: $unit"
         exit 1
-        fi
+      }
 
-        echo "=== INTEGRATION TESTS ==="
-        if [[ -f "$INTEGRATION_TEST_EXECUTABLE" ]]; then
-        echo "Running: $INTEGRATION_TEST_EXECUTABLE"
-        "$INTEGRATION_TEST_EXECUTABLE" || exit $?
-        else
-        echo "❌ Integration test not found: $INTEGRATION_TEST_EXECUTABLE"
+      Write-Host "=== INTEGRATION TESTS ==="
+      if (Test-Path $integration) {
+        & $integration
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      } else {
+        Write-Error "❌ Integration test not found: $integration"
         exit 1
-        fi
+      }
 
-        echo "✅ All tests completed successfully!"
+      Write-Host "✅ All tests completed successfully!"
+    }
+    else {
+      UNIT="./bin/tests/ChainedDecosUnitTests"
+      INTEGRATION="./bin/tests/ChainedDecosIntegrationTests"
+
+      echo "=== UNIT TESTS ==="
+      if [[ -f "$UNIT" ]]; then
+        "$UNIT" || exit $?
+      else
+        echo "❌ Unit test not found: $UNIT"
+        exit 1
+      fi
+
+      echo "=== INTEGRATION TESTS ==="
+      if [[ -f "$INTEGRATION" ]]; then
+        "$INTEGRATION" || exit $?
+      else
+        echo "❌ Integration test not found: $INTEGRATION"
+        exit 1
+      fi
+
+      echo "✅ All tests completed successfully!"
+    }
 
     - name: Upload test results
       uses: actions/upload-artifact@v4

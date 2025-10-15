@@ -102,7 +102,7 @@ jobs:
         choco install cmake ninja ccache --no-progress
 
     - name: Clear CMake cache
-       shell: bash
+      shell: bash
        run: |
          echo "🧹 Starting comprehensive cache cleanup..."
 

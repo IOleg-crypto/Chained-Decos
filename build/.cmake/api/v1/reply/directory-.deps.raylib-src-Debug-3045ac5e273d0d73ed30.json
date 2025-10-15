@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "D:/gitnext/Chained Decos/.deps/raylib-build",
+		"source" : ".deps/raylib-src"
+	}
+}
