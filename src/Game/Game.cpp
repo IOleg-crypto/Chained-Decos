@@ -524,8 +524,7 @@ void Game::InitPlayer()
 
 void Game::LoadGameModels()
 {
-    TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading game models...");
-    const std::string modelsJsonPath = PROJECT_ROOT_DIR "/src/Game/Resource/models.json";
+    TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading game models from resources directory...");
     m_models.SetCacheEnabled(true);
     m_models.SetMaxCacheSize(50);
     m_models.EnableLOD(true);
@@ -533,20 +532,50 @@ void Game::LoadGameModels()
 
     try
     {
-        m_models.LoadModelsFromJson(modelsJsonPath);
-        m_models.PrintStatistics();
-        TraceLog(LOG_INFO, "Game::LoadGameModels() - Models loaded successfully.");
+        // Use the new MapLoader to scan for models in the resources directory
+        MapLoader mapLoader;
+        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+        auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
-        // Validate that we have essential models
-        auto availableModels = m_models.GetAvailableModels();
-        bool hasPlayerModel = std::ranges::find(availableModels, "player") != availableModels.end();
-
-        if (!hasPlayerModel)
+        if (!models.empty())
         {
-            TraceLog(LOG_WARNING, "Game::LoadGameModels() - Player model not found, player may not render correctly");
+            TraceLog(LOG_INFO, "Game::LoadGameModels() - Found %d models in resources directory", models.size());
+
+            // Load each model found in the directory
+            for (const auto& modelInfo : models)
+            {
+                try
+                {
+                    std::string modelPath = PROJECT_ROOT_DIR "/" + modelInfo.path;
+                    TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading model: %s from %s",
+                             modelInfo.name.c_str(), modelPath.c_str());
+
+                    // Load the model using the existing model loading system
+                    m_models.LoadSingleModel(modelInfo.name, modelPath, true);
+                }
+                catch (const std::exception& modelException)
+                {
+                    TraceLog(LOG_WARNING, "Game::LoadGameModels() - Failed to load model %s: %s",
+                             modelInfo.name.c_str(), modelException.what());
+                }
+            }
+
+            m_models.PrintStatistics();
+            TraceLog(LOG_INFO, "Game::LoadGameModels() - Models loaded successfully.");
+
+            // Validate that we have essential models
+            auto availableModels = m_models.GetAvailableModels();
+            bool hasPlayerModel = std::ranges::find(availableModels, "player") != availableModels.end();
+
+            if (!hasPlayerModel)
+            {
+                TraceLog(LOG_WARNING, "Game::LoadGameModels() - Player model not found, player may not render correctly");
+            }
         }
-
-
+        else
+        {
+            TraceLog(LOG_WARNING, "Game::LoadGameModels() - No models found in resources directory");
+        }
     }
     catch (const std::exception &e)
     {
@@ -558,7 +587,6 @@ void Game::LoadGameModels()
 void Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
 {
     TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Loading selective models: %d models", modelNames.size());
-    const std::string modelsJsonPath = PROJECT_ROOT_DIR "/src/Game/Resource/models.json";
     m_models.SetCacheEnabled(true);
     m_models.SetMaxCacheSize(50);
     m_models.EnableLOD(true);
@@ -566,17 +594,53 @@ void Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
 
     try
     {
-        m_models.LoadModelsFromJsonSelective(modelsJsonPath, modelNames);
-        m_models.PrintStatistics();
-        TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Selective models loaded successfully.");
+        // Use the new MapLoader to scan for models in the resources directory
+        MapLoader mapLoader;
+        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+        auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
-        // Validate that we have essential models
-        auto availableModels = m_models.GetAvailableModels();
-        bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
-
-        if (!hasPlayerModel)
+        if (!allModels.empty())
         {
-            TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - Player model not found, player may not render correctly");
+            TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Found %d models in resources directory", allModels.size());
+
+            // Load only the models that are in the required list
+            for (const auto& modelInfo : allModels)
+            {
+                // Check if this model is in the required list
+                if (std::find(modelNames.begin(), modelNames.end(), modelInfo.name) != modelNames.end())
+                {
+                    try
+                    {
+                        std::string modelPath = PROJECT_ROOT_DIR "/" + modelInfo.path;
+                        TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Loading required model: %s from %s",
+                                 modelInfo.name.c_str(), modelPath.c_str());
+
+                        // Load the model using the existing model loading system
+                        m_models.LoadSingleModel(modelInfo.name, modelPath, true);
+                    }
+                    catch (const std::exception& modelException)
+                    {
+                        TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - Failed to load model %s: %s",
+                                 modelInfo.name.c_str(), modelException.what());
+                    }
+                }
+            }
+
+            m_models.PrintStatistics();
+            TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Selective models loaded successfully.");
+
+            // Validate that we have essential models
+            auto availableModels = m_models.GetAvailableModels();
+            bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
+
+            if (!hasPlayerModel)
+            {
+                TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - Player model not found, player may not render correctly");
+            }
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - No models found in resources directory");
         }
     }
     catch (const std::exception &e)
@@ -1029,7 +1093,32 @@ void Game::HandleMenuActions()
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading selected map...");
             try
             {
-                LoadEditorMap(mapPath);
+                // Try to detect map format and use appropriate loader
+                std::ifstream testFile(mapPath);
+                if (testFile.is_open())
+                {
+                    std::string firstLine;
+                    std::getline(testFile, firstLine);
+                    testFile.close();
+
+                    // Check if this looks like array format (old models.json format)
+                    if (firstLine.find("[") == 0)
+                    {
+                        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Detected array format, using LoadModelsMap");
+                        m_gameMap = LoadModelsMap(mapPath);
+                    }
+                    else
+                    {
+                        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Detected editor format, using LoadEditorMap");
+                        LoadEditorMap(mapPath);
+                    }
+                }
+                else
+                {
+                    TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot open map file: %s", mapPath.c_str());
+                    throw std::runtime_error("Cannot open map file");
+                }
+
                 TraceLog(LOG_INFO, "Game::HandleMenuActions() - Map loaded successfully");
             }
             catch (const std::exception& e)
@@ -1929,6 +2018,11 @@ void Game::LoadEditorMap(const std::string& mapPath)
                 colliderSize = Vector3{object.size.x, 0.1f, object.size.y};
                 TraceLog(LOG_INFO, "Game::LoadEditorMap() - Plane collision: size=(%.2f, %.2f, %.2f)", colliderSize.x, colliderSize.y, colliderSize.z);
                 break;
+            case MapObjectType::MODEL:
+                // For models, use scale as bounding box
+                // Scale represents the size of the model instance
+                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Model collision: size=(%.2f, %.2f, %.2f)", colliderSize.x, colliderSize.y, colliderSize.z);
+                break;
             default:
                 // For cubes and other types, use scale as-is
                 TraceLog(LOG_INFO, "Game::LoadEditorMap() - Cube/Model collision: size=(%.2f, %.2f, %.2f)", colliderSize.x, colliderSize.y, colliderSize.z);
@@ -1985,8 +2079,7 @@ void Game::RenderEditorMap()
                 break;
 
             case MapObjectType::MODEL:
-                // For model objects, we would need to load and render the actual model
-                // For now, draw a placeholder cube
+                // For model objects, try to load and render the actual model
                 if (!object.modelName.empty())
                 {
                     try
@@ -1994,10 +2087,22 @@ void Game::RenderEditorMap()
                         Model* model = &m_models.GetModelByName(object.modelName.c_str());
                         if (model && model->meshCount > 0)
                         {
-                            DrawModelEx(*model, object.position,
-                                      Vector3{object.rotation.x, object.rotation.y, object.rotation.z},
-                                      object.rotation.y, Vector3{object.scale.x, object.scale.y, object.scale.z},
-                                      object.color);
+                            // Apply transformations: scale, rotation, translation
+                            Matrix scale = MatrixScale(object.scale.x, object.scale.y, object.scale.z);
+                            Matrix rotationX = MatrixRotateX(object.rotation.x * DEG2RAD);
+                            Matrix rotationY = MatrixRotateY(object.rotation.y * DEG2RAD);
+                            Matrix rotationZ = MatrixRotateZ(object.rotation.z * DEG2RAD);
+                            Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
+
+                            // Combine transformations: scale -> rotate -> translate
+                            Matrix transform = MatrixMultiply(scale, rotationX);
+                            transform = MatrixMultiply(transform, rotationY);
+                            transform = MatrixMultiply(transform, rotationZ);
+                            transform = MatrixMultiply(transform, translation);
+
+                            // Apply transformation and draw model
+                            model->transform = transform;
+                            DrawModel(*model, Vector3{0, 0, 0}, 1.0f, object.color);
                         }
                         else
                         {
@@ -2031,8 +2136,8 @@ void Game::RenderEditorMap()
     }
 
     // Also render any legacy map objects for backward compatibility
-    for (const auto& mapObj : m_mapObjects)
+    for (const auto& legacyObj : m_mapObjects)
     {
-        DrawModel(mapObj.loadedModel, Vector3{0, 0, 0}, 1.0f, WHITE);
+        DrawModel(legacyObj.loadedModel, Vector3{0, 0, 0}, 1.0f, WHITE);
     }
 }

@@ -20,7 +20,7 @@ private:
     Engine *m_engine = nullptr;
 
     // Map loading system
-    std::vector<MapLoader> m_mapObjects;  // Legacy support
+    std::vector<LegacyMapLoader> m_mapObjects;  // Legacy support
     GameMap m_gameMap;                   // New comprehensive map system
 
 private:
