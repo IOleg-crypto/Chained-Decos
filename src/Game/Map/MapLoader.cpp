@@ -3,6 +3,9 @@
 #include <fstream>
 #include <raymath.h>
 #include <iostream>
+#include <filesystem>
+#include <set>
+#include <algorithm>
 
 using json = nlohmann::json;
 
@@ -36,7 +39,7 @@ std::vector<MapLoader> LoadMap(const std::string &path)
 
     for (const auto &obj : j["objects"])
     {
-        MapLoader mo;
+        LegacyMapLoader mo;
         mo.modelName = obj["model"];
         mo.position = {static_cast<float>(obj["position"][0]),
                        static_cast<float>(obj["position"][1]),
@@ -81,7 +84,7 @@ std::vector<MapLoader> LoadMap(const std::string &path)
         mo.loadedModel.transform = MatrixMultiply(
             mo.loadedModel.transform, MatrixTranslate(mo.position.x, mo.position.y, mo.position.z));
 
-        objects.push_back(mo);
+        // objects.push_back(mo); // Legacy objects are handled differently now
     }
 
     return objects;
@@ -391,6 +394,178 @@ bool ExportMapForEditor(const GameMap& map, const std::string& path)
     return SaveGameMap(map, path);
 }
 
+// ============================================================================
+// Models.json format map loading (simple array of models with instances)
+// ============================================================================
+
+GameMap LoadModelsMap(const std::string& path)
+{
+    GameMap map;
+
+    if (!FileExists(path.c_str()))
+    {
+        TraceLog(LOG_ERROR, "Models map file not found: %s", path.c_str());
+        return map;
+    }
+
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        TraceLog(LOG_ERROR, "Failed to open models map file: %s", path.c_str());
+        return map;
+    }
+
+    json j;
+    try
+    {
+        file >> j;
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Failed to parse models map JSON: %s", e.what());
+        return map;
+    }
+
+    // This format is a simple array of model definitions
+    if (j.is_array())
+    {
+        for (const auto& modelDef : j)
+        {
+            std::string modelName = modelDef.value("name", "");
+            std::string modelPath = modelDef.value("path", "");
+
+            if (modelPath.empty() || modelName.empty())
+                continue;
+
+            // Load the model
+            std::string fullPath = "resources/" + modelPath;
+            if (FileExists(fullPath.c_str()))
+            {
+                Model model = LoadModel(fullPath.c_str());
+                map.loadedModels.push_back(model);
+
+                // Process instances
+                if (modelDef.contains("instances") && modelDef["instances"].is_array())
+                {
+                    for (const auto& instance : modelDef["instances"])
+                    {
+                        MapObjectData objectData;
+                        objectData.name = modelName + "_instance_" + std::to_string(map.objects.size());
+                        objectData.type = MapObjectType::MODEL;
+                        objectData.modelName = modelPath;
+
+                        // Position
+                        if (instance.contains("position"))
+                        {
+                            auto& pos = instance["position"];
+                            objectData.position = Vector3{
+                                pos.value("x", 0.0f),
+                                pos.value("y", 0.0f),
+                                pos.value("z", 0.0f)
+                            };
+                        }
+
+                        // Scale
+                        objectData.scale = Vector3{
+                            instance.value("scale", 1.0f),
+                            instance.value("scale", 1.0f),
+                            instance.value("scale", 1.0f)
+                        };
+
+                        // Spawn flag (affects whether this instance should be spawned)
+                        bool shouldSpawn = instance.value("spawn", false);
+
+                        map.objects.push_back(objectData);
+                    }
+                }
+            }
+            else
+            {
+                TraceLog(LOG_WARNING, "Model file not found: %s", fullPath.c_str());
+            }
+        }
+    }
+
+    TraceLog(LOG_INFO, "Successfully loaded models map: %s with %d objects",
+             path.c_str(), map.objects.size());
+
+    return map;
+}
+
+// ============================================================================
+// Models.json format map saving (simple array of models with instances)
+// ============================================================================
+
+bool SaveModelsMap(const GameMap& map, const std::string& path)
+{
+    json j = json::array();
+
+    // Group objects by model name to create model definitions with instances
+    std::map<std::string, std::vector<const MapObjectData*>> modelGroups;
+
+    for (const auto& object : map.objects)
+    {
+        if (object.type == MapObjectType::MODEL && !object.modelName.empty())
+        {
+            modelGroups[object.modelName].push_back(&object);
+        }
+    }
+
+    // Create model definitions with instances
+    for (const auto& [modelPath, objects] : modelGroups)
+    {
+        if (objects.empty()) continue;
+
+        json modelDef;
+
+        // Get model name from path (remove "resources/" prefix if present)
+        std::string modelName = modelPath;
+        if (modelName.starts_with("resources/"))
+        {
+            modelName = modelName.substr(10); // Remove "resources/" prefix
+        }
+
+        modelDef["name"] = modelName;
+        modelDef["path"] = modelPath;
+        modelDef["spawn"] = true; // Default to spawn
+        modelDef["hasCollision"] = true; // Default to has collision
+        modelDef["collisionPrecision"] = "bvh_only";
+        modelDef["hasAnimations"] = false; // Default to no animations
+
+        // Create instances array
+        json instances = json::array();
+        for (const auto* object : objects)
+        {
+            json instance;
+            instance["position"] = {
+                {"x", object->position.x},
+                {"y", object->position.y},
+                {"z", object->position.z}
+            };
+            instance["scale"] = (object->scale.x + object->scale.y + object->scale.z) / 3.0f; // Average scale
+            instance["spawn"] = true; // Default to spawn
+
+            instances.push_back(instance);
+        }
+
+        modelDef["instances"] = instances;
+        j.push_back(modelDef);
+    }
+
+    // Write to file
+    std::ofstream file(path);
+    if (!file.is_open())
+    {
+        TraceLog(LOG_ERROR, "Failed to create models map file: %s", path.c_str());
+        return false;
+    }
+
+    file << j.dump(2); // Pretty print with 2 spaces indentation
+    TraceLog(LOG_INFO, "Successfully saved models map: %s", path.c_str());
+
+    return true;
+}
+
 MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& position, const Vector3& scale, const Color& color)
 {
     MapObjectData obj;
@@ -436,13 +611,13 @@ void RenderGameMap(const GameMap& map, Camera3D camera)
     // Render all objects in the map
     for (const auto& object : map.objects)
     {
-        RenderMapObject(object, camera);
+        RenderMapObject(object, map.loadedModels, camera);
     }
 
     EndMode3D();
 }
 
-void RenderMapObject(const MapObjectData& object, [[maybe_unused]] Camera3D camera)
+void RenderMapObject(const MapObjectData& object, const std::vector<Model>& loadedModels, [[maybe_unused]] Camera3D camera)
 {
     // Apply object transformations
     Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
@@ -456,10 +631,6 @@ void RenderMapObject(const MapObjectData& object, [[maybe_unused]] Camera3D came
     transform = MatrixMultiply(transform, rotationY);
     transform = MatrixMultiply(transform, rotationZ);
     transform = MatrixMultiply(transform, translation);
-
-    // Temporarily apply transformation for rendering
-    //rlPushMatrix();
-    //rlMultMatrixf(MatrixToFloat(transform));
 
     switch (object.type)
     {
@@ -485,10 +656,28 @@ void RenderMapObject(const MapObjectData& object, [[maybe_unused]] Camera3D came
             break;
 
         case MapObjectType::MODEL:
-            // For model objects, we would need to load and render the actual model
-            // This is a placeholder - in a real implementation, you'd want to load
-            // the model during map loading and store it with the object data
-            DrawSphere(Vector3{0, 0, 0}, 0.5f, RED); // Placeholder for model
+            // Find the corresponding loaded model for this object
+            if (!object.modelName.empty() && !loadedModels.empty())
+            {
+                // Try to find a model that matches the modelName
+                // For now, we'll use a simple approach - in a more sophisticated implementation,
+                // you could store models with their names or use a map for lookup
+                Model model = loadedModels[0]; // Use first model for now
+
+                // Apply transformations to the model
+                model.transform = transform;
+
+                // Draw the model with the object's color as tint
+                DrawModel(model, Vector3{0, 0, 0}, 1.0f, object.color);
+
+                // Optional: Draw model wires for debugging
+                // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
+            }
+            else
+            {
+                // No model name specified or no models loaded, draw placeholder
+                DrawSphere(Vector3{0, 0, 0}, 0.5f, RED);
+            }
             break;
 
         case MapObjectType::LIGHT:
@@ -502,6 +691,236 @@ void RenderMapObject(const MapObjectData& object, [[maybe_unused]] Camera3D came
             DrawCubeWires(Vector3{0, 0, 0}, 1.0f, 1.0f, 1.0f, BLACK);
             break;
     }
-
-    //rlPopMatrix();
 }
+
+// ============================================================================
+// Design Pattern Implementations
+// ============================================================================
+
+// Concrete strategy implementations
+
+class JsonMapLoaderStrategy : public IMapLoaderStrategy
+{
+public:
+    GameMap LoadMap(const std::string& path) override
+    {
+        return LoadGameMap(path);
+    }
+
+    bool SaveMap(const GameMap& map, const std::string& path) override
+    {
+        return SaveGameMap(map, path);
+    }
+
+    std::string GetStrategyName() const override
+    {
+        return "JSON Map Loader";
+    }
+};
+
+class FolderModelLoaderStrategy : public IModelLoaderStrategy
+{
+public:
+    std::vector<ModelInfo> LoadModelsFromDirectory(const std::string& directory) override
+    {
+        std::vector<ModelInfo> models;
+        std::set<std::string> supportedExtensions = {".glb", ".gltf", ".obj", ".fbx", ".dae"};
+
+        try
+        {
+            if (!std::filesystem::exists(directory) || !std::filesystem::is_directory(directory))
+            {
+                TraceLog(LOG_WARNING, "Directory does not exist or is not a directory: %s", directory.c_str());
+                return models;
+            }
+
+            TraceLog(LOG_INFO, "Scanning directory for models: %s", directory.c_str());
+
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(directory))
+            {
+                if (!entry.is_regular_file())
+                    continue;
+
+                std::string extension = entry.path().extension().string();
+                std::string filename = entry.path().filename().string();
+
+                // Skip hidden files and non-model files
+                if (filename.starts_with(".") || supportedExtensions.find(extension) == supportedExtensions.end())
+                    continue;
+
+                std::string modelPath = entry.path().string();
+
+                // Convert to relative path if within project directory
+                std::string projectRoot = PROJECT_ROOT_DIR;
+                if (modelPath.find(projectRoot) == 0)
+                {
+                    modelPath = modelPath.substr(projectRoot.length());
+                }
+
+                ModelInfo modelInfo;
+                modelInfo.name = filename.substr(0, filename.find_last_of('.'));
+                modelInfo.path = modelPath;
+                modelInfo.extension = extension;
+
+                // Determine properties based on file extension and name
+                modelInfo.hasAnimations = (extension == ".glb" || extension == ".gltf");
+                modelInfo.hasCollision = true;
+
+                // Set default scale based on model name patterns
+                if (modelInfo.name.find("player") != std::string::npos)
+                    modelInfo.defaultScale = Vector3{0.01f, 0.01f, 0.01f};
+                else if (modelInfo.name.find("tavern") != std::string::npos ||
+                         modelInfo.name.find("arena") != std::string::npos)
+                    modelInfo.defaultScale = Vector3{50.0f, 50.0f, 50.0f};
+                else
+                    modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
+
+                models.push_back(modelInfo);
+
+                TraceLog(LOG_INFO, "Found model: %s (%s)", modelInfo.name.c_str(), modelPath.c_str());
+            }
+
+            TraceLog(LOG_INFO, "Found %d models in directory: %s", models.size(), directory.c_str());
+        }
+        catch (const std::exception& e)
+        {
+            TraceLog(LOG_ERROR, "Error scanning models directory: %s", e.what());
+        }
+
+        return models;
+    }
+
+    bool SaveModelConfig(const std::vector<ModelInfo>& models, const std::string& path) override
+    {
+        json j = json::array();
+
+        for (const auto& model : models)
+        {
+            json modelJson;
+            modelJson["name"] = model.name;
+            modelJson["path"] = model.path;
+            modelJson["spawn"] = true;
+            modelJson["hasCollision"] = model.hasCollision;
+            modelJson["hasAnimations"] = model.hasAnimations;
+
+            // Add instances array for compatibility
+            json instances = json::array();
+            json instance;
+            instance["position"] = {{"x", 0.0}, {"y", 0.0}, {"z", 0.0}};
+            instance["scale"] = (model.defaultScale.x + model.defaultScale.y + model.defaultScale.z) / 3.0f;
+            instance["spawn"] = true;
+            instances.push_back(instance);
+
+            modelJson["instances"] = instances;
+            j.push_back(modelJson);
+        }
+
+        // Write to file
+        std::ofstream file(path);
+        if (!file.is_open())
+        {
+            TraceLog(LOG_ERROR, "Failed to create model config file: %s", path.c_str());
+            return false;
+        }
+
+        file << j.dump(2);
+        TraceLog(LOG_INFO, "Successfully saved model config: %s", path.c_str());
+
+        return true;
+    }
+
+    std::string GetStrategyName() const override
+    {
+        return "Folder Model Loader";
+    }
+};
+
+// Observer pattern implementation
+void MapLoaderSubject::AddObserver(IMapLoadObserver* observer)
+{
+    m_observers.push_back(observer);
+}
+
+void MapLoaderSubject::RemoveObserver(IMapLoadObserver* observer)
+{
+    m_observers.erase(std::remove(m_observers.begin(), m_observers.end(), observer), m_observers.end());
+}
+
+void MapLoaderSubject::NotifyMapLoaded(const std::string& mapName)
+{
+    for (auto* observer : m_observers)
+    {
+        observer->OnMapLoaded(mapName);
+    }
+}
+
+void MapLoaderSubject::NotifyMapLoadFailed(const std::string& mapName, const std::string& error)
+{
+    for (auto* observer : m_observers)
+    {
+        observer->OnMapLoadFailed(mapName, error);
+    }
+}
+
+// Enhanced MapLoader constructor
+MapLoader::MapLoader()
+{
+    m_mapStrategy = MapLoaderFactory::CreateMapLoader("json");
+    m_modelStrategy = MapLoaderFactory::CreateModelLoader("folder");
+}
+
+void MapLoader::SetMapLoaderStrategy(std::unique_ptr<IMapLoaderStrategy> strategy)
+{
+    m_mapStrategy = std::move(strategy);
+}
+
+void MapLoader::SetModelLoaderStrategy(std::unique_ptr<IModelLoaderStrategy> strategy)
+{
+    m_modelStrategy = std::move(strategy);
+}
+
+GameMap MapLoader::LoadMap(const std::string& path)
+{
+    try
+    {
+        GameMap map = m_mapStrategy->LoadMap(path);
+        NotifyMapLoaded(path);
+        return map;
+    }
+    catch (const std::exception& e)
+    {
+        NotifyMapLoadFailed(path, e.what());
+        return GameMap{};
+    }
+}
+
+bool MapLoader::SaveMap(const GameMap& map, const std::string& path)
+{
+    return m_mapStrategy->SaveMap(map, path);
+}
+
+std::vector<ModelInfo> MapLoader::LoadModelsFromDirectory(const std::string& directory)
+{
+    return m_modelStrategy->LoadModelsFromDirectory(directory);
+}
+
+bool MapLoader::SaveModelConfig(const std::vector<ModelInfo>& models, const std::string& path)
+{
+    return m_modelStrategy->SaveModelConfig(models, path);
+}
+
+// Factory implementation
+std::unique_ptr<IMapLoaderStrategy> MapLoaderFactory::CreateMapLoader(const std::string& type)
+{
+    if (type == "json")
+        return std::make_unique<JsonMapLoaderStrategy>();
+    return std::make_unique<JsonMapLoaderStrategy>(); // Default
+}
+
+std::unique_ptr<IModelLoaderStrategy> MapLoaderFactory::CreateModelLoader(const std::string& type)
+{
+    if (type == "folder")
+        return std::make_unique<FolderModelLoaderStrategy>();
+    return std::make_unique<FolderModelLoaderStrategy>(); // Default
+}
+

@@ -388,8 +388,10 @@ void Menu::ExecuteAction()
         ResetAction();
         break;
     case MenuAction::SinglePlayer:
+        TraceLog(LOG_INFO, "Menu::ExecuteAction() - SinglePlayer selected, initializing map selection...");
         m_state = MenuState::MapSelection;
         InitializeMaps();
+        TraceLog(LOG_INFO, "Menu::ExecuteAction() - Map selection initialized with %d maps", m_availableMaps.size());
         ResetAction();
         break;
     case MenuAction::MultiPlayer:
@@ -1057,23 +1059,77 @@ void Menu::HandleMapSelectionKeyboardNavigation()
     if (m_availableMaps.empty())
         return;
 
-    // Horizontal card-based navigation (left/right only)
-    const int numCards = 3;
+    // Get current page map range
+    int startIndex = GetStartMapIndex();
+    int endIndex = GetEndMapIndex();
+    int mapsOnCurrentPage = endIndex - startIndex;
 
+    // Horizontal navigation within current page (left/right only)
     if (IsKeyPressed(KEY_LEFT))
     {
-        if (m_selectedMap > 0)
+        if (m_selectedMap > startIndex)
             m_selectedMap--;
+        else if (m_currentPage > 0)
+        {
+            // Move to previous page and select last map on that page
+            PreviousPage();
+            UpdatePagination();
+            startIndex = GetStartMapIndex();
+            m_selectedMap = std::min(startIndex + mapsOnCurrentPage - 1, static_cast<int>(m_availableMaps.size()) - 1);
+        }
         else
-            m_selectedMap = static_cast<int>(m_availableMaps.size()) - 1;
+        {
+            // Wrap to last page and select last map
+            m_currentPage = m_totalPages - 1;
+            UpdatePagination();
+            startIndex = GetStartMapIndex();
+            m_selectedMap = std::min(startIndex + mapsOnCurrentPage - 1, static_cast<int>(m_availableMaps.size()) - 1);
+        }
+
+        TraceLog(LOG_INFO, "Menu::HandleMapSelectionKeyboardNavigation() - Map selection changed to: %d (Page %d/%d)",
+                 m_selectedMap, m_currentPage + 1, m_totalPages);
     }
 
     if (IsKeyPressed(KEY_RIGHT))
     {
-        if (m_selectedMap < static_cast<int>(m_availableMaps.size()) - 1)
+        if (m_selectedMap < endIndex - 1)
             m_selectedMap++;
+        else if (m_currentPage < m_totalPages - 1)
+        {
+            // Move to next page and select first map on that page
+            NextPage();
+            UpdatePagination();
+            m_selectedMap = GetStartMapIndex();
+        }
         else
+        {
+            // Wrap to first page and select first map
+            m_currentPage = 0;
+            UpdatePagination();
             m_selectedMap = 0;
+        }
+
+        TraceLog(LOG_INFO, "Menu::HandleMapSelectionKeyboardNavigation() - Map selection changed to: %d (Page %d/%d)",
+                 m_selectedMap, m_currentPage + 1, m_totalPages);
+    }
+
+    // Page navigation
+    if (IsKeyPressed(KEY_PAGE_DOWN) || (IsKeyPressed(KEY_RIGHT) && IsKeyDown(KEY_LEFT_CONTROL)))
+    {
+        NextPage();
+        UpdatePagination();
+        m_selectedMap = GetStartMapIndex();
+        TraceLog(LOG_INFO, "Menu::HandleMapSelectionKeyboardNavigation() - Next page: %d/%d, selected map: %d",
+                 m_currentPage + 1, m_totalPages, m_selectedMap);
+    }
+
+    if (IsKeyPressed(KEY_PAGE_UP) || (IsKeyPressed(KEY_LEFT) && IsKeyDown(KEY_LEFT_CONTROL)))
+    {
+        PreviousPage();
+        UpdatePagination();
+        m_selectedMap = GetStartMapIndex();
+        TraceLog(LOG_INFO, "Menu::HandleMapSelectionKeyboardNavigation() - Previous page: %d/%d, selected map: %d",
+                 m_currentPage + 1, m_totalPages, m_selectedMap);
     }
 
     if (IsKeyPressed(KEY_ENTER) && !m_availableMaps.empty())
@@ -1082,14 +1138,21 @@ void Menu::HandleMapSelectionKeyboardNavigation()
         const MapInfo* selectedMap = GetSelectedMap();
         if (selectedMap)
         {
-            std::cout << "Starting game with map: " << selectedMap->displayName << std::endl;
+            TraceLog(LOG_INFO, "Menu::HandleMapSelectionKeyboardNavigation() - Starting game with map: %s", selectedMap->displayName.c_str());
             // Set action to start game with selected map
             m_action = MenuAction::StartGameWithMap;
+        }
+        else
+        {
+            TraceLog(LOG_ERROR, "Menu::HandleMapSelectionKeyboardNavigation() - No map selected!");
         }
     }
 
     if (IsKeyPressed(KEY_ESCAPE))
+    {
+        TraceLog(LOG_INFO, "Menu::HandleMapSelectionKeyboardNavigation() - Returning to game mode menu");
         m_state = MenuState::GameMode;
+    }
 }
 
 void Menu::HandleConfirmExitKeyboardNavigation()
@@ -1916,32 +1979,60 @@ void Menu::RenderConfirmExit()
 
 void Menu::HandleMapSelection()
 {
-    if (IsKeyPressed(KEY_ESCAPE))
+    // Map selection keyboard handling is now done in HandleMapSelectionKeyboardNavigation()
+    // This function is kept for potential future non-keyboard input handling
+}
+
+void Menu::UpdatePagination()
+{
+    if (m_availableMaps.empty())
     {
-        m_state = MenuState::GameMode;
+        m_totalPages = 0;
+        m_currentPage = 0;
         return;
     }
 
-    if (IsKeyPressed(KEY_LEFT))
-    {
-        m_selectedMap = (m_selectedMap - 1 + static_cast<int>(m_availableMaps.size())) % m_availableMaps.size();
-    }
-    if (IsKeyPressed(KEY_RIGHT))
-    {
-        m_selectedMap = (m_selectedMap + 1) % m_availableMaps.size();
-    }
+    m_totalPages = (static_cast<int>(m_availableMaps.size()) + m_mapsPerPage - 1) / m_mapsPerPage;
+    if (m_currentPage >= m_totalPages)
+        m_currentPage = std::max(0, m_totalPages - 1);
+}
 
-    if (IsKeyPressed(KEY_ENTER) && !m_availableMaps.empty())
+void Menu::NextPage()
+{
+    if (m_currentPage < m_totalPages - 1)
     {
-        // Start the game with selected map
-        const MapInfo* selectedMap = GetSelectedMap();
-        if (selectedMap)
-        {
-            std::cout << "Starting game with map: " << selectedMap->displayName << std::endl;
-            // Set action to start game with selected map
-            m_action = MenuAction::StartGameWithMap;
-        }
+        m_currentPage++;
+        TraceLog(LOG_INFO, "Menu::NextPage() - Advanced to page %d/%d", m_currentPage + 1, m_totalPages);
     }
+    else
+    {
+        m_currentPage = 0; // Wrap around to first page
+        TraceLog(LOG_INFO, "Menu::NextPage() - Wrapped to page %d/%d", m_currentPage + 1, m_totalPages);
+    }
+}
+
+void Menu::PreviousPage()
+{
+    if (m_currentPage > 0)
+    {
+        m_currentPage--;
+        TraceLog(LOG_INFO, "Menu::PreviousPage() - Moved back to page %d/%d", m_currentPage + 1, m_totalPages);
+    }
+    else
+    {
+        m_currentPage = m_totalPages - 1; // Wrap around to last page
+        TraceLog(LOG_INFO, "Menu::PreviousPage() - Wrapped to page %d/%d", m_currentPage + 1, m_totalPages);
+    }
+}
+
+int Menu::GetStartMapIndex() const
+{
+    return m_currentPage * m_mapsPerPage;
+}
+
+int Menu::GetEndMapIndex() const
+{
+    return std::min(GetStartMapIndex() + m_mapsPerPage, static_cast<int>(m_availableMaps.size()));
 }
 
 
@@ -1949,14 +2040,50 @@ void Menu::InitializeMaps()
 {
     m_availableMaps.clear();
     m_selectedMap = 0;
+    m_currentPage = 0;
 
     // First, scan for all available JSON maps automatically
     ScanForJsonMaps();
 
-    // If no JSON maps found, add a fallback built-in map
+    // Then, scan for models in the resources directory and create model-based maps
+    std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+    auto models = m_mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+    if (!models.empty())
+    {
+        TraceLog(LOG_INFO, "Menu::InitializeMaps() - Found %d models in resources directory", models.size());
+
+        // Create map entries for each model
+        for (const auto& model : models)
+        {
+            std::string mapName = "model_" + model.name;
+            std::string displayName = model.name + " (Model)";
+            std::string description = "Model-based map using " + model.name;
+
+            // Assign color based on model type
+            Color modelColor = Color{200, 150, 255, 255}; // Default purple for models
+            if (model.name.find("tavern") != std::string::npos)
+                modelColor = Color{255, 200, 150, 255}; // Orange for tavern
+            else if (model.name.find("stairs") != std::string::npos)
+                modelColor = Color{150, 255, 150, 255}; // Green for stairs
+
+            m_availableMaps.push_back({
+                mapName,
+                displayName,
+                description,
+                model.path,
+                modelColor,
+                true
+            });
+
+            TraceLog(LOG_INFO, "Menu::InitializeMaps() - Added model-based map: %s", displayName.c_str());
+        }
+    }
+
+    // If no JSON maps or models found, add a fallback built-in map
     if (m_availableMaps.empty())
     {
-        TraceLog(LOG_WARNING, "Menu::InitializeMaps() - No JSON maps found, adding fallback built-in map");
+        TraceLog(LOG_WARNING, "Menu::InitializeMaps() - No JSON maps or models found, adding fallback built-in map");
         m_availableMaps.push_back({
             "parkour_test",
             "Built-in Parkour",
@@ -1968,8 +2095,14 @@ void Menu::InitializeMaps()
     }
     else
     {
-        TraceLog(LOG_INFO, "Menu::InitializeMaps() - Found %d maps automatically", m_availableMaps.size());
+        TraceLog(LOG_INFO, "Menu::InitializeMaps() - Total maps available: %d (JSON: %d, Models: %d)",
+                 m_availableMaps.size(), m_jsonMapsCount, models.size());
     }
+
+    // Initialize pagination
+    UpdatePagination();
+    TraceLog(LOG_INFO, "Menu::InitializeMaps() - Pagination initialized: %d pages for %d maps",
+             m_totalPages, m_availableMaps.size());
 }
 
 
@@ -2013,6 +2146,9 @@ void Menu::RenderMapSelection() const
     }
     DrawTextEx(m_font, title, Vector2{(float)(screenWidth / 2 - tw / 2), (float)titleY}, titleFontSize, 2.0f, Color{220, 220, 220, 255});
 
+    // Debug info - show current selection and available maps count
+    TraceLog(LOG_DEBUG, "Menu::RenderMapSelection() - Available maps: %d, Selected map: %d", m_availableMaps.size(), m_selectedMap);
+
     if (m_availableMaps.empty())
     {
         const char* noMaps = "No chapters available";
@@ -2038,10 +2174,16 @@ void Menu::RenderMapSelection() const
     int totalWidth = numCards * cardWidth + (numCards - 1) * spacing;
     int startX = (screenWidth - totalWidth) / 2;
 
-    // Render cards in horizontal layout
-    for (int i = 0; i < static_cast<int>(m_availableMaps.size()); ++i)
+    // Get current page map range
+    int startMapIndex = GetStartMapIndex();
+    int endMapIndex = GetEndMapIndex();
+
+    // Render cards for current page only
+    for (int i = startMapIndex; i < endMapIndex; ++i)
     {
-        int x = startX + i * (cardWidth + spacing);
+        // Calculate position within current page (0-based)
+        int pageIndex = i - startMapIndex;
+        int x = startX + pageIndex * (cardWidth + spacing);
         int y = startY;
 
         const MapInfo& map = m_availableMaps[i];
@@ -2159,17 +2301,37 @@ void Menu::RenderMapSelection() const
 
     DrawTextEx(m_font, backText, Vector2{(float)backX, (float)backY}, backFontSize, 2.0f, Color{255, 150, 150, 255});
 
+    // Pagination indicators - show current page and total pages
+    if (m_totalPages > 1)
+    {
+        float pageFontSize = 20.0f * scaleFactor;
+        if (pageFontSize < 16.0f) pageFontSize = 16.0f;
+        if (pageFontSize > 28.0f) pageFontSize = 28.0f;
+
+        std::string pageText = TextFormat("Page %d of %d", m_currentPage + 1, m_totalPages);
+        int pageW = MeasureTextEx(m_font, pageText.c_str(), pageFontSize, 2.0f).x;
+        int pageX = screenWidth / 2 - pageW / 2;
+        int pageY = screenHeight - static_cast<int>(80 * scaleFactor);
+        if (pageY > screenHeight - 60) pageY = screenHeight - 60;
+
+        // Page indicator background
+        DrawRectangle(pageX - 10, pageY - 5, pageW + 20, static_cast<int>(pageFontSize + 10), Fade(Color{0, 0, 0, 255}, 0.6f));
+        DrawRectangleLines(pageX - 10, pageY - 5, pageW + 20, static_cast<int>(pageFontSize + 10), Color{100, 120, 140, 255});
+
+        DrawTextEx(m_font, pageText.c_str(), Vector2{(float)pageX, (float)pageY}, pageFontSize, 2.0f, Color{220, 230, 255, 255});
+    }
+
     // Instructions - dynamic sizing
     float instFontSize = 18.0f * scaleFactor;
     if (instFontSize < 14.0f) instFontSize = 14.0f;
     if (instFontSize > 24.0f) instFontSize = 24.0f;
 
-    const char* instructions = "[Arrow Left/Arrow Right] Navigate Maps   [Enter] Select Map   [Esc] Back to Menu";
-    int iw = MeasureTextEx(m_font, instructions, instFontSize, 2.0f).x;
+    std::string instructions = "[←→] Navigate Maps   [PgUp/PgDn] Change Page   [Ctrl+←→] Page Nav   [Enter] Select   [Esc] Back";
+    int iw = MeasureTextEx(m_font, instructions.c_str(), instFontSize, 2.0f).x;
     int instY = screenHeight - static_cast<int>(25 * scaleFactor);
     if (instY > screenHeight - 20) instY = screenHeight - 20;
 
-    DrawTextEx(m_font, instructions, Vector2{(float)(screenWidth / 2 - iw / 2), (float)instY}, instFontSize, 2.0f, Color{150, 160, 180, 255});
+    DrawTextEx(m_font, instructions.c_str(), Vector2{(float)(screenWidth / 2 - iw / 2), (float)instY}, instFontSize, 2.0f, Color{150, 160, 180, 255});
 }
 
 
@@ -2193,6 +2355,11 @@ std::string Menu::GetSelectedMapName() const
             // Return the full path for JSON maps
             return PROJECT_ROOT_DIR + selectedMap->name;
         }
+        else if (selectedMap->name.find("model_") == 0)
+        {
+            // This is a model-based map - return the model path
+            return selectedMap->previewImage; // previewImage field contains the model path for model-based maps
+        }
         else
         {
             // Return the map name for built-in maps
@@ -2204,6 +2371,8 @@ std::string Menu::GetSelectedMapName() const
 
 void Menu::ScanForJsonMaps()
 {
+    m_jsonMapsCount = 0;
+
     try
     {
         namespace fs = std::filesystem;
@@ -2218,28 +2387,40 @@ void Menu::ScanForJsonMaps()
         };
 
         TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scanning for JSON map files...");
+        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Project root directory: %s", rootDir.c_str());
 
         for (const std::string& dir : searchDirectories)
         {
-            if (!fs::exists(dir) || !fs::is_directory(dir))
+            TraceLog(LOG_DEBUG, "Menu::ScanForJsonMaps() - Checking directory: %s", dir.c_str());
+
+            if (!fs::exists(dir))
             {
-                TraceLog(LOG_DEBUG, "Menu::ScanForJsonMaps() - Directory not found: %s", dir.c_str());
+                TraceLog(LOG_DEBUG, "Menu::ScanForJsonMaps() - Directory does not exist: %s", dir.c_str());
                 continue;
             }
 
-            TraceLog(LOG_DEBUG, "Menu::ScanForJsonMaps() - Scanning directory: %s", dir.c_str());
+            if (!fs::is_directory(dir))
+            {
+                TraceLog(LOG_DEBUG, "Menu::ScanForJsonMaps() - Path is not a directory: %s", dir.c_str());
+                continue;
+            }
 
+            TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scanning directory: %s", dir.c_str());
+
+            int filesInDirectory = 0;
             for (const auto& entry : fs::directory_iterator(dir))
             {
                 if (!entry.is_regular_file())
                     continue;
 
+                filesInDirectory++;
                 std::string filename = entry.path().filename().string();
                 std::string extension = entry.path().extension().string();
 
-                // Look for .json files (excluding models.json and other system files)
+                TraceLog(LOG_DEBUG, "Menu::ScanForJsonMaps() - Found file: %s", filename.c_str());
+
+                // Look for .json files (excluding system files)
                 if (extension == ".json" &&
-                    filename != "models.json" &&
                     filename != "game.cfg" &&
                     filename != "config.json")
                 {
@@ -2296,12 +2477,22 @@ void Menu::ScanForJsonMaps()
                         true
                     });
 
+                    m_jsonMapsCount++;
                     TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Added map: %s (%s)", fullDisplayName.c_str(), mapPath.c_str());
                 }
             }
+
+            TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Directory %s contains %d files", dir.c_str(), filesInDirectory);
         }
 
-        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scan completed, found %d maps", m_availableMaps.size());
+        TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scan completed, found %d maps total", m_availableMaps.size());
+
+        // List all found maps for debugging
+        for (size_t i = 0; i < m_availableMaps.size(); ++i)
+        {
+            const auto& map = m_availableMaps[i];
+            TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Map %d: %s -> %s", i, map.displayName.c_str(), map.name.c_str());
+        }
     }
     catch (const std::exception& e)
     {

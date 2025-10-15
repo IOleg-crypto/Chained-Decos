@@ -7,6 +7,7 @@
 #include <raylib.h>
 #include <Config/ConfigManager.h>
 #include <Engine/Engine.h>
+#include "../Map/MapLoader.h"
 
 enum class MenuAction : uint8_t
 {
@@ -101,6 +102,18 @@ private:
 
     const std::vector<MenuItem> *m_currentMenu = nullptr;
 
+    // Pagination system
+    int m_mapsPerPage = 6;  // 2 rows × 3 columns
+    int m_currentPage = 0;
+    int m_totalPages = 0;
+
+    // Pagination helper methods
+    void UpdatePagination();
+    void NextPage();
+    void PreviousPage();
+    int GetStartMapIndex() const;
+    int GetEndMapIndex() const;
+
     std::vector<MenuItem> m_mainMenu;
     std::vector<MenuItem> m_optionsMenu;
     std::vector<MenuItem> m_SetGameMode;
@@ -115,6 +128,7 @@ private:
     // Map selection data
     std::vector<MapInfo> m_availableMaps;
     int m_selectedMap = 0;
+    int m_jsonMapsCount = 0; // Track number of JSON maps for logging
 
     // Game state tracking
     bool m_gameInProgress = false;
@@ -131,6 +145,7 @@ private:
     Engine *m_engine = nullptr;
     ConfigManager m_config;
     Font m_font{}; // Alan Sans font for menu text
+    MapLoader m_mapLoader; // Enhanced map loader with design patterns
 
     // Audio settings
     float m_masterVolume = 1.0f;

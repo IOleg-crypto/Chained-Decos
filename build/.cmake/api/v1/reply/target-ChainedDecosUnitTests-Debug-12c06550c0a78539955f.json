@@ -241,11 +241,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "gtest::@4e0539ea587b6360fd85"
+			"id" : "gtest_main::@4e0539ea587b6360fd85"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "gtest_main::@4e0539ea587b6360fd85"
+			"id" : "gtest::@4e0539ea587b6360fd85"
 		}
 	],
 	"id" : "ChainedDecosUnitTests::@a44f0ac069e85531cdee",

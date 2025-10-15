@@ -5,6 +5,11 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <functional>
+
+// Forward declarations for Strategy Pattern
+class IMapLoaderStrategy;
+class IModelLoaderStrategy;
 
 // Object types for the map
 enum class MapObjectType
@@ -68,7 +73,7 @@ struct MapMetadata
     {}
 };
 
-// Complete map structure
+// Complete map structure (moved up for strategy interfaces)
 struct GameMap
 {
     MapMetadata metadata;
@@ -82,8 +87,92 @@ struct GameMap
 
 };
 
+// Model information structure for folder-based loading
+struct ModelInfo
+{
+    std::string name;
+    std::string path;
+    std::string extension;
+    bool hasAnimations;
+    bool hasCollision;
+    Vector3 defaultScale;
+
+    ModelInfo() : hasAnimations(false), hasCollision(true), defaultScale{1.0f, 1.0f, 1.0f} {}
+};
+
+// Factory for creating loader strategies
+class MapLoaderFactory
+{
+public:
+    static std::unique_ptr<IMapLoaderStrategy> CreateMapLoader(const std::string& type);
+    static std::unique_ptr<IModelLoaderStrategy> CreateModelLoader(const std::string& type);
+};
+
+// Strategy interface for map loading
+class IMapLoaderStrategy
+{
+public:
+    virtual ~IMapLoaderStrategy() = default;
+    virtual GameMap LoadMap(const std::string& path) = 0;
+    virtual bool SaveMap(const GameMap& map, const std::string& path) = 0;
+    virtual std::string GetStrategyName() const = 0;
+};
+
+// Strategy interface for model loading
+class IModelLoaderStrategy
+{
+public:
+    virtual ~IModelLoaderStrategy() = default;
+    virtual std::vector<ModelInfo> LoadModelsFromDirectory(const std::string& directory) = 0;
+    virtual bool SaveModelConfig(const std::vector<ModelInfo>& models, const std::string& path) = 0;
+    virtual std::string GetStrategyName() const = 0;
+};
+
+// Observer interface for map loading notifications
+class IMapLoadObserver
+{
+public:
+    virtual ~IMapLoadObserver() = default;
+    virtual void OnMapLoaded(const std::string& mapName) = 0;
+    virtual void OnMapLoadFailed(const std::string& mapName, const std::string& error) = 0;
+};
+
+// Subject class for managing observers
+class MapLoaderSubject
+{
+private:
+    std::vector<IMapLoadObserver*> m_observers;
+    
+public:
+    void AddObserver(IMapLoadObserver* observer);
+    void RemoveObserver(IMapLoadObserver* observer);
+    void NotifyMapLoaded(const std::string& mapName);
+    void NotifyMapLoadFailed(const std::string& mapName, const std::string& error);
+};
+
+// Enhanced MapLoader class using Strategy pattern
+class MapLoader : public MapLoaderSubject
+{
+private:
+    std::unique_ptr<IMapLoaderStrategy> m_mapStrategy;
+    std::unique_ptr<IModelLoaderStrategy> m_modelStrategy;
+    
+public:
+    MapLoader();
+    
+    void SetMapLoaderStrategy(std::unique_ptr<IMapLoaderStrategy> strategy);
+    void SetModelLoaderStrategy(std::unique_ptr<IModelLoaderStrategy> strategy);
+    
+    GameMap LoadMap(const std::string& path);
+    bool SaveMap(const GameMap& map, const std::string& path);
+    std::vector<ModelInfo> LoadModelsFromDirectory(const std::string& directory);
+    bool SaveModelConfig(const std::vector<ModelInfo>& models, const std::string& path);
+};
+
+
+
 // Legacy support - old MapLoader structure
-struct MapLoader
+struct LegacyMapLoader
 {
     std::string modelName;
     Vector3 position;
@@ -91,7 +180,7 @@ struct MapLoader
     Vector3 scale;
     Model loadedModel;
 
-    MapLoader()
+    LegacyMapLoader()
         : modelName(""), position{0, 0, 0}, rotation{0, 0, 0}, scale{1, 1, 1}, loadedModel{0}
     {}
 };
@@ -101,7 +190,9 @@ std::vector<MapLoader> LoadMap(const std::string &path);
 
 // New comprehensive map loading functions
 GameMap LoadGameMap(const std::string &path);
+GameMap LoadModelsMap(const std::string& path); // For array-based model format
 bool SaveGameMap(const GameMap& map, const std::string& path);
+bool SaveModelsMap(const GameMap& map, const std::string& path); // Export in models.json format
 bool ExportMapForEditor(const GameMap& map, const std::string& path);
 
 // Utility functions
@@ -109,6 +200,6 @@ MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& positio
 
 // Map rendering functions
 void RenderGameMap(const GameMap& map, Camera3D camera);
-void RenderMapObject(const MapObjectData& object, Camera3D camera);
+void RenderMapObject(const MapObjectData& object, const std::vector<Model>& loadedModels, Camera3D camera);
 
 #endif // MAPLOADER_H
