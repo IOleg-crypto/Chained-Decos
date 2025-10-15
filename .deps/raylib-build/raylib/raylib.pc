@@ -1,4 +1,4 @@
-prefix=D:/gitnext/Chained Decos/cmake-build-debug/install
+prefix=D:/gitnext/Chained Decos/build/install
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

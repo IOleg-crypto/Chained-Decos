@@ -1,4 +1,4 @@
-prefix=D:/gitnext/Chained Decos/cmake-build-debug/install
+prefix=D:/gitnext/Chained Decos/build/install
 includedir=${prefix}/include
 
 Name: nlohmann_json
