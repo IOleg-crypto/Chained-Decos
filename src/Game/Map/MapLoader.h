@@ -88,11 +88,14 @@ struct ModelInfo
     std::string name;
     std::string path;
     std::string extension;
+    std::string category;      // Type of model (Player, Building, Environment, etc.)
+    std::string description;   // Human-readable description
     bool hasAnimations;
     bool hasCollision;
     Vector3 defaultScale;
 
-    ModelInfo() : hasAnimations(false), hasCollision(true), defaultScale{1.0f, 1.0f, 1.0f} {}
+    ModelInfo() : hasAnimations(false), hasCollision(true), defaultScale{1.0f, 1.0f, 1.0f},
+                  category("Generic Model"), description("3D model asset") {}
 };
 
 // Simple MapLoader class - direct implementation without patterns
