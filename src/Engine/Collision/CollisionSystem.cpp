@@ -120,18 +120,82 @@ bool Collision::ContainsPointAABB(const Vector3 &point) const
 void Collision::BuildFromModel(void *model, const Matrix &transform)
 {
     Model *rayModel = static_cast<Model *>(model);
-    if (!rayModel) return;
+    if (!rayModel)
+    {
+        TraceLog(LOG_ERROR, "Collision::BuildFromModel() - Invalid model pointer");
+        return;
+    }
+
+    // Validate model data before processing
+    if (rayModel->meshCount <= 0)
+    {
+        TraceLog(LOG_WARNING, "Collision::BuildFromModel() - Model has no meshes");
+        return;
+    }
 
     size_t totalTriangles = 0;
+    bool hasValidMeshes = false;
+
     for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
     {
         Mesh &mesh = rayModel->meshes[meshIdx];
-        if (!mesh.vertices || !mesh.indices) continue;
+        if (!mesh.vertices || !mesh.indices)
+        {
+            TraceLog(LOG_WARNING, "Collision::BuildFromModel() - Mesh %d has null vertex or index data", meshIdx);
+            continue;
+        }
+
+        if (mesh.vertexCount == 0 || mesh.triangleCount == 0)
+        {
+            TraceLog(LOG_WARNING, "Collision::BuildFromModel() - Mesh %d has no vertices or triangles", meshIdx);
+            continue;
+        }
+
+        // Validate mesh data sizes
+        if (mesh.vertexCount > 1000000) // Sanity check for vertex count
+        {
+            TraceLog(LOG_ERROR, "Collision::BuildFromModel() - Mesh %d has excessive vertex count (%d)", meshIdx, mesh.vertexCount);
+            continue;
+        }
+
+        if (mesh.triangleCount > 1000000) // Sanity check for triangle count
+        {
+            TraceLog(LOG_ERROR, "Collision::BuildFromModel() - Mesh %d has excessive triangle count (%d)", meshIdx, mesh.triangleCount);
+            continue;
+        }
+
         totalTriangles += mesh.triangleCount;
+        hasValidMeshes = true;
+    }
+
+    if (!hasValidMeshes)
+    {
+        TraceLog(LOG_ERROR, "Collision::BuildFromModel() - No valid meshes found in model");
+        return;
+    }
+
+    if (totalTriangles == 0)
+    {
+        TraceLog(LOG_WARNING, "Collision::BuildFromModel() - No triangles found in model");
+        return;
+    }
+
+    if (totalTriangles > 1000000) // Sanity check for total triangles
+    {
+        TraceLog(LOG_ERROR, "Collision::BuildFromModel() - Model has excessive triangle count (%zu)", totalTriangles);
+        return;
     }
 
     // Pre-allocate memory for better performance
-    m_triangles.reserve(totalTriangles);
+    try
+    {
+        m_triangles.reserve(totalTriangles);
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Collision::BuildFromModel() - Failed to reserve memory for triangles: %s", e.what());
+        return;
+    }
 
     // Process all meshes and collect vertices for batch transformation
     for (int meshIdx = 0; meshIdx < rayModel->meshCount; ++meshIdx)
@@ -215,13 +279,42 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
                 continue;
             }
 
+            // Check for degenerate triangles (zero area)
+            Vector3 edge1 = Vector3Subtract(v1, v0);
+            Vector3 edge2 = Vector3Subtract(v2, v0);
+            Vector3 normal = Vector3CrossProduct(edge1, edge2);
+            float area = Vector3Length(normal);
+
+            if (area < 1e-12f)
+            {
+                TraceLog(LOG_DEBUG, "Mesh %d: Degenerate triangle %d (area too small)", meshIdx, i);
+                continue;
+            }
+
             // Transform vertices to world coordinates
             v0 = Vector3Transform(v0, transform);
             v1 = Vector3Transform(v1, transform);
             v2 = Vector3Transform(v2, transform);
 
+            // Validate transformed vertices
+            if (!std::isfinite(v0.x) || !std::isfinite(v0.y) || !std::isfinite(v0.z) ||
+                !std::isfinite(v1.x) || !std::isfinite(v1.y) || !std::isfinite(v1.z) ||
+                !std::isfinite(v2.x) || !std::isfinite(v2.y) || !std::isfinite(v2.z))
+            {
+                TraceLog(LOG_WARNING, "Mesh %d: Invalid transformed vertex data at triangle %d", meshIdx, i);
+                continue;
+            }
+
             // Use emplace_back for better performance (no copy)
-            m_triangles.emplace_back(v0, v1, v2);
+            try
+            {
+                m_triangles.emplace_back(v0, v1, v2);
+            }
+            catch (const std::exception& e)
+            {
+                TraceLog(LOG_ERROR, "Mesh %d: Failed to add triangle %d: %s", meshIdx, i, e.what());
+                continue;
+            }
         }
     }
 
@@ -604,12 +697,47 @@ void Collision::BuildBVHFromTriangles()
 {
     if (m_triangles.empty())
     {
+        TraceLog(LOG_DEBUG, "Collision::BuildBVHFromTriangles() - No triangles to build BVH");
         m_bvhRoot.reset();
         return;
     }
 
+    // Validate triangles before building BVH
+    size_t validTriangles = 0;
+    for (const auto& tri : m_triangles)
+    {
+        if (std::isfinite(tri.V0().x) && std::isfinite(tri.V0().y) && std::isfinite(tri.V0().z) &&
+            std::isfinite(tri.V1().x) && std::isfinite(tri.V1().y) && std::isfinite(tri.V1().z) &&
+            std::isfinite(tri.V2().x) && std::isfinite(tri.V2().y) && std::isfinite(tri.V2().z))
+        {
+            validTriangles++;
+        }
+    }
+
+    if (validTriangles == 0)
+    {
+        TraceLog(LOG_ERROR, "Collision::BuildBVHFromTriangles() - No valid triangles found");
+        m_bvhRoot.reset();
+        return;
+    }
+
+    if (validTriangles < m_triangles.size())
+    {
+        TraceLog(LOG_WARNING, "Collision::BuildBVHFromTriangles() - Found %zu invalid triangles out of %zu total",
+                 m_triangles.size() - validTriangles, m_triangles.size());
+    }
+
     // Build BVH directly with existing triangles - no copying needed
-    m_bvhRoot = BuildBVHNode(m_triangles, 0);
+    try
+    {
+        m_bvhRoot = BuildBVHNode(m_triangles, 0);
+        TraceLog(LOG_INFO, "Collision::BuildBVHFromTriangles() - Successfully built BVH with %zu triangles", validTriangles);
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Collision::BuildBVHFromTriangles() - Failed to build BVH: %s", e.what());
+        m_bvhRoot.reset();
+    }
 }
 
 // ----------------- Ray/triangle (Möller–Trumbore) -----------------
