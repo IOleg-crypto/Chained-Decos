@@ -1,5 +1,6 @@
 #include "Menu.h"
 #include <raylib.h>
+#include <iostream>
 
 // Input handling functionality
 void Menu::HandleKeyboardNavigation()

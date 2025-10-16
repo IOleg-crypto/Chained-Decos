@@ -52,6 +52,87 @@ GameMap LoadGameMap(const std::string &path)
         return map;
     }
 
+    // Detect format: check if it's models.json format (array of models) or editor format (metadata + objects)
+    if (j.is_array() && !j.empty() && j[0].contains("name") && j[0].contains("instances"))
+    {
+        // This is models.json format
+        return LoadGameMapFromModelsFormat(j, path);
+    }
+    else
+    {
+        // This is editor format with metadata and objects
+        return LoadGameMapFromEditorFormat(j, path);
+    }
+}
+
+GameMap LoadGameMapFromModelsFormat(const json& j, const std::string& path)
+{
+    GameMap map;
+
+    // Load models from the models.json format
+    for (const auto& modelData : j)
+    {
+        std::string modelName = modelData.value("name", "");
+        std::string modelPath = modelData.value("path", "");
+
+        // Load the model
+        if (!modelPath.empty() && FileExists(modelPath.c_str()))
+        {
+            Model model = LoadModel(modelPath.c_str());
+            map.loadedModels.push_back(model);
+            TraceLog(LOG_INFO, "Loaded model: %s from %s", modelName.c_str(), modelPath.c_str());
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Model file not found: %s", modelPath.c_str());
+            continue;
+        }
+
+        // Load instances for this model
+        if (modelData.contains("instances") && modelData["instances"].is_array())
+        {
+            for (const auto& instance : modelData["instances"])
+            {
+                MapObjectData objectData;
+
+                // Set basic properties
+                objectData.name = modelName + "_" + std::to_string(map.objects.size());
+                objectData.type = MapObjectType::MODEL;
+                objectData.modelName = modelName;
+
+                // Load position
+                if (instance.contains("position") && instance["position"].is_object())
+                {
+                    auto& pos = instance["position"];
+                    objectData.position = Vector3{
+                        pos.value("x", 0.0f),
+                        pos.value("y", 0.0f),
+                        pos.value("z", 0.0f)
+                    };
+                }
+
+                // Load scale
+                float scaleValue = instance.value("scale", 1.0f);
+                objectData.scale = Vector3{scaleValue, scaleValue, scaleValue};
+
+                // Set default color
+                objectData.color = WHITE;
+
+                map.objects.push_back(objectData);
+            }
+        }
+    }
+
+    TraceLog(LOG_INFO, "Successfully loaded models.json format map: %s with %d objects",
+             path.c_str(), map.objects.size());
+
+    return map;
+}
+
+GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
+{
+    GameMap map;
+
     // Load metadata
     if (j.contains("metadata"))
     {
@@ -199,8 +280,8 @@ GameMap LoadGameMap(const std::string &path)
         }
     }
 
-    TraceLog(LOG_INFO, "Successfully loaded map: %s with %d objects",
-             map.metadata.name.c_str(), map.objects.size());
+    TraceLog(LOG_INFO, "Successfully loaded editor format map: %s with %d objects",
+             path.c_str(), map.objects.size());
 
     return map;
 }

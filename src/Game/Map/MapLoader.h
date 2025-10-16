@@ -111,6 +111,8 @@ public:
 
 // Map loading and saving functions
 GameMap LoadGameMap(const std::string &path);
+GameMap LoadGameMapFromModelsFormat(const nlohmann::json& j, const std::string& path);
+GameMap LoadGameMapFromEditorFormat(const nlohmann::json& j, const std::string& path);
 bool SaveGameMap(const GameMap& map, const std::string& path);
 
 // Utility functions

@@ -1,0 +1,75 @@
+[
+  {
+    "name": "player",
+    "path": "resources/player_low.glb",
+    "spawn": false,
+    "hasAnimations": false,
+    "instances": [
+      {
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "scale": 1.0,
+        "spawn": false
+      }
+    ]
+  },
+  {
+    "name": "arena",
+    "path": "resources/arena.glb",
+    "spawn": true,
+    "hasCollision": true,
+    "collisionPrecision": "bvh_only",
+    "hasAnimations": false,
+    "instances": [
+      {
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "scale": 1.0,
+        "spawn": true
+      }
+    ]
+  },
+  {
+    "name": "arc",
+    "path": "resources/arc.glb",
+    "spawn": true,
+    "hasCollision": true,
+    "collisionPrecision": "bvh_only",
+    "hasAnimations": false,
+    "instances": [
+      {
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "scale": 1.0,
+        "spawn": true
+      }
+    ]
+  },
+  {
+    "name": "doric_arena",
+    "path": "resources/doric_arena.glb",
+    "spawn": true,
+    "hasCollision": true,
+    "collisionPrecision": "bvh_only",
+    "hasAnimations": false,
+    "instances": [
+      {
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "scale": 1.0,
+        "spawn": true
+      }
+    ]
+  },
+  {
+    "name": "tavern",
+    "path": "resources/TaverGLTF.gltf",
+    "spawn": true,
+    "hasCollision": true,
+    "collisionPrecision": "bvh_only",
+    "hasAnimations": false,
+    "instances": [
+      {
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "scale": 50.0,
+        "spawn": true
+      }
+    ]
+  }
+]

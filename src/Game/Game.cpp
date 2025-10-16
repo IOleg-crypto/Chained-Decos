@@ -711,11 +711,13 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string& mapIde
                                    std::istreambuf_iterator<char>());
                 file.close();
 
-                // Check if this is the editor format (with metadata) or game format (direct array)
-                size_t metadataStart = content.find("\"metadata\"");
+                // Check if this is the editor format or game format (direct array)
+                // Editor format: {"objects": [...] ...}
+                // Game format: [...]
+                size_t objectsStart = content.find("\"objects\"");
                 size_t arrayStart = content.find("[");
 
-                if (metadataStart != std::string::npos)
+                if (objectsStart != std::string::npos)
                 {
                     // This is the editor format with metadata - use nlohmann/json
                     json j = json::parse(content);
@@ -1089,10 +1091,32 @@ void Game::HandleMenuActions()
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Selected map: %s", selectedMapName.c_str());
 
             // Convert map name to full path
-            std::string mapPath = PROJECT_ROOT_DIR "/src/Game/Resource/maps/" + selectedMapName;
-            if (selectedMapName.find(".json") == std::string::npos)
+            std::string mapPath;
+            if (selectedMapName.find('/') != std::string::npos || selectedMapName.find('\\') != std::string::npos)
             {
-                mapPath += ".json";
+                // Check if this is already an absolute path (starts with drive letter like D:/)
+                if (selectedMapName.length() >= 3 &&
+                    isalpha(selectedMapName[0]) &&
+                    selectedMapName[1] == ':' &&
+                    (selectedMapName[2] == '/' || selectedMapName[2] == '\\'))
+                {
+                    // Already an absolute path, use as-is
+                    mapPath = selectedMapName;
+                }
+                else
+                {
+                    // Relative path with separators, prepend PROJECT_ROOT_DIR
+                    mapPath = PROJECT_ROOT_DIR + selectedMapName;
+                }
+            }
+            else
+            {
+                // selectedMapName is just a filename, construct full path
+                mapPath = PROJECT_ROOT_DIR "/src/Game/Resource/maps/" + selectedMapName;
+                if (selectedMapName.find(".json") == std::string::npos)
+                {
+                    mapPath += ".json";
+                }
             }
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Full map path: %s", mapPath.c_str());
 

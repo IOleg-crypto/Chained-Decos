@@ -398,7 +398,16 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     }
 
     // Process models in parallel
-    const size_t numThreads = std::min(tasks.size(), static_cast<size_t>(std::thread::hardware_concurrency()));
+    size_t numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0) numThreads = 1; // Fallback for systems that return 0
+    numThreads = std::min(tasks.size(), numThreads);
+
+    if (numThreads == 0 || tasks.empty())
+    {
+        TraceLog(LOG_WARNING, "No tasks to process or no threads available for parallel collision generation");
+        return;
+    }
+
     std::vector<std::future<int>> futures;
 
     // Split tasks into chunks for parallel processing
@@ -549,7 +558,16 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &mode
     }
 
     // Process models in parallel
-    const size_t numThreads = std::min(tasks.size(), static_cast<size_t>(std::thread::hardware_concurrency()));
+    size_t numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0) numThreads = 1; // Fallback for systems that return 0
+    numThreads = std::min(tasks.size(), numThreads);
+
+    if (numThreads == 0 || tasks.empty())
+    {
+        TraceLog(LOG_WARNING, "No tasks to process or no threads available for parallel collision generation");
+        return;
+    }
+
     std::vector<std::future<int>> futures;
 
     // Split tasks into chunks for parallel processing
