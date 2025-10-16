@@ -34,6 +34,7 @@ jobs:
             generator: "Unix Makefiles"
 
           # Windows with MSVC
+          - os: windows-2022
             compiler: msvc
             version: 2022
             build_type: Release
