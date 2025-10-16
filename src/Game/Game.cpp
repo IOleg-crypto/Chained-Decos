@@ -7,6 +7,7 @@
 #include "Engine/Model/Model.h"
 #include "Game/Menu/Menu.h"
 #include "Game/MapEditor/MapFileManager/JsonMapFileManager.h"
+#include "Game/Map/MapLoader.h"
 #include "Engine/Render/RenderManager.h"
 #include "imgui.h"
 #include <unordered_set>
@@ -1938,103 +1939,15 @@ void Game::LoadEditorMap(const std::string& mapPath)
 
     if (extension == "json")
     {
-        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Detected JSON format, using JSON loader");
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Detected JSON format, using MapLoader");
 
-        // Load using JSON format
-        std::vector<JsonSerializableObject> jsonObjects;
-        MapMetadata metadata;
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Using MapLoader for robust JSON parsing...");
+        MapLoader mapLoader;
+        m_gameMap = mapLoader.LoadMap(mapPath);
 
-        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Calling JsonMapFileManager::ImportGameMap...");
-        if (JsonMapFileManager::ImportGameMap(jsonObjects, mapPath, metadata))
+        if (!m_gameMap.objects.empty())
         {
-            TraceLog(LOG_INFO, "Game::LoadEditorMap() - JSON import successful, processing %d objects", jsonObjects.size());
-
-            // Convert JsonSerializableObject to MapObjectData
-            for (size_t i = 0; i < jsonObjects.size(); ++i)
-            {
-                const auto& jsonObj = jsonObjects[i];
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Processing object %d: %s", i, jsonObj.name.c_str());
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d position: (%.2f, %.2f, %.2f)", i, jsonObj.position.x, jsonObj.position.y, jsonObj.position.z);
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d rotation: (%.2f, %.2f, %.2f)", i, jsonObj.rotation.x, jsonObj.rotation.y, jsonObj.rotation.z);
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d scale: (%.2f, %.2f, %.2f)", i, jsonObj.scale.x, jsonObj.scale.y, jsonObj.scale.z);
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d color: (%d, %d, %d, %d)", i, jsonObj.color.r, jsonObj.color.g, jsonObj.color.b, jsonObj.color.a);
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d modelName: %s", i, jsonObj.modelName.c_str());
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d type: %d", i, jsonObj.type);
-
-                MapObjectData objectData;
-
-                objectData.name = jsonObj.name;
-                objectData.position = jsonObj.position;
-                objectData.rotation = jsonObj.rotation;
-                objectData.scale = jsonObj.scale;
-                objectData.color = jsonObj.color;
-                objectData.modelName = jsonObj.modelName;
-
-                // Convert type from int to enum
-                switch (jsonObj.type)
-                {
-                    case 0:
-                        objectData.type = MapObjectType::CUBE;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d type converted to CUBE", i);
-                        break;
-                    case 1:
-                        objectData.type = MapObjectType::SPHERE;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d type converted to SPHERE", i);
-                        break;
-                    case 2:
-                        objectData.type = MapObjectType::CYLINDER;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d type converted to CYLINDER", i);
-                        break;
-                    case 3:
-                        objectData.type = MapObjectType::PLANE;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d type converted to PLANE", i);
-                        break;
-                    case 4:
-                        objectData.type = MapObjectType::MODEL;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d type converted to MODEL", i);
-                        break;
-                    case 5:
-                        objectData.type = MapObjectType::LIGHT;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d type converted to LIGHT", i);
-                        break;
-                    default:
-                        objectData.type = MapObjectType::CUBE;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d type unknown, defaulting to CUBE", i);
-                        break;
-                }
-
-                // Set shape-specific properties
-                switch (jsonObj.type)
-                {
-                    case 1: // Sphere
-                        objectData.radius = jsonObj.radiusSphere;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Sphere object: radius=%.2f", objectData.radius);
-                        break;
-                    case 2: // Cylinder
-                        objectData.radius = jsonObj.radiusH;
-                        objectData.height = jsonObj.radiusV;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Cylinder object: radius=%.2f, height=%.2f", objectData.radius, objectData.height);
-                        break;
-                    case 3: // Plane
-                        objectData.size = jsonObj.size;
-                        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Plane object: size=(%.2f, %.2f)", objectData.size.x, objectData.size.y);
-                        break;
-                }
-
-                m_gameMap.objects.push_back(objectData);
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Added object %d to map", i);
-            }
-
-            // Set metadata
-            m_gameMap.metadata.name = metadata.name;
-            m_gameMap.metadata.displayName = metadata.name;
-            m_gameMap.metadata.description = metadata.description;
-            m_gameMap.metadata.author = metadata.author;
-            m_gameMap.metadata.version = metadata.version;
-            m_gameMap.metadata.startPosition = {0.0f, 2.0f, 0.0f}; // Default start position
-            m_gameMap.metadata.skyColor = SKYBLUE;
-            m_gameMap.metadata.groundColor = DARKGREEN;
-            m_gameMap.metadata.difficulty = 1.0f;
+            TraceLog(LOG_INFO, "Game::LoadEditorMap() - MapLoader import successful, processing %d objects", m_gameMap.objects.size());
 
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded JSON map with %d objects", m_gameMap.objects.size());
         }
@@ -2043,12 +1956,6 @@ void Game::LoadEditorMap(const std::string& mapPath)
             TraceLog(LOG_ERROR, "Game::LoadEditorMap() - Failed to load JSON map");
             return;
         }
-    }
-    else
-    {
-        // Load using the original game map format
-        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Using original game map format");
-        m_gameMap = LoadGameMap(mapPath);
     }
 
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Map loaded, checking object count: %d", m_gameMap.objects.size());

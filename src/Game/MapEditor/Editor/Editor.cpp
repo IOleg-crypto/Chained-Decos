@@ -236,67 +236,66 @@ void Editor::LoadMap(const std::string &filename)
 
 void Editor::ExportMapForGame(const std::string &filename)
 {
-    // Create a GameMap from current editor objects
-    GameMap gameMap;
+    // Convert MapObjects to JsonSerializableObjects for models.json export
+    std::vector<JsonSerializableObject> jsonObjects;
 
-    // Set basic metadata
-    gameMap.metadata.name = m_currentlyLoadedMapFilePath.empty() ? "exported_map" : m_currentlyLoadedMapFilePath;
-    gameMap.metadata.displayName = "Exported Map";
-    gameMap.metadata.description = "Map exported from editor";
-    gameMap.metadata.author = "Map Editor";
-    gameMap.metadata.version = "1.0";
-    gameMap.metadata.startPosition = {0.0f, 2.0f, 0.0f};
-    gameMap.metadata.endPosition = {0.0f, 2.0f, 0.0f};
-    gameMap.metadata.skyColor = SKYBLUE;
-    gameMap.metadata.groundColor = DARKGREEN;
-    gameMap.metadata.difficulty = 1.0f;
-
-    // Convert MapObjects to MapObjectData
     for (const auto& obj : m_editorSceneObjects)
     {
-        MapObjectData objectData;
+        JsonSerializableObject jsonObj;
 
-        objectData.name = obj.GetObjectName();
-        objectData.position = obj.GetPosition();
-        objectData.rotation = obj.GetRotation();
-        objectData.scale = obj.GetScale();
-        objectData.color = obj.GetColor();
-        objectData.modelName = obj.GetModelAssetName();
+        jsonObj.position = obj.GetPosition();
+        jsonObj.scale = obj.GetScale();
+        jsonObj.rotation = obj.GetRotation();
+        jsonObj.color = obj.GetColor();
+        jsonObj.name = obj.GetObjectName();
+        jsonObj.type = obj.GetObjectType();
+        jsonObj.modelName = obj.GetModelAssetName();
+        jsonObj.visible = true;
+        jsonObj.layer = "default";
+        jsonObj.tags = "exported";
+        jsonObj.id = "obj_" + std::to_string(rand() % 9000 + 1000) + "_" + std::to_string(time(nullptr));
 
-        // Convert type (MapObject uses 0-5, MapObjectData uses enum)
-        switch (obj.GetObjectType())
-        {
-            case 0: objectData.type = MapObjectType::CUBE; break;
-            case 1: objectData.type = MapObjectType::SPHERE; break;
-            case 2: objectData.type = MapObjectType::CYLINDER; break;
-            case 3: objectData.type = MapObjectType::PLANE; break;
-            case 5: objectData.type = MapObjectType::MODEL; break;
-            default: objectData.type = MapObjectType::CUBE; break;
-        }
-
-        // Set shape-specific properties
+        // Set shape-specific properties for non-model objects
         switch (obj.GetObjectType())
         {
             case 1: // Sphere
-                objectData.radius = obj.GetSphereRadius();
+                jsonObj.radiusSphere = obj.GetSphereRadius();
                 break;
             case 2: // Cylinder
-                objectData.radius = obj.GetScale().x;
-                objectData.height = obj.GetScale().y;
+                jsonObj.radiusH = obj.GetScale().x;
+                jsonObj.radiusV = obj.GetScale().y;
                 break;
             case 3: // Plane
-                objectData.size = obj.GetPlaneSize();
+                jsonObj.size = obj.GetPlaneSize();
                 break;
         }
 
-        // gameMap.objects.push_back(objectData); // TODO: Fix type mismatch - MapObject vs MapObjectData
+        jsonObjects.push_back(jsonObj);
     }
 
-    // Save using the new comprehensive format
-    if (SaveGameMap(gameMap, filename))
+    // Create metadata for models.json format
+    MapMetadata metadata;
+    metadata.version = "1.0";
+    metadata.name = m_currentlyLoadedMapFilePath.empty() ? "exported_map" : m_currentlyLoadedMapFilePath;
+    metadata.displayName = "Exported Map";
+    metadata.description = "Map exported from ChainedDecos Map Editor";
+    metadata.author = "Map Editor";
+    metadata.startPosition = {0.0f, 2.0f, 0.0f};
+    metadata.endPosition = {0.0f, 2.0f, 0.0f};
+    metadata.skyColor = SKYBLUE;
+    metadata.groundColor = DARKGREEN;
+    metadata.difficulty = 1.0f;
+    metadata.createdDate = "2024-01-01T00:00:00Z";
+    metadata.modifiedDate = "2024-01-01T00:00:00Z";
+    metadata.worldBounds = {100.0f, 100.0f, 100.0f};
+    metadata.backgroundColor = {50, 50, 50, 255};
+    metadata.skyboxTexture = "";
+
+    // Export using the new models.json format
+    if (JsonMapFileManager::ExportGameMap(jsonObjects, filename, metadata))
     {
-        std::cout << "Map exported for game successfully!" << std::endl;
-        std::cout << "Saved " << gameMap.objects.size() << " objects" << std::endl;
+        std::cout << "Map exported for game successfully in models.json format!" << std::endl;
+        std::cout << "Saved " << jsonObjects.size() << " objects" << std::endl;
     }
     else
     {
@@ -657,13 +656,38 @@ void Editor::RenderImGuiToolbar()
                 for (const auto &modelName : m_availableModelNamesList)
                 {
                     bool isSelected = (m_currentlySelectedModelName == modelName);
-                    if (ImGui::Selectable(modelName.c_str(), isSelected))
+
+                    // Find model info to get category and description
+                    std::string displayName = modelName;
+                    std::string tooltip = "";
+
+                    // Look up model info if available
+                    for (const auto& modelInfo : m_availableModels)
+                    {
+                        if (modelInfo.name == modelName)
+                        {
+                            displayName = modelInfo.category + " (" + modelName + ")";
+                            tooltip = modelInfo.description + " [" + modelInfo.extension + "]";
+                            break;
+                        }
+                    }
+
+                    if (ImGui::Selectable(displayName.c_str(), isSelected))
                     {
                         m_currentlySelectedModelName = modelName;
                     }
+
                     if (isSelected)
                     {
                         ImGui::SetItemDefaultFocus();
+                    }
+
+                    // Show tooltip with description on hover
+                    if (ImGui::IsItemHovered() && !tooltip.empty())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("%s", tooltip.c_str());
+                        ImGui::EndTooltip();
                     }
                 }
                 ImGui::EndCombo();
@@ -875,16 +899,53 @@ void Editor::RenderImGuiPropertiesPanel()
                 for (const auto &modelName : m_availableModelNamesList)
                 {
                     bool isSelected = (obj.GetModelAssetName() == modelName);
-                    if (ImGui::Selectable(modelName.c_str(), isSelected))
+
+                    // Find model info to get category and description
+                    std::string displayName = modelName;
+                    std::string tooltip = "";
+
+                    // Look up model info if available
+                    for (const auto& modelInfo : m_availableModels)
+                    {
+                        if (modelInfo.name == modelName)
+                        {
+                            displayName = modelInfo.category + " (" + modelName + ")";
+                            tooltip = modelInfo.description + " [" + modelInfo.extension + "]";
+                            break;
+                        }
+                    }
+
+                    if (ImGui::Selectable(displayName.c_str(), isSelected))
                     {
                         obj.SetModelAssetName(modelName);
                     }
+
                     if (isSelected)
                     {
                         ImGui::SetItemDefaultFocus();
                     }
+
+                    // Show tooltip with description on hover
+                    if (ImGui::IsItemHovered() && !tooltip.empty())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("%s", tooltip.c_str());
+                        ImGui::EndTooltip();
+                    }
                 }
                 ImGui::EndCombo();
+            }
+
+            // Show model info if available
+            for (const auto& modelInfo : m_availableModels)
+            {
+                if (modelInfo.name == obj.GetModelAssetName())
+                {
+                    ImGui::Text("Category: %s", modelInfo.category.c_str());
+                    ImGui::Text("Description: %s", modelInfo.description.c_str());
+                    ImGui::Text("File: %s", modelInfo.extension.c_str());
+                    break;
+                }
             }
 
             // Scale controls for models
@@ -966,12 +1027,13 @@ void Editor::EnsureModelsLoaded()
         TraceLog(LOG_INFO, "Loading models...");
 
         bool loadSuccess = false;
+        std::vector<ModelInfo> models;
         try
         {
             // Use the new MapLoader to scan for models in the resources directory
             MapLoader mapLoader;
             std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
-            auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
+            models = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
             if (!models.empty())
             {
@@ -982,7 +1044,10 @@ void Editor::EnsureModelsLoaded()
                 {
                     try
                     {
-                        std::string modelPath = PROJECT_ROOT_DIR "/" + modelInfo.path;
+                        // Fix double path issue - modelInfo.path already contains leading slash
+                        std::string modelPath = PROJECT_ROOT_DIR + modelInfo.path;
+                        // Replace forward slashes with backslashes for Windows
+                        std::replace(modelPath.begin(), modelPath.end(), '/', '\\');
                         TraceLog(LOG_INFO, "Editor::EnsureModelsLoaded() - Loading model: %s from %s",
                                  modelInfo.name.c_str(), modelPath.c_str());
 
@@ -1015,6 +1080,7 @@ void Editor::EnsureModelsLoaded()
             try
             {
                 m_availableModelNamesList = m_modelAssetManager.GetAvailableModels();
+                m_availableModels = models;  // Store detailed model information
                 m_modelsInitialized = true;
                 TraceLog(LOG_INFO, "Models loaded successfully! Available models: %zu",
                          m_availableModelNamesList.size());

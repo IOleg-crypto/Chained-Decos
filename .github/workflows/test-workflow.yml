@@ -221,29 +221,27 @@ jobs:
       if: matrix.os == 'windows-2022'
       shell: pwsh
       run: |
-        if ($env:RUNNER_OS -eq "Windows") {
-          $unit = "bin/tests/ChainedDecosUnitTests.exe"
-          $integration = "bin/tests/ChainedDecosIntegrationTests.exe"
+        $unit = "bin/tests/ChainedDecosUnitTests.exe"
+        $integration = "bin/tests/ChainedDecosIntegrationTests.exe"
 
-          Write-Host "=== UNIT TESTS ==="
-          if (Test-Path $unit) {
-            & $unit
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          } else {
-            Write-Error "❌ Unit test not found: $unit"
-            exit 1
-          }
+        Write-Host "=== UNIT TESTS ==="
+        if (Test-Path $unit) {
+          & $unit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        } else {
+          Write-Error "❌ Unit test not found: $unit"
+          exit 1
+        }
 
-          Write-Host "=== INTEGRATION TESTS ==="
-          if (Test-Path $integration) {
-            & $integration
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          } else {
-            Write-Error "❌ Integration test not found: $integration"
-          }
+        Write-Host "=== INTEGRATION TESTS ==="
+        if (Test-Path $integration) {
+          & $integration
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        } else {
+          Write-Error "❌ Integration test not found: $integration"
+        }
 
-          Write-Host "✅ All tests completed successfully!"
-          }
+        Write-Host "✅ All tests completed successfully!"
  
         - name: Run tests (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')

@@ -11,10 +11,11 @@
 #include <string>
 #include <vector>
 
-#include "Engine/CameraController/CameraController.h" 
-#include "Engine/Model/Model.h"                       
+#include "Engine/CameraController/CameraController.h"
+#include "Engine/Model/Model.h"
 #include "MapObject.h"
-#include "../Map/ParkourMapGenerator.h"               
+#include "../Map/ParkourMapGenerator.h"
+#include "../Map/MapLoader.h"
 // Main editor class for the map editor
 class Editor
 {
@@ -30,6 +31,7 @@ private:
     std::string m_currentlyLoadedMapFilePath;                      // Current map file path
     ModelLoader m_modelAssetManager;                                // Model manager for loading and rendering models
     std::vector<std::string> m_availableModelNamesList;             // List of available models
+    std::vector<ModelInfo> m_availableModels;                       // Detailed model information with categories
     std::string m_currentlySelectedModelName;                       // Currently selected model for adding
     bool m_modelsInitialized;                                       // Flag to track if models are loaded
     int m_gridSizes;

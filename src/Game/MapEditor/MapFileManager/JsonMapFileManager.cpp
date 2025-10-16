@@ -340,14 +340,21 @@ bool JsonMapFileManager::ImportGameMap(std::vector<JsonSerializableObject>& obje
 
     try
     {
-        // Check if this is the editor format (with metadata) or game format (direct array)
+        // Check if this is the editor format (with metadata), exported editor format (with objects), or game format (direct array)
         size_t metadataStart = content.find("\"metadata\"");
+        size_t objectsStart = content.find("\"objects\"");
         size_t arrayStart = content.find("[");
 
         if (metadataStart != std::string::npos)
         {
             // This is the editor format with metadata - use LoadMap instead
             std::cout << "Detected editor format, using LoadMap parser" << std::endl;
+            return LoadMap(objects, filename, metadata);
+        }
+        else if (objectsStart != std::string::npos)
+        {
+            // This is the exported editor format with objects array but no metadata
+            std::cout << "Detected exported editor format, using LoadMap parser" << std::endl;
             return LoadMap(objects, filename, metadata);
         }
         else if (arrayStart != std::string::npos)
