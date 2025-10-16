@@ -3,3 +3,12 @@
 /* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */
 #include "D:/gitnext/Chained Decos/src/Game/Menu/Menu.cpp"
 
+/* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */
+#include "D:/gitnext/Chained Decos/src/Game/Menu/MenuCore.cpp"
+
+/* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */
+#include "D:/gitnext/Chained Decos/src/Game/Menu/MenuInput.cpp"
+
+/* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */
+#include "D:/gitnext/Chained Decos/src/Game/Menu/MenuMapSelection.cpp"
+

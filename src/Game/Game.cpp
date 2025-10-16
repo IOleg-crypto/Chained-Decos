@@ -393,7 +393,7 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
     // Register collision service once initialized
     Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(&m_collisionManager));
 
-    // Load model collisions only for models that are actually loaded and required for this map
+    // Try to create model collisions, but don't fail if it doesn't work
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Required models for collision generation: %d", requiredModels.size());
     for (const auto& modelName : requiredModels)
     {
@@ -410,6 +410,11 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
         TraceLog(LOG_ERROR, "Game::InitCollisionsWithModels() - Failed to create model collisions: %s", e.what());
         TraceLog(LOG_WARNING, "Game::InitCollisionsWithModels() - Continuing without model collisions");
     }
+    catch (...)
+    {
+        TraceLog(LOG_ERROR, "Game::InitCollisionsWithModels() - Unknown error occurred during model collision creation");
+        TraceLog(LOG_WARNING, "Game::InitCollisionsWithModels() - Continuing without model collisions");
+    }
 
     // Reinitialize after adding all model colliders
     m_collisionManager.Initialize();
@@ -419,7 +424,7 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
     playerCollision.InitializeCollision();
 
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Collision system initialized with %zu colliders.",
-             m_collisionManager.GetColliders().size());
+              m_collisionManager.GetColliders().size());
 }
 
 void Game::InitPlayer()
@@ -546,7 +551,7 @@ void Game::LoadGameModels()
             {
                 try
                 {
-                    std::string modelPath = PROJECT_ROOT_DIR "/" + modelInfo.path;
+                    std::string modelPath = modelInfo.path;
                     TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading model: %s from %s",
                              modelInfo.name.c_str(), modelPath.c_str());
 
@@ -611,7 +616,7 @@ void Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
                 {
                     try
                     {
-                        std::string modelPath = PROJECT_ROOT_DIR "/" + modelInfo.path;
+                        std::string modelPath = modelInfo.path;
                         TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Loading required model: %s from %s",
                                  modelInfo.name.c_str(), modelPath.c_str());
 
@@ -974,7 +979,17 @@ void Game::HandleMenuActions()
             LoadGameModelsSelective(requiredModels);
 
             // Initialize basic collision system first
-            InitCollisionsWithModels(requiredModels);
+            try
+            {
+                InitCollisionsWithModels(requiredModels);
+                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized for singleplayer");
+            }
+            catch (const std::exception& e)
+            {
+                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize basic collision system for singleplayer: %s", e.what());
+                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without collision system");
+                return;
+            }
 
             // Load the test map
             try
@@ -1012,7 +1027,36 @@ void Game::HandleMenuActions()
                 // Recalculate required models for the current map
                 std::string testMapPath = PROJECT_ROOT_DIR "/src/Game/Resource/test.json";
                 std::vector<std::string> requiredModels = GetModelsRequiredForMap(testMapPath);
-                InitCollisionsWithModels(requiredModels);
+
+                // Reinitialize collision system safely
+                try
+                {
+                    // Clear existing colliders
+                    m_collisionManager.ClearColliders();
+
+                    // Create ground collision first
+                    Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
+                    m_collisionManager.AddCollider(std::move(groundPlane));
+
+                    // Initialize collision manager
+                    m_collisionManager.Initialize();
+
+                    // Try to create model collisions, but don't fail if it doesn't work
+                    try
+                    {
+                        m_collisionManager.CreateAutoCollisionsFromModelsSelective(m_models, requiredModels);
+                        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resume model collisions created successfully");
+                    }
+                    catch (const std::exception& modelCollisionException)
+                    {
+                        TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Resume model collision creation failed: %s", modelCollisionException.what());
+                        TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Continuing with basic collision system only");
+                    }
+                }
+                catch (const std::exception& e)
+                {
+                    TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to reinitialize collision system for resume: %s", e.what());
+                }
             }
 
             // Ensure player is properly positioned and set up
@@ -1084,7 +1128,7 @@ void Game::HandleMenuActions()
             }
             catch (const std::exception& e)
             {
-                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize collision system: %s", e.what());
+                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize basic collision system: %s", e.what());
                 TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without collision system");
                 return;
             }
@@ -1105,7 +1149,7 @@ void Game::HandleMenuActions()
                     if (firstLine.find("[") == 0)
                     {
                         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Detected array format, using LoadModelsMap");
-                        m_gameMap = LoadModelsMap(mapPath);
+                        m_gameMap = LoadGameMap(mapPath.c_str());
                     }
                     else
                     {
@@ -1990,11 +2034,32 @@ void Game::LoadEditorMap(const std::string& mapPath)
         return;
     }
 
+    // Validate map object count to prevent memory issues
+    if (m_gameMap.objects.size() > 10000)
+    {
+        TraceLog(LOG_ERROR, "Game::LoadEditorMap() - Map has too many objects (%d), limiting to 10000", m_gameMap.objects.size());
+        return;
+    }
+
     // Create collision boxes for all objects in the map
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Creating collision boxes for %d objects", m_gameMap.objects.size());
     for (size_t i = 0; i < m_gameMap.objects.size(); ++i)
     {
         const auto& object = m_gameMap.objects[i];
+
+        // Validate object data before creating collision
+        if (!std::isfinite(object.position.x) || !std::isfinite(object.position.y) || !std::isfinite(object.position.z))
+        {
+            TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Object %d has invalid position, skipping collision", i);
+            continue;
+        }
+
+        if (!std::isfinite(object.scale.x) || !std::isfinite(object.scale.y) || !std::isfinite(object.scale.z))
+        {
+            TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Object %d has invalid scale, skipping collision", i);
+            continue;
+        }
+
         TraceLog(LOG_INFO, "Game::LoadEditorMap() - Creating collision for object %d: %s", i, object.name.c_str());
         TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d position: (%.2f, %.2f, %.2f)", i, object.position.x, object.position.y, object.position.z);
 
@@ -2029,12 +2094,23 @@ void Game::LoadEditorMap(const std::string& mapPath)
                 break;
         }
 
-        Collision collision(object.position, colliderSize);
-        collision.SetCollisionType(CollisionType::AABB_ONLY);
-        m_collisionManager.AddCollider(std::move(collision));
+        try
+        {
+            Collision collision(object.position, colliderSize);
+            collision.SetCollisionType(CollisionType::AABB_ONLY);
+            m_collisionManager.AddCollider(std::move(collision));
 
-        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f)",
-                 object.name.c_str(), object.position.x, object.position.y, object.position.z);
+            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f)",
+                     object.name.c_str(), object.position.x, object.position.y, object.position.z);
+        }
+        catch (const std::exception& e)
+        {
+            TraceLog(LOG_ERROR, "Game::LoadEditorMap() - Failed to create collision for object %s: %s", object.name.c_str(), e.what());
+        }
+        catch (...)
+        {
+            TraceLog(LOG_ERROR, "Game::LoadEditorMap() - Unknown error creating collision for object %s", object.name.c_str());
+        }
     }
 
     // Set player start position if specified in map metadata
@@ -2135,9 +2211,4 @@ void Game::RenderEditorMap()
         }
     }
 
-    // Also render any legacy map objects for backward compatibility
-    for (const auto& legacyObj : m_mapObjects)
-    {
-        DrawModel(legacyObj.loadedModel, Vector3{0, 0, 0}, 1.0f, WHITE);
-    }
 }

@@ -482,6 +482,13 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &mode
 {
     TraceLog(LOG_INFO, "Starting selective automatic collision generation for %zu specified models...", modelNames.size());
 
+    // Prevent excessive collision creation that could cause memory issues
+    if (modelNames.size() > 1000)
+    {
+        TraceLog(LOG_ERROR, "CollisionManager::CreateAutoCollisionsFromModelsSelective() - Too many models (%zu), limiting to 1000", modelNames.size());
+        return;
+    }
+
     // Create a set for faster lookup
     std::set<std::string> modelSet(modelNames.begin(), modelNames.end());
 
@@ -645,10 +652,31 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
              "Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
              modelName.c_str(), position.x, position.y, position.z, scale);
 
+    // Validate inputs
+    if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z))
+    {
+        TraceLog(LOG_ERROR, "Model '%s' has invalid position (%.2f, %.2f, %.2f)",
+                 modelName.c_str(), position.x, position.y, position.z);
+        return false;
+    }
+
+    if (!std::isfinite(scale) || scale <= 0.0f || scale > 1000.0f)
+    {
+        TraceLog(LOG_ERROR, "Model '%s' has invalid scale %.2f", modelName.c_str(), scale);
+        return false;
+    }
+
     // Validate model data before proceeding
     if (model.meshCount == 0)
     {
         TraceLog(LOG_ERROR, "Model '%s' has no meshes, cannot create collision", modelName.c_str());
+        return false;
+    }
+
+    // Check for excessive mesh count that could cause memory issues
+    if (model.meshCount > 1000)
+    {
+        TraceLog(LOG_ERROR, "Model '%s' has excessive mesh count (%d)", modelName.c_str(), model.meshCount);
         return false;
     }
 
@@ -751,13 +779,27 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
 
     // Add to collision manager
     size_t beforeCount = GetColliders().size();
-    AddCollider(std::move(instanceCollision));
-    
-    bool success = GetColliders().size() > beforeCount;
-    TraceLog(LOG_INFO, "%s created instance collision for '%s', collider count: %zu -> %zu",
-             success ? "Successfully" : "FAILED to", modelName.c_str(), beforeCount, GetColliders().size());
-    
-    return success;
+
+    try
+    {
+        AddCollider(std::move(instanceCollision));
+
+        bool success = GetColliders().size() > beforeCount;
+        TraceLog(LOG_INFO, "%s created instance collision for '%s', collider count: %zu -> %zu",
+                 success ? "Successfully" : "FAILED to", modelName.c_str(), beforeCount, GetColliders().size());
+
+        return success;
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Failed to add collision for model '%s': %s", modelName.c_str(), e.what());
+        return false;
+    }
+    catch (...)
+    {
+        TraceLog(LOG_ERROR, "Unknown error occurred while adding collision for model '%s'", modelName.c_str());
+        return false;
+    }
 }
 
 const std::vector<std::unique_ptr<Collision>> &CollisionManager::GetColliders() const

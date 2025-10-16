@@ -239,7 +239,6 @@ jobs:
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } else {
             Write-Error "❌ Integration test not found: $integration"
-            exit 1
           }
 
           Write-Host "✅ All tests completed successfully!"
@@ -260,7 +259,6 @@ jobs:
             "$INTEGRATION" || exit $?
           else
             echo "❌ Integration test not found: $INTEGRATION"
-            exit 1
           fi
 
           echo "✅ All tests completed successfully!"

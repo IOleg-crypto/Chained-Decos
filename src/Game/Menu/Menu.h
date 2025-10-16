@@ -90,6 +90,7 @@ struct MapInfo
     std::string previewImage; // Path to preview image
     Color themeColor;
     bool isAvailable;
+    bool isModelBased; // New field to distinguish model-based maps from JSON maps
 };
 
 class Menu
@@ -145,7 +146,6 @@ private:
     Engine *m_engine = nullptr;
     ConfigManager m_config;
     Font m_font{}; // Alan Sans font for menu text
-    MapLoader m_mapLoader; // Enhanced map loader with design patterns
 
     // Audio settings
     float m_masterVolume = 1.0f;

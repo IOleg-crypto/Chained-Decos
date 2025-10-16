@@ -1,6 +1,12 @@
 add_library(menu STATIC
     Menu.cpp
     Menu.h
+    MenuCore.cpp
+    MenuCore.h
+    MenuInput.cpp
+    MenuInput.h
+    MenuMapSelection.cpp
+    MenuMapSelection.h
 )
 
 target_include_directories(menu PUBLIC
