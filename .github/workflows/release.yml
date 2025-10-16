@@ -103,7 +103,7 @@ jobs:
 
     - name: Clear CMake cache
       shell: bash
-       run: |
+      run: |
          echo "🧹 Starting comprehensive cache cleanup..."
 
          # Clear build directory completely
