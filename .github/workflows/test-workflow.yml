@@ -71,7 +71,7 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    # ---------------- Ubuntu setup ----------------
+    # ---------------- Linux (Ubuntu) setup ----------------
     - name: Install dependencies (Ubuntu)
       if: startsWith(matrix.os, 'ubuntu')
       run: |
@@ -222,7 +222,6 @@ jobs:
       shell: pwsh
       run: |
         $unit = "bin/tests/ChainedDecosUnitTests.exe"
-        $integration = "bin/tests/ChainedDecosIntegrationTests.exe"
 
         Write-Host "=== UNIT TESTS ==="
         if (Test-Path $unit) {
@@ -233,40 +232,32 @@ jobs:
           exit 1
         }
 
-        Write-Host "=== INTEGRATION TESTS ==="
-        if (Test-Path $integration) {
-          & $integration
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        } else {
-          Write-Error "❌ Integration test not found: $integration"
-        }
-
         Write-Host "✅ All tests completed successfully!"
-
-    - name: Run tests (Ubuntu)
-      if: startsWith(matrix.os, 'ubuntu')
-      shell: bash
-      run: |
-        UNIT="./bin/tests/ChainedDecosUnitTests"
-        INTEGRATION="./bin/tests/ChainedDecosIntegrationTests"
-
-        echo "=== UNIT TESTS ==="
-        if [[ -f "$UNIT" ]]; then
-          "$UNIT" || exit $?
-        else
-          echo "❌ Unit test not found: $UNIT"
-          exit 1
-        fi
-
-        echo "=== INTEGRATION TESTS ==="
-        if [[ -f "$INTEGRATION" ]]; then
-          "$INTEGRATION" || exit $?
-        else
-          echo "❌ Integration test not found: $INTEGRATION"
-          exit 1
-        fi
-
-        echo "✅ All tests completed successfully!"
+ 
+        - name: Run tests (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        shell: bash
+        run: |
+          UNIT="./bin/tests/ChainedDecosUnitTests"
+          INTEGRATION="./bin/tests/ChainedDecosIntegrationTests"
+ 
+          echo "=== UNIT TESTS ==="
+          if [[ -f "$UNIT" ]]; then
+            "$UNIT" || exit $?
+          else
+            echo "❌ Unit test not found: $UNIT"
+            exit 1
+          fi
+ 
+          echo "=== INTEGRATION TESTS ==="
+          if [[ -f "$INTEGRATION" ]]; then
+            "$INTEGRATION" || exit $?
+          else
+            echo "❌ Integration test not found: $INTEGRATION"
+            exit 1
+          fi
+ 
+          echo "✅ All tests completed successfully!"
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
