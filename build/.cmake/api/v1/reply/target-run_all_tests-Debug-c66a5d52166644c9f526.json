@@ -27,11 +27,11 @@
 	[
 		{
 			"backtrace" : 1,
-			"id" : "ChainedDecosIntegrationTests::@a44f0ac069e85531cdee"
+			"id" : "ChainedDecosUnitTests::@a44f0ac069e85531cdee"
 		},
 		{
 			"backtrace" : 1,
-			"id" : "ChainedDecosUnitTests::@a44f0ac069e85531cdee"
+			"id" : "ChainedDecosIntegrationTests::@a44f0ac069e85531cdee"
 		}
 	],
 	"id" : "run_all_tests::@a44f0ac069e85531cdee",
