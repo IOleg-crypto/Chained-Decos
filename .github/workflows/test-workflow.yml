@@ -142,6 +142,7 @@ jobs:
           -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF \
           -DENABLE_WARNINGS=OFF -DENABLE_DEV_TOOLS=OFF \
           -DFETCHCONTENT_QUIET=OFF -DFETCHCONTENT_UPDATES_DISCONNECTED=OFF ..
+
         echo "✅ Dependencies downloaded successfully"
 
     - name: Clean FetchContent subprojects
@@ -191,13 +192,13 @@ jobs:
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -DBUILD_TESTS=ON \
-          -DBUILD_BENCHMARKS=ON \
+          -DBUILD_BENCHMARKS=OFF \
           -DDISABLE_ALL_WARNINGS=ON \
           -DENABLE_OPTIMIZATIONS=OFF \
           -DENABLE_UNITY_BUILD=OFF \
           -DENABLE_DEV_TOOLS=ON \
           -DENABLE_DEBUG_INFO=ON \
-          -DFETCHCONTENT_VERBOSE=ON \
+          -DFETCHCONTENT_VERBOSE=OFF \
           -S "${{ github.workspace }}"
 
         echo "✅ CMake configuration completed"
@@ -221,43 +222,54 @@ jobs:
       if: matrix.os == 'windows-2022'
       shell: pwsh
       run: |
-        $unit = "bin/tests/ChainedDecosUnitTests.exe"
+        if ($env:RUNNER_OS -eq "Windows") {
+          $unit = "bin/tests/ChainedDecosUnitTests.exe"
+          $integration = "bin/tests/ChainedDecosIntegrationTests.exe"
 
-        Write-Host "=== UNIT TESTS ==="
-        if (Test-Path $unit) {
-          & $unit
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        } else {
-          Write-Error "❌ Unit test not found: $unit"
-          exit 1
+          Write-Host "=== UNIT TESTS ==="
+          if (Test-Path $unit) {
+            & $unit
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+            Write-Error "❌ Unit test not found: $unit"
+            exit 1
+          }
+
+          Write-Host "=== INTEGRATION TESTS ==="
+          if (Test-Path $integration) {
+            & $integration
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+            Write-Error "❌ Integration test not found: $integration"
+          }
+
+          Write-Host "✅ All tests completed successfully!"
         }
 
-        Write-Host "✅ All tests completed successfully!"
+    - name: Run tests (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu')
+      shell: bash
+      run: |
+        UNIT="./bin/tests/ChainedDecosUnitTests"
+        INTEGRATION="./bin/tests/ChainedDecosIntegrationTests"
  
-        - name: Run tests (Ubuntu)
-        if: startsWith(matrix.os, 'ubuntu')
-        shell: bash
-        run: |
-          UNIT="./bin/tests/ChainedDecosUnitTests"
-          INTEGRATION="./bin/tests/ChainedDecosIntegrationTests"
+        echo "=== UNIT TESTS ==="
+        if [[ -f "$UNIT" ]]; then
+          "$UNIT" || exit $?
+        else
+          echo "❌ Unit test not found: $UNIT"
+          exit 1
+        fi
  
-          echo "=== UNIT TESTS ==="
-          if [[ -f "$UNIT" ]]; then
-            "$UNIT" || exit $?
-          else
-            echo "❌ Unit test not found: $UNIT"
-            exit 1
-          fi
+        echo "=== INTEGRATION TESTS ==="
+        if [[ -f "$INTEGRATION" ]]; then
+          "$INTEGRATION" || exit $?
+        else
+          echo "❌ Integration test not found: $INTEGRATION"
+          exit 1
+        fi
  
-          echo "=== INTEGRATION TESTS ==="
-          if [[ -f "$INTEGRATION" ]]; then
-            "$INTEGRATION" || exit $?
-          else
-            echo "❌ Integration test not found: $INTEGRATION"
-            exit 1
-          fi
- 
-          echo "✅ All tests completed successfully!"
+        echo "✅ All tests completed successfully!"
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
