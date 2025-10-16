@@ -243,8 +243,9 @@ jobs:
           }
 
           Write-Host "✅ All tests completed successfully!"
+          }
  
-      - name: Run tests (Ubuntu)
+        - name: Run tests (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
         shell: bash
         run: |
