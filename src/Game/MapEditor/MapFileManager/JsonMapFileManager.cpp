@@ -249,38 +249,68 @@ bool JsonMapFileManager::ExportGameMap(const std::vector<JsonSerializableObject>
         return false;
     }
 
-    // Start JSON structure similar to models.json format
+    // Group objects by modelName to create models.json format
+    std::map<std::string, std::vector<const JsonSerializableObject*>> modelGroups;
+
+    for (const auto& obj : objects)
+    {
+        if (!obj.modelName.empty())
+        {
+            modelGroups[obj.modelName].push_back(&obj);
+        }
+    }
+
+    // Start JSON array structure (models.json format)
     file << "[\n";
 
-    for (size_t i = 0; i < objects.size(); ++i)
+    size_t modelIndex = 0;
+    const size_t totalModels = modelGroups.size();
+
+    for (const auto& [modelName, modelObjects] : modelGroups)
     {
-        const auto& obj = objects[i];
+        if (modelObjects.empty()) continue;
 
         file << "  {\n";
-        file << "    \"name\": \"" << obj.name << "\",\n";
-        file << "    \"type\": \"" << GetObjectTypeString(obj.type) << "\",\n";
-        file << "    \"modelPath\": \"" << obj.modelName << "\",\n";
-        file << "    \"position\": " << Vector3ToJson(obj.position) << ",\n";
-        file << "    \"rotation\": " << Vector3ToJson(obj.rotation) << ",\n";
-        file << "    \"scale\": " << Vector3ToJson(obj.scale) << ",\n";
-        file << "    \"color\": " << ColorToJson(obj.color) << ",\n";
+        file << "    \"name\": \"" << modelName << "\",\n";
 
-        // Add shape-specific properties
-        if (obj.type == 1) // SPHERE
-            file << "    \"radius\": " << obj.radiusSphere << ",\n";
-        else if (obj.type == 2) // CYLINDER
-            file << "    \"radius\": " << obj.radiusH << ",\n    \"height\": " << obj.radiusV << ",\n";
-        else if (obj.type == 3) // PLANE
-            file << "    \"size\": " << Vector2ToJson(obj.size) << ",\n";
+        // Determine the appropriate file extension and path
+        std::string modelPath = GetModelPathForModel(modelName);
 
-        file << "    \"visible\": " << (obj.visible ? "true" : "false") << ",\n";
-        file << "    \"layer\": \"" << obj.layer << "\",\n";
-        file << "    \"tags\": \"" << obj.tags << "\"\n";
+        file << "    \"path\": \"" << modelPath << "\",\n";
+        file << "    \"spawn\": true,\n";
+        file << "    \"hasCollision\": true,\n";
+        file << "    \"collisionPrecision\": \"bvh_only\",\n";
+        file << "    \"hasAnimations\": " << (HasAnimations(modelPath) ? "true" : "false") << ",\n";
 
-        if (i < objects.size() - 1)
+        // Create instances array from objects
+        file << "    \"instances\": [\n";
+
+        for (size_t i = 0; i < modelObjects.size(); ++i)
+        {
+            const auto& obj = *modelObjects[i];
+
+            file << "      {\n";
+            file << "        \"position\": " << Vector3ToJson(obj.position) << ",\n";
+
+            // Calculate average scale for the instance
+            float avgScale = (obj.scale.x + obj.scale.y + obj.scale.z) / 3.0f;
+            file << "        \"scale\": " << avgScale << ",\n";
+            file << "        \"spawn\": true\n";
+
+            if (i < modelObjects.size() - 1)
+                file << "      },\n";
+            else
+                file << "      }\n";
+        }
+
+        file << "    ]\n";
+
+        if (modelIndex < totalModels - 1)
             file << "  },\n";
         else
             file << "  }\n";
+
+        modelIndex++;
     }
 
     file << "]\n";
@@ -806,6 +836,33 @@ std::string JsonMapFileManager::GetObjectTypeString(int type)
     }
 }
 
+std::string JsonMapFileManager::GetModelPathForModel(const std::string& modelName)
+{
+    // Check for common model files in resources directory
+    std::vector<std::string> possibleExtensions = {".glb", ".gltf", ".obj"};
+
+    for (const std::string& ext : possibleExtensions)
+    {
+        std::string testPath = "resources/" + modelName + ext;
+        std::ifstream testFile(testPath);
+        if (testFile.good())
+        {
+            testFile.close();
+            return testPath;
+        }
+    }
+
+    // If no file found, return .glb as default (most common)
+    return "resources/" + modelName + ".glb";
+}
+
+bool JsonMapFileManager::HasAnimations(const std::string& modelPath)
+{
+    // Simple heuristic: gltf and glb files often contain animations
+    std::string ext = modelPath.substr(modelPath.find_last_of('.'));
+    return (ext == ".gltf" || ext == ".glb");
+}
+
 void JsonMapFileManager::ParseGameMapObject(const std::string& json, JsonSerializableObject& obj)
 {
     // Parse basic string fields
@@ -992,6 +1049,129 @@ bool JsonMapFileManager::TestRoundTrip(const std::vector<JsonSerializableObject>
     {
         std::cout << "✗ Round-trip test FAILED!" << std::endl;
     }
+
+    return allValid;
+}
+
+bool JsonMapFileManager::TestModelsFormatExportImport()
+{
+    std::cout << "Testing models.json format export/import cycle..." << std::endl;
+
+    // Create test objects that represent a simple scene
+    std::vector<JsonSerializableObject> testObjects;
+
+    // Create a tavern object
+    JsonSerializableObject tavernObj;
+    tavernObj.id = "test_tavern_1";
+    tavernObj.name = "Castle";
+    tavernObj.type = 4; // MODEL type
+    tavernObj.position = {62.1f, -1.5f, -11.7f};
+    tavernObj.scale = {1.0f, 1.0f, 0.9f};
+    tavernObj.rotation = {0.0f, 0.0f, 0.0f};
+    tavernObj.color = {255, 255, 255, 255};
+    tavernObj.modelName = "TaverGLTF";
+    tavernObj.visible = true;
+    tavernObj.layer = "default";
+    tavernObj.tags = "";
+    testObjects.push_back(tavernObj);
+
+    // Create a player object
+    JsonSerializableObject playerObj;
+    playerObj.id = "test_player_1";
+    playerObj.name = "Player";
+    playerObj.type = 4; // MODEL type
+    playerObj.position = {0.0f, 2.0f, 0.0f};
+    playerObj.scale = {0.01f, 0.01f, 0.01f};
+    playerObj.rotation = {0.0f, 0.0f, 0.0f};
+    playerObj.color = {255, 255, 255, 255};
+    playerObj.modelName = "player";
+    playerObj.visible = true;
+    playerObj.layer = "default";
+    playerObj.tags = "";
+    testObjects.push_back(playerObj);
+
+    // Create test metadata
+    MapMetadata metadata;
+    metadata.version = "1.0";
+    metadata.name = "Test Models Format Map";
+    metadata.displayName = "Test Models Format Map";
+    metadata.description = "Test map for models.json format validation";
+    metadata.author = "Test System";
+    metadata.createdDate = GetCurrentTimestamp();
+    metadata.modifiedDate = GetCurrentTimestamp();
+    metadata.worldBounds = {100.0f, 100.0f, 100.0f};
+    metadata.backgroundColor = {50, 50, 50, 255};
+
+    // Export to models.json format
+    std::string testFilePath = "test_models_format.json";
+    if (!ExportGameMap(testObjects, testFilePath, metadata))
+    {
+        std::cout << "ERROR: Failed to export test map to models.json format" << std::endl;
+        return false;
+    }
+
+    std::cout << "✓ Exported " << testObjects.size() << " objects to models.json format" << std::endl;
+
+    // Import back from models.json format
+    std::vector<JsonSerializableObject> importedObjects;
+    MapMetadata importedMetadata;
+
+    if (!ImportGameMap(importedObjects, testFilePath, importedMetadata))
+    {
+        std::cout << "ERROR: Failed to import test map from models.json format" << std::endl;
+        return false;
+    }
+
+    std::cout << "✓ Imported " << importedObjects.size() << " objects from models.json format" << std::endl;
+
+    // Validate that we have the same number of objects
+    if (testObjects.size() != importedObjects.size())
+    {
+        std::cout << "ERROR: Object count mismatch! Original: " << testObjects.size()
+                  << ", Imported: " << importedObjects.size() << std::endl;
+        return false;
+    }
+
+    // Validate each object - check that model names and positions are preserved
+    bool allValid = true;
+    for (size_t i = 0; i < testObjects.size(); ++i)
+    {
+        const auto& original = testObjects[i];
+        const auto& imported = importedObjects[i];
+
+        if (original.modelName != imported.modelName)
+        {
+            std::cout << "ERROR: Object " << i << " model name mismatch!" << std::endl;
+            std::cout << "  Original: " << original.modelName << std::endl;
+            std::cout << "  Imported: " << imported.modelName << std::endl;
+            allValid = false;
+        }
+
+        if (std::abs(original.position.x - imported.position.x) > 0.1f ||
+            std::abs(original.position.y - imported.position.y) > 0.1f ||
+            std::abs(original.position.z - imported.position.z) > 0.1f)
+        {
+            std::cout << "ERROR: Object " << i << " position mismatch!" << std::endl;
+            std::cout << "  Original: (" << original.position.x << ", "
+                      << original.position.y << ", " << original.position.z << ")" << std::endl;
+            std::cout << "  Imported: (" << imported.position.x << ", "
+                      << imported.position.y << ", " << imported.position.z << ")" << std::endl;
+            allValid = false;
+        }
+    }
+
+    if (allValid)
+    {
+        std::cout << "✓ All objects validated successfully!" << std::endl;
+        std::cout << "✓ Models.json format export/import test PASSED!" << std::endl;
+    }
+    else
+    {
+        std::cout << "✗ Models.json format export/import test FAILED!" << std::endl;
+    }
+
+    // Clean up test file
+    std::remove(testFilePath.c_str());
 
     return allValid;
 }
