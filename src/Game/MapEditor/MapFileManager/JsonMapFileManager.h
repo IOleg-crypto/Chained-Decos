@@ -68,6 +68,7 @@ public:
     // Testing and validation
     static bool TestRoundTrip(const std::vector<JsonSerializableObject>& originalObjects,
                              const std::string& testFilePath);
+    static bool TestModelsFormatExportImport();
     
     // Backup operations
     static bool CreateBackup(const std::string& filename);
@@ -99,6 +100,10 @@ private:
     static std::string GetUniqueId();
     static std::string GetObjectTypeString(int type);
     static void ParseGameMapObject(const std::string& json, JsonSerializableObject& obj);
+
+    // Models.json format helper functions
+    static std::string GetModelPathForModel(const std::string& modelName);
+    static bool HasAnimations(const std::string& modelPath);
 };
 
 #endif // JSONMAPFILEMANAGER_H
