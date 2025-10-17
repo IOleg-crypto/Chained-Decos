@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw",
+		"source" : ".deps/raylib-src/src/external/glfw"
+	}
+}

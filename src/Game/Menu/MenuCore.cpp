@@ -142,13 +142,13 @@ void Menu::SetGameInProgress(bool inProgress)
 void Menu::Update()
 {
     // // If game is in progress and we're not in a submenu, ensure we're in main menu to show resume option
-    // if (m_gameInProgress && m_state != MenuState::Options && m_state != MenuState::Gameplay &&
-    //     m_state != MenuState::ParkourControls && m_state != MenuState::Video &&
-    //     m_state != MenuState::Audio && m_state != MenuState::Controls &&
-    //     m_state != MenuState::Credits && m_state != MenuState::Mods &&
-    //     m_state != MenuState::MapSelection && m_state != MenuState::ConfirmExit)
+    // if (game_in_progress && current_state != MenuState::Options && current_state != MenuState::Gameplay &&
+    //     current_state != MenuState::ParkourControls && current_state != MenuState::Video &&
+    //     current_state != MenuState::Audio && current_state != MenuState::Controls &&
+    //     current_state != MenuState::Credits && current_state != MenuState::Mods &&
+    //     current_state != MenuState::MapSelection && current_state != MenuState::ConfirmExit)
     // {
-    //     m_state = MenuState::Main;
+    //     current_state = MenuState::Main;
     // }
 
     // Update current menu based on state
@@ -352,14 +352,22 @@ void Menu::LoadSettings()
             // Try loading from build directory if not found in current directory
             if (!m_config.LoadFromFile("build/game.cfg"))
             {
-                TraceLog(LOG_WARNING, "Menu::Menu() - Could not load game.cfg, will use default settings");
+                TraceLog(LOG_WARNING, "Menu::LoadSettings() - Could not load game.cfg from current directory or build directory, using default settings");
             }
+            else
+            {
+                TraceLog(LOG_INFO, "Menu::LoadSettings() - Successfully loaded settings from build/game.cfg");
+            }
+        }
+        else
+        {
+            TraceLog(LOG_INFO, "Menu::LoadSettings() - Successfully loaded settings from game.cfg");
         }
     }
     catch (const std::exception& e)
     {
-        TraceLog(LOG_ERROR, "Menu::Menu() - Exception while loading config: %s", e.what());
-        TraceLog(LOG_INFO, "Menu::Menu() - Continuing with default settings");
+        TraceLog(LOG_ERROR, "Menu::LoadSettings() - Exception while loading configuration: %s", e.what());
+        TraceLog(LOG_INFO, "Menu::LoadSettings() - Continuing with default settings");
     }
 
     // Apply loaded settings to the game
@@ -429,16 +437,16 @@ void Menu::SaveSettings()
             // Try saving to build directory if not found in current directory
             if (!m_config.SaveToFile("build/game.cfg"))
             {
-                TraceLog(LOG_WARNING, "Menu::SaveSettings() - Could not save game.cfg");
+                TraceLog(LOG_ERROR, "Menu::SaveSettings() - Could not save settings to either game.cfg or build/game.cfg");
             }
             else
             {
-                TraceLog(LOG_INFO, "Menu::SaveSettings() - Settings saved to build/game.cfg");
+                TraceLog(LOG_INFO, "Menu::SaveSettings() - Settings successfully saved to build/game.cfg");
             }
         }
         else
         {
-            TraceLog(LOG_INFO, "Menu::SaveSettings() - Settings saved to game.cfg");
+            TraceLog(LOG_INFO, "Menu::SaveSettings() - Settings successfully saved to game.cfg");
         }
     }
     catch (const std::exception& e)
