@@ -6,6 +6,7 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <cstdint>
 
 #include "MapObject.h"
 
