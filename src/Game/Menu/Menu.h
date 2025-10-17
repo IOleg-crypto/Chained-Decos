@@ -250,8 +250,15 @@ public:
     void ApplyGameplayOption(MenuOption& opt);
     std::string GetGameplaySettingValue(const std::string& settingName) const;
 
-    // Test accessor method
+    // Public interface for game integration
     [[nodiscard]] bool IsVisible() const { return m_state != MenuState::Main || m_gameInProgress; }
+
+private:
+    // Internal helper methods
+    void InitializeMenuSystem();
+    void HandleMenuNavigation();
+    void UpdateMenuDisplay();
+    void ValidateMenuState();
 };
 
 #endif // MENU_H
