@@ -300,19 +300,19 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "cmdhandler::@539fffaf613aa1a67690"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "kernel::@5d86515e568759735271"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "audio::@9d441780e288f3c71fb0"
+			"id" : "cmdhandler::@539fffaf613aa1a67690"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "event::@ac78cbc803f0e3d902f4"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "audio::@9d441780e288f3c71fb0"
 		},
 		{
 			"backtrace" : 2,
