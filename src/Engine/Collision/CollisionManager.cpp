@@ -2,24 +2,33 @@
 #include <CollisionSystem.h>
 #include <Model/Model.h>
 #include <algorithm>
+#include <array>
+#include <cfloat>
 #include <compare>
+#include <execution>
+#include <future>
 #include <raylib.h>
 #include <raymath.h>
 #include <set>
 #include <string>
-#include <vector>
-#include <thread>
-#include <cfloat>
-#include <execution>
-#include <future>
 #include <thread>
 #include <unordered_map>
-#include <array>
+#include <vector>
+
+// Structure to hold model processing data for parallel processing
+struct ModelCollisionTask
+{
+    std::string modelName;
+    Model *model;
+    bool hasCollision;
+    std::vector<ModelInstance *> instances;
+    int createdCollisions = 0;
+};
 
 void CollisionManager::Initialize() const
 {
     // Batch BVH initialization for better performance
-    std::vector<Collision*> bvhObjects;
+    std::vector<Collision *> bvhObjects;
     bvhObjects.reserve(m_collisionObjects.size());
 
     // Collect objects that need BVH initialization
@@ -35,12 +44,37 @@ void CollisionManager::Initialize() const
     // Initialize BVH for collected objects in parallel if many
     if (bvhObjects.size() > 8)
     {
-        std::for_each(std::execution::par, bvhObjects.begin(), bvhObjects.end(),
-                     [](Collision* obj) { obj->InitializeBVH(); });
+// Use parallel execution if available (C++17 and supported platform)
+#if defined(__cpp_lib_execution) && (__cpp_lib_execution >= 201603)
+        try
+        {
+            std::for_each(std::execution::par, bvhObjects.begin(), bvhObjects.end(),
+                          [](Collision *obj) { obj->InitializeBVH(); });
+        }
+        catch (const std::exception &e)
+        {
+            // Fallback to sequential if parallel execution fails
+            TraceLog(LOG_WARNING,
+                     "Parallel BVH initialization failed, falling back to sequential: %s",
+                     e.what());
+            for (Collision *obj : bvhObjects)
+            {
+                obj->InitializeBVH();
+            }
+        }
+#else
+        // Fallback for platforms without std::execution support (older macOS, etc.)
+        TraceLog(LOG_INFO, "Using sequential BVH initialization (parallel execution not supported "
+                           "on this platform)");
+        for (Collision *obj : bvhObjects)
+        {
+            obj->InitializeBVH();
+        }
+#endif
     }
     else
     {
-        for (Collision* obj : bvhObjects)
+        for (Collision *obj : bvhObjects)
         {
             obj->InitializeBVH();
         }
@@ -53,7 +87,8 @@ void CollisionManager::Initialize() const
 // Spatial partitioning optimization
 void CollisionManager::UpdateSpatialPartitioning()
 {
-    if (m_collisionObjects.empty()) return;
+    if (m_collisionObjects.empty())
+        return;
 
     // Reserve space for better performance
     m_spatialGrid.clear();
@@ -64,7 +99,7 @@ void CollisionManager::UpdateSpatialPartitioning()
 
     for (size_t i = 0; i < m_collisionObjects.size(); ++i)
     {
-        const auto& collisionObject = m_collisionObjects[i];
+        const auto &collisionObject = m_collisionObjects[i];
         Vector3 min = collisionObject->GetMin();
         Vector3 max = collisionObject->GetMax();
 
@@ -108,9 +143,10 @@ void CollisionManager::AddCollider(Collision &&collisionObject)
     }
 }
 
-void CollisionManager::AddColliderRef(Collision* collisionObject)
+void CollisionManager::AddColliderRef(Collision *collisionObject)
 {
-    if (!collisionObject) return;
+    if (!collisionObject)
+        return;
 
     m_collisionObjects.push_back(std::unique_ptr<Collision>(collisionObject));
 
@@ -120,7 +156,8 @@ void CollisionManager::AddColliderRef(Collision* collisionObject)
         collisionObject->InitializeBVH();
     }
 
-    TraceLog(LOG_INFO, "Added collision object reference, total count: %zu", m_collisionObjects.size());
+    TraceLog(LOG_INFO, "Added collision object reference, total count: %zu",
+             m_collisionObjects.size());
 }
 
 void CollisionManager::ClearColliders() { m_collisionObjects.clear(); }
@@ -151,13 +188,15 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision) const
     }
     return false;
 }
-bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 &collisionResponse) const
+bool CollisionManager::CheckCollision(const Collision &playerCollision,
+                                      Vector3 &collisionResponse) const
 {
     if (m_collisionObjects.empty())
         return false;
 
     // Check prediction cache first
-    size_t cacheHash = const_cast<CollisionManager*>(this)->GetPredictionCacheHash(playerCollision);
+    size_t cacheHash =
+        const_cast<CollisionManager *>(this)->GetPredictionCacheHash(playerCollision);
     auto cacheIt = m_predictionCache.find(cacheHash);
     if (cacheIt != m_predictionCache.end() &&
         m_currentFrame - cacheIt->second.frameCount < CACHE_LIFETIME_FRAMES)
@@ -169,8 +208,8 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
     const Vector3 playerMin = playerCollision.GetMin();
     const Vector3 playerMax = playerCollision.GetMax();
     const Vector3 playerCenter = {(playerMin.x + playerMax.x) * 0.5f,
-                                    (playerMin.y + playerMax.y) * 0.5f,
-                                    (playerMin.z + playerMax.z) * 0.5f};
+                                  (playerMin.y + playerMax.y) * 0.5f,
+                                  (playerMin.z + playerMax.z) * 0.5f};
     bool collisionDetected = false;
     collisionResponse = (Vector3){0, 0, 0};
     bool hasOptimalResponse = false;
@@ -180,22 +219,30 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
     bool hasGroundSeparationVector = false;
     for (const auto &collisionObject : m_collisionObjects)
     {
-        bool collisionDetectedInObject = collisionObject->IsUsingBVH() ? playerCollision.IntersectsBVH(*collisionObject)
-                                           : playerCollision.Intersects(*collisionObject);
+        bool collisionDetectedInObject = collisionObject->IsUsingBVH()
+                                             ? playerCollision.IntersectsBVH(*collisionObject)
+                                             : playerCollision.Intersects(*collisionObject);
         if (!collisionDetectedInObject)
             continue;
         collisionDetected = true;
 
-        if (collisionObject->IsUsingBVH()) {
+        if (collisionObject->IsUsingBVH())
+        {
             Vector3 raycastOrigin = playerCenter;
             Vector3 raycastDirection = {0.0f, -1.0f, 0.0f};
             float maxRaycastDistance = (playerMax.y - playerMin.y) + 1.0f;
             RayHit raycastHit;
-            if (collisionObject->RaycastBVH(raycastOrigin, raycastDirection, maxRaycastDistance, raycastHit) && raycastHit.hit) {
+            if (collisionObject->RaycastBVH(raycastOrigin, raycastDirection, maxRaycastDistance,
+                                            raycastHit) &&
+                raycastHit.hit)
+            {
                 float upwardDelta = raycastHit.position.y - playerMin.y;
-                if (upwardDelta > 0.0f && upwardDelta < maxRaycastDistance) {
+                if (upwardDelta > 0.0f && upwardDelta < maxRaycastDistance)
+                {
                     Vector3 refinedSeparationVector = {0.0f, upwardDelta, 0.0f};
-                    if (!hasGroundSeparationVector || fabsf(refinedSeparationVector.y) < fabsf(groundSeparationVector.y)) {
+                    if (!hasGroundSeparationVector ||
+                        fabsf(refinedSeparationVector.y) < fabsf(groundSeparationVector.y))
+                    {
                         groundSeparationVector = refinedSeparationVector;
                         hasGroundSeparationVector = true;
                     }
@@ -205,8 +252,9 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         const Vector3 collisionObjectMin = collisionObject->GetMin();
         const Vector3 collisionObjectMax = collisionObject->GetMax();
         const Vector3 collisionObjectCenter = {(collisionObjectMin.x + collisionObjectMax.x) * 0.5f,
-                                         (collisionObjectMin.y + collisionObjectMax.y) * 0.5f,
-                                         (collisionObjectMin.z + collisionObjectMax.z) * 0.5f};
+                                               (collisionObjectMin.y + collisionObjectMax.y) * 0.5f,
+                                               (collisionObjectMin.z + collisionObjectMax.z) *
+                                                   0.5f};
         const float overlapX =
             fminf(playerMax.x, collisionObjectMax.x) - fmaxf(playerMin.x, collisionObjectMin.x);
         const float overlapY =
@@ -231,13 +279,16 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         switch (collisionAxis)
         {
         case 0:
-            minimumTranslationVector.x = (playerCenter.x < collisionObjectCenter.x) ? -minimumOverlap : minimumOverlap;
+            minimumTranslationVector.x =
+                (playerCenter.x < collisionObjectCenter.x) ? -minimumOverlap : minimumOverlap;
             break;
         case 1:
-            minimumTranslationVector.y = (playerCenter.y < collisionObjectCenter.y) ? -minimumOverlap : minimumOverlap;
+            minimumTranslationVector.y =
+                (playerCenter.y < collisionObjectCenter.y) ? -minimumOverlap : minimumOverlap;
             break;
         case 2:
-            minimumTranslationVector.z = (playerCenter.z < collisionObjectCenter.z) ? -minimumOverlap : minimumOverlap;
+            minimumTranslationVector.z =
+                (playerCenter.z < collisionObjectCenter.z) ? -minimumOverlap : minimumOverlap;
             break;
         default:
             break;
@@ -247,16 +298,30 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         if (collisionObject->IsUsingBVH())
         {
             Vector3 surfaceNormalDirection = minimumTranslationVector;
-            float surfaceNormalDirectionLength = sqrtf(surfaceNormalDirection.x * surfaceNormalDirection.x + surfaceNormalDirection.y * surfaceNormalDirection.y + surfaceNormalDirection.z * surfaceNormalDirection.z);
+            float surfaceNormalDirectionLength =
+                sqrtf(surfaceNormalDirection.x * surfaceNormalDirection.x +
+                      surfaceNormalDirection.y * surfaceNormalDirection.y +
+                      surfaceNormalDirection.z * surfaceNormalDirection.z);
             if (surfaceNormalDirectionLength > 1e-5f)
             {
-                surfaceNormalDirection.x /= surfaceNormalDirectionLength; surfaceNormalDirection.y /= surfaceNormalDirectionLength; surfaceNormalDirection.z /= surfaceNormalDirectionLength;
+                surfaceNormalDirection.x /= surfaceNormalDirectionLength;
+                surfaceNormalDirection.y /= surfaceNormalDirectionLength;
+                surfaceNormalDirection.z /= surfaceNormalDirectionLength;
                 // Cast from player center opposite to MTV to find nearest contact and normal
-                RayHit normalHit; normalHit.hit = false;
-                if (collisionObject->RaycastBVH(playerCenter, (Vector3){-surfaceNormalDirection.x, -surfaceNormalDirection.y, -surfaceNormalDirection.z}, fminf(surfaceNormalDirectionLength + 0.5f, 2.0f), normalHit) && normalHit.hit)
+                RayHit normalHit;
+                normalHit.hit = false;
+                if (collisionObject->RaycastBVH(
+                        playerCenter,
+                        (Vector3){-surfaceNormalDirection.x, -surfaceNormalDirection.y,
+                                  -surfaceNormalDirection.z},
+                        fminf(surfaceNormalDirectionLength + 0.5f, 2.0f), normalHit) &&
+                    normalHit.hit)
                 {
                     Vector3 surfaceNormal = normalHit.normal;
-                    float normalDotTranslationVector = surfaceNormal.x * minimumTranslationVector.x + surfaceNormal.y * minimumTranslationVector.y + surfaceNormal.z * minimumTranslationVector.z;
+                    float normalDotTranslationVector =
+                        surfaceNormal.x * minimumTranslationVector.x +
+                        surfaceNormal.y * minimumTranslationVector.y +
+                        surfaceNormal.z * minimumTranslationVector.z;
                     if (normalDotTranslationVector > 0.0f)
                     {
                         // Project MTV onto the surface normal
@@ -269,24 +334,31 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         }
         // Ignore micro-overlaps (contact offset)
         {
-            float translationVectorLength = sqrtf(minimumTranslationVector.x*minimumTranslationVector.x + minimumTranslationVector.y*minimumTranslationVector.y + minimumTranslationVector.z*minimumTranslationVector.z);
+            float translationVectorLength =
+                sqrtf(minimumTranslationVector.x * minimumTranslationVector.x +
+                      minimumTranslationVector.y * minimumTranslationVector.y +
+                      minimumTranslationVector.z * minimumTranslationVector.z);
             const float contactOffset = 0.06f; // small contact buffer to reduce jitter
             if (translationVectorLength < contactOffset)
                 continue;
         }
 
-        if (collisionAxis == 1 && minimumTranslationVector.y > 0 && (playerCenter.y - collisionObjectCenter.y) >= 0.1f)
+        if (collisionAxis == 1 && minimumTranslationVector.y > 0 &&
+            (playerCenter.y - collisionObjectCenter.y) >= 0.1f)
         {
-            if (!hasGroundSeparationVector || fabsf(minimumTranslationVector.y) < fabsf(groundSeparationVector.y))
+            if (!hasGroundSeparationVector ||
+                fabsf(minimumTranslationVector.y) < fabsf(groundSeparationVector.y))
             {
                 groundSeparationVector = minimumTranslationVector;
                 hasGroundSeparationVector = true;
             }
         }
-        else if (collisionAxis == 1 && minimumTranslationVector.y < 0 && (playerCenter.y - collisionObjectCenter.y) <= -0.1f)
+        else if (collisionAxis == 1 && minimumTranslationVector.y < 0 &&
+                 (playerCenter.y - collisionObjectCenter.y) <= -0.1f)
         {
             // Prevent pushing player down through ground
-            if (!hasGroundSeparationVector || fabsf(minimumTranslationVector.y) < fabsf(groundSeparationVector.y))
+            if (!hasGroundSeparationVector ||
+                fabsf(minimumTranslationVector.y) < fabsf(groundSeparationVector.y))
             {
                 groundSeparationVector = minimumTranslationVector;
                 hasGroundSeparationVector = true;
@@ -297,12 +369,18 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
             // Additional jitter guard for small horizontal nudges
             if (fabsf(minimumTranslationVector.y) < 1e-4f)
             {
-                float horizontalMagnitude = sqrtf(minimumTranslationVector.x*minimumTranslationVector.x + minimumTranslationVector.z*minimumTranslationVector.z);
+                float horizontalMagnitude =
+                    sqrtf(minimumTranslationVector.x * minimumTranslationVector.x +
+                          minimumTranslationVector.z * minimumTranslationVector.z);
                 if (horizontalMagnitude < 0.15f) // ignore tiny side pushes while walking
                     continue;
             }
-            float translationVectorLengthSquared = minimumTranslationVector.x * minimumTranslationVector.x + minimumTranslationVector.y * minimumTranslationVector.y + minimumTranslationVector.z * minimumTranslationVector.z;
-            if (!hasOptimalResponse || translationVectorLengthSquared < optimalSeparationDistanceSquared)
+            float translationVectorLengthSquared =
+                minimumTranslationVector.x * minimumTranslationVector.x +
+                minimumTranslationVector.y * minimumTranslationVector.y +
+                minimumTranslationVector.z * minimumTranslationVector.z;
+            if (!hasOptimalResponse ||
+                translationVectorLengthSquared < optimalSeparationDistanceSquared)
             {
                 optimalSeparationDistanceSquared = translationVectorLengthSquared;
                 optimalSeparationVector = minimumTranslationVector;
@@ -315,10 +393,9 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         collisionResponse = groundSeparationVector;
 
         // Cache the result and manage cache size
-        const_cast<CollisionManager*>(this)->m_predictionCache[cacheHash] = {
-            true, collisionResponse, const_cast<CollisionManager*>(this)->m_currentFrame
-        };
-        const_cast<CollisionManager*>(this)->ManageCacheSize();
+        const_cast<CollisionManager *>(this)->m_predictionCache[cacheHash] = {
+            true, collisionResponse, const_cast<CollisionManager *>(this)->m_currentFrame};
+        const_cast<CollisionManager *>(this)->ManageCacheSize();
 
         return true;
     }
@@ -327,19 +404,17 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision, Vector3 
         collisionResponse = optimalSeparationVector;
 
         // Cache the result and manage cache size
-        const_cast<CollisionManager*>(this)->m_predictionCache[cacheHash] = {
-            true, collisionResponse, const_cast<CollisionManager*>(this)->m_currentFrame
-        };
-        const_cast<CollisionManager*>(this)->ManageCacheSize();
+        const_cast<CollisionManager *>(this)->m_predictionCache[cacheHash] = {
+            true, collisionResponse, const_cast<CollisionManager *>(this)->m_currentFrame};
+        const_cast<CollisionManager *>(this)->ManageCacheSize();
 
         return true;
     }
 
     // Cache negative result too and manage cache size
-    const_cast<CollisionManager*>(this)->m_predictionCache[cacheHash] = {
-        collisionDetected, collisionResponse, const_cast<CollisionManager*>(this)->m_currentFrame
-    };
-    const_cast<CollisionManager*>(this)->ManageCacheSize();
+    const_cast<CollisionManager *>(this)->m_predictionCache[cacheHash] = {
+        collisionDetected, collisionResponse, const_cast<CollisionManager *>(this)->m_currentFrame};
+    const_cast<CollisionManager *>(this)->ManageCacheSize();
 
     return collisionDetected;
 }
@@ -356,15 +431,6 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     std::set<std::string> processedModelNames;
     int collisionObjectsCreated = 0;
     constexpr size_t MAX_COLLISION_INSTANCES = 5; // Increased for better coverage
-
-    // Structure to hold model processing data for parallel processing
-    struct ModelCollisionTask {
-        std::string modelName;
-        Model* model;
-        bool hasCollision;
-        std::vector<ModelInstance*> instances;
-        int createdCollisions = 0;
-    };
 
     std::vector<ModelCollisionTask> tasks;
 
@@ -393,18 +459,21 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
         }
         catch (const std::exception &e)
         {
-            TraceLog(LOG_ERROR, "Failed to prepare collision task for model '%s': %s", modelName.c_str(), e.what());
+            TraceLog(LOG_ERROR, "Failed to prepare collision task for model '%s': %s",
+                     modelName.c_str(), e.what());
         }
     }
 
     // Process models in parallel
     size_t numThreads = std::thread::hardware_concurrency();
-    if (numThreads == 0) numThreads = 1; // Fallback for systems that return 0
+    if (numThreads == 0)
+        numThreads = 1; // Fallback for systems that return 0
     numThreads = std::min(tasks.size(), numThreads);
 
     if (numThreads == 0 || tasks.empty())
     {
-        TraceLog(LOG_WARNING, "No tasks to process or no threads available for parallel collision generation");
+        TraceLog(LOG_WARNING,
+                 "No tasks to process or no threads available for parallel collision generation");
         return;
     }
 
@@ -412,74 +481,85 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
 
     // Split tasks into chunks for parallel processing
     size_t chunkSize = tasks.size() / numThreads;
-    if (chunkSize == 0) chunkSize = 1;
+    if (chunkSize == 0)
+        chunkSize = 1;
 
     for (size_t threadIdx = 0; threadIdx < numThreads; ++threadIdx)
     {
         size_t startIdx = threadIdx * chunkSize;
         size_t endIdx = (threadIdx == numThreads - 1) ? tasks.size() : (threadIdx + 1) * chunkSize;
 
-        if (startIdx >= tasks.size()) break;
+        if (startIdx >= tasks.size())
+            break;
 
-        futures.push_back(std::async(std::launch::async, [this, &models, &tasks, startIdx, endIdx, MAX_COLLISION_INSTANCES]() {
-            int localCollisionsCreated = 0;
-
-            for (size_t i = startIdx; i < endIdx; ++i)
+        futures.push_back(std::async(
+            std::launch::async,
+            [this, &models, &tasks, startIdx, endIdx, MAX_COLLISION_INSTANCES]()
             {
-                const auto& task = tasks[i];
+                int localCollisionsCreated = 0;
 
-                TraceLog(LOG_INFO, "Processing model: %s", task.modelName.c_str());
-
-                if (task.instances.empty())
+                for (size_t i = startIdx; i < endIdx; ++i)
                 {
-                    // No instances found, create default collision
-                    Vector3 defaultPos = (task.modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
-                    if (CreateCollisionFromModel(*task.model, task.modelName, defaultPos, 1.0f, models))
-                    {
-                        localCollisionsCreated++;
-                    }
-                }
-                else
-                {
-                    // Create collisions for each instance (up to the limit)
-                    size_t instanceLimit = std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
-                    TraceLog(LOG_INFO, "Processing %zu/%zu instances for model '%s'", instanceLimit,
-                             task.instances.size(), task.modelName.c_str());
+                    const auto &task = tasks[i];
 
-                    for (size_t j = 0; j < instanceLimit; j++)
-                    {
-                        auto *instance = task.instances[j];
-                        Vector3 position = instance->GetModelPosition();
-                        float scale = instance->GetScale();
+                    TraceLog(LOG_INFO, "Processing model: %s", task.modelName.c_str());
 
-                        if (CreateCollisionFromModel(*task.model, task.modelName, position, scale, models))
+                    if (task.instances.empty())
+                    {
+                        // No instances found, create default collision
+                        Vector3 defaultPos =
+                            (task.modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
+                        if (CreateCollisionFromModel(*task.model, task.modelName, defaultPos, 1.0f,
+                                                     models))
                         {
                             localCollisionsCreated++;
                         }
                     }
-
-                    if (task.instances.size() > MAX_COLLISION_INSTANCES)
+                    else
                     {
-                        TraceLog(LOG_WARNING,
-                                 "Limited collisions for model '%s' to %zu (of %zu instances)",
-                                 task.modelName.c_str(), MAX_COLLISION_INSTANCES, task.instances.size());
+                        // Create collisions for each instance (up to the limit)
+                        size_t instanceLimit =
+                            std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
+                        TraceLog(LOG_INFO, "Processing %zu/%zu instances for model '%s'",
+                                 instanceLimit, task.instances.size(), task.modelName.c_str());
+
+                        for (size_t j = 0; j < instanceLimit; j++)
+                        {
+                            auto *instance = task.instances[j];
+                            Vector3 position = instance->GetModelPosition();
+                            float scale = instance->GetScale();
+
+                            if (CreateCollisionFromModel(*task.model, task.modelName, position,
+                                                         scale, models))
+                            {
+                                localCollisionsCreated++;
+                            }
+                        }
+
+                        if (task.instances.size() > MAX_COLLISION_INSTANCES)
+                        {
+                            TraceLog(LOG_WARNING,
+                                     "Limited collisions for model '%s' to %zu (of %zu instances)",
+                                     task.modelName.c_str(), MAX_COLLISION_INSTANCES,
+                                     task.instances.size());
+                        }
                     }
                 }
-            }
 
-            return localCollisionsCreated;
-        }));
+                return localCollisionsCreated;
+            }));
     }
 
     // Collect results from all threads
-    for (auto& future : futures)
+    for (auto &future : futures)
     {
         collisionObjectsCreated += future.get();
     }
 
-    TraceLog(LOG_INFO,
-               "Automatic collision generation complete. Created %d collision objects from %zu models",
-               collisionObjectsCreated, availableModels.size());
+    TraceLog(
+        LOG_INFO,
+        "Automatic collision generation complete. Created %d collision objects from %zu models",
+        collisionObjectsCreated, availableModels.size());
 
     // Final spatial partitioning update for optimal performance
     UpdateSpatialPartitioning();
@@ -487,14 +567,20 @@ void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
     TraceLog(LOG_INFO, "Spatial partitioning updated with %zu cells", m_spatialGrid.size());
 }
 
-void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &models, const std::vector<std::string> &modelNames)
+void CollisionManager::CreateAutoCollisionsFromModelsSelective(
+    ModelLoader &models, const std::vector<std::string> &modelNames)
 {
-    TraceLog(LOG_INFO, "Starting selective automatic collision generation for %zu specified models...", modelNames.size());
+    TraceLog(LOG_INFO,
+             "Starting selective automatic collision generation for %zu specified models...",
+             modelNames.size());
 
     // Prevent excessive collision creation that could cause memory issues
     if (modelNames.size() > 1000)
     {
-        TraceLog(LOG_ERROR, "CollisionManager::CreateAutoCollisionsFromModelsSelective() - Too many models (%zu), limiting to 1000", modelNames.size());
+        TraceLog(LOG_ERROR,
+                 "CollisionManager::CreateAutoCollisionsFromModelsSelective() - Too many models "
+                 "(%zu), limiting to 1000",
+                 modelNames.size());
         return;
     }
 
@@ -503,7 +589,8 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &mode
 
     // Get all available models
     auto availableModels = models.GetAvailableModels();
-    TraceLog(LOG_INFO, "Found %zu models available, filtering to %zu specified models", availableModels.size(), modelNames.size());
+    TraceLog(LOG_INFO, "Found %zu models available, filtering to %zu specified models",
+             availableModels.size(), modelNames.size());
 
     // Track processed models to avoid duplication
     std::set<std::string> processedModelNames;
@@ -511,11 +598,12 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &mode
     constexpr size_t MAX_COLLISION_INSTANCES = 5; // Increased for better coverage
 
     // Structure to hold model processing data for parallel processing
-    struct ModelCollisionTask {
+    struct ModelCollisionTask
+    {
         std::string modelName;
-        Model* model;
+        Model *model;
         bool hasCollision;
-        std::vector<ModelInstance*> instances;
+        std::vector<ModelInstance *> instances;
         int createdCollisions = 0;
     };
 
@@ -527,7 +615,9 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &mode
         // Skip models not in our selective list
         if (modelSet.find(modelName) == modelSet.end())
         {
-            TraceLog(LOG_DEBUG, "Skipping collision creation for model '%s' (not in selective list)", modelName.c_str());
+            TraceLog(LOG_DEBUG,
+                     "Skipping collision creation for model '%s' (not in selective list)",
+                     modelName.c_str());
             continue;
         }
 
@@ -553,18 +643,21 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &mode
         }
         catch (const std::exception &e)
         {
-            TraceLog(LOG_ERROR, "Failed to prepare selective collision task for model '%s': %s", modelName.c_str(), e.what());
+            TraceLog(LOG_ERROR, "Failed to prepare selective collision task for model '%s': %s",
+                     modelName.c_str(), e.what());
         }
     }
 
     // Process models in parallel
     size_t numThreads = std::thread::hardware_concurrency();
-    if (numThreads == 0) numThreads = 1; // Fallback for systems that return 0
+    if (numThreads == 0)
+        numThreads = 1; // Fallback for systems that return 0
     numThreads = std::min(tasks.size(), numThreads);
 
     if (numThreads == 0 || tasks.empty())
     {
-        TraceLog(LOG_WARNING, "No tasks to process or no threads available for parallel collision generation");
+        TraceLog(LOG_WARNING,
+                 "No tasks to process or no threads available for parallel collision generation");
         return;
     }
 
@@ -572,74 +665,86 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(ModelLoader &mode
 
     // Split tasks into chunks for parallel processing
     size_t chunkSize = tasks.size() / numThreads;
-    if (chunkSize == 0) chunkSize = 1;
+    if (chunkSize == 0)
+        chunkSize = 1;
 
     for (size_t threadIdx = 0; threadIdx < numThreads; ++threadIdx)
     {
         size_t startIdx = threadIdx * chunkSize;
         size_t endIdx = (threadIdx == numThreads - 1) ? tasks.size() : (threadIdx + 1) * chunkSize;
 
-        if (startIdx >= tasks.size()) break;
+        if (startIdx >= tasks.size())
+            break;
 
-        futures.push_back(std::async(std::launch::async, [this, &models, &tasks, startIdx, endIdx, MAX_COLLISION_INSTANCES]() {
-            int localCollisionsCreated = 0;
-
-            for (size_t i = startIdx; i < endIdx; ++i)
+        futures.push_back(std::async(
+            std::launch::async,
+            [this, &models, &tasks, startIdx, endIdx, MAX_COLLISION_INSTANCES]()
             {
-                const auto& task = tasks[i];
+                int localCollisionsCreated = 0;
 
-                TraceLog(LOG_INFO, "Processing selective model: %s", task.modelName.c_str());
-
-                if (task.instances.empty())
+                for (size_t i = startIdx; i < endIdx; ++i)
                 {
-                    // No instances found, create default collision
-                    Vector3 defaultPos = (task.modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
-                    if (CreateCollisionFromModel(*task.model, task.modelName, defaultPos, 1.0f, models))
-                    {
-                        localCollisionsCreated++;
-                    }
-                }
-                else
-                {
-                    // Create collisions for each instance (up to the limit)
-                    size_t instanceLimit = std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
-                    TraceLog(LOG_INFO, "Processing %zu/%zu instances for selective model '%s'", instanceLimit,
-                             task.instances.size(), task.modelName.c_str());
+                    const auto &task = tasks[i];
 
-                    for (size_t j = 0; j < instanceLimit; j++)
-                    {
-                        auto *instance = task.instances[j];
-                        Vector3 position = instance->GetModelPosition();
-                        float scale = instance->GetScale();
+                    TraceLog(LOG_INFO, "Processing selective model: %s", task.modelName.c_str());
 
-                        if (CreateCollisionFromModel(*task.model, task.modelName, position, scale, models))
+                    if (task.instances.empty())
+                    {
+                        // No instances found, create default collision
+                        Vector3 defaultPos =
+                            (task.modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
+                        if (CreateCollisionFromModel(*task.model, task.modelName, defaultPos, 1.0f,
+                                                     models))
                         {
                             localCollisionsCreated++;
                         }
                     }
-
-                    if (task.instances.size() > MAX_COLLISION_INSTANCES)
+                    else
                     {
-                        TraceLog(LOG_WARNING,
-                                 "Limited collisions for selective model '%s' to %zu (of %zu instances)",
-                                 task.modelName.c_str(), MAX_COLLISION_INSTANCES, task.instances.size());
+                        // Create collisions for each instance (up to the limit)
+                        size_t instanceLimit =
+                            std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
+                        TraceLog(LOG_INFO, "Processing %zu/%zu instances for selective model '%s'",
+                                 instanceLimit, task.instances.size(), task.modelName.c_str());
+
+                        for (size_t j = 0; j < instanceLimit; j++)
+                        {
+                            auto *instance = task.instances[j];
+                            Vector3 position = instance->GetModelPosition();
+                            float scale = instance->GetScale();
+
+                            if (CreateCollisionFromModel(*task.model, task.modelName, position,
+                                                         scale, models))
+                            {
+                                localCollisionsCreated++;
+                            }
+                        }
+
+                        if (task.instances.size() > MAX_COLLISION_INSTANCES)
+                        {
+                            TraceLog(LOG_WARNING,
+                                     "Limited collisions for selective model '%s' to %zu (of %zu "
+                                     "instances)",
+                                     task.modelName.c_str(), MAX_COLLISION_INSTANCES,
+                                     task.instances.size());
+                        }
                     }
                 }
-            }
 
-            return localCollisionsCreated;
-        }));
+                return localCollisionsCreated;
+            }));
     }
 
     // Collect results from all threads
-    for (auto& future : futures)
+    for (auto &future : futures)
     {
         collisionObjectsCreated += future.get();
     }
 
     TraceLog(LOG_INFO,
-               "Selective automatic collision generation complete. Created %d collision objects from %zu specified models",
-               collisionObjectsCreated, modelNames.size());
+             "Selective automatic collision generation complete. Created %d collision objects from "
+             "%zu specified models",
+             collisionObjectsCreated, modelNames.size());
 
     // Final spatial partitioning update for optimal performance
     UpdateSpatialPartitioning();
@@ -655,7 +760,8 @@ std::string CollisionManager::MakeCollisionCacheKey(const std::string &modelName
     std::string key = modelName + "_s" + std::to_string(scaledInt);
 
     // Limit key length for performance
-    if (key.length() > 64) {
+    if (key.length() > 64)
+    {
         key = key.substr(0, 64);
     }
 
@@ -673,8 +779,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     // Validate inputs
     if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z))
     {
-        TraceLog(LOG_ERROR, "Model '%s' has invalid position (%.2f, %.2f, %.2f)",
-                 modelName.c_str(), position.x, position.y, position.z);
+        TraceLog(LOG_ERROR, "Model '%s' has invalid position (%.2f, %.2f, %.2f)", modelName.c_str(),
+                 position.x, position.y, position.z);
         return false;
     }
 
@@ -694,7 +800,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     // Check for excessive mesh count that could cause memory issues
     if (model.meshCount > 1000)
     {
-        TraceLog(LOG_ERROR, "Model '%s' has excessive mesh count (%d)", modelName.c_str(), model.meshCount);
+        TraceLog(LOG_ERROR, "Model '%s' has excessive mesh count (%d)", modelName.c_str(),
+                 model.meshCount);
         return false;
     }
 
@@ -712,7 +819,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
 
     if (!hasValidGeometry)
     {
-        TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback AABB collision", modelName.c_str());
+        TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback AABB collision",
+                 modelName.c_str());
 
         // Create fallback AABB collision using model bounds
         BoundingBox modelBounds = GetModelBoundingBox(model);
@@ -727,7 +835,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         fallbackCollision.SetCollisionType(CollisionType::AABB_ONLY);
 
         // Transform to instance position and scale
-        fallbackCollision.Update(Vector3Add(center, position), Vector3Scale(Vector3Scale(size, 0.5f), scale));
+        fallbackCollision.Update(Vector3Add(center, position),
+                                 Vector3Scale(Vector3Scale(size, 0.5f), scale));
 
         AddCollider(std::move(fallbackCollision));
         return true;
@@ -735,11 +844,11 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
 
     // Get model configuration
     const ModelFileConfig *config = models.GetModelConfig(modelName);
-    bool needsPreciseCollision = config && (
-        config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE ||
-        config->collisionPrecision == CollisionPrecision::BVH_ONLY ||
-        config->collisionPrecision == CollisionPrecision::IMPROVED_AABB ||
-        config->collisionPrecision == CollisionPrecision::AUTO);
+    bool needsPreciseCollision =
+        config && (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE ||
+                   config->collisionPrecision == CollisionPrecision::BVH_ONLY ||
+                   config->collisionPrecision == CollisionPrecision::IMPROVED_AABB ||
+                   config->collisionPrecision == CollisionPrecision::AUTO);
 
     // Get or create cached collision with improved caching strategy
     std::string cacheKey = MakeCollisionCacheKey(modelName, scale);
@@ -757,26 +866,31 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         cachedCollision = CreateBaseCollision(model, modelName, config, needsPreciseCollision);
 
         // Only cache if it's actually useful (has geometry or is AABB)
-        if (cachedCollision && (cachedCollision->GetCollisionType() != CollisionType::AABB_ONLY ||
-            cachedCollision->GetSize().x > 1.0f || cachedCollision->GetSize().z > 1.0f))
+        if (cachedCollision &&
+            (cachedCollision->GetCollisionType() != CollisionType::AABB_ONLY ||
+             cachedCollision->GetSize().x > 1.0f || cachedCollision->GetSize().z > 1.0f))
         {
             m_collisionCache[cacheKey] = cachedCollision;
-            TraceLog(LOG_INFO, "Cached collision for '%s' (cache size: %zu)", cacheKey.c_str(), m_collisionCache.size());
+            TraceLog(LOG_INFO, "Cached collision for '%s' (cache size: %zu)", cacheKey.c_str(),
+                     m_collisionCache.size());
         }
     }
 
     // Create instance collision
     Collision instanceCollision;
-    bool usePreciseForInstance = needsPreciseCollision && 
-        (cachedCollision->GetCollisionType() == CollisionType::BVH_ONLY || 
+    bool usePreciseForInstance =
+        needsPreciseCollision &&
+        (cachedCollision->GetCollisionType() == CollisionType::BVH_ONLY ||
          cachedCollision->GetCollisionType() == CollisionType::TRIANGLE_PRECISE);
 
-    if (usePreciseForInstance && m_preciseCollisionCountPerModel[modelName] < MAX_PRECISE_COLLISIONS_PER_MODEL)
+    if (usePreciseForInstance &&
+        m_preciseCollisionCountPerModel[modelName] < MAX_PRECISE_COLLISIONS_PER_MODEL)
     {
         // Use precise collision (prefer cached triangles)
         if (cachedCollision->HasTriangleData())
         {
-            instanceCollision = CreatePreciseInstanceCollisionFromCached(*cachedCollision, position, scale);
+            instanceCollision =
+                CreatePreciseInstanceCollisionFromCached(*cachedCollision, position, scale);
         }
         else
         {
@@ -790,8 +904,9 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         instanceCollision = CreateSimpleAABBInstanceCollision(*cachedCollision, position, scale);
         if (usePreciseForInstance)
         {
-            TraceLog(LOG_WARNING, "Reached limit of %d precise collision objects for model '%s', using AABB",
-                      MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
+            TraceLog(LOG_WARNING,
+                     "Reached limit of %d precise collision objects for model '%s', using AABB",
+                     MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
         }
     }
 
@@ -804,18 +919,21 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
 
         bool success = GetColliders().size() > beforeCount;
         TraceLog(LOG_INFO, "%s created instance collision for '%s', collider count: %zu -> %zu",
-                 success ? "Successfully" : "FAILED to", modelName.c_str(), beforeCount, GetColliders().size());
+                 success ? "Successfully" : "FAILED to", modelName.c_str(), beforeCount,
+                 GetColliders().size());
 
         return success;
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Failed to add collision for model '%s': %s", modelName.c_str(), e.what());
+        TraceLog(LOG_ERROR, "Failed to add collision for model '%s': %s", modelName.c_str(),
+                 e.what());
         return false;
     }
     catch (...)
     {
-        TraceLog(LOG_ERROR, "Unknown error occurred while adding collision for model '%s'", modelName.c_str());
+        TraceLog(LOG_ERROR, "Unknown error occurred while adding collision for model '%s'",
+                 modelName.c_str());
         return false;
     }
 }
@@ -825,8 +943,8 @@ const std::vector<std::unique_ptr<Collision>> &CollisionManager::GetColliders() 
     return m_collisionObjects;
 }
 
-bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycastDistance, float &hitDistance,
-                                    Vector3 &hitPoint, Vector3 &hitNormal) const
+bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycastDistance,
+                                   float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const
 {
     bool anyHitDetected = false;
     float nearestHitDistance = maxRaycastDistance;
@@ -842,7 +960,8 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
             RayHit raycastHit;
             raycastHit.hit = false;
             raycastHit.distance = maxRaycastDistance;
-            if (collisionObject->RaycastBVH(raycastOrigin, raycastDirection, maxRaycastDistance, raycastHit))
+            if (collisionObject->RaycastBVH(raycastOrigin, raycastDirection, maxRaycastDistance,
+                                            raycastHit))
             {
                 if (raycastHit.distance < nearestHitDistance)
                 {
@@ -865,7 +984,8 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
                 if (dist <= maxRaycastDistance)
                 {
                     // Check if x,z are inside bounds at that y
-                    if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x && raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
+                    if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x &&
+                        raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
                     {
                         if (dist < nearestHitDistance)
                         {
@@ -884,7 +1004,8 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
                 if (dist <= maxRaycastDistance)
                 {
                     // Check if x,z are inside bounds at that y
-                    if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x && raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
+                    if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x &&
+                        raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
                     {
                         if (dist < nearestHitDistance)
                         {
@@ -944,7 +1065,8 @@ bool CollisionManager::CheckCollisionSpatial(const Collision &playerCollision) c
     // Check collision against objects in relevant cells
     for (size_t objIndex : objectsToCheck)
     {
-        if (objIndex >= m_collisionObjects.size()) continue;
+        if (objIndex >= m_collisionObjects.size())
+            continue;
 
         const auto &collisionObject = m_collisionObjects[objIndex];
         bool collisionDetected = false;
@@ -971,41 +1093,49 @@ bool CollisionManager::CheckCollisionParallel(const Collision &playerCollision) 
     size_t numObjects = m_collisionObjects.size();
     const size_t parallelThreshold = 16; // Only use parallel processing if we have enough objects
 
-    if (numObjects < parallelThreshold) {
+    if (numObjects < parallelThreshold)
+    {
         // Fall back to sequential for small numbers of objects
         return CheckCollision(playerCollision);
     }
 
     // Split collision objects into chunks for parallel processing
-    size_t numThreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()), numObjects / 4);
+    size_t numThreads =
+        std::min(static_cast<size_t>(std::thread::hardware_concurrency()), numObjects / 4);
     numThreads = std::max(numThreads, static_cast<size_t>(1));
 
     std::vector<std::future<bool>> futures;
     size_t chunkSize = numObjects / numThreads;
 
-    for (size_t i = 0; i < numThreads; ++i) {
+    for (size_t i = 0; i < numThreads; ++i)
+    {
         size_t startIdx = i * chunkSize;
         size_t endIdx = (i == numThreads - 1) ? numObjects : (i + 1) * chunkSize;
 
-        futures.push_back(std::async(std::launch::async, [this, &playerCollision, startIdx, endIdx]() {
-            for (size_t j = startIdx; j < endIdx; ++j) {
-                const auto &collisionObject = m_collisionObjects[j];
-                bool collisionDetectedInObject = false;
+        futures.push_back(std::async(
+            std::launch::async,
+            [this, &playerCollision, startIdx, endIdx]()
+            {
+                for (size_t j = startIdx; j < endIdx; ++j)
+                {
+                    const auto &collisionObject = m_collisionObjects[j];
+                    bool collisionDetectedInObject = false;
 
-                if (collisionObject->IsUsingBVH())
-                    collisionDetectedInObject = playerCollision.IntersectsBVH(*collisionObject);
-                else
-                    collisionDetectedInObject = playerCollision.Intersects(*collisionObject);
+                    if (collisionObject->IsUsingBVH())
+                        collisionDetectedInObject = playerCollision.IntersectsBVH(*collisionObject);
+                    else
+                        collisionDetectedInObject = playerCollision.Intersects(*collisionObject);
 
-                if (collisionDetectedInObject)
-                    return true;
-            }
-            return false;
-        }));
+                    if (collisionDetectedInObject)
+                        return true;
+                }
+                return false;
+            }));
     }
 
     // Check if any thread found a collision
-    for (auto &future : futures) {
+    for (auto &future : futures)
+    {
         if (future.get())
             return true;
     }
@@ -1014,14 +1144,16 @@ bool CollisionManager::CheckCollisionParallel(const Collision &playerCollision) 
 }
 
 // Parallel version with response vector
-bool CollisionManager::CheckCollisionParallel(const Collision &playerCollision, Vector3 &collisionResponse) const
+bool CollisionManager::CheckCollisionParallel(const Collision &playerCollision,
+                                              Vector3 &collisionResponse) const
 {
     if (m_collisionObjects.empty())
         return false;
 
     const size_t parallelThreshold = 16;
 
-    if (m_collisionObjects.size() < parallelThreshold) {
+    if (m_collisionObjects.size() < parallelThreshold)
+    {
         return CheckCollision(playerCollision, collisionResponse);
     }
 
@@ -1029,30 +1161,39 @@ bool CollisionManager::CheckCollisionParallel(const Collision &playerCollision, 
     // and then resolve conflicts sequentially to ensure correct physics behavior
     std::vector<std::future<std::pair<bool, Vector3>>> futures;
 
-    size_t numThreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()), m_collisionObjects.size() / 4);
+    size_t numThreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
+                                 m_collisionObjects.size() / 4);
     size_t chunkSize = m_collisionObjects.size() / numThreads;
 
-    for (size_t i = 0; i < numThreads; ++i) {
+    for (size_t i = 0; i < numThreads; ++i)
+    {
         size_t startIdx = i * chunkSize;
         size_t endIdx = (i == numThreads - 1) ? m_collisionObjects.size() : (i + 1) * chunkSize;
 
-        futures.push_back(std::async(std::launch::async, [this, &playerCollision, startIdx, endIdx]() {
-            std::pair<bool, Vector3> result = {false, {0, 0, 0}};
-            Vector3 localResponse = {0, 0, 0};
+        futures.push_back(std::async(std::launch::async,
+                                     [this, &playerCollision, startIdx, endIdx]()
+                                     {
+                                         std::pair<bool, Vector3> result = {false, {0, 0, 0}};
+                                         Vector3 localResponse = {0, 0, 0};
 
-            for (size_t j = startIdx; j < endIdx; ++j) {
-                const auto &collisionObject = m_collisionObjects[j];
-                if (CheckCollisionSingleObject(playerCollision, *collisionObject, localResponse)) {
-                    result.first = true;
-                    // For now, just use the first collision found
-                    // In a more sophisticated implementation, we could collect all collisions
-                    result.second = localResponse;
-                    break;
-                }
-            }
+                                         for (size_t j = startIdx; j < endIdx; ++j)
+                                         {
+                                             const auto &collisionObject = m_collisionObjects[j];
+                                             if (CheckCollisionSingleObject(playerCollision,
+                                                                            *collisionObject,
+                                                                            localResponse))
+                                             {
+                                                 result.first = true;
+                                                 // For now, just use the first collision found
+                                                 // In a more sophisticated implementation, we could
+                                                 // collect all collisions
+                                                 result.second = localResponse;
+                                                 break;
+                                             }
+                                         }
 
-            return result;
-        }));
+                                         return result;
+                                     }));
     }
 
     // Collect results and find the best collision response
@@ -1060,19 +1201,24 @@ bool CollisionManager::CheckCollisionParallel(const Collision &playerCollision, 
     Vector3 bestResponse = {0, 0, 0};
     float bestDistanceSquared = FLT_MAX;
 
-    for (auto &future : futures) {
+    for (auto &future : futures)
+    {
         auto [hasCollision, response] = future.get();
-        if (hasCollision) {
+        if (hasCollision)
+        {
             anyCollision = true;
-            float distanceSquared = response.x * response.x + response.y * response.y + response.z * response.z;
-            if (distanceSquared < bestDistanceSquared) {
+            float distanceSquared =
+                response.x * response.x + response.y * response.y + response.z * response.z;
+            if (distanceSquared < bestDistanceSquared)
+            {
                 bestDistanceSquared = distanceSquared;
                 bestResponse = response;
             }
         }
     }
 
-    if (anyCollision) {
+    if (anyCollision)
+    {
         collisionResponse = bestResponse;
         return true;
     }
@@ -1088,12 +1234,12 @@ bool CollisionManager::CheckCollisionSingleObject(const Collision &playerCollisi
     const Vector3 playerMin = playerCollision.GetMin();
     const Vector3 playerMax = playerCollision.GetMax();
     const Vector3 playerCenter = {(playerMin.x + playerMax.x) * 0.5f,
-                                   (playerMin.y + playerMax.y) * 0.5f,
-                                   (playerMin.z + playerMax.z) * 0.5f};
+                                  (playerMin.y + playerMax.y) * 0.5f,
+                                  (playerMin.z + playerMax.z) * 0.5f};
 
-    bool collisionDetectedInObject = collisionObject.IsUsingBVH() ?
-        playerCollision.IntersectsBVH(collisionObject) :
-        playerCollision.Intersects(collisionObject);
+    bool collisionDetectedInObject = collisionObject.IsUsingBVH()
+                                         ? playerCollision.IntersectsBVH(collisionObject)
+                                         : playerCollision.Intersects(collisionObject);
 
     if (!collisionDetectedInObject)
         return false;
@@ -1102,12 +1248,15 @@ bool CollisionManager::CheckCollisionSingleObject(const Collision &playerCollisi
     const Vector3 collisionObjectMin = collisionObject.GetMin();
     const Vector3 collisionObjectMax = collisionObject.GetMax();
     const Vector3 collisionObjectCenter = {(collisionObjectMin.x + collisionObjectMax.x) * 0.5f,
-                                         (collisionObjectMin.y + collisionObjectMax.y) * 0.5f,
-                                         (collisionObjectMin.z + collisionObjectMax.z) * 0.5f};
+                                           (collisionObjectMin.y + collisionObjectMax.y) * 0.5f,
+                                           (collisionObjectMin.z + collisionObjectMax.z) * 0.5f};
 
-    const float overlapX = fminf(playerMax.x, collisionObjectMax.x) - fmaxf(playerMin.x, collisionObjectMin.x);
-    const float overlapY = fminf(playerMax.y, collisionObjectMax.y) - fmaxf(playerMin.y, collisionObjectMin.y);
-    const float overlapZ = fminf(playerMax.z, collisionObjectMax.z) - fmaxf(playerMin.z, collisionObjectMin.z);
+    const float overlapX =
+        fminf(playerMax.x, collisionObjectMax.x) - fmaxf(playerMin.x, collisionObjectMin.x);
+    const float overlapY =
+        fminf(playerMax.y, collisionObjectMax.y) - fmaxf(playerMin.y, collisionObjectMin.y);
+    const float overlapZ =
+        fminf(playerMax.z, collisionObjectMax.z) - fmaxf(playerMin.z, collisionObjectMin.z);
 
     if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
         return false;
@@ -1115,28 +1264,34 @@ bool CollisionManager::CheckCollisionSingleObject(const Collision &playerCollisi
     float minimumOverlap = fabsf(overlapX);
     int collisionAxis = 0;
 
-    if (fabsf(overlapY) < minimumOverlap) {
+    if (fabsf(overlapY) < minimumOverlap)
+    {
         minimumOverlap = fabsf(overlapY);
         collisionAxis = 1;
     }
-    if (fabsf(overlapZ) < minimumOverlap) {
+    if (fabsf(overlapZ) < minimumOverlap)
+    {
         minimumOverlap = fabsf(overlapZ);
         collisionAxis = 2;
     }
 
     Vector3 minimumTranslationVector = {0, 0, 0};
-    switch (collisionAxis) {
-        case 0:
-            minimumTranslationVector.x = (playerCenter.x < collisionObjectCenter.x) ? -minimumOverlap : minimumOverlap;
-            break;
-        case 1:
-            minimumTranslationVector.y = (playerCenter.y < collisionObjectCenter.y) ? -minimumOverlap : minimumOverlap;
-            break;
-        case 2:
-            minimumTranslationVector.z = (playerCenter.z < collisionObjectCenter.z) ? -minimumOverlap : minimumOverlap;
-            break;
-        default:
-            break;
+    switch (collisionAxis)
+    {
+    case 0:
+        minimumTranslationVector.x =
+            (playerCenter.x < collisionObjectCenter.x) ? -minimumOverlap : minimumOverlap;
+        break;
+    case 1:
+        minimumTranslationVector.y =
+            (playerCenter.y < collisionObjectCenter.y) ? -minimumOverlap : minimumOverlap;
+        break;
+    case 2:
+        minimumTranslationVector.z =
+            (playerCenter.z < collisionObjectCenter.z) ? -minimumOverlap : minimumOverlap;
+        break;
+    default:
+        break;
     }
 
     response = minimumTranslationVector;
@@ -1156,7 +1311,8 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
         // Validate model data before proceeding
         if (model.meshCount == 0)
         {
-            TraceLog(LOG_ERROR, "Model '%s' has no meshes, creating fallback collision", modelName.c_str());
+            TraceLog(LOG_ERROR, "Model '%s' has no meshes, creating fallback collision",
+                     modelName.c_str());
             BoundingBox modelBounds = GetModelBoundingBox(model);
             Vector3 size = {modelBounds.max.x - modelBounds.min.x,
                             modelBounds.max.y - modelBounds.min.y,
@@ -1185,7 +1341,8 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
         if (!hasValidGeometry)
         {
             // Fallback AABB for models without geometry
-            TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback collision", modelName.c_str());
+            TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback collision",
+                     modelName.c_str());
             BoundingBox modelBounds = GetModelBoundingBox(model);
             Vector3 size = {modelBounds.max.x - modelBounds.min.x,
                             modelBounds.max.y - modelBounds.min.y,
@@ -1233,9 +1390,10 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
                     collision->SetCollisionType(CollisionType::AABB_ONLY);
                 }
             }
-            catch (const std::exception& e)
+            catch (const std::exception &e)
             {
-                TraceLog(LOG_ERROR, "Failed to build collision from model '%s': %s", modelName.c_str(), e.what());
+                TraceLog(LOG_ERROR, "Failed to build collision from model '%s': %s",
+                         modelName.c_str(), e.what());
 
                 // Fallback to AABB collision
                 BoundingBox modelBounds = GetModelBoundingBox(model);
@@ -1251,9 +1409,10 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
             }
         }
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Critical error creating collision for model '%s': %s", modelName.c_str(), e.what());
+        TraceLog(LOG_ERROR, "Critical error creating collision for model '%s': %s",
+                 modelName.c_str(), e.what());
 
         // Create emergency fallback collision
         collision = std::make_shared<Collision>(Vector3{0, 0, 0}, Vector3{1, 1, 1});
@@ -1289,8 +1448,9 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
     return instanceCollision;
 }
 
-Collision CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
-                                                                     Vector3 position, float scale)
+Collision
+CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
+                                                           Vector3 position, float scale)
 {
     // Створюємо інстанс з уже наявних трикутників без повторного читання mesh'ів
     Collision instance;
@@ -1367,7 +1527,8 @@ size_t CollisionManager::GetPredictionCacheHash(const Collision &playerCollision
     // Use a simple combination of position and size for hashing
     size_t hash = 0;
     hash = std::hash<float>{}(min.x) ^ std::hash<float>{}(min.y) ^ std::hash<float>{}(min.z);
-    hash = hash * 31 + std::hash<float>{}(max.x) ^ std::hash<float>{}(max.y) ^ std::hash<float>{}(max.z);
+    hash = hash * 31 + std::hash<float>{}(max.x) ^ std::hash<float>{}(max.y) ^
+           std::hash<float>{}(max.z);
 
     return hash;
 }
