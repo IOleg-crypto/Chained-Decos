@@ -38,7 +38,6 @@ public:
     void SetRotationY(float rotation);
 
     float GetSpeed();
-
     float GetSpeed() const;
     void SetSpeed(float speed);
     PhysicsComponent &GetPhysics();

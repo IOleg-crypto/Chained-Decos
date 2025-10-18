@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <functional>
+#include <cstdint>
 
 // HeightmapData struct implementation
 float HeightmapData::GetHeight(int x, int z) const

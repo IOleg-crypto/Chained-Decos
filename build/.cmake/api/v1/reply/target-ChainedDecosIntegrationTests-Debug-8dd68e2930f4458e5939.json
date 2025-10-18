@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "benchmarks/benchmarks.exe"
+			"path" : "bin/tests/ChainedDecosIntegrationTests.exe"
 		},
 		{
-			"path" : "benchmarks/benchmarks.pdb"
+			"path" : "bin/tests/ChainedDecosIntegrationTests.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -16,16 +16,17 @@
 			"add_executable",
 			"target_link_libraries",
 			"add_compile_options",
-			"target_compile_options",
+			"target_compile_definitions",
 			"add_compile_definitions",
-			"target_include_directories",
-			"target_compile_features"
+			"target_include_directories"
 		],
 		"files" : 
 		[
-			"benchmarks/CMakeLists.txt",
-			"src/Engine/CMakeLists.txt",
+			"tests/CMakeLists.txt",
+			".deps/googletest-src/googlemock/CMakeLists.txt",
+			".deps/googletest-src/googletest/CMakeLists.txt",
 			"src/Game/CMakeLists.txt",
+			"src/Engine/CMakeLists.txt",
 			".deps/raylib-src/src/CMakeLists.txt",
 			"CMakeLists.txt"
 		],
@@ -37,13 +38,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 4,
+				"line" : 28,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 14,
+				"line" : 31,
 				"parent" : 0
 			},
 			{
@@ -52,7 +53,7 @@
 			{
 				"command" : 1,
 				"file" : 1,
-				"line" : 23,
+				"line" : 100,
 				"parent" : 3
 			},
 			{
@@ -61,7 +62,7 @@
 			{
 				"command" : 1,
 				"file" : 2,
-				"line" : 16,
+				"line" : 153,
 				"parent" : 5
 			},
 			{
@@ -70,76 +71,88 @@
 			{
 				"command" : 1,
 				"file" : 3,
-				"line" : 93,
+				"line" : 16,
 				"parent" : 7
 			},
 			{
 				"file" : 4
 			},
 			{
-				"command" : 2,
+				"command" : 1,
 				"file" : 4,
-				"line" : 86,
+				"line" : 23,
 				"parent" : 9
 			},
 			{
+				"file" : 5
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 93,
+				"parent" : 11
+			},
+			{
+				"file" : 6
+			},
+			{
 				"command" : 2,
-				"file" : 4,
+				"file" : 6,
+				"line" : 86,
+				"parent" : 13
+			},
+			{
+				"command" : 2,
+				"file" : 6,
 				"line" : 94,
-				"parent" : 9
+				"parent" : 13
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 23,
+				"line" : 110,
 				"parent" : 0
 			},
 			{
 				"command" : 4,
-				"file" : 4,
+				"file" : 6,
 				"line" : 127,
-				"parent" : 9
+				"parent" : 13
 			},
 			{
 				"command" : 4,
-				"file" : 4,
+				"file" : 6,
 				"line" : 271,
-				"parent" : 9
+				"parent" : 13
 			},
 			{
 				"command" : 4,
-				"file" : 4,
+				"file" : 6,
 				"line" : 126,
-				"parent" : 9
+				"parent" : 13
 			},
 			{
 				"command" : 4,
-				"file" : 4,
+				"file" : 6,
 				"line" : 125,
-				"parent" : 9
+				"parent" : 13
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 97,
+				"parent" : 0
 			},
 			{
 				"command" : 4,
-				"file" : 4,
-				"line" : 232,
-				"parent" : 9
-			},
-			{
-				"command" : 4,
-				"file" : 4,
+				"file" : 6,
 				"line" : 130,
-				"parent" : 9
+				"parent" : 13
 			},
 			{
 				"command" : 5,
 				"file" : 0,
-				"line" : 7,
-				"parent" : 0
-			},
-			{
-				"command" : 6,
-				"file" : 0,
-				"line" : 20,
+				"line" : 46,
 				"parent" : 0
 			}
 		]
@@ -153,20 +166,16 @@
 					"fragment" : "-O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview"
 				},
 				{
-					"backtrace" : 10,
+					"backtrace" : 14,
 					"fragment" : "-O0"
 				},
 				{
-					"backtrace" : 10,
+					"backtrace" : 14,
 					"fragment" : "-g"
 				},
 				{
-					"backtrace" : 11,
+					"backtrace" : 15,
 					"fragment" : "-w"
-				},
-				{
-					"backtrace" : 12,
-					"fragment" : "-O2"
 				}
 			],
 			"defines" : 
@@ -176,7 +185,15 @@
 					"define" : "GRAPHICS_API_OPENGL_33"
 				},
 				{
-					"backtrace" : 13,
+					"backtrace" : 16,
+					"define" : "GTEST_CREATE_SHARED_LIBRARY=1"
+				},
+				{
+					"backtrace" : 16,
+					"define" : "GTEST_LINKED_AS_SHARED_LIBRARY=1"
+				},
+				{
+					"backtrace" : 17,
 					"define" : "NOMINMAX"
 				},
 				{
@@ -184,39 +201,47 @@
 					"define" : "PLATFORM_DESKTOP"
 				},
 				{
-					"backtrace" : 14,
+					"backtrace" : 18,
 					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
 				},
 				{
-					"backtrace" : 15,
+					"backtrace" : 19,
 					"define" : "WIN32_LEAN_AND_MEAN"
 				},
 				{
-					"backtrace" : 16,
+					"backtrace" : 20,
 					"define" : "_CRT_SECURE_NO_WARNINGS"
 				},
 				{
-					"backtrace" : 17,
+					"backtrace" : 21,
 					"define" : "_DEBUG"
 				},
 				{
-					"backtrace" : 18,
+					"backtrace" : 22,
 					"define" : "_WIN32_WINNT=0x0601"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 19,
+					"backtrace" : 23,
+					"path" : "D:/gitnext/Chained Decos/tests"
+				},
+				{
+					"backtrace" : 23,
 					"path" : "D:/gitnext/Chained Decos/src"
 				},
 				{
-					"backtrace" : 19,
-					"path" : "D:/gitnext/Chained Decos/src/Engine"
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/src/Game"
 				},
 				{
-					"backtrace" : 19,
-					"path" : "D:/gitnext/Chained Decos/src/Game"
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/gitnext/Chained Decos/src/Engine"
 				},
 				{
 					"backtrace" : 2,
@@ -268,10 +293,6 @@
 				},
 				{
 					"backtrace" : 2,
-					"path" : "D:/gitnext/Chained Decos/include"
-				},
-				{
-					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/src/Engine/CommandLineHandler"
 				},
 				{
@@ -305,6 +326,26 @@
 				{
 					"backtrace" : 2,
 					"path" : "D:/gitnext/Chained Decos/src/Game/GameFeatures"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "D:/gitnext/Chained Decos/.deps/googletest-src/googletest"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock"
 				}
 			],
 			"language" : "CXX",
@@ -312,7 +353,7 @@
 			{
 				"backtraces" : 
 				[
-					20,
+					2,
 					2
 				],
 				"standard" : "20"
@@ -339,11 +380,27 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "collision::@c7f3438d24a996a0c811"
+			"id" : "gmock_main::@01e74dfffeded588aede"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gmock::@01e74dfffeded588aede"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gtest::@4e0539ea587b6360fd85"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gtest_main::@4e0539ea587b6360fd85"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "collision::@c7f3438d24a996a0c811"
 		},
 		{
 			"backtrace" : 2,
@@ -367,19 +424,19 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "cmdhandler::@539fffaf613aa1a67690"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "kernel::@5d86515e568759735271"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "audio::@9d441780e288f3c71fb0"
+			"id" : "cmdhandler::@539fffaf613aa1a67690"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "event::@ac78cbc803f0e3d902f4"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "audio::@9d441780e288f3c71fb0"
 		},
 		{
 			"backtrace" : 2,
@@ -398,7 +455,7 @@
 			"id" : "GameFeatures::@3472a93c03200552aca0"
 		}
 	],
-	"id" : "benchmarks::@099d4941661e36fe2606",
+	"id" : "ChainedDecosIntegrationTests::@a44f0ac069e85531cdee",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -422,7 +479,12 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "src\\Engine\\ChainedDecosEngine.lib",
+				"fragment" : "lib\\gtest_main.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "lib\\gmock_main.lib",
 				"role" : "libraries"
 			},
 			{
@@ -431,132 +493,142 @@
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 2,
-				"fragment" : "src\\Engine\\ChainedDecosEngine.lib",
-				"role" : "libraries"
-			},
-			{
 				"backtrace" : 4,
-				"fragment" : "src\\Engine\\Render\\render.lib",
+				"fragment" : "lib\\gmock.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 6,
-				"fragment" : "src\\Game\\Menu\\menu.lib",
+				"fragment" : "lib\\gtest.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 2,
+				"backtrace" : 8,
 				"fragment" : "src\\Engine\\ChainedDecosEngine.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
-				"fragment" : "src\\Engine\\Render\\render.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 6,
+				"backtrace" : 8,
 				"fragment" : "src\\Game\\Menu\\menu.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\Render\\render.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "src\\Engine\\ChainedDecosEngine.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "src\\Game\\Menu\\menu.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\Render\\render.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
 				"fragment" : "src\\Engine\\Input\\input.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
+				"backtrace" : 10,
 				"fragment" : "src\\Engine\\Kernel\\kernel.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
+				"backtrace" : 10,
 				"fragment" : "src\\Engine\\Audio\\audio.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
+				"backtrace" : 10,
 				"fragment" : "src\\Engine\\Event\\event.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
+				"backtrace" : 10,
 				"fragment" : "src\\Engine\\CommandLineHandler\\cmdhandler.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 6,
-				"fragment" : "src\\Game\\Player\\player.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 4,
-				"fragment" : "src\\Engine\\Collision\\collision.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 4,
-				"fragment" : "src\\Engine\\Model\\model.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 4,
-				"fragment" : "src\\Engine\\Collision\\collision.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 4,
-				"fragment" : "src\\Engine\\Model\\model.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 4,
-				"fragment" : "src\\Engine\\CameraController\\cameracontroller.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 4,
-				"fragment" : "src\\Engine\\World\\world.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 4,
-				"fragment" : "src\\Engine\\Physics\\physics.lib",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 4,
+				"backtrace" : 10,
 				"fragment" : "src\\Engine\\Config\\config.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
-				"fragment" : "imguilib.lib",
+				"backtrace" : 8,
+				"fragment" : "src\\Game\\Player\\player.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 6,
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\CameraController\\cameracontroller.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\Collision\\collision.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\Model\\model.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\Collision\\collision.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\Model\\model.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\World\\world.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src\\Engine\\Physics\\physics.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
 				"fragment" : "src\\Game\\Map\\mapmod.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 6,
+				"backtrace" : 8,
 				"fragment" : "src\\Game\\GameFeatures\\GameFeatures.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 4,
+				"backtrace" : 8,
+				"fragment" : "imguilib.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
 				"fragment" : "\"D:\\gitnext\\Chained Decos\\.deps\\raylib-build\\raylib\\raylib.lib\"",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 8,
+				"backtrace" : 12,
 				"fragment" : "-lopengl32.lib",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 8,
+				"backtrace" : 12,
 				"fragment" : "-lglu32.lib",
 				"role" : "libraries"
 			},
@@ -572,12 +644,12 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "benchmarks",
-	"nameOnDisk" : "benchmarks.exe",
+	"name" : "ChainedDecosIntegrationTests",
+	"nameOnDisk" : "ChainedDecosIntegrationTests.exe",
 	"paths" : 
 	{
-		"build" : "benchmarks",
-		"source" : "benchmarks"
+		"build" : "tests",
+		"source" : "tests"
 	},
 	"sourceGroups" : 
 	[
@@ -586,7 +658,10 @@
 			"sourceIndexes" : 
 			[
 				0,
-				1
+				1,
+				2,
+				3,
+				4
 			]
 		}
 	],
@@ -595,12 +670,27 @@
 		{
 			"backtrace" : 0,
 			"compileGroupIndex" : 0,
-			"path" : "build/benchmarks/CMakeFiles/benchmarks.dir/Unity/unity_0_cxx.cxx",
+			"path" : "build/tests/CMakeFiles/ChainedDecosIntegrationTests.dir/Unity/unity_0_cxx.cxx",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"path" : "benchmarks/PerformanceBenchmark.cpp",
+			"path" : "tests/game/ParkourMapGeneratorTest.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "tests/game/ScoringSystemTest.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "tests/game/PlayerTest.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "tests/integration/GameIntegrationTest.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],
