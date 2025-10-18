@@ -224,6 +224,31 @@ jobs:
             echo "✅ Created Linux tar.gz package"
           fi
 
+      - name: Create source code archive
+        if: matrix.os == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          echo "📦 Creating source code archive..."
+
+          # Create source archive with version
+          SOURCE_ARCHIVE="ChainedDecos-${{ steps.version.outputs.version }}-source.zip"
+
+          # Archive the entire repository except common exclusions
+          zip -r "${{ steps.build-env.outputs.package-dir }}/$SOURCE_ARCHIVE" \
+            . \
+            -x "*.git*" \
+            "build*" \
+            ".deps*" \
+            "cmake-build*" \
+            "*.tmp" \
+            "*.temp" \
+            ".vscode/settings.json" \
+            ".vs/*" \
+            "*/__pycache__/*" \
+            "*.pyc"
+
+          echo "✅ Created source archive: $SOURCE_ARCHIVE"
+
       - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
