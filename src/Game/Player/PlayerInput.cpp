@@ -55,7 +55,8 @@ void PlayerInput::ProcessInput()
     }
 }
 
-void PlayerInput::HandleJumpInput() const {
+void PlayerInput::HandleJumpInput() const
+{
     // Skip key input if no window is available (for testing)
     if (!IsWindowReady())
     {
@@ -64,13 +65,16 @@ void PlayerInput::HandleJumpInput() const {
 
     if (IsKeyPressed(KEY_SPACE))
     {
-        float jumpImpulse = m_player->GetPhysics().GetJumpStrength() * 1.2f; // Slightly stronger jump
+        float jumpImpulse =
+            m_player->GetPhysics().GetJumpStrength() * 1.2f; // Slightly stronger jump
         m_player->ApplyJumpImpulse(jumpImpulse);
-        TraceLog(LOG_DEBUG, "PlayerInput::HandleJumpInput() - Jump key pressed, impulse: %.2f", jumpImpulse);
+        TraceLog(LOG_DEBUG, "PlayerInput::HandleJumpInput() - Jump key pressed, impulse: %.2f",
+                 jumpImpulse);
     }
 }
 
-void PlayerInput::HandleEmergencyReset() const {
+void PlayerInput::HandleEmergencyReset() const
+{
     // Skip key input if no window is available (for testing)
     if (!IsWindowReady())
     {
@@ -104,8 +108,12 @@ Vector3 PlayerInput::GetInputDirection()
     if (IsKeyDown(KEY_D))
         inputDir.x += 1.0f;
 
-    // Update speed based on sprint key
-    m_walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? 15.0f : 8.1f;
+    bool isGrounded = m_player->GetPhysics().IsGrounded();
+    // Update speed based on sprint key - only allow sprint when grounded
+    if (isGrounded) // Only allow sprint when player is on ground
+    {
+        m_walkSpeed = IsKeyDown(KEY_LEFT_SHIFT) ? 15.0f : 8.1f;
+    }
     m_player->SetSpeed(m_walkSpeed);
 
     return inputDir;
