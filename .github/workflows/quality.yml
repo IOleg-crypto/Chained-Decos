@@ -1,0 +1,208 @@
+name: Code Quality
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CI: true
+
+jobs:
+  format:
+    name: Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-14
+
+      - name: Check code formatting
+        run: |
+          echo "🔍 Checking code formatting..."
+
+          # Find all C/C++ source files
+          find src tests benchmarks -name "*.cpp" -o -name "*.hpp" -o -name "*.h" -o -name "*.c" | \
+            xargs clang-format-14 --dry-run --Werror --style=file
+
+          echo "✅ Code formatting is correct"
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck clang-tidy-14
+
+      - name: Create minimal CMake build for analysis
+        run: |
+          mkdir -p build_analysis
+          cd build_analysis
+
+          # Configure with minimal options for analysis
+          cmake -DCMAKE_BUILD_TYPE=Debug \
+                -DBUILD_TESTS=OFF \
+                -DBUILD_BENCHMARKS=OFF \
+                -DDISABLE_ALL_WARNINGS=OFF \
+                -DENABLE_WARNINGS=ON \
+                -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+                ..
+
+      - name: Run cppcheck
+        run: |
+          echo "🔍 Running cppcheck static analysis..."
+
+          cppcheck \
+            --enable=all \
+            --std=c++20 \
+            --language=c++ \
+            --platform=unix64 \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --suppress=unmatchedSuppression \
+            --inline-suppr \
+            --xml \
+            --xml-version=2 \
+            src/ 2> cppcheck_results.xml || true
+
+          # Show summary of findings
+          if [ -f cppcheck_results.xml ]; then
+            echo "📊 Cppcheck found $(grep -c '<error ' cppcheck_results.xml) errors"
+          fi
+
+      - name: Run clang-tidy
+        run: |
+          echo "🔍 Running clang-tidy analysis..."
+
+          cd build_analysis
+
+          # Run clang-tidy on source files
+          find ../src -name "*.cpp" -not -path "*/build/*" | head -20 | \
+            xargs -I {} clang-tidy-14 {} -p . || true
+
+      - name: Upload analysis results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: static-analysis-results
+          path: |
+            cppcheck_results.xml
+            build_analysis/
+          retention-days: 7
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install security tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flawfinder
+
+      - name: Run security scan
+        run: |
+          echo "🔒 Running security scan..."
+
+          # Scan for potential security issues
+          flawfinder --csv --minlevel=3 src/ > security_scan.csv || true
+
+          if [ -f security_scan.csv ]; then
+            echo "📊 Security scan found $(wc -l < security_scan.csv) potential issues"
+            cat security_scan.csv
+          fi
+
+      - name: Upload security results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results
+          path: security_scan.csv
+          retention-days: 30
+
+  complexity:
+    name: Code Complexity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install complexity tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pmccabe
+
+      - name: Analyze code complexity
+        run: |
+          echo "📊 Analyzing code complexity..."
+
+          # Generate complexity report
+          find src -name "*.cpp" -o -name "*.c" | \
+            xargs pmccabe -v > complexity_report.txt || true
+
+          if [ -f complexity_report.txt ]; then
+            echo "📈 Complexity analysis completed"
+            cat complexity_report.txt
+          fi
+
+      - name: Upload complexity report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: complexity-report
+          path: complexity_report.txt
+          retention-days: 7
+
+  documentation:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for README
+        run: |
+          if [ ! -f README.md ]; then
+            echo "❌ README.md not found"
+            exit 1
+          else
+            echo "✅ README.md exists"
+          fi
+
+      - name: Check documentation files
+        run: |
+          echo "📚 Checking documentation files..."
+
+          # Check for docs directory
+          if [ -d docs ]; then
+            echo "✅ Documentation directory exists"
+            find docs -name "*.md" -o -name "*.txt" | wc -l | xargs echo "Found documentation files:"
+          else
+            echo "⚠️ No documentation directory found"
+          fi
+
+      - name: Validate JSON files
+        run: |
+          echo "🔍 Validating JSON files..."
+
+          # Check if any JSON files are malformed
+          find . -name "*.json" -not -path "./.deps/*" -not -path "./build/*" | \
+            xargs -I {} python3 -m json.tool {} > /dev/null || {
+              echo "❌ Invalid JSON found in {}"
+              exit 1
+            }
+
+          echo "✅ All JSON files are valid"
