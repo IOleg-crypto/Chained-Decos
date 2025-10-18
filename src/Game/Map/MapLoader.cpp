@@ -714,4 +714,3 @@ bool MapLoader::SaveModelConfig(const std::vector<ModelInfo>& models, const std:
 
     return true;
 }
-

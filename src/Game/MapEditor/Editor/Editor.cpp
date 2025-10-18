@@ -1045,7 +1045,7 @@ void Editor::EnsureModelsLoaded()
                     try
                     {
                         // Fix double path issue - modelInfo.path already contains leading slash
-                        std::string modelPath = PROJECT_ROOT_DIR + modelInfo.path;
+                        std::string modelPath = modelInfo.path;
                         // Replace forward slashes with backslashes for Windows
                         std::replace(modelPath.begin(), modelPath.end(), '/', '\\');
                         TraceLog(LOG_INFO, "Editor::EnsureModelsLoaded() - Loading model: %s from %s",
