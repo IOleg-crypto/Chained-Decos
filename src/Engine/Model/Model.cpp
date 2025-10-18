@@ -81,7 +81,16 @@ void ModelLoader::LoadModelsFromJson(const std::string &path)
         {
             // Parse using new helper
             ModelFileConfig config = JsonHelper::ParseModelConfig(modelEntry);
-            config.path = std::string(PROJECT_ROOT_DIR) + "/" + config.path;
+
+            // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
+            if (config.path.find('/') == std::string::npos && config.path.find('\\') == std::string::npos)
+            {
+                config.path = "resources/" + config.path;
+            }
+            else if (!config.path.empty() && config.path[0] == '/')
+            {
+                config.path = std::string(PROJECT_ROOT_DIR) + config.path;
+            }
 
             // Store configuration
             m_configs[config.name] = config;
@@ -185,7 +194,16 @@ void ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std
         {
             // Parse using new helper
             ModelFileConfig config = JsonHelper::ParseModelConfig(modelEntry);
-            config.path = std::string(PROJECT_ROOT_DIR) + "/" + config.path;
+
+            // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
+            if (config.path.find('/') == std::string::npos && config.path.find('\\') == std::string::npos)
+            {
+                config.path = "resources/" + config.path;
+            }
+            else if (!config.path.empty() && config.path[0] == '/')
+            {
+                config.path = std::string(PROJECT_ROOT_DIR) + config.path;
+            }
 
             // Store configuration
             m_configs[config.name] = config;
@@ -465,7 +483,25 @@ bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanc
 
 bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &path, bool preload)
 {
-    std::string fullPath = std::string(PROJECT_ROOT_DIR) + "/" + path;
+    std::string fullPath;
+
+    // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
+    if (path.find('/') == std::string::npos && path.find('\\') == std::string::npos)
+    {
+        fullPath = "resources/" + path;
+    }
+    else
+    {
+        // If path starts with "/", treat it as relative to project root
+        if (!path.empty() && path[0] == '/')
+        {
+            fullPath = std::string(PROJECT_ROOT_DIR) + path;
+        }
+        else
+        {
+            fullPath = path;
+        }
+    }
 
     if (!ValidateModelPath(fullPath))
     {
@@ -477,7 +513,17 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
     Model loadedModel = ::LoadModel(fullPath.c_str());
     if (loadedModel.meshCount == 0)
     {
-        TraceLog(LOG_ERROR, "Failed to load model: %s", fullPath.c_str());
+        TraceLog(LOG_ERROR, "Failed to load model: %s (meshCount: %d)", fullPath.c_str(), loadedModel.meshCount);
+
+        // Try to load as different format or check if file is valid
+        if (std::ifstream(fullPath).good())
+        {
+            TraceLog(LOG_WARNING, "Model file exists but failed to load - may be corrupted or unsupported format");
+        }
+        else
+        {
+            TraceLog(LOG_ERROR, "Model file not accessible: %s", fullPath.c_str());
+        }
         return false;
     }
 

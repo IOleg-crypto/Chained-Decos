@@ -13,6 +13,11 @@ add_library(model STATIC
         ModelCache.h
 )
 
+# Add PROJECT_ROOT_DIR definition for consistent path handling
+target_compile_definitions(model PRIVATE
+    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 target_include_directories(model PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src/Engine
