@@ -89,7 +89,19 @@
 			"xmemory": "cpp",
 			"xstring": "cpp",
 			"xtr1common": "cpp",
-			"xtree": "cpp"
+			"xtree": "cpp",
+			"bitset": "cpp",
+			"cinttypes": "cpp",
+			"codecvt": "cpp",
+			"complex": "cpp",
+			"condition_variable": "cpp",
+			"execution": "cpp",
+			"coroutine": "cpp",
+			"resumable": "cpp",
+			"future": "cpp",
+			"queue": "cpp",
+			"stack": "cpp",
+			"typeindex": "cpp"
 		}
 	}
 }

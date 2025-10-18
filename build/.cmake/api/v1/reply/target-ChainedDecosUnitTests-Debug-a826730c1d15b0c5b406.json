@@ -233,11 +233,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "gmock_main::@01e74dfffeded588aede"
+			"id" : "gmock::@01e74dfffeded588aede"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "gmock::@01e74dfffeded588aede"
+			"id" : "gmock_main::@01e74dfffeded588aede"
 		},
 		{
 			"backtrace" : 2,

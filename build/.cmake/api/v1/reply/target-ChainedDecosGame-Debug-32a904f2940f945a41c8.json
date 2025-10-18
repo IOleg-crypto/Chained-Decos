@@ -15,6 +15,7 @@
 			"target_link_libraries",
 			"add_compile_options",
 			"add_compile_definitions",
+			"target_compile_definitions",
 			"target_include_directories"
 		],
 		"files" : 
@@ -36,7 +37,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 16,
+				"line" : 27,
 				"parent" : 0
 			},
 			{
@@ -61,10 +62,10 @@
 				"parent" : 3
 			},
 			{
-				"command" : 3,
-				"file" : 1,
-				"line" : 271,
-				"parent" : 3
+				"command" : 4,
+				"file" : 0,
+				"line" : 12,
+				"parent" : 0
 			},
 			{
 				"command" : 3,
@@ -91,7 +92,7 @@
 				"parent" : 3
 			},
 			{
-				"command" : 4,
+				"command" : 5,
 				"file" : 0,
 				"line" : 5,
 				"parent" : 0
@@ -316,19 +317,19 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "kernel::@5d86515e568759735271"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "cmdhandler::@539fffaf613aa1a67690"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "event::@ac78cbc803f0e3d902f4"
+			"id" : "kernel::@5d86515e568759735271"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "audio::@9d441780e288f3c71fb0"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "event::@ac78cbc803f0e3d902f4"
 		},
 		{
 			"backtrace" : 2,
