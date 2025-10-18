@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CI: true
+
+jobs:
+  # Quick code quality checks
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check code formatting
+        run: |
+          # Install clang-format
+          sudo apt-get update && sudo apt-get install -y clang-format-14
+
+          # Find all C/C++ source files
+          find src tests benchmarks -name "*.cpp" -o -name "*.hpp" -o -name "*.h" -o -name "*.c" | \
+            xargs clang-format-14 --dry-run --Werror --style=file
+
+  # Fast compilation and unit test checks
+  test:
+    name: Test (${{ matrix.os }}, ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    needs: quality
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+            version: 11
+            build_type: Debug
+            generator: "Unix Makefiles"
+
+          - os: windows-latest
+            compiler: msvc
+            version: 2022
+            build_type: Debug
+            generator: "Ninja"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup ccache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ccache
+            ${{ runner.os == 'Windows' && 'C:/ccache' || '~/.ccache' }}
+          key: ci-${{ matrix.os }}-${{ matrix.compiler }}-${{ github.sha }}
+          restore-keys: |
+            ci-${{ matrix.os }}-${{ matrix.compiler }}-
+            ci-${{ matrix.os }}-
+
+      - name: Set up build environment
+        shell: bash
+        id: build-env
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      # Linux setup
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
+            pkg-config ccache libgtk-3-dev libdrm-dev libgbm-dev \
+            libxext-dev libxfixes-dev libxrender-dev libxcomposite-dev \
+            libxdamage-dev libxtst-dev libxss-dev
+
+      - name: Set up GCC (Linux)
+        if: matrix.compiler == 'gcc' && runner.os == 'Linux'
+        run: |
+          echo "CC=gcc-${{ matrix.version }}" >> "$GITHUB_ENV"
+          echo "CXX=g++-${{ matrix.version }}" >> "$GITHUB_ENV"
+
+      # Windows setup
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install cmake ninja ccache --no-progress
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
+
+          cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
+            -G "${{ matrix.generator }}" \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DBUILD_TESTS=ON \
+            -DBUILD_BENCHMARKS=OFF \
+            -DBUILD_MAP_EDITOR=OFF \
+            -DDISABLE_ALL_WARNINGS=ON \
+            -DENABLE_OPTIMIZATIONS=OFF \
+            -DENABLE_UNITY_BUILD=OFF \
+            -DENABLE_DEV_TOOLS=OFF \
+            -DFETCHCONTENT_QUIET=ON \
+            -S "${{ github.workspace }}"
+
+      - name: Build project
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            PARALLEL_JOBS=4
+          else
+            PARALLEL_JOBS=$(nproc 2>/dev/null || echo 4)
+          fi
+
+          cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
+            --config ${{ matrix.build_type }} \
+            --target ChainedDecosUnitTests \
+            --parallel "$PARALLEL_JOBS"
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          cd "${{ steps.build-env.outputs.build-output-dir }}"
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            if [[ -f "bin/tests/ChainedDecosUnitTests.exe" ]]; then
+              bin/tests/ChainedDecosUnitTests.exe
+            else
+              echo "❌ Unit tests not found"
+              exit 1
+            fi
+          else
+            if [[ -f "bin/tests/ChainedDecosUnitTests" ]]; then
+              bin/tests/ChainedDecosUnitTests
+            else
+              echo "❌ Unit tests not found"
+              exit 1
+            fi
+          fi
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-ci-${{ matrix.os }}-${{ matrix.compiler }}
+          path: |
+            ${{ steps.build-env.outputs.build-output-dir }}/Testing/
+            ${{ steps.build-env.outputs.build-output-dir }}/**/*.log
+          retention-days: 1

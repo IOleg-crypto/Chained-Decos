@@ -1,10 +1,10 @@
-name: Release Build
+name: Release
 
 on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag name'
+        description: 'Release tag name (e.g., v1.0.0)'
         required: true
         type: string
       release_name:
@@ -20,7 +20,7 @@ env:
 
 jobs:
   release:
-    name: Create Release (${{ matrix.os }})
+    name: Create Release (${{ matrix.os }}, ${{ matrix.name }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -30,272 +30,188 @@ jobs:
           - os: ubuntu-22.04
             name: linux
             extension: ""
+            generator: "Unix Makefiles"
 
           - os: windows-2022
             name: windows
             extension: ".exe"
+            generator: "Ninja"
+
+          - os: macos-latest
+            name: macos
+            extension: ""
+            generator: "Unix Makefiles"
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Setup ccache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.ccache
-          ${{ runner.os == 'Windows' && 'C:/ccache' || '~/.ccache' }}
-        key: ccache-release-${{ matrix.os }}-${{ github.sha }}
-        restore-keys: |
-          ccache-release-${{ matrix.os }}-
-          ccache-release-
+      - name: Setup ccache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ccache
+            ${{ runner.os == 'Windows' && 'C:/ccache' || '~/.ccache' }}
+          key: release-${{ matrix.os }}-${{ github.sha }}
+          restore-keys: |
+            release-${{ matrix.os }}-
+            release-
 
-    - name: Setup dependency cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          .deps
-          ~/.deps
-        key: deps-release-${{ matrix.os }}-${{ hashFiles('**/CMakeLists.txt') }}
-        restore-keys: |
-          deps-release-${{ matrix.os }}-
-          deps-release-
+      - name: Get version from tag
+        shell: bash
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            VERSION="${{ github.event.inputs.tag_name }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
 
-    - name: Get version from tag
-      shell: bash
-      id: version
-      run: |
-        if [ -n "${{ github.event.inputs.tag_name }}" ]; then
-          VERSION="${{ github.event.inputs.tag_name }}"
-        else
-          VERSION="${GITHUB_REF#refs/tags/}"
-        fi
-        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-        echo "Version: $VERSION"
+      - name: Set up build environment
+        shell: bash
+        id: build-env
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          echo "package-dir=${{ github.workspace }}/package" >> "$GITHUB_OUTPUT"
 
-    - name: Set up build environment
-      shell: bash
-      id: build-env
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        echo "package-dir=${{ github.workspace }}/package" >> "$GITHUB_OUTPUT"
+      # Linux setup
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
+            pkg-config ccache libgtk-3-dev libdrm-dev libgbm-dev \
+            libxext-dev libxfixes-dev libxrender-dev libxcomposite-dev \
+            libxdamage-dev libxtst-dev libxss-dev libgconf-2-4
 
-    # ---------------- Linux setup ----------------
-    - name: Install dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-22.04'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build \
-          libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-          libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-          libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-          pkg-config ccache libgtk-3-dev libdrm-dev libgbm-dev \
-          libxext-dev libxfixes-dev libxrender-dev libxcomposite-dev \
-          libxdamage-dev libxtst-dev libxss-dev libgconf-2-4
+      # Windows setup
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-2022'
+        run: |
+          choco install cmake ninja ccache --no-progress
 
-    # ---------------- Windows setup ----------------
-    - name: Install dependencies (Windows)
-      if: matrix.os == 'windows-2022'
-      run: |
-        choco install cmake ninja ccache --no-progress
+      # macOS setup
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install cmake ninja ccache
 
-    - name: Clear CMake cache
-      shell: bash
-      run: |
-         echo "🧹 Starting comprehensive cache cleanup..."
+      - name: Create build and package directories
+        run: |
+          mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
+          mkdir -p "${{ steps.build-env.outputs.package-dir }}"
 
-         # Clear build directory completely
-         rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
-         rm -rf ".deps"
-         rm -rf "${{ github.workspace }}/.deps"
-         rm -rf "${{ github.workspace }}/build"
+      - name: Configure CMake for release
+        shell: bash
+        run: |
+          echo "🔧 Configuring CMake for release build on ${{ matrix.os }}"
 
-         # Clear any leftover CMake cache files in workspace (with verbose output)
-         echo "📁 Searching for CMake cache files..."
-         find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
-         find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + -print 2>/dev/null || true
-         find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
-         find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + -print 2>/dev/null || true
+          # Determine generator for Windows
+          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+            GENERATOR="Ninja"
+          else
+            GENERATOR="Unix Makefiles"
+          fi
 
-         # Windows-specific cleanup (Visual Studio files)
-         if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-           echo "🪟 Performing comprehensive Windows-specific cleanup..."
-           find "${{ github.workspace }}" -name "*.vcxproj" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.vcxproj.filters" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.sln" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "x64" -type d -exec rm -rf {} + -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "Win32" -type d -exec rm -rf {} + -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.dir" -type d -exec rm -rf {} + -print 2>/dev/null || true
+          cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
+            -G "$GENERATOR" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_BENCHMARKS=OFF \
+            -DBUILD_MAP_EDITOR=ON \
+            -DENABLE_OPTIMIZATIONS=ON \
+            -DENABLE_UNITY_BUILD=OFF \
+            -DENABLE_WARNINGS=OFF \
+            -DENABLE_DEV_TOOLS=OFF \
+            -DENABLE_DEBUG_INFO=OFF \
+            -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
+            -S "${{ github.workspace }}"
 
-           # Additional Windows-specific patterns
-           find "${{ github.workspace }}" -name "*.vcxproj.user" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.pdb" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.ilk" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.exe" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.obj" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.lib" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.exp" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.idb" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.ipdb" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.iobj" -delete -print 2>/dev/null || true
+      - name: Build release binaries
+        shell: bash
+        run: |
+          # Determine parallel jobs based on platform
+          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+            PARALLEL_JOBS=8
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            PARALLEL_JOBS=4
+          else
+            PARALLEL_JOBS=$(nproc 2>/dev/null || echo 4)
+          fi
 
-           # Remove any Visual Studio solution user files
-           find "${{ github.workspace }}" -name "*.suo" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "*.user" -delete -print 2>/dev/null || true
+          echo "🏗️ Building release targets with $PARALLEL_JOBS parallel jobs..."
 
-           # Remove CMake files that might contain generator information
-           find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
-           find "${{ github.workspace }}" -name "compile_commands.json" -delete -print 2>/dev/null || true
+          cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
+            --config Release \
+            --target ChainedDecos ChainedDecosMapEditor \
+            --parallel "$PARALLEL_JOBS"
 
-           # Remove any hidden CMake directories
-           find "${{ github.workspace }}" -type d -name "CMakeFiles" -exec rm -rf {} + -print 2>/dev/null || true
-         fi
+      - name: Install to package directory
+        shell: bash
+        run: |
+          cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
+            --config Release \
+            --component Runtime
 
-         # Clear any hidden CMake files
-         find "${{ github.workspace }}" -name ".cmake" -type d -exec rm -rf {} + 2>/dev/null || true
+      - name: Package binaries
+        shell: bash
+        run: |
+          cd "${{ steps.build-env.outputs.package-dir }}"
 
-         # Clear dependency cache directories that might contain cached generators
-         rm -rf "${{ github.workspace }}/cmake-build-*"
-         rm -rf "${{ github.workspace }}/build"
-         rm -rf "${{ github.workspace }}/.cache"
-         rm -rf "${{ github.workspace }}/CMakeFiles"
+          # Create platform-specific package name
+          PACKAGE_NAME="ChainedDecos-${{ steps.version.outputs.version }}-${{ matrix.name }}"
 
-         # Final verification - list any remaining CMake files
-         echo "🔍 Checking for any remaining CMake files..."
-         find "${{ github.workspace }}" -name "CMakeCache.txt" 2>/dev/null || echo "No CMakeCache.txt found"
-         find "${{ github.workspace }}" -name "CMakeFiles" -type d 2>/dev/null || echo "No CMakeFiles directories found"
+          echo "📦 Creating package: $PACKAGE_NAME"
 
-         echo "✅ CMake cache cleared completely"
+          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+            # Windows: Create ZIP package
+            powershell -Command "
+              Compress-Archive -Path 'bin/*','share/' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
+            "
+            echo "✅ Created Windows ZIP package"
 
-    - name: Clean FetchContent subprojects
-      shell: bash
-      if: matrix.os == 'windows-2022'
-      run: |
-        echo "🧹 Removing old FetchContent subprojects (raylib, etc.)..."
-        find "${{ github.workspace }}" -type d -name ".deps" -exec rm -rf {} + 2>/dev/null || true
-        echo "✅ .deps directories removed"
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            # macOS: Create tar.gz package
+            tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
+              -C bin . -C ../share .
+            echo "✅ Created macOS tar.gz package"
 
-    - name: Force clean all previous builds (Windows)
-      if: matrix.os == 'windows-2022'
-      shell: bash
-      run: |
-        echo "🧨 Full cleanup before new generator"
-        rm -rf "${{ github.workspace }}/build"
-        rm -rf "${{ github.workspace }}/.deps"
-        rm -rf "${{ github.workspace }}/_deps"
-        rm -rf "${{ github.workspace }}/CMakeFiles"
-        rm -f  "${{ github.workspace }}/CMakeCache.txt"
-        find "${{ github.workspace }}" -type d -name "_deps" -exec rm -rf {} +
-        echo "✅ Fully cleaned old CMake and FetchContent directories"
+          else
+            # Linux: Create tar.gz package
+            tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
+              -C bin . -C ../share .
+            echo "✅ Created Linux tar.gz package"
+          fi
 
-    - name: Extra clean Raylib subbuild (Windows)
-      if: matrix.os == 'windows-2022'
-      shell: bash
-      run: |
-        echo "🧹 Cleaning raylib subbuild..."
-        rm -rf "${{ github.workspace }}/.deps/raylib-subbuild"
-        rm -rf "${{ steps.build-env.outputs.build-output-dir }}/_deps/raylib-subbuild"
-        echo "✅ raylib subbuild cleaned"
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ matrix.name }}
+          path: |
+            ${{ steps.build-env.outputs.package-dir }}/*.zip
+            ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
+          retention-days: 30
 
-    - name: Create build and package directories
-      run: |
-        mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
-        mkdir -p "${{ steps.build-env.outputs.package-dir }}"
-
-    - name: Configure CMake for release
-      shell: bash
-      run: |
-        echo "🔧 Configuring CMake for release with the following settings:"
-        echo "  Build type: Release"
-        echo "  OS: ${{ matrix.os }}"
-
-        if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-          echo "  Generator: Ninja"
-        else
-          echo "  Generator: Unix Makefiles"
-        fi
-
-        cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
-          -DBUILD_TESTS=OFF \
-          -DBUILD_BENCHMARKS=OFF \
-          -DENABLE_OPTIMIZATIONS=ON \
-          -DENABLE_UNITY_BUILD=OFF \
-          -DENABLE_WARNINGS=OFF \
-          -DENABLE_DEV_TOOLS=OFF \
-          -DENABLE_DEBUG_INFO=OFF \
-          -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
-          -S "${{ github.workspace }}" \
-          ${{ matrix.os == 'windows-2022' && '-G Ninja' || '' }}
-
-        echo "✅ CMake configuration completed"
-
-    - name: Build release binaries
-      shell: bash
-      run: |
-        # Determine number of CPU cores for parallel builds
-        if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-          PARALLEL_JOBS=8
-        else
-          PARALLEL_JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 8)
-        fi
-
-        cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
-          --config Release \
-          --target ChainedDecos ChainedDecosMapEditor \
-          --parallel "$PARALLEL_JOBS"
-
-    - name: Install to package directory
-      shell: bash
-      run: |
-        cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
-          --config Release \
-          --component Runtime
-
-    - name: Package binaries
-      shell: bash
-      run: |
-        cd "${{ steps.build-env.outputs.package-dir }}"
-
-        # Create platform-specific package name
-        PACKAGE_NAME="ChainedDecos-${{ steps.version.outputs.version }}-${{ matrix.name }}"
-
-        if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          # Windows: Create ZIP package
-          powershell -Command "Compress-Archive -Path 'bin/*','share/' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip'"
-        else
-          # Linux: Create tar.gz package
-          tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
-            -C bin . -C ../share .
-        fi
-
-    - name: Upload release assets
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-${{ matrix.name }}
-        path: |
-          ${{ steps.build-env.outputs.package-dir }}/*.zip
-          ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
-        retention-days: 30
-
-    - name: Create GitHub release (main job only)
-      if: matrix.os == 'ubuntu-22.04' && github.event_name == 'push'
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          ${{ steps.build-env.outputs.package-dir }}/*.zip
-          ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
-        generate_release_notes: true
-        draft: false
-        prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub release (Ubuntu only)
+        if: matrix.os == 'ubuntu-22.04' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ steps.build-env.outputs.package-dir }}/*.zip
+            ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
