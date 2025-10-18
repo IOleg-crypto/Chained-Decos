@@ -50,7 +50,7 @@ public:
     void InitPlayer();
     void LoadGameModels();
     void LoadGameModelsSelective(const std::vector<std::string>& modelNames);
-    std::string GetModelNameForObjectType(int objectType);
+    std::string GetModelNameForObjectType(int objectType, const std::string& modelName = "");
     std::vector<std::string> GetModelsRequiredForMap(const std::string& mapIdentifier);
     void UpdatePlayerLogic();
     void UpdatePhysicsLogic();
@@ -80,21 +80,13 @@ public:
     void RenderEditorMap();
 
     // Test accessor methods - public for testing purposes
-    Player& GetPlayer() { return m_player; }
-    CollisionManager& GetCollisionManager() { return m_collisionManager; }
-    ModelLoader& GetModels() { return m_models; }
-    WorldManager& GetWorld() { return m_world; }
-    Menu& GetMenu() { return m_menu; }
-    GameMap& GetGameMap() { return m_gameMap; }
-    bool IsInitialized() const
-    {
-        // Return false if no engine is available (for testing)
-        if (!m_engine)
-        {
-            return false;
-        }
-        return m_isGameInitialized;
-    }
+    Player& GetPlayer();
+    CollisionManager& GetCollisionManager();
+    ModelLoader& GetModels();
+    WorldManager& GetWorld();
+    Menu& GetMenu();
+    GameMap& GetGameMap();
+    bool IsInitialized() const;
 };
 
 #endif // GAME_H
