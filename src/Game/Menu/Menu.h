@@ -7,7 +7,7 @@
 #include <raylib.h>
 #include <Config/ConfigManager.h>
 #include <Engine/Engine.h>
-#include "../Map/MapLoader.h"
+#include <MapLoader.h>
 
 enum class MenuAction : uint8_t
 {
@@ -91,6 +91,11 @@ struct MapInfo
     Color themeColor;
     bool isAvailable;
     bool isModelBased; // New field to distinguish model-based maps from JSON maps
+
+    // Constructor for easier initialization
+    MapInfo(const std::string& name, const std::string& displayName,
+            const std::string& description, const std::string& previewImage,
+            Color themeColor, bool isAvailable, bool isModelBased);
 };
 
 class Menu
@@ -140,8 +145,8 @@ private:
     std::vector<std::string> m_consoleHistory;
     std::vector<std::string> m_consoleOutput;
     size_t m_consoleHistoryIndex = 0;
-    static const size_t MAX_CONSOLE_LINES = 100;
-    static const size_t MAX_HISTORY_LINES = 50;
+    const size_t MAX_CONSOLE_LINES = 100;
+    const size_t MAX_HISTORY_LINES = 50;
 
     Engine *m_engine = nullptr;
     ConfigManager m_config;
@@ -226,7 +231,7 @@ public:
 
     // Game state management
     void SetGameInProgress(bool inProgress);
-    [[nodiscard]] bool IsGameInProgress() const { return m_gameInProgress; }
+    [[nodiscard]] bool IsGameInProgress() const;
 
     // Keyboard navigation handlers
     void HandleMainMenuKeyboardNavigation();
@@ -251,7 +256,7 @@ public:
     std::string GetGameplaySettingValue(const std::string& settingName) const;
 
     // Public interface for game integration
-    [[nodiscard]] bool IsVisible() const { return m_state != MenuState::Main || m_gameInProgress; }
+    [[nodiscard]] bool IsVisible() const;
 
 private:
     // Internal helper methods

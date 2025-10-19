@@ -54,7 +54,7 @@ void Menu::InitializeMaps()
             "parkour_test",
             "Built-in Parkour",
             "Default parkour level with basic platforming",
-            NULL,
+            "",
             YELLOW,
             true,
             false  // isModelBased = false for built-in maps
@@ -117,10 +117,7 @@ void Menu::ScanForJsonMaps()
 
         // Scan multiple potential map directories
         std::vector<std::string> searchDirectories = {
-            rootDir + "/src/Game/Resource",
-            rootDir + "/src/Game/Resource/maps",
-            rootDir + "/resources/maps",
-            rootDir + "/maps"
+            rootDir + "/src/Game/Resource/maps"
         };
 
         TraceLog(LOG_INFO, "Menu::ScanForJsonMaps() - Scanning for JSON map files...");

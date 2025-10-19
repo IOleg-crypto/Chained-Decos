@@ -22,7 +22,6 @@ target_compile_definitions(ChainedDecosGame PRIVATE
 add_subdirectory(Map)
 add_subdirectory(Menu)
 add_subdirectory(Player)
-add_subdirectory(GameFeatures)
 
 target_link_libraries(ChainedDecosGame
     PUBLIC
@@ -30,7 +29,6 @@ target_link_libraries(ChainedDecosGame
         player
         menu
         mapmod
-        GameFeatures
         raylib
         imguilib
         nlohmann_json

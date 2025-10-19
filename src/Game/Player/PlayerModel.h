@@ -10,7 +10,7 @@ class PlayerModel
 {
 public:
     PlayerModel();
-    ~PlayerModel() = default;
+    ~PlayerModel();
 
     // Set the 3D model
     void SetModel(Model *model);
@@ -27,11 +27,22 @@ public:
     // Get the model pointer
     Model *GetModel() const;
 
+    // Create a simple fallback model using basic shapes
+    void CreateFallbackModel();
+
+    // Render the player model (handles both GLB and fallback models)
+    void Render(const Vector3& position, float rotationY, const Color& color) const;
+
 private:
     Model *m_model = nullptr;
     bool m_useModel = false;
     ModelLoader m_modelManager;
     float m_rotationModelY;
+
+    // Fallback model data
+    Model m_fallbackModel = {};
+    bool m_usingFallback = false;
+    Mesh m_fallbackMeshes[3] = {}; // Body, head, limbs
 };
 
 #endif // PLAYER_MODEL_H

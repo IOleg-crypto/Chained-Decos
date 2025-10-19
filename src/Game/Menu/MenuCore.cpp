@@ -459,3 +459,5 @@ void Menu::SetAction(MenuAction type)
 {
     m_action = type;
 }
+
+bool Menu::IsGameInProgress() const { return m_gameInProgress; }

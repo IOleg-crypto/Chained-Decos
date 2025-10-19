@@ -12,3 +12,14 @@ ModelLoader &PlayerModel::GetModelManager() { return m_modelManager; }
 bool PlayerModel::IsModelUsed() const { return m_useModel; }
 
 Model *PlayerModel::GetModel() const { return m_model; }
+
+PlayerModel::~PlayerModel() {
+    // Clean up fallback model meshes if they were created
+    if (m_usingFallback) {
+        for (int i = 0; i < 3; i++) {
+            UnloadMesh(m_fallbackMeshes[i]);
+        }
+        UnloadModel(m_fallbackModel);
+    }
+
+}

@@ -233,15 +233,6 @@ D:/gitnext/Chained Decos/build/src/Game/Player/CMakeFiles/list_install_component
 D:/gitnext/Chained Decos/build/src/Game/Player/CMakeFiles/install.dir
 D:/gitnext/Chained Decos/build/src/Game/Player/CMakeFiles/install/local.dir
 D:/gitnext/Chained Decos/build/src/Game/Player/CMakeFiles/install/strip.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/GameFeatures.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/package.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/package_source.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/edit_cache.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/rebuild_cache.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/list_install_components.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/install.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/install/local.dir
-D:/gitnext/Chained Decos/build/src/Game/GameFeatures/CMakeFiles/install/strip.dir
 D:/gitnext/Chained Decos/build/tests/CMakeFiles/ChainedDecosUnitTests.dir
 D:/gitnext/Chained Decos/build/tests/CMakeFiles/ChainedDecosIntegrationTests.dir
 D:/gitnext/Chained Decos/build/tests/CMakeFiles/test.dir
