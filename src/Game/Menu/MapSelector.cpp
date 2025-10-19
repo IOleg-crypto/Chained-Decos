@@ -1,9 +1,14 @@
 #include "MapSelector.h"
+#include "MenuConstants.h"
 #include "../Map/MapLoader.h"
 #include <raylib.h>
 #include <iostream>
 #include <filesystem>
 #include <algorithm>
+#include <imgui/imgui.h>
+
+// Use constants from namespace
+using namespace MenuConstants;
 
 MapSelector::MapSelector() {
     UpdatePagination();
@@ -51,7 +56,7 @@ void MapSelector::InitializeMaps() {
     ScanForJsonMaps();
 
     // Then, scan for models in the resources directory and create model-based maps
-    std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+    std::string resourcesDir = "./resources";
     MapLoader loader;
     auto models = loader.LoadModelsFromDirectory(resourcesDir);
 
@@ -100,7 +105,7 @@ void MapSelector::InitializeMaps() {
     // Initialize pagination
     UpdatePagination();
     TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Pagination initialized: %d pages for %d maps",
-              totalPages, availableMaps.size());
+               m_totalPages, m_availableMaps.size());
 }
 
 void MapSelector::AddMap(const MapInfo& mapInfo) {
@@ -150,7 +155,7 @@ std::string MapSelector::GetSelectedMapName() const {
         // Check if this is a JSON map (indicated by file path starting with "maps/")
         if (selectedMapInfo->name.find("maps/") == 0 || selectedMapInfo->name.find(".json") != std::string::npos) {
             // Return the full path for JSON maps
-            return PROJECT_ROOT_DIR + selectedMapInfo->name;
+            return "./" + selectedMapInfo->name;
         } 
         else {
             // Return the map name for built-in maps
@@ -161,11 +166,11 @@ std::string MapSelector::GetSelectedMapName() const {
 }
 
 void MapSelector::ScanForJsonMaps() {
-    jsonMapsCount = 0;
+    m_jsonMapsCount = 0;
 
     try {
         namespace fs = std::filesystem;
-        std::string rootDir = PROJECT_ROOT_DIR;
+        std::string rootDir = "./";
 
         TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Scanning for JSON map files...");
         TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Project root directory: %s", rootDir.c_str());
@@ -249,7 +254,7 @@ void MapSelector::ScanForJsonMaps() {
                     };
 
                     AddMap(mapInfo);
-                    jsonMapsCount++;
+                    m_jsonMapsCount++;
                     TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Added map: %s (%s)", fullDisplayName.c_str(), mapPath.c_str());
                 }
             }
@@ -335,7 +340,7 @@ void MapSelector::RenderMapSelection() const {
     }
 
     // Render pagination info
-    std::string pageInfo = TextFormat("Page %d of %d", currentPage + 1, totalPages);
+    std::string pageInfo = TextFormat("Page %d of %d", m_currentPage + 1, m_totalPages);
     int pageInfoFontSize = PAGE_INFO_FONT_SIZE;
     int pageInfoWidth = MeasureText(pageInfo.c_str(), pageInfoFontSize);
     DrawText(pageInfo.c_str(), (screenWidth - pageInfoWidth) / 2, startY + MAP_BOX_HEIGHT * 2 + MARGIN + 20, pageInfoFontSize, WHITE);
@@ -345,4 +350,69 @@ void MapSelector::RenderMapSelection() const {
     int instrFontSize = INSTRUCTIONS_FONT_SIZE;
     int instrWidth = MeasureText(instructions, instrFontSize);
     DrawText(instructions, (screenWidth - instrWidth) / 2, screenHeight - 40, instrFontSize, Fade(WHITE, 0.7f));
+}
+
+// ImGui-based map selection rendering
+void MapSelector::RenderMapSelectionImGui() const {
+    ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "MAP SELECTION");
+
+    if (m_availableMaps.empty()) {
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
+    } else {
+        // Calculate which maps to show on current page
+        int startIndex = GetStartMapIndex();
+        int endIndex = GetEndMapIndex();
+
+        // Render maps for current page
+        for (int i = startIndex; i < endIndex; ++i) {
+            const auto& map = m_availableMaps[i];
+            bool isSelected = (i == m_selectedMap);
+
+            // Map button with styling
+            if (isSelected) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.6f, 1.0f, 0.8f));
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+            }
+
+            std::string buttonLabel = map.displayName + "##" + std::to_string(i);
+            if (ImGui::Button(buttonLabel.c_str(), ImVec2(300, 50))) {
+                // Map selection logic would be handled by the caller
+            }
+
+            if (isSelected) {
+                ImGui::PopStyleColor(2);
+            }
+
+            // Map details
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), map.description.c_str());
+
+            // Map type indicator
+            ImGui::SameLine(500);
+            std::string typeText = map.isModelBased ? "Model-based" : "JSON Map";
+            ImVec4 typeColor = map.isModelBased ?
+                ImVec4(0.4f, 0.6f, 1.0f, 1.0f) : ImVec4(0.4f, 1.0f, 0.6f, 1.0f);
+            ImGui::TextColored(typeColor, typeText.c_str());
+        }
+
+        // Pagination controls
+        if (m_totalPages > 1) {
+            ImGui::Separator();
+            ImGui::Text("Page %d of %d", m_currentPage + 1, m_totalPages);
+
+            ImGui::SameLine();
+            if (m_currentPage > 0 && ImGui::Button("Previous Page")) {
+                // Previous page logic would be handled by the caller
+            }
+
+            ImGui::SameLine();
+            if (m_currentPage < m_totalPages - 1 && ImGui::Button("Next Page")) {
+                // Next page logic would be handled by the caller
+            }
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                      "Use Arrow Keys to navigate, ENTER to select, ESC for back");
 }
