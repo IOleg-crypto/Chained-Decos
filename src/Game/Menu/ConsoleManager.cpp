@@ -5,6 +5,8 @@
 #include <sstream>
 
 ConsoleManager::ConsoleManager() {
+    TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER BEING INITIALIZED");
+
     // Load font for console (use default if Alan Sans is not available)
     consoleFont = GetFontDefault();
 
@@ -17,7 +19,10 @@ ConsoleManager::ConsoleManager() {
         consoleFont = GetFontDefault();
     } else {
         SetTextureFilter(consoleFont.texture, TEXTURE_FILTER_BILINEAR);
+        TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - Alan Sans font loaded successfully");
     }
+
+    TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER INITIALIZED");
 }
 
 void ConsoleManager::ToggleConsole() {
