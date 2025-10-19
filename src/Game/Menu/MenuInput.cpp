@@ -57,7 +57,8 @@ void Menu::HandleMainMenuKeyboardNavigation()
 
     if (IsKeyPressed(KEY_ESCAPE))
     {
-        if (m_state == MenuState::Options || m_state == MenuState::GameMode)
+        if (m_state == MenuState::Options || m_state == MenuState::GameMode ||
+            m_state == MenuState::Audio || m_state == MenuState::Controls)
             m_state = MenuState::Main;
         else if (m_state == MenuState::Main)
             m_action = MenuAction::ExitGame;
@@ -84,7 +85,7 @@ void Menu::HandleVideoNavigation()
     {
         auto &opt = m_videoOptions[m_selected];
         if (opt.label == "Back")
-            m_state = MenuState::Options;
+            m_state = MenuState::Main;
         else if (opt.label == "Resolution")
         {
             int w = 0, h = 0;
@@ -135,7 +136,7 @@ void Menu::HandleVideoNavigation()
     }
 
     if (IsKeyPressed(KEY_ESCAPE))
-        m_state = MenuState::Options;
+        m_state = MenuState::Main;
 
     // Handle volume adjustments in Audio menu
     if (m_state == MenuState::Audio)
@@ -259,7 +260,7 @@ void Menu::HandleGameplayNavigation()
             auto &opt = m_gameplayOptions[m_selected];
             if (opt.label == "Back")
             {
-                m_state = MenuState::Options;
+                m_state = MenuState::Main;
             }
             else
             {
@@ -270,7 +271,7 @@ void Menu::HandleGameplayNavigation()
     }
 
     if (IsKeyPressed(KEY_ESCAPE))
-        m_state = MenuState::Options;
+         m_state = MenuState::Main;
 }
 
 void Menu::HandleSimpleScreenKeyboardNavigation()
@@ -391,7 +392,7 @@ void Menu::HandleMapSelectionKeyboardNavigation()
     if (IsKeyPressed(KEY_ESCAPE))
     {
         TraceLog(LOG_INFO, "Menu::HandleMapSelectionKeyboardNavigation() - Returning to game mode menu");
-        m_state = MenuState::GameMode;
+        m_state = MenuState::Main;
     }
 }
 
@@ -516,7 +517,7 @@ void Menu::HandleGameplayMouseSelection(Vector2 mousePos, bool clicked)
                 {
                     auto &opt = m_gameplayOptions[m_selected];
                     if (opt.label == "Back")
-                        m_state = MenuState::Options;
+                        m_state = MenuState::Main;
                     else
                         ApplyGameplayOption(opt);
                 }
@@ -542,7 +543,7 @@ void Menu::HandleVideoMenuMouseSelection(Vector2 mousePos, bool clicked)
             {
                 auto &opt = m_videoOptions[m_selected];
                 if (opt.label == "Back")
-                    m_state = MenuState::Options;
+                    m_state = MenuState::Main;
                 else if (opt.label == "Resolution")
                 {
                     int w = 0, h = 0;
