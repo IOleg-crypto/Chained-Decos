@@ -1,463 +1,280 @@
-#include "Menu.h"
+#include "MenuCore.h"
 #include "Engine/Engine.h"
 #include <raylib.h>
 #include <iostream>
+#include <imgui/imgui.h>
+#include <rlImGui/rlImGui.h>
 
-// Core menu functionality
-Menu::Menu()
+// Unified ImGui-based menu system implementation
+// Provides clean separation between menu logic and rendering
+
+void MenuCore::Initialize(Menu* menu)
 {
-    // Load configuration file
-    LoadSettings();
-
-    // Load Alan Sans font for menu text (only if graphics are available)
-    const std::string alanSansFontPath = PROJECT_ROOT_DIR "/resources/font/AlanSans.ttf";
-
-    // Check if we're in a headless environment (no graphics)
-    bool graphicsAvailable = true;
-    try {
-        // Try to detect if graphics are available by checking if we can get screen dimensions
-        int screenWidth = GetScreenWidth();
-        int screenHeight = GetScreenHeight();
-        if (screenWidth <= 0 || screenHeight <= 0) {
-            graphicsAvailable = false;
-        }
-    } catch (...) {
-        graphicsAvailable = false;
+    if (menu)
+    {
+        menu->Initialize(nullptr); // Engine will be set later
+        SetupImGuiStyle();
     }
+}
 
-    if (graphicsAvailable) {
-        m_font = LoadFontEx(alanSansFontPath.c_str(), 64, nullptr, 0);
+void MenuCore::Update(Menu* menu)
+{
+    if (menu)
+    {
+        menu->Update();
+    }
+}
 
-        if (m_font.texture.id == 0)
+void MenuCore::Render(Menu* menu)
+{
+    if (menu)
+    {
+        menu->Render();
+    }
+}
+
+void MenuCore::ExecuteAction(Menu* menu)
+{
+    if (menu)
+    {
+        MenuAction action = menu->ConsumeAction();
+        if (action != MenuAction::None)
         {
-            TraceLog(LOG_WARNING, "Menu::Menu() - Failed to load Alan Sans font: %s, using default font",
-                     alanSansFontPath.c_str());
-            m_font = GetFontDefault();
+            // Handle the action here if needed
+            // For now, the Menu class handles its own actions
+        }
+    }
+}
+
+MenuAction MenuCore::GetAction(Menu* menu)
+{
+    if (menu)
+    {
+        return menu->ConsumeAction();
+    }
+    return MenuAction::None;
+}
+
+void MenuCore::SetAction(Menu* menu, MenuAction action)
+{
+    if (menu)
+    {
+        menu->SetAction(action);
+    }
+}
+
+void MenuCore::LoadSettings(Menu* menu)
+{
+    if (menu)
+    {
+        menu->LoadConfiguration();
+    }
+}
+
+void MenuCore::SaveSettings(Menu* menu)
+{
+    if (menu)
+    {
+        menu->SaveConfiguration();
+    }
+}
+
+void MenuCore::SetGameInProgress(Menu* menu, bool inProgress)
+{
+    if (menu)
+    {
+        menu->SetGameInProgress(inProgress);
+    }
+}
+
+// Enhanced theme system with modern color scheme
+void MenuCore::SetupImGuiStyle()
+{
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    // Modern rounded corners and spacing
+    style.WindowRounding = 12.0f;
+    style.FrameRounding = 6.0f;
+    style.GrabRounding = 6.0f;
+    style.PopupRounding = 8.0f;
+    style.ScrollbarRounding = 8.0f;
+    style.TabRounding = 8.0f;
+
+    // Improved spacing and sizing
+    style.WindowPadding = ImVec2(16.0f, 16.0f);
+    style.FramePadding = ImVec2(12.0f, 8.0f);
+    style.ItemSpacing = ImVec2(12.0f, 8.0f);
+    style.ItemInnerSpacing = ImVec2(8.0f, 6.0f);
+    style.IndentSpacing = 20.0f;
+
+    // Modern scrollbar and tab styling
+    style.ScrollbarSize = 16.0f;
+    style.TabBorderSize = 0.0f;
+
+    // Setup modern dark theme colors
+    SetupModernDarkTheme();
+}
+
+// Helper function to mix two colors
+ImVec4 MixColors(const ImVec4& a, const ImVec4& b, float ratio)
+{
+    return ImVec4(
+        a.x * (1.0f - ratio) + b.x * ratio,
+        a.y * (1.0f - ratio) + b.y * ratio,
+        a.z * (1.0f - ratio) + b.z * ratio,
+        a.w * (1.0f - ratio) + b.w * ratio
+    );
+}
+
+// Modern dark theme with enhanced contrast and readability
+void MenuCore::SetupModernDarkTheme()
+{
+    ImGuiStyle& style = ImGui::GetStyle();
+    ImVec4* colors = style.Colors;
+
+    // Modern dark color palette
+    const ImVec4 colorBackground = ImVec4(0.08f, 0.08f, 0.10f, 1.00f);
+    const ImVec4 colorSurface = ImVec4(0.12f, 0.12f, 0.14f, 1.00f);
+    const ImVec4 colorSurfaceVariant = ImVec4(0.16f, 0.16f, 0.18f, 1.00f);
+    const ImVec4 colorPrimary = ImVec4(0.25f, 0.45f, 0.85f, 1.00f);
+    const ImVec4 colorPrimaryVariant = ImVec4(0.35f, 0.55f, 0.95f, 1.00f);
+    const ImVec4 colorSecondary = ImVec4(0.45f, 0.25f, 0.65f, 1.00f);
+    const ImVec4 colorAccent = ImVec4(0.85f, 0.45f, 0.25f, 1.00f);
+    const ImVec4 colorText = ImVec4(0.95f, 0.95f, 0.97f, 1.00f);
+    const ImVec4 colorTextSecondary = ImVec4(0.75f, 0.75f, 0.78f, 1.00f);
+    const ImVec4 colorBorder = ImVec4(0.25f, 0.25f, 0.28f, 1.00f);
+
+    // Window colors
+    colors[ImGuiCol_WindowBg] = colorBackground;
+    colors[ImGuiCol_ChildBg] = colorSurface;
+    colors[ImGuiCol_PopupBg] = colorSurface;
+
+    // Title colors
+    colors[ImGuiCol_TitleBg] = colorSurface;
+    colors[ImGuiCol_TitleBgActive] = colorSurfaceVariant;
+    colors[ImGuiCol_TitleBgCollapsed] = colorSurface;
+
+    // Menu colors
+    colors[ImGuiCol_MenuBarBg] = colorSurface;
+
+    // Frame colors (input fields, checkboxes, etc.)
+    colors[ImGuiCol_FrameBg] = colorSurfaceVariant;
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(colorSurfaceVariant.x + 0.05f, colorSurfaceVariant.y + 0.05f, colorSurfaceVariant.z + 0.05f, 1.0f);
+    colors[ImGuiCol_FrameBgActive] = MixColors(colorPrimary, colorSurfaceVariant, 0.4f);
+
+    // Button colors
+    colors[ImGuiCol_Button] = colorSurfaceVariant;
+    colors[ImGuiCol_ButtonHovered] = MixColors(colorPrimary, colorSurfaceVariant, 0.6f);
+    colors[ImGuiCol_ButtonActive] = MixColors(colorPrimary, colorSurfaceVariant, 0.8f);
+
+    // Header colors
+    colors[ImGuiCol_Header] = MixColors(colorPrimary, colorSurface, 0.3f);
+    colors[ImGuiCol_HeaderHovered] = MixColors(colorPrimary, colorSurface, 0.5f);
+    colors[ImGuiCol_HeaderActive] = colorPrimary;
+
+    // Tab colors
+    colors[ImGuiCol_Tab] = colorSurface;
+    colors[ImGuiCol_TabHovered] = colorSurfaceVariant;
+    colors[ImGuiCol_TabActive] = MixColors(colorPrimary, colorSurface, 0.3f);
+    colors[ImGuiCol_TabUnfocused] = colorSurface;
+    colors[ImGuiCol_TabUnfocusedActive] = colorSurfaceVariant;
+
+    // Text colors
+    colors[ImGuiCol_Text] = colorText;
+    colors[ImGuiCol_TextDisabled] = ImVec4(colorTextSecondary.x * 0.6f, colorTextSecondary.y * 0.6f, colorTextSecondary.z * 0.6f, 1.0f);
+
+    // Border and separator colors
+    colors[ImGuiCol_Border] = colorBorder;
+    colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+    colors[ImGuiCol_Separator] = colorBorder;
+    colors[ImGuiCol_SeparatorHovered] = MixColors(colorPrimary, colorBorder, 0.5f);
+    colors[ImGuiCol_SeparatorActive] = colorPrimary;
+
+    // Scrollbar colors
+    colors[ImGuiCol_ScrollbarBg] = colorBackground;
+    colors[ImGuiCol_ScrollbarGrab] = colorSurfaceVariant;
+    colors[ImGuiCol_ScrollbarGrabHovered] = MixColors(colorPrimary, colorSurfaceVariant, 0.4f);
+    colors[ImGuiCol_ScrollbarGrabActive] = MixColors(colorPrimary, colorSurfaceVariant, 0.6f);
+
+    // Slider colors
+    colors[ImGuiCol_SliderGrab] = colorPrimary;
+    colors[ImGuiCol_SliderGrabActive] = colorPrimaryVariant;
+
+    // Check mark color
+    colors[ImGuiCol_CheckMark] = colorPrimary;
+
+    // Resize grip colors
+    colors[ImGuiCol_ResizeGrip] = colorSurfaceVariant;
+    colors[ImGuiCol_ResizeGripHovered] = MixColors(colorPrimary, colorSurfaceVariant, 0.4f);
+    colors[ImGuiCol_ResizeGripActive] = MixColors(colorPrimary, colorSurfaceVariant, 0.6f);
+
+    // Plot colors
+    colors[ImGuiCol_PlotLines] = colorPrimary;
+    colors[ImGuiCol_PlotLinesHovered] = colorPrimaryVariant;
+    colors[ImGuiCol_PlotHistogram] = colorPrimary;
+    colors[ImGuiCol_PlotHistogramHovered] = colorPrimaryVariant;
+
+    // Modal window colors
+    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.6f);
+
+    // Navigation colors
+    colors[ImGuiCol_NavHighlight] = colorPrimary;
+    colors[ImGuiCol_NavWindowingHighlight] = colorAccent;
+    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5f);
+
+    // Selection colors
+    colors[ImGuiCol_DragDropTarget] = colorAccent;
+    colors[ImGuiCol_TableHeaderBg] = colorSurface;
+    colors[ImGuiCol_TableBorderStrong] = colorBorder;
+    colors[ImGuiCol_TableBorderLight] = ImVec4(colorBorder.x * 0.7f, colorBorder.y * 0.7f, colorBorder.z * 0.7f, 1.0f);
+    colors[ImGuiCol_TableRowBg] = colorBackground;
+    colors[ImGuiCol_TableRowBgAlt] = MixColors(colorSurface, colorBackground, 0.3f);
+}
+
+void MenuCore::BeginImGuiFrame()
+{
+    rlImGuiBegin();
+}
+
+void MenuCore::EndImGuiFrame()
+{
+    rlImGuiEnd();
+}
+
+void MenuCore::ApplyCustomTheme(Menu* menu)
+{
+    if (menu)
+    {
+        // Apply any custom theme settings from the menu
+        // This could be used for user-customizable themes
+    }
+}
+
+void MenuCore::ResetToDefaultTheme()
+{
+    SetupModernDarkTheme();
+}
+
+bool MenuCore::IsMenuVisible(Menu* menu)
+{
+    if (menu)
+    {
+        return menu->GetState() != MenuState::Main || menu->IsConsoleOpen();
+    }
+    return false;
+}
+
+void MenuCore::ToggleMenuVisibility(Menu* menu)
+{
+    if (menu)
+    {
+        if (menu->IsConsoleOpen())
+        {
+            menu->ToggleConsole();
         }
         else
         {
-            // Set texture filter for smooth scaling
-            SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
-            TraceLog(LOG_INFO, "Menu::Menu() - Alan Sans font loaded successfully: %s",
-                     alanSansFontPath.c_str());
-        }
-    } else {
-        // Headless environment - use default font without loading
-        TraceLog(LOG_INFO, "Menu::Menu() - Headless environment detected, using default font");
-        m_font = GetFontDefault();
-    }
-
-    // Main Menu - Resume Game will be added dynamically if game is in progress
-    m_mainMenu = {{"Start Game", MenuAction::StartGame},
-                  {"Options", MenuAction::OpenOptions},
-                  {"Mods", MenuAction::OpenMods},
-                  {"Credits", MenuAction::OpenCredits},
-                  {"Quit", MenuAction::ExitGame}};
-
-    // Options Menu
-    m_optionsMenu = {{"Video", MenuAction::OpenVideoMode},
-                      {"Audio", MenuAction::OpenAudio},
-                      {"Controls", MenuAction::OpenControls},
-                      {"Gameplay", MenuAction::OpenGameplay},
-                      {"Back", MenuAction::BackToMainMenu}};
-
-    // Game Mode Menu
-    m_SetGameMode = {{"Singleplayer", MenuAction::SinglePlayer},
-                     {"Multiplayer", MenuAction::MultiPlayer},
-                     {"Back", MenuAction::BackToMainMenu}};
-
-    // Video Options
-    m_videoOptions = {
-        {"Resolution", {"800x600", "1280x720", "1360x768", "1920x1080", "2560x1440"}, 0},
-        {"Aspect Ratio", {"16:9", "4:3", "21:9"}, 0},
-        {"Display Mode", {"Windowed", "Fullscreen", "Borderless"}, 0},
-        {"VSync", {"Off", "On"}, 1},
-        {"Target FPS", {"30", "60", "120", "144", "165", "180", "240", "Unlimited"}, 1},
-        {"Back", {}, 0}};
-
-    // Audio Menu with volume controls
-    m_audioMenu = {{"Master Volume", MenuAction::AdjustMasterVolume},
-                   {"Music Volume", MenuAction::AdjustMusicVolume},
-                   {"SFX Volume", MenuAction::AdjustSFXVolume},
-                   {"Mute Audio", MenuAction::ToggleMute},
-                   {"Back", MenuAction::BackToMainMenu}};
-
-    // Controls Menu with proper actions
-    m_controlsMenu = {{"Rebind Keys", MenuAction::OpenKeyBinding},
-                       {"Mouse Sensitivity", MenuAction::AdjustMouseSensitivity},
-                       {"Invert Y Axis", MenuAction::ToggleInvertY},
-                       {"Controller Support", MenuAction::ToggleController},
-                       {"Back", MenuAction::BackToMainMenu}};
-
-    // Gameplay Options - using MenuOption structure like video settings
-    m_gameplayOptions = {
-        {"Difficulty", {"Easy", "Medium", "Hard"}, 1},
-        {"Timer", {"Off", "On"}, 1},
-        {"Checkpoints", {"Off", "On"}, 1},
-        {"Auto Save", {"Off", "On"}, 1},
-        {"Speedrun Mode", {"Off", "On"}, 0},
-        {"Back", {}, 0}
-    };
-
-
-    m_currentMenu = &m_mainMenu;
-    m_buttonScales.assign(m_currentMenu->size(), 1.0f);
-
-    // Ensure we start at the main menu state
-    m_state = MenuState::Main;
-}
-
-float Menu::Lerp(float a, float b, float t) const { return a + (b - a) * t; }
-
-MenuAction Menu::GetAction() const { return m_action; }
-
-void Menu::ResetAction() { m_action = MenuAction::None; }
-
-void Menu::GetEngine(Engine *engine) { m_engine = engine; }
-
-// Helper function to get current menu with dynamic items
-const std::vector<MenuItem>* Menu::GetCurrentMenuWithDynamicItems() const
-{
-    if (m_state == MenuState::Main && m_gameInProgress)
-    {
-        // Create a static dynamic menu for main menu with resume option
-        static std::vector<MenuItem> dynamicMainMenu;
-        dynamicMainMenu = {{"Resume Game", MenuAction::ResumeGame},
-                          {"Start Game", MenuAction::StartGame},
-                          {"Options", MenuAction::OpenOptions},
-                          {"Mods", MenuAction::OpenMods},
-                          {"Credits", MenuAction::OpenCredits},
-                          {"Quit", MenuAction::ExitGame}};
-        return &dynamicMainMenu;
-    }
-    return m_currentMenu;
-}
-
-void Menu::SetGameInProgress(bool inProgress)
-{
-    m_gameInProgress = inProgress;
-    TraceLog(LOG_INFO, "Menu::SetGameInProgress() - Game state set to: %s", inProgress ? "IN PROGRESS" : "NOT IN PROGRESS");
-}
-
-void Menu::Update()
-{
-    // // If game is in progress and we're not in a submenu, ensure we're in main menu to show resume option
-    // if (game_in_progress && current_state != MenuState::Options && current_state != MenuState::Gameplay &&
-    //     current_state != MenuState::ParkourControls && current_state != MenuState::Video &&
-    //     current_state != MenuState::Audio && current_state != MenuState::Controls &&
-    //     current_state != MenuState::Credits && current_state != MenuState::Mods &&
-    //     current_state != MenuState::MapSelection && current_state != MenuState::ConfirmExit)
-    // {
-    //     current_state = MenuState::Main;
-    // }
-
-    // Update current menu based on state
-    switch (m_state)
-    {
-    case MenuState::Main:
-        m_currentMenu = &m_mainMenu;
-        break;
-    case MenuState::Options:
-        m_currentMenu = &m_optionsMenu;
-        break;
-    case MenuState::GameMode:
-        m_currentMenu = &m_SetGameMode;
-        break;
-    case MenuState::MapSelection:
-        // Map selection doesn't use the regular menu system
-        m_currentMenu = nullptr;
-        break;
-    case MenuState::Audio:
-        m_currentMenu = &m_audioMenu;
-        // Initialize audio menu selection if needed
-        if (m_selected >= static_cast<int>(m_audioMenu.size()))
-            m_selected = 0;
-        break;
-    case MenuState::Controls:
-        m_currentMenu = &m_controlsMenu;
-        break;
-    case MenuState::Gameplay:
-        // Use options-based system like video settings
-        // Initialize gameplay menu selection if needed
-        if (m_selected < 0 || m_selected >= static_cast<int>(m_gameplayOptions.size()))
-            m_selected = 0;
-        HandleGameplayNavigation();
-        break;
-    default:
-        m_currentMenu = nullptr;
-        break;
-    }
-
-    if (m_currentMenu && (m_selected < 0 || m_selected >= static_cast<int>(m_currentMenu->size())))
-        m_selected = 0;
-
-    // Handle input
-    if (m_state == MenuState::Video)
-        HandleVideoNavigation();
-    else if (m_state == MenuState::MapSelection)
-        HandleMapSelection();
-    else if (m_state != MenuState::Credits && m_state != MenuState::Mods &&
-             m_state != MenuState::ConfirmExit)
-        HandleKeyboardNavigation();
-
-    if (m_state == MenuState::Credits || m_state == MenuState::Mods)
-    {
-        if (IsKeyPressed(KEY_ESCAPE))
-            m_state = MenuState::Main;
-    }
-
-    // Handle console toggle
-    if (IsKeyPressed(KEY_GRAVE)) // ~ key
-    {
-        ToggleConsole();
-    }
-
-    HandleConsoleInput();
-    HandleMouseSelection();
-
-    if (m_state == MenuState::ConfirmExit)
-        HandleConfirmExit();
-
-    ExecuteAction();
-}
-
-void Menu::ExecuteAction()
-{
-    if (m_action == MenuAction::None)
-        return;
-
-    switch (m_action)
-    {
-    case MenuAction::StartGame:
-        m_state = MenuState::GameMode;
-        ResetAction();
-        break;
-    case MenuAction::ResumeGame:
-        TraceLog(LOG_INFO, "Menu::ExecuteAction() - Resuming game...");
-        // Resume game will be handled by Game class
-        ResetAction();
-        break;
-    case MenuAction::SinglePlayer:
-        TraceLog(LOG_INFO, "Menu::ExecuteAction() - SinglePlayer selected, initializing map selection...");
-        m_state = MenuState::MapSelection;
-        InitializeMaps();
-        TraceLog(LOG_INFO, "Menu::ExecuteAction() - Map selection initialized with %d maps", m_availableMaps.size());
-        ResetAction();
-        break;
-    case MenuAction::MultiPlayer:
-        std::cout << "Selected mode: Multiplayer\n";
-        break;
-    case MenuAction::OpenOptions:
-        m_state = MenuState::Options;
-        ResetAction();
-        break;
-    case MenuAction::OpenVideoMode:
-        m_state = MenuState::Video;
-        ResetAction();
-        break;
-    case MenuAction::OpenAudio:
-        m_state = MenuState::Audio;
-        ResetAction();
-        break;
-    case MenuAction::OpenControls:
-        m_state = MenuState::Controls;
-        ResetAction();
-        break;
-    case MenuAction::OpenGameplay:
-        m_state = MenuState::Gameplay;
-        ResetAction();
-        break;
-    case MenuAction::AdjustMasterVolume:
-        // Volume adjustment is handled in real-time via keyboard input
-        break;
-    case MenuAction::AdjustMusicVolume:
-        // Volume adjustment is handled in real-time via keyboard input
-        break;
-    case MenuAction::AdjustSFXVolume:
-        // Volume adjustment is handled in real-time via keyboard input
-        break;
-    case MenuAction::ToggleMute:
-        m_audioMuted = !m_audioMuted;
-        // TODO: Apply mute to audio system
-        AddConsoleOutput(m_audioMuted ? "Audio muted" : "Audio unmuted");
-        ResetAction();
-        break;
-    case MenuAction::OpenKeyBinding:
-        AddConsoleOutput("Key binding not implemented yet");
-        ResetAction();
-        break;
-    case MenuAction::AdjustMouseSensitivity:
-        // Sensitivity adjustment is handled in real-time via keyboard input
-        break;
-    case MenuAction::ToggleInvertY:
-        m_invertYAxis = !m_invertYAxis;
-        AddConsoleOutput(m_invertYAxis ? "Y-axis inverted" : "Y-axis normal");
-        ResetAction();
-        break;
-    case MenuAction::ToggleController:
-        m_controllerSupport = !m_controllerSupport;
-        AddConsoleOutput(m_controllerSupport ? "Controller support enabled" : "Controller support disabled");
-        ResetAction();
-        break;
-    case MenuAction::OpenCredits:
-        m_state = MenuState::Credits;
-        ResetAction();
-        break;
-    case MenuAction::OpenMods:
-        m_state = MenuState::Mods;
-        ResetAction();
-        break;
-    case MenuAction::BackToMainMenu:
-        m_state = (m_state == MenuState::Video || m_state == MenuState::Audio ||
-                   m_state == MenuState::Controls || m_state == MenuState::Gameplay ||
-                   m_state == MenuState::ParkourControls)
-                      ? MenuState::Options
-                      : MenuState::Main;
-        ResetAction();
-        break;
-    case MenuAction::ExitGame:
-        if (m_state == MenuState::ConfirmExit)
-        {
-            // User confirmed exit, actually exit the game
-            if (m_engine)
-                m_engine->RequestExit();
-            // Set game state to not in progress when exiting
-            m_gameInProgress = false;
-            ResetAction();
-        }
-        else
-        {
-            // Show confirmation dialog
-            m_state = MenuState::ConfirmExit;
-            // Don't reset action, we need it for confirmation
-        }
-        break;
-    case MenuAction::StartGameWithMap:
-        // This action is handled by the Game system, don't reset it here
-        // The Game system will handle the transition and reset the action
-        break;
-    default:
-        ResetAction();
-        break;
-    }
-}
-
-void Menu::LoadSettings()
-{
-    // Load configuration from file (try current directory first, then build directory)
-    try
-    {
-        if (!m_config.LoadFromFile("game.cfg"))
-        {
-            // Try loading from build directory if not found in current directory
-            if (!m_config.LoadFromFile("build/game.cfg"))
-            {
-                TraceLog(LOG_WARNING, "Menu::LoadSettings() - Could not load game.cfg from current directory or build directory, using default settings");
-            }
-            else
-            {
-                TraceLog(LOG_INFO, "Menu::LoadSettings() - Successfully loaded settings from build/game.cfg");
-            }
-        }
-        else
-        {
-            TraceLog(LOG_INFO, "Menu::LoadSettings() - Successfully loaded settings from game.cfg");
+            menu->ShowMainMenu();
         }
     }
-    catch (const std::exception& e)
-    {
-        TraceLog(LOG_ERROR, "Menu::LoadSettings() - Exception while loading configuration: %s", e.what());
-        TraceLog(LOG_INFO, "Menu::LoadSettings() - Continuing with default settings");
-    }
-
-    // Apply loaded settings to the game
-    int width, height;
-    m_config.GetResolution(width, height);
-    SetWindowSize(width, height);
-
-    if (m_config.IsFullscreen())
-    {
-        SetWindowState(FLAG_FULLSCREEN_MODE);
-    }
-
-    if (m_config.IsVSync())
-    {
-        SetWindowState(FLAG_VSYNC_HINT);
-    }
-
-    // Load parkour-specific settings
-    m_wallRunSensitivity = m_config.GetWallRunSensitivity();
-    m_jumpTiming = m_config.GetJumpTiming();
-    m_slideControl = m_config.GetSlideControl();
-    m_grappleSensitivity = m_config.GetGrappleSensitivity();
-
-    m_difficultyLevel = m_config.GetDifficultyLevel();
-    m_timerEnabled = m_config.IsTimerEnabled();
-    m_checkpointsEnabled = m_config.AreCheckpointsEnabled();
-    m_autoSaveEnabled = m_config.IsAutoSaveEnabled();
-    m_speedrunMode = m_config.IsSpeedrunMode();
-
-    m_wallRunEnabled = m_config.IsWallRunEnabled();
-    m_doubleJumpEnabled = m_config.IsDoubleJumpEnabled();
-    m_slideEnabled = m_config.IsSlideEnabled();
-    m_grappleEnabled = m_config.IsGrappleEnabled();
-    m_slowMotionOnTrick = m_config.IsSlowMotionOnTrick();
 }
-
-void Menu::SaveSettings()
-{
-    try
-    {
-        // Save current window settings
-        m_config.SetResolution(GetScreenWidth(), GetScreenHeight());
-        m_config.SetFullscreen(IsWindowFullscreen());
-        m_config.SetVSync(IsWindowState(FLAG_VSYNC_HINT));
-
-        // Save parkour-specific settings
-        m_config.SetWallRunSensitivity(m_wallRunSensitivity);
-        m_config.SetJumpTiming(m_jumpTiming);
-        m_config.SetSlideControl(m_slideControl);
-        m_config.SetGrappleSensitivity(m_grappleSensitivity);
-
-        m_config.SetDifficultyLevel(m_difficultyLevel);
-        m_config.SetTimerEnabled(m_timerEnabled);
-        m_config.SetCheckpointsEnabled(m_checkpointsEnabled);
-        m_config.SetAutoSaveEnabled(m_autoSaveEnabled);
-        m_config.SetSpeedrunMode(m_speedrunMode);
-
-        m_config.SetWallRunEnabled(m_wallRunEnabled);
-        m_config.SetDoubleJumpEnabled(m_doubleJumpEnabled);
-        m_config.SetSlideEnabled(m_slideEnabled);
-        m_config.SetGrappleEnabled(m_grappleEnabled);
-        m_config.SetSlowMotionOnTrick(m_slowMotionOnTrick);
-
-        // Save to file (try current directory first, then build directory)
-        if (!m_config.SaveToFile("game.cfg"))
-        {
-            // Try saving to build directory if not found in current directory
-            if (!m_config.SaveToFile("build/game.cfg"))
-            {
-                TraceLog(LOG_ERROR, "Menu::SaveSettings() - Could not save settings to either game.cfg or build/game.cfg");
-            }
-            else
-            {
-                TraceLog(LOG_INFO, "Menu::SaveSettings() - Settings successfully saved to build/game.cfg");
-            }
-        }
-        else
-        {
-            TraceLog(LOG_INFO, "Menu::SaveSettings() - Settings successfully saved to game.cfg");
-        }
-    }
-    catch (const std::exception& e)
-    {
-        TraceLog(LOG_ERROR, "Menu::SaveSettings() - Exception while saving settings: %s", e.what());
-    }
-}
-
-void Menu::SetAction(MenuAction type)
-{
-    m_action = type;
-}
-
-bool Menu::IsGameInProgress() const { return m_gameInProgress; }

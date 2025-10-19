@@ -42,6 +42,10 @@ private:
     // Scrolling
     int scrollOffset = 0;
 
+    // Constants
+    static constexpr size_t MAX_CONSOLE_LINES = 100;
+    static constexpr size_t MAX_HISTORY_LINES = 50;
+
 public:
     /**
      * @brief Default constructor that initializes the console font and settings
@@ -71,7 +75,7 @@ public:
 
     // History management
     void AddToHistory(const std::string& command);
-    const std::vector<std::string>& GetH istory() const { return consoleHistory; }
+    const std::vector<std::string>& GetHistory() const { return consoleHistory; }
     const std::vector<std::string>& GetOutput() const { return consoleOutput; }
 
     // Utility
