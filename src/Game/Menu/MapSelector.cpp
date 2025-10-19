@@ -35,7 +35,7 @@ void MapSelector::PreviousPageNav() {
 }
 
 int MapSelector::GetStartMapIndex() const {
-    return m_currentPage * MAPS_PER_PAGE;
+    return m_currentPage;
 }
 
 int MapSelector::GetEndMapIndex() const {
@@ -151,10 +151,8 @@ std::string MapSelector::GetSelectedMapName() const {
         if (selectedMapInfo->name.find("maps/") == 0 || selectedMapInfo->name.find(".json") != std::string::npos) {
             // Return the full path for JSON maps
             return PROJECT_ROOT_DIR + selectedMapInfo->name;
-        } else if (selectedMapInfo->name.find("model_") == 0) {
-            // This is a model-based map - return the model path
-            return selectedMapInfo->previewImage; // previewImage field contains the model path for model-based maps
-        } else {
+        } 
+        else {
             // Return the map name for built-in maps
             return selectedMapInfo->name;
         }
@@ -266,13 +264,11 @@ void MapSelector::ScanForJsonMaps() {
             const auto& map = m_availableMaps[i];
             TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Map %d: %s -> %s", i, map.displayName.c_str(), map.name.c_str());
         }
-    } catch (const std::exception& e) {
+    } 
+    catch (const std::exception& e) {
         TraceLog(LOG_ERROR, "MapSelector::ScanForJsonMaps() - Exception while scanning for JSON maps: %s", e.what());
         TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Continuing with any maps found so far");
-    } catch (...) {
-        TraceLog(LOG_ERROR, "MapSelector::ScanForJsonMaps() - Unknown exception while scanning for JSON maps");
-        TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Continuing with any maps found so far");
-    }
+    } 
 }
 
 void MapSelector::RenderMapSelection() const {

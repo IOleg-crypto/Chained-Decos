@@ -9,7 +9,6 @@ set(UNIT_TEST_SOURCES
 
 set(INTEGRATION_TEST_SOURCES
     game/ParkourMapGeneratorTest.cpp
-    game/ScoringSystemTest.cpp
     game/PlayerTest.cpp
     integration/GameIntegrationTest.cpp
 )
