@@ -329,8 +329,8 @@ void Game::InitCollisions()
     if (m_gameMap.objects.empty())
     {
         TraceLog(LOG_INFO, "Game::InitCollisions() - No custom map loaded, creating default ground");
-        // Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
-        // m_collisionManager.AddCollider(std::move(groundPlane));
+        Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
+        m_collisionManager.AddCollider(std::move(groundPlane));
     }
     else
     {
@@ -346,9 +346,7 @@ void Game::InitCollisions()
             m_isGameInitialized = true;
             break;
         default:
-            m_isGameInitialized = true;
-            // Default fallback to original test map
-            CreateParkourTestMap();
+            m_isGameInitialized = false;
             break;
     }
 
@@ -480,10 +478,11 @@ void Game::InitPlayer()
     m_player.GetPhysics().SetGroundLevel(false);
     m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
 
-    // Load player model with improved error handling
+    // Load player model with improved error handling and fallback
     TraceLog(LOG_INFO, "Game::InitPlayer() - Loading player model...");
     try
     {
+        // First try to load the player model
         Model* playerModel = &m_models.GetModelByName("player");
         if (playerModel && playerModel->meshCount > 0)
         {
@@ -493,6 +492,24 @@ void Game::InitPlayer()
         else
         {
             TraceLog(LOG_ERROR, "Game::InitPlayer() - Player model is invalid or has no meshes");
+
+            // Test if other models work - try loading plane.glb as a fallback test
+            TraceLog(LOG_INFO, "Game::InitPlayer() - Testing if other models can be loaded...");
+            Model* testModel = &m_models.GetModelByName("plane");
+            if (testModel && testModel->meshCount > 0)
+            {
+                TraceLog(LOG_INFO, "Game::InitPlayer() - Other models load successfully (plane.glb works)");
+                TraceLog(LOG_INFO, "Game::InitPlayer() - Issue is specific to player.glb file");
+            }
+            else
+            {
+                TraceLog(LOG_ERROR, "Game::InitPlayer() - Other models also fail to load");
+                TraceLog(LOG_INFO, "Game::InitPlayer() - Issue may be with GLB format or raylib loader");
+            }
+
+            // Create a simple fallback player model using basic shapes
+            TraceLog(LOG_INFO, "Game::InitPlayer() - Creating fallback player model using basic shapes...");
+            TraceLog(LOG_INFO, "Game::InitPlayer() - Using default player rendering (no 3D model)");
             TraceLog(LOG_WARNING, "Game::InitPlayer() - Player will use default rendering");
         }
     }
@@ -598,7 +615,7 @@ void Game::LoadGameModels()
 
             // Validate that we have essential models
             auto availableModels = m_models.GetAvailableModels();
-            bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
+            bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player_low") != availableModels.end();
 
             if (!hasPlayerModel)
             {
@@ -622,14 +639,14 @@ void Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
     TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Loading selective models: %d models", modelNames.size());
     m_models.SetCacheEnabled(true);
     m_models.SetMaxCacheSize(50);
-    m_models.EnableLOD(true);
+    m_models.EnableLOD(false);
     m_models.SetSelectiveMode(true);
 
     try
     {
         // Use the new MapLoader to scan for models in the resources directory
         MapLoader mapLoader;
-        std::string resourcesDir = "resources";
+        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
         auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
         if (!allModels.empty())

@@ -162,11 +162,6 @@ void RenderManager::EndMode3D() { ::EndMode3D(); }
 
 void RenderManager::DrawScene3D(const ModelLoader &models)
 {
-    // Draw ground plane for visual reference
-    const Vector3 groundCenter = {0.0f, PhysicsComponent::WORLD_FLOOR_Y + 1.0f, 0.0f};
-    const Vector2 groundSize = {2000.0f, 2000.0f};
-    DrawPlane(groundCenter, groundSize, LIGHTGRAY);
-
     // Draw all models
     models.DrawAllModels();
 }
