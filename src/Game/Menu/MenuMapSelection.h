@@ -1,1 +1,0 @@
-// This file has been removed - map selection methods are now properly declared in Menu.h

@@ -23,27 +23,27 @@ namespace MenuConstants {
  * @brief Container for audio-related settings
  */
 struct AudioSettings {
-    float masterVolume = DEFAULT_MASTER_VOLUME;
-    float musicVolume = DEFAULT_MUSIC_VOLUME;
-    float sfxVolume = DEFAULT_SFX_VOLUME;
+    float masterVolume = MenuConstants::DEFAULT_MASTER_VOLUME;
+    float musicVolume = MenuConstants::DEFAULT_MUSIC_VOLUME;
+    float sfxVolume = MenuConstants::DEFAULT_SFX_VOLUME;
     bool muted = false;
 };
 
 struct ControlSettings {
-    float mouseSensitivity = DEFAULT_MOUSE_SENSITIVITY;
+    float mouseSensitivity = MenuConstants::DEFAULT_MOUSE_SENSITIVITY;
     bool invertYAxis = false;
     bool controllerSupport = true;
 };
 
 struct ParkourControlSettings {
-    float wallRunSensitivity = DEFAULT_WALL_RUN_SENSITIVITY;
-    float jumpTiming = DEFAULT_JUMP_TIMING;
-    float slideControl = DEFAULT_SLIDE_CONTROL;
-    float grappleSensitivity = DEFAULT_GRAPPLE_SENSITIVITY;
+    float wallRunSensitivity = MenuConstants::DEFAULT_WALL_RUN_SENSITIVITY;
+    float jumpTiming = MenuConstants::DEFAULT_JUMP_TIMING;
+    float slideControl = MenuConstants::DEFAULT_SLIDE_CONTROL;
+    float grappleSensitivity = MenuConstants::DEFAULT_GRAPPLE_SENSITIVITY;
 };
 
 struct GameplaySettings {
-    int difficultyLevel = DEFAULT_DIFFICULTY_LEVEL;
+    int difficultyLevel = MenuConstants::DEFAULT_DIFFICULTY_LEVEL;
     bool timerEnabled = true;
     bool checkpointsEnabled = true;
     bool autoSaveEnabled = true;
@@ -73,7 +73,7 @@ private:
     ParkourControlSettings m_parkourSettings;
     GameplaySettings m_gameplaySettings;
 
-    // Video settings (stored in ConfigManager)
+    // Video settings indices
     int m_currentResolutionIndex = 1; // Default to 1280x720
     int m_currentAspectRatioIndex = 0; // Default to 16:9
     int m_currentDisplayModeIndex = 0; // Default to Windowed

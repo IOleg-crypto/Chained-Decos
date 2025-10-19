@@ -77,22 +77,23 @@ public:
     // Getters
     const MapInfo* GetSelectedMap() const;
     std::string GetSelectedMapName() const;
-    const std::vector<MapInfo>& GetAvailableMaps() const { return availableMaps; }
-    int GetSelectedMapIndex() const { return selectedMap; }
-    int GetCurrentPage() const { return currentPage; }
-    int GetTotalPages() const { return totalPages; }
-    int GetJsonMapsCount() const { return jsonMapsCount; }
+    const std::vector<MapInfo>& GetAvailableMaps() const { return m_availableMaps; }
+    int GetSelectedMapIndex() const { return m_selectedMap; }
+    int GetCurrentPage() const { return m_currentPage; }
+    int GetTotalPages() const { return m_totalPages; }
+    int GetJsonMapsCount() const { return m_jsonMapsCount; }
 
     // Rendering
     void RenderMapSelection() const;
+    void RenderMapSelectionImGui() const;
 
     // Utility
-    bool HasMaps() const { return !availableMaps.empty(); }
-    void ClearMaps() { availableMaps.clear(); selectedMap = 0; currentPage = 0; UpdatePagination(); }
+    bool HasMaps() const { return !m_availableMaps.empty(); }
+    void ClearMaps() { m_availableMaps.clear(); m_selectedMap = 0; m_currentPage = 0; UpdatePagination(); }
 
 private:
     // Validation helpers
-    bool IsValidMapIndex(int index) const { return index >= 0 && index < static_cast<int>(availableMaps.size()); }
+    bool IsValidMapIndex(int index) const { return index >= 0 && index < static_cast<int>(m_availableMaps.size()); }
     void ValidateSelection();
 
     // Internal scanning helpers

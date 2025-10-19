@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
 project(ChainedDecos VERSION 1.0.0 LANGUAGES CXX C)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_STANDARD 14)
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 # Build configuration options
 option(FAST_CONFIG "Reduce CMake configure time" ON)

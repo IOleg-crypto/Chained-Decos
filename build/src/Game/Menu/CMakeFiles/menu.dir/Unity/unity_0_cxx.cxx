@@ -7,8 +7,5 @@
 #include "D:/gitnext/Chained Decos/src/Game/Menu/MenuCore.cpp"
 
 /* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */
-#include "D:/gitnext/Chained Decos/src/Game/Menu/MenuInput.cpp"
-
-/* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */
-#include "D:/gitnext/Chained Decos/src/Game/Menu/MenuMapSelection.cpp"
+#include "D:/gitnext/Chained Decos/src/Game/Menu/SettingsManager.cpp"
 

@@ -1,6 +1,8 @@
 #include "SettingsManager.h"
+#include "MenuConstants.h"
 #include <raylib.h>
 #include <iostream>
+#include <algorithm>
 
 SettingsManager::SettingsManager() {
     LoadSettings();
@@ -9,9 +11,9 @@ SettingsManager::SettingsManager() {
 void SettingsManager::LoadSettings() {
     // Load configuration from file (try current directory first, then build directory)
     try {
-        if (!config.LoadFromFile("game.cfg")) {
+        if (!m_config.LoadFromFile("game.cfg")) {
             // Try loading from build directory if not found in current directory
-            if (!config.LoadFromFile("build/game.cfg")) {
+            if (!m_config.LoadFromFile("build/game.cfg")) {
                 TraceLog(LOG_WARNING, "SettingsManager::LoadSettings() - Could not load game.cfg, will use default settings");
             }
         }
@@ -25,27 +27,29 @@ void SettingsManager::LoadSettings() {
 
     // Apply loaded settings to the game
     int width, height;
-    config.GetResolution(width, height);
+    m_config.GetResolution(width, height);
     SetWindowSize(width, height);
 
-    if (config.IsFullscreen()) {
+    if (m_config.IsFullscreen()) {
         SetWindowState(FLAG_FULLSCREEN_MODE);
     }
 
-    if (config.IsVSync()) {
+    if (m_config.IsVSync()) {
         SetWindowState(FLAG_VSYNC_HINT);
     }
 
     // Load audio settings
     m_audioSettings.masterVolume = m_config.GetMasterVolume();
     m_audioSettings.musicVolume = m_config.GetMusicVolume();
-    m_audioSettings.sfxVolume = m_config.GetSfxVolume();
-    m_audioSettings.muted = m_config.IsAudioMuted();
+    m_audioSettings.sfxVolume = m_config.GetSFXVolume();
+    // Note: ConfigManager doesn't have IsAudioMuted, using default for now
+    m_audioSettings.muted = false;
 
     // Load control settings
     m_controlSettings.mouseSensitivity = m_config.GetMouseSensitivity();
-    m_controlSettings.invertYAxis = m_config.IsYAxisInverted();
-    m_controlSettings.controllerSupport = m_config.IsControllerSupportEnabled();
+    m_controlSettings.invertYAxis = m_config.GetInvertY();
+    // Note: ConfigManager doesn't have IsControllerSupportEnabled, using default for now
+    m_controlSettings.controllerSupport = true;
 
     // Load parkour-specific settings
     m_parkourSettings.wallRunSensitivity = m_config.GetWallRunSensitivity();
@@ -69,54 +73,52 @@ void SettingsManager::LoadSettings() {
     // Load video settings indices based on current configuration
     // This is a simplified approach - in a real implementation you'd want to match
     // the current resolution to the available options
-    currentResolutionIndex = 1; // Default to 1280x720
-    currentAspectRatioIndex = 0; // Default to 16:9
-    currentDisplayModeIndex = config.IsFullscreen() ? 1 : 0;
-    currentVSyncIndex = config.IsVSync() ? 1 : 0;
-    currentFpsIndex = 1; // Default to 60 FPS
+    m_currentResolutionIndex = 1; // Default to 1280x720
+    m_currentAspectRatioIndex = 0; // Default to 16:9
+    m_currentDisplayModeIndex = m_config.IsFullscreen() ? 1 : 0;
+    m_currentVSyncIndex = m_config.IsVSync() ? 1 : 0;
+    m_currentFpsIndex = 1; // Default to 60 FPS
 }
 
 void SettingsManager::SaveSettings() {
     try {
         // Save current window settings
-        config.SetResolution(GetScreenWidth(), GetScreenHeight());
-        config.SetFullscreen(IsWindowFullscreen());
-        config.SetVSync(IsWindowState(FLAG_VSYNC_HINT));
+        m_config.SetResolution(GetScreenWidth(), GetScreenHeight());
+        m_config.SetFullscreen(IsWindowFullscreen());
+        m_config.SetVSync(IsWindowState(FLAG_VSYNC_HINT));
 
         // Save audio settings
-        config.SetMasterVolume(audioSettings.masterVolume);
-        config.SetMusicVolume(audioSettings.musicVolume);
-        config.SetSfxVolume(audioSettings.sfxVolume);
-        config.SetAudioMuted(audioSettings.muted);
+        m_config.SetMasterVolume(m_audioSettings.masterVolume);
+        m_config.SetMusicVolume(m_audioSettings.musicVolume);
+        m_config.SetSFXVolume(m_audioSettings.sfxVolume);
 
         // Save control settings
-        config.SetMouseSensitivity(controlSettings.mouseSensitivity);
-        config.SetYAxisInverted(controlSettings.invertYAxis);
-        config.SetControllerSupportEnabled(controlSettings.controllerSupport);
+        m_config.SetMouseSensitivity(m_controlSettings.mouseSensitivity);
+        m_config.SetInvertY(m_controlSettings.invertYAxis);
 
         // Save parkour-specific settings
-        config.SetWallRunSensitivity(parkourSettings.wallRunSensitivity);
-        config.SetJumpTiming(parkourSettings.jumpTiming);
-        config.SetSlideControl(parkourSettings.slideControl);
-        config.SetGrappleSensitivity(parkourSettings.grappleSensitivity);
+        m_config.SetWallRunSensitivity(m_parkourSettings.wallRunSensitivity);
+        m_config.SetJumpTiming(m_parkourSettings.jumpTiming);
+        m_config.SetSlideControl(m_parkourSettings.slideControl);
+        m_config.SetGrappleSensitivity(m_parkourSettings.grappleSensitivity);
 
         // Save gameplay settings
-        config.SetDifficultyLevel(gameplaySettings.difficultyLevel);
-        config.SetTimerEnabled(gameplaySettings.timerEnabled);
-        config.SetCheckpointsEnabled(gameplaySettings.checkpointsEnabled);
-        config.SetAutoSaveEnabled(gameplaySettings.autoSaveEnabled);
-        config.SetSpeedrunMode(gameplaySettings.speedrunMode);
+        m_config.SetDifficultyLevel(m_gameplaySettings.difficultyLevel);
+        m_config.SetTimerEnabled(m_gameplaySettings.timerEnabled);
+        m_config.SetCheckpointsEnabled(m_gameplaySettings.checkpointsEnabled);
+        m_config.SetAutoSaveEnabled(m_gameplaySettings.autoSaveEnabled);
+        m_config.SetSpeedrunMode(m_gameplaySettings.speedrunMode);
 
-        config.SetWallRunEnabled(gameplaySettings.wallRunEnabled);
-        config.SetDoubleJumpEnabled(gameplaySettings.doubleJumpEnabled);
-        config.SetSlideEnabled(gameplaySettings.slideEnabled);
-        config.SetGrappleEnabled(gameplaySettings.grappleEnabled);
-        config.SetSlowMotionOnTrick(gameplaySettings.slowMotionOnTrick);
+        m_config.SetWallRunEnabled(m_gameplaySettings.wallRunEnabled);
+        m_config.SetDoubleJumpEnabled(m_gameplaySettings.doubleJumpEnabled);
+        m_config.SetSlideEnabled(m_gameplaySettings.slideEnabled);
+        m_config.SetGrappleEnabled(m_gameplaySettings.grappleEnabled);
+        m_config.SetSlowMotionOnTrick(m_gameplaySettings.slowMotionOnTrick);
 
         // Save to file (try current directory first, then build directory)
-        if (!config.SaveToFile("game.cfg")) {
+        if (!m_config.SaveToFile("game.cfg")) {
             // Try saving to build directory if not found in current directory
-            if (!config.SaveToFile("build/game.cfg")) {
+            if (!m_config.SaveToFile("build/game.cfg")) {
                 TraceLog(LOG_WARNING, "SettingsManager::SaveSettings() - Could not save game.cfg");
             } else {
                 TraceLog(LOG_INFO, "SettingsManager::SaveSettings() - Settings saved to build/game.cfg");
@@ -133,9 +135,9 @@ void SettingsManager::SaveSettings() {
 
 void SettingsManager::ApplyVideoSettings() {
     // Get resolution from options
-    auto& resolutionOptions = RESOLUTION_OPTIONS;
-    if (currentResolutionIndex >= 0 && currentResolutionIndex < static_cast<int>(resolutionOptions.size())) {
-        auto resolution = resolutionOptions[currentResolutionIndex];
+    auto& resolutionOptions = MenuConstants::RESOLUTION_OPTIONS;
+    if (m_currentResolutionIndex >= 0 && m_currentResolutionIndex < static_cast<int>(resolutionOptions.size())) {
+        auto resolution = resolutionOptions[m_currentResolutionIndex];
         // Parse resolution string (e.g., "1920x1080")
         size_t xPos = resolution.find('x');
         if (xPos != std::string::npos) {
@@ -146,25 +148,25 @@ void SettingsManager::ApplyVideoSettings() {
     }
 
     // Apply fullscreen mode
-    if (currentDisplayModeIndex == 1) { // Fullscreen
+    if (m_currentDisplayModeIndex == 1) { // Fullscreen
         SetWindowState(FLAG_FULLSCREEN_MODE);
-    } else if (currentDisplayModeIndex == 2) { // Borderless
+    } else if (m_currentDisplayModeIndex == 2) { // Borderless
         // Borderless implementation would go here
     } else { // Windowed
         ClearWindowState(FLAG_FULLSCREEN_MODE);
     }
 
     // Apply VSync
-    if (currentVSyncIndex == 1) {
+    if (m_currentVSyncIndex == 1) {
         SetWindowState(FLAG_VSYNC_HINT);
     } else {
         ClearWindowState(FLAG_VSYNC_HINT);
     }
 
     // Apply FPS target
-    auto& fpsOptions = FPS_OPTIONS;
-    if (currentFpsIndex >= 0 && currentFpsIndex < static_cast<int>(fpsOptions.size())) {
-        auto fps = fpsOptions[currentFpsIndex];
+    auto& fpsOptions = MenuConstants::FPS_OPTIONS;
+    if (m_currentFpsIndex >= 0 && m_currentFpsIndex < static_cast<int>(fpsOptions.size())) {
+        auto fps = fpsOptions[m_currentFpsIndex];
         if (fps == "Unlimited") {
             SetTargetFPS(0);
         } else {
@@ -181,111 +183,111 @@ void SettingsManager::ApplyAudioSettings() {
 
 // Audio settings methods
 void SettingsManager::SetMasterVolume(float volume) {
-    audioSettings.masterVolume = std::max(0.0f, std::min(1.0f, volume));
+    m_audioSettings.masterVolume = std::max(0.0f, std::min(1.0f, volume));
 }
 
 void SettingsManager::SetMusicVolume(float volume) {
-    audioSettings.musicVolume = std::max(0.0f, std::min(1.0f, volume));
+    m_audioSettings.musicVolume = std::max(0.0f, std::min(1.0f, volume));
 }
 
 void SettingsManager::SetSfxVolume(float volume) {
-    audioSettings.sfxVolume = std::max(0.0f, std::min(1.0f, volume));
+    m_audioSettings.sfxVolume = std::max(0.0f, std::min(1.0f, volume));
 }
 
 void SettingsManager::SetMuted(bool muted) {
-    audioSettings.muted = muted;
+    m_audioSettings.muted = muted;
 }
 
 // Control settings methods
 void SettingsManager::SetMouseSensitivity(float sensitivity) {
-    controlSettings.mouseSensitivity = std::max(0.1f, std::min(5.0f, sensitivity));
+    m_controlSettings.mouseSensitivity = std::max(0.1f, std::min(5.0f, sensitivity));
 }
 
 void SettingsManager::SetInvertYAxis(bool invert) {
-    controlSettings.invertYAxis = invert;
+    m_controlSettings.invertYAxis = invert;
 }
 
 void SettingsManager::SetControllerSupport(bool enabled) {
-    controlSettings.controllerSupport = enabled;
+    m_controlSettings.controllerSupport = enabled;
 }
 
 // Parkour control settings methods
 void SettingsManager::SetWallRunSensitivity(float sensitivity) {
-    parkourSettings.wallRunSensitivity = std::max(0.1f, std::min(5.0f, sensitivity));
+    m_parkourSettings.wallRunSensitivity = std::max(0.1f, std::min(5.0f, sensitivity));
 }
 
 void SettingsManager::SetJumpTiming(float timing) {
-    parkourSettings.jumpTiming = std::max(0.1f, std::min(5.0f, timing));
+    m_parkourSettings.jumpTiming = std::max(0.1f, std::min(5.0f, timing));
 }
 
 void SettingsManager::SetSlideControl(float control) {
-    parkourSettings.slideControl = std::max(0.1f, std::min(5.0f, control));
+    m_parkourSettings.slideControl = std::max(0.1f, std::min(5.0f, control));
 }
 
 void SettingsManager::SetGrappleSensitivity(float sensitivity) {
-    parkourSettings.grappleSensitivity = std::max(0.1f, std::min(5.0f, sensitivity));
+    m_parkourSettings.grappleSensitivity = std::max(0.1f, std::min(5.0f, sensitivity));
 }
 
 // Gameplay settings methods
 void SettingsManager::SetDifficultyLevel(int level) {
-    gameplaySettings.difficultyLevel = std::max(0, std::min(2, level));
+    m_gameplaySettings.difficultyLevel = std::max(0, std::min(2, level));
 }
 
 void SettingsManager::SetTimerEnabled(bool enabled) {
-    gameplaySettings.timerEnabled = enabled;
+    m_gameplaySettings.timerEnabled = enabled;
 }
 
 void SettingsManager::SetCheckpointsEnabled(bool enabled) {
-    gameplaySettings.checkpointsEnabled = enabled;
+    m_gameplaySettings.checkpointsEnabled = enabled;
 }
 
 void SettingsManager::SetAutoSaveEnabled(bool enabled) {
-    gameplaySettings.autoSaveEnabled = enabled;
+    m_gameplaySettings.autoSaveEnabled = enabled;
 }
 
 void SettingsManager::SetSpeedrunMode(bool enabled) {
-    gameplaySettings.speedrunMode = enabled;
+    m_gameplaySettings.speedrunMode = enabled;
 }
 
 void SettingsManager::SetWallRunEnabled(bool enabled) {
-    gameplaySettings.wallRunEnabled = enabled;
+    m_gameplaySettings.wallRunEnabled = enabled;
 }
 
 void SettingsManager::SetDoubleJumpEnabled(bool enabled) {
-    gameplaySettings.doubleJumpEnabled = enabled;
+    m_gameplaySettings.doubleJumpEnabled = enabled;
 }
 
 void SettingsManager::SetSlideEnabled(bool enabled) {
-    gameplaySettings.slideEnabled = enabled;
+    m_gameplaySettings.slideEnabled = enabled;
 }
 
 void SettingsManager::SetGrappleEnabled(bool enabled) {
-    gameplaySettings.grappleEnabled = enabled;
+    m_gameplaySettings.grappleEnabled = enabled;
 }
 
 void SettingsManager::SetSlowMotionOnTrick(bool enabled) {
-    gameplaySettings.slowMotionOnTrick = enabled;
+    m_gameplaySettings.slowMotionOnTrick = enabled;
 }
 
 // Video settings methods
 void SettingsManager::SetResolutionIndex(int index) {
-    currentResolutionIndex = std::max(0, std::min(static_cast<int>(RESOLUTION_OPTIONS.size()) - 1, index));
+    m_currentResolutionIndex = std::max(0, std::min(static_cast<int>(MenuConstants::RESOLUTION_OPTIONS.size()) - 1, index));
 }
 
 void SettingsManager::SetAspectRatioIndex(int index) {
-    currentAspectRatioIndex = std::max(0, std::min(static_cast<int>(ASPECT_RATIO_OPTIONS.size()) - 1, index));
+    m_currentAspectRatioIndex = std::max(0, std::min(static_cast<int>(MenuConstants::ASPECT_RATIO_OPTIONS.size()) - 1, index));
 }
 
 void SettingsManager::SetDisplayModeIndex(int index) {
-    currentDisplayModeIndex = std::max(0, std::min(static_cast<int>(DISPLAY_MODE_OPTIONS.size()) - 1, index));
+    m_currentDisplayModeIndex = std::max(0, std::min(static_cast<int>(MenuConstants::DISPLAY_MODE_OPTIONS.size()) - 1, index));
 }
 
 void SettingsManager::SetVSyncIndex(int index) {
-    currentVSyncIndex = std::max(0, std::min(static_cast<int>(VSYNC_OPTIONS.size()) - 1, index));
+    m_currentVSyncIndex = std::max(0, std::min(static_cast<int>(MenuConstants::VSYNC_OPTIONS.size()) - 1, index));
 }
 
 void SettingsManager::SetFpsIndex(int index) {
-    currentFpsIndex = std::max(0, std::min(static_cast<int>(FPS_OPTIONS.size()) - 1, index));
+    m_currentFpsIndex = std::max(0, std::min(static_cast<int>(MenuConstants::FPS_OPTIONS.size()) - 1, index));
 }
 
 std::string SettingsManager::GetCurrentSettingValue(const std::string& settingName) const {
@@ -306,7 +308,7 @@ std::string SettingsManager::GetCurrentSettingValue(const std::string& settingNa
     } else if (settingName == "Grapple Sensitivity") {
         return std::to_string(static_cast<int>(m_parkourSettings.grappleSensitivity * 100));
     } else if (settingName == "Difficulty") {
-        auto& options = DIFFICULTY_OPTIONS;
+        auto& options = MenuConstants::DIFFICULTY_OPTIONS;
         if (m_gameplaySettings.difficultyLevel >= 0 && m_gameplaySettings.difficultyLevel < static_cast<int>(options.size())) {
             return options[m_gameplaySettings.difficultyLevel];
         }

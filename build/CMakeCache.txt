@@ -41,29 +41,27 @@ BUILD_TESTS:BOOL=ON
 CMAKE_ADDR2LINE:FILEPATH=C:/msys64/mingw64/bin/addr2line.exe
 
 //Path to a program.
-CMAKE_AR:FILEPATH=C:/LLVM/bin/llvm-ar.exe
+CMAKE_AR:FILEPATH=C:/msys64/mingw64/bin/ar.exe
 
-//Choose the type of build, options are: None Debug Release RelWithDebInfo
-// MinSizeRel ...
+//No help, variable specified on the command line.
 CMAKE_BUILD_TYPE:STRING=Debug
 
 //No help, variable specified on the command line.
-CMAKE_CXX_COMPILER:FILEPATH=C:/LLVM/bin/clang++.exe
+CMAKE_CXX_COMPILER:FILEPATH=C:/msys64/mingw64/bin/g++.exe
 
-//LLVM archiver
-CMAKE_CXX_COMPILER_AR:FILEPATH=C:/LLVM/bin/llvm-ar.exe
+//A wrapper around 'ar' adding the appropriate '--plugin' option
+// for the GCC compiler
+CMAKE_CXX_COMPILER_AR:FILEPATH=C:/msys64/mingw64/bin/gcc-ar.exe
 
-//`clang-scan-deps` dependency scanner
-CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS:FILEPATH=C:/LLVM/bin/clang-scan-deps.exe
-
-//Generate index for LLVM archive
-CMAKE_CXX_COMPILER_RANLIB:FILEPATH=C:/LLVM/bin/llvm-ranlib.exe
+//A wrapper around 'ranlib' adding the appropriate '--plugin' option
+// for the GCC compiler
+CMAKE_CXX_COMPILER_RANLIB:FILEPATH=C:/msys64/mingw64/bin/gcc-ranlib.exe
 
 //Flags used by the CXX compiler during all build types.
 CMAKE_CXX_FLAGS:STRING=
 
 //Flags used by the CXX compiler during DEBUG builds.
-CMAKE_CXX_FLAGS_DEBUG:STRING=-O0
+CMAKE_CXX_FLAGS_DEBUG:STRING=-g
 
 //Flags used by the CXX compiler during MINSIZEREL builds.
 CMAKE_CXX_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG
@@ -72,28 +70,27 @@ CMAKE_CXX_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG
 CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 
 //Flags used by the CXX compiler during RELWITHDEBINFO builds.
-CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -DNDEBUG
+CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
 
 //Libraries linked by default with all C++ applications.
-CMAKE_CXX_STANDARD_LIBRARIES:STRING=-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 -loldnames
+CMAKE_CXX_STANDARD_LIBRARIES:STRING=-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
 
 //No help, variable specified on the command line.
-CMAKE_C_COMPILER:FILEPATH=C:/LLVM/bin/clang.exe
+CMAKE_C_COMPILER:FILEPATH=C:/msys64/mingw64/bin/gcc.exe
 
-//LLVM archiver
-CMAKE_C_COMPILER_AR:FILEPATH=C:/LLVM/bin/llvm-ar.exe
+//A wrapper around 'ar' adding the appropriate '--plugin' option
+// for the GCC compiler
+CMAKE_C_COMPILER_AR:FILEPATH=C:/msys64/mingw64/bin/gcc-ar.exe
 
-//`clang-scan-deps` dependency scanner
-CMAKE_C_COMPILER_CLANG_SCAN_DEPS:FILEPATH=C:/LLVM/bin/clang-scan-deps.exe
-
-//Generate index for LLVM archive
-CMAKE_C_COMPILER_RANLIB:FILEPATH=C:/LLVM/bin/llvm-ranlib.exe
+//A wrapper around 'ranlib' adding the appropriate '--plugin' option
+// for the GCC compiler
+CMAKE_C_COMPILER_RANLIB:FILEPATH=C:/msys64/mingw64/bin/gcc-ranlib.exe
 
 //Flags used by the C compiler during all build types.
 CMAKE_C_FLAGS:STRING=
 
 //Flags used by the C compiler during DEBUG builds.
-CMAKE_C_FLAGS_DEBUG:STRING=-O0
+CMAKE_C_FLAGS_DEBUG:STRING=-g
 
 //Flags used by the C compiler during MINSIZEREL builds.
 CMAKE_C_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG
@@ -102,13 +99,13 @@ CMAKE_C_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG
 CMAKE_C_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 
 //Flags used by the C compiler during RELWITHDEBINFO builds.
-CMAKE_C_FLAGS_RELWITHDEBINFO:STRING=-O2 -DNDEBUG
+CMAKE_C_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
 
 //Libraries linked by default with all C applications.
-CMAKE_C_STANDARD_LIBRARIES:STRING=-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 -loldnames
+CMAKE_C_STANDARD_LIBRARIES:STRING=-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
 
 //Path to a program.
-CMAKE_DLLTOOL:FILEPATH=C:/LLVM/bin/llvm-dlltool.exe
+CMAKE_DLLTOOL:FILEPATH=C:/msys64/mingw64/bin/dlltool.exe
 
 //Flags used by the linker during all build types.
 CMAKE_EXE_LINKER_FLAGS:STRING=
@@ -133,6 +130,9 @@ CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE
 
 //Value Computed by CMake.
 CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=D:/gitnext/Chained Decos/build/CMakeFiles/pkgRedirects
+
+//Convert GNU import libraries to MS format (requires Visual Studio)
+CMAKE_GNUtoMS:BOOL=OFF
 
 //User executables (bin)
 CMAKE_INSTALL_BINDIR:PATH=bin
@@ -186,7 +186,7 @@ CMAKE_INSTALL_SHAREDSTATEDIR:PATH=com
 CMAKE_INSTALL_SYSCONFDIR:PATH=etc
 
 //Path to a program.
-CMAKE_LINKER:FILEPATH=C:/LLVM/bin/lld-link.exe
+CMAKE_LINKER:FILEPATH=C:/msys64/mingw64/bin/ld.exe
 
 //Program used to build from build.ninja files.
 CMAKE_MAKE_PROGRAM:FILEPATH=C:/Users/olegg/AppData/Local/Microsoft/WinGet/Packages/Ninja-build.Ninja_Microsoft.Winget.Source_8wekyb3d8bbwe/ninja.exe
@@ -212,13 +212,13 @@ CMAKE_MODULE_LINKER_FLAGS_RELEASE:STRING=
 CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 
 //Path to a program.
-CMAKE_NM:FILEPATH=C:/LLVM/bin/llvm-nm.exe
+CMAKE_NM:FILEPATH=C:/msys64/mingw64/bin/nm.exe
 
 //Path to a program.
-CMAKE_OBJCOPY:FILEPATH=C:/LLVM/bin/llvm-objcopy.exe
+CMAKE_OBJCOPY:FILEPATH=C:/msys64/mingw64/bin/objcopy.exe
 
 //Path to a program.
-CMAKE_OBJDUMP:FILEPATH=C:/LLVM/bin/llvm-objdump.exe
+CMAKE_OBJDUMP:FILEPATH=C:/msys64/mingw64/bin/objdump.exe
 
 //Value Computed by CMake
 CMAKE_PROJECT_COMPAT_VERSION:STATIC=
@@ -248,10 +248,10 @@ CMAKE_PROJECT_VERSION_PATCH:STATIC=0
 CMAKE_PROJECT_VERSION_TWEAK:STATIC=
 
 //Path to a program.
-CMAKE_RANLIB:FILEPATH=C:/LLVM/bin/llvm-ranlib.exe
+CMAKE_RANLIB:FILEPATH=C:/msys64/mingw64/bin/ranlib.exe
 
 //RC compiler
-CMAKE_RC_COMPILER:FILEPATH=C:/LLVM/bin/llvm-rc.exe
+CMAKE_RC_COMPILER:FILEPATH=C:/msys64/mingw64/bin/windres.exe
 
 //Flags for Windows Resource Compiler during all build types.
 CMAKE_RC_FLAGS:STRING=
@@ -319,7 +319,7 @@ CMAKE_STATIC_LINKER_FLAGS_RELEASE:STRING=
 CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 
 //Path to a program.
-CMAKE_STRIP:FILEPATH=C:/LLVM/bin/llvm-strip.exe
+CMAKE_STRIP:FILEPATH=C:/msys64/mingw64/bin/strip.exe
 
 //Path to a program.
 CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
@@ -631,8 +631,6 @@ CMAKE_CTEST_COMMAND:INTERNAL=C:/Program Files/CMake/bin/ctest.exe
 CMAKE_CXX_COMPILER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_COMPILER_AR
 CMAKE_CXX_COMPILER_AR-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS
-CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_COMPILER_RANLIB
 CMAKE_CXX_COMPILER_RANLIB-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_FLAGS
@@ -651,8 +649,6 @@ CMAKE_CXX_STANDARD_LIBRARIES-ADVANCED:INTERNAL=1
 CMAKE_C_COMPILER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_C_COMPILER_AR
 CMAKE_C_COMPILER_AR-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: CMAKE_C_COMPILER_CLANG_SCAN_DEPS
-CMAKE_C_COMPILER_CLANG_SCAN_DEPS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_C_COMPILER_RANLIB
 CMAKE_C_COMPILER_RANLIB-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_C_FLAGS
@@ -698,11 +694,7 @@ CMAKE_GENERATOR_PLATFORM:INTERNAL=
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
 //Test CMAKE_HAVE_LIBC_PTHREAD
-CMAKE_HAVE_LIBC_PTHREAD:INTERNAL=
-//Have library pthreads
-CMAKE_HAVE_PTHREADS_CREATE:INTERNAL=
-//Have library pthread
-CMAKE_HAVE_PTHREAD_CREATE:INTERNAL=
+CMAKE_HAVE_LIBC_PTHREAD:INTERNAL=1
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=D:/gitnext/Chained Decos
@@ -819,6 +811,8 @@ COMPILER_HAS_THOSE_TOGGLES:INTERNAL=1
 CPACK_SOURCE_7Z-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CPACK_SOURCE_ZIP
 CPACK_SOURCE_ZIP-ADVANCED:INTERNAL=1
+//Have include dinput.h
+DINPUT_H_FOUND:INTERNAL=1
 //Details about finding Python3
 FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[C:/Users/olegg/AppData/Local/Python/pythoncore-3.14-64/python.exe][found components: Interpreter ][v3.14.0()]
 //Details about finding Threads
@@ -847,10 +841,10 @@ SUPPORT_FILEFORMAT_BMP:INTERNAL=OFF
 SUPPORT_FILEFORMAT_JPG:INTERNAL=OFF
 SUPPORT_FILEFORMAT_PNG:INTERNAL=ON
 SUPPORT_MODULE_RTEXTURES:INTERNAL=ON
-//Result of TRY_COMPILE
-THREADS_HAVE_PTHREAD_ARG:INTERNAL=FALSE
 //STRINGS property for variable: USE_EXTERNAL_GLFW
 USE_EXTERNAL_GLFW-STRINGS:INTERNAL=OFF;IF_POSSIBLE;ON
+//Have include xinput.h
+XINPUT_H_FOUND:INTERNAL=1
 //CMAKE_INSTALL_PREFIX during last run
 _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=D:/gitnext/Chained Decos/build/install
 //Compiler reason failure

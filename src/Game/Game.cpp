@@ -73,7 +73,7 @@ void Game::Init()
     TraceLog(LOG_INFO, "Game::Init() - Initializing game components...");
 
     // Initialize menu with engine reference (can be null for testing)
-    m_menu.GetEngine(m_engine);
+    m_menu.Initialize(m_engine);
 
     // Kernel boot and service registration
     Kernel &kernel = Kernel::GetInstance();
@@ -137,7 +137,8 @@ void Game::Update()
     {
         m_menu.ToggleConsole();
     }
-    m_menu.HandleConsoleInput();
+    
+    // Console input is handled internally by the menu
 
 
     // Only process other input if console is not open and engine is available
@@ -208,8 +209,7 @@ void Game::Render()
         m_engine->GetRenderManager()->RenderDebugInfo(m_player, m_models, m_collisionManager);
     }
 
-    // Render console on top of everything
-    m_menu.RenderConsole();
+    // Console is rendered internally by the menu
 
     m_engine->GetRenderManager()->EndFrame();
     // Optional kernel render pass hook
@@ -646,7 +646,7 @@ void Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
     {
         // Use the new MapLoader to scan for models in the resources directory
         MapLoader mapLoader;
-        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+        std::string resourcesDir = "./resources";
         auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
         if (!allModels.empty())
@@ -1002,40 +1002,12 @@ void Game::UpdatePhysicsLogic()
 
 void Game::HandleMenuActions()
 {
-    switch (m_menu.GetAction())
+    MenuAction action = m_menu.ConsumeAction(); // Use ConsumeAction instead of GetAction
+    switch (action)
     {
     case MenuAction::SinglePlayer:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting singleplayer...");
         m_menu.SetGameInProgress(true);
-
-        // // Load test JSON map instead of default parkour map
-        // {
-        //     std::string testMapPath = "./src/Game/Resource/test.json";
-        //     TraceLog(LOG_INFO, "Loading test JSON map for singleplayer: %s", testMapPath.c_str());
-
-        //     // Determine which models are required for this map
-        //     std::vector<std::string> requiredModels = GetModelsRequiredForMap(testMapPath);
-        //     TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading %d models for singleplayer map", requiredModels.size());
-
-        //     // Load only the required models selectively
-        //     LoadGameModelsSelective(requiredModels);
-
-        //     // Initialize basic collision system first
-        //     InitCollisionsWithModels(requiredModels);
-
-        //     // Load the test map
-        //     try
-        //     {
-        //         LoadEditorMap(testMapPath);
-        //         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Test map loaded successfully");
-        //     }
-        //     catch (const std::exception& e)
-        //     {
-        //         TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load test map: %s", e.what());
-        //         TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without map");
-        //         return;
-        //     }
-        // }
 
         // Initialize player after map is loaded
         try
@@ -1051,7 +1023,6 @@ void Game::HandleMenuActions()
 
         ToggleMenu();
         m_isGameInitialized = true; // Mark game as initialized
-        m_menu.ResetAction();
         break;
 
     case MenuAction::ResumeGame:
@@ -1211,7 +1182,31 @@ void Game::HandleMenuActions()
 
             // Determine which models are required for this map
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Determining required models...");
-            std::vector<std::string> requiredModels = GetModelsRequiredForMap(selectedMapName);
+            std::vector<std::string> requiredModels;
+            
+            // For parkour map, load parkour models
+            if (selectedMapName.find("parkourmap") != std::string::npos)
+            {
+                requiredModels = {"plane", "player", "arena", "bridge", "stairs", "section_of_walls"};
+                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Parkour map detected, loading parkour models");
+            }
+            else if (selectedMapName.find("exported_map1") != std::string::npos)
+            {
+                requiredModels = {"plane", "player", "stairs_f"};
+                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Exported map detected, loading exported map models");
+            }
+            else if (selectedMapName.find("test") != std::string::npos)
+            {
+                requiredModels = {"plane", "player"};
+                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Test map detected, loading basic models");
+            }
+            else
+            {
+                // Try to get models from map file
+                requiredModels = GetModelsRequiredForMap(selectedMapName);
+                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading models from map file");
+            }
+            
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Required models:");
             for (const auto& model : requiredModels)
             {

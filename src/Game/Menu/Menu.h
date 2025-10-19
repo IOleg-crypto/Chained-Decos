@@ -4,53 +4,44 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <optional>
+#include <memory>
+#include <functional>
+#include "SettingsManager.h"
+#include "../Engine/Engine.h"
+#include <imgui.h>
 #include <raylib.h>
-#include <Config/ConfigManager.h>
-#include <Engine/Engine.h>
-#include <MapLoader.h>
+
+namespace raylib
+{
+struct Font;
+}
 
 enum class MenuAction : uint8_t
 {
     None,
     StartGame,
-    ResumeGame,        // New action to resume current game
+    ResumeGame,
     OpenOptions,
     OpenCredits,
     OpenVideoMode,
     OpenAudio,
     OpenControls,
     OpenGameplay,
-    OpenParkourControls,
-    OpenLanguage,
     OpenMods,
     BackToMainMenu,
     SinglePlayer,
     MultiPlayer,
-    OpenGameModeMenu,
     ExitGame,
-    StartGameWithMap,  // New action for starting game with selected map
-    AdjustMasterVolume, // Audio control actions
-    AdjustMusicVolume,
-    AdjustSFXVolume,
+    StartGameWithMap,
     ToggleMute,
-    OpenKeyBinding,     // Controls actions
-    AdjustMouseSensitivity,
+    OpenKeyBinding,
     ToggleInvertY,
     ToggleController,
-    AdjustDifficulty,   // Gameplay actions
-    ToggleTimer,
-    ToggleCheckpoints,
-    ToggleAutoSave,
-    ToggleSpeedrunMode,
-    AdjustWallRunSensitivity,  // Parkour control actions
-    AdjustJumpTiming,
-    AdjustSlideControl,
-    AdjustGrappleSensitivity,
-    ToggleWallRun,
-    ToggleDoubleJump,
-    ToggleSlide,
-    ToggleGrapple,
-    ToggleSlowMotionTrick
+    ApplyVideoSettings,
+    ApplyAudioSettings,
+    ApplyControlSettings,
+    ApplyGameplaySettings
 };
 
 enum class MenuState : uint8_t
@@ -63,7 +54,6 @@ enum class MenuState : uint8_t
     Audio,
     Controls,
     Gameplay,
-    ParkourControls,
     Credits,
     Mods,
     ConfirmExit
@@ -71,15 +61,10 @@ enum class MenuState : uint8_t
 
 struct MenuItem
 {
-    const char *label;
-    MenuAction action;
-};
-
-struct MenuOption
-{
     std::string label;
-    std::vector<std::string> values;
-    int selectedIndex = 0;
+    MenuAction action;
+    bool enabled = true;
+    std::string shortcut;
 };
 
 struct MapInfo
@@ -87,183 +72,177 @@ struct MapInfo
     std::string name;
     std::string displayName;
     std::string description;
-    std::string previewImage; // Path to preview image
-    Color themeColor;
+    std::string previewImage;
+    unsigned int themeColor;
     bool isAvailable;
-    bool isModelBased; // New field to distinguish model-based maps from JSON maps
-
-    // Constructor for easier initialization
-    MapInfo(const std::string& name, const std::string& displayName,
-            const std::string& description, const std::string& previewImage,
-            Color themeColor, bool isAvailable, bool isModelBased);
+    bool isModelBased;
 };
+
+struct VideoSettings
+{
+    int resolutionIndex = 1;
+    int displayModeIndex = 0;
+    int vsyncIndex = 1;
+    int fpsIndex = 1;
+};
+
 
 class Menu
 {
-private:
-    int m_selected = 0;
-    MenuAction m_action = MenuAction::None;
-    MenuState m_state = MenuState::Main;
-    mutable std::vector<float> m_buttonScales;
+public:
+    Menu();
+    ~Menu() = default;
 
-    const std::vector<MenuItem> *m_currentMenu = nullptr;
+    // Core functionality
+    void Initialize(Engine *engine);
+    void Update();
+    void Render();
 
-    // Pagination system
-    int m_mapsPerPage = 6;  // 2 rows × 3 columns
-    int m_currentPage = 0;
-    int m_totalPages = 0;
+    // State management
+    void SetGameInProgress(bool inProgress);
+    [[nodiscard]] bool IsGameInProgress() const;
+    [[nodiscard]] MenuAction ConsumeAction();
+    [[nodiscard]] MenuState GetState() const;
+    void SetState(MenuState state);
 
-    // Pagination helper methods
-    void UpdatePagination();
-    void NextPage();
-    void PreviousPage();
-    int GetStartMapIndex() const;
-    int GetEndMapIndex() const;
+    // Navigation methods
+    void ShowMainMenu();
+    void ShowOptionsMenu();
+    void ShowGameModeMenu();
+    void ShowMapSelection();
+    void ShowAudioMenu();
+    void ShowVideoMenu();
+    void ShowControlsMenu();
+    void ShowGameplayMenu();
+    void ShowCredits();
+    void ShowMods();
+    void ShowConfirmExit();
 
-    std::vector<MenuItem> m_mainMenu;
-    std::vector<MenuItem> m_optionsMenu;
-    std::vector<MenuItem> m_SetGameMode;
-    std::vector<MenuItem> m_audioMenu;
-    std::vector<MenuItem> m_controlsMenu;
-    std::vector<MenuItem> m_gameplayMenu;
-    std::vector<MenuItem> m_parkourControlsMenu;
-    std::vector<MenuOption> m_videoOptions;
-    std::vector<MenuOption> m_gameplayOptions;
-    std::vector<MenuOption> m_parkourControlsOptions;
+    // Settings management
+    void ApplyPendingSettings();
+    void SaveConfiguration();
+    void LoadConfiguration();
 
-    // Map selection data
-    std::vector<MapInfo> m_availableMaps;
-    int m_selectedMap = 0;
-    int m_jsonMapsCount = 0; // Track number of JSON maps for logging
+    // Map management
+    [[nodiscard]] std::optional<MapInfo> GetSelectedMap() const;
+    [[nodiscard]] std::string GetSelectedMapName() const;
+    void InitializeMaps();
 
-    // Game state tracking
-    bool m_gameInProgress = false;
+    // Action management
+    void SetAction(MenuAction action);
+    [[nodiscard]] MenuAction GetAction() const;
+    void ResetAction();
 
     // Console functionality
+    void ToggleConsole();
+    [[nodiscard]] bool IsConsoleOpen() const;
+
+    // Keyboard navigation
+    void HandleKeyboardNavigation();
+    void HandlePendingActions();
+
+private:
+    // ImGui rendering methods
+    void BeginFrame();
+    void EndFrame();
+    void SetupStyle();
+    void RenderMenuState();
+
+    // Menu screen renderers
+    void RenderMainMenu();
+    void RenderOptionsMenu();
+    void RenderGameModeMenu();
+    void RenderMapSelection();
+    void RenderAudioSettings();
+    void RenderVideoSettings();
+    void RenderControlSettings();
+    void RenderGameplaySettings();
+    void RenderCreditsScreen();
+    void RenderModsScreen();
+    void RenderConfirmExitDialog();
+
+    // Console functionality
+    void RenderConsoleOverlay();
+    void HandleConsoleInput();
+    void ExecuteConsoleCommand(const std::string &command);
+    void AddConsoleOutput(const std::string &text);
+
+    // Helper methods
+    void HandleAction(MenuAction action);
+    [[nodiscard]] const char *GetStateTitle(MenuState state) const;
+
+    // ImGui UI components
+    bool RenderActionButton(const char *label, MenuAction action, const ImVec2 &size = ImVec2(0, 0));
+    bool RenderBackButton(float width = 0.0f);
+    void RenderSectionHeader(const char *title, const char *subtitle = nullptr) const;
+    void RenderMenuHint(const char *text) const;
+    void RenderMapCard(int index, const MapInfo &map, bool selected, float cardWidth) const;
+
+    // Pagination methods
+    void EnsurePagination();
+    void GoToNextPage();
+    void GoToPreviousPage();
+    [[nodiscard]] int GetPageStartIndex() const;
+    [[nodiscard]] int GetPageEndIndex() const;
+    [[nodiscard]] int GetTotalPages() const;
+    void RenderPaginationControls();
+
+    // Settings synchronization
+    void SyncVideoSettingsToConfig();
+    void SyncAudioSettingsToConfig();
+    void SyncControlSettingsToConfig();
+    void SyncGameplaySettingsToConfig();
+
+    // Map management
+    void ScanForJsonMaps();
+    void UpdatePagination();
+
+    // Core state
+    Engine *m_engine = nullptr;
+    std::unique_ptr<SettingsManager> m_settingsManager;
+
+    // Menu state
+    MenuState m_state = MenuState::Main;
+    MenuAction m_pendingAction = MenuAction::None;
+    MenuAction m_action = MenuAction::None;
+    bool m_gameInProgress = false;
+
+    // Settings
+    VideoSettings m_videoSettings{};
+    AudioSettings m_audioSettings{};
+    ControlSettings m_controlSettings{};
+    GameplaySettings m_gameplaySettings{};
+
+    // Map management
+    std::vector<MapInfo> m_availableMaps;
+    int m_selectedMapIndex = 0;
+    int m_mapsPerPage = 6;
+    int m_currentPage = 0;
+    int m_totalPages = 0;
+    int m_jsonMapsCount = 0;
+
+    // Navigation state
+    int m_selected = 0;
+
+    // Console state
     bool m_consoleOpen = false;
     std::string m_consoleInput;
     std::vector<std::string> m_consoleHistory;
     std::vector<std::string> m_consoleOutput;
     size_t m_consoleHistoryIndex = 0;
-    const size_t MAX_CONSOLE_LINES = 100;
-    const size_t MAX_HISTORY_LINES = 50;
+    float m_consoleBlinkTimer = 0.0f;
 
-    Engine *m_engine = nullptr;
-    ConfigManager m_config;
-    Font m_font{}; // Alan Sans font for menu text
+    // UI state
+    bool m_showDemoWindow = false;
+    bool m_showStyleEditor = false;
+    ImGuiStyle m_customStyle{};
 
-    // Audio settings
-    float m_masterVolume = 1.0f;
-    float m_musicVolume = 0.7f;
-    float m_sfxVolume = 0.8f;
-    bool m_audioMuted = false;
-
-    // Control settings
-    float m_mouseSensitivity = 1.0f;
-    bool m_invertYAxis = false;
-    bool m_controllerSupport = true;
-
-    // Parkour-specific control settings
-    float m_wallRunSensitivity = 1.0f;
-    float m_jumpTiming = 1.0f;
-    float m_slideControl = 1.0f;
-    float m_grappleSensitivity = 1.0f;
-
-    // Gameplay settings
-    int m_difficultyLevel = 2;
-    bool m_timerEnabled = true;
-    bool m_checkpointsEnabled = true;
-    bool m_autoSaveEnabled = true;
-    bool m_speedrunMode = false;
-
-    // Advanced parkour settings
-    bool m_wallRunEnabled = true;
-    bool m_doubleJumpEnabled = false;
-    bool m_slideEnabled = true;
-    bool m_grappleEnabled = false;
-    bool m_slowMotionOnTrick = false;
-
-public:
-    Menu();
-
-    float Lerp(float a, float b, float t) const;
-    [[nodiscard]] MenuAction GetAction() const;
-    void RenderMenu();
-
-    void Update();
-    void Render();
-    void GetEngine(Engine *engine);
-    void ResetAction();
-    void RenderSettingsMenu() const;
-    void RenderCredits();
-    void RenderMods();
-    void ExecuteAction();
-    void HandleMouseSelection();
-    void HandleKeyboardNavigation();
-    void HandleVideoNavigation();
-    void HandleConfirmExit();
-    void HandleMapSelection();
-    void RenderConfirmExit();
-    void SetAction(MenuAction type);
-
-    // Map selection methods
-    void InitializeMaps();
-    void RenderMapSelection() const;
-    [[nodiscard]] const MapInfo* GetSelectedMap() const;
-    [[nodiscard]] std::string GetSelectedMapName() const;
-    void ScanForJsonMaps();
-
-    // Helper method for dynamic menu items
-    [[nodiscard]] const std::vector<MenuItem>* GetCurrentMenuWithDynamicItems() const;
-
-    // Console functionality
-    void ToggleConsole();
-    void HandleConsoleInput();
-    void RenderConsole() const;
-    void ExecuteConsoleCommand(const std::string& command);
-    void AddConsoleOutput(const std::string& text);
-    [[nodiscard]] bool IsConsoleOpen() const { return m_consoleOpen; }
-    [[nodiscard]] std::string GetCurrentSettingValue(const std::string& settingName) const;
-
-    // Configuration management
-    void LoadSettings();
-    void SaveSettings();
-
-    // Game state management
-    void SetGameInProgress(bool inProgress);
-    [[nodiscard]] bool IsGameInProgress() const;
-
-    // Keyboard navigation handlers
-    void HandleMainMenuKeyboardNavigation();
-    void HandleVideoMenuKeyboardNavigation();
-    void HandleSimpleScreenKeyboardNavigation();
-    void HandleMapSelectionKeyboardNavigation();
-    void HandleConfirmExitKeyboardNavigation();
-
-    // Mouse selection handlers
-    void HandleMainMenuMouseSelection(Vector2 mousePos, bool clicked);
-    void HandleVideoMenuMouseSelection(Vector2 mousePos, bool clicked);
-    void HandleCreditsMouseSelection(Vector2 mousePos, bool clicked);
-    void HandleModsMouseSelection(Vector2 mousePos, bool clicked);
-    void HandleMapSelectionMouseSelection(Vector2 mousePos, bool clicked);
-    void HandleConfirmExitMouseSelection(Vector2 mousePos, bool clicked);
-    void HandleGameplayMouseSelection(Vector2 mousePos, bool clicked);
-
-    // New navigation and rendering functions for options-based menus
-    void HandleGameplayNavigation();
-    void RenderGameplayMenu();
-    void ApplyGameplayOption(MenuOption& opt);
-    std::string GetGameplaySettingValue(const std::string& settingName) const;
-
-    // Public interface for game integration
-    [[nodiscard]] bool IsVisible() const;
-
-private:
-    // Internal helper methods
-    void InitializeMenuSystem();
-    void HandleMenuNavigation();
-    void UpdateMenuDisplay();
-    void ValidateMenuState();
+    // Options vectors
+    std::vector<std::string> m_resolutionOptions;
+    std::vector<std::string> m_displayModeOptions;
+    std::vector<std::string> m_vsyncOptions;
+    std::vector<std::string> m_fpsOptions;
+    std::vector<std::string> m_difficultyOptions;
 };
 
 #endif // MENU_H

@@ -1,0 +1,319 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "src/Engine/Render/librender.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"add_compile_options",
+			"target_link_libraries",
+			"add_compile_definitions",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"src/Engine/Render/CMakeLists.txt",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 3,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 86,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 94,
+				"parent" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 14,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 127,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 271,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 126,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 125,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 232,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 130,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 8,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++20"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-O0"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-w"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 5,
+					"define" : "GRAPHICS_API_OPENGL_33"
+				},
+				{
+					"backtrace" : 6,
+					"define" : "NOMINMAX"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "PLATFORM_DESKTOP"
+				},
+				{
+					"backtrace" : 7,
+					"define" : "PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\""
+				},
+				{
+					"backtrace" : 8,
+					"define" : "WIN32_LEAN_AND_MEAN"
+				},
+				{
+					"backtrace" : 9,
+					"define" : "_CRT_SECURE_NO_WARNINGS"
+				},
+				{
+					"backtrace" : 10,
+					"define" : "_DEBUG"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "_WIN32_WINNT=0x0601"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 12,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Render"
+				},
+				{
+					"backtrace" : 12,
+					"path" : "D:/gitnext/Chained Decos/src/Engine"
+				},
+				{
+					"backtrace" : 12,
+					"path" : "D:/gitnext/Chained Decos/src"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/.deps/raylib-src/src"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/include/imgui"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/include/rlImGui"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Collision"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Model"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Game/Menu"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Config"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Input"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/World"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/CommandLineHandler"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Physics/src"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Game/Player"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/CameraController"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Kernel"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Audio"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Engine/Event"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "D:/gitnext/Chained Decos/src/Game/Map"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					5
+				],
+				"standard" : "20"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"id" : "menu::@508c1ec0f6a4eb8a79d5"
+		}
+	],
+	"id" : "render::@1c5ce05080cbaa0376c6",
+	"name" : "render",
+	"nameOnDisk" : "librender.a",
+	"paths" : 
+	{
+		"build" : "src/Engine/Render",
+		"source" : "src/Engine/Render"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"compileGroupIndex" : 0,
+			"path" : "build/src/Engine/Render/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Engine/Render/RenderManager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Engine/Render/RenderManager.h",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}
