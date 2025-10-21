@@ -453,6 +453,69 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
               m_collisionManager.GetColliders().size());
 }
 
+bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string>& requiredModels)
+{
+    TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Initializing collision system with %d required models...", requiredModels.size());
+
+    // Clear existing colliders if any
+    size_t previousColliderCount = m_collisionManager.GetColliders().size();
+    if (previousColliderCount > 0)
+    {
+        TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Clearing %zu existing colliders", previousColliderCount);
+        m_collisionManager.ClearColliders();
+    }
+
+    // Create ground collision first (only if no custom map)
+    if (m_gameMap.objects.empty())
+    {
+        TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - No custom map loaded, creating default ground");
+        Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
+        m_collisionManager.AddCollider(std::move(groundPlane));
+    }
+
+    // Initialize collision manager
+    m_collisionManager.Initialize();
+    
+    // Register collision service once initialized
+    Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(&m_collisionManager));
+
+    // Try to create model collisions, but don't fail if it doesn't work
+    TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Required models for collision generation: %d", requiredModels.size());
+    for (const auto& modelName : requiredModels)
+    {
+        TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Model required: %s", modelName.c_str());
+    }
+
+    // Try to create model collisions safely
+    try
+    {
+        m_collisionManager.CreateAutoCollisionsFromModelsSelective(m_models, requiredModels);
+        TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Model collisions created successfully");
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_WARNING, "Game::InitCollisionsWithModelsSafe() - Failed to create model collisions: %s", e.what());
+        TraceLog(LOG_WARNING, "Game::InitCollisionsWithModelsSafe() - Continuing with basic collision system");
+    }
+    catch (...)
+    {
+        TraceLog(LOG_WARNING, "Game::InitCollisionsWithModelsSafe() - Unknown error occurred during model collision creation");
+        TraceLog(LOG_WARNING, "Game::InitCollisionsWithModelsSafe() - Continuing with basic collision system");
+    }
+
+    // Reinitialize after adding all model colliders
+    m_collisionManager.Initialize();
+
+    // Initialize player collision
+    auto& playerCollision = m_player.GetCollisionMutable();
+    playerCollision.InitializeCollision();
+
+    TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Collision system initialized with %zu colliders.",
+              m_collisionManager.GetColliders().size());
+    
+    return true; // Always return true since we have at least basic collision
+}
+
 void Game::InitPlayer()
 {
     TraceLog(LOG_INFO, "Game::InitPlayer() - Initializing player...");
@@ -700,28 +763,156 @@ void Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
     }
 }
 
+void Game::LoadGameModelsSelectiveSafe(const std::vector<std::string>& modelNames)
+{
+    TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Loading selective models: %d models", modelNames.size());
+    m_models.SetCacheEnabled(true);
+    m_models.SetMaxCacheSize(50);
+    m_models.EnableLOD(false);
+    m_models.SetSelectiveMode(true);
+
+    try
+    {
+        // Use the MapLoader to scan for models in the resources directory (same as original function)
+        MapLoader mapLoader;
+        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+        auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+        if (!allModels.empty())
+        {
+            TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Found %d models in resources directory", allModels.size());
+
+            // Load only the models that are in the required list
+            for (const auto& modelInfo : allModels)
+            {
+                // Check if this model is in the required list
+                if (std::find(modelNames.begin(), modelNames.end(), modelInfo.name) != modelNames.end())
+                {
+                    TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Loading required model: %s from %s",
+                             modelInfo.name.c_str(), modelInfo.path.c_str());
+
+                    // Load the model using the existing model loading system
+                    m_models.LoadSingleModel(modelInfo.name, modelInfo.path, true);
+                }
+            }
+
+            m_models.PrintStatistics();
+            TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Selective models loaded successfully.");
+
+            // Validate that we have essential models
+            auto availableModels = m_models.GetAvailableModels();
+            bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
+
+            if (!hasPlayerModel)
+            {
+                TraceLog(LOG_WARNING, "Game::LoadGameModelsSelectiveSafe() - Player model not found, player may not render correctly");
+            }
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Game::LoadGameModelsSelectiveSafe() - No models found in resources directory");
+        }
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Game::LoadGameModelsSelectiveSafe() - Failed to load selective models: %s", e.what());
+        TraceLog(LOG_ERROR, "Game::LoadGameModelsSelectiveSafe() - Game may not function correctly without models");
+    }
+}
+
 ///
 /// @brief Maps object types to appropriate model names for selective loading
 /// @param objectType The MapObjectType enum value
+/// @param modelName The specific model name from the map object (if any)
 /// @return Model name if mapping exists, empty string otherwise
 ///
 std::string Game::GetModelNameForObjectType(int objectType, const std::string& modelName)
 {
-    // Handle MODEL type objects (type 4) and incorrectly exported MODEL objects (type 5)
-    // The map editor seems to be exporting MODEL objects as type 5 instead of type 4
-    if (objectType == 4 || objectType == 5) // MapObjectType::MODEL or incorrectly exported as LIGHT
+    // Cast to MapObjectType enum for better readability
+    MapObjectType type = static_cast<MapObjectType>(objectType);
+    
+    switch (type)
     {
-        // For MODEL type objects, return the actual model name if provided
-        if (!modelName.empty())
+        case MapObjectType::MODEL:
         {
-            return modelName;
+            // For MODEL type objects, return the actual model name if provided
+            if (!modelName.empty())
+            {
+                TraceLog(LOG_DEBUG, "Game::GetModelNameForObjectType() - MODEL object requires model: %s", modelName.c_str());
+                return modelName;
+            }
+            // Fallback: try to infer model from common naming patterns
+            TraceLog(LOG_WARNING, "Game::GetModelNameForObjectType() - MODEL object has no modelName specified");
+            return "";
         }
-        // For backward compatibility, return empty string if no model name provided
-        return "";
+        
+        case MapObjectType::LIGHT:
+        {
+            // Handle incorrectly exported MODEL objects as LIGHT type
+            // This is a known issue with the map editor
+            if (!modelName.empty())
+            {
+                TraceLog(LOG_DEBUG, "Game::GetModelNameForObjectType() - LIGHT object (likely MODEL) requires model: %s", modelName.c_str());
+                return modelName;
+            }
+            // LIGHT objects don't typically require 3D models for rendering
+            return "";
+        }
+        
+        case MapObjectType::CUBE:
+        {
+            // Cubes are rendered as primitives, no model needed
+            // But some maps might have custom cube models
+            if (!modelName.empty())
+            {
+                TraceLog(LOG_DEBUG, "Game::GetModelNameForObjectType() - CUBE object with custom model: %s", modelName.c_str());
+                return modelName;
+            }
+            return "";
+        }
+        
+        case MapObjectType::SPHERE:
+        {
+            // Spheres are rendered as primitives, no model needed
+            // But some maps might have custom sphere models
+            if (!modelName.empty())
+            {
+                TraceLog(LOG_DEBUG, "Game::GetModelNameForObjectType() - SPHERE object with custom model: %s", modelName.c_str());
+                return modelName;
+            }
+            return "";
+        }
+        
+        case MapObjectType::CYLINDER:
+        {
+            // Cylinders are rendered as primitives, no model needed
+            // But some maps might have custom cylinder models
+            if (!modelName.empty())
+            {
+                TraceLog(LOG_DEBUG, "Game::GetModelNameForObjectType() - CYLINDER object with custom model: %s", modelName.c_str());
+                return modelName;
+            }
+            return "";
+        }
+        
+        case MapObjectType::PLANE:
+        {
+            // Planes are rendered as primitives, no model needed
+            // But some maps might have custom plane models
+            if (!modelName.empty())
+            {
+                TraceLog(LOG_DEBUG, "Game::GetModelNameForObjectType() - PLANE object with custom model: %s", modelName.c_str());
+                return modelName;
+            }
+            return "";
+        }
+        
+        default:
+        {
+            TraceLog(LOG_WARNING, "Game::GetModelNameForObjectType() - Unknown object type: %d", objectType);
+            return "";
+        }
     }
-
-    // For non-MODEL types, return empty string as they don't require 3D models
-    return "";
 }
 
 std::vector<std::string> Game::GetModelsRequiredForMap(const std::string& mapIdentifier)
@@ -775,37 +966,39 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string& mapIde
                     {
                         for (const auto& object : j["objects"])
                         {
-                            // Check if this object references a model by modelName
+                            // Extract object type and model name
+                            int objectType = -1;
+                            std::string objectModelName = "";
+                            
+                            if (object.contains("type") && object["type"].is_number_integer())
+                            {
+                                objectType = object["type"].get<int>();
+                            }
+                            
                             if (object.contains("modelName") && object["modelName"].is_string())
                             {
-                                std::string modelName = object["modelName"].get<std::string>();
-                                if (!modelName.empty())
-                                {
-                                    // Check if this model is not already in the list
-                                    if (std::find(requiredModels.begin(), requiredModels.end(), modelName) == requiredModels.end())
-                                    {
-                                        requiredModels.push_back(modelName);
-                                        TraceLog(LOG_INFO, "Game::GetModelsRequiredForMap() - Found model requirement: %s", modelName.c_str());
-                                    }
-                                }
+                                objectModelName = object["modelName"].get<std::string>();
                             }
-                            // Also check object type and map to appropriate models for MODEL type objects
-                            else if (object.contains("type") && object["type"].is_number_integer())
+                            
+                            // Use our improved function to determine if this object needs a model
+                            std::string modelName = GetModelNameForObjectType(objectType, objectModelName);
+                            
+                            // Add model to requirements if found and not already in list
+                            if (!modelName.empty())
                             {
-                                int objectType = object["type"].get<int>();
-                                std::string objectModelName = "";
-                                if (object.contains("modelName") && object["modelName"].is_string())
-                                {
-                                    objectModelName = object["modelName"].get<std::string>();
-                                }
-
-                                std::string modelName = GetModelNameForObjectType(objectType, objectModelName);
-
-                                if (!modelName.empty() && std::find(requiredModels.begin(), requiredModels.end(), modelName) == requiredModels.end())
+                                if (std::find(requiredModels.begin(), requiredModels.end(), modelName) == requiredModels.end())
                                 {
                                     requiredModels.push_back(modelName);
-                                    TraceLog(LOG_INFO, "Game::GetModelsRequiredForMap() - Mapped type %d to model: %s", objectType, modelName.c_str());
+                                    TraceLog(LOG_INFO, "Game::GetModelsRequiredForMap() - Object type %d requires model: %s", objectType, modelName.c_str());
                                 }
+                                else
+                                {
+                                    TraceLog(LOG_DEBUG, "Game::GetModelsRequiredForMap() - Model %s already in requirements list", modelName.c_str());
+                                }
+                            }
+                            else if (objectType != -1)
+                            {
+                                TraceLog(LOG_DEBUG, "Game::GetModelsRequiredForMap() - Object type %d does not require a model", objectType);
                             }
                         }
                     }
@@ -940,6 +1133,13 @@ void Game::UpdatePlayerLogic()
     const ImGuiIO &io = ImGui::GetIO();
     if (io.WantCaptureMouse)
     {
+        // Still update camera rotation even when ImGui wants mouse capture
+        // This allows camera to work when menu is open or when hovering over UI
+        m_player.GetCameraController()->UpdateCameraRotation();
+        m_player.GetCameraController()->UpdateMouseRotation(m_player.GetCameraController()->GetCamera(),
+                                                           m_player.GetMovement()->GetPosition());
+        m_player.GetCameraController()->Update();
+        
         m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
         return;
     }
@@ -1039,17 +1239,13 @@ void Game::HandleMenuActions()
             LoadGameModelsSelective(requiredModels);
 
             // Initialize basic collision system first
-            try
+            if (!InitCollisionsWithModelsSafe(requiredModels))
             {
-                InitCollisionsWithModels(requiredModels);
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized for singleplayer");
-            }
-            catch (const std::exception& e)
-            {
-                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize basic collision system for singleplayer: %s", e.what());
+                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize basic collision system for singleplayer");
                 TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without collision system");
                 return;
             }
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized for singleplayer");
 
             // Load the default map
             try
@@ -1197,30 +1393,18 @@ void Game::HandleMenuActions()
 
             // Load only the required models selectively
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading selective models...");
-            try
-            {
-                LoadGameModelsSelective(requiredModels);
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Models loaded successfully");
-            }
-            catch (const std::exception& e)
-            {
-                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load models: %s", e.what());
-                TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Continuing with available models");
-            }
+            LoadGameModelsSelectiveSafe(requiredModels);
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Models loading completed");
 
             // Initialize basic collision system first
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing collision system...");
-            try
+            if (!InitCollisionsWithModelsSafe(requiredModels))
             {
-                InitCollisionsWithModels(requiredModels);
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized");
-            }
-            catch (const std::exception& e)
-            {
-                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize basic collision system: %s", e.what());
+                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize basic collision system");
                 TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without collision system");
                 return;
             }
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized");
 
             // Load the selected map
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading selected map...");
