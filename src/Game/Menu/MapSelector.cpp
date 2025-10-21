@@ -229,18 +229,18 @@ void MapSelector::ScanForJsonMaps() {
 
                     // Generate description based on file location or name
                     std::string description = "Custom map";
-                    if (mapPath.find("test") != std::string::npos) {
-                        description = "Test map for development";
-                    } else if (mapPath.find("parkour") != std::string::npos) {
+                    if (mapPath.find("parkour") != std::string::npos) {
                         description = "Parkour challenge map";
+                    } else if (mapPath.find("exported") != std::string::npos) {
+                        description = "Exported custom map";
                     }
 
                     // Assign color based on map type or name
                     Color mapColor = Color{255, 200, 100, 255}; // Default orange
-                    if (displayName.find("Test") != std::string::npos) {
-                        mapColor = LIME; // Green for test maps
-                    } else if (displayName.find("Parkour") != std::string::npos) {
+                    if (displayName.find("Parkour") != std::string::npos) {
                         mapColor = SKYBLUE; // Blue for parkour maps
+                    } else if (displayName.find("Exported") != std::string::npos) {
+                        mapColor = LIME; // Green for exported maps
                     }
 
                     MapInfo mapInfo = {

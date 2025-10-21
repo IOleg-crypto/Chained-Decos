@@ -42,8 +42,6 @@ constexpr int DEFAULT_DIFFICULTY_LEVEL = 2;  // Medium
 
 // Map directories to search
 const std::vector<std::string> MAP_SEARCH_DIRECTORIES = {
-    "/src/Game/Resource",
-    "/src/Game/Resource/maps",
     "/resources/maps",
     "/maps"
 };

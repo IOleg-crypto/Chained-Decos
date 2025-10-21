@@ -337,7 +337,7 @@ void Game::InitCollisions()
         TraceLog(LOG_INFO, "Game::InitCollisions() - Custom map loaded, using map's ground objects");
     }
 
-    // Create parkour test map based on menu selection
+    // Create parkour map based on menu selection
     MenuAction action = m_menu.GetAction();
     switch(action)
     {
@@ -401,7 +401,7 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
         TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Custom map loaded, using map's ground objects");
     }
 
-    // Create parkour test map based on menu selection
+    // Create parkour map based on menu selection
     MenuAction action = m_menu.GetAction();
     switch(action)
     {
@@ -1033,9 +1033,9 @@ void Game::HandleMenuActions()
         {
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing game for resume...");
 
-            // Load models for the current map (test.json for singleplayer)
-            std::string testMapPath = "./src/Game/Resource/test.json";
-            std::vector<std::string> requiredModels = GetModelsRequiredForMap(testMapPath);
+            // Load models for the current map (use default map)
+            std::string defaultMapPath = PROJECT_ROOT_DIR "/resources/maps/parkourmap.json";
+            std::vector<std::string> requiredModels = GetModelsRequiredForMap(defaultMapPath);
             LoadGameModelsSelective(requiredModels);
 
             // Initialize basic collision system first
@@ -1051,10 +1051,10 @@ void Game::HandleMenuActions()
                 return;
             }
 
-            // Load the test map
+            // Load the default map
             try
             {
-                LoadEditorMap(testMapPath);
+                LoadEditorMap(defaultMapPath);
                 TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resume map loaded successfully");
             }
             catch (const std::exception& e)
@@ -1084,8 +1084,8 @@ void Game::HandleMenuActions()
             {
                 TraceLog(LOG_WARNING, "Game::HandleMenuActions() - No colliders found, reinitializing...");
                 // Recalculate required models for the current map
-                std::string testMapPath = "./src/Game/Resource/test.json";
-                std::vector<std::string> requiredModels = GetModelsRequiredForMap(testMapPath);
+                std::string defaultMapPath = PROJECT_ROOT_DIR "/resources/maps/parkourmap.json";
+                std::vector<std::string> requiredModels = GetModelsRequiredForMap(defaultMapPath);
 
                 // Reinitialize collision system safely
                 try
@@ -1172,7 +1172,7 @@ void Game::HandleMenuActions()
             else
             {
                 // selectedMapName is just a filename, construct full path
-                mapPath = "./src/Game/Resource/maps/" + selectedMapName;
+                mapPath =  PROJECT_ROOT_DIR "/resources/maps/" + selectedMapName;
                 if (selectedMapName.find(".json") == std::string::npos)
                 {
                     mapPath += ".json";
@@ -1184,28 +1184,9 @@ void Game::HandleMenuActions()
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Determining required models...");
             std::vector<std::string> requiredModels;
             
-            // For parkour map, load parkour models
-            if (selectedMapName.find("parkourmap") != std::string::npos)
-            {
-                requiredModels = {"plane", "player", "arena", "bridge", "stairs", "section_of_walls"};
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Parkour map detected, loading parkour models");
-            }
-            else if (selectedMapName.find("exported_map1") != std::string::npos)
-            {
-                requiredModels = {"plane", "player", "stairs_f"};
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Exported map detected, loading exported map models");
-            }
-            else if (selectedMapName.find("test") != std::string::npos)
-            {
-                requiredModels = {"plane", "player"};
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Test map detected, loading basic models");
-            }
-            else
-            {
-                // Try to get models from map file
-                requiredModels = GetModelsRequiredForMap(selectedMapName);
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading models from map file");
-            }
+            // Try to get models from map file
+            requiredModels = GetModelsRequiredForMap(mapPath);
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading models from map file");
             
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Required models:");
             for (const auto& model : requiredModels)
@@ -1277,19 +1258,6 @@ void Game::HandleMenuActions()
             {
                 TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load map: %s", e.what());
                 TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Continuing with default map");
-                // Load default test map as fallback
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading fallback map...");
-                try
-                {
-                    LoadEditorMap("./src/Game/Resource/test.json");
-                    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Fallback map loaded successfully");
-                }
-                catch (const std::exception& e2)
-                {
-                    TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load fallback map: %s", e2.what());
-                    TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without any map");
-                    return;
-                }
             }
 
             // Initialize player after map is loaded
@@ -1421,8 +1389,8 @@ void Game::RenderGameUI() const {
 
 void Game::CreateParkourTestMap()
 {
-    // Advanced test map using Raylib functions directly
-    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Creating test parkour map");
+    // Advanced parkour map using Raylib functions directly
+    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Creating parkour map");
 
     // Starting platform - larger for safe landing
     CreatePlatform({0.0f, 0.0f, 0.0f}, {4.0f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 4.0f}, DARKGREEN, CollisionType::AABB_ONLY);
@@ -1442,7 +1410,7 @@ void Game::CreateParkourTestMap()
     // Final platform
     CreatePlatform({32.0f, 2.0f, -2.0f}, {3.0f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 3.0f}, GOLD, CollisionType::AABB_ONLY);
 
-    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Test map created successfully");
+    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Parkour map created successfully");
 }
 
 void Game::CreateEasyParkourMap()
