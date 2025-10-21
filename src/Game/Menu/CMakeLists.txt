@@ -5,6 +5,8 @@ add_library(menu STATIC
     MenuCore.h
     SettingsManager.cpp
     SettingsManager.h
+    ConsoleManager.cpp
+    ConsoleManager.h
 )
 
 target_include_directories(menu PUBLIC
