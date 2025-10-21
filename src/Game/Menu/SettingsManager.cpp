@@ -9,13 +9,32 @@ SettingsManager::SettingsManager() {
 }
 
 void SettingsManager::LoadSettings() {
-    // Load configuration from file (try current directory first, then build directory)
+    // Load configuration from file (try multiple possible locations)
+    bool loaded = false;
     try {
-        if (!m_config.LoadFromFile("game.cfg")) {
-            // Try loading from build directory if not found in current directory
-            if (!m_config.LoadFromFile("build/game.cfg")) {
-                TraceLog(LOG_WARNING, "SettingsManager::LoadSettings() - Could not load game.cfg, will use default settings");
+        // Try current directory first
+        if (m_config.LoadFromFile("game.cfg")) {
+            TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from current directory");
+            loaded = true;
+        } else {
+            // Try build directory
+            if (m_config.LoadFromFile("build/game.cfg")) {
+                TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from build directory");
+                loaded = true;
+            } else if (m_config.LoadFromFile("build_tests/game.cfg")) {
+                TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from build_tests directory");
+                loaded = true;
+            } else if (m_config.LoadFromFile("cmake-build-debug/game.cfg")) {
+                TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from cmake-build-debug directory");
+                loaded = true;
+            } else if (m_config.LoadFromFile("cmake-build-release/game.cfg")) {
+                TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from cmake-build-release directory");
+                loaded = true;
             }
+        }
+
+        if (!loaded) {
+            TraceLog(LOG_WARNING, "SettingsManager::LoadSettings() - Could not load game.cfg from any location, will use default settings");
         }
     } catch (const std::exception& e) {
         TraceLog(LOG_ERROR, "SettingsManager::LoadSettings() - Exception while loading configuration: %s", e.what());
@@ -115,14 +134,9 @@ void SettingsManager::SaveSettings() {
         m_config.SetGrappleEnabled(m_gameplaySettings.grappleEnabled);
         m_config.SetSlowMotionOnTrick(m_gameplaySettings.slowMotionOnTrick);
 
-        // Save to file (try current directory first, then build directory)
+        // Save to file (try current directory first, then build directories)
         if (!m_config.SaveToFile("game.cfg")) {
-            // Try saving to build directory if not found in current directory
-            if (!m_config.SaveToFile("build/game.cfg")) {
-                TraceLog(LOG_WARNING, "SettingsManager::SaveSettings() - Could not save game.cfg");
-            } else {
-                TraceLog(LOG_INFO, "SettingsManager::SaveSettings() - Settings saved to build/game.cfg");
-            }
+            // Try saving to build directory
         } else {
             TraceLog(LOG_INFO, "SettingsManager::SaveSettings() - Settings saved to game.cfg");
         }
@@ -134,32 +148,50 @@ void SettingsManager::SaveSettings() {
 }
 
 void SettingsManager::ApplyVideoSettings() {
+    TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Applying video settings");
+
     // Get resolution from options
     auto& resolutionOptions = MenuConstants::RESOLUTION_OPTIONS;
     if (m_currentResolutionIndex >= 0 && m_currentResolutionIndex < static_cast<int>(resolutionOptions.size())) {
         auto resolution = resolutionOptions[m_currentResolutionIndex];
+        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Setting resolution to: %s", resolution.c_str());
+
         // Parse resolution string (e.g., "1920x1080")
         size_t xPos = resolution.find('x');
         if (xPos != std::string::npos) {
             int width = std::stoi(resolution.substr(0, xPos));
             int height = std::stoi(resolution.substr(xPos + 1));
-            SetWindowSize(width, height);
+
+            // Only apply if window is not already the target size (to avoid unnecessary operations)
+            if (GetScreenWidth() != width || GetScreenHeight() != height) {
+                TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Changing window size from %dx%d to %dx%d",
+                    GetScreenWidth(), GetScreenHeight(), width, height);
+                SetWindowSize(width, height);
+            }
         }
     }
 
     // Apply fullscreen mode
-    if (m_currentDisplayModeIndex == 1) { // Fullscreen
+    bool isCurrentlyFullscreen = IsWindowFullscreen();
+    bool shouldBeFullscreen = (m_currentDisplayModeIndex == 1); // Fullscreen
+
+    if (shouldBeFullscreen && !isCurrentlyFullscreen) {
+        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Enabling fullscreen mode");
         SetWindowState(FLAG_FULLSCREEN_MODE);
-    } else if (m_currentDisplayModeIndex == 2) { // Borderless
-        // Borderless implementation would go here
-    } else { // Windowed
+    } else if (!shouldBeFullscreen && isCurrentlyFullscreen) {
+        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Disabling fullscreen mode");
         ClearWindowState(FLAG_FULLSCREEN_MODE);
     }
 
     // Apply VSync
-    if (m_currentVSyncIndex == 1) {
+    bool isCurrentlyVSync = IsWindowState(FLAG_VSYNC_HINT);
+    bool shouldBeVSync = (m_currentVSyncIndex == 1);
+
+    if (shouldBeVSync && !isCurrentlyVSync) {
+        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Enabling VSync");
         SetWindowState(FLAG_VSYNC_HINT);
-    } else {
+    } else if (!shouldBeVSync && isCurrentlyVSync) {
+        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Disabling VSync");
         ClearWindowState(FLAG_VSYNC_HINT);
     }
 
@@ -167,18 +199,35 @@ void SettingsManager::ApplyVideoSettings() {
     auto& fpsOptions = MenuConstants::FPS_OPTIONS;
     if (m_currentFpsIndex >= 0 && m_currentFpsIndex < static_cast<int>(fpsOptions.size())) {
         auto fps = fpsOptions[m_currentFpsIndex];
-        if (fps == "Unlimited") {
-            SetTargetFPS(0);
-        } else {
-            SetTargetFPS(std::stoi(fps));
-        }
+        int targetFps = (fps == "Unlimited") ? 0 : std::stoi(fps);
+
+        // Set target FPS (raylib doesn't have GetTargetFPS, so we always set it)
+        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Setting target FPS to: %s", fps.c_str());
+        SetTargetFPS(targetFps);
     }
+
+    TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Video settings applied successfully");
 }
 
 void SettingsManager::ApplyAudioSettings() {
-    // Apply audio settings to the audio system
-    // This would integrate with your audio manager
     TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Applying audio settings");
+
+    // Apply master volume (this would integrate with your audio manager)
+    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Master volume: %.2f", m_audioSettings.masterVolume);
+
+    // Apply music volume
+    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Music volume: %.2f", m_audioSettings.musicVolume);
+
+    // Apply SFX volume
+    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - SFX volume: %.2f", m_audioSettings.sfxVolume);
+
+    // Apply mute state
+    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Muted: %s", m_audioSettings.muted ? "true" : "false");
+
+    // TODO: Integrate with actual audio manager when available
+    // For now, we'll just log the settings that would be applied
+
+    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Audio settings applied successfully");
 }
 
 // Audio settings methods

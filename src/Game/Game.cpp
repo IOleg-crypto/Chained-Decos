@@ -584,10 +584,10 @@ void Game::LoadGameModels()
     {
         // Use the new MapLoader to scan for models in the resources directory
         MapLoader mapLoader;
-        std::string resourcesDir = "./resources";
+        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
         auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
-        if (!models.empty())
+        if (!models.empty()) 
         {
             TraceLog(LOG_INFO, "Game::LoadGameModels() - Found %d models in resources directory", models.size());
 

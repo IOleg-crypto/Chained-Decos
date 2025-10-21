@@ -8,6 +8,7 @@
 #include <memory>
 #include <functional>
 #include "SettingsManager.h"
+#include "ConsoleManager.h"
 #include "../Engine/Engine.h"
 #include <imgui.h>
 #include <raylib.h>
@@ -163,9 +164,6 @@ private:
 
     // Console functionality
     void RenderConsoleOverlay();
-    void HandleConsoleInput();
-    void ExecuteConsoleCommand(const std::string &command);
-    void AddConsoleOutput(const std::string &text);
 
     // Helper methods
     void HandleAction(MenuAction action);
@@ -224,13 +222,8 @@ private:
     // Navigation state
     int m_selected = 0;
 
-    // Console state
-    bool m_consoleOpen = false;
-    std::string m_consoleInput;
-    std::vector<std::string> m_consoleHistory;
-    std::vector<std::string> m_consoleOutput;
-    size_t m_consoleHistoryIndex = 0;
-    float m_consoleBlinkTimer = 0.0f;
+    // Console manager
+    std::unique_ptr<ConsoleManager> m_consoleManager;
 
     // UI state
     bool m_showDemoWindow = false;
