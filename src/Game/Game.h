@@ -47,9 +47,11 @@ public:
     void InitInput();
     void InitCollisions();
     void InitCollisionsWithModels(const std::vector<std::string>& requiredModels);
+    bool InitCollisionsWithModelsSafe(const std::vector<std::string>& requiredModels);
     void InitPlayer();
     void LoadGameModels();
     void LoadGameModelsSelective(const std::vector<std::string>& modelNames);
+    void LoadGameModelsSelectiveSafe(const std::vector<std::string>& modelNames);
     std::string GetModelNameForObjectType(int objectType, const std::string& modelName = "");
     std::vector<std::string> GetModelsRequiredForMap(const std::string& mapIdentifier);
     void UpdatePlayerLogic();
