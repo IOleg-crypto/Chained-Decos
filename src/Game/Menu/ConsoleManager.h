@@ -11,6 +11,7 @@
 
 #include <string>
 #include <vector>
+#include <raylib.h>
 #include "MenuConstants.h"
 
 namespace MenuConstants {
