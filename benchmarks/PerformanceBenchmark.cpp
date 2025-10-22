@@ -7,7 +7,7 @@
 #include "Engine/Physics/PhysicsComponent.h"
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Collision/CollisionComponent.h"
-#include "Game/Map/ParkourMapGenerator.h"
+#include "Game/Map/MapLoader.h"
 #include "Game/Game.h"
 
 // Simple timer class for benchmarking
@@ -117,9 +117,10 @@ int main() {
         }
     }, 100);
 
-    // Map Generation Benchmark
-    runBenchmark("Map Generation (Basic Shapes)", []() {
-        auto maps = ParkourMapGenerator::GetAllParkourMaps();
+    // Map Loading Benchmark
+    runBenchmark("Map Loading (All Maps)", []() {
+        MapLoader loader;
+        auto maps = loader.LoadAllMapsFromDirectory("resources/maps");
     }, 10);
 
     std::cout << std::endl;

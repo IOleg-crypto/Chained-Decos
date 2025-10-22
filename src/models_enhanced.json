@@ -1,13 +1,21 @@
 [
   {
     "name": "player",
-    "path": "/resources/player_low.glb",
+    "path": "player_low.glb",
     "category": "character",
-    "spawn": false,
+    "spawn": true,
     "preload": true,
     "priority": 10,
     "lodDistance": 50.0,
-    "hasAnimations": true
+    "hasAnimations": true,
+    "instances": [
+      {
+        "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "scale": 1.0,
+        "color": "white",
+        "spawn": true
+      }
+    ]
   },
   {
     "name": "arc", 

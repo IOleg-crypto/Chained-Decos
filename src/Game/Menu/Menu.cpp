@@ -42,11 +42,6 @@ void Menu::Initialize(Engine *engine)
 
 void Menu::Update()
 {
-    if (m_consoleManager && m_consoleManager->IsConsoleOpen())
-    {
-        m_consoleManager->HandleInput();
-    }
-
     // Handle keyboard navigation
     HandleKeyboardNavigation();
 
@@ -75,7 +70,7 @@ void Menu::Render()
     // Handle console if open
     if (m_consoleManager && m_consoleManager->IsConsoleOpen())
     {
-        RenderConsoleOverlay();
+        m_consoleManager->RenderConsole();
     }
 
 // Debug windows (only in debug builds)
@@ -947,14 +942,7 @@ void Menu::RenderConfirmExitDialog()
     ImGui::End();
 }
 
-// Console functionality
-void Menu::RenderConsoleOverlay()
-{
-    if (m_consoleManager)
-    {
-        m_consoleManager->RenderConsole();
-    }
-}
+// Console functionality removed as it's now handled directly in Render
 
 // Helper methods
 void Menu::HandlePendingActions()
@@ -1013,6 +1001,7 @@ void Menu::HandleKeyboardNavigation()
     // Handle console toggle (tilde key)
     if (IsKeyPressed(KEY_GRAVE) || IsKeyPressed(KEY_F1))
     {
+        TraceLog(LOG_INFO, "Menu::HandleKeyboardNavigation() - Console toggle key pressed");
         ToggleConsole();
     }
 
@@ -1343,7 +1332,7 @@ void Menu::ScanForJsonMaps()
     m_jsonMapsCount = 0;
 
     // Scan for JSON maps in the resources/maps directory
-    std::string mapsPath = PROJECT_ROOT_DIR "/resources/maps";
+    std::string mapsPath = "resources/maps";
 
     try
     {

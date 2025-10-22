@@ -7,13 +7,15 @@
 #include <Collision/CollisionManager.h>
 #include <Engine/World/World.h>
 #include <Game/Menu/Menu.h>
-#include <Game/Player/Player.h>
 #include <Model/Model.h>
 #include <Physics/PhysicsComponent.h>
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
 #include <fstream>
+
+// Include Player header for complete type definition
+#include "../../Game/Player/Player.h"
 
 
 // ==================== CONSTANTS ====================
@@ -166,21 +168,46 @@ void RenderManager::DrawScene3D(const ModelLoader &models)
     models.DrawAllModels();
 }
 
+// Player constants (defined locally to avoid include issues)
+constexpr float MODEL_Y_OFFSET = -1.0f;
+constexpr float MODEL_SCALE = 1.1f;
+
 void RenderManager::DrawPlayer(const Player &player, const ModelLoader &models)
 {
     // Get player model from models cache
     Model &playerModel = const_cast<ModelLoader &>(models).GetModelByName("player");
+
+    TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player model meshCount: %d", playerModel.meshCount);
+    TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player position: (%.2f, %.2f, %.2f)",
+             player.GetPlayerPosition().x, player.GetPlayerPosition().y, player.GetPlayerPosition().z);
+
+    // Check if player model is valid
+    if (playerModel.meshCount == 0)
+    {
+        TraceLog(LOG_ERROR, "RenderManager::DrawPlayer() - Player model has no meshes!");
+        // Draw a simple cube as fallback
+        Vector3 pos = player.GetPlayerPosition();
+        pos.y += MODEL_Y_OFFSET;
+        DrawCube(pos, 1.0f, 2.0f, 1.0f, RED);
+        DrawBoundingBox(player.GetPlayerBoundingBox(), GREEN);
+        return;
+    }
 
     // Apply player rotation
     playerModel.transform = MatrixRotateY(DEG2RAD * player.GetRotationY());
 
     // Calculate adjusted position (with Y offset)
     Vector3 adjustedPos = player.GetPlayerPosition();
-    adjustedPos.y += Player::MODEL_Y_OFFSET;
+    adjustedPos.y += MODEL_Y_OFFSET;
+
+    TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Drawing player model at (%.2f, %.2f, %.2f)",
+             adjustedPos.x, adjustedPos.y, adjustedPos.z);
 
     // Draw player model and bounding box
-    DrawModel(playerModel, adjustedPos, Player::MODEL_SCALE, WHITE);
+    DrawModel(playerModel, adjustedPos, MODEL_SCALE, WHITE);
     DrawBoundingBox(player.GetPlayerBoundingBox(), GREEN);
+
+    TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player model rendered successfully");
 }
 
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,

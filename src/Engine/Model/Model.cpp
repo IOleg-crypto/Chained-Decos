@@ -289,6 +289,13 @@ bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
         shouldSpawnModel = (config.name == "player") || !config.spawn;
     }
 
+    // Special case: Always spawn player model even if spawn is false
+    if (config.name == "player")
+    {
+        shouldSpawnModel = true;
+        TraceLog(LOG_INFO, "ModelLoader::ProcessModelConfigLegacy() - Forcing spawn of player model");
+    }
+
     if (shouldSpawnModel)
     {
         // Process instances
@@ -323,11 +330,20 @@ bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
 
 void ModelLoader::DrawAllModels() const
 {
+    TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Drawing %d model instances", m_instances.size());
+
     for (const auto &instance : m_instances)
     {
         Model *modelPtr = instance.GetModel();
+        TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Processing instance: %s at (%.2f, %.2f, %.2f)",
+                 instance.GetModelName().c_str(),
+                 instance.GetModelPosition().x, instance.GetModelPosition().y, instance.GetModelPosition().z);
+
         if (modelPtr != nullptr && modelPtr->meshCount > 0)
         {
+            TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Drawing model %s with %d meshes",
+                     instance.GetModelName().c_str(), modelPtr->meshCount);
+
             // Build transform with rotation from instance (degrees -> radians)
             Vector3 rotDeg = instance.GetRotationDegrees();
             Vector3 rotRad = { DEG2RAD * rotDeg.x, DEG2RAD * rotDeg.y, DEG2RAD * rotDeg.z };
@@ -341,12 +357,18 @@ void ModelLoader::DrawAllModels() const
             DrawModelEx(*modelPtr, instance.GetModelPosition(), {0,1,0}, rotDeg.y,
                         {instance.GetScale(), instance.GetScale(), instance.GetScale()},
                         instance.GetColor());
+
+            TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Successfully drew model %s",
+                     instance.GetModelName().c_str());
         }
         else
         {
-            TraceLog(LOG_WARNING, "Trying to draw invalid or empty model instance");
+            TraceLog(LOG_WARNING, "ModelLoader::DrawAllModels() - Trying to draw invalid or empty model instance: %s",
+                     instance.GetModelName().c_str());
         }
     }
+
+    TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Finished drawing all model instances");
 }
 
 Model &ModelLoader::GetModelByName(const std::string &name)
