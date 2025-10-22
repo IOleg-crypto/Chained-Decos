@@ -44,10 +44,11 @@ target_include_directories(ChainedDecosMapEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
+    ${nfd_SOURCE_DIR}/src/include
 )
 
 # Link with ChainedDecosEngine, raylib, and mapmod for map loading functionality
-target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib mapmod nlohmann_json)
+target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib mapmod nlohmann_json nfd)
 
 # Compiler definitions
 target_compile_definitions(ChainedDecosMapEditor PRIVATE
