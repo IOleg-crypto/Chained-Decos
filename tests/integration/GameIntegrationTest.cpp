@@ -3,7 +3,6 @@
 
 #include "Game/Game.h"
 #include "Game/Player/Player.h"
-#include "Game/Map/ParkourMapGenerator.h"
 #include "Engine/Engine.h"
 #include "Engine/Collision/CollisionManager.h"
 #include "Game/Map/MapLoader.h"
@@ -13,10 +12,7 @@ protected:
     void SetUp() override {
         game = std::make_shared<Game>(nullptr);
 
-
-        mapGenerator = std::make_shared<ParkourMapGenerator>();
         collisionManager = std::make_shared<CollisionManager>();
-
 
         engine = nullptr;
     }
@@ -24,13 +20,11 @@ protected:
     void TearDown() override {
         game.reset();
         engine.reset();
-        mapGenerator.reset();
         collisionManager.reset();
     }
 
     std::shared_ptr<Engine> engine;
     std::shared_ptr<Game> game;
-    std::shared_ptr<ParkourMapGenerator> mapGenerator;
     std::shared_ptr<CollisionManager> collisionManager;
 };
 
@@ -62,13 +56,6 @@ protected:
 ////    });
 ////}
 //
-//TEST_F(GameIntegrationTest, MapGeneratorWorks) {
-//    auto maps = mapGenerator->GetAllParkourMaps();
-//    EXPECT_GT(maps.size(), 0);
-//
-//    auto map = mapGenerator->GetMapByName("basic_shapes");
-//    EXPECT_FALSE(map.name.empty());
-//}
 
 //TEST_F(GameIntegrationTest, LoadEditorMapAndErrorHandling) {
 //
@@ -106,13 +93,6 @@ protected:
 ////    });
 ////}
 ////
-////TEST_F(GameIntegrationTest, MapGeneratorStandalone) {
-////    // Test map generator independently (doesn't need game instance)
-////    EXPECT_NO_THROW({
-////        auto maps = mapGenerator->GetAllParkourMaps();
-////        EXPECT_GE(maps.size(), 0);
-////    });
-////}
 //
 //TEST_F(GameIntegrationTest, CollisionManagerStandalone) {
 //    // Test collision manager independently (doesn't need game instance)

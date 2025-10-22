@@ -199,6 +199,7 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
             // Basic properties
             objectData.name = obj.value("name", "object_" + std::to_string(map.objects.size()));
             objectData.type = static_cast<MapObjectType>(obj.value("type", 0));
+            TraceLog(LOG_INFO, "MapLoader: Loading object %s, type %d", objectData.name.c_str(), static_cast<int>(objectData.type));
 
             // Position
             if (obj.contains("position"))
@@ -261,16 +262,22 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
                 };
             }
 
+            // Collision properties
+            objectData.isPlatform = obj.value("isPlatform", true);
+            objectData.isObstacle = obj.value("isObstacle", false);
+
             map.objects.push_back(objectData);
 
             // Load model if it's a MODEL type object
             if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
             {
+                TraceLog(LOG_INFO, "MapLoader: Loading MODEL object %s with modelName %s", objectData.name.c_str(), objectData.modelName.c_str());
                 std::string modelPath = PROJECT_ROOT_DIR "resources/" + objectData.modelName;
                 if (FileExists(modelPath.c_str()))
                 {
                     Model model = LoadModel(modelPath.c_str());
                     map.loadedModels.push_back(model);
+                    TraceLog(LOG_INFO, "MapLoader: Loaded model %s", objectData.modelName.c_str());
                 }
                 else
                 {
@@ -379,6 +386,10 @@ bool SaveGameMap(const GameMap& map, const std::string& path)
             {"width", obj.size.x},
             {"height", obj.size.y}
         };
+
+        // Collision properties
+        object["isPlatform"] = obj.isPlatform;
+        object["isObstacle"] = obj.isObstacle;
 
         objects.push_back(object);
     }
@@ -645,4 +656,91 @@ bool MapLoader::SaveModelConfig(const std::vector<ModelInfo>& models, const std:
     TraceLog(LOG_INFO, "Successfully saved model config: %s", path.c_str());
 
     return true;
+}
+
+
+std::vector<GameMap> MapLoader::LoadAllMapsFromDirectory(const std::string& directory)
+{
+    std::vector<GameMap> maps;
+    std::set<std::string> supportedExtensions = {".json"};
+
+    try
+    {
+        if (!std::filesystem::exists(directory) || !std::filesystem::is_directory(directory))
+        {
+            TraceLog(LOG_WARNING, "Directory does not exist or is not a directory: %s", directory.c_str());
+            return maps;
+        }
+
+        TraceLog(LOG_INFO, "Scanning directory for maps: %s", directory.c_str());
+
+        for (const auto& entry : std::filesystem::directory_iterator(directory))
+        {
+            if (!entry.is_regular_file())
+                continue;
+
+            std::string extension = entry.path().extension().string();
+            std::string filename = entry.path().filename().string();
+
+            // Skip hidden files and non-json files
+            if (filename.starts_with(".") || supportedExtensions.find(extension) == supportedExtensions.end())
+                continue;
+
+            std::string mapPath = entry.path().string();
+
+            // Load the map
+            GameMap map = LoadMap(mapPath);
+            if (!map.objects.empty() || !map.metadata.name.empty())
+            {
+                maps.push_back(map);
+                TraceLog(LOG_INFO, "Loaded map: %s", map.metadata.name.c_str());
+            }
+        }
+
+        TraceLog(LOG_INFO, "Found %d maps in directory: %s", maps.size(), directory.c_str());
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Error scanning maps directory: %s", e.what());
+    }
+
+    return maps;
+}
+
+std::vector<std::string> MapLoader::GetMapNamesFromDirectory(const std::string& directory)
+{
+    std::vector<std::string> names;
+    std::set<std::string> supportedExtensions = {".json"};
+
+    try
+    {
+        if (!std::filesystem::exists(directory) || !std::filesystem::is_directory(directory))
+        {
+            TraceLog(LOG_WARNING, "Directory does not exist or is not a directory: %s", directory.c_str());
+            return names;
+        }
+
+        for (const auto& entry : std::filesystem::directory_iterator(directory))
+        {
+            if (!entry.is_regular_file())
+                continue;
+
+            std::string extension = entry.path().extension().string();
+            std::string filename = entry.path().filename().string();
+
+            // Skip hidden files and non-json files
+            if (filename.starts_with(".") || supportedExtensions.find(extension) == supportedExtensions.end())
+                continue;
+
+            // Remove extension to get name
+            std::string name = filename.substr(0, filename.find_last_of('.'));
+            names.push_back(name);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        TraceLog(LOG_ERROR, "Error scanning maps directory: %s", e.what());
+    }
+
+    return names;
 }
