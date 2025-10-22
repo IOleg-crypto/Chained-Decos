@@ -13,6 +13,14 @@
     url = https://github.com/raysan5/raygui.git
     branch = master
 
+[submodule "include/nfd"]
+    path = include/nfd
+    url = https://github.com/btzy/nativefiledialog-extended.git
+    branch = master
+
+[submodule ".deps/nfd-src"]
+    path = .deps/nfd-src
+    url = https://github.com/btzy/nativefiledialog-extended.git
 
 
 
