@@ -29,7 +29,9 @@
 		"D:/gitnext/Chained Decos/build/src/Game/Player/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/build/tests/cmake_install.cmake",
 		"D:/gitnext/Chained Decos/build/src/Game/MapEditor/cmake_install.cmake",
-		"D:/gitnext/Chained Decos/build/benchmarks/cmake_install.cmake"
+		"D:/gitnext/Chained Decos/build/benchmarks/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/.deps/nfd-build/cmake_install.cmake",
+		"D:/gitnext/Chained Decos/.deps/nfd-build/src/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

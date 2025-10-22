@@ -17,6 +17,8 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <raylib.h>
 #include <rlImGui.h>
+#include <nfd.h>
+
 
 #include <raymath.h>
 #include <string>
@@ -34,9 +36,13 @@ Editor::Editor()
     m_currentWorkingDirectory = PROJECT_ROOT_DIR;
     m_newFileNameInput = "new_map.json";
     RefreshDirectoryItems();
+    // NFD init
+    NFD_Init();
 }
 
-Editor::~Editor() = default;
+Editor::~Editor() {
+    NFD_Quit();
+};
 
 std::shared_ptr<CameraController> Editor::GetCameraController() const { return m_cameraController; }
 
@@ -78,13 +84,6 @@ void Editor::RenderImGui()
     {
         RenderFileDialog();
     }
-
-    // Render new folder dialog if shown
-    RenderNewFolderDialog();
-
-    // Render delete confirmation dialog if shown
-    RenderDeleteConfirmDialog();
-
     // Render parkour map dialog if shown
     RenderParkourMapDialog();
 
@@ -985,13 +984,8 @@ void Editor::RenderImGuiPropertiesPanel()
 
 void Editor::HandleKeyboardInput()
 {
-    // Handle keyboard shortcuts for file dialog
-    if (m_displayFileDialog && IsKeyPressed(KEY_DELETE) && !m_currentlySelectedFile.empty())
-    {
-        DeleteFolder(m_currentlySelectedFile);
-    }
     // Handle keyboard shortcuts for scene objects
-    else if (!m_displayFileDialog && IsKeyPressed(KEY_DELETE) && m_currentlySelectedObjectIndex >= 0)
+    if (!m_displayFileDialog && IsKeyPressed(KEY_DELETE) && m_currentlySelectedObjectIndex >= 0)
     {
         RemoveObject(m_currentlySelectedObjectIndex);
     }
@@ -1046,8 +1040,7 @@ void Editor::EnsureModelsLoaded()
                     {
                         // Fix double path issue - modelInfo.path already contains leading slash
                         std::string modelPath = modelInfo.path;
-                        // Replace forward slashes with backslashes for Windows
-                        std::replace(modelPath.begin(), modelPath.end(), '/', '\\');
+                     
                         TraceLog(LOG_INFO, "Editor::EnsureModelsLoaded() - Loading model: %s from %s",
                                  modelInfo.name.c_str(), modelPath.c_str());
 
@@ -1258,251 +1251,38 @@ void Editor::NavigateToDirectory(const std::string &path)
 
 void Editor::RenderFileDialog()
 {
-    const char *title = m_isFileLoadDialog ? "Load Map" : "Save Map As";
+    nfdu8filteritem_t filters[] = { { "Maps (json format)", "json" } };
+    nfdu8char_t* outPath = nullptr;
+    nfdresult_t result;
 
-    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() * 0.5f - 300, GetScreenHeight() * 0.5f - 200),
-                            ImGuiCond_FirstUseEver);
+    if (m_isFileLoadDialog)
+        result = NFD_OpenDialogU8(&outPath, filters, 1, nullptr);
+    else
+        result = NFD_SaveDialogU8(&outPath, filters, 1, nullptr , "exported_map");
 
-    if (ImGui::Begin(title, &m_displayFileDialog, ImGuiWindowFlags_NoCollapse))
+    if (result == NFD_OKAY && outPath)
     {
-        // Current directory display
-        ImGui::Text("Directory: %s", m_currentWorkingDirectory.c_str());
+        std::string path(outPath);
 
-        // Position buttons in top-right corner
-        float buttonWidth = 90.0f;  // Smaller button width
-        float buttonHeight = 20.0f; // Smaller button height
-        float spacing = 5.0f;
-        float totalButtonsWidth = buttonWidth * 2 + spacing;
-
-        ImGui::SameLine(ImGui::GetWindowWidth() - totalButtonsWidth -
-                        20); // 20 = padding from right edge
-
-        if (ImGui::Button("Add Folder", ImVec2(buttonWidth, buttonHeight)))
-        {
-            AddFolder();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Delete", ImVec2(buttonWidth, buttonHeight)))
-        {
-            DeleteFolder(m_currentlySelectedFile);
-        }
-        ImGui::Separator();
-
-        // Directory and file list
-        if (ImGui::BeginChild("DirectoryList", ImVec2(0, -60)))
-        {
-            std::string directoryToNavigate; // Store directory to navigate to
-
-            for (const auto &item : m_currentDirectoryContents)
-            {
-                bool isDirectory = !item.empty() && item.back() == '/';
-                bool isSelected = (m_currentlySelectedFile == item);
-
-                if (isDirectory)
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Text,
-                                          ImVec4(0.4f, 0.8f, 1.0f, 1.0f)); // Blue for directories
-                }
-
-                if (ImGui::Selectable(item.c_str(), isSelected,
-                                      ImGuiSelectableFlags_AllowDoubleClick))
-                {
-                    if (isDirectory)
-                    {
-                        if (ImGui::IsMouseDoubleClicked(0))
-                        {
-                            directoryToNavigate = item; // Store for navigation after loop
-                        }
-                        m_currentlySelectedFile = item;
-                    }
-                    else
-                    {
-                        m_currentlySelectedFile = item;
-                        if (ImGui::IsMouseDoubleClicked(0))
-                        {
-                            // Double-click on file - immediate action
-                            std::string fullPath =
-                                (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
-
-                            if (m_isFileLoadDialog)
-                            {
-                                LoadMap(fullPath);
-                                m_currentlyLoadedMapFilePath = fullPath;
-                            }
-                            else
-                            {
-                                SaveMap(fullPath);
-                                m_currentlyLoadedMapFilePath = fullPath;
-                            }
-                            m_displayFileDialog = false;
-                        }
-                    }
-                }
-
-                if (isDirectory)
-                {
-                    ImGui::PopStyleColor();
-                }
-            }
-
-            // Navigate after the loop to avoid iterator invalidation
-            if (!directoryToNavigate.empty())
-            {
-                NavigateToDirectory(directoryToNavigate);
-            }
-        }
-        ImGui::EndChild();
-
-        ImGui::Separator();
-
-        // File name input (for save dialog)
-        if (!m_isFileLoadDialog)
-        {
-            ImGui::Text("File name:");
-            if (ImGui::InputText("##FileName", &m_newFileNameInput))
-            {
-                m_currentlySelectedFile = m_newFileNameInput;
-            }
-            ImGui::Separator();
-        }
-
-        bool canProceed = false;
         if (m_isFileLoadDialog)
-        {
-            canProceed = !m_currentlySelectedFile.empty();
-        }
+            LoadMap(path);
         else
-        {
-            canProceed = !m_currentlySelectedFile.empty() || !m_newFileNameInput.empty();
-            if (!canProceed && !m_newFileNameInput.empty())
-            {
-                m_currentlySelectedFile = m_newFileNameInput;
-                canProceed = true;
-            }
-        }
+            SaveMap(path);
 
-        // Main action buttons with smaller size
-        ImVec2 mainButtonSize(80.0f, 25.0f);
+        m_currentlyLoadedMapFilePath = std::move(path);
 
-        if (ImGui::Button(m_isFileLoadDialog ? "Load" : "Save", mainButtonSize) && canProceed)
-        {
-            std::string fullPath = (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
-
-            if (m_isFileLoadDialog)
-            {
-                LoadMap(fullPath);
-                m_currentlyLoadedMapFilePath = fullPath;
-            }
-            else
-            {
-                SaveMap(fullPath);
-                m_currentlyLoadedMapFilePath = fullPath;
-            }
-            m_displayFileDialog = false;
-        }
-
-        // Handle export for game (when not in load dialog mode)
-        if (!m_isFileLoadDialog && !m_isJsonExportDialog && ImGui::Button("Export for Game", mainButtonSize) && canProceed)
-        {
-            std::string fullPath = (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
-            ExportMapForGame(fullPath);
-            m_displayFileDialog = false;
-        }
-
-        // Handle JSON export (when JSON export dialog mode)
-        if (!m_isFileLoadDialog && m_isJsonExportDialog && ImGui::Button("Export as JSON", mainButtonSize) && canProceed)
-        {
-            std::string fullPath = (fs::path(m_currentWorkingDirectory) / m_currentlySelectedFile).string();
-            ExportMapAsJSON(fullPath);
-            m_displayFileDialog = false;
-            m_isJsonExportDialog = false;
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Cancel", mainButtonSize))
-        {
-            m_displayFileDialog = false;
-            m_isJsonExportDialog = false;
-        }
-
-        // Show selected file
-        if (!m_currentlySelectedFile.empty())
-        {
-            ImGui::Text("Selected: %s", m_currentlySelectedFile.c_str());
-        }
+        NFD_FreePathU8(outPath); 
     }
-    ImGui::End();
-
-    if (!m_displayFileDialog)
+    else if (result == NFD_ERROR)
     {
-        m_currentlySelectedFile.clear();
-        m_isJsonExportDialog = false;
+        std::cerr << "NFD error: " << NFD_GetError() << std::endl;
     }
-}
 
-void Editor::AddFolder()
-{
-    m_displayNewFolderDialog = true;
-    if (m_newFolderNameInput.empty())
-    {
-        m_newFolderNameInput = "New Folder"; // Initialize default name
-    }
-}
 
-void Editor::RenderNewFolderDialog()
-{
-    if (m_displayNewFolderDialog)
-    {
-        // Center the popup
-        ImGui::SetNextWindowPos(
-            ImVec2(GetScreenWidth() * 0.5f - 150, GetScreenHeight() * 0.5f - 50));
-        ImGui::SetNextWindowSize(ImVec2(300, 120));
-
-        if (ImGui::Begin("Create Folder", &m_displayNewFolderDialog,
-                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
-        {
-            ImGui::Text("Enter folder name:");
-
-            // Use imgui_stdlib.h for std::string support
-            ImGui::InputText("##FolderName", &m_newFolderNameInput);
-
-            if (ImGui::Button("Create", ImVec2(70, 25)) && !m_newFolderNameInput.empty())
-            {
-                try
-                {
-                    fs::path newFolderPath = fs::path(m_currentWorkingDirectory) / m_newFolderNameInput;
-
-                    if (fs::create_directory(newFolderPath))
-                    {
-                        TraceLog(LOG_INFO, "Created folder: %s", newFolderPath.string().c_str());
-                        RefreshDirectoryItems();
-                    }
-                    else
-                    {
-                        TraceLog(LOG_WARNING, "Folder already exists or failed to create: %s",
-                                 m_newFolderNameInput.c_str());
-                    }
-                }
-                catch (const fs::filesystem_error &e)
-                {
-                    TraceLog(LOG_ERROR, "Failed to create folder: %s", e.what());
-                }
-
-                m_displayNewFolderDialog = false;
-                m_newFolderNameInput.clear();
-            }
-
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel", ImVec2(70, 25)))
-            {
-                m_displayNewFolderDialog = false;
-                m_newFolderNameInput.clear();
-            }
-        }
-        ImGui::End();
-    }
+    m_displayFileDialog = false;
+    m_isFileLoadDialog = false;
+    m_isJsonExportDialog = false;
+    m_currentlySelectedFile.clear();
 }
 
 int Editor::GetGridSize() const { return m_gridSizes; }
@@ -1648,89 +1428,3 @@ void Editor::ShowParkourMapSelector()
     m_displayParkourMapDialog = true;
 }
 
-void Editor::DeleteFolder(const std::string &selectedItem)
-{
-    // Check if we have something to delete and not already showing dialog
-    if (!selectedItem.empty() && !m_displayDeleteConfirmationDialog)
-    {
-        m_displayDeleteConfirmationDialog = true;
-        m_itemPendingDeletion = selectedItem;
-    }
-}
-
-void Editor::RenderDeleteConfirmDialog()
-{
-    if (m_displayDeleteConfirmationDialog)
-    {
-        // Center the popup
-        ImGui::SetNextWindowPos(
-            ImVec2(GetScreenWidth() * 0.5f - 150, GetScreenHeight() * 0.5f - 75));
-        ImGui::SetNextWindowSize(ImVec2(300, 130));
-
-        bool isDirectory = !m_itemPendingDeletion.empty() && m_itemPendingDeletion.back() == '/';
-        const char *windowTitle = isDirectory ? "Delete Folder" : "Delete File";
-
-        if (ImGui::Begin(windowTitle, &m_displayDeleteConfirmationDialog,
-                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
-        {
-            ImGui::Text("Are you sure you want to delete:");
-            ImGui::TextWrapped("%s", m_itemPendingDeletion.c_str());
-            ImGui::Text("This action cannot be undone!");
-
-            ImGui::Separator();
-
-            if (ImGui::Button("Delete", ImVec2(80, 25)))
-            {
-                try
-                {
-                    std::string itemName = m_itemPendingDeletion;
-                    if (isDirectory)
-                    {
-                        // Remove trailing '/' for directories
-                        itemName = m_itemPendingDeletion.substr(0, m_itemPendingDeletion.length() - 1);
-                    }
-
-                    fs::path itemPath = fs::path(m_currentWorkingDirectory) / itemName;
-
-                    bool success = false;
-                    if (isDirectory)
-                    {
-                        success = fs::remove_all(itemPath) > 0;
-                        TraceLog(LOG_INFO, "Deleted folder: %s", itemPath.string().c_str());
-                    }
-                    else
-                    {
-                        success = fs::remove(itemPath);
-                        TraceLog(LOG_INFO, "Deleted file: %s", itemPath.string().c_str());
-                    }
-
-                    if (success)
-                    {
-                        RefreshDirectoryItems();
-                        m_currentlySelectedFile.clear();
-                    }
-                    else
-                    {
-                        TraceLog(LOG_WARNING, "Failed to delete %s: %s",
-                                 isDirectory ? "folder" : "file", itemName.c_str());
-                    }
-                }
-                catch (const fs::filesystem_error &e)
-                {
-                    TraceLog(LOG_ERROR, "Failed to delete: %s", e.what());
-                }
-
-                m_displayDeleteConfirmationDialog = false;
-                m_itemPendingDeletion.clear();
-            }
-
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel", ImVec2(80, 25)))
-            {
-                m_displayDeleteConfirmationDialog = false;
-                m_itemPendingDeletion.clear();
-            }
-        }
-        ImGui::End();
-    }
-}
