@@ -247,6 +247,17 @@ void Menu::RenderMainMenu()
     float startY = centerY - 100;
     float currentY = startY;
 
+    if (m_addResumeButton)
+    {
+        // Start Game button
+        ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
+        if (RenderActionButton("Resume Game", MenuAction::ResumeGame,
+                               ImVec2(buttonWidth, buttonHeight)))
+        {
+            m_state = MenuState::Resume;
+        }
+        currentY += buttonHeight + spacing;
+    }
     // Start Game button
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
     if (RenderActionButton("Start Game", MenuAction::StartGame, ImVec2(buttonWidth, buttonHeight)))
@@ -1418,3 +1429,7 @@ const char *Menu::GetStateTitle(MenuState state) const
         return "MENU";
     }
 }
+
+void Menu::SetResumeButtonOn(bool status) { m_addResumeButton = status; }
+
+bool Menu::GetResumeButtonStatus() const { return m_addResumeButton; }
