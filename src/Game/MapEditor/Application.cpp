@@ -97,7 +97,7 @@ void Application::Run() const
 
         // Render 3D scene
         BeginMode3D(m_editor->GetCameraController()->GetCamera());
-        m_editor->GetCameraController()->SetCameraMode(CAMERA_FREE);
+        m_editor->GetCameraController()->SetCameraMode(CAMERA_FREE); // As default
         DrawGrid(m_editor->GetGridSize(), 1.0f); // Draw reference grid
 
         // Render all editor objects
