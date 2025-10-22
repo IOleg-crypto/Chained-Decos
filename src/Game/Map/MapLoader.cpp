@@ -266,7 +266,7 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
             // Load model if it's a MODEL type object
             if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
             {
-                std::string modelPath = "resources/" + objectData.modelName;
+                std::string modelPath = PROJECT_ROOT_DIR "resources/" + objectData.modelName;
                 if (FileExists(modelPath.c_str()))
                 {
                     Model model = LoadModel(modelPath.c_str());
@@ -592,74 +592,6 @@ std::vector<ModelInfo> MapLoader::LoadModelsFromDirectory(const std::string& dir
             // Determine properties based on file extension and name
             modelInfo.hasAnimations = (extension == ".glb" || extension == ".gltf");
             modelInfo.hasCollision = true;
-
-            // Categorize models and set appropriate scales and descriptions
-            if (modelInfo.name.find("player") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{0.01f, 0.01f, 0.01f};
-                modelInfo.category = "Player Model";
-                modelInfo.description = "Player character model";
-            }
-            else if (modelInfo.name.find("tavern") != std::string::npos || modelInfo.name.find("TaverGLTF") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{50.0f, 50.0f, 50.0f};
-                modelInfo.category = "Building Model";
-                modelInfo.description = "Large building structure (tavern/house)";
-            }
-            else if (modelInfo.name.find("arena") != std::string::npos || modelInfo.name.find("doric") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{50.0f, 50.0f, 50.0f};
-                modelInfo.category = "Environment Model";
-                modelInfo.description = "Large environment structure (arena/stadium)";
-            }
-            else if (modelInfo.name.find("stairs") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
-                modelInfo.category = "Architecture Model";
-                modelInfo.description = "Staircase structure";
-            }
-            else if (modelInfo.name.find(" Medieval_House") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
-                modelInfo.category = "Building Model";
-                modelInfo.description = "Medieval house asset pack";
-            }
-            else if (modelInfo.name.find("plane") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
-                modelInfo.category = "Primitive Model";
-                modelInfo.description = "Basic plane geometry";
-            }
-            else if (modelInfo.name.find("arc") != std::string::npos || modelInfo.name.find("column") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
-                modelInfo.category = "Architecture Model";
-                modelInfo.description = "Architectural element (arc/column)";
-            }
-            else if (modelInfo.name.find("bridge") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
-                modelInfo.category = "Environment Model";
-                modelInfo.description = "Bridge structure";
-            }
-            else if (modelInfo.name.find("harry") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
-                modelInfo.category = "Character Model";
-                modelInfo.description = "Character model (Harry)";
-            }
-            else if (modelInfo.name.find("section_of_walls") != std::string::npos)
-            {
-                modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
-                modelInfo.category = "Architecture Model";
-                modelInfo.description = "Wall section for building";
-            }
-            else
-            {
-                modelInfo.defaultScale = Vector3{1.0f, 1.0f, 1.0f};
-                modelInfo.category = "Generic Model";
-                modelInfo.description = "3D model asset";
-            }
 
             models.push_back(modelInfo);
 
