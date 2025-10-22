@@ -650,7 +650,7 @@ void Game::LoadGameModels()
     {
         // Use the new MapLoader to scan for models in the resources directory
         MapLoader mapLoader;
-        std::string resourcesDir = "./resources";
+        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
         auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
         if (!models.empty()) 
@@ -712,7 +712,7 @@ void Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
     {
         // Use the new MapLoader to scan for models in the resources directory
         MapLoader mapLoader;
-        std::string resourcesDir = "./resources";
+        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
         auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
         if (!allModels.empty())
@@ -930,7 +930,7 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string& mapIde
     if (mapPath.substr(mapPath.find_last_of('.') + 1) != "json")
     {
         // If it's not a path ending in .json, assume it's a map name and construct the path
-        mapPath = "./src/Game/Resource/maps/" + mapIdentifier;
+        mapPath = PROJECT_ROOT_DIR "/resources/maps/" + mapIdentifier;
         if (mapIdentifier.find(".json") == std::string::npos)
         {
             mapPath += ".json";
@@ -1779,4 +1779,27 @@ void Game::RenderEditorMap()
         }
     }
 
+}
+
+void Game::SaveGameState()
+{
+    TraceLog(LOG_INFO, "Game::SaveGameState() - Saving current game state...");
+
+    // Save the current map path
+    m_savedMapPath = m_currentMapPath;
+    TraceLog(LOG_INFO, "Game::SaveGameState() - Saved map path: %s", m_savedMapPath.c_str());
+
+    // Save player's current position and state
+    m_savedPlayerPosition = m_player.GetPlayerPosition();
+    m_savedPlayerVelocity = m_player.GetPhysics().GetVelocity();
+    TraceLog(LOG_INFO, "Game::SaveGameState() - Saved player position: (%.2f, %.2f, %.2f)",
+             m_savedPlayerPosition.x, m_savedPlayerPosition.y, m_savedPlayerPosition.z);
+
+    // Save game timer/state if available
+    // Note: Add any additional game state variables here as needed
+
+    // Enable resume button in menu
+    m_menu.SetResumeButtonOn(true);
+
+    TraceLog(LOG_INFO, "Game::SaveGameState() - Game state saved successfully");
 }
