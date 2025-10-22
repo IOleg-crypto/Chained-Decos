@@ -778,7 +778,7 @@ void Game::LoadGameModelsSelectiveSafe(const std::vector<std::string>& modelName
     {
         // Use the MapLoader to scan for models in the resources directory (same as original function)
         MapLoader mapLoader;
-        std::string resourcesDir = "./resources";
+        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
         auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
         if (!allModels.empty())

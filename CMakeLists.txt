@@ -319,8 +319,11 @@ FetchContent_Declare(
 set(NFD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(nfd)
 
+# Copy NFD headers to include directory
+file(COPY ${nfd_SOURCE_DIR}/src/include/ DESTINATION ${CMAKE_SOURCE_DIR}/include/nfd)
+
 # Set up nfd include directories
-target_include_directories(nfd INTERFACE ${nfd_SOURCE_DIR}/src/include)
+target_include_directories(nfd INTERFACE ${CMAKE_SOURCE_DIR}/include/nfd)
 
 # Installation configuration
 install(TARGETS ChainedDecos
