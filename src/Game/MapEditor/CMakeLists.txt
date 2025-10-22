@@ -44,7 +44,7 @@ target_include_directories(ChainedDecosMapEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
-    ${nfd_SOURCE_DIR}/src/include
+    ${CMAKE_SOURCE_DIR}/include/nfd
 )
 
 # Link with ChainedDecosEngine, raylib, and mapmod for map loading functionality

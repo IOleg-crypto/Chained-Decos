@@ -15,11 +15,11 @@ constexpr int MARGIN = 20;
 constexpr int TOP_MARGIN = 150;
 
 // Font sizes
-constexpr int TITLE_FONT_SIZE = 48;
-constexpr int NAME_FONT_SIZE = 24;
-constexpr int DESCRIPTION_FONT_SIZE = 16;
-constexpr int INSTRUCTIONS_FONT_SIZE = 16;
-constexpr int PAGE_INFO_FONT_SIZE = 20;
+constexpr int TITLE_FONT_SIZE = 64;
+constexpr int NAME_FONT_SIZE = 32;
+constexpr int DESCRIPTION_FONT_SIZE = 20;
+constexpr int INSTRUCTIONS_FONT_SIZE = 18;
+constexpr int PAGE_INFO_FONT_SIZE = 24;
 
 // Console constants
 constexpr size_t MAX_CONSOLE_LINES = 100;

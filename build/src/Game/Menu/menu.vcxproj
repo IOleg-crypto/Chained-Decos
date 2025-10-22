@@ -1,0 +1,384 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BD80D5C5-2A7D-372F-A328-67FE134B6A41}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>menu</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\gitnext\Chained Decos\build\src\Game\Menu\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">menu.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">menu</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\gitnext\Chained Decos\build\src\Game\Menu\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">menu.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">menu</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\gitnext\Chained Decos\build\src\Game\Menu\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">menu.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">menu</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\gitnext\Chained Decos\build\src\Game\Menu\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">menu.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">menu</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0601;_DEBUG;PROJECT_ROOT_DIR="D:/gitnext/Chained Decos";PLATFORM_DESKTOP;GRAPHICS_API_OPENGL_33;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0601;PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\";PLATFORM_DESKTOP;GRAPHICS_API_OPENGL_33;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0601;_DEBUG;PROJECT_ROOT_DIR="D:/gitnext/Chained Decos";PLATFORM_DESKTOP;GRAPHICS_API_OPENGL_33;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0601;_DEBUG;PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\";PLATFORM_DESKTOP;GRAPHICS_API_OPENGL_33;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0601;_DEBUG;PROJECT_ROOT_DIR="D:/gitnext/Chained Decos";PLATFORM_DESKTOP;GRAPHICS_API_OPENGL_33;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0601;_DEBUG;PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\";PLATFORM_DESKTOP;GRAPHICS_API_OPENGL_33;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0601;_DEBUG;PROJECT_ROOT_DIR="D:/gitnext/Chained Decos";PLATFORM_DESKTOP;GRAPHICS_API_OPENGL_33;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0601;_DEBUG;PROJECT_ROOT_DIR=\"D:/gitnext/Chained Decos\";PLATFORM_DESKTOP;GRAPHICS_API_OPENGL_33;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\gitnext\Chained Decos\src\Game\Menu;D:\gitnext\Chained Decos\src;D:\gitnext\Chained Decos\src\Engine;D:\gitnext\Chained Decos\include;D:\gitnext\Chained Decos\include\rlImGui;D:\gitnext\Chained Decos\include\imgui;D:\gitnext\Chained Decos\src\Engine\Collision;D:\gitnext\Chained Decos\.deps\raylib-src\src;D:\gitnext\Chained Decos\.deps\raylib-src\src\external\glfw\include;D:\gitnext\Chained Decos\src\Engine\Model;D:\gitnext\Chained Decos\.deps\nlohmann_json-src\include;D:\gitnext\Chained Decos\src\Engine\Config;D:\gitnext\Chained Decos\src\Engine\Input;D:\gitnext\Chained Decos\src\Engine\Render;D:\gitnext\Chained Decos\src\Game\Map;D:\gitnext\Chained Decos\src\Engine\World;D:\gitnext\Chained Decos\src\Engine\CommandLineHandler;D:\gitnext\Chained Decos\src\Engine\Physics\src;D:\gitnext\Chained Decos\src\Game\Player;D:\gitnext\Chained Decos\src\Engine\CameraController;D:\gitnext\Chained Decos\src\Engine\Kernel;D:\gitnext\Chained Decos\src\Engine\Audio;D:\gitnext\Chained Decos\src\Engine\Event;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\gitnext\Chained Decos\src\Game\Menu\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/gitnext/Chained Decos/src/Game/Menu/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SD:/gitnext/Chained Decos" "-BD:/gitnext/Chained Decos/build" --check-stamp-file "D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\gitnext\Chained Decos\build\src\Game\Menu\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/gitnext/Chained Decos/src/Game/Menu/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SD:/gitnext/Chained Decos" "-BD:/gitnext/Chained Decos/build" --check-stamp-file "D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\gitnext\Chained Decos\build\src\Game\Menu\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule D:/gitnext/Chained Decos/src/Game/Menu/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SD:/gitnext/Chained Decos" "-BD:/gitnext/Chained Decos/build" --check-stamp-file "D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\gitnext\Chained Decos\build\src\Game\Menu\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule D:/gitnext/Chained Decos/src/Game/Menu/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SD:/gitnext/Chained Decos" "-BD:/gitnext/Chained Decos/build" --check-stamp-file "D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\gitnext\Chained Decos\build\src\Game\Menu\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <PropertyGroup>
+    <EnableUnitySupport>true</EnableUnitySupport>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="D:\gitnext\Chained Decos\build\src\Game\Menu\CMakeFiles\menu.dir\Unity\unity_0_cxx.cxx" IncludeInUnityFile="false" CustomUnityFile="true" UnityFilesDirectory="D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/menu.dir/Unity" />
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Menu\Menu.cpp" IncludeInUnityFile="true" CustomUnityFile="true" UnityFilesDirectory="D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/menu.dir/Unity" />
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Menu\Menu.h" />
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Menu\MenuCore.cpp" IncludeInUnityFile="true" CustomUnityFile="true" UnityFilesDirectory="D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/menu.dir/Unity" />
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Menu\MenuCore.h" />
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Menu\SettingsManager.cpp" IncludeInUnityFile="true" CustomUnityFile="true" UnityFilesDirectory="D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/menu.dir/Unity" />
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Menu\SettingsManager.h" />
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Menu\ConsoleManager.cpp" IncludeInUnityFile="true" CustomUnityFile="true" UnityFilesDirectory="D:/gitnext/Chained Decos/build/src/Game/Menu/CMakeFiles/menu.dir/Unity" />
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Menu\ConsoleManager.h" />
+    <Natvis Include="D:\gitnext\Chained Decos\.deps\nlohmann_json-src\nlohmann_json.natvis">
+    </Natvis>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\ZERO_CHECK.vcxproj">
+      <Project>{94A188D5-00FF-3EA1-97E6-72892BAA4615}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\Audio\audio.vcxproj">
+      <Project>{F02FCD7A-1609-3756-92D7-E36A13F5D24B}</Project>
+      <Name>audio</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\CameraController\cameracontroller.vcxproj">
+      <Project>{B76B4E06-FA9D-3F3E-B0ED-0CF6387195EC}</Project>
+      <Name>cameracontroller</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\CommandLineHandler\cmdhandler.vcxproj">
+      <Project>{B2CD7805-B61D-3FED-9D47-6D5B4155CC0E}</Project>
+      <Name>cmdhandler</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\Collision\collision.vcxproj">
+      <Project>{29337441-A24E-3713-BC2E-751A440FEC69}</Project>
+      <Name>collision</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\Config\config.vcxproj">
+      <Project>{5FEDCEC3-81A6-36E6-9217-DB1D69C8A3BE}</Project>
+      <Name>config</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\Event\event.vcxproj">
+      <Project>{627076DD-D6F7-3457-B757-449F2B391815}</Project>
+      <Name>event</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\.deps\raylib-build\raylib\external\glfw\src\glfw.vcxproj">
+      <Project>{FF5C3D4F-A40F-325F-86E3-DA0B75994124}</Project>
+      <Name>glfw</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\imguilib.vcxproj">
+      <Project>{1D0B2D48-835D-32A6-84B7-213C824B175E}</Project>
+      <Name>imguilib</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\Input\input.vcxproj">
+      <Project>{F5B2E9D5-CAF5-36D7-9737-A6A591D66A14}</Project>
+      <Name>input</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\Kernel\kernel.vcxproj">
+      <Project>{C427A4E1-4DB1-34DA-923C-E785F5A87028}</Project>
+      <Name>kernel</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Game\Map\mapmod.vcxproj">
+      <Project>{8E5096A8-15EB-3871-A42A-16F0D5A70EB1}</Project>
+      <Name>mapmod</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\Physics\physics.vcxproj">
+      <Project>{C7D189DF-1E53-36EB-8BA4-EA78DC0A9AE0}</Project>
+      <Name>physics</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Game\Player\player.vcxproj">
+      <Project>{0D35A18B-028E-3DCE-B4FD-FFCB2D5A9747}</Project>
+      <Name>player</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\.deps\raylib-build\raylib\raylib.vcxproj">
+      <Project>{756B929C-8921-31DD-967C-6AE7F394CFBF}</Project>
+      <Name>raylib</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\gitnext\Chained Decos\build\src\Engine\World\world.vcxproj">
+      <Project>{31DACA5F-D849-34FB-8F06-BA4947F6EC37}</Project>
+      <Name>world</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

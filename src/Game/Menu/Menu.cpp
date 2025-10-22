@@ -3,6 +3,7 @@
 #include "SettingsManager.h"
 #include "rlImGui.h"
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <fstream>
 #include <imgui.h>
@@ -12,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
@@ -225,26 +227,28 @@ void Menu::RenderMainMenu()
     const ImVec2 windowSize = ImGui::GetWindowSize();
     const float centerX = windowSize.x * 0.5f;
     const float centerY = windowSize.y * 0.5f;
-    const float buttonWidth = 320.0f;
-    const float buttonHeight = 50.0f;
-    const float spacing = 15.0f;
+    const float buttonWidth = 360.0f;
+    const float buttonHeight = 60.0f;
+    const float spacing = 20.0f;
 
     // Title section
-    ImGui::SetCursorPos(ImVec2(centerX - 120, centerY - 200));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
     ImGui::PushFont(nullptr); // Use default font but with larger size
-    ImGui::SetWindowFontScale(2.0f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 24.0f);
     ImGui::Text("CHAINED DECOS");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopFont();
     ImGui::PopStyleColor();
 
     // Subtitle
-    ImGui::SetCursorPos(ImVec2(centerX - 80, centerY - 170));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Parkour Adventure");
+    ImGui::SetWindowFontScale(1.0f);
 
     // Menu buttons container
-    float startY = centerY - 100;
+    float startY = MenuConstants::TOP_MARGIN + 100;
     float currentY = startY;
 
     if (m_addResumeButton)
@@ -298,9 +302,11 @@ void Menu::RenderMainMenu()
     }
 
     // Console toggle hint
-    ImGui::SetCursorPos(ImVec2(20, windowSize.y - 30));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 40));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::INSTRUCTIONS_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
                        "[~] Console | [F12] Screenshot | [ESC] Back");
+    ImGui::SetWindowFontScale(1.0f);
 }
 
 void Menu::RenderGameModeMenu()
@@ -308,20 +314,20 @@ void Menu::RenderGameModeMenu()
     const ImVec2 windowSize = ImGui::GetWindowSize();
     const float centerX = windowSize.x * 0.5f;
     const float centerY = windowSize.y * 0.5f;
-    const float buttonWidth = 320.0f;
-    const float buttonHeight = 50.0f;
-    const float spacing = 15.0f;
+    const float buttonWidth = 360.0f;
+    const float buttonHeight = 60.0f;
+    const float spacing = 20.0f;
 
     // Title
-    ImGui::SetCursorPos(ImVec2(centerX - 150, centerY - 200));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.8f, 1.0f, 1.0f));
-    ImGui::SetWindowFontScale(1.5f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 32.0f);
     ImGui::Text("GAME MODE SELECTION");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
 
     // Menu buttons
-    float startY = centerY - 80;
+    float startY = MenuConstants::TOP_MARGIN + 50;
     float currentY = startY;
 
     // Single Player button
@@ -347,20 +353,20 @@ void Menu::RenderOptionsMenu()
     const ImVec2 windowSize = ImGui::GetWindowSize();
     const float centerX = windowSize.x * 0.5f;
     const float centerY = windowSize.y * 0.5f;
-    const float buttonWidth = 320.0f;
-    const float buttonHeight = 50.0f;
-    const float spacing = 15.0f;
+    const float buttonWidth = 360.0f;
+    const float buttonHeight = 60.0f;
+    const float spacing = 20.0f;
 
     // Title
-    ImGui::SetCursorPos(ImVec2(centerX - 60, centerY - 200));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
-    ImGui::SetWindowFontScale(1.5f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 32.0f);
     ImGui::Text("OPTIONS");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
 
     // Options buttons
-    float startY = centerY - 80;
+    float startY = MenuConstants::TOP_MARGIN + 50;
     float currentY = startY;
 
     // Video Settings button
@@ -408,14 +414,18 @@ void Menu::RenderVideoSettings()
     const ImVec2 windowSize = ImGui::GetWindowSize();
 
     // Title
-    ImGui::SetCursorPos(ImVec2(80, 45));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "VIDEO SETTINGS");
+    ImGui::SetWindowFontScale(1.0f);
 
     ImGui::Dummy(ImVec2(0, 40));
 
     // Resolution
-    ImGui::SetCursorPos(ImVec2(80, 150));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN + 30));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Resolution");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(250);
     if (ImGui::BeginCombo("##resolution",
                           m_resolutionOptions[m_videoSettings.resolutionIndex].c_str()))
@@ -436,7 +446,9 @@ void Menu::RenderVideoSettings()
     ImGui::Dummy(ImVec2(0, 20));
 
     // Display Mode
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Display Mode");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(250);
     if (ImGui::BeginCombo("##display_mode",
                           m_displayModeOptions[m_videoSettings.displayModeIndex].c_str()))
@@ -457,7 +469,9 @@ void Menu::RenderVideoSettings()
     ImGui::Dummy(ImVec2(0, 20));
 
     // VSync
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "VSync");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(250);
     if (ImGui::BeginCombo("##vsync", m_vsyncOptions[m_videoSettings.vsyncIndex].c_str()))
     {
@@ -485,7 +499,9 @@ void Menu::RenderVideoSettings()
     ImGui::Dummy(ImVec2(0, 20));
 
     // FPS Limit
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "FPS Limit");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(250);
     if (ImGui::BeginCombo("##fps", m_fpsOptions[m_videoSettings.fpsIndex].c_str()))
     {
@@ -506,8 +522,8 @@ void Menu::RenderVideoSettings()
     }
 
     // Apply and Back buttons
-    ImGui::SetCursorPos(ImVec2(80, windowSize.y - 60));
-    if (ImGui::Button("Apply", ImVec2(100, 30)))
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
+    if (ImGui::Button("Apply", ImVec2(120, 40)))
     {
         // Apply video settings immediately when button is clicked
         if (m_settingsManager)
@@ -531,14 +547,18 @@ void Menu::RenderAudioSettings()
     const ImVec2 windowSize = ImGui::GetWindowSize();
 
     // Title
-    ImGui::SetCursorPos(ImVec2(80, 45));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "AUDIO SETTINGS");
+    ImGui::SetWindowFontScale(1.0f);
 
     ImGui::Dummy(ImVec2(0, 40));
 
     // Master Volume Slider
-    ImGui::SetCursorPos(ImVec2(80, 150));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN + 30));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Master Volume");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(250);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
     ImGui::SliderFloat("##master_vol", &m_audioSettings.masterVolume, 0.0f, 1.0f, "%.0f%%");
@@ -547,8 +567,10 @@ void Menu::RenderAudioSettings()
     ImGui::Dummy(ImVec2(0, 20));
 
     // Music Volume Slider
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Music Volume");
-    ImGui::SameLine(250);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine(280);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
     ImGui::SliderFloat("##music_vol", &m_audioSettings.musicVolume, 0.0f, 1.0f, "%.0f%%");
     ImGui::PopStyleColor();
@@ -556,8 +578,10 @@ void Menu::RenderAudioSettings()
     ImGui::Dummy(ImVec2(0, 20));
 
     // SFX Volume Slider
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "SFX Volume");
-    ImGui::SameLine(250);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine(280);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
     ImGui::SliderFloat("##sfx_vol", &m_audioSettings.sfxVolume, 0.0f, 1.0f, "%.0f%%");
     ImGui::PopStyleColor();
@@ -565,13 +589,15 @@ void Menu::RenderAudioSettings()
     ImGui::Dummy(ImVec2(0, 20));
 
     // Mute Toggle
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Mute Audio");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(250);
     ImGui::Checkbox("##mute", &m_audioSettings.muted);
 
     // Apply and Back buttons
-    ImGui::SetCursorPos(ImVec2(80, windowSize.y - 60));
-    if (ImGui::Button("Apply", ImVec2(100, 30)))
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
+    if (ImGui::Button("Apply", ImVec2(120, 40)))
     {
         m_pendingAction = MenuAction::ApplyAudioSettings;
     }
@@ -585,15 +611,19 @@ void Menu::RenderControlSettings()
     const ImVec2 windowSize = ImGui::GetWindowSize();
 
     // Title
-    ImGui::SetCursorPos(ImVec2(80, 45));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "CONTROL SETTINGS");
+    ImGui::SetWindowFontScale(1.0f);
 
     ImGui::Dummy(ImVec2(0, 40));
 
     // Mouse Sensitivity Slider
-    ImGui::SetCursorPos(ImVec2(80, 150));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN + 30));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Mouse Sensitivity");
-    ImGui::SameLine(250);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine(280);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
     ImGui::SliderFloat("##mouse_sens", &m_controlSettings.mouseSensitivity, 0.1f, 3.0f, "%.1fx");
     ImGui::PopStyleColor();
@@ -601,20 +631,24 @@ void Menu::RenderControlSettings()
     ImGui::Dummy(ImVec2(0, 20));
 
     // Invert Y Axis Toggle
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Invert Y Axis");
-    ImGui::SameLine(250);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine(280);
     ImGui::Checkbox("##invert_y", &m_controlSettings.invertYAxis);
 
     ImGui::Dummy(ImVec2(0, 20));
 
     // Controller Support Toggle
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Controller Support");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(250);
     ImGui::Checkbox("##controller", &m_controlSettings.controllerSupport);
 
     // Apply and Back buttons
-    ImGui::SetCursorPos(ImVec2(80, windowSize.y - 60));
-    if (ImGui::Button("Apply", ImVec2(100, 30)))
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
+    if (ImGui::Button("Apply", ImVec2(120, 40)))
     {
         m_pendingAction = MenuAction::ApplyControlSettings;
     }
@@ -628,15 +662,19 @@ void Menu::RenderGameplaySettings()
     const ImVec2 windowSize = ImGui::GetWindowSize();
 
     // Title
-    ImGui::SetCursorPos(ImVec2(80, 45));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
     ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "GAMEPLAY SETTINGS");
+    ImGui::SetWindowFontScale(1.0f);
 
     ImGui::Dummy(ImVec2(0, 40));
 
     // Difficulty setting
-    ImGui::SetCursorPos(ImVec2(80, 150));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN + 30));
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Difficulty");
-    ImGui::SameLine(250);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine(280);
     if (ImGui::BeginCombo("##difficulty",
                           m_difficultyOptions[m_gameplaySettings.difficultyLevel - 1].c_str()))
     {
@@ -656,34 +694,42 @@ void Menu::RenderGameplaySettings()
     ImGui::Dummy(ImVec2(0, 20));
 
     // Timer Toggle
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Timer");
-    ImGui::SameLine(250);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine(280);
     ImGui::Checkbox("##timer", &m_gameplaySettings.timerEnabled);
 
     ImGui::Dummy(ImVec2(0, 20));
 
     // Checkpoints Toggle
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Checkpoints");
-    ImGui::SameLine(250);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine(280);
     ImGui::Checkbox("##checkpoints", &m_gameplaySettings.checkpointsEnabled);
 
     ImGui::Dummy(ImVec2(0, 20));
 
     // Auto Save Toggle
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Auto Save");
-    ImGui::SameLine(250);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine(280);
     ImGui::Checkbox("##auto_save", &m_gameplaySettings.autoSaveEnabled);
 
     ImGui::Dummy(ImVec2(0, 20));
 
     // Speedrun Mode Toggle
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Speedrun Mode");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(250);
     ImGui::Checkbox("##speedrun", &m_gameplaySettings.speedrunMode);
 
     // Apply and Back buttons
-    ImGui::SetCursorPos(ImVec2(80, windowSize.y - 60));
-    if (ImGui::Button("Apply", ImVec2(100, 30)))
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
+    if (ImGui::Button("Apply", ImVec2(120, 40)))
     {
         m_pendingAction = MenuAction::ApplyGameplaySettings;
     }
@@ -698,9 +744,9 @@ void Menu::RenderMapSelection()
     const float centerX = windowSize.x * 0.5f;
 
     // Title
-    ImGui::SetCursorPos(ImVec2(centerX - 100, 45));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
-    ImGui::SetWindowFontScale(1.5f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
     ImGui::Text("MAP SELECTION");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
@@ -789,9 +835,9 @@ void Menu::RenderCreditsScreen()
     const float centerY = windowSize.y * 0.5f;
 
     // Title
-    ImGui::SetCursorPos(ImVec2(centerX - 80, centerY - 200));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.6f, 1.0f));
-    ImGui::SetWindowFontScale(1.8f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 28.0f);
     ImGui::Text("CREDITS");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
@@ -837,9 +883,9 @@ void Menu::RenderModsScreen()
     const float centerY = windowSize.y * 0.5f;
 
     // Title
-    ImGui::SetCursorPos(ImVec2(centerX - 50, centerY - 200));
+    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.4f, 1.0f, 1.0f));
-    ImGui::SetWindowFontScale(1.8f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 28.0f);
     ImGui::Text("MODS");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
@@ -1289,43 +1335,6 @@ void Menu::InitializeMaps()
 
     // Scan for JSON maps
     ScanForJsonMaps();
-
-    // Add real available maps
-    MapInfo parkourMap;
-    parkourMap.name = "parkourmap";
-    parkourMap.displayName = "Parkour Map";
-    parkourMap.description = "Main parkour level with obstacles";
-    parkourMap.previewImage = "";
-    parkourMap.themeColor = ColorToInt(SKYBLUE);
-    parkourMap.isAvailable = true;
-    parkourMap.isModelBased = false;
-    m_availableMaps.push_back(parkourMap);
-
-    MapInfo exportedMap;
-    exportedMap.name = "exported_map1";
-    exportedMap.displayName = "Exported Map 1";
-    exportedMap.description = "Custom exported map";
-    exportedMap.previewImage = "";
-    exportedMap.themeColor = ColorToInt(LIME);
-    exportedMap.isAvailable = true;
-    exportedMap.isModelBased = false;
-    m_availableMaps.push_back(exportedMap);
-
-    // If no maps found, add a fallback
-    if (m_availableMaps.empty())
-    {
-        MapInfo defaultMap;
-        defaultMap.name = MenuConstants::FALLBACK_MAP_NAME;
-        defaultMap.displayName = MenuConstants::FALLBACK_MAP_DISPLAY_NAME;
-        defaultMap.description = MenuConstants::FALLBACK_MAP_DESCRIPTION;
-        defaultMap.previewImage = "";
-        defaultMap.themeColor = ColorToInt(WHITE);
-        defaultMap.isAvailable = true;
-        defaultMap.isModelBased = true;
-
-        m_availableMaps.push_back(defaultMap);
-    }
-
     EnsurePagination();
 }
 
@@ -1333,9 +1342,74 @@ void Menu::ScanForJsonMaps()
 {
     m_jsonMapsCount = 0;
 
-    // TODO: Implement JSON map scanning
-    // For now, this is a placeholder
+    // Scan for JSON maps in the resources/maps directory
+    std::string mapsPath = PROJECT_ROOT_DIR "/resources/maps";
+
+    try
+    {
+        if (std::filesystem::exists(mapsPath) && std::filesystem::is_directory(mapsPath))
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(mapsPath))
+            {
+                if (entry.is_regular_file() && entry.path().extension() == ".json")
+                {
+                    std::string filename = entry.path().stem().string();
+                    std::string filepath = entry.path().string();
+
+                    // Create MapInfo for this JSON file
+                    MapInfo jsonMap;
+                    jsonMap.name = filename;
+
+                    // Format display name from filename
+                    std::string displayName = filename;
+                    std::replace(displayName.begin(), displayName.end(), '_', ' ');
+                    bool capitalize = true;
+                    for (char& c : displayName)
+                    {
+                        if (capitalize && std::isalpha(c))
+                        {
+                            c = std::toupper(c);
+                            capitalize = false;
+                        }
+                        else if (std::isspace(c))
+                        {
+                            capitalize = true;
+                        }
+                        else
+                        {
+                            capitalize = false;
+                        }
+                    }
+                    jsonMap.displayName = displayName;
+
+                    // Generate description by analyzing the JSON file
+                    std::ifstream mapFile(filepath);
+                    std::string fileContent((std::istreambuf_iterator<char>(mapFile)), std::istreambuf_iterator<char>());
+                    size_t objectCount = 0;
+                    size_t pos = 0;
+                    while ((pos = fileContent.find("{", pos)) != std::string::npos)
+                    {
+                        objectCount++;
+                        pos++;
+                    }
+                    jsonMap.description = "Map with " + std::to_string(objectCount) + " objects";
+                    jsonMap.previewImage = "";
+                    jsonMap.themeColor = ColorToInt(SKYBLUE);
+                    jsonMap.isAvailable = true;
+                    jsonMap.isModelBased = false;
+
+                    m_availableMaps.push_back(jsonMap);
+                    m_jsonMapsCount++;
+                }
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error scanning for JSON maps: " << e.what() << std::endl;
+    }
 }
+
 
 void Menu::UpdatePagination() { m_totalPages = GetTotalPages(); }
 

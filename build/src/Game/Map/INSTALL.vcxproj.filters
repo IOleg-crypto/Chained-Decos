@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\gitnext\Chained Decos\build\CMakeFiles\f7efd48827c01349cfb6bc2bf445e8ae\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{A984EC55-CAE4-3B63-9719-A0EDF4650938}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
