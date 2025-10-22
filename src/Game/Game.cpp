@@ -303,6 +303,9 @@ void Game::InitInput()
                                                    {
                                                        if (!m_showMenu)
                                                        {
+                                                           // Save current game state before pausing
+                                                           SaveGameState();
+
                                                            m_menu.ResetAction();
                                                            // Set game as in progress when going to menu from game
                                                            m_menu.SetGameInProgress(true);
@@ -647,7 +650,7 @@ void Game::LoadGameModels()
     {
         // Use the new MapLoader to scan for models in the resources directory
         MapLoader mapLoader;
-        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+        std::string resourcesDir = "./resources";
         auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
         if (!models.empty()) 
@@ -775,7 +778,7 @@ void Game::LoadGameModelsSelectiveSafe(const std::vector<std::string>& modelName
     {
         // Use the MapLoader to scan for models in the resources directory (same as original function)
         MapLoader mapLoader;
-        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+        std::string resourcesDir = "./resources";
         auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
         if (!allModels.empty())
@@ -1110,13 +1113,7 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string& mapIde
             TraceLog(LOG_WARNING, "Game::GetModelsRequiredForMap() - Could not open map file: %s", mapPath.c_str());
         }
     }
-    else
-    {
-        TraceLog(LOG_INFO, "Game::GetModelsRequiredForMap() - Non-JSON map format, using default model set");
-        // For non-JSON maps, include common models that might be needed
-        requiredModels.emplace_back("arena");
-    }
-
+    
     TraceLog(LOG_INFO, "Game::GetModelsRequiredForMap() - Total models required: %d", requiredModels.size());
     return requiredModels;
 }
@@ -1233,9 +1230,8 @@ void Game::HandleMenuActions()
         {
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing game for resume...");
 
-            // Load models for the current map (use default map)
-            std::string defaultMapPath = PROJECT_ROOT_DIR "/resources/maps/parkourmap.json";
-            std::vector<std::string> requiredModels = GetModelsRequiredForMap(defaultMapPath);
+            // Load models for the current map (use saved map)
+            std::vector<std::string> requiredModels = GetModelsRequiredForMap(m_savedMapPath);
             LoadGameModelsSelective(requiredModels);
 
             // Initialize basic collision system first
@@ -1246,20 +1242,7 @@ void Game::HandleMenuActions()
                 return;
             }
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized for singleplayer");
-
-            // Load the default map
-            try
-            {
-                LoadEditorMap(defaultMapPath);
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resume map loaded successfully");
-            }
-            catch (const std::exception& e)
-            {
-                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load resume map: %s", e.what());
-                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot resume without map");
-                return;
-            }
-
+      
             // Initialize player after map is loaded
             try
             {
@@ -1279,9 +1262,8 @@ void Game::HandleMenuActions()
             if (m_collisionManager.GetColliders().empty())
             {
                 TraceLog(LOG_WARNING, "Game::HandleMenuActions() - No colliders found, reinitializing...");
-                // Recalculate required models for the current map
-                std::string defaultMapPath = PROJECT_ROOT_DIR "/resources/maps/parkourmap.json";
-                std::vector<std::string> requiredModels = GetModelsRequiredForMap(defaultMapPath);
+                // Recalculate required models for the saved map
+                std::vector<std::string> requiredModels = GetModelsRequiredForMap(m_savedMapPath);
 
                 // Reinitialize collision system safely
                 try
@@ -1368,7 +1350,7 @@ void Game::HandleMenuActions()
             else
             {
                 // selectedMapName is just a filename, construct full path
-                mapPath =  PROJECT_ROOT_DIR "/resources/maps/" + selectedMapName;
+                mapPath =  "./resources/maps/" + selectedMapName;
                 if (selectedMapName.find(".json") == std::string::npos)
                 {
                     mapPath += ".json";
@@ -1570,590 +1552,6 @@ void Game::RenderGameUI() const {
     DrawTextEx(fontToUse, timerText.c_str(), timerPos, fontSize, 2.0f, WHITE);
 }
 
-
-void Game::CreateParkourTestMap()
-{
-    // Advanced parkour map using Raylib functions directly
-    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Creating parkour map");
-
-    // Starting platform - larger for safe landing
-    CreatePlatform({0.0f, 0.0f, 0.0f}, {4.0f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 4.0f}, DARKGREEN, CollisionType::AABB_ONLY);
-
-    // First jump platform
-    CreatePlatform({8.0f, 0.0f, 2.0f}, {2.0f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 2.0f}, DARKBLUE, CollisionType::AABB_ONLY);
-
-    // Floating challenge platform
-    CreatePlatform({14.0f, 4.0f, 1.0f}, {1.5f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 1.5f}, DARKPURPLE, CollisionType::AABB_ONLY);
-
-    // Mid-way platform
-    CreatePlatform({20.0f, 1.0f, -1.0f}, {2.5f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 2.5f}, DARKBROWN, CollisionType::AABB_ONLY);
-
-    // High precision platform
-    CreatePlatform({26.0f, 6.0f, 0.0f}, {1.2f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 1.2f}, RED, CollisionType::AABB_ONLY);
-
-    // Final platform
-    CreatePlatform({32.0f, 2.0f, -2.0f}, {3.0f, GameConstants::DEFAULT_PLATFORM_HEIGHT, 3.0f}, GOLD, CollisionType::AABB_ONLY);
-
-    TraceLog(LOG_INFO, "Game::CreateParkourTestMap() - Parkour map created successfully");
-}
-
-void Game::CreateEasyParkourMap()
-{
-    // Advanced Easy parkour map using Raylib functions
-    Vector3 startPos = {0.0f, 0.0f, 0.0f};
-
-    // Starting area
-    DrawCube(startPos, 5.0f, 1.0f, 5.0f, DARKGREEN);
-    Collision startPlatform({0.0f, 0.0f, 0.0f}, {5.0f, 1.0f, 5.0f});
-    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(startPlatform));
-
-    // Gentle first platforms
-    Vector3 plat1 = {10.0f, 0.0f, 4.0f};
-    DrawCube(plat1, 3.0f, 1.0f, 3.0f, DARKBLUE);
-    Collision c1({10.0f, 0.0f, 4.0f}, {3.0f, 1.0f, 3.0f});
-    c1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c1));
-
-    // Low floating platform
-    Vector3 plat2 = {20.0f, 3.0f, 2.0f};
-    DrawCube(plat2, 2.5f, 1.0f, 2.5f, DARKPURPLE);
-    Collision c2({20.0f, 3.0f, 2.0f}, {2.5f, 1.0f, 2.5f});
-    c2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c2));
-
-    // Ground platform with ramp approach
-    Vector3 plat3 = {30.0f, 0.0f, -1.0f};
-    DrawCube(plat3, 3.5f, 1.0f, 3.5f, DARKBROWN);
-    Collision c3({30.0f, 0.0f, -1.0f}, {3.5f, 1.0f, 3.5f});
-    c3.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c3));
-
-    // Medium height challenge
-    Vector3 plat4 = {42.0f, 5.0f, 1.0f};
-    DrawCube(plat4, 2.2f, 1.0f, 2.2f, RED);
-    Collision c4({42.0f, 5.0f, 1.0f}, {2.2f, 1.0f, 2.2f});
-    c4.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c4));
-
-    // Rest platform
-    Vector3 plat5 = {52.0f, 1.0f, -2.0f};
-    DrawCube(plat5, 3.0f, 1.0f, 3.0f, DARKGRAY);
-    Collision c5({52.0f, 1.0f, -2.0f}, {3.0f, 1.0f, 3.0f});
-    c5.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c5));
-
-    // Higher challenge platform
-    Vector3 plat6 = {62.0f, 7.0f, 0.0f};
-    DrawCube(plat6, 2.0f, 1.0f, 2.0f, ORANGE);
-    Collision c6({62.0f, 7.0f, 0.0f}, {2.0f, 1.0f, 2.0f});
-    c6.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c6));
-
-    // Descent platforms
-    Vector3 plat7 = {72.0f, 3.0f, 2.0f};
-    DrawCube(plat7, 2.8f, 1.0f, 2.8f, DARKBLUE);
-    Collision c7({72.0f, 3.0f, 2.0f}, {2.8f, 1.0f, 2.8f});
-    c7.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c7));
-
-    Vector3 plat8 = {82.0f, 1.0f, -1.0f};
-    DrawCube(plat8, 2.5f, 1.0f, 2.5f, DARKPURPLE);
-    Collision c8({82.0f, 1.0f, -1.0f}, {2.5f, 1.0f, 2.5f});
-    c8.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c8));
-
-    // Final platform
-    Vector3 endPos = {92.0f, 0.0f, 1.0f};
-    DrawCube(endPos, 4.0f, 1.0f, 4.0f, GOLD);
-    Collision endPlatform({92.0f, 0.0f, 1.0f}, {4.0f, 1.0f, 4.0f});
-    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(endPlatform));
-}
-
-void Game::CreateMediumParkourMap()
-{
-    // Advanced Medium difficulty using Raylib functions
-    Vector3 startPos = {0.0f, 0.0f, 0.0f};
-
-    // Large starting area
-    DrawCube(startPos, 4.0f, 1.0f, 4.0f, DARKGREEN);
-    Collision startPlatform({0.0f, 0.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
-    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(startPlatform));
-
-    // Challenging platform sequence
-    Vector3 plat1 = {12.0f, 0.0f, 5.0f};
-    DrawCube(plat1, 2.2f, 1.0f, 2.2f, DARKBLUE);
-    Collision c1({12.0f, 0.0f, 5.0f}, {2.2f, 1.0f, 2.2f});
-    c1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c1));
-
-    // Precision jump platform
-    Vector3 plat2 = {22.0f, 5.0f, 3.0f};
-    DrawCube(plat2, 1.8f, 1.0f, 1.8f, DARKPURPLE);
-    Collision c2({22.0f, 5.0f, 3.0f}, {1.8f, 1.0f, 1.8f});
-    c2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c2));
-
-    // Moving platform simulation (static but challenging position)
-    Vector3 plat3 = {32.0f, 2.0f, -2.0f};
-    DrawCube(plat3, 2.0f, 1.0f, 2.0f, DARKBROWN);
-    Collision c3({32.0f, 2.0f, -2.0f}, {2.0f, 1.0f, 2.0f});
-    c3.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c3));
-
-    // High altitude challenge
-    Vector3 plat4 = {44.0f, 8.0f, 1.0f};
-    DrawCube(plat4, 1.5f, 1.0f, 1.5f, RED);
-    Collision c4({44.0f, 8.0f, 1.0f}, {1.5f, 1.0f, 1.5f});
-    c4.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c4));
-
-    // Recovery platform
-    Vector3 plat5 = {54.0f, 3.0f, -1.0f};
-    DrawCube(plat5, 2.5f, 1.0f, 2.5f, DARKGRAY);
-    Collision c5({54.0f, 3.0f, -1.0f}, {2.5f, 1.0f, 2.5f});
-    c5.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c5));
-
-    // Very high precision platform
-    Vector3 plat6 = {66.0f, 10.0f, 2.0f};
-    DrawCube(plat6, 1.2f, 1.0f, 1.2f, ORANGE);
-    Collision c6({66.0f, 10.0f, 2.0f}, {1.2f, 1.0f, 1.2f});
-    c6.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c6));
-
-    // Descent platform 1
-    Vector3 plat7 = {76.0f, 6.0f, 0.0f};
-    DrawCube(plat7, 2.0f, 1.0f, 2.0f, DARKBLUE);
-    Collision c7({76.0f, 6.0f, 0.0f}, {2.0f, 1.0f, 2.0f});
-    c7.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c7));
-
-    // Descent platform 2
-    Vector3 plat8 = {86.0f, 3.0f, -3.0f};
-    DrawCube(plat8, 1.8f, 1.0f, 1.8f, DARKPURPLE);
-    Collision c8({86.0f, 3.0f, -3.0f}, {1.8f, 1.0f, 1.8f});
-    c8.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c8));
-
-    // Final challenge before finish
-    Vector3 plat9 = {96.0f, 7.0f, 1.0f};
-    DrawCube(plat9, 1.5f, 1.0f, 1.5f, RED);
-    Collision c9({96.0f, 7.0f, 1.0f}, {1.5f, 1.0f, 1.5f});
-    c9.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c9));
-
-    // Victory platform
-    Vector3 endPos = {108.0f, 2.0f, -1.0f};
-    DrawCube(endPos, 5.0f, 1.0f, 5.0f, GOLD);
-    Collision endPlatform({108.0f, 2.0f, -1.0f}, {5.0f, 1.0f, 5.0f});
-    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(endPlatform));
-}
-
-void Game::CreateHardParkourMap()
-{
-    // Advanced Hard difficulty using Raylib functions
-    Vector3 startPos = {0.0f, 0.0f, 0.0f};
-
-    // Compact starting area for hard mode
-    DrawCube(startPos, 3.0f, 1.0f, 3.0f, DARKGREEN);
-    Collision startPlatform({0.0f, 0.0f, 0.0f}, {3.0f, 1.0f, 3.0f});
-    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(startPlatform));
-
-    // Extreme precision challenges
-    Vector3 plat1 = {10.0f, 0.0f, 6.0f};
-    DrawCube(plat1, 1.2f, 1.0f, 1.2f, DARKBLUE);
-    Collision c1({10.0f, 0.0f, 6.0f}, {1.2f, 1.0f, 1.2f});
-    c1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c1));
-
-    // Very high precision platform
-    Vector3 plat2 = {18.0f, 8.0f, 4.0f};
-    DrawCube(plat2, 0.9f, 1.0f, 0.9f, DARKPURPLE);
-    Collision c2({18.0f, 8.0f, 4.0f}, {0.9f, 1.0f, 0.9f});
-    c2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c2));
-
-    // Narrow bridge platform
-    Vector3 plat3 = {26.0f, 3.0f, 2.0f};
-    DrawCube(plat3, 1.0f, 1.0f, 1.0f, DARKBROWN);
-    Collision c3({26.0f, 3.0f, 2.0f}, {1.0f, 1.0f, 1.0f});
-    c3.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c3));
-
-    // Extreme height challenge
-    Vector3 plat4 = {34.0f, 12.0f, 0.0f};
-    DrawCube(plat4, 0.8f, 1.0f, 0.8f, RED);
-    Collision c4({34.0f, 12.0f, 0.0f}, {0.8f, 1.0f, 0.8f});
-    c4.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c4));
-
-    // Recovery but still challenging
-    Vector3 plat5 = {42.0f, 5.0f, -2.0f};
-    DrawCube(plat5, 1.5f, 1.0f, 1.5f, DARKGRAY);
-    Collision c5({42.0f, 5.0f, -2.0f}, {1.5f, 1.0f, 1.5f});
-    c5.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c5));
-
-    // Another extreme height
-    Vector3 plat6 = {50.0f, 15.0f, 1.0f};
-    DrawCube(plat6, 0.7f, 1.0f, 0.7f, ORANGE);
-    Collision c6({50.0f, 15.0f, 1.0f}, {0.7f, 1.0f, 0.7f});
-    c6.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c6));
-
-    // Very narrow connecting platform
-    Vector3 plat7 = {58.0f, 8.0f, -1.0f};
-    DrawCube(plat7, 1.0f, 1.0f, 1.0f, DARKBLUE);
-    Collision c7({58.0f, 8.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
-    c7.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c7));
-
-    // Final extreme challenge
-    Vector3 plat8 = {66.0f, 18.0f, 2.0f};
-    DrawCube(plat8, 0.6f, 1.0f, 0.6f, DARKPURPLE);
-    Collision c8({66.0f, 18.0f, 2.0f}, {0.6f, 1.0f, 0.6f});
-    c8.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c8));
-
-    // Descent precision platforms
-    Vector3 plat9 = {74.0f, 12.0f, 0.0f};
-    DrawCube(plat9, 1.2f, 1.0f, 1.2f, DARKBROWN);
-    Collision c9({74.0f, 12.0f, 0.0f}, {1.2f, 1.0f, 1.2f});
-    c9.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c9));
-
-    Vector3 plat10 = {82.0f, 7.0f, -2.0f};
-    DrawCube(plat10, 1.0f, 1.0f, 1.0f, RED);
-    Collision c10({82.0f, 7.0f, -2.0f}, {1.0f, 1.0f, 1.0f});
-    c10.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c10));
-
-    Vector3 plat11 = {90.0f, 4.0f, 1.0f};
-    DrawCube(plat11, 0.8f, 1.0f, 0.8f, DARKGRAY);
-    Collision c11({90.0f, 4.0f, 1.0f}, {0.8f, 1.0f, 0.8f});
-    c11.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c11));
-
-    // Final platform
-    Vector3 endPos = {98.0f, 1.0f, -1.0f};
-    DrawCube(endPos, 4.0f, 1.0f, 4.0f, GOLD);
-    Collision endPlatform({98.0f, 1.0f, -1.0f}, {4.0f, 1.0f, 4.0f});
-    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(endPlatform));
-}
-
-void Game::CreateSpeedrunParkourMap()
-{
-    // Advanced Speedrun map using Raylib functions - optimized for fast times
-    Vector3 startPos = {0.0f, 0.0f, 0.0f};
-
-    // Speedrun-optimized starting platform
-    DrawCube(startPos, 4.0f, 1.0f, 4.0f, DARKGREEN);
-    Collision startPlatform({0.0f, 0.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
-    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(startPlatform));
-
-    // Fast track platforms - optimized for speed
-    Vector3 plat1 = {8.0f, 0.0f, 3.0f};
-    DrawCube(plat1, 3.2f, 1.0f, 2.2f, DARKBLUE);
-    Collision c1({8.0f, 0.0f, 3.0f}, {3.2f, 1.0f, 2.2f});
-    c1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c1));
-
-    // Quick jump platform
-    Vector3 plat2 = {16.0f, 3.5f, 5.0f};
-    DrawCube(plat2, 2.8f, 1.0f, 2.4f, DARKPURPLE);
-    Collision c2({16.0f, 3.5f, 5.0f}, {2.8f, 1.0f, 2.4f});
-    c2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c2));
-
-    // Sprint platform
-    Vector3 plat3 = {24.0f, 1.0f, 6.5f};
-    DrawCube(plat3, 3.0f, 1.0f, 2.6f, DARKBROWN);
-    Collision c3({24.0f, 1.0f, 6.5f}, {3.0f, 1.0f, 2.6f});
-    c3.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c3));
-
-    // Speed jump platform
-    Vector3 plat4 = {32.0f, 4.5f, 5.8f};
-    DrawCube(plat4, 2.6f, 1.0f, 2.8f, RED);
-    Collision c4({32.0f, 4.5f, 5.8f}, {2.6f, 1.0f, 2.8f});
-    c4.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c4));
-
-    // Long platform for building speed
-    Vector3 plat5 = {40.0f, 0.5f, 4.2f};
-    DrawCube(plat5, 3.4f, 1.0f, 2.0f, DARKGRAY);
-    Collision c5({40.0f, 0.5f, 4.2f}, {3.4f, 1.0f, 2.0f});
-    c5.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c5));
-
-    // High speed challenge
-    Vector3 plat6 = {48.0f, 6.0f, 2.5f};
-    DrawCube(plat6, 2.4f, 1.0f, 3.0f, ORANGE);
-    Collision c6({48.0f, 6.0f, 2.5f}, {2.4f, 1.0f, 3.0f});
-    c6.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c6));
-
-    // Technical precision for speedrunners
-    Vector3 plat7 = {56.0f, 2.0f, 0.8f};
-    DrawCube(plat7, 2.8f, 1.0f, 1.8f, DARKBLUE);
-    Collision c7({56.0f, 2.0f, 0.8f}, {2.8f, 1.0f, 1.8f});
-    c7.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c7));
-
-    // Risk-reward platform
-    Vector3 plat8 = {64.0f, 7.5f, -1.2f};
-    DrawCube(plat8, 2.2f, 1.0f, 2.6f, DARKPURPLE);
-    Collision c8({64.0f, 7.5f, -1.2f}, {2.2f, 1.0f, 2.6f});
-    c8.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c8));
-
-    // Speed tunnel platform
-    Vector3 plat9 = {72.0f, 3.0f, -3.5f};
-    DrawCube(plat9, 3.2f, 1.0f, 2.0f, DARKBROWN);
-    Collision c9({72.0f, 3.0f, -3.5f}, {3.2f, 1.0f, 2.0f});
-    c9.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c9));
-
-    // Advanced speed platform
-    Vector3 plat10 = {80.0f, 8.0f, -5.8f};
-    DrawCube(plat10, 2.0f, 1.0f, 2.8f, RED);
-    Collision c10({80.0f, 8.0f, -5.8f}, {2.0f, 1.0f, 2.8f});
-    c10.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c10));
-
-    // Final sprint platforms
-    Vector3 plat11 = {88.0f, 4.0f, -4.2f};
-    DrawCube(plat11, 2.6f, 1.0f, 2.4f, DARKGRAY);
-    Collision c11({88.0f, 4.0f, -4.2f}, {2.6f, 1.0f, 2.4f});
-    c11.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c11));
-
-    Vector3 plat12 = {96.0f, 1.5f, -2.5f};
-    DrawCube(plat12, 2.4f, 1.0f, 2.2f, DARKBLUE);
-    Collision c12({96.0f, 1.5f, -2.5f}, {2.4f, 1.0f, 2.2f});
-    c12.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c12));
-
-    // Ultimate speed platform
-    Vector3 plat13 = {104.0f, 5.0f, -0.8f};
-    DrawCube(plat13, 2.0f, 1.0f, 2.0f, DARKPURPLE);
-    Collision c13({104.0f, 5.0f, -0.8f}, {2.0f, 1.0f, 2.0f});
-    c13.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c13));
-
-    // Final victory platform
-    Vector3 plat14 = {112.0f, 2.0f, 0.5f};
-    DrawCube(plat14, 2.8f, 1.0f, 2.8f, DARKBROWN);
-    Collision c14({112.0f, 2.0f, 0.5f}, {2.8f, 1.0f, 2.8f});
-    c14.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c14));
-
-    // Grand finish platform
-    Vector3 endPos = {122.0f, 0.0f, -1.0f};
-    DrawCube(endPos, 6.0f, 1.0f, 6.0f, GOLD);
-    Collision endPlatform({122.0f, 0.0f, -1.0f}, {6.0f, 1.0f, 6.0f});
-    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(endPlatform));
-}
-
-void Game::CreateIceTempleMap()
-{
-    // Ice-themed parkour map using Raylib functions
-    Vector3 startPos = {0.0f, 0.0f, 0.0f};
-
-    // Icy starting platform
-    DrawCube(startPos, 4.0f, 1.0f, 4.0f, SKYBLUE);
-    Collision startPlatform({0.0f, 0.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
-    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(startPlatform));
-
-    // Ice platforms with slippery theme
-    Vector3 icePlat1 = {12.0f, 0.0f, 6.0f};
-    DrawCube(icePlat1, 3.0f, 1.0f, 3.0f, Color{150, 200, 255, 255});
-    Collision c1({12.0f, 0.0f, 6.0f}, {3.0f, 1.0f, 3.0f});
-    c1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c1));
-
-    // Crystal formations (decorative)
-    Vector3 crystal1 = {20.0f, 2.0f, 4.0f};
-    DrawCube(crystal1, 0.5f, 4.0f, 0.5f, Color{200, 220, 255, 255});
-    Vector3 crystal2 = {22.0f, 2.0f, 4.0f};
-    DrawCube(crystal2, 0.5f, 4.0f, 0.5f, Color{200, 220, 255, 255});
-
-    // Floating ice platforms
-    Vector3 icePlat2 = {28.0f, 5.0f, 2.0f};
-    DrawCube(icePlat2, 2.5f, 1.0f, 2.5f, Color{180, 220, 255, 255});
-    Collision c2({28.0f, 5.0f, 2.0f}, {2.5f, 1.0f, 2.5f});
-    c2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c2));
-
-    // Ice bridge
-    Vector3 bridge1 = {38.0f, 2.0f, 0.0f};
-    DrawCube(bridge1, 4.0f, 1.0f, 1.5f, Color{160, 210, 255, 255});
-    Collision c3({38.0f, 2.0f, 0.0f}, {4.0f, 1.0f, 1.5f});
-    c3.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c3));
-
-    // High ice spire platform
-    Vector3 icePlat3 = {50.0f, 8.0f, -2.0f};
-    DrawCube(icePlat3, 2.0f, 1.0f, 2.0f, Color{190, 230, 255, 255});
-    Collision c4({50.0f, 8.0f, -2.0f}, {2.0f, 1.0f, 2.0f});
-    c4.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c4));
-
-    // Spiral ice staircase
-    for (int i = 0; i < 8; i++)
-    {
-        float angle = i * PI / 4;
-        float radius = 60.0f + i * 2.0f;
-        float x = cos(angle) * radius;
-        float z = sin(angle) * radius;
-        float y = 2.0f + i * 1.5f;
-
-        Vector3 spiralPos = {x, y, z};
-        DrawCube(spiralPos, 2.5f, 1.0f, 2.5f, Color{170, 200, 250, 255});
-        Collision spiralColl(spiralPos, {2.5f, 1.0f, 2.5f});
-        spiralColl.SetCollisionType(CollisionType::AABB_ONLY);
-        m_collisionManager.AddCollider(std::move(spiralColl));
-    }
-
-    // Ice cavern platforms
-    Vector3 cavern1 = {75.0f, 3.0f, 5.0f};
-    DrawCube(cavern1, 3.0f, 1.0f, 3.0f, Color{140, 190, 240, 255});
-    Collision c5({75.0f, 3.0f, 5.0f}, {3.0f, 1.0f, 3.0f});
-    c5.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c5));
-
-    // Final frozen platform
-    Vector3 endPos = {90.0f, 1.0f, 0.0f};
-    DrawCube(endPos, 5.0f, 1.0f, 5.0f, Color{220, 240, 255, 255});
-    Collision endPlatform({90.0f, 1.0f, 0.0f}, {5.0f, 1.0f, 5.0f});
-    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(endPlatform));
-}
-
-void Game::CreateFireTempleMap()
-{
-    // Fire-themed parkour map using Raylib functions
-    Vector3 startPos = {0.0f, 0.0f, 0.0f};
-
-    // Volcanic starting platform
-    DrawCube(startPos, 4.0f, 1.0f, 4.0f, Color{50, 25, 25, 255});
-    Collision startPlatform({0.0f, 0.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
-    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(startPlatform));
-
-    // Lava flow platforms
-    Vector3 lavaPlat1 = {15.0f, 0.0f, 8.0f};
-    DrawCube(lavaPlat1, 3.5f, 1.0f, 3.5f, Color{100, 30, 20, 255});
-    Collision c1({15.0f, 0.0f, 8.0f}, {3.5f, 1.0f, 3.5f});
-    c1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c1));
-
-    // Rising platforms (simulated with stepped design)
-    for (int i = 0; i < 6; i++)
-    {
-        Vector3 risePos = {30.0f + i * 3.0f, 1.0f + i * 2.0f, 5.0f};
-        Color fireColor = Color{static_cast<unsigned char>(80 + i * 20), 20, 10, 255};
-        DrawCube(risePos, 2.8f, 1.0f, 2.8f, fireColor);
-        Collision riseColl(risePos, {2.8f, 1.0f, 2.8f});
-        riseColl.SetCollisionType(CollisionType::AABB_ONLY);
-        m_collisionManager.AddCollider(std::move(riseColl));
-    }
-
-    // Fire pit crossing (narrow bridges)
-    Vector3 bridge1 = {50.0f, 4.0f, 2.0f};
-    DrawCube(bridge1, 6.0f, 1.0f, 1.2f, Color{60, 20, 15, 255});
-    Collision c2({50.0f, 4.0f, 2.0f}, {6.0f, 1.0f, 1.2f});
-    c2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c2));
-
-    // Ascending fire platforms
-    Vector3 firePlat2 = {65.0f, 8.0f, -1.0f};
-    DrawCube(firePlat2, 2.2f, 1.0f, 2.2f, Color{120, 40, 25, 255});
-    Collision c3({65.0f, 8.0f, -1.0f}, {2.2f, 1.0f, 2.2f});
-    c3.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c3));
-
-    // Magma chamber platforms
-    Vector3 magma1 = {80.0f, 5.0f, 3.0f};
-    DrawCube(magma1, 3.0f, 1.0f, 3.0f, Color{90, 25, 15, 255});
-    Collision c4({80.0f, 5.0f, 3.0f}, {3.0f, 1.0f, 3.0f});
-    c4.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c4));
-
-    // Final volcanic platform
-    Vector3 endPos = {100.0f, 2.0f, 0.0f};
-    DrawCube(endPos, 5.0f, 1.0f, 5.0f, Color{70, 20, 10, 255});
-    Collision endPlatform({100.0f, 2.0f, 0.0f}, {5.0f, 1.0f, 5.0f});
-    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(endPlatform));
-}
-
-void Game::CreateSkyIslandsMap()
-{
-    // Sky islands floating parkour map using Raylib functions
-    Vector3 startPos = {0.0f, 10.0f, 0.0f};
-
-    // Cloud starting platform
-    DrawCube(startPos, 4.0f, 1.0f, 4.0f, WHITE);
-    Collision startPlatform({0.0f, 10.0f, 0.0f}, {4.0f, 1.0f, 4.0f});
-    startPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(startPlatform));
-
-    // Floating island chain
-    for (int i = 0; i < 10; i++)
-    {
-        float x = 15.0f + i * 8.0f;
-        float y = 10.0f + sin(i * 0.5f) * 3.0f;
-        float z = sin(i * 0.3f) * 5.0f;
-
-        Vector3 islandPos = {x, y, z};
-        Color islandColor = Color{static_cast<unsigned char>(200 + i * 5), 220, 240, 255};
-        DrawCube(islandPos, 3.0f, 1.0f, 3.0f, islandColor);
-        Collision islandColl(islandPos, {3.0f, 1.0f, 3.0f});
-        islandColl.SetCollisionType(CollisionType::AABB_ONLY);
-        m_collisionManager.AddCollider(std::move(islandColl));
-    }
-
-    // Cloud bridges
-    Vector3 cloudBridge1 = {45.0f, 12.0f, 2.0f};
-    DrawCube(cloudBridge1, 8.0f, 1.0f, 2.0f, Color{240, 240, 255, 255});
-    Collision c1({45.0f, 12.0f, 2.0f}, {8.0f, 1.0f, 2.0f});
-    c1.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c1));
-
-    // High altitude challenge
-    Vector3 highPlat = {70.0f, 18.0f, -3.0f};
-    DrawCube(highPlat, 2.5f, 1.0f, 2.5f, Color{220, 230, 250, 255});
-    Collision c2({70.0f, 18.0f, -3.0f}, {2.5f, 1.0f, 2.5f});
-    c2.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(c2));
-
-    // Descending cloud platforms
-    for (int i = 0; i < 6; i++)
-    {
-        Vector3 descendPos = {85.0f + i * 4.0f, 15.0f - i * 1.5f, 1.0f};
-        DrawCube(descendPos, 2.8f, 1.0f, 2.8f, Color{210, 220, 245, 255});
-        Collision descendColl(descendPos, {2.8f, 1.0f, 2.8f});
-        descendColl.SetCollisionType(CollisionType::AABB_ONLY);
-        m_collisionManager.AddCollider(std::move(descendColl));
-    }
-
-    // Final landing platform
-    Vector3 endPos = {110.0f, 8.0f, -1.0f};
-    DrawCube(endPos, 6.0f, 1.0f, 6.0f, Color{255, 255, 255, 255});
-    Collision endPlatform({110.0f, 8.0f, -1.0f}, {6.0f, 1.0f, 6.0f});
-    endPlatform.SetCollisionType(CollisionType::AABB_ONLY);
-    m_collisionManager.AddCollider(std::move(endPlatform));
-}
 
 // ============================================================================
 // Editor Map Loading System

@@ -27,6 +27,10 @@ private:
     bool m_isGameInitialized;
     [[maybe_unused]] bool m_isDebugInfo;
 
+    // Game state saving members
+    std::string m_savedMapPath;
+    Vector3 m_savedPlayerPosition;
+
 public:
     Game(Engine *engine);
     ~Game();
@@ -80,6 +84,10 @@ public:
     // Map loading and rendering
     void LoadEditorMap(const std::string& mapPath);
     void RenderEditorMap();
+
+    // Game state management
+    void SaveGameState();
+    void RestoreGameState();
 
     // Test accessor methods - public for testing purposes
     Player& GetPlayer();
