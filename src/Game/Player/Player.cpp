@@ -5,7 +5,7 @@
 #include <memory>
 
 // Define player constants
-const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 5.0f,
+const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 160.0f,
                                                 0.0f}; // Safe spawn position above ground
 const float Player::MODEL_Y_OFFSET = -1.f;
 const float Player::MODEL_SCALE = 1.1f;
@@ -109,7 +109,7 @@ void Player::Update(const CollisionManager &collisionManager)
     // Update camera
     m_cameraController->UpdateCameraRotation();
     m_cameraController->UpdateMouseRotation(m_cameraController->GetCamera(),
-                                            m_movement->GetPosition());
+                                             m_movement->GetPosition());
     m_cameraController->Update();
 
     // Apply physics
@@ -124,6 +124,7 @@ void Player::Update(const CollisionManager &collisionManager)
     // Integrate horizontal velocity from physics into desired position
     Vector3 horizVel = m_movement->GetPhysics().GetVelocity();
     horizVel.y = 0.0f;
+    TraceLog(LOG_INFO, "Player::Update() - Horizontal velocity before move: (%.3f, %.3f, %.3f)", horizVel.x, horizVel.y, horizVel.z);
     if (Vector3Length(horizVel) > 0.0f)
     {
         Vector3 step = Vector3Scale(horizVel, deltaTime);
@@ -131,6 +132,7 @@ void Player::Update(const CollisionManager &collisionManager)
     }
 
     Vector3 newPosition = m_movement->StepMovement(collisionManager);
+    TraceLog(LOG_INFO, "Player::Update() - New position after StepMovement: (%.3f, %.3f, %.3f)", newPosition.x, newPosition.y, newPosition.z);
 
     SetPlayerPosition(newPosition);
 
@@ -166,6 +168,7 @@ void Player::Update(const CollisionManager &collisionManager)
             m_movement->GetPhysics().SetVelocity(currentVel);
         }
     }
+    TraceLog(LOG_INFO, "Player::Update() - Final velocity: (%.3f, %.3f, %.3f), grounded: %d", m_movement->GetPhysics().GetVelocity().x, m_movement->GetPhysics().GetVelocity().y, m_movement->GetPhysics().GetVelocity().z, m_movement->GetPhysics().IsGrounded());
 }
 
 float Player::GetSpeed() const { return m_movement->GetSpeed(); }
