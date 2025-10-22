@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\gitnext\Chained Decos\build\src\Game\Player\CMakeFiles\player.dir\Unity\unity_0_cxx.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Player\Player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Player\PlayerCollision.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Player\PlayerInput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Player\PlayerModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\gitnext\Chained Decos\src\Game\Player\PlayerMovement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Player\Player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Player\PlayerCollision.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Player\PlayerInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Player\PlayerModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\gitnext\Chained Decos\src\Game\Player\PlayerMovement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\gitnext\Chained Decos\src\Game\Player\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="D:\gitnext\Chained Decos\.deps\nlohmann_json-src\nlohmann_json.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{CC0EB81C-FE95-3EEF-9BD9-684B18D8FAC7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{E623EF57-74B1-3BB1-AB4F-B7A0421A2E28}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
