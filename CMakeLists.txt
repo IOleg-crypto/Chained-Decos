@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(ChainedDecos VERSION 1.0.0 LANGUAGES CXX C)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -310,13 +310,24 @@ if(BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()
 
+FetchContent_Declare(
+        nfd
+        GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
+        GIT_TAG        v1.1.1
+)
+
+set(NFD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(nfd)
+
+# Set up nfd include directories
+target_include_directories(nfd INTERFACE ${nfd_SOURCE_DIR}/src/include)
+
 # Installation configuration
 install(TARGETS ChainedDecos
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
-
 # # Install resources (only if directory exists)
 # if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
 #     install(DIRECTORY resources/
