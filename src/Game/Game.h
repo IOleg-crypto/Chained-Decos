@@ -29,7 +29,9 @@ private:
 
     // Game state saving members
     std::string m_savedMapPath;
+    std::string m_currentMapPath;
     Vector3 m_savedPlayerPosition;
+    Vector3 m_savedPlayerVelocity;
 
 public:
     Game(Engine *engine);
@@ -69,17 +71,6 @@ public:
     // Helper functions for code quality and reduced duplication
     void CreatePlatform(const Vector3& position, const Vector3& size, Color color, CollisionType collisionType);
     float CalculateDynamicFontSize(float baseSize) const;
-    
-    // Parkour test map creation
-    void CreateParkourTestMap();
-    void CreateEasyParkourMap();
-    void CreateMediumParkourMap();
-    void CreateHardParkourMap();
-    void CreateSpeedrunParkourMap();
-    void CreateIceTempleMap();
-    void CreateFireTempleMap();
-    void CreateSkyIslandsMap();
-
 
     // Map loading and rendering
     void LoadEditorMap(const std::string& mapPath);
