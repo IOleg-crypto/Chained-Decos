@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <raylib.h>
+#include <imgui/imgui.h>
 #include "MenuConstants.h"
 
 namespace MenuConstants {
@@ -28,20 +29,10 @@ namespace MenuConstants {
 class ConsoleManager {
 private:
     bool consoleOpen = false;
-    std::string consoleInput;
     std::vector<std::string> consoleHistory;
     std::vector<std::string> consoleOutput;
-    size_t consoleHistoryIndex = 0;
 
-    Font consoleFont;
-
-    // Console dimensions and layout
-    int consoleHeight = 200;
-    int inputHeight = 30;
-    int lineHeight = 20;
-
-    // Scrolling
-    int scrollOffset = 0;
+    // Console dimensions and layout (not used with ImGui)
 
     // Constants
     static constexpr size_t MAX_CONSOLE_LINES = 100;
@@ -59,12 +50,7 @@ public:
     void CloseConsole();
     bool IsConsoleOpen() const { return consoleOpen; }
 
-    // Input handling
-    void HandleInput();
-    void ProcessInputCharacter(char character);
-    void ProcessBackspace();
-    void ProcessEnter();
-    void NavigateHistory(bool up);
+    // Input handling removed as ImGui handles it
 
     // Command execution
     void ExecuteCommand(const std::string& command);
@@ -72,30 +58,17 @@ public:
     void ClearOutput();
 
     // Rendering
-    void RenderConsole() const;
+    void RenderConsole();
 
     // History management
     void AddToHistory(const std::string& command);
     const std::vector<std::string>& GetHistory() const { return consoleHistory; }
     const std::vector<std::string>& GetOutput() const { return consoleOutput; }
 
-    // Utility
-    std::string GetCurrentInput() const { return consoleInput; }
-    void SetInput(const std::string& input) { consoleInput = input; }
-    int GetVisibleLineCount() const;
-    void ScrollUp();
-    void ScrollDown();
+    // Utility (removed as ImGui handles input)
 
 private:
-    // Input processing helpers
-    void ProcessCommand(const std::string& command);
-    void AddToCommandHistory(const std::string& command);
-    void UpdateScrollPosition();
-
-    // Rendering helpers
-    void RenderOutputArea() const;
-    void RenderInputArea() const;
-    void RenderScrollbar() const;
+    // Command processing helpers removed
 
 private:
     // Command processing

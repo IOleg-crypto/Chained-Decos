@@ -14,7 +14,6 @@
 #include "Engine/CameraController/CameraController.h"
 #include "Engine/Model/Model.h"
 #include "MapObject.h"
-#include "../Map/ParkourMapGenerator.h"
 #include "../Map/MapLoader.h"
 // Main editor class for the map editor
 class Editor
@@ -52,7 +51,7 @@ private:
 
     // Parkour map dialog
     bool m_displayParkourMapDialog;                               // Show/hide parkour map dialog
-    std::vector<ParkourTestMap> m_availableParkourMaps;           // Available parkour maps
+    std::vector<GameMap> m_availableParkourMaps;                  // Available parkour maps
     int m_currentlySelectedParkourMapIndex;                       // Index of selected parkour map
 
     // Available editing tools

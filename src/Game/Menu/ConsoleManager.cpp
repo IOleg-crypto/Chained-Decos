@@ -1,5 +1,6 @@
 #include "ConsoleManager.h"
 #include <raylib.h>
+#include <imgui/imgui.h>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
@@ -7,20 +8,7 @@
 ConsoleManager::ConsoleManager() {
     TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER BEING INITIALIZED");
 
-    // Load font for console (use default if Alan Sans is not available)
-    consoleFont = GetFontDefault();
-
-    // Try to load Alan Sans font for better console appearance
-    const std::string alanSansFontPath = PROJECT_ROOT_DIR "/resources/font/AlanSans.ttf";
-    consoleFont = LoadFontEx(alanSansFontPath.c_str(), 20, nullptr, 0);
-
-    if (consoleFont.texture.id == 0) {
-        TraceLog(LOG_WARNING, "ConsoleManager::ConsoleManager() - Failed to load Alan Sans font for console, using default font");
-        consoleFont = GetFontDefault();
-    } else {
-        SetTextureFilter(consoleFont.texture, TEXTURE_FILTER_BILINEAR);
-        TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - Alan Sans font loaded successfully");
-    }
+    // Note: Font loading removed as it's not needed for ImGui integration
 
     TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER INITIALIZED");
 }
@@ -36,89 +24,13 @@ void ConsoleManager::ToggleConsole() {
 
 void ConsoleManager::OpenConsole() {
     consoleOpen = true;
-    consoleInput.clear();
-    consoleHistoryIndex = consoleHistory.size();
-    scrollOffset = 0;
 }
 
 void ConsoleManager::CloseConsole() {
     consoleOpen = false;
-    consoleInput.clear();
-    scrollOffset = 0;
 }
 
-void ConsoleManager::HandleInput() {
-    if (!consoleOpen) return;
-
-    // Handle text input
-    int key = GetCharPressed();
-    while (key > 0) {
-        ProcessInputCharacter(static_cast<char>(key));
-        key = GetCharPressed();
-    }
-
-    // Handle backspace
-    if (IsKeyPressed(KEY_BACKSPACE)) {
-        ProcessBackspace();
-    }
-
-    // Handle enter
-    if (IsKeyPressed(KEY_ENTER)) {
-        ProcessEnter();
-    }
-
-    // Handle history navigation
-    if (IsKeyPressed(KEY_UP)) {
-        NavigateHistory(true);
-    }
-    if (IsKeyPressed(KEY_DOWN)) {
-        NavigateHistory(false);
-    }
-
-    // Handle scrolling
-    if (IsKeyPressed(KEY_PAGE_UP)) {
-        ScrollUp();
-    }
-    if (IsKeyPressed(KEY_PAGE_DOWN)) {
-        ScrollDown();
-    }
-}
-
-void ConsoleManager::ProcessInputCharacter(char character) {
-    if (character >= 32 && character <= 125) { // Printable characters
-        consoleInput += character;
-    }
-}
-
-void ConsoleManager::ProcessBackspace() {
-    if (!consoleInput.empty()) {
-        consoleInput.pop_back();
-    }
-}
-
-void ConsoleManager::ProcessEnter() {
-    if (!consoleInput.empty()) {
-        ExecuteCommand(consoleInput);
-        AddToHistory(consoleInput);
-        consoleInput.clear();
-        consoleHistoryIndex = consoleHistory.size();
-    }
-}
-
-void ConsoleManager::NavigateHistory(bool up) {
-    if (consoleHistory.empty()) return;
-
-    if (up && consoleHistoryIndex > 0) {
-        consoleHistoryIndex--;
-        consoleInput = consoleHistory[consoleHistoryIndex];
-    } else if (!up && consoleHistoryIndex < consoleHistory.size() - 1) {
-        consoleHistoryIndex++;
-        consoleInput = consoleHistory[consoleHistoryIndex];
-    } else if (!up && consoleHistoryIndex == consoleHistory.size() - 1) {
-        consoleHistoryIndex = consoleHistory.size();
-        consoleInput.clear();
-    }
-}
+// Input handling removed as ImGui handles it
 
 void ConsoleManager::ExecuteCommand(const std::string& command) {
     AddOutput("> " + command);
@@ -200,14 +112,10 @@ void ConsoleManager::AddOutput(const std::string& text) {
     if (consoleOutput.size() > MAX_CONSOLE_LINES) {
         consoleOutput.erase(consoleOutput.begin(), consoleOutput.begin() + (consoleOutput.size() - MAX_CONSOLE_LINES));
     }
-
-    // Auto-scroll to bottom when new output is added
-    scrollOffset = 0;
 }
 
 void ConsoleManager::ClearOutput() {
     consoleOutput.clear();
-    scrollOffset = 0;
 }
 
 void ConsoleManager::AddToHistory(const std::string& command) {
@@ -224,71 +132,39 @@ void ConsoleManager::AddToHistory(const std::string& command) {
     }
 }
 
-int ConsoleManager::GetVisibleLineCount() const {
-    int availableHeight = consoleHeight - inputHeight - 10; // 10px padding
-    return availableHeight / lineHeight;
-}
+// Scrolling functions removed as ImGui handles scrolling
 
-void ConsoleManager::ScrollUp() {
-    int maxScroll = std::max(0, static_cast<int>(consoleOutput.size()) - GetVisibleLineCount());
-    scrollOffset = std::min(maxScroll, scrollOffset + 1);
-}
-
-void ConsoleManager::ScrollDown() {
-    scrollOffset = std::max(0, scrollOffset - 1);
-}
-
-void ConsoleManager::RenderConsole() const {
+void ConsoleManager::RenderConsole() {
     if (!consoleOpen) return;
 
-    int screenWidth = GetScreenWidth();
-    int screenHeight = GetScreenHeight();
+    // Create ImGui window for console
+    ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+    bool open = consoleOpen;
+    ImGui::Begin("Console", &open, ImGuiWindowFlags_NoCollapse);
+    consoleOpen = open;
 
-    // Draw console background
-    DrawRectangle(0, 0, screenWidth, consoleHeight, Fade(BLACK, 0.8f));
-    DrawRectangleLines(0, 0, screenWidth, consoleHeight, WHITE);
+    // Display output
+    ImGui::BeginChild("Output", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false, ImGuiWindowFlags_HorizontalScrollbar);
+    for (const auto& line : consoleOutput) {
+        ImGui::TextUnformatted(line.c_str());
+    }
+    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+        ImGui::SetScrollHereY(1.0f);
+    }
+    ImGui::EndChild();
 
-    // Draw console title
-    DrawText("Console (F1: Help, ~: Close)", 10, 10, 20, WHITE);
-
-    // Calculate visible area
-    int outputStartY = 30;
-    int outputHeight = consoleHeight - inputHeight - 40;
-    int maxVisibleLines = outputHeight / lineHeight;
-
-    // Draw output lines
-    int startLine = std::max(0, static_cast<int>(consoleOutput.size()) - maxVisibleLines - scrollOffset);
-    int endLine = std::min(static_cast<int>(consoleOutput.size()), startLine + maxVisibleLines);
-
-    for (int i = startLine; i < endLine; ++i) {
-        int y = outputStartY + (i - startLine) * lineHeight;
-        DrawText(consoleOutput[i].c_str(), 10, y, 16, WHITE);
+    // Input area
+    ImGui::Separator();
+    static char inputBuffer[256] = "";
+    if (ImGui::InputText("##Input", inputBuffer, IM_ARRAYSIZE(inputBuffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
+        std::string command = inputBuffer;
+        if (!command.empty()) {
+            ExecuteCommand(command);
+            AddToHistory(command);
+            inputBuffer[0] = '\0';
+        }
     }
 
-    // Draw input area
-    int inputY = consoleHeight - inputHeight - 5;
-    DrawRectangle(5, inputY, screenWidth - 10, inputHeight, Fade(DARKGRAY, 0.5f));
-    DrawRectangleLines(5, inputY, screenWidth - 10, inputHeight, WHITE);
-
-    // Draw input text
-    std::string displayInput = "> " + consoleInput;
-    if (static_cast<int>(GetTime() * 2) % 2) { // Blinking cursor
-        displayInput += "_";
-    }
-    DrawText(displayInput.c_str(), 15, inputY + 5, 18, WHITE);
-
-    // Draw scroll indicator if needed
-    if (static_cast<int>(consoleOutput.size()) > maxVisibleLines) {
-        float scrollPercent = static_cast<float>(scrollOffset) / (consoleOutput.size() - maxVisibleLines);
-        int scrollbarHeight = outputHeight;
-        int scrollbarY = outputStartY;
-
-        // Draw scrollbar background
-        DrawRectangle(screenWidth - 15, scrollbarY, 10, scrollbarHeight, Fade(DARKGRAY, 0.5f));
-
-        // Draw scrollbar thumb
-        int thumbHeight = std::max(20, static_cast<int>(scrollbarHeight * (static_cast<float>(maxVisibleLines) / consoleOutput.size())));
-        int thumbY = scrollbarY + static_cast<int>(scrollPercent * (scrollbarHeight - thumbHeight));
-        DrawRectangle(screenWidth - 15, thumbY, 10, thumbHeight, WHITE);
-    }
+    ImGui::End();
 }

@@ -1,4 +1,4 @@
-#include "Map/ParkourMapGenerator.h"
+#include "Map/MapLoader.h"
 #include "raylib.h"
 #include <memory>
 #include <cmath>
@@ -22,7 +22,7 @@ public:
     DemoPlayer(Vector3 startPos) : position(startPos), velocity({0,0,0}), yaw(-3.14f), pitch(0), isOnGround(false), canJump(true), jumpCooldown(0)
     {}
 
-    void Update(float deltaTime, const ParkourTestMap& map)
+    void Update(float deltaTime, const GameMap& map)
     {
         // Handle mouse look
         Vector2 mouseDelta = GetMouseDelta();
@@ -77,9 +77,9 @@ public:
 
         // Check collision with platforms
         bool collision = false;
-        for (const auto& element : map.elements)
+        for (const auto& object : map.objects)
         {
-            if (element.isPlatform && CheckPlayerPlatformCollision(position, newPosition, element))
+            if (object.isPlatform && CheckPlayerPlatformCollision(position, newPosition, object))
             {
                 collision = true;
                 break;
@@ -99,9 +99,9 @@ public:
             horizontalMove.z += velocity.z * deltaTime;
 
             bool horizontalCollision = false;
-            for (const auto& element : map.elements)
+            for (const auto& object : map.objects)
             {
-                if (element.isPlatform && CheckPlayerPlatformCollision(position, horizontalMove, element))
+                if (object.isPlatform && CheckPlayerPlatformCollision(position, horizontalMove, object))
                 {
                     horizontalCollision = true;
                     break;
@@ -120,11 +120,11 @@ public:
             if (velocity.y <= 0)
             {
                 Vector3 groundCheck = {position.x, position.y - 0.1f, position.z};
-                for (const auto& element : map.elements)
+                for (const auto& object : map.objects)
                 {
-                    if (element.isPlatform && CheckPointPlatformCollision(groundCheck, element))
+                    if (object.isPlatform && CheckPointPlatformCollision(groundCheck, object))
                     {
-                        position.y = element.position.y + element.size.y/2 + 1.0f;
+                        position.y = object.position.y + object.scale.y/2 + 1.0f;
                         velocity.y = 0;
                         isOnGround = true;
                         canJump = true;
@@ -156,7 +156,7 @@ public:
     }
 
 private:
-    bool CheckPlayerPlatformCollision(Vector3 oldPos, Vector3 newPos, const ParkourElement& platform)
+    bool CheckPlayerPlatformCollision(Vector3 oldPos, Vector3 newPos, const MapObjectData& object)
     {
         // Simple AABB collision detection
         Vector3 playerSize = {0.5f, 1.8f, 0.5f}; // Player bounding box
@@ -168,26 +168,26 @@ private:
         float playerMinZ = newPos.z - playerSize.z/2;
         float playerMaxZ = newPos.z + playerSize.z/2;
 
-        float platformMinX = platform.position.x - platform.size.x/2;
-        float platformMaxX = platform.position.x + platform.size.x/2;
-        float platformMinY = platform.position.y - platform.size.y/2;
-        float platformMaxY = platform.position.y + platform.size.y/2;
-        float platformMinZ = platform.position.z - platform.size.z/2;
-        float platformMaxZ = platform.position.z + platform.size.z/2;
+        float platformMinX = object.position.x - object.scale.x/2;
+        float platformMaxX = object.position.x + object.scale.x/2;
+        float platformMinY = object.position.y - object.scale.y/2;
+        float platformMaxY = object.position.y + object.scale.y/2;
+        float platformMinZ = object.position.z - object.scale.z/2;
+        float platformMaxZ = object.position.z + object.scale.z/2;
 
         return !(playerMaxX <= platformMinX || playerMinX >= platformMaxX ||
-                playerMaxY <= platformMinY || playerMinY >= platformMaxY ||
-                playerMaxZ <= platformMinZ || playerMinZ >= platformMaxZ);
+                 playerMaxY <= platformMinY || playerMinY >= platformMaxY ||
+                 playerMaxZ <= platformMinZ || playerMinZ >= platformMaxZ);
     }
 
-    bool CheckPointPlatformCollision(Vector3 point, const ParkourElement& platform)
+    bool CheckPointPlatformCollision(Vector3 point, const MapObjectData& object)
     {
-        float platformMinX = platform.position.x - platform.size.x/2;
-        float platformMaxX = platform.position.x + platform.size.x/2;
-        float platformMinY = platform.position.y - platform.size.y/2;
-        float platformMaxY = platform.position.y + platform.size.y/2;
-        float platformMinZ = platform.position.z - platform.size.z/2;
-        float platformMaxZ = platform.position.z + platform.size.z/2;
+        float platformMinX = object.position.x - object.scale.x/2;
+        float platformMaxX = object.position.x + object.scale.x/2;
+        float platformMinY = object.position.y - object.scale.y/2;
+        float platformMaxY = object.position.y + object.scale.y/2;
+        float platformMinZ = object.position.z - object.scale.z/2;
+        float platformMaxZ = object.position.z + object.scale.z/2;
 
         return (point.x >= platformMinX && point.x <= platformMaxX &&
                 point.y >= platformMinY && point.y <= platformMaxY &&
@@ -202,21 +202,22 @@ private:
     int screenWidth;
     int screenHeight;
     Camera3D camera;
-    ParkourTestMap currentMap;
+    GameMap currentMap;
     int currentMapIndex;
-    std::vector<ParkourTestMap> availableMaps;
+    std::vector<GameMap> availableMaps;
     bool showMapSelection;
     std::unique_ptr<DemoPlayer> player;
+    MapLoader loader;
 
 public:
     ParkourDemo(int width, int height) : screenWidth(width), screenHeight(height), currentMapIndex(0), showMapSelection(true)
     {
         // Load all available maps
-        availableMaps = ParkourMapGenerator::GetAllParkourMaps();
+        availableMaps = loader.LoadAllMapsFromDirectory("resources/maps");
         if (!availableMaps.empty())
         {
             currentMap = availableMaps[0];
-            player = std::make_unique<DemoPlayer>(currentMap.startPosition);
+            player = std::make_unique<DemoPlayer>(currentMap.metadata.startPosition);
         }
         else
         {
@@ -252,7 +253,7 @@ public:
             currentMap = availableMaps[currentMapIndex];
             if (player)
             {
-                player = std::make_unique<DemoPlayer>(currentMap.startPosition);
+                player = std::make_unique<DemoPlayer>(currentMap.metadata.startPosition);
             }
             showMapSelection = false;
         }
@@ -276,7 +277,7 @@ public:
     void Render()
     {
         BeginDrawing();
-        ClearBackground(currentMap.skyColor);
+        ClearBackground(currentMap.metadata.skyColor);
 
         // Update camera based on player position
         if (player)
@@ -291,11 +292,11 @@ public:
         BeginMode3D(camera);
 
         // Render the current parkour map
-        ParkourMapGenerator::RenderParkourMap(currentMap, camera);
+        RenderGameMap(currentMap, camera);
 
         // Draw start and end position indicators
-        DrawSphere(currentMap.startPosition, 0.5f, GREEN);
-        DrawSphere(currentMap.endPosition, 0.5f, YELLOW);
+        DrawSphere(currentMap.metadata.startPosition, 0.5f, GREEN);
+        DrawSphere(currentMap.metadata.endPosition, 0.5f, YELLOW);
 
         // Draw player position indicator (for debugging)
         if (player)
@@ -307,9 +308,9 @@ public:
         EndMode3D();
 
         // Draw UI
-        DrawText(TextFormat("Current Map: %s", currentMap.displayName.c_str()), 10, 10, 20, WHITE);
-        DrawText(TextFormat("Difficulty: %.1f/5.0", currentMap.difficulty), 10, 40, 20, WHITE);
-        DrawText(currentMap.description.c_str(), 10, 70, 15, LIGHTGRAY);
+        DrawText(TextFormat("Current Map: %s", currentMap.metadata.displayName.c_str()), 10, 10, 20, WHITE);
+        DrawText(TextFormat("Difficulty: %.1f/5.0", currentMap.metadata.difficulty), 10, 40, 20, WHITE);
+        DrawText(currentMap.metadata.description.c_str(), 10, 70, 15, LIGHTGRAY);
 
         // Controls help
         if (!showMapSelection)
@@ -327,10 +328,10 @@ public:
             {
                 Color color = (i == currentMapIndex) ? YELLOW : WHITE;
                 DrawText(TextFormat("%zu. %s (%.1f)",
-                       i + 1,
-                       availableMaps[i].displayName.c_str(),
-                       availableMaps[i].difficulty),
-                       screenWidth/2 - 200, screenHeight/2 - 50 + (int)i * 30, 20, color);
+                        i + 1,
+                        availableMaps[i].metadata.displayName.c_str(),
+                        availableMaps[i].metadata.difficulty),
+                        screenWidth/2 - 200, screenHeight/2 - 50 + (int)i * 30, 20, color);
             }
 
             DrawText("Press ENTER to select, TAB to close", screenWidth/2 - 150, screenHeight - 80, 20, GRAY);

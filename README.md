@@ -434,12 +434,6 @@ class Player {
     std::shared_ptr<ModelComponent> model;
 };
 
-// Example: Map generation
-class ParkourMapGenerator {
-    void GeneratePlatforms(DifficultyLevel level);
-    void SetupCollisions();
-    void AddVisualEffects();
-};
 ```
 
 ### Extension Points

@@ -4,8 +4,5 @@
 #include "D:/gitnext/Chained Decos/src/Game/Map/MapLoader.cpp"
 
 /* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */
-#include "D:/gitnext/Chained Decos/src/Game/Map/ParkourMapGenerator.cpp"
-
-/* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */
 #include "D:/gitnext/Chained Decos/src/Game/MapEditor/MapFileManager/JsonMapFileManager.cpp"
 

@@ -13,8 +13,8 @@ enum class MapObjectType
     SPHERE = 1,
     CYLINDER = 2,
     PLANE = 3,
-    MODEL = 4,
-    LIGHT = 5
+    LIGHT = 4,
+    MODEL = 5
 };
 
 // Enhanced map object structure for editor-created maps
@@ -33,9 +33,14 @@ struct MapObjectData
     float height; // For cylinders
     Vector2 size; // For planes
 
+    // Collision properties
+    bool isPlatform;
+    bool isObstacle;
+
     MapObjectData()
         : name(""), type(MapObjectType::CUBE), position{0, 0, 0}, rotation{0, 0, 0},
-          scale{1, 1, 1}, color{WHITE}, modelName(""), radius(1.0f), height(1.0f), size{1, 1}
+          scale{1, 1, 1}, color{WHITE}, modelName(""), radius(1.0f), height(1.0f), size{1, 1},
+          isPlatform(true), isObstacle(false)
     {}
 };
 
@@ -108,6 +113,12 @@ public:
     bool SaveMap(const GameMap& map, const std::string& path);
     std::vector<ModelInfo> LoadModelsFromDirectory(const std::string& directory);
     bool SaveModelConfig(const std::vector<ModelInfo>& models, const std::string& path);
+
+    // Load all maps from a directory
+    std::vector<GameMap> LoadAllMapsFromDirectory(const std::string& directory);
+
+    // Get map names from directory
+    std::vector<std::string> GetMapNamesFromDirectory(const std::string& directory);
 };
 
 
