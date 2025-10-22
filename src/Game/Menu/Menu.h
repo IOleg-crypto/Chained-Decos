@@ -49,6 +49,7 @@ enum class MenuState : uint8_t
 {
     Main,
     GameMode,
+    Resume,
     MapSelection,
     Options,
     Video,
@@ -105,6 +106,8 @@ public:
     [[nodiscard]] MenuAction ConsumeAction();
     [[nodiscard]] MenuState GetState() const;
     void SetState(MenuState state);
+    void SetResumeButtonOn(bool status);
+    bool GetResumeButtonStatus() const;
 
     // Navigation methods
     void ShowMainMenu();
@@ -228,6 +231,7 @@ private:
     // UI state
     bool m_showDemoWindow = false;
     bool m_showStyleEditor = false;
+    bool m_addResumeButton = false;
     ImGuiStyle m_customStyle{};
 
     // Options vectors
