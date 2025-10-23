@@ -1,5 +1,6 @@
 #include <Player.h>
 #include <PlayerInput.h>
+#include <imgui.h>
 
 PlayerInput::PlayerInput(Player *player) : m_player(player), m_walkSpeed(8.1f) {}
 
@@ -9,6 +10,12 @@ void PlayerInput::ProcessInput()
     if (!IsWindowReady())
     {
         TraceLog(LOG_INFO, "PlayerInput::ProcessInput() - Window not ready, skipping input");
+        return;
+    }
+
+    // Skip if ImGui wants keyboard capture (e.g., console open)
+    if (ImGui::GetIO().WantCaptureKeyboard)
+    {
         return;
     }
 
@@ -68,6 +75,12 @@ void PlayerInput::HandleJumpInput() const
         return;
     }
 
+    // Skip if ImGui wants keyboard capture
+    if (ImGui::GetIO().WantCaptureKeyboard)
+    {
+        return;
+    }
+
     if (IsKeyPressed(KEY_SPACE))
     {
         float jumpImpulse =
@@ -82,6 +95,12 @@ void PlayerInput::HandleEmergencyReset() const
 {
     // Skip key input if no window is available (for testing)
     if (!IsWindowReady())
+    {
+        return;
+    }
+
+    // Skip if ImGui wants keyboard capture
+    if (ImGui::GetIO().WantCaptureKeyboard)
     {
         return;
     }

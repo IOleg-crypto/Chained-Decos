@@ -11,10 +11,10 @@ using json = nlohmann::json;
 // GameMap struct implementation
 void GameMap::Cleanup()
 {
-    for (auto& model : loadedModels)
+    for (auto& pair : loadedModels)
     {
-        if (model.meshCount > 0)
-            UnloadModel(model);
+        if (pair.second.meshCount > 0)
+            UnloadModel(pair.second);
     }
     loadedModels.clear();
 }
@@ -79,7 +79,7 @@ GameMap LoadGameMapFromModelsFormat(const json& j, const std::string& path)
         if (!modelPath.empty() && FileExists(modelPath.c_str()))
         {
             Model model = LoadModel(modelPath.c_str());
-            map.loadedModels.push_back(model);
+            map.loadedModels[modelName] = model;
             TraceLog(LOG_INFO, "Loaded model: %s from %s", modelName.c_str(), modelPath.c_str());
         }
         else
@@ -275,9 +275,13 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
                 std::string modelPath = PROJECT_ROOT_DIR "resources/" + objectData.modelName;
                 if (FileExists(modelPath.c_str()))
                 {
-                    Model model = LoadModel(modelPath.c_str());
-                    map.loadedModels.push_back(model);
-                    TraceLog(LOG_INFO, "MapLoader: Loaded model %s", objectData.modelName.c_str());
+                    // Check if model is already loaded
+                    if (map.loadedModels.find(objectData.modelName) == map.loadedModels.end())
+                    {
+                        Model model = LoadModel(modelPath.c_str());
+                        map.loadedModels[objectData.modelName] = model;
+                        TraceLog(LOG_INFO, "MapLoader: Loaded model %s", objectData.modelName.c_str());
+                    }
                 }
                 else
                 {
@@ -464,7 +468,7 @@ void RenderGameMap(const GameMap& map, Camera3D camera)
     EndMode3D();
 }
 
-void RenderMapObject(const MapObjectData& object, const std::vector<Model>& loadedModels, [[maybe_unused]] Camera3D camera)
+void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::string, Model>& loadedModels, [[maybe_unused]] Camera3D camera)
 {
     // Apply object transformations
     Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
@@ -504,25 +508,31 @@ void RenderMapObject(const MapObjectData& object, const std::vector<Model>& load
 
         case MapObjectType::MODEL:
             // Find the corresponding loaded model for this object
-            if (!object.modelName.empty() && !loadedModels.empty())
+            if (!object.modelName.empty())
             {
-                // Try to find a model that matches the modelName
-                // For now, we'll use a simple approach - in a more sophisticated implementation,
-                // you could store models with their names or use a map for lookup
-                Model model = loadedModels[0]; // Use first model for now
+                auto it = loadedModels.find(object.modelName);
+                if (it != loadedModels.end())
+                {
+                    Model model = it->second;
 
-                // Apply transformations to the model
-                model.transform = transform;
+                    // Apply transformations to the model
+                    model.transform = transform;
 
-                // Draw the model with the object's color as tint
-                DrawModel(model, Vector3{0, 0, 0}, 1.0f, object.color);
+                    // Draw the model with the object's color as tint
+                    DrawModel(model, Vector3{0, 0, 0}, 1.0f, object.color);
 
-                // Optional: Draw model wires for debugging
-                // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
+                    // Optional: Draw model wires for debugging
+                    // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
+                }
+                else
+                {
+                    // Model not found, draw placeholder
+                    DrawSphere(Vector3{0, 0, 0}, 0.5f, RED);
+                }
             }
             else
             {
-                // No model name specified or no models loaded, draw placeholder
+                // No model name specified, draw placeholder
                 DrawSphere(Vector3{0, 0, 0}, 0.5f, RED);
             }
             break;

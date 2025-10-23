@@ -140,6 +140,7 @@ public:
     // Console functionality
     void ToggleConsole();
     [[nodiscard]] bool IsConsoleOpen() const;
+    ConsoleManager* GetConsoleManager() const { return m_consoleManager.get(); }
 
     // Keyboard navigation
     void HandleKeyboardNavigation();

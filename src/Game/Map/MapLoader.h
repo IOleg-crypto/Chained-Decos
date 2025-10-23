@@ -4,6 +4,7 @@
 #include <raylib.h>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <nlohmann/json.hpp>
 
 // Object types for the map
@@ -78,7 +79,7 @@ struct GameMap
 {
     MapMetadata metadata;
     std::vector<MapObjectData> objects;
-    std::vector<Model> loadedModels; // For cleanup
+    std::unordered_map<std::string, Model> loadedModels; // For cleanup
 
     GameMap() = default;
     ~GameMap() { Cleanup(); }
@@ -134,6 +135,6 @@ MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& positio
 
 // Map rendering functions
 void RenderGameMap(const GameMap& map, Camera3D camera);
-void RenderMapObject(const MapObjectData& object, const std::vector<Model>& loadedModels, Camera3D camera);
+void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::string, Model>& loadedModels, Camera3D camera);
 
 #endif // MAPLOADER_H
