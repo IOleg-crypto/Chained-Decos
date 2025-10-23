@@ -10,8 +10,12 @@
 #include "Game/Map/MapLoader.h"
 #include "Engine/Render/RenderManager.h"
 #include "imgui.h"
+#include "rlImGui.h"
 #include <unordered_set>
 #include <fstream>
+
+// Static member definition
+Game* Game::s_instance = nullptr;
 
 // Game constants
 namespace GameConstants {
@@ -24,6 +28,7 @@ namespace GameConstants {
 Game::Game(Engine *engine) : m_showMenu(true), m_isGameInitialized(false), m_isDebugInfo(true)
 {
     m_engine = engine;
+    s_instance = this;
     TraceLog(LOG_INFO, "Game class initialized.");
 }
 
@@ -63,9 +68,15 @@ void Game::Cleanup()
 
 Game::~Game()
 {
+    s_instance = nullptr;
     TraceLog(LOG_INFO, "Game class destructor called.");
     // Note: Cleanup() should be called explicitly before destruction
     // as destructors should not throw exceptions
+}
+
+Game* Game::GetInstance()
+{
+    return s_instance;
 }
 
 void Game::Init()
@@ -144,8 +155,8 @@ void Game::Update()
     // Console input is handled internally by the menu
 
 
-    // Only process other input if console is not open and engine is available
-    if (!m_menu.IsConsoleOpen() && m_engine)
+    // Process input always, let ImGui handle capture
+    if (m_engine)
     {
         m_engine->GetInputManager().ProcessInput();
     }
@@ -156,16 +167,13 @@ void Game::Update()
     }
     else
     {
-        // Only update game logic if console is not open
-        if (!m_menu.IsConsoleOpen())
-        {
-            // Debug: Check collision system before updating player
-            size_t colliderCount = m_collisionManager.GetColliders().size();
-            TraceLog(LOG_INFO, "Game::Update() - Collision system has %d colliders", colliderCount);
-    
-            UpdatePlayerLogic();
-            UpdatePhysicsLogic();
-        }
+        // Update game logic always, independent of console
+        // Debug: Check collision system before updating player
+        size_t colliderCount = m_collisionManager.GetColliders().size();
+        TraceLog(LOG_INFO, "Game::Update() - Collision system has %d colliders", colliderCount);
+ 
+        UpdatePlayerLogic();
+        UpdatePhysicsLogic();
     }
 }
 
@@ -223,7 +231,13 @@ void Game::Render()
         m_engine->GetRenderManager()->RenderDebugInfo(m_player, m_models, m_collisionManager);
     }
 
-    // Console is rendered internally by the menu
+    // Render console if open and not in menu
+    if (!m_showMenu && m_menu.GetConsoleManager() && m_menu.GetConsoleManager()->IsConsoleOpen())
+    {
+        rlImGuiBegin();
+        m_menu.GetConsoleManager()->RenderConsole();
+        rlImGuiEnd();
+    }
 
     m_engine->GetRenderManager()->EndFrame();
     // Optional kernel render pass hook
@@ -453,11 +467,6 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
         TraceLog(LOG_ERROR, "Game::InitCollisionsWithModels() - Failed to create model collisions: %s", e.what());
         TraceLog(LOG_WARNING, "Game::InitCollisionsWithModels() - Continuing without model collisions");
     }
-    catch (...)
-    {
-        TraceLog(LOG_ERROR, "Game::InitCollisionsWithModels() - Unknown error occurred during model collision creation");
-        TraceLog(LOG_WARNING, "Game::InitCollisionsWithModels() - Continuing without model collisions");
-    }
 
     // Reinitialize after adding all model colliders
     m_collisionManager.Initialize();
@@ -481,14 +490,6 @@ bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string>& required
         TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Clearing %zu existing colliders", previousColliderCount);
         m_collisionManager.ClearColliders();
     }
-
-    // // Create ground collision first (only if no custom map)
-    // if (m_gameMap.objects.empty())
-    // {
-    //     TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - No custom map loaded, creating default ground");
-    //     Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
-    //     m_collisionManager.AddCollider(std::move(groundPlane));
-    // }
 
     // Initialize collision manager
     m_collisionManager.Initialize();
@@ -591,25 +592,6 @@ void Game::InitPlayer()
                     TraceLog(LOG_INFO, "Game::InitPlayer() - Player model loaded successfully with fallback.");
                 }
             }
-
-            // Test if other models work - try loading plane.glb as a fallback test
-            TraceLog(LOG_INFO, "Game::InitPlayer() - Testing if other models can be loaded...");
-            Model* testModel = &m_models.GetModelByName("plane");
-            if (testModel && testModel->meshCount > 0)
-            {
-                TraceLog(LOG_INFO, "Game::InitPlayer() - Other models load successfully (plane.glb works)");
-                TraceLog(LOG_INFO, "Game::InitPlayer() - Issue is specific to player.glb file");
-            }
-            else
-            {
-                TraceLog(LOG_ERROR, "Game::InitPlayer() - Other models also fail to load");
-                TraceLog(LOG_INFO, "Game::InitPlayer() - Issue may be with GLB format or raylib loader");
-            }
-
-            // Create a simple fallback player model using basic shapes
-            TraceLog(LOG_INFO, "Game::InitPlayer() - Creating fallback player model using basic shapes...");
-            TraceLog(LOG_INFO, "Game::InitPlayer() - Using default player rendering (no 3D model)");
-            TraceLog(LOG_WARNING, "Game::InitPlayer() - Player will use default rendering");
         }
     }
     catch (const std::exception& e)
@@ -1249,6 +1231,8 @@ void Game::HandleMenuActions()
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting singleplayer...");
         m_menu.SetGameInProgress(true);
 
+    
+
         // Initialize player after map is loaded
         try
         {
@@ -1285,6 +1269,8 @@ void Game::HandleMenuActions()
                 return;
             }
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized for singleplayer");
+
+            
       
             // Initialize player after map is loaded
             try
@@ -1849,4 +1835,33 @@ void Game::SaveGameState()
     m_menu.SetResumeButtonOn(true);
 
     TraceLog(LOG_INFO, "Game::SaveGameState() - Game state saved successfully");
+}
+
+// Test accessor methods - public for testing purposes
+Player& Game::GetPlayer() {
+    return m_player;
+}
+
+CollisionManager& Game::GetCollisionManager() {
+    return m_collisionManager;
+}
+
+ModelLoader& Game::GetModels() {
+    return m_models;
+}
+
+WorldManager& Game::GetWorld() {
+    return m_world;
+}
+
+Menu& Game::GetMenu() {
+    return m_menu;
+}
+
+GameMap& Game::GetGameMap() {
+    return m_gameMap;
+}
+
+bool Game::IsInitialized() const {
+    return m_isGameInitialized;
 }

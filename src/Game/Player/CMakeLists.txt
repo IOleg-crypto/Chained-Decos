@@ -20,6 +20,7 @@ target_link_libraries(player PUBLIC
     nlohmann_json
     collision
     cameracontroller
+    imguilib
     model
     world
 )

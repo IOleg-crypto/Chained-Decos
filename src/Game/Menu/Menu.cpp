@@ -67,12 +67,6 @@ void Menu::Render()
     // Render current menu state
     RenderMenuState();
 
-    // Handle console if open
-    if (m_consoleManager && m_consoleManager->IsConsoleOpen())
-    {
-        m_consoleManager->RenderConsole();
-    }
-
 // Debug windows (only in debug builds)
 #ifdef _DEBUG
     if (m_showDemoWindow)
