@@ -12,6 +12,7 @@
 class Game
 {
 private:
+    static Game* s_instance;
     Player m_player;
     CollisionManager m_collisionManager;
     ModelLoader m_models;
@@ -79,6 +80,9 @@ public:
     // Game state management
     void SaveGameState();
     void RestoreGameState();
+
+    // Singleton methods
+    static Game* GetInstance();
 
     // Test accessor methods - public for testing purposes
     Player& GetPlayer();

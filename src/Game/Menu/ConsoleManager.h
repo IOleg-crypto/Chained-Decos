@@ -76,6 +76,7 @@ private:
     void ProcessClearCommand();
     void ProcessSetCommand(const std::string& key, const std::string& value);
     void ProcessGetCommand(const std::string& key);
+    void ProcessNoclipCommand();
 
     // Built-in commands
     std::vector<std::string> GetAvailableCommands() const;

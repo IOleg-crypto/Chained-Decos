@@ -1,4 +1,5 @@
 #include "ConsoleManager.h"
+#include "Game/Game.h"
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include <iostream>
@@ -56,6 +57,23 @@ void ConsoleManager::ExecuteCommand(const std::string& command) {
         ProcessSetCommand(key, value);
     } else if (cmd == "get") {
         ProcessGetCommand(args);
+    } else if (cmd == "noclip") {
+        ProcessNoclipCommand();
+    } else if (cmd == "speed") {
+        std::istringstream argStream(args);
+        float speed;
+        if (argStream >> speed) {
+            Game* game = Game::GetInstance();
+            if (!game) {
+                AddOutput("Error: Game instance not available.");
+                return;
+            }
+            Player& player = game->GetPlayer();
+            player.GetMovement()->SetSpeed(speed);
+            AddOutput("Player speed set to " + std::to_string(speed));
+        } else {
+            AddOutput("Usage: speed <value> - <value> must be a number.");
+        }
     } else if (cmd.empty()) {
         // Empty command, do nothing
     } else {
@@ -96,12 +114,28 @@ void ConsoleManager::ProcessGetCommand(const std::string& key) {
     AddOutput("Getting " + key + " (not implemented yet)");
 }
 
+void ConsoleManager::ProcessNoclipCommand() {
+    Game* game = Game::GetInstance();
+    if (!game) {
+        AddOutput("Error: Game instance not available.");
+        return;
+    }
+
+    Player& player = game->GetPlayer();
+    PlayerCollision& collision = player.GetCollisionMutable();
+    bool current = collision.IsUsingBVH();
+    collision.EnableBVHCollision(!current);
+    AddOutput("Noclip toggled: " + std::string(!current ? "enabled" : "disabled"));
+}
+
 std::vector<std::string> ConsoleManager::GetAvailableCommands() const {
     return {
         "help - Show available commands",
         "clear - Clear console output",
         "set <var> <value> - Set a variable",
-        "get <var> - Get a variable value"
+        "get <var> - Get a variable value",
+        "noclip - Toggle player collision",
+        "speed <value> - Set player speed"
     };
 }
 
