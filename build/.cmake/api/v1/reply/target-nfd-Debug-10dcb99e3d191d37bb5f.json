@@ -1,0 +1,293 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "/home/kali/Chained-Decos/.deps/nfd-build/src/libnfd.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"add_compile_options",
+			"target_compile_options",
+			"add_compile_definitions",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			".deps/nfd-src/src/CMakeLists.txt",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 60,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 86,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 94,
+				"parent" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 116,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 271,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 232,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 67,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 75,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++23"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-O0"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-w"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-Wno-error=implicit-function-declaration"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-nostdlib"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-fno-exceptions"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-fno-rtti"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 6,
+					"define" : "PROJECT_ROOT_DIR=\"/home/kali/Chained-Decos\""
+				},
+				{
+					"backtrace" : 7,
+					"define" : "_DEBUG"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 8,
+					"path" : "/home/kali/Chained-Decos/.deps/nfd-src/src/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/gtk-3.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/pango-1.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/glib-2.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/lib/x86_64-linux-gnu/glib-2.0/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/sysprof-6"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/harfbuzz"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/freetype2"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/libpng16"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/libmount"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/blkid"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/fribidi"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/cairo"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/pixman-1"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/gdk-pixbuf-2.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/webp"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/gio-unix-2.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/cloudproviders"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/atk-1.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/at-spi2-atk/2.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/at-spi-2.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/include/dbus-1.0"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/usr/lib/x86_64-linux-gnu/dbus-1.0/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "23"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"id" : "nfd::@1eb02669359527d07c9f",
+	"name" : "nfd",
+	"nameOnDisk" : "libnfd.a",
+	"paths" : 
+	{
+		"build" : "/home/kali/Chained-Decos/.deps/nfd-build/src",
+		"source" : ".deps/nfd-src/src"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				3
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				1,
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"compileGroupIndex" : 0,
+			"path" : ".deps/nfd-build/src/CMakeFiles/nfd.dir/Unity/unity_0_cxx.cxx",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : ".deps/nfd-src/src/include/nfd.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : ".deps/nfd-src/src/include/nfd.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : ".deps/nfd-src/src/nfd_gtk.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

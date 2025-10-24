@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "/home/kali/Chained-Decos/.deps/nfd-build/src",
+		"source" : ".deps/nfd-src/src"
+	}
+}

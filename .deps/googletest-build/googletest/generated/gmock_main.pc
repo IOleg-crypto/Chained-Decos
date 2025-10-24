@@ -1,5 +1,5 @@
-libdir=D:/gitnext/Chained Decos/build/install/lib
-includedir=D:/gitnext/Chained Decos/build/install/include
+libdir=/home/kali/Chained-Decos/build/install/lib
+includedir=/home/kali/Chained-Decos/build/install/include
 
 Name: gmock_main
 Description: GoogleMock (with main() function)
@@ -7,4 +7,4 @@ Version: 1.14.0
 URL: https://github.com/google/googletest
 Requires: gmock = 1.14.0
 Libs: -L${libdir} -lgmock_main 
-Cflags: -I${includedir} -DGTEST_HAS_PTHREAD=0
+Cflags: -I${includedir} -DGTEST_HAS_PTHREAD=1
