@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "/home/kali/Chained-Decos/.deps/googletest-build",
+		"source" : ".deps/googletest-src"
+	}
+}

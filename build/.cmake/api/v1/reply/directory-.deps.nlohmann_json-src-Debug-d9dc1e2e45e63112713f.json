@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "/home/kali/Chained-Decos/.deps/nlohmann_json-build",
+		"source" : ".deps/nlohmann_json-src"
+	}
+}
