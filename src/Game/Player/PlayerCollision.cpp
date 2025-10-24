@@ -126,6 +126,9 @@ bool PlayerCollision::CheckCollisionWithBVH(const Collision& other, Vector3& out
     
     if (hasCollision) {
         outResponse = totalResponse;
+        TraceLog(LOG_INFO, "PlayerCollision::CheckCollisionWithBVH - Collision detected, response: (%.3f, %.3f, %.3f)", totalResponse.x, totalResponse.y, totalResponse.z);
+    } else {
+        TraceLog(LOG_DEBUG, "PlayerCollision::CheckCollisionWithBVH - No collision detected");
     }
     
     return hasCollision;

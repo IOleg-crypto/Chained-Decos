@@ -71,7 +71,7 @@ public:
 
     // Helper functions for code quality and reduced duplication
     void CreatePlatform(const Vector3& position, const Vector3& size, Color color, CollisionType collisionType);
-    float CalculateDynamicFontSize(float baseSize) const;
+    static float CalculateDynamicFontSize(float baseSize) ;
 
     // Map loading and rendering
     void LoadEditorMap(const std::string& mapPath);

@@ -119,54 +119,71 @@ void Player::Update(const CollisionManager &collisionManager)
     HandleJumpInput();
     HandleEmergencyReset();
 
-    m_movement->ApplyGravity(deltaTime);
-
-    // Integrate horizontal velocity from physics into desired position
-    Vector3 horizVel = m_movement->GetPhysics().GetVelocity();
-    horizVel.y = 0.0f;
-    TraceLog(LOG_INFO, "Player::Update() - Horizontal velocity before move: (%.3f, %.3f, %.3f)", horizVel.x, horizVel.y, horizVel.z);
-    if (Vector3Length(horizVel) > 0.0f)
+    if (!m_movement->IsNoclip())
     {
-        Vector3 step = Vector3Scale(horizVel, deltaTime);
-        m_movement->Move(step);
-    }
+        m_movement->ApplyGravity(deltaTime);
 
-    Vector3 newPosition = m_movement->StepMovement(collisionManager);
-    TraceLog(LOG_INFO, "Player::Update() - New position after StepMovement: (%.3f, %.3f, %.3f)", newPosition.x, newPosition.y, newPosition.z);
-
-    SetPlayerPosition(newPosition);
-
-    UpdatePlayerBox();
-    UpdatePlayerCollision();
-
-    // Only snap when falling slowly to avoid oscillation
-    if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 0.0f)
-    {
-        m_movement->SnapToGround(collisionManager);
-    }
-
-    // Force ground state if player is very close to ground and not moving up fast
-    if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 2.0f)
-    {
-        Vector3 playerPos = GetPlayerPosition();
-        if (playerPos.y <= 1.5f) // More generous ground proximity for jumping
+        // Integrate horizontal velocity from physics into desired position
+        Vector3 horizVel = m_movement->GetPhysics().GetVelocity();
+        horizVel.y = 0.0f;
+        TraceLog(LOG_INFO, "Player::Update() - Horizontal velocity before move: (%.3f, %.3f, %.3f)", horizVel.x, horizVel.y, horizVel.z);
+        if (Vector3Length(horizVel) > 0.0f)
         {
-            m_movement->GetPhysics().SetGroundLevel(true);
-            m_movement->GetPhysics().SetVelocityY(0.0f);
-            TraceLog(LOG_DEBUG, "Player::Update() - Force grounded player at low Y position: %.2f", playerPos.y);
+            Vector3 step = Vector3Scale(horizVel, deltaTime);
+            m_movement->Move(step);
+        }
+
+        Vector3 newPosition = m_movement->StepMovement(collisionManager);
+        TraceLog(LOG_INFO, "Player::Update() - New position after StepMovement: (%.3f, %.3f, %.3f)", newPosition.x, newPosition.y, newPosition.z);
+
+        SetPlayerPosition(newPosition);
+
+        UpdatePlayerBox();
+        UpdatePlayerCollision();
+
+        // Only snap when falling slowly to avoid oscillation
+        if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 0.0f)
+        {
+            m_movement->SnapToGround(collisionManager);
+        }
+
+        // Force ground state if player is very close to ground and not moving up fast
+        if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 2.0f)
+        {
+            Vector3 playerPos = GetPlayerPosition();
+            if (playerPos.y <= 1.5f) // More generous ground proximity for jumping
+            {
+                m_movement->GetPhysics().SetGroundLevel(true);
+                m_movement->GetPhysics().SetVelocityY(0.0f);
+                TraceLog(LOG_DEBUG, "Player::Update() - Force grounded player at low Y position: %.2f", playerPos.y);
+            }
+        }
+
+        if (m_movement->GetPhysics().IsGrounded())
+        {
+            m_isJumping = false;
+            // Ensure velocity is zero when grounded to prevent sliding
+            Vector3 currentVel = m_movement->GetPhysics().GetVelocity();
+            if (fabsf(currentVel.y) < 0.1f)
+            {
+                currentVel.y = 0.0f;
+                m_movement->GetPhysics().SetVelocity(currentVel);
+            }
         }
     }
-
-    if (m_movement->GetPhysics().IsGrounded())
+    else
     {
-        m_isJumping = false;
-        // Ensure velocity is zero when grounded to prevent sliding
-        Vector3 currentVel = m_movement->GetPhysics().GetVelocity();
-        if (fabsf(currentVel.y) < 0.1f)
-        {
-            currentVel.y = 0.0f;
-            m_movement->GetPhysics().SetVelocity(currentVel);
-        }
+        // In noclip mode, just update position based on velocity without gravity or collisions
+        Vector3 vel = m_movement->GetPhysics().GetVelocity();
+        Vector3 newPosition = m_movement->GetPosition();
+        newPosition.x += vel.x * deltaTime;
+        newPosition.y += vel.y * deltaTime;
+        newPosition.z += vel.z * deltaTime;
+        m_movement->SetPosition(newPosition);
+        SetPlayerPosition(newPosition);
+        UpdatePlayerBox();
+        UpdatePlayerCollision();
+        TraceLog(LOG_INFO, "Player::Update() - Noclip mode: Updated position to (%.3f, %.3f, %.3f)", newPosition.x, newPosition.y, newPosition.z);
     }
     TraceLog(LOG_INFO, "Player::Update() - Final velocity: (%.3f, %.3f, %.3f), grounded: %d", m_movement->GetPhysics().GetVelocity().x, m_movement->GetPhysics().GetVelocity().y, m_movement->GetPhysics().GetVelocity().z, m_movement->GetPhysics().IsGrounded());
 }
