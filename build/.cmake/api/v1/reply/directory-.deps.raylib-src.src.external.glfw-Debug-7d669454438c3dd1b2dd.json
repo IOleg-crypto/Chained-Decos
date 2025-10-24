@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "/home/kali/Chained-Decos/.deps/raylib-build/raylib/external/glfw",
+		"source" : ".deps/raylib-src/src/external/glfw"
+	}
+}

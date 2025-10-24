@@ -1,21 +1,21 @@
-# ninja log v7
-1	43	7828389554897901	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-mkdir	924930dbdd6cb8ac
-1	43	7828389554897901	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-mkdir	924930dbdd6cb8ac
-43	951	7828389563978318	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-download	1085e37a841f7cc5
-43	951	7828389563978318	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-download	1085e37a841f7cc5
-951	1015	7828389564598526	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-update_disconnected	231d1da2b4643456
-951	1015	7828389564598526	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-update_disconnected	231d1da2b4643456
-1015	1068	7828389565142147	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-patch_disconnected	b6df6f9de3b3ecab
-1015	1068	7828389565142147	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-patch_disconnected	b6df6f9de3b3ecab
-1069	1119	7828389565637882	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-configure	9a3af7d1e7c52824
-1069	1119	7828389565637882	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-configure	9a3af7d1e7c52824
-1119	1172	7828389566180554	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-build	ec5654d480680a07
-1119	1172	7828389566180554	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-build	ec5654d480680a07
-1172	1223	7828389566690696	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-install	79825eb3f90e42a
-1172	1223	7828389566690696	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-install	79825eb3f90e42a
-1223	1273	7828389567194555	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-test	765872f767fc54a5
-1223	1273	7828389567194555	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-test	765872f767fc54a5
-1274	1343	7828389567877464	CMakeFiles/googletest-populate-complete	790a4c1f2dbc2a1c
-1274	1343	7828389567877464	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-done	790a4c1f2dbc2a1c
-1274	1343	7828389567877464	D:/gitnext/Chained Decos/.deps/googletest-subbuild/CMakeFiles/googletest-populate-complete	790a4c1f2dbc2a1c
-1274	1343	7828389567877464	D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-done	790a4c1f2dbc2a1c
+# ninja log v6
+665	690	1761296214048775731	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-install	8fd2fb3e793a01ed
+743	840	1761296214188845734	CMakeFiles/googletest-populate-complete	4a9e339965ee497a
+0	20	1761296213376439711	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-mkdir	ecd13fe9f5ca68bd
+690	738	1761296214080791732	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-test	7a5378d9b8e75647
+743	840	1761296214188845734	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-done	4a9e339965ee497a
+743	840	1761296214188845734	/home/kali/Chained-Decos/.deps/googletest-subbuild/CMakeFiles/googletest-populate-complete	4a9e339965ee497a
+665	690	1761296214048775731	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-install	8fd2fb3e793a01ed
+590	613	1761296213972737727	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-patch_disconnected	c07bd6ac029d5d92
+634	663	1761296214012757728	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-build	d2d0e8db1d92ca4a
+613	634	1761296213988745729	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-configure	994a65d804bde4f8
+568	589	1761296213944723726	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-update_disconnected	2c29b9273db92935
+568	589	1761296213944723726	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-update_disconnected	2c29b9273db92935
+590	613	1761296213972737727	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-patch_disconnected	c07bd6ac029d5d92
+634	663	1761296214012757728	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-build	d2d0e8db1d92ca4a
+690	738	1761296214080791732	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-test	7a5378d9b8e75647
+20	568	1761296213924713727	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-download	e29dc69b20a6f98e
+743	840	1761296214188845734	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-done	4a9e339965ee497a
+0	20	1761296213376439711	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-mkdir	ecd13fe9f5ca68bd
+613	634	1761296213988745729	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-configure	994a65d804bde4f8
+20	568	1761296213924713727	/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-download	e29dc69b20a6f98e

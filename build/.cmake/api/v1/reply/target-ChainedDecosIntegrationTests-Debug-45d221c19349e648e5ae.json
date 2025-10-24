@@ -1,0 +1,647 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "bin/tests/ChainedDecosIntegrationTests"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries",
+			"add_compile_options",
+			"add_compile_definitions",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"tests/CMakeLists.txt",
+			".deps/googletest-src/googlemock/CMakeLists.txt",
+			".deps/googletest-src/googletest/CMakeLists.txt",
+			"src/Game/CMakeLists.txt",
+			"src/Engine/CMakeLists.txt",
+			".deps/raylib-src/src/CMakeLists.txt",
+			".deps/raylib-src/src/external/glfw/src/CMakeLists.txt",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 29,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 100,
+				"parent" : 3
+			},
+			{
+				"file" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 153,
+				"parent" : 5
+			},
+			{
+				"file" : 3
+			},
+			{
+				"command" : 1,
+				"file" : 3,
+				"line" : 26,
+				"parent" : 7
+			},
+			{
+				"file" : 4
+			},
+			{
+				"command" : 1,
+				"file" : 4,
+				"line" : 23,
+				"parent" : 9
+			},
+			{
+				"file" : 5
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 93,
+				"parent" : 11
+			},
+			{
+				"file" : 6
+			},
+			{
+				"command" : 1,
+				"file" : 6,
+				"line" : 225,
+				"parent" : 13
+			},
+			{
+				"command" : 1,
+				"file" : 6,
+				"line" : 237,
+				"parent" : 13
+			},
+			{
+				"file" : 7
+			},
+			{
+				"command" : 2,
+				"file" : 7,
+				"line" : 86,
+				"parent" : 16
+			},
+			{
+				"command" : 2,
+				"file" : 7,
+				"line" : 94,
+				"parent" : 16
+			},
+			{
+				"command" : 3,
+				"file" : 7,
+				"line" : 271,
+				"parent" : 16
+			},
+			{
+				"command" : 3,
+				"file" : 7,
+				"line" : 232,
+				"parent" : 16
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 44,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++20"
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-O0"
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 18,
+					"fragment" : "-w"
+				},
+				{
+					"backtrace" : 18,
+					"fragment" : "-Wno-error=implicit-function-declaration"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "GRAPHICS_API_OPENGL_33"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "PLATFORM_DESKTOP"
+				},
+				{
+					"backtrace" : 19,
+					"define" : "PROJECT_ROOT_DIR=\"/home/kali/Chained-Decos\""
+				},
+				{
+					"backtrace" : 20,
+					"define" : "_DEBUG"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 21,
+					"path" : "/home/kali/Chained-Decos/tests"
+				},
+				{
+					"backtrace" : 21,
+					"path" : "/home/kali/Chained-Decos/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Game"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Collision"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/.deps/raylib-src/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/.deps/raylib-src/src/external/glfw/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Model"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/.deps/nlohmann_json-src/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Config"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Input"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Render"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/include/imgui"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/include/rlImGui"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Game/Menu"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Game/Map"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/World"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/CommandLineHandler"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Physics/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Game/Player"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/CameraController"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Kernel"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Audio"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/src/Engine/Event"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/kali/Chained-Decos/.deps/googletest-src/googletest/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/kali/Chained-Decos/.deps/googletest-src/googletest"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/kali/Chained-Decos/.deps/googletest-src/googlemock/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/kali/Chained-Decos/.deps/googletest-src/googlemock"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2,
+					2
+				],
+				"standard" : "20"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "imguilib::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "raylib::@027c8bd46e8982f493fd"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@a352dfd4f2618d05228c"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gmock::@6f9d22d65e59c7fe5207"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gmock_main::@6f9d22d65e59c7fe5207"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gtest::@3dba8d3471ec7875e506"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gtest_main::@3dba8d3471ec7875e506"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "ChainedDecosEngine::@57eeced369f002faad1a"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "collision::@c7f3438d24a996a0c811"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "config::@28a42e3ebd48eb13e177"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "input::@d967885210040d4ce616"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "cameracontroller::@d7306d29326ff25263b1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "physics::@e27c3d6556b677b24ea2"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "world::@c98633f6e372857301bf"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "cmdhandler::@539fffaf613aa1a67690"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "kernel::@5d86515e568759735271"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "audio::@9d441780e288f3c71fb0"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "event::@ac78cbc803f0e3d902f4"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "mapmod::@e87daa19a0aaec6b83ad"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "player::@6497c05e8667515fbef8"
+		}
+	],
+	"id" : "ChainedDecosIntegrationTests::@a44f0ac069e85531cdee",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "lib/libgtest_main.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "lib/libgmock_main.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "src/Game/libChainedDecosGame.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib/libgmock.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "lib/libgtest.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "src/Engine/libChainedDecosEngine.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "src/Game/Menu/libmenu.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Render/librender.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "src/Game/libChainedDecosGame.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "src/Engine/libChainedDecosEngine.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "src/Game/Menu/libmenu.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Render/librender.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Input/libinput.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Kernel/libkernel.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Audio/libaudio.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Event/libevent.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/CommandLineHandler/libcmdhandler.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "src/Game/Map/libmapmod.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Config/libconfig.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "src/Game/Player/libplayer.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/CameraController/libcameracontroller.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "libimguilib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Collision/libcollision.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Model/libmodel.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Collision/libcollision.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Model/libmodel.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/World/libworld.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "src/Engine/Physics/libphysics.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "/home/kali/Chained-Decos/.deps/raylib-build/raylib/libraylib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libOpenGL.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libGLX.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libGLU.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "/usr/lib/x86_64-linux-gnu/librt.a",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "ChainedDecosIntegrationTests",
+	"nameOnDisk" : "ChainedDecosIntegrationTests",
+	"paths" : 
+	{
+		"build" : "tests",
+		"source" : "tests"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"compileGroupIndex" : 0,
+			"path" : "build/tests/CMakeFiles/ChainedDecosIntegrationTests.dir/Unity/unity_0_cxx.cxx",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "tests/game/PlayerTest.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "tests/integration/GameIntegrationTest.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}
