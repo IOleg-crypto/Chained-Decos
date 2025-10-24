@@ -36,10 +36,20 @@
 *.exe
 *.out
 *.app
-
 # debug information files
 *.dwo
 
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+_deps
+
+# Build directories
+build/
+cmake-build-*/
 
 
 
