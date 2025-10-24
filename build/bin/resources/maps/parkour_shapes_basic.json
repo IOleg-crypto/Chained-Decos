@@ -1,0 +1,515 @@
+{
+    "metadata": {
+        "author": "MapEditor",
+        "description": "Learn parkour fundamentals with cubes, spheres, and platforms",
+        "difficulty": 1.5,
+        "displayName": "Basic Shapes Parkour",
+        "endPosition": {
+            "x": 50.0,
+            "y": 2.0,
+            "z": 0.0
+        },
+        "groundColor": {
+            "a": 255,
+            "b": 44,
+            "g": 117,
+            "r": 0
+        },
+        "name": "parkour_shapes_basic",
+        "skyColor": {
+            "a": 255,
+            "b": 255,
+            "g": 191,
+            "r": 102
+        },
+        "startPosition": {
+            "x": -10.0,
+            "y": 2.0,
+            "z": 0.0
+        },
+        "version": "1.0"
+    },
+    "objects": [
+        {
+            "color": {
+                "a": 255,
+                "b": 130,
+                "g": 130,
+                "r": 130
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_0",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 20.0,
+                "y": 0.10000000149011612,
+                "z": 20.0
+            },
+            "size": {
+                "height": 20.0,
+                "width": 20.0
+            },
+            "type": 3
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 130,
+                "g": 130,
+                "r": 130
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_1",
+            "position": {
+                "x": 25.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 20.0,
+                "y": 0.10000000149011612,
+                "z": 20.0
+            },
+            "size": {
+                "height": 20.0,
+                "width": 20.0
+            },
+            "type": 3
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 130,
+                "g": 130,
+                "r": 130
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_2",
+            "position": {
+                "x": 50.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 20.0,
+                "y": 0.10000000149011612,
+                "z": 20.0
+            },
+            "size": {
+                "height": 20.0,
+                "width": 20.0
+            },
+            "type": 3
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 241,
+                "g": 121,
+                "r": 0
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_3",
+            "position": {
+                "x": -10.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 5.0,
+                "y": 0.10000000149011612,
+                "z": 5.0
+            },
+            "size": {
+                "height": 5.0,
+                "width": 5.0
+            },
+            "type": 3
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 48,
+                "g": 228,
+                "r": 0
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_4",
+            "position": {
+                "x": 5.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 3.0,
+                "y": 2.0,
+                "z": 3.0
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 0
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 0,
+                "g": 249,
+                "r": 253
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_5",
+            "position": {
+                "x": 10.0,
+                "y": 2.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 2.0,
+                "y": 1.0,
+                "z": 2.0
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 0
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 48,
+                "g": 228,
+                "r": 0
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_6",
+            "position": {
+                "x": 15.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 3.0,
+                "y": 2.0,
+                "z": 3.0
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 0
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 0,
+                "g": 161,
+                "r": 255
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_7",
+            "position": {
+                "x": 20.0,
+                "y": 2.0,
+                "z": 2.0
+            },
+            "radius": 1.5,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.5
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 1
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 0,
+                "g": 161,
+                "r": 255
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_8",
+            "position": {
+                "x": 20.0,
+                "y": 2.0,
+                "z": -2.0
+            },
+            "radius": 1.5,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.5,
+                "y": 1.5,
+                "z": 1.5
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 1
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 122,
+                "r": 200
+            },
+            "height": 3.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_9",
+            "position": {
+                "x": 25.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "radius": 2.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 2.0,
+                "y": 3.0,
+                "z": 2.0
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 2
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 194,
+                "g": 109,
+                "r": 255
+            },
+            "height": 2.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_10",
+            "position": {
+                "x": 30.0,
+                "y": 2.0,
+                "z": 0.0
+            },
+            "radius": 1.5,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.5,
+                "y": 2.0,
+                "z": 1.5
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 2
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 122,
+                "r": 200
+            },
+            "height": 3.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_11",
+            "position": {
+                "x": 35.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "radius": 2.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 2.0,
+                "y": 3.0,
+                "z": 2.0
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 2
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 0,
+                "g": 203,
+                "r": 255
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "parkour_element_12",
+            "position": {
+                "x": 45.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 5.0,
+                "y": 0.10000000149011612,
+                "z": 5.0
+            },
+            "size": {
+                "height": 5.0,
+                "width": 5.0
+            },
+            "type": 3
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "modelName": "player",
+            "name": "player_model",
+            "position": {
+                "x": -10.0,
+                "y": 3.0,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "type": 5
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "modelName": "stairs_f",
+            "name": "stairs_model",
+            "position": {
+                "x": 40.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "type": 5
+        }
+    ]
+}

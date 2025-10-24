@@ -118,12 +118,12 @@ void MenuCore::SetupImGuiStyle()
 // Helper function to mix two colors
 ImVec4 MixColors(const ImVec4& a, const ImVec4& b, float ratio)
 {
-    return ImVec4(
+    return {
         a.x * (1.0f - ratio) + b.x * ratio,
         a.y * (1.0f - ratio) + b.y * ratio,
         a.z * (1.0f - ratio) + b.z * ratio,
         a.w * (1.0f - ratio) + b.w * ratio
-    );
+    };
 }
 
 // Modern dark theme with enhanced contrast and readability
