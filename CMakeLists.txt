@@ -91,7 +91,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 
     if(DISABLE_ALL_WARNINGS)
-        add_compile_options(-w)
+        add_compile_options(-w -Wno-error=implicit-function-declaration)
     elseif(ENABLE_WARNINGS)
         add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
         if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
