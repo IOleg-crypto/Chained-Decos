@@ -108,30 +108,22 @@ jobs:
         shell: bash
         run: |
           echo "🧹 Starting comprehensive cache cleanup..."
+          rm -rf "${{ steps.build-env.outputs.build-output-dir }}" ".deps" \
+                 "${{ github.workspace }}/.deps" "${{ github.workspace }}/build"
 
-          # Clear build directory completely
-          rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
-          rm -rf ".deps"
-          rm -rf "${{ github.workspace }}/.deps"
-          rm -rf "${{ github.workspace }}/build"
+          find "${{ github.workspace }}" -name "CMakeCache.txt" -delete 2>/dev/null || true
+          find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "${{ github.workspace }}" -name "cmake_install.cmake" -delete 2>/dev/null || true
+          find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + 2>/dev/null || true
 
-          # Clear any leftover CMake cache files in workspace
-          echo "📁 Searching for CMake cache files..."
-          find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + -print 2>/dev/null || true
-
-          # Windows-specific cleanup (Visual Studio files)
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             echo "🪟 Performing Windows-specific cleanup..."
-            find "${{ github.workspace }}" -name "*.vcxproj" -delete -print 2>/dev/null || true
-            find "${{ github.workspace }}" -name "*.sln" -delete -print 2>/dev/null || true
-            find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + -print 2>/dev/null || true
-            find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + -print 2>/dev/null || true
-            find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + -print 2>/dev/null || true
+            find "${{ github.workspace }}" -name "*.vcxproj" -delete 2>/dev/null || true
+            find "${{ github.workspace }}" -name "*.sln" -delete 2>/dev/null || true
+            find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + 2>/dev/null || true
+            find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + 2>/dev/null || true
+            find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + 2>/dev/null || true
           fi
-
           echo "✅ CMake cache cleared completely"
 
       - name: Create build and package directories
@@ -143,14 +135,11 @@ jobs:
         shell: bash
         run: |
           echo "🔧 Configuring CMake for release build on ${{ matrix.os }}"
-
-          # Determine generator for Windows
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             GENERATOR="Ninja"
           else
             GENERATOR="Unix Makefiles"
           fi
-
           cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
             -G "$GENERATOR" \
             -DCMAKE_BUILD_TYPE=Release \
@@ -171,7 +160,6 @@ jobs:
       - name: Build release binaries
         shell: bash
         run: |
-          # Determine parallel jobs based on platform
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             PARALLEL_JOBS=8
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
@@ -179,9 +167,7 @@ jobs:
           else
             PARALLEL_JOBS=$(nproc 2>/dev/null || echo 4)
           fi
-
           echo "🏗️ Building release targets with $PARALLEL_JOBS parallel jobs..."
-
           cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
             --config Release \
             --target ChainedDecos ChainedDecosMapEditor \
@@ -198,55 +184,27 @@ jobs:
         shell: bash
         run: |
           cd "${{ steps.build-env.outputs.package-dir }}"
-
-          # Create platform-specific package name
           PACKAGE_NAME="ChainedDecos-${{ steps.version.outputs.version }}-${{ matrix.name }}"
-
           echo "📦 Creating package: $PACKAGE_NAME"
-
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            # Windows: Create ZIP package
             powershell -Command "
               Compress-Archive -Path 'bin/*','share/' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
             "
-            echo "✅ Created Windows ZIP package"
-
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            # macOS: Create tar.gz package
-            tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
-              -C bin . -C ../share .
-            echo "✅ Created macOS tar.gz package"
-
           else
-            # Linux: Create tar.gz package
             tar -czf "${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.tar.gz" \
               -C bin . -C ../share .
-            echo "✅ Created Linux tar.gz package"
           fi
+          echo "✅ Package created"
 
       - name: Create source code archive
         if: matrix.os == 'ubuntu-22.04'
         shell: bash
         run: |
           echo "📦 Creating source code archive..."
-
-          # Create source archive with version
           SOURCE_ARCHIVE="ChainedDecos-${{ steps.version.outputs.version }}-source.zip"
-
-          # Archive the entire repository except common exclusions
           zip -r "${{ steps.build-env.outputs.package-dir }}/$SOURCE_ARCHIVE" \
-            . \
-            -x "*.git*" \
-            "build*" \
-            ".deps*" \
-            "cmake-build*" \
-            "*.tmp" \
-            "*.temp" \
-            ".vscode/settings.json" \
-            ".vs/*" \
-            "*/__pycache__/*" \
-            "*.pyc"
-
+            . -x "*.git*" "build*" ".deps*" "cmake-build*" "*.tmp" "*.temp" \
+            ".vscode/settings.json" ".vs/*" "*/__pycache__/*" "*.pyc"
           echo "✅ Created source archive: $SOURCE_ARCHIVE"
 
       - name: Upload release assets
@@ -258,15 +216,26 @@ jobs:
             ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
           retention-days: 30
 
-      - name: Create GitHub release (Ubuntu only)
-        if: matrix.os == 'ubuntu-22.04' && github.event_name == 'push'
-        uses: softprops/action-gh-release@v1
+      - name: Create release tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="v$(date +'%Y.%m.%d.%H%M%S')"
+          git tag $TAG
+          git push origin $TAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish release to GitHub
+        if: matrix.os == 'ubuntu-22.04'
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "Release ${{ steps.version.outputs.version }}"
           files: |
             ${{ steps.build-env.outputs.package-dir }}/*.zip
             ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
           generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
