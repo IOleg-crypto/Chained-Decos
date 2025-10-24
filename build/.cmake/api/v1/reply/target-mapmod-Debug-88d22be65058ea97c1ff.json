@@ -1,0 +1,233 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "src/Game/Map/libmapmod.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"add_compile_options",
+			"target_compile_definitions",
+			"add_compile_definitions",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"src/Game/Map/CMakeLists.txt",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 1,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 86,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 94,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 16,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 232,
+				"parent" : 3
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 8,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++23"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-O0"
+				},
+				{
+					"backtrace" : 4,
+					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-w"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-Wno-error=implicit-function-declaration"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "GRAPHICS_API_OPENGL_33"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "PLATFORM_DESKTOP"
+				},
+				{
+					"backtrace" : 6,
+					"define" : "PROJECT_ROOT_DIR=\"/home/kali/Chained-Decos\""
+				},
+				{
+					"backtrace" : 7,
+					"define" : "_DEBUG"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 8,
+					"path" : "/home/kali/Chained-Decos/src/Game/Map"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/kali/Chained-Decos/src"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/kali/Chained-Decos/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/.deps/raylib-src/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/.deps/raylib-src/src/external/glfw/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/kali/Chained-Decos/.deps/nlohmann_json-src/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2
+				],
+				"standard" : "23"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "raylib::@027c8bd46e8982f493fd"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@a352dfd4f2618d05228c"
+		}
+	],
+	"id" : "mapmod::@e87daa19a0aaec6b83ad",
+	"name" : "mapmod",
+	"nameOnDisk" : "libmapmod.a",
+	"paths" : 
+	{
+		"build" : "src/Game/Map",
+		"source" : "src/Game/Map"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				3
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				2,
+				4
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"compileGroupIndex" : 0,
+			"path" : "build/src/Game/Map/CMakeFiles/mapmod.dir/Unity/unity_0_cxx.cxx",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Game/Map/MapLoader.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Game/Map/MapLoader.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Game/MapEditor/MapFileManager/JsonMapFileManager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/Game/MapEditor/MapFileManager/JsonMapFileManager.h",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

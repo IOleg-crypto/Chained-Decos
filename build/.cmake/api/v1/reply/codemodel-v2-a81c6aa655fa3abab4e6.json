@@ -1,0 +1,980 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						5,
+						6,
+						9,
+						22,
+						26,
+						27,
+						28,
+						29
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-32706531c314ca064904.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						18
+					]
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/raylib-build",
+					"childIndexes" : 
+					[
+						2
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.deps.raylib-src-Debug-c2efc66997b620d1cf66.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : ".deps/raylib-src",
+					"targetIndexes" : 
+					[
+						34
+					]
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/raylib-build/raylib",
+					"childIndexes" : 
+					[
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.deps.raylib-src.src-Debug-b762df7d95d6742bfa41.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : ".deps/raylib-src/src",
+					"targetIndexes" : 
+					[
+						27
+					]
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/raylib-build/raylib/external/glfw",
+					"childIndexes" : 
+					[
+						4
+					],
+					"jsonFile" : "directory-.deps.raylib-src.src.external.glfw-Debug-7d669454438c3dd1b2dd.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.4"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 2,
+					"source" : ".deps/raylib-src/src/external/glfw"
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/raylib-build/raylib/external/glfw/src",
+					"jsonFile" : "directory-.deps.raylib-src.src.external.glfw.src-Debug-4cb07fd77b3670725aeb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.4"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 2,
+					"source" : ".deps/raylib-src/src/external/glfw/src",
+					"targetIndexes" : 
+					[
+						13,
+						35
+					]
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/nlohmann_json-build",
+					"jsonFile" : "directory-.deps.nlohmann_json-src-Debug-d9dc1e2e45e63112713f.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : ".deps/nlohmann_json-src"
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/googletest-build",
+					"childIndexes" : 
+					[
+						7
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.deps.googletest-src-Debug-fdf94cfed55a07fc1cbb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.13"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 4,
+					"source" : ".deps/googletest-src"
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/googletest-build/googlemock",
+					"childIndexes" : 
+					[
+						8
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.deps.googletest-src.googlemock-Debug-23df83548823856beb4a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.13"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 5,
+					"source" : ".deps/googletest-src/googlemock",
+					"targetIndexes" : 
+					[
+						14,
+						15
+					]
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/googletest-build/googletest",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.deps.googletest-src.googletest-Debug-3b21aa230f8ea032d983.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.13"
+					},
+					"parentIndex" : 7,
+					"projectIndex" : 6,
+					"source" : ".deps/googletest-src/googletest",
+					"targetIndexes" : 
+					[
+						16,
+						17
+					]
+				},
+				{
+					"build" : "src/Engine",
+					"childIndexes" : 
+					[
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21
+					],
+					"jsonFile" : "directory-src.Engine-Debug-f78cc2e3259e8f71741a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Engine",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "src/Engine/Collision",
+					"jsonFile" : "directory-src.Engine.Collision-Debug-67b78860a827fdb47e75.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Collision",
+					"targetIndexes" : 
+					[
+						10
+					]
+				},
+				{
+					"build" : "src/Engine/Config",
+					"jsonFile" : "directory-src.Engine.Config-Debug-1222b57f4588f700cf29.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Config",
+					"targetIndexes" : 
+					[
+						11
+					]
+				},
+				{
+					"build" : "src/Engine/Input",
+					"jsonFile" : "directory-src.Engine.Input-Debug-f31970f6e7a0ec0e4b5b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Input",
+					"targetIndexes" : 
+					[
+						19
+					]
+				},
+				{
+					"build" : "src/Engine/Model",
+					"jsonFile" : "directory-src.Engine.Model-Debug-9875b5b92e3ebdaf6b47.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Model",
+					"targetIndexes" : 
+					[
+						23
+					]
+				},
+				{
+					"build" : "src/Engine/Render",
+					"jsonFile" : "directory-src.Engine.Render-Debug-efa371870c56af09e495.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Render",
+					"targetIndexes" : 
+					[
+						28
+					]
+				},
+				{
+					"build" : "src/Engine/CameraController",
+					"jsonFile" : "directory-src.Engine.CameraController-Debug-df3bb0ec78081c3b78ce.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/CameraController",
+					"targetIndexes" : 
+					[
+						8
+					]
+				},
+				{
+					"build" : "src/Engine/Physics",
+					"jsonFile" : "directory-src.Engine.Physics-Debug-50d3c5f56eb11a57746e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Physics",
+					"targetIndexes" : 
+					[
+						25
+					]
+				},
+				{
+					"build" : "src/Engine/World",
+					"jsonFile" : "directory-src.Engine.World-Debug-e6bbdbaf1ff79fe9973b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/World",
+					"targetIndexes" : 
+					[
+						36
+					]
+				},
+				{
+					"build" : "src/Engine/CommandLineHandler",
+					"jsonFile" : "directory-src.Engine.CommandLineHandler-Debug-5870327555089020d958.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/CommandLineHandler",
+					"targetIndexes" : 
+					[
+						9
+					]
+				},
+				{
+					"build" : "src/Engine/Kernel",
+					"jsonFile" : "directory-src.Engine.Kernel-Debug-310b850d5f75cfef9480.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Kernel",
+					"targetIndexes" : 
+					[
+						20
+					]
+				},
+				{
+					"build" : "src/Engine/Audio",
+					"jsonFile" : "directory-src.Engine.Audio-Debug-19e4856e9e1ec81b87a1.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Audio",
+					"targetIndexes" : 
+					[
+						6
+					]
+				},
+				{
+					"build" : "src/Engine/Event",
+					"jsonFile" : "directory-src.Engine.Event-Debug-9b165e868767959c393e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 9,
+					"projectIndex" : 0,
+					"source" : "src/Engine/Event",
+					"targetIndexes" : 
+					[
+						12
+					]
+				},
+				{
+					"build" : "src/Game",
+					"childIndexes" : 
+					[
+						23,
+						24,
+						25
+					],
+					"jsonFile" : "directory-src.Game-Debug-1e991eca42be2d4a1ec3.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src/Game",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "src/Game/Map",
+					"jsonFile" : "directory-src.Game.Map-Debug-2358048f7798552cd3c9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 22,
+					"projectIndex" : 0,
+					"source" : "src/Game/Map",
+					"targetIndexes" : 
+					[
+						21
+					]
+				},
+				{
+					"build" : "src/Game/Menu",
+					"jsonFile" : "directory-src.Game.Menu-Debug-c61c639f60177fea54a9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 22,
+					"projectIndex" : 0,
+					"source" : "src/Game/Menu",
+					"targetIndexes" : 
+					[
+						22
+					]
+				},
+				{
+					"build" : "src/Game/Player",
+					"jsonFile" : "directory-src.Game.Player-Debug-19c779795fe1285f4f42.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 22,
+					"projectIndex" : 0,
+					"source" : "src/Game/Player",
+					"targetIndexes" : 
+					[
+						26
+					]
+				},
+				{
+					"build" : "tests",
+					"jsonFile" : "directory-tests-Debug-b01f6abb0ab61427ef3b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.25"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "tests",
+					"targetIndexes" : 
+					[
+						3,
+						5,
+						29,
+						30,
+						32,
+						33
+					]
+				},
+				{
+					"build" : "src/Game/MapEditor",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-src.Game.MapEditor-Debug-cc36b619c25442528e39.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 7,
+					"source" : "src/Game/MapEditor",
+					"targetIndexes" : 
+					[
+						4,
+						31
+					]
+				},
+				{
+					"build" : "benchmarks",
+					"jsonFile" : "directory-benchmarks-Debug-f9c487a9ea6598b2a7ae.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "benchmarks",
+					"targetIndexes" : 
+					[
+						7
+					]
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/nfd-build",
+					"childIndexes" : 
+					[
+						30
+					],
+					"jsonFile" : "directory-.deps.nfd-src-Debug-ac987d34039a4c8a9b66.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 8,
+					"source" : ".deps/nfd-src"
+				},
+				{
+					"build" : "/home/kali/Chained-Decos/.deps/nfd-build/src",
+					"jsonFile" : "directory-.deps.nfd-src.src-Debug-08190b7fa26abaa4c1b6.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 29,
+					"projectIndex" : 8,
+					"source" : ".deps/nfd-src/src",
+					"targetIndexes" : 
+					[
+						24
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						3,
+						4,
+						7,
+						8
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						28
+					],
+					"name" : "ChainedDecos",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						25,
+						26,
+						28,
+						29,
+						30,
+						32,
+						33,
+						36
+					]
+				},
+				{
+					"childIndexes" : 
+					[
+						2
+					],
+					"directoryIndexes" : 
+					[
+						1,
+						2
+					],
+					"name" : "raylib",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						27,
+						34
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3,
+						4
+					],
+					"name" : "GLFW",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						13,
+						35
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						5
+					],
+					"name" : "nlohmann_json",
+					"parentIndex" : 0
+				},
+				{
+					"childIndexes" : 
+					[
+						5
+					],
+					"directoryIndexes" : 
+					[
+						6
+					],
+					"name" : "googletest-distribution",
+					"parentIndex" : 0
+				},
+				{
+					"childIndexes" : 
+					[
+						6
+					],
+					"directoryIndexes" : 
+					[
+						7
+					],
+					"name" : "gmock",
+					"parentIndex" : 4,
+					"targetIndexes" : 
+					[
+						14,
+						15
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						8
+					],
+					"name" : "gtest",
+					"parentIndex" : 5,
+					"targetIndexes" : 
+					[
+						16,
+						17
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						27
+					],
+					"name" : "ChainedDecosMapEditor",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						4,
+						31
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						29,
+						30
+					],
+					"name" : "nativefiledialog-extended",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						24
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ChainedDecos::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ChainedDecos-Debug-32e696959fdf179bdf9a.json",
+					"name" : "ChainedDecos",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "ChainedDecosEngine::@57eeced369f002faad1a",
+					"jsonFile" : "target-ChainedDecosEngine-Debug-f30cb72425b82ccf0129.json",
+					"name" : "ChainedDecosEngine",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 22,
+					"id" : "ChainedDecosGame::@a929eadd5dd9e671eb94",
+					"jsonFile" : "target-ChainedDecosGame-Debug-0132c3f0e58805f7d4b3.json",
+					"name" : "ChainedDecosGame",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 26,
+					"id" : "ChainedDecosIntegrationTests::@a44f0ac069e85531cdee",
+					"jsonFile" : "target-ChainedDecosIntegrationTests-Debug-45d221c19349e648e5ae.json",
+					"name" : "ChainedDecosIntegrationTests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 27,
+					"id" : "ChainedDecosMapEditor::@55121233932d6d4fa567",
+					"jsonFile" : "target-ChainedDecosMapEditor-Debug-27c79acc91b5d6a81836.json",
+					"name" : "ChainedDecosMapEditor",
+					"projectIndex" : 7
+				},
+				{
+					"directoryIndex" : 26,
+					"id" : "ChainedDecosUnitTests::@a44f0ac069e85531cdee",
+					"jsonFile" : "target-ChainedDecosUnitTests-Debug-705f1fcbb3fd4fd63c47.json",
+					"name" : "ChainedDecosUnitTests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 20,
+					"id" : "audio::@9d441780e288f3c71fb0",
+					"jsonFile" : "target-audio-Debug-b4c78bbec0fe820d0f78.json",
+					"name" : "audio",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 28,
+					"id" : "benchmarks::@099d4941661e36fe2606",
+					"jsonFile" : "target-benchmarks-Debug-b2c7a3aac725aceab516.json",
+					"name" : "benchmarks",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 15,
+					"id" : "cameracontroller::@d7306d29326ff25263b1",
+					"jsonFile" : "target-cameracontroller-Debug-c01b61f7c6eb53d2fb3a.json",
+					"name" : "cameracontroller",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 18,
+					"id" : "cmdhandler::@539fffaf613aa1a67690",
+					"jsonFile" : "target-cmdhandler-Debug-42a2dfdea8fb0ec197f2.json",
+					"name" : "cmdhandler",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 10,
+					"id" : "collision::@c7f3438d24a996a0c811",
+					"jsonFile" : "target-collision-Debug-27b6100c4abeb6e55c69.json",
+					"name" : "collision",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 11,
+					"id" : "config::@28a42e3ebd48eb13e177",
+					"jsonFile" : "target-config-Debug-228ec73b2ff1b3061a52.json",
+					"name" : "config",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 21,
+					"id" : "event::@ac78cbc803f0e3d902f4",
+					"jsonFile" : "target-event-Debug-6e33ff1adc7425cda5d6.json",
+					"name" : "event",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "glfw::@a352dfd4f2618d05228c",
+					"jsonFile" : "target-glfw-Debug-dca7e266d9cebf53901b.json",
+					"name" : "glfw",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "gmock::@6f9d22d65e59c7fe5207",
+					"jsonFile" : "target-gmock-Debug-1d71e923ea83a580e83e.json",
+					"name" : "gmock",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "gmock_main::@6f9d22d65e59c7fe5207",
+					"jsonFile" : "target-gmock_main-Debug-8c969f9203ee17318e80.json",
+					"name" : "gmock_main",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 8,
+					"id" : "gtest::@3dba8d3471ec7875e506",
+					"jsonFile" : "target-gtest-Debug-0f7f05b037bb5673216d.json",
+					"name" : "gtest",
+					"projectIndex" : 6
+				},
+				{
+					"directoryIndex" : 8,
+					"id" : "gtest_main::@3dba8d3471ec7875e506",
+					"jsonFile" : "target-gtest_main-Debug-cc6c86f813d31e818c89.json",
+					"name" : "gtest_main",
+					"projectIndex" : 6
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "imguilib::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-imguilib-Debug-7759d167e8862d3d8241.json",
+					"name" : "imguilib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 12,
+					"id" : "input::@d967885210040d4ce616",
+					"jsonFile" : "target-input-Debug-719bcc82878194a29579.json",
+					"name" : "input",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 19,
+					"id" : "kernel::@5d86515e568759735271",
+					"jsonFile" : "target-kernel-Debug-235366707fb88709a1ee.json",
+					"name" : "kernel",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 23,
+					"id" : "mapmod::@e87daa19a0aaec6b83ad",
+					"jsonFile" : "target-mapmod-Debug-88d22be65058ea97c1ff.json",
+					"name" : "mapmod",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 24,
+					"id" : "menu::@508c1ec0f6a4eb8a79d5",
+					"jsonFile" : "target-menu-Debug-2caefcca8804d0b4810b.json",
+					"name" : "menu",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 13,
+					"id" : "model::@821f8439338a0146b4f1",
+					"jsonFile" : "target-model-Debug-a40ebec06609fd2152fc.json",
+					"name" : "model",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 30,
+					"id" : "nfd::@1eb02669359527d07c9f",
+					"jsonFile" : "target-nfd-Debug-10dcb99e3d191d37bb5f.json",
+					"name" : "nfd",
+					"projectIndex" : 8
+				},
+				{
+					"directoryIndex" : 16,
+					"id" : "physics::@e27c3d6556b677b24ea2",
+					"jsonFile" : "target-physics-Debug-f07833ef44cf110d3354.json",
+					"name" : "physics",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 25,
+					"id" : "player::@6497c05e8667515fbef8",
+					"jsonFile" : "target-player-Debug-75db7895d6bbc35fabff.json",
+					"name" : "player",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "raylib::@027c8bd46e8982f493fd",
+					"jsonFile" : "target-raylib-Debug-f67830d98f6d0bf03910.json",
+					"name" : "raylib",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 14,
+					"id" : "render::@1c5ce05080cbaa0376c6",
+					"jsonFile" : "target-render-Debug-048787d00d05bf28e48b.json",
+					"name" : "render",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 26,
+					"id" : "run_all_tests::@a44f0ac069e85531cdee",
+					"jsonFile" : "target-run_all_tests-Debug-c5e52c01199bd1f5842a.json",
+					"name" : "run_all_tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 26,
+					"id" : "run_integration_tests::@a44f0ac069e85531cdee",
+					"jsonFile" : "target-run_integration_tests-Debug-3eecb5b2ce16c537558b.json",
+					"name" : "run_integration_tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 27,
+					"id" : "run_mapeditor::@55121233932d6d4fa567",
+					"jsonFile" : "target-run_mapeditor-Debug-0b35471362be48aef1b8.json",
+					"name" : "run_mapeditor",
+					"projectIndex" : 7
+				},
+				{
+					"directoryIndex" : 26,
+					"id" : "run_unit_tests::@a44f0ac069e85531cdee",
+					"jsonFile" : "target-run_unit_tests-Debug-cb66aba4289b14122339.json",
+					"name" : "run_unit_tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 26,
+					"id" : "test::@a44f0ac069e85531cdee",
+					"jsonFile" : "target-test-Debug-988aad5c43041601fc3b.json",
+					"name" : "test",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "uninstall::@9fe8c7e16fdf25f22978",
+					"jsonFile" : "target-uninstall-Debug-cad4ae25d44d46123228.json",
+					"name" : "uninstall",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "update_mappings::@a352dfd4f2618d05228c",
+					"jsonFile" : "target-update_mappings-Debug-b14d041b5e3690229bad.json",
+					"name" : "update_mappings",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 17,
+					"id" : "world::@c98633f6e372857301bf",
+					"jsonFile" : "target-world-Debug-021112833dc51614e0e6.json",
+					"name" : "world",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/kali/Chained-Decos/build",
+		"source" : "/home/kali/Chained-Decos"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
