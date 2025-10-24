@@ -43,6 +43,10 @@ public:
     PhysicsComponent &GetPhysics();
     [[nodiscard]] const PhysicsComponent &GetPhysics() const;
 
+    // Noclip functionality
+    void SetNoclip(bool enable);
+    [[nodiscard]] bool IsNoclip() const;
+
     // Reference to collision manager
     void SetCollisionManager(const CollisionManager *collisionManager);
 
@@ -59,6 +63,9 @@ private:
     // Grounding helpers
     int m_framesSinceGround = 0;
     int m_coyoteFramesRemaining = 0;
+
+    // Noclip mode
+    bool m_noclip = false;
 
     // Constants
     static constexpr int GROUNDED_SET_FRAMES = 2;

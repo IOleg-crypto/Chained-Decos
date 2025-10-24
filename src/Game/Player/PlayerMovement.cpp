@@ -33,6 +33,9 @@ void PlayerMovement::SetSpeed(float speed) { m_walkSpeed = speed; }
 PhysicsComponent &PlayerMovement::GetPhysics() { return m_physics; }
 const PhysicsComponent &PlayerMovement::GetPhysics() const { return m_physics; }
 
+void PlayerMovement::SetNoclip(bool enable) { m_noclip = enable; }
+bool PlayerMovement::IsNoclip() const { return m_noclip; }
+
 void PlayerMovement::SetCollisionManager(const CollisionManager *collisionManager)
 {
     m_lastCollisionManager = collisionManager;
@@ -79,6 +82,18 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     Vector3 vel = m_physics.GetVelocity();
     Vector3 targetPos = m_position;
     TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - Initial velocity: (%.3f, %.3f, %.3f), position: (%.3f, %.3f, %.3f), dt: %.3f", vel.x, vel.y, vel.z, targetPos.x, targetPos.y, targetPos.z, dt);
+
+    if (m_noclip)
+    {
+        // In noclip mode, update position directly based on velocity, ignoring collisions and gravity
+        targetPos.x += vel.x * dt;
+        targetPos.y += vel.y * dt;
+        targetPos.z += vel.z * dt;
+        SetPosition(targetPos);
+        TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - Noclip mode: Updated position to (%.3f, %.3f, %.3f)", targetPos.x, targetPos.y, targetPos.z);
+        // No need to update grounded state in noclip
+        return m_position;
+    }
 
     // 1) Vertical movement
     targetPos.y += vel.y * dt;

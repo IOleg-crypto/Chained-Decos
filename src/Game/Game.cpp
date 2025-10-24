@@ -1143,9 +1143,9 @@ void Game::UpdatePlayerLogic()
         return;
     }
 
-    const ImGuiIO &io = ImGui::GetIO();
-    if (io.WantCaptureMouse)
-    {
+    // const ImGuiIO &io = ImGui::GetIO();
+    // if (io.WantCaptureMouse)
+    // {
         // Still update camera rotation even when ImGui wants mouse capture
         // This allows camera to work when menu is open or when hovering over UI
         m_player.GetCameraController()->UpdateCameraRotation();
@@ -1155,8 +1155,8 @@ void Game::UpdatePlayerLogic()
         
         m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
         TraceLog(LOG_INFO, "Game::UpdatePlayerLogic() - ImGui capturing mouse, only updating camera");
-        return;
-    }
+        // return;
+    // }
 
     Vector3 posBefore = m_player.GetPlayerPosition();
     Vector3 velBefore = m_player.GetPhysics().GetVelocity();
@@ -1541,7 +1541,7 @@ void Game::CreatePlatform(const Vector3& position, const Vector3& size, Color co
  * @param baseSize Base font size for 1920p resolution
  * @return Scaled font size clamped to reasonable bounds
  */
-float Game::CalculateDynamicFontSize(float baseSize) const
+float Game::CalculateDynamicFontSize(float baseSize)
 {
     int screenWidth = GetScreenWidth();
     float scaleFactor = static_cast<float>(screenWidth) / 1920.0f;
@@ -1701,10 +1701,6 @@ void Game::LoadEditorMap(const std::string& mapPath)
         {
             TraceLog(LOG_ERROR, "Game::LoadEditorMap() - Failed to create collision for object %s: %s", object.name.c_str(), e.what());
         }
-        catch (...)
-        {
-            TraceLog(LOG_ERROR, "Game::LoadEditorMap() - Unknown error creating collision for object %s", object.name.c_str());
-        }
     }
 
     // Set player start position if specified in map metadata
@@ -1723,10 +1719,10 @@ void Game::LoadEditorMap(const std::string& mapPath)
 void Game::RenderEditorMap()
 {
     // Render the loaded map objects
-    TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering %d map objects", m_gameMap.objects.size());
+    //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering %d map objects", m_gameMap.objects.size());
     for (const auto& object : m_gameMap.objects)
     {
-        TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering object %s, type %d", object.name.c_str(), static_cast<int>(object.type));
+        //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering object %s, type %d", object.name.c_str(), static_cast<int>(object.type));
         // Render based on object type
         switch (object.type)
         {
@@ -1753,16 +1749,16 @@ void Game::RenderEditorMap()
             case MapObjectType::MODEL:
             case MapObjectType::LIGHT: // Handle both MODEL and incorrectly exported MODEL objects as LIGHT type
                 // For model objects, try to load and render the actual model
-                TraceLog(LOG_INFO, "Game::RenderEditorMap() - MODEL/LIGHT object %s, modelName: %s", object.name.c_str(), object.modelName.c_str());
+                //TraceLog(LOG_INFO, "Game::RenderEditorMap() - MODEL/LIGHT object %s, modelName: %s", object.name.c_str(), object.modelName.c_str());
                 if (!object.modelName.empty())
                 {
                     try
                     {
-                        Model* model = &m_models.GetModelByName(object.modelName.c_str());
+                        Model* model = &m_models.GetModelByName(object.modelName);
                         if (model && model->meshCount > 0)
                         {
-                            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering model: %s at position (%.2f, %.2f, %.2f)",
-                                     object.modelName.c_str(), object.position.x, object.position.y, object.position.z);
+                            //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering model: %s at position (%.2f, %.2f, %.2f)",
+                                     //object.modelName.c_str(), object.position.x, object.position.y, object.position.z);
 
                             // Apply transformations: scale, rotation, translation
                             Matrix scale = MatrixScale(object.scale.x, object.scale.y, object.scale.z);
@@ -1781,11 +1777,11 @@ void Game::RenderEditorMap()
                             model->transform = transform;
                             DrawModel(*model, Vector3{0, 0, 0}, 1.0f, object.color);
 
-                            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Model rendered successfully: %s", object.modelName.c_str());
+                            //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Model rendered successfully: %s", object.modelName.c_str());
                         }
                         else
                         {
-                            TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Model %s not found or has no meshes!", object.modelName.c_str());
+                            //TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Model %s not found or has no meshes!", object.modelName.c_str());
                             // Fallback to cube if model not found
                             DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
                         }
