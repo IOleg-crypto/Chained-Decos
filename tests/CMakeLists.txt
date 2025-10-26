@@ -145,7 +145,3 @@ add_custom_target(run_all_tests
     COMMENT "Running all tests (unit and integration)"
 )
 
-# Performance benchmarks - disabled for now
-# if(BUILD_BENCHMARKS)
-#     add_subdirectory(benchmarks)
-# endif()

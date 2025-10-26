@@ -14,7 +14,7 @@ using namespace MenuConstants;
 MapSelector::MapSelector() {
     UpdatePagination();
     // Initialize placeholder thumbnail
-    m_placeholderThumbnail = LoadTexture("./resources/map_previews/placeholder.png");
+    m_placeholderThumbnail = LoadTexture("../resources/map_previews/placeholder.jpg");
     if (m_placeholderThumbnail.id == 0) {
         // Create a simple colored texture as placeholder
         Image img = GenImageColor(128, 128, GRAY);
@@ -74,34 +74,7 @@ void MapSelector::InitializeMaps() {
     // First, scan for all available JSON maps automatically
     ScanForJsonMaps();
 
-    // Then, scan for models in the resources directory and create model-based maps
-    std::string resourcesDir = "./resources";
-    MapLoader loader;
-    auto models = loader.LoadModelsFromDirectory(resourcesDir);
-
-    if (!models.empty()) {
-        TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Found %d models in resources directory", models.size());
-
-        // Create map entries for each model
-        for (const auto& model : models) {
-            std::string mapName = "model_" + model.name;
-            std::string displayName = model.name + " (Model)";
-            std::string description = "Model-based map using " + model.name;
-
-            MapInfo mapInfo = {
-                mapName,
-                displayName,
-                description,
-                model.path,
-                PURPLE,  // Color for model-based maps
-                true,
-                true     // isModelBased = true for model-based maps
-            };
-
-            AddMap(mapInfo);
-            TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Added model-based map: %s", displayName.c_str());
-        }
-    }
+    // Model-based maps removed as per user request
 
     // If no JSON maps or models found, add a fallback built-in map
     if (m_availableMaps.empty()) {
@@ -117,8 +90,8 @@ void MapSelector::InitializeMaps() {
         };
         AddMap(fallbackMap);
     } else {
-        TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Total maps available: %d (JSON: %d, Models: %d)",
-                 m_availableMaps.size(), m_jsonMapsCount, models.size());
+        TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Total maps available: %d (JSON: %d)",
+                  m_availableMaps.size(), m_jsonMapsCount);
     }
 
     // Initialize pagination
@@ -162,8 +135,6 @@ void MapSelector::UpdateFilters() {
         // Apply filter
         if (m_currentFilter == MapFilter::JSON && map.isModelBased) {
             matchesFilter = false;
-        } else if (m_currentFilter == MapFilter::Model && !map.isModelBased) {
-            matchesFilter = false;
         }
 
         // Apply search
@@ -199,7 +170,7 @@ void MapSelector::LoadThumbnailForMap(const MapInfo& map) {
     if (map.previewImage.empty()) {
         return;
     }
-    std::string path = "./" + map.previewImage;
+    std::string path = "../" + map.previewImage;
     Texture2D tex = LoadTexture(path.c_str());
     if (tex.id != 0) {
         m_thumbnails[map.name] = tex;
@@ -295,8 +266,8 @@ std::string MapSelector::GetSelectedMapName() const {
         // Check if this is a JSON map (indicated by file path starting with "maps/")
         if (selectedMapInfo->name.find("maps/") == 0 || selectedMapInfo->name.find(".json") != std::string::npos) {
             // Return the full path for JSON maps
-            return "./" + selectedMapInfo->name;
-        } 
+            return "../" + selectedMapInfo->name;
+        }
         else {
             // Return the map name for built-in maps
             return selectedMapInfo->name;
@@ -310,7 +281,7 @@ void MapSelector::ScanForJsonMaps() {
 
     try {
         namespace fs = std::filesystem;
-        std::string rootDir = "./";
+        std::string rootDir = PROJECT_ROOT_DIR "/resources/maps";
 
         TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Scanning for JSON map files...");
         TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Project root directory: %s", rootDir.c_str());
@@ -341,12 +312,11 @@ void MapSelector::ScanForJsonMaps() {
                 std::string filename = entry.path().filename().string();
                 std::string extension = entry.path().extension().string();
 
-                TraceLog(LOG_DEBUG, "MapSelector::ScanForJsonMaps() - Found file: %s", filename.c_str());
+                bool isJson = (extension == ".json" && filename != "game.cfg" && filename != "config.json");
+                TraceLog(LOG_DEBUG, "MapSelector::ScanForJsonMaps() - File: %s, Extension: %s, Is JSON: %s", filename.c_str(), extension.c_str(), isJson ? "Yes" : "No");
 
                 // Look for .json files (excluding system files)
-                if (extension == ".json" &&
-                    filename != "game.cfg" &&
-                    filename != "config.json") {
+                if (isJson) {
                     std::string mapPath = entry.path().string();
                     // Convert to relative path from project root
                     if (mapPath.find(rootDir) == 0) {
@@ -399,6 +369,9 @@ void MapSelector::ScanForJsonMaps() {
                 }
             }
 
+            if (filesInDirectory == 0) {
+                TraceLog(LOG_DEBUG, "MapSelector::ScanForJsonMaps() - No files found in directory: %s", fullDir.c_str());
+            }
             TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Directory %s contains %d files", fullDir.c_str(), filesInDirectory);
         }
 
@@ -592,7 +565,7 @@ void MapSelector::RenderMapSelectionWindow() {
         }
 
         ImGui::SameLine();
-        const char* filterItems[] = {"All", "JSON", "Model"};
+        const char* filterItems[] = {"All", "JSON"};
         int currentFilter = static_cast<int>(m_currentFilter);
         if (ImGui::Combo("Filter", &currentFilter, filterItems, IM_ARRAYSIZE(filterItems))) {
             m_currentFilter = static_cast<MapFilter>(currentFilter);
