@@ -272,7 +272,7 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
             if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
             {
                 TraceLog(LOG_INFO, "MapLoader: Loading MODEL object %s with modelName %s", objectData.name.c_str(), objectData.modelName.c_str());
-                std::string modelPath = PROJECT_ROOT_DIR "resources/" + objectData.modelName;
+                std::string modelPath = PROJECT_ROOT_DIR "/resources/" + objectData.modelName;
                 if (FileExists(modelPath.c_str()))
                 {
                     // Check if model is already loaded

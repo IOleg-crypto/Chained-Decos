@@ -14,6 +14,7 @@
       <file path="$PROJECT_DIR$/cmake-build-debug" />
       <file path="$PROJECT_DIR$/cmake-build-default" />
       <file path="$PROJECT_DIR$/cmake-build-minsizerel" />
+      <file path="$PROJECT_DIR$/cmake-build-ninja" />
       <file path="$PROJECT_DIR$/cmake-build-release" />
       <file path="$PROJECT_DIR$/cmake-build-relwithdebinfo" />
       <file path="$PROJECT_DIR$/include/imgui" />

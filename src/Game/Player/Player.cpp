@@ -9,7 +9,6 @@
 const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 160.0f,
                                                 0.0f}; // Safe spawn position above ground
 const float Player::MODEL_Y_OFFSET = -1.f;
-const float Player::MODEL_SCALE = 1.1f;
 
 Player::Player() : m_cameraController(std::make_shared<CameraController>())
 {

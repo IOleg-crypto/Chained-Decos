@@ -85,7 +85,7 @@ void ModelLoader::LoadModelsFromJson(const std::string &path)
             // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
             if (config.path.find('/') == std::string::npos && config.path.find('\\') == std::string::npos)
             {
-                config.path = "resources/" + config.path;
+                config.path = "../resources/" + config.path;
             }
             else if (!config.path.empty() && config.path[0] == '/')
             {
@@ -198,7 +198,7 @@ void ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std
             // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
             if (config.path.find('/') == std::string::npos && config.path.find('\\') == std::string::npos)
             {
-                config.path = "resources/" + config.path;
+                config.path = "../resources/" + config.path;
             }
             else if (!config.path.empty() && config.path[0] == '/')
             {
@@ -510,7 +510,7 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
     // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
     if (path.find('/') == std::string::npos && path.find('\\') == std::string::npos)
     {
-        fullPath = "resources/" + path;
+        fullPath = "../resources/" + path;
     }
     else
     {
@@ -525,6 +525,34 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
         }
     }
 
+    // Fix texture paths for .gltf files
+    if (fullPath.substr(fullPath.size() - 5) == ".gltf")
+    {
+        std::ifstream file(fullPath);
+        json j;
+        file >> j;
+        if (j.contains("textures"))
+        {
+            for (auto &tex : j["textures"])
+            {
+                if (tex.contains("uri") && tex["uri"].is_string())
+                {
+                    std::string uri = tex["uri"];
+                    if (uri.substr(0, 3) == "MI_")
+                    {
+                        tex["uri"] = "../resources/textures/" + uri;
+                    }
+                }
+            }
+        }
+        // Write to temp file
+        std::string tempPath = fullPath + ".temp";
+        std::ofstream tempFile(tempPath);
+        tempFile << j.dump(4);
+        tempFile.close();
+        fullPath = tempPath;
+    }
+
     if (!ValidateModelPath(fullPath))
     {
         return false;
@@ -533,6 +561,13 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
     TraceLog(LOG_INFO, "Loading single model '%s' from: %s", name.c_str(), fullPath.c_str());
 
     Model loadedModel = ::LoadModel(fullPath.c_str());
+
+    // Clean up temp file if used
+    if (fullPath.find(".temp") != std::string::npos)
+    {
+        std::filesystem::remove(fullPath);
+    }
+
     if (loadedModel.meshCount == 0)
     {
         TraceLog(LOG_ERROR, "Failed to load model: %s (meshCount: %d)", fullPath.c_str(), loadedModel.meshCount);

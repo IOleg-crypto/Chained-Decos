@@ -204,12 +204,16 @@ void Game::Render()
         {
             TraceLog(LOG_INFO, "Game::Render() -   Model: %s", modelName.c_str());
 
-            // Check if this is the player model and get more details
-            if (modelName == "player")
+            // Get model details for each model
+            try
             {
-                Model& playerModel = m_models.GetModelByName("player");
-                TraceLog(LOG_INFO, "Game::Render() -   Player model meshCount: %d", playerModel.meshCount);
-                TraceLog(LOG_INFO, "Game::Render() -   Player model materials: %d", playerModel.materialCount);
+                Model& model = m_models.GetModelByName(modelName);
+                TraceLog(LOG_INFO, "Game::Render() -   Model %s meshCount: %d", modelName.c_str(), model.meshCount);
+                TraceLog(LOG_INFO, "Game::Render() -   Model %s materialCount: %d", modelName.c_str(), model.materialCount);
+            }
+            catch (const std::exception& e)
+            {
+                TraceLog(LOG_WARNING, "Game::Render() - Failed to get details for model %s: %s", modelName.c_str(), e.what());
             }
         }
 
@@ -564,7 +568,7 @@ void Game::InitPlayer()
     try
     {
         // First try to load the player model
-        Model* playerModel = &m_models.GetModelByName("player");
+        Model* playerModel = &m_models.GetModelByName("player_low");
         TraceLog(LOG_INFO, "Game::InitPlayer() - Player model pointer: %p, meshCount: %d",
                  playerModel, playerModel ? playerModel->meshCount : -1);
 
@@ -578,7 +582,7 @@ void Game::InitPlayer()
             TraceLog(LOG_ERROR, "Game::InitPlayer() - Player model is invalid or has no meshes");
 
             // Try to load player_low.glb directly if player.glb failed
-            if (!m_models.LoadSingleModel("player", "resources/player_low.glb", true))
+            if (!m_models.LoadSingleModel("player", "../resources/player_low.glb", true))
             {
                 TraceLog(LOG_ERROR, "Game::InitPlayer() - Failed to load player_low.glb as fallback");
             }
@@ -1379,7 +1383,7 @@ void Game::HandleMenuActions()
             else
             {
                 // selectedMapName is just a filename, construct full path
-                mapPath =  "./resources/maps/" + selectedMapName;
+                mapPath =  "../resources/maps/" + selectedMapName;
                 if (selectedMapName.find(".json") == std::string::npos)
                 {
                     mapPath += ".json";
@@ -1402,9 +1406,9 @@ void Game::HandleMenuActions()
             }
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading %d models for map", requiredModels.size());
 
-            // Load only the required models selectively
-            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading selective models...");
-            LoadGameModelsSelectiveSafe(requiredModels);
+            // Load all models instead of selective loading
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading all models...");
+            LoadGameModels();
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Models loading completed");
 
             // Initialize basic collision system first
@@ -1589,6 +1593,7 @@ void Game::RenderGameUI() const {
 void Game::LoadEditorMap(const std::string& mapPath)
 {
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Loading map from: %s", mapPath.c_str());
+    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Debug: Map path logged for verification");
 
     // Clear previous map data
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Clearing previous map data...");
@@ -1612,6 +1617,7 @@ void Game::LoadEditorMap(const std::string& mapPath)
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - MapLoader import successful, processing %d objects", m_gameMap.objects.size());
 
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded JSON map with %d objects", m_gameMap.objects.size());
+            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Debug: Object count verified as %d", m_gameMap.objects.size());
         }
         else
         {
@@ -1639,6 +1645,13 @@ void Game::LoadEditorMap(const std::string& mapPath)
     for (size_t i = 0; i < m_gameMap.objects.size(); ++i)
     {
         const auto& object = m_gameMap.objects[i];
+
+        // Debug log for each object's details
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object %d details: name='%s', type=%d, modelName='%s', position=(%.2f,%.2f,%.2f), scale=(%.2f,%.2f,%.2f), color=(%d,%d,%d,%d)",
+                 i, object.name.c_str(), static_cast<int>(object.type), object.modelName.c_str(),
+                 object.position.x, object.position.y, object.position.z,
+                 object.scale.x, object.scale.y, object.scale.z,
+                 object.color.r, object.color.g, object.color.b, object.color.a);
 
         // Validate object data before creating collision
         if (!std::isfinite(object.position.x) || !std::isfinite(object.position.y) || !std::isfinite(object.position.z))
@@ -1719,37 +1732,44 @@ void Game::LoadEditorMap(const std::string& mapPath)
 void Game::RenderEditorMap()
 {
     // Render the loaded map objects
-    //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering %d map objects", m_gameMap.objects.size());
+    TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering %d map objects", m_gameMap.objects.size());
     for (const auto& object : m_gameMap.objects)
     {
-        //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering object %s, type %d", object.name.c_str(), static_cast<int>(object.type));
+        // Log object details
+        TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering object %s, type %d, position (%.2f, %.2f, %.2f)",
+                 object.name.c_str(), static_cast<int>(object.type), object.position.x, object.position.y, object.position.z);
+        
         // Render based on object type
         switch (object.type)
         {
             case MapObjectType::CUBE:
+                TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing CUBE");
                 DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
                 break;
 
             case MapObjectType::SPHERE:
+                TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing SPHERE");
                 DrawSphere(object.position, object.radius, object.color);
                 break;
 
             case MapObjectType::CYLINDER:
                 // Draw cylinder using multiple spheres for approximation
                 // For better cylinder rendering, you might want to use a 3D model
+                TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing CYLINDER");
                 DrawSphere(object.position, object.radius, object.color);
                 DrawSphere(Vector3{object.position.x, object.position.y + object.height, object.position.z}, object.radius, object.color);
                 break;
 
             case MapObjectType::PLANE:
                 // Draw plane as a thin cube
+                TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing PLANE");
                 DrawCube(object.position, object.size.x, 0.1f, object.size.y, object.color);
                 break;
 
             case MapObjectType::MODEL:
             case MapObjectType::LIGHT: // Handle both MODEL and incorrectly exported MODEL objects as LIGHT type
                 // For model objects, try to load and render the actual model
-                //TraceLog(LOG_INFO, "Game::RenderEditorMap() - MODEL/LIGHT object %s, modelName: %s", object.name.c_str(), object.modelName.c_str());
+                TraceLog(LOG_INFO, "Game::RenderEditorMap() - MODEL/LIGHT object %s, modelName: %s", object.name.c_str(), object.modelName.c_str());
                 if (!object.modelName.empty())
                 {
                     try
@@ -1757,39 +1777,23 @@ void Game::RenderEditorMap()
                         Model* model = &m_models.GetModelByName(object.modelName);
                         if (model && model->meshCount > 0)
                         {
-                            //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering model: %s at position (%.2f, %.2f, %.2f)",
-                                     //object.modelName.c_str(), object.position.x, object.position.y, object.position.z);
-
-                            // Apply transformations: scale, rotation, translation
-                            Matrix scale = MatrixScale(object.scale.x, object.scale.y, object.scale.z);
-                            Matrix rotationX = MatrixRotateX(object.rotation.x * DEG2RAD);
-                            Matrix rotationY = MatrixRotateY(object.rotation.y * DEG2RAD);
-                            Matrix rotationZ = MatrixRotateZ(object.rotation.z * DEG2RAD);
-                            Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
-
-                            // Combine transformations: scale -> rotate -> translate
-                            Matrix transform = MatrixMultiply(scale, rotationX);
-                            transform = MatrixMultiply(transform, rotationY);
-                            transform = MatrixMultiply(transform, rotationZ);
-                            transform = MatrixMultiply(transform, translation);
-
-                            // Apply transformation and draw model
-                            model->transform = transform;
-                            DrawModel(*model, Vector3{0, 0, 0}, 1.0f, object.color);
-
-                            //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Model rendered successfully: %s", object.modelName.c_str());
+                            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Model %s found with %d meshes", object.modelName.c_str(), model->meshCount);
+                            // Draw the model
+                            DrawModel(*model, object.position, object.scale.x, object.color);
                         }
                         else
                         {
-                            //TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Model %s not found or has no meshes!", object.modelName.c_str());
+                            TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Model %s not found or has no meshes!", object.modelName.c_str());
                             // Fallback to cube if model not found
+                            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing fallback cube for %s", object.name.c_str());
                             DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
                         }
                     }
                     catch (const std::exception& e)
                     {
-                        TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Exception while rendering model %s: %s", object.modelName.c_str(), e.what());
+                        TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Exception while retrieving model %s: %s", object.modelName.c_str(), e.what());
                         // Fallback to cube if model loading fails
+                        TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing fallback cube for %s due to exception", object.name.c_str());
                         DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
                     }
                 }
@@ -1797,12 +1801,14 @@ void Game::RenderEditorMap()
                 {
                     TraceLog(LOG_WARNING, "Game::RenderEditorMap() - No modelName for MODEL object %s, drawing as cube", object.name.c_str());
                     // No model name specified, draw as cube
+                    TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing cube for %s (no modelName)", object.name.c_str());
                     DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
                 }
                 break;
 
             default:
                 // Unknown type, draw as cube
+                TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing default cube for unknown type %d", static_cast<int>(object.type));
                 DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
                 break;
         }

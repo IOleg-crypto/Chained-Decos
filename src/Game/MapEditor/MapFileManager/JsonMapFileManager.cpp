@@ -850,7 +850,7 @@ std::string JsonMapFileManager::GetModelPathForModel(const std::string& modelNam
 
     for (const std::string& ext : possibleExtensions)
     {
-        std::string testPath = "resources/" + modelName + ext;
+        std::string testPath = "../resources/" + modelName + ext;
         std::ifstream testFile(testPath);
         if (testFile.good())
         {
@@ -860,7 +860,7 @@ std::string JsonMapFileManager::GetModelPathForModel(const std::string& modelNam
     }
 
     // If no file found, return .glb as default (most common)
-    return "resources/" + modelName + ".glb";
+    return "../resources/" + modelName + ".glb";
 }
 
 bool JsonMapFileManager::HasAnimations(const std::string& modelPath)

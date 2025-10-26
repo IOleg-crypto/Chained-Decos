@@ -55,7 +55,7 @@ private:
 
     // New UI variables
     std::string m_searchQuery;
-    enum class MapFilter { All, JSON, Model };
+    enum class MapFilter { All, JSON };
     MapFilter m_currentFilter = MapFilter::All;
     std::unordered_map<std::string, Texture2D> m_thumbnails; // Map name to texture
     Texture2D m_placeholderThumbnail; // Placeholder for missing thumbnails
