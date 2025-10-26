@@ -3,6 +3,7 @@
 add_library(render STATIC
     RenderManager.cpp
     RenderManager.h
+    IRenderable.h
 )
 
 target_include_directories(render PUBLIC

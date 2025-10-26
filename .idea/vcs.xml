@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.deps/nfd-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/imgui" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/raygui" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/rlImGui" vcs="Git" />

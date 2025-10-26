@@ -11,11 +11,16 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include "MenuConstants.h"
+#include <raylib.h> // For Texture2D
 
-namespace MenuConstants {
-    using namespace MenuConstants;
-}
+
+/**
+ * @enum MapFilter
+ * @brief Filter options for map selection
+ */
+enum class MapFilter { All, JSON, Model };
 
 /**
  * @struct MapInfo
@@ -42,10 +47,18 @@ struct MapInfo {
 class MapSelector {
 private:
     std::vector<MapInfo> m_availableMaps;
+    std::vector<MapInfo> m_filteredMaps; // For search and filtering
     int m_selectedMap = 0;
     int m_currentPage = 0;
     int m_totalPages = 0;
     int m_jsonMapsCount = 0; // Track number of JSON maps for logging
+
+    // New UI variables
+    std::string m_searchQuery;
+    enum class MapFilter { All, JSON, Model };
+    MapFilter m_currentFilter = MapFilter::All;
+    std::unordered_map<std::string, Texture2D> m_thumbnails; // Map name to texture
+    Texture2D m_placeholderThumbnail; // Placeholder for missing thumbnails
 
     // Pagination system
     void UpdatePagination();
@@ -54,11 +67,22 @@ private:
     int GetStartMapIndex() const;
     int GetEndMapIndex() const;
 
+    // New filtering and thumbnail methods
+    void ApplyFilters();
+    void LoadThumbnails();
+    void LoadThumbnailForMap(const MapInfo& map);
+    Texture2D GetThumbnailForMap(const std::string& mapName) const;
+
 public:
     /**
      * @brief Default constructor that initializes pagination
      */
     MapSelector();
+
+    /**
+     * @brief Destructor that cleans up resources
+     */
+    ~MapSelector();
 
     // Map management
     void InitializeMaps();
@@ -85,11 +109,18 @@ public:
 
     // Rendering
     void RenderMapSelection() const;
-    void RenderMapSelectionImGui() const;
+    void RenderMapSelectionImGui();
+    void RenderMapSelectionWindow(); // New window-style interface
+
+    // New UI methods
+    void SetSearchQuery(const std::string& query);
+    void SetFilter(MapFilter filter);
+    void UpdateFilters();
+    void HandleKeyboardNavigation();
 
     // Utility
     bool HasMaps() const { return !m_availableMaps.empty(); }
-    void ClearMaps() { m_availableMaps.clear(); m_selectedMap = 0; m_currentPage = 0; UpdatePagination(); }
+    void ClearMaps();
 
 private:
     // Validation helpers

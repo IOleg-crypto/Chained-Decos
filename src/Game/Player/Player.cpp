@@ -3,6 +3,7 @@
 #include <Player.h>
 #include <World/World.h>
 #include <memory>
+#include <raylib.h>
 
 // Define player constants
 const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 160.0f,
@@ -101,7 +102,7 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
 Player::~Player() = default;
 
 // Main update function called every frame
-void Player::Update(const CollisionManager &collisionManager)
+void Player::UpdateImpl(CollisionManager &collisionManager)
 {
     // Process input first
     m_input->ProcessInput();
@@ -238,10 +239,10 @@ void Player::ApplyJumpImpulse(float impulse)
         m_isJumping = true;
 }
 
-void Player::ApplyGravityForPlayer(const CollisionManager &collisionManager)
+void Player::ApplyGravityForPlayer(CollisionManager &collisionManager)
 {
     // Legacy function - now delegates to Update()
-    Update(collisionManager);
+    UpdateImpl(collisionManager);
 }
 
 void Player::HandleJumpInput() const { m_input->HandleJumpInput(); }
@@ -269,7 +270,36 @@ PhysicsComponent &Player::GetPhysics() { return m_movement->GetPhysics(); }
 void Player::SetRotationY(const float rotationY) const { m_movement->SetRotationY(rotationY); }
 
 PlayerMovement *Player::GetMovement() const { return m_movement.get(); }
-PlayerCollision& Player::GetCollisionMutable() { 
-    return *m_collision; 
+PlayerCollision& Player::GetCollisionMutable() {
+    return *m_collision;
+}
+
+// IRenderable interface implementations
+void Player::Update(CollisionManager& collisionManager) {
+    Player::UpdateImpl(collisionManager);
+}
+
+void Player::Render() {
+    // Rendering is handled by RenderManager, so nothing to do here
+}
+
+Vector3 Player::GetPosition() const {
+    return GetPlayerPosition();
+}
+
+BoundingBox Player::GetBoundingBox() const {
+    return GetPlayerBoundingBox();
+}
+
+void Player::UpdateCollision() {
+    UpdatePlayerCollision();
+}
+
+Camera Player::GetCamera() const {
+    return GetCameraController()->GetCamera();
+}
+
+bool Player::IsGrounded() const {
+    return GetPhysics().IsGrounded();
 }
 

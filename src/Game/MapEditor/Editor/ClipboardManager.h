@@ -9,8 +9,8 @@
 #include <string>
 #include <memory>
 
-// Forward declaration
-class MapObject;
+// Include MapObject header
+#include "MapObject.h"
 
 // Clipboard manager for copy/paste operations
 class ClipboardManager

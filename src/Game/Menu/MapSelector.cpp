@@ -6,22 +6,40 @@
 #include <filesystem>
 #include <algorithm>
 #include <imgui/imgui.h>
+#include <cctype> // For std::tolower
 
 // Use constants from namespace
 using namespace MenuConstants;
 
 MapSelector::MapSelector() {
     UpdatePagination();
+    // Initialize placeholder thumbnail
+    m_placeholderThumbnail = LoadTexture("./resources/map_previews/placeholder.png");
+    if (m_placeholderThumbnail.id == 0) {
+        // Create a simple colored texture as placeholder
+        Image img = GenImageColor(128, 128, GRAY);
+        m_placeholderThumbnail = LoadTextureFromImage(img);
+        UnloadImage(img);
+    }
+}
+
+MapSelector::~MapSelector() {
+    // Clean up textures
+    for (auto& pair : m_thumbnails) {
+        UnloadTexture(pair.second);
+    }
+    UnloadTexture(m_placeholderThumbnail);
 }
 
 void MapSelector::UpdatePagination() {
-    if (m_availableMaps.empty()) {
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    if (maps.empty()) {
         m_totalPages = 0;
         m_currentPage = 0;
         return;
     }
 
-    m_totalPages = (static_cast<int>(m_availableMaps.size()) - 1) / MAPS_PER_PAGE + 1;
+    m_totalPages = (static_cast<int>(maps.size()) - 1) / MAPS_PER_PAGE + 1;
     if (m_currentPage >= m_totalPages) {
         m_currentPage = std::max(0, m_totalPages - 1);
     }
@@ -40,11 +58,12 @@ void MapSelector::PreviousPageNav() {
 }
 
 int MapSelector::GetStartMapIndex() const {
-    return m_currentPage;
+    return m_currentPage * MAPS_PER_PAGE;
 }
 
 int MapSelector::GetEndMapIndex() const {
-    return std::min(GetStartMapIndex() + MAPS_PER_PAGE, static_cast<int>(m_availableMaps.size()));
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    return std::min(GetStartMapIndex() + MAPS_PER_PAGE, static_cast<int>(maps.size()));
 }
 
 void MapSelector::InitializeMaps() {
@@ -104,8 +123,95 @@ void MapSelector::InitializeMaps() {
 
     // Initialize pagination
     UpdatePagination();
+    LoadThumbnails();
     TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Pagination initialized: %d pages for %d maps",
-               m_totalPages, m_availableMaps.size());
+                m_totalPages, m_availableMaps.size());
+}
+
+void MapSelector::ClearMaps() {
+    m_availableMaps.clear();
+    m_filteredMaps.clear();
+    m_selectedMap = 0;
+    m_currentPage = 0;
+    UpdatePagination();
+    m_searchQuery.clear();
+    m_currentFilter = MapFilter::All;
+    // Clean up thumbnails
+    for (auto& pair : m_thumbnails) {
+        UnloadTexture(pair.second);
+    }
+    m_thumbnails.clear();
+}
+
+void MapSelector::SetSearchQuery(const std::string& query) {
+    m_searchQuery = query;
+    UpdateFilters();
+}
+
+void MapSelector::SetFilter(MapFilter filter) {
+    m_currentFilter = filter;
+    UpdateFilters();
+}
+
+void MapSelector::UpdateFilters() {
+    m_filteredMaps.clear();
+    for (const auto& map : m_availableMaps) {
+        bool matchesFilter = true;
+        bool matchesSearch = true;
+
+        // Apply filter
+        if (m_currentFilter == MapFilter::JSON && map.isModelBased) {
+            matchesFilter = false;
+        } else if (m_currentFilter == MapFilter::Model && !map.isModelBased) {
+            matchesFilter = false;
+        }
+
+        // Apply search
+        if (!m_searchQuery.empty()) {
+            std::string lowerQuery = m_searchQuery;
+            std::string lowerName = map.displayName;
+            std::string lowerDesc = map.description;
+            std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
+            std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+            std::transform(lowerDesc.begin(), lowerDesc.end(), lowerDesc.begin(), ::tolower);
+            if (lowerName.find(lowerQuery) == std::string::npos && lowerDesc.find(lowerQuery) == std::string::npos) {
+                matchesSearch = false;
+            }
+        }
+
+        if (matchesFilter && matchesSearch) {
+            m_filteredMaps.push_back(map);
+        }
+    }
+    m_selectedMap = 0;
+    m_currentPage = 0;
+    UpdatePagination();
+    LoadThumbnails();
+}
+
+void MapSelector::LoadThumbnails() {
+    for (const auto& map : m_availableMaps) {
+        LoadThumbnailForMap(map);
+    }
+}
+
+void MapSelector::LoadThumbnailForMap(const MapInfo& map) {
+    if (map.previewImage.empty()) {
+        return;
+    }
+    std::string path = "./" + map.previewImage;
+    Texture2D tex = LoadTexture(path.c_str());
+    if (tex.id != 0) {
+        m_thumbnails[map.name] = tex;
+    }
+}
+
+Texture2D MapSelector::GetThumbnailForMap(const std::string& mapName) const {
+    auto it = m_thumbnails.find(mapName);
+    if (it != m_thumbnails.end()) {
+        return it->second;
+    }
+    return m_placeholderThumbnail;
 }
 
 void MapSelector::AddMap(const MapInfo& mapInfo) {
@@ -113,7 +219,8 @@ void MapSelector::AddMap(const MapInfo& mapInfo) {
 }
 
 void MapSelector::SelectNextMap() {
-    if (m_selectedMap < static_cast<int>(m_availableMaps.size()) - 1) {
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    if (m_selectedMap < static_cast<int>(maps.size()) - 1) {
         m_selectedMap++;
         // Check if we need to change page
         int newPage = m_selectedMap / MAPS_PER_PAGE;
@@ -135,16 +242,49 @@ void MapSelector::SelectPreviousMap() {
 }
 
 void MapSelector::SelectMap(int index) {
-    if (index >= 0 && index < static_cast<int>(m_availableMaps.size())) {
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    if (index >= 0 && index < static_cast<int>(maps.size())) {
         m_selectedMap = index;
         // Update current page based on selected map
         m_currentPage = m_selectedMap / MAPS_PER_PAGE;
     }
 }
 
+void MapSelector::HandleKeyboardNavigation() {
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    if (maps.empty()) return;
+
+    int mapsPerRow = 3;
+    int currentPageStart = GetStartMapIndex();
+    int currentPageEnd = GetEndMapIndex();
+    int pageSize = currentPageEnd - currentPageStart;
+
+    int row = (m_selectedMap - currentPageStart) / mapsPerRow;
+    int col = (m_selectedMap - currentPageStart) % mapsPerRow;
+
+    if (IsKeyPressed(KEY_LEFT)) {
+        if (col > 0) {
+            m_selectedMap--;
+        }
+    } else if (IsKeyPressed(KEY_RIGHT)) {
+        if (col < mapsPerRow - 1 && m_selectedMap + 1 < currentPageEnd) {
+            m_selectedMap++;
+        }
+    } else if (IsKeyPressed(KEY_UP)) {
+        if (row > 0) {
+            m_selectedMap -= mapsPerRow;
+        }
+    } else if (IsKeyPressed(KEY_DOWN)) {
+        if (row < (pageSize - 1) / mapsPerRow && m_selectedMap + mapsPerRow < currentPageEnd) {
+            m_selectedMap += mapsPerRow;
+        }
+    }
+}
+
 const MapInfo* MapSelector::GetSelectedMap() const {
-    if (m_selectedMap >= 0 && m_selectedMap < static_cast<int>(m_availableMaps.size())) {
-        return &m_availableMaps[m_selectedMap];
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    if (m_selectedMap >= 0 && m_selectedMap < static_cast<int>(maps.size())) {
+        return &maps[m_selectedMap];
     }
     return nullptr;
 }
@@ -299,9 +439,11 @@ void MapSelector::RenderMapSelection() const {
     int startIndex = GetStartMapIndex();
     int endIndex = GetEndMapIndex();
 
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+
     // Render map selection boxes
     for (int i = startIndex; i < endIndex; ++i) {
-        const auto& map = m_availableMaps[i];
+        const auto& map = maps[i];
         int row = (i - startIndex) / 3;
         int col = (i - startIndex) % 3;
 
@@ -353,10 +495,11 @@ void MapSelector::RenderMapSelection() const {
 }
 
 // ImGui-based map selection rendering
-void MapSelector::RenderMapSelectionImGui() const {
+void MapSelector::RenderMapSelectionImGui() {
     ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "MAP SELECTION");
 
-    if (m_availableMaps.empty()) {
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    if (maps.empty()) {
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
     } else {
         // Calculate which maps to show on current page
@@ -365,7 +508,7 @@ void MapSelector::RenderMapSelectionImGui() const {
 
         // Render maps for current page
         for (int i = startIndex; i < endIndex; ++i) {
-            const auto& map = m_availableMaps[i];
+            const auto& map = maps[i];
             bool isSelected = (i == m_selectedMap);
 
             // Map button with styling
@@ -376,7 +519,7 @@ void MapSelector::RenderMapSelectionImGui() const {
 
             std::string buttonLabel = map.displayName + "##" + std::to_string(i);
             if (ImGui::Button(buttonLabel.c_str(), ImVec2(300, 50))) {
-                // Map selection logic would be handled by the caller
+                SelectMap(i);
             }
 
             if (isSelected) {
@@ -402,17 +545,123 @@ void MapSelector::RenderMapSelectionImGui() const {
 
             ImGui::SameLine();
             if (m_currentPage > 0 && ImGui::Button("Previous Page")) {
-                // Previous page logic would be handled by the caller
+                PreviousPageNav();
             }
 
             ImGui::SameLine();
             if (m_currentPage < m_totalPages - 1 && ImGui::Button("Next Page")) {
-                // Next page logic would be handled by the caller
+                NextPageNav();
             }
         }
     }
 
     ImGui::Separator();
     ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                      "Use Arrow Keys to navigate, ENTER to select, ESC for back");
+                       "Use Arrow Keys to navigate, ENTER to select, ESC for back");
+}
+
+// New window-style map selection interface
+void MapSelector::RenderMapSelectionWindow() {
+    // Begin a scrollable window, leaving space for buttons at the bottom
+    ImGui::BeginChild("MapSelectionWindow", ImVec2(0, -100), true);
+
+    // Title
+    ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "MAP SELECTION");
+    ImGui::Separator();
+
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    if (maps.empty()) {
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
+    } else {
+        // Search and filter controls
+        static char searchBuffer[256] = "";
+        if (m_searchQuery.empty()) {
+            strcpy(searchBuffer, "");
+        } else {
+            strcpy(searchBuffer, m_searchQuery.c_str());
+        }
+        if (ImGui::InputText("Search", searchBuffer, IM_ARRAYSIZE(searchBuffer))) {
+            m_searchQuery = searchBuffer;
+            UpdateFilters();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Clear")) {
+            m_searchQuery.clear();
+            strcpy(searchBuffer, "");
+            UpdateFilters();
+        }
+
+        ImGui::SameLine();
+        const char* filterItems[] = {"All", "JSON", "Model"};
+        int currentFilter = static_cast<int>(m_currentFilter);
+        if (ImGui::Combo("Filter", &currentFilter, filterItems, IM_ARRAYSIZE(filterItems))) {
+            m_currentFilter = static_cast<MapFilter>(currentFilter);
+            UpdateFilters();
+        }
+
+        // Update search and filter if changed
+        // Note: In a real implementation, this would trigger updates
+
+        // Thumbnail grid
+        ImGui::Text("Maps:");
+        ImGui::Columns(3, "MapGrid", false);
+        int startIndex = GetStartMapIndex();
+        int endIndex = GetEndMapIndex();
+        for (int i = startIndex; i < endIndex; ++i) {
+            const auto& map = maps[i];
+            bool isSelected = (i == m_selectedMap);
+
+            // Thumbnail
+            Texture2D thumb = GetThumbnailForMap(map.name);
+            ImGui::Image((ImTextureID)(uintptr_t)thumb.id, ImVec2(100, 100));
+            if (isSelected) {
+                ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
+            }
+
+            // Map name
+            ImGui::TextWrapped(map.displayName.c_str());
+            ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), map.description.c_str());
+
+            // Map type indicator
+            std::string typeText = map.isModelBased ? "Model-based" : "JSON Map";
+            ImVec4 typeColor = map.isModelBased ?
+                ImVec4(0.4f, 0.6f, 1.0f, 1.0f) : ImVec4(0.4f, 1.0f, 0.6f, 1.0f);
+            ImGui::TextColored(typeColor, typeText.c_str());
+
+            // Select button
+            std::string buttonLabel = "Select##" + std::to_string(i);
+            if (ImGui::Button(buttonLabel.c_str(), ImVec2(-1, 0))) {
+                SelectMap(i);
+            }
+
+            if (isSelected) {
+                ImGui::PopStyleColor();
+                ImGui::PopStyleVar();
+            }
+
+            ImGui::NextColumn();
+        }
+        ImGui::Columns(1);
+
+        // Pagination
+        if (m_totalPages > 1) {
+            ImGui::Separator();
+            ImGui::Text("Page %d of %d", m_currentPage + 1, m_totalPages);
+            ImGui::SameLine();
+            if (m_currentPage > 0 && ImGui::Button("Previous")) {
+                PreviousPageNav();
+            }
+            ImGui::SameLine();
+            if (m_currentPage < m_totalPages - 1 && ImGui::Button("Next")) {
+                NextPageNav();
+            }
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                       "Use Arrow Keys to navigate, ENTER to select, ESC for back");
+
+    ImGui::EndChild();
 }
