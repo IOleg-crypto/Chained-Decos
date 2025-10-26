@@ -5,12 +5,11 @@
 #include <raylib.h>
 #include <string>
 
-// Minimize includes to reduce coupling and avoid cycles
-class Player;
-class Menu;
-class ModelLoader;
-class CollisionManager;
-class CollisionDebugRenderer;
+// Include necessary headers
+#include "IRenderable.h"
+#include "Model/Model.h"
+#include "Collision/CollisionManager.h"
+class CollisionDebugRenderer;  // Keep as forward declaration
 
 //
 // RenderManager - Handles all rendering operations
@@ -37,20 +36,20 @@ public:
     void EndFrame();
     void Render();
 
-    void RenderGame(const Player &player, const ModelLoader &models,
-                    const CollisionManager &collisionManager, bool showCollisionDebug = false);
-    void RenderMenu(Menu &menu);
-    void RenderDebugInfo(const Player &player, const ModelLoader &models,
-                         const CollisionManager &collisionManager);
+    void RenderGame(IRenderable &renderable, const ModelLoader &models,
+                     const CollisionManager &collisionManager, bool showCollisionDebug = false);
+    void RenderMenu(IRenderable &renderable);
+    void RenderDebugInfo(IRenderable &renderable, const ModelLoader &models,
+                          const CollisionManager &collisionManager);
 
     // 3D Scene rendering
     void BeginMode3D(const Camera &camera);
     void EndMode3D();
     void DrawScene3D(const ModelLoader &models);
-    void DrawPlayer(const Player &player, const ModelLoader &models);
+    void DrawPlayer(IRenderable &renderable, const ModelLoader &models);
 
     // Debug rendering
-    void RenderCollisionDebug(const CollisionManager &collisionManager, const Player &player) const;
+    void RenderCollisionDebug(const CollisionManager &collisionManager, IRenderable &renderable) const;
 
     // Utility methods
     void SetBackgroundColor(Color color);
@@ -70,13 +69,13 @@ public:
 
     [[nodiscard]] bool IsCollisionDebugVisible() const;
 
-    void ShowMetersPlayer(const Player &player) const;
+    void ShowMetersPlayer(const IRenderable &renderable) const;
 
     [[nodiscard]] Font GetFont() const;
 private:
     // Private helper methods for debug info
-    void DrawDebugInfoWindow(const Player &player, const ModelLoader &models,
-                             const CollisionManager &collisionManager);
+    void DrawDebugInfoWindow(IRenderable &renderable, const ModelLoader &models,
+                              const CollisionManager &collisionManager);
     void DrawCameraInfo(const Camera &camera, int cameraMode);
     void DrawModelManagerInfo(const ModelLoader &models);
 

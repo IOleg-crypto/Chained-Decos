@@ -9,14 +9,12 @@
 #include <functional>
 #include "SettingsManager.h"
 #include "ConsoleManager.h"
+#include "MapSelector.h"
 #include "Engine/Engine.h"
+#include <Render/IRenderable.h>
 #include <imgui.h>
 #include <raylib.h>
 
-namespace raylib
-{
-struct Font;
-}
 
 enum class MenuAction : uint8_t
 {
@@ -69,16 +67,6 @@ struct MenuItem
     std::string shortcut;
 };
 
-struct MapInfo
-{
-    std::string name;
-    std::string displayName;
-    std::string description;
-    std::string previewImage;
-    unsigned int themeColor;
-    bool isAvailable;
-    bool isModelBased;
-};
 
 struct VideoSettings
 {
@@ -89,7 +77,7 @@ struct VideoSettings
 };
 
 
-class Menu
+class Menu : public IRenderable
 {
 public:
     Menu();
@@ -98,7 +86,6 @@ public:
     // Core functionality
     void Initialize(Engine *engine);
     void Update();
-    void Render();
 
     // State management
     void SetGameInProgress(bool inProgress);
@@ -145,6 +132,17 @@ public:
     // Keyboard navigation
     void HandleKeyboardNavigation();
     void HandlePendingActions();
+
+    // IRenderable interface implementations
+    void Update(CollisionManager& collisionManager) override;
+    void Render() override;
+    Vector3 GetPosition() const override;
+    BoundingBox GetBoundingBox() const override;
+    float GetRotationY() const override;
+    void UpdateCollision() override;
+    const Collision& GetCollision() const override;
+    Camera GetCamera() const override;
+    bool IsGrounded() const override;
 
 private:
     // ImGui rendering methods
@@ -228,6 +226,9 @@ private:
 
     // Console manager
     std::unique_ptr<ConsoleManager> m_consoleManager;
+
+    // Map selector
+    std::unique_ptr<MapSelector> m_mapSelector;
 
     // UI state
     bool m_showDemoWindow = false;

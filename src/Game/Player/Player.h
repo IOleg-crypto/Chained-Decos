@@ -12,6 +12,7 @@
 #include <Collision/CollisionSystem.h>
 #include <World/World.h>
 #include <Model/Model.h>
+#include <Render/IRenderable.h>
 
 // Include component headers - PlayerMovement.h must be included for member declarations
 #include "PlayerMovement.h"
@@ -20,7 +21,7 @@
 #include "PlayerModel.h"
 
 // Player: main player class that uses component classes
-class Player
+class Player : public IRenderable
 {
 public:
     // Player constants - defined in .cpp file
@@ -32,12 +33,12 @@ public:
     Player();
     ~Player();
 
-    void Update(const CollisionManager &collisionManager); // Main update
+    void UpdateImpl(CollisionManager &collisionManager); // Main update
     void UpdatePlayerBox() const;                          // Update bounding box
     void UpdatePlayerCollision() const;                    // Update collisions
     void SyncCollision() const;
 
-    void ApplyGravityForPlayer(const CollisionManager &collisionManager); // Gravity + collisions
+    void ApplyGravityForPlayer(CollisionManager &collisionManager); // Gravity + collisions
 
     // Delegate to PlayerInput
     void ApplyInput() const; // Process input
@@ -74,6 +75,15 @@ public:
     const PhysicsComponent &GetPhysics() const; // Get physics component (const)
     PhysicsComponent &GetPhysics();             // Get physics component (non-const)
     PlayerMovement *GetMovement() const;
+
+    // IRenderable interface implementations
+    void Update(CollisionManager& collisionManager) override;
+    void Render() override;
+    Vector3 GetPosition() const override;
+    BoundingBox GetBoundingBox() const override;
+    void UpdateCollision() override;
+    Camera GetCamera() const override;
+    bool IsGrounded() const override;
 
 private:
     // Component objects
