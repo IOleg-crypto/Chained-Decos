@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <imgui.h>
 #include <iostream>
@@ -14,6 +15,8 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <Collision/CollisionStructures.h>
+#include "Engine/Collision/CollisionSystem.h"
 
 Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
@@ -37,6 +40,8 @@ void Menu::Initialize(Engine *engine)
 {
     m_engine = engine;
     SetupStyle();
+    m_mapSelector = std::make_unique<MapSelector>();
+    m_mapSelector->InitializeMaps();
     InitializeMaps();
 }
 
@@ -44,6 +49,12 @@ void Menu::Update()
 {
     // Handle keyboard navigation
     HandleKeyboardNavigation();
+
+    // Sync map selection
+    if (m_mapSelector)
+    {
+        m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
+    }
 
     // Handle pending actions
     HandlePendingActions();
@@ -729,90 +740,33 @@ void Menu::RenderGameplaySettings()
 
 void Menu::RenderMapSelection()
 {
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-
-    // Title
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
-    ImGui::Text("MAP SELECTION");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::PopStyleColor();
-
-    if (m_availableMaps.empty())
+    if (m_mapSelector)
     {
-        ImGui::SetCursorPos(ImVec2(centerX - 100, 150));
-        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
-    }
-    else
-    {
-        // Render map cards in a grid
-        int mapsPerRow = 3;
-        float cardWidth = 280.0f;
-        float cardHeight = 120.0f;
-        float spacing = 20.0f;
-        float startX = centerX - (mapsPerRow * cardWidth + (mapsPerRow - 1) * spacing) / 2;
-        float startY = 120.0f;
+        m_mapSelector->RenderMapSelectionWindow();
 
-        for (int i = GetPageStartIndex(); i < GetPageEndIndex(); ++i)
-        {
-            if (i < static_cast<int>(m_availableMaps.size()))
-            {
-                const MapInfo &map = m_availableMaps[i];
-                bool selected = (i == m_selectedMapIndex);
-
-                int row = (i - GetPageStartIndex()) / mapsPerRow;
-                int col = (i - GetPageStartIndex()) % mapsPerRow;
-
-                float x = startX + col * (cardWidth + spacing);
-                float y = startY + row * (cardHeight + spacing);
-
-                ImGui::SetCursorPos(ImVec2(x, y));
-
-                // Enhanced map card styling
-                if (selected)
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.6f, 1.0f, 0.8f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.7f, 1.0f, 0.9f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.8f, 1.0f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-                }
-                else
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 0.8f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.9f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
-                }
-
-                if (ImGui::Button(map.displayName.c_str(), ImVec2(cardWidth, cardHeight)))
-                {
-                    m_selectedMapIndex = i;
-                }
-
-                ImGui::PopStyleColor(4);
-
-                // Map description
-                ImGui::SetCursorPos(ImVec2(x + 15, y + cardHeight - 35));
-                ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), map.description.c_str());
-            }
-        }
-
-        // Pagination controls
-        ImGui::SetCursorPos(ImVec2(centerX - 100, startY + 280));
-        RenderPaginationControls();
+        // Sync selection after rendering
+        m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
 
         // Start Game button
-        ImGui::SetCursorPos(ImVec2(centerX - 160, startY + 320));
+        const ImVec2 windowSize = ImGui::GetWindowSize();
+        const float centerX = windowSize.x * 0.5f;
+        ImGui::SetCursorPos(ImVec2(centerX - 160, windowSize.y - 100));
         if (RenderActionButton("Start Game with Selected Map", MenuAction::StartGameWithMap,
                                ImVec2(320, 50)))
         {
             // Action is handled by the button
         }
     }
+    else
+    {
+        const ImVec2 windowSize = ImGui::GetWindowSize();
+        const float centerX = windowSize.x * 0.5f;
+        ImGui::SetCursorPos(ImVec2(centerX - 100, 150));
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
+    }
 
     // Back button
+    const ImVec2 windowSize = ImGui::GetWindowSize();
     ImGui::SetCursorPos(ImVec2(80, windowSize.y - 60));
     RenderBackButton();
 }
@@ -1000,42 +954,15 @@ void Menu::HandleKeyboardNavigation()
     }
 
     // Handle specific navigation for map selection
-    if (m_state == MenuState::MapSelection && !m_availableMaps.empty())
+    if (m_state == MenuState::MapSelection && m_mapSelector && m_mapSelector->HasMaps())
     {
-        if (IsKeyPressed(KEY_LEFT))
-        {
-            if (m_selectedMapIndex > 0)
-            {
-                m_selectedMapIndex--;
-            }
-        }
-        else if (IsKeyPressed(KEY_RIGHT))
-        {
-            if (m_selectedMapIndex < static_cast<int>(m_availableMaps.size()) - 1)
-            {
-                m_selectedMapIndex++;
-            }
-        }
-        else if (IsKeyPressed(KEY_UP))
-        {
-            int mapsPerRow = 3;
-            if (m_selectedMapIndex >= mapsPerRow)
-            {
-                m_selectedMapIndex -= mapsPerRow;
-            }
-        }
-        else if (IsKeyPressed(KEY_DOWN))
-        {
-            int mapsPerRow = 3;
-            if (m_selectedMapIndex + mapsPerRow < static_cast<int>(m_availableMaps.size()))
-            {
-                m_selectedMapIndex += mapsPerRow;
-            }
-        }
-        else if (IsKeyPressed(KEY_ENTER))
+        m_mapSelector->HandleKeyboardNavigation();
+        if (IsKeyPressed(KEY_ENTER))
         {
             m_pendingAction = MenuAction::StartGameWithMap;
         }
+        // Sync selection
+        m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
     }
 
     // Handle navigation for other menus with arrow keys
@@ -1291,19 +1218,22 @@ void Menu::ApplyPendingSettings()
 // Get selected map
 std::optional<MapInfo> Menu::GetSelectedMap() const
 {
-    if (m_selectedMapIndex < m_availableMaps.size())
+    if (m_mapSelector)
     {
-        return m_availableMaps[m_selectedMapIndex];
+        const MapInfo* selected = m_mapSelector->GetSelectedMap();
+        if (selected)
+        {
+            return *selected;
+        }
     }
     return std::nullopt;
 }
 
 std::string Menu::GetSelectedMapName() const
 {
-    auto selectedMap = GetSelectedMap();
-    if (selectedMap)
+    if (m_mapSelector)
     {
-        return selectedMap->name;
+        return m_mapSelector->GetSelectedMapName();
     }
     return "";
 }
@@ -1311,14 +1241,12 @@ std::string Menu::GetSelectedMapName() const
 // Initialize maps
 void Menu::InitializeMaps()
 {
-    // Clear existing maps
-    m_availableMaps.clear();
-    m_selectedMapIndex = 0;
-    m_currentPage = 0;
-
-    // Scan for JSON maps
-    ScanForJsonMaps();
-    EnsurePagination();
+    // Sync with MapSelector
+    m_availableMaps = m_mapSelector->GetAvailableMaps();
+    m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
+    m_currentPage = m_mapSelector->GetCurrentPage();
+    m_totalPages = m_mapSelector->GetTotalPages();
+    m_jsonMapsCount = m_mapSelector->GetJsonMapsCount();
 }
 
 void Menu::ScanForJsonMaps()
@@ -1377,7 +1305,7 @@ void Menu::ScanForJsonMaps()
                     }
                     jsonMap.description = "Map with " + std::to_string(objectCount) + " objects";
                     jsonMap.previewImage = "";
-                    jsonMap.themeColor = ColorToInt(SKYBLUE);
+                    jsonMap.themeColor = SKYBLUE;
                     jsonMap.isAvailable = true;
                     jsonMap.isModelBased = false;
 
@@ -1490,3 +1418,40 @@ const char *Menu::GetStateTitle(MenuState state) const
 void Menu::SetResumeButtonOn(bool status) { m_addResumeButton = status; }
 
 bool Menu::GetResumeButtonStatus() const { return m_addResumeButton; }
+
+// IRenderable interface implementations
+void Menu::Update(CollisionManager& collisionManager) {
+    Update();
+}
+
+Vector3 Menu::GetPosition() const {
+    return {0.0f, 0.0f, 0.0f}; // Menu is UI, no position
+}
+
+BoundingBox Menu::GetBoundingBox() const {
+    return {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}; // No bounding box for UI
+}
+
+float Menu::GetRotationY() const {
+    return 0.0f; // No rotation for UI
+}
+
+void Menu::UpdateCollision() {
+    // No collision for UI
+}
+
+const Collision& Menu::GetCollision() const {
+    // Menu doesn't have collision, return a dummy
+    static Collision dummyCollision;
+    return dummyCollision;
+}
+
+Camera Menu::GetCamera() const {
+    // Menu doesn't have camera, return default
+    static Camera dummyCamera;
+    return dummyCamera;
+}
+
+bool Menu::IsGrounded() const {
+    return true; // UI is always "grounded"
+}
