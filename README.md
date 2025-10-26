@@ -45,7 +45,7 @@ Chained Decos is a fast-paced parkour game built with modern C++20 and [raylib](
 - **High-Performance Engine**: Optimized rendering and physics systems
 - **Cross-Platform Support**: Windows, macOS, and Linux compatibility
 - **Modular Architecture**: Clean separation of engine, game logic, and tools
-- **Comprehensive Testing**: Unit tests and performance benchmarks
+- **Comprehensive Testing**: Unit tests
 - **Advanced Debugging**: Collision visualization, performance metrics, real-time tweaking
 - **Developer Console**: In-game command console with Source engine-style commands
 
@@ -316,8 +316,6 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_DEBUG_INFO=ON
 # Optimized release build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPTIMIZATIONS=ON
 
-# Build with testing and benchmarks
-cmake .. -DBUILD_TESTS=ON -DBUILD_BENCHMARKS=ON
 
 # Enable profiling and sanitizers
 cmake .. -DENABLE_PROFILING=ON -DENABLE_SANITIZERS=ON
@@ -378,14 +376,6 @@ cmake .. -DENABLE_UNITY_BUILD=ON
 - **BVH for Complex Meshes**: Use bounding volume hierarchies for detailed models
 - **LOD System**: Level-of-detail rendering for distant objects (planned)
 
-### Benchmarks
-
-Run performance benchmarks:
-```bash
-cmake .. -DBUILD_BENCHMARKS=ON
-cmake --build .
-./bin/benchmarks
-```
 
 ## 📦 Packaging and Distribution
 
