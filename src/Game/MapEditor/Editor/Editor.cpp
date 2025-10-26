@@ -1364,7 +1364,7 @@ void Editor::LoadParkourMap(const std::string& mapName)
 {
     // Load the map from JSON
     MapLoader loader;
-    std::string mapPath = "resources/maps/" + mapName + ".json";
+    std::string mapPath = "../resources/maps/" + mapName + ".json";
     GameMap gameMap = loader.LoadMap(mapPath);
 
     // Clear current scene
@@ -1426,7 +1426,7 @@ void Editor::ShowParkourMapSelector()
 {
     // Load available parkour maps
     MapLoader loader;
-    m_availableParkourMaps = loader.LoadAllMapsFromDirectory("resources/maps");
+    m_availableParkourMaps = loader.LoadAllMapsFromDirectory("../resources/maps");
     m_currentlySelectedParkourMapIndex = 0;
     m_displayParkourMapDialog = true;
 }

@@ -9,7 +9,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 option(FAST_CONFIG "Reduce CMake configure time" ON)
 option(BUILD_TESTS "Build unit tests" ON)
 option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
-option(BUILD_BENCHMARKS "Build performance benchmarks" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
 option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
 option(ENABLE_WARNINGS "Enable strict compiler warnings" OFF)
@@ -270,6 +269,11 @@ set_target_properties(raylib PROPERTIES UNITY_BUILD OFF)
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
 
+# Copy resources to build directory for runtime access
+if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
+    file(COPY "${CMAKE_SOURCE_DIR}/resources" DESTINATION "${CMAKE_BINARY_DIR}")
+endif()
+
 add_subdirectory(src/Engine)
 add_subdirectory(src/Game)
 
@@ -305,10 +309,6 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos")
 endif()
 
-# Enable benchmarks if requested
-if(BUILD_BENCHMARKS)
-    add_subdirectory(benchmarks)
-endif()
 
 FetchContent_Declare(
         nfd
