@@ -15,7 +15,8 @@
 #include <array>
 
 
-class ModelLoader;
+// Include ModelLoader header
+#include "Model/Model.h"
 
 //
 // CollisionManager

@@ -3,19 +3,16 @@
 //
 
 #include "RenderManager.h"
+#include "IRenderable.h"
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
 #include <Engine/World/World.h>
-#include <Game/Menu/Menu.h>
 #include <Model/Model.h>
 #include <Physics/PhysicsComponent.h>
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
 #include <fstream>
-
-// Include Player header for complete type definition
-#include "../../Game/Player/Player.h"
 
 
 // ==================== CONSTANTS ====================
@@ -119,23 +116,23 @@ void RenderManager::BeginFrame() const
 
 void RenderManager::EndFrame() { EndDrawing(); }
 
-void RenderManager::RenderGame(const Player &player, const ModelLoader &models,
-                               const CollisionManager &collisionManager, bool showCollisionDebug)
+void RenderManager::RenderGame(IRenderable &renderable, const ModelLoader &models,
+                                const CollisionManager &collisionManager, bool showCollisionDebug)
 {
     // Begin 3D rendering
-    BeginMode3D(player.GetCameraController()->GetCamera());
+    BeginMode3D(renderable.GetCamera());
 
     // Draw 3D scene
     DrawScene3D(models);
-    DrawPlayer(player, models);
+    DrawPlayer(renderable, models);
 
-    // Update player collision for next frame
-    player.UpdatePlayerCollision();
+    // Update renderable collision for next frame
+    renderable.UpdateCollision();
 
     // Draw collision debug if enabled
     if (showCollisionDebug)
     {
-        RenderCollisionDebug(collisionManager, player);
+        RenderCollisionDebug(collisionManager, renderable);
         m_forceCollisionDebugNextFrame = false;
     }
 
@@ -143,18 +140,18 @@ void RenderManager::RenderGame(const Player &player, const ModelLoader &models,
     EndMode3D();
 }
 
-void RenderManager::RenderMenu(Menu &menu)
+void RenderManager::RenderMenu(IRenderable &renderable)
 {
-    menu.Update();
-    menu.Render();
+    renderable.Update(*static_cast<CollisionManager*>(nullptr)); // For Menu, collisionManager is not needed, but to match signature
+    renderable.Render();
 }
 
-void RenderManager::RenderDebugInfo(const Player &player, const ModelLoader &models,
-                                    const CollisionManager &collisionManager)
+void RenderManager::RenderDebugInfo(IRenderable &renderable, const ModelLoader &models,
+                                     const CollisionManager &collisionManager)
 {
     if (m_showDebugInfo)
     {
-        DrawDebugInfoWindow(player, models, collisionManager);
+        DrawDebugInfoWindow(renderable, models, collisionManager);
     }
 }
 
@@ -172,49 +169,49 @@ void RenderManager::DrawScene3D(const ModelLoader &models)
 constexpr float MODEL_Y_OFFSET = -1.0f;
 constexpr float MODEL_SCALE = 1.1f;
 
-void RenderManager::DrawPlayer(const Player &player, const ModelLoader &models)
+void RenderManager::DrawPlayer(IRenderable &renderable, const ModelLoader &models)
 {
     // Get player model from models cache
     Model &playerModel = const_cast<ModelLoader &>(models).GetModelByName("player");
 
     TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player model meshCount: %d", playerModel.meshCount);
     TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player position: (%.2f, %.2f, %.2f)",
-             player.GetPlayerPosition().x, player.GetPlayerPosition().y, player.GetPlayerPosition().z);
+              renderable.GetPosition().x, renderable.GetPosition().y, renderable.GetPosition().z);
 
     // Check if player model is valid
     if (playerModel.meshCount == 0)
     {
         TraceLog(LOG_ERROR, "RenderManager::DrawPlayer() - Player model has no meshes!");
         // Draw a simple cube as fallback
-        Vector3 pos = player.GetPlayerPosition();
+        Vector3 pos = renderable.GetPosition();
         pos.y += MODEL_Y_OFFSET;
         DrawCube(pos, 1.0f, 2.0f, 1.0f, RED);
-        DrawBoundingBox(player.GetPlayerBoundingBox(), GREEN);
+        DrawBoundingBox(renderable.GetBoundingBox(), GREEN);
         return;
     }
 
     // Apply player rotation
-    playerModel.transform = MatrixRotateY(DEG2RAD * player.GetRotationY());
+    playerModel.transform = MatrixRotateY(DEG2RAD * renderable.GetRotationY());
 
     // Calculate adjusted position (with Y offset)
-    Vector3 adjustedPos = player.GetPlayerPosition();
+    Vector3 adjustedPos = renderable.GetPosition();
     adjustedPos.y += MODEL_Y_OFFSET;
 
     TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Drawing player model at (%.2f, %.2f, %.2f)",
-             adjustedPos.x, adjustedPos.y, adjustedPos.z);
+              adjustedPos.x, adjustedPos.y, adjustedPos.z);
 
     // Draw player model and bounding box
     DrawModel(playerModel, adjustedPos, MODEL_SCALE, WHITE);
-    DrawBoundingBox(player.GetPlayerBoundingBox(), GREEN);
+    DrawBoundingBox(renderable.GetBoundingBox(), GREEN);
 
     TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player model rendered successfully");
 }
 
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
-                                          const Player &player) const
+                                           IRenderable &renderable) const
 {
     // Draw small debug cube at player position for reference (less intrusive)
-    const Vector3 playerPos = player.GetPlayerPosition();
+    const Vector3 playerPos = renderable.GetPosition();
     const Vector3 dbgPos = {playerPos.x, playerPos.y - 2.0f, playerPos.z}; // Below player
     DrawCubeWires(dbgPos, 0.5f, 0.5f, 0.5f, YELLOW);
 
@@ -227,7 +224,7 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
     m_collisionDebugRenderer->RenderAllCollisions(colliders);
 
     // Render player collision
-    m_collisionDebugRenderer->RenderPlayerCollision(player.GetCollision());
+    m_collisionDebugRenderer->RenderPlayerCollision(renderable.GetCollision());
 
     // Extra: show triangle counts for quick sanity (moved to bottom-right to avoid timer overlap)
     int y = GetScreenHeight() - 100; // Start from bottom
@@ -242,15 +239,15 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
     }
 
     TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer with %zu colliders",
-             colliders.size());
+              colliders.size());
 }
 
 void RenderManager::SetBackgroundColor(Color color) { m_backgroundColor = color; }
 
 void RenderManager::ToggleDebugInfo() { m_showDebugInfo = !m_showDebugInfo; }
 
-void RenderManager::DrawDebugInfoWindow(const Player &player, const ModelLoader &models,
-                                        const CollisionManager &collisionManager)
+void RenderManager::DrawDebugInfoWindow(IRenderable &renderable, const ModelLoader &models,
+                                         const CollisionManager &collisionManager)
 {
     rlImGuiBegin();
 
@@ -260,8 +257,8 @@ void RenderManager::DrawDebugInfoWindow(const Player &player, const ModelLoader 
 
     if (ImGui::Begin("Debug Info", nullptr, ImGuiWindowFlags_NoResize))
     {
-        DrawCameraInfo(player.GetCameraController()->GetCamera(),
-                       player.GetCameraController()->GetCameraMode());
+        DrawCameraInfo(renderable.GetCamera(),
+                       0); // For Menu, camera mode is not applicable, use 0
 
         ImGui::Separator();
         DrawModelManagerInfo(models);
@@ -383,9 +380,9 @@ bool RenderManager::IsDebugInfoVisible() const { return m_showDebugInfo; }
 
 bool RenderManager::IsCollisionDebugVisible() const { return m_showCollisionDebug; }
 
-void RenderManager::ShowMetersPlayer(const Player &player) const
+void RenderManager::ShowMetersPlayer(const IRenderable &renderable) const
 {
-    Vector3 playerPosition = player.GetPlayerPosition();
+    Vector3 playerPosition = renderable.GetPosition();
     float groundLevel = PhysicsComponent::WORLD_FLOOR_Y;
     float heightAboveGround = playerPosition.y - groundLevel;
 
@@ -431,7 +428,7 @@ void RenderManager::ShowMetersPlayer(const Player &player) const
 
     DrawCircleLines(circleX, circleY, circleRadius, WHITE);
 
-    bool isPhysicsGrounded = player.GetPhysics().IsGrounded();
+    bool isPhysicsGrounded = renderable.IsGrounded();
     bool isCloseToGround = (heightAboveGround <= 0.5f && heightAboveGround >= -0.1f);
 
     bool isOnGround = isPhysicsGrounded || isCloseToGround;

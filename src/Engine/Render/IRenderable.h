@@ -1,0 +1,39 @@
+#ifndef IRENDERABLE_H
+#define IRENDERABLE_H
+
+#include <raylib.h>
+#include <string>
+
+// Include necessary headers
+#include "Model/Model.h"
+#include "Collision/CollisionManager.h"
+#include "Collision/CollisionSystem.h"
+
+/**
+ * Abstract interface for renderable objects in the Game layer.
+ * This interface allows the Engine layer to interact with Game objects
+ * without direct dependencies, resolving circular includes.
+ */
+class IRenderable
+{
+public:
+    virtual ~IRenderable() = default;
+
+    // Core rendering methods
+    virtual void Update(CollisionManager& collisionManager) = 0;
+    virtual void Render() = 0;
+
+    // Methods for providing data needed by RenderManager
+    virtual Vector3 GetPosition() const = 0;
+    virtual BoundingBox GetBoundingBox() const = 0;
+    virtual float GetRotationY() const = 0;
+    virtual void UpdateCollision() = 0;
+    virtual const Collision& GetCollision() const = 0;
+    virtual Camera GetCamera() const = 0;
+    virtual bool IsGrounded() const = 0;
+
+    // For Menu, might need different methods, but since it's abstract, we can have defaults or separate interfaces
+    // For now, assuming Player and Menu can implement these
+};
+
+#endif // IRENDERABLE_H
