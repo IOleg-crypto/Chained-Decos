@@ -5,6 +5,16 @@
 #ifndef INPUTMANAGER_H
 #define INPUTMANAGER_H
 
+#ifdef _WIN32
+#ifdef CHAINEDDECOSENGINE_EXPORTS
+#define CHAINEDDECOSENGINE_API __declspec(dllexport)
+#else
+#define CHAINEDDECOSENGINE_API __declspec(dllimport)
+#endif
+#else
+#define CHAINEDDECOSENGINE_API
+#endif
+
 #include <functional>
 #include <raylib.h>
 #include <unordered_map>
@@ -16,7 +26,7 @@
 // - Continuous hold actions (KEY_DOWN)
 // - Release actions (KEY_RELEASED)
 //
-class InputManager
+CHAINEDDECOSENGINE_API class InputManager
 {
 public:
     enum class InputType

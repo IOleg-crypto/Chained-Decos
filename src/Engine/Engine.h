@@ -5,6 +5,16 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#ifdef _WIN32
+#ifdef CHAINEDDECOSENGINE_EXPORTS
+#define CHAINEDDECOSENGINE_API __declspec(dllexport)
+#else
+#define CHAINEDDECOSENGINE_API __declspec(dllimport)
+#endif
+#else
+#define CHAINEDDECOSENGINE_API
+#endif
+
 #include <string>
 #include <memory>
 // Project headers
@@ -21,7 +31,7 @@ class RenderManager; // forward declaration to avoid heavy include and cycles
  *  - Debug information handling
  *
  */
-class Engine
+CHAINEDDECOSENGINE_API class Engine
 {
 public:
     Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager);

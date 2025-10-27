@@ -13,27 +13,33 @@ add_subdirectory(Audio)
 add_subdirectory(Event)
 
 add_library(ChainedDecosEngine STATIC
-        Engine.cpp
-        Engine.h
+          Engine.cpp
+          Engine.h
+          MapFileManager/MapFileManager.cpp
+          MapFileManager/JsonMapFileManager.cpp
 )
 target_include_directories(ChainedDecosEngine
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(ChainedDecosEngine
-           PUBLIC
-           collision
-           config
-           input
-           model
-           render
-           cameracontroller
-           physics
-           world
-           kernel
-           audio
-           event
-           raylib
-           imguilib
-           cmdhandler
-   )
+            PUBLIC
+            collision
+            config
+            input
+            model
+            render
+            cameracontroller
+            physics
+            world
+            kernel
+            audio
+            event
+            raylib
+            imguilib
+            cmdhandler
+    )
+
+target_compile_definitions(ChainedDecosEngine PRIVATE CHAINEDDECOSENGINE_EXPORTS)
+
+set_target_properties(ChainedDecosEngine PROPERTIES POSITION_INDEPENDENT_CODE ON)

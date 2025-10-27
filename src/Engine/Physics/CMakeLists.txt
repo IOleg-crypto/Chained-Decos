@@ -16,6 +16,8 @@ target_link_libraries(physics
     raylib
 )
 
+set_target_properties(physics PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 # Add raylib include directories for FetchContent
 if(NOT raylib_FOUND)
     target_include_directories(physics PUBLIC ${raylib_SOURCE_DIR}/src)

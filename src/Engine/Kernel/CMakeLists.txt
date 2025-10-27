@@ -12,4 +12,6 @@ target_include_directories(kernel
 
 target_link_libraries(kernel PRIVATE raylib)
 
+set_target_properties(kernel PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 

@@ -12,3 +12,5 @@ target_include_directories(world PUBLIC
 target_link_libraries(world PUBLIC
     raylib
     physics)
+
+set_target_properties(world PROPERTIES POSITION_INDEPENDENT_CODE ON)

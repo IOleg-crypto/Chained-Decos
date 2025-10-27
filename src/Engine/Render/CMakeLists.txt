@@ -16,9 +16,10 @@ target_link_libraries(render PUBLIC
     raylib
     imguilib
     collision
-    menu
     model
     world
     player
     nlohmann_json
 )
+
+set_target_properties(render PROPERTIES POSITION_INDEPENDENT_CODE ON)

@@ -26,6 +26,8 @@ target_link_libraries(PerformanceManager PRIVATE
     raylib
 )
 
+set_target_properties(PerformanceManager PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 # Compiler definitions
 target_compile_definitions(PerformanceManager PRIVATE
     PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"

@@ -2,8 +2,8 @@
 //
 
 #include "Editor.h"
-#include "../MapFileManager/MapFileManager.h"
-#include "../MapFileManager/JsonMapFileManager.h"
+#include "../../Engine/MapFileManager/MapFileManager.h"
+#include "../../Engine/MapFileManager/JsonMapFileManager.h"
 #include "../../Game/Map/MapLoader.h"  // Include the new comprehensive map loader
 #include "../../Engine/Kernel/Kernel.h"
 #include <cstdlib>

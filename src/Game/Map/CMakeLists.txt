@@ -1,8 +1,6 @@
 add_library(mapmod STATIC
     MapLoader.cpp
     MapLoader.h
-    ../MapEditor/MapFileManager/JsonMapFileManager.cpp
-    ../MapEditor/MapFileManager/JsonMapFileManager.h
 )
 
 target_include_directories(mapmod
