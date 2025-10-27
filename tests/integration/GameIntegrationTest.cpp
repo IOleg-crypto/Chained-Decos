@@ -20,8 +20,8 @@ protected:
         world = std::make_shared<WorldManager>();
         menu = std::make_shared<Menu>();
 
-        // Create game with injected dependencies
-        game = std::make_shared<Game>(nullptr, *player, *collisionManager, *models, *world, *menu);
+        // Create game instance
+        game = std::make_shared<Game>();
 
         engine = nullptr;
     }
@@ -102,15 +102,15 @@ protected:
 //}
 //
 //
-////TEST_F(GameIntegrationTest, GameStateQueries) {
-////    // Test state queries that don't trigger graphics
-////    EXPECT_NO_THROW({
-////        bool isRunning = game->IsRunning();
-////        bool isInitialized = game->IsInitialized();
-////    });
-////}
-////
-//
+TEST_F(GameIntegrationTest, GameStateQueries) {
+   // Test state queries that don't trigger graphics
+   EXPECT_NO_THROW({
+       bool isRunning = game->IsRunning();
+       bool isInitialized = game->IsInitialized();
+   });
+}
+
+
 //TEST_F(GameIntegrationTest, CollisionManagerStandalone) {
 //    // Test collision manager independently (doesn't need game instance)
 //    EXPECT_NO_THROW({
