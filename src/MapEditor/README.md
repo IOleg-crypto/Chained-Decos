@@ -61,7 +61,6 @@ MapEditor/
 │   ├── ParticleEditor.h/cpp  # Particle effects
 │   ├── MeasurementTools.h/cpp # Measurement & snapping
 │   └── ...                   # Other editor components
-├── MapFileManager/           # File I/O management
 └── CMakeLists.txt           # Build configuration
 ```
 
