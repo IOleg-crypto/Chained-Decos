@@ -28,7 +28,7 @@ private:
     bool m_displayPropertiesPanel;                                  // Show/hide properties panel
     bool m_pendingObjectCreation;                                   // Flag for pending object creation
     std::string m_currentlyLoadedMapFilePath;                      // Current map file path
-    ModelLoader m_modelAssetManager;                                // Model manager for loading and rendering models
+    std::unique_ptr<ModelLoader> m_modelAssetManager;               // Model manager for loading and rendering models
     std::vector<std::string> m_availableModelNamesList;             // List of available models
     std::vector<ModelInfo> m_availableModels;                       // Detailed model information with categories
     std::string m_currentlySelectedModelName;                       // Currently selected model for adding
@@ -68,7 +68,7 @@ private:
     };
 
 public:
-    Editor();
+    Editor(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader);
     ~Editor();
 
 public:

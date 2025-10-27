@@ -1,7 +1,5 @@
 /**
  * @file MapSelector.h
- * @brief Map selection and management system
- *
  * The MapSelector class handles the discovery, organization, and selection
  * of game maps from various sources including JSON files and 3D models.
  */
@@ -17,14 +15,8 @@
 
 
 /**
- * @enum MapFilter
- * @brief Filter options for map selection
- */
-enum class MapFilter { All, JSON, Model };
-
-/**
  * @struct MapInfo
- * @brief Information about a game map
+ * Information about a game map
  */
 struct MapInfo {
     std::string name;
@@ -38,8 +30,7 @@ struct MapInfo {
 
 /**
  * @class MapSelector
- * @brief Handles map discovery, selection, and pagination
- *
+ * Handles map discovery, selection, and pagination.
  * This class manages the collection of available game maps, including
  * automatic discovery of JSON map files and 3D model-based maps.
  * It provides pagination, selection, and rendering functionality.
@@ -55,8 +46,8 @@ private:
 
     // New UI variables
     std::string m_searchQuery;
-    enum class MapFilter { All, JSON };
-    MapFilter m_currentFilter = MapFilter::All;
+    enum class MapFilter { JSON };
+    MapFilter m_currentFilter = MapFilter::JSON;
     std::unordered_map<std::string, Texture2D> m_thumbnails; // Map name to texture
     Texture2D m_placeholderThumbnail; // Placeholder for missing thumbnails
 
@@ -75,12 +66,12 @@ private:
 
 public:
     /**
-     * @brief Default constructor that initializes pagination
+     * Default constructor that initializes pagination
      */
     MapSelector();
 
     /**
-     * @brief Destructor that cleans up resources
+     * Destructor that cleans up resources
      */
     ~MapSelector();
 

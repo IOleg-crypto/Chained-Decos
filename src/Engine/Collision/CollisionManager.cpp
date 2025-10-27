@@ -15,16 +15,6 @@
 #include <unordered_map>
 #include <vector>
 
-// Structure to hold model processing data for parallel processing
-struct ModelCollisionTask
-{
-    std::string modelName;
-    Model *model;
-    bool hasCollision;
-    std::vector<ModelInstance *> instances;
-    int createdCollisions = 0;
-};
-
 void CollisionManager::Initialize() const
 {
     // Batch BVH initialization for better performance
@@ -421,166 +411,160 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision,
 
 void CollisionManager::CreateAutoCollisionsFromModels(ModelLoader &models)
 {
-    TraceLog(LOG_INFO, "Starting automatic collision generation for all models...");
-
-    // Get all available models
-    auto availableModels = models.GetAvailableModels();
-    TraceLog(LOG_INFO, "Found %zu models to check", availableModels.size());
-
-    // Track processed models to avoid duplication
-    std::set<std::string> processedModelNames;
-    int collisionObjectsCreated = 0;
-    constexpr size_t MAX_COLLISION_INSTANCES = 5; // Increased for better coverage
-
-    std::vector<ModelCollisionTask> tasks;
-
-    // Prepare tasks for parallel processing
-    for (const auto &modelName : availableModels)
-    {
-        if (processedModelNames.contains(modelName))
-            continue;
-
-        processedModelNames.insert(modelName);
-
-        try
-        {
-            Model &model = models.GetModelByName(modelName);
-            bool hasCollision = models.HasCollision(modelName);
-
-            if (!hasCollision || model.meshCount == 0)
-                continue;
-
-            ModelCollisionTask task;
-            task.modelName = modelName;
-            task.model = &model;
-            task.hasCollision = hasCollision;
-            task.instances = models.GetInstancesByTag(modelName);
-            tasks.push_back(task);
-        }
-        catch (const std::exception &e)
-        {
-            TraceLog(LOG_ERROR, "Failed to prepare collision task for model '%s': %s",
-                     modelName.c_str(), e.what());
-        }
-    }
-
-    // Process models in parallel
-    size_t numThreads = std::thread::hardware_concurrency();
-    if (numThreads == 0)
-        numThreads = 1; // Fallback for systems that return 0
-    numThreads = std::min(tasks.size(), numThreads);
-
-    if (numThreads == 0 || tasks.empty())
-    {
-        TraceLog(LOG_WARNING,
-                 "No tasks to process or no threads available for parallel collision generation");
-        return;
-    }
-
-    std::vector<std::future<int>> futures;
-
-    // Split tasks into chunks for parallel processing
-    size_t chunkSize = tasks.size() / numThreads;
-    if (chunkSize == 0)
-        chunkSize = 1;
-
-    for (size_t threadIdx = 0; threadIdx < numThreads; ++threadIdx)
-    {
-        size_t startIdx = threadIdx * chunkSize;
-        size_t endIdx = (threadIdx == numThreads - 1) ? tasks.size() : (threadIdx + 1) * chunkSize;
-
-        if (startIdx >= tasks.size())
-            break;
-
-        futures.push_back(std::async(
-            std::launch::async,
-            [this, &models, &tasks, startIdx, endIdx, MAX_COLLISION_INSTANCES]()
-            {
-                int localCollisionsCreated = 0;
-
-                for (size_t i = startIdx; i < endIdx; ++i)
-                {
-                    const auto &task = tasks[i];
-
-                    TraceLog(LOG_INFO, "Processing model: %s", task.modelName.c_str());
-
-                    if (task.instances.empty())
-                    {
-                        // No instances found, create default collision
-                        Vector3 defaultPos =
-                            (task.modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
-                        if (CreateCollisionFromModel(*task.model, task.modelName, defaultPos, 1.0f,
-                                                     models))
-                        {
-                            localCollisionsCreated++;
-                        }
-                    }
-                    else
-                    {
-                        // Create collisions for each instance (up to the limit)
-                        size_t instanceLimit =
-                            std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
-                        TraceLog(LOG_INFO, "Processing %zu/%zu instances for model '%s'",
-                                 instanceLimit, task.instances.size(), task.modelName.c_str());
-
-                        for (size_t j = 0; j < instanceLimit; j++)
-                        {
-                            auto *instance = task.instances[j];
-                            Vector3 position = instance->GetModelPosition();
-                            float scale = instance->GetScale();
-
-                            if (CreateCollisionFromModel(*task.model, task.modelName, position,
-                                                         scale, models))
-                            {
-                                localCollisionsCreated++;
-                            }
-                        }
-
-                        if (task.instances.size() > MAX_COLLISION_INSTANCES)
-                        {
-                            TraceLog(LOG_WARNING,
-                                     "Limited collisions for model '%s' to %zu (of %zu instances)",
-                                     task.modelName.c_str(), MAX_COLLISION_INSTANCES,
-                                     task.instances.size());
-                        }
-                    }
-                }
-
-                return localCollisionsCreated;
-            }));
-    }
-
-    // Collect results from all threads
-    for (auto &future : futures)
-    {
-        collisionObjectsCreated += future.get();
-    }
-
-    TraceLog(
-        LOG_INFO,
-        "Automatic collision generation complete. Created %d collision objects from %zu models",
-        collisionObjectsCreated, availableModels.size());
-
-    // Final spatial partitioning update for optimal performance
-    UpdateSpatialPartitioning();
-
-    TraceLog(LOG_INFO, "Spatial partitioning updated with %zu cells", m_spatialGrid.size());
+//    TraceLog(LOG_INFO, "Starting automatic collision generation for all models...");
+//
+//    // Get all available models
+//    auto availableModels = models.GetAvailableModels();
+//    TraceLog(LOG_INFO, "Found %zu models to check", availableModels.size());
+//
+//    // Track processed models to avoid duplication
+//    std::set<std::string> processedModelNames;
+//    int collisionObjectsCreated = 0;
+//
+//    std::vector<ModelCollisionTask> tasks;
+//
+//    // Prepare tasks for parallel processing
+//    for (const auto &modelName : availableModels)
+//    {
+//        if (processedModelNames.contains(modelName))
+//            continue;
+//
+//        processedModelNames.insert(modelName);
+//
+//        auto modelOpt = models.GetModelByName(modelName);
+//        if (!modelOpt)
+//        {
+//            TraceLog(LOG_WARNING, "CollisionManager - Model not found: %s", modelName.c_str());
+//            continue;
+//        }
+//
+//        Model &model = modelOpt->get();
+//        bool hasCollision = models.HasCollision(modelName);
+//
+//            if (!hasCollision || model.meshCount == 0)
+//                continue;
+//
+//            ModelCollisionTask task;
+//            task.modelName = modelName;
+//            task.model = &model;
+//            task.hasCollision = hasCollision;
+//            task.instances = models.GetInstancesByTag(modelName);
+//            tasks.push_back(task);
+//        }
+//    }
+//
+//    // Process models in parallel
+//    size_t numThreads = std::thread::hardware_concurrency();
+//    if (numThreads == 0){
+//        numThreads = 1;
+//    }
+//
+//    numThreads = std::min(tasks.size(), numThreads);
+//
+//    if (numThreads == 0 || tasks.empty())
+//    {
+//        TraceLog(LOG_WARNING, "No tasks to process or no threads available for parallel collision generation");
+//        return;
+//    }
+//
+//    std::vector<std::future<int>> futures;
+//
+//    // Split tasks into chunks for parallel processing
+//    size_t chunkSize = tasks.size() / numThreads;
+//    if (chunkSize == 0)
+//        chunkSize = 1;
+//
+//    for (size_t threadIdx = 0; threadIdx < numThreads; ++threadIdx)
+//    {
+//        size_t startIdx = threadIdx * chunkSize;
+//        size_t endIdx = (threadIdx == numThreads - 1) ? tasks.size() : (threadIdx + 1) * chunkSize;
+//
+//        if (startIdx >= tasks.size())
+//            break;
+//
+//        futures.push_back(std::async(
+//            std::launch::async,
+//            [this, &models, &tasks, startIdx, endIdx]()
+//            {
+//                int localCollisionsCreated = 0;
+//                constexpr size_t MAX_COLLISION_INSTANCES = 1000;
+//
+//                for (size_t i = startIdx; i < endIdx; ++i)
+//                {
+//                    const auto &task = tasks[i];
+//                    TraceLog(LOG_INFO, "Processing model: %s", task.modelName.c_str());
+//
+//                    if (task.instances.empty())
+//                    {
+//                        // No instances found, create default collision
+//                        Vector3 defaultPos = (task.modelName == "arc") ? Vector3{0, 0, 140} : Vector3{0, 0, 0};
+//                        if (CreateCollisionFromModel(*task.model, task.modelName, defaultPos, 1.0f, models))
+//                        {
+//                            localCollisionsCreated++;
+//                        }
+//                    }
+//                    else
+//                    {
+//                        // Create collisions for each instance (up to the limit)
+//                        size_t instanceLimit = std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
+//                        TraceLog(LOG_INFO, "Processing %zu/%zu instances for model '%s'",
+//                                instanceLimit, task.instances.size(), task.modelName.c_str());
+//
+//                        for (size_t j = 0; j < instanceLimit; j++)
+//                        {
+//                            auto *instance = task.instances[j];
+//                            Vector3 position = instance->GetModelPosition();
+//                            float scale = instance->GetScale();
+//
+//                            if (CreateCollisionFromModel(*task.model, task.modelName, position, scale, models))
+//                            {
+//                                localCollisionsCreated++;
+//                            }
+//                        }
+//
+//                        if (task.instances.size() > MAX_COLLISION_INSTANCES)
+//                        {
+//                            TraceLog(LOG_WARNING, "Limited collisions for model '%s' to %zu (of %zu instances)",
+//                                    task.modelName.c_str(), MAX_COLLISION_INSTANCES, task.instances.size());
+//                        }
+//                    }
+//                }
+//
+//                return localCollisionsCreated;
+//            }));
+//    }
+//
+//    // Collect results from all threads
+//    for (auto &future : futures)
+//    {
+//        collisionObjectsCreated += future.get();
+//    }
+//
+//    TraceLog(LOG_INFO, "Automatic collision generation complete. Created %d collision objects from %zu models",
+//             collisionObjectsCreated, availableModels.size());
+//
+//    // Final spatial partitioning update for optimal performance
+//    UpdateSpatialPartitioning();
+//    TraceLog(LOG_INFO, "Spatial partitioning updated with %zu cells", m_spatialGrid.size());
 }
 
 void CollisionManager::CreateAutoCollisionsFromModelsSelective(
     ModelLoader &models, const std::vector<std::string> &modelNames)
 {
+    constexpr size_t MAX_COLLISION_INSTANCES = 1000;
+    int collisionObjectsCreated = 0;
+
     TraceLog(LOG_INFO,
              "Starting selective automatic collision generation for %zu specified models...",
              modelNames.size());
 
     // Prevent excessive collision creation that could cause memory issues
-    if (modelNames.size() > 1000)
+    if (modelNames.size() > MAX_COLLISION_INSTANCES)
     {
         TraceLog(LOG_ERROR,
                  "CollisionManager::CreateAutoCollisionsFromModelsSelective() - Too many models "
-                 "(%zu), limiting to 1000",
-                 modelNames.size());
+                 "(%zu), limiting to %zu",
+                 modelNames.size(), MAX_COLLISION_INSTANCES);
         return;
     }
 
@@ -594,18 +578,6 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
 
     // Track processed models to avoid duplication
     std::set<std::string> processedModelNames;
-    int collisionObjectsCreated = 0;
-    constexpr size_t MAX_COLLISION_INSTANCES = 5; // Increased for better coverage
-
-    // Structure to hold model processing data for parallel processing
-    struct ModelCollisionTask
-    {
-        std::string modelName;
-        Model *model;
-        bool hasCollision;
-        std::vector<ModelInstance *> instances;
-        int createdCollisions = 0;
-    };
 
     std::vector<ModelCollisionTask> tasks;
 
@@ -626,26 +598,25 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
 
         processedModelNames.insert(modelName);
 
-        try
+        auto modelOpt = models.GetModelByName(modelName);
+        if (!modelOpt)
         {
-            Model &model = models.GetModelByName(modelName);
-            bool hasCollision = models.HasCollision(modelName);
-
-            if (!hasCollision || model.meshCount == 0)
-                continue;
-
-            ModelCollisionTask task;
-            task.modelName = modelName;
-            task.model = &model;
-            task.hasCollision = hasCollision;
-            task.instances = models.GetInstancesByTag(modelName);
-            tasks.push_back(task);
+            TraceLog(LOG_WARNING, "CollisionManager - Model not found: %s", modelName.c_str());
+            continue;
         }
-        catch (const std::exception &e)
-        {
-            TraceLog(LOG_ERROR, "Failed to prepare selective collision task for model '%s': %s",
-                     modelName.c_str(), e.what());
-        }
+
+        Model &model = modelOpt->get();
+        bool hasCollision = models.HasCollision(modelName);
+
+        if (!hasCollision || model.meshCount == 0)
+            continue;
+
+        ModelCollisionTask task;
+        task.modelName = modelName;
+        task.model = &model;
+        task.hasCollision = hasCollision;
+        task.instances = models.GetInstancesByTag(modelName);
+        tasks.push_back(task);
     }
 
     // Process models in parallel
@@ -1428,7 +1399,7 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
 {
     Collision instanceCollision;
 
-    // Масштаб -> (обертання) -> зсув
+
     Matrix transform = MatrixIdentity();
     transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
     // Якщо є rotation:
@@ -1452,15 +1423,15 @@ Collision
 CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
                                                            Vector3 position, float scale)
 {
-    // Створюємо інстанс з уже наявних трикутників без повторного читання mesh'ів
+
     Collision instance;
 
-    // Побудуємо трансформацію інстанса (масштаб -> зсув)
+
     Matrix transform = MatrixIdentity();
     transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
     transform = MatrixMultiply(transform, MatrixTranslate(position.x, position.y, position.z));
 
-    // Скопіюємо трикутники та застосуємо трансформацію
+
     const auto &tris = cachedCollision.GetTriangles();
     instance = Collision{};
     for (const auto &t : tris)
@@ -1471,7 +1442,7 @@ CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cach
         instance.AddTriangle(CollisionTriangle(v0, v1, v2));
     }
 
-    // Оновимо AABB і зберемо BVH
+
     instance.UpdateAABBFromTriangles();
     instance.InitializeBVH();
     instance.SetCollisionType(CollisionType::BVH_ONLY);
@@ -1481,7 +1452,6 @@ CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cach
 Collision CollisionManager::CreateSimpleAABBInstanceCollision(const Collision &cachedCollision,
                                                               const Vector3 &position, float scale)
 {
-    // Створюємо чисту AABB без трикутників та BVH, щоб інстанс був суто AABB_ONLY
     Vector3 transformedCenter =
         Vector3Add(Vector3Scale(cachedCollision.GetCenter(), scale), position);
     Vector3 scaledSize = Vector3Scale(cachedCollision.GetSize(), scale);

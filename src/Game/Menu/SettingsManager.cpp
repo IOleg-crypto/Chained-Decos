@@ -9,39 +9,13 @@ SettingsManager::SettingsManager() {
 }
 
 void SettingsManager::LoadSettings() {
-    // Load configuration from file (try multiple possible locations)
+    // Load configuration from the single canonical file: game.cfg (current directory)
     bool loaded = false;
-    try {
-        // Try current directory first
-        if (m_config.LoadFromFile("game.cfg")) {
-            TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from current directory");
-            loaded = true;
-        } else {
-            // Try build directory
-            if (m_config.LoadFromFile("build/game.cfg")) {
-                TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from build directory");
-                loaded = true;
-            } else if (m_config.LoadFromFile("build_tests/game.cfg")) {
-                TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from build_tests directory");
-                loaded = true;
-            } else if (m_config.LoadFromFile("cmake-build-debug/game.cfg")) {
-                TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from cmake-build-debug directory");
-                loaded = true;
-            } else if (m_config.LoadFromFile("cmake-build-release/game.cfg")) {
-                TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Successfully loaded game.cfg from cmake-build-release directory");
-                loaded = true;
-            }
-        }
-
-        if (!loaded) {
-            TraceLog(LOG_WARNING, "SettingsManager::LoadSettings() - Could not load game.cfg from any location, will use default settings");
-        }
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "SettingsManager::LoadSettings() - Exception while loading configuration: %s", e.what());
-        TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Continuing with default settings");
-    } catch (...) {
-        TraceLog(LOG_ERROR, "SettingsManager::LoadSettings() - Unknown exception while loading configuration");
-        TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Continuing with default settings");
+    if (m_config.LoadFromFile("game.cfg")) {
+        TraceLog(LOG_INFO, "SettingsManager::LoadSettings() - Loaded game.cfg from current directory");
+        loaded = true;
+    } else {
+        TraceLog(LOG_WARNING, "SettingsManager::LoadSettings() - Could not load game.cfg, using default settings");
     }
 
     // Apply loaded settings to the game
@@ -100,50 +74,44 @@ void SettingsManager::LoadSettings() {
 }
 
 void SettingsManager::SaveSettings() {
-    try {
-        // Save current window settings
-        m_config.SetResolution(GetScreenWidth(), GetScreenHeight());
-        m_config.SetFullscreen(IsWindowFullscreen());
-        m_config.SetVSync(IsWindowState(FLAG_VSYNC_HINT));
+    // Save current window settings
+    m_config.SetResolution(GetScreenWidth(), GetScreenHeight());
+    m_config.SetFullscreen(IsWindowFullscreen());
+    m_config.SetVSync(IsWindowState(FLAG_VSYNC_HINT));
 
-        // Save audio settings
-        m_config.SetMasterVolume(m_audioSettings.masterVolume);
-        m_config.SetMusicVolume(m_audioSettings.musicVolume);
-        m_config.SetSFXVolume(m_audioSettings.sfxVolume);
+    // Save audio settings
+    m_config.SetMasterVolume(m_audioSettings.masterVolume);
+    m_config.SetMusicVolume(m_audioSettings.musicVolume);
+    m_config.SetSFXVolume(m_audioSettings.sfxVolume);
 
-        // Save control settings
-        m_config.SetMouseSensitivity(m_controlSettings.mouseSensitivity);
-        m_config.SetInvertY(m_controlSettings.invertYAxis);
+    // Save control settings
+    m_config.SetMouseSensitivity(m_controlSettings.mouseSensitivity);
+    m_config.SetInvertY(m_controlSettings.invertYAxis);
 
-        // Save parkour-specific settings
-        m_config.SetWallRunSensitivity(m_parkourSettings.wallRunSensitivity);
-        m_config.SetJumpTiming(m_parkourSettings.jumpTiming);
-        m_config.SetSlideControl(m_parkourSettings.slideControl);
-        m_config.SetGrappleSensitivity(m_parkourSettings.grappleSensitivity);
+    // Save parkour-specific settings
+    m_config.SetWallRunSensitivity(m_parkourSettings.wallRunSensitivity);
+    m_config.SetJumpTiming(m_parkourSettings.jumpTiming);
+    m_config.SetSlideControl(m_parkourSettings.slideControl);
+    m_config.SetGrappleSensitivity(m_parkourSettings.grappleSensitivity);
 
-        // Save gameplay settings
-        m_config.SetDifficultyLevel(m_gameplaySettings.difficultyLevel);
-        m_config.SetTimerEnabled(m_gameplaySettings.timerEnabled);
-        m_config.SetCheckpointsEnabled(m_gameplaySettings.checkpointsEnabled);
-        m_config.SetAutoSaveEnabled(m_gameplaySettings.autoSaveEnabled);
-        m_config.SetSpeedrunMode(m_gameplaySettings.speedrunMode);
+    // Save gameplay settings
+    m_config.SetDifficultyLevel(m_gameplaySettings.difficultyLevel);
+    m_config.SetTimerEnabled(m_gameplaySettings.timerEnabled);
+    m_config.SetCheckpointsEnabled(m_gameplaySettings.checkpointsEnabled);
+    m_config.SetAutoSaveEnabled(m_gameplaySettings.autoSaveEnabled);
+    m_config.SetSpeedrunMode(m_gameplaySettings.speedrunMode);
 
-        m_config.SetWallRunEnabled(m_gameplaySettings.wallRunEnabled);
-        m_config.SetDoubleJumpEnabled(m_gameplaySettings.doubleJumpEnabled);
-        m_config.SetSlideEnabled(m_gameplaySettings.slideEnabled);
-        m_config.SetGrappleEnabled(m_gameplaySettings.grappleEnabled);
-        m_config.SetSlowMotionOnTrick(m_gameplaySettings.slowMotionOnTrick);
+    m_config.SetWallRunEnabled(m_gameplaySettings.wallRunEnabled);
+    m_config.SetDoubleJumpEnabled(m_gameplaySettings.doubleJumpEnabled);
+    m_config.SetSlideEnabled(m_gameplaySettings.slideEnabled);
+    m_config.SetGrappleEnabled(m_gameplaySettings.grappleEnabled);
+    m_config.SetSlowMotionOnTrick(m_gameplaySettings.slowMotionOnTrick);
 
-        // Save to file (try current directory first, then build directories)
-        if (!m_config.SaveToFile("game.cfg")) {
-            // Try saving to build directory
-        } else {
-            TraceLog(LOG_INFO, "SettingsManager::SaveSettings() - Settings saved to game.cfg");
-        }
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "SettingsManager::SaveSettings() - Exception while saving settings: %s", e.what());
-    } catch (...) {
-        TraceLog(LOG_ERROR, "SettingsManager::SaveSettings() - Unknown exception while saving settings");
+    // Save to file (single canonical location: game.cfg)
+    if (m_config.SaveToFile("game.cfg")) {
+        TraceLog(LOG_INFO, "SettingsManager::SaveSettings() - Settings saved to game.cfg");
+    } else {
+        TraceLog(LOG_WARNING, "SettingsManager::SaveSettings() - Failed to save settings to game.cfg");
     }
 }
 

@@ -2,6 +2,9 @@
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Collision/GroundColliderFactory.h"
 #include "Engine/Engine.h"
+#include "Engine/CommandLineHandler/CommandLineHandler.h"
+#include "Engine/Render/RenderManager.h"
+#include "Engine/Input/InputManager.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/Kernel/KernelServices.h"
 #include "Engine/Model/Model.h"
@@ -13,6 +16,10 @@
 #include "rlImGui.h"
 #include <unordered_set>
 #include <fstream>
+#include <filesystem>
+#include <set>
+#include <chrono>
+#include <chrono>
 
 // Static member definition
 Game* Game::s_instance = nullptr;
@@ -25,15 +32,15 @@ namespace GameConstants {
     constexpr float PLAYER_SAFE_SPAWN_HEIGHT = 2.0f;
 }
 
-Game::Game(Engine *engine) : m_showMenu(true), m_isGameInitialized(false), m_isDebugInfo(true)
+Game::Game()
+    : m_showMenu(true), m_isGameInitialized(false), m_isDebugInfo(true)
 {
-    m_engine = engine;
     s_instance = this;
-    TraceLog(LOG_INFO, "Game class initialized.");
+    TraceLog(LOG_INFO, "Game class instance created.");
 }
 
 /**
- * @brief Cleanup function to properly release resources
+ * Cleanup function to properly release resources.
  * Called during game shutdown to ensure clean resource management
  */
 void Game::Cleanup()
@@ -41,15 +48,15 @@ void Game::Cleanup()
     TraceLog(LOG_INFO, "Game::Cleanup() - Cleaning up game resources...");
 
     // Clear collision system
-    if (!m_collisionManager.GetColliders().empty())
+    if (!m_collisionManager->GetColliders().empty())
     {
-        m_collisionManager.ClearColliders();
+        m_collisionManager->ClearColliders();
         TraceLog(LOG_INFO, "Game::Cleanup() - Collision system cleared");
     }
 
     // Reset player state
-    m_player.SetPlayerPosition({0.0f, 0.0f, 0.0f});
-    m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
+    m_player->SetPlayerPosition({0.0f, 0.0f, 0.0f});
+    m_player->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
 
     // Clear any loaded maps
     if (!m_gameMap.objects.empty())
@@ -61,7 +68,7 @@ void Game::Cleanup()
     // Reset game state
     m_showMenu = true;
     m_isGameInitialized = false;
-    m_menu.SetGameInProgress(false); // Clear game state when cleaning up
+    m_menu->SetGameInProgress(false); // Clear game state when cleaning up
 
     TraceLog(LOG_INFO, "Game::Cleanup() - Game resources cleaned up successfully");
 }
@@ -79,32 +86,61 @@ Game* Game::GetInstance()
     return s_instance;
 }
 
-void Game::Init()
+void Game::Init(int argc, char* argv[])
 {
     TraceLog(LOG_INFO, "Game::Init() - Initializing game components...");
+
+    // Parse command line arguments
+    GameConfig config = CommandLineHandler::ParseArguments(argc, argv);
+
+    // Show parsed configuration in developer mode
+    if (config.developer)
+    {
+        CommandLineHandler::ShowConfig(config);
+    }
+
+    // Create core components
+    auto renderManager = std::make_shared<RenderManager>();
+    auto inputManager = std::make_shared<InputManager>();
+
+    // Initialize engine
+    m_engine = std::make_unique<Engine>(config.width, config.height, renderManager, inputManager);
+    m_engine->Init();
+
+    // Initialize game components
+    m_player = std::make_unique<Player>();
+    m_collisionManager = std::make_unique<CollisionManager>();
+    m_models = std::make_unique<ModelLoader>();
+    m_world = std::make_unique<WorldManager>();
+    m_menu = std::make_unique<Menu>();
 
     // Set log level to show INFO messages for debugging
     SetTraceLogLevel(LOG_INFO);
 
-    // Initialize menu with engine reference (can be null for testing)
-    m_menu.Initialize(m_engine);
+    TraceLog(LOG_INFO, "Game::Init() - About to initialize menu...");
+    // Initialize menu with engine reference
+    m_menu->Initialize(m_engine.get());
+    TraceLog(LOG_INFO, "Game::Init() - Menu initialized.");
 
+    TraceLog(LOG_INFO, "Game::Init() - About to initialize kernel...");
     // Kernel boot and service registration
     Kernel &kernel = Kernel::GetInstance();
     kernel.Initialize();
+    TraceLog(LOG_INFO, "Game::Init() - Kernel initialized.");
 
     // Only register engine-dependent services if engine is available
     if (m_engine)
     {
-        kernel.RegisterService<InputService>(Kernel::ServiceType::Input, std::make_shared<InputService>(&m_engine->GetInputManager()));
+        // InputManager is already registered by Engine
+        TraceLog(LOG_INFO, "Game::Init() - InputManager already registered by Engine");
     }
     else
     {
         TraceLog(LOG_WARNING, "Game::Init() - No engine provided, skipping engine-dependent services");
     }
 
-    kernel.RegisterService<ModelsService>(Kernel::ServiceType::Models, std::make_shared<ModelsService>(&m_models));
-    kernel.RegisterService<WorldService>(Kernel::ServiceType::World, std::make_shared<WorldService>(&m_world));
+    kernel.RegisterService<ModelsService>(Kernel::ServiceType::Models, std::make_shared<ModelsService>(m_models.get()));
+    kernel.RegisterService<WorldService>(Kernel::ServiceType::World, std::make_shared<WorldService>(m_world.get()));
     // CollisionManager and WorldManager will be registered after creation/initialization
 
     // Models will be loaded selectively when a map is selected
@@ -141,6 +177,7 @@ void Game::Update()
     if (m_engine)
     {
         m_engine->Update();
+        m_engine->GetInputManager().ProcessInput();
     }
 
     // Update kernel services each frame
@@ -149,17 +186,13 @@ void Game::Update()
     // Handle console input (works in both menu and gameplay)
     if (IsKeyPressed(KEY_GRAVE)) // ~ key
     {
-        m_menu.ToggleConsole();
+        m_menu->ToggleConsole();
     }
     
     // Console input is handled internally by the menu
 
 
-    // Process input always, let ImGui handle capture
-    if (m_engine)
-    {
-        m_engine->GetInputManager().ProcessInput();
-    }
+    // Input processing is handled by Kernel services
 
     if (m_showMenu)
     {
@@ -169,7 +202,7 @@ void Game::Update()
     {
         // Update game logic always, independent of console
         // Debug: Check collision system before updating player
-        size_t colliderCount = m_collisionManager.GetColliders().size();
+        size_t colliderCount = m_collisionManager->GetColliders().size();
         TraceLog(LOG_INFO, "Game::Update() - Collision system has %d colliders", colliderCount);
  
         UpdatePlayerLogic();
@@ -189,36 +222,17 @@ void Game::Render()
 
     if (m_showMenu)
     {
-        m_engine->GetRenderManager()->RenderMenu(m_menu);
+        m_engine->GetRenderManager()->RenderMenu(*m_menu);
     }
     else
     {
-        // Add debug info before rendering
-        TraceLog(LOG_INFO, "Game::Render() - Rendering game world, player position: (%.2f, %.2f, %.2f)",
-                 m_player.GetPlayerPosition().x, m_player.GetPlayerPosition().y, m_player.GetPlayerPosition().z);
-
-        // Debug: Check if models are loaded
-        auto availableModels = m_models.GetAvailableModels();
-        TraceLog(LOG_INFO, "Game::Render() - Available models: %d", availableModels.size());
-        for (const auto& modelName : availableModels)
-        {
-            TraceLog(LOG_INFO, "Game::Render() -   Model: %s", modelName.c_str());
-
-            // Get model details for each model
-            try
-            {
-                Model& model = m_models.GetModelByName(modelName);
-                TraceLog(LOG_INFO, "Game::Render() -   Model %s meshCount: %d", modelName.c_str(), model.meshCount);
-                TraceLog(LOG_INFO, "Game::Render() -   Model %s materialCount: %d", modelName.c_str(), model.materialCount);
-            }
-            catch (const std::exception& e)
-            {
-                TraceLog(LOG_WARNING, "Game::Render() - Failed to get details for model %s: %s", modelName.c_str(), e.what());
-            }
+        // For debugging, only log model stats when they change
+        static int lastInstanceCount = 0;
+        int currentInstanceCount = m_models->GetLoadingStats().totalInstances;
+        if (currentInstanceCount != lastInstanceCount) {
+            TraceLog(LOG_INFO, "Game::Render() - Model instances count: %d", currentInstanceCount);
+            lastInstanceCount = currentInstanceCount;
         }
-
-        // Check model instances
-        TraceLog(LOG_INFO, "Game::Render() - Model instances count: %d", m_models.GetLoadingStats().totalInstances);
 
         RenderGameWorld();
         RenderGameUI();
@@ -232,14 +246,14 @@ void Game::Render()
 
     if (m_engine->IsDebugInfoVisible() && !m_showMenu)
     {
-        m_engine->GetRenderManager()->RenderDebugInfo(m_player, m_models, m_collisionManager);
+        m_engine->GetRenderManager()->RenderDebugInfo(*m_player, *m_models, *m_collisionManager);
     }
 
     // Render console if open and not in menu
-    if (!m_showMenu && m_menu.GetConsoleManager() && m_menu.GetConsoleManager()->IsConsoleOpen())
+    if (!m_showMenu && m_menu->GetConsoleManager() && m_menu->GetConsoleManager()->IsConsoleOpen())
     {
         rlImGuiBegin();
-        m_menu.GetConsoleManager()->RenderConsole();
+        m_menu->GetConsoleManager()->RenderConsole();
         rlImGuiEnd();
     }
 
@@ -324,7 +338,7 @@ void Game::InitInput()
                                                        // Set game as in progress when going to menu from game
                                                        if (!m_showMenu)
                                                        {
-                                                           m_menu.SetGameInProgress(true);
+                                                           m_menu->SetGameInProgress(true);
                                                        }
                                                        m_showMenu = true;
                                                        EnableCursor();
@@ -338,9 +352,9 @@ void Game::InitInput()
                                                            // Save current game state before pausing
                                                            SaveGameState();
 
-                                                           m_menu.ResetAction();
+                                                           m_menu->ResetAction();
                                                            // Set game as in progress when going to menu from game
-                                                           m_menu.SetGameInProgress(true);
+                                                           m_menu->SetGameInProgress(true);
                                                            ToggleMenu();
                                                            EnableCursor();
                                                        }
@@ -353,11 +367,11 @@ void Game::InitCollisions()
     TraceLog(LOG_INFO, "Game::InitCollisions() - Initializing collision system...");
 
     // Clear existing colliders if any
-    size_t previousColliderCount = m_collisionManager.GetColliders().size();
+    size_t previousColliderCount = m_collisionManager->GetColliders().size();
     if (previousColliderCount > 0)
     {
         TraceLog(LOG_INFO, "Game::InitCollisions() - Clearing %zu existing colliders", previousColliderCount);
-        m_collisionManager.ClearColliders();
+        m_collisionManager->ClearColliders();
     }
 
     // Only create artificial ground if we don't have a custom map with its own ground
@@ -365,7 +379,7 @@ void Game::InitCollisions()
     {
         TraceLog(LOG_INFO, "Game::InitCollisions() - No custom map loaded, creating default ground");
         Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
-        m_collisionManager.AddCollider(std::move(groundPlane));
+        m_collisionManager->AddCollider(std::move(groundPlane));
     }
     else
     {
@@ -373,7 +387,7 @@ void Game::InitCollisions()
     }
 
     // Create parkour map based on menu selection
-    MenuAction action = m_menu.GetAction();
+    MenuAction action = m_menu->GetAction();
     switch(action)
     {
         // Map selection now handled dynamically through StartGameWithMap
@@ -386,12 +400,12 @@ void Game::InitCollisions()
     }
 
     // Initialize ground collider first
-    m_collisionManager.Initialize();
+    m_collisionManager->Initialize();
     // Register collision service once initialized
-    Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(&m_collisionManager));
+    Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(m_collisionManager.get()));
 
     // Load model collisions only for models that are actually loaded and required for this map
-    auto availableModels = m_models.GetAvailableModels();
+    auto availableModels = m_models->GetAvailableModels();
     TraceLog(LOG_INFO, "Game::InitCollisions() - Available models for collision generation: %d", availableModels.size());
     for (const auto& modelName : availableModels)
     {
@@ -400,7 +414,7 @@ void Game::InitCollisions()
 
     try
     {
-        m_collisionManager.CreateAutoCollisionsFromModelsSelective(m_models, availableModels);
+        m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, availableModels);
         TraceLog(LOG_INFO, "Game::InitCollisions() - Model collisions created successfully");
     }
     catch (const std::exception& e)
@@ -410,14 +424,14 @@ void Game::InitCollisions()
     }
 
     // Reinitialize after adding all model colliders
-    m_collisionManager.Initialize();
+    m_collisionManager->Initialize();
 
     // Initialize player collision
-    auto& playerCollision = m_player.GetCollisionMutable();
+    auto& playerCollision = m_player->GetCollisionMutable();
     playerCollision.InitializeCollision();
 
     TraceLog(LOG_INFO, "Game::InitCollisions() - Collision system initialized with %zu colliders.",
-             m_collisionManager.GetColliders().size());
+              m_collisionManager->GetColliders().size());
 }
 
 void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredModels)
@@ -425,11 +439,11 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Initializing collision system with %d required models...", requiredModels.size());
 
     // Clear existing colliders if any
-    size_t previousColliderCount = m_collisionManager.GetColliders().size();
+    size_t previousColliderCount = m_collisionManager->GetColliders().size();
     if (previousColliderCount > 0)
     {
         TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Clearing %zu existing colliders", previousColliderCount);
-        m_collisionManager.ClearColliders();
+        m_collisionManager->ClearColliders();
     }
     else
     {
@@ -437,7 +451,7 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
     }
 
     // Create parkour map based on menu selection
-    MenuAction action = m_menu.GetAction();
+    MenuAction action = m_menu->GetAction();
     switch(action)
     {
         // Map selection now handled dynamically through StartGameWithMap
@@ -450,9 +464,9 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
     }
 
     // Initialize ground collider first
-    m_collisionManager.Initialize();
+    m_collisionManager->Initialize();
     // Register collision service once initialized
-    Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(&m_collisionManager));
+    Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(m_collisionManager.get()));
 
     // Try to create model collisions, but don't fail if it doesn't work
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Required models for collision generation: %d", requiredModels.size());
@@ -463,7 +477,7 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
 
     try
     {
-        m_collisionManager.CreateAutoCollisionsFromModelsSelective(m_models, requiredModels);
+        m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
         TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Model collisions created successfully");
     }
     catch (const std::exception& e)
@@ -473,14 +487,14 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
     }
 
     // Reinitialize after adding all model colliders
-    m_collisionManager.Initialize();
+    m_collisionManager->Initialize();
 
     // Initialize player collision
-    auto& playerCollision = m_player.GetCollisionMutable();
+    auto& playerCollision = m_player->GetCollisionMutable();
     playerCollision.InitializeCollision();
 
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Collision system initialized with %zu colliders.",
-              m_collisionManager.GetColliders().size());
+              m_collisionManager->GetColliders().size());
 }
 
 bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string>& requiredModels)
@@ -488,18 +502,18 @@ bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string>& required
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Initializing collision system with %d required models...", requiredModels.size());
 
     // Clear existing colliders if any
-    size_t previousColliderCount = m_collisionManager.GetColliders().size();
+    size_t previousColliderCount = m_collisionManager->GetColliders().size();
     if (previousColliderCount > 0)
     {
         TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Clearing %zu existing colliders", previousColliderCount);
-        m_collisionManager.ClearColliders();
+        m_collisionManager->ClearColliders();
     }
 
     // Initialize collision manager
-    m_collisionManager.Initialize();
+    m_collisionManager->Initialize();
     
     // Register collision service once initialized
-    Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(&m_collisionManager));
+    Kernel::GetInstance().RegisterService<CollisionService>(Kernel::ServiceType::Collision, std::make_shared<CollisionService>(m_collisionManager.get()));
 
     // Try to create model collisions, but don't fail if it doesn't work
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Required models for collision generation: %d", requiredModels.size());
@@ -511,7 +525,7 @@ bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string>& required
     // Try to create model collisions safely
     try
     {
-        m_collisionManager.CreateAutoCollisionsFromModelsSelective(m_models, requiredModels);
+        m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
         TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Model collisions created successfully");
     }
     catch (const std::exception& e)
@@ -519,21 +533,15 @@ bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string>& required
         TraceLog(LOG_WARNING, "Game::InitCollisionsWithModelsSafe() - Failed to create model collisions: %s", e.what());
         TraceLog(LOG_WARNING, "Game::InitCollisionsWithModelsSafe() - Continuing with basic collision system");
     }
-    catch (...)
-    {
-        TraceLog(LOG_WARNING, "Game::InitCollisionsWithModelsSafe() - Unknown error occurred during model collision creation");
-        TraceLog(LOG_WARNING, "Game::InitCollisionsWithModelsSafe() - Continuing with basic collision system");
-    }
-
     // Reinitialize after adding all model colliders
-    m_collisionManager.Initialize();
+    m_collisionManager->Initialize();
 
     // Initialize player collision
-    auto& playerCollision = m_player.GetCollisionMutable();
+    auto& playerCollision = m_player->GetCollisionMutable();
     playerCollision.InitializeCollision();
 
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Collision system initialized with %zu colliders.",
-              m_collisionManager.GetColliders().size());
+               m_collisionManager->GetColliders().size());
     
     return true; // Always return true since we have at least basic collision
 }
@@ -545,83 +553,80 @@ void Game::InitPlayer()
     // Set initial position on the first platform (mix of ground and floating platforms)
     Vector3 safePosition = {0.0f, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, 0.0f};
     TraceLog(LOG_INFO, "Game::InitPlayer() - Setting initial safe position: (%.2f, %.2f, %.2f)",
-             safePosition.x, safePosition.y, safePosition.z);
-    m_player.SetPlayerPosition(safePosition);
+              safePosition.x, safePosition.y, safePosition.z);
+    m_player->SetPlayerPosition(safePosition);
 
     // Setup collision and physics
     TraceLog(LOG_INFO, "Game::InitPlayer() - Setting up collision manager for player...");
-    m_player.GetMovement()->SetCollisionManager(&m_collisionManager);
+    m_player->GetMovement()->SetCollisionManager(m_collisionManager.get());
 
     TraceLog(LOG_INFO, "Game::InitPlayer() - Updating player collision box...");
-    m_player.UpdatePlayerBox();
+    m_player->UpdatePlayerBox();
 
     TraceLog(LOG_INFO, "Game::InitPlayer() - Updating player collision...");
-    m_player.UpdatePlayerCollision();
+    m_player->UpdatePlayerCollision();
 
     // Allow physics to determine grounded state; start ungrounded so gravity applies
     TraceLog(LOG_INFO, "Game::InitPlayer() - Setting initial physics state...");
-    m_player.GetPhysics().SetGroundLevel(false);
-    m_player.GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
+    m_player->GetPhysics().SetGroundLevel(false);
+    m_player->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
 
     // Load player model with improved error handling and fallback
     TraceLog(LOG_INFO, "Game::InitPlayer() - Loading player model...");
-    try
+    // Try to load the player model
+    if (auto playerModel = m_models->GetModelByName("player_low")) 
     {
-        // First try to load the player model
-        Model* playerModel = &m_models.GetModelByName("player_low");
+        Model& model = playerModel->get();
         TraceLog(LOG_INFO, "Game::InitPlayer() - Player model pointer: %p, meshCount: %d",
-                 playerModel, playerModel ? playerModel->meshCount : -1);
+                 &model, model.meshCount);
 
-        if (playerModel && playerModel->meshCount > 0)
+        if (model.meshCount > 0)
         {
-            m_player.SetPlayerModel(playerModel);
+            m_player->SetPlayerModel(&model);
             TraceLog(LOG_INFO, "Game::InitPlayer() - Player model loaded successfully.");
         }
         else
         {
             TraceLog(LOG_ERROR, "Game::InitPlayer() - Player model is invalid or has no meshes");
-
             // Try to load player_low.glb directly if player.glb failed
-            if (!m_models.LoadSingleModel("player", "../resources/player_low.glb", true))
+            if (!m_models->LoadSingleModel("player", "../resources/player_low.glb", true))
             {
                 TraceLog(LOG_ERROR, "Game::InitPlayer() - Failed to load player_low.glb as fallback");
             }
             else
             {
                 TraceLog(LOG_INFO, "Game::InitPlayer() - Successfully loaded player_low.glb as fallback");
-                playerModel = &m_models.GetModelByName("player");
-                if (playerModel && playerModel->meshCount > 0)
+                if (auto playerModel = m_models->GetModelByName("player"))
                 {
-                    m_player.SetPlayerModel(playerModel);
-                    TraceLog(LOG_INFO, "Game::InitPlayer() - Player model loaded successfully with fallback.");
+                    Model& model = playerModel->get();
+                    if (model.meshCount > 0)
+                    {
+                        m_player->SetPlayerModel(&model);
+                        TraceLog(LOG_INFO, "Game::InitPlayer() - Player model loaded successfully with fallback.");
+                    }
                 }
             }
         }
-    }
-    catch (const std::exception& e)
-    {
-        TraceLog(LOG_ERROR, "Game::InitPlayer() - Failed to load player model: %s", e.what());
-        TraceLog(LOG_WARNING, "Game::InitPlayer() - Player will use default rendering");
     }
 
     TraceLog(LOG_INFO, "Game::InitPlayer() - Player initialized at (%.2f, %.2f, %.2f).",
                  safePosition.x, safePosition.y, safePosition.z);
 
     // Additional safety check - ensure player is properly positioned
-    Vector3 currentPos = m_player.GetPlayerPosition();
+    Vector3 currentPos = m_player->GetPlayerPosition();
     TraceLog(LOG_INFO, "Game::InitPlayer() - Player current position: (%.2f, %.2f, %.2f)",
-                 currentPos.x, currentPos.y, currentPos.z);
+              currentPos.x, currentPos.y, currentPos.z);
 
     // Validate player position is safe (above ground but not too high)
     if (currentPos.y < 0.0f)
     {
         TraceLog(LOG_WARNING, "Game::InitPlayer() - Player position below ground level, adjusting");
-        m_player.SetPlayerPosition({currentPos.x, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
+        m_player->SetPlayerPosition({currentPos.x, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
     }
     else if (currentPos.y > 50.0f)
     {
         TraceLog(LOG_WARNING, "Game::InitPlayer() - Player position too high, adjusting");
-        m_player.SetPlayerPosition({currentPos.x, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
+        m_player->SetPlayerPosition({currentPos.x, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
     }
 
     // Check if map has PlayerStart objects and adjust position accordingly
@@ -638,7 +643,7 @@ void Game::InitPlayer()
             {
                 TraceLog(LOG_INFO, "Game::InitPlayer() - Found PlayerStart object at (%.2f, %.2f, %.2f)",
                          obj.position.x, obj.position.y, obj.position.z);
-                m_player.SetPlayerPosition(obj.position);
+                m_player->SetPlayerPosition(obj.position);
                 TraceLog(LOG_INFO, "Game::InitPlayer() - Player position updated to PlayerStart location");
                 break;
             }
@@ -650,200 +655,231 @@ void Game::InitPlayer()
     }
 
     // Final position verification
-    Vector3 finalPos = m_player.GetPlayerPosition();
+    Vector3 finalPos = m_player->GetPlayerPosition();
     TraceLog(LOG_INFO, "Game::InitPlayer() - Final player position: (%.2f, %.2f, %.2f)",
-             finalPos.x, finalPos.y, finalPos.z);
+              finalPos.x, finalPos.y, finalPos.z);
 
     TraceLog(LOG_INFO, "Game::InitPlayer() - Player initialization complete");
 }
 
-void Game::LoadGameModels()
+std::optional<ModelLoader::LoadResult> Game::LoadGameModels()
 {
     TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading game models from resources directory...");
-    m_models.SetCacheEnabled(true);
-    m_models.SetMaxCacheSize(50);
-    m_models.EnableLOD(true);
-    m_models.SetSelectiveMode(false);
+    m_models->SetCacheEnabled(true);
+    m_models->SetMaxCacheSize(50);
+    m_models->EnableLOD(true);
+    m_models->SetSelectiveMode(false);
 
-    try
+    MapLoader mapLoader;
+    std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
+    auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+    if (models.empty())
     {
-        // Use the new MapLoader to scan for models in the resources directory
-        MapLoader mapLoader;
-        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
-        auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
+        TraceLog(LOG_WARNING, "Game::LoadGameModels() - No models found in resources directory");
+        return std::nullopt;
+    }
 
-        if (!models.empty()) 
+    TraceLog(LOG_INFO, "Game::LoadGameModels() - Found %d models in resources directory", models.size());
+
+    ModelLoader::LoadResult result = {
+        static_cast<int>(models.size()), // totalModels
+        0,                               // loadedModels
+        0,                               // failedModels
+        0.0f                            // loadingTime
+    };
+
+    auto startTime = std::chrono::steady_clock::now();
+
+    // Load each model found in the directory
+    for (const auto& modelInfo : models)
+    {
+        std::string modelPath = modelInfo.path;
+        TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading model: %s from %s",
+                 modelInfo.name.c_str(), modelPath.c_str());
+
+        if (m_models->LoadSingleModel(modelInfo.name, modelPath, true))
         {
-            TraceLog(LOG_INFO, "Game::LoadGameModels() - Found %d models in resources directory", models.size());
-
-            // Load each model found in the directory
-            for (const auto& modelInfo : models)
-            {
-                try
-                {
-                    std::string modelPath = modelInfo.path;
-                    TraceLog(LOG_INFO, "Game::LoadGameModels() - Loading model: %s from %s",
-                             modelInfo.name.c_str(), modelPath.c_str());
-
-                    // Load the model using the existing model loading system
-                    m_models.LoadSingleModel(modelInfo.name, modelPath, true);
-                }
-                catch (const std::exception& modelException)
-                {
-                    TraceLog(LOG_WARNING, "Game::LoadGameModels() - Failed to load model %s: %s",
-                             modelInfo.name.c_str(), modelException.what());
-                }
-            }
-
-            m_models.PrintStatistics();
-            TraceLog(LOG_INFO, "Game::LoadGameModels() - Models loaded successfully.");
-
-            // Validate that we have essential models
-            auto availableModels = m_models.GetAvailableModels();
-            bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player_low") != availableModels.end();
-
-            if (!hasPlayerModel)
-            {
-                TraceLog(LOG_WARNING, "Game::LoadGameModels() - Player model not found, player may not render correctly");
-            }
+            result.loadedModels++;
+            TraceLog(LOG_INFO, "Successfully loaded model: %s", modelInfo.name.c_str());
         }
         else
         {
-            TraceLog(LOG_WARNING, "Game::LoadGameModels() - No models found in resources directory");
+            result.failedModels++;
+            TraceLog(LOG_WARNING, "Failed to load model: %s", modelInfo.name.c_str());
         }
     }
-    catch (const std::exception &e)
+
+    auto endTime = std::chrono::steady_clock::now();
+    result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+
+    m_models->PrintStatistics();
+    TraceLog(LOG_INFO, "Game::LoadGameModels() - Loaded %d/%d models in %.2f seconds",
+             result.loadedModels, result.totalModels, result.loadingTime);
+
+    // Validate that we have essential models
+    auto availableModels = m_models->GetAvailableModels();
+    bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player_low") != availableModels.end();
+
+    if (!hasPlayerModel)
     {
-        TraceLog(LOG_ERROR, "Game::LoadGameModels() - Failed to load models: %s", e.what());
-        TraceLog(LOG_ERROR, "Game::LoadGameModels() - Game may not function correctly without models");
+        TraceLog(LOG_WARNING, "Game::LoadGameModels() - Player model not found, player may not render correctly");
     }
+
+    return result;
 }
 
-void Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
+std::optional<ModelLoader::LoadResult> Game::LoadGameModelsSelective(const std::vector<std::string>& modelNames)
 {
     TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Loading selective models: %d models", modelNames.size());
-    m_models.SetCacheEnabled(true);
-    m_models.SetMaxCacheSize(50);
-    m_models.EnableLOD(false);
-    m_models.SetSelectiveMode(true);
+    m_models->SetCacheEnabled(true);
+    m_models->SetMaxCacheSize(50);
+    m_models->EnableLOD(false);
+    m_models->SetSelectiveMode(true);
 
-    try
+    MapLoader mapLoader;
+    std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+    auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+    if (allModels.empty())
     {
-        // Use the new MapLoader to scan for models in the resources directory
-        MapLoader mapLoader;
-        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
-        auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+        TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - No models found in resources directory");
+        return std::nullopt;
+    }
 
-        if (!allModels.empty())
+    TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Found %d models in resources directory", allModels.size());
+
+    ModelLoader::LoadResult result = {
+        static_cast<int>(modelNames.size()), // totalModels (only count requested models)
+        0,                                   // loadedModels
+        0,                                   // failedModels
+        0.0f                                // loadingTime
+    };
+
+    auto startTime = std::chrono::steady_clock::now();
+
+    // Load only the models that are in the required list
+    for (const auto& modelName : modelNames)
+    {
+        auto it = std::find_if(allModels.begin(), allModels.end(),
+            [&modelName](const ModelInfo& info) { return info.name == modelName; });
+
+        if (it != allModels.end())
         {
-            TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Found %d models in resources directory", allModels.size());
+            std::string modelPath = it->path;
+            TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Loading required model: %s from %s",
+                     modelName.c_str(), modelPath.c_str());
 
-            // Load only the models that are in the required list
-            for (const auto& modelInfo : allModels)
+            if (m_models->LoadSingleModel(modelName, modelPath, true))
             {
-                // Check if this model is in the required list
-                if (std::find(modelNames.begin(), modelNames.end(), modelInfo.name) != modelNames.end())
-                {
-                    try
-                    {
-                        std::string modelPath = modelInfo.path;
-                        TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Loading required model: %s from %s",
-                                 modelInfo.name.c_str(), modelPath.c_str());
-
-                        // Load the model using the existing model loading system
-                        m_models.LoadSingleModel(modelInfo.name, modelPath, true);
-                    }
-                    catch (const std::exception& modelException)
-                    {
-                        TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - Failed to load model %s: %s",
-                                 modelInfo.name.c_str(), modelException.what());
-                    }
-                }
+                result.loadedModels++;
+                TraceLog(LOG_INFO, "Successfully loaded model: %s", modelName.c_str());
             }
-
-            m_models.PrintStatistics();
-            TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Selective models loaded successfully.");
-
-            // Validate that we have essential models
-            auto availableModels = m_models.GetAvailableModels();
-            bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
-
-            if (!hasPlayerModel)
+            else
             {
-                TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - Player model not found, player may not render correctly");
+                result.failedModels++;
+                TraceLog(LOG_WARNING, "Failed to load model: %s", modelName.c_str());
             }
         }
         else
         {
-            TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - No models found in resources directory");
+            TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - Model not found in resources: %s", modelName.c_str());
+            result.failedModels++;
         }
     }
-    catch (const std::exception &e)
+
+    auto endTime = std::chrono::steady_clock::now();
+    result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+
+    m_models->PrintStatistics();
+    TraceLog(LOG_INFO, "Game::LoadGameModelsSelective() - Loaded %d/%d models in %.2f seconds",
+             result.loadedModels, result.totalModels, result.loadingTime);
+
+    // Validate that we have essential models
+    auto availableModels = m_models->GetAvailableModels();
+    bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
+
+    if (!hasPlayerModel)
     {
-        TraceLog(LOG_ERROR, "Game::LoadGameModelsSelective() - Failed to load selective models: %s", e.what());
-        TraceLog(LOG_ERROR, "Game::LoadGameModelsSelective() - Game may not function correctly without models");
+        TraceLog(LOG_WARNING, "Game::LoadGameModelsSelective() - Player model not found, player may not render correctly");
     }
+
+    return result;
 }
 
-void Game::LoadGameModelsSelectiveSafe(const std::vector<std::string>& modelNames)
+std::optional<ModelLoader::LoadResult> Game::LoadGameModelsSelectiveSafe(const std::vector<std::string>& modelNames)
 {
     TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Loading selective models: %d models", modelNames.size());
-    m_models.SetCacheEnabled(true);
-    m_models.SetMaxCacheSize(50);
-    m_models.EnableLOD(false);
-    m_models.SetSelectiveMode(true);
+    m_models->SetCacheEnabled(true);
+    m_models->SetMaxCacheSize(50);
+    m_models->EnableLOD(false);
+    m_models->SetSelectiveMode(true);
 
-    try
+    MapLoader mapLoader;
+    std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
+    auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+    if (allModels.empty())
     {
-        // Use the MapLoader to scan for models in the resources directory (same as original function)
-        MapLoader mapLoader;
-        std::string resourcesDir = PROJECT_ROOT_DIR "/resources";
-        auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+        TraceLog(LOG_WARNING, "Game::LoadGameModelsSelectiveSafe() - No models found in resources directory");
+        return std::nullopt;
+    }
 
-        if (!allModels.empty())
+    TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Found %d models in resources directory", allModels.size());
+
+    ModelLoader::LoadResult result = {
+        static_cast<int>(modelNames.size()), // totalModels (only count requested models)
+        0,                                   // loadedModels
+        0,                                   // failedModels
+        0.0f                                // loadingTime
+    };
+
+    auto startTime = std::chrono::steady_clock::now();
+
+    // Load only the models that are in the required list
+    std::unordered_set<std::string> modelNameSet(modelNames.begin(), modelNames.end());
+
+    for (const auto& modelInfo : allModels)
+    {
+        if (modelNameSet.find(modelInfo.name) != modelNameSet.end())
         {
-            TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Found %d models in resources directory", allModels.size());
+            TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Loading required model: %s from %s",
+                     modelInfo.name.c_str(), modelInfo.path.c_str());
 
-            // Load only the models that are in the required list
-            for (const auto& modelInfo : allModels)
+            if (m_models->LoadSingleModel(modelInfo.name, modelInfo.path, true))
             {
-                // Check if this model is in the required list
-                if (std::find(modelNames.begin(), modelNames.end(), modelInfo.name) != modelNames.end())
-                {
-                    TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Loading required model: %s from %s",
-                             modelInfo.name.c_str(), modelInfo.path.c_str());
-
-                    // Load the model using the existing model loading system
-                    m_models.LoadSingleModel(modelInfo.name, modelInfo.path, true);
-                }
+                result.loadedModels++;
+                TraceLog(LOG_INFO, "Successfully loaded model: %s", modelInfo.name.c_str());
             }
-
-            m_models.PrintStatistics();
-            TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Selective models loaded successfully.");
-
-            // Validate that we have essential models
-            auto availableModels = m_models.GetAvailableModels();
-            bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
-
-            if (!hasPlayerModel)
+            else
             {
-                TraceLog(LOG_WARNING, "Game::LoadGameModelsSelectiveSafe() - Player model not found, player may not render correctly");
+                result.failedModels++;
+                TraceLog(LOG_WARNING, "Failed to load model: %s", modelInfo.name.c_str());
             }
         }
-        else
-        {
-            TraceLog(LOG_WARNING, "Game::LoadGameModelsSelectiveSafe() - No models found in resources directory");
-        }
     }
-    catch (const std::exception& e)
+
+    auto endTime = std::chrono::steady_clock::now();
+    result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+
+    m_models->PrintStatistics();
+    TraceLog(LOG_INFO, "Game::LoadGameModelsSelectiveSafe() - Loaded %d/%d models in %.2f seconds",
+             result.loadedModels, result.totalModels, result.loadingTime);
+
+    // Validate that we have essential models
+    auto availableModels = m_models->GetAvailableModels();
+    bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") != availableModels.end();
+
+    if (!hasPlayerModel)
     {
-        TraceLog(LOG_ERROR, "Game::LoadGameModelsSelectiveSafe() - Failed to load selective models: %s", e.what());
-        TraceLog(LOG_ERROR, "Game::LoadGameModelsSelectiveSafe() - Game may not function correctly without models");
+        TraceLog(LOG_WARNING, "Game::LoadGameModelsSelectiveSafe() - Player model not found, player may not render correctly");
     }
+
+    return result;
 }
 
 ///
-/// @brief Maps object types to appropriate model names for selective loading
+/// Maps object types to appropriate model names for selective loading
 /// @param objectType The MapObjectType enum value
 /// @param modelName The specific model name from the map object (if any)
 /// @return Model name if mapping exists, empty string otherwise
@@ -1143,7 +1179,7 @@ void Game::UpdatePlayerLogic()
     {
         // Skip player logic if no engine is available (for testing)
         TraceLog(LOG_INFO, "Game::UpdatePlayerLogic() - No engine, updating player");
-        m_player.Update(m_collisionManager);
+        m_player->Update(*m_collisionManager);
         return;
     }
 
@@ -1152,38 +1188,38 @@ void Game::UpdatePlayerLogic()
     // {
         // Still update camera rotation even when ImGui wants mouse capture
         // This allows camera to work when menu is open or when hovering over UI
-        m_player.GetCameraController()->UpdateCameraRotation();
-        m_player.GetCameraController()->UpdateMouseRotation(m_player.GetCameraController()->GetCamera(),
-                                                            m_player.GetMovement()->GetPosition());
-        m_player.GetCameraController()->Update();
+        m_player->GetCameraController()->UpdateCameraRotation();
+        m_player->GetCameraController()->UpdateMouseRotation(m_player->GetCameraController()->GetCamera(),
+                                                            m_player->GetMovement()->GetPosition());
+        m_player->GetCameraController()->Update();
         
-        m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
+        m_engine->GetRenderManager()->ShowMetersPlayer(*m_player);
         TraceLog(LOG_INFO, "Game::UpdatePlayerLogic() - ImGui capturing mouse, only updating camera");
         // return;
     // }
 
-    Vector3 posBefore = m_player.GetPlayerPosition();
-    Vector3 velBefore = m_player.GetPhysics().GetVelocity();
+    Vector3 posBefore = m_player->GetPlayerPosition();
+    Vector3 velBefore = m_player->GetPhysics().GetVelocity();
     TraceLog(LOG_INFO, "Game::UpdatePlayerLogic() - Before update: position (%.3f, %.3f, %.3f), velocity (%.3f, %.3f, %.3f)", posBefore.x, posBefore.y, posBefore.z, velBefore.x, velBefore.y, velBefore.z);
 
-    m_player.Update(m_collisionManager);
+    m_player->Update(*m_collisionManager);
 
-    Vector3 posAfter = m_player.GetPlayerPosition();
-    Vector3 velAfter = m_player.GetPhysics().GetVelocity();
+    Vector3 posAfter = m_player->GetPlayerPosition();
+    Vector3 velAfter = m_player->GetPhysics().GetVelocity();
     TraceLog(LOG_INFO, "Game::UpdatePlayerLogic() - After update: position (%.3f, %.3f, %.3f), velocity (%.3f, %.3f, %.3f)", posAfter.x, posAfter.y, posAfter.z, velAfter.x, velAfter.y, velAfter.z);
 
-    m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
+    m_engine->GetRenderManager()->ShowMetersPlayer(*m_player);
 }
 
 /**
- * @brief Updates physics-related game logic
+ * Updates physics-related game logic.
  *
  * Ensures collision system is properly initialized and handles
  * edge cases where collision data might be missing.
  */
 void Game::UpdatePhysicsLogic()
 {
-    const auto& colliders = m_collisionManager.GetColliders();
+    const auto& colliders = m_collisionManager->GetColliders();
 
     if (colliders.empty())
     {
@@ -1228,14 +1264,12 @@ void Game::UpdatePhysicsLogic()
 
 void Game::HandleMenuActions()
 {
-    MenuAction action = m_menu.ConsumeAction(); // Use ConsumeAction instead of GetAction
+    MenuAction action = m_menu->ConsumeAction(); // Use ConsumeAction instead of GetAction
     switch (action)
     {
     case MenuAction::SinglePlayer:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting singleplayer...");
-        m_menu.SetGameInProgress(true);
-
-    
+                                                            m_menu->SetGameInProgress(true);    
 
         // Initialize player after map is loaded
         try
@@ -1255,7 +1289,7 @@ void Game::HandleMenuActions()
 
     case MenuAction::ResumeGame:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resuming game...");
-        m_menu.SetAction(MenuAction::SinglePlayer);
+        m_menu->SetAction(MenuAction::SinglePlayer);
         // Ensure game is properly initialized for resume
         if (!m_isGameInitialized)
         {
@@ -1292,7 +1326,7 @@ void Game::HandleMenuActions()
         else
         {
             // Game is already initialized, just ensure collision system is ready
-            if (m_collisionManager.GetColliders().empty())
+            if (m_collisionManager->GetColliders().empty())
             {
                 TraceLog(LOG_WARNING, "Game::HandleMenuActions() - No colliders found, reinitializing...");
                 // Recalculate required models for the saved map
@@ -1302,22 +1336,22 @@ void Game::HandleMenuActions()
                 try
                 {
                     // Clear existing colliders
-                    m_collisionManager.ClearColliders();
+                    m_collisionManager->ClearColliders();
 
                     // Create ground collision first (only if no custom map)
                     if (m_gameMap.objects.empty())
                     {
                         Collision groundPlane = GroundColliderFactory::CreateDefaultGameGround();
-                        m_collisionManager.AddCollider(std::move(groundPlane));
+                        m_collisionManager->AddCollider(std::move(groundPlane));
                     }
 
                     // Initialize collision manager
-                    m_collisionManager.Initialize();
+                    m_collisionManager->Initialize();
 
                     // Try to create model collisions, but don't fail if it doesn't work
                     try
                     {
-                        m_collisionManager.CreateAutoCollisionsFromModelsSelective(m_models, requiredModels);
+                        m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
                         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resume model collisions created successfully");
                     }
                     catch (const std::exception& modelCollisionException)
@@ -1333,32 +1367,32 @@ void Game::HandleMenuActions()
             }
 
             // Ensure player is properly positioned and set up
-            if (m_player.GetPlayerPosition().x == 0.0f &&
-                m_player.GetPlayerPosition().y == 0.0f &&
-                m_player.GetPlayerPosition().z == 0.0f)
+            if (m_player->GetPlayerPosition().x == 0.0f &&
+                m_player->GetPlayerPosition().y == 0.0f &&
+                m_player->GetPlayerPosition().z == 0.0f)
             {
                 TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player position is origin, resetting to safe position");
-                m_player.SetPlayerPosition({0.0f, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, 0.0f});
+                m_player->SetPlayerPosition({0.0f, GameConstants::PLAYER_SAFE_SPAWN_HEIGHT, 0.0f});
             }
 
             // Re-setup player collision and movement
-            m_player.GetMovement()->SetCollisionManager(&m_collisionManager);
-            m_player.UpdatePlayerBox();
-            m_player.UpdatePlayerCollision();
+            m_player->GetMovement()->SetCollisionManager(m_collisionManager.get());
+            m_player->UpdatePlayerBox();
+            m_player->UpdatePlayerCollision();
         }
 
         // Hide the menu and resume the game
         m_showMenu = false;
         HideCursor();
-        m_menu.ResetAction();
+        m_menu->ResetAction();
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Game resumed successfully");
         // Keep game in progress state when resuming
         break;
     case MenuAction::StartGameWithMap:
         {
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting game with selected map...");
-            m_menu.SetGameInProgress(true);
-            std::string selectedMapName = m_menu.GetSelectedMapName();
+            m_menu->SetGameInProgress(true);
+            std::string selectedMapName = m_menu->GetSelectedMapName();
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Selected map: %s", selectedMapName.c_str());
 
             // Convert map name to full path
@@ -1408,8 +1442,15 @@ void Game::HandleMenuActions()
 
             // Load all models instead of selective loading
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading all models...");
-            LoadGameModels();
-            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Models loading completed");
+            auto loadResult = LoadGameModels();
+            if (!loadResult)
+            {
+                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load models");
+                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without models");
+                return;
+            }
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loaded %d/%d models in %.2f seconds", 
+                     loadResult->loadedModels, loadResult->totalModels, loadResult->loadingTime);
 
             // Initialize basic collision system first
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing collision system...");
@@ -1438,10 +1479,104 @@ void Game::HandleMenuActions()
                     {
                         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Detected array format, using LoadModelsMap");
                         m_gameMap = LoadGameMap(mapPath.c_str());
+
+                        // Register any models that MapLoader preloaded into the GameMap
+                        if (!m_gameMap.loadedModels.empty())
+                        {
+                            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Registering %d preloaded models from map into ModelLoader", m_gameMap.loadedModels.size());
+                            for (const auto &p : m_gameMap.loadedModels)
+                            {
+                                const std::string &modelName = p.first;
+                                const ::Model &loaded = p.second;
+                                
+                                // Validate model before registration
+                                if (loaded.meshCount > 0)
+                                {
+                                    if (m_models->RegisterLoadedModel(modelName, loaded))
+                                    {
+                                        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Successfully registered model from map: %s (meshCount: %d)", 
+                                                modelName.c_str(), loaded.meshCount);
+                                    }
+                                    else
+                                    {
+                                        TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Failed to register model from map: %s", modelName.c_str());
+                                    }
+                                }
+                                else
+                                {
+                                    TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Skipping invalid model from map: %s (meshCount: %d)", 
+                                            modelName.c_str(), loaded.meshCount);
+                                }
+                            }
+                        }
+
+                        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Post-load: creating instances for array-format map (%d objects)", m_gameMap.objects.size());
+                        for (const auto &object : m_gameMap.objects)
+                        {
+                            if ((object.type == MapObjectType::MODEL || object.type == MapObjectType::LIGHT) && !object.modelName.empty())
+                            {
+                                std::string requested = object.modelName;
+                                auto available = m_models->GetAvailableModels();
+                                bool exists = (std::find(available.begin(), available.end(), requested) != available.end());
+                                std::string candidateName = requested;
+
+                                if (!exists)
+                                {
+                                    std::string stem = std::filesystem::path(requested).stem().string();
+                                    if (!stem.empty() && std::find(available.begin(), available.end(), stem) != available.end())
+                                    {
+                                        candidateName = stem;
+                                        exists = true;
+                                    }
+                                    else
+                                    {
+                                        std::vector<std::string> exts = {".glb", ".gltf", ".obj"};
+                                        for (const auto &ext : exts)
+                                        {
+                                            std::string resourcePath = std::string(PROJECT_ROOT_DIR) + "/resources/" + requested;
+                                            if (std::filesystem::path(requested).extension().empty())
+                                                resourcePath = std::string(PROJECT_ROOT_DIR) + "/resources/" + requested + ext;
+
+                                            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Attempting to auto-load model '%s' from %s", requested.c_str(), resourcePath.c_str());
+                                            if (m_models->LoadSingleModel(stem.empty() ? requested : stem, resourcePath, true))
+                                            {
+                                                candidateName = stem.empty() ? requested : stem;
+                                                exists = true;
+                                                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Auto-loaded model '%s'", candidateName.c_str());
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!exists)
+                                {
+                                    TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Model '%s' not available after auto-load attempts; skipping instance for object '%s'", requested.c_str(), object.name.c_str());
+                                    continue;
+                                }
+
+                                ModelInstanceConfig cfg;
+                                cfg.position = object.position;
+                                cfg.rotation = object.rotation;
+                                cfg.scale = object.scale.x != 0.0f ? object.scale.x : 1.0f;
+                                cfg.color = object.color;
+                                cfg.spawn = true;
+
+                                if (!m_models->AddInstanceEx(candidateName, cfg))
+                                {
+                                    TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Failed to add instance for '%s'", candidateName.c_str());
+                                }
+                                else
+                                {
+                                    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Added instance for '%s'", candidateName.c_str());
+                                }
+                            }
+                        }
                     }
                     else
                     {
                         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Detected editor format, using LoadEditorMap");
+                        // Ensure any models inside editor maps are registered by LoadEditorMap itself
                         LoadEditorMap(mapPath);
                     }
                 }
@@ -1479,20 +1614,20 @@ void Game::HandleMenuActions()
             m_showMenu = false;
             HideCursor();
 
-            m_menu.ResetAction();
+            m_menu->ResetAction();
         }
         break;
 
     case MenuAction::ExitGame:
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Exit game requested from menu.");
         // Clear game state when exiting
-        m_menu.SetGameInProgress(false);
+        m_menu->SetGameInProgress(false);
         m_showMenu = true; // Show menu one last time before exit
         if (m_engine)
         {
             m_engine->RequestExit();
         }
-        m_menu.ResetAction();
+        m_menu->ResetAction();
         break;
 
     default:
@@ -1507,8 +1642,8 @@ void Game::RenderGameWorld() {
         return;
     }
 
-    m_engine->GetRenderManager()->RenderGame(m_player, m_models, m_collisionManager,
-                                              m_engine->IsCollisionDebugVisible());
+    m_engine->GetRenderManager()->RenderGame(*m_player, *m_models, *m_collisionManager,
+                                               m_engine->IsCollisionDebugVisible());
 
     // Render editor-created map if available
     if (!m_gameMap.objects.empty())
@@ -1522,7 +1657,7 @@ void Game::RenderGameWorld() {
 // ============================================================================
 
 /**
- * @brief Creates a platform with collision box at specified position
+ * Creates a platform with collision box at specified position
  * @param position Platform center position in 3D space
  * @param size Platform dimensions (width, height, depth)
  * @param color Platform render color
@@ -1537,11 +1672,11 @@ void Game::CreatePlatform(const Vector3& position, const Vector3& size, Color co
 
     Collision collision(position, size);
     collision.SetCollisionType(collisionType);
-    m_collisionManager.AddCollider(std::move(collision));
+    m_collisionManager->AddCollider(std::move(collision));
 }
 
 /**
- * @brief Calculates dynamic font size based on screen resolution
+ * Calculates dynamic font size based on screen resolution
  * @param baseSize Base font size for 1920p resolution
  * @return Scaled font size clamped to reasonable bounds
  */
@@ -1562,7 +1697,7 @@ void Game::RenderGameUI() const {
         return;
     }
 
-    m_engine->GetRenderManager()->ShowMetersPlayer(m_player);
+    m_engine->GetRenderManager()->ShowMetersPlayer(*m_player);
 
     static float gameTime = 0.0f;
     gameTime += GetFrameTime();
@@ -1608,12 +1743,143 @@ void Game::LoadEditorMap(const std::string& mapPath)
     {
         TraceLog(LOG_INFO, "Game::LoadEditorMap() - Detected JSON format, using MapLoader");
 
-        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Using MapLoader for robust JSON parsing...");
-        MapLoader mapLoader;
-        m_gameMap = mapLoader.LoadMap(mapPath);
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Using MapEditor loader (JsonMapFileManager) for JSON parsing...");
+        // Use Map Editor's loader directly and convert its objects into GameMap
+        std::vector<JsonSerializableObject> editorObjects;
+        MapMetadata editorMeta;
+        if (!JsonMapFileManager::LoadMap(editorObjects, mapPath, editorMeta))
+        {
+            TraceLog(LOG_ERROR, "Game::LoadEditorMap() - JsonMapFileManager failed to load map: %s", mapPath.c_str());
+            return;
+        }
+
+        GameMap adapterMap;
+        adapterMap.metadata = editorMeta;
+
+        for (const auto &eo : editorObjects)
+        {
+            MapObjectData od;
+            od.name = eo.name.empty() ? ("object_" + std::to_string(adapterMap.objects.size())) : eo.name;
+            od.type = static_cast<MapObjectType>(eo.type);
+            od.position = eo.position;
+            od.rotation = eo.rotation;
+            od.scale = eo.scale;
+            od.color = eo.color;
+            od.modelName = eo.modelName;
+            od.radius = eo.radiusSphere;
+            od.height = eo.radiusV;
+            od.size = eo.size;
+            od.isPlatform = true;
+            od.isObstacle = false;
+
+            adapterMap.objects.push_back(od);
+
+            // If this object references a model, attempt to preload it into the GameMap.loadedModels
+            if (od.type == MapObjectType::MODEL && !od.modelName.empty())
+            {
+                // Try multiple path variations for the model
+                std::vector<std::string> possiblePaths;
+                std::string modelName = od.modelName;
+                
+                // Remove extension if present to try different extensions
+                std::string stem = std::filesystem::path(modelName).stem().string();
+                std::string extension = std::filesystem::path(modelName).extension().string();
+                
+                // Build possible paths
+                if (extension.empty())
+                {
+                    // No extension provided, try common extensions
+                    std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx"};
+                    for (const auto& ext : extensions)
+                    {
+                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + modelName + ext);
+                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + ext);
+                    }
+                }
+                else
+                {
+                    // Extension provided, use as-is
+                    possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + modelName);
+                    possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + extension);
+                }
+                
+                // Try to find and load the model
+                bool modelLoaded = false;
+                for (const auto& modelPath : possiblePaths)
+                {
+                    if (std::ifstream(modelPath).good())
+                    {
+                        // Avoid duplicate loads
+                        if (adapterMap.loadedModels.find(od.modelName) == adapterMap.loadedModels.end())
+                        {
+                            Model model = ::LoadModel(modelPath.c_str());
+                            if (model.meshCount > 0)
+                            {
+                                adapterMap.loadedModels[od.modelName] = model;
+                                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Adapter loaded model %s from %s (meshCount: %d)", 
+                                        od.modelName.c_str(), modelPath.c_str(), model.meshCount);
+                                modelLoaded = true;
+                                break;
+                            }
+                            else
+                            {
+                                TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Model loaded but has no meshes: %s", modelPath.c_str());
+                            }
+                        }
+                        else
+                        {
+                            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Model %s already loaded", od.modelName.c_str());
+                            modelLoaded = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!modelLoaded)
+                {
+                    TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Could not find model file for %s. Tried paths:", od.modelName.c_str());
+                    for (const auto& path : possiblePaths)
+                    {
+                        TraceLog(LOG_WARNING, "  - %s", path.c_str());
+                    }
+                }
+            }
+        }
+
+        m_gameMap = std::move(adapterMap);
 
         if (!m_gameMap.objects.empty())
         {
+            // Register any models preloaded by MapLoader into the runtime ModelLoader
+            if (!m_gameMap.loadedModels.empty())
+            {
+                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Registering %d preloaded models from map into ModelLoader", m_gameMap.loadedModels.size());
+                for (const auto &p : m_gameMap.loadedModels)
+                {
+                    const std::string &modelName = p.first;
+                    const ::Model &loaded = p.second;
+                    
+                    // Validate model before registration
+                    if (loaded.meshCount > 0)
+                    {
+                        if (m_models->RegisterLoadedModel(modelName, loaded))
+                        {
+                            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully registered model from map: %s (meshCount: %d)", 
+                                    modelName.c_str(), loaded.meshCount);
+                        }
+                        else
+                        {
+                            TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Failed to register model from map: %s", modelName.c_str());
+                        }
+                    }
+                    else
+                    {
+                        TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Skipping invalid model from map: %s (meshCount: %d)", 
+                                modelName.c_str(), loaded.meshCount);
+                    }
+                }
+            }
+
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - MapLoader import successful, processing %d objects", m_gameMap.objects.size());
 
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded JSON map with %d objects", m_gameMap.objects.size());
@@ -1705,7 +1971,7 @@ void Game::LoadEditorMap(const std::string& mapPath)
         {
             Collision collision(object.position, colliderSize);
             collision.SetCollisionType(CollisionType::AABB_ONLY);
-            m_collisionManager.AddCollider(std::move(collision));
+            m_collisionManager->AddCollider(std::move(collision));
 
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f)",
                      object.name.c_str(), object.position.x, object.position.y, object.position.z);
@@ -1721,12 +1987,187 @@ void Game::LoadEditorMap(const std::string& mapPath)
         m_gameMap.metadata.startPosition.y != 0.0f ||
         m_gameMap.metadata.startPosition.z != 0.0f)
     {
-        m_player.SetPlayerPosition(m_gameMap.metadata.startPosition);
+        m_player->SetPlayerPosition(m_gameMap.metadata.startPosition);
         TraceLog(LOG_INFO, "Game::LoadEditorMap() - Set player start position to (%.2f, %.2f, %.2f)",
                  m_gameMap.metadata.startPosition.x, m_gameMap.metadata.startPosition.y, m_gameMap.metadata.startPosition.z);
     }
 
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded map with %d objects", m_gameMap.objects.size());
+
+    // Dump diagnostics to help find why instances are not created
+    DumpMapDiagnostics();
+
+    // Create model instances in the ModelLoader for all MODEL objects so they are drawn
+    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Creating model instances for %d objects if applicable", m_gameMap.objects.size());
+    // First, ensure that all referenced model files are registered in the ModelLoader.
+    // Some maps may reference model names (stems) or filenames with extensions — try common extensions.
+    std::set<std::string> uniqueModelNames;
+    for (const auto &object : m_gameMap.objects)
+    {
+        if ((object.type == MapObjectType::MODEL || object.type == MapObjectType::LIGHT) && !object.modelName.empty())
+            uniqueModelNames.insert(object.modelName);
+    }
+
+    auto available = m_models->GetAvailableModels();
+    for (const auto &requested : uniqueModelNames)
+    {
+        if (std::find(available.begin(), available.end(), requested) != available.end())
+            continue; // already present
+
+        // Try stem (strip extension)
+        std::string stem = std::filesystem::path(requested).stem().string();
+        if (!stem.empty() && std::find(available.begin(), available.end(), stem) != available.end())
+            continue; // present as stem
+
+        // Attempt to auto-load from resources using robust path resolution
+        std::vector<std::string> possiblePaths;
+        std::string extension = std::filesystem::path(requested).extension().string();
+        
+        if (extension.empty())
+        {
+            // No extension provided, try common extensions
+            std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx"};
+            for (const auto& ext : extensions)
+            {
+                possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + requested + ext);
+                possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + ext);
+            }
+        }
+        else
+        {
+            // Extension provided, use as-is
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + requested);
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + extension);
+        }
+        
+        bool loaded = false;
+        for (const auto& resourcePath : possiblePaths)
+        {
+            if (std::ifstream(resourcePath).good())
+            {
+                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Auto-loading candidate: %s", resourcePath.c_str());
+                if (m_models->LoadSingleModel(stem.empty() ? requested : stem, resourcePath, true))
+                {
+                    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Auto-loaded model '%s' from %s", (stem.empty() ? requested : stem).c_str(), resourcePath.c_str());
+                    loaded = true;
+                    break;
+                }
+            }
+        }
+
+        if (!loaded)
+        {
+            TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Failed to auto-load model referenced by map: %s", requested.c_str());
+        }
+    }
+
+    // Refresh available list (some models may have been loaded)
+    available = m_models->GetAvailableModels();
+    for (const auto &object : m_gameMap.objects)
+    {
+        if ((object.type == MapObjectType::MODEL || object.type == MapObjectType::LIGHT) && !object.modelName.empty())
+        {
+            // Ensure the model exists in ModelLoader; try fallbacks (stem, auto-load) if missing
+            std::string requested = object.modelName;
+            auto available = m_models->GetAvailableModels();
+            bool exists = (std::find(available.begin(), available.end(), requested) != available.end());
+            std::string candidateName = requested;
+
+            if (!exists)
+            {
+                // Try filename stem (strip extension) — many configs use filenames while ModelLoader stores names without extensions
+                std::string stem = std::filesystem::path(requested).stem().string();
+                if (!stem.empty() && std::find(available.begin(), available.end(), stem) != available.end())
+                {
+                    candidateName = stem;
+                    exists = true;
+                }
+                else
+                {
+                    // Attempt to auto-load from resources using robust path resolution
+                    std::vector<std::string> possiblePaths;
+                    std::string extension = std::filesystem::path(requested).extension().string();
+                    
+                    if (extension.empty())
+                    {
+                        // No extension provided, try common extensions
+                        std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx"};
+                        for (const auto& ext : extensions)
+                        {
+                            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + requested + ext);
+                            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + ext);
+                        }
+                    }
+                    else
+                    {
+                        // Extension provided, use as-is
+                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + requested);
+                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + extension);
+                    }
+                    
+                    bool loaded = false;
+                    for (const auto& resourcePath : possiblePaths)
+                    {
+                        if (std::ifstream(resourcePath).good())
+                        {
+                            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Attempting to load model file for instance: %s from %s", requested.c_str(), resourcePath.c_str());
+                            
+                            if (!stem.empty() && m_models->LoadSingleModel(stem, resourcePath, true))
+                            {
+                                candidateName = stem;
+                                exists = true;
+                                loaded = true;
+                                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Auto-loaded model as '%s' from %s", stem.c_str(), resourcePath.c_str());
+                                break;
+                            }
+                            else if (m_models->LoadSingleModel(requested, resourcePath, true))
+                            {
+                                candidateName = requested;
+                                exists = true;
+                                loaded = true;
+                                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Auto-loaded model as '%s' from %s", requested.c_str(), resourcePath.c_str());
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!loaded)
+                    {
+                        TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Could not auto-load model file for %s. Tried paths:", requested.c_str());
+                        for (const auto& path : possiblePaths)
+                        {
+                            TraceLog(LOG_WARNING, "  - %s", path.c_str());
+                        }
+                    }
+                }
+            }
+
+            if (!exists)
+            {
+                TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Model '%s' not available in ModelLoader; skipping instance for object '%s'", requested.c_str(), object.name.c_str());
+                continue;
+            }
+
+            ModelInstanceConfig cfg;
+            cfg.position = object.position;
+            cfg.rotation = object.rotation;
+            // Use X component as uniform scale fallback
+            cfg.scale = object.scale.x != 0.0f ? object.scale.x : 1.0f;
+            cfg.color = object.color;
+            cfg.spawn = true;
+
+            bool added = m_models->AddInstanceEx(candidateName, cfg);
+            if (!added)
+            {
+                TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Failed to add instance for model '%s' (object '%s') even after load attempts", candidateName.c_str(), object.name.c_str());
+            }
+            else
+            {
+                TraceLog(LOG_INFO, "Game::LoadEditorMap() - Added instance for model '%s' at (%.2f, %.2f, %.2f)",
+                         candidateName.c_str(), object.position.x, object.position.y, object.position.z);
+            }
+        }
+    }
 }
 
 void Game::RenderEditorMap()
@@ -1774,12 +2215,16 @@ void Game::RenderEditorMap()
                 {
                     try
                     {
-                        Model* model = &m_models.GetModelByName(object.modelName);
-                        if (model && model->meshCount > 0)
+                        if (auto modelOpt = m_models->GetModelByName(object.modelName))
                         {
-                            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Model %s found with %d meshes", object.modelName.c_str(), model->meshCount);
-                            // Draw the model
-                            DrawModel(*model, object.position, object.scale.x, object.color);
+                            Model& model = modelOpt->get();
+                            if (model.meshCount > 0)
+                            {
+                                TraceLog(LOG_INFO, "Game::RenderEditorMap() - Model %s found with %d meshes",
+                                         object.modelName.c_str(), model.meshCount);
+                                // Draw the model
+                                DrawModel(model, object.position, object.scale.x, object.color);
+                            }
                         }
                         else
                         {
@@ -1816,6 +2261,41 @@ void Game::RenderEditorMap()
 
 }
 
+void Game::DumpMapDiagnostics() const
+{
+    TraceLog(LOG_INFO, "Game::DumpMapDiagnostics() - Map objects: %d", m_gameMap.objects.size());
+
+    for (size_t i = 0; i < m_gameMap.objects.size(); ++i)
+    {
+        const auto &o = m_gameMap.objects[i];
+        TraceLog(LOG_INFO, "Game::DumpMapDiagnostics() - Object %d: name='%s' type=%d modelName='%s' pos=(%.2f,%.2f,%.2f) scale=(%.2f,%.2f,%.2f)",
+                 i, o.name.c_str(), static_cast<int>(o.type), o.modelName.c_str(), o.position.x, o.position.y, o.position.z,
+                 o.scale.x, o.scale.y, o.scale.z);
+    }
+
+    // If MapLoader preloaded models into the map, list them
+    if (!m_gameMap.loadedModels.empty())
+    {
+        TraceLog(LOG_INFO, "Game::DumpMapDiagnostics() - GameMap.loadedModels contains %d entries", m_gameMap.loadedModels.size());
+        for (const auto &p : m_gameMap.loadedModels)
+        {
+            TraceLog(LOG_INFO, "Game::DumpMapDiagnostics() -   loadedModel key: %s (meshCount: %d)", p.first.c_str(), p.second.meshCount);
+        }
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "Game::DumpMapDiagnostics() - GameMap.loadedModels is empty");
+    }
+
+    // List ModelLoader's available models
+    auto available = m_models->GetAvailableModels();
+    TraceLog(LOG_INFO, "Game::DumpMapDiagnostics() - ModelLoader available models: %d", available.size());
+    for (const auto &name : available)
+    {
+        TraceLog(LOG_INFO, "Game::DumpMapDiagnostics() -   %s", name.c_str());
+    }
+}
+
 void Game::SaveGameState()
 {
     TraceLog(LOG_INFO, "Game::SaveGameState() - Saving current game state...");
@@ -1825,8 +2305,8 @@ void Game::SaveGameState()
     TraceLog(LOG_INFO, "Game::SaveGameState() - Saved map path: %s", m_savedMapPath.c_str());
 
     // Save player's current position and state
-    m_savedPlayerPosition = m_player.GetPlayerPosition();
-    m_savedPlayerVelocity = m_player.GetPhysics().GetVelocity();
+    m_savedPlayerPosition = m_player->GetPlayerPosition();
+    m_savedPlayerVelocity = m_player->GetPhysics().GetVelocity();
     TraceLog(LOG_INFO, "Game::SaveGameState() - Saved player position: (%.2f, %.2f, %.2f)",
              m_savedPlayerPosition.x, m_savedPlayerPosition.y, m_savedPlayerPosition.z);
 
@@ -1834,31 +2314,12 @@ void Game::SaveGameState()
     // Note: Add any additional game state variables here as needed
 
     // Enable resume button in menu
-    m_menu.SetResumeButtonOn(true);
+    m_menu->SetResumeButtonOn(true);
 
     TraceLog(LOG_INFO, "Game::SaveGameState() - Game state saved successfully");
 }
 
-// Test accessor methods - public for testing purposes
-Player& Game::GetPlayer() {
-    return m_player;
-}
-
-CollisionManager& Game::GetCollisionManager() {
-    return m_collisionManager;
-}
-
-ModelLoader& Game::GetModels() {
-    return m_models;
-}
-
-WorldManager& Game::GetWorld() {
-    return m_world;
-}
-
-Menu& Game::GetMenu() {
-    return m_menu;
-}
+// Test accessor methods - public for testing purposes (defined in header)
 
 GameMap& Game::GetGameMap() {
     return m_gameMap;

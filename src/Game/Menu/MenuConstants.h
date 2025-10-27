@@ -8,7 +8,7 @@
 namespace MenuConstants {
 
 // Layout constants
-constexpr int MAPS_PER_PAGE = 6;        // 2 rows × 3 columns
+constexpr int MAPS_PER_PAGE = 12;       // 3 rows × 4 columns
 constexpr int MAP_BOX_WIDTH = 280;
 constexpr int MAP_BOX_HEIGHT = 160;
 constexpr int MARGIN = 20;
