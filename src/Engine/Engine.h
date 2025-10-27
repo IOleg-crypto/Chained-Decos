@@ -24,8 +24,8 @@ class RenderManager; // forward declaration to avoid heavy include and cycles
 class Engine
 {
 public:
-    Engine();
-    Engine(int screenX, int screenY);
+    Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager);
+    Engine(int screenX, int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager);
     ~Engine();
     Engine(Engine &&other) = delete;
     Engine &operator=(const Engine &other) = delete;
@@ -41,7 +41,7 @@ public:
     // ==================== Public Getters for Engine Services ====================
     [[nodiscard]] RenderManager *GetRenderManager() const;
 
-    InputManager &GetInputManager();
+    InputManager &GetInputManager() const;
 
     // ==================== Engine State Control ====================
     void RequestExit();
@@ -60,7 +60,7 @@ private:
     bool m_windowInitialized; // Track if this Engine instance initialized the window
 
     // Core Engine Services
-    InputManager m_inputManager;
+    std::shared_ptr<InputManager> m_inputManager;
     std::shared_ptr<RenderManager> m_renderManager;
 
     // Engine State

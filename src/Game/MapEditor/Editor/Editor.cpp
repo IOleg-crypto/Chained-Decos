@@ -5,6 +5,7 @@
 #include "../MapFileManager/MapFileManager.h"
 #include "../MapFileManager/JsonMapFileManager.h"
 #include "../../Game/Map/MapLoader.h"  // Include the new comprehensive map loader
+#include "../../Engine/Kernel/Kernel.h"
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
@@ -25,12 +26,12 @@
 
 namespace fs = std::filesystem;
 
-Editor::Editor()
-    : m_cameraController(std::make_shared<CameraController>()), m_currentlySelectedObjectIndex(-1),
-      m_activeEditorTool(SELECT), m_displayImGuiInterface(true), m_displayObjectListPanel(true),
-      m_displayPropertiesPanel(true), m_pendingObjectCreation(false), m_modelsInitialized(false),
-      m_displayFileDialog(false), m_isFileLoadDialog(true), m_isJsonExportDialog(false), m_displayNewFolderDialog(false),
-      m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0) , m_gridSizes(50)
+Editor::Editor(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader)
+    : m_cameraController(std::move(cameraController)), m_modelAssetManager(std::move(modelLoader)), m_currentlySelectedObjectIndex(-1),
+       m_activeEditorTool(SELECT), m_displayImGuiInterface(true), m_displayObjectListPanel(true),
+       m_displayPropertiesPanel(true), m_pendingObjectCreation(false), m_modelsInitialized(false),
+       m_displayFileDialog(false), m_isFileLoadDialog(true), m_isJsonExportDialog(false), m_displayNewFolderDialog(false),
+       m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0) , m_gridSizes(50)
 {
     // Initialize file dialog to project root
     m_currentWorkingDirectory = PROJECT_ROOT_DIR;
@@ -1045,7 +1046,7 @@ void Editor::EnsureModelsLoaded()
                                  modelInfo.name.c_str(), modelPath.c_str());
 
                         // Load the model using the existing model loading system
-                        m_modelAssetManager.LoadSingleModel(modelInfo.name, modelPath, true);
+                        m_modelAssetManager->LoadSingleModel(modelInfo.name, modelPath, true);
                     }
                     catch (const std::exception& modelException)
                     {
@@ -1072,7 +1073,7 @@ void Editor::EnsureModelsLoaded()
         {
             try
             {
-                m_availableModelNamesList = m_modelAssetManager.GetAvailableModels();
+                m_availableModelNamesList = m_modelAssetManager->GetAvailableModels();
                 m_availableModels = models;  // Store detailed model information
                 m_modelsInitialized = true;
                 TraceLog(LOG_INFO, "Models loaded successfully! Available models: %zu",
@@ -1115,7 +1116,16 @@ Model *Editor::GetModelSafe(const std::string &modelName)
     // Try to get model, but still handle potential exception safely
     try
     {
-        return &m_modelAssetManager.GetModelByName(modelName);
+        auto opt = m_modelAssetManager->GetModelByName(modelName);
+        if (opt)
+        {
+            return &opt.value().get();
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Model '%s' found in list but not loaded", modelName.c_str());
+            return nullptr;
+        }
     }
     catch (const std::exception &)
     {

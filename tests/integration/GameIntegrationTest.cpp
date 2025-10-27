@@ -5,14 +5,23 @@
 #include "Game/Player/Player.h"
 #include "Engine/Engine.h"
 #include "Engine/Collision/CollisionManager.h"
+#include "Engine/Model/Model.h"
+#include "Engine/World/World.h"
+#include "Game/Menu/Menu.h"
 #include "Game/Map/MapLoader.h"
 
 class GameIntegrationTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        game = std::make_shared<Game>(nullptr);
-
+        // Create dependencies
+        player = std::make_shared<Player>();
         collisionManager = std::make_shared<CollisionManager>();
+        models = std::make_shared<ModelLoader>();
+        world = std::make_shared<WorldManager>();
+        menu = std::make_shared<Menu>();
+
+        // Create game with injected dependencies
+        game = std::make_shared<Game>(nullptr, *player, *collisionManager, *models, *world, *menu);
 
         engine = nullptr;
     }
@@ -21,11 +30,19 @@ protected:
         game.reset();
         engine.reset();
         collisionManager.reset();
+        player.reset();
+        models.reset();
+        world.reset();
+        menu.reset();
     }
 
     std::shared_ptr<Engine> engine;
     std::shared_ptr<Game> game;
     std::shared_ptr<CollisionManager> collisionManager;
+    std::shared_ptr<Player> player;
+    std::shared_ptr<ModelLoader> models;
+    std::shared_ptr<WorldManager> world;
+    std::shared_ptr<Menu> menu;
 };
 
 //TEST_F(GameIntegrationTest, GameInitialization) {

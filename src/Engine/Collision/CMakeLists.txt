@@ -11,6 +11,11 @@ add_library(collision STATIC
     GroundColliderFactory.h
 )
 
+# Disable Unity build for this library to avoid duplicate definitions
+set_target_properties(collision PROPERTIES
+    UNITY_BUILD OFF
+)
+
 target_include_directories(collision PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src/Engine

@@ -27,8 +27,8 @@ public:
     static bool ValidateInstanceEntry(const json &entry);
 
     // Configuration parsing
-    static ModelFileConfig ParseModelConfig(const json &entry);
-    static ModelInstanceConfig ParseInstanceConfig(const json &entry);
+    static std::optional<ModelFileConfig> ParseModelConfig(const json &entry);
+    static std::optional<ModelInstanceConfig> ParseInstanceConfig(const json &entry);
 
 private:
     static bool HasRequiredKeys(const json &j, const std::vector<std::string> &keys);

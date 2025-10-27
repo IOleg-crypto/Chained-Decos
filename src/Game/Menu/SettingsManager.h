@@ -1,6 +1,6 @@
 /**
  * @file SettingsManager.h
- * @brief Centralized settings management for the Menu system
+ * Centralized settings management for the Menu system.
  *
  * The SettingsManager class handles all game settings including audio, video,
  * controls, and gameplay preferences. It provides a clean interface for loading,
@@ -20,7 +20,7 @@ namespace MenuConstants {
 
 /**
  * @struct AudioSettings
- * @brief Container for audio-related settings
+ * Container for audio-related settings
  */
 struct AudioSettings {
     float masterVolume = MenuConstants::DEFAULT_MASTER_VOLUME;
@@ -59,7 +59,7 @@ struct GameplaySettings {
 
 /**
  * @class SettingsManager
- * @brief Manages all game settings with validation and persistence
+ * Manages all game settings with validation and persistence.
  *
  * This class provides a centralized interface for handling audio, video,
  * control, and gameplay settings. It includes validation, persistence

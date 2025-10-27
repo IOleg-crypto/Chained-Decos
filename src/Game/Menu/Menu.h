@@ -127,7 +127,7 @@ public:
     // Console functionality
     void ToggleConsole();
     [[nodiscard]] bool IsConsoleOpen() const;
-    ConsoleManager* GetConsoleManager() const { return m_consoleManager.get(); }
+    [[nodiscard]] ConsoleManager* GetConsoleManager() const;
 
     // Keyboard navigation
     void HandleKeyboardNavigation();
@@ -169,7 +169,7 @@ private:
 
     // Helper methods
     void HandleAction(MenuAction action);
-    [[nodiscard]] const char *GetStateTitle(MenuState state) const;
+    static const char *GetStateTitle(MenuState state) ;
 
     // ImGui UI components
     bool RenderActionButton(const char *label, MenuAction action, const ImVec2 &size = ImVec2(0, 0));

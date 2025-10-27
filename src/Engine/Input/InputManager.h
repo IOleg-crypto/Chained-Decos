@@ -9,7 +9,6 @@
 #include <raylib.h>
 #include <unordered_map>
 
-
 //
 // InputManager
 // Enhanced input manager with support for different input types:
@@ -51,6 +50,7 @@ public:
     bool IsKeyPressed(int key) const { return ::IsKeyPressed(key); }
     bool IsKeyDown(int key) const { return ::IsKeyDown(key); }
     bool IsKeyReleased(int key) const { return ::IsKeyReleased(key); }
+
 
 private:
     std::unordered_map<int, std::function<void()>> m_pressedActions;

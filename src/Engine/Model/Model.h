@@ -35,10 +35,17 @@ public:
     // ==================== CORE METHODS ====================
 
     // Load models from JSON config
-    void LoadModelsFromJson(const std::string &path);
+    struct LoadResult {
+        int totalModels;
+        int loadedModels;
+        int failedModels;
+        float loadingTime;
+    };
+    
+    std::optional<LoadResult> LoadModelsFromJson(const std::string &path);
 
     // Load only specific models from JSON config
-    void LoadModelsFromJsonSelective(const std::string &path, const std::vector<std::string> &modelNames);
+    std::optional<LoadResult> LoadModelsFromJsonSelective(const std::string &path, const std::vector<std::string> &modelNames);
 
     // Set selective loading mode
     void SetSelectiveMode(bool enabled);
@@ -47,7 +54,7 @@ public:
     void DrawAllModels() const;
 
     // Get model by name
-    Model &GetModelByName(const std::string &name);
+    std::optional<std::reference_wrapper<Model>> GetModelByName(const std::string &name);
 
     // Add instance (legacy method)
     void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
@@ -62,6 +69,8 @@ public:
     bool LoadSingleModel(const std::string &name, const std::string &path, bool preload = true);
     bool UnloadModel(const std::string &name);
     bool ReloadModel(const std::string &name);
+    // Register a raylib::Model that was already loaded elsewhere (e.g. MapLoader)
+    bool RegisterLoadedModel(const std::string &name, const ::Model &model);
 
     // Filtering and search
     std::vector<ModelInstance *> GetInstancesByTag(const std::string &tag);

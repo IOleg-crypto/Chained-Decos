@@ -380,19 +380,19 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "gmock_main::@b516fb7c512facb304d3"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "gmock::@b516fb7c512facb304d3"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "gtest_main::@e17e98bc6b6c8374c4b5"
+			"id" : "gmock_main::@b516fb7c512facb304d3"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "gtest::@e17e98bc6b6c8374c4b5"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gtest_main::@e17e98bc6b6c8374c4b5"
 		},
 		{
 			"backtrace" : 2,

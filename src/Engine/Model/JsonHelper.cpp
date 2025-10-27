@@ -90,12 +90,25 @@ bool JsonHelper::HasRequiredKeys(const json &j, const std::vector<std::string> &
 }
 
 // Configuration parsing
-ModelFileConfig JsonHelper::ParseModelConfig(const json &entry)
+std::optional<ModelFileConfig> JsonHelper::ParseModelConfig(const json &entry)
 {
+    if (!ValidateModelEntry(entry))
+    {
+        return std::nullopt;
+    }
+
     ModelFileConfig config;
 
-    config.name = entry["name"].get<std::string>();
-    config.path = entry["path"].get<std::string>();
+    auto name = GetString(entry, "name");
+    auto path = GetString(entry, "path");
+    
+    if (!name || !path)
+    {
+        return std::nullopt;
+    }
+
+    config.name = *name;
+    config.path = *path;
     config.category = entry.value("category", "default");
     config.spawn = entry.value("spawn", true);
     config.hasCollision = entry.value("hasCollision", false);
@@ -124,15 +137,23 @@ ModelFileConfig JsonHelper::ParseModelConfig(const json &entry)
     {
         for (const auto &instance : entry["instances"])
         {
-            config.instances.push_back(ParseInstanceConfig(instance));
+            if (auto instanceConfig = ParseInstanceConfig(instance))
+            {
+                config.instances.push_back(*instanceConfig);
+            }
         }
     }
 
     return config;
 }
 
-ModelInstanceConfig JsonHelper::ParseInstanceConfig(const json &entry)
+std::optional<ModelInstanceConfig> JsonHelper::ParseInstanceConfig(const json &entry)
 {
+    if (!entry.is_object())
+    {
+        return std::nullopt;
+    }
+
     ModelInstanceConfig config;
 
     if (entry.contains("position"))

@@ -1450,14 +1450,50 @@ build src/Engine/install/strip: phony src/Engine/CMakeFiles/install/strip.util
 
 build cmake_object_order_depends_target_collision: phony || cmake_object_order_depends_target_model
 
-build src/Engine/Collision/CMakeFiles/collision.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/src/Engine/Collision/CMakeFiles/collision.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_collision
+build src/Engine/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/src/Engine/Collision/CollisionSystem.cpp || cmake_object_order_depends_target_collision
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = src\Engine\Collision\CMakeFiles\collision.dir\Unity\unity_0_cxx.cxx.obj.d
+  DEP_FILE = src\Engine\Collision\CMakeFiles\collision.dir\CollisionSystem.cpp.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
   INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
   OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir
-  OBJECT_FILE_DIR = src\Engine\Collision\CMakeFiles\collision.dir\Unity
+  OBJECT_FILE_DIR = src\Engine\Collision\CMakeFiles\collision.dir
+
+build src/Engine/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/src/Engine/Collision/CollisionStructures.cpp || cmake_object_order_depends_target_collision
+  CONFIG = Debug
+  DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
+  DEP_FILE = src\Engine\Collision\CMakeFiles\collision.dir\CollisionStructures.cpp.obj.d
+  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
+  INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
+  OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir
+  OBJECT_FILE_DIR = src\Engine\Collision\CMakeFiles\collision.dir
+
+build src/Engine/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/src/Engine/Collision/CollisionManager.cpp || cmake_object_order_depends_target_collision
+  CONFIG = Debug
+  DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
+  DEP_FILE = src\Engine\Collision\CMakeFiles\collision.dir\CollisionManager.cpp.obj.d
+  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
+  INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
+  OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir
+  OBJECT_FILE_DIR = src\Engine\Collision\CMakeFiles\collision.dir
+
+build src/Engine/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/src/Engine/Collision/CollisionDebugRenderer.cpp || cmake_object_order_depends_target_collision
+  CONFIG = Debug
+  DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
+  DEP_FILE = src\Engine\Collision\CMakeFiles\collision.dir\CollisionDebugRenderer.cpp.obj.d
+  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
+  INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
+  OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir
+  OBJECT_FILE_DIR = src\Engine\Collision\CMakeFiles\collision.dir
+
+build src/Engine/Collision/CMakeFiles/collision.dir/GroundColliderFactory.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/src/Engine/Collision/GroundColliderFactory.cpp || cmake_object_order_depends_target_collision
+  CONFIG = Debug
+  DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
+  DEP_FILE = src\Engine\Collision\CMakeFiles\collision.dir\GroundColliderFactory.cpp.obj.d
+  FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
+  INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/src/Engine/Model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
+  OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir
+  OBJECT_FILE_DIR = src\Engine\Collision\CMakeFiles\collision.dir
 
 
 # =============================================================================
@@ -1467,7 +1503,7 @@ build src/Engine/Collision/CMakeFiles/collision.dir/Unity/unity_0_cxx.cxx.obj: C
 #############################################
 # Link the static library src\Engine\Collision\libcollision.a
 
-build src/Engine/Collision/libcollision.a: CXX_STATIC_LIBRARY_LINKER__collision_Debug src/Engine/Collision/CMakeFiles/collision.dir/Unity/unity_0_cxx.cxx.obj || src/Engine/Model/libmodel.a
+build src/Engine/Collision/libcollision.a: CXX_STATIC_LIBRARY_LINKER__collision_Debug src/Engine/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj src/Engine/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj src/Engine/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj src/Engine/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj src/Engine/Collision/CMakeFiles/collision.dir/GroundColliderFactory.cpp.obj || src/Engine/Model/libmodel.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = src\Engine\Collision\CMakeFiles\collision.dir

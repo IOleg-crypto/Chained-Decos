@@ -34,7 +34,7 @@ RenderManager::~RenderManager()
     TraceLog(LOG_INFO, "RenderManager destroyed");
 }
 
-void RenderManager::Initialize()
+bool RenderManager::Initialize()
 {
     TraceLog(LOG_INFO, "Initializing render manager...");
 
@@ -57,23 +57,24 @@ void RenderManager::Initialize()
             // Set texture filter to linear for smoother scaling
             SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
             TraceLog(LOG_INFO, "Alan Sans font loaded successfully with smooth filtering: %s",
-                     alanSansFontPath.c_str());
+                      alanSansFontPath.c_str());
         }
         else
         {
             TraceLog(LOG_WARNING, "Failed to load Alan Sans font for raylib: %s, using default font",
-                     alanSansFontPath.c_str());
+                      alanSansFontPath.c_str());
             m_font = GetFontDefault();
         }
     }
     else
     {
         TraceLog(LOG_WARNING, "Alan Sans font file not found for raylib: %s, using default font",
-                 alanSansFontPath.c_str());
+                  alanSansFontPath.c_str());
         m_font = GetFontDefault();
     }
 
     TraceLog(LOG_INFO, "Render manager initialized successfully");
+    return true;
 }
 
 
@@ -172,15 +173,19 @@ constexpr float MODEL_SCALE = 1.1f;
 void RenderManager::DrawPlayer(IRenderable &renderable, const ModelLoader &models)
 {
     // Get player model from models cache
-    Model &playerModel = const_cast<ModelLoader &>(models).GetModelByName("player");
+    auto playerModelOpt = const_cast<ModelLoader &>(models).GetModelByName("player");
+    if (!playerModelOpt) {
+        TraceLog(LOG_ERROR, "RenderManager::DrawPlayer() - Player model not found!");
+        // Draw a simple cube as fallback
+        Vector3 pos = renderable.GetPosition();
+        pos.y += MODEL_Y_OFFSET;
+        DrawCube(pos, 1.0f, 2.0f, 1.0f, RED);
+        DrawBoundingBox(renderable.GetBoundingBox(), GREEN);
+        return;
+    }
 
-    TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player model meshCount: %d", playerModel.meshCount);
-    TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player position: (%.2f, %.2f, %.2f)",
-              renderable.GetPosition().x, renderable.GetPosition().y, renderable.GetPosition().z);
-
-    // Check if player model is valid
-    if (playerModel.meshCount == 0)
-    {
+    Model& playerModel = playerModelOpt->get();
+    if (playerModel.meshCount == 0) {
         TraceLog(LOG_ERROR, "RenderManager::DrawPlayer() - Player model has no meshes!");
         // Draw a simple cube as fallback
         Vector3 pos = renderable.GetPosition();
@@ -197,14 +202,9 @@ void RenderManager::DrawPlayer(IRenderable &renderable, const ModelLoader &model
     Vector3 adjustedPos = renderable.GetPosition();
     adjustedPos.y += MODEL_Y_OFFSET;
 
-    TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Drawing player model at (%.2f, %.2f, %.2f)",
-              adjustedPos.x, adjustedPos.y, adjustedPos.z);
-
     // Draw player model and bounding box
     DrawModel(playerModel, adjustedPos, MODEL_SCALE, WHITE);
     DrawBoundingBox(renderable.GetBoundingBox(), GREEN);
-
-    TraceLog(LOG_INFO, "RenderManager::DrawPlayer() - Player model rendered successfully");
 }
 
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
@@ -464,3 +464,19 @@ void RenderManager::ShowMetersPlayer(const IRenderable &renderable) const
 Font RenderManager::GetFont() const { return m_font; }
 
 void RenderManager::Render() {}
+
+void RenderManager::Shutdown()
+{
+    TraceLog(LOG_INFO, "Shutting down render manager...");
+    if (m_font.texture.id != 0 && m_font.texture.id != GetFontDefault().texture.id)
+    {
+        UnloadFont(m_font);
+        TraceLog(LOG_INFO, "Custom font unloaded");
+    }
+    TraceLog(LOG_INFO, "Render manager shutdown complete");
+}
+
+void RenderManager::Update(float deltaTime)
+{
+    // No update needed for RenderManager
+}

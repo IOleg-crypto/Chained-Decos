@@ -9,17 +9,16 @@
 #include "IRenderable.h"
 #include "Model/Model.h"
 #include "Collision/CollisionManager.h"
+#include "Engine/Kernel/IKernelService.h"
 class CollisionDebugRenderer;  // Keep as forward declaration
 
 //
 // RenderManager - Handles all rendering operations
 // Separates rendering logic from the main Engine class
 //
-class RenderManager
+class RenderManager : public IKernelService
 {
 public:
-    // Kernel service interface
-    const char *GetName() const { return "RenderManager"; }
     // Constructor
     explicit RenderManager();
 
@@ -27,14 +26,13 @@ public:
     ~RenderManager();
 
     // Initialization
-    void Initialize();
+    virtual bool Initialize() override;
 
     static void InitializeImGuiFont(const std::string &fontPath, float fontSize);
 
     // Main rendering methods
     void BeginFrame() const;
     void EndFrame();
-    void Render();
 
     void RenderGame(IRenderable &renderable, const ModelLoader &models,
                      const CollisionManager &collisionManager, bool showCollisionDebug = false);
@@ -72,6 +70,12 @@ public:
     void ShowMetersPlayer(const IRenderable &renderable) const;
 
     [[nodiscard]] Font GetFont() const;
+
+    // IKernelService overrides
+    virtual void Shutdown() override;
+    virtual void Update(float deltaTime) override;
+    virtual void Render() override;
+    virtual const char *GetName() const override { return "RenderManager"; }
 private:
     // Private helper methods for debug info
     void DrawDebugInfoWindow(IRenderable &renderable, const ModelLoader &models,

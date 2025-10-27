@@ -18,7 +18,7 @@ class Application
 {
 public:
     // Constructor and destructor
-    Application(int width, int height); // Initialize with window dimensions
+    Application(int width, int height, std::unique_ptr<Editor> editor); // Initialize with window dimensions and editor
     ~Application();
 
 public:
