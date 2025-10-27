@@ -20,7 +20,6 @@ set(MAPEDITOR_SOURCES
     Editor/ShortcutManager.cpp
     Editor/StatusBar.cpp
     Editor/UndoRedo.cpp
-    MapFileManager/MapFileManager.cpp
 )
 
 # Advanced MapEditor features

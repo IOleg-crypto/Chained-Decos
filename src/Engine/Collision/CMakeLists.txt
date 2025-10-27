@@ -14,6 +14,7 @@ add_library(collision STATIC
 # Disable Unity build for this library to avoid duplicate definitions
 set_target_properties(collision PROPERTIES
     UNITY_BUILD OFF
+    POSITION_INDEPENDENT_CODE ON
 )
 
 target_include_directories(collision PUBLIC
