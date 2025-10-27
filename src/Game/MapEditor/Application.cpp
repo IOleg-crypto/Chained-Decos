@@ -3,10 +3,12 @@
 //
 #include "raylib.h"
 #include "Application.h"
+#include "Engine/CameraController/CameraController.h"
+#include "Engine/Model/Model.h"
 
-Application::Application(const int width, const int height)
+Application::Application(int width, int height, std::unique_ptr<Editor> editor)
     : m_width(width), m_height(height), m_windowName("ChainedEditor"),
-      m_editor(std::make_unique<Editor>())
+       m_editor(std::move(editor))
 {
 }
 

@@ -837,8 +837,8 @@ std::string JsonMapFileManager::GetObjectTypeString(int type)
         case 1: return "SPHERE";
         case 2: return "CYLINDER";
         case 3: return "PLANE";
-        case 4: return "MODEL";
-        case 5: return "LIGHT";
+        case 4: return "LIGHT";
+        case 5: return "MODEL";
         default: return "UNKNOWN";
     }
 }
@@ -850,7 +850,7 @@ std::string JsonMapFileManager::GetModelPathForModel(const std::string& modelNam
 
     for (const std::string& ext : possibleExtensions)
     {
-        std::string testPath = "../resources/" + modelName + ext;
+        std::string testPath = PROJECT_ROOT_DIR "/resources/" + modelName + ext;
         std::ifstream testFile(testPath);
         if (testFile.good())
         {
@@ -876,17 +876,19 @@ void JsonMapFileManager::ParseGameMapObject(const std::string& json, JsonSeriali
     ParseMetadataField(json, "\"name\"", obj.name);
 
     // Parse type as string first, then convert to int
+    // NOTE: MapObjectType enum in MapLoader.h defines LIGHT = 4, MODEL = 5
     std::string typeStr;
     ParseMetadataField(json, "\"type\"", typeStr);
     if (typeStr == "CUBE") obj.type = 0;
     else if (typeStr == "SPHERE") obj.type = 1;
     else if (typeStr == "CYLINDER") obj.type = 2;
     else if (typeStr == "PLANE") obj.type = 3;
-    else if (typeStr == "MODEL") obj.type = 4;
-    else if (typeStr == "LIGHT") obj.type = 5;
+    else if (typeStr == "LIGHT") obj.type = 4;
+    else if (typeStr == "MODEL") obj.type = 5;
     else obj.type = 0;
 
-    ParseMetadataField(json, "\"modelPath\"", obj.modelName);
+    // modelName is stored under "modelName" in exported objects
+    ParseMetadataField(json, "\"modelName\"", obj.modelName);
     ParseMetadataField(json, "\"layer\"", obj.layer);
     ParseMetadataField(json, "\"tags\"", obj.tags);
 

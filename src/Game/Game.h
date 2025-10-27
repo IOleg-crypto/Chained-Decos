@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <memory>
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Engine.h"
 #include "Engine/Model/Model.h"
@@ -13,12 +14,12 @@ class Game
 {
 private:
     static Game* s_instance;
-    Player m_player;
-    CollisionManager m_collisionManager;
-    ModelLoader m_models;
-    WorldManager m_world;
-    Menu m_menu;
-    Engine *m_engine = nullptr;
+    std::unique_ptr<Player> m_player;
+    std::unique_ptr<CollisionManager> m_collisionManager;
+    std::unique_ptr<ModelLoader> m_models;
+    std::unique_ptr<WorldManager> m_world;
+    std::unique_ptr<Menu> m_menu;
+    std::unique_ptr<Engine> m_engine;
 
     // Map loading system
     GameMap m_gameMap;                   // New comprehensive map system
@@ -35,10 +36,10 @@ private:
     Vector3 m_savedPlayerVelocity;
 
 public:
-    Game(Engine *engine);
+    Game();
     ~Game();
 
-    void Init();
+    void Init(int argc, char* argv[]);
     void Run();
 
     void ToggleMenu();
@@ -56,9 +57,9 @@ public:
     void InitCollisionsWithModels(const std::vector<std::string>& requiredModels);
     bool InitCollisionsWithModelsSafe(const std::vector<std::string>& requiredModels);
     void InitPlayer();
-    void LoadGameModels();
-    void LoadGameModelsSelective(const std::vector<std::string>& modelNames);
-    void LoadGameModelsSelectiveSafe(const std::vector<std::string>& modelNames);
+    std::optional<ModelLoader::LoadResult> LoadGameModels();
+    std::optional<ModelLoader::LoadResult> LoadGameModelsSelective(const std::vector<std::string>& modelNames);
+    std::optional<ModelLoader::LoadResult> LoadGameModelsSelectiveSafe(const std::vector<std::string>& modelNames);
     std::string GetModelNameForObjectType(int objectType, const std::string& modelName = "");
     std::vector<std::string> GetModelsRequiredForMap(const std::string& mapIdentifier);
     void UpdatePlayerLogic();
@@ -76,6 +77,8 @@ public:
     // Map loading and rendering
     void LoadEditorMap(const std::string& mapPath);
     void RenderEditorMap();
+    // Diagnostics: dump map vs model registry for debugging missing instances
+    void DumpMapDiagnostics() const;
 
     // Game state management
     void SaveGameState();
@@ -85,11 +88,11 @@ public:
     static Game* GetInstance();
 
     // Test accessor methods - public for testing purposes
-    Player& GetPlayer();
-    CollisionManager& GetCollisionManager();
-    ModelLoader& GetModels();
-    WorldManager& GetWorld();
-    Menu& GetMenu();
+    Player& GetPlayer() { return *m_player; }
+    CollisionManager& GetCollisionManager() { return *m_collisionManager; }
+    ModelLoader& GetModels() { return *m_models; }
+    WorldManager& GetWorld() { return *m_world; }
+    Menu& GetMenu() { return *m_menu; }
     GameMap& GetGameMap();
     bool IsInitialized() const;
 };

@@ -1384,7 +1384,7 @@ bool Menu::IsConsoleOpen() const { return m_consoleManager && m_consoleManager->
 // Helper methods
 void Menu::HandleAction(MenuAction action) { m_pendingAction = action; }
 
-const char *Menu::GetStateTitle(MenuState state) const
+const char *Menu::GetStateTitle(MenuState state)
 {
     switch (state)
     {
@@ -1455,3 +1455,5 @@ Camera Menu::GetCamera() const {
 bool Menu::IsGrounded() const {
     return true; // UI is always "grounded"
 }
+
+ConsoleManager *Menu::GetConsoleManager() const { return m_consoleManager.get(); }

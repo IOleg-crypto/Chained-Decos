@@ -108,7 +108,7 @@ void MapSelector::ClearMaps() {
     m_currentPage = 0;
     UpdatePagination();
     m_searchQuery.clear();
-    m_currentFilter = MapFilter::All;
+    m_currentFilter = MapFilter::JSON;
     // Clean up thumbnails
     for (auto& pair : m_thumbnails) {
         UnloadTexture(pair.second);
@@ -225,7 +225,7 @@ void MapSelector::HandleKeyboardNavigation() {
     const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
     if (maps.empty()) return;
 
-    int mapsPerRow = 3;
+    int mapsPerRow = 4;
     int currentPageStart = GetStartMapIndex();
     int currentPageEnd = GetEndMapIndex();
     int pageSize = currentPageEnd - currentPageStart;
@@ -317,10 +317,14 @@ void MapSelector::ScanForJsonMaps() {
 
                 // Look for .json files (excluding system files)
                 if (isJson) {
-                    std::string mapPath = entry.path().string();
-                    // Convert to relative path from project root
-                    if (mapPath.find(rootDir) == 0) {
-                        mapPath = mapPath.substr(rootDir.length());
+                    // Compute a relative path from the maps root directory and normalize separators
+                    // Use lexical relative (no filesystem access) to avoid exceptions and overhead
+                    std::filesystem::path relPath = std::filesystem::path(entry.path()).lexically_relative(rootDir);
+                    std::string mapPath = relPath.generic_string(); // use forward slashes
+                    // Remove any leading ./ or leading path separators
+                    while (!mapPath.empty() && (mapPath.front() == '/' || mapPath.front() == '\\' || (mapPath.size() >= 2 && mapPath.substr(0,2) == "./"))) {
+                        if (mapPath.size() >= 2 && mapPath.substr(0,2) == "./") mapPath = mapPath.substr(2);
+                        else mapPath = mapPath.substr(1);
                     }
 
                     // Extract display name from filename (remove .json extension)
@@ -399,7 +403,7 @@ void MapSelector::RenderMapSelection() const {
     // Calculate starting Y position for centering
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
-    int totalContentHeight = (MAP_BOX_HEIGHT * 2) + MARGIN;
+    int totalContentHeight = (MAP_BOX_HEIGHT * 3) + MARGIN;
     int startY = (screenHeight - totalContentHeight) / 2;
 
     // Title
@@ -417,10 +421,10 @@ void MapSelector::RenderMapSelection() const {
     // Render map selection boxes
     for (int i = startIndex; i < endIndex; ++i) {
         const auto& map = maps[i];
-        int row = (i - startIndex) / 3;
-        int col = (i - startIndex) % 3;
+        int row = (i - startIndex) / 4;
+        int col = (i - startIndex) % 4;
 
-        int x = (screenWidth - (MAP_BOX_WIDTH * 3 + MARGIN * 2)) / 2 + col * (MAP_BOX_WIDTH + MARGIN);
+        int x = (screenWidth - (MAP_BOX_WIDTH * 4 + MARGIN * 3)) / 2 + col * (MAP_BOX_WIDTH + MARGIN);
         int y = startY + row * (MAP_BOX_HEIGHT + MARGIN);
 
         // Determine if this map is selected
@@ -535,8 +539,10 @@ void MapSelector::RenderMapSelectionImGui() {
 
 // New window-style map selection interface
 void MapSelector::RenderMapSelectionWindow() {
+    ImVec2 windowSize = ImGui::GetWindowSize();
+
     // Begin a scrollable window, leaving space for buttons at the bottom
-    ImGui::BeginChild("MapSelectionWindow", ImVec2(0, -100), true);
+    ImGui::BeginChild("MapSelectionWindow", ImVec2(0, -100), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
     // Title
     ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "MAP SELECTION");
@@ -565,19 +571,13 @@ void MapSelector::RenderMapSelectionWindow() {
         }
 
         ImGui::SameLine();
-        const char* filterItems[] = {"All", "JSON"};
-        int currentFilter = static_cast<int>(m_currentFilter);
-        if (ImGui::Combo("Filter", &currentFilter, filterItems, IM_ARRAYSIZE(filterItems))) {
-            m_currentFilter = static_cast<MapFilter>(currentFilter);
-            UpdateFilters();
-        }
-
+        
         // Update search and filter if changed
         // Note: In a real implementation, this would trigger updates
 
         // Thumbnail grid
         ImGui::Text("Maps:");
-        ImGui::Columns(3, "MapGrid", false);
+        ImGui::Columns(4, "MapGrid", false);
         int startIndex = GetStartMapIndex();
         int endIndex = GetEndMapIndex();
         for (int i = startIndex; i < endIndex; ++i) {
@@ -634,7 +634,20 @@ void MapSelector::RenderMapSelectionWindow() {
 
     ImGui::Separator();
     ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                       "Use Arrow Keys to navigate, ENTER to select, ESC for back");
+                        "Use Arrow Keys to navigate, ENTER to select, ESC for back");
+
+    // Log final cursor position and scroll info
+    ImVec2 cursorPos = ImGui::GetCursorPos();
+    float currentScrollY = ImGui::GetScrollY();
+    TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - Final cursor Y: %.0f, Current scroll Y: %.0f", cursorPos.y, currentScrollY);
 
     ImGui::EndChild();
+
+    // Log if scrolling is possible
+    float maxScrollY = ImGui::GetScrollMaxY();
+    if (maxScrollY > 0) {
+        TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - Scrolling is possible, ScrollMaxY: %.0f", maxScrollY);
+    } else {
+        TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - No scrolling needed, content fits");
+    }
 }
