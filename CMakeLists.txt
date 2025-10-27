@@ -288,7 +288,7 @@ if(BUILD_TESTS)
 endif()
 
 if(BUILD_MAP_EDITOR)
-    add_subdirectory(src/Game/MapEditor)
+    add_subdirectory(src/MapEditor)
 endif()
 
 # Set the target properties

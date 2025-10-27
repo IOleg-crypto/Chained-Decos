@@ -11,3 +11,5 @@ target_include_directories(world PUBLIC
 
 target_link_libraries(cmdhandler PUBLIC
     raylib)
+
+set_target_properties(cmdhandler PROPERTIES POSITION_INDEPENDENT_CODE ON)

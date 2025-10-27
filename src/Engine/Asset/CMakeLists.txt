@@ -27,6 +27,8 @@ target_link_libraries(AdvancedAssetManager PRIVATE
     ErrorHandling
 )
 
+set_target_properties(AdvancedAssetManager PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 # Compiler definitions
 target_compile_definitions(AdvancedAssetManager PRIVATE
     PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"

@@ -34,7 +34,6 @@ target_compile_definitions(menu PRIVATE
 
 target_link_libraries(menu PUBLIC
     ChainedDecosEngine
-    ChainedDecosGame
     raylib
     imguilib
     nlohmann_json::nlohmann_json
