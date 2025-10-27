@@ -8,6 +8,73 @@
 
 using json = nlohmann::json;
 
+// Helper function to resolve model paths
+std::vector<std::string> ResolveModelPaths(const std::string& modelName)
+{
+    std::vector<std::string> possiblePaths;
+    std::string stem = std::filesystem::path(modelName).stem().string();
+    std::string extension = std::filesystem::path(modelName).extension().string();
+    
+    if (extension.empty())
+    {
+        // No extension provided, try common extensions
+        std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx"};
+        for (const auto& ext : extensions)
+        {
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + modelName + ext);
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + ext);
+        }
+    }
+    else
+    {
+        // Extension provided, use as-is
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + modelName);
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + extension);
+    }
+    
+    return possiblePaths;
+}
+
+// Helper function to load model with error handling
+bool LoadModelWithErrorHandling(const std::string& modelName, const std::vector<std::string>& possiblePaths, 
+                               std::unordered_map<std::string, Model>& loadedModels)
+{
+    for (const auto& modelPath : possiblePaths)
+    {
+        if (FileExists(modelPath.c_str()))
+        {
+            // Check if model is already loaded
+            if (loadedModels.find(modelName) == loadedModels.end())
+            {
+                Model model = LoadModel(modelPath.c_str());
+                if (model.meshCount > 0)
+                {
+                    loadedModels[modelName] = model;
+                    TraceLog(LOG_INFO, "MapLoader: Successfully loaded model %s from %s (meshCount: %d)", 
+                            modelName.c_str(), modelPath.c_str(), model.meshCount);
+                    return true;
+                }
+                else
+                {
+                    TraceLog(LOG_WARNING, "MapLoader: Model loaded but has no meshes: %s", modelPath.c_str());
+                }
+            }
+            else
+            {
+                TraceLog(LOG_INFO, "MapLoader: Model %s already loaded", modelName.c_str());
+                return true;
+            }
+        }
+    }
+    
+    TraceLog(LOG_WARNING, "MapLoader: Could not find model file for %s. Tried paths:", modelName.c_str());
+    for (const auto& path : possiblePaths)
+    {
+        TraceLog(LOG_WARNING, "  - %s", path.c_str());
+    }
+    return false;
+}
+
 // GameMap struct implementation
 void GameMap::Cleanup()
 {
@@ -76,15 +143,37 @@ GameMap LoadGameMapFromModelsFormat(const json& j, const std::string& path)
         std::string modelPath = modelData.value("path", "");
 
         // Load the model
-        if (!modelPath.empty() && FileExists(modelPath.c_str()))
+        if (!modelPath.empty())
         {
-            Model model = LoadModel(modelPath.c_str());
-            map.loadedModels[modelName] = model;
-            TraceLog(LOG_INFO, "Loaded model: %s from %s", modelName.c_str(), modelPath.c_str());
+            // Try multiple path variations for the model
+            std::vector<std::string> possiblePaths;
+            
+            // Build possible paths
+            if (modelPath.find('/') == std::string::npos && modelPath.find('\\') == std::string::npos)
+            {
+                // Relative path, try in resources folder
+                possiblePaths = ResolveModelPaths(modelPath);
+            }
+            else
+            {
+                // Absolute or relative path with separators
+                possiblePaths.push_back(modelPath);
+                if (modelPath[0] == '/')
+                {
+                    possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + modelPath);
+                }
+            }
+            
+            // Try to find and load the model
+            if (!LoadModelWithErrorHandling(modelName, possiblePaths, map.loadedModels))
+            {
+                TraceLog(LOG_WARNING, "Model file not found for %s", modelName.c_str());
+                continue;
+            }
         }
         else
         {
-            TraceLog(LOG_WARNING, "Model file not found: %s", modelPath.c_str());
+            TraceLog(LOG_WARNING, "Empty model path for model: %s", modelName.c_str());
             continue;
         }
 
@@ -272,21 +361,10 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
             if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
             {
                 TraceLog(LOG_INFO, "MapLoader: Loading MODEL object %s with modelName %s", objectData.name.c_str(), objectData.modelName.c_str());
-                std::string modelPath = PROJECT_ROOT_DIR "/resources/" + objectData.modelName;
-                if (FileExists(modelPath.c_str()))
-                {
-                    // Check if model is already loaded
-                    if (map.loadedModels.find(objectData.modelName) == map.loadedModels.end())
-                    {
-                        Model model = LoadModel(modelPath.c_str());
-                        map.loadedModels[objectData.modelName] = model;
-                        TraceLog(LOG_INFO, "MapLoader: Loaded model %s", objectData.modelName.c_str());
-                    }
-                }
-                else
-                {
-                    TraceLog(LOG_WARNING, "Model not found: %s", objectData.modelName.c_str());
-                }
+                
+                // Use helper function to resolve paths and load model
+                std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.loadedModels);
             }
         }
     }
@@ -522,7 +600,7 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                     DrawModel(model, Vector3{0, 0, 0}, 1.0f, object.color);
 
                     // Optional: Draw model wires for debugging
-                    // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
+                    DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
                 }
                 else
                 {

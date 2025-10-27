@@ -18,6 +18,16 @@
 // Include ModelLoader header
 #include "Model/Model.h"
 
+// Structure to hold model processing data for parallel processing
+struct ModelCollisionTask
+{
+    std::string modelName;
+    Model *model;
+    bool hasCollision;
+    std::vector<ModelInstance *> instances;
+    int createdCollisions = 0;
+};
+
 //
 // CollisionManager
 // Manages all collision boxes in the game.

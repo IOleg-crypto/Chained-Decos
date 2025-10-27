@@ -37,10 +37,12 @@ ModelLoader::~ModelLoader()
     TraceLog(LOG_INFO, "Enhanced Models Manager destroyed (instance: %p)", this);
 }
 
-void ModelLoader::LoadModelsFromJson(const std::string &path)
+std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std::string &path)
 {
     auto startTime = std::chrono::steady_clock::now();
     TraceLog(LOG_INFO, "Loading enhanced models from: %s", path.c_str());
+
+    LoadResult result = {0, 0, 0, 0.0f};
 
     // Disable selective mode for regular loading
     m_selectiveMode = false;
@@ -49,8 +51,7 @@ void ModelLoader::LoadModelsFromJson(const std::string &path)
     if (!file.is_open())
     {
         TraceLog(LOG_ERROR, "Failed to open model list JSON: %s", path.c_str());
-        m_stats.failedModels++;
-        return;
+        return std::nullopt;
     }
 
     json j;
@@ -61,76 +62,79 @@ void ModelLoader::LoadModelsFromJson(const std::string &path)
     catch (const std::exception &e)
     {
         TraceLog(LOG_ERROR, "JSON parsing error: %s", e.what());
-        m_stats.failedModels++;
-        return;
+        return std::nullopt;
     }
 
     for (const auto &modelEntry : j)
     {
-        m_stats.totalModels++;
+        result.totalModels++;
 
         // Use enhanced parsing
         if (!JsonHelper::ValidateModelEntry(modelEntry))
         {
             TraceLog(LOG_WARNING, "Invalid model entry, skipping");
-            m_stats.failedModels++;
+            result.failedModels++;
             continue;
         }
 
-        try
+        // Parse using new helper
+        auto modelConfigResult = JsonHelper::ParseModelConfig(modelEntry);
+        if (!modelConfigResult)
         {
-            // Parse using new helper
-            ModelFileConfig config = JsonHelper::ParseModelConfig(modelEntry);
-
-            // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
-            if (config.path.find('/') == std::string::npos && config.path.find('\\') == std::string::npos)
-            {
-                config.path = "../resources/" + config.path;
-            }
-            else if (!config.path.empty() && config.path[0] == '/')
-            {
-                config.path = std::string(PROJECT_ROOT_DIR) + config.path;
-            }
-
-            // Store configuration
-            m_configs[config.name] = config;
-
-            // Load model
-            if (ProcessModelConfigLegacy(config))
-            {
-                m_stats.loadedModels++;
-                TraceLog(LOG_INFO, "Successfully loaded model: %s", config.name.c_str());
-            }
-            else
-            {
-                m_stats.failedModels++;
-            }
+            TraceLog(LOG_ERROR, "Error processing model entry");
+            result.failedModels++;
+            continue;
         }
-        catch (const std::exception &e)
+
+        auto config = modelConfigResult.value();
+
+        // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
+        if (config.path.find('/') == std::string::npos && config.path.find('\\') == std::string::npos)
         {
-            TraceLog(LOG_ERROR, "Error processing model entry: %s", e.what());
-            m_stats.failedModels++;
+            config.path = "../resources/" + config.path;
+        }
+        else if (!config.path.empty() && config.path[0] == '/')
+        {
+            config.path = std::string(PROJECT_ROOT_DIR) + config.path;
+        }
+
+        // Store configuration
+        m_configs[config.name] = config;
+
+        // Load model
+        if (ProcessModelConfigLegacy(config))
+        {
+            result.loadedModels++;
+            TraceLog(LOG_INFO, "Successfully loaded model: %s", config.name.c_str());
+        }
+        else
+        {
+            result.failedModels++;
         }
     }
 
     // Calculate loading time
     auto endTime = std::chrono::steady_clock::now();
-    m_stats.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+    result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
     // Print statistics
     TraceLog(LOG_INFO, "Loading completed: %d/%d models loaded in %.2f seconds",
-             m_stats.loadedModels, m_stats.totalModels, m_stats.loadingTime);
+             result.loadedModels, result.totalModels, result.loadingTime);
 
-    if (m_stats.failedModels > 0)
+    if (result.failedModels > 0)
     {
-        TraceLog(LOG_WARNING, "Failed to load %d models", m_stats.failedModels);
+        TraceLog(LOG_WARNING, "Failed to load %d models", result.failedModels);
     }
+
+    return result;
 }
 
-void ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std::vector<std::string> &modelNames)
+std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std::vector<std::string> &modelNames)
 {
     auto startTime = std::chrono::steady_clock::now();
     TraceLog(LOG_INFO, "Loading selective models from: %s (models: %d)", path.c_str(), modelNames.size());
+
+    LoadResult result = {0, 0, 0, 0.0f};
 
     // Enable selective mode to prevent auto-spawning of unwanted models
     m_selectiveMode = true;
@@ -139,8 +143,7 @@ void ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std
     if (!file.is_open())
     {
         TraceLog(LOG_ERROR, "Failed to open model list JSON: %s", path.c_str());
-        m_stats.failedModels++;
-        return;
+        return std::nullopt;
     }
 
     json j;
@@ -151,8 +154,7 @@ void ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std
     catch (const std::exception &e)
     {
         TraceLog(LOG_ERROR, "JSON parsing error: %s", e.what());
-        m_stats.failedModels++;
-        return;
+        return std::nullopt;
     }
 
     // Create a set for faster lookup
@@ -160,20 +162,17 @@ void ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std
 
     for (const auto &modelEntry : j)
     {
-        m_stats.totalModels++;
+        result.totalModels++;
 
         // Get model name from the entry
-        std::string modelName;
-        if (modelEntry.contains("name") && modelEntry["name"].is_string())
-        {
-            modelName = modelEntry["name"].get<std::string>();
-        }
-        else
+        if (!modelEntry.contains("name") || !modelEntry["name"].is_string())
         {
             TraceLog(LOG_WARNING, "Model entry missing name field, skipping");
-            m_stats.failedModels++;
+            result.failedModels++;
             continue;
         }
+
+        std::string modelName = modelEntry["name"].get<std::string>();
 
         // Check if this model is in our selective list
         if (modelSet.find(modelName) == modelSet.end())
@@ -186,58 +185,60 @@ void ModelLoader::LoadModelsFromJsonSelective(const std::string &path, const std
         if (!JsonHelper::ValidateModelEntry(modelEntry))
         {
             TraceLog(LOG_WARNING, "Invalid model entry for '%s', skipping", modelName.c_str());
-            m_stats.failedModels++;
+            result.failedModels++;
             continue;
         }
 
-        try
+        // Parse using new helper
+        auto modelConfigResult = JsonHelper::ParseModelConfig(modelEntry);
+        if (!modelConfigResult)
         {
-            // Parse using new helper
-            ModelFileConfig config = JsonHelper::ParseModelConfig(modelEntry);
-
-            // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
-            if (config.path.find('/') == std::string::npos && config.path.find('\\') == std::string::npos)
-            {
-                config.path = "../resources/" + config.path;
-            }
-            else if (!config.path.empty() && config.path[0] == '/')
-            {
-                config.path = std::string(PROJECT_ROOT_DIR) + config.path;
-            }
-
-            // Store configuration
-            m_configs[config.name] = config;
-
-            // Load model
-            if (ProcessModelConfigLegacy(config))
-            {
-                m_stats.loadedModels++;
-                TraceLog(LOG_INFO, "Successfully loaded selective model: %s", config.name.c_str());
-            }
-            else
-            {
-                m_stats.failedModels++;
-            }
+            TraceLog(LOG_ERROR, "Error processing model entry for '%s'", modelName.c_str());
+            result.failedModels++;
+            continue;
         }
-        catch (const std::exception &e)
+
+        auto config = modelConfigResult.value();
+
+        // Simple path handling - if path doesn't contain directory separators, assume it's in resources folder
+        if (config.path.find('/') == std::string::npos && config.path.find('\\') == std::string::npos)
         {
-            TraceLog(LOG_ERROR, "Error processing selective model entry '%s': %s", modelName.c_str(), e.what());
-            m_stats.failedModels++;
+            config.path = "../resources/" + config.path;
+        }
+        else if (!config.path.empty() && config.path[0] == '/')
+        {
+            config.path = std::string(PROJECT_ROOT_DIR) + config.path;
+        }
+
+        // Store configuration
+        m_configs[config.name] = config;
+
+        // Load model
+        if (ProcessModelConfigLegacy(config))
+        {
+            result.loadedModels++;
+            TraceLog(LOG_INFO, "Successfully loaded selective model: %s", config.name.c_str());
+        }
+        else
+        {
+            result.failedModels++;
         }
     }
 
     // Calculate loading time
     auto endTime = std::chrono::steady_clock::now();
-    m_stats.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+    result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
     // Print statistics
     TraceLog(LOG_INFO, "Selective loading completed: %d/%d models loaded in %.2f seconds",
-             m_stats.loadedModels, m_stats.totalModels, m_stats.loadingTime);
+             result.loadedModels, result.totalModels, result.loadingTime);
 
-    if (m_stats.failedModels > 0)
+    if (result.failedModels > 0)
     {
-        TraceLog(LOG_WARNING, "Failed to load %d selective models", m_stats.failedModels);
+        TraceLog(LOG_WARNING, "Failed to load %d selective models", result.failedModels);
     }
+
+    return result;
 }
 
 // Legacy compatible method for config processing
@@ -371,16 +372,15 @@ void ModelLoader::DrawAllModels() const
     TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Finished drawing all model instances");
 }
 
-Model &ModelLoader::GetModelByName(const std::string &name)
+std::optional<std::reference_wrapper<Model>> ModelLoader::GetModelByName(const std::string &name)
 {
-    static Model dummyModel = {};
     const auto it = m_modelByName.find(name);
     if (it == m_modelByName.end())
     {
-        TraceLog(LOG_WARNING, "Model name '%s' not found. Returning dummy model.", name.c_str());
-        return dummyModel;
+        TraceLog(LOG_WARNING, "Model name '%s' not found.", name.c_str());
+        return std::nullopt;
     }
-    return *it->second;
+    return std::ref(*it->second);
 }
 
 void ModelLoader::AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
@@ -804,4 +804,74 @@ const ModelFileConfig *ModelLoader::GetModelConfig(const std::string &modelName)
         return &it->second;
     }
     return nullptr;
+}
+
+// Register a Model that was already loaded by another system (MapLoader)
+bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &model)
+{
+    // If already present, skip
+    if (m_modelByName.find(name) != m_modelByName.end())
+    {
+        TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Model '%s' already registered", name.c_str());
+        return true;
+    }
+
+    // Allocate and copy the provided raylib Model
+    Model *pModel = new Model(model);
+    if (!pModel)
+    {
+        TraceLog(LOG_ERROR, "ModelLoader::RegisterLoadedModel() - Allocation failed for model '%s'", name.c_str());
+        return false;
+    }
+
+    m_modelByName[name] = pModel;
+    m_stats.loadedModels++;
+    TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Registered model '%s' (meshCount=%d)", name.c_str(), pModel->meshCount);
+
+    // Also register common aliases to improve matching between editor exports and runtime keys.
+    try {
+        std::string stem = std::filesystem::path(name).stem().string();
+        std::string ext = std::filesystem::path(name).extension().string();
+
+        // Register stem (without extension) as an alias if different
+        if (!stem.empty() && stem != name && m_modelByName.find(stem) == m_modelByName.end()) {
+            m_modelByName[stem] = pModel;
+            TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Registered alias '%s' -> '%s'", stem.c_str(), name.c_str());
+        }
+
+        // Register lowercase variants for robustness
+        auto toLower = [](std::string s) {
+            std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c){ return std::tolower(c); });
+            return s;
+        };
+
+        std::string lname = toLower(name);
+        if (lname != name && m_modelByName.find(lname) == m_modelByName.end()) {
+            m_modelByName[lname] = pModel;
+            TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Registered lowercase alias '%s'", lname.c_str());
+        }
+
+        std::string lstem = toLower(stem);
+        if (!lstem.empty() && lstem != stem && m_modelByName.find(lstem) == m_modelByName.end()) {
+            m_modelByName[lstem] = pModel;
+            TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Registered lowercase alias '%s'", lstem.c_str());
+        }
+    } catch (...) {
+        // aliasing should not be fatal; ignore any filesystem or transform issues
+    }
+
+    // Attempt to load animations for this model if possible (best-effort)
+    try
+    {
+        std::string potentialPath = std::string(PROJECT_ROOT_DIR) + "/resources/" + name;
+        Animation anim;
+        if (anim.LoadAnimations(potentialPath))
+        {
+            m_animations[name] = std::move(anim);
+            TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Loaded animations for '%s' (if available)", name.c_str());
+        }
+    }
+    catch (...) { /* ignore */ }
+
+    return true;
 }

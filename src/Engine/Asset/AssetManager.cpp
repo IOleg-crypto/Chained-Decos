@@ -3,7 +3,7 @@
 #include <fstream>
 
 /**
- * @brief Loads a texture asset with caching and error handling
+ * Loads a texture asset with caching and error handling
  * @param name Unique identifier for the texture
  * @param filePath Path to the texture file
  * @return true if loaded successfully (or already cached), false on error

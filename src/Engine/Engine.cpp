@@ -9,12 +9,13 @@
 #include <raylib.h>
 #include <rlImGui.h>
 
-Engine::Engine() : Engine(800, 600) {}
+Engine::Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager)
+    : Engine(800, 600, std::move(renderManager), std::move(inputManager)) {}
 
-Engine::Engine(const int screenX, const int screenY)
+Engine::Engine(const int screenX, const int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
-      m_windowInitialized(false), m_renderManager(std::make_shared<RenderManager>()), m_shouldExit(false),
-      m_showDebug(false), m_showCollisionDebug(false), m_isEngineInit(false)
+       m_windowInitialized(false), m_renderManager(std::move(renderManager)), m_inputManager(std::move(inputManager)), m_shouldExit(false),
+       m_showDebug(false), m_showCollisionDebug(false), m_isEngineInit(false)
 {
     if (m_screenX <= 0 || m_screenY <= 0)
     {
@@ -52,26 +53,18 @@ void Engine::Init()
     m_windowInitialized = true;
     SetExitKey(KEY_NULL);
 
-    m_renderManager->Initialize();
+    rlImGuiSetup(true);
+
     m_renderManager->SetCollisionDebug(m_showCollisionDebug);
 
     // Register engine-level input actions
-    m_inputManager.RegisterAction(KEY_F11, ToggleFullscreen);
+    m_inputManager->RegisterAction(KEY_F11, ToggleFullscreen);
 
     m_isEngineInit = true;
 
     // Kernel: register core services so other modules can fetch them
     Kernel &kernel = Kernel::GetInstance();
-    // Wrap RenderManager with a small IKernelService adapter to satisfy interface without changing RenderManager
-    struct RenderServiceAdapter : public IKernelService {
-        std::shared_ptr<RenderManager> rm;
-        explicit RenderServiceAdapter(std::shared_ptr<RenderManager> r) : rm(std::move(r)) {}
-        bool Initialize() override { return rm != nullptr; }
-        void Shutdown() override {}
-        void Render() override { /* optional: could call debug hooks */ }
-        const char *GetName() const override { return "RenderServiceAdapter"; }
-    };
-    kernel.RegisterService<RenderServiceAdapter>(Kernel::ServiceType::Render, std::make_shared<RenderServiceAdapter>(m_renderManager));
+    kernel.RegisterService<RenderManager>(Kernel::ServiceType::Render, m_renderManager);
 
     TraceLog(LOG_INFO, "Engine initialization complete!");
 }
@@ -79,7 +72,6 @@ void Engine::Init()
 void Engine::Update()
 {
     HandleEngineInput();
-    m_inputManager.ProcessInput();
 }
 
 void Engine::Render() const
@@ -104,7 +96,7 @@ void Engine::Shutdown() const
 
 RenderManager *Engine::GetRenderManager() const { return m_renderManager.get(); }
 
-InputManager &Engine::GetInputManager() { return m_inputManager; }
+InputManager &Engine::GetInputManager() const { return *m_inputManager; }
 
 void Engine::RequestExit()
 {

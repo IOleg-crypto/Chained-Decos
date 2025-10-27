@@ -1,6 +1,6 @@
 /**
  * @file ConsoleManager.h
- * @brief In-game console system for debugging and cheats
+ * In-game console system for debugging and cheats.
  *
  * The ConsoleManager class provides an in-game console interface
  * for executing commands, viewing output, and debugging game state.
@@ -21,7 +21,7 @@ namespace MenuConstants {
 
 /**
  * @class ConsoleManager
- * @brief Manages the in-game console functionality
+ * Manages the in-game console functionality.
  *
  * This class handles console input, output, command processing,
  * and rendering of the console interface.
