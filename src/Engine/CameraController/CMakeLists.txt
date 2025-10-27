@@ -7,4 +7,6 @@ target_include_directories(cameracontroller PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(cameracontroller PUBLIC raylib) 
+target_link_libraries(cameracontroller PUBLIC raylib)
+
+set_target_properties(cameracontroller PROPERTIES POSITION_INDEPENDENT_CODE ON)

@@ -25,7 +25,9 @@ target_include_directories(model PUBLIC
 )
 
 target_link_libraries(model PUBLIC
-        raylib
-        nlohmann_json
-        collision
+         raylib
+         nlohmann_json
+         collision
 )
+
+set_target_properties(model PROPERTIES POSITION_INDEPENDENT_CODE ON)

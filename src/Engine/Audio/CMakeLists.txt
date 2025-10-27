@@ -9,3 +9,5 @@ target_include_directories(audio PUBLIC
 )
 
 target_link_libraries(audio PUBLIC raylib)
+
+set_target_properties(audio PROPERTIES POSITION_INDEPENDENT_CODE ON)
