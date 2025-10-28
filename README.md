@@ -18,9 +18,9 @@ Chained Decos is a fast-paced parkour game built with modern C++20 and [raylib](
 
 ### Development Tools
 - **Integrated Map Editor**: Full-featured level editor with real-time preview
-- **Particle System**: Dynamic visual effects for enhanced gameplay
-- **Lighting System**: Advanced lighting with multiple light sources and shadows
-- **Material Editor**: Comprehensive material system for visual customization
+- **Particle System(Planning)**: Dynamic visual effects for enhanced gameplay
+- **Lighting System(Planning)**: Advanced lighting with multiple light sources and shadows
+- **Material Editor(Planning)**: Comprehensive material system for visual customization
 
 ### Technical Features
 - **High-Performance Engine**: Optimized rendering and physics systems
@@ -81,7 +81,6 @@ For the map editor, add `-DBUILD_MAP_EDITOR=ON` to the cmake command.
 - `clear` - Clear console output
 - `quit/exit` - Exit game
 - `fps` - Show current FPS
-- `map <name>` - Load specific map
 - `res <width>x<height>` - Set resolution
 - `fullscreen` - Toggle fullscreen mode
 - `vsync <on/off>` - Toggle VSync
@@ -98,14 +97,6 @@ Available options:
 - `-novsync` - Disable VSync
 - `-map <mapname>` - Load specific map
 - `-dev` - Enable developer mode
-
-### Gameplay Guide
-- **Game Modes**:
-  1. **Test Mode**: Basic parkour course for testing
-  2. **Easy**: Beginner-friendly course
-  3. **Medium**: Balanced difficulty
-  4. **Hard**: Expert-level course
-  5. **Speedrun**: Time-based challenge
 
 - **Tips**: Build momentum for longer jumps, plan ahead, and use all movement options.
 
