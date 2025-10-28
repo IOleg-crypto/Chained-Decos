@@ -71,8 +71,6 @@ For the map editor, add `-DBUILD_MAP_EDITOR=ON` to the cmake command.
 - **F1**: Toggle main menu
 - **F2**: Toggle debug info overlay
 - **F3**: Toggle collision debug visualization
-- **F4**: Exit game
-- **F11**: Toggle fullscreen
 - **ESC**: Pause/return to menu
 - **~ (Tilde)**: Toggle developer console
 
