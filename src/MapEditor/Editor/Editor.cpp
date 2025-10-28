@@ -549,7 +549,7 @@ void Editor::RenderImGuiToolbar()
     constexpr ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
 
     bool toolbarOpen = true;
-    if (ImGui::Begin("Toolbar##foo2", &toolbarOpen, windowFlags))
+    if (ImGui::Begin("Toolbar##foo2", nullptr, windowFlags))
     {
         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
         ImGui::Text("Map Editor Tools");
@@ -629,12 +629,6 @@ void Editor::RenderImGuiToolbar()
         }
 
         ImGui::Separator();
-
-        // Parkour map tools
-        if (ImGui::Button("Load Parkour Map"))
-        {
-            ShowParkourMapSelector();
-        }
         ImGui::SameLine();
         if (ImGui::Button("Generate Parkour Map"))
         {
