@@ -59,9 +59,6 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
 
     // Initialize remaining subsystems
     m_modelManager = std::make_unique<ModelManager>(std::move(modelLoader));
-    // TODO: Initialize remaining subsystems when they are implemented
-    // m_inputManager = std::make_unique<InputManager>();
-    // m_renderManager = std::make_unique<RenderManager>();
     m_uiManager = std::make_unique<UIManager>(m_sceneManager.get(), m_fileManager.get(), m_toolManager.get(), m_modelManager.get());
 
     // Initialize file dialog to project root
@@ -310,5 +307,26 @@ void Editor::ShowParkourMapSelector()
     // Delegate to file manager
     if (m_fileManager) {
         m_fileManager->ShowParkourMapSelector();
+    }
+}
+
+void Editor::PreloadModelsFromResources()
+{
+    if (!m_modelManager)
+        return;
+
+    try
+    {
+        MapLoader mapLoader;
+        std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
+        auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
+        for (const auto &modelInfo : models)
+        {
+            m_modelManager->LoadModel(modelInfo.name, modelInfo.path);
+        }
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_WARNING, "Editor: Failed to preload models from resources: %s", e.what());
     }
 }

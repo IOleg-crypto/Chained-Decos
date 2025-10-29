@@ -1,0 +1,17 @@
+[
+  {
+    "name": "bridge",
+    "path": "D:/gitnext/Chained Decos/resources/bridge.glb",
+    "spawn": true,
+    "hasCollision": true,
+    "collisionPrecision": "bvh_only",
+    "hasAnimations": true,
+    "instances": [
+      {
+        "position": [0, 0, 0],
+        "scale": 0.833333,
+        "spawn": true
+      }
+    ]
+  }
+]
