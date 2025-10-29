@@ -35,7 +35,7 @@ UIManager::UIManager(ISceneManager* sceneManager, IFileManager* fileManager,
       m_currentlySelectedParkourMapIndex(0), m_gridSizes(50)
 {
     // Initialize file dialog to project root
-    m_currentWorkingDirectory = "../resources/maps";
+    m_currentWorkingDirectory = PROJECT_ROOT_DIR "/resources";
     m_newFileNameInput = "new_map.json";
     RefreshDirectoryItems();
     // NFD init
@@ -188,12 +188,47 @@ void UIManager::RenderImGuiToolbar()
 
         if (ImGui::Button("Save Map As..."))
         {
-            OpenFileDialog(false); // false for Save dialog
+            // Use NFD to show save dialog
+            nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
+            nfdchar_t *outPath = nullptr;
+            nfdresult_t result = NFD_SaveDialog(&outPath, filterItem, 1, nullptr, "map.json");
+            if (result == NFD_OKAY)
+            {
+                const auto &objects = m_sceneManager->GetObjects();
+                if (m_fileManager->SaveMap(outPath, objects))
+                {
+                    m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
+                }
+                NFD_FreePath(outPath);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Load Map..."))
         {
-            OpenFileDialog(true); // true for Load dialog
+            // Use NFD to show open dialog
+            nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
+            nfdchar_t *outPath = nullptr;
+            nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+            if (result == NFD_OKAY)
+            {
+                std::vector<MapObject> loadedObjects;
+                if (m_fileManager->LoadMap(outPath, loadedObjects))
+                {
+                    // Replace current objects in the scene manager
+                    // SceneManager API doesn't expose a clear; emulate by removing one by one
+                    while (!m_sceneManager->GetObjects().empty())
+                    {
+                        m_sceneManager->RemoveObject(static_cast<int>(m_sceneManager->GetObjects().size() - 1));
+                    }
+                    for (const auto &obj : loadedObjects)
+                    {
+                        m_sceneManager->AddObject(obj);
+                    }
+                    m_sceneManager->ClearSelection();
+                    m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
+                }
+                NFD_FreePath(outPath);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Quick Save") && !m_fileManager->GetCurrentlyLoadedMapFilePath().empty())
@@ -203,35 +238,10 @@ void UIManager::RenderImGuiToolbar()
             m_fileManager->SaveMap(m_fileManager->GetCurrentlyLoadedMapFilePath(), objects);
         }
         ImGui::SameLine();
-        if (ImGui::Button("Export for Game"))
-        {
-            // Open save dialog for game export
-            m_isFileLoadDialog = false;
-            m_displayFileDialog = true;
-            m_currentlySelectedFile.clear();
-            m_newFileNameInput = "game_map.json";
-            RefreshDirectoryItems();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Export as JSON"))
-        {
-            // Open save dialog for JSON export
-            m_isFileLoadDialog = false;
-            m_isJsonExportDialog = true;
-            m_displayFileDialog = true;
-            m_currentlySelectedFile.clear();
-            m_newFileNameInput = "exported_map.json";
-            RefreshDirectoryItems();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Generate Parkour Map"))
-        {
-            // Show parkour map selector dialog
-            m_fileManager->ShowParkourMapSelector();
-        }
 
         // Show current file path
-        ImGui::Text("Current: %s", m_fileManager->GetCurrentlyLoadedMapFilePath().c_str());
+        ImGui::Separator();
+        ImGui::Text("Current: %s", m_fileManager->GetCurrentlyLoadedMapFilePath().empty() ? m_fileManager->GetCurrentlyLoadedMapFilePath().c_str() : "No map loaded");
 
         // Model selection dropdown (only show when adding models)
         if (GetActiveTool() == ADD_MODEL)
