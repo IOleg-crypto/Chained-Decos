@@ -12,28 +12,11 @@ set(MAPEDITOR_SOURCES
     Application.cpp
     Editor/Editor.cpp
     Editor/MapObject.cpp
-    Editor/CameraModes.cpp
-    Editor/ClipboardManager.cpp
-    Editor/LayerManager.cpp
-    Editor/ObjectFilter.cpp
-    Editor/ObjectTransform.cpp
-    Editor/ShortcutManager.cpp
-    Editor/StatusBar.cpp
-    Editor/UndoRedo.cpp
 )
 
-# Advanced MapEditor features
-set(ADVANCED_EDITOR_SOURCES
-    Editor/TerrainEditor.cpp
-    Editor/LightingSystem.cpp
-    Editor/MaterialEditor.cpp
-    Editor/PrefabSystem.cpp
-    Editor/ParticleEditor.cpp
-    Editor/MeasurementTools.cpp
-)
 
 # Combine all sources
-set(ALL_SOURCES ${MAPEDITOR_SOURCES} ${ADVANCED_EDITOR_SOURCES})
+set(ALL_SOURCES ${MAPEDITOR_SOURCES})
 
 # Create MapEditor executable
 add_executable(ChainedDecosMapEditor ${ALL_SOURCES})
