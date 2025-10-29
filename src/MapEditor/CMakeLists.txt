@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.25)
 
 # MapEditor project - depends on ChainedDecosEngine
 project(ChainedDecosMapEditor VERSION 1.0.0)
@@ -11,7 +11,25 @@ set(MAPEDITOR_SOURCES
     main.cpp
     Application.cpp
     Editor/Editor.cpp
-    Editor/MapObject.cpp
+    Editor/Object/MapObject.cpp
+    Editor/FileManager/FileManager.cpp
+    Editor/FileManager/IFileManager.h
+    Editor/FileManager/FileManager.h
+    Editor/SceneManager/SceneManager.cpp
+    Editor/SceneManager/SceneManager.h
+    Editor/SceneManager/ISceneManager.h
+    Editor/UIManager/UIManager.cpp
+    Editor/UIManager/UIManager.h
+    Editor/UIManager/IUIManager.h
+    Editor/ToolManager/ToolManager.cpp
+    Editor/ToolManager/ToolManager.h
+    Editor/ToolManager/IToolManager.h
+    Editor/CameraManager/CameraManager.cpp
+    Editor/CameraManager/CameraManager.h
+    Editor/CameraManager/ICameraManager.h
+    Editor/ModelManager/ModelManager.cpp
+    Editor/ModelManager/ModelManager.h
+    Editor/ModelManager/IModelManager.h
 )
 
 
@@ -45,7 +63,7 @@ target_compile_definitions(ChainedDecosMapEditor PRIVATE
 
 # Set C++ standard
 set_target_properties(ChainedDecosMapEditor PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
 )
 
