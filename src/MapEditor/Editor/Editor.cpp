@@ -2,36 +2,38 @@
 //
 
 #include "Editor.h"
-#include "../../Engine/MapFileManager/MapFileManager.h"
-#include "../../Engine/MapFileManager/JsonMapFileManager.h"
-#include "../../Game/Map/MapLoader.h"  // Include the new comprehensive map loader
 #include "../../Engine/Kernel/Kernel.h"
-#include <cstdlib>
-#include <ctime>
+#include "../../Engine/MapFileManager/JsonMapFileManager.h"
+#include "../../Engine/MapFileManager/MapFileManager.h"
+#include "../../Game/Map/MapLoader.h" // Include the new comprehensive map loader
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <imgui.h>
 #include <iostream>
 #include <misc/cpp/imgui_stdlib.h>
+#include <nfd.h>
 #include <raylib.h>
 #include <rlImGui.h>
-#include <nfd.h>
-
 
 #include <raymath.h>
 #include <string>
 
 namespace fs = std::filesystem;
 
-Editor::Editor(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader)
-    : m_cameraController(std::move(cameraController)), m_modelAssetManager(std::move(modelLoader)), m_currentlySelectedObjectIndex(-1),
-       m_activeEditorTool(SELECT), m_displayImGuiInterface(true), m_displayObjectListPanel(true),
-       m_displayPropertiesPanel(true), m_pendingObjectCreation(false), m_modelsInitialized(false),
-       m_displayFileDialog(false), m_isFileLoadDialog(true), m_isJsonExportDialog(false), m_displayNewFolderDialog(false),
-       m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0) , m_gridSizes(50)
+Editor::Editor(std::shared_ptr<CameraController> cameraController,
+               std::unique_ptr<ModelLoader> modelLoader)
+    : m_cameraController(std::move(cameraController)), m_modelAssetManager(std::move(modelLoader)),
+      m_currentlySelectedObjectIndex(-1), m_activeEditorTool(SELECT), m_displayImGuiInterface(true),
+      m_displayObjectListPanel(true), m_displayPropertiesPanel(true),
+      m_pendingObjectCreation(false), m_modelsInitialized(false), m_displayFileDialog(false),
+      m_isFileLoadDialog(true), m_isJsonExportDialog(false), m_displayNewFolderDialog(false),
+      m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false),
+      m_currentlySelectedParkourMapIndex(0), m_gridSizes(50)
 {
     // Initialize file dialog to project root
     m_currentWorkingDirectory = PROJECT_ROOT_DIR;
@@ -41,9 +43,7 @@ Editor::Editor(std::shared_ptr<CameraController> cameraController, std::unique_p
     NFD_Init();
 }
 
-Editor::~Editor() {
-    NFD_Quit();
-};
+Editor::~Editor() { NFD_Quit(); };
 
 std::shared_ptr<CameraController> Editor::GetCameraController() const { return m_cameraController; }
 
@@ -145,7 +145,8 @@ void Editor::RemoveObject(const int index)
 void Editor::SelectObject(const int index)
 {
     // Clear previous selection
-    if (m_currentlySelectedObjectIndex >= 0 && m_currentlySelectedObjectIndex < m_editorSceneObjects.size())
+    if (m_currentlySelectedObjectIndex >= 0 &&
+        m_currentlySelectedObjectIndex < m_editorSceneObjects.size())
     {
         m_editorSceneObjects[m_currentlySelectedObjectIndex].SetSelected(false);
     }
@@ -162,7 +163,8 @@ void Editor::SelectObject(const int index)
 void Editor::ClearSelection()
 {
     // Clear current object selection
-    if (m_currentlySelectedObjectIndex >= 0 && m_currentlySelectedObjectIndex < m_editorSceneObjects.size())
+    if (m_currentlySelectedObjectIndex >= 0 &&
+        m_currentlySelectedObjectIndex < m_editorSceneObjects.size())
     {
         m_editorSceneObjects[m_currentlySelectedObjectIndex].SetSelected(false);
     }
@@ -239,7 +241,7 @@ void Editor::ExportMapForGame(const std::string &filename)
     // Convert MapObjects to JsonSerializableObjects for models.json export
     std::vector<JsonSerializableObject> jsonObjects;
 
-    for (const auto& obj : m_editorSceneObjects)
+    for (const auto &obj : m_editorSceneObjects)
     {
         JsonSerializableObject jsonObj;
 
@@ -253,21 +255,22 @@ void Editor::ExportMapForGame(const std::string &filename)
         jsonObj.visible = true;
         jsonObj.layer = "default";
         jsonObj.tags = "exported";
-        jsonObj.id = "obj_" + std::to_string(rand() % 9000 + 1000) + "_" + std::to_string(time(nullptr));
+        jsonObj.id =
+            "obj_" + std::to_string(rand() % 9000 + 1000) + "_" + std::to_string(time(nullptr));
 
         // Set shape-specific properties for non-model objects
         switch (obj.GetObjectType())
         {
-            case 1: // Sphere
-                jsonObj.radiusSphere = obj.GetSphereRadius();
-                break;
-            case 2: // Cylinder
-                jsonObj.radiusH = obj.GetScale().x;
-                jsonObj.radiusV = obj.GetScale().y;
-                break;
-            case 3: // Plane
-                jsonObj.size = obj.GetPlaneSize();
-                break;
+        case 1: // Sphere
+            jsonObj.radiusSphere = obj.GetSphereRadius();
+            break;
+        case 2: // Cylinder
+            jsonObj.radiusH = obj.GetScale().x;
+            jsonObj.radiusV = obj.GetScale().y;
+            break;
+        case 3: // Plane
+            jsonObj.size = obj.GetPlaneSize();
+            break;
         }
 
         jsonObjects.push_back(jsonObj);
@@ -276,7 +279,8 @@ void Editor::ExportMapForGame(const std::string &filename)
     // Create metadata for models.json format
     MapMetadata metadata;
     metadata.version = "1.0";
-    metadata.name = m_currentlyLoadedMapFilePath.empty() ? "exported_map" : m_currentlyLoadedMapFilePath;
+    metadata.name =
+        m_currentlyLoadedMapFilePath.empty() ? "exported_map" : m_currentlyLoadedMapFilePath;
     metadata.displayName = "Exported Map";
     metadata.description = "Map exported from ChainedDecos Map Editor";
     metadata.author = "Map Editor";
@@ -308,7 +312,7 @@ void Editor::ExportMapAsJSON(const std::string &filename)
     // Convert MapObjects to JsonSerializableObjects for JSON export
     std::vector<JsonSerializableObject> jsonObjects;
 
-    for (const auto& obj : m_editorSceneObjects)
+    for (const auto &obj : m_editorSceneObjects)
     {
         JsonSerializableObject jsonObj;
 
@@ -322,21 +326,22 @@ void Editor::ExportMapAsJSON(const std::string &filename)
         jsonObj.visible = true; // Default to visible
         jsonObj.layer = "default";
         jsonObj.tags = "exported";
-        jsonObj.id = "obj_" + std::to_string(rand() % 9000 + 1000) + "_" + std::to_string(time(nullptr));
+        jsonObj.id =
+            "obj_" + std::to_string(rand() % 9000 + 1000) + "_" + std::to_string(time(nullptr));
 
         // Set shape-specific properties
         switch (obj.GetObjectType())
         {
-            case 1: // Sphere
-                jsonObj.radiusSphere = obj.GetSphereRadius();
-                break;
-            case 2: // Cylinder
-                jsonObj.radiusH = obj.GetScale().x;
-                jsonObj.radiusV = obj.GetScale().y;
-                break;
-            case 3: // Plane
-                jsonObj.size = obj.GetPlaneSize();
-                break;
+        case 1: // Sphere
+            jsonObj.radiusSphere = obj.GetSphereRadius();
+            break;
+        case 2: // Cylinder
+            jsonObj.radiusH = obj.GetScale().x;
+            jsonObj.radiusV = obj.GetScale().y;
+            break;
+        case 3: // Plane
+            jsonObj.size = obj.GetPlaneSize();
+            break;
         }
 
         jsonObjects.push_back(jsonObj);
@@ -345,7 +350,8 @@ void Editor::ExportMapAsJSON(const std::string &filename)
     // Create metadata
     MapMetadata metadata;
     metadata.version = "1.0";
-    metadata.name = m_currentlyLoadedMapFilePath.empty() ? "exported_map" : m_currentlyLoadedMapFilePath;
+    metadata.name =
+        m_currentlyLoadedMapFilePath.empty() ? "exported_map" : m_currentlyLoadedMapFilePath;
     metadata.displayName = "Exported Map";
     metadata.description = "Map exported from ChainedDecos Map Editor as JSON";
     metadata.author = "Map Editor";
@@ -354,7 +360,7 @@ void Editor::ExportMapAsJSON(const std::string &filename)
     metadata.skyColor = SKYBLUE;
     metadata.groundColor = DARKGREEN;
     metadata.difficulty = 1.0f;
-    metadata.createdDate = "2024-01-01T00:00:00Z"; // Default timestamp
+    metadata.createdDate = "2024-01-01T00:00:00Z";  // Default timestamp
     metadata.modifiedDate = "2024-01-01T00:00:00Z"; // Default timestamp
     metadata.worldBounds = {100.0f, 100.0f, 100.0f};
     metadata.backgroundColor = {50, 50, 50, 255};
@@ -385,6 +391,22 @@ void Editor::RenderImGuiObjectPanel()
     bool objectPanelOpen = true;
     if (ImGui::Begin("Objects##foo1", &objectPanelOpen, windowFlags))
     {
+        ImVec2 pos = ImGui::GetWindowPos();
+        ImVec2 size = ImGui::GetWindowSize();
+        ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+
+        // Clamp X/Y so window stays fully visible
+        if (pos.x < 0)
+            pos.x = 0;
+        if (pos.y < 0)
+            pos.y = 0;
+        if (pos.x + size.x > displaySize.x)
+            pos.x = displaySize.x - size.x;
+        if (pos.y + size.y > displaySize.y)
+            pos.y = displaySize.y - size.y;
+
+        // Apply corrected position
+        ImGui::SetWindowPos(pos);
 
         if (ImGui::Button("Add Object"))
         {
@@ -481,8 +503,8 @@ void Editor::RenderObject(MapObject &obj)
         DrawPlane(obj.GetPosition(), obj.GetPlaneSize(), drawColor);
         break;
     case 4:
-        DrawEllipse(obj.GetPosition().x, obj.GetPosition().y, obj.GetHorizontalRadius(), obj.GetVerticalRadius(),
-                    drawColor);
+        DrawEllipse(obj.GetPosition().x, obj.GetPosition().y, obj.GetHorizontalRadius(),
+                    obj.GetVerticalRadius(), drawColor);
         break;
     case 5: // 3D Model
         if (!obj.GetModelAssetName().empty())
@@ -554,6 +576,23 @@ void Editor::RenderImGuiToolbar()
         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
         ImGui::Text("Map Editor Tools");
         ImGui::PopFont();
+
+        ImVec2 pos = ImGui::GetWindowPos();
+        ImVec2 size = ImGui::GetWindowSize();
+        ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+
+        // Clamp X/Y so window stays fully visible
+        if (pos.x < 0)
+            pos.x = 0;
+        if (pos.y < 0)
+            pos.y = 0;
+        if (pos.x + size.x > displaySize.x)
+            pos.x = displaySize.x - size.x;
+        if (pos.y + size.y > displaySize.y)
+            pos.y = displaySize.y - size.y;
+
+        // Apply corrected position
+        ImGui::SetWindowPos(pos);
 
         ImGui::Separator();
 
@@ -627,8 +666,6 @@ void Editor::RenderImGuiToolbar()
             m_newFileNameInput = "exported_map.json";
             RefreshDirectoryItems();
         }
-
-        ImGui::Separator();
         ImGui::SameLine();
         if (ImGui::Button("Generate Parkour Map"))
         {
@@ -656,7 +693,7 @@ void Editor::RenderImGuiToolbar()
                     std::string tooltip = "";
 
                     // Look up model info if available
-                    for (const auto& modelInfo : m_availableModels)
+                    for (const auto &modelInfo : m_availableModels)
                     {
                         if (modelInfo.name == modelName)
                         {
@@ -694,15 +731,13 @@ void Editor::RenderImGuiToolbar()
         ImGui::SameLine();
         ImGui::Checkbox("Show Properties", &m_displayPropertiesPanel);
         ImGui::SameLine();
-        if(ImGui::SliderInt("Increase/Decrease editor grid" , &m_gridSizes , 50 , 600))
+        if (ImGui::SliderInt("Increase/Decrease editor grid", &m_gridSizes, 50, 900))
         {
-            if(m_gridSizes < 50)
+            if (m_gridSizes < 50)
             {
                 m_gridSizes = 50;
             }
         }
-
-        // TraceLog(LOG_INFO, TextFormat("Current Tool: %d", m_activeEditorTool));
     }
 
     if (m_pendingObjectCreation)
@@ -727,7 +762,8 @@ void Editor::RenderImGuiToolbar()
 
             newObj.SetObjectType(5);
             newObj.SetModelAssetName(m_currentlySelectedModelName);
-            newObj.SetObjectName(m_currentlySelectedModelName + " " + std::to_string(m_editorSceneObjects.size()));
+            newObj.SetObjectName(m_currentlySelectedModelName + " " +
+                                 std::to_string(m_editorSceneObjects.size()));
             break;
         default:
             break;
@@ -790,7 +826,8 @@ void Editor::PickObject()
 
 void Editor::RenderImGuiPropertiesPanel()
 {
-    if (m_currentlySelectedObjectIndex < 0 || m_currentlySelectedObjectIndex >= m_editorSceneObjects.size())
+    if (m_currentlySelectedObjectIndex < 0 ||
+        m_currentlySelectedObjectIndex >= m_editorSceneObjects.size())
         return;
 
     MapObject &obj = m_editorSceneObjects[m_currentlySelectedObjectIndex];
@@ -899,7 +936,7 @@ void Editor::RenderImGuiPropertiesPanel()
                     std::string tooltip = "";
 
                     // Look up model info if available
-                    for (const auto& modelInfo : m_availableModels)
+                    for (const auto &modelInfo : m_availableModels)
                     {
                         if (modelInfo.name == modelName)
                         {
@@ -931,7 +968,7 @@ void Editor::RenderImGuiPropertiesPanel()
             }
 
             // Show model info if available
-            for (const auto& modelInfo : m_availableModels)
+            for (const auto &modelInfo : m_availableModels)
             {
                 if (modelInfo.name == obj.GetModelAssetName())
                 {
@@ -1026,25 +1063,29 @@ void Editor::EnsureModelsLoaded()
 
             if (!models.empty())
             {
-                TraceLog(LOG_INFO, "Editor::EnsureModelsLoaded() - Found %d models in resources directory", models.size());
+                TraceLog(LOG_INFO,
+                         "Editor::EnsureModelsLoaded() - Found %d models in resources directory",
+                         models.size());
 
                 // Load each model found in the directory
-                for (const auto& modelInfo : models)
+                for (const auto &modelInfo : models)
                 {
                     try
                     {
                         // Fix double path issue - modelInfo.path already contains leading slash
                         std::string modelPath = modelInfo.path;
-                     
-                        TraceLog(LOG_INFO, "Editor::EnsureModelsLoaded() - Loading model: %s from %s",
+
+                        TraceLog(LOG_INFO,
+                                 "Editor::EnsureModelsLoaded() - Loading model: %s from %s",
                                  modelInfo.name.c_str(), modelPath.c_str());
 
                         // Load the model using the existing model loading system
                         m_modelAssetManager->LoadSingleModel(modelInfo.name, modelPath, true);
                     }
-                    catch (const std::exception& modelException)
+                    catch (const std::exception &modelException)
                     {
-                        TraceLog(LOG_WARNING, "Editor::EnsureModelsLoaded() - Failed to load model %s: %s",
+                        TraceLog(LOG_WARNING,
+                                 "Editor::EnsureModelsLoaded() - Failed to load model %s: %s",
                                  modelInfo.name.c_str(), modelException.what());
                     }
                 }
@@ -1053,7 +1094,8 @@ void Editor::EnsureModelsLoaded()
             }
             else
             {
-                TraceLog(LOG_WARNING, "Editor::EnsureModelsLoaded() - No models found in resources directory");
+                TraceLog(LOG_WARNING,
+                         "Editor::EnsureModelsLoaded() - No models found in resources directory");
                 loadSuccess = false;
             }
         }
@@ -1068,7 +1110,7 @@ void Editor::EnsureModelsLoaded()
             try
             {
                 m_availableModelNamesList = m_modelAssetManager->GetAvailableModels();
-                m_availableModels = models;  // Store detailed model information
+                m_availableModels = models; // Store detailed model information
                 m_modelsInitialized = true;
                 TraceLog(LOG_INFO, "Models loaded successfully! Available models: %zu",
                          m_availableModelNamesList.size());
@@ -1086,7 +1128,6 @@ void Editor::EnsureModelsLoaded()
         {
             // Complete failure - use fallback
             TraceLog(LOG_WARNING, "Models failed to load, using fallback model list");
-            m_availableModelNamesList = {"arc"};
             // Don't set m_modelsInitialized to true, so we can retry later
         }
     }
@@ -1100,7 +1141,8 @@ Model *Editor::GetModelSafe(const std::string &modelName)
     }
 
     // Check if model exists in available models list first
-    auto it = std::find(m_availableModelNamesList.begin(), m_availableModelNamesList.end(), modelName);
+    auto it =
+        std::find(m_availableModelNamesList.begin(), m_availableModelNamesList.end(), modelName);
     if (it == m_availableModelNamesList.end())
     {
         TraceLog(LOG_WARNING, "Model '%s' not found in available models list", modelName.c_str());
@@ -1255,14 +1297,14 @@ void Editor::NavigateToDirectory(const std::string &path)
 
 void Editor::RenderFileDialog()
 {
-    nfdu8filteritem_t filters[] = { { "Maps (json format)", "json" } };
-    nfdu8char_t* outPath = nullptr;
+    nfdu8filteritem_t filters[] = {{"Maps (json format)", "json"}};
+    nfdu8char_t *outPath = nullptr;
     nfdresult_t result;
 
     if (m_isFileLoadDialog)
         result = NFD_OpenDialogU8(&outPath, filters, 1, nullptr);
     else
-        result = NFD_SaveDialogU8(&outPath, filters, 1, nullptr , "exported_map");
+        result = NFD_SaveDialogU8(&outPath, filters, 1, nullptr, "exported_map");
 
     if (result == NFD_OKAY && outPath)
     {
@@ -1275,13 +1317,12 @@ void Editor::RenderFileDialog()
 
         m_currentlyLoadedMapFilePath = std::move(path);
 
-        NFD_FreePathU8(outPath); 
+        NFD_FreePathU8(outPath);
     }
     else if (result == NFD_ERROR)
     {
         std::cerr << "NFD error: " << NFD_GetError() << std::endl;
     }
-
 
     m_displayFileDialog = false;
     m_isFileLoadDialog = false;
@@ -1296,8 +1337,9 @@ void Editor::RenderParkourMapDialog()
     if (m_displayParkourMapDialog)
     {
         ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() * 0.5f - 250, GetScreenHeight() * 0.5f - 200),
-                               ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(
+            ImVec2(GetScreenWidth() * 0.5f - 250, GetScreenHeight() * 0.5f - 200),
+            ImGuiCond_FirstUseEver);
 
         if (ImGui::Begin("Parkour Maps", &m_displayParkourMapDialog, ImGuiWindowFlags_NoCollapse))
         {
@@ -1307,10 +1349,11 @@ void Editor::RenderParkourMapDialog()
             // List all available parkour maps
             for (int i = 0; i < m_availableParkourMaps.size(); i++)
             {
-                const auto& gameMap = m_availableParkourMaps[i];
+                const auto &gameMap = m_availableParkourMaps[i];
 
                 char buffer[256];
-                snprintf(buffer, sizeof(buffer), "%s (%.1f/5.0)", gameMap.metadata.displayName.c_str(), gameMap.metadata.difficulty);
+                snprintf(buffer, sizeof(buffer), "%s (%.1f/5.0)",
+                         gameMap.metadata.displayName.c_str(), gameMap.metadata.difficulty);
                 if (ImGui::Selectable(buffer, m_currentlySelectedParkourMapIndex == i))
                 {
                     m_currentlySelectedParkourMapIndex = i;
@@ -1331,9 +1374,11 @@ void Editor::RenderParkourMapDialog()
             // Action buttons
             if (ImGui::Button("Load Selected Map", ImVec2(150, 30)))
             {
-                if (m_currentlySelectedParkourMapIndex >= 0 && m_currentlySelectedParkourMapIndex < m_availableParkourMaps.size())
+                if (m_currentlySelectedParkourMapIndex >= 0 &&
+                    m_currentlySelectedParkourMapIndex < m_availableParkourMaps.size())
                 {
-                    LoadParkourMap(m_availableParkourMaps[m_currentlySelectedParkourMapIndex].metadata.name);
+                    LoadParkourMap(
+                        m_availableParkourMaps[m_currentlySelectedParkourMapIndex].metadata.name);
                     m_displayParkourMapDialog = false;
                 }
             }
@@ -1345,9 +1390,11 @@ void Editor::RenderParkourMapDialog()
             }
 
             // Show selected map details
-            if (m_currentlySelectedParkourMapIndex >= 0 && m_currentlySelectedParkourMapIndex < m_availableParkourMaps.size())
+            if (m_currentlySelectedParkourMapIndex >= 0 &&
+                m_currentlySelectedParkourMapIndex < m_availableParkourMaps.size())
             {
-                const auto& selectedGameMap = m_availableParkourMaps[m_currentlySelectedParkourMapIndex];
+                const auto &selectedGameMap =
+                    m_availableParkourMaps[m_currentlySelectedParkourMapIndex];
                 ImGui::Separator();
                 ImGui::Text("Selected Map Details:");
                 ImGui::Text("Name: %s", selectedGameMap.metadata.displayName.c_str());
@@ -1355,16 +1402,18 @@ void Editor::RenderParkourMapDialog()
                 ImGui::Text("Difficulty: %.1f/5.0", selectedGameMap.metadata.difficulty);
                 ImGui::Text("Elements: %zu", selectedGameMap.objects.size());
                 ImGui::Text("Start: (%.1f, %.1f, %.1f)", selectedGameMap.metadata.startPosition.x,
-                           selectedGameMap.metadata.startPosition.y, selectedGameMap.metadata.startPosition.z);
+                            selectedGameMap.metadata.startPosition.y,
+                            selectedGameMap.metadata.startPosition.z);
                 ImGui::Text("End: (%.1f, %.1f, %.1f)", selectedGameMap.metadata.endPosition.x,
-                           selectedGameMap.metadata.endPosition.y, selectedGameMap.metadata.endPosition.z);
+                            selectedGameMap.metadata.endPosition.y,
+                            selectedGameMap.metadata.endPosition.z);
             }
         }
         ImGui::End();
     }
 }
 
-void Editor::LoadParkourMap(const std::string& mapName)
+void Editor::LoadParkourMap(const std::string &mapName)
 {
     // Load the map from JSON
     MapLoader loader;
@@ -1376,7 +1425,7 @@ void Editor::LoadParkourMap(const std::string& mapName)
     m_currentlySelectedObjectIndex = -1;
 
     // Convert GameMap objects to MapObjects
-    for (const auto& object : gameMap.objects)
+    for (const auto &object : gameMap.objects)
     {
         MapObject obj;
 
@@ -1388,43 +1437,41 @@ void Editor::LoadParkourMap(const std::string& mapName)
         // Convert MapObjectType to MapObject type
         switch (object.type)
         {
-            case MapObjectType::CUBE:
-                obj.SetObjectType(0); // Cube
-                obj.SetScale(object.scale);
-                break;
-            case MapObjectType::SPHERE:
-                obj.SetObjectType(1); // Sphere
-                obj.SetSphereRadius(object.radius);
-                break;
-            case MapObjectType::CYLINDER:
-                obj.SetObjectType(2); // Cylinder
-                obj.SetScale(object.scale);
-                break;
-            case MapObjectType::PLANE:
-                obj.SetObjectType(3); // Plane
-                obj.SetPlaneSize(object.size);
-                break;
-            case MapObjectType::MODEL:
-                obj.SetObjectType(5); // Model
-                obj.SetModelAssetName(object.modelName);
-                obj.SetScale(object.scale);
-                break;
-            case MapObjectType::LIGHT:
-                obj.SetObjectType(0); // Use cube as approximation
-                obj.SetScale(object.scale);
-                break;
+        case MapObjectType::CUBE:
+            obj.SetObjectType(0); // Cube
+            obj.SetScale(object.scale);
+            break;
+        case MapObjectType::SPHERE:
+            obj.SetObjectType(1); // Sphere
+            obj.SetSphereRadius(object.radius);
+            break;
+        case MapObjectType::CYLINDER:
+            obj.SetObjectType(2); // Cylinder
+            obj.SetScale(object.scale);
+            break;
+        case MapObjectType::PLANE:
+            obj.SetObjectType(3); // Plane
+            obj.SetPlaneSize(object.size);
+            break;
+        case MapObjectType::MODEL:
+            obj.SetObjectType(5); // Model
+            obj.SetModelAssetName(object.modelName);
+            obj.SetScale(object.scale);
+            break;
+        case MapObjectType::LIGHT:
+            obj.SetObjectType(0); // Use cube as approximation
+            obj.SetScale(object.scale);
+            break;
         }
 
         m_editorSceneObjects.push_back(obj);
     }
 
-    TraceLog(LOG_INFO, "Loaded parkour map '%s' with %d elements", mapName.c_str(), m_editorSceneObjects.size());
+    TraceLog(LOG_INFO, "Loaded parkour map '%s' with %d elements", mapName.c_str(),
+             m_editorSceneObjects.size());
 }
 
-void Editor::GenerateParkourMap(const std::string& mapName)
-{
-    LoadParkourMap(mapName);
-}
+void Editor::GenerateParkourMap(const std::string &mapName) { LoadParkourMap(mapName); }
 
 void Editor::ShowParkourMapSelector()
 {
@@ -1434,4 +1481,3 @@ void Editor::ShowParkourMapSelector()
     m_currentlySelectedParkourMapIndex = 0;
     m_displayParkourMapDialog = true;
 }
-
