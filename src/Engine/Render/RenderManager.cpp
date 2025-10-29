@@ -120,9 +120,9 @@ void RenderManager::EndFrame() { EndDrawing(); }
 void RenderManager::RenderGame(IRenderable &renderable, const ModelLoader &models,
                                 const CollisionManager &collisionManager, bool showCollisionDebug)
 {
-    // Begin 3D rendering
-    BeginMode3D(renderable.GetCamera());
-
+    // NOTE: BeginMode3D/EndMode3D are now handled by Game::RenderGameWorld()
+    // to allow RenderEditorMap() to be called inside the 3D context
+    
     // Draw 3D scene
     DrawScene3D(models);
     DrawPlayer(renderable, models);
@@ -136,9 +136,6 @@ void RenderManager::RenderGame(IRenderable &renderable, const ModelLoader &model
         RenderCollisionDebug(collisionManager, renderable);
         m_forceCollisionDebugNextFrame = false;
     }
-
-    // End 3D rendering
-    EndMode3D();
 }
 
 void RenderManager::RenderMenu(IRenderable &renderable)
