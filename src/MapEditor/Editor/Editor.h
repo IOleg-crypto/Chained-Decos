@@ -118,10 +118,7 @@ private:
     void RenderFileDialog();                            // Render file dialog
     void RefreshDirectoryItems();                       // Refresh current directory items
     void NavigateToDirectory(const std::string &path);  // Navigate to directory
-    //void AddFolder();                                   // Add folder in file dialog
-    //void DeleteFolder(const std::string &selectedItem); // Delete selected file or folder
-    //void RenderDeleteConfirmDialog();                   // Render delete confirmation dialog
-    //void RenderNewFolderDialog();                       // Render new folder dialog
+    
 };
 
 #endif // EDITOR_H
