@@ -393,12 +393,17 @@ void Game::InitCollisions()
 {
     TraceLog(LOG_INFO, "Game::InitCollisions() - Initializing collision system...");
 
-    // Clear existing colliders if any
+    // Only clear existing colliders if no custom map is loaded
+    // If map is loaded, LoadEditorMap() has already created colliders for map objects
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
-    if (previousColliderCount > 0)
+    if (previousColliderCount > 0 && m_gameMap.objects.empty())
     {
-        TraceLog(LOG_INFO, "Game::InitCollisions() - Clearing %zu existing colliders", previousColliderCount);
+        TraceLog(LOG_INFO, "Game::InitCollisions() - Clearing %zu existing colliders (no map loaded)", previousColliderCount);
         m_collisionManager->ClearColliders();
+    }
+    else if (previousColliderCount > 0 && !m_gameMap.objects.empty())
+    {
+        TraceLog(LOG_INFO, "Game::InitCollisions() - Map loaded with %zu existing colliders, preserving them", previousColliderCount);
     }
 
     // Only create artificial ground if we don't have a custom map with its own ground
@@ -465,16 +470,17 @@ void Game::InitCollisionsWithModels(const std::vector<std::string>& requiredMode
 {
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Initializing collision system with %d required models...", requiredModels.size());
 
-    // Clear existing colliders if any
+    // Only clear existing colliders if no custom map is loaded
+    // If map is loaded, LoadEditorMap() has already created colliders for map objects
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
-    if (previousColliderCount > 0)
+    if (previousColliderCount > 0 && m_gameMap.objects.empty())
     {
-        TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Clearing %zu existing colliders", previousColliderCount);
+        TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Clearing %zu existing colliders (no map loaded)", previousColliderCount);
         m_collisionManager->ClearColliders();
     }
-    else
+    else if (previousColliderCount > 0 && !m_gameMap.objects.empty())
     {
-        TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Custom map loaded, using map's ground objects");
+        TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Map loaded with %zu existing colliders, preserving them", previousColliderCount);
     }
 
     // Create parkour map based on menu selection
@@ -528,12 +534,17 @@ bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string>& required
 {
     TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Initializing collision system with %d required models...", requiredModels.size());
 
-    // Clear existing colliders if any
+    // Only clear existing colliders if no custom map is loaded
+    // If map is loaded, LoadEditorMap() has already created colliders for map objects
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
-    if (previousColliderCount > 0)
+    if (previousColliderCount > 0 && m_gameMap.objects.empty())
     {
-        TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Clearing %zu existing colliders", previousColliderCount);
+        TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Clearing %zu existing colliders (no map loaded)", previousColliderCount);
         m_collisionManager->ClearColliders();
+    }
+    else if (previousColliderCount > 0 && !m_gameMap.objects.empty())
+    {
+        TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Map loaded with %zu existing colliders, preserving them", previousColliderCount);
     }
 
     // Initialize collision manager
@@ -1669,10 +1680,17 @@ void Game::RenderGameWorld() {
         return;
     }
 
+    // Get camera from player
+    Camera camera = m_player->GetCamera();
+    
+    // Begin 3D rendering
+    BeginMode3D(camera);
+    
+    // Render game world (models, player, etc.)
     m_engine->GetRenderManager()->RenderGame(*m_player, *m_models, *m_collisionManager,
                                                m_engine->IsCollisionDebugVisible());
 
-    // Render editor-created map if available
+    // Render editor-created map if available - MUST be inside 3D context
     if (!m_gameMap.objects.empty())
     {
         TraceLog(LOG_INFO, "Game::RenderGameWorld() - Rendering map with %d objects", m_gameMap.objects.size());
@@ -1682,6 +1700,9 @@ void Game::RenderGameWorld() {
     {
         TraceLog(LOG_WARNING, "Game::RenderGameWorld() - No map objects to render (m_gameMap.objects.empty())");
     }
+    
+    // End 3D rendering
+    EndMode3D();
 }
 
 // ============================================================================
@@ -1764,6 +1785,7 @@ void Game::LoadEditorMap(const std::string& mapPath)
 
     // Clear previous map data
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Clearing previous map data...");
+    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Current collider count before map load: %zu", m_collisionManager->GetColliders().size());
     m_gameMap.Cleanup();
     m_gameMap = GameMap{};
 
@@ -1997,17 +2019,27 @@ void Game::LoadEditorMap(const std::string& mapPath)
         {
             case MapObjectType::SPHERE:
                 // For spheres, use radius for all dimensions
-                colliderSize = Vector3{object.radius, object.radius, object.radius};
+                {
+                    float radius = object.radius > 0.0f ? object.radius : 1.0f;
+                    colliderSize = Vector3{radius, radius, radius};
+                }
                 TraceLog(LOG_INFO, "Game::LoadEditorMap() - Sphere collision: size=(%.2f, %.2f, %.2f)", colliderSize.x, colliderSize.y, colliderSize.z);
                 break;
             case MapObjectType::CYLINDER:
                 // For cylinders, use radius for x/z and height for y
-                colliderSize = Vector3{object.radius, object.height, object.radius};
+                {
+                    float radius = object.radius > 0.0f ? object.radius : 1.0f;
+                    float height = object.height > 0.0f ? object.height : 2.0f;
+                    colliderSize = Vector3{radius, height, radius};
+                }
                 TraceLog(LOG_INFO, "Game::LoadEditorMap() - Cylinder collision: size=(%.2f, %.2f, %.2f)", colliderSize.x, colliderSize.y, colliderSize.z);
                 break;
             case MapObjectType::PLANE:
                 // For planes, use size for x/z and small height for y
                 colliderSize = Vector3{object.size.x, 0.1f, object.size.y};
+                // Fallback to default if size is zero
+                if (colliderSize.x == 0.0f) colliderSize.x = 5.0f;
+                if (colliderSize.z == 0.0f) colliderSize.z = 5.0f;
                 TraceLog(LOG_INFO, "Game::LoadEditorMap() - Plane collision: size=(%.2f, %.2f, %.2f)", colliderSize.x, colliderSize.y, colliderSize.z);
                 break;
             case MapObjectType::MODEL:
@@ -2022,14 +2054,29 @@ void Game::LoadEditorMap(const std::string& mapPath)
                 break;
         }
 
+        // Ensure colliderSize has valid non-zero dimensions
+        if (colliderSize.x == 0.0f) colliderSize.x = 1.0f;
+        if (colliderSize.y == 0.0f) colliderSize.y = 1.0f;
+        if (colliderSize.z == 0.0f) colliderSize.z = 1.0f;
+
+        // Validate final collider size
+        if (!std::isfinite(colliderSize.x) || !std::isfinite(colliderSize.y) || !std::isfinite(colliderSize.z))
+        {
+            TraceLog(LOG_WARNING, "Game::LoadEditorMap() - Object %d has invalid colliderSize after calculation, skipping collision", i);
+            continue;
+        }
+
+        TraceLog(LOG_INFO, "Game::LoadEditorMap() - Final colliderSize for object %d: (%.2f, %.2f, %.2f)", i, colliderSize.x, colliderSize.y, colliderSize.z);
+
         try
         {
             Collision collision(object.position, colliderSize);
             collision.SetCollisionType(CollisionType::AABB_ONLY);
             m_collisionManager->AddCollider(std::move(collision));
 
-            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f)",
-                     object.name.c_str(), object.position.x, object.position.y, object.position.z);
+            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f) with size (%.2f, %.2f, %.2f)",
+                     object.name.c_str(), object.position.x, object.position.y, object.position.z,
+                     colliderSize.x, colliderSize.y, colliderSize.z);
         }
         catch (const std::exception& e)
         {
@@ -2048,6 +2095,7 @@ void Game::LoadEditorMap(const std::string& mapPath)
     }
 
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded map with %d objects", m_gameMap.objects.size());
+    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Final collider count after creating collisions: %zu", m_collisionManager->GetColliders().size());
     
     // Log object types breakdown
     int modelObjects = 0, cubeObjects = 0, otherObjects = 0;
