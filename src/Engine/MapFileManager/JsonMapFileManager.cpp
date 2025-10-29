@@ -594,6 +594,20 @@ size_t JsonMapFileManager::FindMatchingBrace(const std::string& json, size_t sta
     return std::string::npos;
 }
 
+static Vector3 ParseVector3Obj(const std::string& json) {
+    Vector3 out = {0,0,0};
+    size_t x = json.find("\"x\"");
+    size_t y = json.find("\"y\"");
+    size_t z = json.find("\"z\"");
+    if (x != std::string::npos)
+        out.x = std::stof(json.substr(json.find(":", x)+1));
+    if (y != std::string::npos)
+        out.y = std::stof(json.substr(json.find(":", y)+1));
+    if (z != std::string::npos)
+        out.z = std::stof(json.substr(json.find(":", z)+1));
+    return out;
+}
+
 void JsonMapFileManager::ParseObject(const std::string& json, JsonSerializableObject& obj)
 {
     // Parse basic fields
@@ -610,40 +624,65 @@ void JsonMapFileManager::ParseObject(const std::string& json, JsonSerializableOb
     obj.radiusV = ParseFloatField(json, "\"radiusV\"");
     obj.radiusSphere = ParseFloatField(json, "\"radiusSphere\"");
 
-    // Parse vectors and colors
+    // Parse position
     size_t pos = json.find("\"position\"");
     if (pos != std::string::npos)
     {
-        pos = json.find("[", pos);
-        size_t end = json.find("]", pos);
-        if (pos != std::string::npos && end != std::string::npos)
-        {
-            std::string vecStr = json.substr(pos, end - pos + 1);
-            obj.position = ParseVector3(vecStr);
+        // об'єктний стиль
+        size_t brace = json.find("{", pos);
+        if (brace != std::string::npos) {
+            size_t braceEnd = json.find("}", brace);
+            if (braceEnd != std::string::npos) {
+                std::string objStr = json.substr(brace, braceEnd - brace + 1);
+                obj.position = ParseVector3Obj(objStr);
+            }
+        } else { // фолбек на масив
+            pos = json.find("[", pos);
+            size_t end = json.find("]", pos);
+            if (pos != std::string::npos && end != std::string::npos) {
+                std::string vecStr = json.substr(pos, end - pos + 1);
+                obj.position = ParseVector3(vecStr);
+            }
         }
     }
-
+    // Parse scale
     pos = json.find("\"scale\"");
     if (pos != std::string::npos)
     {
-        pos = json.find("[", pos);
-        size_t end = json.find("]", pos);
-        if (pos != std::string::npos && end != std::string::npos)
-        {
-            std::string vecStr = json.substr(pos, end - pos + 1);
-            obj.scale = ParseVector3(vecStr);
+        size_t brace = json.find("{", pos);
+        if (brace != std::string::npos) {
+            size_t braceEnd = json.find("}", brace);
+            if (braceEnd != std::string::npos) {
+                std::string objStr = json.substr(brace, braceEnd - brace + 1);
+                obj.scale = ParseVector3Obj(objStr);
+            }
+        } else {
+            pos = json.find("[", pos);
+            size_t end = json.find("]", pos);
+            if (pos != std::string::npos && end != std::string::npos) {
+                std::string vecStr = json.substr(pos, end - pos + 1);
+                obj.scale = ParseVector3(vecStr);
+            }
         }
     }
-
+    // Parse rotation
     pos = json.find("\"rotation\"");
     if (pos != std::string::npos)
     {
-        pos = json.find("[", pos);
-        size_t end = json.find("]", pos);
-        if (pos != std::string::npos && end != std::string::npos)
-        {
-            std::string vecStr = json.substr(pos, end - pos + 1);
-            obj.rotation = ParseVector3(vecStr);
+        size_t brace = json.find("{", pos);
+        if (brace != std::string::npos) {
+            size_t braceEnd = json.find("}", brace);
+            if (braceEnd != std::string::npos) {
+                std::string objStr = json.substr(brace, braceEnd - brace + 1);
+                obj.rotation = ParseVector3Obj(objStr);
+            }
+        } else {
+            pos = json.find("[", pos);
+            size_t end = json.find("]", pos);
+            if (pos != std::string::npos && end != std::string::npos) {
+                std::string vecStr = json.substr(pos, end - pos + 1);
+                obj.rotation = ParseVector3(vecStr);
+            }
         }
     }
 
@@ -662,13 +701,44 @@ void JsonMapFileManager::ParseObject(const std::string& json, JsonSerializableOb
     pos = json.find("\"size\"");
     if (pos != std::string::npos)
     {
-        pos = json.find("[", pos);
-        size_t end = json.find("]", pos);
-        if (pos != std::string::npos && end != std::string::npos)
-        {
-            std::string sizeStr = json.substr(pos, end - pos + 1);
-            obj.size = ParseVector2(sizeStr);
+        // Try object format first {x: ..., y: ...}
+        size_t brace = json.find("{", pos);
+        if (brace != std::string::npos) {
+            size_t braceEnd = json.find("}", brace);
+            if (braceEnd != std::string::npos) {
+                std::string objStr = json.substr(brace, braceEnd - brace + 1);
+                Vector2 vec2 = {0, 0};
+                size_t x = objStr.find("\"x\"");
+                size_t y = objStr.find("\"y\"");
+                if (x != std::string::npos)
+                    vec2.x = std::stof(objStr.substr(objStr.find(":", x)+1));
+                if (y != std::string::npos)
+                    vec2.y = std::stof(objStr.substr(objStr.find(":", y)+1));
+                obj.size = vec2;
+            }
+        } else {
+            // Fallback to array format [x, y]
+            pos = json.find("[", pos);
+            size_t end = json.find("]", pos);
+            if (pos != std::string::npos && end != std::string::npos)
+            {
+                std::string sizeStr = json.substr(pos, end - pos + 1);
+                obj.size = ParseVector2(sizeStr);
+            }
         }
+    }
+
+    // Also parse "radius" and "height" fields for compatibility with exported maps
+    float radius = ParseFloatField(json, "\"radius\"");
+    if (radius > 0.0f && obj.radiusSphere == 0.0f)
+    {
+        obj.radiusSphere = radius;
+    }
+    
+    float height = ParseFloatField(json, "\"height\"");
+    if (height > 0.0f && obj.radiusV == 0.0f)
+    {
+        obj.radiusV = height;
     }
 }
 
