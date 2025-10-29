@@ -76,6 +76,9 @@ void Application::Init() const
     colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
     colors[ImGuiCol_TitleBgActive] = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
     colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+
+    // After window and context are ready, preload models for the editor UI
+    m_editor->PreloadModelsFromResources();
 }
 
 void Application::Run() const

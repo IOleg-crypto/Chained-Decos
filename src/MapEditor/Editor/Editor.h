@@ -54,6 +54,9 @@ public:
     void RenderImGui(); // Render ImGui interface
     void HandleInput(); // Handle user input
 
+    // Assets
+    void PreloadModelsFromResources();
+
     // Object management functions (delegate to SceneManager)
     void AddObject(const MapObject &obj); // Add new object to scene
     void RemoveObject(int index);         // Remove object by index

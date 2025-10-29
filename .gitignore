@@ -51,5 +51,11 @@ _deps
 build/
 cmake-build-*/
 
+.cmake
+.cache
+.zencoder
+.idea
+Testing
+
 
 
