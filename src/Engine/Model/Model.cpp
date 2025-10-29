@@ -374,13 +374,59 @@ void ModelLoader::DrawAllModels() const
 
 std::optional<std::reference_wrapper<Model>> ModelLoader::GetModelByName(const std::string &name)
 {
-    const auto it = m_modelByName.find(name);
-    if (it == m_modelByName.end())
+    // 1) Exact match
+    auto it = m_modelByName.find(name);
+    if (it != m_modelByName.end())
     {
-        TraceLog(LOG_WARNING, "Model name '%s' not found.", name.c_str());
-        return std::nullopt;
+        return std::ref(*it->second);
     }
-    return std::ref(*it->second);
+
+    // 2) Try filename stem if a full path or filename with extension was provided
+    std::string candidate = name;
+    // Extract filename if path-like
+    const size_t slashPos = candidate.find_last_of("/\\");
+    if (slashPos != std::string::npos)
+    {
+        candidate = candidate.substr(slashPos + 1);
+    }
+    // Strip extension
+    const size_t dotPos = candidate.find_last_of('.');
+    if (dotPos != std::string::npos)
+    {
+        candidate = candidate.substr(0, dotPos);
+    }
+    it = m_modelByName.find(candidate);
+    if (it != m_modelByName.end())
+    {
+        return std::ref(*it->second);
+    }
+
+    // 3) Case-insensitive match (lowercase both sides)
+    auto toLower = [](std::string s) {
+        std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return s;
+    };
+
+    const std::string nameLower = toLower(name);
+    for (auto &pair : m_modelByName)
+    {
+        if (toLower(pair.first) == nameLower)
+        {
+            return std::ref(*pair.second);
+        }
+    }
+
+    const std::string candLower = toLower(candidate);
+    for (auto &pair : m_modelByName)
+    {
+        if (toLower(pair.first) == candLower)
+        {
+            return std::ref(*pair.second);
+        }
+    }
+
+    TraceLog(LOG_WARNING, "Model name '%s' not found (after normalization attempts).", name.c_str());
+    return std::nullopt;
 }
 
 void ModelLoader::AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,

@@ -150,6 +150,33 @@ void Game::Init(int argc, char* argv[])
 
     m_isGameInitialized = true;
     TraceLog(LOG_INFO, "Game::Init() - Game components initialized.");
+
+    // Auto-load a default editor map if none is loaded yet
+    try
+    {
+        if (m_gameMap.objects.empty())
+        {
+            std::string mapsDir = std::string(PROJECT_ROOT_DIR) + std::string("/resources/maps");
+            TraceLog(LOG_INFO, "Game::Init() - Attempting to auto-load editor map from %s", mapsDir.c_str());
+            if (std::filesystem::exists(mapsDir))
+            {
+                for (const auto &entry : std::filesystem::directory_iterator(mapsDir))
+                {
+                    if (entry.is_regular_file() && entry.path().extension() == ".json")
+                    {
+                        std::string mapPath = entry.path().string();
+                        TraceLog(LOG_INFO, "Game::Init() - Auto-loading editor map: %s", mapPath.c_str());
+                        LoadEditorMap(mapPath);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_WARNING, "Game::Init() - Auto-load editor map failed: %s", e.what());
+    }
 }
 
 void Game::Run()
@@ -1648,7 +1675,12 @@ void Game::RenderGameWorld() {
     // Render editor-created map if available
     if (!m_gameMap.objects.empty())
     {
+        TraceLog(LOG_INFO, "Game::RenderGameWorld() - Rendering map with %d objects", m_gameMap.objects.size());
         RenderEditorMap();
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "Game::RenderGameWorld() - No map objects to render (m_gameMap.objects.empty())");
     }
 }
 
@@ -1771,6 +1803,29 @@ void Game::LoadEditorMap(const std::string& mapPath)
             od.size = eo.size;
             od.isPlatform = true;
             od.isObstacle = false;
+
+            // Sanitize values coming from editor JSON to avoid NaN/Inf propagating to render
+            auto sanitizeVec3 = [](Vector3 v) {
+                if (!std::isfinite(v.x)) v.x = 0.0f;
+                if (!std::isfinite(v.y)) v.y = 0.0f;
+                if (!std::isfinite(v.z)) v.z = 0.0f;
+                return v;
+            };
+            auto sanitizeFloat = [](float f, float fallback) {
+                return std::isfinite(f) ? f : fallback;
+            };
+
+            od.position = sanitizeVec3(od.position);
+            od.rotation = sanitizeVec3(od.rotation);
+            od.scale = sanitizeVec3(od.scale);
+            if (od.scale.x == 0.0f && od.scale.y == 0.0f && od.scale.z == 0.0f)
+            {
+                od.scale = {1.0f, 1.0f, 1.0f};
+            }
+            od.radius = sanitizeFloat(od.radius, 1.0f);
+            od.height = sanitizeFloat(od.height, 1.0f);
+            if (!std::isfinite(od.size.x)) od.size.x = 0.0f;
+            if (!std::isfinite(od.size.y)) od.size.y = 0.0f;
 
             adapterMap.objects.push_back(od);
 
@@ -1993,6 +2048,16 @@ void Game::LoadEditorMap(const std::string& mapPath)
     }
 
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded map with %d objects", m_gameMap.objects.size());
+    
+    // Log object types breakdown
+    int modelObjects = 0, cubeObjects = 0, otherObjects = 0;
+    for (const auto &obj : m_gameMap.objects)
+    {
+        if (obj.type == MapObjectType::MODEL || obj.type == MapObjectType::LIGHT) modelObjects++;
+        else if (obj.type == MapObjectType::CUBE) cubeObjects++;
+        else otherObjects++;
+    }
+    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Object types: %d MODEL/LIGHT, %d CUBE, %d other", modelObjects, cubeObjects, otherObjects);
 
     // Dump diagnostics to help find why instances are not created
     DumpMapDiagnostics();
@@ -2029,15 +2094,15 @@ void Game::LoadEditorMap(const std::string& mapPath)
             std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx"};
             for (const auto& ext : extensions)
             {
-                possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + requested + ext);
-                possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + ext);
+                possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + requested + ext);
+                possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + stem + ext);
             }
         }
         else
         {
             // Extension provided, use as-is
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + requested);
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + extension);
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + requested);
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + stem + extension);
         }
         
         bool loaded = false;
@@ -2094,15 +2159,15 @@ void Game::LoadEditorMap(const std::string& mapPath)
                         std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx"};
                         for (const auto& ext : extensions)
                         {
-                            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + requested + ext);
-                            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + ext);
+                            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + requested + ext);
+                            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + stem + ext);
                         }
                     }
                     else
                     {
                         // Extension provided, use as-is
-                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + requested);
-                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + extension);
+                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + requested);
+                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + stem + extension);
                     }
                     
                     bool loaded = false;
