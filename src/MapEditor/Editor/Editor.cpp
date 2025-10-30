@@ -228,6 +228,7 @@ void Editor::LoadMap(const std::string &filename)
         std::vector<MapObject> objects;
         if (m_fileManager->LoadMap(filename, objects)) {
             // Clear and reload scene
+            
             m_sceneManager->ClearSelection();
             // Note: SceneManager doesn't have a ClearAll method, so we need to recreate it
             // For now, we'll assume the file manager handles scene clearing internally

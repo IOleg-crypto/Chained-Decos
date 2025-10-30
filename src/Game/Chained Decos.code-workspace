@@ -103,7 +103,8 @@
 			"stack": "cpp",
 			"typeindex": "cpp",
 			"expected": "cpp",
-			"source_location": "cpp"
+			"source_location": "cpp",
+			"*.m": "cpp"
 		}
 	}
 }
