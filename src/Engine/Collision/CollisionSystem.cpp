@@ -393,6 +393,8 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
 
 void Collision::BuildBVHFromTriangles()
 {
+    TraceLog(LOG_DEBUG, "Collision::BuildBVHFromTriangles() - Starting BVH build for collision object");
+
     if (m_triangles.empty())
     {
         TraceLog(LOG_DEBUG, "Collision::BuildBVHFromTriangles() - No triangles to build BVH");
@@ -411,6 +413,8 @@ void Collision::BuildBVHFromTriangles()
             validTriangles++;
         }
     }
+
+    TraceLog(LOG_DEBUG, "Collision::BuildBVHFromTriangles() - Found %zu valid triangles out of %zu total", validTriangles, m_triangles.size());
 
     if (validTriangles == 0)
     {
