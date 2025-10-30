@@ -1,14 +1,15 @@
 //
 // Created by I#Oleg.
 //
-#include "raylib.h"
 #include "Application.h"
 #include "Engine/CameraController/CameraController.h"
 #include "Engine/Model/Model.h"
+#include "GLFW/glfw3.h"
+#include "raylib.h"
+#define STB_IMAGE_IMPLEMENTATION
 
 Application::Application(int width, int height, std::unique_ptr<Editor> editor)
-    : m_width(width), m_height(height), m_windowName("ChainedEditor"),
-       m_editor(std::move(editor))
+    : m_width(width), m_height(height), m_windowName("ChainedEditor"), m_editor(std::move(editor))
 {
 }
 
@@ -45,7 +46,7 @@ void Application::Init() const
     io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
     io.Fonts->Build();
 
-    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.png");
+    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.jpg");
     ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
     SetWindowIcon(m_icon);
@@ -103,7 +104,7 @@ void Application::Run() const
         // Render 3D scene
         BeginMode3D(m_editor->GetCameraController()->GetCamera());
         m_editor->GetCameraController()->SetCameraMode(CAMERA_FREE); // As default
-        DrawGrid(m_editor->GetGridSize(), 1.0f); // Draw reference grid
+        DrawGrid(m_editor->GetGridSize(), 1.0f);                     // Draw reference grid
 
         // Render all editor objects
         m_editor->Render();

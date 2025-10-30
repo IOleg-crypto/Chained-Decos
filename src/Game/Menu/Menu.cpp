@@ -1254,7 +1254,7 @@ void Menu::ScanForJsonMaps()
     m_jsonMapsCount = 0;
 
     // Scan for JSON maps in the resources/maps directory
-    std::string mapsPath = "../resources/maps";
+    std::string mapsPath = PROJECT_ROOT_DIR "resources/maps";
 
     try
     {

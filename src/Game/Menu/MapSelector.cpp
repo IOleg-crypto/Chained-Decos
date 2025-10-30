@@ -639,15 +639,15 @@ void MapSelector::RenderMapSelectionWindow() {
     // Log final cursor position and scroll info
     ImVec2 cursorPos = ImGui::GetCursorPos();
     float currentScrollY = ImGui::GetScrollY();
-    TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - Final cursor Y: %.0f, Current scroll Y: %.0f", cursorPos.y, currentScrollY);
+    //TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - Final cursor Y: %.0f, Current scroll Y: %.0f", cursorPos.y, currentScrollY);
 
     ImGui::EndChild();
 
-    // Log if scrolling is possible
-    float maxScrollY = ImGui::GetScrollMaxY();
-    if (maxScrollY > 0) {
-        TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - Scrolling is possible, ScrollMaxY: %.0f", maxScrollY);
-    } else {
-        TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - No scrolling needed, content fits");
-    }
+    // // Log if scrolling is possible
+    // float maxScrollY = ImGui::GetScrollMaxY();
+    // if (maxScrollY > 0) {
+    //     TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - Scrolling is possible, ScrollMaxY: %.0f", maxScrollY);
+    // } else {
+    //     TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - No scrolling needed, content fits");
+    // }
 }

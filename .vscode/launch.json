@@ -40,36 +40,11 @@
       "name": "Debug with GDB",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/bin/ChainedDecos_debug.exe",
+      "program": "${workspaceFolder}\\build\\bin\\ChainedDecos.exe",
       "args": [],
-      "cwd": "${workspaceFolder}/build",
-      "stopOnEntry": true,
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        },
-        {
-          "description": "Load debug symbols",
-          "text": "symbol-file \"${workspaceFolder}/build/bin/ChainedDecos_debug.exe\"",
-          "ignoreFailures": true
-        },
-        {
-          "description": "Set source directory",
-          "text": "directory \"${workspaceFolder}\"",
-          "ignoreFailures": true
-        }
-      ]
+      "cwd": "${workspaceFolder}\\build",
+      "stopAtEntry": true,
+      //"miDebuggerPath": "C:/MinGW/bin/gdb.exe",
     },
-    {
-      "name": "Launch Release",
-      "type": "lldb",
-      "request": "launch",
-      "program": "${workspaceFolder}/cmake-build-release/ChainedDecos.exe",
-      "args": [],
-      "cwd": "${workspaceFolder}/cmake-build-release/",
-      "stopOnEntry": false
-    }
   ]
 }

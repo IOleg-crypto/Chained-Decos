@@ -14,44 +14,99 @@ std::vector<std::string> ResolveModelPaths(const std::string& modelName)
     std::vector<std::string> possiblePaths;
     std::string stem = std::filesystem::path(modelName).stem().string();
     std::string extension = std::filesystem::path(modelName).extension().string();
-    
+
+    // Normalize path separators to forward slashes for consistency
+    std::string normalizedModelName = modelName;
+    std::replace(normalizedModelName.begin(), normalizedModelName.end(), '\\', '/');
+
     if (extension.empty())
     {
-        // No extension provided, try common extensions
-        std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx"};
+        // No extension provided, try common extensions in multiple locations
+        std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx", ".dae"};
+
+        // Try in resources/ directory
         for (const auto& ext : extensions)
         {
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + modelName + ext);
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + normalizedModelName + ext);
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" + normalizedModelName + ext);
+        }
+
+        // Try with stem variations
+        for (const auto& ext : extensions)
+        {
             possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + ext);
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" + stem + ext);
+        }
+
+        // Try absolute paths if modelName contains path separators
+        if (normalizedModelName.find('/') != std::string::npos)
+        {
+            for (const auto& ext : extensions)
+            {
+                possiblePaths.push_back(normalizedModelName + ext);
+                if (normalizedModelName[0] == '/')
+                {
+                    possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + normalizedModelName.substr(1) + ext);
+                }
+            }
         }
     }
     else
     {
-        // Extension provided, use as-is
-        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + modelName);
+        // Extension provided, use as-is with multiple path variations
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + normalizedModelName);
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" + normalizedModelName);
+
+        // Try with stem variation
         possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + extension);
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" + stem + extension);
+
+        // Try absolute path if provided
+        if (normalizedModelName.find('/') != std::string::npos)
+        {
+            possiblePaths.push_back(normalizedModelName);
+            if (normalizedModelName[0] == '/')
+            {
+                possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + normalizedModelName.substr(1));
+            }
+        }
     }
-    
+
     return possiblePaths;
 }
 
 // Helper function to load model with error handling
-bool LoadModelWithErrorHandling(const std::string& modelName, const std::vector<std::string>& possiblePaths, 
+bool LoadModelWithErrorHandling(const std::string& modelName, const std::vector<std::string>& possiblePaths,
                                std::unordered_map<std::string, Model>& loadedModels)
 {
+    // Normalize the model name key for consistent storage
+    std::string normalizedKey = modelName;
+    std::replace(normalizedKey.begin(), normalizedKey.end(), '\\', '/');
+
+    // Remove any path components from the key, keep only the filename
+    std::filesystem::path keyPath(normalizedKey);
+    std::string keyStem = keyPath.stem().string();
+    std::string keyExtension = keyPath.extension().string();
+
+    // Create a clean key without path or extension
+    std::string cleanKey = keyStem;
+    if (!keyExtension.empty()) {
+        cleanKey += keyExtension;
+    }
+
     for (const auto& modelPath : possiblePaths)
     {
         if (FileExists(modelPath.c_str()))
         {
-            // Check if model is already loaded
-            if (loadedModels.find(modelName) == loadedModels.end())
+            // Check if model is already loaded using the clean key
+            if (loadedModels.find(cleanKey) == loadedModels.end())
             {
                 Model model = LoadModel(modelPath.c_str());
                 if (model.meshCount > 0)
                 {
-                    loadedModels[modelName] = model;
-                    TraceLog(LOG_INFO, "MapLoader: Successfully loaded model %s from %s (meshCount: %d)", 
-                            modelName.c_str(), modelPath.c_str(), model.meshCount);
+                    loadedModels[cleanKey] = model;
+                    TraceLog(LOG_INFO, "MapLoader: Successfully loaded model %s (key: %s) from %s (meshCount: %d)",
+                            modelName.c_str(), cleanKey.c_str(), modelPath.c_str(), model.meshCount);
                     return true;
                 }
                 else
@@ -61,12 +116,12 @@ bool LoadModelWithErrorHandling(const std::string& modelName, const std::vector<
             }
             else
             {
-                TraceLog(LOG_INFO, "MapLoader: Model %s already loaded", modelName.c_str());
+                TraceLog(LOG_INFO, "MapLoader: Model %s (key: %s) already loaded", modelName.c_str(), cleanKey.c_str());
                 return true;
             }
         }
     }
-    
+
     TraceLog(LOG_WARNING, "MapLoader: Could not find model file for %s. Tried paths:", modelName.c_str());
     for (const auto& path : possiblePaths)
     {
@@ -312,7 +367,7 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
                 };
             }
 
-            // Scale
+            // Scale - ensure consistent handling
             if (obj.contains("scale"))
             {
                 auto& scl = obj["scale"];
@@ -321,6 +376,16 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
                     scl.value("y", 1.0f),
                     scl.value("z", 1.0f)
                 };
+
+                // Normalize scale values to prevent zero/negative scales
+                objectData.scale.x = (objectData.scale.x <= 0.0f) ? 1.0f : objectData.scale.x;
+                objectData.scale.y = (objectData.scale.y <= 0.0f) ? 1.0f : objectData.scale.y;
+                objectData.scale.z = (objectData.scale.z <= 0.0f) ? 1.0f : objectData.scale.z;
+            }
+            else
+            {
+                // Default scale if not specified
+                objectData.scale = Vector3{1.0f, 1.0f, 1.0f};
             }
 
             // Color
@@ -338,17 +403,22 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
             // Model name (for MODEL type)
             objectData.modelName = obj.value("modelName", "");
 
-            // Shape-specific properties
-            objectData.radius = obj.value("radius", 1.0f);
-            objectData.height = obj.value("height", 1.0f);
+            // Shape-specific properties - ensure consistency with scale
+            objectData.radius = obj.value("radius", objectData.scale.x); // Default to scale.x if not specified
+            objectData.height = obj.value("height", objectData.scale.y); // Default to scale.y if not specified
 
             if (obj.contains("size"))
             {
                 auto& sz = obj["size"];
                 objectData.size = Vector2{
-                    sz.value("width", 1.0f),
-                    sz.value("height", 1.0f)
+                    sz.value("width", objectData.scale.x), // Default to scale.x if not specified
+                    sz.value("height", objectData.scale.z) // Default to scale.z if not specified
                 };
+            }
+            else
+            {
+                // Set size based on scale for consistency
+                objectData.size = Vector2{objectData.scale.x, objectData.scale.z};
             }
 
             // Collision properties
@@ -361,10 +431,57 @@ GameMap LoadGameMapFromEditorFormat(const json& j, const std::string& path)
             if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
             {
                 TraceLog(LOG_INFO, "MapLoader: Loading MODEL object %s with modelName %s", objectData.name.c_str(), objectData.modelName.c_str());
-                
+
                 // Use helper function to resolve paths and load model
                 std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
                 LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.loadedModels);
+            }
+            // Handle LIGHT type objects that may actually be misclassified MODEL objects from map editor
+            else if (objectData.type == MapObjectType::LIGHT && !objectData.modelName.empty())
+            {
+                TraceLog(LOG_INFO, "MapLoader: LIGHT object %s has modelName %s - treating as MODEL (map editor export issue)", objectData.name.c_str(), objectData.modelName.c_str());
+
+                // Change type to MODEL and load the model
+                objectData.type = MapObjectType::MODEL;
+                std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.loadedModels);
+            }
+            // Also handle LIGHT objects that might have been exported without modelName but should be models
+            else if (objectData.type == MapObjectType::LIGHT)
+            {
+                // Check if this LIGHT object has properties that suggest it should be a MODEL
+                // This handles cases where the map editor incorrectly exports models as lights
+                bool shouldBeModel = false;
+
+                // Check for model-like properties (non-zero scale, specific naming patterns, etc.)
+                if (objectData.scale.x != 1.0f || objectData.scale.y != 1.0f || objectData.scale.z != 1.0f)
+                {
+                    shouldBeModel = true;
+                }
+                else if (objectData.name.find("model") != std::string::npos ||
+                         objectData.name.find("Model") != std::string::npos ||
+                         objectData.name.find("MODEL") != std::string::npos)
+                {
+                    shouldBeModel = true;
+                }
+
+                if (shouldBeModel)
+                {
+                    TraceLog(LOG_INFO, "MapLoader: LIGHT object %s appears to be a misclassified MODEL - converting", objectData.name.c_str());
+                    objectData.type = MapObjectType::MODEL;
+                    // Try to infer model name from object name
+                    if (objectData.modelName.empty())
+                    {
+                        objectData.modelName = objectData.name;
+                        // Remove common prefixes/suffixes
+                        if (objectData.modelName.find("parkour_element_") == 0)
+                        {
+                            objectData.modelName = objectData.modelName.substr(16);
+                        }
+                    }
+                    std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
+                    LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.loadedModels);
+                }
             }
         }
     }
@@ -504,17 +621,26 @@ MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& positio
     obj.color = color;
     obj.name = "object_" + std::to_string(rand());
 
+    // Ensure consistent scale handling across all object types
+    // Normalize scale values to prevent inconsistencies
+    obj.scale.x = (scale.x <= 0.0f) ? 1.0f : scale.x;
+    obj.scale.y = (scale.y <= 0.0f) ? 1.0f : scale.y;
+    obj.scale.z = (scale.z <= 0.0f) ? 1.0f : scale.z;
+
     switch (type)
     {
         case MapObjectType::SPHERE:
-            obj.radius = scale.x; // Use scale.x as radius
+            obj.radius = obj.scale.x; // Use normalized scale.x as radius
             break;
         case MapObjectType::CYLINDER:
-            obj.radius = scale.x;
-            obj.height = scale.y;
+            obj.radius = obj.scale.x;
+            obj.height = obj.scale.y;
             break;
         case MapObjectType::PLANE:
-            obj.size = Vector2{scale.x, scale.z};
+            obj.size = Vector2{obj.scale.x, obj.scale.z};
+            break;
+        case MapObjectType::MODEL:
+            // For models, scale is used directly in rendering, no additional properties needed
             break;
         default:
             break;
@@ -548,18 +674,19 @@ void RenderGameMap(const GameMap& map, Camera3D camera)
 
 void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::string, Model>& loadedModels, [[maybe_unused]] Camera3D camera)
 {
-    // Apply object transformations
+    // Apply object transformations - ensure consistent order for collision/rendering match
     Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
     Matrix scale = MatrixScale(object.scale.x, object.scale.y, object.scale.z);
     Matrix rotationX = MatrixRotateX(object.rotation.x * DEG2RAD);
     Matrix rotationY = MatrixRotateY(object.rotation.y * DEG2RAD);
     Matrix rotationZ = MatrixRotateZ(object.rotation.z * DEG2RAD);
 
-    // Combine transformations: scale -> rotate -> translate
-    Matrix transform = MatrixMultiply(scale, rotationX);
-    transform = MatrixMultiply(transform, rotationY);
-    transform = MatrixMultiply(transform, rotationZ);
-    transform = MatrixMultiply(transform, translation);
+    // Combine transformations in consistent order: translate -> rotate -> scale
+    // This ensures collision and rendering transformations match
+    Matrix transform = MatrixMultiply(rotationX, translation);
+    transform = MatrixMultiply(rotationY, transform);
+    transform = MatrixMultiply(rotationZ, transform);
+    transform = MatrixMultiply(scale, transform);
 
     switch (object.type)
     {
@@ -588,7 +715,18 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
             // Find the corresponding loaded model for this object
             if (!object.modelName.empty())
             {
-                auto it = loadedModels.find(object.modelName);
+                // Normalize the lookup key to match how models are stored
+                std::string lookupKey = object.modelName;
+                std::replace(lookupKey.begin(), lookupKey.end(), '\\', '/');
+                std::filesystem::path keyPath(lookupKey);
+                std::string keyStem = keyPath.stem().string();
+                std::string keyExtension = keyPath.extension().string();
+                std::string cleanKey = keyStem;
+                if (!keyExtension.empty()) {
+                    cleanKey += keyExtension;
+                }
+
+                auto it = loadedModels.find(cleanKey);
                 if (it != loadedModels.end())
                 {
                     Model model = it->second;
@@ -604,8 +742,22 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                 }
                 else
                 {
-                    // Model not found, draw placeholder
-                    DrawSphere(Vector3{0, 0, 0}, 0.5f, RED);
+                    // Try fallback lookup with original modelName
+                    auto it2 = loadedModels.find(object.modelName);
+                    if (it2 != loadedModels.end())
+                    {
+                        Model model = it2->second;
+                        model.transform = transform;
+                        DrawModel(model, Vector3{0, 0, 0}, 1.0f, object.color);
+                        DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
+                    }
+                    else
+                    {
+                        // Model not found, draw placeholder
+                        DrawSphere(Vector3{0, 0, 0}, 0.5f, RED);
+                        TraceLog(LOG_WARNING, "RenderMapObject: Model not found for %s (tried keys: %s, %s)",
+                                object.name.c_str(), cleanKey.c_str(), object.modelName.c_str());
+                    }
                 }
             }
             else

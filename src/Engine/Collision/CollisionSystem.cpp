@@ -101,19 +101,17 @@ void Collision::Update(const Vector3 &center, const Vector3 &halfSize)
 
 bool Collision::IntersectsAABB(const Collision &other) const
 {
-    if (m_max.x < other.m_min.x || m_min.x > other.m_max.x)
-        return false;
-    if (m_max.y < other.m_min.y || m_min.y > other.m_max.y)
-        return false;
-    if (m_max.z < other.m_min.z || m_min.z > other.m_max.z)
-        return false;
-    return true;
+    // Use raylib's built-in AABB intersection for robustness
+    BoundingBox a{ m_min, m_max };
+    BoundingBox b{ other.m_min, other.m_max };
+    return CheckCollisionBoxes(a, b);
 }
 
 bool Collision::ContainsPointAABB(const Vector3 &point) const
 {
     return (point.x >= m_min.x && point.x <= m_max.x) &&
-           (point.y >= m_min.y && point.y <= m_max.y) && (point.z >= m_min.z && point.z <= m_max.z);
+           (point.y >= m_min.y && point.y <= m_max.y) &&
+           (point.z >= m_min.z && point.z <= m_max.z);
 }
 
 // ----------------- Build from model (optimized) -----------------
