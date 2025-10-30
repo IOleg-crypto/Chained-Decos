@@ -29,9 +29,13 @@ void CollisionDebugRenderer::RenderCollisionTriangles(const Collision &collision
 
 void CollisionDebugRenderer::RenderAllCollisions(const std::vector<std::unique_ptr<Collision>> &collisions) const
 {
+    TraceLog(LOG_DEBUG, "CollisionDebugRenderer::RenderAllCollisions() - Rendering %zu collision objects", collisions.size());
+
     for (size_t i = 0; i < collisions.size(); i++)
     {
         Color color = (i == 0) ? m_groundColor : m_obstacleColor;
+        TraceLog(LOG_DEBUG, "CollisionDebugRenderer::RenderAllCollisions() - Rendering collision %zu with color (%d,%d,%d,%d), triangles: %zu",
+                 i, color.r, color.g, color.b, color.a, collisions[i]->GetTriangleCount());
         RenderCollisionBox(*collisions[i].get(), color);
         RenderCollisionTriangles(*collisions[i], RED);
     }

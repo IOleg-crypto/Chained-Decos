@@ -49,6 +49,9 @@ public:
     // Debug rendering
     void RenderCollisionDebug(const CollisionManager &collisionManager, IRenderable &renderable) const;
 
+    // Normal gameplay collision shape rendering
+    void RenderCollisionShapes(const CollisionManager &collisionManager, IRenderable &renderable) const;
+
     // Utility methods
     void SetBackgroundColor(Color color);
     void ToggleDebugInfo();

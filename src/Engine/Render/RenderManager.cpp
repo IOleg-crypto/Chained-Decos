@@ -20,6 +20,7 @@
 RenderManager::RenderManager()
     : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>())
 {
+    m_collisionDebugRenderer->SetWireframeMode(true); // Use wireframe for collision shapes in normal gameplay
     m_font = {0};
     TraceLog(LOG_INFO, "RenderManager created");
 }
@@ -118,11 +119,11 @@ void RenderManager::BeginFrame() const
 void RenderManager::EndFrame() { EndDrawing(); }
 
 void RenderManager::RenderGame(IRenderable &renderable, const ModelLoader &models,
-                                const CollisionManager &collisionManager, bool showCollisionDebug)
+                                 const CollisionManager &collisionManager, bool showCollisionDebug)
 {
     // NOTE: BeginMode3D/EndMode3D are now handled by Game::RenderGameWorld()
     // to allow RenderEditorMap() to be called inside the 3D context
-    
+
     // Draw 3D scene
     DrawScene3D(models);
     DrawPlayer(renderable, models);
@@ -130,7 +131,10 @@ void RenderManager::RenderGame(IRenderable &renderable, const ModelLoader &model
     // Update renderable collision for next frame
     renderable.UpdateCollision();
 
-    // Draw collision debug if enabled
+    // Always render collision shapes in normal gameplay (wireframe mode)
+    RenderCollisionShapes(collisionManager, renderable);
+
+    // Draw collision debug if enabled (additional debug info)
     if (showCollisionDebug)
     {
         RenderCollisionDebug(collisionManager, renderable);
@@ -207,15 +211,21 @@ void RenderManager::DrawPlayer(IRenderable &renderable, const ModelLoader &model
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
                                            IRenderable &renderable) const
 {
+    TraceLog(LOG_DEBUG, "RenderManager::RenderCollisionDebug() - Starting collision debug rendering");
+
     // Draw small debug cube at player position for reference (less intrusive)
     const Vector3 playerPos = renderable.GetPosition();
     const Vector3 dbgPos = {playerPos.x, playerPos.y - 2.0f, playerPos.z}; // Below player
     DrawCubeWires(dbgPos, 0.5f, 0.5f, 0.5f, YELLOW);
 
     if (!m_collisionDebugRenderer)
+    {
+        TraceLog(LOG_WARNING, "RenderManager::RenderCollisionDebug() - No collision debug renderer available");
         return;
+    }
 
     const auto &colliders = collisionManager.GetColliders();
+    TraceLog(LOG_DEBUG, "RenderManager::RenderCollisionDebug() - Rendering %zu collision objects", colliders.size());
 
     // Render all collisions
     m_collisionDebugRenderer->RenderAllCollisions(colliders);
@@ -235,8 +245,33 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
         count++;
     }
 
-    TraceLog(LOG_DEBUG, "Collision debug rendered via CollisionDebugRenderer with %zu colliders",
+    TraceLog(LOG_DEBUG, "RenderManager::RenderCollisionDebug() - Collision debug rendered via CollisionDebugRenderer with %zu colliders",
               colliders.size());
+}
+
+void RenderManager::RenderCollisionShapes(const CollisionManager &collisionManager,
+                                           IRenderable &renderable) const
+{
+    if (!m_collisionDebugRenderer)
+    {
+        TraceLog(LOG_WARNING, "RenderManager::RenderCollisionShapes() - No collision debug renderer available");
+        return;
+    }
+
+    const auto &colliders = collisionManager.GetColliders();
+
+    // Use wireframe mode for normal gameplay collision shapes
+    m_collisionDebugRenderer->SetWireframeMode(true);
+
+    // Render all collision shapes with subtle colors for normal gameplay
+    for (size_t i = 0; i < colliders.size(); i++)
+    {
+        Color color = (i == 0) ? Fade(GREEN, 0.3f) : Fade(YELLOW, 0.3f); // Semi-transparent colors
+        m_collisionDebugRenderer->RenderCollisionBox(*colliders[i].get(), color);
+    }
+
+    // Render player collision shape
+    m_collisionDebugRenderer->RenderPlayerCollision(renderable.GetCollision());
 }
 
 void RenderManager::SetBackgroundColor(Color color) { m_backgroundColor = color; }
