@@ -157,6 +157,10 @@ private:
 
     // Cache size management
     void ManageCacheSize();
+
+    // Shape analysis methods for automatic collision type determination
+    bool AnalyzeModelShape(const Model &model, const std::string &modelName);
+    bool AnalyzeGeometryIrregularity(const Model &model);
 };
 
 #endif // COLLISIONMANAGER_H
