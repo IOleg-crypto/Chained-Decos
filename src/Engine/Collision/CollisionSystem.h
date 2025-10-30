@@ -10,12 +10,6 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
-#include <queue>
-#include <stack>
-#include <thread>
-#include <future>
-#include <mutex>
-#include <atomic>
 
 #include "CollisionStructures.h"
 
@@ -71,12 +65,7 @@ public:
                                 const Matrix &transform = MatrixIdentity());
     void CalculateFromModel(void *model, const Matrix &transform = MatrixIdentity());
 
-    // Parallel version for better performance with complex models
-    void BuildFromModelParallel(void *model, const Matrix &transform = MatrixIdentity());
 
-    // Optimized collision creation with caching
-    static std::shared_ptr<Collision> CreateFromModelCached(void *model, const Matrix &transform = MatrixIdentity());
-    static void ClearCollisionCache();
 
     // Collision type control
     CollisionType GetCollisionType() const;
@@ -108,11 +97,19 @@ public:
     bool Intersects(const Collision &other) const;
 
     // Compatibility helpers expected by CollisionManager (legacy Octree paths)
-    bool IntersectsBVH(const Collision &other) const;
-    bool IsUsingBVH() const;
-    bool IsUsingOctree() const;
+    bool IntersectsBVH(const Collision &other) const { return Intersects(other); }
+    bool IsUsingBVH() const { return m_bvhRoot != nullptr; }
+    bool IsUsingOctree() const { return IsUsingBVH(); }
     bool RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
-                       float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const;
+                        float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const
+    {
+        RayHit hit;
+        if (!RaycastBVH(origin, dir, maxDistance, hit)) return false;
+        hitDistance = hit.distance;
+        hitPoint = hit.position;
+        hitNormal = hit.normal;
+        return true;
+    }
 
     // Debug / stats
     struct PerformanceStats
@@ -127,22 +124,8 @@ public:
 
     void UpdateAABBFromTriangles();
 
-    // Public accessor for cache size
-    static size_t GetCollisionCacheSize() { return collisionCache.size(); }
 
-    // Public methods to reset collision state
-    void ResetCollisionState()
-    {
-        m_triangles.clear();
-        m_bvhRoot.reset();
-        m_isBuilt = false;
-    }
 
-    // Public access to collision cache for pool management
-    static std::unordered_map<size_t, std::weak_ptr<Collision>>& GetCollisionCache()
-    {
-        return collisionCache;
-    }
 
 private:
     // AABB (stored as min/max compatible with raylib BoundingBox)
@@ -162,8 +145,6 @@ private:
     // Perf stats
     mutable PerformanceStats m_stats;
 
-    // Collision cache for performance optimization
-    static std::unordered_map<size_t, std::weak_ptr<Collision>> collisionCache;
 
 private:
     // Helpers
@@ -182,44 +163,6 @@ private:
                                       const CollisionTriangle &tri, RayHit &outHit);
 };
 
-// Collision object pool for efficient memory management
-class CollisionPool
-{
-public:
-    static CollisionPool& GetInstance();
-
-    // Pool management
-    std::shared_ptr<Collision> AcquireCollision();
-    void ReleaseCollision(std::shared_ptr<Collision> collision);
-    void ClearPool();
-
-    // Statistics
-    size_t GetPoolSize() const { return m_collisionPool.size(); }
-    size_t GetActiveCollisions() const { return m_activeCollisions.size(); }
-    size_t GetCacheSize() const { return Collision::GetCollisionCacheSize(); }
-
-    // Settings
-    void SetMaxPoolSize(size_t maxSize) { m_maxPoolSize = maxSize; }
-    void SetMaxCacheSize(size_t maxSize) { m_maxCacheSize = maxSize; }
-
-    // Cleanup
-    void CleanupUnusedCollisions();
-    void CleanupExpiredCache();
-
-private:
-    CollisionPool();
-    ~CollisionPool();
-
-    std::stack<std::shared_ptr<Collision>> m_collisionPool;
-    std::unordered_set<std::shared_ptr<Collision>> m_activeCollisions;
-    size_t m_maxPoolSize = 100;
-    size_t m_maxCacheSize = 200;
-    mutable std::mutex m_poolMutex;
-
-    // Prevent copying
-    CollisionPool(const CollisionPool&) = delete;
-    CollisionPool& operator=(const CollisionPool&) = delete;
-};
 
 // CollisionManager is defined in CollisionManager.h
 

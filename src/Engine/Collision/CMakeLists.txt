@@ -7,8 +7,6 @@ add_library(collision STATIC
     CollisionManager.h
     CollisionDebugRenderer.cpp
     CollisionDebugRenderer.h
-    GroundColliderFactory.cpp
-    GroundColliderFactory.h
 )
 
 # Disable Unity build for this library to avoid duplicate definitions
