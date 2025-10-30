@@ -33,24 +33,21 @@ void Application::Init() const
         std::cerr << "Failed to create window!" << std::endl;
         return;
     }
-
+    
+    
+    
     // Initialize ImGui AFTER window is created
     rlImGuiSetup(true);
 
     // Configure ImGui settings for better interaction
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard navigation
-
+    
     // Set up custom font
     io.Fonts->Clear();
     io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
     io.Fonts->Build();
 
-    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.jpg");
-    ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-
-    SetWindowIcon(m_icon);
-    UnloadImage(m_icon);
 
     // Set up ImGui style for better visibility
     ImGui::StyleColorsDark();
@@ -80,6 +77,11 @@ void Application::Init() const
 
     // After window and context are ready, preload models for the editor UI
     m_editor->PreloadModelsFromResources();
+    
+    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.jpg");
+    ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    SetWindowIcon(m_icon);
+    UnloadImage(m_icon);
 }
 
 void Application::Run() const
@@ -90,7 +92,7 @@ void Application::Run() const
         std::cerr << "Window not ready, cannot start application loop!" << std::endl;
         return;
     }
-
+    
     // Main application loop
     while (!WindowShouldClose())
     {

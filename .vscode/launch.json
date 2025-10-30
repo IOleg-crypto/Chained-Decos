@@ -10,7 +10,6 @@
       "cwd": "${workspaceFolder}/cmake-build-debug/",
       "stopOnEntry": true,
       "env": [],
-      "console": "externalTerminal",
     },
     {
       "name": "Debug with LLDB",
@@ -40,11 +39,11 @@
       "name": "Debug with GDB",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}\\build\\bin\\ChainedDecos.exe",
+      "program": "${workspaceFolder}/build/bin/ChainedDecos.exe",
       "args": [],
       "cwd": "${workspaceFolder}\\build",
       "stopAtEntry": true,
-      //"miDebuggerPath": "C:/MinGW/bin/gdb.exe",
+      "miDebuggerPath": "C:/MinGW/bin/gdb.exe",
     },
   ]
 }

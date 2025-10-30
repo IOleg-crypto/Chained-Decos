@@ -170,7 +170,7 @@ constexpr float MODEL_SCALE = 1.1f;
 void RenderManager::DrawPlayer(IRenderable &renderable, const ModelLoader &models)
 {
     // Get player model from models cache
-    auto playerModelOpt = const_cast<ModelLoader &>(models).GetModelByName("player");
+    auto playerModelOpt = const_cast<ModelLoader &>(models).GetModelByName("player_low");
     if (!playerModelOpt) {
         TraceLog(LOG_ERROR, "RenderManager::DrawPlayer() - Player model not found!");
         // Draw a simple cube as fallback

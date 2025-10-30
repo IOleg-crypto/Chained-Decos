@@ -340,33 +340,79 @@ void ModelLoader::DrawAllModels() const
                  instance.GetModelName().c_str(),
                  instance.GetModelPosition().x, instance.GetModelPosition().y, instance.GetModelPosition().z);
 
-        if (modelPtr != nullptr && modelPtr->meshCount > 0)
+        // Enhanced null/invalid model pointer validation
+        if (modelPtr == nullptr)
         {
-            TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Drawing model %s with %d meshes",
-                     instance.GetModelName().c_str(), modelPtr->meshCount);
-
-            // Build transform with rotation from instance (degrees -> radians)
-            Vector3 rotDeg = instance.GetRotationDegrees();
-            Vector3 rotRad = { DEG2RAD * rotDeg.x, DEG2RAD * rotDeg.y, DEG2RAD * rotDeg.z };
-            Matrix rotation = MatrixRotateXYZ(rotRad);
-            Matrix translation = MatrixTranslate(instance.GetModelPosition().x,
-                                                instance.GetModelPosition().y,
-                                                instance.GetModelPosition().z);
-            Matrix transform = MatrixMultiply(rotation, translation);
-
-            // Draw with transform and uniform scale
-            DrawModelEx(*modelPtr, instance.GetModelPosition(), {0,1,0}, rotDeg.y,
-                        {instance.GetScale(), instance.GetScale(), instance.GetScale()},
-                        instance.GetColor());
-
-            TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Successfully drew model %s",
+            TraceLog(LOG_WARNING, "ModelLoader::DrawAllModels() - Null model pointer for instance: %s",
                      instance.GetModelName().c_str());
+            continue;
         }
-        else
+
+        if (modelPtr->meshCount <= 0)
         {
-            TraceLog(LOG_WARNING, "ModelLoader::DrawAllModels() - Trying to draw invalid or empty model instance: %s",
-                     instance.GetModelName().c_str());
+            TraceLog(LOG_WARNING, "ModelLoader::DrawAllModels() - Empty model (meshCount: %d) for instance: %s",
+                     modelPtr->meshCount, instance.GetModelName().c_str());
+            continue;
         }
+
+        // Validate position, rotation, and scale for NaN/inf
+        Vector3 position = instance.GetModelPosition();
+        Vector3 rotationDeg = instance.GetRotationDegrees();
+        float scale = instance.GetScale();
+
+        if (!IsValidVector3(position))
+        {
+            TraceLog(LOG_ERROR, "ModelLoader::DrawAllModels() - Invalid position (NaN/inf) for instance: %s (%.2f, %.2f, %.2f)",
+                     instance.GetModelName().c_str(), position.x, position.y, position.z);
+            continue;
+        }
+
+        if (!IsValidVector3(rotationDeg))
+        {
+            TraceLog(LOG_ERROR, "ModelLoader::DrawAllModels() - Invalid rotation (NaN/inf) for instance: %s (%.2f, %.2f, %.2f)",
+                     instance.GetModelName().c_str(), rotationDeg.x, rotationDeg.y, rotationDeg.z);
+            continue;
+        }
+
+        if (std::isnan(scale) || std::isinf(scale) || scale <= 0.0f)
+        {
+            TraceLog(LOG_ERROR, "ModelLoader::DrawAllModels() - Invalid scale (NaN/inf/zero/negative) for instance: %s (%.2f)",
+                     instance.GetModelName().c_str(), scale);
+            continue;
+        }
+
+        // Validate color - skip drawing if invalid to prevent access violations
+        Color drawColor = instance.GetColor();
+        if (!IsValidColor(drawColor))
+        {
+            TraceLog(LOG_ERROR, "ModelLoader::DrawAllModels() - Invalid color for instance: %s (r:%d g:%d b:%d a:%d), skipping draw to prevent access violation",
+                     instance.GetModelName().c_str(), drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+            continue;
+        }
+
+        TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Drawing model %s with %d meshes",
+                 instance.GetModelName().c_str(), modelPtr->meshCount);
+
+        // Build transform with rotation from instance (degrees -> radians)
+        Vector3 rotRad = { DEG2RAD * rotationDeg.x, DEG2RAD * rotationDeg.y, DEG2RAD * rotationDeg.z };
+        Matrix rotation = MatrixRotateXYZ(rotRad);
+        Matrix translation = MatrixTranslate(position.x, position.y, position.z);
+        Matrix transform = MatrixMultiply(rotation, translation);
+
+        // Validate matrix before drawing
+        if (!IsValidMatrix(rotation) || !IsValidMatrix(translation) || !IsValidMatrix(transform))
+        {
+            TraceLog(LOG_ERROR, "ModelLoader::DrawAllModels() - Invalid transform matrix for instance: %s",
+                     instance.GetModelName().c_str());
+            continue;
+        }
+
+        // Draw with transform and uniform scale
+        DrawModelEx(*modelPtr, position, {0,1,0}, rotationDeg.y,
+                    {scale, scale, scale}, WHITE);
+
+        TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Successfully drew model %s",
+                 instance.GetModelName().c_str());
     }
 
     TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Finished drawing all model instances");
@@ -791,6 +837,37 @@ void ModelLoader::OptimizeCache() const {
         m_cache->CleanupUnusedModels(60); // More aggressive cleanup
         TraceLog(LOG_INFO, "Cache optimized");
     }
+}
+
+// Validation helper functions for crash prevention
+bool ModelLoader::IsValidVector3(const Vector3& v)
+{
+    return !std::isnan(v.x) && !std::isnan(v.y) && !std::isnan(v.z) &&
+           !std::isinf(v.x) && !std::isinf(v.y) && !std::isinf(v.z);
+}
+
+bool ModelLoader::IsValidColor(const Color& c)
+{
+    // Check for valid range and ensure no access violations by checking component types
+    // Color components should be unsigned char (0-255), but we add safety checks
+    return (c.r >= 0 && c.r <= 255) &&
+           (c.g >= 0 && c.g <= 255) &&
+           (c.b >= 0 && c.b <= 255) &&
+           (c.a >= 0 && c.a <= 255);
+}
+
+bool ModelLoader::IsValidMatrix(const Matrix& m)
+{
+    // Check for NaN or infinite values in all matrix elements
+    for (int i = 0; i < 16; ++i)
+    {
+        float val = (&m.m0)[i];
+        if (std::isnan(val) || std::isinf(val))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool ModelLoader::ValidateModelPath(const std::string &path) const

@@ -37,9 +37,9 @@ The foundation layer providing essential services:
 - **Features**: Gravity simulation, velocity management, kinematic objects
 
 #### [`Engine/Collision/`](src/Engine/Collision/) - Collision Detection
-- **Purpose**: High-performance collision detection using BVH trees
+- **Purpose**: Leverages raylib's built-in AABB collision detection, enhanced with BVH optimization
 - **Key Classes**: `CollisionSystem`, `CollisionManager`, `BVHNode`
-- **Features**: AABB broad-phase, triangle-level narrow-phase, collision pooling
+- **Features**: Optimized broad-phase, triangle-level narrow-phase, collision pooling
 
 #### [`Engine/Model/`](src/Engine/Model/) - 3D Model Management
 - **Purpose**: Efficient 3D model loading, caching, and rendering
