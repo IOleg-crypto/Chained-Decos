@@ -51,9 +51,10 @@ public:
     Collision &operator=(Collision &&other) noexcept;
 
 public:
-    // AABB getters
+    // AABB getters (backed by raylib BoundingBox)
     Vector3 GetMin() const;
     Vector3 GetMax() const;
+    BoundingBox GetBoundingBox() const { return { m_min, m_max }; }
     Vector3 GetCenter() const;
     Vector3 GetSize() const;
 
@@ -144,7 +145,7 @@ public:
     }
 
 private:
-    // AABB
+    // AABB (stored as min/max compatible with raylib BoundingBox)
     Vector3 m_min{};
     Vector3 m_max{};
 

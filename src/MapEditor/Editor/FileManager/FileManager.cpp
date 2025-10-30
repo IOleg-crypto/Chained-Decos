@@ -82,6 +82,7 @@ bool FileManager::LoadMap(const std::string& filename, std::vector<MapObject>& o
     {
         // Clear current scene
         objects.clear();
+        TraceLog(LOG_INFO , "InFO load modes");
 
         // Convert SerializableObjects back to MapObjects
         for (const auto& [position, scale, rotation, color, name, type, modelName] : serializableObjects)
