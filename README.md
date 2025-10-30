@@ -187,10 +187,10 @@ Edit [`game.cfg`](game.cfg) for persistent settings:
 
 ## 🧪 Testing
 
-Run the test suite:
+Run the unit tests using Google Test:
 ```bash
 # From build directory
-ctest --output-on-failure
+./tests/gtest
 ```
 
 Key test modules:
