@@ -121,6 +121,11 @@ private:
     bool ProcessModelConfigLegacy(const ModelFileConfig &config); // Legacy compatibility
     bool ValidateModelPath(const std::string &path) const;
 
+    // Validation helper functions for crash prevention
+    static bool IsValidVector3(const Vector3& v);
+    static bool IsValidColor(const Color& c);
+    static bool IsValidMatrix(const Matrix& m);
+
 };
 
 #endif // MODEL_H
