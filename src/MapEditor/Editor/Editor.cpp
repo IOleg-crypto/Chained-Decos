@@ -88,66 +88,95 @@ void Editor::Render()
 
 void Editor::RenderObject(const MapObject& obj)
 {
-    // Get object properties
-    Vector3 position = obj.GetPosition();
-    Vector3 scale = obj.GetScale();
-    Vector3 rotation = obj.GetRotation();
-    Color color = {obj.GetColor().r, obj.GetColor().g, obj.GetColor().b, obj.GetColor().a};
-
-    // Render based on object type with transformations applied
-    switch (obj.GetObjectType()) {
-        case 0: // Cube
-            DrawCube(position, scale.x, scale.y, scale.z, color);
-            DrawCubeWires(position, scale.x, scale.y, scale.z, BLACK);
-            break;
-        case 1: // Sphere
-            DrawSphere(position, obj.GetSphereRadius() * scale.x, color);
-            DrawSphereWires(position, obj.GetSphereRadius() * scale.x, 16, 16, BLACK);
-            break;
-        case 2: // Cylinder
-            DrawCylinderEx(position, {position.x, position.y + scale.y, position.z}, scale.x * 0.5f, scale.x * 0.5f, 16, color);
-            DrawCylinderWiresEx(position, {position.x, position.y + scale.y, position.z}, scale.x * 0.5f, scale.x * 0.5f, 16, BLACK);
-            break;
-        case 3: // Plane
-            DrawPlane(position, {obj.GetPlaneSize().x * scale.x, obj.GetPlaneSize().y * scale.z}, color);
-            break;
-        case 4: // Ellipse (approximated as a scaled sphere)
-            DrawSphere(position, 0.5f * scale.x, color);
-            DrawSphereWires(position, 0.5f * scale.x, 16, 16, BLACK);
-            break;
-        case 5: // Model
-            // Draw 3D model if available
-            if (m_modelManager && !obj.GetModelAssetName().empty()) {
-                auto modelOpt = m_modelManager->GetModelLoader().GetModelByName(obj.GetModelAssetName());
-                if (modelOpt) {
-                    // Apply transformations
-                    Matrix transform = MatrixMultiply(MatrixScale(scale.x, scale.y, scale.z),
-                                                    MatrixMultiply(MatrixRotateXYZ(rotation),
-                                                                 MatrixTranslate(position.x, position.y, position.z)));
-                    modelOpt->get().transform = transform;
-
-                    // Draw the model
-                    DrawModel(modelOpt->get(), {0, 0, 0}, 1.0f, color);
-
-                    // Draw wireframe for selection indication
-                    if (obj.IsSelected()) {
-                        DrawModelWires(modelOpt->get(), {0, 0, 0}, 1.0f, BLACK);
-                    }
-                } else {
-                    // Fallback: draw placeholder cube if model not found
-                    DrawCube(position, scale.x, scale.y, scale.z, color);
-                    DrawCubeWires(position, scale.x, scale.y, scale.z, BLACK);
-                }
-            } else {
-                // Fallback: draw placeholder cube
-                DrawCube(position, scale.x, scale.y, scale.z, color);
-                DrawCubeWires(position, scale.x, scale.y, scale.z, BLACK);
+    // Convert MapObject to MapObjectData for shared rendering
+    MapObjectData data;
+    data.name = obj.GetObjectName();
+    data.position = obj.GetPosition();
+    data.rotation = obj.GetRotation();
+    data.scale = obj.GetScale();
+    data.color = obj.GetColor();
+    data.modelName = obj.GetModelAssetName();
+    data.radius = obj.GetSphereRadius();
+    data.height = obj.GetScale().y;
+    data.size = obj.GetPlaneSize();
+    
+    // Convert object type
+    switch (obj.GetObjectType())
+    {
+        case 0: data.type = MapObjectType::CUBE; break;
+        case 1: data.type = MapObjectType::SPHERE; break;
+        case 2: data.type = MapObjectType::CYLINDER; break;
+        case 3: data.type = MapObjectType::PLANE; break;
+        case 4: data.type = MapObjectType::LIGHT; break;
+        case 5: data.type = MapObjectType::MODEL; break;
+        default: data.type = MapObjectType::CUBE; break;
+    }
+    
+    // Get loaded models from ModelManager for MODEL type objects
+    std::unordered_map<std::string, Model> loadedModels;
+    if (m_modelManager && data.type == MapObjectType::MODEL && !data.modelName.empty())
+    {
+        auto modelOpt = m_modelManager->GetModelLoader().GetModelByName(data.modelName);
+        if (modelOpt)
+        {
+            // Deep copy the model for loadedModels map
+            Model modelCopy = modelOpt->get();
+            loadedModels[data.modelName] = modelCopy;
+        }
+    }
+    
+    // Use shared RenderMapObject function for consistency with Game
+    Camera3D camera = m_cameraManager->GetCamera();
+    RenderMapObject(data, loadedModels, camera);
+    
+    // Additional editor-specific rendering: selection wireframe
+    if (obj.IsSelected() && data.type == MapObjectType::MODEL)
+    {
+        auto it = loadedModels.find(data.modelName);
+        if (it != loadedModels.end())
+        {
+            // Draw wireframe for selected models
+            DrawModelWires(it->second, {0, 0, 0}, 1.0f, YELLOW);
+        }
+    }
+    else if (obj.IsSelected())
+    {
+        // Draw selection indicator for primitives
+        Color selectionColor = YELLOW;
+        selectionColor.a = 100; // Semi-transparent
+        switch (data.type)
+        {
+            case MapObjectType::CUBE:
+            {
+                DrawCubeWires(data.position, data.scale.x, data.scale.y, data.scale.z, YELLOW);
+                break;
             }
-            break;
-        default:
-            // Unknown type - draw a default cube
-            DrawCube(position, scale.x, scale.y, scale.z, color);
-            break;
+            case MapObjectType::SPHERE:
+            {
+                DrawSphereWires(data.position, data.radius, 16, 16, YELLOW);
+                break;
+            }
+            case MapObjectType::CYLINDER:
+            {
+                DrawCylinderWires(data.position, data.radius, data.radius, data.height, 16, YELLOW);
+                break;
+            }
+            case MapObjectType::PLANE:
+            {
+                // Draw plane selection indicator using lines
+                Vector3 p1 = {data.position.x - data.size.x * 0.5f, data.position.y, data.position.z - data.size.y * 0.5f};
+                Vector3 p2 = {data.position.x + data.size.x * 0.5f, data.position.y, data.position.z - data.size.y * 0.5f};
+                Vector3 p3 = {data.position.x + data.size.x * 0.5f, data.position.y, data.position.z + data.size.y * 0.5f};
+                Vector3 p4 = {data.position.x - data.size.x * 0.5f, data.position.y, data.position.z + data.size.y * 0.5f};
+                DrawLine3D(p1, p2, YELLOW);
+                DrawLine3D(p2, p3, YELLOW);
+                DrawLine3D(p3, p4, YELLOW);
+                DrawLine3D(p4, p1, YELLOW);
+                break;
+            }
+            default:
+                break;
+        }
     }
 }
 
@@ -274,7 +303,15 @@ void Editor::ExportMapAsJSON(const std::string &filename)
 
 
 
-int Editor::GetGridSize() const { return m_gridSizes; }
+int Editor::GetGridSize() const 
+{ 
+    // Get grid size from UIManager if available, otherwise use default
+    if (m_uiManager) 
+    {
+        return m_uiManager->GetGridSize();
+    }
+    return m_gridSizes;
+}
 
 // The Editor class has been successfully refactored to use the Facade pattern.
 // All major functionality has been delegated to subsystem managers.

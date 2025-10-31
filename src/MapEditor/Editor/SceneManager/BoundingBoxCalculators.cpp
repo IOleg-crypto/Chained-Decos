@@ -6,9 +6,12 @@ BoundingBox CubeBoundingBoxCalculator::CalculateBoundingBox(const MapObject& obj
     Vector3 position = obj.GetPosition();
     Vector3 scale = obj.GetScale();
     
+    // Use half-size for bounding box (like Collision uses halfSize)
+    Vector3 halfSize = Vector3Scale(scale, 0.5f);
+    
     return {
-        Vector3{position.x - scale.x, position.y - scale.y, position.z - scale.z},
-        Vector3{position.x + scale.x, position.y + scale.y, position.z + scale.z}
+        Vector3{position.x - halfSize.x, position.y - halfSize.y, position.z - halfSize.z},
+        Vector3{position.x + halfSize.x, position.y + halfSize.y, position.z + halfSize.z}
     };
 }
 

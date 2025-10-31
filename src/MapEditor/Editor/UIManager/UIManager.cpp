@@ -46,9 +46,7 @@ UIManager::~UIManager() { NFD_Quit(); }
 
 void UIManager::Render()
 {
-    // Use simple rlImGui approach
-    rlImGuiBegin();
-
+    // Note: rlImGuiBegin() is now called in Application::Run() for docking support
     // Render all ImGui panels in specific order
     RenderImGuiToolbar();
 
@@ -70,7 +68,7 @@ void UIManager::Render()
     // Render parkour map dialog if shown
     RenderParkourMapDialog();
 
-    rlImGuiEnd();
+    // Note: rlImGuiEnd() is now called in Application::Run() for docking support
 }
 
 void UIManager::HandleInput()
@@ -280,6 +278,11 @@ void UIManager::RenderImGuiToolbar()
             if (m_gridSizes < 50)
             {
                 m_gridSizes = 50;
+            }
+            // Ensure grid size is within valid range
+            if (m_gridSizes > 900)
+            {
+                m_gridSizes = 900;
             }
         }
 
@@ -767,4 +770,9 @@ void UIManager::ProcessPendingObjectCreation()
         m_pendingObjectCreation = false;
         SetActiveTool(SELECT);
     }
+}
+
+int UIManager::GetGridSize() const 
+{ 
+    return m_gridSizes; 
 }
