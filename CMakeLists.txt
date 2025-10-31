@@ -277,7 +277,7 @@ endif()
 add_subdirectory(src/Engine)
 add_subdirectory(src/Game)
 
-add_executable(ChainedDecos src/main.cpp)
+add_executable(ChainedDecos src/Game/main.cpp)
 target_link_libraries(ChainedDecos PRIVATE
     ChainedDecosGame
     imguilib
