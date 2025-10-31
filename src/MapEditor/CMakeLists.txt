@@ -18,6 +18,9 @@ set(MAPEDITOR_SOURCES
     Editor/SceneManager/SceneManager.cpp
     Editor/SceneManager/SceneManager.h
     Editor/SceneManager/ISceneManager.h
+    Editor/SceneManager/BoundingBoxCalculators.cpp
+    Editor/SceneManager/BoundingBoxCalculators.h
+    Editor/SceneManager/IBoundingBoxCalculator.h
     Editor/UIManager/UIManager.cpp
     Editor/UIManager/UIManager.h
     Editor/UIManager/IUIManager.h
@@ -47,8 +50,8 @@ target_include_directories(ChainedDecosMapEditor PRIVATE
     ${CMAKE_SOURCE_DIR}/include/nfd
 )
 
-# Link with ChainedDecosEngine, raylib, and mapmod for map loading functionality
-target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib mapmod nlohmann_json nfd)
+# Link with ChainedDecosEngine, raylib (map is included via ChainedDecosEngine)
+target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib nlohmann_json nfd)
 
 # Compiler definitions
 target_compile_definitions(ChainedDecosMapEditor PRIVATE

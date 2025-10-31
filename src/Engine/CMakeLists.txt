@@ -3,6 +3,7 @@ add_subdirectory(Collision)
 add_subdirectory(Config)
 add_subdirectory(Input)
 add_subdirectory(Model)
+add_subdirectory(Map)
 add_subdirectory(Render)
 add_subdirectory(CameraController)
 add_subdirectory(Physics)
@@ -28,6 +29,7 @@ target_link_libraries(ChainedDecosEngine
             config
             input
             model
+            map
             render
             cameracontroller
             physics

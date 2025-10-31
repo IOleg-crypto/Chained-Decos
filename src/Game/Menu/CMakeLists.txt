@@ -38,5 +38,4 @@ target_link_libraries(menu PUBLIC
     imguilib
     nlohmann_json::nlohmann_json
     config
-    mapmod
 )

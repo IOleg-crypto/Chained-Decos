@@ -19,7 +19,6 @@ target_compile_definitions(ChainedDecosGame PRIVATE
     PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
 )
 
-add_subdirectory(Map)
 add_subdirectory(Menu)
 add_subdirectory(Player)
 
@@ -28,7 +27,6 @@ target_link_libraries(ChainedDecosGame
         ChainedDecosEngine
         player
         menu
-        mapmod
         raylib
         imguilib
         nlohmann_json

@@ -4,7 +4,7 @@
 
 #include "UIManager.h"
 #include "Engine/Kernel/Kernel.h"
-#include "Game/Map/MapLoader.h"
+#include "Engine/Map/MapLoader.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

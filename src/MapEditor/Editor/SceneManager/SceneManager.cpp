@@ -1,6 +1,7 @@
 #include "SceneManager.h"
 #include "../Object/MapObject.h"
 #include "Engine/Collision/CollisionStructures.h"
+#include "BoundingBoxCalculators.h"
 #include <algorithm>
 #include <limits>
 #include <raylib.h>
@@ -64,68 +65,9 @@ int SceneManager::PickObject(const CollisionRay& ray) {
     for (size_t i = 0; i < m_objects.size(); ++i) {
         const auto& obj = m_objects[i];
 
-        // Create bounding box for the object based on type
-        Vector3 position = obj.GetPosition();
-        Vector3 scale = obj.GetScale();
-        BoundingBox box = {};
-
-        switch (obj.GetObjectType()) {
-            case 0: // Cube
-                box = {
-                    Vector3{position.x - scale.x, position.y - scale.y, position.z - scale.z},
-                    Vector3{position.x + scale.x, position.y + scale.y, position.z + scale.z}
-                };
-                break;
-            case 1: // Sphere
-                {
-                    float radius = obj.GetSphereRadius() * scale.x;
-                    box = {
-                        Vector3{position.x - radius, position.y - radius, position.z - radius},
-                        Vector3{position.x + radius, position.y + radius, position.z + radius}
-                    };
-                }
-                break;
-            case 2: // Cylinder
-                box = {
-                    Vector3{position.x - scale.x * 0.5f, position.y - scale.y, position.z - scale.x * 0.5f},
-                    Vector3{position.x + scale.x * 0.5f, position.y + scale.y, position.z + scale.x * 0.5f}
-                };
-                break;
-            case 3: // Plane
-                {
-                    Vector2 planeSize = obj.GetPlaneSize();
-                    box = {
-                        Vector3{position.x - planeSize.x * scale.x, position.y - 0.1f, position.z - planeSize.y * scale.z},
-                        Vector3{position.x + planeSize.x * scale.x, position.y + 0.1f, position.z + planeSize.y * scale.z}
-                    };
-                }
-                break;
-            case 4: // Ellipse
-                {
-                    float radiusX = obj.GetHorizontalRadius() * scale.x;
-                    float radiusZ = obj.GetVerticalRadius() * scale.z;
-                    box = {
-                        Vector3{position.x - radiusX, position.y - 0.5f * scale.y, position.z - radiusZ},
-                        Vector3{position.x + radiusX, position.y + 0.5f * scale.y, position.z + radiusZ}
-                    };
-                }
-                break;
-            case 5: // Model
-                // For models, use a default bounding box for now
-                // TODO: In future, get actual model bounds from ModelLoader
-                box = {
-                    Vector3{position.x - scale.x, position.y - scale.y, position.z - scale.z},
-                    Vector3{position.x + scale.x, position.y + scale.y, position.z + scale.z}
-                };
-                break;
-            default:
-                // Unknown type - use default cube bounds
-                box = {
-                    Vector3{position.x - scale.x, position.y - scale.y, position.z - scale.z},
-                    Vector3{position.x + scale.x, position.y + scale.y, position.z + scale.z}
-                };
-                break;
-        }
+        // Use Strategy pattern to calculate bounding box based on object type
+        auto calculator = BoundingBoxCalculatorFactory::CreateCalculator(obj.GetObjectType());
+        BoundingBox box = calculator->CalculateBoundingBox(obj);
 
         // Check ray intersection with bounding box
         RayCollision collision = GetRayCollisionBox(rlRay, box);
