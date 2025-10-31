@@ -25,10 +25,6 @@ Game::Game() : m_showMenu(true), m_isGameInitialized(false), m_isDebugInfo(true)
     TraceLog(LOG_INFO, "Game class instance created.");
 }
 
-/**
- * Cleanup function to properly release resources.
- * Called during game shutdown to ensure clean resource management
- */
 void Game::Cleanup()
 {
     TraceLog(LOG_INFO, "Game::Cleanup() - Cleaning up game resources...");
@@ -924,12 +920,6 @@ Game::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames)
     return result;
 }
 
-///
-/// Maps object types to appropriate model names for selective loading
-/// @param objectType The MapObjectType enum value
-/// @param modelName The specific model name from the map object (if any)
-/// @return Model name if mapping exists, empty string otherwise
-///
 std::string Game::GetModelNameForObjectType(int objectType, const std::string &modelName)
 {
     // Cast to MapObjectType enum for better readability
@@ -1296,12 +1286,6 @@ void Game::UpdatePlayerLogic()
     m_engine->GetRenderManager()->ShowMetersPlayer(*m_player);
 }
 
-/**
- * Updates physics-related game logic.
- *
- * Ensures collision system is properly initialized and handles
- * edge cases where collision data might be missing.
- */
 void Game::UpdatePhysicsLogic()
 {
     const auto &colliders = m_collisionManager->GetColliders();
@@ -1738,16 +1722,6 @@ void Game::RenderGameWorld()
 // Helper Functions
 // ============================================================================
 
-/**
- * Creates a platform with collision box at specified position
- * @param position Platform center position in 3D space
- * @param size Platform dimensions (width, height, depth)
- * @param color Platform render color
- * @param collisionType Type of collision detection to use
- *
- * This helper function reduces code duplication in map creation functions
- * and ensures consistent platform creation across all map types.
- */
 void Game::CreatePlatform(const Vector3 &position, const Vector3 &size, Color color,
                           CollisionType collisionType)
 {
@@ -1758,11 +1732,6 @@ void Game::CreatePlatform(const Vector3 &position, const Vector3 &size, Color co
     m_collisionManager->AddCollider(std::move(collision));
 }
 
-/**
- * Calculates dynamic font size based on screen resolution
- * @param baseSize Base font size for 1920p resolution
- * @return Scaled font size clamped to reasonable bounds
- */
 float Game::CalculateDynamicFontSize(float baseSize)
 {
     int screenWidth = GetScreenWidth();

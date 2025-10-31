@@ -1,11 +1,3 @@
-/**
- * @file ConsoleManager.h
- * In-game console system for debugging and cheats.
- *
- * The ConsoleManager class provides an in-game console interface
- * for executing commands, viewing output, and debugging game state.
- */
-
 #ifndef CONSOLE_MANAGER_H
 #define CONSOLE_MANAGER_H
 
@@ -22,13 +14,6 @@ namespace MenuConstants {
 // Forward declaration - will be included in .cpp
 class Game;
 
-/**
- * @class ConsoleManager
- * Manages the in-game console functionality.
- *
- * This class handles console input, output, command processing,
- * and rendering of the console interface.
- */
 class ConsoleManager {
 private:
     Game* m_game;
@@ -43,10 +28,6 @@ private:
     static constexpr size_t MAX_HISTORY_LINES = 50;
 
 public:
-    /**
-     * @brief Constructor that initializes the console font and settings
-     * @param game Pointer to Game instance for command execution
-     */
     ConsoleManager(Game* game);
 
     // Console state management
