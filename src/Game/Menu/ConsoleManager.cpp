@@ -1,5 +1,6 @@
 #include "ConsoleManager.h"
 #include "../Game.h"
+#include "Game/Player/PlayerCollision.h"
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include <iostream>

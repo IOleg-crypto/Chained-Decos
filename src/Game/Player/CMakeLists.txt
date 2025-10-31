@@ -5,10 +5,12 @@ add_library(player STATIC
     PlayerCollision.h
     PlayerInput.cpp
     PlayerInput.h
+    IPlayerInput.h
     PlayerModel.h
     PlayerModel.cpp
     PlayerMovement.h
     PlayerMovement.cpp
+    IPlayerMovement.h
 )
 
 target_include_directories(player PUBLIC

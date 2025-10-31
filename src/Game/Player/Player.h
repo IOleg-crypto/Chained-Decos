@@ -14,11 +14,15 @@
 #include <Model/Model.h>
 #include <Render/IRenderable.h>
 
-// Include component headers - PlayerMovement.h must be included for member declarations
-#include "PlayerMovement.h"
-#include "PlayerCollision.h"
-#include "PlayerInput.h"
-#include "PlayerModel.h"
+// Include component interfaces
+#include "IPlayerInput.h"
+#include "IPlayerMovement.h"
+
+// Forward declarations to reduce dependencies
+class PlayerInput;
+class PlayerMovement;
+class PlayerCollision;
+class PlayerModel;
 
 // Player: main player class that uses component classes
 class Player : public IRenderable
@@ -74,7 +78,7 @@ public:
     BoundingBox GetPlayerBoundingBox() const;   // Get bounding box
     const PhysicsComponent &GetPhysics() const; // Get physics component (const)
     PhysicsComponent &GetPhysics();             // Get physics component (non-const)
-    PlayerMovement *GetMovement() const;
+    IPlayerMovement *GetMovement() const;
 
     // IRenderable interface implementations
     void Update(CollisionManager& collisionManager) override;
@@ -86,9 +90,9 @@ public:
     bool IsGrounded() const override;
 
 private:
-    // Component objects
-    std::unique_ptr<PlayerMovement> m_movement;
-    std::unique_ptr<PlayerInput> m_input;
+    // Component objects - using interfaces for better decoupling
+    std::unique_ptr<IPlayerMovement> m_movement;
+    std::unique_ptr<IPlayerInput> m_input;
     std::unique_ptr<PlayerModel> m_model;
     std::unique_ptr<PlayerCollision> m_collision;
 
