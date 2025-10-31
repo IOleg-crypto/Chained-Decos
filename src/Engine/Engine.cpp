@@ -9,12 +9,12 @@
 #include <raylib.h>
 #include <rlImGui.h>
 
-Engine::Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager)
-    : Engine(800, 600, std::move(renderManager), std::move(inputManager)) {}
+Engine::Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel)
+    : Engine(800, 600, std::move(renderManager), std::move(inputManager), kernel) {}
 
-Engine::Engine(const int screenX, const int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager)
+Engine::Engine(const int screenX, const int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
-       m_windowInitialized(false), m_renderManager(std::move(renderManager)), m_inputManager(std::move(inputManager)), m_shouldExit(false),
+       m_windowInitialized(false), m_renderManager(std::move(renderManager)), m_inputManager(std::move(inputManager)), m_kernel(kernel), m_shouldExit(false),
        m_showDebug(false), m_showCollisionDebug(false), m_isEngineInit(false)
 {
     if (m_screenX <= 0 || m_screenY <= 0)
@@ -63,8 +63,9 @@ void Engine::Init()
     m_isEngineInit = true;
 
     // Kernel: register core services so other modules can fetch them
-    Kernel &kernel = Kernel::GetInstance();
-    kernel.RegisterService<RenderManager>(Kernel::ServiceType::Render, m_renderManager);
+    if (m_kernel) {
+        m_kernel->RegisterService<RenderManager>(Kernel::ServiceType::Render, m_renderManager);
+    }
 
     TraceLog(LOG_INFO, "Engine initialization complete!");
 }

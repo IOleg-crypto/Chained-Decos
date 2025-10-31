@@ -1,12 +1,6 @@
 #include "Kernel.h"
 #include <raylib.h>
 
-Kernel &Kernel::GetInstance()
-{
-    static Kernel instance;
-    return instance;
-}
-
 bool Kernel::Initialize(const std::string &configFile)
 {
     (void)configFile;

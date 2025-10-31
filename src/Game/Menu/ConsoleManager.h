@@ -19,6 +19,9 @@ namespace MenuConstants {
     using namespace MenuConstants;
 }
 
+// Forward declaration - will be included in .cpp
+class Game;
+
 /**
  * @class ConsoleManager
  * Manages the in-game console functionality.
@@ -28,6 +31,7 @@ namespace MenuConstants {
  */
 class ConsoleManager {
 private:
+    Game* m_game;
     bool consoleOpen = false;
     std::vector<std::string> consoleHistory;
     std::vector<std::string> consoleOutput;
@@ -40,9 +44,10 @@ private:
 
 public:
     /**
-     * @brief Default constructor that initializes the console font and settings
+     * @brief Constructor that initializes the console font and settings
+     * @param game Pointer to Game instance for command execution
      */
-    ConsoleManager();
+    ConsoleManager(Game* game);
 
     // Console state management
     void ToggleConsole();

@@ -81,7 +81,6 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     float dt = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
     Vector3 vel = m_physics.GetVelocity();
     Vector3 targetPos = m_position;
-    TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - Initial velocity: (%.3f, %.3f, %.3f), position: (%.3f, %.3f, %.3f), dt: %.3f", vel.x, vel.y, vel.z, targetPos.x, targetPos.y, targetPos.z, dt);
 
     if (m_noclip)
     {
@@ -90,7 +89,6 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
         targetPos.y += vel.y * dt;
         targetPos.z += vel.z * dt;
         SetPosition(targetPos);
-        TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - Noclip mode: Updated position to (%.3f, %.3f, %.3f)", targetPos.x, targetPos.y, targetPos.z);
         // No need to update grounded state in noclip
         return m_position;
     }
@@ -102,7 +100,6 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     Vector3 response = {0};
     if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
-        TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - Vertical collision detected, response: (%.3f, %.3f, %.3f)", response.x, response.y, response.z);
         // De-jitter: damp tiny horizontal corrections while walking
         if (fabsf(response.y) < 1e-4f)
         {
@@ -162,11 +159,9 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
     targetPos.x += vel.x * dt;
     targetPos.z += vel.z * dt;
     SetPosition(targetPos);
-    TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - After horizontal move, targetPos: (%.3f, %.3f, %.3f)", targetPos.x, targetPos.y, targetPos.z);
 
     if (collisionManager.CheckCollision(m_player->GetCollision(), response))
     {
-        TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - Horizontal collision detected, response: (%.3f, %.3f, %.3f)", response.x, response.y, response.z);
         response.y = 0.0f;
         // Shape horizontal MTV to be stable: correct only opposite to movement direction
         {
@@ -194,11 +189,9 @@ Vector3 PlayerMovement::StepMovement(const CollisionManager &collisionManager)
         response = ValidateCollisionResponse(response, targetPos);
         targetPos = Vector3Add(m_position, response);
         SetPosition(targetPos);
-        TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - After collision response, targetPos: (%.3f, %.3f, %.3f)", targetPos.x, targetPos.y, targetPos.z);
     }
 
     m_physics.SetVelocity(vel);
-    TraceLog(LOG_INFO, "PlayerMovement::StepMovement() - Final velocity: (%.3f, %.3f, %.3f), position: (%.3f, %.3f, %.3f)", vel.x, vel.y, vel.z, m_position.x, m_position.y, m_position.z);
 
     // 3) Update grounded state
     UpdateGrounded(collisionManager);

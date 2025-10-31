@@ -1,4 +1,5 @@
 #include "Menu.h"
+#include "../Game.h"
 #include "MenuConstants.h"
 #include "SettingsManager.h"
 #include "rlImGui.h"
@@ -23,7 +24,7 @@ Menu::Menu()
       m_selectedMapIndex(0), m_mapsPerPage(MenuConstants::MAPS_PER_PAGE), m_currentPage(0),
       m_totalPages(0), m_jsonMapsCount(0), m_showDemoWindow(false), m_showStyleEditor(false),
       m_settingsManager(std::make_unique<SettingsManager>()),
-      m_consoleManager(std::make_unique<ConsoleManager>())
+      m_consoleManager(nullptr)
 {
     // Initialize options vectors
     m_resolutionOptions = MenuConstants::RESOLUTION_OPTIONS;
@@ -43,6 +44,14 @@ void Menu::Initialize(Engine *engine)
     m_mapSelector = std::make_unique<MapSelector>();
     m_mapSelector->InitializeMaps();
     InitializeMaps();
+}
+
+void Menu::SetGame(Game* game)
+{
+    m_game = game;
+    if (m_game && !m_consoleManager) {
+        m_consoleManager = std::make_unique<ConsoleManager>(m_game);
+    }
 }
 
 void Menu::Update()
