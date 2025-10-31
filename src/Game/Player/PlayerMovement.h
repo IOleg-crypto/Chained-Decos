@@ -6,49 +6,47 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <Physics/PhysicsComponent.h>
+#include "IPlayerMovement.h"
 
 // Forward declaration - necessary for circular dependency with Player
 class Player;
 
-class PlayerMovement
+class PlayerMovement : public IPlayerMovement
 {
 public:
     explicit PlayerMovement(Player *player);
     ~PlayerMovement() = default;
 
-    // Movement methods
-    void Move(const Vector3 &moveVector);
-    void SetPosition(const Vector3 &pos);
-    [[nodiscard]] Vector3 GetPosition() const;
-    void ApplyJumpImpulse(float impulse);
+    // IPlayerMovement interface implementation
+    void Move(const Vector3 &moveVector) override;
+    void SetPosition(const Vector3 &pos) override;
+    Vector3 GetPosition() const override;
+    void ApplyJumpImpulse(float impulse) override;
 
     // Physics & collision
-    void ApplyGravity(float deltaTime);
-    Vector3 StepMovement(const CollisionManager &collisionManager);
-    void SnapToGround(const CollisionManager &collisionManager);
-    
-    // Unified grounded detection using raycast
-    void UpdateGrounded(const CollisionManager &collisionManager);
-    void HandleCollisionVelocity(const Vector3 &responseNormal);
-    bool ExtractFromCollider();
-    Vector3 ValidateCollisionResponse(const Vector3& response, const Vector3& currentPosition);
+    void ApplyGravity(float deltaTime) override;
+    Vector3 StepMovement(const CollisionManager &collisionManager) override;
+    void SnapToGround(const CollisionManager &collisionManager) override;
+    void UpdateGrounded(const CollisionManager &collisionManager) override;
+    void HandleCollisionVelocity(const Vector3 &responseNormal) override;
+    bool ExtractFromCollider() override;
+    Vector3 ValidateCollisionResponse(const Vector3 &response, const Vector3 &currentPosition) override;
 
     // Getters/Setters
-    [[nodiscard]] float GetRotationY() const;
-    void SetRotationY(float rotation);
-
-    float GetSpeed();
-    float GetSpeed() const;
-    void SetSpeed(float speed);
-    PhysicsComponent &GetPhysics();
-    [[nodiscard]] const PhysicsComponent &GetPhysics() const;
+    float GetRotationY() const override;
+    void SetRotationY(float rotation) override;
+    float GetSpeed() const override;
+    void SetSpeed(float speed) override;
+    
+    PhysicsComponent &GetPhysics() override;
+    const PhysicsComponent &GetPhysics() const override;
 
     // Noclip functionality
-    void SetNoclip(bool enable);
-    [[nodiscard]] bool IsNoclip() const;
+    void SetNoclip(bool enable) override;
+    bool IsNoclip() const override;
 
     // Reference to collision manager
-    void SetCollisionManager(const CollisionManager *collisionManager);
+    void SetCollisionManager(const CollisionManager *collisionManager) override;
 
 private:
     Player *m_player;

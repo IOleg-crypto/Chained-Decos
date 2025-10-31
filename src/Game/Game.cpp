@@ -5,11 +5,12 @@
 #include "Engine/Input/InputManager.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/Kernel/KernelServices.h"
+#include "Engine/Map/MapLoader.h"
 #include "Engine/MapFileManager/JsonMapFileManager.h"
 #include "Engine/Model/Model.h"
 #include "Engine/Render/RenderManager.h"
-#include "Engine/Map/MapLoader.h"
 #include "Game/Menu/Menu.h"
+#include "Player/PlayerCollision.h"
 #include "imgui.h"
 #include "rlImGui.h"
 #include <chrono>
@@ -17,6 +18,7 @@
 #include <fstream>
 #include <set>
 #include <unordered_set>
+
 
 Game::Game() : m_showMenu(true), m_isGameInitialized(false), m_isDebugInfo(true)
 {
@@ -86,7 +88,8 @@ void Game::Init(int argc, char *argv[])
     m_kernel->Initialize();
 
     // Initialize engine with kernel reference
-    m_engine = std::make_unique<Engine>(config.width, config.height, renderManager, inputManager, m_kernel.get());
+    m_engine = std::make_unique<Engine>(config.width, config.height, renderManager, inputManager,
+                                        m_kernel.get());
     m_engine->Init();
 
     // Initialize game components
@@ -108,7 +111,6 @@ void Game::Init(int argc, char *argv[])
 
     TraceLog(LOG_INFO, "Game::Init() - Kernel already initialized.");
 
-    
     // Only register engine-dependent services if engine is available
     if (m_engine)
     {
@@ -122,9 +124,9 @@ void Game::Init(int argc, char *argv[])
     }
 
     m_kernel->RegisterService<ModelsService>(Kernel::ServiceType::Models,
-                                          std::make_shared<ModelsService>(m_models.get()));
+                                             std::make_shared<ModelsService>(m_models.get()));
     m_kernel->RegisterService<WorldService>(Kernel::ServiceType::World,
-                                         std::make_shared<WorldService>(m_world.get()));
+                                            std::make_shared<WorldService>(m_world.get()));
     InitPlayer();
     InitInput();
 
@@ -133,7 +135,7 @@ void Game::Init(int argc, char *argv[])
 
     Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecos.jpg");
     ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    
+
     SetWindowIcon(m_icon);
     UnloadImage(m_icon);
 }
@@ -638,14 +640,12 @@ void Game::InitPlayer()
     if (currentPos.y < 0.0f)
     {
         TraceLog(LOG_WARNING, "Game::InitPlayer() - Player position below ground level, adjusting");
-        m_player->SetPlayerPosition(
-            {currentPos.x, PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
+        m_player->SetPlayerPosition({currentPos.x, PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
     }
     else if (currentPos.y > 50.0f)
     {
         TraceLog(LOG_WARNING, "Game::InitPlayer() - Player position too high, adjusting");
-        m_player->SetPlayerPosition(
-            {currentPos.x, PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
+        m_player->SetPlayerPosition({currentPos.x, PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
     }
 
     // Check if map has PlayerStart objects and adjust position accordingly
@@ -1064,129 +1064,157 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string &mapIde
         std::ifstream file(mapPath);
         if (file.is_open())
         {
-            try
+            // Read entire file content for manual parsing
+            std::string content((std::istreambuf_iterator<char>(file)),
+                                std::istreambuf_iterator<char>());
+            file.close();
+
+            // Check if this is the editor format or game format (direct array)
+            // Editor format: {"objects": [...] ...}
+            // Game format: [...]
+            size_t objectsStart = content.find("\"objects\"");
+            size_t arrayStart = content.find("[");
+
+            if (objectsStart != std::string::npos)
             {
-                // Read entire file content for manual parsing
-                std::string content((std::istreambuf_iterator<char>(file)),
-                                    std::istreambuf_iterator<char>());
-                file.close();
-
-                // Check if this is the editor format or game format (direct array)
-                // Editor format: {"objects": [...] ...}
-                // Game format: [...]
-                size_t objectsStart = content.find("\"objects\"");
-                size_t arrayStart = content.find("[");
-
-                if (objectsStart != std::string::npos)
+                // This is the editor format with metadata - use nlohmann/json
+                json j;
+                try
                 {
-                    // This is the editor format with metadata - use nlohmann/json
-                    json j;
-                    try
-                    {
-                        j = json::parse(content);
-                    }
-                    catch (const std::exception &e)
-                    {
-                        TraceLog(LOG_WARNING,
-                                 "Game::GetModelsRequiredForMap() - Error parsing map JSON: %s",
-                                 e.what());
-                        return requiredModels;
-                    }
+                    j = json::parse(content);
+                }
+                catch (const std::exception &e)
+                {
+                    TraceLog(LOG_WARNING,
+                             "Game::GetModelsRequiredForMap() - Error parsing map JSON: %s",
+                             e.what());
+                    return requiredModels;
+                }
 
-                    // Look for objects with model references
-                    if (j.contains("objects") && j["objects"].is_array())
+                // Look for objects with model references
+                if (j.contains("objects") && j["objects"].is_array())
+                {
+                    for (const auto &object : j["objects"])
                     {
-                        for (const auto &object : j["objects"])
+                        // Extract object type and model name
+                        int objectType = -1;
+                        std::string objectModelName = "";
+
+                        if (object.contains("type") && object["type"].is_number_integer())
                         {
-                            // Extract object type and model name
-                            int objectType = -1;
-                            std::string objectModelName = "";
+                            objectType = object["type"].get<int>();
+                        }
 
-                            if (object.contains("type") && object["type"].is_number_integer())
+                        if (object.contains("modelName") && object["modelName"].is_string())
+                        {
+                            objectModelName = object["modelName"].get<std::string>();
+                        }
+
+                        // Use our improved function to determine if this object needs a model
+                        std::string modelName =
+                            GetModelNameForObjectType(objectType, objectModelName);
+
+                        // Add model to requirements if found and not already in list
+                        if (!modelName.empty())
+                        {
+                            if (std::find(requiredModels.begin(), requiredModels.end(),
+                                          modelName) == requiredModels.end())
                             {
-                                objectType = object["type"].get<int>();
+                                requiredModels.push_back(modelName);
+                                TraceLog(LOG_INFO,
+                                         "Game::GetModelsRequiredForMap() - Object type %d "
+                                         "requires model: %s",
+                                         objectType, modelName.c_str());
                             }
-
-                            if (object.contains("modelName") && object["modelName"].is_string())
-                            {
-                                objectModelName = object["modelName"].get<std::string>();
-                            }
-
-                            // Use our improved function to determine if this object needs a model
-                            std::string modelName =
-                                GetModelNameForObjectType(objectType, objectModelName);
-
-                            // Add model to requirements if found and not already in list
-                            if (!modelName.empty())
-                            {
-                                if (std::find(requiredModels.begin(), requiredModels.end(),
-                                              modelName) == requiredModels.end())
-                                {
-                                    requiredModels.push_back(modelName);
-                                    TraceLog(LOG_INFO,
-                                             "Game::GetModelsRequiredForMap() - Object type %d "
-                                             "requires model: %s",
-                                             objectType, modelName.c_str());
-                                }
-                                else
-                                {
-                                    TraceLog(LOG_DEBUG,
-                                             "Game::GetModelsRequiredForMap() - Model %s already "
-                                             "in requirements list",
-                                             modelName.c_str());
-                                }
-                            }
-                            else if (objectType != -1)
+                            else
                             {
                                 TraceLog(LOG_DEBUG,
-                                         "Game::GetModelsRequiredForMap() - Object type %d does "
-                                         "not require a model",
-                                         objectType);
+                                         "Game::GetModelsRequiredForMap() - Model %s already "
+                                         "in requirements list",
+                                         modelName.c_str());
                             }
+                        }
+                        else if (objectType != -1)
+                        {
+                            TraceLog(LOG_DEBUG,
+                                     "Game::GetModelsRequiredForMap() - Object type %d does "
+                                     "not require a model",
+                                     objectType);
                         }
                     }
                 }
-                else if (arrayStart != std::string::npos)
+            }
+            else if (arrayStart != std::string::npos)
+            {
+                // This is the game format (direct array) - parse manually
+                TraceLog(
+                    LOG_INFO,
+                    "Game::GetModelsRequiredForMap() - Detected game format, parsing manually");
+
+                // Find all objects in the array
+                size_t pos = arrayStart + 1;
+                std::string objectStartStr = "{";
+                size_t objectStart = content.find(objectStartStr, pos);
+
+                while (objectStart != std::string::npos)
                 {
-                    // This is the game format (direct array) - parse manually
-                    TraceLog(
-                        LOG_INFO,
-                        "Game::GetModelsRequiredForMap() - Detected game format, parsing manually");
+                    // Find the matching closing brace
+                    size_t braceCount = 0;
+                    size_t objectEnd = objectStart;
 
-                    // Find all objects in the array
-                    size_t pos = arrayStart + 1;
-                    std::string objectStartStr = "{";
-                    size_t objectStart = content.find(objectStartStr, pos);
-
-                    while (objectStart != std::string::npos)
+                    while (objectEnd < content.length())
                     {
-                        // Find the matching closing brace
-                        size_t braceCount = 0;
-                        size_t objectEnd = objectStart;
-
-                        while (objectEnd < content.length())
+                        if (content[objectEnd] == '{')
+                            braceCount++;
+                        else if (content[objectEnd] == '}')
                         {
-                            if (content[objectEnd] == '{')
-                                braceCount++;
-                            else if (content[objectEnd] == '}')
-                            {
-                                braceCount--;
-                                if (braceCount == 0)
-                                    break;
-                            }
-                            objectEnd++;
+                            braceCount--;
+                            if (braceCount == 0)
+                                break;
                         }
+                        objectEnd++;
+                    }
 
-                        if (objectEnd < content.length())
+                    if (objectEnd < content.length())
+                    {
+                        std::string objectJson =
+                            content.substr(objectStart, objectEnd - objectStart + 1);
+
+                        // Parse modelPath field manually
+                        size_t modelPathPos = objectJson.find("\"modelPath\"");
+                        if (modelPathPos != std::string::npos)
                         {
-                            std::string objectJson =
-                                content.substr(objectStart, objectEnd - objectStart + 1);
-
-                            // Parse modelPath field manually
-                            size_t modelPathPos = objectJson.find("\"modelPath\"");
-                            if (modelPathPos != std::string::npos)
+                            size_t quoteStart = objectJson.find('\"', modelPathPos + 11);
+                            if (quoteStart != std::string::npos)
                             {
-                                size_t quoteStart = objectJson.find('\"', modelPathPos + 11);
+                                size_t quoteEnd = objectJson.find('\"', quoteStart + 1);
+                                if (quoteEnd != std::string::npos)
+                                {
+                                    std::string modelName = objectJson.substr(
+                                        quoteStart + 1, quoteEnd - quoteStart - 1);
+                                    if (!modelName.empty())
+                                    {
+                                        // Check if this model is not already in the list
+                                        if (std::find(requiredModels.begin(), requiredModels.end(),
+                                                      modelName) == requiredModels.end())
+                                        {
+                                            requiredModels.push_back(modelName);
+                                            TraceLog(LOG_INFO,
+                                                     "Game::GetModelsRequiredForMap() - Found "
+                                                     "model requirement: %s",
+                                                     modelName.c_str());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // Also check for modelName field in game format
+                        else
+                        {
+                            size_t modelNamePos = objectJson.find("\"modelName\"");
+                            if (modelNamePos != std::string::npos)
+                            {
+                                size_t quoteStart = objectJson.find('\"', modelNamePos + 12);
                                 if (quoteStart != std::string::npos)
                                 {
                                     size_t quoteEnd = objectJson.find('\"', quoteStart + 1);
@@ -1204,61 +1232,29 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string &mapIde
                                                 requiredModels.push_back(modelName);
                                                 TraceLog(LOG_INFO,
                                                          "Game::GetModelsRequiredForMap() - Found "
-                                                         "model requirement: %s",
+                                                         "model requirement in game format: %s",
                                                          modelName.c_str());
                                             }
                                         }
                                     }
                                 }
                             }
-                            // Also check for modelName field in game format
-                            else
-                            {
-                                size_t modelNamePos = objectJson.find("\"modelName\"");
-                                if (modelNamePos != std::string::npos)
-                                {
-                                    size_t quoteStart = objectJson.find('\"', modelNamePos + 12);
-                                    if (quoteStart != std::string::npos)
-                                    {
-                                        size_t quoteEnd = objectJson.find('\"', quoteStart + 1);
-                                        if (quoteEnd != std::string::npos)
-                                        {
-                                            std::string modelName = objectJson.substr(
-                                                quoteStart + 1, quoteEnd - quoteStart - 1);
-                                            if (!modelName.empty())
-                                            {
-                                                // Check if this model is not already in the list
-                                                if (std::find(requiredModels.begin(),
-                                                              requiredModels.end(),
-                                                              modelName) == requiredModels.end())
-                                                {
-                                                    requiredModels.push_back(modelName);
-                                                    TraceLog(
-                                                        LOG_INFO,
-                                                        "Game::GetModelsRequiredForMap() - Found "
-                                                        "model requirement in game format: %s",
-                                                        modelName.c_str());
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                        }
 
-                            pos = objectEnd + 1;
-                            objectStart = content.find(objectStartStr, pos);
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        pos = objectEnd + 1;
+                        objectStart = content.find(objectStartStr, pos);
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
-                else
-                {
-                    TraceLog(LOG_WARNING, "Game::GetModelsRequiredForMap() - No valid JSON "
-                                          "structure found in map file");
-                }
+            }
+            else
+            {
+                TraceLog(LOG_WARNING, "Game::GetModelsRequiredForMap() - No valid JSON "
+                                      "structure found in map file");
+            }
         }
         else
         {
@@ -1404,294 +1400,303 @@ void Game::HandleMenuActions()
                 // Clear existing colliders
                 m_collisionManager->ClearColliders();
 
-                    // Create ground collision first (only if no custom map)
-                    if (m_gameMap.objects.empty())
-                    {
-                        // Come back to main menu
-                         m_menu->SetAction(MenuAction::BackToMainMenu);
-                         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Returning to main menu");
-                         return;
-                    }
-
-                    // Initialize collision manager
-                    m_collisionManager->Initialize();
-
-                    // Try to create model collisions, but don't fail if it doesn't work
-                    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models,
-                                                                                requiredModels);
-                    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resume model collisions created");
-                }
-            }
-
-            // Ensure player is properly positioned and set up
-            if (m_player->GetPlayerPosition().x == 0.0f &&
-                m_player->GetPlayerPosition().y == 0.0f && m_player->GetPlayerPosition().z == 0.0f)
-            {
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player position is origin, "
-                                   "resetting to safe position");
-                m_player->SetPlayerPosition({0.0f, PLAYER_SAFE_SPAWN_HEIGHT, 0.0f});
-            }
-
-            // Re-setup player collision and movement
-            m_player->GetMovement()->SetCollisionManager(m_collisionManager.get());
-            m_player->UpdatePlayerBox();
-            m_player->UpdatePlayerCollision();
-        }
-
-        // Hide the menu and resume the game
-        m_showMenu = false;
-        HideCursor();
-        m_menu->ResetAction();
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Game resumed successfully");
-        // Keep game in progress state when resuming
-        break;
-    case MenuAction::StartGameWithMap:
-    {
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting game with selected map...");
-        m_menu->SetGameInProgress(true);
-        std::string selectedMapName = m_menu->GetSelectedMapName();
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Selected map: %s", selectedMapName.c_str());
-
-        // Convert map name to full path
-        std::string mapPath;
-        if (selectedMapName.length() >= 3 && isalpha(selectedMapName[0]) &&
-            selectedMapName[1] == ':' &&
-            (selectedMapName[2] == '/' || selectedMapName[2] == '\\'))
-        {
-            // Already an absolute path, use as-is
-            mapPath = selectedMapName;
-        }
-        else
-        {
-            // For relative paths, construct path using PROJECT_ROOT_DIR and resources/maps/
-            // Extract filename to handle cases like "../maporigin.json"
-            std::string filename = std::filesystem::path(selectedMapName).filename().string();
-            mapPath = PROJECT_ROOT_DIR "/resources/maps/" + filename;
-            if (filename.find(".json") == std::string::npos)
-            {
-                mapPath += ".json";
-            }
-        }
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Full map path: %s", mapPath.c_str());
-
-        // Step 1: Analyze map to determine required models
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Analyzing map to determine required models...");
-        std::vector<std::string> requiredModels = GetModelsRequiredForMap(mapPath);
-        if (requiredModels.empty())
-        {
-            TraceLog(LOG_WARNING, "Game::HandleMenuActions() - No models required for map, but player model is always needed");
-            requiredModels.emplace_back("player"); // Always include player model
-        }
-
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Required models for map:");
-        for (const auto &model : requiredModels)
-        {
-            TraceLog(LOG_INFO, "Game::HandleMenuActions() -   - %s", model.c_str());
-        }
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Total models required: %d", requiredModels.size());
-
-        // Step 2: Load only the required models selectively
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading required models selectively...");
-        auto loadResult = LoadGameModelsSelective(requiredModels);
-        if (!loadResult || loadResult->loadedModels == 0)
-        {
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load any required models");
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without models");
-            return;
-        }
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Successfully loaded %d/%d required models in %.2f seconds",
-                 loadResult->loadedModels, loadResult->totalModels, loadResult->loadingTime);
-
-        // Step 3: Initialize collision system with required models
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing collision system with required models...");
-        if (!InitCollisionsWithModelsSafe(requiredModels))
-        {
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize collision system with required models");
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without collision system");
-            return;
-        }
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized successfully");
-
-        // Step 4: Load the map objects
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading map objects...");
-        try
-        {
-            // Try to detect map format and use appropriate loader
-            std::ifstream testFile(mapPath);
-            if (testFile.is_open())
-            {
-                std::string firstLine;
-                std::getline(testFile, firstLine);
-                testFile.close();
-
-                // Check if this looks like array format (old models.json format)
-                if (firstLine.find("[") == 0)
+                // Create ground collision first (only if no custom map)
+                if (m_gameMap.objects.empty())
                 {
-                    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Detected array format, using LoadGameMap");
-                    m_gameMap = LoadGameMap(mapPath.c_str());
+                    // Come back to main menu
+                    m_menu->SetAction(MenuAction::BackToMainMenu);
+                    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Returning to main menu");
+                    return;
+                }
 
-                    // Register any models that MapLoader preloaded into the GameMap
-                    if (!m_gameMap.loadedModels.empty())
+                // Initialize collision manager
+                m_collisionManager->Initialize();
+
+                // Try to create model collisions, but don't fail if it doesn't work
+                m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models,
+                                                                            requiredModels);
+                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resume model collisions created");
+            }
+        }
+
+        // Ensure player is properly positioned and set up
+        if (m_player->GetPlayerPosition().x == 0.0f && m_player->GetPlayerPosition().y == 0.0f &&
+            m_player->GetPlayerPosition().z == 0.0f)
+        {
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player position is origin, "
+                               "resetting to safe position");
+            m_player->SetPlayerPosition({0.0f, PLAYER_SAFE_SPAWN_HEIGHT, 0.0f});
+        }
+
+        // Re-setup player collision and movement
+        m_player->GetMovement()->SetCollisionManager(m_collisionManager.get());
+        m_player->UpdatePlayerBox();
+        m_player->UpdatePlayerCollision();
+    }
+
+    // Hide the menu and resume the game
+    m_showMenu = false;
+    HideCursor();
+    m_menu->ResetAction();
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Game resumed successfully");
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Starting game with selected map...");
+    m_menu->SetGameInProgress(true);
+    std::string selectedMapName = m_menu->GetSelectedMapName();
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Selected map: %s", selectedMapName.c_str());
+
+    // Convert map name to full path
+    std::string mapPath;
+    if (selectedMapName.length() >= 3 && isalpha(selectedMapName[0]) && selectedMapName[1] == ':' &&
+        (selectedMapName[2] == '/' || selectedMapName[2] == '\\'))
+    {
+        // Already an absolute path, use as-is
+        mapPath = selectedMapName;
+    }
+    else
+    {
+        // For relative paths, construct path using PROJECT_ROOT_DIR and resources/maps/
+        // Extract filename to handle cases like "../maporigin.json"
+        std::string filename = std::filesystem::path(selectedMapName).filename().string();
+        mapPath = PROJECT_ROOT_DIR "/resources/maps/" + filename;
+        if (filename.find(".json") == std::string::npos)
+        {
+            mapPath += ".json";
+        }
+    }
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Full map path: %s", mapPath.c_str());
+
+    // Step 1: Analyze map to determine required models
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Analyzing map to determine required models...");
+    std::vector<std::string> requiredModels = GetModelsRequiredForMap(mapPath);
+    if (requiredModels.empty())
+    {
+        TraceLog(LOG_WARNING, "Game::HandleMenuActions() - No models required for map, but player "
+                              "model is always needed");
+        requiredModels.emplace_back("player"); // Always include player model
+    }
+
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Required models for map:");
+    for (const auto &model : requiredModels)
+    {
+        TraceLog(LOG_INFO, "Game::HandleMenuActions() -   - %s", model.c_str());
+    }
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Total models required: %d",
+             requiredModels.size());
+
+    // Step 2: Load only the required models selectively
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading required models selectively...");
+    auto loadResult = LoadGameModelsSelective(requiredModels);
+    if (!loadResult || loadResult->loadedModels == 0)
+    {
+        TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load any required models");
+        TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without models");
+        return;
+    }
+    TraceLog(
+        LOG_INFO,
+        "Game::HandleMenuActions() - Successfully loaded %d/%d required models in %.2f seconds",
+        loadResult->loadedModels, loadResult->totalModels, loadResult->loadingTime);
+
+    // Step 3: Initialize collision system with required models
+    TraceLog(LOG_INFO,
+             "Game::HandleMenuActions() - Initializing collision system with required models...");
+    if (!InitCollisionsWithModelsSafe(requiredModels))
+    {
+        TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize collision system "
+                            "with required models");
+        TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without collision system");
+        return;
+    }
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Collision system initialized successfully");
+
+    // Step 4: Load the map objects
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Loading map objects...");
+    // Try to detect map format and use appropriate loader
+    std::ifstream testFile(mapPath);
+    if (testFile.is_open())
+    {
+        std::string firstLine;
+        std::getline(testFile, firstLine);
+        testFile.close();
+
+        // Check if this looks like array format (old models.json format)
+        if (firstLine.find("[") == 0)
+        {
+            TraceLog(LOG_INFO,
+                     "Game::HandleMenuActions() - Detected array format, using LoadGameMap");
+            m_gameMap = LoadGameMap(mapPath.c_str());
+
+            // Register any models that MapLoader preloaded into the GameMap
+            if (!m_gameMap.loadedModels.empty())
+            {
+                TraceLog(LOG_INFO,
+                         "Game::HandleMenuActions() - Registering %d preloaded models from map "
+                         "into ModelLoader",
+                         m_gameMap.loadedModels.size());
+                for (const auto &p : m_gameMap.loadedModels)
+                {
+                    const std::string &modelName = p.first;
+                    const ::Model &loaded = p.second;
+
+                    // Validate model before registration
+                    if (loaded.meshCount > 0)
                     {
-                        TraceLog(LOG_INFO,
-                                 "Game::HandleMenuActions() - Registering %d preloaded models from map into ModelLoader",
-                                 m_gameMap.loadedModels.size());
-                        for (const auto &p : m_gameMap.loadedModels)
+                        if (m_models->RegisterLoadedModel(modelName, loaded))
                         {
-                            const std::string &modelName = p.first;
-                            const ::Model &loaded = p.second;
-
-                            // Validate model before registration
-                            if (loaded.meshCount > 0)
-                            {
-                                if (m_models->RegisterLoadedModel(modelName, loaded))
-                                {
-                                    TraceLog(LOG_INFO,
-                                             "Game::HandleMenuActions() - Successfully registered model from map: %s (meshCount: %d)",
-                                             modelName.c_str(), loaded.meshCount);
-                                }
-                                else
-                                {
-                                    TraceLog(LOG_WARNING,
-                                             "Game::HandleMenuActions() - Failed to register model from map: %s",
-                                             modelName.c_str());
-                                }
-                            }
-                            else
-                            {
-                                TraceLog(LOG_WARNING,
-                                         "Game::HandleMenuActions() - Skipping invalid model from map: %s (meshCount: %d)",
-                                         modelName.c_str(), loaded.meshCount);
-                            }
+                            TraceLog(LOG_INFO,
+                                     "Game::HandleMenuActions() - Successfully registered model "
+                                     "from map: %s (meshCount: %d)",
+                                     modelName.c_str(), loaded.meshCount);
+                        }
+                        else
+                        {
+                            TraceLog(
+                                LOG_WARNING,
+                                "Game::HandleMenuActions() - Failed to register model from map: %s",
+                                modelName.c_str());
                         }
                     }
                     else
                     {
-                        TraceLog(LOG_INFO, "Game::HandleMenuActions() - No preloaded models in GameMap to register");
+                        TraceLog(LOG_WARNING,
+                                 "Game::HandleMenuActions() - Skipping invalid model from map: %s "
+                                 "(meshCount: %d)",
+                                 modelName.c_str(), loaded.meshCount);
                     }
-
-                    TraceLog(LOG_INFO,
-                             "Game::HandleMenuActions() - Creating model instances for array-format map (%d objects)",
-                             m_gameMap.objects.size());
-                    for (const auto &object : m_gameMap.objects)
-                    {
-                        if (object.type == MapObjectType::MODEL && !object.modelName.empty())
-                        {
-                            std::string requested = object.modelName;
-                            auto available = m_models->GetAvailableModels();
-                            bool exists = (std::find(available.begin(), available.end(), requested) != available.end());
-                            std::string candidateName = requested;
-
-                            if (!exists)
-                            {
-                                std::string stem = std::filesystem::path(requested).stem().string();
-                                if (!stem.empty() && std::find(available.begin(), available.end(), stem) != available.end())
-                                {
-                                    candidateName = stem;
-                                    exists = true;
-                                }
-                                else
-                                {
-                                    std::vector<std::string> exts = {".glb", ".gltf", ".obj"};
-                                    for (const auto &ext : exts)
-                                    {
-                                        std::string resourcePath = std::string(PROJECT_ROOT_DIR) + "/resources/" + requested;
-                                        if (std::filesystem::path(requested).extension().empty())
-                                            resourcePath = std::string(PROJECT_ROOT_DIR) + "/resources/" + requested + ext;
-
-                                        TraceLog(LOG_INFO,
-                                                 "Game::HandleMenuActions() - Attempting to auto-load model '%s' from %s",
-                                                 requested.c_str(), resourcePath.c_str());
-                                        if (m_models->LoadSingleModel(stem.empty() ? requested : stem, resourcePath, true))
-                                        {
-                                            candidateName = stem.empty() ? requested : stem;
-                                            exists = true;
-                                            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Auto-loaded model '%s'", candidateName.c_str());
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (!exists)
-                            {
-                                TraceLog(LOG_WARNING,
-                                         "Game::HandleMenuActions() - Model '%s' not available after auto-load attempts; skipping instance for object '%s'",
-                                         requested.c_str(), object.name.c_str());
-                                continue;
-                            }
-
-                            ModelInstanceConfig cfg;
-                            cfg.position = object.position;
-                            cfg.rotation = object.rotation;
-                            cfg.scale = (object.scale.x != 0.0f || object.scale.y != 0.0f || object.scale.z != 0.0f)
-                                            ? object.scale.x : 1.0f;
-                            cfg.color = object.color;
-                            cfg.spawn = true;
-
-                            if (!m_models->AddInstanceEx(candidateName, cfg))
-                            {
-                                TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Failed to add instance for '%s'", candidateName.c_str());
-                            }
-                            else
-                            {
-                                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Added instance for '%s'", candidateName.c_str());
-                            }
-                        }
-                        else if (object.type == MapObjectType::LIGHT)
-                        {
-                            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Skipping LIGHT object '%s' for model instance creation", object.name.c_str());
-                        }
-                    }
-                }
-                else
-                {
-                    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Detected editor format, using LoadEditorMap");
-                    LoadEditorMap(mapPath);
                 }
             }
             else
             {
-                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot open map file: %s", mapPath.c_str());
-                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without map");
-                return;
+                TraceLog(LOG_INFO,
+                         "Game::HandleMenuActions() - No preloaded models in GameMap to register");
             }
 
-            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Map loaded successfully with %d objects", m_gameMap.objects.size());
+            TraceLog(LOG_INFO,
+                     "Game::HandleMenuActions() - Creating model instances for array-format map "
+                     "(%d objects)",
+                     m_gameMap.objects.size());
+            for (const auto &object : m_gameMap.objects)
+            {
+                if (object.type == MapObjectType::MODEL && !object.modelName.empty())
+                {
+                    std::string requested = object.modelName;
+                    auto available = m_models->GetAvailableModels();
+                    bool exists = (std::find(available.begin(), available.end(), requested) !=
+                                   available.end());
+                    std::string candidateName = requested;
+
+                    if (!exists)
+                    {
+                        std::string stem = std::filesystem::path(requested).stem().string();
+                        if (!stem.empty() &&
+                            std::find(available.begin(), available.end(), stem) != available.end())
+                        {
+                            candidateName = stem;
+                            exists = true;
+                        }
+                        else
+                        {
+                            std::vector<std::string> exts = {".glb", ".gltf", ".obj"};
+                            for (const auto &ext : exts)
+                            {
+                                std::string resourcePath =
+                                    std::string(PROJECT_ROOT_DIR) + "/resources/" + requested;
+                                if (std::filesystem::path(requested).extension().empty())
+                                    resourcePath = std::string(PROJECT_ROOT_DIR) + "/resources/" +
+                                                   requested + ext;
+
+                                TraceLog(LOG_INFO,
+                                         "Game::HandleMenuActions() - Attempting to auto-load "
+                                         "model '%s' from %s",
+                                         requested.c_str(), resourcePath.c_str());
+                                if (m_models->LoadSingleModel(stem.empty() ? requested : stem,
+                                                              resourcePath, true))
+                                {
+                                    candidateName = stem.empty() ? requested : stem;
+                                    exists = true;
+                                    TraceLog(LOG_INFO,
+                                             "Game::HandleMenuActions() - Auto-loaded model '%s'",
+                                             candidateName.c_str());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!exists)
+                    {
+                        TraceLog(LOG_WARNING,
+                                 "Game::HandleMenuActions() - Model '%s' not available after "
+                                 "auto-load attempts; skipping instance for object '%s'",
+                                 requested.c_str(), object.name.c_str());
+                        continue;
+                    }
+
+                    ModelInstanceConfig cfg;
+                    cfg.position = object.position;
+                    cfg.rotation = object.rotation;
+                    cfg.scale =
+                        (object.scale.x != 0.0f || object.scale.y != 0.0f || object.scale.z != 0.0f)
+                            ? object.scale.x
+                            : 1.0f;
+                    cfg.color = object.color;
+                    cfg.spawn = true;
+
+                    if (!m_models->AddInstanceEx(candidateName, cfg))
+                    {
+                        TraceLog(LOG_WARNING,
+                                 "Game::HandleMenuActions() - Failed to add instance for '%s'",
+                                 candidateName.c_str());
+                    }
+                    else
+                    {
+                        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Added instance for '%s'",
+                                 candidateName.c_str());
+                    }
+                }
+                else if (object.type == MapObjectType::LIGHT)
+                {
+                    TraceLog(LOG_INFO,
+                             "Game::HandleMenuActions() - Skipping LIGHT object '%s' for model "
+                             "instance creation",
+                             object.name.c_str());
+                }
+            }
         }
-
-        // Step 5: Initialize player after map is loaded
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing player...");
-        InitPlayer();
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player initialized");
-
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Game initialization complete");
-        m_isGameInitialized = true;
-
-        // Hide menu and start the game
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Hiding menu and starting game...");
-        m_showMenu = false;
-        HideCursor();
-        m_menu->ResetAction();
-    }
-    break;
-
-    case MenuAction::ExitGame:
-        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Exit game requested from menu.");
-        // Clear game state when exiting
-        m_menu->SetGameInProgress(false);
-        m_showMenu = true; // Show menu one last time before exit
-        if (m_engine)
+        else
         {
-            m_engine->RequestExit();
+            TraceLog(LOG_INFO,
+                     "Game::HandleMenuActions() - Detected editor format, using LoadEditorMap");
+            LoadEditorMap(mapPath);
         }
-        m_menu->ResetAction();
-        break;
-
-    default:
-        break;
     }
+    else
+    {
+        TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot open map file: %s",
+                 mapPath.c_str());
+        TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without map");
+        return;
+    }
+
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Map loaded successfully with %d objects",
+             m_gameMap.objects.size());
+
+    // Step 5: Initialize player after map is loaded
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing player...");
+    InitPlayer();
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player initialized");
+
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Game initialization complete");
+    m_isGameInitialized = true;
+
+    // Hide menu and start the game
+    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Hiding menu and starting game...");
+    m_showMenu = false;
+    HideCursor();
+    m_menu->ResetAction();
+    
 }
+
 
 void Game::RenderGameWorld()
 {
@@ -2545,8 +2550,7 @@ void Game::RenderEditorMap()
                     }
                     else
                     {
-                        TraceLog(LOG_ERROR,
-                                 "Game::RenderEditorMap() - Model %s has no meshes!",
+                        TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Model %s has no meshes!",
                                  object.modelName.c_str());
                         // Fallback to cube if model has no meshes
                         DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z,
@@ -2555,8 +2559,7 @@ void Game::RenderEditorMap()
                 }
                 else
                 {
-                    TraceLog(LOG_ERROR,
-                             "Game::RenderEditorMap() - Model %s not found!",
+                    TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Model %s not found!",
                              object.modelName.c_str());
                     // Fallback to cube if model not found
                     DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z,
