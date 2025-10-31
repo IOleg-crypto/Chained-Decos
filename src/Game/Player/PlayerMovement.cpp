@@ -4,7 +4,7 @@
 #include <raylib.h>
 
 PlayerMovement::PlayerMovement(Player *player)
-    : m_player(player), m_position(Player::DEFAULT_SPAWN_POSITION), m_rotationY(0.0f),
+    : m_player(player), m_position({0.0f, 0.0f, 0.0f}), m_rotationY(0.0f),
       m_walkSpeed(11.0f)
 {
     m_physics.SetGroundLevel(false);
@@ -27,7 +27,7 @@ Vector3 PlayerMovement::GetPosition() const { return m_position; }
 float PlayerMovement::GetRotationY() const { return m_rotationY; }
 void PlayerMovement::SetRotationY(float rotation) { m_rotationY = rotation; }
 
-float PlayerMovement::GetSpeed() { return m_walkSpeed; }
+float PlayerMovement::GetSpeed() const { return m_walkSpeed; }
 void PlayerMovement::SetSpeed(float speed) { m_walkSpeed = speed; }
 
 PhysicsComponent &PlayerMovement::GetPhysics() { return m_physics; }

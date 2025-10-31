@@ -4,8 +4,9 @@
 #include <raylib.h>
 #include <Collision/CollisionSystem.h>
 #include <vector>
-#include "Player.h"
-#include "Player.h"
+
+// Forward declaration to break circular dependency
+class Player;
 
 // PlayerCollision: handles collision detection and response
 class PlayerCollision : public Collision {

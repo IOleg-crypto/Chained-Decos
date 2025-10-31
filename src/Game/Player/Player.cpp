@@ -1,6 +1,9 @@
+#include "Player.h"
 #include "PlayerMovement.h"
+#include "PlayerInput.h"
+#include "PlayerCollision.h"
+#include "PlayerModel.h"
 #include <CameraController/CameraController.h>
-#include <Player.h>
 #include <World/World.h>
 #include <memory>
 #include <raylib.h>
@@ -12,10 +15,8 @@ const float Player::MODEL_Y_OFFSET = -1.f;
 
 Player::Player() : m_cameraController(std::make_shared<CameraController>())
 {
-    TraceLog(LOG_INFO, "Creating Player...");
-
     // Initialize player bounding box size
-    m_boundingBoxSize = (Vector3){1.0f, 2.5f, 1.0f}; // Adjusted height for large model
+    m_boundingBoxSize = {1.0f, 2.5f, 1.0f};
 
     // Create component objects
     m_movement = std::make_unique<PlayerMovement>(this);
@@ -23,79 +24,17 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_model = std::make_unique<PlayerModel>();
     m_collision = std::make_unique<PlayerCollision>(this);
 
-
     // Initialize player position - use safe position above ground
     Vector3 safePosition = {0.0f, 5.0f, 0.0f};
     SetPlayerPosition(safePosition);
 
-    TraceLog(LOG_INFO, "Player::Player() - Player initialized at safe position (%.2f, %.2f, %.2f)",
-               safePosition.x, safePosition.y, safePosition.z);
-
-    // Let physics detect ground; start ungrounded so gravity can act
+    // Initialize physics - start ungrounded so gravity can act
     m_movement->GetPhysics().SetGroundLevel(false);
     m_movement->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
 
-    // Additional safety check
-    Vector3 currentPos = GetPlayerPosition();
-    TraceLog(LOG_INFO, "Player::Player() - Player current position after init: (%.2f, %.2f, %.2f)",
-               currentPos.x, currentPos.y, currentPos.z);
-
-    // Force update collision system
+    // Update collision system
     UpdatePlayerBox();
     UpdatePlayerCollision();
-
-    // Final position verification
-    Vector3 finalPos = GetPlayerPosition();
-    TraceLog(LOG_INFO, "Player::Player() - Player final position: (%.2f, %.2f, %.2f)",
-               finalPos.x, finalPos.y, finalPos.z);
-
-    // Ensure player is properly grounded
-    if (finalPos.y < 5.0f)
-    {
-        Vector3 correctedPos = {finalPos.x, 5.0f, finalPos.z};
-        SetPlayerPosition(correctedPos);
-        TraceLog(LOG_WARNING, "Player::Player() - Player position corrected to (%.2f, %.2f, %.2f)",
-                   correctedPos.x, correctedPos.y, correctedPos.z);
-    }
-
-    // Final verification
-    Vector3 verifiedPos = GetPlayerPosition();
-    TraceLog(LOG_INFO, "Player::Player() - Player verified final position: (%.2f, %.2f, %.2f)",
-               verifiedPos.x, verifiedPos.y, verifiedPos.z);
-
-    // Ensure player stays at safe height
-    if (verifiedPos.y < 5.0f)
-    {
-        Vector3 safeCorrectedPos = {verifiedPos.x, 5.0f, verifiedPos.z};
-        SetPlayerPosition(safeCorrectedPos);
-        TraceLog(LOG_ERROR, "Player::Player() - Player position force-corrected to safe height (%.2f, %.2f, %.2f)",
-                   safeCorrectedPos.x, safeCorrectedPos.y, safeCorrectedPos.z);
-    }
-
-    // Final safety check - ensure player is at correct height
-    Vector3 finalCheckPos = GetPlayerPosition();
-    if (finalCheckPos.y < 5.0f)
-    {
-        Vector3 emergencyPos = {finalCheckPos.x, 5.0f, finalCheckPos.z};
-        SetPlayerPosition(emergencyPos);
-        TraceLog(LOG_ERROR, "Player::Player() - EMERGENCY: Player position corrected to (%.2f, %.2f, %.2f)",
-                   emergencyPos.x, emergencyPos.y, emergencyPos.z);
-    }
-
-    // Ultimate safety check
-    Vector3 ultimatePos = GetPlayerPosition();
-    if (ultimatePos.y < 5.0f)
-    {
-        Vector3 ultimateSafePos = {ultimatePos.x, 5.0f, ultimatePos.z};
-        SetPlayerPosition(ultimateSafePos);
-        TraceLog(LOG_ERROR, "Player::Player() - ULTIMATE SAFETY: Player position corrected to (%.2f, %.2f, %.2f)",
-                   ultimateSafePos.x, ultimateSafePos.y, ultimateSafePos.z);
-    }
-
-    // Final position confirmation
-    Vector3 finalConfirmedPos = GetPlayerPosition();
-    TraceLog(LOG_INFO, "Player::Player() - Player final confirmed position: (%.2f, %.2f, %.2f)",
-               finalConfirmedPos.x, finalConfirmedPos.y, finalConfirmedPos.z);
 }
 
 Player::~Player() = default;
@@ -264,7 +203,7 @@ PhysicsComponent &Player::GetPhysics() { return m_movement->GetPhysics(); }
 
 void Player::SetRotationY(const float rotationY) const { m_movement->SetRotationY(rotationY); }
 
-PlayerMovement *Player::GetMovement() const { return m_movement.get(); }
+IPlayerMovement *Player::GetMovement() const { return m_movement.get(); }
 PlayerCollision& Player::GetCollisionMutable() {
     return *m_collision;
 }
