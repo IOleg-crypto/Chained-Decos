@@ -9,10 +9,6 @@
 // Forward declaration to break circular dependency
 class Player;
 
-/**
- * Interface for player movement and physics
- * Allows Player to work with different movement implementations
- */
 class IPlayerMovement
 {
 public:

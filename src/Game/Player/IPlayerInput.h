@@ -8,10 +8,6 @@
 // Forward declaration to break circular dependency
 class Player;
 
-/**
- * Interface for player input handling
- * Allows Player to work with different input implementations
- */
 class IPlayerInput
 {
 public:
