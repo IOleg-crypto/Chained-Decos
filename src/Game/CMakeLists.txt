@@ -1,5 +1,13 @@
 add_library(ChainedDecosGame STATIC
     Game.cpp
+    Managers/GameMapManager.cpp
+    Managers/GameMapManager.h
+    Managers/GameModelManager.cpp
+    Managers/GameModelManager.h
+    Managers/GameStateManager.cpp
+    Managers/GameStateManager.h
+    Managers/GameRenderHelper.cpp
+    Managers/GameRenderHelper.h
 )
 
 target_include_directories(ChainedDecosGame

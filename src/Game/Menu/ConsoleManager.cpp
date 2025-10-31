@@ -167,6 +167,23 @@ void ConsoleManager::AddToHistory(const std::string& command) {
 
 // Scrolling functions removed as ImGui handles scrolling
 
+void ConsoleManager::CopyToClipboard(const std::string& text) {
+    ImGui::SetClipboardText(text.c_str());
+}
+
+void ConsoleManager::CopyLastCommand() {
+    if (!consoleHistory.empty()) {
+        CopyToClipboard(consoleHistory.back());
+    }
+}
+
+std::string ConsoleManager::GetLastCommand() const {
+    if (!consoleHistory.empty()) {
+        return consoleHistory.back();
+    }
+    return "";
+}
+
 void ConsoleManager::RenderConsole() {
     if (!consoleOpen) return;
 
@@ -177,19 +194,80 @@ void ConsoleManager::RenderConsole() {
     ImGui::Begin("Console", &open, ImGuiWindowFlags_NoCollapse);
     consoleOpen = open;
 
-    // Display output
+    // Toolbar with copy button
+    if (ImGui::Button("Copy Last Command")) {
+        CopyLastCommand();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Copy All Output")) {
+        std::string allOutput;
+        for (const auto& line : consoleOutput) {
+            allOutput += line + "\n";
+        }
+        if (!allOutput.empty()) {
+            CopyToClipboard(allOutput);
+        }
+    }
+
+    // Display output with context menu for copying
     ImGui::BeginChild("Output", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false, ImGuiWindowFlags_HorizontalScrollbar);
-    for (const auto& line : consoleOutput) {
+    for (size_t i = 0; i < consoleOutput.size(); ++i) {
+        const auto& line = consoleOutput[i];
         ImGui::TextUnformatted(line.c_str());
+        
+        // Add context menu on right-click for copying individual lines
+        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            ImGui::OpenPopup(("OutputContextMenu_" + std::to_string(i)).c_str());
+        }
+        
+        if (ImGui::BeginPopup(("OutputContextMenu_" + std::to_string(i)).c_str())) {
+            if (ImGui::MenuItem("Copy Line")) {
+                CopyToClipboard(line);
+            }
+            ImGui::EndPopup();
+        }
     }
     if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
         ImGui::SetScrollHereY(1.0f);
     }
     ImGui::EndChild();
 
+    // History section with copy functionality
+    if (!consoleHistory.empty()) {
+        ImGui::Separator();
+        ImGui::Text("Command History:");
+        ImGui::BeginChild("History", ImVec2(0, 100), false, ImGuiWindowFlags_HorizontalScrollbar);
+        for (size_t i = 0; i < consoleHistory.size(); ++i) {
+            const auto& cmd = consoleHistory[i];
+            ImGui::Selectable(("##history_" + std::to_string(i)).c_str(), false);
+            ImGui::SameLine();
+            ImGui::TextUnformatted(cmd.c_str());
+            
+            // Double-click to insert command into input field
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                // Copy to clipboard first, then user can paste
+                CopyToClipboard(cmd);
+            }
+            
+            // Right-click context menu for copying
+            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+                ImGui::OpenPopup(("HistoryContextMenu_" + std::to_string(i)).c_str());
+            }
+            
+            if (ImGui::BeginPopup(("HistoryContextMenu_" + std::to_string(i)).c_str())) {
+                if (ImGui::MenuItem("Copy Command")) {
+                    CopyToClipboard(cmd);
+                }
+                ImGui::EndPopup();
+            }
+        }
+        ImGui::EndChild();
+    }
+
     // Input area
     ImGui::Separator();
     static char inputBuffer[256] = "";
+    ImGui::PushItemWidth(-1);
     if (ImGui::InputText("##Input", inputBuffer, IM_ARRAYSIZE(inputBuffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
         std::string command = inputBuffer;
         if (!command.empty()) {
@@ -198,6 +276,7 @@ void ConsoleManager::RenderConsole() {
             inputBuffer[0] = '\0';
         }
     }
+    ImGui::PopItemWidth();
 
     ImGui::End();
 }

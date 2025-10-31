@@ -5,19 +5,23 @@
 #include "Engine/Engine.h"
 #include "Engine/Model/Model.h"
 #include "Engine/World/World.h"
-#include "Engine/Map/MapLoader.h" // For loading editor-created maps
+#include "Engine/Map/MapLoader.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Player/Player.h"
 #include <memory>
 
-// Forward declaration to break circular dependency
 class Menu;
+class GameMapManager;
+class GameModelManager;
+class GameStateManager;
+class GameRenderHelper;
 
 class Game
-
 {
 private:
     float PLAYER_SAFE_SPAWN_HEIGHT = 2.0f;
+    
+    // Core components
     std::unique_ptr<Player> m_player;
     std::unique_ptr<CollisionManager> m_collisionManager;
     std::unique_ptr<ModelLoader> m_models;
@@ -26,19 +30,15 @@ private:
     std::unique_ptr<Engine> m_engine;
     std::unique_ptr<Kernel> m_kernel;
 
-    // Map loading system
-    GameMap m_gameMap; // New comprehensive map system
+    // Game manager components
+    std::unique_ptr<GameMapManager> m_mapManager;
+    std::unique_ptr<GameModelManager> m_modelManager;
+    std::unique_ptr<GameStateManager> m_stateManager;
+    std::unique_ptr<GameRenderHelper> m_renderHelper;
 
-private:
     bool m_showMenu;
     bool m_isGameInitialized;
     [[maybe_unused]] bool m_isDebugInfo;
-
-    // Game state saving members
-    std::string m_savedMapPath;
-    std::string m_currentMapPath;
-    Vector3 m_savedPlayerPosition;
-    Vector3 m_savedPlayerVelocity;
 
 public:
     Game();
@@ -46,61 +46,62 @@ public:
 
     void Init(int argc, char *argv[]);
     void Run();
+    void Update();
+    void Render();
+    void Cleanup();
 
     void ToggleMenu();
     void RequestExit() const;
     bool IsRunning() const;
 
-    // Cursor management
     void EnableCursor();
     void HideCursor();
 
-    void Update();
-    void Render();
     void InitInput();
-    void InitCollisions();
-    void InitCollisionsWithModels(const std::vector<std::string> &requiredModels);
-    bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels);
     void InitPlayer();
-    std::optional<ModelLoader::LoadResult> LoadGameModels();
-    std::optional<ModelLoader::LoadResult>
-    LoadGameModelsSelective(const std::vector<std::string> &modelNames);
-    std::optional<ModelLoader::LoadResult>
-    LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames);
-    std::string GetModelNameForObjectType(int objectType, const std::string &modelName = "");
-    std::vector<std::string> GetModelsRequiredForMap(const std::string &mapIdentifier);
+    
     void UpdatePlayerLogic();
     void UpdatePhysicsLogic();
-    void Cleanup(); // Resource cleanup
-    // void HandleKeyboardShortcuts(); maybe implemented in the future
+
     void HandleMenuActions();
     void RenderGameWorld();
     void RenderGameUI() const;
 
-    // Helper functions for code quality and reduced duplication
-    void CreatePlatform(const Vector3 &position, const Vector3 &size, Color color,
-                        CollisionType collisionType);
+    // Delegated methods to managers
+    void InitCollisions();
+    void InitCollisionsWithModels(const std::vector<std::string> &requiredModels);
+    bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels);
+    
+    std::optional<ModelLoader::LoadResult> LoadGameModels();
+    std::optional<ModelLoader::LoadResult> LoadGameModelsSelective(const std::vector<std::string> &modelNames);
+    std::optional<ModelLoader::LoadResult> LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames);
+    std::string GetModelNameForObjectType(int objectType, const std::string &modelName = "");
+    std::vector<std::string> GetModelsRequiredForMap(const std::string &mapIdentifier);
+
+    void CreatePlatform(const Vector3 &position, const Vector3 &size, Color color, CollisionType collisionType);
     static float CalculateDynamicFontSize(float baseSize);
 
-    // Map loading and rendering
     void LoadEditorMap(const std::string &mapPath);
     void RenderEditorMap();
-    // Diagnostics: dump map vs model registry for debugging missing instances
     void DumpMapDiagnostics() const;
 
-    // Game state management
     void SaveGameState();
     void RestoreGameState();
 
-    // Test accessor methods - public for testing purposes
     Player &GetPlayer() { return *m_player; }
     CollisionManager &GetCollisionManager() { return *m_collisionManager; }
     ModelLoader &GetModels() { return *m_models; }
     WorldManager &GetWorld() { return *m_world; }
-    Menu &GetMenu(); // Implementation in .cpp to avoid including Menu.h
+    Menu &GetMenu();
     Kernel &GetKernel() { return *m_kernel; }
+    
+    GameMapManager* GetMapManager() { return m_mapManager.get(); }
+    GameModelManager* GetModelManager() { return m_modelManager.get(); }
+    GameStateManager* GetStateManager() { return m_stateManager.get(); }
+    GameRenderHelper* GetRenderHelper() { return m_renderHelper.get(); }
+    
     GameMap &GetGameMap();
-    bool IsInitialized() const;
+    bool IsInitialized() const { return m_isGameInitialized; }
 };
 
 #endif // GAME_H

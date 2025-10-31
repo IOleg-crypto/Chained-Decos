@@ -50,6 +50,11 @@ public:
     void AddToHistory(const std::string& command);
     const std::vector<std::string>& GetHistory() const { return consoleHistory; }
     const std::vector<std::string>& GetOutput() const { return consoleOutput; }
+    
+    // Clipboard operations
+    void CopyToClipboard(const std::string& text);
+    void CopyLastCommand();
+    std::string GetLastCommand() const;
 
     // Utility (removed as ImGui handles input)
 

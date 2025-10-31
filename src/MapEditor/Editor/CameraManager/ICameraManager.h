@@ -2,6 +2,7 @@
 #define ICAMERAMANAGER_H
 
 #include <memory>
+#include <raylib.h>
 
 class CameraController;
 
