@@ -6,6 +6,7 @@
 #include "Engine/Model/Model.h"
 #include "GLFW/glfw3.h"
 #include "raylib.h"
+#include <imgui.h>
 #define STB_IMAGE_IMPLEMENTATION
 
 Application::Application(int width, int height, std::unique_ptr<Editor> editor)
@@ -42,6 +43,11 @@ void Application::Init() const
     // Configure ImGui settings for better interaction
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard navigation
+    
+    // Docking support - check if available in this ImGui version
+    // Note: Docking was added in ImGui 1.79+, but may need additional configuration
+    // For now, we'll just enable navigation and window management
+    io.ConfigWindowsMoveFromTitleBarOnly = true; // Only allow moving windows from title bar
     
     // Set up custom font
     io.Fonts->Clear();
@@ -98,6 +104,9 @@ void Application::Run() const
     {
         // Update editor state
         m_editor->Update();
+        
+        // Handle input (including object selection)
+        m_editor->HandleInput();
 
         // Begin rendering frame
         BeginDrawing();
@@ -113,8 +122,18 @@ void Application::Run() const
 
         EndMode3D();
 
-        // Render ImGui interface on top
+        // Begin ImGui frame
+        rlImGuiBegin();
+        
+        // Note: Docking support requires ImGui 1.79+ with docking branch
+        // For now, windows can still be moved and resized, but docking is disabled
+        // If you have docking-enabled ImGui, uncomment the following line:
+        // ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        
+        // Render ImGui interface
         m_editor->RenderImGui();
+        
+        rlImGuiEnd();
 
         EndDrawing();
     }
