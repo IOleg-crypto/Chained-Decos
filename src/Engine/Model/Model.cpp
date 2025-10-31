@@ -4,6 +4,9 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <raylib.h>
+#include <rlgl.h>
+#include <raymath.h>
 #include <iostream>
 #include <string>
 #include <unordered_set>
@@ -350,6 +353,30 @@ void ModelLoader::DrawAllModels() const
             continue;
         }
 
+        // Debug: Check if model has materials and textures
+        static bool loggedMaterialInfo = false;
+        if (!loggedMaterialInfo && modelPtr->materialCount > 0)
+        {
+            TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Model '%s' has %d materials, %d meshes",
+                     instance.GetModelName().c_str(), modelPtr->materialCount, modelPtr->meshCount);
+            for (int i = 0; i < modelPtr->materialCount && i < 3; i++)
+            {
+                Texture2D tex = modelPtr->materials[i].maps[MATERIAL_MAP_ALBEDO].texture;
+                if (tex.id != 0)
+                {
+                    TraceLog(LOG_INFO, "  Material[%d]: has texture (id=%d, size=%dx%d)",
+                             i, tex.id, tex.width, tex.height);
+                }
+                else
+                {
+                    Color col = modelPtr->materials[i].maps[MATERIAL_MAP_ALBEDO].color;
+                    TraceLog(LOG_INFO, "  Material[%d]: no texture, color=(%d,%d,%d,%d)",
+                             i, col.r, col.g, col.b, col.a);
+                }
+            }
+            loggedMaterialInfo = true;
+        }
+
         // Validate position, rotation, and scale for NaN/inf
         Vector3 position = instance.GetModelPosition();
         Vector3 rotationDeg = instance.GetRotationDegrees();
@@ -385,23 +412,27 @@ void ModelLoader::DrawAllModels() const
             continue;
         }
 
-        // Build transform with rotation from instance (degrees -> radians)
+        // Build transform matrix: Scale -> Rotation -> Translation
+        // Same approach as MapEditor for consistency
         Vector3 rotRad = { DEG2RAD * rotationDeg.x, DEG2RAD * rotationDeg.y, DEG2RAD * rotationDeg.z };
-        Matrix rotation = MatrixRotateXYZ(rotRad);
-        Matrix translation = MatrixTranslate(position.x, position.y, position.z);
-        Matrix transform = MatrixMultiply(rotation, translation);
+        Matrix matScale = MatrixScale(scale, scale, scale);
+        Matrix matRotation = MatrixRotateXYZ(rotRad);
+        Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
+        Matrix transform = MatrixMultiply(matScale, MatrixMultiply(matRotation, matTranslation));
 
         // Validate matrix before drawing
-        if (!IsValidMatrix(rotation) || !IsValidMatrix(translation) || !IsValidMatrix(transform))
+        if (!IsValidMatrix(matScale) || !IsValidMatrix(matRotation) || !IsValidMatrix(matTranslation) || !IsValidMatrix(transform))
         {
             TraceLog(LOG_ERROR, "ModelLoader::DrawAllModels() - Invalid transform matrix for instance: %s",
                      instance.GetModelName().c_str());
             continue;
         }
 
-        // Draw with transform and uniform scale
-        DrawModelEx(*modelPtr, position, {0,1,0}, rotationDeg.y,
-                    {scale, scale, scale}, WHITE);
+        // Apply transform to model (same as MapEditor - no restore needed since each instance has its own transform)
+        modelPtr->transform = transform;
+
+        // Draw the model with instance color (same as MapEditor)
+        DrawModel(*modelPtr, Vector3{0, 0, 0}, 1.0f, drawColor);
     }
 }
 
@@ -661,6 +692,25 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
             TraceLog(LOG_ERROR, "Model file not accessible: %s", fullPath.c_str());
         }
         return false;
+    }
+
+    // Debug: Log material and texture info after loading
+    TraceLog(LOG_INFO, "Loaded model '%s': meshCount=%d, materialCount=%d", name.c_str(), loadedModel.meshCount, loadedModel.materialCount);
+    if (loadedModel.materialCount > 0)
+    {
+        for (int i = 0; i < loadedModel.materialCount && i < 3; i++)
+        {
+            Texture2D tex = loadedModel.materials[i].maps[MATERIAL_MAP_ALBEDO].texture;
+            if (tex.id != 0 && tex.id != rlGetTextureIdDefault())
+            {
+                TraceLog(LOG_INFO, "  Material[%d]: has texture (id=%d, size=%dx%d)", i, tex.id, tex.width, tex.height);
+            }
+            else
+            {
+                Color col = loadedModel.materials[i].maps[MATERIAL_MAP_ALBEDO].color;
+                TraceLog(LOG_INFO, "  Material[%d]: no texture (using default), color=(%d,%d,%d,%d)", i, col.r, col.g, col.b, col.a);
+            }
+        }
     }
 
     // Store in legacy storage
@@ -936,7 +986,29 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
 
     m_modelByName[name] = pModel;
     m_stats.loadedModels++;
-    TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Registered model '%s' (meshCount=%d)", name.c_str(), pModel->meshCount);
+    TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Registered model '%s' (meshCount=%d, materialCount=%d)", name.c_str(), pModel->meshCount, pModel->materialCount);
+    
+    // Debug: Log material and texture info after registration
+    if (pModel->materialCount > 0)
+    {
+        for (int i = 0; i < pModel->materialCount && i < 3; i++)
+        {
+            Texture2D tex = pModel->materials[i].maps[MATERIAL_MAP_ALBEDO].texture;
+            if (tex.id != 0 && tex.id != rlGetTextureIdDefault())
+            {
+                TraceLog(LOG_INFO, "  Registered Material[%d]: has texture (id=%d, size=%dx%d)", i, tex.id, tex.width, tex.height);
+            }
+            else
+            {
+                Color col = pModel->materials[i].maps[MATERIAL_MAP_ALBEDO].color;
+                TraceLog(LOG_INFO, "  Registered Material[%d]: no texture (using default), color=(%d,%d,%d,%d)", i, col.r, col.g, col.b, col.a);
+            }
+        }
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "ModelLoader::RegisterLoadedModel() - Model '%s' has no materials!", name.c_str());
+    }
 
     // Also register common aliases to improve matching between editor exports and runtime keys.
     try {
