@@ -960,15 +960,16 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
             // AABB-only fallback: intersect ray with top face of AABB
             const Vector3 mn = collisionObject->GetMin();
             const Vector3 mx = collisionObject->GetMax();
-            // Ray is vertical down. Intersect at y = mx.y (top face)
-            if (raycastOrigin.y >= mx.y)
+            
+            // Check if raycast origin is within or above the AABB on X and Z axes
+            if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x &&
+                raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
             {
-                float dist = raycastOrigin.y - mx.y;
-                if (dist <= maxRaycastDistance)
+                // If origin is above or at the top face, use top face as hit point
+                if (raycastOrigin.y >= mx.y)
                 {
-                    // Check if x,z are inside bounds at that y
-                    if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x &&
-                        raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
+                    float dist = raycastOrigin.y - mx.y;
+                    if (dist <= maxRaycastDistance)
                     {
                         if (dist < nearestHitDistance)
                         {
@@ -979,24 +980,17 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
                         }
                     }
                 }
-            }
-            // Also check bottom face for ground collision
-            else if (raycastOrigin.y <= mn.y)
-            {
-                float dist = mn.y - raycastOrigin.y;
-                if (dist <= maxRaycastDistance)
+                // If origin is inside the AABB (between min and max Y), use top face as hit point
+                // This is important for detecting ground when player is standing on/inside the collision box
+                else if (raycastOrigin.y >= mn.y && raycastOrigin.y <= mx.y)
                 {
-                    // Check if x,z are inside bounds at that y
-                    if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x &&
-                        raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
+                    float dist = 0.0f; // Player is inside or on top of the collision box
+                    if (dist < nearestHitDistance)
                     {
-                        if (dist < nearestHitDistance)
-                        {
-                            nearestHitDistance = dist;
-                            nearestHitPoint = {raycastOrigin.x, mn.y, raycastOrigin.z};
-                            nearestHitNormal = {0, -1, 0};
-                            anyHitDetected = true;
-                        }
+                        nearestHitDistance = dist;
+                        nearestHitPoint = {raycastOrigin.x, mx.y, raycastOrigin.z};
+                        nearestHitNormal = {0, 1, 0};
+                        anyHitDetected = true;
                     }
                 }
             }

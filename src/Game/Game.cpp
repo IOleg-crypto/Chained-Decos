@@ -18,6 +18,7 @@
 #include "imgui.h"
 #include "rlImGui.h"
 #include <chrono>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <set>
@@ -195,10 +196,29 @@ void Game::Update()
     }
     else
     {
-        // Update game logic always, independent of console
-        // Update player logic
-        UpdatePlayerLogic();
-        UpdatePhysicsLogic();
+        // Check if console is open - if so, pause player updates to prevent falling
+        bool consoleOpen = m_menu->GetConsoleManager() && m_menu->GetConsoleManager()->IsConsoleOpen();
+        if (!consoleOpen)
+        {
+            // Update game logic only when console is closed
+            // Update player logic
+            UpdatePlayerLogic();
+            UpdatePhysicsLogic();
+        }
+        else
+        {
+            // Console is open - only update camera and UI, but freeze player physics
+            const ImGuiIO &io = ImGui::GetIO();
+            if (io.WantCaptureMouse)
+            {
+                // Still update camera rotation even when console is open
+                m_player->GetCameraController()->UpdateCameraRotation();
+                m_player->GetCameraController()->UpdateMouseRotation(
+                    m_player->GetCameraController()->GetCamera(), m_player->GetMovement()->GetPosition());
+                m_player->GetCameraController()->Update();
+            }
+            m_engine->GetRenderManager()->ShowMetersPlayer(*m_player);
+        }
     }
 }
 
@@ -2199,10 +2219,22 @@ void Game::LoadEditorMap(const std::string &mapPath)
         // Adjust collider size based on object type
         switch (object.type)
         {
+        case MapObjectType::CUBE:
+            // For cubes, use absolute values of scale to avoid negative sizes
+            {
+                colliderSize = Vector3{
+                    std::abs(object.scale.x != 0.0f ? object.scale.x : 1.0f),
+                    std::abs(object.scale.y != 0.0f ? object.scale.y : 1.0f),
+                    std::abs(object.scale.z != 0.0f ? object.scale.z : 1.0f)
+                };
+            }
+            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Cube collision: size=(%.2f, %.2f, %.2f)",
+                     colliderSize.x, colliderSize.y, colliderSize.z);
+            break;
         case MapObjectType::SPHERE:
             // For spheres, use radius for all dimensions
             {
-                float radius = object.radius > 0.0f ? object.radius : 1.0f;
+                float radius = std::abs(object.radius > 0.0f ? object.radius : 1.0f);
                 colliderSize = Vector3{radius, radius, radius};
             }
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - Sphere collision: size=(%.2f, %.2f, %.2f)",
@@ -2211,8 +2243,8 @@ void Game::LoadEditorMap(const std::string &mapPath)
         case MapObjectType::CYLINDER:
             // For cylinders, use radius for x/z and height for y
             {
-                float radius = object.radius > 0.0f ? object.radius : 1.0f;
-                float height = object.height > 0.0f ? object.height : 2.0f;
+                float radius = std::abs(object.radius > 0.0f ? object.radius : 1.0f);
+                float height = std::abs(object.height > 0.0f ? object.height : 2.0f);
                 colliderSize = Vector3{radius, height, radius};
             }
             TraceLog(LOG_INFO,
@@ -2220,14 +2252,12 @@ void Game::LoadEditorMap(const std::string &mapPath)
                      colliderSize.x, colliderSize.y, colliderSize.z);
             break;
         case MapObjectType::PLANE:
-            // For planes, use size for x/z and small height for y
-            // But skip collision if it's a large ground plane (likely artificial ground)
-            colliderSize = Vector3{object.size.x, 0.1f, object.size.y};
-            // Fallback to default if size is zero
-            if (colliderSize.x == 0.0f)
-                colliderSize.x = 5.0f;
-            if (colliderSize.z == 0.0f)
-                colliderSize.z = 5.0f;
+            // For planes, use absolute values of size for x/z and small height for y
+            {
+                float planeWidth = std::abs(object.size.x != 0.0f ? object.size.x : 5.0f);
+                float planeLength = std::abs(object.size.y != 0.0f ? object.size.y : 5.0f);
+                colliderSize = Vector3{planeWidth, 0.1f, planeLength};
+            }
             
             // Skip collision creation for large ground planes (artificial ground)
             // Large planes with y position near 0 are likely artificial ground
@@ -2245,8 +2275,14 @@ void Game::LoadEditorMap(const std::string &mapPath)
                      colliderSize.x, colliderSize.y, colliderSize.z);
             break;
         case MapObjectType::MODEL:
-            // For models, use scale as bounding box - scale represents the size of the model
-            // instance
+            // For models, use absolute values of scale as bounding box
+            {
+                colliderSize = Vector3{
+                    std::abs(object.scale.x != 0.0f ? object.scale.x : 1.0f),
+                    std::abs(object.scale.y != 0.0f ? object.scale.y : 1.0f),
+                    std::abs(object.scale.z != 0.0f ? object.scale.z : 1.0f)
+                };
+            }
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - Model collision: size=(%.2f, %.2f, %.2f)",
                      colliderSize.x, colliderSize.y, colliderSize.z);
             break;
@@ -2256,31 +2292,25 @@ void Game::LoadEditorMap(const std::string &mapPath)
             collisionSkippedCount++;
             continue; // Skip collision creation for LIGHT objects
         default:
-            // For cubes and other types, use scale as-is
-            // But skip collision if it's a large ground cube (likely artificial ground)
-            // Large cubes with y position near 0 and thin height are likely artificial ground
-            if (object.type == MapObjectType::CUBE && 
-                (colliderSize.x > 500.0f || colliderSize.z > 500.0f) &&
-                colliderSize.y < 5.0f &&
-                object.position.y <= 2.0f && object.position.y >= -2.0f)
+            // For unknown types, use absolute values of scale
             {
-                TraceLog(LOG_INFO, "Game::LoadEditorMap() - CUBE object '%s': skipping collision creation (large ground cube)", 
-                        object.name.c_str());
-                collisionSkippedCount++;
-                continue;
+                colliderSize = Vector3{
+                    std::abs(object.scale.x != 0.0f ? object.scale.x : 1.0f),
+                    std::abs(object.scale.y != 0.0f ? object.scale.y : 1.0f),
+                    std::abs(object.scale.z != 0.0f ? object.scale.z : 1.0f)
+                };
             }
-            
-            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Cube collision: size=(%.2f, %.2f, %.2f)",
+            TraceLog(LOG_INFO, "Game::LoadEditorMap() - Unknown type collision: size=(%.2f, %.2f, %.2f)",
                      colliderSize.x, colliderSize.y, colliderSize.z);
             break;
         }
 
-        // Ensure colliderSize has valid non-zero dimensions
-        if (colliderSize.x == 0.0f)
+        // Ensure colliderSize has valid non-zero dimensions (already handled above, but double-check)
+        if (colliderSize.x <= 0.0f)
             colliderSize.x = 1.0f;
-        if (colliderSize.y == 0.0f)
+        if (colliderSize.y <= 0.0f)
             colliderSize.y = 1.0f;
-        if (colliderSize.z == 0.0f)
+        if (colliderSize.z <= 0.0f)
             colliderSize.z = 1.0f;
 
         // Validate final collider size
@@ -2298,7 +2328,10 @@ void Game::LoadEditorMap(const std::string &mapPath)
                  "Game::LoadEditorMap() - Final colliderSize for object %d: (%.2f, %.2f, %.2f)", i,
                  colliderSize.x, colliderSize.y, colliderSize.z);
 
-        Collision collision(object.position, colliderSize);
+        // Collision constructor expects halfSize (half the dimensions), not full size
+        // So we need to divide by 2 to get the correct collision box size
+        Vector3 halfSize = Vector3Scale(colliderSize, 0.5f);
+        Collision collision(object.position, halfSize);
         collision.SetCollisionType(CollisionType::AABB_ONLY);
         m_collisionManager->AddCollider(std::move(collision));
 
@@ -2321,6 +2354,10 @@ void Game::LoadEditorMap(const std::string &mapPath)
                  m_mapManager->GetGameMap().metadata.startPosition.z);
     }
 
+    // Initialize collision manager after adding all colliders
+    // This is crucial for collision detection to work properly
+    m_collisionManager->Initialize();
+    
     TraceLog(LOG_INFO, "Game::LoadEditorMap() - Successfully loaded map with %d objects",
              m_mapManager->GetGameMap().objects.size());
     TraceLog(LOG_INFO,
@@ -2329,6 +2366,7 @@ void Game::LoadEditorMap(const std::string &mapPath)
     TraceLog(LOG_INFO,
              "Game::LoadEditorMap() - Final collider count after creating collisions: %zu",
              m_collisionManager->GetColliders().size());
+    TraceLog(LOG_INFO, "Game::LoadEditorMap() - Collision manager initialized with all colliders");
 
     // Log object types breakdown
     int modelObjects = 0, lightObjects = 0, cubeObjects = 0, otherObjects = 0;
@@ -2588,50 +2626,113 @@ void Game::LoadEditorMap(const std::string &mapPath)
 void Game::RenderEditorMap()
 {
     // Render the loaded map objects
+    int renderedCount = 0;
     for (const auto &object : m_mapManager->GetGameMap().objects)
     {
+        // Use color from map, or gray if color is black/zero (no color specified)
+        Color renderColor = object.color;
+        if (renderColor.a == 0)
+        {
+            renderColor.a = 255; // Make fully opaque if transparent
+        }
+        // If color is completely black/zero (no color specified), use gray
+        if (renderColor.r == 0 && renderColor.g == 0 && renderColor.b == 0)
+        {
+            renderColor = GRAY; // Use gray for models without color
+        }
+        
         // Render based on object type
         switch (object.type)
         {
         case MapObjectType::CUBE:
-            DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+        {
+            // Ensure valid scale values
+            float cubeWidth = (object.scale.x != 0.0f) ? object.scale.x : 1.0f;
+            float cubeHeight = (object.scale.y != 0.0f) ? object.scale.y : 1.0f;
+            float cubeLength = (object.scale.z != 0.0f) ? object.scale.z : 1.0f;
+            DrawCube(object.position, cubeWidth, cubeHeight, cubeLength, renderColor);
+            //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing CUBE at (%.2f, %.2f, %.2f) size=(%.2f, %.2f, %.2f) color=(%d,%d,%d,%d)",
+            //         object.position.x, object.position.y, object.position.z,
+            //         cubeWidth, cubeHeight, cubeLength,
+            //         renderColor.r, renderColor.g, renderColor.b, renderColor.a);
+            renderedCount++;
             break;
+        }
 
         case MapObjectType::SPHERE:
-            DrawSphere(object.position, object.radius, object.color);
+        {
+            // Ensure valid radius
+            float sphereRadius = (object.radius > 0.0f) ? object.radius : 1.0f;
+            DrawSphere(object.position, sphereRadius, renderColor);
+            //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing SPHERE at (%.2f, %.2f, %.2f) radius=%.2f color=(%d,%d,%d,%d)",
+                     //object.position.x, object.position.y, object.position.z,
+                     //sphereRadius,
+                    // renderColor.r, renderColor.g, renderColor.b, renderColor.a);
+            renderedCount++;
             break;
+        }
 
         case MapObjectType::CYLINDER:
+        {
             // Draw cylinder using multiple spheres for approximation
             // For better cylinder rendering, you might want to use a 3D model
-            DrawSphere(object.position, object.radius, object.color);
+            float cylRadius = (object.radius > 0.0f) ? object.radius : 1.0f;
+            DrawSphere(object.position, cylRadius, renderColor);
             DrawSphere(
                 Vector3{object.position.x, object.position.y + object.height, object.position.z},
-                object.radius, object.color);
+                cylRadius, renderColor);
+           //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing CYLINDER at (%.2f, %.2f, %.2f) radius=%.2f height=%.2f color=(%d,%d,%d,%d)",
+           //          object.position.x, object.position.y, object.position.z,
+           //          cylRadius, object.height,
+           //          renderColor.r, renderColor.g, renderColor.b, renderColor.a);
+            renderedCount++;
             break;
+        }
 
         case MapObjectType::PLANE:
+        {
             // Draw plane as a thin cube
-            DrawCube(object.position, object.size.x, 0.1f, object.size.y, object.color);
+            float planeWidth = (object.size.x != 0.0f) ? object.size.x : 5.0f;
+            float planeLength = (object.size.y != 0.0f) ? object.size.y : 5.0f;
+            DrawCube(object.position, planeWidth, 0.1f, planeLength, renderColor);
+            //TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing PLANE at (%.2f, %.2f, %.2f) size=(%.2f, %.2f) color=(%d,%d,%d,%d)",
+           //          object.position.x, object.position.y, object.position.z,
+           //          planeWidth, planeLength,
+           //          renderColor.r, renderColor.g, renderColor.b, renderColor.a);
+            renderedCount++;
             break;
+        }
 
         case MapObjectType::MODEL:
+        {
             // MODEL objects are rendered through ModelLoader instances via DrawAllModels()
             // in RenderGame() -> DrawScene3D(), so we don't render them here to avoid duplicates.
             // If model is not found or instance creation failed, it will show as missing
             // (instances are created in LoadEditorMap()).
             break;
+        }
 
         case MapObjectType::LIGHT:
+        {
             // LIGHT objects are not rendered as 3D models - they are lighting objects
             break;
+        }
 
         default:
+        {
             // Unknown type, draw as cube
-            DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+            float defWidth = (object.scale.x != 0.0f) ? object.scale.x : 1.0f;
+            float defHeight = (object.scale.y != 0.0f) ? object.scale.y : 1.0f;
+            float defLength = (object.scale.z != 0.0f) ? object.scale.z : 1.0f;
+            DrawCube(object.position, defWidth, defHeight, defLength, renderColor);
+            renderedCount++;
             break;
         }
+        }
     }
+    
+    TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendered %d primitive objects out of %zu total objects",
+             renderedCount, m_mapManager->GetGameMap().objects.size());
 }
 
 void Game::DumpMapDiagnostics() const

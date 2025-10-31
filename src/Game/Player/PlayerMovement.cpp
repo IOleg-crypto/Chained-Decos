@@ -251,7 +251,8 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
 
     for (const Vector3 &off : offsets)
     {
-        Vector3 probe = { center.x + off.x, center.y, center.z + off.z };
+        // Cast ray from slightly above center to ensure we hit ground even when standing on it
+        Vector3 probe = { center.x + off.x, center.y + size.y * 0.1f, center.z + off.z };
         float d = 0.0f; Vector3 p = {0}; Vector3 n = {0};
         if (collisionManager.RaycastDown(probe, maxDistance, d, p, n))
         {
@@ -277,11 +278,13 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
         }
     }
 
-    if (!grounded && bestGap < 0.5f && m_physics.GetVelocity().y <= 0.0f)
+    // If we found a ground hit within reasonable gap, consider grounded
+    if (!grounded && bestGap < 0.5f && bestGap >= -0.5f && m_physics.GetVelocity().y <= 0.0f)
     {
         grounded = true;
         hitPoint = bestPoint;
         hitNormal = bestNormal;
+        TraceLog(LOG_DEBUG, "PlayerMovement::UpdateGrounded() - Grounded via bestGap: %.2f", bestGap);
     }
 
     // Additional check: if we're very close to ground level and not moving up fast, consider grounded
