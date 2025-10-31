@@ -331,14 +331,9 @@ bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
 
 void ModelLoader::DrawAllModels() const
 {
-    TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Drawing %d model instances", m_instances.size());
-
     for (const auto &instance : m_instances)
     {
         Model *modelPtr = instance.GetModel();
-        TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Processing instance: %s at (%.2f, %.2f, %.2f)",
-                 instance.GetModelName().c_str(),
-                 instance.GetModelPosition().x, instance.GetModelPosition().y, instance.GetModelPosition().z);
 
         // Enhanced null/invalid model pointer validation
         if (modelPtr == nullptr)
@@ -390,9 +385,6 @@ void ModelLoader::DrawAllModels() const
             continue;
         }
 
-        TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Drawing model %s with %d meshes",
-                 instance.GetModelName().c_str(), modelPtr->meshCount);
-
         // Build transform with rotation from instance (degrees -> radians)
         Vector3 rotRad = { DEG2RAD * rotationDeg.x, DEG2RAD * rotationDeg.y, DEG2RAD * rotationDeg.z };
         Matrix rotation = MatrixRotateXYZ(rotRad);
@@ -410,12 +402,7 @@ void ModelLoader::DrawAllModels() const
         // Draw with transform and uniform scale
         DrawModelEx(*modelPtr, position, {0,1,0}, rotationDeg.y,
                     {scale, scale, scale}, WHITE);
-
-        TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Successfully drew model %s",
-                 instance.GetModelName().c_str());
     }
-
-    TraceLog(LOG_INFO, "ModelLoader::DrawAllModels() - Finished drawing all model instances");
 }
 
 std::optional<std::reference_wrapper<Model>> ModelLoader::GetModelByName(const std::string &name)

@@ -6,22 +6,25 @@
 #include "Engine/Model/Model.h"
 #include "Engine/World/World.h"
 #include "Engine/Map/MapLoader.h" // For loading editor-created maps
-#include "Menu/Menu.h"
+#include "Engine/Kernel/Kernel.h"
 #include "Player/Player.h"
 #include <memory>
+
+// Forward declaration to break circular dependency
+class Menu;
 
 class Game
 
 {
 private:
     float PLAYER_SAFE_SPAWN_HEIGHT = 2.0f;
-    static Game *s_instance;
     std::unique_ptr<Player> m_player;
     std::unique_ptr<CollisionManager> m_collisionManager;
     std::unique_ptr<ModelLoader> m_models;
     std::unique_ptr<WorldManager> m_world;
     std::unique_ptr<Menu> m_menu;
     std::unique_ptr<Engine> m_engine;
+    std::unique_ptr<Kernel> m_kernel;
 
     // Map loading system
     GameMap m_gameMap; // New comprehensive map system
@@ -89,15 +92,13 @@ public:
     void SaveGameState();
     void RestoreGameState();
 
-    // Singleton methods
-    static Game *GetInstance();
-
     // Test accessor methods - public for testing purposes
     Player &GetPlayer() { return *m_player; }
     CollisionManager &GetCollisionManager() { return *m_collisionManager; }
     ModelLoader &GetModels() { return *m_models; }
     WorldManager &GetWorld() { return *m_world; }
-    Menu &GetMenu() { return *m_menu; }
+    Menu &GetMenu(); // Implementation in .cpp to avoid including Menu.h
+    Kernel &GetKernel() { return *m_kernel; }
     GameMap &GetGameMap();
     bool IsInitialized() const;
 };
