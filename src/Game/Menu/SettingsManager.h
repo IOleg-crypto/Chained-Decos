@@ -1,12 +1,3 @@
-/**
- * @file SettingsManager.h
- * Centralized settings management for the Menu system.
- *
- * The SettingsManager class handles all game settings including audio, video,
- * controls, and gameplay preferences. It provides a clean interface for loading,
- * saving, and applying settings throughout the application.
- */
-
 #ifndef SETTINGS_MANAGER_H
 #define SETTINGS_MANAGER_H
 
@@ -18,10 +9,6 @@ namespace MenuConstants {
     using namespace MenuConstants;
 }
 
-/**
- * @struct AudioSettings
- * Container for audio-related settings
- */
 struct AudioSettings {
     float masterVolume = MenuConstants::DEFAULT_MASTER_VOLUME;
     float musicVolume = MenuConstants::DEFAULT_MUSIC_VOLUME;
@@ -57,14 +44,6 @@ struct GameplaySettings {
     bool slowMotionOnTrick = false;
 };
 
-/**
- * @class SettingsManager
- * Manages all game settings with validation and persistence.
- *
- * This class provides a centralized interface for handling audio, video,
- * control, and gameplay settings. It includes validation, persistence
- * to configuration files, and application of settings to the game engine.
- */
 class SettingsManager {
 private:
     ConfigManager m_config;
@@ -81,9 +60,6 @@ private:
     int m_currentFpsIndex = 1; // Default to 60 FPS
 
 public:
-    /**
-     * @brief Default constructor that loads settings from configuration file
-     */
     SettingsManager();
 
     // Load and save settings

@@ -9,11 +9,6 @@
 #include "Collision/CollisionManager.h"
 #include "Collision/CollisionSystem.h"
 
-/**
- * Abstract interface for renderable objects in the Game layer.
- * This interface allows the Engine layer to interact with Game objects
- * without direct dependencies, resolving circular includes.
- */
 class IRenderable
 {
 public:

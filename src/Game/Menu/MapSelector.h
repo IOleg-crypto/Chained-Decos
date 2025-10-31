@@ -1,9 +1,3 @@
-/**
- * @file MapSelector.h
- * The MapSelector class handles the discovery, organization, and selection
- * of game maps from various sources including JSON files and 3D models.
- */
-
 #ifndef MAP_SELECTOR_H
 #define MAP_SELECTOR_H
 
@@ -14,10 +8,6 @@
 #include <raylib.h> // For Texture2D
 
 
-/**
- * @struct MapInfo
- * Information about a game map
- */
 struct MapInfo {
     std::string name;
     std::string displayName;
@@ -28,13 +18,6 @@ struct MapInfo {
     bool isModelBased; // New field to distinguish model-based maps from JSON maps
 };
 
-/**
- * @class MapSelector
- * Handles map discovery, selection, and pagination.
- * This class manages the collection of available game maps, including
- * automatic discovery of JSON map files and 3D model-based maps.
- * It provides pagination, selection, and rendering functionality.
- */
 class MapSelector {
 private:
     std::vector<MapInfo> m_availableMaps;
@@ -65,14 +48,7 @@ private:
     Texture2D GetThumbnailForMap(const std::string& mapName) const;
 
 public:
-    /**
-     * Default constructor that initializes pagination
-     */
     MapSelector();
-
-    /**
-     * Destructor that cleans up resources
-     */
     ~MapSelector();
 
     // Map management

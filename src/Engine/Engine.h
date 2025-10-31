@@ -22,16 +22,6 @@
 #include "Kernel/Kernel.h"
 
 class RenderManager; // forward declaration to avoid heavy include and cycles
-/**
- * Main Engine class - manages the core application window and rendering
- *
- * Responsibilities:
- *  - Window creation and management (using raylib)
- *  - Basic game loop (update/render cycle for engine itself)
- *  - Managing core engine services (input, rendering)
- *  - Debug information handling
- *
- */
 CHAINEDDECOSENGINE_API class Engine
 {
 public:
