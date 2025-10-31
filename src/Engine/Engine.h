@@ -19,6 +19,7 @@
 #include <memory>
 // Project headers
 #include "Input/InputManager.h"
+#include "Kernel/Kernel.h"
 
 class RenderManager; // forward declaration to avoid heavy include and cycles
 /**
@@ -34,8 +35,8 @@ class RenderManager; // forward declaration to avoid heavy include and cycles
 CHAINEDDECOSENGINE_API class Engine
 {
 public:
-    Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager);
-    Engine(int screenX, int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager);
+    Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel = nullptr);
+    Engine(int screenX, int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel = nullptr);
     ~Engine();
     Engine(Engine &&other) = delete;
     Engine &operator=(const Engine &other) = delete;
@@ -72,6 +73,7 @@ private:
     // Core Engine Services
     std::shared_ptr<InputManager> m_inputManager;
     std::shared_ptr<RenderManager> m_renderManager;
+    Kernel* m_kernel;
 
     // Engine State
     bool m_shouldExit;

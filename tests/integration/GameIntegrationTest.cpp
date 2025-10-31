@@ -8,7 +8,7 @@
 #include "Engine/Model/Model.h"
 #include "Engine/World/World.h"
 #include "Game/Menu/Menu.h"
-#include "Game/Map/MapLoader.h"
+#include "Engine/Map/MapLoader.h"
 
 class GameIntegrationTest : public ::testing::Test {
 protected:

@@ -1,12 +1,12 @@
 #include "ConsoleManager.h"
-#include "Game/Game.h"
+#include "../Game.h"
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
 
-ConsoleManager::ConsoleManager() {
+ConsoleManager::ConsoleManager(Game* game) : m_game(game) {
     TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER BEING INITIALIZED");
 
     // Note: Font loading removed as it's not needed for ImGui integration
@@ -63,12 +63,11 @@ void ConsoleManager::ExecuteCommand(const std::string& command) {
         std::istringstream argStream(args);
         float speed;
         if (argStream >> speed) {
-            Game* game = Game::GetInstance();
-            if (!game) {
+            if (!m_game) {
                 AddOutput("Error: Game instance not available.");
                 return;
             }
-            Player& player = game->GetPlayer();
+            Player& player = m_game->GetPlayer();
             player.GetMovement()->SetSpeed(speed);
             AddOutput("Player speed set to " + std::to_string(speed));
         } else {
@@ -115,13 +114,12 @@ void ConsoleManager::ProcessGetCommand(const std::string& key) {
 }
 
 void ConsoleManager::ProcessNoclipCommand() {
-    Game* game = Game::GetInstance();
-    if (!game) {
+    if (!m_game) {
         AddOutput("Error: Game instance not available.");
         return;
     }
 
-    Player& player = game->GetPlayer();
+    Player& player = m_game->GetPlayer();
     PlayerCollision& collision = player.GetCollisionMutable();
     bool current = collision.IsUsingBVH();
     collision.EnableBVHCollision(!current);

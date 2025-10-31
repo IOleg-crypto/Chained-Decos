@@ -15,6 +15,9 @@
 #include <imgui.h>
 #include <raylib.h>
 
+// Forward declaration - will be included in .cpp
+class Game;
+
 
 enum class MenuAction : uint8_t
 {
@@ -85,6 +88,7 @@ public:
 
     // Core functionality
     void Initialize(Engine *engine);
+    void SetGame(Game* game);
     void Update();
 
     // State management
@@ -199,6 +203,7 @@ private:
 
     // Core state
     Engine *m_engine = nullptr;
+    Game* m_game = nullptr;
     std::unique_ptr<SettingsManager> m_settingsManager;
 
     // Menu state

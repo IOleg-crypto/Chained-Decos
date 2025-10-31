@@ -126,7 +126,6 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
         // Integrate horizontal velocity from physics into desired position
         Vector3 horizVel = m_movement->GetPhysics().GetVelocity();
         horizVel.y = 0.0f;
-        TraceLog(LOG_INFO, "Player::Update() - Horizontal velocity before move: (%.3f, %.3f, %.3f)", horizVel.x, horizVel.y, horizVel.z);
         if (Vector3Length(horizVel) > 0.0f)
         {
             Vector3 step = Vector3Scale(horizVel, deltaTime);
@@ -134,7 +133,6 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
         }
 
         Vector3 newPosition = m_movement->StepMovement(collisionManager);
-        TraceLog(LOG_INFO, "Player::Update() - New position after StepMovement: (%.3f, %.3f, %.3f)", newPosition.x, newPosition.y, newPosition.z);
 
         SetPlayerPosition(newPosition);
 
@@ -183,9 +181,7 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
         SetPlayerPosition(newPosition);
         UpdatePlayerBox();
         UpdatePlayerCollision();
-        TraceLog(LOG_INFO, "Player::Update() - Noclip mode: Updated position to (%.3f, %.3f, %.3f)", newPosition.x, newPosition.y, newPosition.z);
     }
-    TraceLog(LOG_INFO, "Player::Update() - Final velocity: (%.3f, %.3f, %.3f), grounded: %d", m_movement->GetPhysics().GetVelocity().x, m_movement->GetPhysics().GetVelocity().y, m_movement->GetPhysics().GetVelocity().z, m_movement->GetPhysics().IsGrounded());
 }
 
 float Player::GetSpeed() const { return m_movement->GetSpeed(); }
