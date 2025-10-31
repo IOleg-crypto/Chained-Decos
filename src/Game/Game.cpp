@@ -18,12 +18,8 @@
 #include <set>
 #include <unordered_set>
 
-// Static member definition
-Game *Game::s_instance = nullptr;
-
 Game::Game() : m_showMenu(true), m_isGameInitialized(false), m_isDebugInfo(true)
 {
-    s_instance = this;
     TraceLog(LOG_INFO, "Game class instance created.");
 }
 
@@ -63,13 +59,10 @@ void Game::Cleanup()
 
 Game::~Game()
 {
-    s_instance = nullptr;
     TraceLog(LOG_INFO, "Game class destructor called.");
     // Note: Cleanup() should be called explicitly before destruction
     // as destructors should not throw exceptions
 }
-
-Game *Game::GetInstance() { return s_instance; }
 
 void Game::Init(int argc, char *argv[])
 {
@@ -88,8 +81,12 @@ void Game::Init(int argc, char *argv[])
     auto renderManager = std::make_shared<RenderManager>();
     auto inputManager = std::make_shared<InputManager>();
 
-    // Initialize engine
-    m_engine = std::make_unique<Engine>(config.width, config.height, renderManager, inputManager);
+    // Create and initialize kernel first
+    m_kernel = std::make_unique<Kernel>();
+    m_kernel->Initialize();
+
+    // Initialize engine with kernel reference
+    m_engine = std::make_unique<Engine>(config.width, config.height, renderManager, inputManager, m_kernel.get());
     m_engine->Init();
 
     // Initialize game components
@@ -105,13 +102,11 @@ void Game::Init(int argc, char *argv[])
     TraceLog(LOG_INFO, "Game::Init() - About to initialize menu...");
     // Initialize menu with engine reference
     m_menu->Initialize(m_engine.get());
+    // Set game reference for console manager
+    m_menu->SetGame(this);
     TraceLog(LOG_INFO, "Game::Init() - Menu initialized.");
 
-    TraceLog(LOG_INFO, "Game::Init() - About to initialize kernel...");
-    // Kernel boot and service registration
-    Kernel &kernel = Kernel::GetInstance();
-    kernel.Initialize();
-    TraceLog(LOG_INFO, "Game::Init() - Kernel initialized.");
+    TraceLog(LOG_INFO, "Game::Init() - Kernel already initialized.");
 
     
     // Only register engine-dependent services if engine is available
@@ -126,14 +121,10 @@ void Game::Init(int argc, char *argv[])
                  "Game::Init() - No engine provided, skipping engine-dependent services");
     }
 
-    kernel.RegisterService<ModelsService>(Kernel::ServiceType::Models,
+    m_kernel->RegisterService<ModelsService>(Kernel::ServiceType::Models,
                                           std::make_shared<ModelsService>(m_models.get()));
-    kernel.RegisterService<WorldService>(Kernel::ServiceType::World,
+    m_kernel->RegisterService<WorldService>(Kernel::ServiceType::World,
                                          std::make_shared<WorldService>(m_world.get()));
-    // CollisionManager and WorldManager will be registered after creation/initialization
-
-    // Models will be loaded selectively when a map is selected
-    // LoadGameModels(); // Commented out - replaced with selective loading
     InitPlayer();
     InitInput();
 
@@ -176,7 +167,7 @@ void Game::Update()
     }
 
     // Update kernel services each frame
-    Kernel::GetInstance().Update(GetFrameTime());
+    m_kernel->Update(GetFrameTime());
 
     // Handle console input (works in both menu and gameplay)
     if (IsKeyPressed(KEY_GRAVE)) // ~ key
@@ -195,10 +186,7 @@ void Game::Update()
     else
     {
         // Update game logic always, independent of console
-        // Debug: Check collision system before updating player
-        size_t colliderCount = m_collisionManager->GetColliders().size();
-        TraceLog(LOG_INFO, "Game::Update() - Collision system has %d colliders", colliderCount);
-
+        // Update player logic
         UpdatePlayerLogic();
         UpdatePhysicsLogic();
     }
@@ -225,7 +213,6 @@ void Game::Render()
         int currentInstanceCount = m_models->GetLoadingStats().totalInstances;
         if (currentInstanceCount != lastInstanceCount)
         {
-            TraceLog(LOG_INFO, "Game::Render() - Model instances count: %d", currentInstanceCount);
             lastInstanceCount = currentInstanceCount;
         }
 
@@ -235,8 +222,6 @@ void Game::Render()
         // Add debug info after rendering
         if (!m_gameMap.objects.empty())
         {
-            TraceLog(LOG_INFO, "Game::Render() - Rendered %d map objects",
-                     m_gameMap.objects.size());
         }
     }
 
@@ -255,7 +240,7 @@ void Game::Render()
 
     m_engine->GetRenderManager()->EndFrame();
     // Optional kernel render pass hook
-    Kernel::GetInstance().Render();
+    m_kernel->Render();
 }
 
 void Game::ToggleMenu()
@@ -414,7 +399,7 @@ void Game::InitCollisions()
     // Initialize ground collider first
     m_collisionManager->Initialize();
     // Register collision service once initialized
-    Kernel::GetInstance().RegisterService<CollisionService>(
+    m_kernel->RegisterService<CollisionService>(
         Kernel::ServiceType::Collision,
         std::make_shared<CollisionService>(m_collisionManager.get()));
 
@@ -427,17 +412,8 @@ void Game::InitCollisions()
         TraceLog(LOG_INFO, "Game::InitCollisions() - Model available: %s", modelName.c_str());
     }
 
-    try
-    {
-        m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, availableModels);
-        TraceLog(LOG_INFO, "Game::InitCollisions() - Model collisions created successfully");
-    }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_ERROR, "Game::InitCollisions() - Failed to create model collisions: %s",
-                 e.what());
-        TraceLog(LOG_WARNING, "Game::InitCollisions() - Continuing without model collisions");
-    }
+    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, availableModels);
+    TraceLog(LOG_INFO, "Game::InitCollisions() - Model collisions created");
 
     // Reinitialize after adding all model colliders
     m_collisionManager->Initialize();
@@ -492,7 +468,7 @@ void Game::InitCollisionsWithModels(const std::vector<std::string> &requiredMode
     // Initialize ground collider first
     m_collisionManager->Initialize();
     // Register collision service once initialized
-    Kernel::GetInstance().RegisterService<CollisionService>(
+    m_kernel->RegisterService<CollisionService>(
         Kernel::ServiceType::Collision,
         std::make_shared<CollisionService>(m_collisionManager.get()));
 
@@ -506,20 +482,8 @@ void Game::InitCollisionsWithModels(const std::vector<std::string> &requiredMode
                  modelName.c_str());
     }
 
-    try
-    {
-        m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
-        TraceLog(LOG_INFO,
-                 "Game::InitCollisionsWithModels() - Model collisions created successfully");
-    }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_ERROR,
-                 "Game::InitCollisionsWithModels() - Failed to create model collisions: %s",
-                 e.what());
-        TraceLog(LOG_WARNING,
-                 "Game::InitCollisionsWithModels() - Continuing without model collisions");
-    }
+    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
+    TraceLog(LOG_INFO, "Game::InitCollisionsWithModels() - Model collisions created");
 
     // Reinitialize after adding all model colliders
     m_collisionManager->Initialize();
@@ -563,7 +527,7 @@ bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string> &required
     m_collisionManager->Initialize();
 
     // Register collision service once initialized
-    Kernel::GetInstance().RegisterService<CollisionService>(
+    m_kernel->RegisterService<CollisionService>(
         Kernel::ServiceType::Collision,
         std::make_shared<CollisionService>(m_collisionManager.get()));
 
@@ -578,20 +542,8 @@ bool Game::InitCollisionsWithModelsSafe(const std::vector<std::string> &required
     }
 
     // Try to create model collisions safely
-    try
-    {
-        m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
-        TraceLog(LOG_INFO,
-                 "Game::InitCollisionsWithModelsSafe() - Model collisions created successfully");
-    }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_WARNING,
-                 "Game::InitCollisionsWithModelsSafe() - Failed to create model collisions: %s",
-                 e.what());
-        TraceLog(LOG_WARNING,
-                 "Game::InitCollisionsWithModelsSafe() - Continuing with basic collision system");
-    }
+    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
+    TraceLog(LOG_INFO, "Game::InitCollisionsWithModelsSafe() - Model collisions created");
     // Reinitialize after adding all model colliders
     m_collisionManager->Initialize();
 
@@ -1128,7 +1080,18 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string &mapIde
                 if (objectsStart != std::string::npos)
                 {
                     // This is the editor format with metadata - use nlohmann/json
-                    json j = json::parse(content);
+                    json j;
+                    try
+                    {
+                        j = json::parse(content);
+                    }
+                    catch (const std::exception &e)
+                    {
+                        TraceLog(LOG_WARNING,
+                                 "Game::GetModelsRequiredForMap() - Error parsing map JSON: %s",
+                                 e.what());
+                        return requiredModels;
+                    }
 
                     // Look for objects with model references
                     if (j.contains("objects") && j["objects"].is_array())
@@ -1296,12 +1259,6 @@ std::vector<std::string> Game::GetModelsRequiredForMap(const std::string &mapIde
                     TraceLog(LOG_WARNING, "Game::GetModelsRequiredForMap() - No valid JSON "
                                           "structure found in map file");
                 }
-            }
-            catch (const std::exception &e)
-            {
-                TraceLog(LOG_WARNING,
-                         "Game::GetModelsRequiredForMap() - Error parsing map JSON: %s", e.what());
-            }
         }
         else
         {
@@ -1320,7 +1277,6 @@ void Game::UpdatePlayerLogic()
     if (!m_engine)
     {
         // Skip player logic if no engine is available (for testing)
-        TraceLog(LOG_INFO, "Game::UpdatePlayerLogic() - No engine, updating player");
         m_player->Update(*m_collisionManager);
         return;
     }
@@ -1336,26 +1292,10 @@ void Game::UpdatePlayerLogic()
         m_player->GetCameraController()->Update();
 
         m_engine->GetRenderManager()->ShowMetersPlayer(*m_player);
-        TraceLog(LOG_INFO,
-                 "Game::UpdatePlayerLogic() - ImGui capturing mouse, only updating camera");
         // return;
     }
 
-    Vector3 posBefore = m_player->GetPlayerPosition();
-    Vector3 velBefore = m_player->GetPhysics().GetVelocity();
-    TraceLog(LOG_INFO,
-             "Game::UpdatePlayerLogic() - Before update: position (%.3f, %.3f, %.3f), velocity "
-             "(%.3f, %.3f, %.3f)",
-             posBefore.x, posBefore.y, posBefore.z, velBefore.x, velBefore.y, velBefore.z);
-
     m_player->Update(*m_collisionManager);
-
-    Vector3 posAfter = m_player->GetPlayerPosition();
-    Vector3 velAfter = m_player->GetPhysics().GetVelocity();
-    TraceLog(LOG_INFO,
-             "Game::UpdatePlayerLogic() - After update: position (%.3f, %.3f, %.3f), velocity "
-             "(%.3f, %.3f, %.3f)",
-             posAfter.x, posAfter.y, posAfter.z, velAfter.x, velAfter.y, velAfter.z);
 
     m_engine->GetRenderManager()->ShowMetersPlayer(*m_player);
 }
@@ -1381,27 +1321,15 @@ void Game::UpdatePhysicsLogic()
         }
 
         // Create emergency ground plane if no colliders exist and no custom map is loaded
-        try
+        if (m_gameMap.objects.empty())
         {
-            if (m_gameMap.objects.empty())
-            {
-                // Emergency ground plane creation removed - GroundColliderFactory no longer exists
-                // Collision plane = GroundColliderFactory::CreateDefaultGameGround();
-                // m_collisionManager.AddCollider(std::move(plane));
-                TraceLog(LOG_WARNING,
-                         "Game::UpdatePhysicsLogic() - Created emergency ground plane.");
-            }
-            else
-            {
-                TraceLog(LOG_WARNING, "Game::UpdatePhysicsLogic() - No colliders but custom map "
-                                      "loaded, using map objects for collision.");
-            }
+            TraceLog(LOG_WARNING,
+                     "Game::UpdatePhysicsLogic() - No colliders and no map objects loaded");
         }
-        catch (const std::exception &e)
+        else
         {
-            TraceLog(LOG_ERROR,
-                     "Game::UpdatePhysicsLogic() - Failed to create emergency ground plane: %s",
-                     e.what());
+            TraceLog(LOG_WARNING, "Game::UpdatePhysicsLogic() - No colliders but custom map "
+                                  "loaded, using map objects for collision.");
         }
     }
     else if (colliders.size() < 2) // Only ground plane exists
@@ -1427,17 +1355,8 @@ void Game::HandleMenuActions()
         m_menu->SetGameInProgress(true);
 
         // Initialize player after map is loaded
-        try
-        {
-            InitPlayer();
-            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player initialized successfully");
-        }
-        catch (const std::exception &e)
-        {
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize player: %s",
-                     e.what());
-            TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Player may not render correctly");
-        }
+        InitPlayer();
+        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player initialized");
 
         ToggleMenu();
         m_isGameInitialized = true; // Mark game as initialized
@@ -1468,19 +1387,8 @@ void Game::HandleMenuActions()
                      "Game::HandleMenuActions() - Collision system initialized for singleplayer");
 
             // Initialize player after map is loaded
-            try
-            {
-                InitPlayer();
-                TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player initialized for resume");
-            }
-            catch (const std::exception &e)
-            {
-                TraceLog(LOG_ERROR,
-                         "Game::HandleMenuActions() - Failed to initialize player for resume: %s",
-                         e.what());
-                TraceLog(LOG_WARNING,
-                         "Game::HandleMenuActions() - Player may not render correctly");
-            }
+            InitPlayer();
+            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player initialized for resume");
         }
         else
         {
@@ -1493,49 +1401,25 @@ void Game::HandleMenuActions()
                 std::vector<std::string> requiredModels = GetModelsRequiredForMap(m_savedMapPath);
 
                 // Reinitialize collision system safely
-                try
-                {
-                    // Clear existing colliders
-                    m_collisionManager->ClearColliders();
+                // Clear existing colliders
+                m_collisionManager->ClearColliders();
 
                     // Create ground collision first (only if no custom map)
                     if (m_gameMap.objects.empty())
                     {
-                        // Ground positioned to align visual model with collision
-                        Vector3 groundCenter = {0.0f, 0.0f, 0.0f};
-                        Vector3 groundSize = {1000.0f, 1.0f, 1000.0f};
-                        Collision groundPlane(groundCenter, groundSize);
-                        groundPlane.SetCollisionType(CollisionType::AABB_ONLY);
-                        m_collisionManager->AddCollider(std::move(groundPlane));
+                        // Come back to main menu
+                         m_menu->SetAction(MenuAction::BackToMainMenu);
+                         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Returning to main menu");
+                         return;
                     }
 
                     // Initialize collision manager
                     m_collisionManager->Initialize();
 
                     // Try to create model collisions, but don't fail if it doesn't work
-                    try
-                    {
-                        m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models,
-                                                                                    requiredModels);
-                        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resume model collisions "
-                                           "created successfully");
-                    }
-                    catch (const std::exception &modelCollisionException)
-                    {
-                        TraceLog(LOG_WARNING,
-                                 "Game::HandleMenuActions() - Resume model collision creation "
-                                 "failed: %s",
-                                 modelCollisionException.what());
-                        TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Continuing with basic "
-                                              "collision system only");
-                    }
-                }
-                catch (const std::exception &e)
-                {
-                    TraceLog(LOG_ERROR,
-                             "Game::HandleMenuActions() - Failed to reinitialize collision system "
-                             "for resume: %s",
-                             e.what());
+                    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models,
+                                                                                requiredModels);
+                    TraceLog(LOG_INFO, "Game::HandleMenuActions() - Resume model collisions created");
                 }
             }
 
@@ -1592,22 +1476,11 @@ void Game::HandleMenuActions()
 
         // Step 1: Analyze map to determine required models
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Analyzing map to determine required models...");
-        std::vector<std::string> requiredModels;
-
-        try
+        std::vector<std::string> requiredModels = GetModelsRequiredForMap(mapPath);
+        if (requiredModels.empty())
         {
-            requiredModels = GetModelsRequiredForMap(mapPath);
-            if (requiredModels.empty())
-            {
-                TraceLog(LOG_WARNING, "Game::HandleMenuActions() - No models required for map, but player model is always needed");
-                requiredModels.emplace_back("player"); // Always include player model
-            }
-        }
-        catch (const std::exception &e)
-        {
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to analyze map for required models: %s", e.what());
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without model analysis");
-            return;
+            TraceLog(LOG_WARNING, "Game::HandleMenuActions() - No models required for map, but player model is always needed");
+            requiredModels.emplace_back("player"); // Always include player model
         }
 
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Required models for map:");
@@ -1780,30 +1653,17 @@ void Game::HandleMenuActions()
             else
             {
                 TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot open map file: %s", mapPath.c_str());
-                throw std::runtime_error("Cannot open map file");
+                TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without map");
+                return;
             }
 
             TraceLog(LOG_INFO, "Game::HandleMenuActions() - Map loaded successfully with %d objects", m_gameMap.objects.size());
         }
-        catch (const std::exception &e)
-        {
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to load map: %s", e.what());
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Cannot continue without map");
-            return;
-        }
 
         // Step 5: Initialize player after map is loaded
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Initializing player...");
-        try
-        {
-            InitPlayer();
-            TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player initialized successfully");
-        }
-        catch (const std::exception &e)
-        {
-            TraceLog(LOG_ERROR, "Game::HandleMenuActions() - Failed to initialize player: %s", e.what());
-            TraceLog(LOG_WARNING, "Game::HandleMenuActions() - Player may not render correctly");
-        }
+        InitPlayer();
+        TraceLog(LOG_INFO, "Game::HandleMenuActions() - Player initialized");
 
         TraceLog(LOG_INFO, "Game::HandleMenuActions() - Game initialization complete");
         m_isGameInitialized = true;
@@ -2354,26 +2214,16 @@ void Game::LoadEditorMap(const std::string &mapPath)
                  "Game::LoadEditorMap() - Final colliderSize for object %d: (%.2f, %.2f, %.2f)", i,
                  colliderSize.x, colliderSize.y, colliderSize.z);
 
-        try
-        {
-            Collision collision(object.position, colliderSize);
-            collision.SetCollisionType(CollisionType::AABB_ONLY);
-            m_collisionManager->AddCollider(std::move(collision));
+        Collision collision(object.position, colliderSize);
+        collision.SetCollisionType(CollisionType::AABB_ONLY);
+        m_collisionManager->AddCollider(std::move(collision));
 
-            TraceLog(LOG_INFO,
-                     "Game::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f) with "
-                     "size (%.2f, %.2f, %.2f)",
-                     object.name.c_str(), object.position.x, object.position.y, object.position.z,
-                     colliderSize.x, colliderSize.y, colliderSize.z);
-            collisionCreationCount++;
-        }
-        catch (const std::exception &e)
-        {
-            TraceLog(LOG_ERROR,
-                     "Game::LoadEditorMap() - Failed to create collision for object %s: %s",
-                     object.name.c_str(), e.what());
-            collisionSkippedCount++;
-        }
+        TraceLog(LOG_INFO,
+                 "Game::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f) with "
+                 "size (%.2f, %.2f, %.2f)",
+                 object.name.c_str(), object.position.x, object.position.y, object.position.z,
+                 colliderSize.x, colliderSize.y, colliderSize.z);
+        collisionCreationCount++;
     }
 
     // Set player start position if specified in map metadata
@@ -2654,34 +2504,22 @@ void Game::LoadEditorMap(const std::string &mapPath)
 void Game::RenderEditorMap()
 {
     // Render the loaded map objects
-    TraceLog(LOG_INFO, "Game::RenderEditorMap() - Rendering %d map objects",
-             m_gameMap.objects.size());
     for (const auto &object : m_gameMap.objects)
     {
-        // Log object details
-        TraceLog(
-            LOG_INFO,
-            "Game::RenderEditorMap() - Rendering object %s, type %d, position (%.2f, %.2f, %.2f)",
-            object.name.c_str(), static_cast<int>(object.type), object.position.x,
-            object.position.y, object.position.z);
-
         // Render based on object type
         switch (object.type)
         {
         case MapObjectType::CUBE:
-            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing CUBE");
             DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
             break;
 
         case MapObjectType::SPHERE:
-            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing SPHERE");
             DrawSphere(object.position, object.radius, object.color);
             break;
 
         case MapObjectType::CYLINDER:
             // Draw cylinder using multiple spheres for approximation
             // For better cylinder rendering, you might want to use a 3D model
-            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing CYLINDER");
             DrawSphere(object.position, object.radius, object.color);
             DrawSphere(
                 Vector3{object.position.x, object.position.y + object.height, object.position.z},
@@ -2690,52 +2528,37 @@ void Game::RenderEditorMap()
 
         case MapObjectType::PLANE:
             // Draw plane as a thin cube
-            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing PLANE");
             DrawCube(object.position, object.size.x, 0.1f, object.size.y, object.color);
             break;
 
         case MapObjectType::MODEL:
             // For model objects, try to load and render the actual model
-            TraceLog(LOG_INFO, "Game::RenderEditorMap() - MODEL object %s, modelName: %s",
-                     object.name.c_str(), object.modelName.c_str());
             if (!object.modelName.empty())
             {
-                try
+                if (auto modelOpt = m_models->GetModelByName(object.modelName))
                 {
-                    if (auto modelOpt = m_models->GetModelByName(object.modelName))
+                    Model &model = modelOpt->get();
+                    if (model.meshCount > 0)
                     {
-                        Model &model = modelOpt->get();
-                        if (model.meshCount > 0)
-                        {
-                            TraceLog(LOG_INFO,
-                                     "Game::RenderEditorMap() - Model %s found with %d meshes",
-                                     object.modelName.c_str(), model.meshCount);
-                            // Draw the model with uniform scale
-                            DrawModel(model, object.position, object.scale.x, object.color);
-                        }
+                        // Draw the model with uniform scale
+                        DrawModel(model, object.position, object.scale.x, object.color);
                     }
                     else
                     {
                         TraceLog(LOG_ERROR,
-                                 "Game::RenderEditorMap() - Model %s not found or has no meshes!",
+                                 "Game::RenderEditorMap() - Model %s has no meshes!",
                                  object.modelName.c_str());
-                        // Fallback to cube if model not found
-                        TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing fallback cube for %s",
-                                 object.name.c_str());
+                        // Fallback to cube if model has no meshes
                         DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z,
                                  object.color);
                     }
                 }
-                catch (const std::exception &e)
+                else
                 {
                     TraceLog(LOG_ERROR,
-                             "Game::RenderEditorMap() - Exception while retrieving model %s: %s",
-                             object.modelName.c_str(), e.what());
-                    // Fallback to cube if model loading fails
-                    TraceLog(
-                        LOG_INFO,
-                        "Game::RenderEditorMap() - Drawing fallback cube for %s due to exception",
-                        object.name.c_str());
+                             "Game::RenderEditorMap() - Model %s not found!",
+                             object.modelName.c_str());
+                    // Fallback to cube if model not found
                     DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z,
                              object.color);
                 }
@@ -2747,8 +2570,6 @@ void Game::RenderEditorMap()
                     "Game::RenderEditorMap() - No modelName for MODEL object %s, drawing as cube",
                     object.name.c_str());
                 // No model name specified, draw as cube
-                TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing cube for %s (no modelName)",
-                         object.name.c_str());
                 DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z,
                          object.color);
             }
@@ -2756,15 +2577,10 @@ void Game::RenderEditorMap()
 
         case MapObjectType::LIGHT:
             // LIGHT objects are not rendered as 3D models - they are lighting objects
-            TraceLog(LOG_INFO,
-                     "Game::RenderEditorMap() - Skipping LIGHT object %s (no 3D rendering needed)",
-                     object.name.c_str());
             break;
 
         default:
             // Unknown type, draw as cube
-            TraceLog(LOG_INFO, "Game::RenderEditorMap() - Drawing default cube for unknown type %d",
-                     static_cast<int>(object.type));
             DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
             break;
         }
@@ -2835,6 +2651,8 @@ void Game::SaveGameState()
 }
 
 // Test accessor methods - public for testing purposes (defined in header)
+
+Menu &Game::GetMenu() { return *m_menu; }
 
 GameMap &Game::GetGameMap() { return m_gameMap; }
 

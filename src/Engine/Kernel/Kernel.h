@@ -26,8 +26,6 @@ public:
         Custom2
     };
 
-    static Kernel &GetInstance();
-
     bool Initialize(const std::string &configFile = "");
     void Shutdown();
     void Update(float deltaTime);
@@ -55,7 +53,7 @@ public:
     void PrintServiceStatus();
     void Log(const std::string &message, int level = 3);
 
-private:
+    // Constructor and destructor - no longer private
     Kernel() = default;
     ~Kernel() = default;
     Kernel(const Kernel &) = delete;
@@ -69,11 +67,12 @@ private:
     std::map<std::string, std::string> m_config;
 };
 
-#define REGISTER_KERNEL_SERVICE(Type, ServiceType) \
-    Kernel::GetInstance().RegisterService<Type>(Kernel::ServiceType::ServiceType, std::make_shared<Type>())
+// Macros updated to require Kernel reference/pointer
+#define REGISTER_KERNEL_SERVICE(kernel, Type, ServiceType) \
+    kernel.RegisterService<Type>(Kernel::ServiceType::ServiceType, std::make_shared<Type>())
 
-#define GET_KERNEL_SERVICE(Type, ServiceType) \
-    Kernel::GetInstance().GetService<Type>(Kernel::ServiceType::ServiceType)
+#define GET_KERNEL_SERVICE(kernel, Type, ServiceType) \
+    kernel.GetService<Type>(Kernel::ServiceType::ServiceType)
 
 #endif // KERNEL_H
 

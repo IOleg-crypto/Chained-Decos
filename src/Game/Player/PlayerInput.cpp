@@ -9,7 +9,6 @@ void PlayerInput::ProcessInput()
     // Skip input processing if no window is available (for testing)
     if (!IsWindowReady())
     {
-        TraceLog(LOG_INFO, "PlayerInput::ProcessInput() - Window not ready, skipping input");
         return;
     }
 
@@ -20,7 +19,6 @@ void PlayerInput::ProcessInput()
     }
 
     Vector3 inputDirection = GetInputDirection();
-    TraceLog(LOG_INFO, "PlayerInput::ProcessInput() - Input direction: (%.3f, %.3f, %.3f)", inputDirection.x, inputDirection.y, inputDirection.z);
 
     // Use default delta time if no window is available (for testing)
     float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
@@ -42,19 +40,16 @@ void PlayerInput::ProcessInput()
         if (Vector3Length(moveDir) > 0.001f)
             moveDir = Vector3Normalize(moveDir);
     }
-    TraceLog(LOG_INFO, "PlayerInput::ProcessInput() - Move direction: (%.3f, %.3f, %.3f)", moveDir.x, moveDir.y, moveDir.z);
 
     // Convert desired move direction into horizontal velocity (units per second)
     float speed = m_player->GetSpeed();
     Vector3 desiredHorizontalVelocity = {moveDir.x * speed, 0.0f, moveDir.z * speed};
-    TraceLog(LOG_INFO, "PlayerInput::ProcessInput() - Desired velocity: (%.3f, %.3f, %.3f), speed: %.3f", desiredHorizontalVelocity.x, desiredHorizontalVelocity.y, desiredHorizontalVelocity.z, speed);
 
     // Apply to player's physics velocity preserving vertical component
     Vector3 v = m_player->GetPhysics().GetVelocity();
     v.x = desiredHorizontalVelocity.x;
     v.z = desiredHorizontalVelocity.z;
     m_player->GetPhysics().SetVelocity(v);
-    TraceLog(LOG_INFO, "PlayerInput::ProcessInput() - Set velocity: (%.3f, %.3f, %.3f)", v.x, v.y, v.z);
 
     // Smoothly rotate player towards movement direction when moving
     if (Vector3Length(desiredHorizontalVelocity) > 0.001f)
@@ -118,7 +113,6 @@ Vector3 PlayerInput::GetInputDirection()
     // Skip key input if no window is available (for testing)
     if (!IsWindowReady())
     {
-        TraceLog(LOG_INFO, "PlayerInput::GetInputDirection() - Window not ready, returning zero");
         return {0.0f, 0.0f, 0.0f};
     }
 
@@ -140,7 +134,6 @@ Vector3 PlayerInput::GetInputDirection()
         inputDir.x += 1.0f;
 
     bool isGrounded = m_player->GetPhysics().IsGrounded();
-    TraceLog(LOG_INFO, "PlayerInput::GetInputDirection() - Keys: W=%d S=%d A=%d D=%d Shift=%d, Grounded=%d", wDown, sDown, aDown, dDown, shiftDown, isGrounded);
 
     // Update speed based on sprint key - only allow sprint when grounded
     if (isGrounded) // Only allow sprint when player is on ground
@@ -148,7 +141,6 @@ Vector3 PlayerInput::GetInputDirection()
         m_walkSpeed = shiftDown ? 15.0f : 8.1f;
     }
     m_player->SetSpeed(m_walkSpeed);
-    TraceLog(LOG_INFO, "PlayerInput::GetInputDirection() - Input dir: (%.3f, %.3f, %.3f), Speed: %.3f", inputDir.x, inputDir.y, inputDir.z, m_walkSpeed);
 
     return inputDir;
 }
