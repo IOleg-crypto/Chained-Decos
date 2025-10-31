@@ -688,27 +688,32 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
     transform = MatrixMultiply(rotationZ, transform);
     transform = MatrixMultiply(scale, transform);
 
+    // For primitives, use direct position and scale (DrawCube, DrawSphere don't use transform matrix)
+    // Rotation is not applied to primitives - same as Editor and Game::RenderEditorMap()
+    // For models, use transform matrix (DrawModel uses model.transform)
     switch (object.type)
     {
         case MapObjectType::CUBE:
-            DrawCube(Vector3{0, 0, 0}, 1.0f, 1.0f, 1.0f, object.color);
-            DrawCubeWires(Vector3{0, 0, 0}, 1.0f, 1.0f, 1.0f, BLACK);
+            // DrawCube uses position directly, scale is applied via width/height/length
+            DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+            DrawCubeWires(object.position, object.scale.x, object.scale.y, object.scale.z, BLACK);
             break;
 
         case MapObjectType::SPHERE:
-            DrawSphere(Vector3{0, 0, 0}, object.radius, object.color);
-            DrawSphereWires(Vector3{0, 0, 0}, object.radius, 16, 16, BLACK);
+            // DrawSphere uses position directly, radius is from object.radius
+            DrawSphere(object.position, object.radius, object.color);
+            DrawSphereWires(object.position, object.radius, 16, 16, BLACK);
             break;
 
         case MapObjectType::CYLINDER:
-            DrawCylinder(Vector3{0, 0, 0}, object.radius, object.radius, object.height, 16, object.color);
-            DrawCylinderWires(Vector3{0, 0, 0}, object.radius, object.radius, object.height, 16, BLACK);
+            // DrawCylinder uses position directly, radius and height from object properties
+            DrawCylinder(object.position, object.radius, object.radius, object.height, 16, object.color);
+            DrawCylinderWires(object.position, object.radius, object.radius, object.height, 16, BLACK);
             break;
 
         case MapObjectType::PLANE:
-            // Draw plane as a flat cube
-            DrawCube(Vector3{0, 0, 0}, object.size.x, 0.1f, object.size.y, object.color);
-            DrawCubeWires(Vector3{0, 0, 0}, object.size.x, 0.1f, object.size.y, BLACK);
+            // DrawPlane uses position directly, size from object.size
+            DrawPlane(object.position, Vector2{object.size.x, object.size.y}, object.color);
             break;
 
         case MapObjectType::MODEL:
@@ -754,7 +759,7 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                     else
                     {
                         // Model not found, draw placeholder
-                        DrawSphere(Vector3{0, 0, 0}, 0.5f, RED);
+                        DrawSphere(object.position, 0.5f, RED);
                         TraceLog(LOG_WARNING, "RenderMapObject: Model not found for %s (tried keys: %s, %s)",
                                 object.name.c_str(), cleanKey.c_str(), object.modelName.c_str());
                     }
@@ -763,19 +768,19 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
             else
             {
                 // No model name specified, draw placeholder
-                DrawSphere(Vector3{0, 0, 0}, 0.5f, RED);
+                DrawSphere(object.position, 0.5f, RED);
             }
             break;
 
         case MapObjectType::LIGHT:
             // Light objects don't render visually, they affect lighting
-            DrawSphere(Vector3{0, 0, 0}, 0.2f, YELLOW); // Visual representation of light
+            DrawSphere(object.position, 0.2f, YELLOW); // Visual representation of light
             break;
 
         default:
             // Unknown object type - draw as cube
-            DrawCube(Vector3{0, 0, 0}, 1.0f, 1.0f, 1.0f, object.color);
-            DrawCubeWires(Vector3{0, 0, 0}, 1.0f, 1.0f, 1.0f, BLACK);
+            DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);
+            DrawCubeWires(object.position, object.scale.x, object.scale.y, object.scale.z, BLACK);
             break;
     }
 }

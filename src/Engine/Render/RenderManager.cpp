@@ -131,12 +131,11 @@ void RenderManager::RenderGame(IRenderable &renderable, const ModelLoader &model
     // Update renderable collision for next frame
     renderable.UpdateCollision();
 
-    // Always render collision shapes in normal gameplay (wireframe mode)
-    RenderCollisionShapes(collisionManager, renderable);
-
-    // Draw collision debug if enabled (additional debug info)
+    // Only render collision shapes in debug mode to avoid wireframes covering primitives
+    // In normal gameplay, collision shapes are not visible (only functional)
     if (showCollisionDebug)
     {
+        RenderCollisionShapes(collisionManager, renderable);
         RenderCollisionDebug(collisionManager, renderable);
         m_forceCollisionDebugNextFrame = false;
     }

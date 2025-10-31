@@ -371,17 +371,11 @@ void Game::InitCollisions()
                  previousColliderCount);
     }
 
-    // Only create artificial ground if we don't have a custom map with its own ground
+    // Ground is now provided by map objects, no artificial ground needed
     if (m_mapManager->GetGameMap().objects.empty())
     {
         TraceLog(LOG_INFO,
-                 "Game::InitCollisions() - No custom map loaded, creating default ground");
-        // Ground positioned to align visual model with collision
-        Vector3 groundCenter = {0.0f, 0.0f, 0.0f};
-        Vector3 groundSize = {1000.0f, 1.0f, 1000.0f};
-        Collision groundPlane(groundCenter, groundSize);
-        groundPlane.SetCollisionType(CollisionType::AABB_ONLY);
-        m_collisionManager->AddCollider(std::move(groundPlane));
+                 "Game::InitCollisions() - No custom map loaded, no ground will be created");
     }
     else
     {
@@ -1437,16 +1431,7 @@ void Game::HandleMenuActions()
                     // Clear existing colliders
                     m_collisionManager->ClearColliders();
 
-                    // Create ground collision first (only if no custom map)
-                    if (m_mapManager->GetGameMap().objects.empty())
-                    {
-                        // Ground positioned to align visual model with collision
-                        Vector3 groundCenter = {0.0f, 0.0f, 0.0f};
-                        Vector3 groundSize = {1000.0f, 1.0f, 1000.0f};
-                        Collision groundPlane(groundCenter, groundSize);
-                        groundPlane.SetCollisionType(CollisionType::AABB_ONLY);
-                        m_collisionManager->AddCollider(std::move(groundPlane));
-                    }
+                    // Ground is now provided by map objects, no artificial ground needed
 
                     // Initialize collision manager
                     m_collisionManager->Initialize();
@@ -1788,11 +1773,8 @@ void Game::RenderGameWorld()
     // Begin 3D rendering
     BeginMode3D(camera);
 
-    // Render game world (models, player, etc.)
-    m_engine->GetRenderManager()->RenderGame(*m_player, *m_models, *m_collisionManager,
-                                             m_engine->IsCollisionDebugVisible());
-
-    // Render editor-created map if available - MUST be inside 3D context
+    // Render editor-created map FIRST (primitives must be rendered before collision shapes)
+    // to avoid collision wireframes covering primitives
     if (!m_mapManager->GetGameMap().objects.empty())
     {
         TraceLog(LOG_INFO, "Game::RenderGameWorld() - Rendering map with %d objects",
@@ -1804,6 +1786,11 @@ void Game::RenderGameWorld()
         TraceLog(LOG_WARNING,
                  "Game::RenderGameWorld() - No map objects to render (m_gameMap.objects.empty())");
     }
+
+    // Render game world (models, player, etc.) and collision shapes AFTER primitives
+    // This ensures primitives are visible and not covered by wireframes
+    m_engine->GetRenderManager()->RenderGame(*m_player, *m_models, *m_collisionManager,
+                                             m_engine->IsCollisionDebugVisible());
 
     // End 3D rendering
     EndMode3D();
@@ -2234,12 +2221,26 @@ void Game::LoadEditorMap(const std::string &mapPath)
             break;
         case MapObjectType::PLANE:
             // For planes, use size for x/z and small height for y
+            // But skip collision if it's a large ground plane (likely artificial ground)
             colliderSize = Vector3{object.size.x, 0.1f, object.size.y};
             // Fallback to default if size is zero
             if (colliderSize.x == 0.0f)
                 colliderSize.x = 5.0f;
             if (colliderSize.z == 0.0f)
                 colliderSize.z = 5.0f;
+            
+            // Skip collision creation for large ground planes (artificial ground)
+            // Large planes with y position near 0 are likely artificial ground
+            if (colliderSize.x > 500.0f || colliderSize.z > 500.0f || 
+                (object.position.y <= 1.0f && object.position.y >= -1.0f && 
+                 (colliderSize.x > 100.0f || colliderSize.z > 100.0f)))
+            {
+                TraceLog(LOG_INFO, "Game::LoadEditorMap() - PLANE object '%s': skipping collision creation (large ground plane)", 
+                        object.name.c_str());
+                collisionSkippedCount++;
+                continue;
+            }
+            
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - Plane collision: size=(%.2f, %.2f, %.2f)",
                      colliderSize.x, colliderSize.y, colliderSize.z);
             break;
@@ -2256,6 +2257,19 @@ void Game::LoadEditorMap(const std::string &mapPath)
             continue; // Skip collision creation for LIGHT objects
         default:
             // For cubes and other types, use scale as-is
+            // But skip collision if it's a large ground cube (likely artificial ground)
+            // Large cubes with y position near 0 and thin height are likely artificial ground
+            if (object.type == MapObjectType::CUBE && 
+                (colliderSize.x > 500.0f || colliderSize.z > 500.0f) &&
+                colliderSize.y < 5.0f &&
+                object.position.y <= 2.0f && object.position.y >= -2.0f)
+            {
+                TraceLog(LOG_INFO, "Game::LoadEditorMap() - CUBE object '%s': skipping collision creation (large ground cube)", 
+                        object.name.c_str());
+                collisionSkippedCount++;
+                continue;
+            }
+            
             TraceLog(LOG_INFO, "Game::LoadEditorMap() - Cube collision: size=(%.2f, %.2f, %.2f)",
                      colliderSize.x, colliderSize.y, colliderSize.z);
             break;
@@ -2602,45 +2616,10 @@ void Game::RenderEditorMap()
             break;
 
         case MapObjectType::MODEL:
-            // For model objects, try to load and render the actual model
-            if (!object.modelName.empty())
-            {
-                if (auto modelOpt = m_models->GetModelByName(object.modelName))
-                {
-                    Model &model = modelOpt->get();
-                    if (model.meshCount > 0)
-                    {
-                        // Draw the model with uniform scale
-                        DrawModel(model, object.position, object.scale.x, object.color);
-                    }
-                    else
-                    {
-                        TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Model %s has no meshes!",
-                                 object.modelName.c_str());
-                        // Fallback to cube if model has no meshes
-                        DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z,
-                                 object.color);
-                    }
-                }
-                else
-                {
-                    TraceLog(LOG_ERROR, "Game::RenderEditorMap() - Model %s not found!",
-                             object.modelName.c_str());
-                    // Fallback to cube if model not found
-                    DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z,
-                             object.color);
-                }
-            }
-            else
-            {
-                TraceLog(
-                    LOG_WARNING,
-                    "Game::RenderEditorMap() - No modelName for MODEL object %s, drawing as cube",
-                    object.name.c_str());
-                // No model name specified, draw as cube
-                DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z,
-                         object.color);
-            }
+            // MODEL objects are rendered through ModelLoader instances via DrawAllModels()
+            // in RenderGame() -> DrawScene3D(), so we don't render them here to avoid duplicates.
+            // If model is not found or instance creation failed, it will show as missing
+            // (instances are created in LoadEditorMap()).
             break;
 
         case MapObjectType::LIGHT:
