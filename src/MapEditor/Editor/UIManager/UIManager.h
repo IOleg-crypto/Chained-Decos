@@ -12,7 +12,7 @@
 #include "imgui.h"
 #include "raylib.h"
 
-#include "Game/Map/MapLoader.h"
+#include "Engine/Map/MapLoader.h"
 
 // Forward declarations for subsystem interfaces
 class ISceneManager;

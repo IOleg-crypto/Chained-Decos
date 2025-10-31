@@ -14,7 +14,7 @@
 #include "Engine/CameraController/CameraController.h"
 #include "Engine/Model/Model.h"
 #include "Object/MapObject.h"
-#include "Game/Map/MapLoader.h"
+#include "Engine/Map/MapLoader.h"
 #include "ModelManager/IModelManager.h"
 
 // Subsystem interfaces
