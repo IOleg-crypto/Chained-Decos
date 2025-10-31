@@ -5,7 +5,7 @@
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/MapFileManager/JsonMapFileManager.h"
 #include "Engine/MapFileManager/MapFileManager.h"
-#include "Game/Map/MapLoader.h" // Include the new comprehensive map loader
+#include "Engine/Map/MapLoader.h" // Include the new comprehensive map loader
 
 // Subsystem implementations
 #include "SceneManager/SceneManager.h"

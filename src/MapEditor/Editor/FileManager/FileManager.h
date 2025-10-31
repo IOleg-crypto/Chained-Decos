@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "Game/Map/MapLoader.h"
+#include "Engine/Map/MapLoader.h"
 #include "Engine/MapFileManager/MapFileManager.h"
 #include "Engine/MapFileManager/JsonMapFileManager.h"
 

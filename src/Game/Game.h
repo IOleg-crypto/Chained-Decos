@@ -5,7 +5,7 @@
 #include "Engine/Engine.h"
 #include "Engine/Model/Model.h"
 #include "Engine/World/World.h"
-#include "Map/MapLoader.h" // For loading editor-created maps
+#include "Engine/Map/MapLoader.h" // For loading editor-created maps
 #include "Menu/Menu.h"
 #include "Player/Player.h"
 #include <memory>
