@@ -32,7 +32,7 @@ struct JsonSerializableObject
 };
 
 // Include MapLoader.h for MapMetadata definition
-#include "../../Game/Map/MapLoader.h"
+#include "../Map/MapLoader.h"
 
 // JSON-based map file manager
 class JsonMapFileManager

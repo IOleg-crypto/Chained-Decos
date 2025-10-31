@@ -1,9 +1,9 @@
-add_library(mapmod STATIC
+add_library(map STATIC
     MapLoader.cpp
     MapLoader.h
 )
 
-target_include_directories(mapmod
+target_include_directories(map
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src
@@ -11,14 +11,17 @@ target_include_directories(mapmod
 )
 
 # Add PROJECT_ROOT_DIR definition for consistent path handling
-target_compile_definitions(mapmod PRIVATE
+target_compile_definitions(map PRIVATE
     PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
 )
 
 # Use forward slashes for cross-platform compatibility
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
-target_compile_definitions(mapmod PRIVATE
+target_compile_definitions(map PRIVATE
     PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
 )
 
-target_link_libraries(mapmod PUBLIC raylib nlohmann_json)
+target_link_libraries(map PUBLIC raylib nlohmann_json)
+
+set_target_properties(map PROPERTIES POSITION_INDEPENDENT_CODE ON)
+

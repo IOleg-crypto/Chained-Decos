@@ -6,7 +6,7 @@
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/MapFileManager/JsonMapFileManager.h"
 #include "Engine/MapFileManager/MapFileManager.h"
-#include "Game/Map/MapLoader.h"
+#include "Engine/Map/MapLoader.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
