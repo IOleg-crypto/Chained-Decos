@@ -80,6 +80,7 @@ public:
     void ShowPropertiesPanel(bool show) override;
     void ShowFileDialog(bool show) override;
     void ShowParkourMapDialog(bool show) override;
+    int GetGridSize() const override;
 
     // UI state accessors
     bool IsImGuiInterfaceDisplayed() const { return m_displayImGuiInterface; }
@@ -93,7 +94,6 @@ public:
     void SetActiveTool(::Tool tool);
     const std::string& GetSelectedModelName() const { return m_currentlySelectedModelName; }
     void SetSelectedModelName(const std::string& name) { m_currentlySelectedModelName = name; }
-    int GetGridSize() const { return m_gridSizes; }
     void SetGridSize(int size) { m_gridSizes = size; }
 
 private:

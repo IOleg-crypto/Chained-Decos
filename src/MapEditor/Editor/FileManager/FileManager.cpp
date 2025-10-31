@@ -7,6 +7,7 @@
 #include "Engine/MapFileManager/JsonMapFileManager.h"
 #include "Engine/MapFileManager/MapFileManager.h"
 #include "Engine/Map/MapLoader.h"
+#include "../Object/MapObject.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -41,28 +42,91 @@ FileManager::FileManager()
 
 FileManager::~FileManager() { NFD_Quit(); }
 
+// Helper functions to convert between MapObject (Editor) and MapObjectData (Engine)
+static MapObjectData ConvertMapObjectToMapObjectData(const MapObject& obj)
+{
+    MapObjectData data;
+    data.name = obj.GetObjectName();
+    data.position = obj.GetPosition();
+    data.rotation = obj.GetRotation();
+    data.scale = obj.GetScale();
+    data.color = obj.GetColor();
+    data.modelName = obj.GetModelAssetName();
+    
+    // Convert object type (Editor uses int, Engine uses enum)
+    switch (obj.GetObjectType())
+    {
+        case 0: data.type = MapObjectType::CUBE; break;
+        case 1: data.type = MapObjectType::SPHERE; break;
+        case 2: data.type = MapObjectType::CYLINDER; break;
+        case 3: data.type = MapObjectType::PLANE; break;
+        case 4: data.type = MapObjectType::LIGHT; break;
+        case 5: data.type = MapObjectType::MODEL; break;
+        default: data.type = MapObjectType::CUBE; break;
+    }
+    
+    // Shape-specific properties
+    data.radius = obj.GetSphereRadius();
+    data.height = obj.GetScale().y; // Use scale.y for cylinder height
+    data.size = obj.GetPlaneSize();
+    
+    // Default collision properties
+    data.isPlatform = true;
+    data.isObstacle = false;
+    
+    return data;
+}
+
+static MapObject ConvertMapObjectDataToMapObject(const MapObjectData& data)
+{
+    MapObject obj;
+    obj.SetObjectName(data.name);
+    obj.SetPosition(data.position);
+    obj.SetRotation(data.rotation);
+    obj.SetScale(data.scale);
+    obj.SetColor(data.color);
+    obj.SetModelAssetName(data.modelName);
+    obj.SetSelected(false);
+    
+    // Convert object type
+    switch (data.type)
+    {
+        case MapObjectType::CUBE: obj.SetObjectType(0); break;
+        case MapObjectType::SPHERE: obj.SetObjectType(1); break;
+        case MapObjectType::CYLINDER: obj.SetObjectType(2); break;
+        case MapObjectType::PLANE: obj.SetObjectType(3); break;
+        case MapObjectType::LIGHT: obj.SetObjectType(4); break;
+        case MapObjectType::MODEL: obj.SetObjectType(5); break;
+    }
+    
+    // Shape-specific properties
+    obj.SetSphereRadius(data.radius);
+    obj.SetPlaneSize(data.size);
+    
+    return obj;
+}
+
 bool FileManager::SaveMap(const std::string& filename, const std::vector<MapObject>& objects)
 {
-    // Convert MapObjects to SerializableObjects for saving
-    std::vector<SerializableObject> serializableObjects;
-
-    for (auto& obj : objects)
+    // Convert MapObjects to GameMap using shared MapLoader
+    GameMap gameMap;
+    
+    // Set basic metadata
+    gameMap.metadata.name = fs::path(filename).stem().string();
+    gameMap.metadata.displayName = gameMap.metadata.name;
+    gameMap.metadata.version = "1.0";
+    
+    // Convert MapObjects to MapObjectData
+    for (const auto& obj : objects)
     {
-        SerializableObject serializableObj;
-        serializableObj.position = obj.GetPosition();
-        serializableObj.scale = obj.GetScale();
-        serializableObj.rotation = obj.GetRotation();
-        serializableObj.color = obj.GetColor();
-        serializableObj.name = obj.GetObjectName();
-        serializableObj.type = obj.GetObjectType();
-        serializableObj.modelName = obj.GetModelAssetName();
-        serializableObjects.push_back(serializableObj);
+        gameMap.objects.push_back(ConvertMapObjectToMapObjectData(obj));
     }
-
-    // Save map to file
-    if (MapFileManager::SaveMap(serializableObjects, filename))
+    
+    // Save using shared MapLoader
+    MapLoader loader;
+    if (loader.SaveMap(gameMap, filename))
     {
-        std::cout << "Map saved successfully!" << std::endl;
+        std::cout << "Map saved successfully using shared MapLoader!" << std::endl;
         m_currentlyLoadedMapFilePath = filename;
         return true;
     }
@@ -75,40 +139,54 @@ bool FileManager::SaveMap(const std::string& filename, const std::vector<MapObje
 
 bool FileManager::LoadMap(const std::string& filename, std::vector<MapObject>& objects)
 {
-    // Load map from file
-    std::vector<SerializableObject> serializableObjects;
-
-    if (MapFileManager::LoadMap(serializableObjects, filename))
+    // Load map using shared MapLoader
+    MapLoader loader;
+    GameMap gameMap = loader.LoadMap(filename);
+    
+    if (gameMap.objects.empty() && gameMap.metadata.name.empty())
     {
-        // Clear current scene
-        objects.clear();
-        TraceLog(LOG_INFO , "InFO load modes");
-
-        // Convert SerializableObjects back to MapObjects
-        for (const auto& [position, scale, rotation, color, name, type, modelName] : serializableObjects)
+        // Try fallback to old format if MapLoader fails
+        std::vector<SerializableObject> serializableObjects;
+        if (MapFileManager::LoadMap(serializableObjects, filename))
         {
-            MapObject obj;
-            obj.SetPosition(position);
-            obj.SetScale(scale);
-            obj.SetRotation(rotation);
-            obj.SetColor(color);
-            obj.SetObjectName(name);
-            obj.SetObjectType(type);
-            obj.SetModelAssetName(modelName);
-            obj.SetSelected(false);
-
-            objects.push_back(obj);
+            objects.clear();
+            TraceLog(LOG_INFO, "FileManager::LoadMap() - Using fallback MapFileManager for compatibility");
+            
+            for (const auto& [position, scale, rotation, color, name, type, modelName] : serializableObjects)
+            {
+                MapObject obj;
+                obj.SetPosition(position);
+                obj.SetScale(scale);
+                obj.SetRotation(rotation);
+                obj.SetColor(color);
+                obj.SetObjectName(name);
+                obj.SetObjectType(type);
+                obj.SetModelAssetName(modelName);
+                obj.SetSelected(false);
+                objects.push_back(obj);
+            }
+            
+            m_currentlyLoadedMapFilePath = filename;
+            return true;
         }
-
-        std::cout << "Map loaded successfully!" << std::endl;
-        m_currentlyLoadedMapFilePath = filename;
-        return true;
-    }
-    else
-    {
+        
         std::cout << "Failed to load map!" << std::endl;
         return false;
     }
+    
+    // Clear current scene
+    objects.clear();
+    TraceLog(LOG_INFO, "FileManager::LoadMap() - Loaded map using shared MapLoader");
+    
+    // Convert MapObjectData to MapObjects
+    for (const auto& data : gameMap.objects)
+    {
+        objects.push_back(ConvertMapObjectDataToMapObject(data));
+    }
+    
+    std::cout << "Map loaded successfully using shared MapLoader!" << std::endl;
+    m_currentlyLoadedMapFilePath = filename;
+    return true;
 }
 
 bool FileManager::ExportForGame(const std::string& filename, const std::vector<MapObject>& objects)
