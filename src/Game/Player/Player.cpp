@@ -1,8 +1,10 @@
 #include "Player.h"
+#include "PlayerRenderable.h"
 #include "PlayerMovement.h"
 #include "PlayerInput.h"
 #include "PlayerCollision.h"
 #include "PlayerModel.h"
+#include <Render/IRenderable.h>
 #include <CameraController/CameraController.h>
 #include <World/World.h>
 #include <memory>
@@ -23,10 +25,8 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_input = std::make_unique<PlayerInput>(this);
     m_model = std::make_unique<PlayerModel>();
     m_collision = std::make_unique<PlayerCollision>(this);
+    m_renderable = std::make_unique<PlayerRenderable>(this);
 
-    // Initialize player position - use safe position above ground
-    Vector3 safePosition = {0.0f, 5.0f, 0.0f};
-    SetPlayerPosition(safePosition);
 
     // Initialize physics - start ungrounded so gravity can act
     m_movement->GetPhysics().SetGroundLevel(false);
@@ -208,32 +208,13 @@ PlayerCollision& Player::GetCollisionMutable() {
     return *m_collision;
 }
 
-// IRenderable interface implementations
+// IRenderable access
+IRenderable* Player::GetRenderable() const {
+    return m_renderable.get();
+}
+
+// Update method для сумісності (делегує до UpdateImpl)
 void Player::Update(CollisionManager& collisionManager) {
-    Player::UpdateImpl(collisionManager);
-}
-
-void Player::Render() {
-    // Rendering is handled by RenderManager, so nothing to do here
-}
-
-Vector3 Player::GetPosition() const {
-    return GetPlayerPosition();
-}
-
-BoundingBox Player::GetBoundingBox() const {
-    return GetPlayerBoundingBox();
-}
-
-void Player::UpdateCollision() {
-    UpdatePlayerCollision();
-}
-
-Camera Player::GetCamera() const {
-    return GetCameraController()->GetCamera();
-}
-
-bool Player::IsGrounded() const {
-    return GetPhysics().IsGrounded();
+    UpdateImpl(collisionManager);
 }
 

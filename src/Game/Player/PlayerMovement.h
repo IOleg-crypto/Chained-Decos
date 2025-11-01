@@ -7,12 +7,12 @@
 #include <raymath.h>
 #include <Physics/PhysicsComponent.h>
 #include "IPlayerMovement.h"
-#include "Player.h"
+#include "IPlayerMediator.h"
 
 class PlayerMovement : public IPlayerMovement
 {
 public:
-    explicit PlayerMovement(Player *player);
+    explicit PlayerMovement(IPlayerMediator *player);
     ~PlayerMovement() = default;
 
     // IPlayerMovement interface implementation
@@ -47,7 +47,7 @@ public:
     void SetCollisionManager(const CollisionManager *collisionManager) override;
 
 private:
-    Player *m_player;
+    IPlayerMediator *m_player;
     Vector3 m_position;
     float m_rotationY = 0.0f;
 
@@ -67,7 +67,7 @@ private:
     static constexpr int GROUNDED_SET_FRAMES = 2;
     static constexpr int GROUNDED_CLEAR_FRAMES = 3;
     static constexpr int COYOTE_FRAMES = 4;
-    static constexpr float MAX_FALL_SPEED = -50.0f;
+    static constexpr float MAX_FALL_SPEED = -20.0f;
     static constexpr float SKIN_WIDTH = 0.001f;
 };
 

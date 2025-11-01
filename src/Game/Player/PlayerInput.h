@@ -6,13 +6,13 @@
 #include <raylib.h>
 #include <raymath.h>
 #include "IPlayerInput.h"
-#include "Player.h"
+#include "IPlayerMediator.h"
 
 // PlayerInput: handles all input-related functionality
 class PlayerInput : public IPlayerInput
 {
 public:
-    explicit PlayerInput(Player *player);
+    explicit PlayerInput(IPlayerMediator *player);
 
     // IPlayerInput interface implementation
     void ProcessInput() override;
@@ -22,7 +22,7 @@ public:
     std::pair<Vector3, Vector3> GetCameraVectors() const override;
 
 private:
-    Player *m_player;
+    IPlayerMediator *m_player;
     float m_walkSpeed;
 };
 

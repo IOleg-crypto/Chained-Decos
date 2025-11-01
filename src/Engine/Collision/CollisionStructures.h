@@ -8,6 +8,23 @@
 #include <vector>
 
 //
+// CollisionRay - represents a ray for ray casting
+//
+class CollisionRay
+{
+public:
+    CollisionRay() = default;
+    CollisionRay(const Vector3 &orig, const Vector3 &dir);
+
+    const Vector3 &GetOrigin() const;
+    const Vector3 &GetDirection() const;
+
+private:
+    Vector3 m_origin{};
+    Vector3 m_direction{};
+};
+
+//
 // CollisionTriangle - represents a triangle in 3D space for collision detection
 //
 class CollisionTriangle
@@ -47,23 +64,6 @@ private:
     // Cached edge vectors and dot products for barycentric coordinates
     Vector3 m_e0{}, m_e1{};
     float m_dot00{}, m_dot01{}, m_dot11{};
-};
-
-//
-// CollisionRay - represents a ray for ray casting
-//
-class CollisionRay
-{
-public:
-    CollisionRay() = default;
-    CollisionRay(const Vector3 &orig, const Vector3 &dir);
-
-    const Vector3 &GetOrigin() const;
-    const Vector3 &GetDirection() const;
-
-private:
-    Vector3 m_origin{};
-    Vector3 m_direction{};
 };
 
 //

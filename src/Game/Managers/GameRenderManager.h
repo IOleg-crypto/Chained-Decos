@@ -1,7 +1,7 @@
 #ifndef GAME_RENDER_MANAGER_H
 #define GAME_RENDER_MANAGER_H
 
-#include "Player/Player.h"
+#include "../Player/Player.h"
 #include "Engine/Engine.h"
 #include "Engine/Model/Model.h"
 #include "Engine/Collision/CollisionManager.h"

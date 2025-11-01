@@ -1,87 +1,75 @@
 #include "CollisionSystem.h"
-#include <cassert>
-#include <cmath>
-#include <cfloat>
-#include <vector>
 #include <algorithm>
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <vector>
+
 
 #include "CollisionStructures.h"
 #include <raylib.h>
 #include <raymath.h>
 
-
-Collision::Collision()
-{
-    m_min = {0, 0, 0};
-    m_max = {0, 0, 0};
-}
+Collision::Collision() { m_bounds = {{0, 0, 0}, {0, 0, 0}}; }
 Collision::Collision(const Vector3 &center, const Vector3 &halfSize)
 {
-    m_min = Vector3Subtract(center, halfSize);
-    m_max = Vector3Add(center, halfSize);
+    m_bounds.min = Vector3Subtract(center, halfSize);
+    m_bounds.max = Vector3Add(center, halfSize);
 }
 
-Collision::Collision(const Collision& other)
+Collision::Collision(const Collision &other)
 {
-    m_min = other.m_min;
-    m_max = other.m_max;
-    m_collisionType = other.m_collisionType; 
-    m_complexity = other.m_complexity;
-    m_triangles = other.m_triangles;
-    m_isBuilt = other.m_isBuilt;
-    m_stats = other.m_stats;
-
-    if (other.m_bvhRoot) {
-        BuildBVHFromTriangles();
-    }
-}
-
-Collision& Collision::operator=(const Collision& other)
-{
-    if (this == &other) return *this;
-    
-    m_min = other.m_min;
-    m_max = other.m_max;
+    m_bounds = other.m_bounds;
     m_collisionType = other.m_collisionType;
     m_complexity = other.m_complexity;
     m_triangles = other.m_triangles;
     m_isBuilt = other.m_isBuilt;
-    m_stats = other.m_stats;
 
-
-    if (!m_triangles.empty() && 
-        (m_collisionType == CollisionType::BVH_ONLY || 
-         m_collisionType == CollisionType::TRIANGLE_PRECISE))
+    if (other.m_bvhRoot)
     {
         BuildBVHFromTriangles();
     }
-    
+}
+
+Collision &Collision::operator=(const Collision &other)
+{
+    if (this == &other)
+        return *this;
+
+    m_bounds = other.m_bounds;
+    m_collisionType = other.m_collisionType;
+    m_complexity = other.m_complexity;
+    m_triangles = other.m_triangles;
+    m_isBuilt = other.m_isBuilt;
+
+    if (!m_triangles.empty() && (m_collisionType == CollisionType::BVH_ONLY ||
+                                 m_collisionType == CollisionType::TRIANGLE_PRECISE))
+    {
+        BuildBVHFromTriangles();
+    }
+
     return *this;
 }
 
 Collision::Collision(Collision &&other) noexcept
 {
-    m_min = other.m_min;
-    m_max = other.m_max;
+    m_bounds = other.m_bounds;
     m_collisionType = other.m_collisionType;
     m_complexity = other.m_complexity;
     m_triangles = std::move(other.m_triangles);
     m_bvhRoot = std::move(other.m_bvhRoot);
     m_isBuilt = other.m_isBuilt;
-    m_stats = other.m_stats;
 }
 Collision &Collision::operator=(Collision &&other) noexcept
 {
     if (this == &other)
         return *this;
-    m_min = other.m_min;
-    m_max = other.m_max;
+    m_bounds = other.m_bounds;
     m_collisionType = other.m_collisionType;
     m_complexity = other.m_complexity;
     m_triangles = std::move(other.m_triangles);
     m_bvhRoot = std::move(other.m_bvhRoot);
     m_isBuilt = other.m_isBuilt;
-    m_stats = other.m_stats;
     return *this;
 }
 Collision::~Collision() = default;
@@ -89,23 +77,22 @@ Collision::~Collision() = default;
 // ----------------- AABB -----------------
 void Collision::Update(const Vector3 &center, const Vector3 &halfSize)
 {
-    m_min = Vector3Subtract(center, halfSize);
-    m_max = Vector3Add(center, halfSize);
+    m_bounds.min = Vector3Subtract(center, halfSize);
+    m_bounds.max = Vector3Add(center, halfSize);
 }
 
 bool Collision::IntersectsAABB(const Collision &other) const
 {
-    // Use raylib's built-in AABB intersection for robustness
-    BoundingBox a{ m_min, m_max };
-    BoundingBox b{ other.m_min, other.m_max };
-    return CheckCollisionBoxes(a, b);
+    // Use raylib's built-in AABB intersection
+    return CheckCollisionBoxes(m_bounds, other.m_bounds);
 }
 
 bool Collision::ContainsPointAABB(const Vector3 &point) const
 {
-    return (point.x >= m_min.x && point.x <= m_max.x) &&
-           (point.y >= m_min.y && point.y <= m_max.y) &&
-           (point.z >= m_min.z && point.z <= m_max.z);
+    // Check if point is inside bounding box
+    return (point.x >= m_bounds.min.x && point.x <= m_bounds.max.x) &&
+           (point.y >= m_bounds.min.y && point.y <= m_bounds.max.y) &&
+           (point.z >= m_bounds.min.z && point.z <= m_bounds.max.z);
 }
 
 // ----------------- Build from model (optimized) -----------------
@@ -154,7 +141,7 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
 
         // Batch process triangles for this mesh
         const int triangleCount = mesh.triangleCount;
-        const unsigned short* indices = mesh.indices;
+        const unsigned short *indices = mesh.indices;
 
         for (int i = 0; i < triangleCount; ++i)
         {
@@ -167,13 +154,13 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
             if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount)
                 continue;
 
-            const float* v0Ptr = &mesh.vertices[i0 * 3];
-            const float* v1Ptr = &mesh.vertices[i1 * 3];
-            const float* v2Ptr = &mesh.vertices[i2 * 3];
+            const float *v0Ptr = &mesh.vertices[i0 * 3];
+            const float *v1Ptr = &mesh.vertices[i1 * 3];
+            const float *v2Ptr = &mesh.vertices[i2 * 3];
 
-            Vector3 v0 = { v0Ptr[0], v0Ptr[1], v0Ptr[2] };
-            Vector3 v1 = { v1Ptr[0], v1Ptr[1], v1Ptr[2] };
-            Vector3 v2 = { v2Ptr[0], v2Ptr[1], v2Ptr[2] };
+            Vector3 v0 = {v0Ptr[0], v0Ptr[1], v0Ptr[2]};
+            Vector3 v1 = {v1Ptr[0], v1Ptr[1], v1Ptr[2]};
+            Vector3 v2 = {v2Ptr[0], v2Ptr[1], v2Ptr[2]};
 
             // Basic validation
             if (!std::isfinite(v0.x) || !std::isfinite(v0.y) || !std::isfinite(v0.z) ||
@@ -214,12 +201,10 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
     {
         // Fallback to model's bounding box if no triangles
         BoundingBox bb = GetModelBoundingBox(*rayModel);
-        Vector3 corners[8] = {
-            {bb.min.x, bb.min.y, bb.min.z}, {bb.max.x, bb.min.y, bb.min.z},
-            {bb.min.x, bb.max.y, bb.min.z}, {bb.min.x, bb.min.y, bb.max.z},
-            {bb.max.x, bb.max.y, bb.min.z}, {bb.min.x, bb.max.y, bb.max.z},
-            {bb.max.x, bb.min.y, bb.max.z}, {bb.max.x, bb.max.y, bb.max.z}
-        };
+        Vector3 corners[8] = {{bb.min.x, bb.min.y, bb.min.z}, {bb.max.x, bb.min.y, bb.min.z},
+                              {bb.min.x, bb.max.y, bb.min.z}, {bb.min.x, bb.min.y, bb.max.z},
+                              {bb.max.x, bb.max.y, bb.min.z}, {bb.min.x, bb.max.y, bb.max.z},
+                              {bb.max.x, bb.min.y, bb.max.z}, {bb.max.x, bb.max.y, bb.max.z}};
 
         Vector3 tmin = {FLT_MAX, FLT_MAX, FLT_MAX};
         Vector3 tmax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
@@ -227,27 +212,24 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
         for (const auto &corner : corners)
         {
             Vector3 tc = Vector3Transform(corner, transform);
-            tmin.x = fminf(tmin.x, tc.x); tmin.y = fminf(tmin.y, tc.y); tmin.z = fminf(tmin.z, tc.z);
-            tmax.x = fmaxf(tmax.x, tc.x); tmax.y = fmaxf(tmax.y, tc.y); tmax.z = fmaxf(tmax.z, tc.z);
+            tmin.x = fminf(tmin.x, tc.x);
+            tmin.y = fminf(tmin.y, tc.y);
+            tmin.z = fminf(tmin.z, tc.z);
+            tmax.x = fmaxf(tmax.x, tc.x);
+            tmax.y = fmaxf(tmax.y, tc.y);
+            tmax.z = fmaxf(tmax.z, tc.z);
         }
 
-        m_min = tmin;
-        m_max = tmax;
+        m_bounds.min = tmin;
+        m_bounds.max = tmax;
     }
 
     m_isBuilt = true;
 }
 
-
-
 void Collision::BuildFromModelWithType(void *model, CollisionType type, const Matrix &transform)
 {
     m_collisionType = type;
-    BuildFromModel(model, transform);
-}
-
-void Collision::CalculateFromModel(void *model, const Matrix &transform)
-{
     BuildFromModel(model, transform);
 }
 
@@ -262,21 +244,13 @@ void Collision::ExpandAABB(Vector3 &minOut, Vector3 &maxOut, const Vector3 &p)
     maxOut.z = std::max(maxOut.z, p.z);
 }
 
-void Collision::TriangleBounds(const CollisionTriangle &t, Vector3 &outMin, Vector3 &outMax)
-{
-    outMin = t.V0();
-    outMax = t.V0();
-    ExpandAABB(outMin, outMax, t.V1());
-    ExpandAABB(outMin, outMax, t.V2());
-}
-
 void Collision::UpdateAABBFromTriangles()
 {
     if (m_triangles.empty())
         return;
 
     // Initialize with first triangle vertices
-    const CollisionTriangle& firstTri = m_triangles[0];
+    const CollisionTriangle &firstTri = m_triangles[0];
     Vector3 minP = firstTri.V0();
     Vector3 maxP = firstTri.V0();
 
@@ -288,21 +262,18 @@ void Collision::UpdateAABBFromTriangles()
     const size_t triangleCount = m_triangles.size();
     for (size_t i = 1; i < triangleCount; ++i)
     {
-        const CollisionTriangle& t = m_triangles[i];
+        const CollisionTriangle &t = m_triangles[i];
         // Process all three vertices at once for better cache performance
         ExpandAABB(minP, maxP, t.V0());
         ExpandAABB(minP, maxP, t.V1());
         ExpandAABB(minP, maxP, t.V2());
     }
 
-    m_min = minP;
-    m_max = maxP;
+    m_bounds.min = minP;
+    m_bounds.max = maxP;
 }
 
-void Collision::AddTriangle(const CollisionTriangle &triangle)
-{
-    m_triangles.push_back(triangle);
-}
+void Collision::AddTriangle(const CollisionTriangle &triangle) { m_triangles.push_back(triangle); }
 
 void Collision::AddTriangles(const std::vector<CollisionTriangle> &triangles)
 {
@@ -375,8 +346,10 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
                   }
 
                   // Handle NaN/inf values
-                  if (!std::isfinite(ca_val)) ca_val = 0.0f;
-                  if (!std::isfinite(cb_val)) cb_val = 0.0f;
+                  if (!std::isfinite(ca_val))
+                      ca_val = 0.0f;
+                  if (!std::isfinite(cb_val))
+                      cb_val = 0.0f;
 
                   return ca_val < cb_val;
               });
@@ -393,7 +366,8 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
 
 void Collision::BuildBVHFromTriangles()
 {
-    TraceLog(LOG_DEBUG, "Collision::BuildBVHFromTriangles() - Starting BVH build for collision object");
+    TraceLog(LOG_DEBUG,
+             "Collision::BuildBVHFromTriangles() - Starting BVH build for collision object");
 
     if (m_triangles.empty())
     {
@@ -404,7 +378,7 @@ void Collision::BuildBVHFromTriangles()
 
     // Validate triangles before building BVH
     size_t validTriangles = 0;
-    for (const auto& tri : m_triangles)
+    for (const auto &tri : m_triangles)
     {
         if (std::isfinite(tri.V0().x) && std::isfinite(tri.V0().y) && std::isfinite(tri.V0().z) &&
             std::isfinite(tri.V1().x) && std::isfinite(tri.V1().y) && std::isfinite(tri.V1().z) &&
@@ -414,7 +388,9 @@ void Collision::BuildBVHFromTriangles()
         }
     }
 
-    TraceLog(LOG_DEBUG, "Collision::BuildBVHFromTriangles() - Found %zu valid triangles out of %zu total", validTriangles, m_triangles.size());
+    TraceLog(LOG_DEBUG,
+             "Collision::BuildBVHFromTriangles() - Found %zu valid triangles out of %zu total",
+             validTriangles, m_triangles.size());
 
     if (validTriangles == 0)
     {
@@ -425,26 +401,31 @@ void Collision::BuildBVHFromTriangles()
 
     if (validTriangles < m_triangles.size())
     {
-        TraceLog(LOG_WARNING, "Collision::BuildBVHFromTriangles() - Found %zu invalid triangles out of %zu total",
-                 m_triangles.size() - validTriangles, m_triangles.size());
+        TraceLog(
+            LOG_WARNING,
+            "Collision::BuildBVHFromTriangles() - Found %zu invalid triangles out of %zu total",
+            m_triangles.size() - validTriangles, m_triangles.size());
     }
 
     // Build BVH directly with existing triangles - no copying needed
     try
     {
         m_bvhRoot = BuildBVHNode(m_triangles, 0);
-        TraceLog(LOG_INFO, "Collision::BuildBVHFromTriangles() - Successfully built BVH with %zu triangles", validTriangles);
+        TraceLog(LOG_INFO,
+                 "Collision::BuildBVHFromTriangles() - Successfully built BVH with %zu triangles",
+                 validTriangles);
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Collision::BuildBVHFromTriangles() - Failed to build BVH: %s", e.what());
+        TraceLog(LOG_ERROR, "Collision::BuildBVHFromTriangles() - Failed to build BVH: %s",
+                 e.what());
         m_bvhRoot.reset();
     }
 }
 
 // ----------------- Ray/triangle (Möller–Trumbore) -----------------
 bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
-                                       const CollisionTriangle &tri, RayHit &outHit)
+                                      const CollisionTriangle &tri, RayHit &outHit)
 {
     // Enhanced Möller-Trumbore with safety checks
     const float EPS_PARALLEL = 1e-8f;
@@ -505,23 +486,17 @@ bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
     return false;
 }
 
-// ----------------- AABB ray test (using raylib) -----------------
-bool Collision::AABBIntersectRay(const Vector3 &min, const Vector3 &max, const Vector3 &origin,
-                                 const Vector3 &dir, float maxDistance)
-{
-    Ray ray = { origin, dir };
-    BoundingBox box = { min, max };
-    RayCollision collision = GetRayCollisionBox(ray, box);
-    return collision.hit && collision.distance <= maxDistance;
-}
-
 // ----------------- BVH raycast traversal -----------------
 bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const Vector3 &dir,
                                float maxDistance, RayHit &outHit) const
 {
     if (!node)
         return false;
-    if (!AABBIntersectRay(node->min, node->max, origin, dir, maxDistance))
+    // Use raylib for AABB-ray intersection test
+    Ray ray = {origin, dir};
+    BoundingBox box = {node->min, node->max};
+    RayCollision collision = GetRayCollisionBox(ray, box);
+    if (!collision.hit || collision.distance > maxDistance)
         return false;
 
     bool hitAny = false;
@@ -552,7 +527,7 @@ bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const
 }
 
 bool Collision::RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxDistance,
-                            RayHit &outHit) const
+                           RayHit &outHit) const
 {
     if (!m_bvhRoot)
         return false;
@@ -574,7 +549,8 @@ bool Collision::RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxD
 bool Collision::ContainsPointBVH(const Vector3 &point) const
 {
     // Cast ray in +X direction and count intersections
-    Vector3 dir = Vector3Normalize({1.0f, 0.0001f, 0.0002f}); // slight offset to avoid coplanar degeneracy
+    Vector3 dir =
+        Vector3Normalize({1.0f, 0.0001f, 0.0002f}); // slight offset to avoid coplanar degeneracy
     RayHit hit;
     int count = 0;
     const float MAX_DIST = 1e6f;
@@ -593,7 +569,11 @@ bool Collision::ContainsPointBVH(const Vector3 &point) const
     {
         const BVHNode *n = stack.back();
         stack.pop_back();
-        if (!AABBIntersectRay(n->min, n->max, point, dir, MAX_DIST))
+        // Use raylib for AABB-ray intersection test
+        Ray ray = {point, dir};
+        BoundingBox box = {n->min, n->max};
+        RayCollision collision = GetRayCollisionBox(ray, box);
+        if (!collision.hit || collision.distance > MAX_DIST)
             continue;
         if (n->IsLeaf())
         {
@@ -621,30 +601,52 @@ bool Collision::ContainsPointBVH(const Vector3 &point) const
 // ----------------- Intersects (AABB broad, BVH narrow) -----------------
 // Helper: check if other's BVH has any leaf AABB overlapping this Collision's AABB
 // Optimized Triangle-AABB SAT test with early exit optimizations
-static bool TriangleAABBOverlapSAT(const CollisionTriangle &tri, const Vector3 &bmin, const Vector3 &bmax)
+static bool TriangleAABBOverlapSAT(const CollisionTriangle &tri, const Vector3 &bmin,
+                                   const Vector3 &bmax)
 {
     // Quick AABB-AABB test first (much faster than full SAT)
     Vector3 triMin = tri.V0();
     Vector3 triMax = tri.V0();
 
     // Calculate triangle AABB inline for speed
-    if (tri.V1().x < triMin.x) triMin.x = tri.V1().x; else if (tri.V1().x > triMax.x) triMax.x = tri.V1().x;
-    if (tri.V1().y < triMin.y) triMin.y = tri.V1().y; else if (tri.V1().y > triMax.y) triMax.y = tri.V1().y;
-    if (tri.V1().z < triMin.z) triMin.z = tri.V1().z; else if (tri.V1().z > triMax.z) triMax.z = tri.V1().z;
+    if (tri.V1().x < triMin.x)
+        triMin.x = tri.V1().x;
+    else if (tri.V1().x > triMax.x)
+        triMax.x = tri.V1().x;
+    if (tri.V1().y < triMin.y)
+        triMin.y = tri.V1().y;
+    else if (tri.V1().y > triMax.y)
+        triMax.y = tri.V1().y;
+    if (tri.V1().z < triMin.z)
+        triMin.z = tri.V1().z;
+    else if (tri.V1().z > triMax.z)
+        triMax.z = tri.V1().z;
 
-    if (tri.V2().x < triMin.x) triMin.x = tri.V2().x; else if (tri.V2().x > triMax.x) triMax.x = tri.V2().x;
-    if (tri.V2().y < triMin.y) triMin.y = tri.V2().y; else if (tri.V2().y > triMax.y) triMax.y = tri.V2().y;
-    if (tri.V2().z < triMin.z) triMin.z = tri.V2().z; else if (tri.V2().z > triMax.z) triMax.z = tri.V2().z;
+    if (tri.V2().x < triMin.x)
+        triMin.x = tri.V2().x;
+    else if (tri.V2().x > triMax.x)
+        triMax.x = tri.V2().x;
+    if (tri.V2().y < triMin.y)
+        triMin.y = tri.V2().y;
+    else if (tri.V2().y > triMax.y)
+        triMax.y = tri.V2().y;
+    if (tri.V2().z < triMin.z)
+        triMin.z = tri.V2().z;
+    else if (tri.V2().z > triMax.z)
+        triMax.z = tri.V2().z;
 
     // Early exit: if triangle AABB doesn't overlap box AABB, no intersection
-    if (triMax.x < bmin.x || triMin.x > bmax.x) return false;
-    if (triMax.y < bmin.y || triMin.y > bmax.y) return false;
-    if (triMax.z < bmin.z || triMin.z > bmax.z) return false;
+    if (triMax.x < bmin.x || triMin.x > bmax.x)
+        return false;
+    if (triMax.y < bmin.y || triMin.y > bmax.y)
+        return false;
+    if (triMax.z < bmin.z || triMin.z > bmax.z)
+        return false;
 
     // If we get here, AABBs overlap, so we need full SAT test
     // Centered box with half extents
-    Vector3 c = { (bmin.x + bmax.x) * 0.5f, (bmin.y + bmax.y) * 0.5f, (bmin.z + bmax.z) * 0.5f };
-    Vector3 h = { (bmax.x - bmin.x) * 0.5f, (bmax.y - bmin.y) * 0.5f, (bmax.z - bmin.z) * 0.5f };
+    Vector3 c = {(bmin.x + bmax.x) * 0.5f, (bmin.y + bmax.y) * 0.5f, (bmin.z + bmax.z) * 0.5f};
+    Vector3 h = {(bmax.x - bmin.x) * 0.5f, (bmax.y - bmin.y) * 0.5f, (bmax.z - bmin.z) * 0.5f};
 
     // Triangle vertices relative to box center
     Vector3 v0 = Vector3Subtract(tri.V0(), c);
@@ -672,38 +674,44 @@ static bool TriangleAABBOverlapSAT(const CollisionTriangle &tri, const Vector3 &
     };
 
     // 1) Test box axes (most likely to fail first)
-    if (!axisTest(ax)) return false;
-    if (!axisTest(ay)) return false;
-    if (!axisTest(az)) return false;
+    if (!axisTest(ax))
+        return false;
+    if (!axisTest(ay))
+        return false;
+    if (!axisTest(az))
+        return false;
 
     // 2) Test triangle plane normal
     Vector3 e0 = Vector3Subtract(v1, v0);
     Vector3 e1 = Vector3Subtract(v2, v0);
     Vector3 n = Vector3CrossProduct(e0, e1);
-    if (!axisTest(n)) return false;
+    if (!axisTest(n))
+        return false;
 
     // 3) Test cross products of triangle edges with box axes (9 axes)
     Vector3 e2 = Vector3Subtract(v2, v1);
-    const Vector3 edges[3] = { e0, e1, e2 };
-    const Vector3 boxAxes[3] = { ax, ay, az };
+    const Vector3 edges[3] = {e0, e1, e2};
+    const Vector3 boxAxes[3] = {ax, ay, az};
     for (const Vector3 &e : edges)
     {
         for (const Vector3 &ba : boxAxes)
         {
             Vector3 a = Vector3CrossProduct(e, ba);
-            if (!axisTest(a)) return false;
+            if (!axisTest(a))
+                return false;
         }
     }
 
     return true; // no separating axis found
 }
 
-static bool BVHOverlapsAABB(const BVHNode* node, const Collision& aabbCollider)
+static bool BVHOverlapsAABB(const BVHNode *node, const Collision &aabbCollider)
 {
-    if (!node) return false;
+    if (!node)
+        return false;
     // Quick reject: node AABB vs collider AABB
-    Collision nodeBox{ Vector3Scale(Vector3Add(node->min, node->max), 0.5f),
-                       Vector3Scale(Vector3Subtract(node->max, node->min), 0.5f) };
+    Collision nodeBox{Vector3Scale(Vector3Add(node->min, node->max), 0.5f),
+                      Vector3Scale(Vector3Subtract(node->max, node->min), 0.5f)};
     if (!nodeBox.IntersectsAABB(aabbCollider))
         return false;
     if (node->IsLeaf())
@@ -738,7 +746,8 @@ bool Collision::Intersects(const Collision &other) const
     {
         // Check if any of other's leaf nodes overlaps this AABB and vice versa
         bool otherIntoThis = BVHOverlapsAABB(other.m_bvhRoot.get(), *this);
-        if (!otherIntoThis) return false;
+        if (!otherIntoThis)
+            return false;
         bool thisIntoOther = BVHOverlapsAABB(m_bvhRoot.get(), other);
         return thisIntoOther;
     }
@@ -762,34 +771,30 @@ bool Collision::Intersects(const Collision &other) const
 // ======================================================================================================================
 void Collision::SetCollisionType(CollisionType type) { m_collisionType = type; }
 bool BVHNode::IsLeaf() const { return !left && !right; }
-Vector3 Collision::GetSize() const
-{
-    return Vector3Subtract(m_max, m_min);
-}
+Vector3 Collision::GetSize() const { return Vector3Subtract(m_bounds.max, m_bounds.min); }
 Vector3 Collision::GetCenter() const
 {
-    return Vector3Scale(Vector3Add(m_min, m_max), 0.5f);
+    return Vector3Scale(Vector3Add(m_bounds.min, m_bounds.max), 0.5f);
 }
-Vector3 Collision::GetMax() const { return m_max; }
-Vector3 Collision::GetMin() const { return m_min; }
 size_t Collision::GetTriangleCount() const { return m_triangles.size(); }
 bool Collision::HasTriangleData() const { return !m_triangles.empty(); }
-const Collision::PerformanceStats &Collision::GetPerformanceStats() const { return m_stats; }
 
 CollisionType Collision::GetCollisionType() const { return m_collisionType; }
 const CollisionComplexity &Collision::GetComplexity() const { return m_complexity; }
 void Collision::InitializeBVH() { BuildBVHFromTriangles(); }
 const CollisionTriangle &Collision::GetTriangle(size_t idx) const { return m_triangles[idx]; }
 const std::vector<CollisionTriangle> &Collision::GetTriangles() const { return m_triangles; }
-bool Collision::CheckCollisionWithBVH(const Collision& other, Vector3& outResponse) const {
-    if (!other.m_bvhRoot || !IntersectsAABB(other)) {
+bool Collision::CheckCollisionWithBVH(const Collision &other, Vector3 &outResponse) const
+{
+    if (!other.m_bvhRoot || !IntersectsAABB(other))
+    {
         return false;
     }
 
     // Get the center point of this collision
     Vector3 center = GetCenter();
     Vector3 size = GetSize();
-    
+
     // Check points around the AABB
     const float checkDistance = size.y + 1.0f;
     bool hasCollision = false;
@@ -797,20 +802,23 @@ bool Collision::CheckCollisionWithBVH(const Collision& other, Vector3& outRespon
 
     // Check center and corners
     Vector3 checkPoints[] = {
-        center,  // Center
-        {center.x - size.x*0.5f, center.y, center.z}, // Left
-        {center.x + size.x*0.5f, center.y, center.z}, // Right
-        {center.x, center.y, center.z - size.z*0.5f}, // Front
-        {center.x, center.y, center.z + size.z*0.5f}  // Back
+        center,                                         // Center
+        {center.x - size.x * 0.5f, center.y, center.z}, // Left
+        {center.x + size.x * 0.5f, center.y, center.z}, // Right
+        {center.x, center.y, center.z - size.z * 0.5f}, // Front
+        {center.x, center.y, center.z + size.z * 0.5f}  // Back
     };
 
-    for (const auto& point : checkPoints) {
+    for (const auto &point : checkPoints)
+    {
         RayHit hit;
         Vector3 dir = {0, -1, 0};
-        if (other.RaycastBVH(point, dir, checkDistance, hit)) {
-            if (hit.hit && hit.distance < minY) {
+        if (other.RaycastBVH(point, dir, checkDistance, hit))
+        {
+            if (hit.hit && hit.distance < minY)
+            {
                 minY = hit.distance;
-                outResponse = {0, hit.position.y - (center.y - size.y*0.5f), 0};
+                outResponse = {0, hit.position.y - (center.y - size.y * 0.5f), 0};
                 hasCollision = true;
             }
         }
@@ -820,6 +828,3 @@ bool Collision::CheckCollisionWithBVH(const Collision& other, Vector3& outRespon
 }
 
 // ======================================================================================================================
-
-
-

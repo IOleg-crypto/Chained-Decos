@@ -4,10 +4,15 @@ add_library(input STATIC
 )
 
 target_include_directories(input PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR} # Дозволяє іншим модулям включати заголовки Input
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src/Engine 
+    ${CMAKE_SOURCE_DIR}/src 
 )
 
-target_link_libraries(input PUBLIC raylib)
+target_link_libraries(input PUBLIC 
+    raylib
+    kernel
+)
 
 target_compile_definitions(input PRIVATE CHAINEDDECOSENGINE_EXPORTS)
 

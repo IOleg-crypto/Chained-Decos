@@ -2,8 +2,10 @@
 #define MENU_ACTION_HANDLER_H
 
 #include "Game/Menu/Menu.h"
-#include "Game.h"
-#include "Player/Player.h"
+
+// Forward declarations to break circular dependencies
+class Game;
+class Player;
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Model/Model.h"
 #include "MapManager.h"

@@ -1,14 +1,13 @@
-#include "Player.h"
 #include "PlayerCollision.h"
 #include <cmath>
 
-PlayerCollision::PlayerCollision(Player* player)
+PlayerCollision::PlayerCollision(IPlayerMediator* player)
     : m_player(player) {
     UpdateBoundingBox();
 }
 
 void PlayerCollision::InitializeCollision() {
-    SetCollisionType(CollisionType::BVH_ONLY);
+    SetCollisionType(CollisionType::AABB_ONLY);
     UpdateBoundingBox();
     UpdateCollisionPoints();
 }

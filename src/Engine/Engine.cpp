@@ -15,7 +15,7 @@ Engine::Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<Inp
 Engine::Engine(const int screenX, const int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
        m_windowInitialized(false), m_renderManager(std::move(renderManager)), m_inputManager(std::move(inputManager)), m_kernel(kernel), m_shouldExit(false),
-       m_showDebug(false), m_showCollisionDebug(false), m_isEngineInit(false)
+       m_isEngineInit(false)
 {
     if (m_screenX <= 0 || m_screenY <= 0)
     {
@@ -55,8 +55,6 @@ void Engine::Init()
 
     rlImGuiSetup(true);
 
-    m_renderManager->SetCollisionDebug(m_showCollisionDebug);
-
     // Register engine-level input actions
     m_inputManager->RegisterAction(KEY_F11, ToggleFullscreen);
 
@@ -65,6 +63,7 @@ void Engine::Init()
     // Kernel: register core services so other modules can fetch them
     if (m_kernel) {
         m_kernel->RegisterService<RenderManager>(Kernel::ServiceType::Render, m_renderManager);
+        m_kernel->RegisterService<InputManager>(Kernel::ServiceType::Input, m_inputManager);
     }
 
     TraceLog(LOG_INFO, "Engine initialization complete!");
@@ -72,13 +71,16 @@ void Engine::Init()
 
 void Engine::Update()
 {
+    // Update all Kernel services
+    if (m_kernel) {
+        m_kernel->Update(GetFrameTime());
+    }
     HandleEngineInput();
 }
 
 void Engine::Render() const
 {
     m_renderManager->BeginFrame();
-    ClearBackground(RAYWHITE);
     m_renderManager->EndFrame();
 }
 
@@ -105,23 +107,31 @@ void Engine::RequestExit()
     TraceLog(LOG_INFO, "Exit requested");
 }
 
-bool Engine::IsDebugInfoVisible() const { return m_showDebug; }
+bool Engine::IsDebugInfoVisible() const 
+{ 
+    return m_renderManager ? m_renderManager->IsDebugInfoVisible() : false; 
+}
 
-bool Engine::IsCollisionDebugVisible() const { return m_showCollisionDebug; }
+bool Engine::IsCollisionDebugVisible() const 
+{ 
+    return m_renderManager ? m_renderManager->IsCollisionDebugVisible() : false; 
+}
 
 // ==================== Private Engine Input Handling ====================
 void Engine::HandleEngineInput()
 {
     if (IsKeyPressed(KEY_F2))
     {
-        m_showDebug = !m_showDebug;
-        m_renderManager->SetDebugInfo(m_showDebug);
-        TraceLog(LOG_INFO, "Debug info: %s", m_showDebug ? "ON" : "OFF");
+        if (m_renderManager) {
+            m_renderManager->ToggleDebugInfo();
+            TraceLog(LOG_INFO, "Debug info: %s", m_renderManager->IsDebugInfoVisible() ? "ON" : "OFF");
+        }
     }
     if (IsKeyPressed(KEY_F3))
     {
-        m_showCollisionDebug = !m_showCollisionDebug;
-        m_renderManager->SetCollisionDebug(m_showCollisionDebug);
-        TraceLog(LOG_INFO, "Collision debug: %s", m_showCollisionDebug ? "ON" : "OFF");
+        if (m_renderManager) {
+            m_renderManager->ToggleCollisionDebug();
+            TraceLog(LOG_INFO, "Collision debug: %s", m_renderManager->IsCollisionDebugVisible() ? "ON" : "OFF");
+        }
     }
 }

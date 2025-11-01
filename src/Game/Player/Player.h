@@ -12,18 +12,20 @@
 #include <Collision/CollisionSystem.h>
 #include <World/World.h>
 #include <Model/Model.h>
-#include <Render/IRenderable.h>
 
 // Include component interfaces
 #include "IPlayerInput.h"
 #include "IPlayerMovement.h"
-#include "PlayerInput.h"
-#include "PlayerMovement.h"
-#include "PlayerCollision.h"
+#include "IPlayerMediator.h"
 #include "PlayerModel.h"
 
+// Forward declarations
+class PlayerCollision;
+class PlayerRenderable;
+class IRenderable;  // Forward declaration to break circular dependency
+
 // Player: main player class that uses component classes
-class Player : public IRenderable
+class Player : public IPlayerMediator
 {
 public:
     // Player constants - defined in .cpp file
@@ -78,14 +80,11 @@ public:
     PhysicsComponent &GetPhysics();             // Get physics component (non-const)
     IPlayerMovement *GetMovement() const;
 
-    // IRenderable interface implementations
-    void Update(CollisionManager& collisionManager) override;
-    void Render() override;
-    Vector3 GetPosition() const override;
-    BoundingBox GetBoundingBox() const override;
-    void UpdateCollision() override;
-    Camera GetCamera() const override;
-    bool IsGrounded() const override;
+    // IRenderable access - повертає адаптер для рендерингу
+    IRenderable* GetRenderable() const;
+    
+    // Update method для сумісності (делегує до UpdateImpl)
+    void Update(CollisionManager& collisionManager);
 
 private:
     // Component objects - using interfaces for better decoupling
@@ -93,6 +92,9 @@ private:
     std::unique_ptr<IPlayerInput> m_input;
     std::unique_ptr<PlayerModel> m_model;
     std::unique_ptr<PlayerCollision> m_collision;
+
+    // IRenderable adapter - для уникнення множинного наслідування
+    std::unique_ptr<PlayerRenderable> m_renderable;
 
     // Camera control
     std::shared_ptr<CameraController> m_cameraController;

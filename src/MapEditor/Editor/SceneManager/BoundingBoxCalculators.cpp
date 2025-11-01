@@ -1,4 +1,5 @@
 #include "BoundingBoxCalculators.h"
+#include <raylib.h>
 #include <memory>
 
 // Cube bounding box implementation

@@ -18,6 +18,7 @@
 #include <functional>
 #include <raylib.h>
 #include <unordered_map>
+#include "Engine/Kernel/IKernelService.h"
 
 //
 // InputManager
@@ -26,7 +27,7 @@
 // - Continuous hold actions (KEY_DOWN)
 // - Release actions (KEY_RELEASED)
 //
-CHAINEDDECOSENGINE_API class InputManager
+CHAINEDDECOSENGINE_API class InputManager : public IKernelService
 {
 public:
     enum class InputType
@@ -61,6 +62,12 @@ public:
     bool IsKeyDown(int key) const { return ::IsKeyDown(key); }
     bool IsKeyReleased(int key) const { return ::IsKeyReleased(key); }
 
+    // IKernelService interface
+    virtual bool Initialize() override { return true; }
+    virtual void Shutdown() override { ClearActions(); }
+    virtual void Update(float deltaTime) override;
+    virtual void Render() override {}
+    virtual const char* GetName() const override { return "InputManager"; }
 
 private:
     std::unordered_map<int, std::function<void()>> m_pressedActions;
