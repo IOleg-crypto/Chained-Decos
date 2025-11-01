@@ -20,8 +20,8 @@
 // Project headers
 #include "Input/InputManager.h"
 #include "Kernel/Kernel.h"
+#include "Render/RenderManager.h"
 
-class RenderManager; // forward declaration to avoid heavy include and cycles
 CHAINEDDECOSENGINE_API class Engine
 {
 public:
@@ -67,10 +67,6 @@ private:
 
     // Engine State
     bool m_shouldExit;
-
-    // Debug State
-    bool m_showDebug;
-    bool m_showCollisionDebug;
     bool m_isEngineInit;
 };
 

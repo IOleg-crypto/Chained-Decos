@@ -6,9 +6,6 @@
 #include <raylib.h>
 #include <raymath.h>
 
-// Forward declaration to break circular dependency
-class Player;
-
 class IPlayerMovement
 {
 public:

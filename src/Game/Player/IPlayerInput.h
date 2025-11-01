@@ -5,9 +5,6 @@
 #include <raymath.h>
 #include <utility>
 
-// Forward declaration to break circular dependency
-class Player;
-
 class IPlayerInput
 {
 public:

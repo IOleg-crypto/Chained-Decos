@@ -3,8 +3,7 @@
 
 #include <string>
 #include <vector>
-
-class ModelLoader;
+#include "Engine/Model/Model.h"
 
 // Interface for model management subsystem
 class IModelManager {

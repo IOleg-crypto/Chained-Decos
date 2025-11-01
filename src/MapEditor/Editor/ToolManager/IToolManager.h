@@ -3,8 +3,7 @@
 
 #include <string>
 #include "raylib.h"
-
-class ISceneManager;
+#include "../SceneManager/ISceneManager.h"
 
 enum Tool
 {
