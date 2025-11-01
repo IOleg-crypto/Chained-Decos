@@ -11,10 +11,10 @@
 #include <memory>
 
 class Menu;
-class GameMapManager;
-class GameModelManager;
-class GameStateManager;
-class GameRenderHelper;
+class MapManager;
+class ResourceManager;
+class StateManager;
+class RenderHelper;
 
 class Game
 {
@@ -31,10 +31,10 @@ private:
     std::unique_ptr<Kernel> m_kernel;
 
     // Game manager components
-    std::unique_ptr<GameMapManager> m_mapManager;
-    std::unique_ptr<GameModelManager> m_modelManager;
-    std::unique_ptr<GameStateManager> m_stateManager;
-    std::unique_ptr<GameRenderHelper> m_renderHelper;
+    std::unique_ptr<MapManager> m_mapManager;
+    std::unique_ptr<ResourceManager> m_modelManager;
+    std::unique_ptr<StateManager> m_stateManager;
+    std::unique_ptr<RenderHelper> m_renderHelper;
 
     bool m_showMenu;
     bool m_isGameInitialized;
@@ -95,10 +95,10 @@ public:
     Menu &GetMenu();
     Kernel &GetKernel() { return *m_kernel; }
     
-    GameMapManager* GetMapManager() { return m_mapManager.get(); }
-    GameModelManager* GetModelManager() { return m_modelManager.get(); }
-    GameStateManager* GetStateManager() { return m_stateManager.get(); }
-    GameRenderHelper* GetRenderHelper() { return m_renderHelper.get(); }
+    MapManager* GetMapManager() { return m_mapManager.get(); }
+    ResourceManager* GetModelManager() { return m_modelManager.get(); }
+    StateManager* GetStateManager() { return m_stateManager.get(); }
+    RenderHelper* GetRenderHelper() { return m_renderHelper.get(); }
     
     GameMap &GetGameMap();
     bool IsInitialized() const { return m_isGameInitialized; }
