@@ -121,7 +121,8 @@ void UIManager::RenderImGuiToolbar()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(700, 300), ImGuiCond_FirstUseEver);
 
-    constexpr ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
+    // Enable docking for toolbar window - allow it to be docked if needed
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
 
     bool toolbarOpen = true;
     if (ImGui::Begin("Toolbar##foo2", nullptr, windowFlags))
@@ -129,23 +130,6 @@ void UIManager::RenderImGuiToolbar()
         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
         ImGui::Text("Map Editor Tools");
         ImGui::PopFont();
-
-        ImVec2 pos = ImGui::GetWindowPos();
-        ImVec2 size = ImGui::GetWindowSize();
-        ImVec2 displaySize = ImGui::GetIO().DisplaySize;
-
-        // Clamp X/Y so window stays fully visible
-        if (pos.x < 0)
-            pos.x = 0;
-        if (pos.y < 0)
-            pos.y = 0;
-        if (pos.x + size.x > displaySize.x)
-            pos.x = displaySize.x - size.x;
-        if (pos.y + size.y > displaySize.y)
-            pos.y = displaySize.y - size.y;
-
-        // Apply corrected position
-        ImGui::SetWindowPos(pos);
 
         ImGui::Separator();
 
@@ -305,29 +289,12 @@ void UIManager::RenderImGuiObjectPanel()
                             ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(240, 400), ImGuiCond_FirstUseEver);
 
-    // Use minimal flags for testing
-    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
+    // Enable docking for object panel - allow docking to sides
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
 
     bool objectPanelOpen = true;
     if (ImGui::Begin("Objects##foo1", &objectPanelOpen, windowFlags))
     {
-        ImVec2 pos = ImGui::GetWindowPos();
-        ImVec2 size = ImGui::GetWindowSize();
-        ImVec2 displaySize = ImGui::GetIO().DisplaySize;
-
-        // Clamp X/Y so window stays fully visible
-        if (pos.x < 0)
-            pos.x = 0;
-        if (pos.y < 0)
-            pos.y = 0;
-        if (pos.x + size.x > displaySize.x)
-            pos.x = displaySize.x - size.x;
-        if (pos.y + size.y > displaySize.y)
-            pos.y = displaySize.y - size.y;
-
-        // Apply corrected position
-        ImGui::SetWindowPos(pos);
-
         if (ImGui::Button("Add Object"))
         {
             // Create a default cube object
@@ -409,7 +376,8 @@ void UIManager::RenderImGuiPropertiesPanel()
                             ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
 
-    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
+    // Enable docking for properties panel
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
     bool propertiesPanelOpen = true;
     std::string nameLabel;
     if (ImGui::Begin("Properties##Panel", &propertiesPanelOpen, windowFlags))

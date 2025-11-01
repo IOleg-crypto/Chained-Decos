@@ -48,6 +48,7 @@ target_include_directories(ChainedDecosMapEditor PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/nfd
+    ${CMAKE_SOURCE_DIR}/.deps/raylib-src/src  # For rcamera.h
 )
 
 # Link with ChainedDecosEngine, raylib (map is included via ChainedDecosEngine)

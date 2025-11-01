@@ -677,16 +677,15 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
     // Apply object transformations - ensure consistent order for collision/rendering match
     Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
     Matrix scale = MatrixScale(object.scale.x, object.scale.y, object.scale.z);
-    Matrix rotationX = MatrixRotateX(object.rotation.x * DEG2RAD);
-    Matrix rotationY = MatrixRotateY(object.rotation.y * DEG2RAD);
-    Matrix rotationZ = MatrixRotateZ(object.rotation.z * DEG2RAD);
+    Vector3 rotationRad = {
+        object.rotation.x * DEG2RAD,
+        object.rotation.y * DEG2RAD,
+        object.rotation.z * DEG2RAD
+    };
+    Matrix rotation = MatrixRotateXYZ(rotationRad);
 
-    // Combine transformations in consistent order: translate -> rotate -> scale
-    // This ensures collision and rendering transformations match
-    Matrix transform = MatrixMultiply(rotationX, translation);
-    transform = MatrixMultiply(rotationY, transform);
-    transform = MatrixMultiply(rotationZ, transform);
-    transform = MatrixMultiply(scale, transform);
+    // Combine transformations: scale -> rotation -> translation (matches DrawModel/ModelLoader)
+    Matrix transform = MatrixMultiply(scale, MatrixMultiply(rotation, translation));
 
     // For primitives, use direct position and scale (DrawCube, DrawSphere don't use transform matrix)
     // Rotation is not applied to primitives - same as Editor and Game::RenderEditorMap()
@@ -739,11 +738,17 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                     // Apply transformations to the model
                     model.transform = transform;
 
-                    // Draw the model with the object's color as tint
-                    DrawModel(model, Vector3{0, 0, 0}, 1.0f, object.color);
+                    // Always render models with WHITE tint to preserve original textures.
+                    // Map editor uses object.color for selection highlighting, but in-game we
+                    // want the model's textures and materials without additional tinting.
+                    Color renderColor = WHITE;
+                    renderColor.a = 255;
 
-                    // Optional: Draw model wires for debugging
-                    DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
+                    // Draw the model with the render color as tint
+                    DrawModel(model, Vector3{0, 0, 0}, 1.0f, renderColor);
+                    
+                    // Optional: Draw model wires for debugging (disabled in runtime)
+                    // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
                 }
                 else
                 {
@@ -753,8 +758,10 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                     {
                         Model model = it2->second;
                         model.transform = transform;
-                        DrawModel(model, Vector3{0, 0, 0}, 1.0f, object.color);
-                        DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
+                        
+                        // Render with default WHITE tint to preserve textures
+                        DrawModel(model, Vector3{0, 0, 0}, 1.0f, WHITE);
+                        // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
                     }
                     else
                     {
