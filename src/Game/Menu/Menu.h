@@ -14,7 +14,9 @@
 #include <Render/IRenderable.h>
 #include <imgui.h>
 #include <raylib.h>
-#include "Game.h"
+
+// Forward declaration to break circular dependency
+class Game;
 
 
 enum class MenuAction : uint8_t

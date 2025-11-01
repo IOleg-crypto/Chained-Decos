@@ -8,8 +8,6 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "CollisionStructures.h"
 
@@ -45,17 +43,17 @@ public:
     Collision &operator=(Collision &&other) noexcept;
 
 public:
-    // AABB getters (backed by raylib BoundingBox)
-    Vector3 GetMin() const;
-    Vector3 GetMax() const;
-    BoundingBox GetBoundingBox() const { return { m_min, m_max }; }
+    // AABB getters (using raylib BoundingBox)
+    Vector3 GetMin() const { return m_bounds.min; }
+    Vector3 GetMax() const { return m_bounds.max; }
+    BoundingBox GetBoundingBox() const { return m_bounds; }
     Vector3 GetCenter() const;
     Vector3 GetSize() const;
 
     // Update AABB
     void Update(const Vector3 &center, const Vector3 &halfSize);
 
-    // AABB tests
+    // AABB tests (using raylib functions)
     bool IntersectsAABB(const Collision &other) const;
     bool ContainsPointAABB(const Vector3 &point) const;
 
@@ -63,7 +61,6 @@ public:
     void BuildFromModel(void *model, const Matrix &transform = MatrixIdentity());
     void BuildFromModelWithType(void *model, CollisionType type,
                                 const Matrix &transform = MatrixIdentity());
-    void CalculateFromModel(void *model, const Matrix &transform = MatrixIdentity());
 
 
 
@@ -111,26 +108,15 @@ public:
         return true;
     }
 
-    // Debug / stats
-    struct PerformanceStats
-    {
-        float lastCheckTime = 0.0f;
-        size_t checksPerformed = 0;
-        CollisionType typeUsed = CollisionType::AABB_ONLY;
-    };
-    const PerformanceStats &GetPerformanceStats() const;
 
     bool CheckCollisionWithBVH(const Collision& other, Vector3& outResponse) const;
 
     void UpdateAABBFromTriangles();
 
 
-
-
 private:
-    // AABB (stored as min/max compatible with raylib BoundingBox)
-    Vector3 m_min{};
-    Vector3 m_max{};
+    // AABB using raylib BoundingBox directly
+    BoundingBox m_bounds{};
 
     CollisionType m_collisionType = CollisionType::HYBRID_AUTO;
     CollisionComplexity m_complexity;
@@ -142,9 +128,6 @@ private:
     // Cached flags
     bool m_isBuilt = false;
 
-    // Perf stats
-    mutable PerformanceStats m_stats;
-
 
 private:
     // Helpers
@@ -154,9 +137,6 @@ private:
 
     // Triangle / AABB helpers
     static void ExpandAABB(Vector3 &minOut, Vector3 &maxOut, const Vector3 &p);
-    static void TriangleBounds(const CollisionTriangle &t, Vector3 &outMin, Vector3 &outMax);
-    static bool AABBIntersectRay(const Vector3 &min, const Vector3 &max, const Vector3 &origin,
-                                 const Vector3 &dir, float maxDistance);
 
     // Moller-Trumbore ray/triangle
     static bool RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
