@@ -2,7 +2,7 @@
 #define PLAYER_MANAGER_H
 
 #include <raylib.h>
-#include "Player/Player.h"
+#include "../Player/Player.h"
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Model/Model.h"
 #include "Engine/Engine.h"

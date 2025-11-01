@@ -7,11 +7,8 @@
 #include <imgui/imgui.h>
 #include "MenuConstants.h"
 
-namespace MenuConstants {
-    using namespace MenuConstants;
-}
-
-#include "Game.h"
+// Forward declaration to break circular dependency
+class Game;
 
 class ConsoleManager {
 private:
