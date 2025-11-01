@@ -4,7 +4,7 @@
 #include <string>
 #include <raylib.h>
 #include "../Player/Player.h"
-#include "Menu/Menu.h"
+#include "../Menu/Menu.h"
 
 class StateManager
 {

@@ -421,21 +421,26 @@ void Menu::RenderOptionsMenu()
 void Menu::RenderVideoSettings()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
+    const float labelWidth = 200.0f;
+    const float comboWidth = 200.0f;
+    const float startX = MenuConstants::MARGIN + 50.0f;
+    const float startY = MenuConstants::MARGIN + 60.0f;
+    const float spacing = 50.0f;
 
     // Title
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "VIDEO SETTINGS");
+    ImGui::SetCursorPos(ImVec2(startX, MenuConstants::MARGIN + 20));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
+    ImGui::SetWindowFontScale(1.5f);
+    ImGui::Text("VIDEO SETTINGS");
+    ImGui::PopStyleColor();
     ImGui::SetWindowFontScale(1.0f);
 
-    ImGui::Dummy(ImVec2(0, 40));
+    ImGui::SetCursorPos(ImVec2(startX, startY));
 
     // Resolution
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN + 30));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Resolution");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(250);
+    ImGui::SameLine(startX + labelWidth);
+    ImGui::SetNextItemWidth(comboWidth);
     if (ImGui::BeginCombo("##resolution",
                           m_resolutionOptions[m_videoSettings.resolutionIndex].c_str()))
     {
@@ -452,13 +457,12 @@ void Menu::RenderVideoSettings()
         ImGui::EndCombo();
     }
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // Display Mode
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Display Mode");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(250);
+    ImGui::SameLine(startX + labelWidth);
+    ImGui::SetNextItemWidth(comboWidth);
     if (ImGui::BeginCombo("##display_mode",
                           m_displayModeOptions[m_videoSettings.displayModeIndex].c_str()))
     {
@@ -475,13 +479,12 @@ void Menu::RenderVideoSettings()
         ImGui::EndCombo();
     }
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // VSync
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "VSync");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(250);
+    ImGui::SameLine(startX + labelWidth);
+    ImGui::SetNextItemWidth(comboWidth);
     if (ImGui::BeginCombo("##vsync", m_vsyncOptions[m_videoSettings.vsyncIndex].c_str()))
     {
         for (size_t i = 0; i < m_vsyncOptions.size(); ++i)
@@ -492,26 +495,17 @@ void Menu::RenderVideoSettings()
                 m_videoSettings.vsyncIndex = static_cast<int>(i);
             }
             if (isSelected)
-            {
-                int width, height;
-                if (sscanf(m_fpsOptions[m_videoSettings.fpsIndex].c_str(), "%dx%d", &width,
-                           &height) == 2)
-                {
-                    SetWindowSize(width, height);
-                }
                 ImGui::SetItemDefaultFocus();
-            }
         }
         ImGui::EndCombo();
     }
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // FPS Limit
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "FPS Limit");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(250);
+    ImGui::SameLine(startX + labelWidth);
+    ImGui::SetNextItemWidth(comboWidth);
     if (ImGui::BeginCombo("##fps", m_fpsOptions[m_videoSettings.fpsIndex].c_str()))
     {
         for (size_t i = 0; i < m_fpsOptions.size(); ++i)
@@ -522,16 +516,13 @@ void Menu::RenderVideoSettings()
                 m_videoSettings.fpsIndex = static_cast<int>(i);
             }
             if (isSelected)
-            {
-
                 ImGui::SetItemDefaultFocus();
-            }
         }
         ImGui::EndCombo();
     }
 
     // Apply and Back buttons
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
+    ImGui::SetCursorPos(ImVec2(startX, windowSize.y - 80));
     if (ImGui::Button("Apply", ImVec2(120, 40)))
     {
         // Apply video settings immediately when button is clicked
@@ -547,7 +538,7 @@ void Menu::RenderVideoSettings()
         m_pendingAction = MenuAction::ApplyVideoSettings;
     }
 
-    ImGui::SameLine();
+    ImGui::SameLine(startX + 140);
     RenderBackButton();
 }
 

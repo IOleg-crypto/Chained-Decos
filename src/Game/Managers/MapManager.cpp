@@ -357,6 +357,8 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
                  object.position.x, object.position.y, object.position.z);
 
         Vector3 colliderSize = object.scale;
+        bool useBVHCollision = false;
+        Collision collision; // will be initialized per-type
 
         // Adjust collider size based on object type
         switch (object.type)
@@ -417,16 +419,90 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
                      colliderSize.x, colliderSize.y, colliderSize.z);
             break;
         case MapObjectType::MODEL:
-            // For models, use absolute values of scale as bounding box
+            // For models, build BVH collision using actual mesh data when available
             {
-                colliderSize = Vector3{
-                    std::abs(object.scale.x != 0.0f ? object.scale.x : 1.0f),
-                    std::abs(object.scale.y != 0.0f ? object.scale.y : 1.0f),
-                    std::abs(object.scale.z != 0.0f ? object.scale.z : 1.0f)
-                };
+                const Model* modelPtr = nullptr;
+
+                if (!object.modelName.empty())
+                {
+                    // Try runtime ModelLoader first (shared resource)
+                    if (m_models)
+                    {
+                        auto modelOpt = m_models->GetModelByName(object.modelName);
+                        if (!modelOpt)
+                        {
+                            // Try stem (filename without extension)
+                            std::string stem = std::filesystem::path(object.modelName).stem().string();
+                            if (!stem.empty())
+                            {
+                                modelOpt = m_models->GetModelByName(stem);
+                            }
+                        }
+
+                        if (modelOpt)
+                        {
+                            modelPtr = &modelOpt->get();
+                        }
+                    }
+
+                    // Fallback to models preloaded by MapLoader but not registered in ModelLoader yet
+                    if (!modelPtr)
+                    {
+                        auto mapModelIt = m_gameMap.loadedModels.find(object.modelName);
+                        if (mapModelIt == m_gameMap.loadedModels.end())
+                        {
+                            std::string stem = std::filesystem::path(object.modelName).stem().string();
+                            if (!stem.empty())
+                            {
+                                mapModelIt = m_gameMap.loadedModels.find(stem);
+                            }
+                        }
+
+                        if (mapModelIt != m_gameMap.loadedModels.end())
+                        {
+                            modelPtr = &mapModelIt->second;
+                        }
+                    }
+                }
+
+                if (modelPtr)
+                {
+                    Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
+                    Matrix scaleMatrix = MatrixScale(object.scale.x, object.scale.y, object.scale.z);
+                    Vector3 rotationRad = {
+                        object.rotation.x * DEG2RAD,
+                        object.rotation.y * DEG2RAD,
+                        object.rotation.z * DEG2RAD
+                    };
+                    Matrix rotationMatrix = MatrixRotateXYZ(rotationRad);
+
+                    Matrix transform = MatrixMultiply(scaleMatrix, MatrixMultiply(rotationMatrix, translation));
+
+                    collision = Collision();
+                    collision.BuildFromModelWithType(const_cast<Model *>(modelPtr), CollisionType::BVH_ONLY, transform);
+                    useBVHCollision = true;
+
+                    BoundingBox bb = collision.GetBoundingBox();
+                    colliderSize = Vector3{
+                        std::abs(bb.max.x - bb.min.x),
+                        std::abs(bb.max.y - bb.min.y),
+                        std::abs(bb.max.z - bb.min.z)
+                    };
+
+                    TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Built BVH collision for model '%s'", object.modelName.c_str());
+                }
+                else
+                {
+                    colliderSize = Vector3{
+                        std::abs(object.scale.x != 0.0f ? object.scale.x : 1.0f),
+                        std::abs(object.scale.y != 0.0f ? object.scale.y : 1.0f),
+                        std::abs(object.scale.z != 0.0f ? object.scale.z : 1.0f)
+                    };
+                    TraceLog(LOG_WARNING,
+                             "MapManager::LoadEditorMap() - Model '%s' not found in ModelLoader or cached map models, using scale as collision size (AABB fallback)",
+                             object.modelName.c_str(), colliderSize.x, colliderSize.y, colliderSize.z);
+                }
             }
-            TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Model collision: size=(%.2f, %.2f, %.2f)",
-                     colliderSize.x, colliderSize.y, colliderSize.z);
             break;
         case MapObjectType::LIGHT:
             // LIGHT objects don't need collision - they are just lighting
@@ -447,41 +523,50 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
             break;
         }
 
-        // Ensure colliderSize has valid non-zero dimensions (already handled above, but double-check)
-        if (colliderSize.x <= 0.0f)
-            colliderSize.x = 1.0f;
-        if (colliderSize.y <= 0.0f)
-            colliderSize.y = 1.0f;
-        if (colliderSize.z <= 0.0f)
-            colliderSize.z = 1.0f;
-
-        // Validate final collider size
-        if (!std::isfinite(colliderSize.x) || !std::isfinite(colliderSize.y) ||
-            !std::isfinite(colliderSize.z))
+        if (!useBVHCollision)
         {
-            TraceLog(LOG_WARNING,
-                     "MapManager::LoadEditorMap() - Object %d has invalid colliderSize after "
-                     "calculation, skipping collision",
-                     i);
-            continue;
+            // Ensure colliderSize has valid non-zero dimensions (already handled above, but double-check)
+            if (colliderSize.x <= 0.0f)
+                colliderSize.x = 1.0f;
+            if (colliderSize.y <= 0.0f)
+                colliderSize.y = 1.0f;
+            if (colliderSize.z <= 0.0f)
+                colliderSize.z = 1.0f;
+
+            // Validate final collider size
+            if (!std::isfinite(colliderSize.x) || !std::isfinite(colliderSize.y) ||
+                !std::isfinite(colliderSize.z))
+            {
+                TraceLog(LOG_WARNING,
+                         "MapManager::LoadEditorMap() - Object %d has invalid colliderSize after "
+                         "calculation, skipping collision",
+                         i);
+                continue;
+            }
+
+            TraceLog(LOG_INFO,
+                     "MapManager::LoadEditorMap() - Final colliderSize for object %d (AABB): (%.2f, %.2f, %.2f)", i,
+                     colliderSize.x, colliderSize.y, colliderSize.z);
+
+            // Collision constructor expects halfSize (half the dimensions)
+            Vector3 halfSize = Vector3Scale(colliderSize, 0.5f);
+            collision = Collision(object.position, halfSize);
+            collision.SetCollisionType(CollisionType::AABB_ONLY);
+        }
+        else
+        {
+            // BVH collision already built; ensure type is BVH
+            collision.SetCollisionType(CollisionType::BVH_ONLY);
         }
 
-        TraceLog(LOG_INFO,
-                 "MapManager::LoadEditorMap() - Final colliderSize for object %d: (%.2f, %.2f, %.2f)", i,
-                 colliderSize.x, colliderSize.y, colliderSize.z);
-
-        // Collision constructor expects halfSize (half the dimensions), not full size
-        // So we need to divide by 2 to get the correct collision box size
-        Vector3 halfSize = Vector3Scale(colliderSize, 0.5f);
-        Collision collision(object.position, halfSize);
-        collision.SetCollisionType(CollisionType::AABB_ONLY);
         m_collisionManager->AddCollider(std::move(collision));
 
         TraceLog(LOG_INFO,
                  "MapManager::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f) with "
-                 "size (%.2f, %.2f, %.2f)",
+                 "size (%.2f, %.2f, %.2f) (type: %s)",
                  object.name.c_str(), object.position.x, object.position.y, object.position.z,
-                 colliderSize.x, colliderSize.y, colliderSize.z);
+                 colliderSize.x, colliderSize.y, colliderSize.z,
+                 useBVHCollision ? "BVH" : "AABB");
         collisionCreationCount++;
     }
 

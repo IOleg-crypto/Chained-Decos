@@ -225,30 +225,121 @@ void MapSelector::HandleKeyboardNavigation() {
     const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
     if (maps.empty()) return;
 
-    int mapsPerRow = 4;
     int currentPageStart = GetStartMapIndex();
     int currentPageEnd = GetEndMapIndex();
-    int pageSize = currentPageEnd - currentPageStart;
+    
+    if (m_usePanelView) {
+        // Panel view: simple vertical navigation (UP/DOWN only)
+        if (IsKeyPressed(KEY_UP)) {
+            if (m_selectedMap > currentPageStart) {
+                m_selectedMap--;
+            } else if (m_currentPage > 0) {
+                // Go to previous page and select last map
+                PreviousPageNav();
+                m_selectedMap = GetEndMapIndex() - 1;
+            } else if (m_selectedMap > 0) {
+                // Wrap around to last map
+                m_selectedMap = static_cast<int>(maps.size()) - 1;
+            }
+            // Update page if needed
+            UpdatePagination();
+            int newPageStart = GetStartMapIndex();
+            if (m_selectedMap < newPageStart) {
+                m_currentPage = m_selectedMap / MAPS_PER_PAGE;
+                UpdatePagination();
+            }
+        } else if (IsKeyPressed(KEY_DOWN)) {
+            if (m_selectedMap < currentPageEnd - 1) {
+                m_selectedMap++;
+            } else if (m_currentPage < m_totalPages - 1) {
+                // Go to next page and select first map
+                NextPageNav();
+                m_selectedMap = GetStartMapIndex();
+            } else if (m_selectedMap < static_cast<int>(maps.size()) - 1) {
+                // Wrap around to first map
+                m_selectedMap = 0;
+                m_currentPage = 0;
+                UpdatePagination();
+            }
+            // Update page if needed
+            UpdatePagination();
+            int newPageEnd = GetEndMapIndex();
+            if (m_selectedMap >= newPageEnd) {
+                m_currentPage = m_selectedMap / MAPS_PER_PAGE;
+                UpdatePagination();
+            }
+        }
+    } else {
+        // Grid view: 4-column navigation (LEFT/RIGHT/UP/DOWN)
+        int mapsPerRow = 4;
+        int pageSize = currentPageEnd - currentPageStart;
+        
+        int row = (m_selectedMap - currentPageStart) / mapsPerRow;
+        int col = (m_selectedMap - currentPageStart) % mapsPerRow;
 
-    int row = (m_selectedMap - currentPageStart) / mapsPerRow;
-    int col = (m_selectedMap - currentPageStart) % mapsPerRow;
-
-    if (IsKeyPressed(KEY_LEFT)) {
-        if (col > 0) {
-            m_selectedMap--;
+        if (IsKeyPressed(KEY_LEFT)) {
+            if (col > 0) {
+                m_selectedMap--;
+            } else if (row > 0) {
+                // Wrap to end of previous row
+                m_selectedMap = currentPageStart + (row - 1) * mapsPerRow + (mapsPerRow - 1);
+                if (m_selectedMap >= currentPageEnd) {
+                    m_selectedMap = currentPageEnd - 1;
+                }
+            }
+        } else if (IsKeyPressed(KEY_RIGHT)) {
+            int maxCol = (currentPageEnd - currentPageStart - row * mapsPerRow - 1) % mapsPerRow;
+            if (col < mapsPerRow - 1 && m_selectedMap + 1 < currentPageEnd) {
+                m_selectedMap++;
+            } else if (row < (pageSize - 1) / mapsPerRow) {
+                // Wrap to start of next row
+                m_selectedMap = currentPageStart + (row + 1) * mapsPerRow;
+                if (m_selectedMap >= currentPageEnd) {
+                    m_selectedMap = currentPageEnd - 1;
+                }
+            }
+        } else if (IsKeyPressed(KEY_UP)) {
+            if (row > 0) {
+                m_selectedMap -= mapsPerRow;
+            } else if (m_currentPage > 0) {
+                // Go to previous page
+                PreviousPageNav();
+                int newPageEnd = GetEndMapIndex();
+                int newPageStart = GetStartMapIndex();
+                int lastRow = (newPageEnd - newPageStart - 1) / mapsPerRow;
+                m_selectedMap = newPageStart + lastRow * mapsPerRow + col;
+                if (m_selectedMap >= newPageEnd) {
+                    m_selectedMap = newPageEnd - 1;
+                }
+            }
+        } else if (IsKeyPressed(KEY_DOWN)) {
+            int maxRow = (pageSize - 1) / mapsPerRow;
+            if (row < maxRow && m_selectedMap + mapsPerRow < currentPageEnd) {
+                m_selectedMap += mapsPerRow;
+            } else if (m_currentPage < m_totalPages - 1) {
+                // Go to next page
+                NextPageNav();
+                int newPageStart = GetStartMapIndex();
+                m_selectedMap = newPageStart + col;
+                int newPageEnd = GetEndMapIndex();
+                if (m_selectedMap >= newPageEnd) {
+                    m_selectedMap = newPageEnd - 1;
+                }
+            }
         }
-    } else if (IsKeyPressed(KEY_RIGHT)) {
-        if (col < mapsPerRow - 1 && m_selectedMap + 1 < currentPageEnd) {
-            m_selectedMap++;
-        }
-    } else if (IsKeyPressed(KEY_UP)) {
-        if (row > 0) {
-            m_selectedMap -= mapsPerRow;
-        }
-    } else if (IsKeyPressed(KEY_DOWN)) {
-        if (row < (pageSize - 1) / mapsPerRow && m_selectedMap + mapsPerRow < currentPageEnd) {
-            m_selectedMap += mapsPerRow;
-        }
+    }
+    
+    // Ensure selection is valid
+    if (m_selectedMap < 0) m_selectedMap = 0;
+    if (m_selectedMap >= static_cast<int>(maps.size())) {
+        m_selectedMap = static_cast<int>(maps.size()) - 1;
+    }
+    
+    // Update pagination if selection moved to different page
+    int pageOfSelection = m_selectedMap / MAPS_PER_PAGE;
+    if (pageOfSelection != m_currentPage) {
+        m_currentPage = pageOfSelection;
+        UpdatePagination();
     }
 }
 
@@ -537,6 +628,104 @@ void MapSelector::RenderMapSelectionImGui() {
                        "Use Arrow Keys to navigate, ENTER to select, ESC for back");
 }
 
+// Panel-style map selection interface (Half-Life style with large horizontal panels)
+void MapSelector::RenderMapSelectionPanels() {
+    const std::vector<MapInfo>& maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
+    
+    if (maps.empty()) {
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
+        return;
+    }
+
+    // Render maps as horizontal panels (scrollable)
+    int startIndex = GetStartMapIndex();
+    int endIndex = GetEndMapIndex();
+    
+    for (int i = startIndex; i < endIndex; ++i) {
+        const auto& map = maps[i];
+        bool isSelected = (i == m_selectedMap);
+
+        // Create a panel for each map
+        ImGui::PushID(i);
+        
+        // Panel frame with selection highlight
+        if (isSelected) {
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.3f, 0.3f, 0.4f, 0.5f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 2.0f);
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.2f, 0.2f, 0.25f, 0.3f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.4f, 0.4f, 0.5f, 0.5f));
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
+        }
+        
+        // Begin child window for panel (clickable)
+        float panelWidth = ImGui::GetContentRegionAvail().x - 20;
+        ImGui::BeginChild(("MapPanel##" + std::to_string(i)).c_str(), 
+                         ImVec2(panelWidth, 180), true, 
+                         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        
+        // Make the entire panel clickable
+        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            SelectMap(i);
+        }
+        
+        // Panel content: Image on left, text on right
+        ImGui::Columns(2, ("MapPanelCols##" + std::to_string(i)).c_str(), false);
+        ImGui::SetColumnWidth(0, 260); // Fixed width for image
+        
+        // Left column: Thumbnail (larger size)
+        Texture2D thumb = GetThumbnailForMap(map.name);
+        ImGui::Image((ImTextureID)(uintptr_t)thumb.id, ImVec2(240, 160));
+        
+        ImGui::NextColumn();
+        
+        // Right column: Map information
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+        
+        // Map name (larger, bold)
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        ImGui::SetWindowFontScale(1.2f);
+        ImGui::Text("%s", map.displayName.c_str());
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::PopStyleColor();
+        
+        ImGui::Spacing();
+        
+        // Description
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.8f, 1.0f), "%s", map.description.c_str());
+        
+        ImGui::Spacing();
+        
+        // Map type indicator
+        std::string typeText = map.isModelBased ? "Model-based map" : "JSON Map";
+        ImVec4 typeColor = map.isModelBased ?
+            ImVec4(0.4f, 0.6f, 1.0f, 1.0f) : ImVec4(0.4f, 1.0f, 0.6f, 1.0f);
+        ImGui::TextColored(typeColor, "%s", typeText.c_str());
+        
+        ImGui::Spacing();
+        ImGui::Spacing();
+        
+        // Select button (bottom right)
+        float buttonWidth = 120.0f;
+        ImGui::SetCursorPosX(ImGui::GetColumnWidth(1) - buttonWidth);
+        std::string buttonLabel = "Select##" + std::to_string(i);
+        if (ImGui::Button(buttonLabel.c_str(), ImVec2(buttonWidth, 35))) {
+            SelectMap(i);
+        }
+        
+        ImGui::Columns(1);
+        ImGui::EndChild();
+        
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar();
+        
+        ImGui::PopID();
+        
+        ImGui::Spacing();
+    }
+}
+
 // New window-style map selection interface
 void MapSelector::RenderMapSelectionWindow() {
     ImVec2 windowSize = ImGui::GetWindowSize();
@@ -572,62 +761,88 @@ void MapSelector::RenderMapSelectionWindow() {
 
         ImGui::SameLine();
         
-        // Update search and filter if changed
-        // Note: In a real implementation, this would trigger updates
-
-        // Thumbnail grid
-        ImGui::Text("Maps:");
-        ImGui::Columns(4, "MapGrid", false);
-        int startIndex = GetStartMapIndex();
-        int endIndex = GetEndMapIndex();
-        for (int i = startIndex; i < endIndex; ++i) {
-            const auto& map = maps[i];
-            bool isSelected = (i == m_selectedMap);
-
-            // Thumbnail
-            Texture2D thumb = GetThumbnailForMap(map.name);
-            ImGui::Image((ImTextureID)(uintptr_t)thumb.id, ImVec2(100, 100));
-            if (isSelected) {
-                ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
-                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
-            }
-
-            // Map name
-            ImGui::TextWrapped(map.displayName.c_str());
-            ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), map.description.c_str());
-
-            // Map type indicator
-            std::string typeText = map.isModelBased ? "Model-based" : "JSON Map";
-            ImVec4 typeColor = map.isModelBased ?
-                ImVec4(0.4f, 0.6f, 1.0f, 1.0f) : ImVec4(0.4f, 1.0f, 0.6f, 1.0f);
-            ImGui::TextColored(typeColor, typeText.c_str());
-
-            // Select button
-            std::string buttonLabel = "Select##" + std::to_string(i);
-            if (ImGui::Button(buttonLabel.c_str(), ImVec2(-1, 0))) {
-                SelectMap(i);
-            }
-
-            if (isSelected) {
-                ImGui::PopStyleColor();
-                ImGui::PopStyleVar();
-            }
-
-            ImGui::NextColumn();
+        // Checkbox to toggle between grid and panel view
+        ImGui::Text("View:");
+        ImGui::SameLine();
+        if (ImGui::Checkbox("Panel View", &m_usePanelView)) {
+            // View mode changed
         }
-        ImGui::Columns(1);
-
-        // Pagination
-        if (m_totalPages > 1) {
-            ImGui::Separator();
-            ImGui::Text("Page %d of %d", m_currentPage + 1, m_totalPages);
-            ImGui::SameLine();
-            if (m_currentPage > 0 && ImGui::Button("Previous")) {
-                PreviousPageNav();
+        
+        ImGui::Separator();
+        
+        // Render based on view mode
+        if (m_usePanelView) {
+            // Use panel view
+            RenderMapSelectionPanels();
+            
+            // Pagination for panel view
+            if (m_totalPages > 1) {
+                ImGui::Separator();
+                ImGui::Text("Page %d of %d", m_currentPage + 1, m_totalPages);
+                ImGui::SameLine();
+                if (m_currentPage > 0 && ImGui::Button("Previous")) {
+                    PreviousPageNav();
+                }
+                ImGui::SameLine();
+                if (m_currentPage < m_totalPages - 1 && ImGui::Button("Next")) {
+                    NextPageNav();
+                }
             }
-            ImGui::SameLine();
-            if (m_currentPage < m_totalPages - 1 && ImGui::Button("Next")) {
-                NextPageNav();
+        } else {
+            // Original grid view
+            ImGui::Text("Maps:");
+            ImGui::Columns(4, "MapGrid", false);
+            int startIndex = GetStartMapIndex();
+            int endIndex = GetEndMapIndex();
+            for (int i = startIndex; i < endIndex; ++i) {
+                const auto& map = maps[i];
+                bool isSelected = (i == m_selectedMap);
+
+                // Thumbnail
+                Texture2D thumb = GetThumbnailForMap(map.name);
+                ImGui::Image((ImTextureID)(uintptr_t)thumb.id, ImVec2(100, 100));
+                if (isSelected) {
+                    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+                    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
+                }
+
+                // Map name
+                ImGui::TextWrapped(map.displayName.c_str());
+                ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), map.description.c_str());
+
+                // Map type indicator
+                std::string typeText = map.isModelBased ? "Model-based" : "JSON Map";
+                ImVec4 typeColor = map.isModelBased ?
+                    ImVec4(0.4f, 0.6f, 1.0f, 1.0f) : ImVec4(0.4f, 1.0f, 0.6f, 1.0f);
+                ImGui::TextColored(typeColor, typeText.c_str());
+
+                // Select button
+                std::string buttonLabel = "Select##" + std::to_string(i);
+                if (ImGui::Button(buttonLabel.c_str(), ImVec2(-1, 0))) {
+                    SelectMap(i);
+                }
+
+                if (isSelected) {
+                    ImGui::PopStyleColor();
+                    ImGui::PopStyleVar();
+                }
+
+                ImGui::NextColumn();
+            }
+            ImGui::Columns(1);
+
+            // Pagination for grid view
+            if (m_totalPages > 1) {
+                ImGui::Separator();
+                ImGui::Text("Page %d of %d", m_currentPage + 1, m_totalPages);
+                ImGui::SameLine();
+                if (m_currentPage > 0 && ImGui::Button("Previous")) {
+                    PreviousPageNav();
+                }
+                ImGui::SameLine();
+                if (m_currentPage < m_totalPages - 1 && ImGui::Button("Next")) {
+                    NextPageNav();
+                }
             }
         }
     }

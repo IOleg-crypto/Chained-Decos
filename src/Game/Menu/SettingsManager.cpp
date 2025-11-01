@@ -139,16 +139,40 @@ void SettingsManager::ApplyVideoSettings() {
         }
     }
 
-    // Apply fullscreen mode
+    // Apply display mode (Windowed/Fullscreen/Borderless)
     bool isCurrentlyFullscreen = IsWindowFullscreen();
-    bool shouldBeFullscreen = (m_currentDisplayModeIndex == 1); // Fullscreen
+    bool isCurrentlyBorderless = IsWindowState(FLAG_WINDOW_UNDECORATED);
+    
+    // 0 = Windowed, 1 = Fullscreen, 2 = Borderless
+    bool shouldBeFullscreen = (m_currentDisplayModeIndex == 1);
+    bool shouldBeBorderless = (m_currentDisplayModeIndex == 2);
 
+    // Handle fullscreen
     if (shouldBeFullscreen && !isCurrentlyFullscreen) {
         TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Enabling fullscreen mode");
+        // Clear borderless first if active
+        if (isCurrentlyBorderless) {
+            ClearWindowState(FLAG_WINDOW_UNDECORATED);
+        }
         SetWindowState(FLAG_FULLSCREEN_MODE);
     } else if (!shouldBeFullscreen && isCurrentlyFullscreen) {
         TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Disabling fullscreen mode");
         ClearWindowState(FLAG_FULLSCREEN_MODE);
+        // Apply borderless if needed
+        if (shouldBeBorderless) {
+            SetWindowState(FLAG_WINDOW_UNDECORATED);
+        }
+    }
+    
+    // Handle borderless (only when not fullscreen)
+    if (!shouldBeFullscreen) {
+        if (shouldBeBorderless && !isCurrentlyBorderless) {
+            TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Enabling borderless mode");
+            SetWindowState(FLAG_WINDOW_UNDECORATED);
+        } else if (!shouldBeBorderless && isCurrentlyBorderless) {
+            TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Disabling borderless mode");
+            ClearWindowState(FLAG_WINDOW_UNDECORATED);
+        }
     }
 
     // Apply VSync

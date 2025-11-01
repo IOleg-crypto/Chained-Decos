@@ -7,7 +7,7 @@ PlayerCollision::PlayerCollision(IPlayerMediator* player)
 }
 
 void PlayerCollision::InitializeCollision() {
-    SetCollisionType(CollisionType::AABB_ONLY);
+    SetCollisionType(CollisionType::BVH_ONLY);
     UpdateBoundingBox();
     UpdateCollisionPoints();
 }

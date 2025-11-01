@@ -26,6 +26,8 @@ public:
     virtual void SetSelectedModel(const std::string& modelName) = 0;
     virtual const std::string& GetSelectedModel() const = 0;
     virtual void HandleToolInput(bool mousePressed, const Ray& ray, ISceneManager& scene) = 0;
+    virtual void UpdateTool(const Ray& ray, ISceneManager& scene) = 0;
+    virtual void EndTransform() = 0;
 };
 
 #endif // ITOOLMANAGER_H
