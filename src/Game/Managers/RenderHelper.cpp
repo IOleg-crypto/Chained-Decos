@@ -1,15 +1,15 @@
-#include "GameRenderHelper.h"
+#include "RenderHelper.h"
 #include "Engine/Collision/CollisionManager.h"
 #include <raylib.h>
 #include <algorithm>
 
-GameRenderHelper::GameRenderHelper(CollisionManager* collisionManager)
+RenderHelper::RenderHelper(CollisionManager* collisionManager)
     : m_collisionManager(collisionManager)
 {
-    TraceLog(LOG_INFO, "GameRenderHelper created");
+    TraceLog(LOG_INFO, "RenderHelper created");
 }
 
-void GameRenderHelper::CreatePlatform(const Vector3 &position, const Vector3 &size, Color color, CollisionType collisionType)
+void RenderHelper::CreatePlatform(const Vector3 &position, const Vector3 &size, Color color, CollisionType collisionType)
 {
     DrawCube(position, size.x, size.y, size.z, color);
 
@@ -18,7 +18,7 @@ void GameRenderHelper::CreatePlatform(const Vector3 &position, const Vector3 &si
     m_collisionManager->AddCollider(std::move(collision));
 }
 
-float GameRenderHelper::CalculateDynamicFontSize(float baseSize)
+float RenderHelper::CalculateDynamicFontSize(float baseSize)
 {
     int screenWidth = GetScreenWidth();
     float scaleFactor = static_cast<float>(screenWidth) / 1920.0f;

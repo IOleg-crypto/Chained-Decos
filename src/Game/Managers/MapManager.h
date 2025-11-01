@@ -1,5 +1,5 @@
-#ifndef GAME_MAP_MANAGER_H
-#define GAME_MAP_MANAGER_H
+#ifndef MAP_MANAGER_H
+#define MAP_MANAGER_H
 
 #include <string>
 #include <vector>
@@ -9,8 +9,10 @@ class Player;
 class CollisionManager;
 class ModelLoader;
 class RenderManager;
+class Kernel;
+class Menu;
 
-class GameMapManager
+class MapManager
 {
 private:
     GameMap m_gameMap;
@@ -20,10 +22,12 @@ private:
     CollisionManager* m_collisionManager;
     ModelLoader* m_models;
     RenderManager* m_renderManager;
+    Kernel* m_kernel;  // For collision service registration
+    Menu* m_menu;      // For menu action checking (optional)
 
 public:
-    GameMapManager(Player* player, CollisionManager* collisionManager, ModelLoader* models, RenderManager* renderManager);
-    ~GameMapManager() = default;
+    MapManager(Player* player, CollisionManager* collisionManager, ModelLoader* models, RenderManager* renderManager, Kernel* kernel, Menu* menu = nullptr);
+    ~MapManager() = default;
 
     void LoadEditorMap(const std::string &mapPath);
     void RenderEditorMap();
@@ -37,5 +41,5 @@ public:
     const std::string& GetCurrentMapPath() const { return m_currentMapPath; }
 };
 
-#endif // GAME_MAP_MANAGER_H
+#endif // MAP_MANAGER_H
 
