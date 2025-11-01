@@ -13,23 +13,11 @@
 #include "raylib.h"
 
 #include "Engine/Map/MapLoader.h"
-
-// Forward declarations for subsystem interfaces
-class ISceneManager;
-class IFileManager;
-class IToolManager;
-
-// Include ModelManager interface
-#include "../ModelManager/IModelManager.h"
-
-#include "IUIManager.h"
-
-// Include the Tool enum from ToolManager
-#include "../ToolManager/IToolManager.h"
-
-// Include necessary headers for complete types
 #include "../SceneManager/ISceneManager.h"
 #include "../FileManager/IFileManager.h"
+#include "../ToolManager/IToolManager.h"
+#include "../ModelManager/IModelManager.h"
+#include "IUIManager.h"
 
 
 // Concrete UI Manager implementation

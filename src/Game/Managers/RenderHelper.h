@@ -3,8 +3,7 @@
 
 #include <raylib.h>
 #include <Engine/Collision/CollisionSystem.h>
-
-class CollisionManager;
+#include "Engine/Collision/CollisionManager.h"
 
 class RenderHelper
 {

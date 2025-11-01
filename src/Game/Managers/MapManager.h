@@ -4,13 +4,12 @@
 #include <string>
 #include <vector>
 #include <Engine/Map/MapLoader.h>
-
-class Player;
-class CollisionManager;
-class ModelLoader;
-class RenderManager;
-class Kernel;
-class Menu;
+#include "Player/Player.h"
+#include "Engine/Collision/CollisionManager.h"
+#include "Engine/Model/Model.h"
+#include "Engine/Render/RenderManager.h"
+#include "Engine/Kernel/Kernel.h"
+#include "Menu/Menu.h"
 
 class MapManager
 {
