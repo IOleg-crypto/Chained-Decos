@@ -3,11 +3,9 @@
 
 #include "ISceneManager.h"
 #include "../Object/MapObject.h"
+#include "Engine/Collision/CollisionStructures.h"
 #include <vector>
 #include <memory>
-
-class MapObject;
-class CollisionRay;
 
 // Concrete implementation of scene management subsystem
 class SceneManager : public ISceneManager {

@@ -14,9 +14,7 @@
 #include <Render/IRenderable.h>
 #include <imgui.h>
 #include <raylib.h>
-
-// Forward declaration - will be included in .cpp
-class Game;
+#include "Game.h"
 
 
 enum class MenuAction : uint8_t
