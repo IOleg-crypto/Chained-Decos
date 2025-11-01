@@ -2,11 +2,10 @@
 #define MODELMANAGER_H
 
 #include "IModelManager.h"
+#include "Engine/Model/Model.h"
 #include <memory>
 #include <string>
 #include <vector>
-
-class ModelLoader;
 
 class ModelManager : public IModelManager {
 private:

@@ -17,7 +17,7 @@ public:
     CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c);
 
     // Ray-triangle intersection using Möller-Trumbore algorithm
-    bool Intersects(const class CollisionRay &ray, float &t) const;
+    bool Intersects(const CollisionRay &ray, float &t) const;
     bool Intersects(const Vector3 &origin, const Vector3 &direction, float &t) const;
 
     // Triangle-triangle intersection

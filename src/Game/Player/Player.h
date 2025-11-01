@@ -17,12 +17,10 @@
 // Include component interfaces
 #include "IPlayerInput.h"
 #include "IPlayerMovement.h"
-
-// Forward declarations to reduce dependencies
-class PlayerInput;
-class PlayerMovement;
-class PlayerCollision;
-class PlayerModel;
+#include "PlayerInput.h"
+#include "PlayerMovement.h"
+#include "PlayerCollision.h"
+#include "PlayerModel.h"
 
 // Player: main player class that uses component classes
 class Player : public IRenderable

@@ -8,19 +8,20 @@
 #include "Engine/Map/MapLoader.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Player/Player.h"
+#include "Managers/MapManager.h"
+#include "Managers/ResourceManager.h"
+#include "Managers/StateManager.h"
+#include "Managers/RenderHelper.h"
+#include "Managers/PlayerManager.h"
+#include "Managers/UpdateManager.h"
+#include "Managers/GameRenderManager.h"
+#include "Managers/MenuActionHandler.h"
+#include "Menu/Menu.h"
 #include <memory>
-
-class Menu;
-class MapManager;
-class ResourceManager;
-class StateManager;
-class RenderHelper;
 
 class Game
 {
 private:
-    float PLAYER_SAFE_SPAWN_HEIGHT = 2.0f;
-    
     // Core components
     std::unique_ptr<Player> m_player;
     std::unique_ptr<CollisionManager> m_collisionManager;
@@ -35,6 +36,10 @@ private:
     std::unique_ptr<ResourceManager> m_modelManager;
     std::unique_ptr<StateManager> m_stateManager;
     std::unique_ptr<RenderHelper> m_renderHelper;
+    std::unique_ptr<PlayerManager> m_playerManager;
+    std::unique_ptr<UpdateManager> m_updateManager;
+    std::unique_ptr<GameRenderManager> m_gameRenderManager;
+    std::unique_ptr<MenuActionHandler> m_menuActionHandler;
 
     bool m_showMenu;
     bool m_isGameInitialized;
@@ -99,6 +104,10 @@ public:
     ResourceManager* GetModelManager() { return m_modelManager.get(); }
     StateManager* GetStateManager() { return m_stateManager.get(); }
     RenderHelper* GetRenderHelper() { return m_renderHelper.get(); }
+    PlayerManager* GetPlayerManager() { return m_playerManager.get(); }
+    UpdateManager* GetUpdateManager() { return m_updateManager.get(); }
+    GameRenderManager* GetGameRenderManager() { return m_gameRenderManager.get(); }
+    MenuActionHandler* GetMenuActionHandler() { return m_menuActionHandler.get(); }
     
     GameMap &GetGameMap();
     bool IsInitialized() const { return m_isGameInitialized; }

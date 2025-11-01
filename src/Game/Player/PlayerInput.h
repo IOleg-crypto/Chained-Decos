@@ -6,9 +6,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include "IPlayerInput.h"
-
-// Forward declaration to break circular dependency
-class Player;
+#include "Player.h"
 
 // PlayerInput: handles all input-related functionality
 class PlayerInput : public IPlayerInput

@@ -6,8 +6,6 @@
 #include <optional>
 #include <Engine/Model/Model.h>
 
-class ModelLoader;
-
 class ResourceManager
 {
 private:

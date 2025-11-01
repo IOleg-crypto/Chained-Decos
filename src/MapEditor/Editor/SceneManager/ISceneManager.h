@@ -3,9 +3,8 @@
 
 #include <vector>
 #include <memory>
-
-class MapObject;
-class CollisionRay;
+#include "../Object/MapObject.h"
+#include "Engine/Collision/CollisionStructures.h"
 
 // Interface for scene management subsystem
 class ISceneManager {

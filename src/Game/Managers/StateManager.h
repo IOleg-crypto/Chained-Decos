@@ -3,9 +3,8 @@
 
 #include <string>
 #include <raylib.h>
-
-class Player;
-class Menu;
+#include "Player/Player.h"
+#include "Menu/Menu.h"
 
 class StateManager
 {

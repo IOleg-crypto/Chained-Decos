@@ -9,8 +9,8 @@
 #include "IRenderable.h"
 #include "Model/Model.h"
 #include "Collision/CollisionManager.h"
+#include "Collision/CollisionDebugRenderer.h"
 #include "Engine/Kernel/IKernelService.h"
-class CollisionDebugRenderer;  // Keep as forward declaration
 
 //
 // RenderManager - Handles all rendering operations
