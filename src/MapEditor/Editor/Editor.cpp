@@ -196,10 +196,23 @@ void Editor::HandleInput()
     // Handle tool-specific input
     if (m_toolManager && m_sceneManager && m_cameraManager) {
         const ImGuiIO &io = ImGui::GetIO();
-        if (!io.WantCaptureMouse && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (!io.WantCaptureMouse) {
             // Create ray from screen to world using camera
             Ray ray = GetScreenToWorldRay(GetMousePosition(), m_cameraManager->GetCamera());
-            m_toolManager->HandleToolInput(true, ray, *m_sceneManager);
+            
+            // Handle mouse button press/release
+            bool mousePressed = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+            bool mouseReleased = IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+            bool mouseDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+            
+            if (mousePressed) {
+                m_toolManager->HandleToolInput(true, ray, *m_sceneManager);
+            } else if (mouseReleased) {
+                m_toolManager->HandleToolInput(false, ray, *m_sceneManager);
+            } else if (mouseDown) {
+                // Update tool during drag operations
+                m_toolManager->UpdateTool(ray, *m_sceneManager);
+            }
         }
     }
 }

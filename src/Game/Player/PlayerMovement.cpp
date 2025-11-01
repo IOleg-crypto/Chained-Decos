@@ -286,17 +286,21 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
         TraceLog(LOG_DEBUG, "PlayerMovement::UpdateGrounded() - Grounded via bestGap: %.2f", bestGap);
     }
 
-    // Additional check: if we're very close to ground level and not moving up fast, consider grounded
-    if (!grounded && m_physics.GetVelocity().y <= 2.0f)
+    // Additional check: if we're very close to ground level (with actual collision) and not moving up fast, consider grounded
+    // Only set grounded if we actually have a ground collision detected, not just based on height
+    if (!grounded && m_physics.GetVelocity().y <= 2.0f && bestGap < 1e8f)
     {
         float bottom = center.y - size.y * 0.5f;
         // Account for MODEL_Y_OFFSET when checking ground proximity
         // The visual model is offset by -1.0f, so we need to check against a higher threshold
         // The effective ground level for the collision box should be MODEL_Y_OFFSET higher than visual ground
-        if (bottom <= (1.5f + fabsf(Player::MODEL_Y_OFFSET)))
+        // Only consider grounded if there's an actual ground hit nearby (not just low Y position)
+        if (bottom <= (1.5f + fabsf(Player::MODEL_Y_OFFSET)) && bestGap >= -0.5f && bestGap <= 2.0f)
         {
             grounded = true;
-            TraceLog(LOG_DEBUG, "PlayerMovement::UpdateGrounded() - Force grounded due to proximity: bottom=%.2f", bottom);
+            hitPoint = bestPoint;
+            hitNormal = bestNormal;
+            TraceLog(LOG_DEBUG, "PlayerMovement::UpdateGrounded() - Force grounded due to proximity with collision: bottom=%.2f, gap=%.2f", bottom, bestGap);
         }
     }
 

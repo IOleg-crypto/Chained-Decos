@@ -1,0 +1,135 @@
+{
+    "metadata": {
+        "author": "",
+        "description": "",
+        "difficulty": 1.0,
+        "displayName": "map_save",
+        "endPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "groundColor": {
+            "a": 255,
+            "b": 44,
+            "g": 117,
+            "r": 0
+        },
+        "name": "map_save",
+        "skyColor": {
+            "a": 255,
+            "b": 255,
+            "g": 191,
+            "r": 102
+        },
+        "startPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "version": "1.0"
+    },
+    "objects": [
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "modelName": "player_low",
+            "name": "player",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "size": {
+                "height": 2.0,
+                "width": 2.0
+            },
+            "type": 5
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 114,
+                "g": 114,
+                "r": 116
+            },
+            "height": 0.8999999761581421,
+            "isObstacle": false,
+            "isPlatform": true,
+            "modelName": "stairs_f",
+            "name": "stairs",
+            "position": {
+                "x": 0.0,
+                "y": 2.9000000953674316,
+                "z": 30.200000762939453
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 87.6823959350586,
+                "z": -0.10471975803375244
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 0.8999999761581421,
+                "z": 1.0
+            },
+            "size": {
+                "height": 2.0,
+                "width": 2.0
+            },
+            "type": 5
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 88,
+                "g": 88,
+                "r": 92
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "New Object 2 (Cube)",
+            "position": {
+                "x": 0.0,
+                "y": -0.10000000149011612,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 143.0,
+                "y": 1.0,
+                "z": 169.5
+            },
+            "size": {
+                "height": 2.0,
+                "width": 2.0
+            },
+            "type": 0
+        }
+    ]
+}
