@@ -44,9 +44,9 @@ void Application::Init() const
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard navigation
     
-    // Docking support - check if available in this ImGui version
-    // Note: Docking was added in ImGui 1.79+, but may need additional configuration
-    // For now, we'll just enable navigation and window management
+    // Docking support - not available in standard ImGui
+    // Note: Docking requires ImGui docking branch which is not included in this project
+    // Windows can still be moved and resized manually
     io.ConfigWindowsMoveFromTitleBarOnly = true; // Only allow moving windows from title bar
     
     // Set up custom font
@@ -125,10 +125,7 @@ void Application::Run() const
         // Begin ImGui frame
         rlImGuiBegin();
         
-        // Note: Docking support requires ImGui 1.79+ with docking branch
-        // For now, windows can still be moved and resized, but docking is disabled
-        // If you have docking-enabled ImGui, uncomment the following line:
-        // ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        // Docking not available - windows can be moved and resized manually
         
         // Render ImGui interface
         m_editor->RenderImGui();

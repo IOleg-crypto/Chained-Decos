@@ -174,12 +174,7 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
             if (Vector3LengthSqr(Vector3CrossProduct(edge1, edge2)) < 1e-12f)
                 continue;
 
-            // Transform vertices to world coordinates
-            v0 = Vector3Transform(v0, transform);
-            v1 = Vector3Transform(v1, transform);
-            v2 = Vector3Transform(v2, transform);
-
-            // Transform vertices
+            // Transform vertices to world coordinates (apply once)
             v0 = Vector3Transform(v0, transform);
             v1 = Vector3Transform(v1, transform);
             v2 = Vector3Transform(v2, transform);

@@ -33,6 +33,7 @@ private:
     MapFilter m_currentFilter = MapFilter::JSON;
     std::unordered_map<std::string, Texture2D> m_thumbnails; // Map name to texture
     Texture2D m_placeholderThumbnail; // Placeholder for missing thumbnails
+    bool m_usePanelView = false; // false = grid view, true = panel view
 
     // Pagination system
     void UpdatePagination();
@@ -78,6 +79,7 @@ public:
     void RenderMapSelection() const;
     void RenderMapSelectionImGui();
     void RenderMapSelectionWindow(); // New window-style interface
+    void RenderMapSelectionPanels(); // Panel-style interface (Half-Life style)
 
     // New UI methods
     void SetSearchQuery(const std::string& query);

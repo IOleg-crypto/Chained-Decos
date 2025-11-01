@@ -101,29 +101,64 @@ void PlayerManager::InitPlayer()
         m_player->SetPlayerPosition({currentPos.x, PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
     }
     
-    // Check if map has PlayerStart objects and adjust position accordingly
-    TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Checking for PlayerStart objects in map...");
+    // Check if map has player spawn objects and adjust position accordingly
+    // First, look for objects with modelName == "player"
+    // If not found, fall back to objects with "player_start" in name for backward compatibility
+    TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Checking for player spawn objects in map...");
     if (!m_mapManager->GetGameMap().objects.empty())
     {
-        TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Map has %d objects, searching for PlayerStart...",
+        TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Map has %d objects, searching for player spawn...",
                  m_mapManager->GetGameMap().objects.size());
+        
+        bool foundPlayerSpawn = false;
+        
+        // First, search for objects with modelName == "player"
         for (size_t i = 0; i < m_mapManager->GetGameMap().objects.size(); ++i)
         {
             const auto &obj = m_mapManager->GetGameMap().objects[i];
-            TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Checking object %d: %s (type: %d)", i,
-                     obj.name.c_str(), static_cast<int>(obj.type));
+            TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Checking object %d: name=%s, modelName=%s (type: %d)", i,
+                     obj.name.c_str(), obj.modelName.c_str(), static_cast<int>(obj.type));
             
             if ((obj.type == MapObjectType::MODEL || obj.type == MapObjectType::LIGHT) &&
-                obj.name.find("player_start") != std::string::npos)
+                obj.modelName == "player")
             {
                 TraceLog(LOG_INFO,
-                         "PlayerManager::InitPlayer() - Found PlayerStart object at (%.2f, %.2f, %.2f)",
+                         "PlayerManager::InitPlayer() - Found player spawn object (modelName=player) at (%.2f, %.2f, %.2f)",
                          obj.position.x, obj.position.y, obj.position.z);
                 m_player->SetPlayerPosition(obj.position);
                 TraceLog(LOG_INFO,
-                         "PlayerManager::InitPlayer() - Player position updated to PlayerStart location");
+                         "PlayerManager::InitPlayer() - Player position updated to player spawn location");
+                foundPlayerSpawn = true;
                 break;
             }
+        }
+        
+        // If not found, fall back to searching by name for backward compatibility
+        if (!foundPlayerSpawn)
+        {
+            TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No object with modelName='player' found, trying player_start by name...");
+            for (size_t i = 0; i < m_mapManager->GetGameMap().objects.size(); ++i)
+            {
+                const auto &obj = m_mapManager->GetGameMap().objects[i];
+                
+                if ((obj.type == MapObjectType::MODEL || obj.type == MapObjectType::LIGHT) &&
+                    obj.name.find("player_start") != std::string::npos)
+                {
+                    TraceLog(LOG_INFO,
+                             "PlayerManager::InitPlayer() - Found PlayerStart object (by name) at (%.2f, %.2f, %.2f)",
+                             obj.position.x, obj.position.y, obj.position.z);
+                    m_player->SetPlayerPosition(obj.position);
+                    TraceLog(LOG_INFO,
+                             "PlayerManager::InitPlayer() - Player position updated to PlayerStart location");
+                    foundPlayerSpawn = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!foundPlayerSpawn)
+        {
+            TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No player spawn object found in map, using default position");
         }
     }
     else
