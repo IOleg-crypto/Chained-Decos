@@ -1,5 +1,5 @@
-#ifndef GAME_STATE_MANAGER_H
-#define GAME_STATE_MANAGER_H
+#ifndef STATE_MANAGER_H
+#define STATE_MANAGER_H
 
 #include <string>
 #include <raylib.h>
@@ -7,7 +7,7 @@
 class Player;
 class Menu;
 
-class GameStateManager
+class StateManager
 {
 private:
     std::string m_savedMapPath;
@@ -18,8 +18,8 @@ private:
     Menu* m_menu;
 
 public:
-    GameStateManager(Player* player, Menu* menu);
-    ~GameStateManager() = default;
+    StateManager(Player* player, Menu* menu);
+    ~StateManager() = default;
 
     void SaveGameState(const std::string& currentMapPath);
     void RestoreGameState();
@@ -27,5 +27,5 @@ public:
     const std::string& GetSavedMapPath() const { return m_savedMapPath; }
 };
 
-#endif // GAME_STATE_MANAGER_H
+#endif // STATE_MANAGER_H
 
