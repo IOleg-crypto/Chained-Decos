@@ -89,3 +89,8 @@ void InputManager::ProcessInput() const
     }
 }
 
+void InputManager::Update(float deltaTime)
+{
+    ProcessInput();
+}
+

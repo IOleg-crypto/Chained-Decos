@@ -1,5 +1,5 @@
 #include "StateManager.h"
-#include "Player/Player.h"
+#include "../Player/Player.h"
 #include "Menu/Menu.h"
 #include <raylib.h>
 
