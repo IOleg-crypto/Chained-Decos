@@ -41,10 +41,7 @@ BoundingBox PlayerCollision::GetBoundingBox() const {
 
 void PlayerCollision::UpdateBoundingBox() {
     Vector3 pos = m_player->GetPlayerPosition();
-    Vector3 halfSize = Vector3Scale(m_player->GetPlayerSize(), 0.5f);
-
-    m_boundingBox.min = Vector3Subtract(pos, halfSize);
-    m_boundingBox.max = Vector3Add(pos, halfSize);
+    Vector3 halfSize = Vector3Scale(m_player->GetPlayerSize(), 1.0f);
 
     // Sync base Collision AABB
     Collision::Update(pos, halfSize);
@@ -86,7 +83,7 @@ bool PlayerCollision::CheckCollisionWithBVH(const Collision& other, Vector3& out
     for (const auto& point : m_collisionPoints) {
         for (const auto& dir : directions) {
             RayHit hit;
-            if (other.RaycastBVH(point, dir, 2.0f, hit)) {
+            if (other.RaycastBVH(point, dir, 1.0f, hit)) {
                 if (hit.hit) {
                     // Calculate proper collision response
                     // The response should push the player away from the collision surface

@@ -412,27 +412,42 @@ void ModelLoader::DrawAllModels() const
             continue;
         }
 
-        // Build transform matrix: Scale -> Rotation -> Translation
-        // Same approach as MapEditor for consistency
+        // Convert rotation to radians
         Vector3 rotRad = { DEG2RAD * rotationDeg.x, DEG2RAD * rotationDeg.y, DEG2RAD * rotationDeg.z };
+        
+        // Build full transform matrix: Scale -> Rotation -> Translation
+        // This matches the order used in collision system
         Matrix matScale = MatrixScale(scale, scale, scale);
         Matrix matRotation = MatrixRotateXYZ(rotRad);
         Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
-        Matrix transform = MatrixMultiply(matScale, MatrixMultiply(matRotation, matTranslation));
-
-        // Validate matrix before drawing
-        if (!IsValidMatrix(matScale) || !IsValidMatrix(matRotation) || !IsValidMatrix(matTranslation) || !IsValidMatrix(transform))
+        Matrix fullTransform = MatrixMultiply(matScale, MatrixMultiply(matRotation, matTranslation));
+        
+        // Apply full transform to model
+        // We'll use DrawMesh directly to properly apply the complete transformation
+        // This ensures rotation matches the collision system
+        modelPtr->transform = fullTransform;
+        
+        // Draw model meshes directly with the full transform matrix
+        // This bypasses DrawModel/DrawModelEx which don't handle XYZ rotation correctly
+        for (int i = 0; i < modelPtr->meshCount; i++)
         {
-            TraceLog(LOG_ERROR, "ModelLoader::DrawAllModels() - Invalid transform matrix for instance: %s",
-                     instance.GetModelName().c_str());
-            continue;
+            // Get material color and apply tint
+            Color color = modelPtr->materials[modelPtr->meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color;
+            Color colorTint = WHITE;
+            colorTint.r = (unsigned char)(((int)color.r * (int)drawColor.r) / 255);
+            colorTint.g = (unsigned char)(((int)color.g * (int)drawColor.g) / 255);
+            colorTint.b = (unsigned char)(((int)color.b * (int)drawColor.b) / 255);
+            colorTint.a = (unsigned char)(((int)color.a * (int)drawColor.a) / 255);
+            
+            // Apply tint temporarily
+            modelPtr->materials[modelPtr->meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = colorTint;
+            
+            // Draw mesh with full transform
+            DrawMesh(modelPtr->meshes[i], modelPtr->materials[modelPtr->meshMaterial[i]], fullTransform);
+            
+            // Restore original color
+            modelPtr->materials[modelPtr->meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = color;
         }
-
-        // Apply transform to model (same as MapEditor - no restore needed since each instance has its own transform)
-        modelPtr->transform = transform;
-
-        // Draw the model with instance color (same as MapEditor)
-        DrawModel(*modelPtr, Vector3{0, 0, 0}, 1.0f, drawColor);
     }
 }
 
@@ -606,6 +621,12 @@ bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanc
         m_instances.emplace_back(config.position, model, config.scale, modelName, config.color);
     }
 
+    // Apply rotation to the last instance (rotation is expected to be in degrees)
+    if (!m_instances.empty())
+    {
+        m_instances.back().SetRotationDegrees(config.rotation);
+    }
+
     m_stats.totalInstances++;
     TraceLog(LOG_INFO, "Added enhanced instance for model '%s' at (%.2f, %.2f, %.2f)",
              modelName.c_str(), config.position.x, config.position.y, config.position.z);
@@ -636,9 +657,14 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
     }
 
     // Fix texture paths for .gltf files
-    if (fullPath.substr(fullPath.size() - 5) == ".gltf")
+    if (fullPath.size() >= 5 && fullPath.substr(fullPath.size() - 5) == ".gltf")
     {
         std::ifstream file(fullPath);
+        if (!file.is_open())
+        {
+            TraceLog(LOG_ERROR, "Failed to open GLTF file for texture path fixing: %s", fullPath.c_str());
+            return false;
+        }
         json j;
         file >> j;
         if (j.contains("textures"))
@@ -658,6 +684,11 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
         // Write to temp file
         std::string tempPath = fullPath + ".temp";
         std::ofstream tempFile(tempPath);
+        if (!tempFile.is_open())
+        {
+            TraceLog(LOG_ERROR, "Failed to create temp file for GLTF: %s", tempPath.c_str());
+            return false;
+        }
         tempFile << j.dump(4);
         tempFile.close();
         fullPath = tempPath;
@@ -874,6 +905,14 @@ void ModelLoader::OptimizeCache() const {
         m_cache->CleanupUnusedModels(60); // More aggressive cleanup
         TraceLog(LOG_INFO, "Cache optimized");
     }
+}
+
+void ModelLoader::ClearInstances()
+{
+    size_t count = m_instances.size();
+    m_instances.clear();
+    m_stats.totalInstances = 0;
+    TraceLog(LOG_INFO, "ModelLoader::ClearInstances() - Cleared %zu model instances", count);
 }
 
 // Validation helper functions for crash prevention

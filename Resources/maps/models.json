@@ -1,17 +1,101 @@
-[
-  {
-    "name": "bridge",
-    "path": "D:/gitnext/Chained Decos/resources/bridge.glb",
-    "spawn": true,
-    "hasCollision": true,
-    "collisionPrecision": "bvh_only",
-    "hasAnimations": true,
-    "instances": [
-      {
-        "position": [0, 0, 0],
-        "scale": 0.833333,
-        "spawn": true
-      }
+{
+    "metadata": {
+        "author": "",
+        "description": "",
+        "difficulty": 1.0,
+        "displayName": "models",
+        "endPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "groundColor": {
+            "a": 255,
+            "b": 44,
+            "g": 117,
+            "r": 0
+        },
+        "name": "models",
+        "skyColor": {
+            "a": 255,
+            "b": 255,
+            "g": 191,
+            "r": 102
+        },
+        "startPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "version": "1.0"
+    },
+    "objects": [
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "height": 1.4329999685287476,
+            "isObstacle": false,
+            "isPlatform": true,
+            "modelName": "bridge",
+            "name": "bridge_0",
+            "position": {
+                "x": 0.0,
+                "y": 1.2000000476837158,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": -89.72517395019531,
+                "y": 0.5759586691856384,
+                "z": -1.1344640254974365
+            },
+            "scale": {
+                "x": 0.8333330154418945,
+                "y": 1.4329999685287476,
+                "z": 0.8333330154418945
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 5
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 24,
+                "g": 24,
+                "r": 26
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": true,
+            "name": "New Cube 1",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "size": {
+                "height": 700.0,
+                "width": 181.3000030517578
+            },
+            "type": 3
+        }
     ]
-  }
-]
+}

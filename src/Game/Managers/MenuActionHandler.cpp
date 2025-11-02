@@ -9,27 +9,85 @@
 #include "ResourceManager.h"
 #include "PlayerManager.h"
 #include "Engine/Engine.h"
+#include "Engine/Kernel/KernelServices.h"
 #include <raylib.h>
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
 
-MenuActionHandler::MenuActionHandler(Game* game, Player* player, Menu* menu,
-                                      CollisionManager* collisionManager, ModelLoader* models,
-                                      MapManager* mapManager, ResourceManager* resourceManager,
-                                      PlayerManager* playerManager, Engine* engine,
-                                      bool* showMenu, bool* isGameInitialized)
-    : m_game(game), m_player(player), m_menu(menu), m_collisionManager(collisionManager),
-      m_models(models), m_mapManager(mapManager), m_resourceManager(resourceManager),
-      m_playerManager(playerManager), m_engine(engine),
-      m_showMenu(showMenu), m_isGameInitialized(isGameInitialized)
+MenuActionHandler::MenuActionHandler(Kernel* kernel, bool* showMenu, bool* isGameInitialized)
+    : m_kernel(kernel), m_showMenu(showMenu), m_isGameInitialized(isGameInitialized)
 {
-    TraceLog(LOG_INFO, "MenuActionHandler created");
+    if (!m_kernel)
+    {
+        TraceLog(LOG_ERROR, "MenuActionHandler: Kernel is null!");
+    }
+    TraceLog(LOG_INFO, "MenuActionHandler created with Kernel-based dependency injection");
+}
+
+Game* MenuActionHandler::GetGame() const
+{
+    auto service = m_kernel->GetService<GameService>(Kernel::ServiceType::Game);
+    return service ? service->game : nullptr;
+}
+
+Player* MenuActionHandler::GetPlayer() const
+{
+    auto service = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
+    return service ? service->player : nullptr;
+}
+
+Menu* MenuActionHandler::GetMenu() const
+{
+    auto service = m_kernel->GetService<MenuService>(Kernel::ServiceType::Menu);
+    return service ? service->menu : nullptr;
+}
+
+CollisionManager* MenuActionHandler::GetCollisionManager() const
+{
+    auto service = m_kernel->GetService<CollisionService>(Kernel::ServiceType::Collision);
+    return service ? service->cm : nullptr;
+}
+
+ModelLoader* MenuActionHandler::GetModels() const
+{
+    auto service = m_kernel->GetService<ModelsService>(Kernel::ServiceType::Models);
+    return service ? service->models : nullptr;
+}
+
+MapManager* MenuActionHandler::GetMapManager() const
+{
+    auto service = m_kernel->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
+    return service ? service->mapManager : nullptr;
+}
+
+ResourceManager* MenuActionHandler::GetResourceManager() const
+{
+    auto service = m_kernel->GetService<ResourceManagerService>(Kernel::ServiceType::ResourceManager);
+    return service ? service->resourceManager : nullptr;
+}
+
+PlayerManager* MenuActionHandler::GetPlayerManager() const
+{
+    auto service = m_kernel->GetService<PlayerManagerService>(Kernel::ServiceType::PlayerManager);
+    return service ? service->playerManager : nullptr;
+}
+
+Engine* MenuActionHandler::GetEngine() const
+{
+    // Engine is accessible through Game
+    // Most Engine operations should go through Game methods
+    // If direct Engine access is needed, we can add Engine as a service later
+    auto* game = GetGame();
+    return nullptr; // Engine access should go through Game methods (e.g., game->RequestExit())
 }
 
 void MenuActionHandler::HandleMenuActions()
 {
-    MenuAction action = m_menu->ConsumeAction();
+    Menu* menu = GetMenu();
+    if (!menu) return;
+    
+    MenuAction action = menu->ConsumeAction();
     switch (action)
     {
     case MenuAction::SinglePlayer:
@@ -52,12 +110,21 @@ void MenuActionHandler::HandleMenuActions()
 void MenuActionHandler::HandleSinglePlayer()
 {
     TraceLog(LOG_INFO, "MenuActionHandler::HandleSinglePlayer() - Starting singleplayer...");
-    m_menu->SetGameInProgress(true);
+    Menu* menu = GetMenu();
+    PlayerManager* playerManager = GetPlayerManager();
+    Game* game = GetGame();
+    
+    if (!menu || !playerManager || !game) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleSinglePlayer() - Required services not available");
+        return;
+    }
+    
+    menu->SetGameInProgress(true);
 
     // Initialize player after map is loaded
     try
     {
-        m_playerManager->InitPlayer();
+        playerManager->InitPlayer();
         TraceLog(LOG_INFO, "MenuActionHandler::HandleSinglePlayer() - Player initialized successfully");
     }
     catch (const std::exception &e)
@@ -67,54 +134,78 @@ void MenuActionHandler::HandleSinglePlayer()
         TraceLog(LOG_WARNING, "MenuActionHandler::HandleSinglePlayer() - Player may not render correctly");
     }
 
-    m_game->ToggleMenu();
+    game->ToggleMenu();
     *m_isGameInitialized = true; // Mark game as initialized
 }
 
 void MenuActionHandler::HideMenuAndStartGame()
 {
     *m_showMenu = false;
-    if (m_game)
+    Game* game = GetGame();
+    Menu* menu = GetMenu();
+    
+    if (game)
     {
-        m_game->HideCursor();
+        game->HideCursor();
     }
-    m_menu->ResetAction();
+    if (menu)
+    {
+        menu->ResetAction();
+    }
 }
 
 void MenuActionHandler::EnsurePlayerSafePosition()
 {
-    if (m_player->GetPlayerPosition().x == 0.0f &&
-        m_player->GetPlayerPosition().y == 0.0f && m_player->GetPlayerPosition().z == 0.0f)
+    Player* player = GetPlayer();
+    CollisionManager* collisionManager = GetCollisionManager();
+    
+    if (!player || !collisionManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::EnsurePlayerSafePosition() - Required services not available");
+        return;
+    }
+    
+    if (player->GetPlayerPosition().x == 0.0f &&
+        player->GetPlayerPosition().y == 0.0f && player->GetPlayerPosition().z == 0.0f)
     {
         TraceLog(LOG_INFO, "MenuActionHandler::EnsurePlayerSafePosition() - Player position is origin, "
                            "resetting to safe position");
-        m_player->SetPlayerPosition({0.0f, 2.0f, 0.0f}); // PLAYER_SAFE_SPAWN_HEIGHT = 2.0f
+        player->SetPlayerPosition({0.0f, 2.0f, 0.0f}); // PLAYER_SAFE_SPAWN_HEIGHT = 2.0f
     }
 
     // Re-setup player collision and movement
-    m_player->GetMovement()->SetCollisionManager(m_collisionManager);
-    m_player->UpdatePlayerBox();
-    m_player->UpdatePlayerCollision();
+    player->GetMovement()->SetCollisionManager(collisionManager);
+    player->UpdatePlayerBox();
+    player->UpdatePlayerCollision();
 }
 
 void MenuActionHandler::ReinitializeCollisionSystemForResume()
 {
+    ResourceManager* resourceManager = GetResourceManager();
+    MapManager* mapManager = GetMapManager();
+    CollisionManager* collisionManager = GetCollisionManager();
+    ModelLoader* models = GetModels();
+    
+    if (!resourceManager || !mapManager || !collisionManager || !models) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::ReinitializeCollisionSystemForResume() - Required services not available");
+        return;
+    }
+    
     TraceLog(LOG_WARNING, "MenuActionHandler::ReinitializeCollisionSystemForResume() - No colliders found, reinitializing...");
-    std::vector<std::string> requiredModels = m_resourceManager->GetModelsRequiredForMap(m_mapManager->GetCurrentMapPath());
+    std::vector<std::string> requiredModels = resourceManager->GetModelsRequiredForMap(mapManager->GetCurrentMapPath());
 
     // Reinitialize collision system safely
     try
     {
         // Clear existing colliders
-        m_collisionManager->ClearColliders();
+        collisionManager->ClearColliders();
 
         // Initialize collision manager
-        m_collisionManager->Initialize();
+        collisionManager->Initialize();
 
         // Try to create model collisions, but don't fail if it doesn't work
         try
         {
-            m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
+            collisionManager->CreateAutoCollisionsFromModelsSelective(*models, requiredModels);
             TraceLog(LOG_INFO, "MenuActionHandler::ReinitializeCollisionSystemForResume() - Resume model collisions "
                                "created successfully");
         }
@@ -140,7 +231,20 @@ void MenuActionHandler::ReinitializeCollisionSystemForResume()
 void MenuActionHandler::HandleResumeGame()
 {
     TraceLog(LOG_INFO, "MenuActionHandler::HandleResumeGame() - Resuming game...");
-    m_menu->SetAction(MenuAction::SinglePlayer);
+    
+    Menu* menu = GetMenu();
+    ResourceManager* resourceManager = GetResourceManager();
+    MapManager* mapManager = GetMapManager();
+    Game* game = GetGame();
+    PlayerManager* playerManager = GetPlayerManager();
+    CollisionManager* collisionManager = GetCollisionManager();
+    
+    if (!menu || !resourceManager || !mapManager || !game || !playerManager || !collisionManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleResumeGame() - Required services not available");
+        return;
+    }
+    
+    menu->SetAction(MenuAction::SinglePlayer);
 
     // Ensure game is properly initialized for resume
     if (!(*m_isGameInitialized))
@@ -148,11 +252,11 @@ void MenuActionHandler::HandleResumeGame()
         TraceLog(LOG_INFO, "MenuActionHandler::HandleResumeGame() - Initializing game for resume...");
 
         // Load models for the current map (use saved map)
-        std::vector<std::string> requiredModels = m_resourceManager->GetModelsRequiredForMap(m_mapManager->GetCurrentMapPath());
-        m_resourceManager->LoadGameModelsSelective(requiredModels);
+        std::vector<std::string> requiredModels = resourceManager->GetModelsRequiredForMap(mapManager->GetCurrentMapPath());
+        resourceManager->LoadGameModelsSelective(requiredModels);
 
         // Initialize basic collision system first
-        if (!m_game->InitCollisionsWithModelsSafe(requiredModels))
+        if (!game->InitCollisionsWithModelsSafe(requiredModels))
         {
             TraceLog(LOG_ERROR, "MenuActionHandler::HandleResumeGame() - Failed to initialize basic "
                                 "collision system for singleplayer");
@@ -166,7 +270,7 @@ void MenuActionHandler::HandleResumeGame()
         // Initialize player after map is loaded
         try
         {
-            m_playerManager->InitPlayer();
+            playerManager->InitPlayer();
             TraceLog(LOG_INFO, "MenuActionHandler::HandleResumeGame() - Player initialized for resume");
         }
         catch (const std::exception &e)
@@ -181,7 +285,7 @@ void MenuActionHandler::HandleResumeGame()
     else
     {
         // Game is already initialized, just ensure collision system is ready
-        if (m_collisionManager->GetColliders().empty())
+        if (collisionManager->GetColliders().empty())
         {
             ReinitializeCollisionSystemForResume();
         }
@@ -224,9 +328,15 @@ std::vector<std::string> MenuActionHandler::AnalyzeMapForRequiredModels(const st
     TraceLog(LOG_INFO, "MenuActionHandler::AnalyzeMapForRequiredModels() - Analyzing map to determine required models...");
     std::vector<std::string> requiredModels;
 
+    ResourceManager* resourceManager = GetResourceManager();
+    if (!resourceManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::AnalyzeMapForRequiredModels() - ResourceManager not available");
+        throw std::runtime_error("ResourceManager not available");
+    }
+
     try
     {
-        requiredModels = m_resourceManager->GetModelsRequiredForMap(mapPath);
+        requiredModels = resourceManager->GetModelsRequiredForMap(mapPath);
         if (requiredModels.empty())
         {
             TraceLog(LOG_WARNING, "MenuActionHandler::AnalyzeMapForRequiredModels() - No models required for map, but player model is always needed");
@@ -253,7 +363,14 @@ std::vector<std::string> MenuActionHandler::AnalyzeMapForRequiredModels(const st
 bool MenuActionHandler::LoadRequiredModels(const std::vector<std::string>& requiredModels)
 {
     TraceLog(LOG_INFO, "MenuActionHandler::LoadRequiredModels() - Loading required models selectively...");
-    auto loadResult = m_resourceManager->LoadGameModelsSelective(requiredModels);
+    
+    ResourceManager* resourceManager = GetResourceManager();
+    if (!resourceManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::LoadRequiredModels() - ResourceManager not available");
+        return false;
+    }
+    
+    auto loadResult = resourceManager->LoadGameModelsSelective(requiredModels);
     if (!loadResult || loadResult->loadedModels == 0)
     {
         TraceLog(LOG_ERROR, "MenuActionHandler::LoadRequiredModels() - Failed to load any required models");
@@ -268,7 +385,14 @@ bool MenuActionHandler::LoadRequiredModels(const std::vector<std::string>& requi
 bool MenuActionHandler::InitializeCollisionSystemWithModels(const std::vector<std::string>& requiredModels)
 {
     TraceLog(LOG_INFO, "MenuActionHandler::InitializeCollisionSystemWithModels() - Initializing collision system with required models...");
-    if (!m_game->InitCollisionsWithModelsSafe(requiredModels))
+    
+    Game* game = GetGame();
+    if (!game) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::InitializeCollisionSystemWithModels() - Game not available");
+        return false;
+    }
+    
+    if (!game->InitCollisionsWithModelsSafe(requiredModels))
     {
         TraceLog(LOG_ERROR, "MenuActionHandler::InitializeCollisionSystemWithModels() - Failed to initialize collision system with required models");
         TraceLog(LOG_ERROR, "MenuActionHandler::InitializeCollisionSystemWithModels() - Cannot continue without collision system");
@@ -280,12 +404,20 @@ bool MenuActionHandler::InitializeCollisionSystemWithModels(const std::vector<st
 
 void MenuActionHandler::RegisterPreloadedModels()
 {
-    if (!m_mapManager->GetGameMap().loadedModels.empty())
+    MapManager* mapManager = GetMapManager();
+    ModelLoader* models = GetModels();
+    
+    if (!mapManager || !models) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::RegisterPreloadedModels() - Required services not available");
+        return;
+    }
+    
+    if (!mapManager->GetGameMap().loadedModels.empty())
     {
         TraceLog(LOG_INFO,
                  "MenuActionHandler::RegisterPreloadedModels() - Registering %d preloaded models from map into ModelLoader",
-                 m_mapManager->GetGameMap().loadedModels.size());
-        for (const auto &p : m_mapManager->GetGameMap().loadedModels)
+                 mapManager->GetGameMap().loadedModels.size());
+        for (const auto &p : mapManager->GetGameMap().loadedModels)
         {
             const std::string &modelName = p.first;
             const ::Model &loaded = p.second;
@@ -293,7 +425,7 @@ void MenuActionHandler::RegisterPreloadedModels()
             // Validate model before registration
             if (loaded.meshCount > 0)
             {
-                if (m_models->RegisterLoadedModel(modelName, loaded))
+                if (models->RegisterLoadedModel(modelName, loaded))
                 {
                     TraceLog(LOG_INFO,
                              "MenuActionHandler::RegisterPreloadedModels() - Successfully registered model from map: %s (meshCount: %d)",
@@ -322,7 +454,13 @@ void MenuActionHandler::RegisterPreloadedModels()
 
 bool MenuActionHandler::AutoLoadModelIfNeeded(const std::string& requested, std::string& candidateName)
 {
-    auto available = m_models->GetAvailableModels();
+    ModelLoader* models = GetModels();
+    if (!models) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::AutoLoadModelIfNeeded() - ModelLoader not available");
+        return false;
+    }
+    
+    auto available = models->GetAvailableModels();
     bool exists = (std::find(available.begin(), available.end(), requested) != available.end());
     candidateName = requested;
 
@@ -346,7 +484,7 @@ bool MenuActionHandler::AutoLoadModelIfNeeded(const std::string& requested, std:
                 TraceLog(LOG_INFO,
                          "MenuActionHandler::AutoLoadModelIfNeeded() - Attempting to auto-load model '%s' from %s",
                          requested.c_str(), resourcePath.c_str());
-                if (m_models->LoadSingleModel(stem.empty() ? requested : stem, resourcePath, true))
+                if (models->LoadSingleModel(stem.empty() ? requested : stem, resourcePath, true))
                 {
                     candidateName = stem.empty() ? requested : stem;
                     exists = true;
@@ -362,10 +500,18 @@ bool MenuActionHandler::AutoLoadModelIfNeeded(const std::string& requested, std:
 
 void MenuActionHandler::CreateModelInstancesForMap()
 {
+    MapManager* mapManager = GetMapManager();
+    ModelLoader* models = GetModels();
+    
+    if (!mapManager || !models) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::CreateModelInstancesForMap() - Required services not available");
+        return;
+    }
+    
     TraceLog(LOG_INFO,
              "MenuActionHandler::CreateModelInstancesForMap() - Creating model instances for array-format map (%d objects)",
-             m_mapManager->GetGameMap().objects.size());
-    for (const auto &object : m_mapManager->GetGameMap().objects)
+             mapManager->GetGameMap().objects.size());
+    for (const auto &object : mapManager->GetGameMap().objects)
     {
         if (object.type == MapObjectType::MODEL && !object.modelName.empty())
         {
@@ -388,7 +534,7 @@ void MenuActionHandler::CreateModelInstancesForMap()
             cfg.color = object.color;
             cfg.spawn = true;
 
-            if (!m_models->AddInstanceEx(candidateName, cfg))
+            if (!models->AddInstanceEx(candidateName, cfg))
             {
                 TraceLog(LOG_WARNING, "MenuActionHandler::CreateModelInstancesForMap() - Failed to add instance for '%s'", candidateName.c_str());
             }
@@ -421,7 +567,13 @@ void MenuActionHandler::LoadMapObjects(const std::string& mapPath)
             if (firstLine.find("[") == 0)
             {
                 TraceLog(LOG_INFO, "MenuActionHandler::LoadMapObjects() - Detected array format, using LoadGameMap");
-                m_mapManager->GetGameMap() = LoadGameMap(mapPath.c_str());
+                MapManager* mapManager = GetMapManager();
+                if (!mapManager) {
+                    TraceLog(LOG_ERROR, "MenuActionHandler::LoadMapObjects() - MapManager not available");
+                    throw std::runtime_error("MapManager not available");
+                }
+                
+                mapManager->GetGameMap() = LoadGameMap(mapPath.c_str());
 
                 // Register any models that MapLoader preloaded into the GameMap
                 RegisterPreloadedModels();
@@ -432,7 +584,12 @@ void MenuActionHandler::LoadMapObjects(const std::string& mapPath)
             else
             {
                 TraceLog(LOG_INFO, "MenuActionHandler::LoadMapObjects() - Detected editor format, using LoadEditorMap");
-                m_game->LoadEditorMap(mapPath);
+                Game* game = GetGame();
+                if (!game) {
+                    TraceLog(LOG_ERROR, "MenuActionHandler::LoadMapObjects() - Game not available");
+                    throw std::runtime_error("Game not available");
+                }
+                game->LoadEditorMap(mapPath);
             }
         }
         else
@@ -441,7 +598,10 @@ void MenuActionHandler::LoadMapObjects(const std::string& mapPath)
             throw std::runtime_error("Cannot open map file");
         }
 
-        TraceLog(LOG_INFO, "MenuActionHandler::LoadMapObjects() - Map loaded successfully with %d objects", m_mapManager->GetGameMap().objects.size());
+        MapManager* mapManager = GetMapManager();
+        if (mapManager) {
+            TraceLog(LOG_INFO, "MenuActionHandler::LoadMapObjects() - Map loaded successfully with %d objects", mapManager->GetGameMap().objects.size());
+        }
     }
     catch (const std::exception &e)
     {
@@ -454,8 +614,15 @@ void MenuActionHandler::LoadMapObjects(const std::string& mapPath)
 void MenuActionHandler::HandleStartGameWithMap()
 {
     TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Starting game with selected map...");
-    m_menu->SetGameInProgress(true);
-    std::string selectedMapName = m_menu->GetSelectedMapName();
+    
+    Menu* menu = GetMenu();
+    if (!menu) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - Menu not available");
+        return;
+    }
+    
+    menu->SetGameInProgress(true);
+    std::string selectedMapName = menu->GetSelectedMapName();
     TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Selected map: %s", selectedMapName.c_str());
 
     // Convert map name to full path
@@ -499,9 +666,16 @@ void MenuActionHandler::HandleStartGameWithMap()
 
     // Step 5: Initialize player after map is loaded
     TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Initializing player...");
+    
+    PlayerManager* playerManager = GetPlayerManager();
+    if (!playerManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - PlayerManager not available");
+        return;
+    }
+    
     try
     {
-        m_playerManager->InitPlayer();
+        playerManager->InitPlayer();
         TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Player initialized successfully");
     }
     catch (const std::exception &e)
@@ -521,13 +695,20 @@ void MenuActionHandler::HandleStartGameWithMap()
 void MenuActionHandler::HandleExitGame()
 {
     TraceLog(LOG_INFO, "MenuActionHandler::HandleExitGame() - Exit game requested from menu.");
-    // Clear game state when exiting
-    m_menu->SetGameInProgress(false);
-    *m_showMenu = true; // Show menu one last time before exit
-    if (m_engine)
-    {
-        m_engine->RequestExit();
+    
+    Menu* menu = GetMenu();
+    Game* game = GetGame();
+    
+    if (menu) {
+        // Clear game state when exiting
+        menu->SetGameInProgress(false);
+        menu->ResetAction();
     }
-    m_menu->ResetAction();
+    
+    *m_showMenu = true; // Show menu one last time before exit
+    
+    if (game) {
+        game->RequestExit();
+    }
 }
 

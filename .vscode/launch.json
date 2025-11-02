@@ -36,6 +36,30 @@
       ]
     },
     {
+      "name": "Debug MapEditor with LLDB",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/src/MapEditor/ChainedDecosMapEditor.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/build",
+      "stopOnEntry": true,
+      "sourceMap": {
+        "${workspaceFolder}": "${workspaceFolder}"
+      },
+      "setupCommands": [
+        {
+          "description": "Load debug symbols",
+          "text": "target symbols add \"${workspaceFolder}/build/bin/ChainedDecos_debug.exe\"",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set source path",
+          "text": "settings set target.source-map . \"${workspaceFolder}\"",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
       "name": "Debug with GDB",
       "type": "cppdbg",
       "request": "launch",

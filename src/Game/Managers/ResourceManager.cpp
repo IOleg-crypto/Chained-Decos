@@ -368,7 +368,9 @@ std::vector<std::string> ResourceManager::GetModelsRequiredForMap(const std::str
 
     // Convert map name to full path if needed
     std::string mapPath = mapIdentifier;
-    if (mapPath.substr(mapPath.find_last_of('.') + 1) != "json")
+    size_t dotPos = mapPath.find_last_of('.');
+    if (dotPos == std::string::npos || dotPos + 1 >= mapPath.length() || 
+        mapPath.substr(dotPos + 1) != "json")
     {
         // If it's not a path ending in .json, assume it's a map name and construct the path
         mapPath = PROJECT_ROOT_DIR "/resources/maps/" + mapIdentifier;
@@ -379,7 +381,12 @@ std::vector<std::string> ResourceManager::GetModelsRequiredForMap(const std::str
     }
 
     // Check if this is a JSON file exported from map editor
-    std::string extension = mapPath.substr(mapPath.find_last_of(".") + 1);
+    dotPos = mapPath.find_last_of(".");
+    std::string extension;
+    if (dotPos != std::string::npos && dotPos + 1 < mapPath.length())
+    {
+        extension = mapPath.substr(dotPos + 1);
+    }
     if (extension == "json")
     {
         TraceLog(LOG_INFO,
