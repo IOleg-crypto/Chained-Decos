@@ -84,6 +84,9 @@ void Application::Init() const
     // After window and context are ready, preload models for the editor UI
     m_editor->PreloadModelsFromResources();
     
+    // Load spawn texture after window is initialized
+    m_editor->LoadSpawnTexture();
+    
     Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.jpg");
     ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     SetWindowIcon(m_icon);
