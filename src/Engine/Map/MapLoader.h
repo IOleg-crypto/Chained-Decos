@@ -135,7 +135,7 @@ MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& positio
 
 // Map rendering functions
 void RenderGameMap(const GameMap& map, Camera3D camera);
-void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::string, Model>& loadedModels, Camera3D camera);
+void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::string, Model>& loadedModels, Camera3D camera, bool useEditorColors = false);
 
 #endif // MAPLOADER_H
 

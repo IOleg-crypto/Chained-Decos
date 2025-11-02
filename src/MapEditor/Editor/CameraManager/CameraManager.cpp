@@ -13,19 +13,18 @@ void CameraManager::Update()
 {
     if (m_cameraController)
     {
-        // If ImGui is capturing mouse (e.g., hovering tools window), skip camera update
+        // If ImGui is capturing mouse (e.g., hovering tools window), skip camera rotation
+        // But allow camera movement keys to work even if keyboard is captured
         const ImGuiIO &io = ImGui::GetIO();
-        if (io.WantCaptureMouse || io.WantCaptureKeyboard)
-        {
-            return;
-        }
+        bool skipRotation = (io.WantCaptureMouse || (io.WantCaptureKeyboard && io.NavActive));
 
         Camera& camera = m_cameraController->GetCamera();
         bool leftMousePressed = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
         bool arrowKeysPressed = IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_UP) || IsKeyDown(KEY_DOWN);
         
         // Handle rotation: only when left mouse button is pressed or arrow keys are used
-        if (leftMousePressed)
+        // Skip rotation if ImGui is capturing input
+        if (!skipRotation && leftMousePressed)
         {
             // Update rotation angles based on mouse delta when left mouse button is pressed
             m_cameraController->UpdateCameraRotation();
@@ -75,7 +74,7 @@ void CameraManager::Update()
             // Update camera target based on new forward direction
             camera.target = Vector3Add(camera.position, Vector3Scale(forward, distance));
         }
-        else if (arrowKeysPressed)
+        else if (!skipRotation && arrowKeysPressed)
         {
             // Update rotation based on arrow keys
             float rotationSpeed = 90.0f; // degrees per second

@@ -672,7 +672,7 @@ void RenderGameMap(const GameMap& map, Camera3D camera)
     EndMode3D();
 }
 
-void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::string, Model>& loadedModels, [[maybe_unused]] Camera3D camera)
+void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::string, Model>& loadedModels, [[maybe_unused]] Camera3D camera, bool useEditorColors)
 {
     // Apply object transformations - ensure consistent order for collision/rendering match
     Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
@@ -738,14 +738,12 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                     // Apply transformations to the model
                     model.transform = transform;
 
-                    // Always render models with WHITE tint to preserve original textures.
-                    // Map editor uses object.color for selection highlighting, but in-game we
-                    // want the model's textures and materials without additional tinting.
-                    Color renderColor = WHITE;
-                    renderColor.a = 255;
+                    // Choose tint based on rendering context
+                    // Editor: use WHITE to preserve textures; Game: use object.color for tinting
+                    Color tintColor = useEditorColors ? WHITE : object.color;
 
-                    // Draw the model with the render color as tint
-                    DrawModel(model, Vector3{0, 0, 0}, 1.0f, renderColor);
+                    // Draw the model with the selected tint
+                    DrawModel(model, Vector3{0, 0, 0}, 1.0f, tintColor);
                     
                     // Optional: Draw model wires for debugging (disabled in runtime)
                     // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
@@ -759,8 +757,10 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                         Model model = it2->second;
                         model.transform = transform;
                         
-                        // Render with default WHITE tint to preserve textures
-                        DrawModel(model, Vector3{0, 0, 0}, 1.0f, WHITE);
+                        // Choose tint based on rendering context
+                        Color tintColor = useEditorColors ? WHITE : object.color;
+                        
+                        DrawModel(model, Vector3{0, 0, 0}, 1.0f, tintColor);
                         // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
                     }
                     else

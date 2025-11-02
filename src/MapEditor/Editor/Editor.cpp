@@ -126,8 +126,9 @@ void Editor::RenderObject(const MapObject& obj)
     }
     
     // Use shared RenderMapObject function for consistency with Game
+    // Pass useEditorColors=true to show textures properly in editor
     Camera3D camera = m_cameraManager->GetCamera();
-    RenderMapObject(data, loadedModels, camera);
+    RenderMapObject(data, loadedModels, camera, true);
     
     // Additional editor-specific rendering: selection wireframe
     if (obj.IsSelected() && data.type == MapObjectType::MODEL)
