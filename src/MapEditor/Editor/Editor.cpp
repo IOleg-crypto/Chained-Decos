@@ -35,6 +35,7 @@
 #include <raymath.h>
 #include <rlgl.h>
 #include <string>
+#include "Engine/Render/RenderUtils.h"
 
 namespace fs = std::filesystem;
 
@@ -391,63 +392,6 @@ void Editor::ExportMapAsJSON(const std::string &filename)
 
 
 
-// Helper function to draw textured cube (based on Raylib example, with corrected UV coordinates)
-static void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color)
-{
-    float x = position.x;
-    float y = position.y;
-    float z = position.z;
-
-    rlSetTexture(texture.id);
-    rlBegin(RL_QUADS);
-        rlColor4ub(color.r, color.g, color.b, color.a);
-        
-        // Front Face (UV coordinates corrected for proper texture orientation)
-        rlNormal3f(0.0f, 0.0f, 1.0f);
-        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
-        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
-        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
-        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
-        
-        // Back Face
-        rlNormal3f(0.0f, 0.0f, -1.0f);
-        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
-        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
-        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
-        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
-        
-        // Top Face
-        rlNormal3f(0.0f, 1.0f, 0.0f);
-        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
-        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
-        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
-        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
-        
-        // Bottom Face
-        rlNormal3f(0.0f, -1.0f, 0.0f);
-        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
-        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
-        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
-        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
-        
-        // Right Face
-        rlNormal3f(1.0f, 0.0f, 0.0f);
-        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
-        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
-        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
-        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
-        
-        // Left Face
-        rlNormal3f(-1.0f, 0.0f, 0.0f);
-        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
-        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
-        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
-        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
-        
-    rlEnd();
-    rlSetTexture(0);
-}
-
 void Editor::RenderSpawnZoneWithTexture(const Vector3& position, float size, Color color) const
 {
     if (!m_spawnTextureLoaded)
@@ -458,8 +402,8 @@ void Editor::RenderSpawnZoneWithTexture(const Vector3& position, float size, Col
         return;
     }
     
-    // Use Raylib-style helper function to draw textured cube
-    DrawCubeTexture(m_spawnTexture, position, size, size, size, color);
+    // Use shared RenderUtils function to draw textured cube
+    RenderUtils::DrawCubeTexture(m_spawnTexture, position, size, size, size, color);
     
     // Draw wireframe for better visibility
     DrawCubeWires(position, size, size, size, WHITE);
