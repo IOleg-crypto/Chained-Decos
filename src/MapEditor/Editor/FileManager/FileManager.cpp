@@ -62,6 +62,7 @@ static MapObjectData ConvertMapObjectToMapObjectData(const MapObject& obj)
         case 3: data.type = MapObjectType::PLANE; break;
         case 4: data.type = MapObjectType::LIGHT; break;
         case 5: data.type = MapObjectType::MODEL; break;
+        case 6: data.type = MapObjectType::SPAWN_ZONE; break;
         default: data.type = MapObjectType::CUBE; break;
     }
     
@@ -97,6 +98,7 @@ static MapObject ConvertMapObjectDataToMapObject(const MapObjectData& data)
         case MapObjectType::PLANE: obj.SetObjectType(3); break;
         case MapObjectType::LIGHT: obj.SetObjectType(4); break;
         case MapObjectType::MODEL: obj.SetObjectType(5); break;
+        case MapObjectType::SPAWN_ZONE: obj.SetObjectType(6); break;
     }
     
     // Shape-specific properties
@@ -116,11 +118,26 @@ bool FileManager::SaveMap(const std::string& filename, const std::vector<MapObje
     gameMap.metadata.displayName = gameMap.metadata.name;
     gameMap.metadata.version = "1.0";
     
-    // Convert MapObjects to MapObjectData
+    // Find spawn zone and set metadata.startPosition, but don't save it as a regular object
+    Vector3 spawnPosition = {0.0f, 2.0f, 0.0f}; // Default spawn position
+    bool hasSpawnZone = false;
+    
+    // Convert MapObjects to MapObjectData (skip SPAWN_ZONE objects)
     for (const auto& obj : objects)
     {
+        if (obj.GetObjectType() == 6) // SPAWN_ZONE
+        {
+            // Use spawn zone position for metadata
+            spawnPosition = obj.GetPosition();
+            hasSpawnZone = true;
+            // Don't add spawn zone as a regular object
+            continue;
+        }
         gameMap.objects.push_back(ConvertMapObjectToMapObjectData(obj));
     }
+    
+    // Set spawn position in metadata
+    gameMap.metadata.startPosition = spawnPosition;
     
     // Save using shared MapLoader
     MapLoader loader;
@@ -193,9 +210,22 @@ bool FileManager::ExportForGame(const std::string& filename, const std::vector<M
 {
     // Convert MapObjects to JsonSerializableObjects for models.json export
     std::vector<JsonSerializableObject> jsonObjects;
+    
+    // Find spawn zone and set metadata.startPosition
+    Vector3 spawnPosition = {0.0f, 2.0f, 0.0f}; // Default spawn position
+    bool hasSpawnZone = false;
 
     for (const auto& obj : objects)
     {
+        // Handle spawn zone separately
+        if (obj.GetObjectType() == 6) // SPAWN_ZONE
+        {
+            spawnPosition = obj.GetPosition();
+            hasSpawnZone = true;
+            // Don't export spawn zone as a regular object
+            continue;
+        }
+        
         JsonSerializableObject jsonObj;
 
         jsonObj.position = obj.GetPosition();
@@ -235,7 +265,7 @@ bool FileManager::ExportForGame(const std::string& filename, const std::vector<M
     metadata.displayName = "Exported Map";
     metadata.description = "Map exported from ChainedDecos Map Editor";
     metadata.author = "Map Editor";
-    metadata.startPosition = {0.0f, 2.0f, 0.0f};
+    metadata.startPosition = spawnPosition; // Use spawn zone position if found
     metadata.endPosition = {0.0f, 2.0f, 0.0f};
     metadata.skyColor = SKYBLUE;
     metadata.groundColor = DARKGREEN;
@@ -299,6 +329,18 @@ bool FileManager::ExportAsJSON(const std::string& filename, const std::vector<Ma
         jsonObjects.push_back(jsonObj);
     }
 
+    // Find spawn zone and set metadata.startPosition
+    Vector3 spawnPosition = {0.0f, 2.0f, 0.0f}; // Default spawn position
+    
+    for (const auto& obj : objects)
+    {
+        if (obj.GetObjectType() == 6) // SPAWN_ZONE
+        {
+            spawnPosition = obj.GetPosition();
+            break;
+        }
+    }
+    
     // Create metadata
     MapMetadata metadata;
     metadata.version = "1.0";
@@ -306,7 +348,7 @@ bool FileManager::ExportAsJSON(const std::string& filename, const std::vector<Ma
     metadata.displayName = "Exported Map";
     metadata.description = "Map exported from ChainedDecos Map Editor as JSON";
     metadata.author = "Map Editor";
-    metadata.startPosition = {0.0f, 2.0f, 0.0f};
+    metadata.startPosition = spawnPosition; // Use spawn zone position if found
     metadata.endPosition = {0.0f, 2.0f, 0.0f};
     metadata.skyColor = SKYBLUE;
     metadata.groundColor = DARKGREEN;

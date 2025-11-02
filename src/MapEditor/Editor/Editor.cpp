@@ -33,18 +33,31 @@
 #include <rlImGui.h>
 
 #include <raymath.h>
+#include <rlgl.h>
 #include <string>
 
 namespace fs = std::filesystem;
 
 Editor::Editor(std::shared_ptr<CameraController> cameraController,
                 std::unique_ptr<ModelLoader> modelLoader)
-    : m_gridSizes(50)
+    : m_gridSizes(50), m_spawnTextureLoaded(false)
 {
+    // Initialize spawn texture (will be loaded after window initialization)
+    m_spawnTexture = {0};
+    
     InitializeSubsystems(std::move(cameraController), std::move(modelLoader));
 }
 
-Editor::~Editor() { NFD_Quit(); };
+Editor::~Editor() 
+{ 
+    // Unload spawn texture if loaded
+    if (m_spawnTextureLoaded && m_spawnTexture.id != 0)
+    {
+        UnloadTexture(m_spawnTexture);
+        TraceLog(LOG_INFO, "Editor::~Editor() - Unloaded spawn texture");
+    }
+    NFD_Quit(); 
+};
 
 std::shared_ptr<CameraController> Editor::GetCameraController() const {
     return m_cameraManager->GetController();
@@ -109,7 +122,24 @@ void Editor::RenderObject(const MapObject& obj)
         case 3: data.type = MapObjectType::PLANE; break;
         case 4: data.type = MapObjectType::LIGHT; break;
         case 5: data.type = MapObjectType::MODEL; break;
+        case 6: data.type = MapObjectType::SPAWN_ZONE; break;
         default: data.type = MapObjectType::CUBE; break;
+    }
+    
+    // Handle spawn zone rendering separately
+    if (data.type == MapObjectType::SPAWN_ZONE)
+    {
+        // Render spawn zone with texture
+        const float spawnSize = 2.0f;
+        Color spawnColor = obj.GetColor();
+        RenderSpawnZoneWithTexture(data.position, spawnSize, spawnColor);
+        
+        // Additional editor-specific rendering: selection wireframe
+        if (obj.IsSelected())
+        {
+            DrawCubeWires(data.position, spawnSize, spawnSize, spawnSize, YELLOW);
+        }
+        return; // Don't render spawn zone as regular object
     }
     
     // Get loaded models from ModelManager for MODEL type objects
@@ -361,6 +391,80 @@ void Editor::ExportMapAsJSON(const std::string &filename)
 
 
 
+// Helper function to draw textured cube (based on Raylib example, with corrected UV coordinates)
+static void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color)
+{
+    float x = position.x;
+    float y = position.y;
+    float z = position.z;
+
+    rlSetTexture(texture.id);
+    rlBegin(RL_QUADS);
+        rlColor4ub(color.r, color.g, color.b, color.a);
+        
+        // Front Face (UV coordinates corrected for proper texture orientation)
+        rlNormal3f(0.0f, 0.0f, 1.0f);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
+        
+        // Back Face
+        rlNormal3f(0.0f, 0.0f, -1.0f);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
+        
+        // Top Face
+        rlNormal3f(0.0f, 1.0f, 0.0f);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
+        
+        // Bottom Face
+        rlNormal3f(0.0f, -1.0f, 0.0f);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
+        
+        // Right Face
+        rlNormal3f(1.0f, 0.0f, 0.0f);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
+        
+        // Left Face
+        rlNormal3f(-1.0f, 0.0f, 0.0f);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
+        
+    rlEnd();
+    rlSetTexture(0);
+}
+
+void Editor::RenderSpawnZoneWithTexture(const Vector3& position, float size, Color color) const
+{
+    if (!m_spawnTextureLoaded)
+    {
+        // Fallback to simple cube if texture not loaded
+        DrawCube(position, size, size, size, color);
+        DrawCubeWires(position, size, size, size, WHITE);
+        return;
+    }
+    
+    // Use Raylib-style helper function to draw textured cube
+    DrawCubeTexture(m_spawnTexture, position, size, size, size, color);
+    
+    // Draw wireframe for better visibility
+    DrawCubeWires(position, size, size, size, WHITE);
+}
+
 int Editor::GetGridSize() const 
 { 
     // Get grid size from UIManager if available, otherwise use default
@@ -403,6 +507,35 @@ void Editor::ShowParkourMapSelector()
     // Delegate to file manager
     if (m_fileManager) {
         m_fileManager->ShowParkourMapSelector();
+    }
+}
+
+void Editor::LoadSpawnTexture()
+{
+    if (m_spawnTextureLoaded)
+    {
+        return; // Already loaded
+    }
+    
+    // Load spawn texture (only after window is initialized)
+    std::string texturePath = std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
+    if (FileExists(texturePath.c_str()))
+    {
+        m_spawnTexture = LoadTexture(texturePath.c_str());
+        if (m_spawnTexture.id != 0)
+        {
+            m_spawnTextureLoaded = true;
+            TraceLog(LOG_INFO, "Editor::LoadSpawnTexture() - Loaded spawn texture: %dx%d", 
+                     m_spawnTexture.width, m_spawnTexture.height);
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Editor::LoadSpawnTexture() - Failed to load spawn texture from: %s", texturePath.c_str());
+        }
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "Editor::LoadSpawnTexture() - Spawn texture not found at: %s", texturePath.c_str());
     }
 }
 

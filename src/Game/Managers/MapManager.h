@@ -23,13 +23,20 @@ private:
     RenderManager* m_renderManager;
     Kernel* m_kernel;  // For collision service registration
     Menu* m_menu;      // For menu action checking (optional)
+    
+    // Player spawn zone
+    BoundingBox m_playerSpawnZone;
+    Texture2D m_spawnTexture;
+    bool m_hasSpawnZone;
+    bool m_spawnTextureLoaded;
 
 public:
     MapManager(Player* player, CollisionManager* collisionManager, ModelLoader* models, RenderManager* renderManager, Kernel* kernel, Menu* menu = nullptr);
-    ~MapManager() = default;
+    ~MapManager();
 
     void LoadEditorMap(const std::string &mapPath);
     void RenderEditorMap();
+    void RenderSpawnZone() const;
     void DumpMapDiagnostics() const;
     
     void InitCollisions();
@@ -38,6 +45,10 @@ public:
     
     GameMap &GetGameMap() { return m_gameMap; }
     const std::string& GetCurrentMapPath() const { return m_currentMapPath; }
+    
+    // Get player spawn position from spawn zone (returns center of spawn zone)
+    Vector3 GetPlayerSpawnPosition() const;
+    bool HasSpawnZone() const { return m_hasSpawnZone; }
 };
 
 #endif // MAP_MANAGER_H

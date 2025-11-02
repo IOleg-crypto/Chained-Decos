@@ -158,12 +158,37 @@ void PlayerManager::InitPlayer()
         
         if (!foundPlayerSpawn)
         {
-            TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No player spawn object found in map, using default position");
+            // If no spawn object found, try to use spawn zone from map metadata
+            if (m_mapManager->HasSpawnZone())
+            {
+                Vector3 spawnPos = m_mapManager->GetPlayerSpawnPosition();
+                m_player->SetPlayerPosition(spawnPos);
+                TraceLog(LOG_INFO,
+                         "PlayerManager::InitPlayer() - Using spawn zone position: (%.2f, %.2f, %.2f)",
+                         spawnPos.x, spawnPos.y, spawnPos.z);
+                foundPlayerSpawn = true;
+            }
+            else
+            {
+                TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No player spawn object or zone found in map, using default position");
+            }
         }
     }
     else
     {
-        TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No map objects found, using default position");
+        // No map objects, but check for spawn zone
+        if (m_mapManager->HasSpawnZone())
+        {
+            Vector3 spawnPos = m_mapManager->GetPlayerSpawnPosition();
+            m_player->SetPlayerPosition(spawnPos);
+            TraceLog(LOG_INFO,
+                     "PlayerManager::InitPlayer() - Using spawn zone position: (%.2f, %.2f, %.2f)",
+                     spawnPos.x, spawnPos.y, spawnPos.z);
+        }
+        else
+        {
+            TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No map objects or spawn zone found, using default position");
+        }
     }
     
     // Final position verification

@@ -15,7 +15,8 @@ enum class MapObjectType
     CYLINDER = 2,
     PLANE = 3,
     LIGHT = 4,
-    MODEL = 5
+    MODEL = 5,
+    SPAWN_ZONE = 6
 };
 
 // Enhanced map object structure for editor-created maps

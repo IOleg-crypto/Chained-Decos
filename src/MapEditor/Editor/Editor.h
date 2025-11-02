@@ -41,6 +41,10 @@ private:
 
     // Legacy compatibility - minimal state kept for backward compatibility
     int m_gridSizes;
+    
+    // Spawn zone texture
+    Texture2D m_spawnTexture;
+    bool m_spawnTextureLoaded;
 
 public:
     Editor(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader);
@@ -56,6 +60,7 @@ public:
 
     // Assets
     void PreloadModelsFromResources();
+    void LoadSpawnTexture(); // Load spawn zone texture (must be called after window init)
 
     // Object management functions (delegate to SceneManager)
     void AddObject(const MapObject &obj); // Add new object to scene
@@ -87,6 +92,7 @@ private:
     void InitializeSubsystems(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader);
     void RenderObject(const MapObject& obj); // Render a single object
     void RenderGizmo(const MapObject& obj, const MapObjectData& data); // Render transform gizmo
+    void RenderSpawnZoneWithTexture(const Vector3& position, float size, Color color) const; // Render textured spawn zone
 };
 
 #endif // EDITOR_H

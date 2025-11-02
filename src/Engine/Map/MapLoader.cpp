@@ -642,6 +642,9 @@ MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& positio
         case MapObjectType::MODEL:
             // For models, scale is used directly in rendering, no additional properties needed
             break;
+        case MapObjectType::SPAWN_ZONE:
+            // Spawn zone uses default scale, no additional properties needed
+            break;
         default:
             break;
     }
@@ -715,6 +718,11 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
             DrawPlane(object.position, Vector2{object.size.x, object.size.y}, object.color);
             break;
 
+        case MapObjectType::SPAWN_ZONE:
+            // Spawn zone is rendered separately in game (via MapManager::RenderSpawnZone)
+            // Don't render it here as a regular object
+            break;
+
         case MapObjectType::MODEL:
             // Find the corresponding loaded model for this object
             if (!object.modelName.empty())
@@ -735,15 +743,34 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                 {
                     Model model = it->second;
 
-                    // Apply transformations to the model
+                    // Apply full transform to model (already contains scale, rotation, translation)
                     model.transform = transform;
 
                     // Choose tint based on rendering context
                     // Editor: use WHITE to preserve textures; Game: use object.color for tinting
                     Color tintColor = useEditorColors ? WHITE : object.color;
 
-                    // Draw the model with the selected tint
-                    DrawModel(model, Vector3{0, 0, 0}, 1.0f, tintColor);
+                    // Draw model meshes directly with the full transform matrix
+                    // This ensures rotation is properly applied (unlike DrawModel which ignores rotation)
+                    for (int i = 0; i < model.meshCount; i++)
+                    {
+                        // Get material color and apply tint
+                        Color color = model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color;
+                        Color colorTint = WHITE;
+                        colorTint.r = (unsigned char)(((int)color.r * (int)tintColor.r) / 255);
+                        colorTint.g = (unsigned char)(((int)color.g * (int)tintColor.g) / 255);
+                        colorTint.b = (unsigned char)(((int)color.b * (int)tintColor.b) / 255);
+                        colorTint.a = (unsigned char)(((int)color.a * (int)tintColor.a) / 255);
+                        
+                        // Apply tint temporarily
+                        model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = colorTint;
+                        
+                        // Draw mesh with full transform
+                        DrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], transform);
+                        
+                        // Restore original color
+                        model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = color;
+                    }
                     
                     // Optional: Draw model wires for debugging (disabled in runtime)
                     // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
@@ -760,7 +787,26 @@ void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::
                         // Choose tint based on rendering context
                         Color tintColor = useEditorColors ? WHITE : object.color;
                         
-                        DrawModel(model, Vector3{0, 0, 0}, 1.0f, tintColor);
+                        // Draw model meshes directly with the full transform matrix
+                        for (int i = 0; i < model.meshCount; i++)
+                        {
+                            // Get material color and apply tint
+                            Color color = model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color;
+                            Color colorTint = WHITE;
+                            colorTint.r = (unsigned char)(((int)color.r * (int)tintColor.r) / 255);
+                            colorTint.g = (unsigned char)(((int)color.g * (int)tintColor.g) / 255);
+                            colorTint.b = (unsigned char)(((int)color.b * (int)tintColor.b) / 255);
+                            colorTint.a = (unsigned char)(((int)color.a * (int)tintColor.a) / 255);
+                            
+                            // Apply tint temporarily
+                            model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = colorTint;
+                            
+                            // Draw mesh with full transform
+                            DrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], transform);
+                            
+                            // Restore original color
+                            model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = color;
+                        }
                         // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
                     }
                     else
@@ -848,7 +894,11 @@ std::vector<ModelInfo> MapLoader::LoadModelsFromDirectory(const std::string& dir
             }
 
             ModelInfo modelInfo;
-            modelInfo.name = filename.substr(0, filename.find_last_of('.'));
+            size_t dotPos = filename.find_last_of('.');
+            if (dotPos != std::string::npos)
+                modelInfo.name = filename.substr(0, dotPos);
+            else
+                modelInfo.name = filename;
             modelInfo.path = modelPath;
             modelInfo.extension = extension;
 
@@ -985,7 +1035,12 @@ std::vector<std::string> MapLoader::GetMapNamesFromDirectory(const std::string& 
                 continue;
 
             // Remove extension to get name
-            std::string name = filename.substr(0, filename.find_last_of('.'));
+            size_t dotPos = filename.find_last_of('.');
+            std::string name;
+            if (dotPos != std::string::npos)
+                name = filename.substr(0, dotPos);
+            else
+                name = filename;
             names.push_back(name);
         }
     }

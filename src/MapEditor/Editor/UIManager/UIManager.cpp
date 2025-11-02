@@ -134,7 +134,7 @@ void UIManager::RenderImGuiToolbar()
         ImGui::Separator();
 
         const char *toolNames[] = {"Select",   "Move",       "Rotate",       "Scale",
-                                    "Add Cube", "Add Sphere", "Add Cylinder", "Add Model"};
+                                    "Add Cube", "Add Sphere", "Add Cylinder", "Add Model", "Add Spawn Zone"};
 
         for (int i = 0; i < std::size(toolNames); i++)
         {
@@ -152,7 +152,8 @@ void UIManager::RenderImGuiToolbar()
                 SetActiveTool(static_cast<Tool>(i));
 
                 if (GetActiveTool() == ADD_CUBE || GetActiveTool() == ADD_SPHERE ||
-                    GetActiveTool() == ADD_CYLINDER || GetActiveTool() == ADD_MODEL)
+                    GetActiveTool() == ADD_CYLINDER || GetActiveTool() == ADD_MODEL ||
+                    GetActiveTool() == ADD_SPAWN_ZONE)
                 {
                     m_pendingObjectCreation = true;
                 }
@@ -723,6 +724,11 @@ void UIManager::ProcessPendingObjectCreation()
             newObj.SetObjectType(5); // Model
             newObj.SetModelAssetName(m_currentlySelectedModelName);
             newObj.SetObjectName(m_currentlySelectedModelName + " " + std::to_string(m_sceneManager->GetObjects().size()));
+            break;
+        case ADD_SPAWN_ZONE:
+            newObj.SetObjectType(6); // Spawn Zone
+            newObj.SetObjectName("Spawn Zone");
+            newObj.SetColor({255, 100, 100, 200}); // Semi-transparent red
             break;
         default:
             break;

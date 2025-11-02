@@ -14,7 +14,8 @@ enum Tool
     ADD_CUBE = 4,     // Add cube primitive
     ADD_SPHERE = 5,   // Add sphere primitive
     ADD_CYLINDER = 6, // Add cylinder primitive
-    ADD_MODEL = 7     // Add 3D model
+    ADD_MODEL = 7,    // Add 3D model
+    ADD_SPAWN_ZONE = 8 // Add player spawn zone
 };
 
 class IToolManager {

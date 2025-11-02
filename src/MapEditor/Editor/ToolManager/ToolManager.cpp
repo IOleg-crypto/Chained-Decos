@@ -20,7 +20,7 @@ void ToolManager::SetActiveTool(Tool tool)
     m_activeTool = tool;
 
     // Set pending creation for object creation tools
-    if (tool == ADD_CUBE || tool == ADD_SPHERE || tool == ADD_CYLINDER || tool == ADD_MODEL)
+    if (tool == ADD_CUBE || tool == ADD_SPHERE || tool == ADD_CYLINDER || tool == ADD_MODEL || tool == ADD_SPAWN_ZONE)
     {
         m_pendingObjectCreation = true;
     }
@@ -323,6 +323,11 @@ void ToolManager::CreateObjectForTool(Tool tool, ISceneManager& scene)
         newObj.SetObjectType(5); // Model
         newObj.SetModelAssetName(m_currentlySelectedModelName);
         newObj.SetObjectName(m_currentlySelectedModelName + " " + std::to_string(SCENE_CAST(scene).GetObjects().size()));
+        break;
+    case ADD_SPAWN_ZONE:
+        newObj.SetObjectType(6); // Spawn Zone
+        newObj.SetObjectName("Spawn Zone");
+        newObj.SetColor({255, 100, 100, 200}); // Semi-transparent red
         break;
     default:
         std::cout << "Warning: Attempted to create object with invalid tool" << std::endl;
