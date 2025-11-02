@@ -4,6 +4,13 @@
 #include "IToolManager.h"
 #include <string>
 
+enum class GizmoAxis {
+    NONE,
+    X,
+    Y,
+    Z
+};
+
 class ToolManager : public IToolManager {
 private:
     Tool m_activeTool;
@@ -12,6 +19,7 @@ private:
     
     // State for transform operations (Move, Rotate, Scale)
     bool m_isTransforming;
+    GizmoAxis m_selectedAxis;      // Which gizmo axis is selected
     Vector3 m_transformStartPoint;  // Starting point for transformation
     Vector3 m_lastMouseRayPoint;    // Last mouse ray intersection point
     Vector3 m_transformStartPosition; // Object position when transform started
@@ -37,6 +45,8 @@ private:
     void CreateObjectForTool(Tool tool, ISceneManager& scene);
     Vector3 GetRayPlaneIntersection(const Ray& ray, const Vector3& planePoint, const Vector3& planeNormal);
     Vector3 GetRayGroundIntersection(const Ray& ray);
+    GizmoAxis PickGizmoAxis(const Ray& ray, const Vector3& objPos, const Vector3& gizmoScale);
+    Vector3 GetClosestPointOnRay(const Vector3& point, const Vector3& rayStart, const Vector3& rayDir);
 };
 
 #endif // TOOLMANAGER_H

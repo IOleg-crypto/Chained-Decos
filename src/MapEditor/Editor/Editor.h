@@ -86,6 +86,7 @@ private:
     // Helper methods for subsystem coordination
     void InitializeSubsystems(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader);
     void RenderObject(const MapObject& obj); // Render a single object
+    void RenderGizmo(const MapObject& obj, const MapObjectData& data); // Render transform gizmo
 };
 
 #endif // EDITOR_H

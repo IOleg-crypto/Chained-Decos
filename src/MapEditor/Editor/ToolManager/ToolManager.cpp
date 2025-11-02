@@ -10,7 +10,7 @@
 
 ToolManager::ToolManager()
     : m_activeTool(SELECT), m_pendingObjectCreation(false), m_currentlySelectedModelName(""),
-      m_isTransforming(false), m_transformStartPoint({0, 0, 0}), m_lastMouseRayPoint({0, 0, 0}),
+      m_isTransforming(false), m_selectedAxis(GizmoAxis::NONE), m_transformStartPoint({0, 0, 0}), m_lastMouseRayPoint({0, 0, 0}),
       m_transformStartPosition({0, 0, 0}), m_transformStartRotation({0, 0, 0}), m_transformStartScale({1, 1, 1})
 {
 }
@@ -69,21 +69,35 @@ void ToolManager::HandleToolInput(bool mousePressed, const Ray& ray, ISceneManag
         }
         else if ((m_activeTool == MOVE || m_activeTool == ROTATE || m_activeTool == SCALE) && selectedObj != nullptr)
         {
+            // For MOVE and SCALE, check if clicking on a gizmo axis
+            if (m_activeTool == MOVE || m_activeTool == SCALE)
+            {
+                // Calculate gizmo scale (simplified, should ideally come from camera)
+                Vector3 gizmoScale = {1.0f, 1.0f, 1.0f};
+                m_selectedAxis = PickGizmoAxis(ray, selectedObj->GetPosition(), gizmoScale);
+                
+                // If no axis was picked, use ground plane intersection
+                if (m_selectedAxis == GizmoAxis::NONE)
+                {
+                    m_transformStartPoint = GetRayGroundIntersection(ray);
+                }
+                else
+                {
+                    // Use object position as start point for axis-constrained transforms
+                    m_transformStartPoint = selectedObj->GetPosition();
+                }
+            }
+            else // ROTATE
+            {
+                m_selectedAxis = GizmoAxis::NONE;
+                m_transformStartPoint = selectedObj->GetPosition();
+            }
+            
             // Start transform operation
             m_isTransforming = true;
             m_transformStartPosition = selectedObj->GetPosition();
             m_transformStartRotation = selectedObj->GetRotation();
             m_transformStartScale = selectedObj->GetScale();
-            
-            // Get intersection point with ground plane (Y=0) for move/scale, or use object position for rotate
-            if (m_activeTool == MOVE || m_activeTool == SCALE)
-            {
-                m_transformStartPoint = GetRayGroundIntersection(ray);
-            }
-            else // ROTATE
-            {
-                m_transformStartPoint = selectedObj->GetPosition();
-            }
             m_lastMouseRayPoint = m_transformStartPoint;
         }
     }
@@ -112,12 +126,34 @@ void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
     {
     case MOVE:
     {
-        // Move object along ground plane
-        Vector3 newPoint = GetRayGroundIntersection(ray);
-        Vector3 delta = Vector3Subtract(newPoint, m_transformStartPoint);
-        Vector3 newPosition = Vector3Add(m_transformStartPosition, delta);
-        selectedObj->SetPosition(newPosition);
-        m_lastMouseRayPoint = newPoint;
+        if (m_selectedAxis != GizmoAxis::NONE)
+        {
+            // Move along selected axis
+            Vector3 newPoint = GetRayGroundIntersection(ray);
+            
+            // Project delta onto the selected axis
+            Vector3 delta = Vector3Subtract(newPoint, m_transformStartPoint);
+            Vector3 axisDir = {0, 0, 0};
+            switch (m_selectedAxis)
+            {
+                case GizmoAxis::X: axisDir = {1, 0, 0}; break;
+                case GizmoAxis::Y: axisDir = {0, 1, 0}; break;
+                case GizmoAxis::Z: axisDir = {0, 0, 1}; break;
+                default: break;
+            }
+            
+            float projection = Vector3DotProduct(delta, axisDir);
+            Vector3 newPosition = Vector3Add(m_transformStartPosition, Vector3Scale(axisDir, projection));
+            selectedObj->SetPosition(newPosition);
+        }
+        else
+        {
+            // Move object along ground plane (backward compatibility)
+            Vector3 newPoint = GetRayGroundIntersection(ray);
+            Vector3 delta = Vector3Subtract(newPoint, m_transformStartPoint);
+            Vector3 newPosition = Vector3Add(m_transformStartPosition, delta);
+            selectedObj->SetPosition(newPosition);
+        }
         break;
     }
     case ROTATE:
@@ -132,24 +168,63 @@ void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
     }
     case SCALE:
     {
-        // Scale object based on distance from start point
-        Vector3 newPoint = GetRayGroundIntersection(ray);
-        float startDistance = Vector3Length(Vector3Subtract(m_transformStartPoint, selectedObj->GetPosition()));
-        float newDistance = Vector3Length(Vector3Subtract(newPoint, selectedObj->GetPosition()));
-        
-        if (startDistance > 0.001f)
+        if (m_selectedAxis != GizmoAxis::NONE)
         {
-            float scaleFactor = newDistance / startDistance;
-            Vector3 currentScale = selectedObj->GetScale();
-            Vector3 newScale = Vector3Scale(m_transformStartScale, scaleFactor);
+            // Scale along selected axis
+            Vector3 newPoint = GetRayGroundIntersection(ray);
             
-            // Prevent negative scale
-            if (newScale.x > 0.01f && newScale.y > 0.01f && newScale.z > 0.01f)
+            // Calculate distance along the selected axis
+            Vector3 axisDir = {0, 0, 0};
+            switch (m_selectedAxis)
             {
-                selectedObj->SetScale(newScale);
+                case GizmoAxis::X: axisDir = {1, 0, 0}; break;
+                case GizmoAxis::Y: axisDir = {0, 1, 0}; break;
+                case GizmoAxis::Z: axisDir = {0, 0, 1}; break;
+                default: break;
+            }
+            
+            float startDistance = Vector3DotProduct(Vector3Subtract(m_transformStartPoint, selectedObj->GetPosition()), axisDir);
+            float newDistance = Vector3DotProduct(Vector3Subtract(newPoint, selectedObj->GetPosition()), axisDir);
+            
+            if (fabs(startDistance) > 0.001f)
+            {
+                float scaleFactor = newDistance / startDistance;
+                Vector3 newScale = Vector3Scale(m_transformStartScale, 1.0f);
+                
+                switch (m_selectedAxis)
+                {
+                    case GizmoAxis::X: newScale.x *= scaleFactor; break;
+                    case GizmoAxis::Y: newScale.y *= scaleFactor; break;
+                    case GizmoAxis::Z: newScale.z *= scaleFactor; break;
+                    default: break;
+                }
+                
+                // Prevent negative scale
+                if (newScale.x > 0.01f && newScale.y > 0.01f && newScale.z > 0.01f)
+                {
+                    selectedObj->SetScale(newScale);
+                }
             }
         }
-        m_lastMouseRayPoint = newPoint;
+        else
+        {
+            // Scale object based on distance from start point (backward compatibility)
+            Vector3 newPoint = GetRayGroundIntersection(ray);
+            float startDistance = Vector3Length(Vector3Subtract(m_transformStartPoint, selectedObj->GetPosition()));
+            float newDistance = Vector3Length(Vector3Subtract(newPoint, selectedObj->GetPosition()));
+            
+            if (startDistance > 0.001f)
+            {
+                float scaleFactor = newDistance / startDistance;
+                Vector3 newScale = Vector3Scale(m_transformStartScale, scaleFactor);
+                
+                // Prevent negative scale
+                if (newScale.x > 0.01f && newScale.y > 0.01f && newScale.z > 0.01f)
+                {
+                    selectedObj->SetScale(newScale);
+                }
+            }
+        }
         break;
     }
     default:
@@ -160,6 +235,7 @@ void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
 void ToolManager::EndTransform()
 {
     m_isTransforming = false;
+    m_selectedAxis = GizmoAxis::NONE;
     m_transformStartPoint = {0, 0, 0};
     m_lastMouseRayPoint = {0, 0, 0};
 }
@@ -181,6 +257,47 @@ Vector3 ToolManager::GetRayGroundIntersection(const Ray& ray)
     Vector3 groundPoint = {0, 0, 0};
     Vector3 groundNormal = {0, 1, 0}; // Y-up
     return GetRayPlaneIntersection(ray, groundPoint, groundNormal);
+}
+
+Vector3 ToolManager::GetClosestPointOnRay(const Vector3& point, const Vector3& rayStart, const Vector3& rayDir)
+{
+    Vector3 toPoint = Vector3Subtract(point, rayStart);
+    float t = Vector3DotProduct(toPoint, rayDir);
+    return Vector3Add(rayStart, Vector3Scale(rayDir, t));
+}
+
+GizmoAxis ToolManager::PickGizmoAxis(const Ray& ray, const Vector3& objPos, const Vector3& gizmoScale)
+{
+    float gizmoLength = 2.0f;
+    float arrowLength = gizmoLength * gizmoScale.x;
+    
+    // Define gizmo axes (these match what we render in Editor::RenderGizmo)
+    Vector3 axes[3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; // X, Y, Z
+    GizmoAxis axisEnums[3] = {GizmoAxis::X, GizmoAxis::Y, GizmoAxis::Z};
+    
+    float minDistance = 0.5f * arrowLength * 0.7f; // Within 70% of arrow length
+    GizmoAxis closestAxis = GizmoAxis::NONE;
+    
+    for (int i = 0; i < 3; i++)
+    {
+        Vector3 axisEnd = Vector3Add(objPos, Vector3Scale(axes[i], arrowLength));
+        Vector3 closestPointOnAxis = GetClosestPointOnRay(ray.position, objPos, axes[i]);
+        
+        // Check if closest point is within the arrow range
+        float distOnAxis = Vector3Length(Vector3Subtract(closestPointOnAxis, objPos));
+        if (distOnAxis < 0.0f || distOnAxis > arrowLength) continue;
+        
+        // Calculate distance from ray start to closest point
+        float distToAxis = Vector3Distance(ray.position, closestPointOnAxis);
+        
+        if (distToAxis < minDistance)
+        {
+            minDistance = distToAxis;
+            closestAxis = axisEnums[i];
+        }
+    }
+    
+    return closestAxis;
 }
 
 void ToolManager::CreateObjectForTool(Tool tool, ISceneManager& scene)
