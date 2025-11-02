@@ -9,6 +9,7 @@
 #include "Game/Menu/Menu.h"
 #include "Player/PlayerCollision.h"
 #include <raylib.h>
+#include <rlgl.h>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -16,9 +17,45 @@
 #include <unordered_set>
 
 MapManager::MapManager(Player* player, CollisionManager* collisionManager, ModelLoader* models, RenderManager* renderManager, Kernel* kernel, Menu* menu)
-    : m_player(player), m_collisionManager(collisionManager), m_models(models), m_renderManager(renderManager), m_kernel(kernel), m_menu(menu)
+    : m_player(player), m_collisionManager(collisionManager), m_models(models), m_renderManager(renderManager), m_kernel(kernel), m_menu(menu),
+      m_hasSpawnZone(false), m_spawnTextureLoaded(false)
 {
+    // Initialize spawn zone
+    m_playerSpawnZone = {0};
+    m_spawnTexture = {0};
+    
+    // Load spawn texture
+    std::string texturePath = std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
+    if (FileExists(texturePath.c_str()))
+    {
+        m_spawnTexture = LoadTexture(texturePath.c_str());
+        if (m_spawnTexture.id != 0)
+        {
+            m_spawnTextureLoaded = true;
+            TraceLog(LOG_INFO, "MapManager::MapManager() - Loaded spawn texture: %dx%d", 
+                     m_spawnTexture.width, m_spawnTexture.height);
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "MapManager::MapManager() - Failed to load spawn texture from: %s", texturePath.c_str());
+        }
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "MapManager::MapManager() - Spawn texture not found at: %s", texturePath.c_str());
+    }
+    
     TraceLog(LOG_INFO, "MapManager created");
+}
+
+MapManager::~MapManager()
+{
+    // Unload spawn texture if loaded
+    if (m_spawnTextureLoaded && m_spawnTexture.id != 0)
+    {
+        UnloadTexture(m_spawnTexture);
+        TraceLog(LOG_INFO, "MapManager::~MapManager() - Unloaded spawn texture");
+    }
 }
 
 void MapManager::LoadEditorMap(const std::string &mapPath)
@@ -33,13 +70,32 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
         return;
     }
 
-    // Clear previous map data
+    // Clear previous map data BEFORE loading new map
     TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Clearing previous map data...");
     TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Current collider count before map load: %zu",
              m_collisionManager->GetColliders().size());
+    
+    // Clear old model instances to prevent overlap with new map
+    m_models->ClearInstances();
+    
+    // Clear previous map objects and loaded models
+    m_gameMap.objects.clear();
+    m_gameMap.Cleanup(); // This clears loadedModels
+    
+    // Clear previous spawn zone
+    m_hasSpawnZone = false;
+    m_playerSpawnZone = {0};
+    
+    // Clear previous colliders
+    m_collisionManager->ClearColliders();
 
     // Check if this is a JSON file exported from map editor
-    std::string extension = mapPath.substr(mapPath.find_last_of(".") + 1);
+    size_t dotPos = mapPath.find_last_of(".");
+    std::string extension;
+    if (dotPos != std::string::npos && dotPos + 1 < mapPath.length())
+    {
+        extension = mapPath.substr(dotPos + 1);
+    }
     TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - File extension: %s", extension.c_str());
 
     if (extension == "json")
@@ -570,15 +626,24 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
         collisionCreationCount++;
     }
 
-    // Set player start position if specified in map metadata
+    // Create player spawn zone from startPosition if specified in map metadata
     if (m_gameMap.metadata.startPosition.x != 0.0f || m_gameMap.metadata.startPosition.y != 0.0f ||
         m_gameMap.metadata.startPosition.z != 0.0f)
     {
-        m_player->SetPlayerPosition(m_gameMap.metadata.startPosition);
+        // Create BoundingBox for spawn zone (2x2x2 units around start position)
+        const float spawnSize = 2.0f;
+        Vector3 spawnPos = m_gameMap.metadata.startPosition;
+        m_playerSpawnZone.min = {spawnPos.x - spawnSize/2, spawnPos.y - spawnSize/2, spawnPos.z - spawnSize/2};
+        m_playerSpawnZone.max = {spawnPos.x + spawnSize/2, spawnPos.y + spawnSize/2, spawnPos.z + spawnSize/2};
+        m_hasSpawnZone = true;
+        
         TraceLog(LOG_INFO,
-                 "MapManager::LoadEditorMap() - Set player start position to (%.2f, %.2f, %.2f)",
-                 m_gameMap.metadata.startPosition.x, m_gameMap.metadata.startPosition.y,
-                 m_gameMap.metadata.startPosition.z);
+                 "MapManager::LoadEditorMap() - Created player spawn zone at (%.2f, %.2f, %.2f) size: %.2f",
+                 spawnPos.x, spawnPos.y, spawnPos.z, spawnSize);
+    }
+    else
+    {
+        m_hasSpawnZone = false;
     }
 
     // Initialize collision manager after adding all colliders
@@ -942,8 +1007,106 @@ void MapManager::RenderEditorMap()
         }
     }
     
-    TraceLog(LOG_INFO, "MapManager::RenderEditorMap() - Rendered %d primitive objects out of %zu total objects",
-             renderedCount, m_gameMap.objects.size());
+    // Models are rendered through ModelLoader instances via DrawAllModels()
+    // Only primitive objects are counted here
+    
+    // Render spawn zone if it exists
+    RenderSpawnZone();
+}
+
+Vector3 MapManager::GetPlayerSpawnPosition() const
+{
+    if (!m_hasSpawnZone)
+    {
+        return {0.0f, 0.0f, 0.0f};
+    }
+    
+    return {
+        (m_playerSpawnZone.min.x + m_playerSpawnZone.max.x) * 0.5f,
+        (m_playerSpawnZone.min.y + m_playerSpawnZone.max.y) * 0.5f,
+        (m_playerSpawnZone.min.z + m_playerSpawnZone.max.z) * 0.5f
+    };
+}
+
+// Helper function to draw textured cube (based on Raylib example, with corrected UV coordinates)
+static void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color)
+{
+    float x = position.x;
+    float y = position.y;
+    float z = position.z;
+
+    rlSetTexture(texture.id);
+    rlBegin(RL_QUADS);
+        rlColor4ub(color.r, color.g, color.b, color.a);
+        
+        // Front Face (UV coordinates corrected for proper texture orientation)
+        rlNormal3f(0.0f, 0.0f, 1.0f);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
+        
+        // Back Face
+        rlNormal3f(0.0f, 0.0f, -1.0f);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
+        
+        // Top Face
+        rlNormal3f(0.0f, 1.0f, 0.0f);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
+        
+        // Bottom Face
+        rlNormal3f(0.0f, -1.0f, 0.0f);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
+        
+        // Right Face
+        rlNormal3f(1.0f, 0.0f, 0.0f);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z - length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z - length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x + width/2, y + height/2, z + length/2);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x + width/2, y - height/2, z + length/2);
+        
+        // Left Face
+        rlNormal3f(-1.0f, 0.0f, 0.0f);
+        rlTexCoord2f(0.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z - length/2);
+        rlTexCoord2f(1.0f, 1.0f); rlVertex3f(x - width/2, y - height/2, z + length/2);
+        rlTexCoord2f(1.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z + length/2);
+        rlTexCoord2f(0.0f, 0.0f); rlVertex3f(x - width/2, y + height/2, z - length/2);
+        
+    rlEnd();
+    rlSetTexture(0);
+}
+
+void MapManager::RenderSpawnZone() const
+{
+    if (!m_hasSpawnZone || !m_spawnTextureLoaded)
+    {
+        return;
+    }
+    
+    // Calculate size and center of spawn zone
+    Vector3 size = {
+        m_playerSpawnZone.max.x - m_playerSpawnZone.min.x,
+        m_playerSpawnZone.max.y - m_playerSpawnZone.min.y,
+        m_playerSpawnZone.max.z - m_playerSpawnZone.min.z
+    };
+    
+    Vector3 center = {
+        (m_playerSpawnZone.min.x + m_playerSpawnZone.max.x) * 0.5f,
+        (m_playerSpawnZone.min.y + m_playerSpawnZone.max.y) * 0.5f,
+        (m_playerSpawnZone.min.z + m_playerSpawnZone.max.z) * 0.5f
+    };
+    
+    // Use Raylib-style helper function to draw textured cube
+    DrawCubeTexture(m_spawnTexture, center, size.x, size.y, size.z, WHITE);
 }
 
 void MapManager::DumpMapDiagnostics() const
