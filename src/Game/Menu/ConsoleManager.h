@@ -3,12 +3,32 @@
 
 #include <string>
 #include <vector>
+#include <functional>
+#include <unordered_map>
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include "MenuConstants.h"
 
 // Forward declaration to break circular dependency
 class Game;
+
+// Command callback function type
+using CommandCallback = std::function<void(const std::vector<std::string>&, class ConsoleManager*)>;
+
+// Command information structure
+struct CommandInfo {
+    std::string name;
+    std::string fullName;  // Full name with prefix (e.g., "player.pos")
+    std::string category;   // Category/prefix (e.g., "player", "engine")
+    std::string description;
+    std::string usage;
+    CommandCallback callback;
+    
+    CommandInfo() = default;
+    CommandInfo(const std::string& n, const std::string& full, const std::string& cat,
+                const std::string& desc, const std::string& use, CommandCallback cb)
+        : name(n), fullName(full), category(cat), description(desc), usage(use), callback(std::move(cb)) {}
+};
 
 class ConsoleManager {
 private:
@@ -17,7 +37,8 @@ private:
     std::vector<std::string> consoleHistory;
     std::vector<std::string> consoleOutput;
 
-    // Console dimensions and layout (not used with ImGui)
+    // Command registry
+    std::unordered_map<std::string, CommandInfo> m_commands;
 
     // Constants
     static constexpr size_t MAX_CONSOLE_LINES = 100;
@@ -31,8 +52,6 @@ public:
     void OpenConsole();
     void CloseConsole();
     bool IsConsoleOpen() const { return consoleOpen; }
-
-    // Input handling removed as ImGui handles it
 
     // Command execution
     void ExecuteCommand(const std::string& command);
@@ -52,21 +71,30 @@ public:
     void CopyLastCommand();
     std::string GetLastCommand() const;
 
-    // Utility (removed as ImGui handles input)
+    // Command registration
+    void RegisterCommand(const std::string& name, const std::string& description, 
+                       const std::string& usage, CommandCallback callback);
+    void RegisterCommandWithPrefix(const std::string& category, const std::string& name,
+                                  const std::string& description, const std::string& usage,
+                                  CommandCallback callback, bool alsoRegisterWithoutPrefix = true);
+    void UnregisterCommand(const std::string& name);
+    const CommandInfo* GetCommandInfo(const std::string& name) const;
+    std::vector<std::string> GetAvailableCommandNames() const;
+    std::vector<std::string> GetCommandsByCategory(const std::string& category) const;
+    std::vector<std::string> GetAvailableCategories() const;
+
+    // Helper to get Game instance
+    Game* GetGame() const { return m_game; }
 
 private:
-    // Command processing helpers removed
-
-private:
-    // Command processing
-    void ProcessHelpCommand();
-    void ProcessClearCommand();
-    void ProcessSetCommand(const std::string& key, const std::string& value);
-    void ProcessGetCommand(const std::string& key);
-    void ProcessNoclipCommand();
-
-    // Built-in commands
-    std::vector<std::string> GetAvailableCommands() const;
+    // Initialize built-in commands
+    void RegisterBuiltinCommands();
+    
+    // Command argument parsing
+    std::vector<std::string> ParseArguments(const std::string& args) const;
+    
+    // Command lookup with prefix support
+    const CommandInfo* FindCommand(const std::string& cmdName) const;
 };
 
 #endif // CONSOLE_MANAGER_H

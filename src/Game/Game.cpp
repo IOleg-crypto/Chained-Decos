@@ -127,11 +127,25 @@ void Game::Init(int argc, char *argv[])
     m_gameRenderManager = std::make_unique<GameRenderManager>(m_player.get(), m_engine.get(),
                                                                 m_models.get(), m_collisionManager.get(),
                                                                 m_mapManager.get());
-    m_menuActionHandler = std::make_unique<MenuActionHandler>(this, m_player.get(), m_menu.get(),
-                                                                 m_collisionManager.get(), m_models.get(),
-                                                                 m_mapManager.get(), m_modelManager.get(),
-                                                                 m_playerManager.get(), m_engine.get(),
-                                                                 &m_showMenu, &m_isGameInitialized);
+    // Register game services in Kernel for dependency injection
+    m_kernel->RegisterService<PlayerService>(Kernel::ServiceType::Player,
+                                             std::make_shared<PlayerService>(m_player.get()));
+    m_kernel->RegisterService<MenuService>(Kernel::ServiceType::Menu,
+                                           std::make_shared<MenuService>(m_menu.get()));
+    m_kernel->RegisterService<MapManagerService>(Kernel::ServiceType::MapManager,
+                                                  std::make_shared<MapManagerService>(m_mapManager.get()));
+    m_kernel->RegisterService<ResourceManagerService>(Kernel::ServiceType::ResourceManager,
+                                                       std::make_shared<ResourceManagerService>(m_modelManager.get()));
+    m_kernel->RegisterService<PlayerManagerService>(Kernel::ServiceType::PlayerManager,
+                                                     std::make_shared<PlayerManagerService>(m_playerManager.get()));
+    m_kernel->RegisterService<GameService>(Kernel::ServiceType::Game,
+                                            std::make_shared<GameService>(this));
+    m_kernel->RegisterService<CollisionService>(Kernel::ServiceType::Collision,
+                                                 std::make_shared<CollisionService>(m_collisionManager.get()));
+    
+    // Create MenuActionHandler with Kernel-based dependency injection
+    m_menuActionHandler = std::make_unique<MenuActionHandler>(m_kernel.get(),
+                                                               &m_showMenu, &m_isGameInitialized);
     TraceLog(LOG_INFO, "Game::Init() - Manager components initialized.");
 
     TraceLog(LOG_INFO, "Game::Init() - Kernel already initialized.");
@@ -152,6 +166,7 @@ void Game::Init(int argc, char *argv[])
                                              std::make_shared<ModelsService>(m_models.get()));
     m_kernel->RegisterService<WorldService>(Kernel::ServiceType::World,
                                             std::make_shared<WorldService>(m_world.get()));
+    // Note: Game services (Player, Menu, etc.) are registered above, before MenuActionHandler creation
     InitPlayer();
     InitInput();
 

@@ -205,7 +205,6 @@ IRenderable* Player::GetRenderable() const {
     return m_renderable.get();
 }
 
-// Update method для сумісності (делегує до UpdateImpl)
 void Player::Update(CollisionManager& collisionManager) {
     UpdateImpl(collisionManager);
 }
