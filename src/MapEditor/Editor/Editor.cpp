@@ -131,6 +131,12 @@ void Editor::RenderObject(const MapObject& obj)
     RenderMapObject(data, loadedModels, camera, true);
     
     // Additional editor-specific rendering: selection wireframe
+    if (obj.IsSelected())
+    {
+        // Render gizmo for MOVE and SCALE tools
+        RenderGizmo(obj, data);
+    }
+    
     if (obj.IsSelected() && data.type == MapObjectType::MODEL)
     {
         auto it = loadedModels.find(data.modelName);
@@ -179,6 +185,44 @@ void Editor::RenderObject(const MapObject& obj)
                 break;
         }
     }
+}
+
+void Editor::RenderGizmo(const MapObject& obj, const MapObjectData& data)
+{
+    // Only show gizmo for MOVE and SCALE tools
+    if (!m_toolManager) return;
+    Tool activeTool = m_toolManager->GetActiveTool();
+    if (activeTool != MOVE && activeTool != SCALE) return;
+    
+    Vector3 pos = obj.GetPosition();
+    float gizmoLength = 2.0f;
+    float gizmoThickness = 0.1f;
+    
+    // Get camera to determine gizmo scale
+    Camera3D camera = m_cameraManager->GetCamera();
+    Vector3 toCamera = Vector3Subtract(camera.position, pos);
+    float distance = Vector3Length(toCamera);
+    float scale = distance * 0.1f; // Scale gizmo based on distance from camera
+    if (scale < 0.5f) scale = 0.5f;
+    if (scale > 2.0f) scale = 2.0f;
+    
+    float arrowLength = gizmoLength * scale;
+    float arrowRadius = gizmoThickness * scale;
+    
+    // Draw X axis (red) - right
+    DrawLine3D(pos, Vector3Add(pos, {arrowLength, 0, 0}), RED);
+    DrawCylinderEx(Vector3Add(pos, {arrowLength * 0.7f, 0, 0}), Vector3Add(pos, {arrowLength, 0, 0}), arrowRadius * 0.5f, arrowRadius, 8, RED);
+    
+    // Draw Y axis (green) - up
+    DrawLine3D(pos, Vector3Add(pos, {0, arrowLength, 0}), GREEN);
+    DrawCylinderEx(Vector3Add(pos, {0, arrowLength * 0.7f, 0}), Vector3Add(pos, {0, arrowLength, 0}), arrowRadius * 0.5f, arrowRadius, 8, GREEN);
+    
+    // Draw Z axis (blue) - forward
+    DrawLine3D(pos, Vector3Add(pos, {0, 0, arrowLength}), BLUE);
+    DrawCylinderEx(Vector3Add(pos, {0, 0, arrowLength * 0.7f}), Vector3Add(pos, {0, 0, arrowLength}), arrowRadius * 0.5f, arrowRadius, 8, BLUE);
+    
+    // Draw center sphere
+    DrawSphere(pos, arrowRadius * 1.5f, YELLOW);
 }
 
 void Editor::RenderImGui()
