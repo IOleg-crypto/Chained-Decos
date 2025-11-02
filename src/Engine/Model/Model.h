@@ -98,6 +98,9 @@ public:
     // Cleanup and optimization
     void CleanupUnusedModels() const;
     void OptimizeCache() const;
+    
+    // Clear all model instances (useful when loading new maps)
+    void ClearInstances();
 
 private:
     // ==================== LEGACY FIELDS ====================

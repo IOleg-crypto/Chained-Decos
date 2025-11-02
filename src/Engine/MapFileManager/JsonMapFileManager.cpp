@@ -121,9 +121,15 @@ bool JsonMapFileManager::LoadMap(std::vector<JsonSerializableObject>& objects,
             if (boundsStart != std::string::npos)
             {
                 boundsStart = metadataJson.find("[", boundsStart);
-                size_t boundsEnd = metadataJson.find("]", boundsStart);
-                std::string boundsStr = metadataJson.substr(boundsStart, boundsEnd - boundsStart + 1);
-                metadata.worldBounds = ParseVector3(boundsStr);
+                if (boundsStart != std::string::npos)
+                {
+                    size_t boundsEnd = metadataJson.find("]", boundsStart);
+                    if (boundsEnd != std::string::npos && boundsEnd > boundsStart)
+                    {
+                        std::string boundsStr = metadataJson.substr(boundsStart, boundsEnd - boundsStart + 1);
+                        metadata.worldBounds = ParseVector3(boundsStr);
+                    }
+                }
             }
 
             // Parse background color
@@ -131,9 +137,15 @@ bool JsonMapFileManager::LoadMap(std::vector<JsonSerializableObject>& objects,
             if (colorStart != std::string::npos)
             {
                 colorStart = metadataJson.find("[", colorStart);
-                size_t colorEnd = metadataJson.find("]", colorStart);
-                std::string colorStr = metadataJson.substr(colorStart, colorEnd - colorStart + 1);
-                metadata.backgroundColor = ParseColor(colorStr);
+                if (colorStart != std::string::npos)
+                {
+                    size_t colorEnd = metadataJson.find("]", colorStart);
+                    if (colorEnd != std::string::npos && colorEnd > colorStart)
+                    {
+                        std::string colorStr = metadataJson.substr(colorStart, colorEnd - colorStart + 1);
+                        metadata.backgroundColor = ParseColor(colorStr);
+                    }
+                }
             }
         }
 
@@ -600,11 +612,23 @@ static Vector3 ParseVector3Obj(const std::string& json) {
     size_t y = json.find("\"y\"");
     size_t z = json.find("\"z\"");
     if (x != std::string::npos)
-        out.x = std::stof(json.substr(json.find(":", x)+1));
+    {
+        size_t colonPos = json.find(":", x);
+        if (colonPos != std::string::npos && colonPos + 1 < json.length())
+            out.x = std::stof(json.substr(colonPos + 1));
+    }
     if (y != std::string::npos)
-        out.y = std::stof(json.substr(json.find(":", y)+1));
+    {
+        size_t colonPos = json.find(":", y);
+        if (colonPos != std::string::npos && colonPos + 1 < json.length())
+            out.y = std::stof(json.substr(colonPos + 1));
+    }
     if (z != std::string::npos)
-        out.z = std::stof(json.substr(json.find(":", z)+1));
+    {
+        size_t colonPos = json.find(":", z);
+        if (colonPos != std::string::npos && colonPos + 1 < json.length())
+            out.z = std::stof(json.substr(colonPos + 1));
+    }
     return out;
 }
 
@@ -936,7 +960,10 @@ std::string JsonMapFileManager::GetModelPathForModel(const std::string& modelNam
 bool JsonMapFileManager::HasAnimations(const std::string& modelPath)
 {
     // Simple heuristic: gltf and glb files often contain animations
-    std::string ext = modelPath.substr(modelPath.find_last_of('.'));
+    size_t dotPos = modelPath.find_last_of('.');
+    if (dotPos == std::string::npos || dotPos >= modelPath.length())
+        return false;
+    std::string ext = modelPath.substr(dotPos);
     return (ext == ".gltf" || ext == ".glb");
 }
 
