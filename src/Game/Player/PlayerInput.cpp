@@ -1,4 +1,5 @@
 #include "PlayerInput.h"
+#include "Player.h"
 #include <imgui.h>
 
 PlayerInput::PlayerInput(IPlayerMediator *player) : m_player(player), m_walkSpeed(8.1f) {}

@@ -1,4 +1,5 @@
 #include "PlayerMovement.h"
+#include "Player.h"
 #include <cmath>
 #include <raylib.h>
 
