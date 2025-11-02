@@ -1,4 +1,5 @@
 #include "PlayerCollision.h"
+#include "Player.h"
 #include <cmath>
 
 PlayerCollision::PlayerCollision(IPlayerMediator* player)
@@ -103,7 +104,7 @@ bool PlayerCollision::CheckCollisionWithBVH(const Collision& other, Vector3& out
                     {
                         // For ground collision, ensure the collision box is positioned correctly
                         // relative to the visual model's offset
-                        float modelOffset = Player::MODEL_Y_OFFSET; // -1.0f
+                        float modelOffset = Player::MODEL_Y_OFFSET;
                         if (response.y > 0.0f) // Pushing upward (away from ground penetration)
                         {
                             // Adjust response to account for model offset
