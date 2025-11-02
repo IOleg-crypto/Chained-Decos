@@ -22,6 +22,13 @@ public:
         Collision,
         World,
         Physics,
+        // Game services
+        Player,
+        Menu,
+        MapManager,
+        ResourceManager,
+        PlayerManager,
+        Game,
         Custom1,
         Custom2
     };
@@ -47,7 +54,7 @@ public:
         auto it = m_services.find(type);
         if (it == m_services.end())
             return nullptr;
-        return std::dynamic_pointer_cast<T>(it->second);
+        return std::static_pointer_cast<T>(it->second);
     }
 
     void PrintServiceStatus();

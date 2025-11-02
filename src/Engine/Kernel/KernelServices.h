@@ -66,6 +66,68 @@ struct AssetService : public IKernelService
     const char *GetName() const override { return "AssetService"; }
 };
 
+// Forward declarations for game services
+class Player;
+class Menu;
+class MapManager;
+class ResourceManager;
+class PlayerManager;
+class Game;
+
+struct PlayerService : public IKernelService
+{
+    Player *player = nullptr;
+    explicit PlayerService(Player *p) : player(p) {}
+    bool Initialize() override { return player != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "PlayerService"; }
+};
+
+struct MenuService : public IKernelService
+{
+    Menu *menu = nullptr;
+    explicit MenuService(Menu *m) : menu(m) {}
+    bool Initialize() override { return menu != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "MenuService"; }
+};
+
+struct MapManagerService : public IKernelService
+{
+    MapManager *mapManager = nullptr;
+    explicit MapManagerService(MapManager *mm) : mapManager(mm) {}
+    bool Initialize() override { return mapManager != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "MapManagerService"; }
+};
+
+struct ResourceManagerService : public IKernelService
+{
+    ResourceManager *resourceManager = nullptr;
+    explicit ResourceManagerService(ResourceManager *rm) : resourceManager(rm) {}
+    bool Initialize() override { return resourceManager != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "ResourceManagerService"; }
+};
+
+struct PlayerManagerService : public IKernelService
+{
+    PlayerManager *playerManager = nullptr;
+    explicit PlayerManagerService(PlayerManager *pm) : playerManager(pm) {}
+    bool Initialize() override { return playerManager != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "PlayerManagerService"; }
+};
+
+struct GameService : public IKernelService
+{
+    Game *game = nullptr;
+    explicit GameService(Game *g) : game(g) {}
+    bool Initialize() override { return game != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "GameService"; }
+};
+
 #endif // KERNELSERVICES_H
 
 

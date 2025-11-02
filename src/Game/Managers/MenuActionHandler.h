@@ -2,29 +2,22 @@
 #define MENU_ACTION_HANDLER_H
 
 #include "Game/Menu/Menu.h"
+#include "Engine/Kernel/Kernel.h"
 
 // Forward declarations to break circular dependencies
 class Game;
 class Player;
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Model/Model.h"
-#include "MapManager.h"
-#include "ResourceManager.h"
-#include "PlayerManager.h"
-#include "Engine/Engine.h"
+class CollisionManager;
+class ModelLoader;
+class MapManager;
+class ResourceManager;
+class PlayerManager;
+class Engine;
 
 class MenuActionHandler
 {
 private:
-    Game* m_game;
-    Player* m_player;
-    Menu* m_menu;
-    CollisionManager* m_collisionManager;
-    ModelLoader* m_models;
-    MapManager* m_mapManager;
-    ResourceManager* m_resourceManager;
-    PlayerManager* m_playerManager;
-    Engine* m_engine;
+    Kernel* m_kernel;
     bool* m_showMenu;
     bool* m_isGameInitialized;
 
@@ -41,11 +34,19 @@ private:
     void CreateModelInstancesForMap();
     bool AutoLoadModelIfNeeded(const std::string& requested, std::string& candidateName);
 
+    // Helper methods to get services from kernel
+    Game* GetGame() const;
+    Player* GetPlayer() const;
+    Menu* GetMenu() const;
+    CollisionManager* GetCollisionManager() const;
+    ModelLoader* GetModels() const;
+    MapManager* GetMapManager() const;
+    ResourceManager* GetResourceManager() const;
+    PlayerManager* GetPlayerManager() const;
+    Engine* GetEngine() const;
+
 public:
-    MenuActionHandler(Game* game, Player* player, Menu* menu, CollisionManager* collisionManager,
-                      ModelLoader* models, MapManager* mapManager, ResourceManager* resourceManager,
-                      PlayerManager* playerManager, Engine* engine,
-                      bool* showMenu, bool* isGameInitialized);
+    MenuActionHandler(Kernel* kernel, bool* showMenu, bool* isGameInitialized);
     ~MenuActionHandler() = default;
 
     void HandleMenuActions();

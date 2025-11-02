@@ -34,14 +34,7 @@ void GameRenderManager::RenderGameWorld()
     // to avoid collision wireframes covering primitives
     if (!m_mapManager->GetGameMap().objects.empty())
     {
-        TraceLog(LOG_INFO, "GameRenderManager::RenderGameWorld() - Rendering map with %d objects",
-                 m_mapManager->GetGameMap().objects.size());
         m_mapManager->RenderEditorMap();
-    }
-    else
-    {
-        TraceLog(LOG_WARNING,
-                 "GameRenderManager::RenderGameWorld() - No map objects to render (m_gameMap.objects.empty())");
     }
     
     // Render game world (models, player, etc.) and collision shapes AFTER primitives

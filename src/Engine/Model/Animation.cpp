@@ -5,7 +5,15 @@ Animation::Animation()
 {
 }
 
-Animation::~Animation() { delete[] m_modelAnimations; }
+Animation::~Animation() 
+{ 
+    if (m_modelAnimations != nullptr && m_animCount > 0)
+    {
+        UnloadModelAnimations(m_modelAnimations, m_animCount);
+        m_modelAnimations = nullptr;
+        m_animCount = 0;
+    }
+}
 
 void Animation::Update(Model &model)
 {
