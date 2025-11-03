@@ -31,7 +31,7 @@ void EditorApplication::OnInitializeServices()
 {
     TraceLog(LOG_INFO, "[EditorApplication] Initializing editor components...");
 
-    // Створюємо компоненти Editor
+    // Create Editor components
     auto camera = std::make_shared<CameraController>();
     auto modelLoader = std::make_unique<ModelLoader>();
     m_editor = std::make_unique<Editor>(camera, std::move(modelLoader));
@@ -56,15 +56,15 @@ void EditorApplication::OnRegisterProjectServices()
 {
     TraceLog(LOG_INFO, "[EditorApplication] Registering editor services...");
     
-    // Editor поки що не реєструє додаткові сервіси
-    // Можна додати EditorService якщо потрібно
+    // Editor doesn't register additional services yet
+    // Can add EditorService if needed
 }
 
 void EditorApplication::OnPostInitialize()
 {
     TraceLog(LOG_INFO, "[EditorApplication] Post-initialization...");
     
-    // Налаштування ImGui для Editor (кастомні налаштування)
+    // Configure ImGui for Editor (custom settings)
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
@@ -100,13 +100,13 @@ void EditorApplication::OnPostInitialize()
     colors[ImGuiCol_TitleBgActive] = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
     colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
     
-    // Preload моделі після ініціалізації вікна
+    // Preload models after window initialization
     if (m_editor) {
         m_editor->PreloadModelsFromResources();
         m_editor->LoadSpawnTexture();
     }
     
-    // Встановлюємо іконку вікна
+    // Set window icon
     Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.jpg");
     ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     SetWindowIcon(icon);
@@ -129,14 +129,14 @@ void EditorApplication::OnPostRender()
 {
     if (!m_editor) return;
     
-    // Рендеринг Editor
-    // BeginFrame() вже викликано в Engine::Render() через RenderManager::BeginFrame()
-    // EndFrame() буде викликано в Engine::Render() через RenderManager::EndFrame()
+    // Editor rendering
+    // BeginFrame() already called in Engine::Render() via RenderManager::BeginFrame()
+    // EndFrame() will be called in Engine::Render() via RenderManager::EndFrame()
     
-    // Очищаємо фон перед 3D сценою
+    // Clear background before 3D scene
     ClearBackground(DARKGRAY);
     
-    // Render 3D scene для Editor
+    // Render 3D scene for Editor
     BeginMode3D(m_editor->GetCameraController()->GetCamera());
     m_editor->GetCameraController()->SetCameraMode(CAMERA_FREE);
     DrawGrid(m_editor->GetGridSize(), 1.0f);
@@ -146,9 +146,9 @@ void EditorApplication::OnPostRender()
 
     EndMode3D();
 
-    // Begin ImGui frame для Editor UI
-    // rlImGuiBegin() вже викликано в RenderManager, але можемо викликати знову
-    // (він безпечно обробляє повторні виклики)
+    // Begin ImGui frame for Editor UI
+    // rlImGuiBegin() already called in RenderManager, but can call again
+    // (it safely handles repeated calls)
     rlImGuiBegin();
     
     // Render ImGui interface
@@ -161,7 +161,7 @@ void EditorApplication::OnPreShutdown()
 {
     TraceLog(LOG_INFO, "[EditorApplication] Cleaning up editor resources...");
     
-    // Editor сам очищає свої ресурси в деструкторі
+    // Editor cleans up its own resources in destructor
     m_editor.reset();
     
     TraceLog(LOG_INFO, "[EditorApplication] Editor resources cleaned up.");

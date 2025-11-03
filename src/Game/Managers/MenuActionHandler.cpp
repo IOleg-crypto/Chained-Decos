@@ -1,5 +1,4 @@
 #include "MenuActionHandler.h"
-#include "../Game.h"
 #include "../Player/Player.h"
 #include "Game/Menu/Menu.h"
 #include "Engine/Collision/CollisionManager.h"
@@ -23,12 +22,6 @@ MenuActionHandler::MenuActionHandler(Kernel* kernel, bool* showMenu, bool* isGam
         TraceLog(LOG_ERROR, "MenuActionHandler: Kernel is null!");
     }
     TraceLog(LOG_INFO, "MenuActionHandler created with Kernel-based dependency injection");
-}
-
-Game* MenuActionHandler::GetGame() const
-{
-    auto service = m_kernel->GetService<GameService>(Kernel::ServiceType::Game);
-    return service ? service->game : nullptr;
 }
 
 Player* MenuActionHandler::GetPlayer() const
@@ -75,11 +68,8 @@ PlayerManager* MenuActionHandler::GetPlayerManager() const
 
 Engine* MenuActionHandler::GetEngine() const
 {
-    // Engine is accessible through Game
-    // Most Engine operations should go through Game methods
-    // If direct Engine access is needed, we can add Engine as a service later
-    auto* game = GetGame();
-    return nullptr; // Engine access should go through Game methods (e.g., game->RequestExit())
+    auto service = m_kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
+    return service ? service->engine : nullptr;
 }
 
 void MenuActionHandler::HandleMenuActions()
@@ -112,9 +102,8 @@ void MenuActionHandler::HandleSinglePlayer()
     TraceLog(LOG_INFO, "MenuActionHandler::HandleSinglePlayer() - Starting singleplayer...");
     Menu* menu = GetMenu();
     PlayerManager* playerManager = GetPlayerManager();
-    Game* game = GetGame();
     
-    if (!menu || !playerManager || !game) {
+    if (!menu || !playerManager) {
         TraceLog(LOG_ERROR, "MenuActionHandler::HandleSinglePlayer() - Required services not available");
         return;
     }
@@ -134,20 +123,15 @@ void MenuActionHandler::HandleSinglePlayer()
         TraceLog(LOG_WARNING, "MenuActionHandler::HandleSinglePlayer() - Player may not render correctly");
     }
 
-    game->ToggleMenu();
+    *m_showMenu = false; // Hide menu
     *m_isGameInitialized = true; // Mark game as initialized
 }
 
 void MenuActionHandler::HideMenuAndStartGame()
 {
     *m_showMenu = false;
-    Game* game = GetGame();
     Menu* menu = GetMenu();
     
-    if (game)
-    {
-        game->HideCursor();
-    }
     if (menu)
     {
         menu->ResetAction();
@@ -235,11 +219,10 @@ void MenuActionHandler::HandleResumeGame()
     Menu* menu = GetMenu();
     ResourceManager* resourceManager = GetResourceManager();
     MapManager* mapManager = GetMapManager();
-    Game* game = GetGame();
     PlayerManager* playerManager = GetPlayerManager();
     CollisionManager* collisionManager = GetCollisionManager();
     
-    if (!menu || !resourceManager || !mapManager || !game || !playerManager || !collisionManager) {
+    if (!menu || !resourceManager || !mapManager || !playerManager || !collisionManager) {
         TraceLog(LOG_ERROR, "MenuActionHandler::HandleResumeGame() - Required services not available");
         return;
     }
@@ -256,7 +239,7 @@ void MenuActionHandler::HandleResumeGame()
         resourceManager->LoadGameModelsSelective(requiredModels);
 
         // Initialize basic collision system first
-        if (!game->InitCollisionsWithModelsSafe(requiredModels))
+        if (!mapManager->InitCollisionsWithModelsSafe(requiredModels))
         {
             TraceLog(LOG_ERROR, "MenuActionHandler::HandleResumeGame() - Failed to initialize basic "
                                 "collision system for singleplayer");
@@ -386,13 +369,13 @@ bool MenuActionHandler::InitializeCollisionSystemWithModels(const std::vector<st
 {
     TraceLog(LOG_INFO, "MenuActionHandler::InitializeCollisionSystemWithModels() - Initializing collision system with required models...");
     
-    Game* game = GetGame();
-    if (!game) {
-        TraceLog(LOG_ERROR, "MenuActionHandler::InitializeCollisionSystemWithModels() - Game not available");
+    MapManager* mapManager = GetMapManager();
+    if (!mapManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::InitializeCollisionSystemWithModels() - MapManager not available");
         return false;
     }
     
-    if (!game->InitCollisionsWithModelsSafe(requiredModels))
+    if (!mapManager->InitCollisionsWithModelsSafe(requiredModels))
     {
         TraceLog(LOG_ERROR, "MenuActionHandler::InitializeCollisionSystemWithModels() - Failed to initialize collision system with required models");
         TraceLog(LOG_ERROR, "MenuActionHandler::InitializeCollisionSystemWithModels() - Cannot continue without collision system");
@@ -584,12 +567,12 @@ void MenuActionHandler::LoadMapObjects(const std::string& mapPath)
             else
             {
                 TraceLog(LOG_INFO, "MenuActionHandler::LoadMapObjects() - Detected editor format, using LoadEditorMap");
-                Game* game = GetGame();
-                if (!game) {
-                    TraceLog(LOG_ERROR, "MenuActionHandler::LoadMapObjects() - Game not available");
-                    throw std::runtime_error("Game not available");
+                MapManager* mapManager = GetMapManager();
+                if (!mapManager) {
+                    TraceLog(LOG_ERROR, "MenuActionHandler::LoadMapObjects() - MapManager not available");
+                    throw std::runtime_error("MapManager not available");
                 }
-                game->LoadEditorMap(mapPath);
+                mapManager->LoadEditorMap(mapPath);
             }
         }
         else
@@ -697,7 +680,7 @@ void MenuActionHandler::HandleExitGame()
     TraceLog(LOG_INFO, "MenuActionHandler::HandleExitGame() - Exit game requested from menu.");
     
     Menu* menu = GetMenu();
-    Game* game = GetGame();
+    Engine* engine = GetEngine();
     
     if (menu) {
         // Clear game state when exiting
@@ -707,8 +690,8 @@ void MenuActionHandler::HandleExitGame()
     
     *m_showMenu = true; // Show menu one last time before exit
     
-    if (game) {
-        game->RequestExit();
+    if (engine) {
+        engine->RequestExit();
     }
 }
 

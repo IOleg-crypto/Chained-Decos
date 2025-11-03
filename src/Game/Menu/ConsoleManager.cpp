@@ -1,9 +1,10 @@
 #include "ConsoleManager.h"
-#include "../Game.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/Kernel/KernelServices.h"
 #include "Game/Player/PlayerCollision.h"
 #include "Game/Managers/MapManager.h"
+#include "Game/Player/Player.h"
+#include "Engine/Engine.h"
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include <iostream>
@@ -13,24 +14,9 @@
 #include <cctype>
 #include <iterator>
 
-ConsoleManager::ConsoleManager(Game* game) : m_game(game), m_kernel(nullptr) {
-    TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER BEING INITIALIZED");
 
-    // Register all built-in commands
-    RegisterBuiltinCommands();
-
-    TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER INITIALIZED with %zu commands", 
-             m_commands.size());
-}
-
-ConsoleManager::ConsoleManager(Kernel* kernel) : m_game(nullptr), m_kernel(kernel) {
+ConsoleManager::ConsoleManager(Kernel* kernel) : m_kernel(kernel) {
     TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager(Kernel*) - CONSOLE MANAGER BEING INITIALIZED");
-
-    // Try to get Game from Kernel if available
-    if (m_kernel) {
-        // Try to get GameService from Kernel
-        // Game* will be set later if needed
-    }
 
     // Register all built-in commands
     RegisterBuiltinCommands();
@@ -39,23 +25,25 @@ ConsoleManager::ConsoleManager(Kernel* kernel) : m_game(nullptr), m_kernel(kerne
              m_commands.size());
 }
 
-Game* ConsoleManager::GetGame() const {
-    // If we have Game directly, return it
-    if (m_game) {
-        return m_game;
-    }
+Player* ConsoleManager::GetPlayer() const {
+    if (!m_kernel) return nullptr;
     
-    // Otherwise, try to get it from Kernel
-    if (m_kernel) {
-        auto gameService = m_kernel->GetService<GameService>(Kernel::ServiceType::Game);
-        if (gameService && gameService->game) {
-            // Cast away const for internal use
-            const_cast<ConsoleManager*>(this)->m_game = gameService->game;
-            return gameService->game;
-        }
-    }
+    auto playerService = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
+    return playerService ? playerService->player : nullptr;
+}
+
+MapManager* ConsoleManager::GetMapManager() const {
+    if (!m_kernel) return nullptr;
     
-    return nullptr;
+    auto mapService = m_kernel->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
+    return mapService ? mapService->mapManager : nullptr;
+}
+
+Engine* ConsoleManager::GetEngine() const {
+    if (!m_kernel) return nullptr;
+    
+    auto engineService = m_kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
+    return engineService ? engineService->engine : nullptr;
 }
 
 void ConsoleManager::ToggleConsole() {
@@ -303,13 +291,12 @@ void ConsoleManager::RegisterBuiltinCommands() {
     // Noclip command (Source Engine style)
     RegisterCommand("noclip", "Toggle player collision (noclip mode)", "noclip",
         [](const std::vector<std::string>& args, ConsoleManager* console) {
-            Game* game = console->GetGame();
-            if (!game) {
-                console->AddOutput("Error: Game instance not available.");
+            Player* player = console->GetPlayer();
+            if (!player) {
+                console->AddOutput("Error: Player instance not available.");
                 return;
             }
-            Player& player = game->GetPlayer();
-            PlayerCollision& collision = player.GetCollisionMutable();
+            PlayerCollision& collision = player->GetCollisionMutable();
             bool current = collision.IsUsingBVH();
             collision.EnableBVHCollision(!current);
             console->AddOutput("Noclip: " + std::string(!current ? "enabled" : "disabled"));
@@ -324,13 +311,12 @@ void ConsoleManager::RegisterBuiltinCommands() {
             }
             try {
                 float speed = std::stof(args[0]);
-                Game* game = console->GetGame();
-                if (!game) {
-                    console->AddOutput("Error: Game instance not available.");
+                Player* player = console->GetPlayer();
+                if (!player) {
+                    console->AddOutput("Error: Player instance not available.");
                     return;
                 }
-                Player& player = game->GetPlayer();
-                player.GetMovement()->SetSpeed(speed);
+                player->GetMovement()->SetSpeed(speed);
                 console->AddOutput("Player speed set to " + std::to_string(speed));
             } catch (const std::exception&) {
                 console->AddOutput("Error: Invalid speed value. Must be a number.");
@@ -348,13 +334,12 @@ void ConsoleManager::RegisterBuiltinCommands() {
                 float x = std::stof(args[0]);
                 float y = std::stof(args[1]);
                 float z = std::stof(args[2]);
-                Game* game = console->GetGame();
-                if (!game) {
-                    console->AddOutput("Error: Game instance not available.");
+                Player* player = console->GetPlayer();
+                if (!player) {
+                    console->AddOutput("Error: Player instance not available.");
                     return;
                 }
-                Player& player = game->GetPlayer();
-                player.SetPlayerPosition({x, y, z});
+                player->SetPlayerPosition({x, y, z});
                 console->AddOutput("Player position set to: " + std::to_string(x) + 
                                  ", " + std::to_string(y) + ", " + std::to_string(z));
             } catch (const std::exception&) {
@@ -365,13 +350,12 @@ void ConsoleManager::RegisterBuiltinCommands() {
     // Getpos command (Source Engine style: cl_getpos)
     RegisterCommandWithPrefix("cl", "getpos", "Get player position", "cl_getpos",
         [](const std::vector<std::string>& args, ConsoleManager* console) {
-            Game* game = console->GetGame();
-            if (!game) {
-                console->AddOutput("Error: Game instance not available.");
+            Player* player = console->GetPlayer();
+            if (!player) {
+                console->AddOutput("Error: Player instance not available.");
                 return;
             }
-            Player& player = game->GetPlayer();
-            Vector3 pos = player.GetPlayerPosition();
+            Vector3 pos = player->GetPlayerPosition();
             console->AddOutput("Player position: " + std::to_string(pos.x) + 
                              " " + std::to_string(pos.y) + 
                              " " + std::to_string(pos.z));
@@ -390,12 +374,7 @@ void ConsoleManager::RegisterBuiltinCommands() {
     RegisterCommand("map", "Load a map", "map <mapname>",
         [](const std::vector<std::string>& args, ConsoleManager* console) {
             if (args.empty()) {
-                Game* game = console->GetGame();
-                if (!game) {
-                    console->AddOutput("Error: Game instance not available.");
-                    return;
-                }
-                MapManager* mapManager = game->GetMapManager();
+                MapManager* mapManager = console->GetMapManager();
                 if (mapManager) {
                     std::string currentMap = mapManager->GetCurrentMapPath();
                     if (currentMap.empty()) {
@@ -414,15 +393,15 @@ void ConsoleManager::RegisterBuiltinCommands() {
                 mapName += ".json";
             }
             
-            Game* game = console->GetGame();
-            if (!game) {
-                console->AddOutput("Error: Game instance not available.");
+            MapManager* mapManager = console->GetMapManager();
+            if (!mapManager) {
+                console->AddOutput("Error: MapManager not available.");
                 return;
             }
             
             std::string mapPath = std::string(PROJECT_ROOT_DIR) + "/maps/" + mapName;
             console->AddOutput("Loading map: " + mapPath);
-            game->LoadEditorMap(mapPath);
+            mapManager->LoadEditorMap(mapPath);
             console->AddOutput("Map loaded successfully!");
         });
 
@@ -430,9 +409,9 @@ void ConsoleManager::RegisterBuiltinCommands() {
     RegisterCommand("quit", "Quit the game", "quit",
         [](const std::vector<std::string>& args, ConsoleManager* console) {
             console->AddOutput("Quitting game...");
-            Game* game = console->GetGame();
-            if (game) {
-                game->RequestExit();
+            Engine* engine = console->GetEngine();
+            if (engine) {
+                engine->RequestExit();
             }
         });
 }

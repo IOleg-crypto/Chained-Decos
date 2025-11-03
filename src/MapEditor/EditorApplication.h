@@ -7,35 +7,35 @@
 // Forward declaration
 class Editor;
 
-// Editor application - використовує повний рушій + власні модулі
+// Editor application - uses full engine + own modules
 class EditorApplication : public EngineApplication {
 public:
     EditorApplication();
     ~EditorApplication();
 
 protected:
-    // Налаштування перед ініціалізацією
+    // Settings before initialization
     void OnPreInitialize() override;
     
-    // Ініціалізація компонентів Editor
+    // Initialize Editor components
     void OnInitializeServices() override;
     
-    // Реєстрація модулів Editor (ОБОВ'ЯЗКОВО)
+    // Register Editor modules (REQUIRED)
     void OnRegisterProjectModules() override;
     
-    // Реєстрація сервісів Editor
+    // Register Editor services
     void OnRegisterProjectServices() override;
     
-    // Після ініціалізації
+    // After initialization
     void OnPostInitialize() override;
     
-    // Кастомна логіка оновлення
+    // Custom update logic
     void OnPostUpdate(float deltaTime) override;
     
-    // Кастомна логіка рендерингу
+    // Custom rendering logic
     void OnPostRender() override;
     
-    // Перед завершенням
+    // Before shutdown
     void OnPreShutdown() override;
 
 private:

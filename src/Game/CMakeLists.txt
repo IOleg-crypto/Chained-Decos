@@ -1,6 +1,4 @@
 add_library(ChainedDecosGame STATIC
-    Game.cpp
-    Game.h
     GameApplication.cpp
     GameApplication.h
     Managers/MapManager.cpp
@@ -15,7 +13,6 @@ add_library(ChainedDecosGame STATIC
     Managers/PlayerManager.h
     Managers/UpdateManager.cpp
     Managers/UpdateManager.h
-    # GameRenderManager замінено на Systems/RenderingSystem/RenderingSystem
     Managers/MenuActionHandler.cpp
     Managers/MenuActionHandler.h
     # Systems (modular architecture)
