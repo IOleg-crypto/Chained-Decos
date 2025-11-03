@@ -1,8 +1,8 @@
 add_library(menu STATIC
     Menu.cpp
     Menu.h
-    MenuCore.cpp
-    MenuCore.h
+    MenuController.cpp
+    MenuController.h
     SettingsManager.cpp
     SettingsManager.h
     ConsoleManager.cpp

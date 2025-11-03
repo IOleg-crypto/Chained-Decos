@@ -6,8 +6,8 @@ add_library(ChainedDecosGame STATIC
     Managers/ResourceManager.h
     Managers/StateManager.cpp
     Managers/StateManager.h
-    Managers/RenderHelper.cpp
-    Managers/RenderHelper.h
+    Managers/GameRenderHelpers.cpp
+    Managers/GameRenderHelpers.h
     Managers/PlayerManager.cpp
     Managers/PlayerManager.h
     Managers/UpdateManager.cpp
@@ -16,6 +16,12 @@ add_library(ChainedDecosGame STATIC
     Managers/GameRenderManager.h
     Managers/MenuActionHandler.cpp
     Managers/MenuActionHandler.h
+    Modules/PlayerModule.cpp
+    Modules/PlayerModule.h
+    Modules/MapModule.cpp
+    Modules/MapModule.h
+    Modules/MenuModule.cpp
+    Modules/MenuModule.h
 )
 
 target_include_directories(ChainedDecosGame
@@ -46,4 +52,5 @@ target_link_libraries(ChainedDecosGame
         raylib
         imguilib
         nlohmann_json
+        module
 )
