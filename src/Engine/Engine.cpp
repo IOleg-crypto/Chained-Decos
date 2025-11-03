@@ -5,6 +5,9 @@
 #include "Engine.h"
 #include "Render/RenderManager.h"
 #include "Kernel/Kernel.h"
+#include "Kernel/KernelServices.h"
+#include "Module/ModuleManager.h"
+#include "Module/IEngineModule.h"
 // Raylib & ImGui
 #include <raylib.h>
 #include <rlImGui.h>
@@ -14,7 +17,8 @@ Engine::Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<Inp
 
 Engine::Engine(const int screenX, const int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel)
     : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
-       m_windowInitialized(false), m_renderManager(std::move(renderManager)), m_inputManager(std::move(inputManager)), m_kernel(kernel), m_shouldExit(false),
+       m_windowInitialized(false), m_renderManager(std::move(renderManager)), m_inputManager(std::move(inputManager)), m_kernel(kernel), 
+       m_moduleManager(std::make_unique<ModuleManager>(kernel)), m_shouldExit(false),
        m_isEngineInit(false)
 {
     if (m_screenX <= 0 || m_screenY <= 0)
@@ -54,16 +58,14 @@ void Engine::Init()
     SetExitKey(KEY_NULL);
 
     rlImGuiSetup(true);
-
-    // Register engine-level input actions
     m_inputManager->RegisterAction(KEY_F11, ToggleFullscreen);
-
     m_isEngineInit = true;
 
-    // Kernel: register core services so other modules can fetch them
     if (m_kernel) {
-        m_kernel->RegisterService<RenderManager>(Kernel::ServiceType::Render, m_renderManager);
-        m_kernel->RegisterService<InputManager>(Kernel::ServiceType::Input, m_inputManager);
+        m_kernel->RegisterService<RenderService>(Kernel::ServiceType::Render,
+            std::make_shared<RenderService>(m_renderManager.get()));
+        m_kernel->RegisterService<InputService>(Kernel::ServiceType::Input,
+            std::make_shared<InputService>(m_inputManager.get()));
     }
 
     TraceLog(LOG_INFO, "Engine initialization complete!");
@@ -71,16 +73,25 @@ void Engine::Init()
 
 void Engine::Update()
 {
-    // Update all Kernel services
     if (m_kernel) {
         m_kernel->Update(GetFrameTime());
     }
+    
+    if (m_moduleManager) {
+        m_moduleManager->UpdateAllModules(GetFrameTime());
+    }
+    
     HandleEngineInput();
 }
 
 void Engine::Render() const
 {
     m_renderManager->BeginFrame();
+    
+    if (m_moduleManager) {
+        m_moduleManager->RenderAllModules();
+    }
+    
     m_renderManager->EndFrame();
 }
 
@@ -89,7 +100,6 @@ bool Engine::ShouldClose() const { return WindowShouldClose() || m_shouldExit; }
 void Engine::Shutdown() const
 {
     TraceLog(LOG_INFO, "Shutting down Engine...");
-    // m_renderManager.Shutdown();
     if (m_windowInitialized && IsWindowReady())
     {
         CloseWindow();
@@ -117,7 +127,13 @@ bool Engine::IsCollisionDebugVisible() const
     return m_renderManager ? m_renderManager->IsCollisionDebugVisible() : false; 
 }
 
-// ==================== Private Engine Input Handling ====================
+void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)
+{
+    if (m_moduleManager && module) {
+        m_moduleManager->RegisterModule(std::move(module));
+    }
+}
+
 void Engine::HandleEngineInput()
 {
     if (IsKeyPressed(KEY_F2))

@@ -11,6 +11,7 @@
 
 // Forward declaration to break circular dependency
 class Game;
+class Kernel;
 
 // Command callback function type
 using CommandCallback = std::function<void(const std::vector<std::string>&, class ConsoleManager*)>;
@@ -33,6 +34,7 @@ struct CommandInfo {
 class ConsoleManager {
 private:
     Game* m_game;
+    Kernel* m_kernel;  // Alternative initialization
     bool consoleOpen = false;
     std::vector<std::string> consoleHistory;
     std::vector<std::string> consoleOutput;
@@ -46,6 +48,7 @@ private:
 
 public:
     ConsoleManager(Game* game);
+    ConsoleManager(Kernel* kernel);  // Alternative constructor
 
     // Console state management
     void ToggleConsole();
@@ -83,8 +86,8 @@ public:
     std::vector<std::string> GetCommandsByCategory(const std::string& category) const;
     std::vector<std::string> GetAvailableCategories() const;
 
-    // Helper to get Game instance
-    Game* GetGame() const { return m_game; }
+    // Helper to get Game instance (tries Kernel if m_game is null)
+    Game* GetGame() const;
 
 private:
     // Initialize built-in commands

@@ -5,7 +5,7 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include "JsonHelper.h"
+#include "JsonParser.h"
 #include "ModelCache.h"
 #include "ModelConfig.h"
 #include "ModelInstance.h"
