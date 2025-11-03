@@ -5,7 +5,6 @@
 #include "Engine/Kernel/Kernel.h"
 
 // Forward declarations to break circular dependencies
-class Game;
 class Player;
 class CollisionManager;
 class ModelLoader;
@@ -35,7 +34,6 @@ private:
     bool AutoLoadModelIfNeeded(const std::string& requested, std::string& candidateName);
 
     // Helper methods to get services from kernel
-    Game* GetGame() const;
     Player* GetPlayer() const;
     Menu* GetMenu() const;
     CollisionManager* GetCollisionManager() const;
