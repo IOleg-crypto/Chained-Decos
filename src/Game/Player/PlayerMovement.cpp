@@ -4,9 +4,10 @@
 #include <raylib.h>
 
 PlayerMovement::PlayerMovement(IPlayerMediator *player)
-    : m_player(player), m_position({0.0f, 0.0f, 0.0f}), m_rotationY(0.0f),
+    : m_player(player), m_position({-999999.0f, -999999.0f, -999999.0f}), m_rotationY(0.0f),
       m_walkSpeed(11.0f)
 {
+    // Set uninitialized position - will be set properly in InitPlayer()
     m_physics.SetGroundLevel(false);
     m_physics.SetVelocity({0, 0, 0});
 }

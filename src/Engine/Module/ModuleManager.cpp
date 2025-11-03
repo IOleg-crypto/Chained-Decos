@@ -64,14 +64,18 @@ bool ModuleManager::InitializeAllModules()
             continue;
         }
         
-        module->RegisterServices(m_kernel);
-        
-        if (module->Initialize(m_kernel)) {
-            module->SetInitialized(true);
-        } else {
+        // First initialize the module (creates components)
+        // Module can call RegisterServices inside Initialize if needed
+        if (!module->Initialize(m_kernel)) {
             TraceLog(LOG_WARNING, "[ModuleManager] Failed to initialize module: %s", moduleName.c_str());
             continue;
         }
+        
+        // Register services after initialization (components created)
+        // This allows modules to register their services after component creation
+        module->RegisterServices(m_kernel);
+        
+        module->SetInitialized(true);
     }
     
     m_initialized = true;
