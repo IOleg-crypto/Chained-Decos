@@ -29,7 +29,6 @@ public:
         MapManager,
         ResourceManager,
         PlayerManager,
-        Game,
         Custom1,
         Custom2
     };

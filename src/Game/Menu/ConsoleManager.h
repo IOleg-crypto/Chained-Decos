@@ -10,8 +10,10 @@
 #include "MenuConstants.h"
 
 // Forward declaration to break circular dependency
-class Game;
 class Kernel;
+class Player;
+class MapManager;
+class Engine;
 
 // Command callback function type
 using CommandCallback = std::function<void(const std::vector<std::string>&, class ConsoleManager*)>;
@@ -33,8 +35,7 @@ struct CommandInfo {
 
 class ConsoleManager {
 private:
-    Game* m_game;
-    Kernel* m_kernel;  // Alternative initialization
+    Kernel* m_kernel;  // Kernel for service access
     bool consoleOpen = false;
     std::vector<std::string> consoleHistory;
     std::vector<std::string> consoleOutput;
@@ -47,8 +48,7 @@ private:
     static constexpr size_t MAX_HISTORY_LINES = 50;
 
 public:
-    ConsoleManager(Game* game);
-    ConsoleManager(Kernel* kernel);  // Alternative constructor
+    ConsoleManager(Kernel* kernel);
 
     // Console state management
     void ToggleConsole();
@@ -86,8 +86,10 @@ public:
     std::vector<std::string> GetCommandsByCategory(const std::string& category) const;
     std::vector<std::string> GetAvailableCategories() const;
 
-    // Helper to get Game instance (tries Kernel if m_game is null)
-    Game* GetGame() const;
+    // Helpers to get services through Kernel
+    Player* GetPlayer() const;
+    MapManager* GetMapManager() const;
+    Engine* GetEngine() const;
 
 private:
     // Initialize built-in commands

@@ -16,7 +16,6 @@
 #include <raylib.h>
 
 // Forward declarations to break circular dependencies
-class Game;
 class Kernel;
 
 
@@ -90,7 +89,6 @@ public:
     // Core functionality
     void Initialize(Engine *engine);
     void SetKernel(Kernel* kernel);
-    void SetGame(Game* game); // Deprecated: use SetKernel instead
     void Update();
 
     // State management
@@ -212,7 +210,6 @@ private:
     // Core state
     Engine *m_engine = nullptr;
     Kernel* m_kernel = nullptr;
-    Game* m_game = nullptr; // Kept for backward compatibility, will be removed
     std::unique_ptr<SettingsManager> m_settingsManager;
 
     // Menu state

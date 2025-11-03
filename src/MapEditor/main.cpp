@@ -6,6 +6,6 @@
 int main()
 {
     EditorApplication app;
-    app.Run();  // Весь життєвий цикл в базовому класі EngineApplication!
+    app.Run();
     return 0;
 }
