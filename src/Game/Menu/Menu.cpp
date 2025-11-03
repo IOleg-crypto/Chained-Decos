@@ -1,5 +1,4 @@
 #include "Menu.h"
-#include "../Game.h"
 #include "MenuConstants.h"
 #include "SettingsManager.h"
 #include "rlImGui.h"
@@ -54,23 +53,6 @@ void Menu::SetKernel(Kernel* kernel)
     }
 }
 
-void Menu::SetGame(Game* game)
-{
-    m_game = game;
-    // Try to get kernel from game if available
-    if (m_game && !m_kernel) {
-        m_kernel = &m_game->GetKernel();
-    }
-    // Initialize console manager with kernel if we have it
-    if (m_kernel && !m_consoleManager) {
-        m_consoleManager = std::make_unique<ConsoleManager>(m_kernel);
-    }
-    // Fallback to old method if no kernel
-    else if (m_game && !m_consoleManager) {
-        m_consoleManager = std::make_unique<ConsoleManager>(&m_game->GetKernel());
-    }
-}
-
 void Menu::Update()
 {
     // Handle keyboard navigation
@@ -88,10 +70,7 @@ void Menu::Update()
 
 void Menu::Render()
 {
-    // Примітка: BeginFrame/EndFrame викликаються в EngineApplication::Render()
-    // Тут тільки налаштовуємо ImGui вікно
     
-    // Отримуємо розміри екрану
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
     
@@ -126,7 +105,6 @@ void Menu::Render()
 
     ImGui::End();
     
-    // Примітка: EndFrame викликається в EngineApplication::Render()
 }
 
 void Menu::BeginFrame() { rlImGuiBegin(); }
