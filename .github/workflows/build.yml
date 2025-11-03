@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'src/**/*.cpp'
+      - 'src/**/*.h'
+      - 'include/**/*.h'
+      - 'CMakeLists.txt'
+      - '.github/workflows/build.yml'
   schedule:
     # Run weekly builds every Sunday at 2 AM UTC
     - cron: '0 2 * * 0'

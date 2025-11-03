@@ -15,7 +15,7 @@
 #include "Managers/GameRenderHelpers.h"
 #include "Managers/PlayerManager.h"
 #include "Managers/UpdateManager.h"
-#include "Managers/GameRenderManager.h"
+// GameRenderManager замінено на RenderingSystem
 #include "Managers/MenuActionHandler.h"
 #include "Menu/Menu.h"
 #include <memory>
@@ -39,7 +39,7 @@ private:
     std::unique_ptr<GameRenderHelpers> m_renderHelper;
     std::unique_ptr<PlayerManager> m_playerManager;
     std::unique_ptr<UpdateManager> m_updateManager;
-    std::unique_ptr<GameRenderManager> m_gameRenderManager;
+    // GameRenderManager замінено на RenderingSystem (використовується в GameApplication)
     std::unique_ptr<MenuActionHandler> m_menuActionHandler;
 
     bool m_showMenu;
@@ -86,7 +86,7 @@ public:
     GameRenderHelpers* GetRenderHelper() { return m_renderHelper.get(); }
     PlayerManager* GetPlayerManager() { return m_playerManager.get(); }
     UpdateManager* GetUpdateManager() { return m_updateManager.get(); }
-    GameRenderManager* GetGameRenderManager() { return m_gameRenderManager.get(); }
+    // GameRenderManager замінено на RenderingSystem
     MenuActionHandler* GetMenuActionHandler() { return m_menuActionHandler.get(); }
     
     GameMap &GetGameMap();

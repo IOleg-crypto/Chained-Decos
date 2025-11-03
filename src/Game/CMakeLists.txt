@@ -1,5 +1,8 @@
 add_library(ChainedDecosGame STATIC
     Game.cpp
+    Game.h
+    GameApplication.cpp
+    GameApplication.h
     Managers/MapManager.cpp
     Managers/MapManager.h
     Managers/ResourceManager.cpp
@@ -12,16 +15,18 @@ add_library(ChainedDecosGame STATIC
     Managers/PlayerManager.h
     Managers/UpdateManager.cpp
     Managers/UpdateManager.h
-    Managers/GameRenderManager.cpp
-    Managers/GameRenderManager.h
+    # GameRenderManager замінено на Systems/RenderingSystem/RenderingSystem
     Managers/MenuActionHandler.cpp
     Managers/MenuActionHandler.h
-    Modules/PlayerModule.cpp
-    Modules/PlayerModule.h
-    Modules/MapModule.cpp
-    Modules/MapModule.h
-    Modules/MenuModule.cpp
-    Modules/MenuModule.h
+    # Systems (modular architecture)
+    Systems/PlayerSystem/PlayerSystem.cpp
+    Systems/PlayerSystem/PlayerSystem.h
+    Systems/MapSystem/MapSystem.cpp
+    Systems/MapSystem/MapSystem.h
+    Systems/UIController/UIController.cpp
+    Systems/UIController/UIController.h
+    Systems/RenderingSystem/RenderingSystem.cpp
+    Systems/RenderingSystem/RenderingSystem.h
 )
 
 target_include_directories(ChainedDecosGame

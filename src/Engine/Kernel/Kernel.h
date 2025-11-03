@@ -22,6 +22,7 @@ public:
         Collision,
         World,
         Physics,
+        Engine,
         // Game services
         Player,
         Menu,

@@ -1,8 +1,10 @@
-#ifndef MENU_MODULE_H
-#define MENU_MODULE_H
+#ifndef UI_CONTROLLER_H
+#define UI_CONTROLLER_H
 
 #include "Engine/Module/IEngineModule.h"
 #include <memory>
+#include <vector>
+#include <string>
 
 // Forward declarations
 class Kernel;
@@ -10,23 +12,24 @@ class Menu;
 class ConsoleManager;
 class Engine;
 
-// Модуль для управління меню та консоллю
-class MenuModule : public IEngineModule {
+// System for managing user interface and menus
+// Creates and owns its components independently
+class UIController : public IEngineModule {
 public:
-    MenuModule();
-    ~MenuModule() override = default;
+    UIController();
+    ~UIController() override;
 
     // IEngineModule interface
-    const char* GetModuleName() const override { return "Menu"; }
+    const char* GetModuleName() const override { return "UI"; }
     const char* GetModuleVersion() const override { return "1.0.0"; }
-    const char* GetModuleDescription() const override { return "Menu and console management"; }
+    const char* GetModuleDescription() const override { 
+        return "User interface and menu management"; 
+    }
     
     bool Initialize(Kernel* kernel) override;
     void Shutdown() override;
-    
     void Update(float deltaTime) override;
     void Render() override;
-    
     void RegisterServices(Kernel* kernel) override;
     std::vector<std::string> GetDependencies() const override;
 
@@ -35,11 +38,15 @@ public:
     ConsoleManager* GetConsoleManager() const;
 
 private:
+    // System OWNS its components
     std::unique_ptr<Menu> m_menu;
     
-    // Dependencies
+    // Kernel reference (for accessing services)
+    Kernel* m_kernel;
+    
+    // Dependencies obtained through Kernel (references only)
     Engine* m_engine;
 };
 
-#endif // MENU_MODULE_H
+#endif // UI_CONTROLLER_H
 

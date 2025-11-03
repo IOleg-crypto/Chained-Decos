@@ -19,6 +19,8 @@ add_library(ChainedDecosEngine STATIC
           Engine.h
           MapFileManager/MapFileManager.cpp
           MapFileManager/JsonMapFileManager.cpp
+          Application/EngineApplication.cpp
+          Application/EngineApplication.h
 )
 target_include_directories(ChainedDecosEngine
         PUBLIC

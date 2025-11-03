@@ -5,7 +5,7 @@
 #include "Managers/GameRenderHelpers.h"
 #include "Managers/PlayerManager.h"
 #include "Managers/UpdateManager.h"
-#include "Managers/GameRenderManager.h"
+// GameRenderManager замінено на RenderingSystem
 #include "Managers/MenuActionHandler.h"
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/CommandLineHandler/CommandLineHandler.h"
@@ -19,9 +19,6 @@
 #include "Engine/Model/Model.h"
 #include "Engine/Render/RenderManager.h"
 #include "Game/Menu/Menu.h"
-#include "Game/Modules/PlayerModule.h"
-#include "Game/Modules/MapModule.h"
-#include "Game/Modules/MenuModule.h"
 #include "Player/PlayerCollision.h"
 #include "imgui.h"
 #include "rlImGui.h"
@@ -91,11 +88,14 @@ void Game::Init(int argc, char *argv[])
         m_engine->GetModuleManager()->InitializeAllModules();
     }
     
-    InitPlayer();
+    // Player initialization is deferred until map is selected
+    // InitPlayer() will be called in HandleStartGameWithMap()
+    
     InitInput();
 
-    m_isGameInitialized = true;
-    TraceLog(LOG_INFO, "Game::Init() - Game components initialized.");
+    // Game is not initialized until a map is selected
+    m_isGameInitialized = false;
+    TraceLog(LOG_INFO, "Game::Init() - Game components initialized (player will be initialized when map is selected).");
 
     Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecos.jpg");
     ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
@@ -151,9 +151,7 @@ void Game::InitializeManagers()
     m_playerManager = std::make_unique<PlayerManager>(m_player.get(), m_collisionManager.get(),
                                                        m_models.get(), m_engine.get(), m_mapManager.get());
     m_updateManager = std::make_unique<UpdateManager>(m_collisionManager.get(), m_mapManager.get());
-    m_gameRenderManager = std::make_unique<GameRenderManager>(m_player.get(), m_engine.get(),
-                                                                m_models.get(), m_collisionManager.get(),
-                                                                m_mapManager.get());
+    // GameRenderManager замінено на RenderingSystem (використовується в GameApplication)
     m_menuActionHandler = std::make_unique<MenuActionHandler>(m_kernel.get(),
                                                                &m_showMenu, &m_isGameInitialized);
     
@@ -213,17 +211,10 @@ void Game::RegisterManagerKernelServices()
 
 void Game::RegisterModules()
 {
-    TraceLog(LOG_INFO, "Game::RegisterModules() - Registering game modules...");
-    
-    if (m_engine) {
-        m_engine->RegisterModule(std::make_unique<MapModule>());
-        m_engine->RegisterModule(std::make_unique<PlayerModule>());
-        m_engine->RegisterModule(std::make_unique<MenuModule>());
-        
-        TraceLog(LOG_INFO, "Game::RegisterModules() - Modules registered. They will be initialized by Engine.");
-    } else {
-        TraceLog(LOG_WARNING, "Game::RegisterModules() - No engine available, cannot register modules");
-    }
+    // DEPRECATED: Old module usage code
+    // Now using GameApplication with Systems (PlayerSystem, MapSystem, UIController)
+    // This method remains for compatibility but doesn't register modules
+    TraceLog(LOG_INFO, "Game::RegisterModules() - DEPRECATED: Use GameApplication with Systems instead");
 }
 
 void Game::Run()
@@ -266,23 +257,31 @@ void Game::Update()
     }
     else
     {
-        bool consoleOpen = m_menu->GetConsoleManager() && m_menu->GetConsoleManager()->IsConsoleOpen();
-        if (!consoleOpen)
+        // Only update game logic if game is initialized (map selected)
+        if (m_isGameInitialized)
         {
-            UpdatePlayerLogic();
-            UpdatePhysicsLogic();
-        }
-        else
-        {
-            const ImGuiIO &io = ImGui::GetIO();
-            if (io.WantCaptureMouse)
+            bool consoleOpen = m_menu->GetConsoleManager() && m_menu->GetConsoleManager()->IsConsoleOpen();
+            if (!consoleOpen)
             {
-                m_player->GetCameraController()->UpdateCameraRotation();
-                m_player->GetCameraController()->UpdateMouseRotation(
-                    m_player->GetCameraController()->GetCamera(), m_player->GetMovement()->GetPosition());
-                m_player->GetCameraController()->Update();
+                UpdatePlayerLogic();
+                UpdatePhysicsLogic();
             }
-            m_engine->GetRenderManager()->ShowMetersPlayer(*m_player->GetRenderable());
+            else
+            {
+                // Only show player metrics if game is initialized (map selected)
+                if (m_player)
+                {
+                    const ImGuiIO &io = ImGui::GetIO();
+                    if (io.WantCaptureMouse)
+                    {
+                        m_player->GetCameraController()->UpdateCameraRotation();
+                        m_player->GetCameraController()->UpdateMouseRotation(
+                            m_player->GetCameraController()->GetCamera(), m_player->GetMovement()->GetPosition());
+                        m_player->GetCameraController()->Update();
+                    }
+                    m_engine->GetRenderManager()->ShowMetersPlayer(*m_player->GetRenderable());
+                }
+            }
         }
     }
 }
@@ -303,8 +302,12 @@ void Game::Render()
     }
     else
     {
-        RenderGameWorld();
-        RenderGameUI();
+        // Only render game world and UI if game is initialized (map selected)
+        if (m_isGameInitialized)
+        {
+            // DEPRECATED: RenderGameWorld/RenderGameUI are now in RenderingSystem
+            // Use GameApplication instead of Game if needed
+        }
     }
 
     if (m_engine->IsDebugInfoVisible() && !m_showMenu)
@@ -494,7 +497,9 @@ void Game::HandleMenuActions()
 
 void Game::RenderGameWorld()
 {
-    m_gameRenderManager->RenderGameWorld();
+    // DEPRECATED: GameRenderManager replaced with RenderingSystem
+    // Use GameApplication instead of Game if needed
+    TraceLog(LOG_WARNING, "[Game] RenderGameWorld() is deprecated - use GameApplication with RenderingSystem");
 }
 
 void Game::CreatePlatform(const Vector3 &position, const Vector3 &size, Color color,
@@ -510,7 +515,8 @@ float Game::CalculateDynamicFontSize(float baseSize)
 
 void Game::RenderGameUI() const
 {
-    m_gameRenderManager->RenderGameUI();
+    // DEPRECATED: GameRenderManager replaced with RenderingSystem
+    TraceLog(LOG_WARNING, "[Game] RenderGameUI() is deprecated - use GameApplication with RenderingSystem");
 }
 
 void Game::LoadEditorMap(const std::string &mapPath)

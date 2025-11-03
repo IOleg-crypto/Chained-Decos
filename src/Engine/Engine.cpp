@@ -57,6 +57,14 @@ void Engine::Init()
     m_windowInitialized = true;
     SetExitKey(KEY_NULL);
 
+    // Center window on screen
+    int monitor = GetCurrentMonitor();
+    int monitorWidth = GetMonitorWidth(monitor);
+    int monitorHeight = GetMonitorHeight(monitor);
+    int windowX = (monitorWidth - m_screenX) / 2;
+    int windowY = (monitorHeight - m_screenY) / 2;
+    SetWindowPosition(windowX, windowY);
+
     rlImGuiSetup(true);
     m_inputManager->RegisterAction(KEY_F11, ToggleFullscreen);
     m_isEngineInit = true;
@@ -77,6 +85,9 @@ void Engine::Update()
         m_kernel->Update(GetFrameTime());
     }
     
+    // Modules are updated via Engine::Update which is called from Game::Update
+    // Game::Update checks m_isGameInitialized before calling UpdatePlayerLogic,
+    // but modules are still updated. PlayerModule::Update() now checks player position.
     if (m_moduleManager) {
         m_moduleManager->UpdateAllModules(GetFrameTime());
     }
@@ -86,13 +97,12 @@ void Engine::Update()
 
 void Engine::Render() const
 {
-    m_renderManager->BeginFrame();
+    // Note: BeginFrame/EndFrame are now called in EngineApplication::Render()
+    // to allow projects to render between them
     
     if (m_moduleManager) {
         m_moduleManager->RenderAllModules();
     }
-    
-    m_renderManager->EndFrame();
 }
 
 bool Engine::ShouldClose() const { return WindowShouldClose() || m_shouldExit; }

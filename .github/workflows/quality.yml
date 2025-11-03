@@ -4,8 +4,18 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'src/**/*.cpp'
+      - 'src/**/*.h'
+      - 'include/**/*.h'
+      - '.github/workflows/quality.yml'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'src/**/*.cpp'
+      - 'src/**/*.h'
+      - 'include/**/*.h'
+      - '.github/workflows/quality.yml'
 
 env:
   CI: true
