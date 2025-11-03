@@ -1,5 +1,6 @@
 
 #include <Model/Model.h>
+#include <Model/JsonParser.h>
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -73,7 +74,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
         result.totalModels++;
 
         // Use enhanced parsing
-        if (!JsonHelper::ValidateModelEntry(modelEntry))
+        if (!JsonParser::ValidateModelEntry(modelEntry))
         {
             TraceLog(LOG_WARNING, "Invalid model entry, skipping");
             result.failedModels++;
@@ -81,7 +82,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
         }
 
         // Parse using new helper
-        auto modelConfigResult = JsonHelper::ParseModelConfig(modelEntry);
+        auto modelConfigResult = JsonParser::ParseModelConfig(modelEntry);
         if (!modelConfigResult)
         {
             TraceLog(LOG_ERROR, "Error processing model entry");
@@ -185,7 +186,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJsonSelective(
         }
 
         // Use enhanced parsing
-        if (!JsonHelper::ValidateModelEntry(modelEntry))
+        if (!JsonParser::ValidateModelEntry(modelEntry))
         {
             TraceLog(LOG_WARNING, "Invalid model entry for '%s', skipping", modelName.c_str());
             result.failedModels++;
@@ -193,7 +194,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJsonSelective(
         }
 
         // Parse using new helper
-        auto modelConfigResult = JsonHelper::ParseModelConfig(modelEntry);
+        auto modelConfigResult = JsonParser::ParseModelConfig(modelEntry);
         if (!modelConfigResult)
         {
             TraceLog(LOG_ERROR, "Error processing model entry for '%s'", modelName.c_str());
@@ -421,7 +422,7 @@ void ModelLoader::DrawAllModels() const
         Matrix matRotation = MatrixRotateXYZ(rotRad);
         Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
         Matrix fullTransform = MatrixMultiply(matScale, MatrixMultiply(matRotation, matTranslation));
-        
+
         // Apply full transform to model
         // We'll use DrawMesh directly to properly apply the complete transformation
         // This ensures rotation matches the collision system
@@ -441,7 +442,7 @@ void ModelLoader::DrawAllModels() const
             
             // Apply tint temporarily
             modelPtr->materials[modelPtr->meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = colorTint;
-            
+
             // Draw mesh with full transform
             DrawMesh(modelPtr->meshes[i], modelPtr->materials[modelPtr->meshMaterial[i]], fullTransform);
             

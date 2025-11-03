@@ -7,11 +7,12 @@
 #include "Engine/World/World.h"
 #include "Engine/Map/MapLoader.h"
 #include "Engine/Kernel/Kernel.h"
+#include "Engine/CommandLineHandler/CommandLineHandler.h"
 #include "Player/Player.h"
 #include "Managers/MapManager.h"
 #include "Managers/ResourceManager.h"
 #include "Managers/StateManager.h"
-#include "Managers/RenderHelper.h"
+#include "Managers/GameRenderHelpers.h"
 #include "Managers/PlayerManager.h"
 #include "Managers/UpdateManager.h"
 #include "Managers/GameRenderManager.h"
@@ -35,7 +36,7 @@ private:
     std::unique_ptr<MapManager> m_mapManager;
     std::unique_ptr<ResourceManager> m_modelManager;
     std::unique_ptr<StateManager> m_stateManager;
-    std::unique_ptr<RenderHelper> m_renderHelper;
+    std::unique_ptr<GameRenderHelpers> m_renderHelper;
     std::unique_ptr<PlayerManager> m_playerManager;
     std::unique_ptr<UpdateManager> m_updateManager;
     std::unique_ptr<GameRenderManager> m_gameRenderManager;
@@ -54,11 +55,44 @@ public:
     void Update();
     void Render();
     void Cleanup();
+    
+private:
+    // Initialization helpers
+    void InitializeCoreServices(const GameConfig& config);
+    void InitializeGameComponents();
+    void InitializeManagers();
+    void RegisterCoreKernelServices();
+    void RegisterManagerKernelServices();
+    void RegisterModules();
 
+public:
+    // Public API methods
     void ToggleMenu();
     void RequestExit() const;
     bool IsRunning() const;
+    bool IsInitialized() const { return m_isGameInitialized; }
+    
+    // Public accessors
+    Player &GetPlayer() { return *m_player; }
+    CollisionManager &GetCollisionManager() { return *m_collisionManager; }
+    ModelLoader &GetModels() { return *m_models; }
+    WorldManager &GetWorld() { return *m_world; }
+    Menu &GetMenu();
+    Kernel &GetKernel() { return *m_kernel; }
+    
+    MapManager* GetMapManager() { return m_mapManager.get(); }
+    ResourceManager* GetModelManager() { return m_modelManager.get(); }
+    StateManager* GetStateManager() { return m_stateManager.get(); }
+    GameRenderHelpers* GetRenderHelper() { return m_renderHelper.get(); }
+    PlayerManager* GetPlayerManager() { return m_playerManager.get(); }
+    UpdateManager* GetUpdateManager() { return m_updateManager.get(); }
+    GameRenderManager* GetGameRenderManager() { return m_gameRenderManager.get(); }
+    MenuActionHandler* GetMenuActionHandler() { return m_menuActionHandler.get(); }
+    
+    GameMap &GetGameMap();
+    void LoadEditorMap(const std::string &mapPath);
 
+public:
     void EnableCursor();
     void HideCursor();
 
@@ -86,31 +120,11 @@ public:
     void CreatePlatform(const Vector3 &position, const Vector3 &size, Color color, CollisionType collisionType);
     static float CalculateDynamicFontSize(float baseSize);
 
-    void LoadEditorMap(const std::string &mapPath);
     void RenderEditorMap();
     void DumpMapDiagnostics() const;
 
     void SaveGameState();
     void RestoreGameState();
-
-    Player &GetPlayer() { return *m_player; }
-    CollisionManager &GetCollisionManager() { return *m_collisionManager; }
-    ModelLoader &GetModels() { return *m_models; }
-    WorldManager &GetWorld() { return *m_world; }
-    Menu &GetMenu();
-    Kernel &GetKernel() { return *m_kernel; }
-    
-    MapManager* GetMapManager() { return m_mapManager.get(); }
-    ResourceManager* GetModelManager() { return m_modelManager.get(); }
-    StateManager* GetStateManager() { return m_stateManager.get(); }
-    RenderHelper* GetRenderHelper() { return m_renderHelper.get(); }
-    PlayerManager* GetPlayerManager() { return m_playerManager.get(); }
-    UpdateManager* GetUpdateManager() { return m_updateManager.get(); }
-    GameRenderManager* GetGameRenderManager() { return m_gameRenderManager.get(); }
-    MenuActionHandler* GetMenuActionHandler() { return m_menuActionHandler.get(); }
-    
-    GameMap &GetGameMap();
-    bool IsInitialized() const { return m_isGameInitialized; }
 };
 
 #endif // GAME_H

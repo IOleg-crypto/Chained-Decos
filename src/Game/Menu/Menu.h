@@ -15,8 +15,9 @@
 #include <imgui.h>
 #include <raylib.h>
 
-// Forward declaration to break circular dependency
+// Forward declarations to break circular dependencies
 class Game;
+class Kernel;
 
 
 enum class MenuAction : uint8_t
@@ -88,7 +89,8 @@ public:
 
     // Core functionality
     void Initialize(Engine *engine);
-    void SetGame(Game* game);
+    void SetKernel(Kernel* kernel);
+    void SetGame(Game* game); // Deprecated: use SetKernel instead
     void Update();
 
     // State management
@@ -203,7 +205,8 @@ private:
 
     // Core state
     Engine *m_engine = nullptr;
-    Game* m_game = nullptr;
+    Kernel* m_kernel = nullptr;
+    Game* m_game = nullptr; // Kept for backward compatibility, will be removed
     std::unique_ptr<SettingsManager> m_settingsManager;
 
     // Menu state

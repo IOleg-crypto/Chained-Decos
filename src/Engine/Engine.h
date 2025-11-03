@@ -22,6 +22,9 @@
 #include "Kernel/Kernel.h"
 #include "Render/RenderManager.h"
 
+// Forward declaration
+class ModuleManager;
+
 CHAINEDDECOSENGINE_API class Engine
 {
 public:
@@ -43,6 +46,15 @@ public:
     [[nodiscard]] RenderManager *GetRenderManager() const;
 
     InputManager &GetInputManager() const;
+    
+    Kernel* GetKernel() const { return m_kernel; }
+
+    // ==================== Module System ====================
+    ModuleManager* GetModuleManager() { return m_moduleManager.get(); }
+    const ModuleManager* GetModuleManager() const { return m_moduleManager.get(); }
+    
+    // Зареєструвати модуль в рушії
+    void RegisterModule(std::unique_ptr<class IEngineModule> module);
 
     // ==================== Engine State Control ====================
     void RequestExit();
@@ -64,6 +76,9 @@ private:
     std::shared_ptr<InputManager> m_inputManager;
     std::shared_ptr<RenderManager> m_renderManager;
     Kernel* m_kernel;
+    
+    // Module System
+    std::unique_ptr<ModuleManager> m_moduleManager;
 
     // Engine State
     bool m_shouldExit;

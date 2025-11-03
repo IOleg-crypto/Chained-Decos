@@ -1129,13 +1129,8 @@ void MapManager::InitCollisions()
     // Initialize ground collider first
     m_collisionManager->Initialize();
     
-    // Register collision service once initialized
-    if (m_kernel)
-    {
-        m_kernel->RegisterService<CollisionService>(
-            Kernel::ServiceType::Collision,
-            std::make_shared<CollisionService>(m_collisionManager));
-    }
+    // CollisionService реєструється в Game::RegisterKernelServices()
+    // MapManager не повинен реєструвати сервіси - це відповідальність Game
 
     // Load model collisions only for models that are actually loaded and required for this map
     auto availableModels = m_models->GetAvailableModels();
@@ -1189,13 +1184,8 @@ void MapManager::InitCollisionsWithModels(const std::vector<std::string> &requir
     // Initialize ground collider first
     m_collisionManager->Initialize();
     
-    // Register collision service once initialized
-    if (m_kernel)
-    {
-        m_kernel->RegisterService<CollisionService>(
-            Kernel::ServiceType::Collision,
-            std::make_shared<CollisionService>(m_collisionManager));
-    }
+    // CollisionService реєструється в Game::RegisterKernelServices()
+    // MapManager не повинен реєструвати сервіси - це відповідальність Game
 
     // Try to create model collisions, but don't fail if it doesn't work
     TraceLog(LOG_INFO,
@@ -1251,13 +1241,8 @@ bool MapManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &re
     // Initialize collision manager
     m_collisionManager->Initialize();
 
-    // Register collision service once initialized
-    if (m_kernel)
-    {
-        m_kernel->RegisterService<CollisionService>(
-            Kernel::ServiceType::Collision,
-            std::make_shared<CollisionService>(m_collisionManager));
-    }
+    // CollisionService реєструється в Game::RegisterKernelServices()
+    // MapManager не повинен реєструвати сервіси - це відповідальність Game
 
     // Try to create model collisions, but don't fail if it doesn't work
     TraceLog(LOG_INFO,

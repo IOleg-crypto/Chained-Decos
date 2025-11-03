@@ -10,6 +10,7 @@ add_subdirectory(Physics)
 add_subdirectory(World)
 add_subdirectory(CommandLineHandler)
 add_subdirectory(Kernel)
+add_subdirectory(Module)
 add_subdirectory(Audio)
 add_subdirectory(Event)
 
@@ -35,6 +36,7 @@ target_link_libraries(ChainedDecosEngine
             physics
             world
             kernel
+            module
             audio
             event
             raylib

@@ -1,5 +1,7 @@
 #include "ConsoleManager.h"
 #include "../Game.h"
+#include "Engine/Kernel/Kernel.h"
+#include "Engine/Kernel/KernelServices.h"
 #include "Game/Player/PlayerCollision.h"
 #include "Game/Managers/MapManager.h"
 #include <raylib.h>
@@ -11,7 +13,7 @@
 #include <cctype>
 #include <iterator>
 
-ConsoleManager::ConsoleManager(Game* game) : m_game(game) {
+ConsoleManager::ConsoleManager(Game* game) : m_game(game), m_kernel(nullptr) {
     TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER BEING INITIALIZED");
 
     // Register all built-in commands
@@ -19,6 +21,41 @@ ConsoleManager::ConsoleManager(Game* game) : m_game(game) {
 
     TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER INITIALIZED with %zu commands", 
              m_commands.size());
+}
+
+ConsoleManager::ConsoleManager(Kernel* kernel) : m_game(nullptr), m_kernel(kernel) {
+    TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager(Kernel*) - CONSOLE MANAGER BEING INITIALIZED");
+
+    // Try to get Game from Kernel if available
+    if (m_kernel) {
+        // Try to get GameService from Kernel
+        // Game* will be set later if needed
+    }
+
+    // Register all built-in commands
+    RegisterBuiltinCommands();
+
+    TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager(Kernel*) - CONSOLE MANAGER INITIALIZED with %zu commands", 
+             m_commands.size());
+}
+
+Game* ConsoleManager::GetGame() const {
+    // If we have Game directly, return it
+    if (m_game) {
+        return m_game;
+    }
+    
+    // Otherwise, try to get it from Kernel
+    if (m_kernel) {
+        auto gameService = m_kernel->GetService<GameService>(Kernel::ServiceType::Game);
+        if (gameService && gameService->game) {
+            // Cast away const for internal use
+            const_cast<ConsoleManager*>(this)->m_game = gameService->game;
+            return gameService->game;
+        }
+    }
+    
+    return nullptr;
 }
 
 void ConsoleManager::ToggleConsole() {

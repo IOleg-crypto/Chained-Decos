@@ -45,7 +45,7 @@ public:
     void RegisterService(ServiceType type, std::shared_ptr<T> service)
     {
         static_assert(std::is_base_of_v<IKernelService, T>, "Service must implement IKernelService");
-        m_services[type] = service;
+        m_services[type] = std::static_pointer_cast<IKernelService>(service);
     }
 
     template <typename T>
@@ -70,7 +70,7 @@ public:
     void ShutdownServices();
 
 private:
-    std::unordered_map<ServiceType, std::shared_ptr<void>> m_services;
+    std::unordered_map<ServiceType, std::shared_ptr<IKernelService>> m_services;
     std::map<std::string, std::string> m_config;
 };
 

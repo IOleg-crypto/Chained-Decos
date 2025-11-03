@@ -4,7 +4,7 @@
 #include "Engine/Model/Model.h"
 #include "Engine/Collision/CollisionManager.h"
 #include "MapManager.h"
-#include "RenderHelper.h"
+#include "GameRenderHelpers.h"
 #include <raylib.h>
 
 GameRenderManager::GameRenderManager(Player* player, Engine* engine, ModelLoader* models,
@@ -76,7 +76,7 @@ void GameRenderManager::RenderGameUI() const
             ? m_engine->GetRenderManager()->GetFont()
             : GetFontDefault();
     
-    float fontSize = RenderHelper::CalculateDynamicFontSize(24.0f);
+    float fontSize = GameRenderHelpers::CalculateDynamicFontSize(24.0f);
     DrawTextEx(fontToUse, timerText.c_str(), timerPos, fontSize, 2.0f, WHITE);
 }
 
