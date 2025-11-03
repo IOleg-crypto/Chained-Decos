@@ -46,11 +46,28 @@ void Menu::Initialize(Engine *engine)
     InitializeMaps();
 }
 
+void Menu::SetKernel(Kernel* kernel)
+{
+    m_kernel = kernel;
+    if (m_kernel && !m_consoleManager) {
+        m_consoleManager = std::make_unique<ConsoleManager>(m_kernel);
+    }
+}
+
 void Menu::SetGame(Game* game)
 {
     m_game = game;
-    if (m_game && !m_consoleManager) {
-        m_consoleManager = std::make_unique<ConsoleManager>(m_game);
+    // Try to get kernel from game if available
+    if (m_game && !m_kernel) {
+        m_kernel = &m_game->GetKernel();
+    }
+    // Initialize console manager with kernel if we have it
+    if (m_kernel && !m_consoleManager) {
+        m_consoleManager = std::make_unique<ConsoleManager>(m_kernel);
+    }
+    // Fallback to old method if no kernel
+    else if (m_game && !m_consoleManager) {
+        m_consoleManager = std::make_unique<ConsoleManager>(&m_game->GetKernel());
     }
 }
 

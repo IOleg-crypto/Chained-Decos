@@ -9,6 +9,16 @@
 #include "../Audio/AudioManager.h"
 #include "../Event/EventSystem.h"
 #include "../Asset/AssetManager.h"
+#include "../Render/RenderManager.h"
+
+struct RenderService : public IKernelService
+{
+    RenderManager *renderManager = nullptr;
+    explicit RenderService(RenderManager *rm) : renderManager(rm) {}
+    bool Initialize() override { return renderManager != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "RenderService"; }
+};
 
 struct InputService : public IKernelService
 {

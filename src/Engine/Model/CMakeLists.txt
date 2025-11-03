@@ -7,8 +7,8 @@ add_library(model STATIC
         Animation.h
         ModelConfig.h
         ModelConfig.cpp
-        JsonHelper.cpp
-        JsonHelper.h
+        JsonParser.cpp
+        JsonParser.h
         ModelCache.cpp
         ModelCache.h
 )
