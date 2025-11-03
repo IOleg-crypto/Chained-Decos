@@ -183,6 +183,12 @@ private:
     void RenderSectionHeader(const char *title, const char *subtitle = nullptr) const;
     void RenderMenuHint(const char *text) const;
     void RenderMapCard(int index, const MapInfo &map, bool selected, float cardWidth) const;
+    
+    // Video settings helpers
+    bool RenderVideoSettingCombo(const char* label, const char* id, 
+                                const std::vector<std::string>& options, 
+                                int& currentIndex, float labelWidth, float comboWidth, float startX);
+    bool HasUnsavedVideoChanges() const;
 
     // Pagination methods
     void EnsurePagination();

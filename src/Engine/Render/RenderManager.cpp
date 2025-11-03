@@ -414,6 +414,16 @@ bool RenderManager::IsCollisionDebugVisible() const { return m_showCollisionDebu
 void RenderManager::ShowMetersPlayer(const IRenderable &renderable) const
 {
     Vector3 playerPosition = renderable.GetPosition();
+    
+    // Don't show meters if player is at uninitialized position
+    // Check for both default (0,0,0) and explicit uninitialized position (-999999)
+    constexpr float UNINITIALIZED_POS = -999999.0f;
+    if ((playerPosition.x == 0.0f && playerPosition.y == 0.0f && playerPosition.z == 0.0f) ||
+        (playerPosition.x <= UNINITIALIZED_POS + 1000.0f && playerPosition.y <= UNINITIALIZED_POS + 1000.0f))
+    {
+        return;
+    }
+    
     float groundLevel = PhysicsComponent::WORLD_FLOOR_Y;
     float heightAboveGround = playerPosition.y - groundLevel;
 

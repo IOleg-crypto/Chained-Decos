@@ -83,6 +83,7 @@ class MapManager;
 class ResourceManager;
 class PlayerManager;
 class Game;
+class Engine;
 
 struct PlayerService : public IKernelService
 {
@@ -136,6 +137,15 @@ struct GameService : public IKernelService
     bool Initialize() override { return game != nullptr; }
     void Shutdown() override {}
     const char *GetName() const override { return "GameService"; }
+};
+
+struct EngineService : public IKernelService
+{
+    Engine *engine = nullptr;
+    explicit EngineService(Engine *e) : engine(e) {}
+    bool Initialize() override { return engine != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "EngineService"; }
 };
 
 #endif // KERNELSERVICES_H

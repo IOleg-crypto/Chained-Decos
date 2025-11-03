@@ -88,11 +88,16 @@ void Menu::Update()
 
 void Menu::Render()
 {
-    BeginFrame();
-
-    // Set up main window for the menu
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(GetScreenWidth(), GetScreenHeight()));
+    // Примітка: BeginFrame/EndFrame викликаються в EngineApplication::Render()
+    // Тут тільки налаштовуємо ImGui вікно
+    
+    // Отримуємо розміри екрану
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    
+    // Set up main window for the menu (на весь екран)
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(static_cast<float>(screenWidth), static_cast<float>(screenHeight)), ImGuiCond_Always);
 
     ImGuiWindowFlags windowFlags =
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -120,7 +125,8 @@ void Menu::Render()
 #endif
 
     ImGui::End();
-    EndFrame();
+    
+    // Примітка: EndFrame викликається в EngineApplication::Render()
 }
 
 void Menu::BeginFrame() { rlImGuiBegin(); }
@@ -435,6 +441,56 @@ void Menu::RenderOptionsMenu()
     RenderBackButton();
 }
 
+// Helper function to render option combo box with validation
+bool Menu::RenderVideoSettingCombo(const char* label, const char* id, 
+                                   const std::vector<std::string>& options, 
+                                   int& currentIndex, float labelWidth, float comboWidth, float startX)
+{
+    // Validate index to prevent out-of-bounds access
+    if (currentIndex < 0 || currentIndex >= static_cast<int>(options.size()))
+    {
+        currentIndex = 0; // Reset to first option if invalid
+    }
+
+    const char* currentValue = options[currentIndex].c_str();
+    bool changed = false;
+
+    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "%s", label);
+    ImGui::SameLine(startX + labelWidth);
+    ImGui::SetNextItemWidth(comboWidth);
+    
+    if (ImGui::BeginCombo(id, currentValue))
+    {
+        for (size_t i = 0; i < options.size(); ++i)
+        {
+            bool isSelected = (currentIndex == static_cast<int>(i));
+            if (ImGui::Selectable(options[i].c_str(), isSelected))
+            {
+                currentIndex = static_cast<int>(i);
+                changed = true;
+            }
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    return changed;
+}
+
+// Check if video settings have unsaved changes
+bool Menu::HasUnsavedVideoChanges() const
+{
+    if (!m_settingsManager) return false;
+    
+    return m_videoSettings.resolutionIndex != m_settingsManager->GetResolutionIndex() ||
+           m_videoSettings.displayModeIndex != m_settingsManager->GetDisplayModeIndex() ||
+           m_videoSettings.vsyncIndex != m_settingsManager->GetVSyncIndex() ||
+           m_videoSettings.fpsIndex != m_settingsManager->GetFpsIndex();
+}
+
 void Menu::RenderVideoSettings()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
@@ -443,6 +499,7 @@ void Menu::RenderVideoSettings()
     const float startX = MenuConstants::MARGIN + 50.0f;
     const float startY = MenuConstants::MARGIN + 60.0f;
     const float spacing = 50.0f;
+    const float buttonSpacing = 140.0f;
 
     // Title
     ImGui::SetCursorPos(ImVec2(startX, MenuConstants::MARGIN + 20));
@@ -452,110 +509,74 @@ void Menu::RenderVideoSettings()
     ImGui::PopStyleColor();
     ImGui::SetWindowFontScale(1.0f);
 
+    // Check for unsaved changes indicator
+    bool hasUnsavedChanges = HasUnsavedVideoChanges();
+    if (hasUnsavedChanges)
+    {
+        ImGui::SetCursorPos(ImVec2(startX, MenuConstants::MARGIN + 50));
+        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "* Unsaved changes");
+    }
+
     ImGui::SetCursorPos(ImVec2(startX, startY));
 
     // Resolution
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Resolution");
-    ImGui::SameLine(startX + labelWidth);
-    ImGui::SetNextItemWidth(comboWidth);
-    if (ImGui::BeginCombo("##resolution",
-                          m_resolutionOptions[m_videoSettings.resolutionIndex].c_str()))
-    {
-        for (size_t i = 0; i < m_resolutionOptions.size(); ++i)
-        {
-            bool isSelected = (m_videoSettings.resolutionIndex == static_cast<int>(i));
-            if (ImGui::Selectable(m_resolutionOptions[i].c_str(), isSelected))
-            {
-                m_videoSettings.resolutionIndex = static_cast<int>(i);
-            }
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
+    RenderVideoSettingCombo("Resolution", "##resolution", 
+                            m_resolutionOptions, m_videoSettings.resolutionIndex,
+                            labelWidth, comboWidth, startX);
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // Display Mode
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Display Mode");
-    ImGui::SameLine(startX + labelWidth);
-    ImGui::SetNextItemWidth(comboWidth);
-    if (ImGui::BeginCombo("##display_mode",
-                          m_displayModeOptions[m_videoSettings.displayModeIndex].c_str()))
-    {
-        for (size_t i = 0; i < m_displayModeOptions.size(); ++i)
-        {
-            bool isSelected = (m_videoSettings.displayModeIndex == static_cast<int>(i));
-            if (ImGui::Selectable(m_displayModeOptions[i].c_str(), isSelected))
-            {
-                m_videoSettings.displayModeIndex = static_cast<int>(i);
-            }
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
+    RenderVideoSettingCombo("Display Mode", "##display_mode",
+                            m_displayModeOptions, m_videoSettings.displayModeIndex,
+                            labelWidth, comboWidth, startX);
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // VSync
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "VSync");
-    ImGui::SameLine(startX + labelWidth);
-    ImGui::SetNextItemWidth(comboWidth);
-    if (ImGui::BeginCombo("##vsync", m_vsyncOptions[m_videoSettings.vsyncIndex].c_str()))
-    {
-        for (size_t i = 0; i < m_vsyncOptions.size(); ++i)
-        {
-            bool isSelected = (m_videoSettings.vsyncIndex == static_cast<int>(i));
-            if (ImGui::Selectable(m_vsyncOptions[i].c_str(), isSelected))
-            {
-                m_videoSettings.vsyncIndex = static_cast<int>(i);
-            }
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
+    RenderVideoSettingCombo("VSync", "##vsync",
+                            m_vsyncOptions, m_videoSettings.vsyncIndex,
+                            labelWidth, comboWidth, startX);
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // FPS Limit
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "FPS Limit");
-    ImGui::SameLine(startX + labelWidth);
-    ImGui::SetNextItemWidth(comboWidth);
-    if (ImGui::BeginCombo("##fps", m_fpsOptions[m_videoSettings.fpsIndex].c_str()))
-    {
-        for (size_t i = 0; i < m_fpsOptions.size(); ++i)
-        {
-            bool isSelected = (m_videoSettings.fpsIndex == static_cast<int>(i));
-            if (ImGui::Selectable(m_fpsOptions[i].c_str(), isSelected))
-            {
-                m_videoSettings.fpsIndex = static_cast<int>(i);
-            }
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
+    RenderVideoSettingCombo("FPS Limit", "##fps",
+                            m_fpsOptions, m_videoSettings.fpsIndex,
+                            labelWidth, comboWidth, startX);
 
-    // Apply and Back buttons
+    // Buttons section
     ImGui::SetCursorPos(ImVec2(startX, windowSize.y - 80));
-    if (ImGui::Button("Apply", ImVec2(120, 40)))
+    
+    // Apply button - enable only if there are unsaved changes
+    ImGui::BeginDisabled(!hasUnsavedChanges);
+    if (ImGui::Button("Apply", ImVec2(120, 40)) || (hasUnsavedChanges && IsKeyPressed(KEY_ENTER)))
     {
-        // Apply video settings immediately when button is clicked
         if (m_settingsManager)
         {
-            m_settingsManager->SetResolutionIndex(m_videoSettings.resolutionIndex);
-            m_settingsManager->SetDisplayModeIndex(m_videoSettings.displayModeIndex);
-            m_settingsManager->SetVSyncIndex(m_videoSettings.vsyncIndex);
-            m_settingsManager->SetFpsIndex(m_videoSettings.fpsIndex);
-            m_settingsManager->ApplyVideoSettings();
-            m_settingsManager->SaveSettings(); // Save to config file
+            // Validate all indices before applying
+            if (m_videoSettings.resolutionIndex >= 0 && 
+                m_videoSettings.resolutionIndex < static_cast<int>(m_resolutionOptions.size()) &&
+                m_videoSettings.displayModeIndex >= 0 && 
+                m_videoSettings.displayModeIndex < static_cast<int>(m_displayModeOptions.size()) &&
+                m_videoSettings.vsyncIndex >= 0 && 
+                m_videoSettings.vsyncIndex < static_cast<int>(m_vsyncOptions.size()) &&
+                m_videoSettings.fpsIndex >= 0 && 
+                m_videoSettings.fpsIndex < static_cast<int>(m_fpsOptions.size()))
+            {
+                m_settingsManager->SetResolutionIndex(m_videoSettings.resolutionIndex);
+                m_settingsManager->SetDisplayModeIndex(m_videoSettings.displayModeIndex);
+                m_settingsManager->SetVSyncIndex(m_videoSettings.vsyncIndex);
+                m_settingsManager->SetFpsIndex(m_videoSettings.fpsIndex);
+                m_settingsManager->ApplyVideoSettings();
+                m_settingsManager->SaveSettings();
+            }
         }
         m_pendingAction = MenuAction::ApplyVideoSettings;
     }
+    ImGui::EndDisabled();
 
-    ImGui::SameLine(startX + 140);
+    ImGui::SameLine(startX + buttonSpacing);
     RenderBackButton();
 }
 
@@ -614,7 +635,7 @@ void Menu::RenderAudioSettings()
 
     // Apply and Back buttons
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
-    if (ImGui::Button("Apply", ImVec2(120, 40)))
+    if (ImGui::Button("Apply", ImVec2(120, 40)) || IsKeyPressed(KEY_ENTER))
     {
         m_pendingAction = MenuAction::ApplyAudioSettings;
     }
@@ -665,7 +686,7 @@ void Menu::RenderControlSettings()
 
     // Apply and Back buttons
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
-    if (ImGui::Button("Apply", ImVec2(120, 40)))
+    if (ImGui::Button("Apply", ImVec2(120, 40)) || IsKeyPressed(KEY_ENTER))
     {
         m_pendingAction = MenuAction::ApplyControlSettings;
     }
@@ -746,7 +767,7 @@ void Menu::RenderGameplaySettings()
 
     // Apply and Back buttons
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
-    if (ImGui::Button("Apply", ImVec2(120, 40)))
+    if (ImGui::Button("Apply", ImVec2(120, 40)) || IsKeyPressed(KEY_ENTER))
     {
         m_pendingAction = MenuAction::ApplyGameplaySettings;
     }
@@ -768,11 +789,8 @@ void Menu::RenderMapSelection()
         const ImVec2 windowSize = ImGui::GetWindowSize();
         const float centerX = windowSize.x * 0.5f;
         ImGui::SetCursorPos(ImVec2(centerX - 160, windowSize.y - 100));
-        if (RenderActionButton("Start Game with Selected Map", MenuAction::StartGameWithMap,
-                               ImVec2(320, 50)))
-        {
-            // Action is handled by the button
-        }
+        RenderActionButton("Start Game with Selected Map", MenuAction::StartGameWithMap,
+                               ImVec2(320, 50));
     }
     else
     {
@@ -964,7 +982,7 @@ void Menu::HandleKeyboardNavigation()
     }
 
     // Handle console toggle (tilde key)
-    if (IsKeyPressed(KEY_GRAVE) || IsKeyPressed(KEY_F1))
+    if (IsKeyPressed(KEY_GRAVE))
     {
         TraceLog(LOG_INFO, "Menu::HandleKeyboardNavigation() - Console toggle key pressed");
         ToggleConsole();
@@ -1013,12 +1031,12 @@ bool Menu::RenderActionButton(const char *label, MenuAction action, const ImVec2
 
     ImGui::PopStyleColor(4);
 
-    if (clicked)
+    if (clicked && action != MenuAction::None)
     {
         m_pendingAction = action;
         return true;
     }
-    return false;
+    return clicked;
 }
 
 bool Menu::RenderBackButton(float width)
@@ -1057,17 +1075,14 @@ void Menu::RenderMenuHint(const char *text) const
     ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), text);
 }
 
-void Menu::RenderMapCard(int index, const MapInfo &map, bool selected, float cardWidth) const
+void Menu::RenderMapCard(int /*index*/, const MapInfo &map, bool selected, float cardWidth) const
 {
     if (selected)
     {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.6f, 1.0f, 0.8f));
     }
 
-    if (ImGui::Button(map.displayName.c_str(), ImVec2(cardWidth, 40)))
-    {
-        // Map selection is handled by the calling function
-    }
+    ImGui::Button(map.displayName.c_str(), ImVec2(cardWidth, 40));
 
     if (selected)
     {
@@ -1150,6 +1165,7 @@ void Menu::SyncVideoSettingsToConfig()
         m_settingsManager->SetVSyncIndex(m_videoSettings.vsyncIndex);
         m_settingsManager->SetFpsIndex(m_videoSettings.fpsIndex);
         m_settingsManager->ApplyVideoSettings();
+        m_settingsManager->SaveSettings();  // Зберігаємо налаштування в конфіг
     }
 }
 
@@ -1162,6 +1178,7 @@ void Menu::SyncAudioSettingsToConfig()
         m_settingsManager->SetSfxVolume(m_audioSettings.sfxVolume);
         m_settingsManager->SetMuted(m_audioSettings.muted);
         m_settingsManager->ApplyAudioSettings();
+        m_settingsManager->SaveSettings();  // Зберігаємо налаштування в конфіг
     }
 }
 
@@ -1172,6 +1189,7 @@ void Menu::SyncControlSettingsToConfig()
         m_settingsManager->SetMouseSensitivity(m_controlSettings.mouseSensitivity);
         m_settingsManager->SetInvertYAxis(m_controlSettings.invertYAxis);
         m_settingsManager->SetControllerSupport(m_controlSettings.controllerSupport);
+        m_settingsManager->SaveSettings();  // Зберігаємо налаштування в конфіг
     }
 }
 
@@ -1184,6 +1202,7 @@ void Menu::SyncGameplaySettingsToConfig()
         m_settingsManager->SetCheckpointsEnabled(m_gameplaySettings.checkpointsEnabled);
         m_settingsManager->SetAutoSaveEnabled(m_gameplaySettings.autoSaveEnabled);
         m_settingsManager->SetSpeedrunMode(m_gameplaySettings.speedrunMode);
+        m_settingsManager->SaveSettings();  // Зберігаємо налаштування в конфіг
     }
 }
 
@@ -1437,7 +1456,7 @@ void Menu::SetResumeButtonOn(bool status) { m_addResumeButton = status; }
 bool Menu::GetResumeButtonStatus() const { return m_addResumeButton; }
 
 // IRenderable interface implementations
-void Menu::Update(CollisionManager& collisionManager) {
+void Menu::Update(CollisionManager& /*collisionManager*/) {
     Update();
 }
 
@@ -1474,3 +1493,4 @@ bool Menu::IsGrounded() const {
 }
 
 ConsoleManager *Menu::GetConsoleManager() const { return m_consoleManager.get(); }
+
