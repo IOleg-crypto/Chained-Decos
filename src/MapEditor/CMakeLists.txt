@@ -9,7 +9,8 @@ project(ChainedDecosMapEditor VERSION 1.0.0)
 # MapEditor source files
 set(MAPEDITOR_SOURCES
     main.cpp
-    Application.cpp
+    EditorApplication.cpp
+    EditorApplication.h
     Editor/Editor.cpp
     Editor/Object/MapObject.cpp
     Editor/FileManager/FileManager.cpp
@@ -33,6 +34,8 @@ set(MAPEDITOR_SOURCES
     Editor/ModelManager/ModelManager.cpp
     Editor/ModelManager/ModelManager.h
     Editor/ModelManager/IModelManager.h
+    Modules/EditorModule.cpp
+    Modules/EditorModule.h
 )
 
 

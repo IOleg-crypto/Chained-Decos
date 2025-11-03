@@ -201,10 +201,22 @@ void PlayerManager::InitPlayer()
 
 void PlayerManager::UpdatePlayerLogic()
 {
-    if (!m_engine)
+    if (!m_engine || !m_player)
     {
-        // Skip player logic if no engine is available (for testing)
-        m_player->Update(*m_collisionManager);
+        // Skip player logic if no engine or player is available
+        if (m_player)
+        {
+            m_player->Update(*m_collisionManager);
+        }
+        return;
+    }
+    
+    // Check if player is at uninitialized position - don't update or show metrics
+    Vector3 pos = m_player->GetPlayerPosition();
+    constexpr float UNINITIALIZED_THRESHOLD = -999000.0f;
+    if (pos.y <= UNINITIALIZED_THRESHOLD || 
+        (pos.x == 0.0f && pos.y == 0.0f && pos.z == 0.0f)) {
+        // Player is not initialized yet - don't update or show metrics
         return;
     }
     
@@ -218,12 +230,14 @@ void PlayerManager::UpdatePlayerLogic()
             m_player->GetCameraController()->GetCamera(), m_player->GetMovement()->GetPosition());
         m_player->GetCameraController()->Update();
         
+        // Show meters only if player is initialized (position check done above)
         m_engine->GetRenderManager()->ShowMetersPlayer(*m_player->GetRenderable());
         // return;
     }
     
     m_player->Update(*m_collisionManager);
     
+    // Show meters only if player is initialized (position check done above)
     m_engine->GetRenderManager()->ShowMetersPlayer(*m_player->GetRenderable());
 }
 
