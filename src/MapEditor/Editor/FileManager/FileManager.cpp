@@ -36,11 +36,13 @@ FileManager::FileManager()
     m_currentWorkingDirectory = PROJECT_ROOT_DIR;
     m_newFileNameInput = "new_map.json";
     RefreshDirectoryItems();
-    // NFD init
-    NFD_Init();
+    // NFD is initialized in Editor::InitializeSubsystems()
 }
 
-FileManager::~FileManager() { NFD_Quit(); }
+FileManager::~FileManager() 
+{
+    // NFD cleanup is handled in Editor::~Editor()
+}
 
 // Helper functions to convert between MapObject (Editor) and MapObjectData (Engine)
 static MapObjectData ConvertMapObjectToMapObjectData(const MapObject& obj)
@@ -458,13 +460,46 @@ void FileManager::OpenFileDialog(bool isLoad)
     RefreshDirectoryItems();
 }
 
+ImVec2 FileManager::ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize)
+{
+    const int screenWidth = GetScreenWidth();
+    const int screenHeight = GetScreenHeight();
+    
+    // Clamp window size to fit screen
+    if (windowSize.x > static_cast<float>(screenWidth))
+        windowSize.x = static_cast<float>(screenWidth);
+    if (windowSize.y > static_cast<float>(screenHeight))
+        windowSize.y = static_cast<float>(screenHeight);
+    
+    float clampedX = desiredPos.x;
+    float clampedY = desiredPos.y;
+    
+    // Clamp X position
+    if (clampedX < 0.0f)
+        clampedX = 0.0f;
+    else if (clampedX + windowSize.x > static_cast<float>(screenWidth))
+        clampedX = static_cast<float>(screenWidth) - windowSize.x;
+    
+    // Clamp Y position
+    if (clampedY < 0.0f)
+        clampedY = 0.0f;
+    else if (clampedY + windowSize.y > static_cast<float>(screenHeight))
+        clampedY = static_cast<float>(screenHeight) - windowSize.y;
+    
+    return ImVec2(clampedX, clampedY);
+}
+
 void FileManager::RenderFileDialog()
 {
     if (!m_displayFileDialog)
         return;
 
-    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() * 0.5f - 300, GetScreenHeight() * 0.5f - 200), ImGuiCond_FirstUseEver);
+    ImVec2 windowSize(600, 400);
+    ImVec2 desiredPos(GetScreenWidth() * 0.5f - 300, GetScreenHeight() * 0.5f - 200);
+    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+    
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
 
     std::string title = m_isFileLoadDialog ? "Load Map" : "Save Map";
     if (ImGui::Begin(title.c_str(), &m_displayFileDialog, ImGuiWindowFlags_NoCollapse))
@@ -605,8 +640,12 @@ void FileManager::RenderParkourMapDialog()
 {
     if (m_displayParkourMapDialog)
     {
-        ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(ImVec2(GetScreenWidth() * 0.5f - 250, GetScreenHeight() * 0.5f - 200), ImGuiCond_FirstUseEver);
+        ImVec2 windowSize(500, 400);
+        ImVec2 desiredPos(GetScreenWidth() * 0.5f - 250, GetScreenHeight() * 0.5f - 200);
+        ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+        
+        ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+        ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
 
         if (ImGui::Begin("Parkour Maps", &m_displayParkourMapDialog, ImGuiWindowFlags_NoCollapse))
         {
