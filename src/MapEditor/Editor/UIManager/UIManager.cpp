@@ -38,11 +38,13 @@ UIManager::UIManager(ISceneManager* sceneManager, IFileManager* fileManager,
     m_currentWorkingDirectory = PROJECT_ROOT_DIR "/resources";
     m_newFileNameInput = "new_map.json";
     RefreshDirectoryItems();
-    // NFD init
-    NFD_Init();
+    // NFD is initialized in Editor::InitializeSubsystems()
 }
 
-UIManager::~UIManager() { NFD_Quit(); }
+UIManager::~UIManager() 
+{
+    // NFD cleanup is handled in Editor::~Editor()
+}
 
 void UIManager::Render()
 {
@@ -116,10 +118,43 @@ void UIManager::SetActiveTool(::Tool tool)
     m_toolManager->SetActiveTool(tool);
 }
 
+ImVec2 UIManager::ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize)
+{
+    const int screenWidth = GetScreenWidth();
+    const int screenHeight = GetScreenHeight();
+    
+    // Clamp window size to fit screen
+    if (windowSize.x > static_cast<float>(screenWidth))
+        windowSize.x = static_cast<float>(screenWidth);
+    if (windowSize.y > static_cast<float>(screenHeight))
+        windowSize.y = static_cast<float>(screenHeight);
+    
+    float clampedX = desiredPos.x;
+    float clampedY = desiredPos.y;
+    
+    // Clamp X position
+    if (clampedX < 0.0f)
+        clampedX = 0.0f;
+    else if (clampedX + windowSize.x > static_cast<float>(screenWidth))
+        clampedX = static_cast<float>(screenWidth) - windowSize.x;
+    
+    // Clamp Y position
+    if (clampedY < 0.0f)
+        clampedY = 0.0f;
+    else if (clampedY + windowSize.y > static_cast<float>(screenHeight))
+        clampedY = static_cast<float>(screenHeight) - windowSize.y;
+    
+    return ImVec2(clampedX, clampedY);
+}
+
 void UIManager::RenderImGuiToolbar()
 {
-    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(700, 300), ImGuiCond_FirstUseEver);
+    ImVec2 windowSize(700, 300);
+    ImVec2 desiredPos(10, 10);
+    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+    
+    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
 
     // Enable docking for toolbar window - allow it to be docked if needed
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
@@ -286,9 +321,12 @@ void UIManager::RenderImGuiToolbar()
 void UIManager::RenderImGuiObjectPanel()
 {
     const int screenWidth = GetScreenWidth();
-    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(screenWidth) - 250, 10),
-                            ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(240, 400), ImGuiCond_FirstUseEver);
+    ImVec2 windowSize(240, 400);
+    ImVec2 desiredPos(static_cast<float>(screenWidth) - 250, 10);
+    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+    
+    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
 
     // Enable docking for object panel - allow docking to sides
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
@@ -373,9 +411,12 @@ void UIManager::RenderImGuiPropertiesPanel()
     auto& obj = *m_sceneManager->GetSelectedObject();
     const int screenHeight = GetScreenHeight();
 
-    ImGui::SetNextWindowPos(ImVec2(10, static_cast<float>(screenHeight - 400)),
-                            ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
+    ImVec2 windowSize(300, 400);
+    ImVec2 desiredPos(10, static_cast<float>(screenHeight - 400));
+    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+    
+    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
 
     // Enable docking for properties panel
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
@@ -404,7 +445,7 @@ void UIManager::RenderImGuiPropertiesPanel()
             obj.SetObjectName(nameLabel); // Update the object's name
         }
 
-        const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane", "Ellipse", "Model"};
+        const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane", "Ellipse", "Model" , "Spawn Zone"};
         int typeIndex = obj.GetObjectType();
         if (ImGui::Combo("Type", &typeIndex, types, IM_ARRAYSIZE(types)))
         {
@@ -417,97 +458,125 @@ void UIManager::RenderImGuiPropertiesPanel()
             obj.SetPosition({pos[0], pos[1], pos[2]});
         }
 
-        float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
-        float size[2] = {obj.GetPlaneSize().x, obj.GetPlaneSize().y};
-        float radiusEllipse[2] = {obj.GetHorizontalRadius(), obj.GetVerticalRadius()};
-        float radiusSphere = obj.GetSphereRadius();
-
+        // Type-specific parameters (only show relevant ones for each type)
         switch (obj.GetObjectType())
         {
         case 0: // Cube
-            if (ImGui::DragFloat3("Scale", scale, 0.1f))
             {
-                obj.SetScale({scale[0], scale[1], scale[2]});
+                float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
+                if (ImGui::DragFloat3("Scale", scale, 0.1f))
+                {
+                    obj.SetScale({scale[0], scale[1], scale[2]});
+                }
             }
             break;
 
         case 1: // Sphere
-            if (ImGui::DragFloat("Radius", &radiusSphere, 0.1f))
             {
-                obj.SetSphereRadius(radiusSphere);
+                float radiusSphere = obj.GetSphereRadius();
+                if (ImGui::DragFloat("Radius", &radiusSphere, 0.1f))
+                {
+                    obj.SetSphereRadius(radiusSphere);
+                }
             }
             break;
 
         case 2: // Cylinder
-            if (ImGui::DragFloat3("Scale", scale, 0.1f))
             {
-                obj.SetScale({scale[0], scale[1], scale[2]});
+                float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
+                if (ImGui::DragFloat3("Scale", scale, 0.1f))
+                {
+                    obj.SetScale({scale[0], scale[1], scale[2]});
+                }
             }
             break;
 
         case 3: // Plane
-            if (ImGui::DragFloat2("Size", size, 0.1f))
             {
-                obj.SetPlaneSize({size[0], size[1]});
+                float size[2] = {obj.GetPlaneSize().x, obj.GetPlaneSize().y};
+                if (ImGui::DragFloat2("Size", size, 0.1f))
+                {
+                    obj.SetPlaneSize({size[0], size[1]});
+                }
             }
             break;
 
         case 4: // Ellipse
-            if (ImGui::DragFloat2("Radius H/V", radiusEllipse, 0.1f))
             {
-                obj.SetHorizontalRadius(radiusEllipse[0]);
-                obj.SetVerticalRadius(radiusEllipse[1]);
+                float radiusEllipse[2] = {obj.GetHorizontalRadius(), obj.GetVerticalRadius()};
+                if (ImGui::DragFloat2("Radius H/V", radiusEllipse, 0.1f))
+                {
+                    obj.SetHorizontalRadius(radiusEllipse[0]);
+                    obj.SetVerticalRadius(radiusEllipse[1]);
+                }
             }
             break;
 
         case 5: // Model
-            // Model selection dropdown
-            ImGui::Text("Model:");
-            if (ImGui::BeginCombo("##ModelSelect", obj.GetModelAssetName().c_str()))
             {
-                // Use model manager for available models
-                const auto& availableModels = m_modelManager->GetAvailableModels();
-                for (const auto &modelName : availableModels)
+                // Model selection dropdown
+                ImGui::Text("Model:");
+                if (ImGui::BeginCombo("##ModelSelect", obj.GetModelAssetName().c_str()))
                 {
-                    bool isSelected = (obj.GetModelAssetName() == modelName);
-
-                    if (ImGui::Selectable(modelName.c_str(), isSelected))
+                    // Use model manager for available models
+                    const auto& availableModels = m_modelManager->GetAvailableModels();
+                    for (const auto &modelName : availableModels)
                     {
-                        obj.SetModelAssetName(modelName);
-                    }
+                        bool isSelected = (obj.GetModelAssetName() == modelName);
 
-                    if (isSelected)
-                    {
-                        ImGui::SetItemDefaultFocus();
+                        if (ImGui::Selectable(modelName.c_str(), isSelected))
+                        {
+                            obj.SetModelAssetName(modelName);
+                        }
+
+                        if (isSelected)
+                        {
+                            ImGui::SetItemDefaultFocus();
+                        }
                     }
+                    ImGui::EndCombo();
                 }
-                ImGui::EndCombo();
-            }
 
-            // Scale controls for models
-            if (ImGui::DragFloat3("Scale", scale, 0.1f))
+                // Scale controls for models
+                float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
+                if (ImGui::DragFloat3("Scale", scale, 0.1f))
+                {
+                    obj.SetScale({scale[0], scale[1], scale[2]});
+                }
+            }
+            break;
+
+        case 6: // Spawn Zone
             {
-                obj.SetScale({scale[0], scale[1], scale[2]});
+                // Spawn Zone only needs Position, no other parameters needed
             }
             break;
         }
 
-        float rot[3] = {obj.GetRotation().x * RAD2DEG, obj.GetRotation().y * RAD2DEG,
-                        obj.GetRotation().z * RAD2DEG};
-        if (ImGui::DragFloat3("Rotation", rot, 1.0f))
+        // Rotation - show for all types except Spawn Zone
+        if (obj.GetObjectType() != 6)
         {
-            obj.SetRotation({rot[0] * DEG2RAD, rot[1] * DEG2RAD, rot[2] * DEG2RAD});
+            float rot[3] = {obj.GetRotation().x * RAD2DEG, obj.GetRotation().y * RAD2DEG,
+                            obj.GetRotation().z * RAD2DEG};
+            if (ImGui::DragFloat3("Rotation", rot, 1.0f))
+            {
+                obj.SetRotation({rot[0] * DEG2RAD, rot[1] * DEG2RAD, rot[2] * DEG2RAD});
+            }
         }
 
-        float color[4] = {obj.GetColor().r / 255.0f, obj.GetColor().g / 255.0f,
-                          obj.GetColor().b / 255.0f, obj.GetColor().a / 255.0f};
-
-        if (ImGui::ColorEdit4("Color", color))
+        // Color - show for all types except Spawn Zone
+        if (obj.GetObjectType() != 6)
         {
-            obj.SetColor({static_cast<unsigned char>(color[0] * 255),
-                          static_cast<unsigned char>(color[1] * 255),
-                          static_cast<unsigned char>(color[2] * 255),
-                          static_cast<unsigned char>(color[3] * 255)});
+            float color[4] = {obj.GetColor().r / 255.0f, obj.GetColor().g / 255.0f,
+                              obj.GetColor().b / 255.0f, obj.GetColor().a / 255.0f};
+
+            if (ImGui::ColorEdit4("Color", color))
+            {
+                obj.SetColor({static_cast<unsigned char>(color[0] * 255),
+                              static_cast<unsigned char>(color[1] * 255),
+                              static_cast<unsigned char>(color[2] * 255),
+                              static_cast<unsigned char>(color[3] * 255)});
+            }
         }
     }
 
@@ -523,10 +592,15 @@ void UIManager::RenderParkourMapDialog()
 {
     if (m_displayParkourMapDialog)
     {
-        ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(
-            ImVec2(GetScreenWidth() * 0.5f - 250, GetScreenHeight() * 0.5f - 200),
-            ImGuiCond_FirstUseEver);
+        ImVec2 windowSize(500, 400);
+        ImVec2 desiredPos(
+            GetScreenWidth() * 0.5f - 250,
+            GetScreenHeight() * 0.5f - 200
+        );
+        ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+        
+        ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+        ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
 
         if (ImGui::Begin("Parkour Maps", &m_displayParkourMapDialog, ImGuiWindowFlags_NoCollapse))
         {
