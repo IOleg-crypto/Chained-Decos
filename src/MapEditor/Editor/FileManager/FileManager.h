@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <imgui.h>
 #include "Engine/Map/MapLoader.h"
 #include "Engine/MapFileManager/MapFileManager.h"
 #include "Engine/MapFileManager/JsonMapFileManager.h"
@@ -67,6 +68,9 @@ public:
 private:
     // Helper methods
     void RenderParkourMapDialog();
+    
+    // Window position helper (windowSize is passed by reference to allow clamping)
+    ImVec2 ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize);
 };
 
 #endif // FILEMANAGER_H

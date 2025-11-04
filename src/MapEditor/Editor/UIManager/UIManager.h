@@ -102,6 +102,9 @@ private:
 
     // UI helper methods
     void ProcessPendingObjectCreation();
+    
+    // Window position helper (windowSize is passed by reference to allow clamping)
+    ImVec2 ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize);
 };
 
 #endif // UIMANAGER_H
