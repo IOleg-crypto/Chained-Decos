@@ -54,9 +54,22 @@ void CameraController::UpdateCameraRotation()
     }
 
     Vector2 mouseDelta = GetMouseDelta();
-    float sensitivity = 0.005f;
-    m_cameraYaw -= mouseDelta.x * sensitivity;
-    m_cameraPitch -= mouseDelta.y * sensitivity;
+    
+    // Обмежуємо максимальне значення delta для уникнення стрибків на віртуальних машинах
+    const float maxDelta = 100.0f;
+    mouseDelta.x = Clamp(mouseDelta.x, -maxDelta, maxDelta);
+    mouseDelta.y = Clamp(mouseDelta.y, -maxDelta, maxDelta);
+    
+    // Згладжування для віртуальних машин - зменшує різкі стрибки
+    m_smoothedMouseDelta = Vector2Lerp(m_smoothedMouseDelta, mouseDelta, MOUSE_SMOOTHING_FACTOR);
+    
+    // Чутливість для віртуальних машин - значно зменшена
+    // Не використовуємо нормалізацію за FPS, оскільки на VM FPS може бути нестабільним
+    float sensitivity = 0.00005f; // Ще більш зменшена чутливість для віртуальних машин
+    
+    // Використовуємо згладжене значення замість сирого delta
+    m_cameraYaw -= m_smoothedMouseDelta.x * sensitivity;
+    m_cameraPitch -= m_smoothedMouseDelta.y * sensitivity;
     m_cameraPitch = Clamp(m_cameraPitch, -PI / 2.0f + 0.1f, PI / 2.0f - 0.1f);
 }
 

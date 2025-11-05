@@ -3,6 +3,8 @@
 
 #include "IBoundingBoxCalculator.h"
 #include <memory>
+#include <raymath.h>
+#include <raylib.h>
 
 // Cube bounding box calculator
 class CubeBoundingBoxCalculator : public IBoundingBoxCalculator {
