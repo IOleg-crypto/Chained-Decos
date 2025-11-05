@@ -7,3 +7,6 @@ UseTab: Never
 AllowShortIfStatementsOnASingleLine: false
 ColumnLimit: 100
 BreakBeforeBraces: Allman
+AlignConsecutiveAssignments: true
+BraceWrapping:
+  AfterFunction: true

@@ -6,7 +6,8 @@
 #include <string>
 
 // Include necessary headers
-#include "IRenderable.h"
+#include "IGameRenderable.h"
+#include "IMenuRenderable.h"
 #include "Model/Model.h"
 #include "Collision/CollisionManager.h"
 #include "Collision/CollisionDebugRenderer.h"
@@ -34,23 +35,23 @@ public:
     void BeginFrame() const;
     void EndFrame();
 
-    void RenderGame(IRenderable &renderable, const ModelLoader &models,
+    void RenderGame(IGameRenderable &renderable, const ModelLoader &models,
                      const CollisionManager &collisionManager, bool showCollisionDebug = false);
-    void RenderMenu(IRenderable &renderable);
-    void RenderDebugInfo(IRenderable &renderable, const ModelLoader &models,
+    void RenderMenu(IMenuRenderable &renderable);
+    void RenderDebugInfo(IGameRenderable &renderable, const ModelLoader &models,
                           const CollisionManager &collisionManager);
 
     // 3D Scene rendering
     void BeginMode3D(const Camera &camera);
     void EndMode3D();
     void DrawScene3D(const ModelLoader &models);
-    void DrawPlayer(IRenderable &renderable, const ModelLoader &models);
+    void DrawPlayer(IGameRenderable &renderable, const ModelLoader &models);
 
     // Debug rendering
-    void RenderCollisionDebug(const CollisionManager &collisionManager, IRenderable &renderable) const;
+    void RenderCollisionDebug(const CollisionManager &collisionManager, IGameRenderable &renderable) const;
 
     // Normal gameplay collision shape rendering
-    void RenderCollisionShapes(const CollisionManager &collisionManager, IRenderable &renderable) const;
+    void RenderCollisionShapes(const CollisionManager &collisionManager, IGameRenderable &renderable) const;
 
     // Utility methods
     void SetBackgroundColor(Color color);
@@ -70,7 +71,7 @@ public:
 
     [[nodiscard]] bool IsCollisionDebugVisible() const;
 
-    void ShowMetersPlayer(const IRenderable &renderable) const;
+    void ShowMetersPlayer(const IGameRenderable &renderable) const;
 
     [[nodiscard]] Font GetFont() const;
 
@@ -81,7 +82,7 @@ public:
     virtual const char *GetName() const override { return "RenderManager"; }
 private:
     // Private helper methods for debug info
-    void DrawDebugInfoWindow(IRenderable &renderable, const ModelLoader &models,
+    void DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
                               const CollisionManager &collisionManager);
     void DrawCameraInfo(const Camera &camera, int cameraMode);
     void DrawModelManagerInfo(const ModelLoader &models);

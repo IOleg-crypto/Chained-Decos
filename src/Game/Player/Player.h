@@ -22,7 +22,7 @@
 // Forward declarations
 class PlayerCollision;
 class PlayerRenderable;
-class IRenderable;  // Forward declaration to break circular dependency
+class IGameRenderable;  // Forward declaration to break circular dependency
 
 // Player: main player class that uses component classes
 class Player : public IPlayerMediator
@@ -80,8 +80,8 @@ public:
     PhysicsComponent &GetPhysics();             // Get physics component (non-const)
     IPlayerMovement *GetMovement() const;
 
-    // IRenderable access - повертає адаптер для рендерингу
-    IRenderable* GetRenderable() const;
+    // IGameRenderable access - повертає адаптер для рендерингу
+    IGameRenderable* GetRenderable() const;
     
     // Update method для сумісності (делегує до UpdateImpl)
     void Update(CollisionManager& collisionManager);
@@ -93,7 +93,7 @@ private:
     std::unique_ptr<PlayerModel> m_model;
     std::unique_ptr<PlayerCollision> m_collision;
 
-    // IRenderable adapter - для уникнення множинного наслідування
+    // IGameRenderable adapter - для уникнення множинного наслідування
     std::unique_ptr<PlayerRenderable> m_renderable;
 
     // Camera control

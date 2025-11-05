@@ -7,6 +7,7 @@
 #include "MapManager.h"
 #include "ResourceManager.h"
 #include "PlayerManager.h"
+#include "StateManager.h"
 #include "Engine/Engine.h"
 #include "Engine/Kernel/KernelServices.h"
 #include <raylib.h>
@@ -72,12 +73,23 @@ Engine* MenuActionHandler::GetEngine() const
     return service ? service->engine : nullptr;
 }
 
+StateManager* MenuActionHandler::GetStateManager() const
+{
+    auto service = m_kernel->GetService<StateManagerService>(Kernel::ServiceType::StateManager);
+    return service ? service->stateManager : nullptr;
+}
+
 void MenuActionHandler::HandleMenuActions()
 {
     Menu* menu = GetMenu();
-    if (!menu) return;
+    if (!menu) {
+        TraceLog(LOG_WARNING, "MenuActionHandler::HandleMenuActions() - Menu not available");
+        return;
+    }
     
     MenuAction action = menu->ConsumeAction();
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleMenuActions() - Consumed action: %d", static_cast<int>(action));
+    
     switch (action)
     {
     case MenuAction::SinglePlayer:
@@ -87,6 +99,7 @@ void MenuActionHandler::HandleMenuActions()
         HandleResumeGame();
         break;
     case MenuAction::StartGameWithMap:
+        TraceLog(LOG_INFO, "MenuActionHandler::HandleMenuActions() - Starting HandleStartGameWithMap()");
         HandleStartGameWithMap();
         break;
     case MenuAction::ExitGame:
@@ -131,6 +144,9 @@ void MenuActionHandler::HideMenuAndStartGame()
 {
     *m_showMenu = false;
     Menu* menu = GetMenu();
+    
+    // Cursor visibility is now managed centrally in GameApplication::OnPostUpdate()
+    // based on m_showMenu state
     
     if (menu)
     {
@@ -216,6 +232,7 @@ void MenuActionHandler::HandleResumeGame()
 {
     TraceLog(LOG_INFO, "MenuActionHandler::HandleResumeGame() - Resuming game...");
     
+    StateManager* stateManager = GetStateManager();
     Menu* menu = GetMenu();
     ResourceManager* resourceManager = GetResourceManager();
     MapManager* mapManager = GetMapManager();
@@ -227,7 +244,16 @@ void MenuActionHandler::HandleResumeGame()
         return;
     }
     
+    if (!stateManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleResumeGame() - StateManager not available");
+        return;
+    }
+    
     menu->SetAction(MenuAction::SinglePlayer);
+
+    // Restore game state first (player position, velocity, etc.)
+    stateManager->RestoreGameState();
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleResumeGame() - Game state restored");
 
     // Ensure game is properly initialized for resume
     if (!(*m_isGameInitialized))
@@ -598,12 +624,42 @@ void MenuActionHandler::HandleStartGameWithMap()
 {
     TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Starting game with selected map...");
     
+    // Verify all required services are available
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Getting services...");
     Menu* menu = GetMenu();
+    MapManager* mapManager = GetMapManager();
+    ResourceManager* resourceManager = GetResourceManager();
+    PlayerManager* playerManager = GetPlayerManager();
+    
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Checking menu...");
     if (!menu) {
         TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - Menu not available");
         return;
     }
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Menu OK");
     
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Checking MapManager...");
+    if (!mapManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - MapManager not available");
+        return;
+    }
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - MapManager OK");
+    
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Checking ResourceManager...");
+    if (!resourceManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - ResourceManager not available");
+        return;
+    }
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - ResourceManager OK");
+    
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Checking PlayerManager...");
+    if (!playerManager) {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - PlayerManager not available");
+        return;
+    }
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - PlayerManager OK");
+    
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - All services available, proceeding...");
     menu->SetGameInProgress(true);
     std::string selectedMapName = menu->GetSelectedMapName();
     TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Selected map: %s", selectedMapName.c_str());
@@ -613,10 +669,12 @@ void MenuActionHandler::HandleStartGameWithMap()
     TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Full map path: %s", mapPath.c_str());
 
     // Step 1: Analyze map to determine required models
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 1: Analyzing map...");
     std::vector<std::string> requiredModels;
     try
     {
         requiredModels = AnalyzeMapForRequiredModels(mapPath);
+        TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 1 complete: Found %d required models", requiredModels.size());
     }
     catch (const std::exception &e)
     {
@@ -625,21 +683,29 @@ void MenuActionHandler::HandleStartGameWithMap()
     }
 
     // Step 2: Load only the required models selectively
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 2: Loading models...");
     if (!LoadRequiredModels(requiredModels))
     {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - Failed to load required models");
         return;
     }
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 2 complete: Models loaded");
 
     // Step 3: Initialize collision system with required models
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 3: Initializing collision system...");
     if (!InitializeCollisionSystemWithModels(requiredModels))
     {
+        TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - Failed to initialize collision system");
         return;
     }
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 3 complete: Collision system initialized");
 
     // Step 4: Load the map objects
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 4: Loading map objects...");
     try
     {
         LoadMapObjects(mapPath);
+        TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 4 complete: Map objects loaded");
     }
     catch (const std::exception &e)
     {
@@ -648,18 +714,12 @@ void MenuActionHandler::HandleStartGameWithMap()
     }
 
     // Step 5: Initialize player after map is loaded
-    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Initializing player...");
-    
-    PlayerManager* playerManager = GetPlayerManager();
-    if (!playerManager) {
-        TraceLog(LOG_ERROR, "MenuActionHandler::HandleStartGameWithMap() - PlayerManager not available");
-        return;
-    }
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 5: Initializing player...");
     
     try
     {
         playerManager->InitPlayer();
-        TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Player initialized successfully");
+        TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Step 5 complete: Player initialized successfully");
     }
     catch (const std::exception &e)
     {
@@ -673,6 +733,7 @@ void MenuActionHandler::HandleStartGameWithMap()
     // Hide menu and start the game
     TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Hiding menu and starting game...");
     HideMenuAndStartGame();
+    TraceLog(LOG_INFO, "MenuActionHandler::HandleStartGameWithMap() - Complete!");
 }
 
 void MenuActionHandler::HandleExitGame()

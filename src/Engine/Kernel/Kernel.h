@@ -29,6 +29,7 @@ public:
         MapManager,
         ResourceManager,
         PlayerManager,
+        StateManager,
         Custom1,
         Custom2
     };

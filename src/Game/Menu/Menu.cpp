@@ -1,11 +1,14 @@
 #include "Menu.h"
+#include "Engine/Collision/CollisionSystem.h"
 #include "MenuConstants.h"
 #include "SettingsManager.h"
 #include "rlImGui.h"
+#include <Collision/CollisionStructures.h>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <imgui.h>
 #include <iostream>
@@ -14,23 +17,19 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <filesystem>
-#include <Collision/CollisionStructures.h>
-#include "Engine/Collision/CollisionSystem.h"
 
 Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
       m_selectedMapIndex(0), m_mapsPerPage(MenuConstants::MAPS_PER_PAGE), m_currentPage(0),
       m_totalPages(0), m_jsonMapsCount(0), m_showDemoWindow(false), m_showStyleEditor(false),
-      m_settingsManager(std::make_unique<SettingsManager>()),
-      m_consoleManager(nullptr)
+      m_settingsManager(std::make_unique<SettingsManager>()), m_consoleManager(nullptr)
 {
     // Initialize options vectors
-    m_resolutionOptions = MenuConstants::RESOLUTION_OPTIONS;
+    m_resolutionOptions  = MenuConstants::RESOLUTION_OPTIONS;
     m_displayModeOptions = MenuConstants::DISPLAY_MODE_OPTIONS;
-    m_vsyncOptions = MenuConstants::VSYNC_OPTIONS;
-    m_fpsOptions = MenuConstants::FPS_OPTIONS;
-    m_difficultyOptions = MenuConstants::DIFFICULTY_OPTIONS;
+    m_vsyncOptions       = MenuConstants::VSYNC_OPTIONS;
+    m_fpsOptions         = MenuConstants::FPS_OPTIONS;
+    m_difficultyOptions  = MenuConstants::DIFFICULTY_OPTIONS;
 
     // Load configuration
     LoadConfiguration();
@@ -45,14 +44,16 @@ void Menu::Initialize(Engine *engine)
     InitializeMaps();
 }
 
-void Menu::SetKernel(Kernel* kernel)
+void Menu::SetKernel(Kernel *kernel)
 {
     m_kernel = kernel;
-    if (m_kernel && !m_consoleManager) {
+    if (m_kernel && !m_consoleManager)
+    {
         m_consoleManager = std::make_unique<ConsoleManager>(m_kernel);
     }
 }
 
+// IMenuRenderable interface implementations
 void Menu::Update()
 {
     // Handle keyboard navigation
@@ -70,13 +71,15 @@ void Menu::Update()
 
 void Menu::Render()
 {
-    
-    int screenWidth = GetScreenWidth();
+
+    int screenWidth  = GetScreenWidth();
     int screenHeight = GetScreenHeight();
-    
+
     // Set up main window for the menu (на весь екран)
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(static_cast<float>(screenWidth), static_cast<float>(screenHeight)), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(
+        ImVec2(static_cast<float>(screenWidth), static_cast<float>(screenHeight)),
+        ImGuiCond_Always);
 
     ImGuiWindowFlags windowFlags =
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -104,7 +107,6 @@ void Menu::Render()
 #endif
 
     ImGui::End();
-    
 }
 
 void Menu::BeginFrame() { rlImGuiBegin(); }
@@ -117,21 +119,21 @@ void Menu::SetupStyle()
     ImGuiStyle &style = ImGui::GetStyle();
 
     // Customize colors for a more modern look
-    style.WindowRounding = 8.0f;
-    style.FrameRounding = 6.0f;
-    style.GrabRounding = 6.0f;
-    style.PopupRounding = 8.0f;
+    style.WindowRounding    = 8.0f;
+    style.FrameRounding     = 6.0f;
+    style.GrabRounding      = 6.0f;
+    style.PopupRounding     = 8.0f;
     style.ScrollbarRounding = 8.0f;
-    style.TabRounding = 8.0f;
-    style.ChildRounding = 8.0f;
+    style.TabRounding       = 8.0f;
+    style.ChildRounding     = 8.0f;
 
     // Improved spacing and sizing
-    style.WindowPadding = ImVec2(16.0f, 16.0f);
-    style.FramePadding = ImVec2(12.0f, 8.0f);
-    style.ItemSpacing = ImVec2(12.0f, 8.0f);
+    style.WindowPadding    = ImVec2(16.0f, 16.0f);
+    style.FramePadding     = ImVec2(12.0f, 8.0f);
+    style.ItemSpacing      = ImVec2(12.0f, 8.0f);
     style.ItemInnerSpacing = ImVec2(8.0f, 6.0f);
-    style.IndentSpacing = 20.0f;
-    style.GrabMinSize = 20.0f;
+    style.IndentSpacing    = 20.0f;
+    style.GrabMinSize      = 20.0f;
 
     // Modern scrollbar and tab styling
     style.ScrollbarSize = 16.0f;
@@ -142,51 +144,51 @@ void Menu::SetupStyle()
 
     // Window and background colors
     colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.98f);
-    colors[ImGuiCol_ChildBg] = ImVec4(0.10f, 0.10f, 0.10f, 0.95f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.12f, 0.12f, 0.12f, 0.98f);
+    colors[ImGuiCol_ChildBg]  = ImVec4(0.10f, 0.10f, 0.10f, 0.95f);
+    colors[ImGuiCol_PopupBg]  = ImVec4(0.12f, 0.12f, 0.12f, 0.98f);
 
     // Title bar colors
-    colors[ImGuiCol_TitleBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);
+    colors[ImGuiCol_TitleBg]          = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+    colors[ImGuiCol_TitleBgActive]    = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);
     colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.10f, 0.10f, 0.10f, 1.0f);
 
     // Button colors
-    colors[ImGuiCol_Button] = ImVec4(0.25f, 0.25f, 0.25f, 0.8f);
+    colors[ImGuiCol_Button]        = ImVec4(0.25f, 0.25f, 0.25f, 0.8f);
     colors[ImGuiCol_ButtonHovered] = ImVec4(0.35f, 0.35f, 0.35f, 0.9f);
-    colors[ImGuiCol_ButtonActive] = ImVec4(0.45f, 0.45f, 0.45f, 1.0f);
+    colors[ImGuiCol_ButtonActive]  = ImVec4(0.45f, 0.45f, 0.45f, 1.0f);
 
     // Frame colors
-    colors[ImGuiCol_FrameBg] = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);
+    colors[ImGuiCol_FrameBg]        = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);
     colors[ImGuiCol_FrameBgHovered] = ImVec4(0.22f, 0.22f, 0.22f, 1.0f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);
+    colors[ImGuiCol_FrameBgActive]  = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);
 
     // Slider colors
-    colors[ImGuiCol_SliderGrab] = ImVec4(0.4f, 0.6f, 1.0f, 1.0f);
+    colors[ImGuiCol_SliderGrab]       = ImVec4(0.4f, 0.6f, 1.0f, 1.0f);
     colors[ImGuiCol_SliderGrabActive] = ImVec4(0.5f, 0.7f, 1.0f, 1.0f);
 
     // Text colors
-    colors[ImGuiCol_Text] = ImVec4(0.95f, 0.95f, 0.95f, 1.0f);
+    colors[ImGuiCol_Text]         = ImVec4(0.95f, 0.95f, 0.95f, 1.0f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
 
     // Border colors
-    colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+    colors[ImGuiCol_Border]       = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
     colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.24f);
 
     // Scrollbar colors
-    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
-    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+    colors[ImGuiCol_ScrollbarBg]          = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+    colors[ImGuiCol_ScrollbarGrab]        = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
     colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
-    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+    colors[ImGuiCol_ScrollbarGrabActive]  = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
 
     // Tab colors
-    colors[ImGuiCol_Tab] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+    colors[ImGuiCol_Tab]        = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
     colors[ImGuiCol_TabHovered] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
-    colors[ImGuiCol_TabActive] = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
+    colors[ImGuiCol_TabActive]  = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
 
     // Header colors
-    colors[ImGuiCol_Header] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+    colors[ImGuiCol_Header]        = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
     colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
-    colors[ImGuiCol_HeaderActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.0f);
+    colors[ImGuiCol_HeaderActive]  = ImVec4(0.35f, 0.35f, 0.35f, 1.0f);
 }
 
 void Menu::RenderMenuState()
@@ -234,12 +236,12 @@ void Menu::RenderMenuState()
 
 void Menu::RenderMainMenu()
 {
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float centerY = windowSize.y * 0.5f;
-    const float buttonWidth = 360.0f;
+    const ImVec2 windowSize  = ImGui::GetWindowSize();
+    const float centerX      = windowSize.x * 0.5f;
+    const float centerY      = windowSize.y * 0.5f;
+    const float buttonWidth  = 360.0f;
     const float buttonHeight = 60.0f;
-    const float spacing = 20.0f;
+    const float spacing      = 20.0f;
 
     // Title section
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
@@ -258,7 +260,7 @@ void Menu::RenderMainMenu()
     ImGui::SetWindowFontScale(1.0f);
 
     // Menu buttons container
-    float startY = MenuConstants::TOP_MARGIN + 100;
+    float startY   = MenuConstants::TOP_MARGIN + 100;
     float currentY = startY;
 
     if (m_addResumeButton)
@@ -321,12 +323,12 @@ void Menu::RenderMainMenu()
 
 void Menu::RenderGameModeMenu()
 {
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float centerY = windowSize.y * 0.5f;
-    const float buttonWidth = 360.0f;
+    const ImVec2 windowSize  = ImGui::GetWindowSize();
+    const float centerX      = windowSize.x * 0.5f;
+    const float centerY      = windowSize.y * 0.5f;
+    const float buttonWidth  = 360.0f;
     const float buttonHeight = 60.0f;
-    const float spacing = 20.0f;
+    const float spacing      = 20.0f;
 
     // Title
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
@@ -337,7 +339,7 @@ void Menu::RenderGameModeMenu()
     ImGui::PopStyleColor();
 
     // Menu buttons
-    float startY = MenuConstants::TOP_MARGIN + 50;
+    float startY   = MenuConstants::TOP_MARGIN + 50;
     float currentY = startY;
 
     // Single Player button
@@ -360,12 +362,12 @@ void Menu::RenderGameModeMenu()
 
 void Menu::RenderOptionsMenu()
 {
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float centerY = windowSize.y * 0.5f;
-    const float buttonWidth = 360.0f;
+    const ImVec2 windowSize  = ImGui::GetWindowSize();
+    const float centerX      = windowSize.x * 0.5f;
+    const float centerY      = windowSize.y * 0.5f;
+    const float buttonWidth  = 360.0f;
     const float buttonHeight = 60.0f;
-    const float spacing = 20.0f;
+    const float spacing      = 20.0f;
 
     // Title
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
@@ -376,7 +378,7 @@ void Menu::RenderOptionsMenu()
     ImGui::PopStyleColor();
 
     // Options buttons
-    float startY = MenuConstants::TOP_MARGIN + 50;
+    float startY   = MenuConstants::TOP_MARGIN + 50;
     float currentY = startY;
 
     // Video Settings button
@@ -420,9 +422,9 @@ void Menu::RenderOptionsMenu()
 }
 
 // Helper function to render option combo box with validation
-bool Menu::RenderVideoSettingCombo(const char* label, const char* id, 
-                                   const std::vector<std::string>& options, 
-                                   int& currentIndex, float labelWidth, float comboWidth, float startX)
+bool Menu::RenderVideoSettingCombo(const char *label, const char *id,
+                                   const std::vector<std::string> &options, int &currentIndex,
+                                   float labelWidth, float comboWidth, float startX)
 {
     // Validate index to prevent out-of-bounds access
     if (currentIndex < 0 || currentIndex >= static_cast<int>(options.size()))
@@ -430,13 +432,13 @@ bool Menu::RenderVideoSettingCombo(const char* label, const char* id,
         currentIndex = 0; // Reset to first option if invalid
     }
 
-    const char* currentValue = options[currentIndex].c_str();
-    bool changed = false;
+    const char *currentValue = options[currentIndex].c_str();
+    bool changed             = false;
 
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "%s", label);
     ImGui::SameLine(startX + labelWidth);
     ImGui::SetNextItemWidth(comboWidth);
-    
+
     if (ImGui::BeginCombo(id, currentValue))
     {
         for (size_t i = 0; i < options.size(); ++i)
@@ -445,7 +447,7 @@ bool Menu::RenderVideoSettingCombo(const char* label, const char* id,
             if (ImGui::Selectable(options[i].c_str(), isSelected))
             {
                 currentIndex = static_cast<int>(i);
-                changed = true;
+                changed      = true;
             }
             if (isSelected)
             {
@@ -461,8 +463,9 @@ bool Menu::RenderVideoSettingCombo(const char* label, const char* id,
 // Check if video settings have unsaved changes
 bool Menu::HasUnsavedVideoChanges() const
 {
-    if (!m_settingsManager) return false;
-    
+    if (!m_settingsManager)
+        return false;
+
     return m_videoSettings.resolutionIndex != m_settingsManager->GetResolutionIndex() ||
            m_videoSettings.displayModeIndex != m_settingsManager->GetDisplayModeIndex() ||
            m_videoSettings.vsyncIndex != m_settingsManager->GetVSyncIndex() ||
@@ -471,12 +474,12 @@ bool Menu::HasUnsavedVideoChanges() const
 
 void Menu::RenderVideoSettings()
 {
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float labelWidth = 200.0f;
-    const float comboWidth = 200.0f;
-    const float startX = MenuConstants::MARGIN + 50.0f;
-    const float startY = MenuConstants::MARGIN + 60.0f;
-    const float spacing = 50.0f;
+    const ImVec2 windowSize   = ImGui::GetWindowSize();
+    const float labelWidth    = 200.0f;
+    const float comboWidth    = 200.0f;
+    const float startX        = MenuConstants::MARGIN + 50.0f;
+    const float startY        = MenuConstants::MARGIN + 60.0f;
+    const float spacing       = 50.0f;
     const float buttonSpacing = 140.0f;
 
     // Title
@@ -498,34 +501,30 @@ void Menu::RenderVideoSettings()
     ImGui::SetCursorPos(ImVec2(startX, startY));
 
     // Resolution
-    RenderVideoSettingCombo("Resolution", "##resolution", 
-                            m_resolutionOptions, m_videoSettings.resolutionIndex,
-                            labelWidth, comboWidth, startX);
+    RenderVideoSettingCombo("Resolution", "##resolution", m_resolutionOptions,
+                            m_videoSettings.resolutionIndex, labelWidth, comboWidth, startX);
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // Display Mode
-    RenderVideoSettingCombo("Display Mode", "##display_mode",
-                            m_displayModeOptions, m_videoSettings.displayModeIndex,
-                            labelWidth, comboWidth, startX);
+    RenderVideoSettingCombo("Display Mode", "##display_mode", m_displayModeOptions,
+                            m_videoSettings.displayModeIndex, labelWidth, comboWidth, startX);
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // VSync
-    RenderVideoSettingCombo("VSync", "##vsync",
-                            m_vsyncOptions, m_videoSettings.vsyncIndex,
+    RenderVideoSettingCombo("VSync", "##vsync", m_vsyncOptions, m_videoSettings.vsyncIndex,
                             labelWidth, comboWidth, startX);
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // FPS Limit
-    RenderVideoSettingCombo("FPS Limit", "##fps",
-                            m_fpsOptions, m_videoSettings.fpsIndex,
+    RenderVideoSettingCombo("FPS Limit", "##fps", m_fpsOptions, m_videoSettings.fpsIndex,
                             labelWidth, comboWidth, startX);
 
     // Buttons section
     ImGui::SetCursorPos(ImVec2(startX, windowSize.y - 80));
-    
+
     // Apply button - enable only if there are unsaved changes
     ImGui::BeginDisabled(!hasUnsavedChanges);
     if (ImGui::Button("Apply", ImVec2(120, 40)) || (hasUnsavedChanges && IsKeyPressed(KEY_ENTER)))
@@ -533,13 +532,13 @@ void Menu::RenderVideoSettings()
         if (m_settingsManager)
         {
             // Validate all indices before applying
-            if (m_videoSettings.resolutionIndex >= 0 && 
+            if (m_videoSettings.resolutionIndex >= 0 &&
                 m_videoSettings.resolutionIndex < static_cast<int>(m_resolutionOptions.size()) &&
-                m_videoSettings.displayModeIndex >= 0 && 
+                m_videoSettings.displayModeIndex >= 0 &&
                 m_videoSettings.displayModeIndex < static_cast<int>(m_displayModeOptions.size()) &&
-                m_videoSettings.vsyncIndex >= 0 && 
+                m_videoSettings.vsyncIndex >= 0 &&
                 m_videoSettings.vsyncIndex < static_cast<int>(m_vsyncOptions.size()) &&
-                m_videoSettings.fpsIndex >= 0 && 
+                m_videoSettings.fpsIndex >= 0 &&
                 m_videoSettings.fpsIndex < static_cast<int>(m_fpsOptions.size()))
             {
                 m_settingsManager->SetResolutionIndex(m_videoSettings.resolutionIndex);
@@ -765,15 +764,15 @@ void Menu::RenderMapSelection()
 
         // Start Game button
         const ImVec2 windowSize = ImGui::GetWindowSize();
-        const float centerX = windowSize.x * 0.5f;
+        const float centerX     = windowSize.x * 0.5f;
         ImGui::SetCursorPos(ImVec2(centerX - 160, windowSize.y - 100));
         RenderActionButton("Start Game with Selected Map", MenuAction::StartGameWithMap,
-                               ImVec2(320, 50));
+                           ImVec2(320, 50));
     }
     else
     {
         const ImVec2 windowSize = ImGui::GetWindowSize();
-        const float centerX = windowSize.x * 0.5f;
+        const float centerX     = windowSize.x * 0.5f;
         ImGui::SetCursorPos(ImVec2(centerX - 100, 150));
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
     }
@@ -787,8 +786,8 @@ void Menu::RenderMapSelection()
 void Menu::RenderCreditsScreen()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float centerY = windowSize.y * 0.5f;
+    const float centerX     = windowSize.x * 0.5f;
+    const float centerY     = windowSize.y * 0.5f;
 
     // Title
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
@@ -799,10 +798,10 @@ void Menu::RenderCreditsScreen()
     ImGui::PopStyleColor();
 
     // Credits content
-    float startY = centerY - 120;
-    float currentY = startY;
+    float startY         = centerY - 120;
+    float currentY       = startY;
     float sectionSpacing = 60.0f;
-    float labelSpacing = 30.0f;
+    float labelSpacing   = 30.0f;
 
     // Developer section
     ImGui::SetCursorPos(ImVec2(centerX - 100, currentY));
@@ -835,8 +834,8 @@ void Menu::RenderCreditsScreen()
 void Menu::RenderModsScreen()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float centerY = windowSize.y * 0.5f;
+    const float centerX     = windowSize.x * 0.5f;
+    const float centerY     = windowSize.y * 0.5f;
 
     // Title
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
@@ -914,22 +913,25 @@ void Menu::HandlePendingActions()
         {
         case MenuAction::ApplyVideoSettings:
             SyncVideoSettingsToConfig();
+            m_pendingAction = MenuAction::None;
             break;
         case MenuAction::ApplyAudioSettings:
             SyncAudioSettingsToConfig();
+            m_pendingAction = MenuAction::None;
             break;
         case MenuAction::ApplyControlSettings:
             SyncControlSettingsToConfig();
+            m_pendingAction = MenuAction::None;
             break;
         case MenuAction::ApplyGameplaySettings:
             SyncGameplaySettingsToConfig();
+            m_pendingAction = MenuAction::None;
             break;
         default:
+            // Don't reset m_pendingAction for actions handled by MenuActionHandler
+            // (SinglePlayer, ResumeGame, StartGameWithMap, ExitGame, etc.)
             break;
         }
-
-        // Reset action after handling
-        m_pendingAction = MenuAction::None;
     }
 }
 
@@ -1011,6 +1013,8 @@ bool Menu::RenderActionButton(const char *label, MenuAction action, const ImVec2
 
     if (clicked && action != MenuAction::None)
     {
+        TraceLog(LOG_INFO, "Menu::RenderActionButton() - Button '%s' clicked, setting action: %d",
+                 label, static_cast<int>(action));
         m_pendingAction = action;
         return true;
     }
@@ -1143,7 +1147,7 @@ void Menu::SyncVideoSettingsToConfig()
         m_settingsManager->SetVSyncIndex(m_videoSettings.vsyncIndex);
         m_settingsManager->SetFpsIndex(m_videoSettings.fpsIndex);
         m_settingsManager->ApplyVideoSettings();
-        m_settingsManager->SaveSettings();  // Зберігаємо налаштування в конфіг
+        m_settingsManager->SaveSettings(); // Зберігаємо налаштування в конфіг
     }
 }
 
@@ -1156,7 +1160,7 @@ void Menu::SyncAudioSettingsToConfig()
         m_settingsManager->SetSfxVolume(m_audioSettings.sfxVolume);
         m_settingsManager->SetMuted(m_audioSettings.muted);
         m_settingsManager->ApplyAudioSettings();
-        m_settingsManager->SaveSettings();  // Зберігаємо налаштування в конфіг
+        m_settingsManager->SaveSettings(); // Зберігаємо налаштування в конфіг
     }
 }
 
@@ -1167,7 +1171,7 @@ void Menu::SyncControlSettingsToConfig()
         m_settingsManager->SetMouseSensitivity(m_controlSettings.mouseSensitivity);
         m_settingsManager->SetInvertYAxis(m_controlSettings.invertYAxis);
         m_settingsManager->SetControllerSupport(m_controlSettings.controllerSupport);
-        m_settingsManager->SaveSettings();  // Зберігаємо налаштування в конфіг
+        m_settingsManager->SaveSettings(); // Зберігаємо налаштування в конфіг
     }
 }
 
@@ -1180,7 +1184,7 @@ void Menu::SyncGameplaySettingsToConfig()
         m_settingsManager->SetCheckpointsEnabled(m_gameplaySettings.checkpointsEnabled);
         m_settingsManager->SetAutoSaveEnabled(m_gameplaySettings.autoSaveEnabled);
         m_settingsManager->SetSpeedrunMode(m_gameplaySettings.speedrunMode);
-        m_settingsManager->SaveSettings();  // Зберігаємо налаштування в конфіг
+        m_settingsManager->SaveSettings(); // Зберігаємо налаштування в конфіг
     }
 }
 
@@ -1192,7 +1196,7 @@ bool Menu::IsGameInProgress() const { return m_gameInProgress; }
 MenuAction Menu::ConsumeAction()
 {
     MenuAction action = m_pendingAction;
-    m_pendingAction = MenuAction::None;
+    m_pendingAction   = MenuAction::None;
     return action;
 }
 
@@ -1234,7 +1238,7 @@ std::optional<MapInfo> Menu::GetSelectedMap() const
 {
     if (m_mapSelector)
     {
-        const MapInfo* selected = m_mapSelector->GetSelectedMap();
+        const MapInfo *selected = m_mapSelector->GetSelectedMap();
         if (selected)
         {
             return *selected;
@@ -1256,11 +1260,11 @@ std::string Menu::GetSelectedMapName() const
 void Menu::InitializeMaps()
 {
     // Sync with MapSelector
-    m_availableMaps = m_mapSelector->GetAvailableMaps();
+    m_availableMaps    = m_mapSelector->GetAvailableMaps();
     m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
-    m_currentPage = m_mapSelector->GetCurrentPage();
-    m_totalPages = m_mapSelector->GetTotalPages();
-    m_jsonMapsCount = m_mapSelector->GetJsonMapsCount();
+    m_currentPage      = m_mapSelector->GetCurrentPage();
+    m_totalPages       = m_mapSelector->GetTotalPages();
+    m_jsonMapsCount    = m_mapSelector->GetJsonMapsCount();
 }
 
 void Menu::ScanForJsonMaps()
@@ -1274,7 +1278,7 @@ void Menu::ScanForJsonMaps()
     {
         if (std::filesystem::exists(mapsPath) && std::filesystem::is_directory(mapsPath))
         {
-            for (const auto& entry : std::filesystem::directory_iterator(mapsPath))
+            for (const auto &entry : std::filesystem::directory_iterator(mapsPath))
             {
                 if (entry.is_regular_file() && entry.path().extension() == ".json")
                 {
@@ -1289,11 +1293,11 @@ void Menu::ScanForJsonMaps()
                     std::string displayName = filename;
                     std::replace(displayName.begin(), displayName.end(), '_', ' ');
                     bool capitalize = true;
-                    for (char& c : displayName)
+                    for (char &c : displayName)
                     {
                         if (capitalize && std::isalpha(c))
                         {
-                            c = std::toupper(c);
+                            c          = std::toupper(c);
                             capitalize = false;
                         }
                         else if (std::isspace(c))
@@ -1309,18 +1313,19 @@ void Menu::ScanForJsonMaps()
 
                     // Generate description by analyzing the JSON file
                     std::ifstream mapFile(filepath);
-                    std::string fileContent((std::istreambuf_iterator<char>(mapFile)), std::istreambuf_iterator<char>());
+                    std::string fileContent((std::istreambuf_iterator<char>(mapFile)),
+                                            std::istreambuf_iterator<char>());
                     size_t objectCount = 0;
-                    size_t pos = 0;
+                    size_t pos         = 0;
                     while ((pos = fileContent.find("{", pos)) != std::string::npos)
                     {
                         objectCount++;
                         pos++;
                     }
-                    jsonMap.description = "Map with " + std::to_string(objectCount) + " objects";
+                    jsonMap.description  = "Map with " + std::to_string(objectCount) + " objects";
                     jsonMap.previewImage = "";
-                    jsonMap.themeColor = SKYBLUE;
-                    jsonMap.isAvailable = true;
+                    jsonMap.themeColor   = SKYBLUE;
+                    jsonMap.isAvailable  = true;
                     jsonMap.isModelBased = false;
 
                     m_availableMaps.push_back(jsonMap);
@@ -1329,12 +1334,11 @@ void Menu::ScanForJsonMaps()
             }
         }
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
         std::cerr << "Error scanning for JSON maps: " << e.what() << std::endl;
     }
 }
-
 
 void Menu::UpdatePagination() { m_totalPages = GetTotalPages(); }
 
@@ -1356,24 +1360,24 @@ void Menu::LoadConfiguration()
 
         // Load settings into local variables
         m_audioSettings.masterVolume = m_settingsManager->GetMasterVolume();
-        m_audioSettings.musicVolume = m_settingsManager->GetMusicVolume();
-        m_audioSettings.sfxVolume = m_settingsManager->GetSfxVolume();
-        m_audioSettings.muted = m_settingsManager->IsMuted();
+        m_audioSettings.musicVolume  = m_settingsManager->GetMusicVolume();
+        m_audioSettings.sfxVolume    = m_settingsManager->GetSfxVolume();
+        m_audioSettings.muted        = m_settingsManager->IsMuted();
 
-        m_controlSettings.mouseSensitivity = m_settingsManager->GetMouseSensitivity();
-        m_controlSettings.invertYAxis = m_settingsManager->GetInvertYAxis();
+        m_controlSettings.mouseSensitivity  = m_settingsManager->GetMouseSensitivity();
+        m_controlSettings.invertYAxis       = m_settingsManager->GetInvertYAxis();
         m_controlSettings.controllerSupport = m_settingsManager->GetControllerSupport();
 
-        m_gameplaySettings.difficultyLevel = m_settingsManager->GetDifficultyLevel();
-        m_gameplaySettings.timerEnabled = m_settingsManager->IsTimerEnabled();
+        m_gameplaySettings.difficultyLevel    = m_settingsManager->GetDifficultyLevel();
+        m_gameplaySettings.timerEnabled       = m_settingsManager->IsTimerEnabled();
         m_gameplaySettings.checkpointsEnabled = m_settingsManager->AreCheckpointsEnabled();
-        m_gameplaySettings.autoSaveEnabled = m_settingsManager->IsAutoSaveEnabled();
-        m_gameplaySettings.speedrunMode = m_settingsManager->IsSpeedrunMode();
+        m_gameplaySettings.autoSaveEnabled    = m_settingsManager->IsAutoSaveEnabled();
+        m_gameplaySettings.speedrunMode       = m_settingsManager->IsSpeedrunMode();
 
-        m_videoSettings.resolutionIndex = m_settingsManager->GetResolutionIndex();
+        m_videoSettings.resolutionIndex  = m_settingsManager->GetResolutionIndex();
         m_videoSettings.displayModeIndex = m_settingsManager->GetDisplayModeIndex();
-        m_videoSettings.vsyncIndex = m_settingsManager->GetVSyncIndex();
-        m_videoSettings.fpsIndex = m_settingsManager->GetFpsIndex();
+        m_videoSettings.vsyncIndex       = m_settingsManager->GetVSyncIndex();
+        m_videoSettings.fpsIndex         = m_settingsManager->GetFpsIndex();
     }
 }
 
@@ -1433,42 +1437,4 @@ void Menu::SetResumeButtonOn(bool status) { m_addResumeButton = status; }
 
 bool Menu::GetResumeButtonStatus() const { return m_addResumeButton; }
 
-// IRenderable interface implementations
-void Menu::Update(CollisionManager& /*collisionManager*/) {
-    Update();
-}
-
-Vector3 Menu::GetPosition() const {
-    return {0.0f, 0.0f, 0.0f}; // Menu is UI, no position
-}
-
-BoundingBox Menu::GetBoundingBox() const {
-    return {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}; // No bounding box for UI
-}
-
-float Menu::GetRotationY() const {
-    return 0.0f; // No rotation for UI
-}
-
-void Menu::UpdateCollision() {
-    // No collision for UI
-}
-
-const Collision& Menu::GetCollision() const {
-    // Menu doesn't have collision, return a dummy
-    static Collision dummyCollision;
-    return dummyCollision;
-}
-
-Camera Menu::GetCamera() const {
-    // Menu doesn't have camera, return default
-    static Camera dummyCamera;
-    return dummyCamera;
-}
-
-bool Menu::IsGrounded() const {
-    return true; // UI is always "grounded"
-}
-
 ConsoleManager *Menu::GetConsoleManager() const { return m_consoleManager.get(); }
-

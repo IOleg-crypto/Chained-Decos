@@ -11,7 +11,7 @@
 #include "ConsoleManager.h"
 #include "MapSelector.h"
 #include "Engine/Engine.h"
-#include <Render/IRenderable.h>
+#include <Render/IMenuRenderable.h>
 #include <imgui.h>
 #include <raylib.h>
 
@@ -80,7 +80,7 @@ struct VideoSettings
 };
 
 
-class Menu : public IRenderable
+class Menu : public IMenuRenderable
 {
 public:
     Menu();
@@ -89,7 +89,6 @@ public:
     // Core functionality
     void Initialize(Engine *engine);
     void SetKernel(Kernel* kernel);
-    void Update();
 
     // State management
     void SetGameInProgress(bool inProgress);
@@ -137,16 +136,9 @@ public:
     void HandleKeyboardNavigation();
     void HandlePendingActions();
 
-    // IRenderable interface implementations
-    void Update(CollisionManager& collisionManager) override;
+    // IMenuRenderable interface implementations
+    void Update() override;
     void Render() override;
-    Vector3 GetPosition() const override;
-    BoundingBox GetBoundingBox() const override;
-    float GetRotationY() const override;
-    void UpdateCollision() override;
-    const Collision& GetCollision() const override;
-    Camera GetCamera() const override;
-    bool IsGrounded() const override;
 
 private:
     // ImGui rendering methods

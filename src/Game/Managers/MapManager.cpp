@@ -139,7 +139,9 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
             
             if(od.name.find("player") != std::string::npos)
             {
-                m_player->SetPlayerPosition(od.position);
+                if (m_player) {
+                    m_player->SetPlayerPosition(od.position);
+                }
             }
             od.rotation = eo.rotation;
             od.scale = eo.scale;
@@ -1147,9 +1149,13 @@ void MapManager::InitCollisions()
     // Reinitialize after adding all model colliders
     m_collisionManager->Initialize();
 
-    // Initialize player collision
-    auto &playerCollision = m_player->GetCollisionMutable();
-    playerCollision.InitializeCollision();
+    // Initialize player collision (if player is available)
+    if (m_player) {
+        auto &playerCollision = m_player->GetCollisionMutable();
+        playerCollision.InitializeCollision();
+    } else {
+        TraceLog(LOG_WARNING, "MapManager::InitCollisions() - Player not available, skipping player collision initialization");
+    }
 
     TraceLog(LOG_INFO, "MapManager::InitCollisions() - Collision system initialized with %zu colliders.",
              m_collisionManager->GetColliders().size());
@@ -1203,9 +1209,13 @@ void MapManager::InitCollisionsWithModels(const std::vector<std::string> &requir
     // Reinitialize after adding all model colliders
     m_collisionManager->Initialize();
 
-    // Initialize player collision
-    auto &playerCollision = m_player->GetCollisionMutable();
-    playerCollision.InitializeCollision();
+    // Initialize player collision (if player is available)
+    if (m_player) {
+        auto &playerCollision = m_player->GetCollisionMutable();
+        playerCollision.InitializeCollision();
+    } else {
+        TraceLog(LOG_WARNING, "MapManager::InitCollisionsWithModels() - Player not available, skipping player collision initialization");
+    }
 
     TraceLog(LOG_INFO,
              "MapManager::InitCollisionsWithModels() - Collision system initialized with %zu colliders.",
@@ -1261,9 +1271,13 @@ bool MapManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &re
     // Reinitialize after adding all model colliders
     m_collisionManager->Initialize();
 
-    // Initialize player collision
-    auto &playerCollision = m_player->GetCollisionMutable();
-    playerCollision.InitializeCollision();
+    // Initialize player collision (if player is available)
+    if (m_player) {
+        auto &playerCollision = m_player->GetCollisionMutable();
+        playerCollision.InitializeCollision();
+    } else {
+        TraceLog(LOG_WARNING, "MapManager::InitCollisionsWithModelsSafe() - Player not available, skipping player collision initialization");
+    }
 
     TraceLog(
         LOG_INFO,
@@ -1271,4 +1285,10 @@ bool MapManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &re
         m_collisionManager->GetColliders().size());
 
     return true; // Always return true since we have at least basic collision
+}
+
+void MapManager::SetPlayer(Player* player)
+{
+    m_player = player;
+    TraceLog(LOG_INFO, "MapManager::SetPlayer() - Player reference updated");
 }

@@ -76,6 +76,9 @@ private:
     bool m_showMenu;
     bool m_isGameInitialized;
     
+    // Cursor state tracking to avoid calling DisableCursor/EnableCursor every frame
+    bool m_cursorDisabled;
+    
     // Command line configuration
     GameConfig m_gameConfig;
     
@@ -87,6 +90,9 @@ private:
     void HandleMenuActions();
     void UpdatePlayerLogic();
     void UpdatePhysicsLogic();
+    
+    // Game state management
+    void SaveGameState();
 };
 
 #endif // GAME_APPLICATION_H

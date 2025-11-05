@@ -17,8 +17,6 @@
 #include <fstream>
 #include <imgui.h>
 #include <iostream>
-#include <misc/cpp/imgui_stdlib.h>
-#include <nfd.h>
 #include <raylib.h>
 #include <rlImGui.h>
 #include <string>
@@ -28,14 +26,8 @@
 namespace fs = std::filesystem;
 
 FileManager::FileManager()
-    : m_displayFileDialog(false), m_isFileLoadDialog(true), m_isJsonExportDialog(false),
-      m_displayNewFolderDialog(false), m_displayDeleteConfirmationDialog(false),
-      m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0)
+    : m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0)
 {
-    // Initialize file dialog to project root
-    m_currentWorkingDirectory = PROJECT_ROOT_DIR;
-    m_newFileNameInput = "new_map.json";
-    RefreshDirectoryItems();
     // NFD is initialized in Editor::InitializeSubsystems()
 }
 
@@ -201,6 +193,26 @@ bool FileManager::LoadMap(const std::string& filename, std::vector<MapObject>& o
     for (const auto& data : gameMap.objects)
     {
         objects.push_back(ConvertMapObjectDataToMapObject(data));
+    }
+    
+    // Restore spawn zone from metadata.startPosition if it exists
+    // Check if startPosition is not at default position (0,0,0) or if it's explicitly set
+    // We restore spawn zone if Y coordinate is >= 2.0f (typical spawn height) or if any coordinate is non-zero
+    if (gameMap.metadata.startPosition.y >= 2.0f || 
+        (gameMap.metadata.startPosition.x != 0.0f || 
+         gameMap.metadata.startPosition.y != 0.0f || 
+         gameMap.metadata.startPosition.z != 0.0f))
+    {
+        MapObject spawnZone;
+        spawnZone.SetObjectType(6); // SPAWN_ZONE
+        spawnZone.SetPosition(gameMap.metadata.startPosition);
+        spawnZone.SetObjectName("Spawn Zone");
+        spawnZone.SetColor({255, 0, 255, 128}); // Magenta with transparency
+        spawnZone.SetScale({2.0f, 2.0f, 2.0f}); // Default spawn zone size
+        spawnZone.SetSelected(false);
+        objects.push_back(spawnZone);
+        TraceLog(LOG_INFO, "FileManager::LoadMap() - Restored spawn zone from metadata at (%.2f, %.2f, %.2f)", 
+                 gameMap.metadata.startPosition.x, gameMap.metadata.startPosition.y, gameMap.metadata.startPosition.z);
     }
     
     std::cout << "Map loaded successfully using shared MapLoader!" << std::endl;
@@ -425,12 +437,31 @@ void FileManager::LoadParkourMap(const std::string& mapName, std::vector<MapObje
             break;
         }
 
-        objects.push_back(obj);
-    }
+                  objects.push_back(obj);
+      }
+      
+      // Restore spawn zone from metadata.startPosition if it exists
+      // Check if startPosition is not at default position (0,0,0) or if it's explicitly set
+      if (gameMap.metadata.startPosition.y >= 2.0f || 
+          (gameMap.metadata.startPosition.x != 0.0f || 
+           gameMap.metadata.startPosition.y != 0.0f || 
+           gameMap.metadata.startPosition.z != 0.0f))
+      {
+          MapObject spawnZone;
+          spawnZone.SetObjectType(6); // SPAWN_ZONE
+          spawnZone.SetPosition(gameMap.metadata.startPosition);
+          spawnZone.SetObjectName("Spawn Zone");
+          spawnZone.SetColor({255, 0, 255, 128}); // Magenta with transparency
+          spawnZone.SetScale({2.0f, 2.0f, 2.0f}); // Default spawn zone size
+          spawnZone.SetSelected(false);
+          objects.push_back(spawnZone);
+          TraceLog(LOG_INFO, "FileManager::LoadParkourMap() - Restored spawn zone from metadata at (%.2f, %.2f, %.2f)", 
+                   gameMap.metadata.startPosition.x, gameMap.metadata.startPosition.y, gameMap.metadata.startPosition.z);
+      }
 
-    TraceLog(LOG_INFO, "Loaded parkour map '%s' with %d elements", mapName.c_str(), objects.size());
-    m_currentlyLoadedMapFilePath = mapName;
-}
+      TraceLog(LOG_INFO, "Loaded parkour map '%s' with %d elements", mapName.c_str(), objects.size());
+      m_currentlyLoadedMapFilePath = mapName;
+  }
 
 void FileManager::GenerateParkourMap(const std::string& mapName, std::vector<MapObject>& objects)
 {
@@ -451,13 +482,15 @@ void FileManager::ShowParkourMapSelector()
     m_displayParkourMapDialog = true;
 }
 
-void FileManager::OpenFileDialog(bool isLoad)
+
+std::string FileManager::GetCurrentlyLoadedMapFilePath() const
 {
-    m_isFileLoadDialog = isLoad;
-    m_displayFileDialog = true;
-    m_currentlySelectedFile.clear();
-    m_newFileNameInput = isLoad ? "new_map.json" : "game_map.json";
-    RefreshDirectoryItems();
+    return m_currentlyLoadedMapFilePath;
+}
+
+void FileManager::SetCurrentlyLoadedMapFilePath(const std::string& path)
+{
+    m_currentlyLoadedMapFilePath = path;
 }
 
 ImVec2 FileManager::ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize)
@@ -489,151 +522,58 @@ ImVec2 FileManager::ClampWindowPosition(const ImVec2& desiredPos, ImVec2& window
     return ImVec2(clampedX, clampedY);
 }
 
-void FileManager::RenderFileDialog()
+void FileManager::EnsureWindowInBounds()
 {
-    if (!m_displayFileDialog)
-        return;
-
-    ImVec2 windowSize(600, 400);
-    ImVec2 desiredPos(GetScreenWidth() * 0.5f - 300, GetScreenHeight() * 0.5f - 200);
-    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+    ImVec2 pos = ImGui::GetWindowPos();
+    ImVec2 size = ImGui::GetWindowSize();
+    const int screenWidth = GetScreenWidth();
+    const int screenHeight = GetScreenHeight();
     
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
-
-    std::string title = m_isFileLoadDialog ? "Load Map" : "Save Map";
-    if (ImGui::Begin(title.c_str(), &m_displayFileDialog, ImGuiWindowFlags_NoCollapse))
+    bool needsClamp = false;
+    ImVec2 clampedPos = pos;
+    ImVec2 clampedSize = size;
+    
+    // Clamp size
+    if (clampedSize.x > static_cast<float>(screenWidth))
     {
-        // Current directory display
-        ImGui::Text("Current Directory: %s", m_currentWorkingDirectory.c_str());
-        ImGui::Separator();
-
-        // Directory navigation
-        if (ImGui::Button("Up"))
-        {
-            fs::path currentPath(m_currentWorkingDirectory);
-            if (currentPath.has_parent_path())
-            {
-                NavigateToDirectory(currentPath.parent_path().string());
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Refresh"))
-        {
-            RefreshDirectoryItems();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("New Folder"))
-        {
-            m_displayNewFolderDialog = true;
-        }
-
-        ImGui::Separator();
-
-        // Directory contents
-        ImGui::BeginChild("DirectoryContents", ImVec2(0, 200), true);
-        for (const auto& item : m_currentDirectoryContents)
-        {
-            bool isDirectory = fs::is_directory(m_currentWorkingDirectory + "/" + item);
-            std::string icon = isDirectory ? "[DIR]" : "[FILE]";
-
-            if (ImGui::Selectable((icon + " " + item).c_str(), m_currentlySelectedFile == item))
-            {
-                m_currentlySelectedFile = item;
-                if (!isDirectory)
-                {
-                    m_newFileNameInput = item;
-                }
-            }
-
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
-            {
-                if (isDirectory)
-                {
-                    NavigateToDirectory(m_currentWorkingDirectory + "/" + item);
-                }
-                else if (m_isFileLoadDialog)
-                {
-                    // Load the file
-                    std::string fullPath = m_currentWorkingDirectory + "/" + item;
-                    // Note: Loading would be handled by the caller
-                    m_displayFileDialog = false;
-                }
-            }
-        }
-        ImGui::EndChild();
-
-        ImGui::Separator();
-
-        // File name input
-        ImGui::Text("File Name:");
-        ImGui::InputText("##FileName", &m_newFileNameInput);
-
-        // Action buttons
-        if (ImGui::Button(m_isFileLoadDialog ? "Load" : "Save"))
-        {
-            if (!m_newFileNameInput.empty())
-            {
-                // Note: Actual save/load would be handled by the caller
-                m_displayFileDialog = false;
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel"))
-        {
-            m_displayFileDialog = false;
-        }
+        clampedSize.x = static_cast<float>(screenWidth);
+        needsClamp = true;
     }
-    ImGui::End();
-
-    // Render parkour map dialog if needed
-    RenderParkourMapDialog();
-}
-
-void FileManager::RefreshDirectoryItems()
-{
-    m_currentDirectoryContents.clear();
-    try
+    if (clampedSize.y > static_cast<float>(screenHeight))
     {
-        for (const auto& entry : fs::directory_iterator(m_currentWorkingDirectory))
-        {
-            m_currentDirectoryContents.push_back(entry.path().filename().string());
-        }
-        std::sort(m_currentDirectoryContents.begin(), m_currentDirectoryContents.end());
+        clampedSize.y = static_cast<float>(screenHeight);
+        needsClamp = true;
     }
-    catch (const std::exception& e)
+    
+    // Clamp position
+    if (clampedPos.x < 0.0f)
     {
-        TraceLog(LOG_ERROR, "Failed to refresh directory items: %s", e.what());
+        clampedPos.x = 0.0f;
+        needsClamp = true;
     }
-}
-
-void FileManager::NavigateToDirectory(const std::string& path)
-{
-    if (fs::exists(path) && fs::is_directory(path))
+    else if (clampedPos.x + clampedSize.x > static_cast<float>(screenWidth))
     {
-        m_currentWorkingDirectory = path;
-        RefreshDirectoryItems();
+        clampedPos.x = static_cast<float>(screenWidth) - clampedSize.x;
+        needsClamp = true;
     }
-}
-
-bool FileManager::IsFileDialogOpen() const
-{
-    return m_displayFileDialog;
-}
-
-std::string FileManager::GetCurrentWorkingDirectory() const
-{
-    return m_currentWorkingDirectory;
-}
-
-std::string FileManager::GetCurrentlyLoadedMapFilePath() const
-{
-    return m_currentlyLoadedMapFilePath;
-}
-
-void FileManager::SetCurrentlyLoadedMapFilePath(const std::string& path)
-{
-    m_currentlyLoadedMapFilePath = path;
+    
+    if (clampedPos.y < 0.0f)
+    {
+        clampedPos.y = 0.0f;
+        needsClamp = true;
+    }
+    else if (clampedPos.y + clampedSize.y > static_cast<float>(screenHeight))
+    {
+        clampedPos.y = static_cast<float>(screenHeight) - clampedSize.y;
+        needsClamp = true;
+    }
+    
+    // Apply clamping only if needed
+    if (needsClamp)
+    {
+        ImGui::SetWindowPos(clampedPos, ImGuiCond_Always);
+        ImGui::SetWindowSize(clampedSize, ImGuiCond_Always);
+    }
 }
 
 void FileManager::RenderParkourMapDialog()
@@ -644,11 +584,19 @@ void FileManager::RenderParkourMapDialog()
         ImVec2 desiredPos(GetScreenWidth() * 0.5f - 250, GetScreenHeight() * 0.5f - 200);
         ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
         
-        ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-        ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
+        
+        // Limit maximum window size to screen dimensions
+        ImGui::SetNextWindowSizeConstraints(
+            ImVec2(300, 300),
+            ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
+        );
 
         if (ImGui::Begin("Parkour Maps", &m_displayParkourMapDialog, ImGuiWindowFlags_NoCollapse))
         {
+            // Ensure window stays within screen bounds
+            EnsureWindowInBounds();
             ImGui::Text("Select a Parkour Map:");
             ImGui::Separator();
 

@@ -3,7 +3,7 @@
 //
 
 #include "RenderManager.h"
-#include "IRenderable.h"
+#include "IGameRenderable.h"
 #include <Collision/CollisionDebugRenderer.h>
 #include <Collision/CollisionManager.h>
 #include <Engine/World/World.h>
@@ -91,8 +91,8 @@ void RenderManager::InitializeImGuiFont(const std::string &fontPath, float fontS
         ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
         if (font != nullptr)
         {
-            io.Fonts->Build();
-            TraceLog(LOG_INFO, "Alan Sans font loaded for ImGui: %s (%.1fpx)", fontPath.c_str(), fontSize);
+            // Don't build here - will be built in BeginFrame() after BeginDrawing()
+            TraceLog(LOG_INFO, "Alan Sans font loaded for ImGui: %s (%.1fpx) (will be built on first frame)", fontPath.c_str(), fontSize);
             return;
         }
         else
@@ -107,18 +107,29 @@ void RenderManager::InitializeImGuiFont(const std::string &fontPath, float fontS
 
     // Add default font as fallback
     io.Fonts->AddFontDefault();
-    io.Fonts->Build();
+    // Don't build here - will be built in BeginFrame() after BeginDrawing()
 }
 
 void RenderManager::BeginFrame() const
 {
     BeginDrawing();
     ClearBackground(m_backgroundColor);
+    
+    // Build ImGui fonts on first frame to ensure proper OpenGL context
+    // Must be called after BeginDrawing() but before rlImGuiBegin()
+    static bool fontsBuilt = false;
+    if (!fontsBuilt) {
+        ImGuiIO &io = ImGui::GetIO();
+        if (!io.Fonts->IsBuilt()) {
+            io.Fonts->Build();
+            fontsBuilt = true;
+        }
+    }
 }
 
 void RenderManager::EndFrame() { EndDrawing(); }
 
-void RenderManager::RenderGame(IRenderable &renderable, const ModelLoader &models,
+void RenderManager::RenderGame(IGameRenderable &renderable, const ModelLoader &models,
                                  const CollisionManager &collisionManager, bool showCollisionDebug)
 {
     // NOTE: BeginMode3D/EndMode3D are now handled by Game::RenderGameWorld()
@@ -141,13 +152,13 @@ void RenderManager::RenderGame(IRenderable &renderable, const ModelLoader &model
     }
 }
 
-void RenderManager::RenderMenu(IRenderable &renderable)
+void RenderManager::RenderMenu(IMenuRenderable &renderable)
 {
-    renderable.Update(*static_cast<CollisionManager*>(nullptr)); // For Menu, collisionManager is not needed, but to match signature
+    renderable.Update(); // Menu update doesn't need CollisionManager
     renderable.Render();
 }
 
-void RenderManager::RenderDebugInfo(IRenderable &renderable, const ModelLoader &models,
+void RenderManager::RenderDebugInfo(IGameRenderable &renderable, const ModelLoader &models,
                                      const CollisionManager &collisionManager)
 {
     if (m_showDebugInfo)
@@ -170,7 +181,7 @@ void RenderManager::DrawScene3D(const ModelLoader &models)
 constexpr float MODEL_Y_OFFSET = -1.0f;
 constexpr float MODEL_SCALE = 1.1f;
 
-void RenderManager::DrawPlayer(IRenderable &renderable, const ModelLoader &models)
+void RenderManager::DrawPlayer(IGameRenderable &renderable, const ModelLoader &models)
 {
     // Get player model from models cache
     auto playerModelOpt = const_cast<ModelLoader &>(models).GetModelByName("player_low");
@@ -208,7 +219,7 @@ void RenderManager::DrawPlayer(IRenderable &renderable, const ModelLoader &model
 }
 
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
-                                           IRenderable &renderable) const
+                                           IGameRenderable &renderable) const
 {
     TraceLog(LOG_DEBUG, "RenderManager::RenderCollisionDebug() - Starting collision debug rendering");
 
@@ -249,7 +260,7 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
 }
 
 void RenderManager::RenderCollisionShapes(const CollisionManager &collisionManager,
-                                           IRenderable &renderable) const
+                                           IGameRenderable &renderable) const
 {
     if (!m_collisionDebugRenderer)
     {
@@ -277,7 +288,7 @@ void RenderManager::SetBackgroundColor(Color color) { m_backgroundColor = color;
 
 void RenderManager::ToggleDebugInfo() { m_showDebugInfo = !m_showDebugInfo; }
 
-void RenderManager::DrawDebugInfoWindow(IRenderable &renderable, const ModelLoader &models,
+void RenderManager::DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
                                          const CollisionManager &collisionManager)
 {
     rlImGuiBegin();
@@ -411,7 +422,7 @@ bool RenderManager::IsDebugInfoVisible() const { return m_showDebugInfo; }
 
 bool RenderManager::IsCollisionDebugVisible() const { return m_showCollisionDebug; }
 
-void RenderManager::ShowMetersPlayer(const IRenderable &renderable) const
+void RenderManager::ShowMetersPlayer(const IGameRenderable &renderable) const
 {
     Vector3 playerPosition = renderable.GetPosition();
     

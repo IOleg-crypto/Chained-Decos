@@ -3,6 +3,7 @@
 
 #include "CameraController.h"
 #include "raylib.h"
+#include <imgui/imgui.h>
 
 CameraController::CameraController() : m_camera({0}), m_cameraMode(CAMERA_THIRD_PERSON)
 {
@@ -26,6 +27,14 @@ void CameraController::Update()
         return;
     }
 
+    // Skip camera update if ImGui wants to capture mouse (menu is open)
+    // This prevents UpdateCamera from centering the cursor
+    const ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse)
+    {
+        return;
+    }
+
     UpdateCamera(&m_camera, m_cameraMode);
 }
 
@@ -33,6 +42,13 @@ void CameraController::UpdateCameraRotation()
 {
     // Skip mouse input if no window is available (for testing)
     if (!IsWindowReady())
+    {
+        return;
+    }
+
+    // Skip camera rotation if ImGui wants to capture mouse (menu is open)
+    const ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse)
     {
         return;
     }

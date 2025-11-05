@@ -1,9 +1,6 @@
 #include "EditorModule.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/Kernel/KernelServices.h"
-#include "MapEditor/Editor/Editor.h"
-#include "Engine/CameraController/CameraController.h"
-#include "Engine/Model/Model.h"
 #include <raylib.h>
 
 EditorModule::EditorModule()
@@ -17,12 +14,8 @@ bool EditorModule::Initialize(Kernel* kernel)
         return false;
     }
 
-    // Створюємо залежності для Editor
-    m_cameraController = std::make_shared<CameraController>();
-    m_modelLoader = std::make_unique<ModelLoader>();
-
-    // Створюємо Editor
-    m_editor = std::make_unique<Editor>(m_cameraController, std::move(m_modelLoader));
+    // EditorModule doesn't create Editor - it's created by EditorApplication
+    // This module can be used for editor-specific services if needed
 
     TraceLog(LOG_INFO, "[EditorModule] Initialized successfully");
     return true;
@@ -30,40 +23,26 @@ bool EditorModule::Initialize(Kernel* kernel)
 
 void EditorModule::Shutdown()
 {
-    if (m_editor) {
-        m_editor.reset();
-    }
-    if (m_cameraController) {
-        m_cameraController.reset();
-    }
-    if (m_modelLoader) {
-        m_modelLoader.reset();
-    }
-    
     TraceLog(LOG_INFO, "[EditorModule] Shutdown complete");
 }
 
 void EditorModule::Update(float deltaTime)
 {
-    if (m_editor) {
-        m_editor->Update();
-        m_editor->HandleInput();
-    }
+    // Editor update is handled by EditorApplication::OnPostUpdate()
+    (void)deltaTime;
 }
 
 void EditorModule::Render()
 {
-    if (m_editor) {
-        m_editor->Render();
-        m_editor->RenderImGui();
-    }
+    // Editor rendering is handled by EditorApplication::OnPostRender()
 }
 
 void EditorModule::RegisterServices(Kernel* kernel)
 {
     if (!kernel) return;
     
-    // Editor може бути зареєстрований як сервіс, якщо потрібно
+    // Editor doesn't need additional services registered here
+    // All editor functionality is handled directly in EditorApplication
 }
 
 std::vector<std::string> EditorModule::GetDependencies() const
