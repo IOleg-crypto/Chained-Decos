@@ -81,7 +81,7 @@ void EditorApplication::OnPostInitialize()
     }
     
     // Set window icon
-    Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.png");
+    Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.jpg");
     if (icon.data != nullptr) {
         ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
         SetWindowIcon(icon);
