@@ -37,19 +37,6 @@ private:
     std::string m_currentlySelectedModelName;
     int m_gridSizes;
 
-    // File dialog state
-    std::string m_currentWorkingDirectory;
-    std::vector<std::string> m_currentDirectoryContents;
-    std::string m_currentlySelectedFile;
-    std::string m_newFileNameInput;
-    std::string m_newFolderNameInput;
-    bool m_displayFileDialog;
-    bool m_isFileLoadDialog;
-    bool m_isJsonExportDialog;
-    bool m_displayNewFolderDialog;
-    bool m_displayDeleteConfirmationDialog;
-    std::string m_itemPendingDeletion;
-
     // Parkour map dialog
     bool m_displayParkourMapDialog;
     std::vector<GameMap> m_availableParkourMaps;
@@ -66,7 +53,6 @@ public:
     void HandleInput() override;
     void ShowObjectPanel(bool show) override;
     void ShowPropertiesPanel(bool show) override;
-    void ShowFileDialog(bool show) override;
     void ShowParkourMapDialog(bool show) override;
     int GetGridSize() const override;
 
@@ -74,7 +60,6 @@ public:
     bool IsImGuiInterfaceDisplayed() const { return m_displayImGuiInterface; }
     bool IsObjectPanelDisplayed() const { return m_displayObjectListPanel; }
     bool IsPropertiesPanelDisplayed() const { return m_displayPropertiesPanel; }
-    bool IsFileDialogDisplayed() const { return m_displayFileDialog; }
     bool IsParkourMapDialogDisplayed() const { return m_displayParkourMapDialog; }
 
     // Tool and model state
@@ -90,21 +75,18 @@ private:
     void RenderImGuiObjectPanel();
     void RenderImGuiPropertiesPanel();
     void RenderParkourMapDialog();
-    void RenderFileDialog();
 
     // Input handling
     void HandleKeyboardInput();
-
-    // File dialog helpers
-    void OpenFileDialog(bool isLoad);
-    void RefreshDirectoryItems();
-    void NavigateToDirectory(const std::string& path);
 
     // UI helper methods
     void ProcessPendingObjectCreation();
     
     // Window position helper (windowSize is passed by reference to allow clamping)
     ImVec2 ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize);
+    
+    // Ensure window stays within screen bounds (call after Begin())
+    void EnsureWindowInBounds();
 };
 
 #endif // UIMANAGER_H

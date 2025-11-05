@@ -5,6 +5,7 @@ add_library(cameracontroller STATIC
 
 target_include_directories(cameracontroller PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
 )
 
 target_link_libraries(cameracontroller PUBLIC raylib)

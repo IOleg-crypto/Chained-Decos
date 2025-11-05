@@ -61,10 +61,17 @@ Editor::~Editor()
 };
 
 std::shared_ptr<CameraController> Editor::GetCameraController() const {
+    if (!m_cameraManager) {
+        TraceLog(LOG_WARNING, "Editor::GetCameraController() - CameraManager is null");
+        return nullptr;
+    }
     return m_cameraManager->GetController();
 }
 
 void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader) {
+    // Initialize NFD once (before subsystems that use it)
+    NFD_Init();
+    
     // Initialize subsystems in dependency order
     m_cameraManager = std::make_unique<CameraManager>(cameraController);
     m_sceneManager = std::make_unique<SceneManager>();
@@ -74,9 +81,6 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
     // Initialize remaining subsystems
     m_modelManager = std::make_unique<ModelManager>(std::move(modelLoader));
     m_uiManager = std::make_unique<UIManager>(m_sceneManager.get(), m_fileManager.get(), m_toolManager.get(), m_modelManager.get());
-
-    // Initialize file dialog to project root
-    NFD_Init();
 }
 
 void Editor::Update()
@@ -221,7 +225,7 @@ void Editor::RenderObject(const MapObject& obj)
 void Editor::RenderGizmo(const MapObject& obj, const MapObjectData& data)
 {
     // Only show gizmo for MOVE and SCALE tools
-    if (!m_toolManager) return;
+    if (!m_toolManager || !m_cameraManager) return;
     Tool activeTool = m_toolManager->GetActiveTool();
     if (activeTool != MOVE && activeTool != SCALE) return;
     

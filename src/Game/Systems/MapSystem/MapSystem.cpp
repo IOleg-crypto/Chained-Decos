@@ -112,6 +112,16 @@ void MapSystem::Shutdown()
 
 void MapSystem::Update(float deltaTime)
 {
+    // Update Player reference if it became available
+    if (!m_player && m_kernel && m_mapManager) {
+        auto playerService = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
+        if (playerService && playerService->player) {
+            m_player = playerService->player;
+            m_mapManager->SetPlayer(m_player);
+            TraceLog(LOG_INFO, "[MapSystem] Player reference updated in MapManager");
+        }
+    }
+    
     // Map update logic if needed
     (void)deltaTime;
 }

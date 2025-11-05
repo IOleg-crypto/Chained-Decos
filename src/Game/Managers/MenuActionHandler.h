@@ -11,6 +11,7 @@ class ModelLoader;
 class MapManager;
 class ResourceManager;
 class PlayerManager;
+class StateManager;
 class Engine;
 
 class MenuActionHandler
@@ -42,6 +43,7 @@ private:
     ResourceManager* GetResourceManager() const;
     PlayerManager* GetPlayerManager() const;
     Engine* GetEngine() const;
+    class StateManager* GetStateManager() const;
 
 public:
     MenuActionHandler(Kernel* kernel, bool* showMenu, bool* isGameInitialized);

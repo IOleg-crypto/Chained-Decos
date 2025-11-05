@@ -49,6 +49,9 @@ public:
     // Get player spawn position from spawn zone (returns center of spawn zone)
     Vector3 GetPlayerSpawnPosition() const;
     bool HasSpawnZone() const { return m_hasSpawnZone; }
+    
+    // Update Player reference (used when PlayerSystem initializes after MapSystem)
+    void SetPlayer(Player* player);
 };
 
 #endif // MAP_MANAGER_H
