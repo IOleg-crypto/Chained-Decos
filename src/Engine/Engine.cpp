@@ -75,7 +75,7 @@ void Engine::Init()
 
     // Initialize raw mouse motion for better mouse handling on Linux/VM
     // This must be done after window is created and before other input handling
-#if defined(PLATFORM_DESKTOP)
+#if defined(__linux__) // Crashing on Windows
     if (glfwRawMouseMotionSupported())
     {
         GLFWwindow* window = (GLFWwindow*)GetWindowHandle();
@@ -89,7 +89,7 @@ void Engine::Init()
 #endif
 
     rlImGuiSetup(true);
-    m_inputManager->RegisterAction(KEY_F11, ToggleFullscreen);
+    //m_inputManager->RegisterAction(KEY_F11, ToggleFullscreen);
     m_isEngineInit = true;
 
     if (m_kernel) {
