@@ -23,6 +23,7 @@
 #include "imgui.h"
 #include "rlImGui.h"
 #include <raylib.h>
+#include <GLFW/glfw3.h>
 
 GameApplication::GameApplication(int argc, char* argv[])
     : EngineApplication()
@@ -179,7 +180,8 @@ void GameApplication::OnPostInitialize()
     if (player && menu) {
         m_renderHelper = std::make_unique<GameRenderHelpers>(m_collisionManager.get());
     }
-    
+
+    // Raw mouse motion is now initialized in Engine::Init() to avoid duplication
     // GameRenderManager replaced with RenderingSystem
     // RenderingSystem is created and initialized through ModuleManager
     
@@ -260,6 +262,8 @@ void GameApplication::OnPostUpdate(float deltaTime)
             m_cursorDisabled = false;
         }
         
+        
+        
         HandleMenuActions();
     }
     else
@@ -278,6 +282,8 @@ void GameApplication::OnPostUpdate(float deltaTime)
                     EnableCursor();
                     m_cursorDisabled = false;
                 }
+                
+                
             }
             else
             {
@@ -287,6 +293,8 @@ void GameApplication::OnPostUpdate(float deltaTime)
                     DisableCursor();
                     m_cursorDisabled = true;
                 }
+                
+                
             }
             
             // Only update game logic if game is initialized (map selected)
@@ -303,14 +311,12 @@ void GameApplication::OnPostUpdate(float deltaTime)
                 
                 if (player)
                 {
-                    const ImGuiIO &io = ImGui::GetIO();
-                    if (io.WantCaptureMouse)
-                    {
-                        player->GetCameraController()->UpdateCameraRotation();
-                        player->GetCameraController()->UpdateMouseRotation(
-                            player->GetCameraController()->GetCamera(), player->GetMovement()->GetPosition());
-                        player->GetCameraController()->Update();
-                    }
+                    
+                    //player->GetCameraController()->UpdateCameraRotation();
+                    player->GetCameraController()->UpdateMouseRotation(
+                    player->GetCameraController()->GetCamera(), player->GetMovement()->GetPosition());
+                    player->GetCameraController()->Update();
+                    
                     GetEngine()->GetRenderManager()->ShowMetersPlayer(*player->GetRenderable());
                 }
             }
