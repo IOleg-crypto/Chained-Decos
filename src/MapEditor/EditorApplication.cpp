@@ -15,6 +15,8 @@ EditorApplication::EditorApplication()
     config.windowName = "ChainedEditor";
     config.width = 1280;
     config.height = 720;
+    config.resizable = true;
+    config.enableMSAA = true;
 }
 
 EditorApplication::~EditorApplication()
@@ -31,7 +33,7 @@ void EditorApplication::OnInitializeServices()
 {
     TraceLog(LOG_INFO, "[EditorApplication] Initializing editor components...");
 
-    // Create Editor components
+    // Create Editor components using engine services
     auto camera = std::make_shared<CameraController>();
     auto modelLoader = std::make_unique<ModelLoader>();
     m_editor = std::make_unique<Editor>(camera, std::move(modelLoader));
@@ -45,17 +47,15 @@ void EditorApplication::OnRegisterProjectModules()
     
     if (auto engine = GetEngine()) {
         engine->RegisterModule(std::make_unique<EditorModule>());
-        
         TraceLog(LOG_INFO, "[EditorApplication] Editor modules registered.");
     } else {
-        TraceLog(LOG_WARNING, "[EditorApplication] No engine available, cannot register modules");
+        TraceLog(LOG_ERROR, "[EditorApplication] Engine not available!");
     }
 }
 
 void EditorApplication::OnRegisterProjectServices()
 {
     TraceLog(LOG_INFO, "[EditorApplication] Registering editor services...");
-    
     // Editor doesn't register additional services yet
     // Can add EditorService if needed
 }
@@ -65,40 +65,14 @@ void EditorApplication::OnPostInitialize()
     TraceLog(LOG_INFO, "[EditorApplication] Post-initialization...");
     
     // Configure ImGui for Editor (custom settings)
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
     
     // Set up custom font
     io.Fonts->Clear();
     io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
-    io.Fonts->Build();
-    
-    // Set up ImGui style for better visibility
-    ImGui::StyleColorsDark();
-    ImGuiStyle &style = ImGui::GetStyle();
-    
-    // Configure style for better window interaction
-    style.WindowPadding = ImVec2(8, 8);
-    style.FramePadding = ImVec2(4, 4);
-    style.ItemSpacing = ImVec2(8, 4);
-    style.ScrollbarSize = 12.0f;
-    style.GrabMinSize = 8.0f;
-    style.WindowRounding = 5.0f;
-    style.FrameRounding = 3.0f;
-    style.GrabRounding = 3.0f;
-    
-    // Colors for better visibility
-    ImVec4 *colors = style.Colors;
-    colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.95f);
-    colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.16f, 0.16f, 0.54f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.26f, 0.26f, 0.54f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.26f, 0.26f, 0.67f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
-    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+    // Don't build fonts here - will be built in RenderManager::BeginFrame()
     
     // Preload models after window initialization
     if (m_editor) {
@@ -107,22 +81,27 @@ void EditorApplication::OnPostInitialize()
     }
     
     // Set window icon
-    Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.jpg");
-    ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    SetWindowIcon(icon);
-    UnloadImage(icon);
+    Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.png");
+    if (icon.data != nullptr) {
+        ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+        SetWindowIcon(icon);
+        UnloadImage(icon);
+    }
     
-    TraceLog(LOG_INFO, "[EditorApplication] Editor application initialized.");
+    TraceLog(LOG_INFO, "[EditorApplication] Post-initialization complete.");
 }
 
 void EditorApplication::OnPostUpdate(float deltaTime)
 {
-    (void)deltaTime;  // Unused for now
+    (void)deltaTime;
     
-    if (m_editor) {
-        m_editor->Update();
-        m_editor->HandleInput();
-    }
+    if (!m_editor) return;
+    
+    // Update editor state
+    m_editor->Update();
+    
+    // Handle editor input
+    m_editor->HandleInput();
 }
 
 void EditorApplication::OnPostRender()
@@ -137,33 +116,37 @@ void EditorApplication::OnPostRender()
     ClearBackground(DARKGRAY);
     
     // Render 3D scene for Editor
-    BeginMode3D(m_editor->GetCameraController()->GetCamera());
-    m_editor->GetCameraController()->SetCameraMode(CAMERA_FREE);
-    DrawGrid(m_editor->GetGridSize(), 1.0f);
-
-    // Render all editor objects
-    m_editor->Render();
-
-    EndMode3D();
-
+    auto cameraController = m_editor->GetCameraController();
+    if (cameraController) {
+        BeginMode3D(cameraController->GetCamera());
+        cameraController->SetCameraMode(CAMERA_FREE);
+        
+        // Draw grid
+        DrawGrid(m_editor->GetGridSize(), 1.0f);
+        
+        // Render all editor objects
+        m_editor->Render();
+        
+        EndMode3D();
+    }
+    
     // Begin ImGui frame for Editor UI
-    // rlImGuiBegin() already called in RenderManager, but can call again
-    // (it safely handles repeated calls)
+    // Note: rlImGuiBegin() must be called here, before rendering ImGui
+    // rlImGuiEnd() will be called AFTER EndFrame() but before kernel->Render()
     rlImGuiBegin();
     
     // Render ImGui interface
     m_editor->RenderImGui();
     
+    // rlImGuiEnd() will be called after EndFrame() - but we need to call it here
+    // because kernel->Render() is called after EndFrame() and may conflict
+    // Actually, we should keep it here and let kernel->Render() handle its own ImGui if needed
     rlImGuiEnd();
 }
 
 void EditorApplication::OnPreShutdown()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Cleaning up editor resources...");
-    
+    TraceLog(LOG_INFO, "[EditorApplication] Pre-shutdown...");
     // Editor cleans up its own resources in destructor
-    m_editor.reset();
-    
-    TraceLog(LOG_INFO, "[EditorApplication] Editor resources cleaned up.");
 }
 

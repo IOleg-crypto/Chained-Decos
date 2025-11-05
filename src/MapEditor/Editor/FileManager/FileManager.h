@@ -16,19 +16,6 @@
 
 class FileManager : public IFileManager {
 private:
-    // File dialog state
-    std::string m_currentWorkingDirectory;
-    std::vector<std::string> m_currentDirectoryContents;
-    std::string m_currentlySelectedFile;
-    std::string m_newFileNameInput;
-    std::string m_newFolderNameInput;
-    bool m_displayFileDialog;
-    bool m_isFileLoadDialog;
-    bool m_isJsonExportDialog;
-    bool m_displayNewFolderDialog;
-    bool m_displayDeleteConfirmationDialog;
-    std::string m_itemPendingDeletion;
-
     // Parkour map dialog state
     bool m_displayParkourMapDialog;
     std::vector<GameMap> m_availableParkourMaps;
@@ -53,15 +40,7 @@ public:
     std::vector<GameMap> GetAvailableParkourMaps() override;
     void ShowParkourMapSelector() override;
 
-    // File dialog operations
-    void OpenFileDialog(bool isLoad) override;
-    void RenderFileDialog() override;
-    void RefreshDirectoryItems() override;
-    void NavigateToDirectory(const std::string& path) override;
-
     // Getters for dialog state
-    bool IsFileDialogOpen() const override;
-    std::string GetCurrentWorkingDirectory() const override;
     std::string GetCurrentlyLoadedMapFilePath() const override;
     void SetCurrentlyLoadedMapFilePath(const std::string& path) override;
 
@@ -71,6 +50,9 @@ private:
     
     // Window position helper (windowSize is passed by reference to allow clamping)
     ImVec2 ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize);
+    
+    // Ensure window stays within screen bounds (call after Begin())
+    void EnsureWindowInBounds();
 };
 
 #endif // FILEMANAGER_H

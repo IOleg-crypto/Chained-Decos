@@ -23,9 +23,9 @@
             "r": 102
         },
         "startPosition": {
-            "x": 0.0,
-            "y": 2.799999952316284,
-            "z": 0.0
+            "x": 20.0,
+            "y": 13.300000190734863,
+            "z": 20.0
         },
         "version": "1.0"
     },
@@ -74,7 +74,7 @@
             "height": 1.0,
             "isObstacle": false,
             "isPlatform": true,
-            "name": "New Object 2 (Cube)",
+            "name": "lands",
             "position": {
                 "x": 0.0,
                 "y": -0.10000000149011612,

@@ -3,14 +3,14 @@
 
 #include "Engine/Module/IEngineModule.h"
 #include <memory>
+#include <vector>
+#include <string>
 
 // Forward declarations
 class Kernel;
-class Editor;
-class CameraController;
-class ModelLoader;
 
-// Модуль для редактора карт
+// Editor module - minimal implementation
+// Editor functionality is handled directly in EditorApplication
 class EditorModule : public IEngineModule {
 public:
     EditorModule();
@@ -29,14 +29,6 @@ public:
     
     void RegisterServices(Kernel* kernel) override;
     std::vector<std::string> GetDependencies() const override;
-
-    // Accessors
-    Editor* GetEditor() const { return m_editor.get(); }
-
-private:
-    std::unique_ptr<Editor> m_editor;
-    std::shared_ptr<CameraController> m_cameraController;
-    std::unique_ptr<ModelLoader> m_modelLoader;
 };
 
 #endif // EDITOR_MODULE_H

@@ -19,6 +19,7 @@
 #include "Systems/MapSystem/MapSystem.h"
 #include "Systems/UIController/UIController.h"
 #include "Systems/RenderingSystem/RenderingSystem.h"
+#define RLIMGUI_ALWAYS_TRACK_MOUSE
 #include "imgui.h"
 #include "rlImGui.h"
 #include <raylib.h>
@@ -27,6 +28,7 @@ GameApplication::GameApplication(int argc, char* argv[])
     : EngineApplication()
     , m_showMenu(true)
     , m_isGameInitialized(false)
+    , m_cursorDisabled(false)
 {
     ProcessCommandLine(argc, argv);
 }
@@ -105,6 +107,9 @@ void GameApplication::OnInitializeServices()
     m_models = std::make_unique<ModelLoader>();
     m_world = std::make_unique<WorldManager>();
     
+    // Initialize managers that don't have their own systems yet
+    InitializeManagers();
+    
     TraceLog(LOG_INFO, "[GameApplication] Engine services initialized.");
     TraceLog(LOG_INFO, "[GameApplication] Game-specific components will be created by systems.");
 }
@@ -144,6 +149,17 @@ void GameApplication::OnPostInitialize()
     // Initial state - show menu
     m_showMenu = true;
     
+    // Initialize cursor state - menu is shown, so cursor should be enabled
+    m_cursorDisabled = false;
+    
+    // Ensure cursor is visible when menu is shown (using system cursor)
+    EnableCursor();
+    
+    // Configure ImGui for proper mouse/cursor handling in menu
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard navigation
+    io.MouseDrawCursor = false; // Use system cursor, not ImGui cursor
+    
     // Systems now initialized, get components through Kernel
     auto playerService = GetKernel()->GetService<PlayerService>(Kernel::ServiceType::Player);
     auto menuService = GetKernel()->GetService<MenuService>(Kernel::ServiceType::Menu);
@@ -174,6 +190,16 @@ void GameApplication::OnPostInitialize()
     if (menu && player) {
         m_menuActionHandler = std::make_unique<MenuActionHandler>(
             GetKernel(), &m_showMenu, &m_isGameInitialized);
+    }
+    
+    // Register StateManagerService after creation
+    if (m_stateManager) {
+        auto kernel = GetKernel();
+        if (kernel) {
+            kernel->RegisterService<StateManagerService>(Kernel::ServiceType::StateManager,
+                std::make_shared<StateManagerService>(m_stateManager.get()));
+            TraceLog(LOG_INFO, "[GameApplication] StateManagerService registered.");
+        }
     }
     
     // Initialize input after everything is ready
@@ -216,16 +242,54 @@ void GameApplication::OnPostUpdate(float deltaTime)
         menu->ToggleConsole();
     }
 
+    // Manage cursor visibility based on menu state
+    // Only call EnableCursor/DisableCursor when state changes to avoid centering cursor every frame
     if (m_showMenu)
     {
+        // Menu is open - show system cursor (more reliable than ImGui cursor)
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        
+        // Disable ImGui cursor drawing - use system cursor instead
+        io.MouseDrawCursor = false;
+        
+        // Enable system cursor for menu interaction (only if currently disabled)
+        if (m_cursorDisabled)
+        {
+            EnableCursor();
+            m_cursorDisabled = false;
+        }
+        
         HandleMenuActions();
     }
     else
     {
-        // Only update game logic if game is initialized (map selected)
+        // Menu is closed - check if game is running
         if (m_isGameInitialized)
         {
+            // Game is running - check console state
             bool consoleOpen = menu && menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen();
+            
+            if (consoleOpen)
+            {
+                // Console is open - show system cursor (only if currently disabled)
+                if (m_cursorDisabled)
+                {
+                    EnableCursor();
+                    m_cursorDisabled = false;
+                }
+            }
+            else
+            {
+                // Game is running, no console - hide cursor (only if currently enabled)
+                if (!m_cursorDisabled)
+                {
+                    DisableCursor();
+                    m_cursorDisabled = true;
+                }
+            }
+            
+            // Only update game logic if game is initialized (map selected)
             if (!consoleOpen)
             {
                 UpdatePlayerLogic();
@@ -249,6 +313,15 @@ void GameApplication::OnPostUpdate(float deltaTime)
                     }
                     GetEngine()->GetRenderManager()->ShowMetersPlayer(*player->GetRenderable());
                 }
+            }
+        }
+        else
+        {
+            // Menu is closed but game not initialized - show cursor (shouldn't happen, but safe)
+            if (m_cursorDisabled)
+            {
+                EnableCursor();
+                m_cursorDisabled = false;
             }
         }
     }
@@ -424,27 +497,30 @@ void GameApplication::InitInput()
         return;
     }
 
-    engine->GetInputManager().RegisterAction(KEY_F1,
-                                           [this, menu]
-                                           {
-                                               if (!m_showMenu)
-                                               {
-                                                   menu->SetGameInProgress(true);
-                                               }
-                                               m_showMenu = true;
-                                           });
+        engine->GetInputManager().RegisterAction(KEY_F1,
+                                            [this, menu]
+                                            {
+                                                if (!m_showMenu && m_isGameInitialized)
+                                                {
+                                                    SaveGameState();
+                                                    menu->SetGameInProgress(true);
+                                                    m_showMenu = true;
+                                                    EnableCursor(); // Show system cursor when opening menu
+                                                }
+                                            });
 
     engine->GetInputManager().RegisterAction(KEY_ESCAPE,
-                                           [this, menu]
-                                           {
-                                               if (!m_showMenu)
-                                               {
-                                                   // SaveGameState();  // TODO: додати метод
-                                                   menu->ResetAction();
-                                                   menu->SetGameInProgress(true);
-                                                   m_showMenu = true;
-                                               }
-                                           });
+                                            [this, menu]
+                                            {
+                                                if (!m_showMenu && m_isGameInitialized)
+                                                {
+                                                    SaveGameState();
+                                                    menu->ResetAction();
+                                                    menu->SetGameInProgress(true);
+                                                    m_showMenu = true;
+                                                    EnableCursor(); // Show system cursor when opening menu
+                                                }
+                                            });
     TraceLog(LOG_INFO, "[GameApplication] Game input bindings configured.");
 }
 
@@ -472,6 +548,35 @@ void GameApplication::UpdatePhysicsLogic()
     {
         m_updateManager->UpdatePhysicsLogic();
     }
+}
+
+void GameApplication::SaveGameState()
+{
+    if (!m_stateManager || !m_isGameInitialized)
+    {
+        return; // No state to save if game is not initialized
+    }
+    
+    // Get MapManager through Kernel to get current map path
+    auto mapService = GetKernel()->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
+    if (!mapService || !mapService->mapManager)
+    {
+        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - MapManager not available");
+        return;
+    }
+    
+    // Get current map path (need to make GetCurrentMapPath public or add public method)
+    // For now, we'll use a workaround - get from MapManager if it has public access
+    std::string currentMapPath = mapService->mapManager->GetCurrentMapPath();
+    
+    if (currentMapPath.empty())
+    {
+        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - Current map path is empty");
+        return;
+    }
+    
+    m_stateManager->SaveGameState(currentMapPath);
+    TraceLog(LOG_INFO, "[GameApplication] Game state saved (map: %s)", currentMapPath.c_str());
 }
 
 // RenderGameWorld() and RenderGameUI() are now in RenderingSystem
