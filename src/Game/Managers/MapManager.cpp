@@ -81,7 +81,30 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
     
     // Clear previous map objects and loaded models
     m_gameMap.objects.clear();
-    m_gameMap.Cleanup(); // This clears loadedModels
+    
+    // IMPORTANT: Unregister models from ModelLoader BEFORE calling GameMap::Cleanup()
+    // to prevent double free - models registered from GameMap::loadedModels share
+    // the same GPU resources, so we must unregister them first
+    // Also try to unload aliases (stem, lowercase variants) that might have been registered
+    for (const auto &pair : m_gameMap.loadedModels)
+    {
+        const std::string &modelName = pair.first;
+        // Try to unload from ModelLoader if it was registered
+        // This prevents double free when GameMap::Cleanup() calls UnloadModel()
+        m_models->UnloadModel(modelName);
+        
+        // Also try to unload possible aliases (stem without extension)
+        try {
+            std::string stem = std::filesystem::path(modelName).stem().string();
+            if (!stem.empty() && stem != modelName) {
+                m_models->UnloadModel(stem);
+            }
+        } catch (...) {
+            // Ignore filesystem errors
+        }
+    }
+    
+    m_gameMap.Cleanup(); // This clears loadedModels and calls UnloadModel() - but models are already unregistered
     
     // Clear previous spawn zone
     m_hasSpawnZone = false;

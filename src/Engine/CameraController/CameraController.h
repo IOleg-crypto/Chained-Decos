@@ -70,6 +70,10 @@ private:
     float m_cameraPitch = 0.0f;      // Pitch angle for rotation
     float m_cameraSmoothingFactor = 4.0f; // Smoothing speed for camera rotation
     float m_radiusFOV = 8.0f;        // Radius or distance for field of view
+    
+    // Згладжування для віртуальних машин
+    Vector2 m_smoothedMouseDelta = {0.0f, 0.0f}; // Згладжене значення delta миші
+    static constexpr float MOUSE_SMOOTHING_FACTOR = 0.15f; // Коефіцієнт згладжування (0.0-1.0) - зменшено для більш плавного руху
 };
 
 #endif // CAMERACONTROLLER_H
