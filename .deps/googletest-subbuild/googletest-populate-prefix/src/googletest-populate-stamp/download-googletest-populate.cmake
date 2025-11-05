@@ -1,5 +1,5 @@
 # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# file LICENSE.rst or https://cmake.org/licensing for details.
 
 cmake_minimum_required(VERSION ${CMAKE_VERSION}) # this file comes with cmake
 
@@ -22,14 +22,14 @@ function(check_file_hash has_hash hash_is_good)
   set("${has_hash}" TRUE PARENT_SCOPE)
 
   message(VERBOSE "verifying file...
-       file='/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip'")
+       file='D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip'")
 
-  file("" "/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip" actual_value)
+  file("" "D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip" actual_value)
 
   if(NOT "${actual_value}" STREQUAL "")
     set("${hash_is_good}" FALSE PARENT_SCOPE)
     message(VERBOSE " hash of
-    /home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip
+    D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip
   does not match expected value
     expected: ''
       actual: '${actual_value}'")
@@ -71,32 +71,32 @@ function(sleep_before_download attempt)
   execute_process(COMMAND "${CMAKE_COMMAND}" -E sleep "${sleep_seconds}")
 endfunction()
 
-if(EXISTS "/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip")
+if(EXISTS "D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip")
   check_file_hash(has_hash hash_is_good)
   if(has_hash)
     if(hash_is_good)
       message(VERBOSE "File already exists and hash match (skip download):
-  file='/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip'
+  file='D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip'
   =''"
       )
       return()
     else()
       message(VERBOSE "File already exists but hash mismatch. Removing...")
-      file(REMOVE "/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip")
+      file(REMOVE "D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip")
     endif()
   else()
     message(VERBOSE "File already exists but no hash specified (use URL_HASH):
-  file='/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip'
+  file='D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip'
 Old file will be removed and new file downloaded from URL."
     )
-    file(REMOVE "/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip")
+    file(REMOVE "D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip")
   endif()
 endif()
 
 set(retry_number 5)
 
 message(VERBOSE "Downloading...
-   dst='/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip'
+   dst='D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip'
    timeout='none'
    inactivity timeout='none'"
 )
@@ -119,7 +119,7 @@ foreach(i RANGE ${retry_number})
 
       file(
         DOWNLOAD
-        "${url}" "/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip"
+        "${url}" "D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip"
         SHOW_PROGRESS
         # no TIMEOUT
         # no INACTIVITY_TIMEOUT
@@ -136,7 +136,7 @@ foreach(i RANGE ${retry_number})
         check_file_hash(has_hash hash_is_good)
         if(has_hash AND NOT hash_is_good)
           message(VERBOSE "Hash mismatch, removing...")
-          file(REMOVE "/home/kali/Chained-Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip")
+          file(REMOVE "D:/gitnext/Chained Decos/.deps/googletest-subbuild/googletest-populate-prefix/src/v1.14.0.zip")
         else()
           message(VERBOSE "Downloading... done")
           return()
