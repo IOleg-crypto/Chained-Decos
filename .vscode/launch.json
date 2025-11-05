@@ -2,21 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Launch Debug",
-      "program": "${workspaceFolder}/cmake-build-debug/ChainedDecos.exe",
-      "args": [],
-      "cwd": "${workspaceFolder}/cmake-build-debug/",
-      "stopOnEntry": true,
-      "env": [],
-    },
-    {
       "name": "Debug with LLDB",
       "type": "lldb",
-      "request": "launch",
+      "request":"launch",
       "program": "${workspaceFolder}/build/bin/ChainedDecos_debug.exe",
-      "args": [],
+      "args": ["--fullscreen"],
       "cwd": "${workspaceFolder}/build",
       "stopOnEntry": true,
       "sourceMap": {

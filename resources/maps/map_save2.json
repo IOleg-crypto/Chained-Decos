@@ -3,7 +3,7 @@
         "author": "",
         "description": "",
         "difficulty": 1.0,
-        "displayName": "map",
+        "displayName": "map_save2",
         "endPosition": {
             "x": 0.0,
             "y": 0.0,
@@ -15,7 +15,7 @@
             "g": 117,
             "r": 0
         },
-        "name": "map",
+        "name": "map_save2",
         "skyColor": {
             "a": 255,
             "b": 255,
@@ -37,7 +37,7 @@
                 "g": 100,
                 "r": 255
             },
-            "height": -0.699999988079071,
+            "height": 0.10000000149011612,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_0",
@@ -53,15 +53,15 @@
                 "z": 0.0
             },
             "scale": {
-                "x": 36.0,
-                "y": -0.699999988079071,
-                "z": 27.200000762939453
+                "x": 3.0,
+                "y": 0.10000000149011612,
+                "z": 4.0
             },
             "size": {
                 "height": 35.70000076293945,
                 "width": 19.5
             },
-            "type": 0
+            "type": 3
         },
         {
             "color": {
@@ -94,7 +94,7 @@
                 "height": 4.0,
                 "width": 3.0
             },
-            "type": 2
+            "type": 3
         },
         {
             "color": {
@@ -127,7 +127,7 @@
                 "height": 4.0,
                 "width": 3.0
             },
-            "type": 0
+            "type": 3
         },
         {
             "color": {
