@@ -172,22 +172,22 @@ void GameApplication::OnPostInitialize()
     auto* mapManager = mapService ? mapService->mapManager : nullptr;
     auto* playerManager = playerManagerService ? playerManagerService->playerManager : nullptr;
     
+    if (player && menu) {
+        m_renderHelper = std::make_unique<GameRenderHelpers>(m_collisionManager.get());
+    }
+    if (m_collisionManager && mapManager) {
+        m_updateManager = std::make_unique<UpdateManager>(m_collisionManager.get(), mapManager);
+    }
     // Create managers that need components from systems
     if (player && menu) {
         m_stateManager = std::make_unique<StateManager>(player, menu);
     }
     
-    if (player && menu) {
-        m_renderHelper = std::make_unique<GameRenderHelpers>(m_collisionManager.get());
-    }
 
     // Raw mouse motion is now initialized in Engine::Init() to avoid duplication
     // GameRenderManager replaced with RenderingSystem
     // RenderingSystem is created and initialized through ModuleManager
     
-    if (m_collisionManager && mapManager) {
-        m_updateManager = std::make_unique<UpdateManager>(m_collisionManager.get(), mapManager);
-    }
     
     if (menu && player) {
         m_menuActionHandler = std::make_unique<MenuActionHandler>(
