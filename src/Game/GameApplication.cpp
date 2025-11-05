@@ -19,7 +19,6 @@
 #include "Systems/MapSystem/MapSystem.h"
 #include "Systems/UIController/UIController.h"
 #include "Systems/RenderingSystem/RenderingSystem.h"
-#define RLIMGUI_ALWAYS_TRACK_MOUSE
 #include "imgui.h"
 #include "rlImGui.h"
 #include <raylib.h>
