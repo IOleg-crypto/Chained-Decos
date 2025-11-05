@@ -82,6 +82,7 @@ class Menu;
 class MapManager;
 class ResourceManager;
 class PlayerManager;
+class StateManager;
 class Engine;
 
 struct PlayerService : public IKernelService
@@ -127,6 +128,15 @@ struct PlayerManagerService : public IKernelService
     bool Initialize() override { return playerManager != nullptr; }
     void Shutdown() override {}
     const char *GetName() const override { return "PlayerManagerService"; }
+};
+
+struct StateManagerService : public IKernelService
+{
+    StateManager *stateManager = nullptr;
+    explicit StateManagerService(StateManager *sm) : stateManager(sm) {}
+    bool Initialize() override { return stateManager != nullptr; }
+    void Shutdown() override {}
+    const char *GetName() const override { return "StateManagerService"; }
 };
 
 struct EngineService : public IKernelService

@@ -4,7 +4,7 @@
 #include "PlayerInput.h"
 #include "PlayerCollision.h"
 #include "PlayerModel.h"
-#include <Render/IRenderable.h>
+#include <Render/IGameRenderable.h>
 #include <CameraController/CameraController.h>
 #include <World/World.h>
 #include <memory>
@@ -200,8 +200,8 @@ PlayerCollision& Player::GetCollisionMutable() {
     return *m_collision;
 }
 
-// IRenderable access
-IRenderable* Player::GetRenderable() const {
+// IGameRenderable access
+IGameRenderable* Player::GetRenderable() const {
     return m_renderable.get();
 }
 

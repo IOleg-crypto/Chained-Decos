@@ -1,22 +1,19 @@
 #ifndef PLAYER_RENDERABLE_H
 #define PLAYER_RENDERABLE_H
 
-#include <Render/IRenderable.h>
+#include <Render/IGameRenderable.h>
 
 // Forward declaration
 class Player;
 
-// PlayerRenderable - адаптер для Player, що реалізує IRenderable
-// Використовується для уникнення множинного наслідування в Player
-class PlayerRenderable : public IRenderable
+class PlayerRenderable : public IGameRenderable
 {
 public:
     explicit PlayerRenderable(Player* player);
     ~PlayerRenderable() = default;
 
-    // IRenderable interface implementations
+    // IGameRenderable interface implementations
     void Update(CollisionManager& collisionManager) override;
-    void Render() override;
     Vector3 GetPosition() const override;
     BoundingBox GetBoundingBox() const override;
     float GetRotationY() const override;

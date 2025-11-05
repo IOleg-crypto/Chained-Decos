@@ -10,11 +10,6 @@ void PlayerRenderable::Update(CollisionManager& collisionManager)
     m_player->UpdateImpl(collisionManager);
 }
 
-void PlayerRenderable::Render()
-{
-    // Rendering is handled by RenderManager, so nothing to do here
-}
-
 Vector3 PlayerRenderable::GetPosition() const
 {
     return m_player->GetPlayerPosition();

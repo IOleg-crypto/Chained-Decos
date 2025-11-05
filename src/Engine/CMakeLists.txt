@@ -13,6 +13,7 @@ add_subdirectory(Kernel)
 add_subdirectory(Module)
 add_subdirectory(Audio)
 add_subdirectory(Event)
+add_subdirectory(GUI)
 
 add_library(ChainedDecosEngine STATIC
           Engine.cpp
@@ -41,6 +42,7 @@ target_link_libraries(ChainedDecosEngine
             module
             audio
             event
+            gui
             raylib
             imguilib
             cmdhandler

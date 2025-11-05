@@ -29,15 +29,9 @@ UIManager::UIManager(ISceneManager* sceneManager, IFileManager* fileManager,
       m_toolManager(toolManager), m_modelManager(modelManager),
       m_displayImGuiInterface(true), m_displayObjectListPanel(true),
       m_displayPropertiesPanel(true), m_pendingObjectCreation(false),
-      m_displayFileDialog(false), m_isFileLoadDialog(true),
-      m_isJsonExportDialog(false), m_displayNewFolderDialog(false),
-      m_displayDeleteConfirmationDialog(false), m_displayParkourMapDialog(false),
-      m_currentlySelectedParkourMapIndex(0), m_gridSizes(50)
+      m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0),
+      m_gridSizes(50)
 {
-    // Initialize file dialog to project root
-    m_currentWorkingDirectory = PROJECT_ROOT_DIR "/resources";
-    m_newFileNameInput = "new_map.json";
-    RefreshDirectoryItems();
     // NFD is initialized in Editor::InitializeSubsystems()
 }
 
@@ -62,11 +56,6 @@ void UIManager::Render()
         RenderImGuiPropertiesPanel();
     }
 
-    // Render file dialog if shown
-    if (m_displayFileDialog)
-    {
-        RenderFileDialog();
-    }
     // Render parkour map dialog if shown
     RenderParkourMapDialog();
 
@@ -93,11 +82,6 @@ void UIManager::ShowObjectPanel(bool show)
 void UIManager::ShowPropertiesPanel(bool show)
 {
     m_displayPropertiesPanel = show;
-}
-
-void UIManager::ShowFileDialog(bool show)
-{
-    m_displayFileDialog = show;
 }
 
 void UIManager::ShowParkourMapDialog(bool show)
@@ -147,14 +131,74 @@ ImVec2 UIManager::ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSi
     return ImVec2(clampedX, clampedY);
 }
 
+void UIManager::EnsureWindowInBounds()
+{
+    ImVec2 pos = ImGui::GetWindowPos();
+    ImVec2 size = ImGui::GetWindowSize();
+    const int screenWidth = GetScreenWidth();
+    const int screenHeight = GetScreenHeight();
+    
+    bool needsClamp = false;
+    ImVec2 clampedPos = pos;
+    ImVec2 clampedSize = size;
+    
+    // Clamp size
+    if (clampedSize.x > static_cast<float>(screenWidth))
+    {
+        clampedSize.x = static_cast<float>(screenWidth);
+        needsClamp = true;
+    }
+    if (clampedSize.y > static_cast<float>(screenHeight))
+    {
+        clampedSize.y = static_cast<float>(screenHeight);
+        needsClamp = true;
+    }
+    
+    // Clamp position
+    if (clampedPos.x < 0.0f)
+    {
+        clampedPos.x = 0.0f;
+        needsClamp = true;
+    }
+    else if (clampedPos.x + clampedSize.x > static_cast<float>(screenWidth))
+    {
+        clampedPos.x = static_cast<float>(screenWidth) - clampedSize.x;
+        needsClamp = true;
+    }
+    
+    if (clampedPos.y < 0.0f)
+    {
+        clampedPos.y = 0.0f;
+        needsClamp = true;
+    }
+    else if (clampedPos.y + clampedSize.y > static_cast<float>(screenHeight))
+    {
+        clampedPos.y = static_cast<float>(screenHeight) - clampedSize.y;
+        needsClamp = true;
+    }
+    
+    // Apply clamping only if needed
+    if (needsClamp)
+    {
+        ImGui::SetWindowPos(clampedPos, ImGuiCond_Always);
+        ImGui::SetWindowSize(clampedSize, ImGuiCond_Always);
+    }
+}
+
 void UIManager::RenderImGuiToolbar()
 {
     ImVec2 windowSize(700, 300);
     ImVec2 desiredPos(10, 10);
     ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
     
-    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+    
+    // Limit maximum window size to screen dimensions
+    ImGui::SetNextWindowSizeConstraints(
+        ImVec2(100, 100),
+        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
+    );
 
     // Enable docking for toolbar window - allow it to be docked if needed
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
@@ -162,6 +206,8 @@ void UIManager::RenderImGuiToolbar()
     bool toolbarOpen = true;
     if (ImGui::Begin("Toolbar##foo2", nullptr, windowFlags))
     {
+        // Ensure window stays within screen bounds
+        EnsureWindowInBounds();
         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
         ImGui::Text("Map Editor Tools");
         ImGui::PopFont();
@@ -259,7 +305,7 @@ void UIManager::RenderImGuiToolbar()
 
         // Show current file path
         ImGui::Separator();
-        ImGui::Text("Current: %s", m_fileManager->GetCurrentlyLoadedMapFilePath().empty() ? m_fileManager->GetCurrentlyLoadedMapFilePath().c_str() : "No map loaded");
+        ImGui::Text("Current: %s", m_fileManager->GetCurrentlyLoadedMapFilePath().empty() ? "No map loaded" : m_fileManager->GetCurrentlyLoadedMapFilePath().c_str());
 
         // Model selection dropdown (only show when adding models)
         if (GetActiveTool() == ADD_MODEL)
@@ -325,8 +371,14 @@ void UIManager::RenderImGuiObjectPanel()
     ImVec2 desiredPos(static_cast<float>(screenWidth) - 250, 10);
     ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
     
-    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+    
+    // Limit maximum window size to screen dimensions
+    ImGui::SetNextWindowSizeConstraints(
+        ImVec2(100, 100),
+        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
+    );
 
     // Enable docking for object panel - allow docking to sides
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
@@ -334,6 +386,8 @@ void UIManager::RenderImGuiObjectPanel()
     bool objectPanelOpen = true;
     if (ImGui::Begin("Objects##foo1", &objectPanelOpen, windowFlags))
     {
+        // Ensure window stays within screen bounds
+        EnsureWindowInBounds();
         if (ImGui::Button("Add Object"))
         {
             // Create a default cube object
@@ -415,8 +469,14 @@ void UIManager::RenderImGuiPropertiesPanel()
     ImVec2 desiredPos(10, static_cast<float>(screenHeight - 400));
     ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
     
-    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+    
+    // Limit maximum window size to screen dimensions
+    ImGui::SetNextWindowSizeConstraints(
+        ImVec2(200, 200),
+        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
+    );
 
     // Enable docking for properties panel
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
@@ -424,6 +484,8 @@ void UIManager::RenderImGuiPropertiesPanel()
     std::string nameLabel;
     if (ImGui::Begin("Properties##Panel", &propertiesPanelOpen, windowFlags))
     {
+        // Ensure window stays within screen bounds
+        EnsureWindowInBounds();
         // If nameLabel is empty, initialize it with the object's current name
         if (nameLabel.empty())
             nameLabel = obj.GetObjectName();
@@ -599,11 +661,19 @@ void UIManager::RenderParkourMapDialog()
         );
         ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
         
-        ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-        ImGui::SetNextWindowPos(clampedPos, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
+        
+        // Limit maximum window size to screen dimensions
+        ImGui::SetNextWindowSizeConstraints(
+            ImVec2(300, 300),
+            ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
+        );
 
         if (ImGui::Begin("Parkour Maps", &m_displayParkourMapDialog, ImGuiWindowFlags_NoCollapse))
         {
+            // Ensure window stays within screen bounds
+            EnsureWindowInBounds();
             ImGui::Text("Select a Parkour Map:");
             ImGui::Separator();
 
@@ -673,18 +743,10 @@ void UIManager::RenderParkourMapDialog()
     }
 }
 
-void UIManager::RenderFileDialog()
-{
-    // TODO: Implement file dialog rendering
-    // This is a complex dialog that needs to be extracted from Editor.cpp
-    // For now, just close the dialog if it's open
-    m_displayFileDialog = false;
-}
-
 void UIManager::HandleKeyboardInput()
 {
     // Handle keyboard shortcuts for scene objects
-    if (!m_displayFileDialog && IsKeyPressed(KEY_DELETE) && m_sceneManager->GetSelectedObject() != nullptr)
+    if (IsKeyPressed(KEY_DELETE) && m_sceneManager->GetSelectedObject() != nullptr)
     {
         // Remove selected object
         m_sceneManager->RemoveObject(m_sceneManager->GetSelectedObjectIndex());
@@ -692,14 +754,7 @@ void UIManager::HandleKeyboardInput()
 
     if (IsKeyPressed(KEY_ESCAPE))
     {
-        if (m_displayFileDialog)
-        {
-            m_displayFileDialog = false;
-        }
-        else
-        {
-            m_sceneManager->ClearSelection();
-        }
+        m_sceneManager->ClearSelection();
     }
 
     // Toggle UI panels with different keys
@@ -711,62 +766,6 @@ void UIManager::HandleKeyboardInput()
     if (IsKeyPressed(KEY_F))
     {
         m_displayPropertiesPanel = !m_displayPropertiesPanel;
-    }
-}
-
-void UIManager::OpenFileDialog(bool isLoad)
-{
-    m_isFileLoadDialog = isLoad;
-    m_displayFileDialog = true;
-    m_currentlySelectedFile.clear();
-    m_newFileNameInput = isLoad ? "new_map.json" : "save_map.json";
-    RefreshDirectoryItems();
-}
-
-void UIManager::RefreshDirectoryItems()
-{
-    m_currentDirectoryContents.clear();
-    try
-    {
-        for (const auto &entry : fs::directory_iterator(m_currentWorkingDirectory))
-        {
-            m_currentDirectoryContents.push_back(entry.path().filename().string());
-        }
-        std::sort(m_currentDirectoryContents.begin(), m_currentDirectoryContents.end());
-    }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_ERROR, "Failed to refresh directory items: %s", e.what());
-    }
-}
-
-void UIManager::NavigateToDirectory(const std::string &path)
-{
-    std::string newPath = path;
-    if (newPath == "..")
-    {
-        // Go up one directory
-        fs::path currentPath(m_currentWorkingDirectory);
-        if (currentPath.has_parent_path())
-        {
-            newPath = currentPath.parent_path().string();
-        }
-        else
-        {
-            return; // Already at root
-        }
-    }
-    else
-    {
-        // Navigate to subdirectory
-        newPath = m_currentWorkingDirectory + "/" + path;
-    }
-
-    // Check if the new path is a directory
-    if (fs::is_directory(newPath))
-    {
-        m_currentWorkingDirectory = newPath;
-        RefreshDirectoryItems();
     }
 }
 

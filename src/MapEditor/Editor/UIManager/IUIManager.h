@@ -13,7 +13,6 @@ public:
     virtual void HandleInput() = 0;
     virtual void ShowObjectPanel(bool show) = 0;
     virtual void ShowPropertiesPanel(bool show) = 0;
-    virtual void ShowFileDialog(bool show) = 0;
     virtual void ShowParkourMapDialog(bool show) = 0;
     virtual int GetGridSize() const = 0;
 };

@@ -26,15 +26,7 @@ public:
     virtual std::vector<GameMap> GetAvailableParkourMaps() = 0;
     virtual void ShowParkourMapSelector() = 0;
 
-    // File dialog operations
-    virtual void OpenFileDialog(bool isLoad) = 0;
-    virtual void RenderFileDialog() = 0;
-    virtual void RefreshDirectoryItems() = 0;
-    virtual void NavigateToDirectory(const std::string& path) = 0;
-
     // Getters for dialog state
-    virtual bool IsFileDialogOpen() const = 0;
-    virtual std::string GetCurrentWorkingDirectory() const = 0;
     virtual std::string GetCurrentlyLoadedMapFilePath() const = 0;
     virtual void SetCurrentlyLoadedMapFilePath(const std::string& path) = 0;
 };
