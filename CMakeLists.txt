@@ -173,6 +173,8 @@ if(NOT raylib_FOUND)
         set(PLATFORM Desktop CACHE STRING "" FORCE)  # Use Desktop platform (GLFW) for better compatibility
         set(OPENGL_VERSION "3.3" CACHE STRING "" FORCE)
         set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)  # Ensure X11 support in GLFW
+        # Try to use system GLFW if available (more stable mouse handling on Linux)
+        set(USE_EXTERNAL_GLFW IF_POSSIBLE CACHE STRING "" FORCE)
     endif()
 
     FetchContent_MakeAvailable(raylib)

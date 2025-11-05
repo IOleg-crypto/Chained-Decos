@@ -2,6 +2,7 @@
 #include "../SceneManager/SceneManager.h"
 #include "../Object/MapObject.h"
 #include "Engine/Collision/CollisionStructures.h"
+#include "Engine/CameraController/CameraController.h"
 #include <iostream>
 #include <cmath>
 
@@ -160,6 +161,8 @@ void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
     {
         // Rotate object around its Y axis based on mouse horizontal movement
         Vector2 mouseDelta = GetMouseDelta();
+        // Apply filtering to prevent glitches on Linux/VM
+        mouseDelta = CameraController::FilterMouseDelta(mouseDelta);
         float rotationSpeed = 0.01f; // Adjust sensitivity
         Vector3 currentRotation = selectedObj->GetRotation();
         currentRotation.y += mouseDelta.x * rotationSpeed;
