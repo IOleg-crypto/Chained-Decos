@@ -72,7 +72,6 @@ bool CGUIComboBox(const char* label, int* currentIndex, const std::vector<std::s
 {
     if (options.empty()) return false;
     
-    // Валідація
     if (*currentIndex < 0 || *currentIndex >= static_cast<int>(options.size())) {
         *currentIndex = 0;
     }

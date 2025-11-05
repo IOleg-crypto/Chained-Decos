@@ -1,21 +1,21 @@
-# ninja log v7
-1	49	7835229709570789	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir	e28da464b462683a
-1	49	7835229709570789	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir	e28da464b462683a
-3	9780	7836228011204924	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download	6850877bda763070
-3	9780	7836228011204924	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download	6850877bda763070
-9780	9894	7836228012325036	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update_disconnected	1ff5e14b0e886145
-9780	9894	7836228012325036	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update_disconnected	1ff5e14b0e886145
-9894	10031	7836228013676624	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch_disconnected	4793cc5a6d053fb1
-9894	10031	7836228013676624	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch_disconnected	4793cc5a6d053fb1
-10031	10156	7836228014893492	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-configure	eea7d0ca6d53245c
-10031	10156	7836228014893492	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-configure	eea7d0ca6d53245c
-10156	10260	7836228015929785	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-build	7f07ff99ec1cacaf
-10156	10260	7836228015929785	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-build	7f07ff99ec1cacaf
-10261	10367	7836228017055214	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-install	61f6dfa6003aa690
-10261	10367	7836228017055214	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-install	61f6dfa6003aa690
-10367	10473	7836228018073910	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test	ab5fee075777eaee
-10367	10473	7836228018073910	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test	ab5fee075777eaee
-10474	10612	7836228019525823	CMakeFiles/raylib-populate-complete	e586c050dc1b72a3
-10474	10612	7836228019525823	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-done	e586c050dc1b72a3
-10474	10612	7836228019525823	D:/gitnext/Chained Decos/.deps/raylib-subbuild/CMakeFiles/raylib-populate-complete	e586c050dc1b72a3
-10474	10612	7836228019525823	D:/gitnext/Chained Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-done	e586c050dc1b72a3
+# ninja log v6
+8654	8676	1762331676405593665	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test	dbcf1477f7efdba3
+0	18	1762331667748006725	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir	30cd196649c75348
+18	8547	1762331676276006966	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download	56673cb926b45043
+0	18	1762331667748006725	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir	30cd196649c75348
+8547	8568	1762331676300006966	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update_disconnected	75573406570be1f3
+8636	8654	1762331676384006969	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-install	f2ea11bc5616857c
+8568	8589	1762331676320006967	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch_disconnected	1f74f397dc192f18
+8612	8636	1762331676368006968	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-build	b05b6264d377a4c0
+8590	8612	1762331676344006968	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-configure	d099817e3fc4adab
+18	8547	1762331676276006966	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download	56673cb926b45043
+8547	8568	1762331676300006966	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update_disconnected	75573406570be1f3
+8612	8636	1762331676368006968	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-build	b05b6264d377a4c0
+8677	8746	1762331676476006971	CMakeFiles/raylib-populate-complete	4152da97fe8e7043
+8636	8654	1762331676384006969	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-install	f2ea11bc5616857c
+8568	8589	1762331676320006967	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch_disconnected	1f74f397dc192f18
+8654	8676	1762331676405593665	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test	dbcf1477f7efdba3
+8677	8746	1762331676476006971	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-done	4152da97fe8e7043
+8677	8746	1762331676476006971	/home/kali/Chained-Decos/.deps/raylib-subbuild/CMakeFiles/raylib-populate-complete	4152da97fe8e7043
+8677	8746	1762331676476006971	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-done	4152da97fe8e7043
+8590	8612	1762331676344006968	/home/kali/Chained-Decos/.deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-configure	d099817e3fc4adab
