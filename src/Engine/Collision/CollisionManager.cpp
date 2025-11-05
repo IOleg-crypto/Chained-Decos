@@ -963,8 +963,10 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
             const Vector3 mx = collisionObject->GetMax();
             
             // Check if raycast origin is within or above the AABB on X and Z axes
-            if (raycastOrigin.x >= mn.x && raycastOrigin.x <= mx.x &&
-                raycastOrigin.z >= mn.z && raycastOrigin.z <= mx.z)
+            // Allow some tolerance for X and Z to catch nearby platforms
+            const float tolerance = 2.0f; // Increase tolerance to catch nearby platforms
+            if (raycastOrigin.x >= (mn.x - tolerance) && raycastOrigin.x <= (mx.x + tolerance) &&
+                raycastOrigin.z >= (mn.z - tolerance) && raycastOrigin.z <= (mx.z + tolerance))
             {
                 // If origin is above or at the top face, use top face as hit point
                 if (raycastOrigin.y >= mx.y)

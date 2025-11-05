@@ -45,6 +45,12 @@ void RenderingSystem::EnsureDependencies()
         return;
     }
 
+    if (!m_models) {
+        auto modelsService = m_kernel->GetService<ModelsService>(Kernel::ServiceType::Models);
+        if (modelsService) {
+            m_models = modelsService->models;
+        }
+    }
     // Get dependencies through Kernel (lazy loading)
     if (!m_player) {
         auto playerService = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
@@ -67,12 +73,6 @@ void RenderingSystem::EnsureDependencies()
         }
     }
     
-    if (!m_models) {
-        auto modelsService = m_kernel->GetService<ModelsService>(Kernel::ServiceType::Models);
-        if (modelsService) {
-            m_models = modelsService->models;
-        }
-    }
     
     if (!m_engine) {
         auto engineService = m_kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
@@ -145,7 +145,7 @@ void RenderingSystem::RenderGameWorld()
     }
     
     // Render spawn zone
-    m_mapManager->RenderSpawnZone();
+   // m_mapManager->RenderSpawnZone(); // Render spawn zone only in Map Editor
     
     // Render game world (models, player, etc.) and collision shapes AFTER primitives
     m_engine->GetRenderManager()->RenderGame(*m_player->GetRenderable(), *m_models, *m_collisionManager,

@@ -8,8 +8,6 @@
 #include <Physics/PhysicsComponent.h>
 #include <CameraController/CameraController.h>
 
-// IPlayerMediator - інтерфейс для доступу до Player функціональності компонентами
-// Використовується для уникнення циклічних залежностей та forward declarations
 class IPlayerMediator
 {
 public:

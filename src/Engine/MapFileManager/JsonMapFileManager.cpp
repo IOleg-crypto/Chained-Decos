@@ -9,8 +9,95 @@
 #include <ctime>
 #include <random>
 #include <filesystem>
+#include <raylib.h>
 
 namespace fs = std::filesystem;
+
+// Helper function to parse Vector3 from object format {x: ..., y: ..., z: ...}
+static Vector3 ParseVector3Obj(const std::string& json) {
+    Vector3 out = {0,0,0};
+    
+    auto parseFloatValue = [](const std::string& json, size_t fieldPos) -> float {
+        size_t colonPos = json.find(":", fieldPos);
+        if (colonPos == std::string::npos || colonPos + 1 >= json.length())
+            return 0.0f;
+        
+        // Skip whitespace after colon
+        size_t valueStart = colonPos + 1;
+        while (valueStart < json.length() && (json[valueStart] == ' ' || json[valueStart] == '\t'))
+            valueStart++;
+        
+        // Check if number starts with minus sign
+        bool isNegative = false;
+        if (valueStart < json.length() && json[valueStart] == '-')
+        {
+            isNegative = true;
+            valueStart++; // Skip the minus sign
+            // Skip whitespace after minus (shouldn't happen in valid JSON, but handle it)
+            while (valueStart < json.length() && (json[valueStart] == ' ' || json[valueStart] == '\t'))
+                valueStart++;
+        }
+        
+        // Find the end of the number (comma, closing brace, or whitespace)
+        // Include digits, decimal point, and exponent notation (e, E, +, -)
+        size_t valueEnd = valueStart;
+        while (valueEnd < json.length())
+        {
+            char c = json[valueEnd];
+            if (c == ',' || c == '}' || c == ' ' || c == '\t' || c == '\n' || c == '\r')
+                break;
+            // Allow digits, decimal point, and exponent notation
+            if ((c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-')
+            {
+                valueEnd++;
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        if (valueEnd > valueStart)
+        {
+            try {
+                std::string numStr = json.substr(valueStart, valueEnd - valueStart);
+                float value = std::stof(numStr);
+                // Apply negative sign if needed
+                return isNegative ? -value : value;
+            } catch (const std::exception& e) {
+                TraceLog(LOG_WARNING, "JsonMapFileManager::ParseVector3Obj() - Failed to parse float: %s, error: %s", 
+                         json.substr(valueStart, valueEnd - valueStart).c_str(), e.what());
+                return 0.0f;
+            }
+        }
+        
+        return 0.0f;
+    };
+    
+    size_t x = json.find("\"x\"");
+    size_t y = json.find("\"y\"");
+    size_t z = json.find("\"z\"");
+    
+    if (x != std::string::npos)
+    {
+        out.x = parseFloatValue(json, x);
+        TraceLog(LOG_DEBUG, "JsonMapFileManager::ParseVector3Obj() - Parsed x: %.6f", out.x);
+    }
+    if (y != std::string::npos)
+    {
+        out.y = parseFloatValue(json, y);
+        TraceLog(LOG_DEBUG, "JsonMapFileManager::ParseVector3Obj() - Parsed y: %.6f", out.y);
+    }
+    if (z != std::string::npos)
+    {
+        out.z = parseFloatValue(json, z);
+        TraceLog(LOG_DEBUG, "JsonMapFileManager::ParseVector3Obj() - Parsed z: %.6f", out.z);
+    }
+    
+    TraceLog(LOG_INFO, "JsonMapFileManager::ParseVector3Obj() - Final result: (%.6f, %.6f, %.6f)", out.x, out.y, out.z);
+    
+    return out;
+}
 
 bool JsonMapFileManager::SaveMap(const std::vector<JsonSerializableObject>& objects,
                                 const std::string& filename,
@@ -36,7 +123,34 @@ bool JsonMapFileManager::SaveMap(const std::vector<JsonSerializableObject>& obje
     file << "    \"modifiedDate\": \"" << GetCurrentTimestamp() << "\",\n";
     file << "    \"worldBounds\": " << Vector3ToJson(metadata.worldBounds) << ",\n";
     file << "    \"backgroundColor\": " << ColorToJson(metadata.backgroundColor) << ",\n";
-    file << "    \"skyboxTexture\": \"" << metadata.skyboxTexture << "\"\n";
+    file << "    \"skyboxTexture\": \"" << metadata.skyboxTexture << "\",\n";
+    
+    // Add startPosition and endPosition
+    file << "    \"startPosition\": {\n";
+    file << "      \"x\": " << metadata.startPosition.x << ",\n";
+    file << "      \"y\": " << metadata.startPosition.y << ",\n";
+    file << "      \"z\": " << metadata.startPosition.z << "\n";
+    file << "    },\n";
+    file << "    \"endPosition\": {\n";
+    file << "      \"x\": " << metadata.endPosition.x << ",\n";
+    file << "      \"y\": " << metadata.endPosition.y << ",\n";
+    file << "      \"z\": " << metadata.endPosition.z << "\n";
+    file << "    },\n";
+    
+    // Add skyColor and groundColor
+    file << "    \"skyColor\": {\n";
+    file << "      \"r\": " << (int)metadata.skyColor.r << ",\n";
+    file << "      \"g\": " << (int)metadata.skyColor.g << ",\n";
+    file << "      \"b\": " << (int)metadata.skyColor.b << ",\n";
+    file << "      \"a\": " << (int)metadata.skyColor.a << "\n";
+    file << "    },\n";
+    file << "    \"groundColor\": {\n";
+    file << "      \"r\": " << (int)metadata.groundColor.r << ",\n";
+    file << "      \"g\": " << (int)metadata.groundColor.g << ",\n";
+    file << "      \"b\": " << (int)metadata.groundColor.b << ",\n";
+    file << "      \"a\": " << (int)metadata.groundColor.a << "\n";
+    file << "    },\n";
+    file << "    \"difficulty\": " << metadata.difficulty << "\n";
     file << "  },\n";
     
     // Objects section
@@ -103,48 +217,206 @@ bool JsonMapFileManager::LoadMap(std::vector<JsonSerializableObject>& objects,
         if (metadataStart != std::string::npos)
         {
             metadataStart = content.find("{", metadataStart);
-            size_t metadataEnd = content.find("}", metadataStart);
-
-            std::string metadataJson = content.substr(metadataStart, metadataEnd - metadataStart + 1);
-
-            // Parse metadata fields
-            ParseMetadataField(metadataJson, "\"version\"", metadata.version);
-            ParseMetadataField(metadataJson, "\"name\"", metadata.name);
-            ParseMetadataField(metadataJson, "\"description\"", metadata.description);
-            ParseMetadataField(metadataJson, "\"author\"", metadata.author);
-            ParseMetadataField(metadataJson, "\"createdDate\"", metadata.createdDate);
-            ParseMetadataField(metadataJson, "\"modifiedDate\"", metadata.modifiedDate);
-            ParseMetadataField(metadataJson, "\"skyboxTexture\"", metadata.skyboxTexture);
-
-            // Parse world bounds
-            size_t boundsStart = metadataJson.find("\"worldBounds\"");
-            if (boundsStart != std::string::npos)
+            if (metadataStart != std::string::npos)
             {
-                boundsStart = metadataJson.find("[", boundsStart);
-                if (boundsStart != std::string::npos)
+                // Use FindMatchingBrace to correctly find the closing brace for nested objects
+                size_t metadataEnd = FindMatchingBrace(content, metadataStart);
+                
+                if (metadataEnd != std::string::npos)
                 {
-                    size_t boundsEnd = metadataJson.find("]", boundsStart);
-                    if (boundsEnd != std::string::npos && boundsEnd > boundsStart)
+                    std::string metadataJson = content.substr(metadataStart, metadataEnd - metadataStart + 1);
+                    
+                    TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Extracted metadata JSON (length: %zu)", 
+                             metadataJson.length());
+                    TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Metadata range: %zu to %zu", metadataStart, metadataEnd);
+                    
+                    // Debug: show first 200 chars of metadata
+                    std::string preview = metadataJson.length() > 200 ? metadataJson.substr(0, 200) + "..." : metadataJson;
+                    TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Metadata preview: %s", preview.c_str());
+
+                    // Parse metadata fields
+                    ParseMetadataField(metadataJson, "\"version\"", metadata.version);
+                    ParseMetadataField(metadataJson, "\"name\"", metadata.name);
+                    ParseMetadataField(metadataJson, "\"description\"", metadata.description);
+                    ParseMetadataField(metadataJson, "\"author\"", metadata.author);
+                    ParseMetadataField(metadataJson, "\"createdDate\"", metadata.createdDate);
+                    ParseMetadataField(metadataJson, "\"modifiedDate\"", metadata.modifiedDate);
+                    ParseMetadataField(metadataJson, "\"skyboxTexture\"", metadata.skyboxTexture);
+
+                    // Parse world bounds
+                    size_t boundsStart = metadataJson.find("\"worldBounds\"");
+                    if (boundsStart != std::string::npos)
                     {
-                        std::string boundsStr = metadataJson.substr(boundsStart, boundsEnd - boundsStart + 1);
-                        metadata.worldBounds = ParseVector3(boundsStr);
+                        boundsStart = metadataJson.find("[", boundsStart);
+                        if (boundsStart != std::string::npos)
+                        {
+                            size_t boundsEnd = metadataJson.find("]", boundsStart);
+                            if (boundsEnd != std::string::npos && boundsEnd > boundsStart)
+                            {
+                                std::string boundsStr = metadataJson.substr(boundsStart, boundsEnd - boundsStart + 1);
+                                metadata.worldBounds = ParseVector3(boundsStr);
+                            }
+                        }
+                    }
+
+                    // Parse background color
+                    size_t colorStart = metadataJson.find("\"backgroundColor\"");
+                    if (colorStart != std::string::npos)
+                    {
+                        colorStart = metadataJson.find("[", colorStart);
+                        if (colorStart != std::string::npos)
+                        {
+                            size_t colorEnd = metadataJson.find("]", colorStart);
+                            if (colorEnd != std::string::npos && colorEnd > colorStart)
+                            {
+                                std::string colorStr = metadataJson.substr(colorStart, colorEnd - colorStart + 1);
+                                metadata.backgroundColor = ParseColor(colorStr);
+                            }
+                        }
+                    }
+
+                    // Parse startPosition - support both {x, y, z} and [x, y, z] formats
+                    size_t startPosStart = metadataJson.find("\"startPosition\"");
+                    if (startPosStart != std::string::npos)
+                    {
+                        TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Found startPosition field at position %zu", startPosStart);
+                        
+                        // Try object format first: {x, y, z}
+                        size_t braceStart = metadataJson.find("{", startPosStart);
+                        if (braceStart != std::string::npos)
+                        {
+                            TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Found opening brace at position %zu", braceStart);
+                            
+                            size_t braceEnd = FindMatchingBrace(metadataJson, braceStart);
+                            if (braceEnd != std::string::npos && braceEnd > braceStart)
+                            {
+                                std::string posStr = metadataJson.substr(braceStart, braceEnd - braceStart + 1);
+                                TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Extracted startPosition string: %s", posStr.c_str());
+                                
+                                metadata.startPosition = ParseVector3Obj(posStr);
+                                TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Parsed startPosition as object: (%.2f, %.2f, %.2f)",
+                                         metadata.startPosition.x, metadata.startPosition.y, metadata.startPosition.z);
+                            }
+                            else
+                            {
+                                TraceLog(LOG_WARNING, "JsonMapFileManager::LoadMap() - Failed to find matching brace for startPosition (braceStart=%zu, braceEnd=%zu)", 
+                                         braceStart, braceEnd);
+                            }
+                        }
+                        else
+                        {
+                            TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - No opening brace found, trying array format");
+                            
+                            // Fallback to array format: [x, y, z]
+                            size_t arrayStart = metadataJson.find("[", startPosStart);
+                            if (arrayStart != std::string::npos)
+                            {
+                                size_t arrayEnd = metadataJson.find("]", arrayStart);
+                                if (arrayEnd != std::string::npos && arrayEnd > arrayStart)
+                                {
+                                    std::string posStr = metadataJson.substr(arrayStart, arrayEnd - arrayStart + 1);
+                                    metadata.startPosition = ParseVector3(posStr);
+                                    TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Parsed startPosition as array: (%.2f, %.2f, %.2f)",
+                                             metadata.startPosition.x, metadata.startPosition.y, metadata.startPosition.z);
+                                }
+                            }
+                            else
+                            {
+                                TraceLog(LOG_WARNING, "JsonMapFileManager::LoadMap() - startPosition field found but no object or array format");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        TraceLog(LOG_WARNING, "JsonMapFileManager::LoadMap() - startPosition field not found in metadata");
+                        // Debug: show first 500 chars of metadataJson
+                        std::string preview = metadataJson.length() > 500 ? metadataJson.substr(0, 500) + "..." : metadataJson;
+                        TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Metadata preview: %s", preview.c_str());
+                    }
+                    
+                    // Parse endPosition - same fix
+                    size_t endPosStart = metadataJson.find("\"endPosition\"");
+                    if (endPosStart != std::string::npos)
+                    {
+                        size_t braceStart = metadataJson.find("{", endPosStart);
+                        if (braceStart != std::string::npos)
+                        {
+                            size_t braceEnd = metadataJson.find("}", braceStart);
+                            if (braceEnd != std::string::npos && braceEnd > braceStart)
+                            {
+                                std::string posStr = metadataJson.substr(braceStart, braceEnd - braceStart + 1);
+                                metadata.endPosition = ParseVector3Obj(posStr);
+                            }
+                        }
+                        else
+                        {
+                            size_t arrayStart = metadataJson.find("[", endPosStart);
+                            if (arrayStart != std::string::npos)
+                            {
+                                size_t arrayEnd = metadataJson.find("]", arrayStart);
+                                if (arrayEnd != std::string::npos && arrayEnd > arrayStart)
+                                {
+                                    std::string posStr = metadataJson.substr(arrayStart, arrayEnd - arrayStart + 1);
+                                    metadata.endPosition = ParseVector3(posStr);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Parse skyColor and groundColor
+                    size_t skyColorStart = metadataJson.find("\"skyColor\"");
+                    if (skyColorStart != std::string::npos)
+                    {
+                        size_t braceStart = metadataJson.find("{", skyColorStart);
+                        if (braceStart != std::string::npos)
+                        {
+                            size_t braceEnd = metadataJson.find("}", braceStart);
+                            if (braceEnd != std::string::npos && braceEnd > braceStart)
+                            {
+                                std::string colorStr = metadataJson.substr(braceStart, braceEnd - braceStart + 1);
+                                metadata.skyColor = ParseColor(colorStr);
+                            }
+                        }
+                    }
+                    
+                    size_t groundColorStart = metadataJson.find("\"groundColor\"");
+                    if (groundColorStart != std::string::npos)
+                    {
+                        size_t braceStart = metadataJson.find("{", groundColorStart);
+                        if (braceStart != std::string::npos)
+                        {
+                            size_t braceEnd = metadataJson.find("}", braceStart);
+                            if (braceEnd != std::string::npos && braceEnd > braceStart)
+                            {
+                                std::string colorStr = metadataJson.substr(braceStart, braceEnd - braceStart + 1);
+                                metadata.groundColor = ParseColor(colorStr);
+                            }
+                        }
+                    }
+                    
+                    // Parse difficulty
+                    size_t diffStart = metadataJson.find("\"difficulty\"");
+                    if (diffStart != std::string::npos)
+                    {
+                        size_t colonPos = metadataJson.find(":", diffStart);
+                        if (colonPos != std::string::npos && colonPos + 1 < metadataJson.length())
+                        {
+                            std::string diffStr = metadataJson.substr(colonPos + 1);
+                            // Remove trailing comma if present
+                            size_t commaPos = diffStr.find(",");
+                            if (commaPos != std::string::npos)
+                                diffStr = diffStr.substr(0, commaPos);
+                            try {
+                                metadata.difficulty = std::stof(diffStr);
+                            } catch (...) {
+                                metadata.difficulty = 1.0f;
+                            }
+                        }
                     }
                 }
-            }
-
-            // Parse background color
-            size_t colorStart = metadataJson.find("\"backgroundColor\"");
-            if (colorStart != std::string::npos)
-            {
-                colorStart = metadataJson.find("[", colorStart);
-                if (colorStart != std::string::npos)
+                else
                 {
-                    size_t colorEnd = metadataJson.find("]", colorStart);
-                    if (colorEnd != std::string::npos && colorEnd > colorStart)
-                    {
-                        std::string colorStr = metadataJson.substr(colorStart, colorEnd - colorStart + 1);
-                        metadata.backgroundColor = ParseColor(colorStr);
-                    }
+                    TraceLog(LOG_WARNING, "JsonMapFileManager::LoadMap() - Failed to find matching closing brace for metadata");
                 }
             }
         }
@@ -606,32 +878,6 @@ size_t JsonMapFileManager::FindMatchingBrace(const std::string& json, size_t sta
     return std::string::npos;
 }
 
-static Vector3 ParseVector3Obj(const std::string& json) {
-    Vector3 out = {0,0,0};
-    size_t x = json.find("\"x\"");
-    size_t y = json.find("\"y\"");
-    size_t z = json.find("\"z\"");
-    if (x != std::string::npos)
-    {
-        size_t colonPos = json.find(":", x);
-        if (colonPos != std::string::npos && colonPos + 1 < json.length())
-            out.x = std::stof(json.substr(colonPos + 1));
-    }
-    if (y != std::string::npos)
-    {
-        size_t colonPos = json.find(":", y);
-        if (colonPos != std::string::npos && colonPos + 1 < json.length())
-            out.y = std::stof(json.substr(colonPos + 1));
-    }
-    if (z != std::string::npos)
-    {
-        size_t colonPos = json.find(":", z);
-        if (colonPos != std::string::npos && colonPos + 1 < json.length())
-            out.z = std::stof(json.substr(colonPos + 1));
-    }
-    return out;
-}
-
 void JsonMapFileManager::ParseObject(const std::string& json, JsonSerializableObject& obj)
 {
     // Parse basic fields
@@ -652,7 +898,6 @@ void JsonMapFileManager::ParseObject(const std::string& json, JsonSerializableOb
     size_t pos = json.find("\"position\"");
     if (pos != std::string::npos)
     {
-        // об'єктний стиль
         size_t brace = json.find("{", pos);
         if (brace != std::string::npos) {
             size_t braceEnd = json.find("}", brace);
@@ -660,7 +905,7 @@ void JsonMapFileManager::ParseObject(const std::string& json, JsonSerializableOb
                 std::string objStr = json.substr(brace, braceEnd - brace + 1);
                 obj.position = ParseVector3Obj(objStr);
             }
-        } else { // фолбек на масив
+        } else {
             pos = json.find("[", pos);
             size_t end = json.find("]", pos);
             if (pos != std::string::npos && end != std::string::npos) {
