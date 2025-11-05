@@ -62,6 +62,12 @@ public:
     [[nodiscard]] float GetCameraSmoothingFactor() const;
     [[nodiscard]] float GetFOV() const;
 
+    // -------------------- Static Utilities --------------------
+    
+    // Static utility function for filtering mouse delta (prevents glitches on Linux/VM)
+    // Use this everywhere GetMouseDelta() is called to ensure consistent behavior
+    static Vector2 FilterMouseDelta(const Vector2& mouseDelta);
+
 private:
     Camera m_camera;                  // Raylib camera struct representing the 3D perspective
     int m_cameraMode;                 // Current camera mode (First, Free, Third, Orbital)
@@ -71,9 +77,9 @@ private:
     float m_cameraSmoothingFactor = 4.0f; // Smoothing speed for camera rotation
     float m_radiusFOV = 8.0f;        // Radius or distance for field of view
     
-    // Згладжування для віртуальних машин
-    Vector2 m_smoothedMouseDelta = {0.0f, 0.0f}; // Згладжене значення delta миші
-    static constexpr float MOUSE_SMOOTHING_FACTOR = 0.15f; // Коефіцієнт згладжування (0.0-1.0) - зменшено для більш плавного руху
+    // Smoothing for virtual machines
+    Vector2 m_smoothedMouseDelta = {0.0f, 0.0f}; // Smoothed mouse delta value
+    static constexpr float MOUSE_DEAD_ZONE = 0.5f; // Dead zone - ignore very small movements
 };
 
 #endif // CAMERACONTROLLER_H

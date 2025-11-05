@@ -11,6 +11,9 @@
 // Raylib & ImGui
 #include <raylib.h>
 #include <rlImGui.h>
+#if defined(PLATFORM_DESKTOP)
+#include "GLFW/glfw3.h"
+#endif
 
 Engine::Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel)
     : Engine(800, 600, std::move(renderManager), std::move(inputManager), kernel) {}
@@ -52,10 +55,15 @@ void Engine::Init()
 {
     TraceLog(LOG_INFO, "Initializing Engine...");
 
+    // FLAG_MOUSE_CAPTURE_ALWAYS helps with mouse input on virtual machines
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     m_windowInitialized = true;
     SetExitKey(KEY_NULL);
+    
+    // SetMouseGrabbed helps with mouse sensitivity on virtual machines
+    // Note: This can be controlled dynamically via SetMouseGrabbed(false) when menu is open
+  
 
     // Center window on screen
     int monitor = GetCurrentMonitor();
@@ -64,6 +72,21 @@ void Engine::Init()
     int windowX = (monitorWidth - m_screenX) / 2;
     int windowY = (monitorHeight - m_screenY) / 2;
     SetWindowPosition(windowX, windowY);
+
+    // Initialize raw mouse motion for better mouse handling on Linux/VM
+    // This must be done after window is created and before other input handling
+#if defined(PLATFORM_DESKTOP)
+    if (glfwRawMouseMotionSupported())
+    {
+        GLFWwindow* window = (GLFWwindow*)GetWindowHandle();
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        TraceLog(LOG_INFO, "[Engine] Raw mouse motion enabled (Linux/VM)");
+    }
+    else
+    {
+        TraceLog(LOG_INFO, "[Engine] Raw mouse motion not supported on this system");
+    }
+#endif
 
     rlImGuiSetup(true);
     m_inputManager->RegisterAction(KEY_F11, ToggleFullscreen);

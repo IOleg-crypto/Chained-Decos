@@ -31,6 +31,8 @@ void CameraManager::Update()
             
             // Apply rotation to camera manually using Vector3 and Matrix operations
             Vector2 mouseDelta = GetMouseDelta();
+            // Apply filtering to prevent glitches on Linux/VM
+            mouseDelta = CameraController::FilterMouseDelta(mouseDelta);
             float sensitivity = 0.005f;
             
             // Calculate forward vector from camera position to target

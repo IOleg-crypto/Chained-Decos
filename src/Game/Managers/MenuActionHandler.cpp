@@ -83,12 +83,12 @@ void MenuActionHandler::HandleMenuActions()
 {
     Menu* menu = GetMenu();
     if (!menu) {
-        TraceLog(LOG_WARNING, "MenuActionHandler::HandleMenuActions() - Menu not available");
+       
         return;
     }
     
     MenuAction action = menu->ConsumeAction();
-    TraceLog(LOG_INFO, "MenuActionHandler::HandleMenuActions() - Consumed action: %d", static_cast<int>(action));
+    
     
     switch (action)
     {
@@ -99,7 +99,6 @@ void MenuActionHandler::HandleMenuActions()
         HandleResumeGame();
         break;
     case MenuAction::StartGameWithMap:
-        TraceLog(LOG_INFO, "MenuActionHandler::HandleMenuActions() - Starting HandleStartGameWithMap()");
         HandleStartGameWithMap();
         break;
     case MenuAction::ExitGame:
