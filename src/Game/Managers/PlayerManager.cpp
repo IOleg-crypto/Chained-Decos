@@ -105,77 +105,7 @@ void PlayerManager::InitPlayer()
     // First, look for objects with modelName == "player"
     // If not found, fall back to objects with "player_start" in name for backward compatibility
     TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Checking for player spawn objects in map...");
-    if (!m_mapManager->GetGameMap().objects.empty())
-    {
-        TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Map has %d objects, searching for player spawn...",
-                 m_mapManager->GetGameMap().objects.size());
-        
-        bool foundPlayerSpawn = false;
-        
-        // First, search for objects with modelName == "player"
-        for (size_t i = 0; i < m_mapManager->GetGameMap().objects.size(); ++i)
-        {
-            const auto &obj = m_mapManager->GetGameMap().objects[i];
-            TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Checking object %d: name=%s, modelName=%s (type: %d)", i,
-                     obj.name.c_str(), obj.modelName.c_str(), static_cast<int>(obj.type));
-            
-            if ((obj.type == MapObjectType::MODEL || obj.type == MapObjectType::LIGHT) &&
-                obj.modelName == "player")
-            {
-                TraceLog(LOG_INFO,
-                         "PlayerManager::InitPlayer() - Found player spawn object (modelName=player) at (%.2f, %.2f, %.2f)",
-                         obj.position.x, obj.position.y, obj.position.z);
-                m_player->SetPlayerPosition(obj.position);
-                TraceLog(LOG_INFO,
-                         "PlayerManager::InitPlayer() - Player position updated to player spawn location");
-                foundPlayerSpawn = true;
-                break;
-            }
-        }
-        
-        // If not found, fall back to searching by name for backward compatibility
-        if (!foundPlayerSpawn)
-        {
-            TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No object with modelName='player' found, trying player_start by name...");
-            for (size_t i = 0; i < m_mapManager->GetGameMap().objects.size(); ++i)
-            {
-                const auto &obj = m_mapManager->GetGameMap().objects[i];
-                
-                if ((obj.type == MapObjectType::MODEL || obj.type == MapObjectType::LIGHT) &&
-                    obj.name.find("player_start") != std::string::npos)
-                {
-                    TraceLog(LOG_INFO,
-                             "PlayerManager::InitPlayer() - Found PlayerStart object (by name) at (%.2f, %.2f, %.2f)",
-                             obj.position.x, obj.position.y, obj.position.z);
-                    m_player->SetPlayerPosition(obj.position);
-                    TraceLog(LOG_INFO,
-                             "PlayerManager::InitPlayer() - Player position updated to PlayerStart location");
-                    foundPlayerSpawn = true;
-                    break;
-                }
-            }
-        }
-        
-        if (!foundPlayerSpawn)
-        {
-            // If no spawn object found, try to use spawn zone from map metadata
-            if (m_mapManager->HasSpawnZone())
-            {
-                Vector3 spawnPos = m_mapManager->GetPlayerSpawnPosition();
-                m_player->SetPlayerPosition(spawnPos);
-                TraceLog(LOG_INFO,
-                         "PlayerManager::InitPlayer() - Using spawn zone position: (%.2f, %.2f, %.2f)",
-                         spawnPos.x, spawnPos.y, spawnPos.z);
-                foundPlayerSpawn = true;
-            }
-            else
-            {
-                TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No player spawn object or zone found in map, using default position");
-            }
-        }
-    }
-    else
-    {
+    
         // No map objects, but check for spawn zone
         if (m_mapManager->HasSpawnZone())
         {
@@ -189,12 +119,12 @@ void PlayerManager::InitPlayer()
         {
             TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - No map objects or spawn zone found, using default position");
         }
-    }
+    
     
     // Final position verification
     Vector3 finalPos = m_player->GetPlayerPosition();
     TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Final player position: (%.2f, %.2f, %.2f)", finalPos.x,
-             finalPos.y, finalPos.z);
+          finalPos.y, finalPos.z);
     
     TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Player initialization complete");
 }
@@ -210,15 +140,7 @@ void PlayerManager::UpdatePlayerLogic()
         }
         return;
     }
-    
-    // Check if player is at uninitialized position - don't update or show metrics
-    Vector3 pos = m_player->GetPlayerPosition();
-    constexpr float UNINITIALIZED_THRESHOLD = -999000.0f;
-    if (pos.y <= UNINITIALIZED_THRESHOLD || 
-        (pos.x == 0.0f && pos.y == 0.0f && pos.z == 0.0f)) {
-        // Player is not initialized yet - don't update or show metrics
-        return;
-    }
+      
     
     const ImGuiIO &io = ImGui::GetIO();
     if (io.WantCaptureMouse)

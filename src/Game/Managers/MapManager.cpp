@@ -160,12 +160,6 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
             od.type = static_cast<MapObjectType>(eo.type);
             od.position = eo.position;
             
-            if(od.name.find("player") != std::string::npos)
-            {
-                if (m_player) {
-                    m_player->SetPlayerPosition(od.position);
-                }
-            }
             od.rotation = eo.rotation;
             od.scale = eo.scale;
             od.color = eo.color;
@@ -984,13 +978,10 @@ void MapManager::RenderEditorMap()
 
         case MapObjectType::CYLINDER:
         {
-            // Draw cylinder using multiple spheres for approximation
-            // For better cylinder rendering, you might want to use a 3D model
+            // Draw cylinder using proper DrawCylinder function
             float cylRadius = (object.radius > 0.0f) ? object.radius : 1.0f;
-            DrawSphere(object.position, cylRadius, renderColor);
-            DrawSphere(
-                Vector3{object.position.x, object.position.y + object.height, object.position.z},
-                cylRadius, renderColor);
+            float cylHeight = (object.height > 0.0f) ? object.height : 1.0f;
+            DrawCylinder(object.position, cylRadius, cylRadius, cylHeight, 16, renderColor);
             renderedCount++;
             break;
         }
@@ -1000,7 +991,7 @@ void MapManager::RenderEditorMap()
             // Draw plane as a thin cube
             float planeWidth = (object.size.x != 0.0f) ? object.size.x : 5.0f;
             float planeLength = (object.size.y != 0.0f) ? object.size.y : 5.0f;
-            DrawCube(object.position, planeWidth, 0.1f, planeLength, renderColor);
+            DrawPlane(object.position, Vector2{planeWidth, planeLength}, renderColor);
             renderedCount++;
             break;
         }
@@ -1020,14 +1011,16 @@ void MapManager::RenderEditorMap()
             break;
         }
 
+        case MapObjectType::SPAWN_ZONE:
+        {
+            // SPAWN_ZONE objects are rendered separately via RenderSpawnZone() (currently disabled)
+            // Don't render them here as regular objects
+            break;
+        }
+
         default:
         {
-            // Unknown type, draw as cube
-            float defWidth = (object.scale.x != 0.0f) ? object.scale.x : 1.0f;
-            float defHeight = (object.scale.y != 0.0f) ? object.scale.y : 1.0f;
-            float defLength = (object.scale.z != 0.0f) ? object.scale.z : 1.0f;
-            DrawCube(object.position, defWidth, defHeight, defLength, renderColor);
-            renderedCount++;
+            renderedCount = 0;
             break;
         }
         }
@@ -1037,7 +1030,7 @@ void MapManager::RenderEditorMap()
     // Only primitive objects are counted here
     
     // Render spawn zone if it exists
-    RenderSpawnZone();
+    // RenderSpawnZone(); // Disabled - spawn zone rendering turned off in game
 }
 
 Vector3 MapManager::GetPlayerSpawnPosition() const
@@ -1154,8 +1147,7 @@ void MapManager::InitCollisions()
     // Initialize ground collider first
     m_collisionManager->Initialize();
     
-    // CollisionService реєструється в Game::RegisterKernelServices()
-    // MapManager не повинен реєструвати сервіси - це відповідальність Game
+  
 
     // Load model collisions only for models that are actually loaded and required for this map
     auto availableModels = m_models->GetAvailableModels();
