@@ -8,12 +8,9 @@
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include "MenuConstants.h"
-
-// Forward declaration to break circular dependency
-class Kernel;
-class Player;
-class MapManager;
-class Engine;
+#include "Game/Player/IPlayerProvider.h"
+#include "Game/Managers/IMapManagerProvider.h"
+#include "Engine/IEngineProvider.h"
 
 // Command callback function type
 using CommandCallback = std::function<void(const std::vector<std::string>&, class ConsoleManager*)>;
@@ -35,7 +32,11 @@ struct CommandInfo {
 
 class ConsoleManager {
 private:
-    Kernel* m_kernel;  // Kernel for service access
+    // Explicit dependencies via interfaces (Dependency Injection)
+    IPlayerProvider* m_playerProvider = nullptr;
+    IMapManagerProvider* m_mapManagerProvider = nullptr;
+    IEngineProvider* m_engineProvider = nullptr;
+    
     bool consoleOpen = false;
     std::vector<std::string> consoleHistory;
     std::vector<std::string> consoleOutput;
@@ -48,7 +49,19 @@ private:
     static constexpr size_t MAX_HISTORY_LINES = 50;
 
 public:
-    ConsoleManager(Kernel* kernel);
+    // Dependency Injection via constructor (providers can be nullptr)
+    ConsoleManager(
+        IPlayerProvider* playerProvider = nullptr,
+        IMapManagerProvider* mapManagerProvider = nullptr,
+        IEngineProvider* engineProvider = nullptr
+    );
+    
+    // Update providers later (when services become available)
+    void SetProviders(
+        IPlayerProvider* playerProvider,
+        IMapManagerProvider* mapManagerProvider,
+        IEngineProvider* engineProvider
+    );
 
     // Console state management
     void ToggleConsole();
@@ -81,12 +94,14 @@ public:
                                   const std::string& description, const std::string& usage,
                                   CommandCallback callback, bool alsoRegisterWithoutPrefix = true);
     void UnregisterCommand(const std::string& name);
+    
+    // Command lookup
     const CommandInfo* GetCommandInfo(const std::string& name) const;
     std::vector<std::string> GetAvailableCommandNames() const;
     std::vector<std::string> GetCommandsByCategory(const std::string& category) const;
     std::vector<std::string> GetAvailableCategories() const;
 
-    // Helpers to get services through Kernel
+    // Helpers to get services through Dependency Injection
     Player* GetPlayer() const;
     MapManager* GetMapManager() const;
     Engine* GetEngine() const;

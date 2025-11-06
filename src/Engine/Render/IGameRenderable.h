@@ -6,16 +6,16 @@
 #include "Collision/CollisionManager.h"
 #include "Collision/CollisionSystem.h"
 
-// Інтерфейс для об'єктів, що потребують повного рендерингу гри (Player, NPC, тощо)
-// Дотримується Interface Segregation Principle - тільки методи, потрібні для ігрових об'єктів
+// Interface for objects that require full game rendering (Player, NPC, etc.)
+// Follows Interface Segregation Principle - only methods needed for game objects
 struct IGameRenderable
 {
     virtual ~IGameRenderable() = default;
 
-    // Оновлення стану об'єкта
+    // Update object state
     virtual void Update(CollisionManager& collisionManager) = 0;
     
-    // Методи для рендерингу
+    // Rendering methods
     virtual Vector3 GetPosition() const = 0;
     virtual BoundingBox GetBoundingBox() const = 0;
     virtual float GetRotationY() const = 0;
