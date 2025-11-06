@@ -7,7 +7,6 @@
 #include "Engine/Input/InputManager.h"
 #include "Engine/Kernel/KernelServices.h"
 #include "Engine/Engine.h"
-#include "Game/Menu/ConsoleManagerHelpers.h"
 #include <raylib.h>
 
 EngineApplication::EngineApplication(const Config& config)
@@ -81,9 +80,6 @@ void EngineApplication::Initialize()
     m_kernel->RegisterService<EngineService>(Kernel::ServiceType::Engine,
         std::make_shared<EngineService>(m_engine.get()));
     TraceLog(LOG_INFO, "[EngineApplication] EngineService registered");
-    
-    // Dependency Injection: inject EngineProvider into ConsoleManager
-    UpdateConsoleManagerProviders(m_kernel.get());
     
     // Step 8: Allow project to register additional services after Engine
     OnRegisterEngineServices();
