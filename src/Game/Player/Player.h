@@ -29,7 +29,7 @@ class Player : public IPlayerMediator
 {
 public:
     // Player constants - defined in .cpp file
-    static const Vector3 DEFAULT_SPAWN_POSITION;
+    static Vector3 DEFAULT_SPAWN_POSITION;
     static const float MODEL_Y_OFFSET;
     static const float MODEL_SCALE;
 
@@ -79,11 +79,9 @@ public:
     const PhysicsComponent &GetPhysics() const; // Get physics component (const)
     PhysicsComponent &GetPhysics();             // Get physics component (non-const)
     IPlayerMovement *GetMovement() const;
-
-    // IGameRenderable access - повертає адаптер для рендерингу
     IGameRenderable* GetRenderable() const;
     
-    // Update method для сумісності (делегує до UpdateImpl)
+    
     void Update(CollisionManager& collisionManager);
 
 private:
@@ -93,7 +91,7 @@ private:
     std::unique_ptr<PlayerModel> m_model;
     std::unique_ptr<PlayerCollision> m_collision;
 
-    // IGameRenderable adapter - для уникнення множинного наслідування
+    
     std::unique_ptr<PlayerRenderable> m_renderable;
 
     // Camera control

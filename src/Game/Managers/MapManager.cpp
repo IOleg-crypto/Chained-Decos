@@ -1205,8 +1205,6 @@ void MapManager::InitCollisionsWithModels(const std::vector<std::string> &requir
     // Initialize ground collider first
     m_collisionManager->Initialize();
     
-    // CollisionService реєструється в Game::RegisterKernelServices()
-    // MapManager не повинен реєструвати сервіси - це відповідальність Game
 
     // Try to create model collisions, but don't fail if it doesn't work
     TraceLog(LOG_INFO,
@@ -1265,9 +1263,6 @@ bool MapManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &re
 
     // Initialize collision manager
     m_collisionManager->Initialize();
-
-    // CollisionService реєструється в Game::RegisterKernelServices()
-    // MapManager не повинен реєструвати сервіси - це відповідальність Game
 
     // Try to create model collisions, but don't fail if it doesn't work
     TraceLog(LOG_INFO,
