@@ -1171,7 +1171,7 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
 
     Matrix transform = MatrixIdentity();
     transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
-    // Якщо є rotation:
+    // If there is rotation:
     // transform = MatrixMultiply(transform, MatrixRotateXYZ(rotation));
     transform = MatrixMultiply(transform, MatrixTranslate(position.x, position.y, position.z));
 

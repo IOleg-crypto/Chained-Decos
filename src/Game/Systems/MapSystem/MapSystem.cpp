@@ -8,6 +8,7 @@
 #include "Engine/Render/RenderManager.h"
 #include "../../Player/Player.h"
 #include "../../Menu/Menu.h"
+#include "../../Menu/ConsoleManagerHelpers.h"
 #include <raylib.h>
 
 MapSystem::MapSystem()
@@ -149,6 +150,9 @@ void MapSystem::RegisterServices(Kernel* kernel)
             std::make_shared<MapManagerService>(m_mapManager.get())
         );
         TraceLog(LOG_INFO, "[MapSystem] MapManagerService registered");
+        
+        // Dependency Injection: inject MapManagerProvider into ConsoleManager
+        UpdateConsoleManagerProviders(kernel);
     }
 }
 

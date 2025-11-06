@@ -7,13 +7,14 @@
 
 #include <raylib.h>
 #include <raymath.h>
+#include "ICameraSensitivityController.h"
 
 //
 // CameraController
 // Handles the 3D camera system including position, rotation, mode, and input smoothing.
 // Supports different camera modes (Third) and mouse-based rotation.
 //
-class CameraController
+class CameraController : public ICameraSensitivityController
 {
 public:
     CameraController();  // Initialize camera
@@ -48,7 +49,7 @@ public:
 
     // Set field of view (radius)
     void SetFOV(float FOV); 
-    void SetMouseSensitivity(float sensitivity);
+    void SetMouseSensitivity(float sensitivity) override;
     void ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY);
 
     // -------------------- Getters --------------------
@@ -57,7 +58,7 @@ public:
     [[nodiscard]] float GetCameraPitch() const;
     [[nodiscard]] float GetCameraSmoothingFactor() const;
     [[nodiscard]] float GetFOV() const;
-    [[nodiscard]] float GetMouseSensitivity() const;
+    [[nodiscard]] float GetMouseSensitivity() const override;
 
     // -------------------- Static Utilities --------------------
     

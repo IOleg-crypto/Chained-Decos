@@ -4,6 +4,7 @@
 #include "Engine/Engine.h"
 #include "../../Menu/Menu.h"
 #include "../../Menu/ConsoleManager.h"
+#include "../../Player/Player.h"
 #include <raylib.h>
 
 UIController::UIController()
@@ -44,6 +45,10 @@ bool UIController::Initialize(Kernel* kernel)
         if (m_engine) {
             m_menu->Initialize(m_engine);
             m_menu->SetKernel(kernel);
+            
+            // Camera will be injected later in PlayerSystem::RegisterServices
+            // after Player is created, so we don't do anything here
+            
             TraceLog(LOG_INFO, "[UIController] Menu initialized");
         } else {
             TraceLog(LOG_WARNING, "[UIController] Menu created but not fully initialized (no Engine)");

@@ -10,7 +10,8 @@
 #include "SettingsManager.h"
 #include "ConsoleManager.h"
 #include "MapSelector.h"
-#include "Engine/Engine.h"
+#include "Engine.h"
+#include "Engine/CameraController/ICameraSensitivityController.h"
 #include <Render/IMenuRenderable.h>
 #include <imgui.h>
 #include <raylib.h>
@@ -18,8 +19,6 @@
 
 // Forward declarations to break circular dependencies
 class Kernel;
-class PlayerService;
-class Player;
 
 
 enum class MenuAction : uint8_t
@@ -130,6 +129,9 @@ public:
     void ToggleConsole();
     [[nodiscard]] bool IsConsoleOpen() const;
     [[nodiscard]] ConsoleManager* GetConsoleManager() const;
+    
+    // Dependency Injection for camera
+    void SetCameraController(ICameraSensitivityController* controller);
 
     // Keyboard navigation
     void HandleKeyboardNavigation();
@@ -192,7 +194,7 @@ private:
     void SyncAudioSettingsToConfig();
     void SyncControlSettingsToConfig();
     
-    // Apply camera sensitivity to CameraController
+    // Apply camera sensitivity to CameraController (Dependency Injection)
     void ApplyCameraSensitivity(float sensitivity);
 
     // Map management
@@ -203,6 +205,9 @@ private:
     Engine *m_engine = nullptr;
     Kernel* m_kernel = nullptr;
     std::unique_ptr<SettingsManager> m_settingsManager;
+    
+    // Explicit dependency via interface (Dependency Injection)
+    ICameraSensitivityController* m_cameraController = nullptr;
 
     // Menu state
     MenuState m_state = MenuState::Main;

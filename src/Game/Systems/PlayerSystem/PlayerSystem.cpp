@@ -4,6 +4,8 @@
 #include "Engine/Engine.h"
 #include "../../Player/Player.h"
 #include "../../Managers/PlayerManager.h"
+#include "../../Menu/Menu.h"
+#include "../../Menu/ConsoleManagerHelpers.h"
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Model/Model.h"
 #include <raylib.h>
@@ -159,6 +161,19 @@ void PlayerSystem::RegisterServices(Kernel* kernel)
             std::make_shared<PlayerService>(m_player.get())
         );
         TraceLog(LOG_INFO, "[PlayerSystem] PlayerService registered");
+        
+        // Dependency Injection: inject PlayerProvider into ConsoleManager
+        UpdateConsoleManagerProviders(kernel);
+        
+        // Dependency Injection: inject camera into Menu
+        auto menuService = kernel->GetService<MenuService>(Kernel::ServiceType::Menu);
+        if (menuService && menuService->menu) {
+            auto cameraController = m_player->GetCameraController();
+            if (cameraController) {
+                menuService->menu->SetCameraController(cameraController.get());
+                TraceLog(LOG_INFO, "[PlayerSystem] CameraController injected into Menu");
+            }
+        }
     }
 
     if (m_playerManager) {

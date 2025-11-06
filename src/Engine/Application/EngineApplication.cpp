@@ -7,6 +7,7 @@
 #include "Engine/Input/InputManager.h"
 #include "Engine/Kernel/KernelServices.h"
 #include "Engine/Engine.h"
+#include "Game/Menu/ConsoleManagerHelpers.h"
 #include <raylib.h>
 
 EngineApplication::EngineApplication(const Config& config)
@@ -79,6 +80,10 @@ void EngineApplication::Initialize()
     // Step 7.5: Register Engine as service
     m_kernel->RegisterService<EngineService>(Kernel::ServiceType::Engine,
         std::make_shared<EngineService>(m_engine.get()));
+    TraceLog(LOG_INFO, "[EngineApplication] EngineService registered");
+    
+    // Dependency Injection: inject EngineProvider into ConsoleManager
+    UpdateConsoleManagerProviders(m_kernel.get());
     
     // Step 8: Allow project to register additional services after Engine
     OnRegisterEngineServices();
@@ -148,7 +153,7 @@ void EngineApplication::Shutdown()
     
     OnPreShutdown();
     
-    // Shutdown у зворотному порядку
+    // Shutdown in reverse order
     if (auto moduleManager = m_engine->GetModuleManager()) {
         moduleManager->ShutdownAllModules();
     }

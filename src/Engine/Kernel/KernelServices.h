@@ -10,6 +10,9 @@
 #include "../Event/EventSystem.h"
 #include "../Asset/AssetManager.h"
 #include "../Render/RenderManager.h"
+#include "../../Game/Player/IPlayerProvider.h"
+#include "../../Game/Managers/IMapManagerProvider.h"
+#include "../IEngineProvider.h"
 
 struct RenderService : public IKernelService
 {
@@ -85,13 +88,14 @@ class PlayerManager;
 class StateManager;
 class Engine;
 
-struct PlayerService : public IKernelService
+struct PlayerService : public IKernelService, public IPlayerProvider
 {
     Player *player = nullptr;
     explicit PlayerService(Player *p) : player(p) {}
     bool Initialize() override { return player != nullptr; }
     void Shutdown() override {}
     const char *GetName() const override { return "PlayerService"; }
+    Player* GetPlayer() override { return player; }
 };
 
 struct MenuService : public IKernelService
@@ -103,13 +107,14 @@ struct MenuService : public IKernelService
     const char *GetName() const override { return "MenuService"; }
 };
 
-struct MapManagerService : public IKernelService
+struct MapManagerService : public IKernelService, public IMapManagerProvider
 {
     MapManager *mapManager = nullptr;
     explicit MapManagerService(MapManager *mm) : mapManager(mm) {}
     bool Initialize() override { return mapManager != nullptr; }
     void Shutdown() override {}
     const char *GetName() const override { return "MapManagerService"; }
+    MapManager* GetMapManager() override { return mapManager; }
 };
 
 struct ResourceManagerService : public IKernelService
@@ -139,13 +144,14 @@ struct StateManagerService : public IKernelService
     const char *GetName() const override { return "StateManagerService"; }
 };
 
-struct EngineService : public IKernelService
+struct EngineService : public IKernelService, public IEngineProvider
 {
     Engine *engine = nullptr;
     explicit EngineService(Engine *e) : engine(e) {}
     bool Initialize() override { return engine != nullptr; }
     void Shutdown() override {}
     const char *GetName() const override { return "EngineService"; }
+    Engine* GetEngine() override { return engine; }
 };
 
 #endif // KERNELSERVICES_H
