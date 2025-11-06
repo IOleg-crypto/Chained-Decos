@@ -55,9 +55,7 @@ public:
 
     // AABB tests (using raylib functions)
     bool IntersectsAABB(const Collision &other) const;
-    bool ContainsPointAABB(const Vector3 &point) const;
 
-  
     void BuildFromModel(void *model, const Matrix &transform = MatrixIdentity());
     void BuildFromModelWithType(void *model, CollisionType type,
                                 const Matrix &transform = MatrixIdentity());
@@ -67,8 +65,6 @@ public:
     // Collision type control
     CollisionType GetCollisionType() const;
     void SetCollisionType(CollisionType type);
-
-    const CollisionComplexity &GetComplexity() const;
 
     const CollisionTriangle &GetTriangle(size_t idx) const;
     const std::vector<CollisionTriangle> &GetTriangles() const;
@@ -86,9 +82,6 @@ public:
     // Raycast using BVH (returns true if hit within maxDistance)
     bool RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxDistance,
                     RayHit &outHit) const;
-
-    // Point-in-mesh using BVH (raycast trick)
-    bool ContainsPointBVH(const Vector3 &point) const;
 
     // Intersection with another Collision (broad-phase AABB then BVH narrow-phase)
     bool Intersects(const Collision &other) const;
@@ -108,9 +101,6 @@ public:
         return true;
     }
 
-
-    bool CheckCollisionWithBVH(const Collision& other, Vector3& outResponse) const;
-
     void UpdateAABBFromTriangles();
 
 
@@ -119,7 +109,6 @@ private:
     BoundingBox m_bounds{};
 
     CollisionType m_collisionType = CollisionType::HYBRID_AUTO;
-    CollisionComplexity m_complexity;
     std::vector<CollisionTriangle> m_triangles;
 
     // BVH root

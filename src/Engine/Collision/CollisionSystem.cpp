@@ -21,7 +21,6 @@ Collision::Collision(const Collision &other)
 {
     m_bounds = other.m_bounds;
     m_collisionType = other.m_collisionType;
-    m_complexity = other.m_complexity;
     m_triangles = other.m_triangles;
     m_isBuilt = other.m_isBuilt;
 
@@ -38,7 +37,6 @@ Collision &Collision::operator=(const Collision &other)
 
     m_bounds = other.m_bounds;
     m_collisionType = other.m_collisionType;
-    m_complexity = other.m_complexity;
     m_triangles = other.m_triangles;
     m_isBuilt = other.m_isBuilt;
 
@@ -55,7 +53,6 @@ Collision::Collision(Collision &&other) noexcept
 {
     m_bounds = other.m_bounds;
     m_collisionType = other.m_collisionType;
-    m_complexity = other.m_complexity;
     m_triangles = std::move(other.m_triangles);
     m_bvhRoot = std::move(other.m_bvhRoot);
     m_isBuilt = other.m_isBuilt;
@@ -66,7 +63,6 @@ Collision &Collision::operator=(Collision &&other) noexcept
         return *this;
     m_bounds = other.m_bounds;
     m_collisionType = other.m_collisionType;
-    m_complexity = other.m_complexity;
     m_triangles = std::move(other.m_triangles);
     m_bvhRoot = std::move(other.m_bvhRoot);
     m_isBuilt = other.m_isBuilt;
@@ -85,14 +81,6 @@ bool Collision::IntersectsAABB(const Collision &other) const
 {
     // Use raylib's built-in AABB intersection
     return CheckCollisionBoxes(m_bounds, other.m_bounds);
-}
-
-bool Collision::ContainsPointAABB(const Vector3 &point) const
-{
-    // Check if point is inside bounding box
-    return (point.x >= m_bounds.min.x && point.x <= m_bounds.max.x) &&
-           (point.y >= m_bounds.min.y && point.y <= m_bounds.max.y) &&
-           (point.z >= m_bounds.min.z && point.z <= m_bounds.max.z);
 }
 
 // ----------------- Build from model (optimized) -----------------
@@ -540,59 +528,6 @@ bool Collision::RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxD
     return ok;
 }
 
-// ----------------- Point-in-mesh via raycast (count intersections) -----------------
-bool Collision::ContainsPointBVH(const Vector3 &point) const
-{
-    // Cast ray in +X direction and count intersections
-    Vector3 dir =
-        Vector3Normalize({1.0f, 0.0001f, 0.0002f}); // slight offset to avoid coplanar degeneracy
-    RayHit hit;
-    int count = 0;
-    const float MAX_DIST = 1e6f;
-
-    // Instead of single Raycast that returns nearest, we need to count all intersections along ray.
-    // Simple way: traverse BVH and for each triangle test ray intersection and count t>EPS.
-    if (!m_bvhRoot)
-        return false;
-
-    // Flatten traversal - naive approach: iterate all triangles (costly) OR
-    // write a specialized traversal that collects all hits. For simplicity, we do traversal and
-    // check. We'll implement a stackless recursion using lambda:
-    std::vector<const BVHNode *> stack;
-    stack.push_back(m_bvhRoot.get());
-    while (!stack.empty())
-    {
-        const BVHNode *n = stack.back();
-        stack.pop_back();
-        // Use raylib for AABB-ray intersection test
-        Ray ray = {point, dir};
-        BoundingBox box = {n->min, n->max};
-        RayCollision collision = GetRayCollisionBox(ray, box);
-        if (!collision.hit || collision.distance > MAX_DIST)
-            continue;
-        if (n->IsLeaf())
-        {
-            for (const auto &tri : n->triangles)
-            {
-                RayHit rh;
-                if (RayIntersectsTriangle(point, dir, tri, rh))
-                {
-                    if (rh.distance > 1e-6f)
-                        count++;
-                }
-            }
-        }
-        else
-        {
-            if (n->left)
-                stack.push_back(n->left.get());
-            if (n->right)
-                stack.push_back(n->right.get());
-        }
-    }
-    return (count % 2) == 1;
-}
-
 // ----------------- Intersects (AABB broad, BVH narrow) -----------------
 // Helper: check if other's BVH has any leaf AABB overlapping this Collision's AABB
 // Optimized Triangle-AABB SAT test with early exit optimizations
@@ -775,51 +710,8 @@ size_t Collision::GetTriangleCount() const { return m_triangles.size(); }
 bool Collision::HasTriangleData() const { return !m_triangles.empty(); }
 
 CollisionType Collision::GetCollisionType() const { return m_collisionType; }
-const CollisionComplexity &Collision::GetComplexity() const { return m_complexity; }
 void Collision::InitializeBVH() { BuildBVHFromTriangles(); }
 const CollisionTriangle &Collision::GetTriangle(size_t idx) const { return m_triangles[idx]; }
 const std::vector<CollisionTriangle> &Collision::GetTriangles() const { return m_triangles; }
-bool Collision::CheckCollisionWithBVH(const Collision &other, Vector3 &outResponse) const
-{
-    if (!other.m_bvhRoot || !IntersectsAABB(other))
-    {
-        return false;
-    }
-
-    // Get the center point of this collision
-    Vector3 center = GetCenter();
-    Vector3 size = GetSize();
-
-    // Check points around the AABB
-    const float checkDistance = size.y + 1.0f;
-    bool hasCollision = false;
-    float minY = FLT_MAX;
-
-    // Check center and corners
-    Vector3 checkPoints[] = {
-        center,                                         // Center
-        {center.x - size.x * 0.5f, center.y, center.z}, // Left
-        {center.x + size.x * 0.5f, center.y, center.z}, // Right
-        {center.x, center.y, center.z - size.z * 0.5f}, // Front
-        {center.x, center.y, center.z + size.z * 0.5f}  // Back
-    };
-
-    for (const auto &point : checkPoints)
-    {
-        RayHit hit;
-        Vector3 dir = {0, -1, 0};
-        if (other.RaycastBVH(point, dir, checkDistance, hit))
-        {
-            if (hit.hit && hit.distance < minY)
-            {
-                minY = hit.distance;
-                outResponse = {0, hit.position.y - (center.y - size.y * 0.5f), 0};
-                hasCollision = true;
-            }
-        }
-    }
-
-    return hasCollision;
-}
 
 // ======================================================================================================================

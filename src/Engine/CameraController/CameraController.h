@@ -47,12 +47,8 @@ public:
     // -------------------- Settings --------------------
 
     // Set field of view (radius)
-    void SetFOV(float FOV);
-
-    // -------------------- Deprecated --------------------
-
-    // Deprecated: Used previously when player was not a cube shape
-    [[deprecated("Used before, when player is not cube")]]
+    void SetFOV(float FOV); 
+    void SetMouseSensitivity(float sensitivity);
     void ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY);
 
     // -------------------- Getters --------------------
@@ -61,6 +57,7 @@ public:
     [[nodiscard]] float GetCameraPitch() const;
     [[nodiscard]] float GetCameraSmoothingFactor() const;
     [[nodiscard]] float GetFOV() const;
+    [[nodiscard]] float GetMouseSensitivity() const;
 
     // -------------------- Static Utilities --------------------
     
@@ -76,7 +73,8 @@ private:
     float m_cameraPitch = 0.0f;      // Pitch angle for rotation
     float m_cameraSmoothingFactor = 4.0f; // Smoothing speed for camera rotation
     float m_radiusFOV = 8.0f;        // Radius or distance for field of view
-    
+
+    float m_mouseSensitivity = 0.1f; // Mouse sensitivity
     // Smoothing for virtual machines
     Vector2 m_smoothedMouseDelta = {0.0f, 0.0f}; // Smoothed mouse delta value
     static constexpr float MOUSE_DEAD_ZONE = 0.5f; // Dead zone - ignore very small movements

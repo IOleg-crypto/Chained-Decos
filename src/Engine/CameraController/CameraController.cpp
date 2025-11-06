@@ -140,9 +140,9 @@ void CameraController::UpdateCameraRotation()
     m_smoothedMouseDelta = Vector2Lerp(m_smoothedMouseDelta, mouseDelta, smoothingFactor);
 
     // Actual effect on yaw/pitch
-    const float sensitivity = 0.1f; // Standard sensitivity
-    m_cameraYaw   -= m_smoothedMouseDelta.x * sensitivity;
-    m_cameraPitch -= m_smoothedMouseDelta.y * sensitivity;
+    
+    m_cameraYaw   -= m_smoothedMouseDelta.x * m_mouseSensitivity;
+    m_cameraPitch -= m_smoothedMouseDelta.y * m_mouseSensitivity;
 
     // Angle clamping using raylib Clamp
     m_cameraPitch = Clamp(m_cameraPitch, -PI/2.0f + 0.1f, PI/2.0f - 0.1f);
@@ -216,3 +216,7 @@ void CameraController::UpdateMouseRotation(Camera &camera, const Vector3 &player
     camera.position = Vector3Add(playerPosition, offset);
     camera.target = playerPosition;
 }
+
+void CameraController::SetMouseSensitivity(float sensitivity) { m_mouseSensitivity = sensitivity; }
+
+float CameraController::GetMouseSensitivity() const { return m_mouseSensitivity; }
