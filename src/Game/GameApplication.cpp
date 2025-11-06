@@ -19,6 +19,7 @@
 #include "Systems/MapSystem/MapSystem.h"
 #include "Systems/UIController/UIController.h"
 #include "Systems/RenderingSystem/RenderingSystem.h"
+#include "Menu/ConsoleManagerHelpers.h"
 #include "imgui.h"
 #include "rlImGui.h"
 #include <raylib.h>
@@ -170,6 +171,9 @@ void GameApplication::OnPostInitialize()
     auto* menu = menuService ? menuService->menu : nullptr;
     auto* mapManager = mapService ? mapService->mapManager : nullptr;
     auto* playerManager = playerManagerService ? playerManagerService->playerManager : nullptr;
+    
+    // Dependency Injection: update ConsoleManager providers after all services are registered
+    UpdateConsoleManagerProviders(GetKernel());
     
     if (player && menu) {
         m_renderHelper = std::make_unique<GameRenderHelpers>(m_collisionManager.get());
