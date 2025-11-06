@@ -47,9 +47,6 @@ public:
 
     // Add a new collider to the manager
     void AddCollider(Collision &&collider);
-    
-    // Add an existing collider reference
-    void AddColliderRef(Collision* collider);
 
     // Remove all colliders
     void ClearColliders();
@@ -63,21 +60,12 @@ public:
     // Check collision and provide collision response vector
     [[nodiscard]] bool CheckCollision(const Collision &playerCollision, Vector3 &response) const;
 
-    // Parallel version of collision checking for better performance with many objects
-    [[nodiscard]] bool CheckCollisionParallel(const Collision &playerCollision) const;
-
-    // Parallel version with response vector
-    [[nodiscard]] bool CheckCollisionParallel(const Collision &playerCollision, Vector3 &response) const;
-
     // Get all colliders
     [[nodiscard]] const std::vector<std::unique_ptr<Collision>> &GetColliders() const;
 
     // Raycast down against precise colliders (BVH or triangle) to find ground beneath a point
     bool RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
                      Vector3 &hitPoint, Vector3 &hitNormal) const;
-
-    // Automatically create collisions for all models
-    void CreateAutoCollisionsFromModels(ModelLoader &models);
 
     // Create collisions only for specific models
     void CreateAutoCollisionsFromModelsSelective(ModelLoader &models, const std::vector<std::string> &modelNames);
@@ -106,11 +94,6 @@ public:
     // Create simple AABB collision for an instance
     Collision CreateSimpleAABBInstanceCollision(
         const Collision &cachedCollision,  const Vector3 &position, float scale);
-
-    // Helper method to check collision with a single object (for parallel processing)
-    bool CheckCollisionSingleObject(const Collision &playerCollision,
-                                    const Collision &collisionObject,
-                                    Vector3 &response) const;
 
     // Prediction cache management
     void UpdateFrameCache();
