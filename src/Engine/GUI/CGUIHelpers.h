@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 
-// Прості helper функції для UI компонентів
 bool CGUISliderFloat(const char* label, float* value, float min, float max, 
                      float labelWidth = 180.0f, float sliderWidth = 300.0f,
                      const char* format = "%.1f", const ImVec4& sliderColor = ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
