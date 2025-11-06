@@ -54,7 +54,7 @@ const std::string FALLBACK_MAP_DESCRIPTION = "Default parkour level with basic p
 
 // Video options
 const std::vector<std::string> RESOLUTION_OPTIONS = {
-    "800x600", "1280x720", "1360x768", "1920x1080", "2560x1440"
+    "1920x1080", "1280x720", "1366x768", "1600x900", "2560x1440"
 };
 
 const std::vector<std::string> ASPECT_RATIO_OPTIONS = {

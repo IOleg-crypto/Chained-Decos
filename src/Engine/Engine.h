@@ -52,8 +52,7 @@ public:
     // ==================== Module System ====================
     ModuleManager* GetModuleManager() { return m_moduleManager.get(); }
     const ModuleManager* GetModuleManager() const { return m_moduleManager.get(); }
-    
-    // Зареєструвати модуль в рушії
+
     void RegisterModule(std::unique_ptr<class IEngineModule> module);
 
     // ==================== Engine State Control ====================
