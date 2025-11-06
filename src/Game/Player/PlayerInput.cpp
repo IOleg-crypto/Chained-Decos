@@ -12,8 +12,10 @@ void PlayerInput::ProcessInput()
         return;
     }
 
-    // Skip if ImGui wants keyboard capture (e.g., console open)
-    if (ImGui::GetIO().WantCaptureKeyboard)
+    // Skip if ImGui wants keyboard capture (e.g., console open or text input active)
+    // But allow input if only navigation is active (we want to allow game input even with navigation)
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureKeyboard && (io.WantTextInput || io.NavActive))
     {
         return;
     }
@@ -70,8 +72,9 @@ void PlayerInput::HandleJumpInput() const
         return;
     }
 
-    // Skip if ImGui wants keyboard capture
-    if (ImGui::GetIO().WantCaptureKeyboard)
+    // Skip if ImGui wants keyboard capture (only for text input or active widgets)
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureKeyboard && (io.WantTextInput || io.NavActive))
     {
         return;
     }
@@ -94,8 +97,9 @@ void PlayerInput::HandleEmergencyReset() const
         return;
     }
 
-    // Skip if ImGui wants keyboard capture
-    if (ImGui::GetIO().WantCaptureKeyboard)
+    // Skip if ImGui wants keyboard capture (only for text input or active widgets)
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureKeyboard && (io.WantTextInput || io.NavActive))
     {
         return;
     }
