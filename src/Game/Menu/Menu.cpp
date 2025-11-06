@@ -14,9 +14,11 @@
 #include <iostream>
 #include <memory>
 #include <raylib.h>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
+
 
 Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
@@ -24,12 +26,53 @@ Menu::Menu()
       m_totalPages(0), m_jsonMapsCount(0), m_showDemoWindow(false), m_showStyleEditor(false),
       m_settingsManager(std::make_unique<SettingsManager>()), m_consoleManager(nullptr)
 {
+    // Collect all resolutions in a set to automatically remove duplicates
+    std::set<std::string> resolutionSet;
+
+    // Get available monitor resolutions using GLFW
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    if (monitor != nullptr)
+    {
+        int modesCount           = 0;
+        const GLFWvidmode *modes = glfwGetVideoModes(monitor, &modesCount);
+
+        if (modes != nullptr && modesCount > 0)
+        {
+            for (int i = 0; i < modesCount; ++i)
+            {
+                resolutionSet.insert(std::to_string(modes[i].width) + "x" +
+                                     std::to_string(modes[i].height));
+            }
+        }
+    }
+
+    // Add standard resolution options (for windowed mode and fallback)
+    for (const auto &resolution : MenuConstants::RESOLUTION_OPTIONS)
+    {
+        resolutionSet.insert(resolution);
+    }
+
+    // Convert set to vector and sort by resolution size
+    m_resolutionOptions.assign(resolutionSet.begin(), resolutionSet.end());
+    std::sort(m_resolutionOptions.begin(), m_resolutionOptions.end(),
+              [](const std::string &a, const std::string &b)
+              {
+                  size_t xPosA = a.find('x'), xPosB = b.find('x');
+                  if (xPosA != std::string::npos && xPosB != std::string::npos)
+                  {
+                      int widthA  = std::stoi(a.substr(0, xPosA));
+                      int heightA = std::stoi(a.substr(xPosA + 1));
+                      int widthB  = std::stoi(b.substr(0, xPosB));
+                      int heightB = std::stoi(b.substr(xPosB + 1));
+                      return (widthA != widthB) ? widthA < widthB : heightA < heightB;
+                  }
+                  return a < b;
+              });
     // Initialize options vectors
-    m_resolutionOptions  = MenuConstants::RESOLUTION_OPTIONS;
+
     m_displayModeOptions = MenuConstants::DISPLAY_MODE_OPTIONS;
     m_vsyncOptions       = MenuConstants::VSYNC_OPTIONS;
     m_fpsOptions         = MenuConstants::FPS_OPTIONS;
-    m_difficultyOptions  = MenuConstants::DIFFICULTY_OPTIONS;
 
     // Load configuration
     LoadConfiguration();
@@ -216,9 +259,6 @@ void Menu::RenderMenuState()
     case MenuState::Controls:
         RenderControlSettings();
         break;
-    case MenuState::Gameplay:
-        RenderGameplaySettings();
-        break;
     case MenuState::Credits:
         RenderCreditsScreen();
         break;
@@ -338,9 +378,11 @@ void Menu::RenderGameModeMenu()
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
 
-    // Menu buttons
-    float startY   = MenuConstants::TOP_MARGIN + 50;
-    float currentY = startY;
+    // Menu buttons - centered vertically (2 buttons total)
+    const int buttonCount   = 2;
+    const float totalHeight = (buttonCount * buttonHeight) + ((buttonCount - 1) * spacing);
+    float startY            = centerY - totalHeight / 2.0f;
+    float currentY          = startY;
 
     // Single Player button
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
@@ -349,7 +391,10 @@ void Menu::RenderGameModeMenu()
         // Go to map selection for single player
         m_state = MenuState::MapSelection;
     }
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY + 70));
+    currentY += buttonHeight + spacing;
+
+    // Multi Player button (disabled)
+    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
     ImGui::BeginDisabled(true);
     if (RenderActionButton("Multi Player", MenuAction::None, ImVec2(buttonWidth, buttonHeight)))
     {
@@ -377,9 +422,11 @@ void Menu::RenderOptionsMenu()
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
 
-    // Options buttons
-    float startY   = MenuConstants::TOP_MARGIN + 50;
-    float currentY = startY;
+    // Options buttons - centered vertically (3 buttons total)
+    const int buttonCount   = 3;
+    const float totalHeight = (buttonCount * buttonHeight) + ((buttonCount - 1) * spacing);
+    float startY            = centerY - totalHeight / 2.0f;
+    float currentY          = startY;
 
     // Video Settings button
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
@@ -408,14 +455,6 @@ void Menu::RenderOptionsMenu()
     }
     currentY += buttonHeight + spacing;
 
-    // Gameplay Settings button
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Gameplay Settings", MenuAction::OpenGameplay,
-                           ImVec2(buttonWidth, buttonHeight)))
-    {
-        m_state = MenuState::Gameplay;
-    }
-
     // Back button
     ImGui::SetCursorPos(ImVec2(80, windowSize.y - 60));
     RenderBackButton();
@@ -435,8 +474,14 @@ bool Menu::RenderVideoSettingCombo(const char *label, const char *id,
     const char *currentValue = options[currentIndex].c_str();
     bool changed             = false;
 
+    // Set cursor to startX for consistent alignment
+    ImGui::SetCursorPosX(startX);
+
+    // Render label with fixed width
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "%s", label);
-    ImGui::SameLine(startX + labelWidth);
+
+    // Position dropdown at fixed offset from startX
+    ImGui::SameLine(startX + labelWidth + 20.0f); // 20px gap between label and dropdown
     ImGui::SetNextItemWidth(comboWidth);
 
     if (ImGui::BeginCombo(id, currentValue))
@@ -474,31 +519,34 @@ bool Menu::HasUnsavedVideoChanges() const
 
 void Menu::RenderVideoSettings()
 {
-    const ImVec2 windowSize   = ImGui::GetWindowSize();
-    const float labelWidth    = 200.0f;
-    const float comboWidth    = 200.0f;
-    const float startX        = MenuConstants::MARGIN + 50.0f;
-    const float startY        = MenuConstants::MARGIN + 60.0f;
-    const float spacing       = 50.0f;
+    const ImVec2 windowSize = ImGui::GetWindowSize();
+    const float centerX     = windowSize.x * 0.5f;
+    const float labelWidth  = 180.0f; // Fixed width for labels to align dropdowns
+    const float comboWidth  = 300.0f; // Increased width for dropdowns
+    const float startX =
+        centerX - (labelWidth + comboWidth + 30.0f) / 2.0f; // Center the settings group
+    const float spacing       = 40.0f;                      // Reduced spacing between items
     const float buttonSpacing = 140.0f;
 
-    // Title
-    ImGui::SetCursorPos(ImVec2(startX, MenuConstants::MARGIN + 20));
+    // Title - centered
+    ImGui::SetCursorPos(ImVec2(centerX - 150.0f, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
     ImGui::SetWindowFontScale(1.5f);
     ImGui::Text("VIDEO SETTINGS");
     ImGui::PopStyleColor();
     ImGui::SetWindowFontScale(1.0f);
 
-    // Check for unsaved changes indicator
+    // Check for unsaved changes indicator - centered
     bool hasUnsavedChanges = HasUnsavedVideoChanges();
     if (hasUnsavedChanges)
     {
-        ImGui::SetCursorPos(ImVec2(startX, MenuConstants::MARGIN + 50));
+        ImGui::SetCursorPos(ImVec2(centerX - 100.0f, MenuConstants::TOP_MARGIN - 20));
         ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "* Unsaved changes");
     }
 
-    ImGui::SetCursorPos(ImVec2(startX, startY));
+    // Settings - centered vertically
+    const float settingsStartY = MenuConstants::TOP_MARGIN + 80.0f;
+    ImGui::SetCursorPos(ImVec2(startX, settingsStartY));
 
     // Resolution
     RenderVideoSettingCombo("Resolution", "##resolution", m_resolutionOptions,
@@ -522,234 +570,177 @@ void Menu::RenderVideoSettings()
     RenderVideoSettingCombo("FPS Limit", "##fps", m_fpsOptions, m_videoSettings.fpsIndex,
                             labelWidth, comboWidth, startX);
 
-    // Buttons section
-    ImGui::SetCursorPos(ImVec2(startX, windowSize.y - 80));
+    // Buttons section - positioned at bottom, centered horizontally
+    const float buttonY = windowSize.y - 80.0f;
+    const float buttonGroupWidth =
+        120.0f + buttonSpacing + 120.0f; // Apply width + spacing + Back width
+    const float buttonStartX = centerX - buttonGroupWidth / 2.0f;
+    ImGui::SetCursorPos(ImVec2(buttonStartX, buttonY));
 
     // Apply button - enable only if there are unsaved changes
     ImGui::BeginDisabled(!hasUnsavedChanges);
     if (ImGui::Button("Apply", ImVec2(120, 40)) || (hasUnsavedChanges && IsKeyPressed(KEY_ENTER)))
     {
-        if (m_settingsManager)
+        // Validate all indices before applying
+        if (m_videoSettings.resolutionIndex >= 0 &&
+            m_videoSettings.resolutionIndex < static_cast<int>(m_resolutionOptions.size()) &&
+            m_videoSettings.displayModeIndex >= 0 &&
+            m_videoSettings.displayModeIndex < static_cast<int>(m_displayModeOptions.size()) &&
+            m_videoSettings.vsyncIndex >= 0 &&
+            m_videoSettings.vsyncIndex < static_cast<int>(m_vsyncOptions.size()) &&
+            m_videoSettings.fpsIndex >= 0 &&
+            m_videoSettings.fpsIndex < static_cast<int>(m_fpsOptions.size()))
         {
-            // Validate all indices before applying
-            if (m_videoSettings.resolutionIndex >= 0 &&
-                m_videoSettings.resolutionIndex < static_cast<int>(m_resolutionOptions.size()) &&
-                m_videoSettings.displayModeIndex >= 0 &&
-                m_videoSettings.displayModeIndex < static_cast<int>(m_displayModeOptions.size()) &&
-                m_videoSettings.vsyncIndex >= 0 &&
-                m_videoSettings.vsyncIndex < static_cast<int>(m_vsyncOptions.size()) &&
-                m_videoSettings.fpsIndex >= 0 &&
-                m_videoSettings.fpsIndex < static_cast<int>(m_fpsOptions.size()))
-            {
-                m_settingsManager->SetResolutionIndex(m_videoSettings.resolutionIndex);
-                m_settingsManager->SetDisplayModeIndex(m_videoSettings.displayModeIndex);
-                m_settingsManager->SetVSyncIndex(m_videoSettings.vsyncIndex);
-                m_settingsManager->SetFpsIndex(m_videoSettings.fpsIndex);
-                m_settingsManager->ApplyVideoSettings();
-                m_settingsManager->SaveSettings();
-            }
+            m_pendingAction = MenuAction::ApplyVideoSettings;
         }
-        m_pendingAction = MenuAction::ApplyVideoSettings;
     }
     ImGui::EndDisabled();
 
-    ImGui::SameLine(startX + buttonSpacing);
+    ImGui::SameLine(buttonStartX + buttonSpacing);
     RenderBackButton();
 }
 
 void Menu::RenderAudioSettings()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
+    const float centerX     = windowSize.x * 0.5f;
+    const float labelWidth  = 180.0f;
+    const float sliderWidth = 300.0f;
+    const float startX      = centerX - (labelWidth + sliderWidth + 30.0f) / 2.0f;
+    const float spacing     = 30.0f;
 
-    // Title
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
+    // Title - centered
+    ImGui::SetCursorPos(ImVec2(centerX - 150.0f, MenuConstants::TOP_MARGIN - 50));
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "AUDIO SETTINGS");
     ImGui::SetWindowFontScale(1.0f);
 
-    ImGui::Dummy(ImVec2(0, 40));
+    // Settings - centered vertically
+    const float settingsStartY = MenuConstants::TOP_MARGIN + 60.0f;
+    ImGui::SetCursorPos(ImVec2(startX, settingsStartY));
 
     // Master Volume Slider
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN + 30));
+    ImGui::SetCursorPosX(startX);
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Master Volume");
     ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(250);
+    ImGui::SameLine(startX + labelWidth + 20.0f);
+    ImGui::SetNextItemWidth(sliderWidth);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
     ImGui::SliderFloat("##master_vol", &m_audioSettings.masterVolume, 0.0f, 1.0f, "%.0f%%");
     ImGui::PopStyleColor();
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // Music Volume Slider
+    ImGui::SetCursorPosX(startX);
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Music Volume");
     ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(280);
+    ImGui::SameLine(startX + labelWidth + 20.0f);
+    ImGui::SetNextItemWidth(sliderWidth);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
     ImGui::SliderFloat("##music_vol", &m_audioSettings.musicVolume, 0.0f, 1.0f, "%.0f%%");
     ImGui::PopStyleColor();
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // SFX Volume Slider
+    ImGui::SetCursorPosX(startX);
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "SFX Volume");
     ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(280);
+    ImGui::SameLine(startX + labelWidth + 20.0f);
+    ImGui::SetNextItemWidth(sliderWidth);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
     ImGui::SliderFloat("##sfx_vol", &m_audioSettings.sfxVolume, 0.0f, 1.0f, "%.0f%%");
     ImGui::PopStyleColor();
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // Mute Toggle
+    ImGui::SetCursorPosX(startX);
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Mute Audio");
     ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(250);
+    ImGui::SameLine(startX + labelWidth + 20.0f);
     ImGui::Checkbox("##mute", &m_audioSettings.muted);
 
-    // Apply and Back buttons
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
+    // Apply and Back buttons - positioned at bottom, centered horizontally
+    const float buttonY          = windowSize.y - 80.0f;
+    const float buttonGroupWidth = 120.0f + 140.0f + 120.0f; // Apply width + spacing + Back width
+    const float buttonStartX     = centerX - buttonGroupWidth / 2.0f;
+    ImGui::SetCursorPos(ImVec2(buttonStartX, buttonY));
     if (ImGui::Button("Apply", ImVec2(120, 40)) || IsKeyPressed(KEY_ENTER))
     {
         m_pendingAction = MenuAction::ApplyAudioSettings;
     }
 
-    ImGui::SameLine();
+    ImGui::SameLine(buttonStartX + 140.0f);
     RenderBackButton();
 }
 
 void Menu::RenderControlSettings()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
+    const float centerX     = windowSize.x * 0.5f;
+    const float labelWidth  = 180.0f;
+    const float sliderWidth = 300.0f;
+    const float startX      = centerX - (labelWidth + sliderWidth + 30.0f) / 2.0f;
+    const float spacing     = 30.0f;
 
-    // Title
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
+    // Title - centered
+    ImGui::SetCursorPos(ImVec2(centerX - 150.0f, MenuConstants::TOP_MARGIN - 50));
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "CONTROL SETTINGS");
     ImGui::SetWindowFontScale(1.0f);
 
-    ImGui::Dummy(ImVec2(0, 40));
+    // Settings - centered vertically
+    const float settingsStartY = MenuConstants::TOP_MARGIN + 60.0f;
+    ImGui::SetCursorPos(ImVec2(startX, settingsStartY));
 
     // Mouse Sensitivity Slider
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN + 30));
+    ImGui::SetCursorPosX(startX);
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Mouse Sensitivity");
     ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(280);
+    ImGui::SameLine(startX + labelWidth + 20.0f);
+    ImGui::SetNextItemWidth(sliderWidth);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
     ImGui::SliderFloat("##mouse_sens", &m_controlSettings.mouseSensitivity, 0.1f, 3.0f, "%.1fx");
     ImGui::PopStyleColor();
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // Invert Y Axis Toggle
+    ImGui::SetCursorPosX(startX);
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Invert Y Axis");
     ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(280);
+    ImGui::SameLine(startX + labelWidth + 20.0f);
     ImGui::Checkbox("##invert_y", &m_controlSettings.invertYAxis);
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
 
     // Controller Support Toggle
+    ImGui::SetCursorPosX(startX);
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
     ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Controller Support");
     ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(250);
+    ImGui::SameLine(startX + labelWidth + 20.0f);
     ImGui::Checkbox("##controller", &m_controlSettings.controllerSupport);
 
-    // Apply and Back buttons
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
+    // Apply and Back buttons - positioned at bottom, centered horizontally
+    const float buttonY          = windowSize.y - 80.0f;
+    const float buttonGroupWidth = 120.0f + 140.0f + 120.0f; // Apply width + spacing + Back width
+    const float buttonStartX     = centerX - buttonGroupWidth / 2.0f;
+    ImGui::SetCursorPos(ImVec2(buttonStartX, buttonY));
     if (ImGui::Button("Apply", ImVec2(120, 40)) || IsKeyPressed(KEY_ENTER))
     {
         m_pendingAction = MenuAction::ApplyControlSettings;
     }
 
-    ImGui::SameLine();
-    RenderBackButton();
-}
-
-void Menu::RenderGameplaySettings()
-{
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-
-    // Title
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::MARGIN + 20));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
-    ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "GAMEPLAY SETTINGS");
-    ImGui::SetWindowFontScale(1.0f);
-
-    ImGui::Dummy(ImVec2(0, 40));
-
-    // Difficulty setting
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN + 30));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Difficulty");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(280);
-    if (ImGui::BeginCombo("##difficulty",
-                          m_difficultyOptions[m_gameplaySettings.difficultyLevel - 1].c_str()))
-    {
-        for (size_t i = 0; i < m_difficultyOptions.size(); ++i)
-        {
-            bool isSelected = (m_gameplaySettings.difficultyLevel - 1 == static_cast<int>(i));
-            if (ImGui::Selectable(m_difficultyOptions[i].c_str(), isSelected))
-            {
-                m_gameplaySettings.difficultyLevel = static_cast<int>(i) + 1;
-            }
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-
-    ImGui::Dummy(ImVec2(0, 20));
-
-    // Timer Toggle
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Timer");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(280);
-    ImGui::Checkbox("##timer", &m_gameplaySettings.timerEnabled);
-
-    ImGui::Dummy(ImVec2(0, 20));
-
-    // Checkpoints Toggle
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Checkpoints");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(280);
-    ImGui::Checkbox("##checkpoints", &m_gameplaySettings.checkpointsEnabled);
-
-    ImGui::Dummy(ImVec2(0, 20));
-
-    // Auto Save Toggle
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Auto Save");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(280);
-    ImGui::Checkbox("##auto_save", &m_gameplaySettings.autoSaveEnabled);
-
-    ImGui::Dummy(ImVec2(0, 20));
-
-    // Speedrun Mode Toggle
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Speedrun Mode");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(250);
-    ImGui::Checkbox("##speedrun", &m_gameplaySettings.speedrunMode);
-
-    // Apply and Back buttons
-    ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 80));
-    if (ImGui::Button("Apply", ImVec2(120, 40)) || IsKeyPressed(KEY_ENTER))
-    {
-        m_pendingAction = MenuAction::ApplyGameplaySettings;
-    }
-
-    ImGui::SameLine();
+    ImGui::SameLine(buttonStartX + 140.0f);
     RenderBackButton();
 }
 
@@ -923,10 +914,6 @@ void Menu::HandlePendingActions()
             SyncControlSettingsToConfig();
             m_pendingAction = MenuAction::None;
             break;
-        case MenuAction::ApplyGameplaySettings:
-            SyncGameplaySettingsToConfig();
-            m_pendingAction = MenuAction::None;
-            break;
         default:
             // Don't reset m_pendingAction for actions handled by MenuActionHandler
             // (SinglePlayer, ResumeGame, StartGameWithMap, ExitGame, etc.)
@@ -948,7 +935,6 @@ void Menu::HandleKeyboardNavigation()
         case MenuState::Video:
         case MenuState::Audio:
         case MenuState::Controls:
-        case MenuState::Gameplay:
         case MenuState::Credits:
         case MenuState::Mods:
             m_state = MenuState::Main;
@@ -1023,7 +1009,11 @@ bool Menu::RenderActionButton(const char *label, MenuAction action, const ImVec2
 
 bool Menu::RenderBackButton(float width)
 {
-    ImVec2 buttonSize(width > 0 ? width : 100, 30);
+    ImVec2 buttonSize(120.0f, 40.0f); // Same size as Apply button
+    if (width > 0)
+    {
+        buttonSize.x = width;
+    }
 
     // Enhanced back button styling
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 0.8f));
@@ -1142,12 +1132,59 @@ void Menu::SyncVideoSettingsToConfig()
 {
     if (m_settingsManager)
     {
-        m_settingsManager->SetResolutionIndex(m_videoSettings.resolutionIndex);
+        // Convert resolution index from m_resolutionOptions to MenuConstants::RESOLUTION_OPTIONS
+        // index
+        int standardIndex = 1; // Default to 1280x720
+        if (m_videoSettings.resolutionIndex >= 0 &&
+            m_videoSettings.resolutionIndex < static_cast<int>(m_resolutionOptions.size()))
+        {
+            std::string resolutionStr       = m_resolutionOptions[m_videoSettings.resolutionIndex];
+            const auto &standardResolutions = MenuConstants::RESOLUTION_OPTIONS;
+
+            // Find matching resolution in standard options
+            for (size_t i = 0; i < standardResolutions.size(); ++i)
+            {
+                if (standardResolutions[i] == resolutionStr)
+                {
+                    standardIndex = static_cast<int>(i);
+                    break;
+                }
+            }
+            // If not found in standard options, try to find closest match or use default
+            if (standardIndex == 1 && resolutionStr != standardResolutions[1])
+            {
+                // Try to find by parsing resolution
+                size_t xPos = resolutionStr.find('x');
+                if (xPos != std::string::npos)
+                {
+                    int width  = std::stoi(resolutionStr.substr(0, xPos));
+                    int height = std::stoi(resolutionStr.substr(xPos + 1));
+
+                    // Find closest match
+                    for (size_t i = 0; i < standardResolutions.size(); ++i)
+                    {
+                        size_t stdXPos = standardResolutions[i].find('x');
+                        if (stdXPos != std::string::npos)
+                        {
+                            int stdWidth  = std::stoi(standardResolutions[i].substr(0, stdXPos));
+                            int stdHeight = std::stoi(standardResolutions[i].substr(stdXPos + 1));
+                            if (stdWidth == width && stdHeight == height)
+                            {
+                                standardIndex = static_cast<int>(i);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        m_settingsManager->SetResolutionIndex(standardIndex);
         m_settingsManager->SetDisplayModeIndex(m_videoSettings.displayModeIndex);
         m_settingsManager->SetVSyncIndex(m_videoSettings.vsyncIndex);
         m_settingsManager->SetFpsIndex(m_videoSettings.fpsIndex);
         m_settingsManager->ApplyVideoSettings();
-        m_settingsManager->SaveSettings(); // Зберігаємо налаштування в конфіг
+        m_settingsManager->SaveSettings();
     }
 }
 
@@ -1160,7 +1197,7 @@ void Menu::SyncAudioSettingsToConfig()
         m_settingsManager->SetSfxVolume(m_audioSettings.sfxVolume);
         m_settingsManager->SetMuted(m_audioSettings.muted);
         m_settingsManager->ApplyAudioSettings();
-        m_settingsManager->SaveSettings(); // Зберігаємо налаштування в конфіг
+        m_settingsManager->SaveSettings();
     }
 }
 
@@ -1171,20 +1208,7 @@ void Menu::SyncControlSettingsToConfig()
         m_settingsManager->SetMouseSensitivity(m_controlSettings.mouseSensitivity);
         m_settingsManager->SetInvertYAxis(m_controlSettings.invertYAxis);
         m_settingsManager->SetControllerSupport(m_controlSettings.controllerSupport);
-        m_settingsManager->SaveSettings(); // Зберігаємо налаштування в конфіг
-    }
-}
-
-void Menu::SyncGameplaySettingsToConfig()
-{
-    if (m_settingsManager)
-    {
-        m_settingsManager->SetDifficultyLevel(m_gameplaySettings.difficultyLevel);
-        m_settingsManager->SetTimerEnabled(m_gameplaySettings.timerEnabled);
-        m_settingsManager->SetCheckpointsEnabled(m_gameplaySettings.checkpointsEnabled);
-        m_settingsManager->SetAutoSaveEnabled(m_gameplaySettings.autoSaveEnabled);
-        m_settingsManager->SetSpeedrunMode(m_gameplaySettings.speedrunMode);
-        m_settingsManager->SaveSettings(); // Зберігаємо налаштування в конфіг
+        m_settingsManager->SaveSettings();
     }
 }
 
@@ -1212,7 +1236,6 @@ void Menu::ShowMapSelection() { m_state = MenuState::MapSelection; }
 void Menu::ShowAudioMenu() { m_state = MenuState::Audio; }
 void Menu::ShowVideoMenu() { m_state = MenuState::Video; }
 void Menu::ShowControlsMenu() { m_state = MenuState::Controls; }
-void Menu::ShowGameplayMenu() { m_state = MenuState::Gameplay; }
 void Menu::ShowCredits() { m_state = MenuState::Credits; }
 void Menu::ShowMods() { m_state = MenuState::Mods; }
 void Menu::ShowConfirmExit() { m_state = MenuState::ConfirmExit; }
@@ -1226,8 +1249,6 @@ void Menu::ApplyPendingSettings()
     SyncAudioSettingsToConfig();
     // Apply control settings
     SyncControlSettingsToConfig();
-    // Apply gameplay settings
-    SyncGameplaySettingsToConfig();
 
     // Save configuration
     SaveConfiguration();
@@ -1368,16 +1389,76 @@ void Menu::LoadConfiguration()
         m_controlSettings.invertYAxis       = m_settingsManager->GetInvertYAxis();
         m_controlSettings.controllerSupport = m_settingsManager->GetControllerSupport();
 
-        m_gameplaySettings.difficultyLevel    = m_settingsManager->GetDifficultyLevel();
-        m_gameplaySettings.timerEnabled       = m_settingsManager->IsTimerEnabled();
-        m_gameplaySettings.checkpointsEnabled = m_settingsManager->AreCheckpointsEnabled();
-        m_gameplaySettings.autoSaveEnabled    = m_settingsManager->IsAutoSaveEnabled();
-        m_gameplaySettings.speedrunMode       = m_settingsManager->IsSpeedrunMode();
+        // Convert resolution index from MenuConstants::RESOLUTION_OPTIONS to m_resolutionOptions
+        int standardIndex               = m_settingsManager->GetResolutionIndex();
+        const auto &standardResolutions = MenuConstants::RESOLUTION_OPTIONS;
 
-        m_videoSettings.resolutionIndex  = m_settingsManager->GetResolutionIndex();
+        m_videoSettings.resolutionIndex = 0; // Default to first option
+        if (standardIndex >= 0 && standardIndex < static_cast<int>(standardResolutions.size()))
+        {
+            std::string resolutionStr = standardResolutions[standardIndex];
+
+            // Find matching resolution in m_resolutionOptions
+            for (size_t i = 0; i < m_resolutionOptions.size(); ++i)
+            {
+                if (m_resolutionOptions[i] == resolutionStr)
+                {
+                    m_videoSettings.resolutionIndex = static_cast<int>(i);
+                    break;
+                }
+            }
+            // If not found, try to find by parsing resolution
+            if (m_videoSettings.resolutionIndex == 0 && resolutionStr != m_resolutionOptions[0])
+            {
+                size_t xPos = resolutionStr.find('x');
+                if (xPos != std::string::npos)
+                {
+                    int width  = std::stoi(resolutionStr.substr(0, xPos));
+                    int height = std::stoi(resolutionStr.substr(xPos + 1));
+
+                    for (size_t i = 0; i < m_resolutionOptions.size(); ++i)
+                    {
+                        size_t optXPos = m_resolutionOptions[i].find('x');
+                        if (optXPos != std::string::npos)
+                        {
+                            int optWidth  = std::stoi(m_resolutionOptions[i].substr(0, optXPos));
+                            int optHeight = std::stoi(m_resolutionOptions[i].substr(optXPos + 1));
+                            if (optWidth == width && optHeight == height)
+                            {
+                                m_videoSettings.resolutionIndex = static_cast<int>(i);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         m_videoSettings.displayModeIndex = m_settingsManager->GetDisplayModeIndex();
         m_videoSettings.vsyncIndex       = m_settingsManager->GetVSyncIndex();
         m_videoSettings.fpsIndex         = m_settingsManager->GetFpsIndex();
+
+        // Validate indices to prevent out-of-bounds
+        if (m_videoSettings.resolutionIndex < 0 ||
+            m_videoSettings.resolutionIndex >= static_cast<int>(m_resolutionOptions.size()))
+        {
+            m_videoSettings.resolutionIndex = 0;
+        }
+        if (m_videoSettings.displayModeIndex < 0 ||
+            m_videoSettings.displayModeIndex >= static_cast<int>(m_displayModeOptions.size()))
+        {
+            m_videoSettings.displayModeIndex = 0;
+        }
+        if (m_videoSettings.vsyncIndex < 0 ||
+            m_videoSettings.vsyncIndex >= static_cast<int>(m_vsyncOptions.size()))
+        {
+            m_videoSettings.vsyncIndex = 0;
+        }
+        if (m_videoSettings.fpsIndex < 0 ||
+            m_videoSettings.fpsIndex >= static_cast<int>(m_fpsOptions.size()))
+        {
+            m_videoSettings.fpsIndex = 1; // Default to 60 FPS
+        }
     }
 }
 
@@ -1416,8 +1497,6 @@ const char *Menu::GetStateTitle(MenuState state)
         return "AUDIO SETTINGS";
     case MenuState::Controls:
         return "CONTROL SETTINGS";
-    case MenuState::Gameplay:
-        return "GAMEPLAY SETTINGS";
     case MenuState::GameMode:
         return "GAME MODE";
     case MenuState::MapSelection:
