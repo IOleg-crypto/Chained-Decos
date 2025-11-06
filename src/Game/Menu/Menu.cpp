@@ -2,6 +2,11 @@
 #include "Engine/Collision/CollisionSystem.h"
 #include "MenuConstants.h"
 #include "SettingsManager.h"
+#include "Engine.h"
+#include "Engine/Kernel/Kernel.h"
+#include "Engine/Kernel/KernelServices.h"
+#include "Engine/CameraController/CameraController.h"
+#include "Game/Player/Player.h"
 #include "rlImGui.h"
 #include <Collision/CollisionStructures.h>
 #include <algorithm>
@@ -18,7 +23,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
 
 Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
@@ -46,11 +50,18 @@ Menu::Menu()
         }
     }
 
+    
+
     // Add standard resolution options (for windowed mode and fallback)
     for (const auto &resolution : MenuConstants::RESOLUTION_OPTIONS)
     {
-        resolutionSet.insert(resolution);
+        if (!resolution.empty())
+        {
+            resolutionSet.insert(resolution);
+        }
     }
+
+    
 
     // Convert set to vector and sort by resolution size
     m_resolutionOptions.assign(resolutionSet.begin(), resolutionSet.end());
@@ -68,6 +79,7 @@ Menu::Menu()
                   }
                   return a < b;
               });
+
     // Initialize options vectors
 
     m_displayModeOptions = MenuConstants::DISPLAY_MODE_OPTIONS;
@@ -708,6 +720,7 @@ void Menu::RenderControlSettings()
     ImGui::SetNextItemWidth(sliderWidth);
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
     ImGui::SliderFloat("##mouse_sens", &m_controlSettings.mouseSensitivity, 0.1f, 3.0f, "%.1fx");
+
     ImGui::PopStyleColor();
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
@@ -721,7 +734,7 @@ void Menu::RenderControlSettings()
     ImGui::Checkbox("##invert_y", &m_controlSettings.invertYAxis);
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-
+    ImGui::BeginDisabled();
     // Controller Support Toggle
     ImGui::SetCursorPosX(startX);
     ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
@@ -729,6 +742,7 @@ void Menu::RenderControlSettings()
     ImGui::SetWindowFontScale(1.0f);
     ImGui::SameLine(startX + labelWidth + 20.0f);
     ImGui::Checkbox("##controller", &m_controlSettings.controllerSupport);
+    ImGui::EndDisabled();
 
     // Apply and Back buttons - positioned at bottom, centered horizontally
     const float buttonY          = windowSize.y - 80.0f;
@@ -965,24 +979,6 @@ void Menu::HandleKeyboardNavigation()
         // Sync selection
         m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
     }
-
-    // Handle navigation for other menus with arrow keys
-    if (m_state == MenuState::Main || m_state == MenuState::GameMode ||
-        m_state == MenuState::Options)
-    {
-        if (IsKeyPressed(KEY_UP))
-        {
-            // Navigate up in menu (could be implemented with a selected item index)
-        }
-        else if (IsKeyPressed(KEY_DOWN))
-        {
-            // Navigate down in menu
-        }
-        else if (IsKeyPressed(KEY_ENTER))
-        {
-            // Activate selected item (could be implemented)
-        }
-    }
 }
 
 bool Menu::RenderActionButton(const char *label, MenuAction action, const ImVec2 &size)
@@ -1209,6 +1205,9 @@ void Menu::SyncControlSettingsToConfig()
         m_settingsManager->SetInvertYAxis(m_controlSettings.invertYAxis);
         m_settingsManager->SetControllerSupport(m_controlSettings.controllerSupport);
         m_settingsManager->SaveSettings();
+        
+        // Apply sensitivity to CameraController
+        ApplyCameraSensitivity(m_controlSettings.mouseSensitivity);
     }
 }
 
@@ -1388,6 +1387,9 @@ void Menu::LoadConfiguration()
         m_controlSettings.mouseSensitivity  = m_settingsManager->GetMouseSensitivity();
         m_controlSettings.invertYAxis       = m_settingsManager->GetInvertYAxis();
         m_controlSettings.controllerSupport = m_settingsManager->GetControllerSupport();
+        
+        // Apply sensitivity to CameraController
+        ApplyCameraSensitivity(m_controlSettings.mouseSensitivity);
 
         // Convert resolution index from MenuConstants::RESOLUTION_OPTIONS to m_resolutionOptions
         int standardIndex               = m_settingsManager->GetResolutionIndex();
@@ -1517,3 +1519,34 @@ void Menu::SetResumeButtonOn(bool status) { m_addResumeButton = status; }
 bool Menu::GetResumeButtonStatus() const { return m_addResumeButton; }
 
 ConsoleManager *Menu::GetConsoleManager() const { return m_consoleManager.get(); }
+
+// Apply camera sensitivity to CameraController
+void Menu::ApplyCameraSensitivity(float sensitivity)
+{
+    if (!m_kernel)
+        return;
+    
+    // Get PlayerService from Kernel
+    auto playerService = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
+    if (!playerService)
+        return;
+    
+    // Get Player from PlayerService
+    Player* player = playerService->player;
+    if (!player)
+        return;
+    
+    // Get CameraController from Player
+    auto cameraController = player->GetCameraController();
+    if (!cameraController)
+        return;
+    
+    // Convert menu sensitivity (0.1-3.0) to CameraController sensitivity (0.01-0.3)
+    // Menu default is 1.0, CameraController default is 0.1
+    // So we scale: menuValue * 0.1 = cameraValue
+    float cameraSensitivity = sensitivity * 0.1f;
+    cameraController->SetMouseSensitivity(cameraSensitivity);
+    
+    TraceLog(LOG_INFO, "Menu::ApplyCameraSensitivity() - Applied sensitivity %.2f (menu) -> %.2f (camera)", 
+             sensitivity, cameraSensitivity);
+}

@@ -37,12 +37,6 @@ public:
     bool Intersects(const CollisionRay &ray, float &t) const;
     bool Intersects(const Vector3 &origin, const Vector3 &direction, float &t) const;
 
-    // Triangle-triangle intersection
-    bool Intersects(const CollisionTriangle &other) const;
-
-    // Triangle-AABB intersection
-    bool IntersectsAABB(const Vector3 &boxMin, const Vector3 &boxMax) const;
-
     // Get triangle properties
     Vector3 GetCenter() const;
     Vector3 GetMin() const;
@@ -61,9 +55,8 @@ private:
     Vector3 m_center{};             // Cached triangle center
     float m_area{};                 // Cached area
 
-    // Cached edge vectors and dot products for barycentric coordinates
+    // Cached edge vectors for normal and area calculations
     Vector3 m_e0{}, m_e1{};
-    float m_dot00{}, m_dot01{}, m_dot11{};
 };
 
 //
@@ -75,37 +68,6 @@ enum class CollisionType : uint8_t
     BVH_ONLY,        // BVH-based collision (precise, scalable)
     HYBRID_AUTO,     // Automatically choose based on model complexity
     TRIANGLE_PRECISE // Brute force (triangle-to-triangle)
-};
-
-//
-// CollisionComplexity - helper to determine model complexity
-//
-class CollisionComplexity
-{
-public:
-    CollisionComplexity() = default;
-
-    void SetTriangleCount(size_t count) { m_triangleCount = count; }
-    void SetSurfaceArea(float area) { m_surfaceArea = area; }
-    void SetBoundingVolume(float volume) { m_boundingVolume = volume; }
-    void SetHasComplexGeometry(bool complex) { m_hasComplexGeometry = complex; }
-
-    size_t GetTriangleCount() const { return m_triangleCount; }
-    float GetSurfaceArea() const { return m_surfaceArea; }
-    float GetBoundingVolume() const { return m_boundingVolume; }
-    bool HasComplexGeometry() const { return m_hasComplexGeometry; }
-
-    [[nodiscard]] bool IsSimple() const;
-    [[nodiscard]] bool IsComplex() const;
-
-    static constexpr size_t SIMPLE_TRIANGLE_THRESHOLD = 100;
-    static constexpr float SIMPLE_AREA_THRESHOLD = 1000.0f;
-
-private:
-    size_t m_triangleCount = 0;
-    float m_surfaceArea = 0.0f;
-    float m_boundingVolume = 0.0f;
-    bool m_hasComplexGeometry = false;
 };
 
 #endif // COLLISIONSTRUCTURES_H

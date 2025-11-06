@@ -18,6 +18,8 @@
 
 // Forward declarations to break circular dependencies
 class Kernel;
+class PlayerService;
+class Player;
 
 
 enum class MenuAction : uint8_t
@@ -189,6 +191,9 @@ private:
     void SyncVideoSettingsToConfig();
     void SyncAudioSettingsToConfig();
     void SyncControlSettingsToConfig();
+    
+    // Apply camera sensitivity to CameraController
+    void ApplyCameraSensitivity(float sensitivity);
 
     // Map management
     void ScanForJsonMaps();
