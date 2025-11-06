@@ -7,6 +7,8 @@ add_library(menu STATIC
     SettingsManager.h
     ConsoleManager.cpp
     ConsoleManager.h
+    ConsoleManagerHelpers.cpp
+    ConsoleManagerHelpers.h
     MapSelector.cpp
     MapSelector.h
     MenuConstants.h

@@ -48,8 +48,6 @@ Menu::Menu()
         }
     }
 
-    
-
     // Add standard resolution options (for windowed mode and fallback)
     for (const auto &resolution : MenuConstants::RESOLUTION_OPTIONS)
     {
@@ -58,8 +56,6 @@ Menu::Menu()
             resolutionSet.insert(resolution);
         }
     }
-
-    
 
     // Convert set to vector and sort by resolution size
     m_resolutionOptions.assign(resolutionSet.begin(), resolutionSet.end());
