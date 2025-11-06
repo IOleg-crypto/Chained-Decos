@@ -14,6 +14,7 @@
 #include <Render/IMenuRenderable.h>
 #include <imgui.h>
 #include <raylib.h>
+#include <GLFW/glfw3.h>
 
 // Forward declarations to break circular dependencies
 class Kernel;
@@ -29,7 +30,6 @@ enum class MenuAction : uint8_t
     OpenVideoMode,
     OpenAudio,
     OpenControls,
-    OpenGameplay,
     OpenMods,
     BackToMainMenu,
     SinglePlayer,
@@ -42,8 +42,7 @@ enum class MenuAction : uint8_t
     ToggleController,
     ApplyVideoSettings,
     ApplyAudioSettings,
-    ApplyControlSettings,
-    ApplyGameplaySettings
+    ApplyControlSettings
 };
 
 enum class MenuState : uint8_t
@@ -56,7 +55,6 @@ enum class MenuState : uint8_t
     Video,
     Audio,
     Controls,
-    Gameplay,
     Credits,
     Mods,
     ConfirmExit
@@ -107,7 +105,6 @@ public:
     void ShowAudioMenu();
     void ShowVideoMenu();
     void ShowControlsMenu();
-    void ShowGameplayMenu();
     void ShowCredits();
     void ShowMods();
     void ShowConfirmExit();
@@ -155,7 +152,6 @@ private:
     void RenderAudioSettings();
     void RenderVideoSettings();
     void RenderControlSettings();
-    void RenderGameplaySettings();
     void RenderCreditsScreen();
     void RenderModsScreen();
     void RenderConfirmExitDialog();
@@ -193,7 +189,6 @@ private:
     void SyncVideoSettingsToConfig();
     void SyncAudioSettingsToConfig();
     void SyncControlSettingsToConfig();
-    void SyncGameplaySettingsToConfig();
 
     // Map management
     void ScanForJsonMaps();
@@ -214,7 +209,6 @@ private:
     VideoSettings m_videoSettings{};
     AudioSettings m_audioSettings{};
     ControlSettings m_controlSettings{};
-    GameplaySettings m_gameplaySettings{};
 
     // Map management
     std::vector<MapInfo> m_availableMaps;
@@ -244,7 +238,6 @@ private:
     std::vector<std::string> m_displayModeOptions;
     std::vector<std::string> m_vsyncOptions;
     std::vector<std::string> m_fpsOptions;
-    std::vector<std::string> m_difficultyOptions;
 };
 
 #endif // MENU_H
