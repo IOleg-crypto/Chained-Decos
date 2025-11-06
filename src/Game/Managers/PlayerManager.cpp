@@ -34,6 +34,13 @@ void PlayerManager::InitPlayer()
     TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Updating player collision...");
     m_player->UpdatePlayerCollision();
     
+    // Extract player from collider if stuck after spawn
+    TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Checking if player is stuck in collision...");
+    if (m_player->GetMovement()->ExtractFromCollider())
+    {
+        TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Player extracted from collider");
+    }
+    
     // Allow physics to determine grounded state; start ungrounded so gravity applies
     TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Setting initial physics state...");
     m_player->GetPhysics().SetGroundLevel(false);
@@ -110,6 +117,7 @@ void PlayerManager::InitPlayer()
         if (m_mapManager->HasSpawnZone())
         {
             Vector3 spawnPos = m_mapManager->GetPlayerSpawnPosition();
+            m_player->DEFAULT_SPAWN_POSITION = spawnPos;
             m_player->SetPlayerPosition(spawnPos);
             TraceLog(LOG_INFO,
                      "PlayerManager::InitPlayer() - Using spawn zone position: (%.2f, %.2f, %.2f)",

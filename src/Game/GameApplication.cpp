@@ -267,7 +267,11 @@ void GameApplication::OnPostUpdate(float deltaTime)
     }
     else
     {
-        // Menu is closed - check if game is running
+        // Menu is closed - disable keyboard navigation to allow game input
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
+        
+        // Game is running - check console state
         if (m_isGameInitialized)
         {
             // Game is running - check console state
@@ -349,6 +353,13 @@ void GameApplication::OnPostRender()
         // Need to call rlImGuiBegin before rendering menu
         rlImGuiBegin();
         engine->GetRenderManager()->RenderMenu(*menu);
+        
+        // Render console in menu if open
+        if (menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
+        {
+            menu->GetConsoleManager()->RenderConsole();
+        }
+        
         rlImGuiEnd();
     }
     else
@@ -375,11 +386,16 @@ void GameApplication::OnPostRender()
         engine->GetRenderManager()->RenderDebugInfo(*player->GetRenderable(), *m_models, *m_collisionManager);
     }
 
-    if (!m_showMenu && menu && menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
+    // Render console in game if open (works for both menu and game)
+    if (menu && menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
     {
-        rlImGuiBegin();
-        menu->GetConsoleManager()->RenderConsole();
-        rlImGuiEnd();
+        if (!m_showMenu)  // Only call rlImGuiBegin/End if not already in menu rendering
+        {
+            rlImGuiBegin();
+            menu->GetConsoleManager()->RenderConsole();
+            rlImGuiEnd();
+        }
+        // If in menu, console is already rendered above
     }
 }
 
