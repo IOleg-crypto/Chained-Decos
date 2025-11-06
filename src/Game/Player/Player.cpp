@@ -11,14 +11,14 @@
 #include <raylib.h>
 
 // Define player constants
-const Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 160.0f,
+Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 0.0f,
                                                 0.0f}; // Safe spawn position above ground
 const float Player::MODEL_Y_OFFSET = -1.f;
 
 Player::Player() : m_cameraController(std::make_shared<CameraController>())
 {
-    // Initialize player bounding box size
-    m_boundingBoxSize = {1.0f, 2.5f, 1.0f};
+   
+    m_boundingBoxSize = {1.2f, 2.8f, 1.2f};  
 
     // Create component objects
     m_movement = std::make_unique<PlayerMovement>(this);

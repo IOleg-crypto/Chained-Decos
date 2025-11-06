@@ -11,7 +11,7 @@
 class PlayerManager
 {
 private:
-    static constexpr float PLAYER_SAFE_SPAWN_HEIGHT = 2.0f;
+    static constexpr float PLAYER_SAFE_SPAWN_HEIGHT = 1.5f;
     
     Player* m_player;
     CollisionManager* m_collisionManager;
