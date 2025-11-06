@@ -41,7 +41,7 @@ BoundingBox PlayerCollision::GetBoundingBox() const {
 
 void PlayerCollision::UpdateBoundingBox() {
     Vector3 pos = m_player->GetPlayerPosition();
-    Vector3 halfSize = Vector3Scale(m_player->GetPlayerSize(), 1.0f);
+    Vector3 halfSize = Vector3Scale(m_player->GetPlayerSize(), 0.5f);
 
     // Sync base Collision AABB
     Collision::Update(pos, halfSize);
