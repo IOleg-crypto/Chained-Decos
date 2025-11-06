@@ -1,16 +1,16 @@
 #ifndef IMENURENDERABLE_H
 #define IMENURENDERABLE_H
 
-// Інтерфейс для UI елементів (Menu, HUD, тощо)
-// Дотримується Interface Segregation Principle - тільки методи, потрібні для UI
+// Interface for UI elements (Menu, HUD, etc.)
+// Follows Interface Segregation Principle - only methods needed for UI
 struct IMenuRenderable
 {
     virtual ~IMenuRenderable() = default;
 
-    // Оновлення UI стану
+    // Update UI state
     virtual void Update() = 0;
     
-    // Рендеринг UI
+    // Render UI
     virtual void Render() = 0;
 };
 

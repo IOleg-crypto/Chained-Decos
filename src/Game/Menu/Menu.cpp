@@ -5,8 +5,6 @@
 #include "Engine.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/Kernel/KernelServices.h"
-#include "Engine/CameraController/CameraController.h"
-#include "Game/Player/Player.h"
 #include "rlImGui.h"
 #include <Collision/CollisionStructures.h>
 #include <algorithm>
@@ -104,7 +102,15 @@ void Menu::SetKernel(Kernel *kernel)
     m_kernel = kernel;
     if (m_kernel && !m_consoleManager)
     {
-        m_consoleManager = std::make_unique<ConsoleManager>(m_kernel);
+        // Create ConsoleManager with nullptr providers
+        // Providers will be injected later via SetProviders()
+        // when services become available (Engine, MapSystem, PlayerSystem)
+        m_consoleManager = std::make_unique<ConsoleManager>(
+            nullptr,  // IPlayerProvider* - will be injected later
+            nullptr,  // IMapManagerProvider* - will be injected later
+            nullptr   // IEngineProvider* - will be injected later
+        );
+        TraceLog(LOG_INFO, "Menu::SetKernel() - ConsoleManager created, providers will be injected later");
     }
 }
 
@@ -130,7 +136,7 @@ void Menu::Render()
     int screenWidth  = GetScreenWidth();
     int screenHeight = GetScreenHeight();
 
-    // Set up main window for the menu (на весь екран)
+    // Set up main window for the menu (fullscreen)
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(
         ImVec2(static_cast<float>(screenWidth), static_cast<float>(screenHeight)),
@@ -1520,32 +1526,22 @@ bool Menu::GetResumeButtonStatus() const { return m_addResumeButton; }
 
 ConsoleManager *Menu::GetConsoleManager() const { return m_consoleManager.get(); }
 
-// Apply camera sensitivity to CameraController
+// Apply camera sensitivity to CameraController (Dependency Injection)
+void Menu::SetCameraController(ICameraSensitivityController* controller)
+{
+    m_cameraController = controller;
+}
+
 void Menu::ApplyCameraSensitivity(float sensitivity)
 {
-    if (!m_kernel)
+    if (!m_cameraController)
         return;
     
-    // Get PlayerService from Kernel
-    auto playerService = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
-    if (!playerService)
-        return;
-    
-    // Get Player from PlayerService
-    Player* player = playerService->player;
-    if (!player)
-        return;
-    
-    // Get CameraController from Player
-    auto cameraController = player->GetCameraController();
-    if (!cameraController)
-        return;
-    
-    // Convert menu sensitivity (0.1-3.0) to CameraController sensitivity (0.01-0.3)
+    // Convert menu sensitivity (0.1-3.0) to camera sensitivity (0.01-0.3)
     // Menu default is 1.0, CameraController default is 0.1
     // So we scale: menuValue * 0.1 = cameraValue
     float cameraSensitivity = sensitivity * 0.1f;
-    cameraController->SetMouseSensitivity(cameraSensitivity);
+    m_cameraController->SetMouseSensitivity(cameraSensitivity);
     
     TraceLog(LOG_INFO, "Menu::ApplyCameraSensitivity() - Applied sensitivity %.2f (menu) -> %.2f (camera)", 
              sensitivity, cameraSensitivity);
