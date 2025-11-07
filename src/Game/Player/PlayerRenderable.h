@@ -21,6 +21,7 @@ public:
     const Collision& GetCollision() const override;
     Camera GetCamera() const override;
     bool IsGrounded() const override;
+    float GetVelocityY() const override;
 
 private:
     Player* m_player;
