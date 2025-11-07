@@ -45,6 +45,14 @@ public:
     // Update camera offset based on FOV and angles relative to player position
     void UpdateMouseRotation(Camera &camera, const Vector3 &playerPosition);
 
+    // -------------------- Screen Shake --------------------
+    
+    // Add screen shake effect (intensity based on fall speed or impact)
+    void AddScreenShake(float intensity, float duration = 0.5f);
+    
+    // Update screen shake (call every frame)
+    void UpdateScreenShake(float deltaTime);
+
     // -------------------- Settings --------------------
 
     // Set field of view (radius)
@@ -79,6 +87,12 @@ private:
     // Smoothing for virtual machines
     Vector2 m_smoothedMouseDelta = {0.0f, 0.0f}; // Smoothed mouse delta value
     static constexpr float MOUSE_DEAD_ZONE = 0.5f; // Dead zone - ignore very small movements
+    
+    // Screen shake
+    float m_shakeIntensity = 0.0f;      // Current shake intensity
+    float m_shakeDuration = 0.0f;       // Remaining shake duration
+    float m_shakeTimer = 0.0f;          // Internal timer for shake animation
+    Vector3 m_shakeOffset = {0.0f, 0.0f, 0.0f}; // Current shake offset applied to camera
 };
 
 #endif // CAMERACONTROLLER_H
