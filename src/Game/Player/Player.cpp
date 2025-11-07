@@ -82,15 +82,43 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
         if (!m_movement->GetPhysics().IsGrounded() && m_movement->GetPhysics().GetVelocity().y <= 0.0f)
         {
             m_movement->SnapToGround(collisionManager);
+            
+            // Apply screen shake during fall (intensity based on fall speed)
+            float fallSpeed = abs(m_movement->GetPhysics().GetVelocity().y);
+            if (fallSpeed > 5.0f) // Only shake if falling fast enough
+            {
+                // Normalize fall speed (0-60 range -> 0-1 range, then scale to shake intensity)
+                float normalizedFall = std::min(fallSpeed / 60.0f, 1.0f);
+                float shakeIntensity = normalizedFall * 0.15f; // Max 0.15 intensity
+                float shakeDuration = 0.3f; // Short continuous shake during fall
+                m_cameraController->AddScreenShake(shakeIntensity, shakeDuration);
+            }
         }
 
         // Don't force ground state based on height alone - rely on collision detection
         // This allows player to fall properly when there's no ground below
         // The UpdateGrounded() method handles ground detection based on actual collisions
 
+        // Track falling state for screen shake and landing impact
+        static bool wasFalling = false;
+        static float lastFallSpeed = 0.0f;
+
         if (m_movement->GetPhysics().IsGrounded())
         {
+            // Check if we just landed (was falling, now grounded)
+            if (wasFalling && lastFallSpeed > 10.0f)
+            {
+                // Strong impact shake on landing
+                float normalizedFall = std::min(lastFallSpeed / 60.0f, 1.0f);
+                float impactIntensity = normalizedFall * 0.3f; // Max 0.3 intensity
+                float impactDuration = 0.4f;
+                m_cameraController->AddScreenShake(impactIntensity, impactDuration);
+            }
+            
+            wasFalling = false;
+            lastFallSpeed = 0.0f;
             m_isJumping = false;
+            
             // Ensure velocity is zero when grounded to prevent sliding
             Vector3 currentVel = m_movement->GetPhysics().GetVelocity();
             if (fabsf(currentVel.y) < 0.1f)
@@ -98,6 +126,12 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
                 currentVel.y = 0.0f;
                 m_movement->GetPhysics().SetVelocity(currentVel);
             }
+        }
+        else
+        {
+            // Track falling state for landing impact
+            wasFalling = true;
+            lastFallSpeed = abs(m_movement->GetPhysics().GetVelocity().y);
         }
     }
     else

@@ -13,12 +13,14 @@
 #include <raylib.h>
 #include <rlImGui.h>
 #include <fstream>
+#include <filesystem>
 
 
 // ==================== CONSTANTS ====================
 
 RenderManager::RenderManager()
-    : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>())
+    : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>()),
+      m_shaderManager(std::make_unique<ShaderManager>())
 {
     m_collisionDebugRenderer->SetWireframeMode(true); // Use wireframe for collision shapes in normal gameplay
     m_font = {0};
@@ -70,9 +72,12 @@ bool RenderManager::Initialize()
     else
     {
         TraceLog(LOG_WARNING, "Alan Sans font file not found for raylib: %s, using default font",
-                  alanSansFontPath.c_str());
+                 alanSansFontPath.c_str());
         m_font = GetFontDefault();
     }
+
+    // Load player wind effect shader
+    LoadWindShader();
 
     TraceLog(LOG_INFO, "Render manager initialized successfully");
     return true;
@@ -215,6 +220,7 @@ void RenderManager::DrawPlayer(IGameRenderable &renderable, const ModelLoader &m
 
     // Draw player model and bounding box
     DrawModel(playerModel, adjustedPos, MODEL_SCALE, WHITE);
+    
     DrawBoundingBox(renderable.GetBoundingBox(), GREEN);
 }
 
@@ -526,6 +532,72 @@ void RenderManager::Shutdown()
         TraceLog(LOG_INFO, "Custom font unloaded");
     }
     TraceLog(LOG_INFO, "Render manager shutdown complete");
+}
+
+bool RenderManager::LoadWindShader()
+{
+    // Unload existing shader if it exists (in case of reload)
+    if (m_shaderManager->IsShaderLoaded("player_wind"))
+    {
+        m_shaderManager->UnloadShader("player_wind");
+    }
+    
+    std::string vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.vs";
+    std::string fsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.fs";
+    
+    // Check if files exist
+    if (!std::filesystem::exists(vsPath) || !std::filesystem::exists(fsPath))
+    {
+        TraceLog(LOG_WARNING, "Wind shader files not found: %s or %s", vsPath.c_str(), fsPath.c_str());
+        return false;
+    }
+    
+    // Only try to load if OpenGL context is ready
+    if (!IsWindowReady())
+    {
+        TraceLog(LOG_DEBUG, "Wind shader loading deferred - OpenGL context not ready yet");
+        return false;
+    }
+    
+    if (m_shaderManager->LoadShaderPair("player_wind", vsPath, fsPath))
+    {
+        Shader* windShader = m_shaderManager->GetShader("player_wind");
+        if (windShader && windShader->id != 0)
+        {
+            // Verify shader is valid using raylib's IsShaderValid
+            if (IsShaderValid(*windShader))
+            {
+                m_fallSpeedLoc = GetShaderLocation(*windShader, "fallSpeed");
+                m_timeLoc = GetShaderLocation(*windShader, "time");
+                m_windDirectionLoc = GetShaderLocation(*windShader, "windDirection");
+                
+                TraceLog(LOG_INFO, "Player wind effect shader loaded successfully");
+                TraceLog(LOG_INFO, "Shader locations: fallSpeed=%d, time=%d, windDirection=%d", 
+                         m_fallSpeedLoc, m_timeLoc, m_windDirectionLoc);
+                
+                // Reset shader time when shader is loaded
+                m_shaderTime = 0.0f;
+                
+                return true;
+            }
+            else
+            {
+                TraceLog(LOG_WARNING, "Wind shader loaded but IsShaderValid returned false");
+                m_shaderManager->UnloadShader("player_wind");
+                return false;
+            }
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "Wind shader loaded but GetShader returned null or invalid ID");
+            return false;
+        }
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "Failed to load player wind effect shader from %s + %s", vsPath.c_str(), fsPath.c_str());
+        return false;
+    }
 }
 
 void RenderManager::Update(float deltaTime)

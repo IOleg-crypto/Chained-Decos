@@ -13,9 +13,11 @@ void PlayerInput::ProcessInput()
     }
 
     // Skip if ImGui wants keyboard capture (e.g., console open or text input active)
-    // But allow input if only navigation is active (we want to allow game input even with navigation)
+    // Only block input if text input is active OR navigation is both enabled and active
+    // This ensures input works immediately after closing menu even if ImGui state hasn't fully reset
     ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureKeyboard && (io.WantTextInput || io.NavActive))
+    bool navEnabled = (io.ConfigFlags & ImGuiConfigFlags_NavEnableKeyboard) != 0;
+    if (io.WantCaptureKeyboard && (io.WantTextInput || (navEnabled && io.NavActive)))
     {
         return;
     }
@@ -73,8 +75,10 @@ void PlayerInput::HandleJumpInput() const
     }
 
     // Skip if ImGui wants keyboard capture (only for text input or active widgets)
+    // Only block input if text input is active OR navigation is both enabled and active
     ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureKeyboard && (io.WantTextInput || io.NavActive))
+    bool navEnabled = (io.ConfigFlags & ImGuiConfigFlags_NavEnableKeyboard) != 0;
+    if (io.WantCaptureKeyboard && (io.WantTextInput || (navEnabled && io.NavActive)))
     {
         return;
     }
@@ -98,8 +102,10 @@ void PlayerInput::HandleEmergencyReset() const
     }
 
     // Skip if ImGui wants keyboard capture (only for text input or active widgets)
+    // Only block input if text input is active OR navigation is both enabled and active
     ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureKeyboard && (io.WantTextInput || io.NavActive))
+    bool navEnabled = (io.ConfigFlags & ImGuiConfigFlags_NavEnableKeyboard) != 0;
+    if (io.WantCaptureKeyboard && (io.WantTextInput || (navEnabled && io.NavActive)))
     {
         return;
     }

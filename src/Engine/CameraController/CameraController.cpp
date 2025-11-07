@@ -72,6 +72,10 @@ void CameraController::Update()
         return;
     }
 
+    // Update screen shake
+    float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
+    UpdateScreenShake(deltaTime);
+
     //UpdateCamera(&m_camera, m_cameraMode);
 }
 
@@ -215,6 +219,57 @@ void CameraController::UpdateMouseRotation(Camera &camera, const Vector3 &player
 
     camera.position = Vector3Add(playerPosition, offset);
     camera.target = playerPosition;
+    
+    // Apply screen shake offset
+    if (m_shakeIntensity > 0.0f)
+    {
+        camera.position = Vector3Add(camera.position, m_shakeOffset);
+        camera.target = Vector3Add(camera.target, m_shakeOffset);
+    }
+}
+
+void CameraController::AddScreenShake(float intensity, float duration)
+{
+    // Add to existing shake if already shaking (stack effect for strong impacts)
+    if (m_shakeDuration > 0.0f)
+    {
+        m_shakeIntensity = std::max(m_shakeIntensity, intensity);
+        m_shakeDuration = std::max(m_shakeDuration, duration);
+    }
+    else
+    {
+        m_shakeIntensity = intensity;
+        m_shakeDuration = duration;
+        m_shakeTimer = 0.0f;
+    }
+}
+
+void CameraController::UpdateScreenShake(float deltaTime)
+{
+    if (m_shakeDuration > 0.0f)
+    {
+        // Update timer
+        m_shakeTimer += deltaTime * 30.0f; // Speed of shake animation
+        
+        // Calculate shake offset using Perlin-like noise (simple sine waves)
+        float shakeAmount = m_shakeIntensity * (m_shakeDuration / 0.5f); // Fade out over time
+        
+        m_shakeOffset.x = (sinf(m_shakeTimer * 2.1f) + cosf(m_shakeTimer * 1.7f)) * 0.5f * shakeAmount;
+        m_shakeOffset.y = (sinf(m_shakeTimer * 2.3f) + cosf(m_shakeTimer * 1.9f)) * 0.5f * shakeAmount;
+        m_shakeOffset.z = (sinf(m_shakeTimer * 1.8f) + cosf(m_shakeTimer * 2.2f)) * 0.5f * shakeAmount;
+        
+        // Reduce duration
+        m_shakeDuration -= deltaTime;
+        
+        if (m_shakeDuration <= 0.0f)
+        {
+            // Reset shake
+            m_shakeIntensity = 0.0f;
+            m_shakeDuration = 0.0f;
+            m_shakeTimer = 0.0f;
+            m_shakeOffset = {0.0f, 0.0f, 0.0f};
+        }
+    }
 }
 
 void CameraController::SetMouseSensitivity(float sensitivity) { m_mouseSensitivity = sensitivity; }

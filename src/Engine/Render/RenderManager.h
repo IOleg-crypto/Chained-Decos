@@ -12,6 +12,7 @@
 #include "Collision/CollisionManager.h"
 #include "Collision/CollisionDebugRenderer.h"
 #include "Engine/Kernel/IKernelService.h"
+#include "Shader/ShaderManager.h"
 
 //
 // RenderManager - Handles all rendering operations
@@ -89,6 +90,9 @@ private:
 
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager);
     void DrawControlsInfo();
+    
+    // Shader loading helper
+    bool LoadWindShader();
 private:
     // Debug rendering
     std::unique_ptr<CollisionDebugRenderer> m_collisionDebugRenderer; // incomplete type is fine here
@@ -101,6 +105,15 @@ private:
     Color m_backgroundColor = BLUE;
 
     Font m_font{}; // Custom font for raylib
+    
+    // Shader management
+    std::unique_ptr<ShaderManager> m_shaderManager;
+    
+    // Player wind effect shader uniforms
+    int m_fallSpeedLoc = -1;
+    int m_timeLoc = -1;
+    int m_windDirectionLoc = -1;
+    float m_shaderTime = 0.0f;
 };
 
 #endif // RENDER_MANAGER_H
