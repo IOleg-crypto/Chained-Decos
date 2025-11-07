@@ -45,3 +45,8 @@ bool PlayerRenderable::IsGrounded() const
     return m_player->GetPhysics().IsGrounded();
 }
 
+float PlayerRenderable::GetVelocityY() const
+{
+    return m_player->GetPhysics().GetVelocity().y;
+}
+

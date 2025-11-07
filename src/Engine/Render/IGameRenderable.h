@@ -23,6 +23,7 @@ struct IGameRenderable
     virtual const Collision& GetCollision() const = 0;
     virtual Camera GetCamera() const = 0;
     virtual bool IsGrounded() const = 0;
+    virtual float GetVelocityY() const { return 0.0f; } // Vertical velocity (for shader effects)
 };
 
 #endif // IGAMERENDERABLE_H
