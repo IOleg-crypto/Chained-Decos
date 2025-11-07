@@ -8,6 +8,8 @@ add_library(render STATIC
     IRenderable.h
     RenderUtils.cpp
     RenderUtils.h
+    Shader/ShaderManager.cpp
+    Shader/ShaderManager.h
 )
 
 target_include_directories(render PUBLIC
