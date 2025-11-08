@@ -12,15 +12,15 @@ UpdateManager::UpdateManager(CollisionManager* collisionManager, MapManager* map
 
 void UpdateManager::UpdatePhysicsLogic()
 {
-    // Update skybox if present
-    if (m_mapManager)
-    {
-        GameMap& gameMap = m_mapManager->GetGameMap();
-        if (gameMap.GetSkyBox())
-        {
-            SkyboxUpdate(gameMap.GetSkyBox());
-        }
-    }
+    // // Update skybox if present
+    // if (m_mapManager)
+    // {
+    //     GameMap& gameMap = m_mapManager->GetGameMap();
+    //     if (gameMap.GetSkyBox())
+    //     {
+    //         SkyboxUpdate(gameMap.GetSkyBox());
+    //     }
+    // }
     
     const auto &colliders = m_collisionManager->GetColliders();
     
