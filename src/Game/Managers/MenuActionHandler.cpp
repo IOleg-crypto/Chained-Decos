@@ -421,12 +421,12 @@ void MenuActionHandler::RegisterPreloadedModels()
         return;
     }
     
-    if (!mapManager->GetGameMap().loadedModels.empty())
+    if (!mapManager->GetGameMap().GetMapModels().empty())
     {
         TraceLog(LOG_INFO,
                  "MenuActionHandler::RegisterPreloadedModels() - Registering %d preloaded models from map into ModelLoader",
-                 mapManager->GetGameMap().loadedModels.size());
-        for (const auto &p : mapManager->GetGameMap().loadedModels)
+                 mapManager->GetGameMap().GetMapModels().size());
+        for (const auto &p : mapManager->GetGameMap().GetMapModels())
         {
             const std::string &modelName = p.first;
             const ::Model &loaded = p.second;
@@ -519,8 +519,8 @@ void MenuActionHandler::CreateModelInstancesForMap()
     
     TraceLog(LOG_INFO,
              "MenuActionHandler::CreateModelInstancesForMap() - Creating model instances for array-format map (%d objects)",
-             mapManager->GetGameMap().objects.size());
-    for (const auto &object : mapManager->GetGameMap().objects)
+             mapManager->GetGameMap().GetMapObjects().size());
+    for (const auto &object : mapManager->GetGameMap().GetMapObjects())
     {
         if (object.type == MapObjectType::MODEL && !object.modelName.empty())
         {
@@ -609,7 +609,7 @@ void MenuActionHandler::LoadMapObjects(const std::string& mapPath)
 
         MapManager* mapManager = GetMapManager();
         if (mapManager) {
-            TraceLog(LOG_INFO, "MenuActionHandler::LoadMapObjects() - Map loaded successfully with %d objects", mapManager->GetGameMap().objects.size());
+            TraceLog(LOG_INFO, "MenuActionHandler::LoadMapObjects() - Map loaded successfully with %d objects", mapManager->GetGameMap().GetMapObjects().size());
         }
     }
     catch (const std::exception &e)
