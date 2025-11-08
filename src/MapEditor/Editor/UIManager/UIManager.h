@@ -54,6 +54,9 @@ private:
     Texture2D m_skyboxPlaceholderTexture;
     bool m_skyboxPlaceholderInitialized;
 
+    // Skybox shader paths
+    std::string m_vsPath;
+    std::string m_fsPath;
 
 public:
     UIManager(Editor* editor,

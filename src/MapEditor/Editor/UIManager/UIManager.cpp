@@ -30,9 +30,11 @@ UIManager::UIManager(Editor *editor, ISceneManager *sceneManager, IFileManager *
       m_toolManager(toolManager), m_modelManager(modelManager), m_displayImGuiInterface(true),
       m_displayObjectListPanel(true), m_displayPropertiesPanel(true),
       m_pendingObjectCreation(false), m_displaySkyboxPanel(false), m_displayParkourMapDialog(false),
-      m_currentlySelectedParkourMapIndex(0), m_gridSizes(50), m_skyboxPreviewTexture({0}),
-            m_skyboxPreviewTextureInitialized(false), m_skyboxPreviewPath(""),
-            m_skyboxPlaceholderTexture({0}), m_skyboxPlaceholderInitialized(false)
+      m_currentlySelectedParkourMapIndex(0), m_gridSizes(50), 
+      m_skyboxPreviewTexture({0}), m_skyboxPreviewTextureInitialized(false),
+      m_skyboxPreviewPath(""), m_skyboxPlaceholderTexture({0}), 
+      m_skyboxPlaceholderInitialized(false),
+      m_vsPath(""), m_fsPath("")
 {
     // NFD is initialized in Editor::InitializeSubsystems()
     // Keep placeholder uninitialized here; we'll lazily load it in RenderSkyboxPanel to
@@ -881,13 +883,77 @@ void UIManager::RenderSkyboxPanel()
         ImGui::Separator();
         ImGui::Spacing();
 
+        // Load and apply skybox image
         if (m_skyboxPreviewTextureInitialized && ImGui::Button("Apply to Scene", ImVec2(200, 30)))
         {
-            if (m_editor)
+            if (m_editor && m_editor->GetSkybox())
             {
+                // First apply texture
                 m_editor->SetSkyboxTexture(m_skyboxPreviewPath);
-                TraceLog(LOG_INFO, "Applied skybox to editor scene: %s",
-                         m_skyboxPreviewPath.c_str());
+                
+                // Then apply shaders if they are set
+                if (!m_vsPath.empty() && !m_fsPath.empty())
+                {
+                    m_editor->GetSkybox()->LoadMaterialShader(m_vsPath, m_fsPath);
+                }
+                
+                TraceLog(LOG_INFO, "Applied skybox to editor scene: %s", m_skyboxPreviewPath.c_str());
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text("Shaders:");
+        ImGui::Spacing();
+
+        // Vertex shader selection
+        if (ImGui::Button("Load Vertex Shader", ImVec2(200, 30)))
+        {
+            nfdfilteritem_t filterItem[1] = {{"Vertex Shader", "vs"}};
+            nfdchar_t *outPath = nullptr;
+            nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+
+            if (result == NFD_OKAY && m_editor && m_editor->GetSkybox())
+            {
+                m_vsPath = outPath;
+                m_editor->GetSkybox()->LoadMaterialShader(m_vsPath, m_fsPath);
+                NFD_FreePath(outPath);
+            }
+        }
+        if (!m_vsPath.empty())
+        {
+            ImGui::SameLine();
+            ImGui::Text("%s", std::filesystem::path(m_vsPath).filename().string().c_str());
+        }
+
+        // Fragment shader selection
+        if (ImGui::Button("Load Fragment Shader", ImVec2(200, 30)))
+        {
+            nfdfilteritem_t filterItem[1] = {{"Fragment Shader", "fs"}};
+            nfdchar_t *outPath = nullptr;
+            nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+
+            if (result == NFD_OKAY && m_editor && m_editor->GetSkybox())
+            {
+                m_fsPath = outPath;
+                m_editor->GetSkybox()->LoadMaterialShader(m_vsPath, m_fsPath);
+                NFD_FreePath(outPath);
+            }
+        }
+        if (!m_fsPath.empty())
+        {
+            ImGui::SameLine();
+            ImGui::Text("%s", std::filesystem::path(m_fsPath).filename().string().c_str());
+        }
+
+        // Default shaders button
+        if (ImGui::Button("Use Default Shaders", ImVec2(200, 30)))
+        {
+            m_vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/glsl330/skybox.vs";
+            m_fsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/glsl330/skybox.fs";
+            if (m_editor && m_editor->GetSkybox())
+            {
+                m_editor->GetSkybox()->LoadMaterialShader(m_vsPath, m_fsPath);
             }
         }
     }
