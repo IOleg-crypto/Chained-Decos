@@ -2,7 +2,8 @@ add_library(map STATIC
     MapLoader.cpp
     MapLoader.h
     MapData.h
-    Skybox/skybox.h
+    Skybox/Skybox.cpp
+    Skybox/Skybox.h
 )
 
 target_include_directories(map

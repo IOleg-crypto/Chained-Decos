@@ -66,9 +66,9 @@ public:
 
     void Cleanup();
 
-    // Skybox
-    void SetSkyBox(std::shared_ptr<Skyboxlib>& skyboxlib);
-    Skyboxlib* GetSkyBox() const;
+    // Skybox - оновлені методи
+    void SetSkyBox(std::shared_ptr<Skybox>& skybox);
+    Skybox* GetSkyBox() const;
 
     // Models
     const std::unordered_map<std::string, Model>& GetMapModels() const;
@@ -85,8 +85,8 @@ public:
 private:
     MapMetadata m_metadata;
     std::vector<MapObjectData> m_objects;
-    std::unordered_map<std::string, Model> m_loadedModels; // For cleanup
-    std::shared_ptr<Skyboxlib> m_skybox;                   // Skybox for the map
+    std::unordered_map<std::string, Model> m_loadedModels;
+    std::shared_ptr<Skybox> m_skybox;  // Змінено на новий клас Skybox
 };
 
 // ============================================================================

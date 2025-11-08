@@ -36,6 +36,7 @@ private:
     std::unique_ptr<IToolManager> m_toolManager;
     std::unique_ptr<ICameraManager> m_cameraManager;
     std::unique_ptr<IModelManager> m_modelManager;
+    std::unique_ptr<Skybox> m_skybox;
 
     // Legacy compatibility - minimal state kept for backward compatibility
     int m_gridSizes;
@@ -44,10 +45,11 @@ private:
     Texture2D m_spawnTexture;
     bool m_spawnTextureLoaded;
 
-    std::unique_ptr<Skyboxlib> m_skybox;
+    
     std::string m_skyboxTexturePath;
     Color m_clearColor;
     MapMetadata m_activeMetadata;
+
 
 public:
     Editor(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader);
@@ -94,7 +96,7 @@ public:
     void SetSkyboxTexture(const std::string& texturePath, bool updateFileManager = true);
     const std::string& GetSkyboxTexture() const { return m_skyboxTexturePath; }
     bool HasSkybox() const { return static_cast<bool>(m_skybox); }
-    Skyboxlib* GetSkybox() const { return m_skybox.get(); }
+    Skybox* GetSkybox() const { return m_skybox.get(); }
     Color GetClearColor() const { return m_clearColor; }
 
     // Access to subsystems for advanced usage (optional - maintains some backward compatibility)
