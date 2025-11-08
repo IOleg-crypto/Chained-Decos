@@ -39,32 +39,10 @@
 
 namespace fs = std::filesystem;
 
-namespace
-{
-// Try resources/shaders first (user's preferred location), fallback to SkyboxLib
-constexpr const char *SKYBOX_SHADER_VS_FORMAT =
-    PROJECT_ROOT_DIR "/resources/shaders/glsl%i/skybox.vs";
-constexpr const char *SKYBOX_SHADER_FS_FORMAT =
-    PROJECT_ROOT_DIR "/resources/shaders/glsl%i/skybox.fs";
-constexpr const char *SKYBOX_CUBEMAP_VS_FORMAT =
-    PROJECT_ROOT_DIR "/resources/shaders/glsl%i/cubemap.vs";
-constexpr const char *SKYBOX_CUBEMAP_FS_FORMAT =
-    PROJECT_ROOT_DIR "/resources/shaders/glsl%i/cubemap.fs";
-
-// Fallback paths if resources/shaders don't exist
-constexpr const char *SKYBOX_SHADER_VS_FORMAT_FALLBACK =
-    PROJECT_ROOT_DIR "/include/SkyboxLib/shader/glsl%i/skybox.vs";
-constexpr const char *SKYBOX_SHADER_FS_FORMAT_FALLBACK =
-    PROJECT_ROOT_DIR "/include/SkyboxLib/shader/glsl%i/skybox.fs";
-constexpr const char *SKYBOX_CUBEMAP_VS_FORMAT_FALLBACK =
-    PROJECT_ROOT_DIR "/include/SkyboxLib/shader/glsl%i/cubemap.vs";
-constexpr const char *SKYBOX_CUBEMAP_FS_FORMAT_FALLBACK =
-    PROJECT_ROOT_DIR "/include/SkyboxLib/shader/glsl%i/cubemap.fs";
-} // namespace
 
 Editor::Editor(std::shared_ptr<CameraController> cameraController,
                std::unique_ptr<ModelLoader> modelLoader)
-    : m_gridSizes(50), m_spawnTextureLoaded(false), m_skybox(nullptr), m_skyboxTexturePath("")
+    : m_gridSizes(50), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()), m_skyboxTexturePath("")
 {
     // Initialize spawn texture (will be loaded after window initialization)
     m_spawnTexture = {0};
@@ -84,7 +62,6 @@ Editor::~Editor()
     }
     if (m_skybox)
     {
-        UnloadSkybox(m_skybox.get());
         m_skybox.reset();
     }
     NFD_Quit();
@@ -116,6 +93,7 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
     m_modelManager = std::make_unique<ModelManager>(std::move(modelLoader));
     m_uiManager = std::make_unique<UIManager>(this, m_sceneManager.get(), m_fileManager.get(),
                                               m_toolManager.get(), m_modelManager.get());
+                                              
 }
 
 void Editor::Update()
@@ -123,23 +101,23 @@ void Editor::Update()
     // Update subsystems
     if (m_cameraManager)
         m_cameraManager->Update();
-    if (m_skybox)
-    {
-        SkyboxUpdate(m_skybox.get());
-    }
+    // if (m_skybox)
+    // {
+    //     SkyboxUpdate(m_skybox.get());
+    // }
     // TODO: Update other subsystems when implemented
     // if (m_inputManager) m_inputManager->Update();
     // if (m_uiManager) m_uiManager->HandleInput();
+    
 }
 
 void Editor::Render()
 {
-    // Render all objects in the scene
-    if (m_skybox)
+    if (m_skybox && m_skybox->IsLoaded())
     {
-        Camera3D cam = m_cameraManager->GetCamera();
-        DrawSkyboxModelAtPosition(m_skybox.get(), cam.position);
+        m_skybox->DrawSkybox();
     }
+
 
     if (m_sceneManager)
     {
@@ -539,14 +517,12 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
         return;
     }
 
-    if (m_skybox)
+    if (!m_skybox)
     {
-        UnloadSkybox(m_skybox.get());
-        m_skybox.reset();
+        m_skybox = std::make_unique<Skybox>();
     }
 
-    std::string absolutePath =
-        ResolveSkyboxAbsolutePath(normalized.empty() ? texturePath : normalized);
+    std::string absolutePath = ResolveSkyboxAbsolutePath(normalized.empty() ? texturePath : normalized);
 
     if (!normalized.empty())
     {
@@ -565,25 +541,7 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
 
     if (!absolutePath.empty())
     {
-        // Check if shaders exist in resources, otherwise use fallback
-        char vsPath[512], fsPath[512], cubemapVsPath[512], cubemapFsPath[512];
-        snprintf(vsPath, sizeof(vsPath), SKYBOX_SHADER_VS_FORMAT, 330);
-        snprintf(fsPath, sizeof(fsPath), SKYBOX_SHADER_FS_FORMAT, 330);
-        snprintf(cubemapVsPath, sizeof(cubemapVsPath), SKYBOX_CUBEMAP_VS_FORMAT, 330);
-        snprintf(cubemapFsPath, sizeof(cubemapFsPath), SKYBOX_CUBEMAP_FS_FORMAT, 330);
-
-        const char *vsFormat =
-            FileExists(vsPath) ? SKYBOX_SHADER_VS_FORMAT : SKYBOX_SHADER_VS_FORMAT_FALLBACK;
-        const char *fsFormat =
-            FileExists(fsPath) ? SKYBOX_SHADER_FS_FORMAT : SKYBOX_SHADER_FS_FORMAT_FALLBACK;
-        const char *cubemapVsFormat = FileExists(cubemapVsPath) ? SKYBOX_CUBEMAP_VS_FORMAT
-                                                                : SKYBOX_CUBEMAP_VS_FORMAT_FALLBACK;
-        const char *cubemapFsFormat = FileExists(cubemapFsPath) ? SKYBOX_CUBEMAP_FS_FORMAT
-                                                                : SKYBOX_CUBEMAP_FS_FORMAT_FALLBACK;
-
-        Skyboxlib loadedSkybox = SkyboxLoad(absolutePath.c_str(), nullptr, vsFormat, fsFormat,
-                                            cubemapVsFormat, cubemapFsFormat);
-        m_skybox = std::make_unique<Skyboxlib>(loadedSkybox);
+        m_skybox->LoadMaterialTexture(absolutePath);
         TraceLog(LOG_INFO, "Editor::SetSkyboxTexture() - Loaded skybox from %s",
                  absolutePath.c_str());
     }
