@@ -51,6 +51,7 @@ target_include_directories(ChainedDecosMapEditor PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/nfd
+    ${CMAKE_SOURCE_DIR}/src/Engine/Map/Skybox
     ${CMAKE_SOURCE_DIR}/.deps/raylib-src/src  # For rcamera.h
 )
 
@@ -70,7 +71,7 @@ target_compile_definitions(ChainedDecosMapEditor PRIVATE
 
 # Set C++ standard
 set_target_properties(ChainedDecosMapEditor PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
 )
 

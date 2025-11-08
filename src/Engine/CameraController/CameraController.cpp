@@ -233,8 +233,8 @@ void CameraController::AddScreenShake(float intensity, float duration)
     // Add to existing shake if already shaking (stack effect for strong impacts)
     if (m_shakeDuration > 0.0f)
     {
-        m_shakeIntensity = std::max(m_shakeIntensity, intensity);
-        m_shakeDuration = std::max(m_shakeDuration, duration);
+        m_shakeIntensity = std::fmax(m_shakeIntensity, intensity);
+        m_shakeDuration = std::fmax(m_shakeDuration, duration);
     }
     else
     {

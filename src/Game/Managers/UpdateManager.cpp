@@ -1,6 +1,7 @@
 #include "UpdateManager.h"
 #include "Engine/Collision/CollisionManager.h"
 #include "MapManager.h"
+#include "Engine/Map/Skybox/skybox.h"
 #include <raylib.h>
 
 UpdateManager::UpdateManager(CollisionManager* collisionManager, MapManager* mapManager)
@@ -11,6 +12,16 @@ UpdateManager::UpdateManager(CollisionManager* collisionManager, MapManager* map
 
 void UpdateManager::UpdatePhysicsLogic()
 {
+    // Update skybox if present
+    if (m_mapManager)
+    {
+        GameMap& gameMap = m_mapManager->GetGameMap();
+        if (gameMap.GetSkyBox())
+        {
+            SkyboxUpdate(gameMap.GetSkyBox());
+        }
+    }
+    
     const auto &colliders = m_collisionManager->GetColliders();
     
     if (colliders.empty())
@@ -24,7 +35,7 @@ void UpdateManager::UpdatePhysicsLogic()
         }
         
         // Create emergency ground plane if no colliders exist and no custom map is loaded
-        if (m_mapManager->GetGameMap().objects.empty())
+        if (m_mapManager->GetGameMap().GetMapObjects().empty())
         {
             TraceLog(LOG_WARNING,
                      "UpdateManager::UpdatePhysicsLogic() - No colliders and no map objects loaded");

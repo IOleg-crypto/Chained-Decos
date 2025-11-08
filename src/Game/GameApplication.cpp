@@ -437,7 +437,7 @@ void GameApplication::OnPreShutdown()
         player->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
     }
 
-    if (mapManager && !mapManager->GetGameMap().objects.empty())
+    if (mapManager && !mapManager->GetGameMap().GetMapObjects().empty())
     {
         mapManager->GetGameMap().Cleanup();
         TraceLog(LOG_INFO, "[GameApplication] Editor map cleared");

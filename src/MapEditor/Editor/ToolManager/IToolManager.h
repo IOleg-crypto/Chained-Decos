@@ -15,7 +15,14 @@ enum Tool
     ADD_SPHERE = 5,   // Add sphere primitive
     ADD_CYLINDER = 6, // Add cylinder primitive
     ADD_MODEL = 7,    // Add 3D model
-    ADD_SPAWN_ZONE = 8 // Add player spawn zone
+    ADD_SPAWN_ZONE = 8, // Add player spawn zone
+    ADD_SKYBOX = 9, // Add skybox
+    ADD_SKYBOX_CUBEMAP = 10, // Add skybox cubemap
+    ADD_SKYBOX_HDR = 11, // Add skybox hdr
+    ADD_SKYBOX_VS = 12, // Add skybox vs
+    ADD_SKYBOX_FS = 13, // Add skybox fs
+    ADD_SKYBOX_CUBEMAP_VS = 14, // Add skybox cubemap vs
+    ADD_SKYBOX_CUBEMAP_FS = 15 // Add skybox cubemap fs
 };
 
 class IToolManager {

@@ -3,6 +3,7 @@
 //
 
 #include "UIManager.h"
+#include "Editor/Editor.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/Map/MapLoader.h"
 #include <algorithm>
@@ -23,21 +24,39 @@
 
 namespace fs = std::filesystem;
 
-UIManager::UIManager(ISceneManager* sceneManager, IFileManager* fileManager,
-                     IToolManager* toolManager, IModelManager* modelManager)
-    : m_sceneManager(sceneManager), m_fileManager(fileManager),
-      m_toolManager(toolManager), m_modelManager(modelManager),
-      m_displayImGuiInterface(true), m_displayObjectListPanel(true),
-      m_displayPropertiesPanel(true), m_pendingObjectCreation(false),
-      m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0),
-      m_gridSizes(50)
+UIManager::UIManager(Editor *editor, ISceneManager *sceneManager, IFileManager *fileManager,
+                     IToolManager *toolManager, IModelManager *modelManager)
+    : m_editor(editor), m_sceneManager(sceneManager), m_fileManager(fileManager),
+      m_toolManager(toolManager), m_modelManager(modelManager), m_displayImGuiInterface(true),
+      m_displayObjectListPanel(true), m_displayPropertiesPanel(true),
+      m_pendingObjectCreation(false), m_displaySkyboxPanel(false), m_displayParkourMapDialog(false),
+      m_currentlySelectedParkourMapIndex(0), m_gridSizes(50), m_skyboxPreviewTexture({0}),
+            m_skyboxPreviewTextureInitialized(false), m_skyboxPreviewPath(""),
+            m_skyboxPlaceholderTexture({0}), m_skyboxPlaceholderInitialized(false)
 {
     // NFD is initialized in Editor::InitializeSubsystems()
+    // Keep placeholder uninitialized here; we'll lazily load it in RenderSkyboxPanel to
+    // avoid heavy filesystem logic in the constructor and to keep things simple.
+    m_skyboxPlaceholderTexture = {0};
+    m_skyboxPlaceholderInitialized = false;
 }
 
-UIManager::~UIManager() 
+UIManager::~UIManager()
 {
-    // NFD cleanup is handled in Editor::~Editor()
+    // Cleanup preview texture if loaded
+    if (m_skyboxPreviewTextureInitialized && m_skyboxPreviewTexture.id != 0)
+    {
+        UnloadTexture(m_skyboxPreviewTexture);
+        m_skyboxPreviewTexture = {0};
+        m_skyboxPreviewTextureInitialized = false;
+        m_skyboxPreviewPath.clear();
+    }
+    // Cleanup placeholder texture
+    if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0) {
+        UnloadTexture(m_skyboxPlaceholderTexture);
+        m_skyboxPlaceholderTexture = {0};
+        m_skyboxPlaceholderInitialized = false;
+    }
 }
 
 void UIManager::Render()
@@ -56,8 +75,16 @@ void UIManager::Render()
         RenderImGuiPropertiesPanel();
     }
 
-    // Render parkour map dialog if shown
-    RenderParkourMapDialog();
+    // Render skybox panel (always call to handle cleanup even when closed)
+    // Note: RenderSkyboxPanel handles its own Begin/End and can modify m_displaySkyboxPanel
+    if (m_displaySkyboxPanel)
+    {
+
+        RenderSkyboxPanel();
+    }
+
+    // If skybox panel was closed via window X button, update checkbox state
+    // (This is handled automatically by ImGui through the bool* parameter in Begin)
 
     // Note: rlImGuiEnd() is now called in Application::Run() for docking support
 }
@@ -89,7 +116,7 @@ void UIManager::ShowParkourMapDialog(bool show)
     m_displayParkourMapDialog = show;
 }
 
-::Tool UIManager::GetActiveTool() const
+Tool UIManager::GetActiveTool() const
 {
     // Convert from IToolManager enum to local Tool enum
     // This assumes the enums are compatible
@@ -102,32 +129,32 @@ void UIManager::SetActiveTool(::Tool tool)
     m_toolManager->SetActiveTool(tool);
 }
 
-ImVec2 UIManager::ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize)
+ImVec2 UIManager::ClampWindowPosition(const ImVec2 &desiredPos, ImVec2 &windowSize)
 {
     const int screenWidth = GetScreenWidth();
     const int screenHeight = GetScreenHeight();
-    
+
     // Clamp window size to fit screen
     if (windowSize.x > static_cast<float>(screenWidth))
         windowSize.x = static_cast<float>(screenWidth);
     if (windowSize.y > static_cast<float>(screenHeight))
         windowSize.y = static_cast<float>(screenHeight);
-    
+
     float clampedX = desiredPos.x;
     float clampedY = desiredPos.y;
-    
+
     // Clamp X position
     if (clampedX < 0.0f)
         clampedX = 0.0f;
     else if (clampedX + windowSize.x > static_cast<float>(screenWidth))
         clampedX = static_cast<float>(screenWidth) - windowSize.x;
-    
+
     // Clamp Y position
     if (clampedY < 0.0f)
         clampedY = 0.0f;
     else if (clampedY + windowSize.y > static_cast<float>(screenHeight))
         clampedY = static_cast<float>(screenHeight) - windowSize.y;
-    
+
     return ImVec2(clampedX, clampedY);
 }
 
@@ -137,11 +164,11 @@ void UIManager::EnsureWindowInBounds()
     ImVec2 size = ImGui::GetWindowSize();
     const int screenWidth = GetScreenWidth();
     const int screenHeight = GetScreenHeight();
-    
+
     bool needsClamp = false;
     ImVec2 clampedPos = pos;
     ImVec2 clampedSize = size;
-    
+
     // Clamp size
     if (clampedSize.x > static_cast<float>(screenWidth))
     {
@@ -153,7 +180,7 @@ void UIManager::EnsureWindowInBounds()
         clampedSize.y = static_cast<float>(screenHeight);
         needsClamp = true;
     }
-    
+
     // Clamp position
     if (clampedPos.x < 0.0f)
     {
@@ -165,7 +192,7 @@ void UIManager::EnsureWindowInBounds()
         clampedPos.x = static_cast<float>(screenWidth) - clampedSize.x;
         needsClamp = true;
     }
-    
+
     if (clampedPos.y < 0.0f)
     {
         clampedPos.y = 0.0f;
@@ -176,7 +203,7 @@ void UIManager::EnsureWindowInBounds()
         clampedPos.y = static_cast<float>(screenHeight) - clampedSize.y;
         needsClamp = true;
     }
-    
+
     // Apply clamping only if needed
     if (needsClamp)
     {
@@ -190,15 +217,14 @@ void UIManager::RenderImGuiToolbar()
     ImVec2 windowSize(700, 300);
     ImVec2 desiredPos(10, 10);
     ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
-    
+
     ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-    
+
     // Limit maximum window size to screen dimensions
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(100, 100),
-        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
-    );
+        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())));
 
     // Enable docking for toolbar window - allow it to be docked if needed
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
@@ -214,8 +240,9 @@ void UIManager::RenderImGuiToolbar()
 
         ImGui::Separator();
 
-        const char *toolNames[] = {"Select",   "Move",       "Rotate",       "Scale",
-                                    "Add Cube", "Add Sphere", "Add Cylinder", "Add Model", "Add Spawn Zone"};
+        const char *toolNames[] = {"Select",       "Move",      "Rotate",
+                                   "Scale",        "Add Cube",  "Add Sphere",
+                                   "Add Cylinder", "Add Model", "Add Spawn Zone"};
 
         for (int i = 0; i < std::size(toolNames); i++)
         {
@@ -282,7 +309,8 @@ void UIManager::RenderImGuiToolbar()
                     // SceneManager API doesn't expose a clear; emulate by removing one by one
                     while (!m_sceneManager->GetObjects().empty())
                     {
-                        m_sceneManager->RemoveObject(static_cast<int>(m_sceneManager->GetObjects().size() - 1));
+                        m_sceneManager->RemoveObject(
+                            static_cast<int>(m_sceneManager->GetObjects().size() - 1));
                     }
                     for (const auto &obj : loadedObjects)
                     {
@@ -290,6 +318,10 @@ void UIManager::RenderImGuiToolbar()
                     }
                     m_sceneManager->ClearSelection();
                     m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
+                    if (m_editor)
+                    {
+                        m_editor->ApplyMetadata(m_fileManager->GetCurrentMetadata());
+                    }
                 }
                 NFD_FreePath(outPath);
             }
@@ -298,14 +330,15 @@ void UIManager::RenderImGuiToolbar()
         if (ImGui::Button("Quick Save") && !m_fileManager->GetCurrentlyLoadedMapFilePath().empty())
         {
             // Quick save to currently loaded file
-            const auto& objects = m_sceneManager->GetObjects();
+            const auto &objects = m_sceneManager->GetObjects();
             m_fileManager->SaveMap(m_fileManager->GetCurrentlyLoadedMapFilePath(), objects);
         }
-        ImGui::SameLine();
 
         // Show current file path
         ImGui::Separator();
-        ImGui::Text("Current: %s", m_fileManager->GetCurrentlyLoadedMapFilePath().empty() ? "No map loaded" : m_fileManager->GetCurrentlyLoadedMapFilePath().c_str());
+        ImGui::Text("Current: %s", m_fileManager->GetCurrentlyLoadedMapFilePath().empty()
+                                       ? "No map loaded"
+                                       : m_fileManager->GetCurrentlyLoadedMapFilePath().c_str());
 
         // Model selection dropdown (only show when adding models)
         if (GetActiveTool() == ADD_MODEL)
@@ -314,7 +347,7 @@ void UIManager::RenderImGuiToolbar()
             if (ImGui::BeginCombo("##ModelSelect", m_currentlySelectedModelName.c_str()))
             {
                 // Use model manager for available models
-                const auto& availableModels = m_modelManager->GetAvailableModels();
+                const auto &availableModels = m_modelManager->GetAvailableModels();
                 for (const auto &modelName : availableModels)
                 {
                     bool isSelected = (m_currentlySelectedModelName == modelName);
@@ -338,6 +371,8 @@ void UIManager::RenderImGuiToolbar()
         ImGui::Checkbox("Show Object Panel", &m_displayObjectListPanel);
         ImGui::SameLine();
         ImGui::Checkbox("Show Properties", &m_displayPropertiesPanel);
+        ImGui::SameLine();
+        ImGui::Checkbox("Show Skybox Settings", &m_displaySkyboxPanel);
         ImGui::SameLine();
         if (ImGui::SliderInt("Increase/Decrease editor grid", &m_gridSizes, 50, 900))
         {
@@ -370,18 +405,18 @@ void UIManager::RenderImGuiObjectPanel()
     ImVec2 windowSize(240, 400);
     ImVec2 desiredPos(static_cast<float>(screenWidth) - 250, 10);
     ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
-    
+
     ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-    
+
     // Limit maximum window size to screen dimensions
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(100, 100),
-        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
-    );
+        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())));
 
     // Enable docking for object panel - allow docking to sides
-    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
+    ImGuiWindowFlags windowFlags =
+        ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
 
     bool objectPanelOpen = true;
     if (ImGui::Begin("Objects##foo1", &objectPanelOpen, windowFlags))
@@ -408,7 +443,8 @@ void UIManager::RenderImGuiObjectPanel()
         if (ImGui::Button("Clear All"))
         {
             // Clear all objects - need to clear the vector
-            // Since SceneManager doesn't have a ClearAll method, we'll clear selection and remove all objects
+            // Since SceneManager doesn't have a ClearAll method, we'll clear selection and remove
+            // all objects
             m_sceneManager->ClearSelection();
             // Note: SceneManager doesn't expose a way to clear all objects, so this is limited
             // For now, just clear selection
@@ -417,12 +453,13 @@ void UIManager::RenderImGuiObjectPanel()
         ImGui::Separator();
 
         // List all objects
-        const auto& objects = m_sceneManager->GetObjects();
+        const auto &objects = m_sceneManager->GetObjects();
         for (size_t i = 0; i < objects.size(); i++)
         {
             const auto &obj = objects[i];
 
-            if (const bool isSelected = (static_cast<int>(i) == m_sceneManager->GetSelectedObjectIndex());
+            if (const bool isSelected =
+                    (static_cast<int>(i) == m_sceneManager->GetSelectedObjectIndex());
                 ImGui::Selectable(obj.GetObjectName().c_str(), isSelected))
             {
                 m_sceneManager->SelectObject(static_cast<int>(i));
@@ -438,11 +475,10 @@ void UIManager::RenderImGuiObjectPanel()
                                         : obj.GetObjectType() == 1 ? "Sphere"
                                         : obj.GetObjectType() == 2 ? "Cylinder"
                                         : obj.GetObjectType() == 3 ? "Plane"
-                                        : obj.GetObjectType() == 4
-                                            ? "Ellipse"
-                                            : obj.GetObjectType() == 5
-                                                ? ("Model: " + obj.GetModelAssetName()).c_str()
-                                                : "Unknown");
+                                        : obj.GetObjectType() == 4 ? "Ellipse"
+                                        : obj.GetObjectType() == 5
+                                            ? ("Model: " + obj.GetModelAssetName()).c_str()
+                                            : "Unknown");
                 ImGui::EndTooltip();
             }
         }
@@ -462,24 +498,24 @@ void UIManager::RenderImGuiPropertiesPanel()
     if (m_sceneManager->GetSelectedObject() == nullptr)
         return;
 
-    auto& obj = *m_sceneManager->GetSelectedObject();
+    auto &obj = *m_sceneManager->GetSelectedObject();
     const int screenHeight = GetScreenHeight();
 
     ImVec2 windowSize(300, 400);
     ImVec2 desiredPos(10, static_cast<float>(screenHeight - 400));
     ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
-    
+
     ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-    
+
     // Limit maximum window size to screen dimensions
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(200, 200),
-        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
-    );
+        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())));
 
     // Enable docking for properties panel
-    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
+    ImGuiWindowFlags windowFlags =
+        ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
     bool propertiesPanelOpen = true;
     std::string nameLabel;
     if (ImGui::Begin("Properties##Panel", &propertiesPanelOpen, windowFlags))
@@ -507,7 +543,8 @@ void UIManager::RenderImGuiPropertiesPanel()
             obj.SetObjectName(nameLabel); // Update the object's name
         }
 
-        const char *types[] = {"Cube", "Sphere", "Cylinder", "Plane", "Ellipse", "Model" , "Spawn Zone"};
+        const char *types[] = {"Cube",    "Sphere", "Cylinder",  "Plane",
+                               "Ellipse", "Model",  "Spawn Zone"};
         int typeIndex = obj.GetObjectType();
         if (ImGui::Combo("Type", &typeIndex, types, IM_ARRAYSIZE(types)))
         {
@@ -524,95 +561,95 @@ void UIManager::RenderImGuiPropertiesPanel()
         switch (obj.GetObjectType())
         {
         case 0: // Cube
+        {
+            float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
+            if (ImGui::DragFloat3("Scale", scale, 0.1f))
             {
-                float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
-                if (ImGui::DragFloat3("Scale", scale, 0.1f))
-                {
-                    obj.SetScale({scale[0], scale[1], scale[2]});
-                }
+                obj.SetScale({scale[0], scale[1], scale[2]});
             }
-            break;
+        }
+        break;
 
         case 1: // Sphere
+        {
+            float radiusSphere = obj.GetSphereRadius();
+            if (ImGui::DragFloat("Radius", &radiusSphere, 0.1f))
             {
-                float radiusSphere = obj.GetSphereRadius();
-                if (ImGui::DragFloat("Radius", &radiusSphere, 0.1f))
-                {
-                    obj.SetSphereRadius(radiusSphere);
-                }
+                obj.SetSphereRadius(radiusSphere);
             }
-            break;
+        }
+        break;
 
         case 2: // Cylinder
+        {
+            float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
+            if (ImGui::DragFloat3("Scale", scale, 0.1f))
             {
-                float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
-                if (ImGui::DragFloat3("Scale", scale, 0.1f))
-                {
-                    obj.SetScale({scale[0], scale[1], scale[2]});
-                }
+                obj.SetScale({scale[0], scale[1], scale[2]});
             }
-            break;
+        }
+        break;
 
         case 3: // Plane
+        {
+            float size[2] = {obj.GetPlaneSize().x, obj.GetPlaneSize().y};
+            if (ImGui::DragFloat2("Size", size, 0.1f))
             {
-                float size[2] = {obj.GetPlaneSize().x, obj.GetPlaneSize().y};
-                if (ImGui::DragFloat2("Size", size, 0.1f))
-                {
-                    obj.SetPlaneSize({size[0], size[1]});
-                }
+                obj.SetPlaneSize({size[0], size[1]});
             }
-            break;
+        }
+        break;
 
         case 4: // Ellipse
+        {
+            float radiusEllipse[2] = {obj.GetHorizontalRadius(), obj.GetVerticalRadius()};
+            if (ImGui::DragFloat2("Radius H/V", radiusEllipse, 0.1f))
             {
-                float radiusEllipse[2] = {obj.GetHorizontalRadius(), obj.GetVerticalRadius()};
-                if (ImGui::DragFloat2("Radius H/V", radiusEllipse, 0.1f))
-                {
-                    obj.SetHorizontalRadius(radiusEllipse[0]);
-                    obj.SetVerticalRadius(radiusEllipse[1]);
-                }
+                obj.SetHorizontalRadius(radiusEllipse[0]);
+                obj.SetVerticalRadius(radiusEllipse[1]);
             }
-            break;
+        }
+        break;
 
         case 5: // Model
+        {
+            // Model selection dropdown
+            ImGui::Text("Model:");
+            if (ImGui::BeginCombo("##ModelSelect", obj.GetModelAssetName().c_str()))
             {
-                // Model selection dropdown
-                ImGui::Text("Model:");
-                if (ImGui::BeginCombo("##ModelSelect", obj.GetModelAssetName().c_str()))
+                // Use model manager for available models
+                const auto &availableModels = m_modelManager->GetAvailableModels();
+                for (const auto &modelName : availableModels)
                 {
-                    // Use model manager for available models
-                    const auto& availableModels = m_modelManager->GetAvailableModels();
-                    for (const auto &modelName : availableModels)
+                    bool isSelected = (obj.GetModelAssetName() == modelName);
+
+                    if (ImGui::Selectable(modelName.c_str(), isSelected))
                     {
-                        bool isSelected = (obj.GetModelAssetName() == modelName);
-
-                        if (ImGui::Selectable(modelName.c_str(), isSelected))
-                        {
-                            obj.SetModelAssetName(modelName);
-                        }
-
-                        if (isSelected)
-                        {
-                            ImGui::SetItemDefaultFocus();
-                        }
+                        obj.SetModelAssetName(modelName);
                     }
-                    ImGui::EndCombo();
-                }
 
-                // Scale controls for models
-                float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
-                if (ImGui::DragFloat3("Scale", scale, 0.1f))
-                {
-                    obj.SetScale({scale[0], scale[1], scale[2]});
+                    if (isSelected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
                 }
+                ImGui::EndCombo();
             }
-            break;
+
+            // Scale controls for models
+            float scale[3] = {obj.GetScale().x, obj.GetScale().y, obj.GetScale().z};
+            if (ImGui::DragFloat3("Scale", scale, 0.1f))
+            {
+                obj.SetScale({scale[0], scale[1], scale[2]});
+            }
+        }
+        break;
 
         case 6: // Spawn Zone
-            {
-                // Spawn Zone only needs Position, no other parameters needed
-            }
-            break;
+        {
+            // Spawn Zone only needs Position, no other parameters needed
+        }
+        break;
         }
 
         // Rotation - show for all types except Spawn Zone
@@ -648,99 +685,6 @@ void UIManager::RenderImGuiPropertiesPanel()
     }
 
     ImGui::End();
-}
-
-void UIManager::RenderParkourMapDialog()
-{
-    if (m_displayParkourMapDialog)
-    {
-        ImVec2 windowSize(500, 400);
-        ImVec2 desiredPos(
-            GetScreenWidth() * 0.5f - 250,
-            GetScreenHeight() * 0.5f - 200
-        );
-        ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
-        
-        ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
-        
-        // Limit maximum window size to screen dimensions
-        ImGui::SetNextWindowSizeConstraints(
-            ImVec2(300, 300),
-            ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight()))
-        );
-
-        if (ImGui::Begin("Parkour Maps", &m_displayParkourMapDialog, ImGuiWindowFlags_NoCollapse))
-        {
-            // Ensure window stays within screen bounds
-            EnsureWindowInBounds();
-            ImGui::Text("Select a Parkour Map:");
-            ImGui::Separator();
-
-            // List all available parkour maps
-            for (int i = 0; i < m_availableParkourMaps.size(); i++)
-            {
-                const auto &gameMap = m_availableParkourMaps[i];
-
-                char buffer[256];
-                snprintf(buffer, sizeof(buffer), "%s (%.1f/5.0)",
-                         gameMap.metadata.displayName.c_str(), gameMap.metadata.difficulty);
-                if (ImGui::Selectable(buffer, m_currentlySelectedParkourMapIndex == i))
-                {
-                    m_currentlySelectedParkourMapIndex = i;
-                }
-
-                // Show tooltip with description on hover
-                if (ImGui::IsItemHovered())
-                {
-                    ImGui::BeginTooltip();
-                    ImGui::Text("%s", gameMap.metadata.description.c_str());
-                    ImGui::Text("Elements: %zu", gameMap.objects.size());
-                    ImGui::EndTooltip();
-                }
-            }
-
-            ImGui::Separator();
-
-            // Action buttons
-            if (ImGui::Button("Load Selected Map", ImVec2(150, 30)))
-            {
-                if (m_currentlySelectedParkourMapIndex >= 0 &&
-                    m_currentlySelectedParkourMapIndex < m_availableParkourMaps.size())
-                {
-                    // TODO: Load parkour map through file manager
-                    m_displayParkourMapDialog = false;
-                }
-            }
-
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel", ImVec2(100, 30)))
-            {
-                m_displayParkourMapDialog = false;
-            }
-
-            // Show selected map details
-            if (m_currentlySelectedParkourMapIndex >= 0 &&
-                m_currentlySelectedParkourMapIndex < m_availableParkourMaps.size())
-            {
-                const auto &selectedGameMap =
-                    m_availableParkourMaps[m_currentlySelectedParkourMapIndex];
-                ImGui::Separator();
-                ImGui::Text("Selected Map Details:");
-                ImGui::Text("Name: %s", selectedGameMap.metadata.displayName.c_str());
-                ImGui::Text("Description: %s", selectedGameMap.metadata.description.c_str());
-                ImGui::Text("Difficulty: %.1f/5.0", selectedGameMap.metadata.difficulty);
-                ImGui::Text("Elements: %zu", selectedGameMap.objects.size());
-                ImGui::Text("Start: (%.1f, %.1f, %.1f)", selectedGameMap.metadata.startPosition.x,
-                            selectedGameMap.metadata.startPosition.y,
-                            selectedGameMap.metadata.startPosition.z);
-                ImGui::Text("End: (%.1f, %.1f, %.1f)", selectedGameMap.metadata.endPosition.x,
-                            selectedGameMap.metadata.endPosition.y,
-                            selectedGameMap.metadata.endPosition.z);
-            }
-        }
-        ImGui::End();
-    }
 }
 
 void UIManager::HandleKeyboardInput()
@@ -796,7 +740,8 @@ void UIManager::ProcessPendingObjectCreation()
         case ADD_MODEL:
             newObj.SetObjectType(5); // Model
             newObj.SetModelAssetName(m_currentlySelectedModelName);
-            newObj.SetObjectName(m_currentlySelectedModelName + " " + std::to_string(m_sceneManager->GetObjects().size()));
+            newObj.SetObjectName(m_currentlySelectedModelName + " " +
+                                 std::to_string(m_sceneManager->GetObjects().size()));
             break;
         case ADD_SPAWN_ZONE:
             newObj.SetObjectType(6); // Spawn Zone
@@ -819,7 +764,137 @@ void UIManager::ProcessPendingObjectCreation()
     }
 }
 
-int UIManager::GetGridSize() const 
-{ 
-    return m_gridSizes; 
+int UIManager::GetGridSize() const
+{
+    return m_gridSizes;
+}
+
+void UIManager::RenderSkyboxPanel()
+{
+    const int screenWidth = GetScreenWidth();
+    const int screenHeight = GetScreenHeight();
+
+    ImVec2 windowSize(440, 540);
+    ImVec2 desiredPos(static_cast<float>(screenWidth) - 460, 80);
+    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+    
+    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+
+    // Lazily load placeholder texture on first open of the panel. This keeps logic in one
+    // function and avoids per-frame loading while keeping the change minimal.
+    if (!m_skyboxPlaceholderInitialized)
+    {
+        const char *placeholderPath = PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
+        Image placeholderImg = LoadImage(placeholderPath);
+        if (placeholderImg.data != nullptr)
+        {
+            m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
+            UnloadImage(placeholderImg);
+            m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
+        }
+    }
+
+    bool isOpen = true;
+    if (ImGui::Begin("Set Skybox", &isOpen, ImGuiWindowFlags_NoCollapse))
+    {
+        ImGui::TextWrapped("Current skybox: %s", m_skyboxPreviewPath.empty()
+                                                     ? "No skybox loaded"
+                                                     : m_skyboxPreviewPath.c_str());
+        ImGui::Separator();
+        ImGui::Spacing();
+        
+        if (ImGui::Button("Load Skybox Image", ImVec2(200, 30)))
+        {
+            nfdfilteritem_t filterItem[1] = {{"Images", "png,jpg,jpeg,bmp,hdr,dds"}};
+            nfdchar_t *outPath = nullptr;
+            nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+
+            if (result == NFD_OKAY)
+            {
+                if (m_skyboxPreviewTextureInitialized && m_skyboxPreviewTexture.id != 0)
+                {
+                    UnloadTexture(m_skyboxPreviewTexture);
+                    m_skyboxPreviewTexture = {0};
+                    m_skyboxPreviewTextureInitialized = false;
+                    m_skyboxPreviewPath.clear();
+                }
+
+                Image image = LoadImage(outPath);
+                if (image.data != nullptr)
+                {
+                    m_skyboxPreviewTexture = LoadTextureFromImage(image);
+                    UnloadImage(image);
+                    if (m_skyboxPreviewTexture.id != 0)
+                    {
+                        m_skyboxPreviewTextureInitialized = true;
+                        m_skyboxPreviewPath = outPath;
+                        //TraceLog(LOG_INFO, "Skybox preview loaded: %s", outPath);
+                    }
+                }
+                NFD_FreePath(outPath);
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Unload", ImVec2(100, 30)))
+        {
+            // Clear editor skybox via Editor API so ownership/unloading is centralized
+            if (m_editor)
+            {
+                m_editor->SetSkyboxTexture(std::string());
+            }
+
+            if (m_skyboxPreviewTextureInitialized && m_skyboxPreviewTexture.id != 0)
+            {
+                UnloadTexture(m_skyboxPreviewTexture);
+                m_skyboxPreviewTexture = {0};
+                m_skyboxPreviewTextureInitialized = false;
+                m_skyboxPreviewPath.clear();
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        if (m_skyboxPreviewTextureInitialized && m_skyboxPreviewTexture.id != 0)
+        {
+            ImGui::Text("Preview:");
+            
+            rlImGuiImageSize(&m_skyboxPreviewTexture, 64, 64);
+        }
+        else
+        {
+            ImGui::Text("Preview:");
+            if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0)
+            {
+                rlImGuiImageSize(&m_skyboxPlaceholderTexture, 64, 64);
+            }
+            else
+            {
+                ImGui::Text("No preview available");
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        if (m_skyboxPreviewTextureInitialized && ImGui::Button("Apply to Scene", ImVec2(200, 30)))
+        {
+            if (m_editor)
+            {
+                m_editor->SetSkyboxTexture(m_skyboxPreviewPath);
+                TraceLog(LOG_INFO, "Applied skybox to editor scene: %s",
+                         m_skyboxPreviewPath.c_str());
+            }
+        }
+    }
+    ImGui::End();
+
+    if (!isOpen)
+    {
+        m_displaySkyboxPanel = false;
+    }
 }

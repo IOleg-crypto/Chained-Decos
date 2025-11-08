@@ -8,6 +8,8 @@
 #include <imgui.h>
 #include <rlImGui.h>
 
+#include "Engine/Map/Skybox/skybox.h"
+
 EditorApplication::EditorApplication()
     : EngineApplication()
 {
@@ -113,7 +115,7 @@ void EditorApplication::OnPostRender()
     // EndFrame() will be called in Engine::Render() via RenderManager::EndFrame()
     
     // Clear background before 3D scene
-    ClearBackground(DARKGRAY);
+    ClearBackground(m_editor->GetClearColor());
     
     // Render 3D scene for Editor
     auto cameraController = m_editor->GetCameraController();
@@ -121,11 +123,11 @@ void EditorApplication::OnPostRender()
         BeginMode3D(cameraController->GetCamera());
         cameraController->SetCameraMode(CAMERA_FREE);
         
-        // Draw grid
-        DrawGrid(m_editor->GetGridSize(), 1.0f);
-        
-        // Render all editor objects
+        // Render skybox and objects
         m_editor->Render();
+
+        // Draw grid after scene for orientation
+        DrawGrid(m_editor->GetGridSize(), 1.0f);
         
         EndMode3D();
     }

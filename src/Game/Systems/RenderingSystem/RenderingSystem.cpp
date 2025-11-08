@@ -136,16 +136,18 @@ void RenderingSystem::RenderGameWorld()
     // Get camera from player
     Camera camera = m_player->GetCameraController()->GetCamera();
     
-    // Begin 3D rendering
-    BeginMode3D(camera);
-    
-    // Render editor-created map FIRST (primitives must be rendered before collision shapes)
-    if (!m_mapManager->GetGameMap().objects.empty()) {
-        m_mapManager->RenderEditorMap();
+    // Render editor-created map using RenderGameMap (includes skybox)
+    // Note: RenderGameMap handles BeginMode3D/EndMode3D internally
+    GameMap& gameMap = m_mapManager->GetGameMap();
+    if (!gameMap.GetMapObjects().empty()) {
+        RenderGameMap(gameMap, camera);
     }
     
-    // Render spawn zone
-   // m_mapManager->RenderSpawnZone(); // Render spawn zone only in Map Editor
+    // Render spawn zone (commented out - only in Map Editor)
+    // m_mapManager->RenderSpawnZone();
+    
+    // Begin 3D rendering for game world elements
+    BeginMode3D(camera);
     
     // Render game world (models, player, etc.) and collision shapes AFTER primitives
     m_engine->GetRenderManager()->RenderGame(*m_player->GetRenderable(), *m_models, *m_collisionManager,
