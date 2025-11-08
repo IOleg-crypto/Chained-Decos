@@ -19,11 +19,14 @@
 #include "../ModelManager/IModelManager.h"
 #include "IUIManager.h"
 
+class Editor;
+
 
 // Concrete UI Manager implementation
 class UIManager : public IUIManager {
 private:
     // Subsystem references
+    Editor* m_editor;
     ISceneManager* m_sceneManager;
     IFileManager* m_fileManager;
     IToolManager* m_toolManager;
@@ -34,6 +37,7 @@ private:
     bool m_displayObjectListPanel;
     bool m_displayPropertiesPanel;
     bool m_pendingObjectCreation;
+    bool m_displaySkyboxPanel;
     std::string m_currentlySelectedModelName;
     int m_gridSizes;
 
@@ -41,10 +45,19 @@ private:
     bool m_displayParkourMapDialog;
     std::vector<GameMap> m_availableParkourMaps;
     int m_currentlySelectedParkourMapIndex;
+    
+    // Skybox preview texture (Texture2D is used for previews)
+    Texture2D m_skyboxPreviewTexture;
+    bool m_skyboxPreviewTextureInitialized;
+    std::string m_skyboxPreviewPath; // current preview file path or empty
+    // Placeholder texture for skybox panel (avoid loading every frame)
+    Texture2D m_skyboxPlaceholderTexture;
+    bool m_skyboxPlaceholderInitialized;
 
 
 public:
-    UIManager(ISceneManager* sceneManager, IFileManager* fileManager,
+    UIManager(Editor* editor,
+              ISceneManager* sceneManager, IFileManager* fileManager,
               IToolManager* toolManager, IModelManager* modelManager);
     ~UIManager() override;
 
@@ -87,6 +100,8 @@ private:
     
     // Ensure window stays within screen bounds (call after Begin())
     void EnsureWindowInBounds();
+    // Render skybox panel
+    void RenderSkyboxPanel();
 };
 
 #endif // UIMANAGER_H

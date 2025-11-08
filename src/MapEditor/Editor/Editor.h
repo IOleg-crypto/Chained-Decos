@@ -16,6 +16,7 @@
 #include "Object/MapObject.h"
 #include "Engine/Map/MapLoader.h"
 #include "ModelManager/IModelManager.h"
+#include "Engine/Map/Skybox/skybox.h"
 
 // Subsystem interfaces
 #include "SceneManager/ISceneManager.h"
@@ -35,9 +36,6 @@ private:
     std::unique_ptr<IToolManager> m_toolManager;
     std::unique_ptr<ICameraManager> m_cameraManager;
     std::unique_ptr<IModelManager> m_modelManager;
-    // TODO: Implement when needed
-    // std::unique_ptr<IInputManager> m_inputManager;
-    // std::unique_ptr<IRenderManager> m_renderManager;
 
     // Legacy compatibility - minimal state kept for backward compatibility
     int m_gridSizes;
@@ -45,6 +43,11 @@ private:
     // Spawn zone texture
     Texture2D m_spawnTexture;
     bool m_spawnTextureLoaded;
+
+    std::unique_ptr<Skyboxlib> m_skybox;
+    std::string m_skyboxTexturePath;
+    Color m_clearColor;
+    MapMetadata m_activeMetadata;
 
 public:
     Editor(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader);
@@ -68,17 +71,31 @@ public:
     void SelectObject(int index);         // Select object by index
     void ClearSelection();                // Clear current selection
 
+
+    
+
     // File operations (delegate to FileManager)
     void SaveMap(const std::string &filename); // Save map to file (editor format)
     void LoadMap(const std::string &filename); // Load map from file (editor format)
     void ExportMapForGame(const std::string &filename); // Export map for game engine
     void ExportMapAsJSON(const std::string &filename); // Export map as JSON format
 
+
+
     // Parkour map operations (delegate to FileManager)
     void LoadParkourMap(const std::string& mapName); // Load a parkour map into editor
     void GenerateParkourMap(const std::string& mapName); // Generate a new parkour map
     void ShowParkourMapSelector(); // Show parkour map selection dialog
     int GetGridSize() const; // Get editor grid size
+
+
+    // Skybox operations
+    void ApplyMetadata(const MapMetadata& metadata);
+    void SetSkyboxTexture(const std::string& texturePath, bool updateFileManager = true);
+    const std::string& GetSkyboxTexture() const { return m_skyboxTexturePath; }
+    bool HasSkybox() const { return static_cast<bool>(m_skybox); }
+    Skyboxlib* GetSkybox() const { return m_skybox.get(); }
+    Color GetClearColor() const { return m_clearColor; }
 
     // Access to subsystems for advanced usage (optional - maintains some backward compatibility)
     ISceneManager* GetSceneManager() const { return m_sceneManager.get(); }
@@ -93,6 +110,13 @@ private:
     void RenderObject(const MapObject& obj); // Render a single object
     void RenderGizmo(const MapObject& obj, const MapObjectData& data); // Render transform gizmo
     void RenderSpawnZoneWithTexture(const Vector3& position, float size, Color color) const; // Render textured spawn zone
+
+    std::string NormalizeSkyboxPath(const std::string& texturePath) const;
+    std::string ResolveSkyboxAbsolutePath(const std::string& texturePath) const;
+    
+public:
+    // Public helper to get absolute skybox path
+    std::string GetSkyboxAbsolutePath() const;
 };
 
 #endif // EDITOR_H

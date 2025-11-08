@@ -23,6 +23,7 @@ private:
 
     // Current file path
     std::string m_currentlyLoadedMapFilePath;
+    MapMetadata m_currentMetadata;
 
 public:
     FileManager();
@@ -37,16 +38,17 @@ public:
     // Parkour map operations
     void LoadParkourMap(const std::string& mapName, std::vector<MapObject>& objects) override;
     void GenerateParkourMap(const std::string& mapName, std::vector<MapObject>& objects) override;
-    std::vector<GameMap> GetAvailableParkourMaps() override;
+    const std::vector<GameMap>& GetAvailableParkourMaps() override;
     void ShowParkourMapSelector() override;
 
     // Getters for dialog state
     std::string GetCurrentlyLoadedMapFilePath() const override;
     void SetCurrentlyLoadedMapFilePath(const std::string& path) override;
 
+    const MapMetadata& GetCurrentMetadata() const override { return m_currentMetadata; }
+    void SetSkyboxTexture(const std::string& path) override;
+
 private:
-    // Helper methods
-    void RenderParkourMapDialog();
     
     // Window position helper (windowSize is passed by reference to allow clamping)
     ImVec2 ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize);
