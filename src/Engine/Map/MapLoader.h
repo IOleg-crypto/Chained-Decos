@@ -1,115 +1,109 @@
 #ifndef MAPLOADER_H
 #define MAPLOADER_H
 
+#include "Engine/Map/MapData.h"
+#include "Engine/Map/Skybox/skybox.h"
+#include <memory>
+#include <nlohmann/json.hpp>
 #include <raylib.h>
 #include <string>
-#include <vector>
 #include <unordered_map>
-#include <nlohmann/json.hpp>
+#include <vector>
 
-// Object types for the map
-enum class MapObjectType
-{
-    CUBE = 0,
-    SPHERE = 1,
-    CYLINDER = 2,
-    PLANE = 3,
-    LIGHT = 4,
-    MODEL = 5,
-    SPAWN_ZONE = 6
-};
+// ============================================================================
+// Data Structures
+// ============================================================================
 
-// Enhanced map object structure for editor-created maps
-struct MapObjectData
-{
-    std::string name;
-    MapObjectType type;
-    Vector3 position;
-    Vector3 rotation;
-    Vector3 scale;
-    Color color;
-    std::string modelName; // For MODEL type objects
 
-    // Shape-specific properties
-    float radius; // For spheres
-    float height; // For cylinders
-    Vector2 size; // For planes
-
-    // Collision properties
-    bool isPlatform;
-    bool isObstacle;
-
-    MapObjectData()
-        : name(""), type(MapObjectType::CUBE), position{0, 0, 0}, rotation{0, 0, 0},
-          scale{1, 1, 1}, color{WHITE}, modelName(""), radius(1.0f), height(1.0f), size{1, 1},
-          isPlatform(true), isObstacle(false)
-    {}
-};
-
-// Map metadata
-struct MapMetadata
-{
-    std::string name;
-    std::string displayName;
-    std::string description;
-    std::string author;
-    std::string version;
-    Vector3 startPosition;
-    Vector3 endPosition;
-    Color skyColor;
-    Color groundColor;
-    float difficulty;
-
-    // Additional fields for JSON export compatibility
-    std::string createdDate;
-    std::string modifiedDate;
-    Vector3 worldBounds;
-    Color backgroundColor;
-    std::string skyboxTexture;
-
-    MapMetadata()
-        : name(""), displayName(""), description(""), author(""), version("1.0"),
-          startPosition{0, 0, 0}, endPosition{0, 0, 0}, skyColor{SKYBLUE},
-          groundColor{DARKGREEN}, difficulty(1.0f), createdDate(""), modifiedDate(""),
-          worldBounds{100.0f, 100.0f, 100.0f}, backgroundColor{50, 50, 50, 255}, skyboxTexture("")
-    {}
-};
-
-// Complete map structure (moved up for strategy interfaces)
-struct GameMap
-{
-    MapMetadata metadata;
-    std::vector<MapObjectData> objects;
-    std::unordered_map<std::string, Model> loadedModels; // For cleanup
-
-    GameMap() = default;
-    ~GameMap() { Cleanup(); }
-
-    void Cleanup();
-
-};
-
-// Model information structure for folder-based loading
 struct ModelInfo
 {
     std::string name;
     std::string path;
     std::string extension;
-    std::string category;      // Type of model (Player, Building, Environment, etc.)
-    std::string description;   // Human-readable description
+    std::string category;    // Type of model (Player, Building, Environment, etc.)
+    std::string description; // Human-readable description
     bool hasAnimations;
     bool hasCollision;
     Vector3 defaultScale;
-
-    ModelInfo() : hasAnimations(false), hasCollision(true), defaultScale{1.0f, 1.0f, 1.0f},
-                  category("Generic Model"), description("3D model asset") {}
 };
 
-// Simple MapLoader class - direct implementation without patterns
+// ============================================================================
+// GameMap Class
+// ============================================================================
+
+// Forward declarations for friend classes
+class MapManager;
+class FileManager;
+
+class GameMap
+{
+    // Friend functions for direct access to private members
+    friend GameMap LoadGameMap(const std::string& path);
+    friend GameMap LoadGameMapFromModelsFormat(const nlohmann::json& j, const std::string& path);
+    friend GameMap LoadGameMapFromEditorFormat(const nlohmann::json& j, const std::string& path);
+    friend bool SaveGameMap(const GameMap& map, const std::string& path);
+    friend void LoadSkyboxForMap(GameMap& map);
+    friend void RenderGameMap(const GameMap& map, Camera3D camera);
+    friend void RenderMapObject(const MapObjectData& object,
+                                const std::unordered_map<std::string, Model>& loadedModels,
+                                Camera3D camera,
+                                bool useEditorColors);
+    //friend std::vector<GameMap> MapLoader::LoadAllMapsFromDirectory(const std::string& directory);
+    
+    // Friend classes for direct access to private members
+    friend class MapManager;
+    friend class FileManager;
+
+public:
+    GameMap() = default;
+    ~GameMap();
+
+    // Non-copyable, movable
+    GameMap(const GameMap&) = delete;
+    GameMap& operator=(const GameMap&) = delete;
+    GameMap(GameMap&&) noexcept = default;
+    GameMap& operator=(GameMap&&) noexcept = default;
+
+    void Cleanup();
+
+    // Skybox
+    void SetSkyBox(std::shared_ptr<Skyboxlib>& skyboxlib);
+    Skyboxlib* GetSkyBox() const;
+
+    // Models
+    const std::unordered_map<std::string, Model>& GetMapModels() const;
+    void AddMapModels(const std::unordered_map<std::string, Model>& modelsMap);
+
+    // Objects
+    const std::vector<MapObjectData>& GetMapObjects() const;
+    void AddMapObjects(const std::vector<MapObjectData>& mapObjects);
+
+    // Metadata
+    const MapMetadata& GetMapMetaData() const;
+    void SetMapMetaData(const MapMetadata& mapData);
+
+private:
+    MapMetadata m_metadata;
+    std::vector<MapObjectData> m_objects;
+    std::unordered_map<std::string, Model> m_loadedModels; // For cleanup
+    std::shared_ptr<Skyboxlib> m_skybox;                   // Skybox for the map
+};
+
+// ============================================================================
+// MapLoader Class
+// ============================================================================
+
 class MapLoader
 {
 public:
     MapLoader() = default;
+    ~MapLoader() = default;
+
+    // Non-copyable, movable
+    MapLoader(const MapLoader&) = delete;
+    MapLoader& operator=(const MapLoader&) = delete;
+    MapLoader(MapLoader&&) noexcept = default;
+    MapLoader& operator=(MapLoader&&) noexcept = default;
 
     GameMap LoadMap(const std::string& path);
     bool SaveMap(const GameMap& map, const std::string& path);
@@ -123,20 +117,31 @@ public:
     std::vector<std::string> GetMapNamesFromDirectory(const std::string& directory);
 };
 
+// ============================================================================
+// Free Functions - Map Loading/Saving
+// ============================================================================
 
-
-// Map loading and saving functions
-GameMap LoadGameMap(const std::string &path);
+GameMap LoadGameMap(const std::string& path);
 GameMap LoadGameMapFromModelsFormat(const nlohmann::json& j, const std::string& path);
 GameMap LoadGameMapFromEditorFormat(const nlohmann::json& j, const std::string& path);
 bool SaveGameMap(const GameMap& map, const std::string& path);
+void LoadSkyboxForMap(GameMap& map);
 
-// Utility functions
-MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& position, const Vector3& scale, const Color& color);
+// ============================================================================
+// Utility Functions
+// ============================================================================
 
-// Map rendering functions
+MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& position,
+                                      const Vector3& scale, const Color& color);
+
+// ============================================================================
+// Rendering Functions
+// ============================================================================
+
 void RenderGameMap(const GameMap& map, Camera3D camera);
-void RenderMapObject(const MapObjectData& object, const std::unordered_map<std::string, Model>& loadedModels, Camera3D camera, bool useEditorColors = false);
+void RenderMapObject(const MapObjectData& object,
+                     const std::unordered_map<std::string, Model>& loadedModels,
+                     Camera3D camera,
+                     bool useEditorColors = false);
 
 #endif // MAPLOADER_H
-
