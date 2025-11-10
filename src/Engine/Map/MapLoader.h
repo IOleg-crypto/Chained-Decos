@@ -2,7 +2,7 @@
 #define MAPLOADER_H
 
 #include "MapData.h"
-#include "Engine/Map/Skybox/skybox.h"
+#include "Skybox/Skybox.h"
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <raylib.h>

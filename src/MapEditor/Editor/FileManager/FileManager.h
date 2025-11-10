@@ -7,10 +7,11 @@
 #define FILEMANAGER_H
 
 #include "IFileManager.h"
+#include "Engine/Map/MapData.h"
+#include "Engine/Map/MapService.h"
+#include "Engine/Map/MapLoader.h"
 #include <string>
 #include <vector>
-#include "Engine/Map/MapService.h"
-#include "Engine/Map/MapData.h"
 
 class FileManager : public IFileManager {
 private:
