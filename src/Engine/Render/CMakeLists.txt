@@ -3,6 +3,8 @@
 add_library(render STATIC
     RenderManager.cpp
     RenderManager.h
+    ImGuiHelper.cpp
+    ImGuiHelper.h
     IGameRenderable.h
     IMenuRenderable.h
     IRenderable.h
