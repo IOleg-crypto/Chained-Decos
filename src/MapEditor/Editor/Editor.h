@@ -72,25 +72,11 @@ public:
     void RemoveObject(int index);         // Remove object by index
     void SelectObject(int index);         // Select object by index
     void ClearSelection();                // Clear current selection
-
-
-    
-
+public:
     // File operations (delegate to FileManager)
     void SaveMap(const std::string &filename); // Save map to file (editor format)
     void LoadMap(const std::string &filename); // Load map from file (editor format)
-    void ExportMapForGame(const std::string &filename); // Export map for game engine
-    void ExportMapAsJSON(const std::string &filename); // Export map as JSON format
-
-
-
-    // Parkour map operations (delegate to FileManager)
-    void LoadParkourMap(const std::string& mapName); // Load a parkour map into editor
-    void GenerateParkourMap(const std::string& mapName); // Generate a new parkour map
-    void ShowParkourMapSelector(); // Show parkour map selection dialog
     int GetGridSize() const; // Get editor grid size
-
-
     // Skybox operations
     void ApplyMetadata(const MapMetadata& metadata);
     void SetSkyboxTexture(const std::string& texturePath, bool updateFileManager = true);

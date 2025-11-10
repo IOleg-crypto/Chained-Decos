@@ -19,8 +19,8 @@ public:
     void Init();                 // New initialization method
     void LoadMaterialTexture(const std::string &texturePath);
     void LoadMaterialShader(const std::string &vsPath, const std::string &fsPath);
+    void LoadShadersAutomatically(); // Automatically find and load shaders from resources/shaders
     void DrawSkybox();
-    void LoadTextureCubemap(const std::string &texturePath);
     void UnloadSkybox();
     bool IsInitialized() const { return m_initialized; }
     bool IsLoaded() const { return m_skyboxTexture.id != 0; }
