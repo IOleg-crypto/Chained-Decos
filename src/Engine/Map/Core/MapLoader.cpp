@@ -745,9 +745,8 @@ void MapLoader::LoadSkyboxForMap(GameMap &map)
     if (!map.GetSkyBox())
     {
         std::shared_ptr<Skybox> skybox = std::make_shared<Skybox>();
+        // Init() automatically loads shaders, so shaders are ready before loading texture
         skybox->Init();
-        // Automatically load shaders
-        skybox->LoadShadersAutomatically();
         map.SetSkyBox(skybox);
     }
     

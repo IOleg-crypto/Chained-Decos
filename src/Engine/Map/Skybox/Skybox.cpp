@@ -3,6 +3,7 @@
 #include "rlImGui/rlImGui.h"
 #include "rlgl.h"
 #include "Skybox.h"
+#include "Engine/Config/Core/ConfigManager.h"
 
 #ifndef PROJECT_ROOT_DIR
 #define PROJECT_ROOT_DIR ""
@@ -13,7 +14,11 @@ Skybox::Skybox()
     : m_cube(), 
       m_skyboxModel(), 
       m_skyboxTexture(), 
-      m_initialized(false)
+      m_initialized(false),
+      m_gammaEnabled(false),
+      m_gammaValue(2.2f),
+      m_doGammaLoc(-1),
+      m_fragGammaLoc(-1)
 {
     // Only initialize members, actual setup happens in Init()
 }
@@ -30,6 +35,8 @@ void Skybox::Init()
     m_skyboxModel = LoadModelFromMesh(m_cube);
     m_skyboxTexture = { 0 };
     m_initialized = true;
+    // Load default shaders
+    LoadMaterialShader(PROJECT_ROOT_DIR "/resources/shaders/skybox.vs", PROJECT_ROOT_DIR "/resources/shaders/skybox.fs");
 }
 
 void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fsPath)
@@ -79,8 +86,17 @@ void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fs
     int doGammaLoc = GetShaderLocation(shader, "doGamma");
     if (doGammaLoc >= 0)
     {
-        int doGammaValue[1] = { 0 }; // No gamma correction for regular textures
+        m_doGammaLoc = doGammaLoc;
+        int doGammaValue[1] = { m_gammaEnabled ? 1 : 0 };
         SetShaderValue(shader, doGammaLoc, doGammaValue, SHADER_UNIFORM_INT);
+    }
+
+    int fragGammaLoc = GetShaderLocation(shader, "fragGamma");
+    if (fragGammaLoc >= 0)
+    {
+        m_fragGammaLoc = fragGammaLoc;
+        float fragGammaValue[1] = { m_gammaValue };
+        SetShaderValue(shader, fragGammaLoc, fragGammaValue, SHADER_UNIFORM_FLOAT);
     }
 
     int vflippedLoc = GetShaderLocation(shader, "vflipped");
@@ -171,6 +187,18 @@ void Skybox::DrawSkybox()
         return;
     }
 
+    // Update gamma settings before rendering
+    if (m_doGammaLoc >= 0)
+    {
+        int doGammaValue[1] = { m_gammaEnabled ? 1 : 0 };
+        SetShaderValue(m_skyboxModel.materials[0].shader, m_doGammaLoc, doGammaValue, SHADER_UNIFORM_INT);
+    }
+    if (m_fragGammaLoc >= 0)
+    {
+        float fragGammaValue[1] = { m_gammaValue };
+        SetShaderValue(m_skyboxModel.materials[0].shader, m_fragGammaLoc, fragGammaValue, SHADER_UNIFORM_FLOAT);
+    }
+
     // Disable backface culling for inside cube rendering
     rlDisableBackfaceCulling();
     rlDisableDepthMask();
@@ -182,4 +210,43 @@ void Skybox::DrawSkybox()
     
     rlEnableDepthMask();
     rlEnableBackfaceCulling();
+}
+
+void Skybox::SetGammaEnabled(bool enabled)
+{
+    m_gammaEnabled = enabled;
+    // Update shader if already loaded
+    if (m_initialized && m_doGammaLoc >= 0)
+    {
+        int doGammaValue[1] = { m_gammaEnabled ? 1 : 0 };
+        SetShaderValue(m_skyboxModel.materials[0].shader, m_doGammaLoc, doGammaValue, SHADER_UNIFORM_INT);
+    }
+}
+
+void Skybox::SetGammaValue(float gamma)
+{
+    // Clamp gamma value to reasonable range (0.5 to 3.0)
+    m_gammaValue = std::max(0.5f, std::min(3.0f, gamma));
+    // Update shader if already loaded
+    if (m_initialized && m_fragGammaLoc >= 0)
+    {
+        float fragGammaValue[1] = { m_gammaValue };
+        SetShaderValue(m_skyboxModel.materials[0].shader, m_fragGammaLoc, fragGammaValue, SHADER_UNIFORM_FLOAT);
+    }
+}
+
+void Skybox::UpdateGammaFromConfig()
+{
+    if (!m_initialized)
+    {
+        return;
+    }
+    
+    // Create a temporary ConfigManager to read settings
+    ConfigManager config;
+    config.LoadFromFile("game.cfg");
+    
+    // Update gamma settings from config
+    SetGammaEnabled(config.IsSkyboxGammaEnabled());
+    SetGammaValue(config.GetSkyboxGammaValue());
 }

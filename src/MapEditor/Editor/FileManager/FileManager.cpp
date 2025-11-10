@@ -7,6 +7,7 @@
 #include "../Object/MapObject.h"
 #include "Engine/Map/Core/MapService.h"
 #include "Engine/Map/Core/MapLoader.h"
+#include "../Utils/PathUtils.h"
 #include <filesystem>
 #include <iostream>
 #include <raylib.h>
@@ -87,6 +88,7 @@ bool FileManager::LoadMap(const std::string &filename, std::vector<MapObject> &o
     {
         objects.push_back(MapObjectConverterEditor::MapObjectDataToMapObject(data));
     }
+    
 
     if (metadata.startPosition.y >= 2.0f ||
         (metadata.startPosition.x != 0.0f || metadata.startPosition.y != 0.0f ||
@@ -119,7 +121,16 @@ void FileManager::SetCurrentlyLoadedMapFilePath(const std::string &path)
 
 void FileManager::SetSkyboxTexture(const std::string &path)
 {
-    m_currentMetadata.skyboxTexture = path;
+    // Normalize path to relative path from PROJECT_ROOT_DIR for portability
+    // This ensures maps can be loaded on different machines
+    if (!path.empty())
+    {
+        m_currentMetadata.skyboxTexture = PathUtils::NormalizePath(path, PROJECT_ROOT_DIR);
+    }
+    else
+    {
+        m_currentMetadata.skyboxTexture = "";
+    }
 }
 
 void FileManager::SetCurrentMetadata(const MapMetadata& metadata)

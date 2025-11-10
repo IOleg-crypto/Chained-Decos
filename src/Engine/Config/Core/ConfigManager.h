@@ -84,6 +84,12 @@ public:
     int GetTextureQuality() const;
     void SetRenderDistance(float distance);
     float GetRenderDistance() const;
+    
+    // Skybox gamma settings
+    void SetSkyboxGammaEnabled(bool enabled);
+    bool IsSkyboxGammaEnabled() const;
+    void SetSkyboxGammaValue(float gamma);
+    float GetSkyboxGammaValue() const;
 
     // Game progression settings
     void SetCompletedLevels(const std::string& levels);

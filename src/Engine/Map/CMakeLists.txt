@@ -32,7 +32,7 @@ target_compile_definitions(map PRIVATE
     PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
 )
 
-target_link_libraries(map PUBLIC raylib nlohmann_json)
+target_link_libraries(map PUBLIC raylib nlohmann_json config)
 
 set_target_properties(map PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

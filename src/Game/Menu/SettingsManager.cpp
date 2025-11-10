@@ -466,3 +466,25 @@ int SettingsManager::GetVSyncIndex() const {
 int SettingsManager::GetFpsIndex() const {
     return m_currentFpsIndex;
 }
+
+void SettingsManager::SetSkyboxGammaEnabled(bool enabled)
+{
+    m_config.SetSkyboxGammaEnabled(enabled);
+}
+
+bool SettingsManager::IsSkyboxGammaEnabled() const
+{
+    return m_config.IsSkyboxGammaEnabled();
+}
+
+void SettingsManager::SetSkyboxGammaValue(float gamma)
+{
+    // Clamp gamma value to reasonable range (0.5 to 3.0)
+    float clampedGamma = std::max(0.5f, std::min(3.0f, gamma));
+    m_config.SetSkyboxGammaValue(clampedGamma);
+}
+
+float SettingsManager::GetSkyboxGammaValue() const
+{
+    return m_config.GetSkyboxGammaValue();
+}
