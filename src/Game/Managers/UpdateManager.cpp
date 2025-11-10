@@ -1,5 +1,5 @@
 #include "UpdateManager.h"
-#include "Engine/Collision/CollisionManager.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
 #include "MapManager.h"
 #include "Engine/Map/Skybox/Skybox.h"
 #include <raylib.h>

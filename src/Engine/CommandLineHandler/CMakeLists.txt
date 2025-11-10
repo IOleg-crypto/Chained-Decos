@@ -1,9 +1,9 @@
 add_library(cmdhandler STATIC
-    CommandLineHandler.cpp
-    CommandLineHandler.h
+    Core/CommandLineHandler.cpp
+    Core/CommandLineHandler.h
 )
 
-target_include_directories(world PUBLIC
+target_include_directories(cmdhandler PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src/Engine
     ${CMAKE_SOURCE_DIR}/include

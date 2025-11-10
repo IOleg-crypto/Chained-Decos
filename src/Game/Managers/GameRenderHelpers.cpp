@@ -1,5 +1,5 @@
 #include "GameRenderHelpers.h"
-#include "Engine/Collision/CollisionManager.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
 #include <raylib.h>
 #include <algorithm>
 

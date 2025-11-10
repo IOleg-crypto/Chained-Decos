@@ -1,7 +1,7 @@
 #ifndef EDITOR_MODULE_H
 #define EDITOR_MODULE_H
 
-#include "Engine/Module/IEngineModule.h"
+#include "Engine/Module/Interfaces/IEngineModule.h"
 #include <memory>
 #include <vector>
 #include <string>

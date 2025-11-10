@@ -7,11 +7,11 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include <CameraController/CameraController.h>
-#include <Collision/CollisionManager.h>
-#include <Collision/CollisionSystem.h>
-#include <World/World.h>
-#include <Model/Model.h>
+#include <CameraController/Core/CameraController.h>
+#include <Collision/Manager/CollisionManager.h>
+#include <Collision/System/CollisionSystem.h>
+#include <World/Core/World.h>
+#include <Model/Core/Model.h>
 
 // Include component interfaces
 #include "IPlayerInput.h"

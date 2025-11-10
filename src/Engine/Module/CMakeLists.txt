@@ -1,7 +1,7 @@
 add_library(module STATIC
-    IEngineModule.h
-    ModuleManager.h
-    ModuleManager.cpp
+    Core/ModuleManager.h
+    Core/ModuleManager.cpp
+    Interfaces/IEngineModule.h
 )
 
 target_include_directories(module PUBLIC

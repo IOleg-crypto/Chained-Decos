@@ -4,9 +4,9 @@
 #include "PlayerInput.h"
 #include "PlayerCollision.h"
 #include "PlayerModel.h"
-#include <Render/IGameRenderable.h>
-#include <CameraController/CameraController.h>
-#include <World/World.h>
+#include <Render/Interfaces/IGameRenderable.h>
+#include <CameraController/Core/CameraController.h>
+#include <World/Core/World.h>
 #include <memory>
 #include <raylib.h>
 

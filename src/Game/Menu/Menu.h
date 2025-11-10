@@ -11,8 +11,8 @@
 #include "ConsoleManager.h"
 #include "MapSelector.h"
 #include "Engine.h"
-#include "Engine/CameraController/ICameraSensitivityController.h"
-#include <Render/IMenuRenderable.h>
+#include "Engine/CameraController/Interfaces/ICameraSensitivityController.h"
+#include <Render/Interfaces/IMenuRenderable.h>
 #include <imgui.h>
 #include <raylib.h>
 #include <GLFW/glfw3.h>

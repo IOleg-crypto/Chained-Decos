@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include "../Object/MapObject.h"
-#include "Engine/Collision/CollisionStructures.h"
+#include "Engine/Collision/Structures/CollisionStructures.h"
 
 // Interface for scene management subsystem
 class ISceneManager {

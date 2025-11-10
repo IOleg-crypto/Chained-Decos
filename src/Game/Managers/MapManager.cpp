@@ -1,12 +1,14 @@
 #include "MapManager.h"
 #include "../Player/Player.h"
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Model/Model.h"
-#include "Engine/Render/RenderManager.h"
-#include "Engine/Kernel/Kernel.h"
-#include "Engine/Kernel/KernelServices.h"
-#include "Engine/Map/MapService.h"
-#include "Engine/Map/MapObjectConverter.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
+#include "Engine/Render/Manager/RenderManager.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Kernel/Core/KernelServices.h"
+#include "Engine/Map/Core/MapService.h"
+#include "Engine/Map/Converter/MapObjectConverter.h"
+#include "Engine/Map/Renderer/MapRenderer.h"
+#include "MapCollisionInitializer.h"
 #include "Game/Menu/Menu.h"
 #include "Player/PlayerCollision.h"
 #include <raylib.h>
@@ -16,11 +18,11 @@
 #include <fstream>
 #include <set>
 #include <unordered_set>
-#include "Engine/Render/RenderUtils.h"
 
 MapManager::MapManager(Player* player, CollisionManager* collisionManager, ModelLoader* models, RenderManager* renderManager, Kernel* kernel, Menu* menu)
     : m_player(player), m_collisionManager(collisionManager), m_models(models), m_renderManager(renderManager), m_kernel(kernel), m_menu(menu),
-      m_hasSpawnZone(false), m_spawnTextureLoaded(false)
+      m_hasSpawnZone(false), m_spawnTextureLoaded(false),
+      m_collisionInitializer(std::make_unique<MapCollisionInitializer>(collisionManager, models, player))
 {
     // Initialize spawn zone
     m_playerSpawnZone = {0};
@@ -763,97 +765,28 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
 
 void MapManager::RenderEditorMap()
 {
-    // Render the loaded map objects
-    int renderedCount = 0;
+    // Use MapRenderer to render map objects
+    // Note: This method renders primitives only; models are rendered via ModelLoader instances
+    MapRenderer renderer;
+    Camera3D dummyCamera = {0}; // Not used for primitive rendering
+    
     for (const auto &object : m_gameMap.GetMapObjects())
     {
-        // Use color from map, or gray if color is black/zero (no color specified)
-        Color renderColor = object.color;
-        if (renderColor.a == 0)
+        // Skip models - they are rendered through ModelLoader instances
+        if (object.type == MapObjectType::MODEL)
         {
-            renderColor.a = 255; // Make fully opaque if transparent
-        }
-        // If color is completely black/zero (no color specified), use gray
-        if (renderColor.r == 0 && renderColor.g == 0 && renderColor.b == 0)
-        {
-            renderColor = GRAY; // Use gray for models without color
+            continue;
         }
         
-        // Render based on object type
-        switch (object.type)
+        // Skip spawn zones - they are rendered separately
+        if (object.type == MapObjectType::SPAWN_ZONE)
         {
-        case MapObjectType::CUBE:
-        {
-            // Ensure valid scale values
-            float cubeWidth = (object.scale.x != 0.0f) ? object.scale.x : 1.0f;
-            float cubeHeight = (object.scale.y != 0.0f) ? object.scale.y : 1.0f;
-            float cubeLength = (object.scale.z != 0.0f) ? object.scale.z : 1.0f;
-            DrawCube(object.position, cubeWidth, cubeHeight, cubeLength, renderColor);
-            renderedCount++;
-            break;
+            continue;
         }
-
-        case MapObjectType::SPHERE:
-        {
-            // Ensure valid radius
-            float sphereRadius = (object.radius > 0.0f) ? object.radius : 1.0f;
-            DrawSphere(object.position, sphereRadius, renderColor);
-            renderedCount++;
-            break;
-        }
-
-        case MapObjectType::CYLINDER:
-        {
-            // Draw cylinder using proper DrawCylinder function
-            float cylRadius = (object.radius > 0.0f) ? object.radius : 1.0f;
-            float cylHeight = (object.height > 0.0f) ? object.height : 1.0f;
-            DrawCylinder(object.position, cylRadius, cylRadius, cylHeight, 16, renderColor);
-            renderedCount++;
-            break;
-        }
-
-        case MapObjectType::PLANE:
-        {
-            // Draw plane as a thin cube
-            float planeWidth = (object.size.x != 0.0f) ? object.size.x : 5.0f;
-            float planeLength = (object.size.y != 0.0f) ? object.size.y : 5.0f;
-            DrawPlane(object.position, Vector2{planeWidth, planeLength}, renderColor);
-            renderedCount++;
-            break;
-        }
-
-        case MapObjectType::MODEL:
-        {
-            // MODEL objects are rendered through ModelLoader instances via DrawAllModels()
-            // in RenderGame() -> DrawScene3D(), so we don't render them here to avoid duplicates.
-            // If model is not found or instance creation failed, it will show as missing
-            // (instances are created in LoadEditorMap()).
-            break;
-        }
-
-        case MapObjectType::LIGHT:
-        {
-            // LIGHT objects are not rendered as 3D models - they are lighting objects
-            break;
-        }
-
-        case MapObjectType::SPAWN_ZONE:
-        {
-            // SPAWN_ZONE objects are rendered separately via RenderSpawnZone() (currently disabled)
-            // Don't render them here as regular objects
-            break;
-        }
-
-        default:
-        {
-            renderedCount = 0;
-            break;
-        }
-        }
+        
+        // Use MapRenderer to render the object
+        renderer.RenderMapObject(object, m_gameMap.GetMapModels(), dummyCamera, false);
     }
-    
-    // Models are rendered through ModelLoader instances via DrawAllModels()
-    // Only primitive objects are counted here
     
     // Render spawn zone if it exists
     // RenderSpawnZone(); // Disabled - spawn zone rendering turned off in game
@@ -893,8 +826,10 @@ void MapManager::RenderSpawnZone() const
         (m_playerSpawnZone.min.z + m_playerSpawnZone.max.z) * 0.5f
     };
     
-    // Use shared RenderUtils function to draw textured cube
-    RenderUtils::DrawCubeTexture(m_spawnTexture, center, size.x, size.y, size.z, WHITE);
+    // Use MapRenderer to render spawn zone
+    MapRenderer renderer;
+    float spawnSize = (size.x + size.y + size.z) / 3.0f; // Average size
+    renderer.RenderSpawnZone(m_spawnTexture, center, spawnSize, WHITE, m_spawnTextureLoaded);
 }
 
 void MapManager::DumpMapDiagnostics() const
@@ -939,192 +874,35 @@ void MapManager::DumpMapDiagnostics() const
 
 void MapManager::InitCollisions()
 {
-    TraceLog(LOG_INFO, "MapManager::InitCollisions() - Initializing collision system...");
-
-    // Only clear existing colliders if no custom map is loaded
-    // If map is loaded, LoadEditorMap() has already created colliders for map objects
-    size_t previousColliderCount = m_collisionManager->GetColliders().size();
-    if (previousColliderCount > 0 && m_gameMap.GetMapObjects().empty())
+    if (m_collisionInitializer)
     {
-        TraceLog(LOG_INFO,
-                 "MapManager::InitCollisions() - Clearing %zu existing colliders (no map loaded)",
-                 previousColliderCount);
-        m_collisionManager->ClearColliders();
+        m_collisionInitializer->InitializeCollisions(m_gameMap);
     }
-    else if (previousColliderCount > 0 && !m_gameMap.GetMapObjects().empty())
-    {
-        TraceLog(LOG_INFO,
-                 "MapManager::InitCollisions() - Map loaded with %zu existing colliders, preserving them",
-                 previousColliderCount);
-    }
-
-    // Ground is now provided by map objects, no artificial ground needed
-    if (m_gameMap.GetMapObjects().empty())
-    {
-        TraceLog(LOG_INFO,
-                 "MapManager::InitCollisions() - No custom map loaded, no ground will be created");
-    }
-    else
-    {
-        TraceLog(LOG_INFO,
-                 "MapManager::InitCollisions() - Custom map loaded, using map's ground objects");
-    }
-
-    // Initialize ground collider first
-    m_collisionManager->Initialize();
-    
-  
-
-    // Load model collisions only for models that are actually loaded and required for this map
-    auto availableModels = m_models->GetAvailableModels();
-    TraceLog(LOG_INFO, "MapManager::InitCollisions() - Available models for collision generation: %d",
-             availableModels.size());
-    for (const auto &modelName : availableModels)
-    {
-        TraceLog(LOG_INFO, "MapManager::InitCollisions() - Model available: %s", modelName.c_str());
-    }
-
-    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, availableModels);
-    TraceLog(LOG_INFO, "MapManager::InitCollisions() - Model collisions created");
-
-    // Reinitialize after adding all model colliders
-    m_collisionManager->Initialize();
-
-    // Initialize player collision (if player is available)
-    if (m_player) {
-        auto &playerCollision = m_player->GetCollisionMutable();
-        playerCollision.InitializeCollision();
-    } else {
-        TraceLog(LOG_WARNING, "MapManager::InitCollisions() - Player not available, skipping player collision initialization");
-    }
-
-    TraceLog(LOG_INFO, "MapManager::InitCollisions() - Collision system initialized with %zu colliders.",
-             m_collisionManager->GetColliders().size());
 }
 
 void MapManager::InitCollisionsWithModels(const std::vector<std::string> &requiredModels)
 {
-    TraceLog(LOG_INFO,
-             "MapManager::InitCollisionsWithModels() - Initializing collision system with %d required "
-             "models...",
-             requiredModels.size());
-
-    // Only clear existing colliders if no custom map is loaded
-    // If map is loaded, LoadEditorMap() has already created colliders for map objects
-    size_t previousColliderCount = m_collisionManager->GetColliders().size();
-    if (previousColliderCount > 0 && m_gameMap.GetMapObjects().empty())
+    if (m_collisionInitializer)
     {
-        TraceLog(
-            LOG_INFO,
-            "MapManager::InitCollisionsWithModels() - Clearing %zu existing colliders (no map loaded)",
-            previousColliderCount);
-        m_collisionManager->ClearColliders();
+        m_collisionInitializer->InitializeCollisionsWithModels(m_gameMap, requiredModels);
     }
-    else if (previousColliderCount > 0 && !m_gameMap.GetMapObjects().empty())
-    {
-        TraceLog(LOG_INFO,
-                 "MapManager::InitCollisionsWithModels() - Map loaded with %zu existing colliders, "
-                 "preserving them",
-                 previousColliderCount);
-    }
-
-    // Initialize ground collider first
-    m_collisionManager->Initialize();
-    
-
-    // Try to create model collisions, but don't fail if it doesn't work
-    TraceLog(LOG_INFO,
-             "MapManager::InitCollisionsWithModels() - Required models for collision generation: %d",
-             requiredModels.size());
-    for (const auto &modelName : requiredModels)
-    {
-        TraceLog(LOG_INFO, "MapManager::InitCollisionsWithModels() - Model required: %s",
-                 modelName.c_str());
-    }
-
-    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
-    TraceLog(LOG_INFO, "MapManager::InitCollisionsWithModels() - Model collisions created");
-
-    // Reinitialize after adding all model colliders
-    m_collisionManager->Initialize();
-
-    // Initialize player collision (if player is available)
-    if (m_player) {
-        auto &playerCollision = m_player->GetCollisionMutable();
-        playerCollision.InitializeCollision();
-    } else {
-        TraceLog(LOG_WARNING, "MapManager::InitCollisionsWithModels() - Player not available, skipping player collision initialization");
-    }
-
-    TraceLog(LOG_INFO,
-             "MapManager::InitCollisionsWithModels() - Collision system initialized with %zu colliders.",
-             m_collisionManager->GetColliders().size());
 }
 
 bool MapManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels)
 {
-    TraceLog(LOG_INFO,
-             "MapManager::InitCollisionsWithModelsSafe() - Initializing collision system with %d "
-             "required models...",
-             requiredModels.size());
-
-    // Only clear existing colliders if no custom map is loaded
-    // If map is loaded, LoadEditorMap() has already created colliders for map objects
-    size_t previousColliderCount = m_collisionManager->GetColliders().size();
-    if (previousColliderCount > 0 && m_gameMap.GetMapObjects().empty())
+    if (m_collisionInitializer)
     {
-        TraceLog(LOG_INFO,
-                 "MapManager::InitCollisionsWithModelsSafe() - Clearing %zu existing colliders (no map "
-                 "loaded)",
-                 previousColliderCount);
-        m_collisionManager->ClearColliders();
+        return m_collisionInitializer->InitializeCollisionsWithModelsSafe(m_gameMap, requiredModels);
     }
-    else if (previousColliderCount > 0 && !m_gameMap.GetMapObjects().empty())
-    {
-        TraceLog(LOG_INFO,
-                 "MapManager::InitCollisionsWithModelsSafe() - Map loaded with %zu existing colliders, "
-                 "preserving them",
-                 previousColliderCount);
-    }
-
-    // Initialize collision manager
-    m_collisionManager->Initialize();
-
-    // Try to create model collisions, but don't fail if it doesn't work
-    TraceLog(LOG_INFO,
-             "MapManager::InitCollisionsWithModelsSafe() - Required models for collision generation: %d",
-             requiredModels.size());
-    for (const auto &modelName : requiredModels)
-    {
-        TraceLog(LOG_INFO, "MapManager::InitCollisionsWithModelsSafe() - Model required: %s",
-                 modelName.c_str());
-    }
-
-    // Try to create model collisions safely
-    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
-    TraceLog(LOG_INFO, "MapManager::InitCollisionsWithModelsSafe() - Model collisions created");
-    
-    // Reinitialize after adding all model colliders
-    m_collisionManager->Initialize();
-
-    // Initialize player collision (if player is available)
-    if (m_player) {
-        auto &playerCollision = m_player->GetCollisionMutable();
-        playerCollision.InitializeCollision();
-    } else {
-        TraceLog(LOG_WARNING, "MapManager::InitCollisionsWithModelsSafe() - Player not available, skipping player collision initialization");
-    }
-
-    TraceLog(
-        LOG_INFO,
-        "MapManager::InitCollisionsWithModelsSafe() - Collision system initialized with %zu colliders.",
-        m_collisionManager->GetColliders().size());
-
-    return true; // Always return true since we have at least basic collision
+    return false;
 }
 
 void MapManager::SetPlayer(Player* player)
 {
     m_player = player;
+    if (m_collisionInitializer)
+    {
+        m_collisionInitializer->SetPlayer(player);
+    }
     TraceLog(LOG_INFO, "MapManager::SetPlayer() - Player reference updated");
 }

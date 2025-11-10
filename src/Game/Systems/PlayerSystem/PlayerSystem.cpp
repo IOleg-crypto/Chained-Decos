@@ -1,13 +1,13 @@
 #include "PlayerSystem.h"
-#include "Engine/Kernel/Kernel.h"
-#include "Engine/Kernel/KernelServices.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Kernel/Core/KernelServices.h"
 #include "Engine/Engine.h"
 #include "../../Player/Player.h"
 #include "../../Managers/PlayerManager.h"
 #include "../../Menu/Menu.h"
 #include "../../Menu/ConsoleManagerHelpers.h"
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Model/Model.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
 #include <raylib.h>
 
 PlayerSystem::PlayerSystem()

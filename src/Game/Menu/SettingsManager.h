@@ -2,7 +2,7 @@
 #define SETTINGS_MANAGER_H
 
 #include <string>
-#include "../Config/ConfigManager.h"
+#include "../Config/Core/ConfigManager.h"
 #include "MenuConstants.h"
 
 namespace MenuConstants {

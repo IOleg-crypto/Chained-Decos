@@ -1,7 +1,7 @@
 #ifndef UPDATE_MANAGER_H
 #define UPDATE_MANAGER_H
 
-#include "Engine/Collision/CollisionManager.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
 #include "MapManager.h"
 
 class UpdateManager

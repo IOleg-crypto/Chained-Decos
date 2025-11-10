@@ -4,11 +4,11 @@
 #include "Game/GameApplication.h"
 #include "Game/Player/Player.h"
 #include "Engine/Engine.h"
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Model/Model.h"
-#include "Engine/World/World.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
+#include "Engine/World/Core/World.h"
 #include "Game/Menu/Menu.h"
-#include "Engine/Map/MapLoader.h"
+#include "Engine/Map/Core/MapLoader.h"
 
 class GameIntegrationTest : public ::testing::Test {
 protected:
