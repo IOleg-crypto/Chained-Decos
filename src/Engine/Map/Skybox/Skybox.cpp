@@ -68,6 +68,28 @@ void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fs
     int mvpLoc = GetShaderLocation(shader, "mvp");
     m_skyboxModel.materials[0].shader.locs[SHADER_LOC_MATRIX_MVP] = mvpLoc;
 
+    // Set shader uniforms for skybox cubemap
+    int environmentMapLoc = GetShaderLocation(shader, "environmentMap");
+    if (environmentMapLoc >= 0)
+    {
+        int envMapValue[1] = { MATERIAL_MAP_CUBEMAP };
+        SetShaderValue(shader, environmentMapLoc, envMapValue, SHADER_UNIFORM_INT);
+    }
+
+    int doGammaLoc = GetShaderLocation(shader, "doGamma");
+    if (doGammaLoc >= 0)
+    {
+        int doGammaValue[1] = { 0 }; // No gamma correction for regular textures
+        SetShaderValue(shader, doGammaLoc, doGammaValue, SHADER_UNIFORM_INT);
+    }
+
+    int vflippedLoc = GetShaderLocation(shader, "vflipped");
+    if (vflippedLoc >= 0)
+    {
+        int vflippedValue[1] = { 0 }; // Not flipped for regular cubemaps
+        SetShaderValue(shader, vflippedLoc, vflippedValue, SHADER_UNIFORM_INT);
+    }
+
     TraceLog(LOG_INFO, "Skybox::LoadMaterialShader() - Shaders loaded successfully");
 }
 
@@ -153,7 +175,10 @@ void Skybox::DrawSkybox()
     rlDisableBackfaceCulling();
     rlDisableDepthMask();
     
-    DrawModel(m_skyboxModel, Vector3{0, 0, 0}, 1.0f, WHITE);
+    // Render skybox at large scale to surround the entire scene
+    // Scale should be large enough to be outside the far plane but not too large to cause precision issues
+    const float skyboxScale = 1000.0f;
+    DrawModel(m_skyboxModel, Vector3{0, 0, 0}, skyboxScale, WHITE);
     
     rlEnableDepthMask();
     rlEnableBackfaceCulling();
