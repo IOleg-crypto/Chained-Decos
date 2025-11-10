@@ -14,6 +14,8 @@ set(MAPEDITOR_SOURCES
     Editor/Editor.cpp
     Editor/Object/MapObject.cpp
     Editor/FileManager/FileManager.cpp
+    Editor/FileManager/MapObjectConverterEditor.cpp
+    Editor/FileManager/MapObjectConverterEditor.h
     Editor/FileManager/IFileManager.h
     Editor/FileManager/FileManager.h
     Editor/SceneManager/SceneManager.cpp
@@ -56,7 +58,7 @@ target_include_directories(ChainedDecosMapEditor PRIVATE
 )
 
 # Link with ChainedDecosEngine, raylib (map is included via ChainedDecosEngine)
-target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib nlohmann_json nfd)
+target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib nlohmann_json nfd imguilib)
 
 # Compiler definitions
 target_compile_definitions(ChainedDecosMapEditor PRIVATE

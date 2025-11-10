@@ -2,6 +2,10 @@ add_library(map STATIC
     MapLoader.cpp
     MapLoader.h
     MapData.h
+    MapService.cpp
+    MapService.h
+    MapObjectConverter.cpp
+    MapObjectConverter.h
     Skybox/Skybox.cpp
     Skybox/Skybox.h
 )

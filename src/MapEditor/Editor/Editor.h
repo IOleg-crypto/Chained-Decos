@@ -5,7 +5,7 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
-#include "imgui.h"
+#include <imgui/imgui.h>
 #include "raylib.h"
 #include <memory>
 #include <string>
@@ -16,7 +16,7 @@
 #include "Object/MapObject.h"
 #include "Engine/Map/MapLoader.h"
 #include "ModelManager/IModelManager.h"
-#include "Engine/Map/Skybox/skybox.h"
+#include "Engine/Map/Skybox/Skybox.h"
 
 // Subsystem interfaces
 #include "SceneManager/ISceneManager.h"

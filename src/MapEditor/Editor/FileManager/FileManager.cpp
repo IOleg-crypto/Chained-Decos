@@ -6,7 +6,7 @@
 #include "MapObjectConverterEditor.h"
 #include "../Object/MapObject.h"
 #include "Engine/Map/MapService.h"
-#include "Engine/Map/MapData.h"
+#include "Engine/Map/MapLoader.h"
 #include <filesystem>
 #include <iostream>
 #include <raylib.h>
@@ -16,7 +16,11 @@ namespace fs = std::filesystem;
 FileManager::FileManager()
     : m_currentlyLoadedMapFilePath(""), m_currentMetadata()
 {
-    m_currentMetadata = m_mapService.GetDefaultMetadata();
+    MapMetadata defaultMeta;
+    defaultMeta.name = "Untitled Map";
+    defaultMeta.displayName = "Untitled Map";
+    defaultMeta.skyColor = SKYBLUE;
+    m_currentMetadata = defaultMeta;
 }
 
 FileManager::~FileManager()
@@ -27,7 +31,8 @@ bool FileManager::SaveMap(const std::string &filename, const std::vector<MapObje
 {
     Vector3 spawnPosition = {0.0f, 2.0f, 0.0f};
     
-    std::vector<MapObjectData> mapObjects;
+    GameMap gameMap;
+    std::vector<MapObjectData>& mapObjects = gameMap.GetMapObjectsMutable();
     for (const auto &obj : objects)
     {
         if (obj.GetObjectType() == 6)
@@ -51,7 +56,9 @@ bool FileManager::SaveMap(const std::string &filename, const std::vector<MapObje
         metadata.skyColor = SKYBLUE;
     }
 
-    if (m_mapService.SaveMap(filename, mapObjects, metadata))
+    gameMap.SetMapMetaData(metadata);
+
+    if (m_mapService.SaveMap(filename, gameMap))
     {
         std::cout << "Map saved successfully to " << filename << std::endl;
         m_currentlyLoadedMapFilePath = filename;
@@ -65,18 +72,18 @@ bool FileManager::SaveMap(const std::string &filename, const std::vector<MapObje
 
 bool FileManager::LoadMap(const std::string &filename, std::vector<MapObject> &objects)
 {
-    std::vector<MapObjectData> mapObjects;
-    MapMetadata metadata;
-    if (!m_mapService.LoadMap(filename, mapObjects, metadata))
+    GameMap gameMap;
+    if (!m_mapService.LoadMap(filename, gameMap))
     {
         std::cout << "Failed to load map: " << filename << std::endl;
         return false;
     }
 
+    const MapMetadata& metadata = gameMap.GetMapMetaData();
     m_currentMetadata = metadata;
 
     objects.clear();
-    for (const auto &data : mapObjects)
+    for (const auto &data : gameMap.GetMapObjects())
     {
         objects.push_back(MapObjectConverterEditor::MapObjectDataToMapObject(data));
     }
