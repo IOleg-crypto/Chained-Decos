@@ -11,7 +11,7 @@
 #include <CameraController/CameraController.h>
 #include <Color/ColorParser.h>
 #include <Engine/Engine.h>
-#include <Input/InputManager.h>
+#include <Input/Core/InputManager.h>
 #include <Map/MapLoader.h>
 #include <Menu/Menu.h>
 #include <Model/Model.h>

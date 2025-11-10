@@ -1,6 +1,6 @@
 add_library(config STATIC
-    ConfigManager.cpp
-    ConfigManager.h
+    Core/ConfigManager.cpp
+    Core/ConfigManager.h
 )
 
 target_include_directories(config

@@ -1,11 +1,6 @@
-//
-// Created by AI Assistant
-// EditorRenderer - Implementation
-//
-
 #include "EditorRenderer.h"
-#include "Engine/Map/MapLoader.h"
-#include "Engine/Render/RenderUtils.h"
+#include "Engine/Map/Renderer/MapRenderer.h"
+#include "Engine/Render/Utils/RenderUtils.h"
 #include <raylib.h>
 #include <raymath.h>
 
@@ -38,8 +33,8 @@ void EditorRenderer::RenderObject(const MapObject& obj, const MapObjectData& dat
     }
 
     Camera3D camera = m_cameraManager ? m_cameraManager->GetCamera() : Camera3D{};
-    MapLoader loader;
-    loader.RenderMapObject(data, loadedModels, camera, true);
+    MapRenderer renderer;
+    renderer.RenderMapObject(data, loadedModels, camera, true);
 
     // Additional editor-specific rendering: selection wireframe and gizmo
     if (isSelected)

@@ -1,6 +1,6 @@
 add_library(event STATIC
-    EventSystem.cpp
-    EventSystem.h
+    Core/EventSystem.cpp
+    Core/EventSystem.h
 )
 
 target_include_directories(event PUBLIC

@@ -1,8 +1,8 @@
 #ifndef GAME_APPLICATION_H
 #define GAME_APPLICATION_H
 
-#include "Engine/Application/EngineApplication.h"
-#include "Engine/CommandLineHandler/CommandLineHandler.h"
+#include "Engine/Application/Core/EngineApplication.h"
+#include "Engine/CommandLineHandler/Core/CommandLineHandler.h"
 #include <memory>
 
 // Forward declarations

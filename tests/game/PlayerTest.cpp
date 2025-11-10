@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "Game/Player/Player.h"
-#include "Engine/Collision/CollisionManager.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
 
 class PlayerTest : public ::testing::Test {
 protected:

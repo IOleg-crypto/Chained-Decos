@@ -1,6 +1,6 @@
 add_library(color STATIC
-    ColorParser.h
-    ColorParser.cpp
+    Parser/ColorParser.h
+    Parser/ColorParser.cpp
 )
 
 target_include_directories(color PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

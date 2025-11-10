@@ -1,8 +1,3 @@
-//
-// Created by AI Assistant
-// PathUtils - Implementation
-//
-
 #include "PathUtils.h"
 #include <filesystem>
 #include <string>

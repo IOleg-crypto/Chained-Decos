@@ -1,6 +1,6 @@
 add_library(world STATIC
-    World.cpp
-    World.h
+    Core/World.cpp
+    Core/World.h
 )
 
 target_include_directories(world PUBLIC
