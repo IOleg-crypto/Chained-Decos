@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "imgui.h"
+#include <imgui/imgui.h>
 #include "raylib.h"
 
 #include "Engine/Map/MapLoader.h"
@@ -61,6 +61,7 @@ private:
     std::vector<SkyboxInfo> m_availableSkyboxes;
     bool m_skyboxesScanned;
     int m_selectedSkyboxIndex;
+    std::string m_skyboxPlaceholderPath;
 
 public:
     UIManager(Editor* editor,

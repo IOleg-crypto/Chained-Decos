@@ -5,10 +5,10 @@
 #include "Modules/EditorModule.h"
 #include "Engine/Kernel/KernelServices.h"
 #include <raylib.h>
-#include <imgui.h>
+#include <imgui/imgui.h>
 #include <rlImGui.h>
 
-#include "Engine/Map/Skybox/skybox.h"
+#include "Engine/Map/Skybox/Skybox.h"
 
 EditorApplication::EditorApplication()
     : EngineApplication()

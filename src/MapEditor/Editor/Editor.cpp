@@ -25,9 +25,9 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <imgui.h>
+#include <imgui/imgui.h>
 #include <iostream>
-#include <misc/cpp/imgui_stdlib.h>
+#include <imgui/misc/cpp/imgui_stdlib.h>
 #include <nfd.h>
 #include <raylib.h>
 #include <rlImGui.h>
@@ -101,13 +101,6 @@ void Editor::Update()
     // Update subsystems
     if (m_cameraManager)
         m_cameraManager->Update();
-    // if (m_skybox)
-    // {
-    //     SkyboxUpdate(m_skybox.get());
-    // }
-    // TODO: Update other subsystems when implemented
-    // if (m_inputManager) m_inputManager->Update();
-    // if (m_uiManager) m_uiManager->HandleInput();
     
 }
 
@@ -164,14 +157,9 @@ void Editor::RenderObject(const MapObject &obj)
         }
     }
 
-    // Use MapLoader::RenderMapObject for consistency with Game
-    // Pass useEditorColors=true to show textures properly in editor
     Camera3D camera = m_cameraManager->GetCamera();
     MapLoader loader;
     loader.RenderMapObject(data, loadedModels, camera, true);
-    
-    // Note: This could also use MapService::RenderMapObject for consistency,
-    // but MapLoader is already available and works correctly
 
     // Additional editor-specific rendering: selection wireframe
     if (obj.IsSelected())
