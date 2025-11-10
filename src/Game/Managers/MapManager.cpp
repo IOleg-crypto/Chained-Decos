@@ -5,7 +5,8 @@
 #include "Engine/Render/RenderManager.h"
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/Kernel/KernelServices.h"
-#include "Engine/MapFileManager/JsonMapFileManager.h"
+#include "Engine/Map/MapService.h"
+#include "Engine/Map/MapObjectConverter.h"
 #include "Game/Menu/Menu.h"
 #include "Player/PlayerCollision.h"
 #include <raylib.h>
@@ -123,16 +124,15 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
 
     if (extension == "json")
     {
-        TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Detected JSON format, using MapLoader");
+        TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Detected JSON format, using MapService");
 
-        TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Using MapEditor loader (JsonMapFileManager) "
-                           "for JSON parsing...");
-        // Use Map Editor's loader directly and convert its objects into GameMap
-        std::vector<JsonSerializableObject> editorObjects;
-        MapMetadata editorMeta;
-        if (!JsonMapFileManager::LoadMap(editorObjects, mapPath, editorMeta))
+        // Use MapService to load map (unified service for Editor and Game)
+        MapService mapService;
+        GameMap loadedMap = mapService.LoadMapAsGameMap(mapPath);
+        
+        if (loadedMap.GetMapObjects().empty())
         {
-            TraceLog(LOG_ERROR, "MapManager::LoadEditorMap() - JsonMapFileManager failed to load map: %s",
+            TraceLog(LOG_ERROR, "MapManager::LoadEditorMap() - MapService failed to load map: %s",
                      mapPath.c_str());
             TraceLog(LOG_ERROR, "MapManager::LoadEditorMap() - This may indicate JSON parsing errors or "
                                 "invalid map format");
@@ -140,239 +140,69 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
         }
 
         TraceLog(LOG_INFO,
-                 "MapManager::LoadEditorMap() - JsonMapFileManager loaded %zu objects successfully",
-                 editorObjects.size());
+                 "MapManager::LoadEditorMap() - MapService loaded %zu objects successfully",
+                 loadedMap.GetMapObjects().size());
 
-        GameMap adapterMap;
-        adapterMap.SetMapMetaData(editorMeta);
+        // Move loaded map data to m_gameMap
+        // Note: Skybox is already loaded by MapService::LoadMapAsGameMap -> MapLoader::LoadMap
+        m_gameMap = std::move(loadedMap);
+        m_currentMapPath = mapPath;
 
-        for (const auto &eo : editorObjects)
+        // Register any models preloaded by MapLoader into the runtime ModelLoader
+        if (!m_gameMap.GetMapModels().empty())
         {
             TraceLog(LOG_INFO,
-                     "MapManager::LoadEditorMap() - Processing editor object: name='%s', type=%d, "
-                     "modelName='%s'",
-                     eo.name.c_str(), eo.type, eo.modelName.c_str());
-
-            MapObjectData od;
-            od.name =
-                eo.name.empty() ? ("object_" + std::to_string(adapterMap.GetMapObjects().size())) : eo.name;
-            od.type = static_cast<MapObjectType>(eo.type);
-            od.position = eo.position;
-            
-            od.rotation = eo.rotation;
-            od.scale = eo.scale;
-            od.color = eo.color;
-            od.modelName = eo.modelName;
-            od.radius = eo.radiusSphere;
-            od.height = eo.radiusV;
-            od.size = eo.size;
-            od.isPlatform = true;
-            od.isObstacle = false;
-
-            // Sanitize values coming from editor JSON to avoid NaN/Inf propagating to render
-            auto sanitizeVec3 = [](Vector3 v)
+                     "MapManager::LoadEditorMap() - Registering %zu preloaded models from map into "
+                     "ModelLoader",
+                     m_gameMap.GetMapModels().size());
+            for (const auto &p : m_gameMap.GetMapModels())
             {
-                if (!std::isfinite(v.x))
-                    v.x = 0.0f;
-                if (!std::isfinite(v.y))
-                    v.y = 0.0f;
-                if (!std::isfinite(v.z))
-                    v.z = 0.0f;
-                return v;
-            };
-            auto sanitizeFloat = [](float f, float fallback)
-            { return std::isfinite(f) ? f : fallback; };
+                const std::string &modelName = p.first;
+                const ::Model &loaded = p.second;
 
-            od.position = sanitizeVec3(od.position);
-            od.rotation = sanitizeVec3(od.rotation);
-            od.scale = sanitizeVec3(od.scale);
-            if (od.scale.x == 0.0f && od.scale.y == 0.0f && od.scale.z == 0.0f)
-            {
-                od.scale = {1.0f, 1.0f, 1.0f};
-            }
-            od.radius = sanitizeFloat(od.radius, 1.0f);
-            od.height = sanitizeFloat(od.height, 1.0f);
-            if (!std::isfinite(od.size.x))
-                od.size.x = 0.0f;
-            if (!std::isfinite(od.size.y))
-                od.size.y = 0.0f;
-
-            TraceLog(LOG_INFO,
-                     "MapManager::LoadEditorMap() - Sanitized object: pos=(%.2f,%.2f,%.2f), "
-                     "scale=(%.2f,%.2f,%.2f), radius=%.2f",
-                     od.position.x, od.position.y, od.position.z, od.scale.x, od.scale.y,
-                     od.scale.z, od.radius);
-
-            adapterMap.AddMapObjects({{od}});
-
-            // If this object references a model, attempt to preload it into the
-            // GameMap.loadedModels
-            if (od.type == MapObjectType::MODEL && !od.modelName.empty())
-            {
-                TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Attempting to load model: %s",
-                         od.modelName.c_str());
-
-                // Try multiple path variations for the model
-                std::vector<std::string> possiblePaths;
-                std::string modelName = od.modelName;
-
-                // Remove extension if present to try different extensions
-                std::string stem = std::filesystem::path(modelName).stem().string();
-                std::string extension = std::filesystem::path(modelName).extension().string();
-
-                // Build possible paths
-                if (extension.empty())
+                // Validate model before registration
+                if (loaded.meshCount > 0)
                 {
-                    // No extension provided, try common extensions
-                    std::vector<std::string> extensions = {".glb", ".gltf", ".obj", ".fbx"};
-                    for (const auto &ext : extensions)
+                    if (m_models->RegisterLoadedModel(modelName, loaded))
                     {
-                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" +
-                                                modelName + ext);
-                        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" +
-                                                stem + ext);
+                        TraceLog(LOG_INFO,
+                                 "MapManager::LoadEditorMap() - Successfully registered model from "
+                                 "map: %s (meshCount: %d)",
+                                 modelName.c_str(), loaded.meshCount);
+                    }
+                    else
+                    {
+                        TraceLog(
+                            LOG_WARNING,
+                            "MapManager::LoadEditorMap() - Failed to register model from map: %s",
+                            modelName.c_str());
                     }
                 }
                 else
                 {
-                    // Extension provided, use as-is
-                    possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" +
-                                            modelName);
-                    possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + stem +
-                                            extension);
-                }
-
-                TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Trying %zu possible paths for model %s",
-                         possiblePaths.size(), od.modelName.c_str());
-
-                // Try to find and load the model
-                bool modelLoaded = false;
-                for (const auto &modelPath : possiblePaths)
-                {
-                    TraceLog(LOG_DEBUG, "MapManager::LoadEditorMap() - Checking path: %s",
-                             modelPath.c_str());
-                    if (std::ifstream(modelPath).good())
-                    {
-                        TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Found model file at: %s",
-                                 modelPath.c_str());
-                        // Avoid duplicate loads
-                        if (adapterMap.GetMapModels().find(od.modelName) ==
-                            adapterMap.GetMapModels().end())
-                        {
-                            Model model = ::LoadModel(modelPath.c_str());
-                            if (model.meshCount > 0)
-                            {
-                                adapterMap.AddMapModels({{od.modelName, model}});
-                                TraceLog(LOG_INFO,
-                                         "MapManager::LoadEditorMap() - Successfully loaded model %s "
-                                         "from %s (meshCount: %d)",
-                                         od.modelName.c_str(), modelPath.c_str(), model.meshCount);
-                                modelLoaded = true;
-                                break;
-                            }
-                            else
-                            {
-                                TraceLog(
-                                    LOG_WARNING,
-                                    "MapManager::LoadEditorMap() - Model loaded but has no meshes: %s",
-                                    modelPath.c_str());
-                            }
-                        }
-                        else
-                        {
-                            TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Model %s already loaded",
-                                     od.modelName.c_str());
-                            modelLoaded = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!modelLoaded)
-                {
-                    TraceLog(LOG_ERROR,
-                             "MapManager::LoadEditorMap() - CRITICAL: Could not find or load model file "
-                             "for %s. This will cause rendering failures.",
-                             od.modelName.c_str());
-                    TraceLog(LOG_ERROR, "MapManager::LoadEditorMap() - Tried paths:");
-                    for (const auto &path : possiblePaths)
-                    {
-                        TraceLog(LOG_ERROR, "  - %s", path.c_str());
-                    }
+                    TraceLog(LOG_WARNING,
+                             "MapManager::LoadEditorMap() - Skipping invalid model from map: %s "
+                             "(meshCount: %d)",
+                             modelName.c_str(), loaded.meshCount);
                 }
             }
-        }
-
-        m_gameMap.SetMapMetaData(adapterMap.GetMapMetaData());
-        m_gameMap.AddMapObjects(adapterMap.GetMapObjects());
-        m_gameMap.AddMapModels(adapterMap.GetMapModels());
-    m_currentMapPath = mapPath;
-
-        if (!m_gameMap.GetMapObjects().empty())
-        {
-            // Register any models preloaded by MapLoader into the runtime ModelLoader
-            if (!m_gameMap.GetMapModels().empty())
-            {
-                TraceLog(LOG_INFO,
-                         "MapManager::LoadEditorMap() - Registering %d preloaded models from map into "
-                         "ModelLoader",
-                         m_gameMap.GetMapModels().size());
-                for (const auto &p : m_gameMap.GetMapModels())
-                {
-                    const std::string &modelName = p.first;
-                    const ::Model &loaded = p.second;
-
-                    // Validate model before registration
-                    if (loaded.meshCount > 0)
-                    {
-                        if (m_models->RegisterLoadedModel(modelName, loaded))
-                        {
-                            TraceLog(LOG_INFO,
-                                     "MapManager::LoadEditorMap() - Successfully registered model from "
-                                     "map: %s (meshCount: %d)",
-                                     modelName.c_str(), loaded.meshCount);
-                        }
-                        else
-                        {
-                            TraceLog(
-                                LOG_WARNING,
-                                "MapManager::LoadEditorMap() - Failed to register model from map: %s",
-                                modelName.c_str());
-                        }
-                    }
-                    else
-                    {
-                        TraceLog(LOG_WARNING,
-                                 "MapManager::LoadEditorMap() - Skipping invalid model from map: %s "
-                                 "(meshCount: %d)",
-                                 modelName.c_str(), loaded.meshCount);
-                    }
-                }
-            }
-            else
-            {
-                TraceLog(LOG_INFO,
-                         "MapManager::LoadEditorMap() - No preloaded models in GameMap to register");
-            }
-
-            TraceLog(LOG_INFO,
-                     "MapManager::LoadEditorMap() - MapLoader import successful, processing %d objects",
-                     m_gameMap.GetMapObjects().size());
-
-            TraceLog(LOG_INFO,
-                     "MapManager::LoadEditorMap() - Successfully loaded JSON map with %d objects",
-                     m_gameMap.GetMapObjects().size());
-            TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Debug: Object count verified as %d",
-                     m_gameMap.GetMapObjects().size());
         }
         else
         {
-            TraceLog(LOG_ERROR, "MapManager::LoadEditorMap() - Failed to load JSON map");
-            return;
+            TraceLog(LOG_INFO,
+                     "MapManager::LoadEditorMap() - No preloaded models in GameMap to register");
         }
+
+        TraceLog(LOG_INFO,
+                 "MapManager::LoadEditorMap() - MapService import successful, processing %zu objects",
+                 m_gameMap.GetMapObjects().size());
+
+        TraceLog(LOG_INFO,
+                 "MapManager::LoadEditorMap() - Successfully loaded JSON map with %zu objects",
+                 m_gameMap.GetMapObjects().size());
     }
 
-    TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Map loaded, checking object count: %d",
+    TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Map loaded, checking object count: %zu",
              m_gameMap.GetMapObjects().size());
     if (m_gameMap.GetMapObjects().empty())
     {

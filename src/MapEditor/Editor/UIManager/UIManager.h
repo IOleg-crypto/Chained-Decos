@@ -46,17 +46,21 @@ private:
     std::vector<GameMap> m_availableParkourMaps;
     int m_currentlySelectedParkourMapIndex;
     
-    // Skybox preview texture (Texture2D is used for previews)
-    Texture2D m_skyboxPreviewTexture;
-    bool m_skyboxPreviewTextureInitialized;
-    std::string m_skyboxPreviewPath; // current preview file path or empty
     // Placeholder texture for skybox panel (avoid loading every frame)
     Texture2D m_skyboxPlaceholderTexture;
     bool m_skyboxPlaceholderInitialized;
 
-    // Skybox shader paths
-    std::string m_vsPath;
-    std::string m_fsPath;
+    // Available skyboxes from resources/skyboxes/
+    struct SkyboxInfo
+    {
+        std::string filename;
+        std::string fullPath;
+        Texture2D previewTexture;
+        bool previewLoaded;
+    };
+    std::vector<SkyboxInfo> m_availableSkyboxes;
+    bool m_skyboxesScanned;
+    int m_selectedSkyboxIndex;
 
 public:
     UIManager(Editor* editor,
@@ -69,7 +73,6 @@ public:
     void HandleInput() override;
     void ShowObjectPanel(bool show) override;
     void ShowPropertiesPanel(bool show) override;
-    void ShowParkourMapDialog(bool show) override;
     int GetGridSize() const override;
 
     // UI state accessors
@@ -90,7 +93,6 @@ private:
     void RenderImGuiToolbar();
     void RenderImGuiObjectPanel();
     void RenderImGuiPropertiesPanel();
-    void RenderParkourMapDialog();
 
     // Input handling
     void HandleKeyboardInput();
@@ -105,6 +107,10 @@ private:
     void EnsureWindowInBounds();
     // Render skybox panel
     void RenderSkyboxPanel();
+    // Scan skyboxes directory
+    void ScanSkyboxesDirectory();
+    // Load preview for a skybox
+    void LoadSkyboxPreview(SkyboxInfo& skybox);
 };
 
 #endif // UIMANAGER_H
