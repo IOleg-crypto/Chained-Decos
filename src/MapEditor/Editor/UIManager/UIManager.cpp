@@ -32,7 +32,7 @@ UIManager::UIManager(Editor *editor, ISceneManager *sceneManager, IFileManager *
       m_toolManager(toolManager), m_modelManager(modelManager), m_displayImGuiInterface(true),
       m_displayObjectListPanel(true), m_displayPropertiesPanel(true),
       m_pendingObjectCreation(false), m_displaySkyboxPanel(false), m_displayParkourMapDialog(false),
-      m_currentlySelectedParkourMapIndex(0), m_gridSizes(50),
+      m_currentlySelectedParkourMapIndex(0), m_gridSizes(900),
       m_skyboxBrowser(std::make_unique<SkyboxBrowser>(editor)),
       m_objectFactory(std::make_unique<ObjectFactory>(sceneManager, toolManager))
 {
@@ -353,16 +353,16 @@ void UIManager::RenderImGuiToolbar()
         ImGui::SameLine();
         ImGui::Checkbox("Show Skybox Settings", &m_displaySkyboxPanel);
         ImGui::SameLine();
-        if (ImGui::SliderInt("Increase/Decrease editor grid", &m_gridSizes, 50, 900))
+        if (ImGui::SliderInt("Increase/Decrease editor grid", &m_gridSizes, 900, 10000))
         {
-            if (m_gridSizes < 50)
-            {
-                m_gridSizes = 50;
-            }
-            // Ensure grid size is within valid range
-            if (m_gridSizes > 900)
+            if (m_gridSizes < 900)
             {
                 m_gridSizes = 900;
+            }
+            // Ensure grid size is within valid range
+            if (m_gridSizes > 10000)
+            {
+                m_gridSizes = 10000;
             }
         }
 

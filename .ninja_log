@@ -7,10 +7,8 @@
 38	1732	7835227655204079	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj	319822e3d412f230
 61	2021	7835227655434032	CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj	a4b327c02f6551e3
 2022	3220	7835227674959912	CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj	e36f1b002c73d1fb
-4062	5615	7835227695407508	src/Engine/Collision/CMakeFiles/collision.dir/CollisionDebugRenderer.cpp.obj	c6828eca6257677b
 49	2738	7835227655304045	.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_1_c.c.obj	7fb4cecd71d5ff7
 52	3427	7835227655334061	.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_0_c.c.obj	eaec5a5d1426fe6b
-3220	4637	7835227686997211	src/Engine/Collision/CMakeFiles/collision.dir/CollisionStructures.cpp.obj	b438b3348e775301
 722	4078	7835227661997916	CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj	14496c16a2aa16f6
 58	4267	7835227655404051	src/Engine/Physics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj	b37e12c6dde09412
 32	4342	7835227655134034	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	1693722d5d34a77e
@@ -20,14 +18,12 @@
 4078	4598	7835227695576786	src/Engine/CameraController/CMakeFiles/cameracontroller.dir/Unity/unity_0_cxx.cxx.obj	3cf6aaf75b8dc27f
 69	4795	7835227655504233	CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj	5089f38b14b21114
 369	5323	7835227658472770	CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj	cea6c7f1668d7fe0
-2738	5201	7835227682189849	src/Engine/Collision/CMakeFiles/collision.dir/CollisionSystem.cpp.obj	4df5a7bfec5ae27e
 4598	5368	7835227700803427	src/Engine/Input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj	739dc3eb12e889a1
 42	6032	7835227655234077	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	66359294fed7d2e6
 5201	6714	7835227706788780	src/Engine/Kernel/CMakeFiles/kernel.dir/Unity/unity_0_cxx.cxx.obj	ea618ec6d854d14d
 9042	9354	7835227745203979	src/Engine/Input/libinput.a	afa310f777e80762
 5368	6546	7835227708431232	src/Engine/Event/CMakeFiles/event.dir/Unity/unity_0_cxx.cxx.obj	fdfd53f451e52015
 65	6640	7835227655464043	CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj	a6a4b3dd096c8aad
-3427	11912	7835227689063941	src/Engine/Collision/CMakeFiles/collision.dir/CollisionManager.cpp.obj	fbd3dbd2b06306fb
 5323	6702	7835227707994802	src/Engine/Audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj	dd322790004c83ae
 4267	6733	7835227697475569	src/Engine/World/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj	64edf293a1dcc26c
 4795	6708	7835227702756726	src/Engine/CommandLineHandler/CMakeFiles/cmdhandler.dir/Unity/unity_0_cxx.cxx.obj	cd6ca6199209cd52

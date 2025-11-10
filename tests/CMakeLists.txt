@@ -5,21 +5,25 @@ set(UNIT_TEST_SOURCES
     main.cpp
     engine/PhysicsComponentTest.cpp
     engine/CollisionSystemTest.cpp
+    engine/ConfigManagerTest.cpp
 )
 
 set(INTEGRATION_TEST_SOURCES
     game/PlayerTest.cpp
     integration/GameIntegrationTest.cpp
+    integration/SkyboxTest.cpp
+    engine/SettingsManagerTest.cpp
 )
 
 # Create unit test executable (no raylib dependencies)
 add_executable(ChainedDecosUnitTests ${UNIT_TEST_SOURCES})
 
-# Link unit tests - no need for additional libraries since tests use mocks
+# Link unit tests - need config library for ConfigManager tests
 target_link_libraries(ChainedDecosUnitTests
     PRIVATE
         GTest::gtest_main
         GTest::gmock_main
+        config
 )
 
 # Create integration test executable (with full game dependencies)
