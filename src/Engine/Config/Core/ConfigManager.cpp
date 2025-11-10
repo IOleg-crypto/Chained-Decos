@@ -390,6 +390,26 @@ float ConfigManager::GetRenderDistance() const
     return GetFloat("graphics_render_distance", 100.0f);
 }
 
+void ConfigManager::SetSkyboxGammaEnabled(bool enabled)
+{
+    SetBool("skybox_gamma_enabled", enabled);
+}
+
+bool ConfigManager::IsSkyboxGammaEnabled() const
+{
+    return GetBool("skybox_gamma_enabled", false);
+}
+
+void ConfigManager::SetSkyboxGammaValue(float gamma)
+{
+    SetFloat("skybox_gamma_value", gamma);
+}
+
+float ConfigManager::GetSkyboxGammaValue() const
+{
+    return GetFloat("skybox_gamma_value", 2.2f);
+}
+
 // Game progression settings
 void ConfigManager::SetCompletedLevels(const std::string& levels)
 {

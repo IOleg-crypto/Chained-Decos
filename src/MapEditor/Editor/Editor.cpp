@@ -44,7 +44,7 @@ namespace fs = std::filesystem;
 
 Editor::Editor(std::shared_ptr<CameraController> cameraController,
                std::unique_ptr<ModelLoader> modelLoader)
-    : m_gridSizes(50), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()), m_skyboxTexturePath("")
+    : m_gridSizes(900), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()), m_skyboxTexturePath("")
 {
     // Initialize spawn texture (will be loaded after window initialization)
     m_spawnTexture = {0};
@@ -113,6 +113,8 @@ void Editor::Render()
 {
     if (m_skybox && m_skybox->IsLoaded())
     {
+        // Update gamma settings from config before rendering
+        m_skybox->UpdateGammaFromConfig();
         m_skybox->DrawSkybox();
     }
 
@@ -345,11 +347,10 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
     }
 
     // Initialize skybox if not already initialized
+    // Init() automatically loads shaders, so shaders are ready before loading texture
     if (!m_skybox->IsInitialized())
     {
         m_skybox->Init();
-        // Automatically load shaders
-        m_skybox->LoadShadersAutomatically();
     }
 
     // Resolve absolute path (handles both absolute from NFD and relative from JSON)

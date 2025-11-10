@@ -138,6 +138,12 @@ public:
     // Apply settings to the system
     void ApplyVideoSettings();
     void ApplyAudioSettings();
+    
+    // Skybox gamma settings
+    void SetSkyboxGammaEnabled(bool enabled);
+    void SetSkyboxGammaValue(float gamma);
+    bool IsSkyboxGammaEnabled() const;
+    float GetSkyboxGammaValue() const;
 
     // Get current setting values as strings
     std::string GetCurrentSettingValue(const std::string& settingName) const;

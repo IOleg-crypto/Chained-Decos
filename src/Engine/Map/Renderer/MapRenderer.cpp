@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <algorithm>
 
+
 void MapRenderer::RenderMap(const GameMap& map, Camera3D camera)
 {
     const MapMetadata& metadata = map.GetMapMetaData();
@@ -30,6 +31,8 @@ void MapRenderer::RenderMap(const GameMap& map, Camera3D camera)
     // Render skybox first (if present)
     if (skybox && skybox->IsLoaded())
     {
+        // Update gamma settings from config before rendering
+        skybox->UpdateGammaFromConfig();
         skybox->DrawSkybox();
     }
 

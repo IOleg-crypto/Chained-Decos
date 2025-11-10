@@ -62,7 +62,7 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
 
     if (ImGui::Begin("Set Skybox", &isOpen, ImGuiWindowFlags_NoCollapse))
     {
-        ImGui::TextWrapped("Current skybox: No skybox loaded");
+        ImGui::Text("Current skybox: %s", m_skyboxPlaceholderPath.empty() ? "No skybox loaded" : m_skyboxPlaceholderPath.c_str());
         ImGui::Separator();
         ImGui::Spacing();
         
