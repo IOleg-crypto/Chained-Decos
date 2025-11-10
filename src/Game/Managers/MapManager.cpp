@@ -128,9 +128,7 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
 
         // Use MapService to load map (unified service for Editor and Game)
         MapService mapService;
-        GameMap loadedMap = mapService.LoadMapAsGameMap(mapPath);
-        
-        if (loadedMap.GetMapObjects().empty())
+        if (!mapService.LoadMap(mapPath, m_gameMap))
         {
             TraceLog(LOG_ERROR, "MapManager::LoadEditorMap() - MapService failed to load map: %s",
                      mapPath.c_str());
@@ -141,11 +139,8 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
 
         TraceLog(LOG_INFO,
                  "MapManager::LoadEditorMap() - MapService loaded %zu objects successfully",
-                 loadedMap.GetMapObjects().size());
+                 m_gameMap.GetMapObjects().size());
 
-        // Move loaded map data to m_gameMap
-        // Note: Skybox is already loaded by MapService::LoadMapAsGameMap -> MapLoader::LoadMap
-        m_gameMap = std::move(loadedMap);
         m_currentMapPath = mapPath;
 
         // Register any models preloaded by MapLoader into the runtime ModelLoader
