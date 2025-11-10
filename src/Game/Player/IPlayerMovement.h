@@ -1,8 +1,8 @@
 #ifndef IPLAYERMOVEMENT_H
 #define IPLAYERMOVEMENT_H
 
-#include <Collision/CollisionManager.h>
-#include <Physics/PhysicsComponent.h>
+#include <Collision/Manager/CollisionManager.h>
+#include <Physics/Components/PhysicsComponent.h>
 #include <raylib.h>
 #include <raymath.h>
 

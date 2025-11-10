@@ -27,6 +27,10 @@ set(MAPEDITOR_SOURCES
     Editor/UIManager/UIManager.cpp
     Editor/UIManager/UIManager.h
     Editor/UIManager/IUIManager.h
+    Editor/UIManager/SkyboxBrowser.cpp
+    Editor/UIManager/SkyboxBrowser.h
+    Editor/UIManager/ObjectFactory.cpp
+    Editor/UIManager/ObjectFactory.h
     Editor/ToolManager/ToolManager.cpp
     Editor/ToolManager/ToolManager.h
     Editor/ToolManager/IToolManager.h

@@ -3,14 +3,16 @@
 
 #include <string>
 #include <vector>
-#include <Engine/Map/MapLoader.h>
-#include <Engine/Map/MapService.h>
+#include <memory>
+#include <Engine/Map/Core/MapLoader.h>
+#include <Engine/Map/Core/MapService.h>
 #include "../Player/Player.h"
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Model/Model.h"
-#include "Engine/Render/RenderManager.h"
-#include "Engine/Kernel/Kernel.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
+#include "Engine/Render/Manager/RenderManager.h"
+#include "Engine/Kernel/Core/Kernel.h"
 #include "../Menu/Menu.h"
+#include "MapCollisionInitializer.h"
 
 class MapManager
 {
@@ -30,6 +32,9 @@ private:
     Texture2D m_spawnTexture;
     bool m_hasSpawnZone;
     bool m_spawnTextureLoaded;
+    
+    // Collision initializer
+    std::unique_ptr<MapCollisionInitializer> m_collisionInitializer;
 
 public:
     MapManager(Player* player, CollisionManager* collisionManager, ModelLoader* models, RenderManager* renderManager, Kernel* kernel, Menu* menu = nullptr);
@@ -43,6 +48,9 @@ public:
     void InitCollisions();
     void InitCollisionsWithModels(const std::vector<std::string> &requiredModels);
     bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels);
+    
+    // Get collision initializer (for external use if needed)
+    MapCollisionInitializer* GetCollisionInitializer() { return m_collisionInitializer.get(); }
     
     GameMap &GetGameMap() { return m_gameMap; }
     const std::string& GetCurrentMapPath() const { return m_currentMapPath; }

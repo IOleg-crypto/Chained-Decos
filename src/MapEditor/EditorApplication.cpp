@@ -1,9 +1,9 @@
 #include "EditorApplication.h"
 #include "Editor/Editor.h"
-#include "Engine/CameraController/CameraController.h"
-#include "Engine/Model/Model.h"
+#include "Engine/CameraController/Core/CameraController.h"
+#include "Engine/Model/Core/Model.h"
 #include "Modules/EditorModule.h"
-#include "Engine/Kernel/KernelServices.h"
+#include "Engine/Kernel/Core/KernelServices.h"
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include <rlImGui.h>

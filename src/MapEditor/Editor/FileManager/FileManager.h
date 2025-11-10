@@ -7,9 +7,9 @@
 #define FILEMANAGER_H
 
 #include "IFileManager.h"
-#include "Engine/Map/MapData.h"
-#include "Engine/Map/MapService.h"
-#include "Engine/Map/MapLoader.h"
+#include "Engine/Map/Core/MapData.h"
+#include "Engine/Map/Core/MapService.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include <string>
 #include <vector>
 

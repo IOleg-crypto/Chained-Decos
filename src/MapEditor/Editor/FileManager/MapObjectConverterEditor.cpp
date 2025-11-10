@@ -1,11 +1,7 @@
-//
-// Created by AI Assistant
-//
-
 #include "MapObjectConverterEditor.h"
 #include "../Object/MapObject.h"
-#include "Engine/Map/MapObjectConverter.h"
-#include "Engine/MapFileManager/JsonMapFileManager.h"
+#include "Engine/Map/Converter/MapObjectConverter.h"
+#include "Engine/MapFileManager/Json/JsonMapFileManager.h"
 #include <ctime>
 #include <cstdlib>
 

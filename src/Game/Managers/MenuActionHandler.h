@@ -2,7 +2,7 @@
 #define MENU_ACTION_HANDLER_H
 
 #include "Game/Menu/Menu.h"
-#include "Engine/Kernel/Kernel.h"
+#include "Engine/Kernel/Core/Kernel.h"
 
 // Forward declarations to break circular dependencies
 class Player;

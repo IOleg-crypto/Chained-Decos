@@ -1,7 +1,7 @@
 #ifndef EDITOR_APPLICATION_H
 #define EDITOR_APPLICATION_H
 
-#include "Engine/Application/EngineApplication.h"
+#include "Engine/Application/Core/EngineApplication.h"
 #include <memory>
 
 // Forward declaration

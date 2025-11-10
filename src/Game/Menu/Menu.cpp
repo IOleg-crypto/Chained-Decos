@@ -1,12 +1,12 @@
 #include "Menu.h"
 #include "Engine.h"
-#include "Engine/Collision/CollisionSystem.h"
-#include "Engine/Kernel/Kernel.h"
-#include "Engine/Kernel/KernelServices.h"
+#include "Engine/Collision/System/CollisionSystem.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Kernel/Core/KernelServices.h"
 #include "MenuConstants.h"
 #include "SettingsManager.h"
 #include "rlImGui.h"
-#include <Collision/CollisionStructures.h>
+#include <Collision/Structures/CollisionStructures.h>
 #include <algorithm>
 #include <cctype>
 #include <cmath>

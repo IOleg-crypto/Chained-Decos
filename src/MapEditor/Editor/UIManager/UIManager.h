@@ -12,7 +12,7 @@
 #include <imgui/imgui.h>
 #include "raylib.h"
 
-#include "Engine/Map/MapLoader.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include "../SceneManager/ISceneManager.h"
 #include "../FileManager/IFileManager.h"
 #include "../ToolManager/IToolManager.h"
@@ -46,22 +46,8 @@ private:
     std::vector<GameMap> m_availableParkourMaps;
     int m_currentlySelectedParkourMapIndex;
     
-    // Placeholder texture for skybox panel (avoid loading every frame)
-    Texture2D m_skyboxPlaceholderTexture;
-    bool m_skyboxPlaceholderInitialized;
-
-    // Available skyboxes from resources/skyboxes/
-    struct SkyboxInfo
-    {
-        std::string filename;
-        std::string fullPath;
-        Texture2D previewTexture;
-        bool previewLoaded;
-    };
-    std::vector<SkyboxInfo> m_availableSkyboxes;
-    bool m_skyboxesScanned;
-    int m_selectedSkyboxIndex;
-    std::string m_skyboxPlaceholderPath;
+    // Skybox browser
+    std::unique_ptr<class SkyboxBrowser> m_skyboxBrowser;
 
 public:
     UIManager(Editor* editor,
@@ -101,17 +87,14 @@ private:
     // UI helper methods
     void ProcessPendingObjectCreation();
     
+    // Object factory
+    std::unique_ptr<class ObjectFactory> m_objectFactory;
+    
     // Window position helper (windowSize is passed by reference to allow clamping)
     ImVec2 ClampWindowPosition(const ImVec2& desiredPos, ImVec2& windowSize);
     
     // Ensure window stays within screen bounds (call after Begin())
     void EnsureWindowInBounds();
-    // Render skybox panel
-    void RenderSkyboxPanel();
-    // Scan skyboxes directory
-    void ScanSkyboxesDirectory();
-    // Load preview for a skybox
-    void LoadSkyboxPreview(SkyboxInfo& skybox);
 };
 
 #endif // UIMANAGER_H

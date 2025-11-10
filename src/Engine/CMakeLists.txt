@@ -18,10 +18,10 @@ add_subdirectory(GUI)
 add_library(ChainedDecosEngine STATIC
           Engine.cpp
           Engine.h
-          MapFileManager/MapFileManager.cpp
-          MapFileManager/JsonMapFileManager.cpp
-          Application/EngineApplication.cpp
-          Application/EngineApplication.h
+          MapFileManager/Core/MapFileManager.cpp
+          MapFileManager/Json/JsonMapFileManager.cpp
+          Application/Core/EngineApplication.cpp
+          Application/Core/EngineApplication.h
 )
 target_include_directories(ChainedDecosEngine
         PUBLIC

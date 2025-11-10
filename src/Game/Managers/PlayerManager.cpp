@@ -1,9 +1,9 @@
 #include "PlayerManager.h"
 #include "../Player/Player.h"
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Model/Model.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
 #include "Engine/Engine.h"
-#include "Engine/Map/MapLoader.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include "MapManager.h"
 #include <raylib.h>
 #include <imgui.h>

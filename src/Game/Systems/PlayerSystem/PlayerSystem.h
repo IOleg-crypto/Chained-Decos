@@ -1,7 +1,7 @@
 #ifndef PLAYER_SYSTEM_H
 #define PLAYER_SYSTEM_H
 
-#include "Engine/Module/IEngineModule.h"
+#include "Engine/Module/Interfaces/IEngineModule.h"
 #include <memory>
 #include <vector>
 #include <string>

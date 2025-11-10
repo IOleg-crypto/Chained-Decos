@@ -1,6 +1,6 @@
 #include "ConsoleManagerHelpers.h"
-#include "Engine/Kernel/Kernel.h"
-#include "Engine/Kernel/KernelServices.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Kernel/Core/KernelServices.h"
 #include "Menu.h"
 
 // Helper function to update ConsoleManager providers via Dependency Injection

@@ -2,11 +2,11 @@
 
 # Collect source files
 file(GLOB ASSET_SOURCES
-    "*.cpp"
+    "Core/*.cpp"
 )
 
 file(GLOB ASSET_HEADERS
-    "*.h"
+    "Core/*.h"
 )
 
 # Create library

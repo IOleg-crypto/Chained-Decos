@@ -1,8 +1,8 @@
 add_library(kernel STATIC
-        Kernel.cpp
-        Kernel.h
-        IKernelService.h
-        KernelServices.h
+        Core/Kernel.cpp
+        Core/Kernel.h
+        Core/KernelServices.h
+        Interfaces/IKernelService.h
 )
 
 target_include_directories(kernel

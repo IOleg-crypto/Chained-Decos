@@ -1,15 +1,9 @@
-//
-// Created by AI Assistant
-// EditorRenderer - Handles rendering of editor objects, gizmos, and spawn zones
-// Separated from Editor class to follow Single Responsibility Principle
-//
-
 #ifndef EDITOR_RENDERER_H
 #define EDITOR_RENDERER_H
 
 #include "../Object/MapObject.h"
-#include "Engine/Map/MapLoader.h"
-#include "Engine/Map/MapData.h"
+#include "Engine/Map/Core/MapLoader.h"
+#include "Engine/Map/Core/MapData.h"
 #include "../ToolManager/IToolManager.h"
 #include "../CameraManager/ICameraManager.h"
 #include "../ModelManager/IModelManager.h"

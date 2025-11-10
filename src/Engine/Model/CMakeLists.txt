@@ -1,16 +1,17 @@
 add_library(model STATIC
-        Model.cpp
-        Model.h
-        ModelInstance.cpp
-        ModelInstance.h
-        Animation.cpp
-        Animation.h
-        ModelConfig.h
-        ModelConfig.cpp
-        JsonParser.cpp
-        JsonParser.h
-        ModelCache.cpp
-        ModelCache.h
+        Core/Model.cpp
+        Core/Model.h
+        Core/ModelInstance.cpp
+        Core/ModelInstance.h
+        Animation/Animation.cpp
+        Animation/Animation.h
+        Config/ModelConfig.h
+        Config/ModelConfig.cpp
+        Parser/JsonParser.cpp
+        Parser/JsonParser.h
+        Parser/JsonHelper.cpp
+        Cache/ModelCache.cpp
+        Cache/ModelCache.h
 )
 
 # Add PROJECT_ROOT_DIR definition for consistent path handling

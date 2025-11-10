@@ -1,14 +1,14 @@
 #include "RenderingSystem.h"
-#include "Engine/Kernel/Kernel.h"
-#include "Engine/Kernel/KernelServices.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Kernel/Core/KernelServices.h"
 #include "Engine/Engine.h"
-#include "Engine/Render/RenderManager.h"
+#include "Engine/Render/Manager/RenderManager.h"
 #include "../../Player/Player.h"
 #include "../../Managers/MapManager.h"
 #include "../../Managers/GameRenderHelpers.h"
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Model/Model.h"
-#include "Engine/Map/MapLoader.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
+#include "Engine/Map/Renderer/MapRenderer.h"
 #include <raylib.h>
 
 RenderingSystem::RenderingSystem()
@@ -137,12 +137,12 @@ void RenderingSystem::RenderGameWorld()
     // Get camera from player
     Camera camera = m_player->GetCameraController()->GetCamera();
     
-    // Render editor-created map using MapLoader::RenderMap (includes skybox)
+    // Render editor-created map using MapRenderer (includes skybox)
     // Note: RenderMap handles BeginMode3D/EndMode3D internally
     GameMap& gameMap = m_mapManager->GetGameMap();
     if (!gameMap.GetMapObjects().empty()) {
-        MapLoader loader;
-        loader.RenderMap(gameMap, camera);
+        MapRenderer renderer;
+        renderer.RenderMap(gameMap, camera);
     }
     
     // Render spawn zone (commented out - only in Map Editor)

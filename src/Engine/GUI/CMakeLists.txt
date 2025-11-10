@@ -1,6 +1,6 @@
 add_library(gui STATIC
-    CGUIHelpers.cpp
-    CGUIHelpers.h
+    Helpers/CGUIHelpers.cpp
+    Helpers/CGUIHelpers.h
 )
 
 target_include_directories(gui PUBLIC

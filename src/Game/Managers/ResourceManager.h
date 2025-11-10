@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <optional>
-#include <Engine/Model/Model.h>
+#include <Engine/Model/Core/Model.h>
 
 class ResourceManager
 {

@@ -4,9 +4,9 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <memory>
-#include <Collision/CollisionSystem.h>
-#include <Physics/PhysicsComponent.h>
-#include <CameraController/CameraController.h>
+#include <Collision/System/CollisionSystem.h>
+#include <Physics/Components/PhysicsComponent.h>
+#include <CameraController/Core/CameraController.h>
 
 class IPlayerMediator
 {

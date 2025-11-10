@@ -1,15 +1,17 @@
 
 
 add_library(render STATIC
-    RenderManager.cpp
-    RenderManager.h
-    ImGuiHelper.cpp
-    ImGuiHelper.h
-    IGameRenderable.h
-    IMenuRenderable.h
-    IRenderable.h
-    RenderUtils.cpp
-    RenderUtils.h
+    Manager/RenderManager.cpp
+    Manager/RenderManager.h
+    Helpers/ImGuiHelper.cpp
+    Helpers/ImGuiHelper.h
+    Interfaces/IGameRenderable.h
+    Interfaces/IMenuRenderable.h
+    Interfaces/IRenderable.h
+    Utils/RenderUtils.cpp
+    Utils/RenderUtils.h
+    Utils/RenderUtilities.cpp
+    Utils/RenderUtilities.h
     Shader/ShaderManager.cpp
     Shader/ShaderManager.h
 )

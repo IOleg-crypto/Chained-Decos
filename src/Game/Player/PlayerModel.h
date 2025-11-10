@@ -2,7 +2,7 @@
 #ifndef PLAYER_MODEL_H
 #define PLAYER_MODEL_H
 
-#include <Model/Model.h>
+#include <Model/Core/Model.h>
 #include <raylib.h>
 
 // PlayerModel: handles the 3D model of the player

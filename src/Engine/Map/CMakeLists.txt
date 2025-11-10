@@ -1,11 +1,15 @@
 add_library(map STATIC
-    MapLoader.cpp
-    MapLoader.h
-    MapData.h
-    MapService.cpp
-    MapService.h
-    MapObjectConverter.cpp
-    MapObjectConverter.h
+    Core/MapLoader.cpp
+    Core/MapLoader.h
+    Core/MapData.h
+    Core/MapService.cpp
+    Core/MapService.h
+    Converter/MapObjectConverter.cpp
+    Converter/MapObjectConverter.h
+    Interfaces/IMapFileOperations.h
+    Interfaces/IMapMetadataManager.h
+    Renderer/MapRenderer.cpp
+    Renderer/MapRenderer.h
     Skybox/Skybox.cpp
     Skybox/Skybox.h
 )

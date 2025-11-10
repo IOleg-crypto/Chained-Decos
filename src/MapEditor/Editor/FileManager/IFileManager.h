@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 #include "../Object/MapObject.h"
-#include "Engine/Map/MapData.h"
+#include "Engine/Map/Core/MapData.h"
 
 class IFileManager {
 public:

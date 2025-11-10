@@ -1,6 +1,6 @@
 add_library(input STATIC
-    InputManager.cpp
-    InputManager.h
+    Core/InputManager.cpp
+    Core/InputManager.h
 )
 
 target_include_directories(input PUBLIC

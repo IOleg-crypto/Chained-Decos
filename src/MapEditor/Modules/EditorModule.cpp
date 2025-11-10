@@ -1,6 +1,6 @@
 #include "EditorModule.h"
-#include "Engine/Kernel/Kernel.h"
-#include "Engine/Kernel/KernelServices.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Kernel/Core/KernelServices.h"
 #include <raylib.h>
 
 EditorModule::EditorModule()

@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "Engine/CameraController/CameraController.h"
-#include "Engine/Model/Model.h"
+#include "Engine/CameraController/Core/CameraController.h"
+#include "Engine/Model/Core/Model.h"
 #include "Object/MapObject.h"
-#include "Engine/Map/MapLoader.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include "ModelManager/IModelManager.h"
 #include "Engine/Map/Skybox/Skybox.h"
 

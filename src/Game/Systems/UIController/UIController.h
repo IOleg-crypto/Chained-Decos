@@ -1,7 +1,7 @@
 #ifndef UI_CONTROLLER_H
 #define UI_CONTROLLER_H
 
-#include "Engine/Module/IEngineModule.h"
+#include "Engine/Module/Interfaces/IEngineModule.h"
 #include <memory>
 #include <vector>
 #include <string>

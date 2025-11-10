@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <raylib.h>
-#include "Engine/CameraController/CameraController.h"
+#include "Engine/CameraController/Core/CameraController.h"
 
 class ICameraManager {
 public:

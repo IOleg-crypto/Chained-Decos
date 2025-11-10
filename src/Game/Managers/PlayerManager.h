@@ -3,8 +3,8 @@
 
 #include <raylib.h>
 #include "../Player/Player.h"
-#include "Engine/Collision/CollisionManager.h"
-#include "Engine/Model/Model.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
 #include "Engine/Engine.h"
 #include "MapManager.h"
 

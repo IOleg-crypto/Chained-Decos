@@ -1,5 +1,5 @@
 #include "ModelManager.h"
-#include "Engine/Model/Model.h"
+#include "Engine/Model/Core/Model.h"
 
 ModelManager::ModelManager(std::unique_ptr<ModelLoader> modelLoader)
     : m_modelLoader(std::move(modelLoader))
