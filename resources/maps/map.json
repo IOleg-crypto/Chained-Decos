@@ -24,7 +24,7 @@
         },
         "startPosition": {
             "x": -0.800000011920929,
-            "y": 26.200000762939453,
+            "y": 6.699999809265137,
             "z": -0.8999999761581421
         },
         "version": "1.0"
@@ -37,7 +37,7 @@
                 "g": 100,
                 "r": 255
             },
-            "height": -0.699999988079071,
+            "height": 1.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_0",
@@ -46,7 +46,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -54,12 +54,12 @@
             },
             "scale": {
                 "x": 36.0,
-                "y": -0.699999988079071,
+                "y": 1.0,
                 "z": 27.200000762939453
             },
             "size": {
-                "height": 35.70000076293945,
-                "width": 19.5
+                "height": 0.0,
+                "width": 0.0
             },
             "type": 0
         },
@@ -91,8 +91,8 @@
                 "z": 4.0
             },
             "size": {
-                "height": 4.0,
-                "width": 3.0
+                "height": 0.0,
+                "width": 0.0
             },
             "type": 2
         },
@@ -112,7 +112,7 @@
                 "y": 1.8469637632369995,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -124,8 +124,8 @@
                 "z": 4.0
             },
             "size": {
-                "height": 4.0,
-                "width": 3.0
+                "height": 0.0,
+                "width": 0.0
             },
             "type": 0
         },
@@ -136,7 +136,7 @@
                 "g": 115,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_3",
@@ -145,7 +145,7 @@
                 "y": 2.17499041557312,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -169,7 +169,7 @@
                 "g": 120,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_4",
@@ -178,7 +178,7 @@
                 "y": 2.3980586528778076,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -202,7 +202,7 @@
                 "g": 125,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_5",
@@ -211,7 +211,7 @@
                 "y": 2.4962425231933594,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -235,7 +235,7 @@
                 "g": 130,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_6",
@@ -244,7 +244,7 @@
                 "y": 2.4607715606689453,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -268,7 +268,7 @@
                 "g": 135,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_7",
@@ -277,7 +277,7 @@
                 "y": 2.294814109802246,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -301,7 +301,7 @@
                 "g": 140,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_8",
@@ -310,7 +310,7 @@
                 "y": 2.0131945610046387,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -334,7 +334,7 @@
                 "g": 145,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_9",
@@ -343,7 +343,7 @@
                 "y": 1.641069769859314,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -367,7 +367,7 @@
                 "g": 150,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_10",
@@ -376,7 +376,7 @@
                 "y": 1.2116799354553223,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -400,7 +400,7 @@
                 "g": 155,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_11",
@@ -409,7 +409,7 @@
                 "y": 0.7633811831474304,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -433,7 +433,7 @@
                 "g": 160,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_12",
@@ -442,7 +442,7 @@
                 "y": 0.3362191915512085,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -466,7 +466,7 @@
                 "g": 165,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_13",
@@ -475,7 +475,7 @@
                 "y": -0.03164935111999512,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -499,7 +499,7 @@
                 "g": 170,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_14",
@@ -508,7 +508,7 @@
                 "y": -0.3073638677597046,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -532,7 +532,7 @@
                 "g": 175,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_15",
@@ -541,7 +541,7 @@
                 "y": -0.4662952423095703,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -565,7 +565,7 @@
                 "g": 180,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_16",
@@ -574,7 +574,7 @@
                 "y": -0.4942469596862793,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -598,7 +598,7 @@
                 "g": 185,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_17",
@@ -607,7 +607,7 @@
                 "y": -0.3887217044830322,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -631,7 +631,7 @@
                 "g": 190,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_18",
@@ -640,7 +640,7 @@
                 "y": -0.15914666652679443,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -664,7 +664,7 @@
                 "g": 195,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_19",
@@ -673,7 +673,7 @@
                 "y": 0.17397207021713257,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -697,7 +697,7 @@
                 "g": 200,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_20",
@@ -706,7 +706,7 @@
                 "y": 0.5808767676353455,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -730,7 +730,7 @@
                 "g": 205,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_21",
@@ -739,7 +739,7 @@
                 "y": 1.0252211093902588,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -763,7 +763,7 @@
                 "g": 210,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_22",
@@ -772,7 +772,7 @@
                 "y": 1.4673125743865967,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -796,7 +796,7 @@
                 "g": 215,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_23",
@@ -805,7 +805,7 @@
                 "y": 1.8676598072052002,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -829,7 +829,7 @@
                 "g": 220,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_24",
@@ -838,7 +838,7 @@
                 "y": 2.190502166748047,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -862,7 +862,7 @@
                 "g": 225,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_25",
@@ -871,7 +871,7 @@
                 "y": 2.4070000648498535,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -895,7 +895,7 @@
                 "g": 230,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_26",
@@ -904,7 +904,7 @@
                 "y": 2.4978151321411133,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -928,7 +928,7 @@
                 "g": 235,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_27",
@@ -937,7 +937,7 @@
                 "y": 2.454834461212158,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -961,7 +961,7 @@
                 "g": 240,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_28",
@@ -970,7 +970,7 @@
                 "y": 2.281898021697998,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -994,7 +994,7 @@
                 "g": 245,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_29",
@@ -1003,7 +1003,7 @@
                 "y": 1.994452953338623,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1027,7 +1027,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_30",
@@ -1036,7 +1036,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1060,7 +1060,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_31",
@@ -1069,7 +1069,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1093,7 +1093,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_32",
@@ -1102,7 +1102,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1126,7 +1126,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_33",
@@ -1135,7 +1135,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1159,7 +1159,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_34",
@@ -1168,7 +1168,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1192,7 +1192,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_35",
@@ -1201,7 +1201,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1225,7 +1225,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_36",
@@ -1234,7 +1234,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1258,7 +1258,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_37",
@@ -1267,7 +1267,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1291,7 +1291,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_38",
@@ -1300,7 +1300,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1324,7 +1324,7 @@
                 "g": 255,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_39",
@@ -1333,7 +1333,7 @@
                 "y": 0.5,
                 "z": 5.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1357,7 +1357,7 @@
                 "g": 100,
                 "r": 255
             },
-            "height": 1.0,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_40",
@@ -1378,8 +1378,8 @@
                 "z": 1.0
             },
             "size": {
-                "height": 1.0,
-                "width": 1.0
+                "height": 0.0,
+                "width": 0.0
             },
             "type": 1
         },
@@ -1390,7 +1390,7 @@
                 "g": 100,
                 "r": 255
             },
-            "height": 1.0,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_41",
@@ -1411,8 +1411,8 @@
                 "z": 1.0
             },
             "size": {
-                "height": 1.0,
-                "width": 1.0
+                "height": 0.0,
+                "width": 0.0
             },
             "type": 1
         },
@@ -1423,7 +1423,7 @@
                 "g": 100,
                 "r": 255
             },
-            "height": 1.0,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_42",
@@ -1444,8 +1444,8 @@
                 "z": 1.0
             },
             "size": {
-                "height": 1.0,
-                "width": 1.0
+                "height": 0.0,
+                "width": 0.0
             },
             "type": 1
         },
@@ -1456,7 +1456,7 @@
                 "g": 100,
                 "r": 255
             },
-            "height": 1.0,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_43",
@@ -1477,8 +1477,8 @@
                 "z": 1.0
             },
             "size": {
-                "height": 1.0,
-                "width": 1.0
+                "height": 0.0,
+                "width": 0.0
             },
             "type": 1
         },
@@ -1489,7 +1489,7 @@
                 "g": 100,
                 "r": 255
             },
-            "height": 1.0,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_44",
@@ -1510,8 +1510,8 @@
                 "z": 1.0
             },
             "size": {
-                "height": 1.0,
-                "width": 1.0
+                "height": 0.0,
+                "width": 0.0
             },
             "type": 1
         },
@@ -1522,7 +1522,7 @@
                 "g": 255,
                 "r": 100
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_45",
@@ -1531,7 +1531,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1555,7 +1555,7 @@
                 "g": 255,
                 "r": 100
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_46",
@@ -1564,7 +1564,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1588,7 +1588,7 @@
                 "g": 255,
                 "r": 100
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_47",
@@ -1597,7 +1597,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1621,7 +1621,7 @@
                 "g": 255,
                 "r": 100
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_48",
@@ -1630,7 +1630,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1654,7 +1654,7 @@
                 "g": 255,
                 "r": 100
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_49",
@@ -1663,7 +1663,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1687,7 +1687,7 @@
                 "g": 255,
                 "r": 100
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_50",
@@ -1696,7 +1696,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1720,7 +1720,7 @@
                 "g": 255,
                 "r": 100
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_51",
@@ -1729,7 +1729,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1753,7 +1753,7 @@
                 "g": 255,
                 "r": 100
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_52",
@@ -1762,7 +1762,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
@@ -1786,7 +1786,7 @@
                 "g": 203,
                 "r": 255
             },
-            "height": 0.10000000149011612,
+            "height": 0.0,
             "isObstacle": false,
             "isPlatform": true,
             "name": "parkour_element_53",
@@ -1795,7 +1795,7 @@
                 "y": 1.0,
                 "z": 0.0
             },
-            "radius": 1.0,
+            "radius": 0.0,
             "rotation": {
                 "x": 0.0,
                 "y": 0.0,
