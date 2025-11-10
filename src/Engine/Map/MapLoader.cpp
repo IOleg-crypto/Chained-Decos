@@ -168,10 +168,10 @@ GameMap::~GameMap()
 }
 
 // ============================================================================
-// New comprehensive map loading system
+// MapLoader Implementation
 // ============================================================================
 
-GameMap LoadGameMap(const std::string &path)
+GameMap MapLoader::LoadMapFromFile(const std::string &path)
 {
     GameMap map;
 
@@ -204,16 +204,16 @@ GameMap LoadGameMap(const std::string &path)
     if (j.is_array() && !j.empty() && j[0].contains("name") && j[0].contains("instances"))
     {
         // This is models.json format
-        return LoadGameMapFromModelsFormat(j, path);
+        return LoadMapFromModelsFormat(j, path);
     }
     else
     {
         // This is editor format with metadata and objects
-        return LoadGameMapFromEditorFormat(j, path);
+        return LoadMapFromEditorFormat(j, path);
     }
 }
 
-GameMap LoadGameMapFromModelsFormat(const json &j, const std::string &path)
+GameMap MapLoader::LoadMapFromModelsFormat(const json &j, const std::string &path)
 {
     GameMap map;
 
@@ -247,7 +247,7 @@ GameMap LoadGameMapFromModelsFormat(const json &j, const std::string &path)
             }
 
             // Try to find and load the model
-            if (!LoadModelWithErrorHandling(modelName, possiblePaths, map.m_loadedModels))
+            if (!LoadModelWithErrorHandling(modelName, possiblePaths, map.GetMapModelsMutable()))
             {
                 TraceLog(LOG_WARNING, "Model file not found for %s", modelName.c_str());
                 continue;
@@ -262,12 +262,13 @@ GameMap LoadGameMapFromModelsFormat(const json &j, const std::string &path)
         // Load instances for this model
         if (modelData.contains("instances") && modelData["instances"].is_array())
         {
+            size_t objectIndex = map.GetMapObjects().size();
             for (const auto &instance : modelData["instances"])
             {
                 MapObjectData objectData;
 
                 // Set basic properties
-                objectData.name = modelName + "_" + std::to_string(map.m_objects.size());
+                objectData.name = modelName + "_" + std::to_string(objectIndex++);
                 objectData.type = MapObjectType::MODEL;
                 objectData.modelName = modelName;
 
@@ -286,18 +287,18 @@ GameMap LoadGameMapFromModelsFormat(const json &j, const std::string &path)
                 // Set default color
                 objectData.color = WHITE;
 
-                map.m_objects.push_back(objectData);
+                map.GetMapObjectsMutable().push_back(objectData);
             }
         }
     }
 
     TraceLog(LOG_INFO, "Successfully loaded models.json format map: %s with %d objects",
-             path.c_str(), map.m_objects.size());
+             path.c_str(), map.GetMapObjects().size());
 
     return map;
 }
 
-GameMap LoadGameMapFromEditorFormat(const json &j, const std::string &path)
+GameMap MapLoader::LoadMapFromEditorFormat(const json &j, const std::string &path)
 {
     GameMap map;
 
@@ -305,18 +306,19 @@ GameMap LoadGameMapFromEditorFormat(const json &j, const std::string &path)
     if (j.contains("metadata"))
     {
         const auto &meta = j["metadata"];
-        map.m_metadata.name = meta.value("name", "unnamed_map");
-        map.m_metadata.displayName = meta.value("displayName", "Unnamed Map");
-        map.m_metadata.description = meta.value("description", "");
-        map.m_metadata.author = meta.value("author", "");
-        map.m_metadata.version = meta.value("version", "1.0");
-        map.m_metadata.difficulty = meta.value("difficulty", 1.0f);
+        MapMetadata &metadata = map.GetMapMetaDataMutable();
+        metadata.name = meta.value("name", "unnamed_map");
+        metadata.displayName = meta.value("displayName", "Unnamed Map");
+        metadata.description = meta.value("description", "");
+        metadata.author = meta.value("author", "");
+        metadata.version = meta.value("version", "1.0");
+        metadata.difficulty = meta.value("difficulty", 1.0f);
 
         // Load colors
         if (meta.contains("skyColor"))
         {
             auto &sky = meta["skyColor"];
-            map.m_metadata.skyColor = Color{static_cast<unsigned char>(sky.value("r", 135)),
+            metadata.skyColor = Color{static_cast<unsigned char>(sky.value("r", 135)),
                                             static_cast<unsigned char>(sky.value("g", 206)),
                                             static_cast<unsigned char>(sky.value("b", 235)),
                                             static_cast<unsigned char>(sky.value("a", 255))};
@@ -325,7 +327,7 @@ GameMap LoadGameMapFromEditorFormat(const json &j, const std::string &path)
         if (meta.contains("groundColor"))
         {
             auto &ground = meta["groundColor"];
-            map.m_metadata.groundColor = Color{static_cast<unsigned char>(ground.value("r", 34)),
+            metadata.groundColor = Color{static_cast<unsigned char>(ground.value("r", 34)),
                                                static_cast<unsigned char>(ground.value("g", 139)),
                                                static_cast<unsigned char>(ground.value("b", 34)),
                                                static_cast<unsigned char>(ground.value("a", 255))};
@@ -335,39 +337,37 @@ GameMap LoadGameMapFromEditorFormat(const json &j, const std::string &path)
         if (meta.contains("startPosition"))
         {
             auto &start = meta["startPosition"];
-            map.m_metadata.startPosition =
+            metadata.startPosition =
                 Vector3{start.value("x", 0.0f), start.value("y", 0.0f), start.value("z", 0.0f)};
         }
 
         if (meta.contains("endPosition"))
         {
             auto &end = meta["endPosition"];
-            map.m_metadata.endPosition =
+            metadata.endPosition =
                 Vector3{end.value("x", 0.0f), end.value("y", 0.0f), end.value("z", 0.0f)};
         }
 
         // Load skybox texture path
         if (meta.contains("skyboxTexture"))
         {
-            map.m_metadata.skyboxTexture = meta.value("skyboxTexture", "");
+            metadata.skyboxTexture = meta.value("skyboxTexture", "");
         }
     }
 
-    // Load skybox if texture path is specified
-    if (!map.m_metadata.skyboxTexture.empty())
-    {
-        LoadSkyboxForMap(map);
-    }
+    // Note: Skybox loading will be done by the caller after map is loaded
+    // This allows the caller to control when skybox is loaded
 
     // Load objects
     if (j.contains("objects"))
     {
+        size_t objectIndex = map.GetMapObjects().size();
         for (const auto &obj : j["objects"])
         {
             MapObjectData objectData;
 
             // Basic properties
-            objectData.name = obj.value("name", "object_" + std::to_string(map.m_objects.size()));
+            objectData.name = obj.value("name", "object_" + std::to_string(objectIndex++));
             objectData.type = static_cast<MapObjectType>(obj.value("type", 0));
             TraceLog(LOG_INFO, "MapLoader: Loading object %s, type %d", objectData.name.c_str(),
                      static_cast<int>(objectData.type));
@@ -443,7 +443,7 @@ GameMap LoadGameMapFromEditorFormat(const json &j, const std::string &path)
             objectData.isPlatform = obj.value("isPlatform", true);
             objectData.isObstacle = obj.value("isObstacle", false);
 
-            map.m_objects.push_back(objectData);
+            map.GetMapObjectsMutable().push_back(objectData);
 
             // Load model if it's a MODEL type object
             if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
@@ -453,7 +453,7 @@ GameMap LoadGameMapFromEditorFormat(const json &j, const std::string &path)
 
                 // Use helper function to resolve paths and load model
                 std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
-                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.m_loadedModels);
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
             }
             // Handle LIGHT type objects that may actually be misclassified MODEL objects from map
             // editor
@@ -467,7 +467,7 @@ GameMap LoadGameMapFromEditorFormat(const json &j, const std::string &path)
                 // Change type to MODEL and load the model
                 objectData.type = MapObjectType::MODEL;
                 std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
-                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.m_loadedModels);
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
             }
             // Also handle LIGHT objects that might have been exported without modelName but should
             // be models
@@ -510,56 +510,64 @@ GameMap LoadGameMapFromEditorFormat(const json &j, const std::string &path)
                     std::vector<std::string> possiblePaths =
                         ResolveModelPaths(objectData.modelName);
                     LoadModelWithErrorHandling(objectData.modelName, possiblePaths,
-                                               map.m_loadedModels);
+                                               map.GetMapModelsMutable());
                 }
             }
         }
     }
 
     TraceLog(LOG_INFO, "Successfully loaded editor format map: %s with %d objects", path.c_str(),
-             map.m_objects.size());
+             map.GetMapObjects().size());
 
     return map;
 }
 
-bool SaveGameMap(const GameMap &map, const std::string &path)
+bool MapLoader::SaveMapToFile(const GameMap &map, const std::string &path)
 {
     json j;
+    const MapMetadata &metadata = map.GetMapMetaData();
 
     // Save metadata
-    json metadata;
-    metadata["name"] = map.m_metadata.name;
-    metadata["displayName"] = map.m_metadata.displayName;
-    metadata["description"] = map.m_metadata.description;
-    metadata["author"] = map.m_metadata.author;
-    metadata["version"] = map.m_metadata.version;
-    metadata["difficulty"] = map.m_metadata.difficulty;
+    json metaJson;
+    metaJson["name"] = metadata.name;
+    metaJson["displayName"] = metadata.displayName;
+    metaJson["description"] = metadata.description;
+    metaJson["author"] = metadata.author;
+    metaJson["version"] = metadata.version;
+    metaJson["difficulty"] = metadata.difficulty;
 
-    // Save colors
-    metadata["skyColor"] = {{"r", map.m_metadata.skyColor.r},
-                            {"g", map.m_metadata.skyColor.g},
-                            {"b", map.m_metadata.skyColor.b},
-                            {"a", map.m_metadata.skyColor.a}};
+    // Save colors - save skyColor if skybox is empty, otherwise save skyboxTexture
+    if (metadata.skyboxTexture.empty())
+    {
+        metaJson["skyColor"] = {{"r", metadata.skyColor.r},
+                                {"g", metadata.skyColor.g},
+                                {"b", metadata.skyColor.b},
+                                {"a", metadata.skyColor.a}};
+    }
+    else
+    {
+        metaJson["skyboxTexture"] = metadata.skyboxTexture;
+    }
 
-    metadata["groundColor"] = {{"r", map.m_metadata.groundColor.r},
-                               {"g", map.m_metadata.groundColor.g},
-                               {"b", map.m_metadata.groundColor.b},
-                               {"a", map.m_metadata.groundColor.a}};
+    metaJson["groundColor"] = {{"r", metadata.groundColor.r},
+                               {"g", metadata.groundColor.g},
+                               {"b", metadata.groundColor.b},
+                               {"a", metadata.groundColor.a}};
 
     // Save positions
-    metadata["startPosition"] = {{"x", map.m_metadata.startPosition.x},
-                                 {"y", map.m_metadata.startPosition.y},
-                                 {"z", map.m_metadata.startPosition.z}};
+    metaJson["startPosition"] = {{"x", metadata.startPosition.x},
+                                 {"y", metadata.startPosition.y},
+                                 {"z", metadata.startPosition.z}};
 
-    metadata["endPosition"] = {{"x", map.m_metadata.endPosition.x},
-                               {"y", map.m_metadata.endPosition.y},
-                               {"z", map.m_metadata.endPosition.z}};
+    metaJson["endPosition"] = {{"x", metadata.endPosition.x},
+                               {"y", metadata.endPosition.y},
+                               {"z", metadata.endPosition.z}};
 
-    j["metadata"] = metadata;
+    j["metadata"] = metaJson;
 
     // Save objects
     json objects = json::array();
-    for (const auto &obj : map.m_objects)
+    for (const auto &obj : map.GetMapObjects())
     {
         json object;
 
@@ -718,65 +726,81 @@ std::string ResolveSkyboxAbsolutePath(const std::string &texturePath)
 }
 } // namespace
 
-void LoadSkyboxForMap(GameMap &map)
+void MapLoader::LoadSkyboxForMap(GameMap &map)
 {
-    if (map.m_metadata.skyboxTexture.empty())
+    const MapMetadata &metadata = map.GetMapMetaData();
+    if (metadata.skyboxTexture.empty())
     {
         return;
     }
 
-    std::string absolutePath = ResolveSkyboxAbsolutePath(map.m_metadata.skyboxTexture);
+    std::string absolutePath = ResolveSkyboxAbsolutePath(metadata.skyboxTexture);
     if (absolutePath.empty() || !std::filesystem::exists(absolutePath))
     {
         TraceLog(LOG_WARNING, "LoadSkyboxForMap() - Skybox texture not found: %s",
-                 map.m_metadata.skyboxTexture.c_str());
+                 metadata.skyboxTexture.c_str());
         return;
     }
 
-    if (!map.m_skybox)
+    if (!map.GetSkyBox())
     {
-        map.m_skybox = std::make_shared<Skybox>();
+        std::shared_ptr<Skybox> skybox = std::make_shared<Skybox>();
+        skybox->Init();
+        // Automatically load shaders
+        skybox->LoadShadersAutomatically();
+        map.SetSkyBox(skybox);
     }
     
-    map.m_skybox->LoadMaterialTexture(absolutePath);
-    TraceLog(LOG_INFO, "LoadSkyboxForMap() - Loaded skybox from %s", absolutePath.c_str());
+    Skybox* skybox = map.GetSkyBox();
+    if (skybox)
+    {
+        skybox->LoadMaterialTexture(absolutePath);
+        TraceLog(LOG_INFO, "LoadSkyboxForMap() - Loaded skybox from %s", absolutePath.c_str());
+    }
 }
 
 // ============================================================================
 // Map Rendering Functions
 // ============================================================================
 
-void RenderGameMap(const GameMap &map, Camera3D camera)
+void MapLoader::RenderMap(const GameMap &map, Camera3D camera)
 {
-    // Set sky color if specified (or use default if skybox is present)
-    if (map.m_metadata.skyColor.a > 0)
+    const MapMetadata &metadata = map.GetMapMetaData();
+    Skybox* skybox = map.GetSkyBox();
+    
+    // Set sky color if no skybox, otherwise use skybox
+    if (!skybox || !skybox->IsLoaded())
     {
-        ClearBackground(map.m_metadata.skyColor);
-    }
-    else if (!map.m_skybox)
-    {
-        // Use default sky color if no skybox
-        ClearBackground(SKYBLUE);
+        // Use skyColor if no skybox
+        if (metadata.skyColor.a > 0)
+        {
+            ClearBackground(metadata.skyColor);
+        }
+        else
+        {
+            // Use default sky color if no skybox and no skyColor
+            ClearBackground(SKYBLUE);
+        }
     }
 
     BeginMode3D(camera);
 
     // Render skybox first (if present)
-    if (map.m_skybox && map.m_skybox->IsLoaded())
+    if (skybox && skybox->IsLoaded())
     {
-        map.m_skybox->DrawSkybox();
+        skybox->DrawSkybox();
     }
 
     // Render all objects in the map
-    for (const auto &object : map.m_objects)
+    for (const auto &object : map.GetMapObjects())
     {
-        RenderMapObject(object, map.m_loadedModels, camera);
+        RenderMapObject(object, map.GetMapModels(), camera);
     }
 
     EndMode3D();
 }
 
-void RenderMapObject(const MapObjectData &object,
+void MapLoader::RenderMapObject(const MapObjectData &object,
                      const std::unordered_map<std::string, Model> &loadedModels,
                      [[maybe_unused]] Camera3D camera, bool useEditorColors)
 {
@@ -948,17 +972,25 @@ void RenderMapObject(const MapObjectData &object,
 }
 
 // ============================================================================
-// Simple MapLoader Implementation
+// MapLoader Public Methods
 // ============================================================================
 
 GameMap MapLoader::LoadMap(const std::string &path)
 {
-    return LoadGameMap(path);
+    GameMap map = LoadMapFromFile(path);
+    
+    // Load skybox if texture path is specified
+    if (!map.GetMapMetaData().skyboxTexture.empty())
+    {
+        LoadSkyboxForMap(map);
+    }
+    
+    return map;
 }
 
 bool MapLoader::SaveMap(const GameMap &map, const std::string &path)
 {
-    return SaveGameMap(map, path);
+    return SaveMapToFile(map, path);
 }
 
 std::vector<ModelInfo> MapLoader::LoadModelsFromDirectory(const std::string &directory)
@@ -1206,4 +1238,19 @@ const MapMetadata &GameMap::GetMapMetaData() const
 void GameMap::SetMapMetaData(const MapMetadata &mapData)
 {
     m_metadata = mapData;
+}
+
+MapMetadata &GameMap::GetMapMetaDataMutable()
+{
+    return m_metadata;
+}
+
+std::unordered_map<std::string, Model> &GameMap::GetMapModelsMutable()
+{
+    return m_loadedModels;
+}
+
+std::vector<MapObjectData> &GameMap::GetMapObjectsMutable()
+{
+    return m_objects;
 }

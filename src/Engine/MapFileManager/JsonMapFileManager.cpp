@@ -113,10 +113,11 @@ bool JsonMapFileManager::SaveMap(const std::vector<JsonSerializableObject>& obje
     // Start JSON structure
     file << "{\n";
     
-    // Metadata section
+    // Metadata section - save all metadata fields including skybox
     file << "  \"metadata\": {\n";
     file << "    \"version\": \"" << metadata.version << "\",\n";
     file << "    \"name\": \"" << metadata.name << "\",\n";
+    file << "    \"displayName\": \"" << metadata.displayName << "\",\n";
     file << "    \"description\": \"" << metadata.description << "\",\n";
     file << "    \"author\": \"" << metadata.author << "\",\n";
     file << "    \"createdDate\": \"" << metadata.createdDate << "\",\n";
@@ -234,9 +235,10 @@ bool JsonMapFileManager::LoadMap(std::vector<JsonSerializableObject>& objects,
                     std::string preview = metadataJson.length() > 200 ? metadataJson.substr(0, 200) + "..." : metadataJson;
                     TraceLog(LOG_INFO, "JsonMapFileManager::LoadMap() - Metadata preview: %s", preview.c_str());
 
-                    // Parse metadata fields
+                    // Parse metadata fields - all fields including skybox
                     ParseMetadataField(metadataJson, "\"version\"", metadata.version);
                     ParseMetadataField(metadataJson, "\"name\"", metadata.name);
+                    ParseMetadataField(metadataJson, "\"displayName\"", metadata.displayName);
                     ParseMetadataField(metadataJson, "\"description\"", metadata.description);
                     ParseMetadataField(metadataJson, "\"author\"", metadata.author);
                     ParseMetadataField(metadataJson, "\"createdDate\"", metadata.createdDate);

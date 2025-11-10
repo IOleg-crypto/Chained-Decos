@@ -582,7 +582,8 @@ void MenuActionHandler::LoadMapObjects(const std::string& mapPath)
                     throw std::runtime_error("MapManager not available");
                 }
                 
-                mapManager->GetGameMap() = LoadGameMap(mapPath.c_str());
+                MapLoader loader;
+                mapManager->GetGameMap() = loader.LoadMap(mapPath.c_str());
 
                 // Register any models that MapLoader preloaded into the GameMap
                 RegisterPreloadedModels();

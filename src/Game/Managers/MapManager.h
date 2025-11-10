@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <Engine/Map/MapLoader.h>
+#include <Engine/Map/MapService.h>
 #include "../Player/Player.h"
 #include "Engine/Collision/CollisionManager.h"
 #include "Engine/Model/Model.h"

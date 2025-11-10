@@ -1,7 +1,12 @@
 #include <filesystem>
+#include <vector>
 #include "rlImGui/rlImGui.h"
 #include "rlgl.h"
 #include "Skybox.h"
+
+#ifndef PROJECT_ROOT_DIR
+#define PROJECT_ROOT_DIR ""
+#endif
 
 
 Skybox::Skybox()
@@ -66,6 +71,46 @@ void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fs
     TraceLog(LOG_INFO, "Skybox::LoadMaterialShader() - Shaders loaded successfully");
 }
 
+void Skybox::LoadShadersAutomatically()
+{
+    if (!m_initialized)
+    {
+        TraceLog(LOG_WARNING, "Skybox::LoadShadersAutomatically() - Skybox not initialized");
+        return;
+    }
+
+    // Try to find shaders in resources/shaders/
+    std::string basePath = std::string(PROJECT_ROOT_DIR) + "resources/shaders/";
+    std::string vsPath = basePath + "skybox.vs";
+    std::string fsPath = basePath + "skybox.fs";
+
+    // Check if shaders exist
+    if (std::filesystem::exists(vsPath) && std::filesystem::exists(fsPath))
+    {
+        TraceLog(LOG_INFO, "Skybox::LoadShadersAutomatically() - Found shaders in resources/shaders/");
+        LoadMaterialShader(vsPath, fsPath);
+        return;
+    }
+
+    // Try glsl version specific paths (330, 100, etc.)
+    std::vector<int> glslVersions = {330, 100, 430, 450};
+    for (int version : glslVersions)
+    {
+        std::string glslPath = basePath + "glsl" + std::to_string(version) + "/";
+        std::string testVsPath = glslPath + "skybox.vs";
+        std::string testFsPath = glslPath + "skybox.fs";
+        
+        if (std::filesystem::exists(testVsPath) && std::filesystem::exists(testFsPath))
+        {
+            TraceLog(LOG_INFO, "Skybox::LoadShadersAutomatically() - Found shaders in glsl%d/", version);
+            LoadMaterialShader(testVsPath, testFsPath);
+            return;
+        }
+    }
+
+    TraceLog(LOG_WARNING, "Skybox::LoadShadersAutomatically() - Could not find skybox shaders in resources/shaders/");
+}
+
 void Skybox::LoadMaterialTexture(const std::string &texturePath)
 {
     if (!std::filesystem::exists(texturePath))
@@ -93,24 +138,6 @@ void Skybox::LoadMaterialTexture(const std::string &texturePath)
 
     // Set material cubemap texture
     SetMaterialTexture(&m_skyboxModel.materials[0], MATERIAL_MAP_CUBEMAP, m_skyboxTexture);
-}
-
-void Skybox::LoadTextureCubemap(const std::string &texturePath)
-{
-    if (!std::filesystem::exists(texturePath))
-    {
-        TraceLog(LOG_WARNING, "Skybox::LoadTextureCubemap() - Texture file not found: %s", texturePath.c_str());
-        return;
-    }
-
-    m_skyboxTexture = LoadTexture(texturePath.c_str());
-    if (m_skyboxTexture.id == 0)
-    {
-        TraceLog(LOG_ERROR, "Skybox::LoadTextureCubemap() - Failed to load cubemap texture");
-        return;
-    }
-
-    m_skyboxModel.materials[0].maps[MATERIAL_MAP_CUBEMAP].texture = m_skyboxTexture;
 }
 
 void Skybox::UnloadSkybox()
