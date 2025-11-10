@@ -1,6 +1,6 @@
 #include "ResourceManager.h"
-#include "Engine/Model/Model.h"
-#include "Engine/Map/MapLoader.h"
+#include "Engine/Model/Core/Model.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include <raylib.h>
 #include <nlohmann/json.hpp>
 #include <chrono>

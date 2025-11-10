@@ -2,8 +2,8 @@
 #define GAME_RENDER_HELPERS_H
 
 #include <raylib.h>
-#include <Engine/Collision/CollisionSystem.h>
-#include "Engine/Collision/CollisionManager.h"
+#include <Engine/Collision/System/CollisionSystem.h>
+#include "Engine/Collision/Manager/CollisionManager.h"
 
 class GameRenderHelpers
 {

@@ -1,11 +1,11 @@
 #ifndef PLAYER_MOVEMENT_H
 #define PLAYER_MOVEMENT_H
 
-#include <Collision/CollisionManager.h>
-#include <World/World.h>
+#include <Collision/Manager/CollisionManager.h>
+#include <World/Core/World.h>
 #include <raylib.h>
 #include <raymath.h>
-#include <Physics/PhysicsComponent.h>
+#include <Physics/Components/PhysicsComponent.h>
 #include "IPlayerMovement.h"
 #include "IPlayerMediator.h"
 

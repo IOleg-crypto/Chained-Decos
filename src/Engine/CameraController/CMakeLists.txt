@@ -1,6 +1,7 @@
 add_library(cameracontroller STATIC
-    CameraController.cpp
-    CameraController.h
+    Core/CameraController.cpp
+    Core/CameraController.h
+    Interfaces/ICameraSensitivityController.h
 )
 
 target_include_directories(cameracontroller PUBLIC

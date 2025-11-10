@@ -1,9 +1,3 @@
-//
-// Created by AI Assistant
-// PathUtils - Utility functions for path manipulation
-// Separated from Editor class to follow Single Responsibility Principle
-//
-
 #ifndef PATH_UTILS_H
 #define PATH_UTILS_H
 

@@ -91,23 +91,6 @@ void Skybox::LoadShadersAutomatically()
         LoadMaterialShader(vsPath, fsPath);
         return;
     }
-
-    // Try glsl version specific paths (330, 100, etc.)
-    std::vector<int> glslVersions = {330, 100, 430, 450};
-    for (int version : glslVersions)
-    {
-        std::string glslPath = basePath + "glsl" + std::to_string(version) + "/";
-        std::string testVsPath = glslPath + "skybox.vs";
-        std::string testFsPath = glslPath + "skybox.fs";
-        
-        if (std::filesystem::exists(testVsPath) && std::filesystem::exists(testFsPath))
-        {
-            TraceLog(LOG_INFO, "Skybox::LoadShadersAutomatically() - Found shaders in glsl%d/", version);
-            LoadMaterialShader(testVsPath, testFsPath);
-            return;
-        }
-    }
-
     TraceLog(LOG_WARNING, "Skybox::LoadShadersAutomatically() - Could not find skybox shaders in resources/shaders/");
 }
 

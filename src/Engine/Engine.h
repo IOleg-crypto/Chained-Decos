@@ -18,9 +18,9 @@
 #include <string>
 #include <memory>
 // Project headers
-#include "Input/InputManager.h"
-#include "Kernel/Kernel.h"
-#include "Render/RenderManager.h"
+#include "Input/Core/InputManager.h"
+#include "Kernel/Core/Kernel.h"
+#include "Render/Manager/RenderManager.h"
 
 // Forward declaration
 class ModuleManager;

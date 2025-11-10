@@ -3,6 +3,8 @@ add_library(ChainedDecosGame STATIC
     GameApplication.h
     Managers/MapManager.cpp
     Managers/MapManager.h
+    Managers/MapCollisionInitializer.cpp
+    Managers/MapCollisionInitializer.h
     Managers/ResourceManager.cpp
     Managers/ResourceManager.h
     Managers/StateManager.cpp

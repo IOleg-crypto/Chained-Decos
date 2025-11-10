@@ -3,11 +3,11 @@
 //
 
 #include "Engine.h"
-#include "Render/RenderManager.h"
-#include "Kernel/Kernel.h"
-#include "Kernel/KernelServices.h"
-#include "Module/ModuleManager.h"
-#include "Module/IEngineModule.h"
+#include "Render/Manager/RenderManager.h"
+#include "Kernel/Core/Kernel.h"
+#include "Kernel/Core/KernelServices.h"
+#include "Module/Core/ModuleManager.h"
+#include "Module/Interfaces/IEngineModule.h"
 // Raylib & ImGui
 #include <raylib.h>
 #include <rlImGui.h>

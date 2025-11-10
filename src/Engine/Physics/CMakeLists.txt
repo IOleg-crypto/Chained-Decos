@@ -1,8 +1,8 @@
 add_library(physics STATIC
-    PhysicsComponent.cpp
-    PhysicsComponent.h
-    SurfaceComponent.h
-    SurfaceComponent.cpp
+    Components/PhysicsComponent.cpp
+    Components/PhysicsComponent.h
+    Components/SurfaceComponent.h
+    Components/SurfaceComponent.cpp
 )
 
 target_include_directories(physics

@@ -3,9 +3,11 @@
 //
 
 #include "UIManager.h"
+#include "SkyboxBrowser.h"
+#include "ObjectFactory.h"
 #include "Editor/Editor.h"
-#include "Engine/Kernel/Kernel.h"
-#include "Engine/Map/MapLoader.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -30,24 +32,15 @@ UIManager::UIManager(Editor *editor, ISceneManager *sceneManager, IFileManager *
       m_toolManager(toolManager), m_modelManager(modelManager), m_displayImGuiInterface(true),
       m_displayObjectListPanel(true), m_displayPropertiesPanel(true),
       m_pendingObjectCreation(false), m_displaySkyboxPanel(false), m_displayParkourMapDialog(false),
-      m_currentlySelectedParkourMapIndex(0), m_gridSizes(50)
+      m_currentlySelectedParkourMapIndex(0), m_gridSizes(50),
+      m_skyboxBrowser(std::make_unique<SkyboxBrowser>(editor)),
+      m_objectFactory(std::make_unique<ObjectFactory>(sceneManager, toolManager))
 {
-    // NFD is initialized in Editor::InitializeSubsystems()
-    // Keep placeholder uninitialized here; we'll lazily load it in RenderSkyboxPanel to
-    // avoid heavy filesystem logic in the constructor and to keep things simple.
-    m_skyboxPlaceholderTexture = {0};
-    m_skyboxPlaceholderInitialized = false;
 }
 
 UIManager::~UIManager()
 {
-    
-    // Cleanup placeholder texture
-    if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0) {
-        UnloadTexture(m_skyboxPlaceholderTexture);
-        m_skyboxPlaceholderTexture = {0};
-        m_skyboxPlaceholderInitialized = false;
-    }
+    // SkyboxBrowser handles its own cleanup
 }
 
 void UIManager::Render()
@@ -67,11 +60,10 @@ void UIManager::Render()
     }
 
     // Render skybox panel (always call to handle cleanup even when closed)
-    // Note: RenderSkyboxPanel handles its own Begin/End and can modify m_displaySkyboxPanel
-    if (m_displaySkyboxPanel)
+    // Note: SkyboxBrowser handles its own Begin/End and can modify m_displaySkyboxPanel
+    if (m_displaySkyboxPanel && m_skyboxBrowser)
     {
-
-        RenderSkyboxPanel();
+        m_skyboxBrowser->RenderPanel(m_displaySkyboxPanel);
     }
 
     // If skybox panel was closed via window X button, update checkbox state
@@ -702,50 +694,9 @@ void UIManager::HandleKeyboardInput()
 
 void UIManager::ProcessPendingObjectCreation()
 {
-    if (m_pendingObjectCreation)
+    if (m_pendingObjectCreation && m_objectFactory)
     {
-        // Create object through tool manager
-        // Note: ToolManager expects SceneManager, but we have ISceneManager
-        // For now, we'll handle object creation directly here
-        MapObject newObj;
-        std::string baseName = "New Object " + std::to_string(m_sceneManager->GetObjects().size());
-
-        switch (GetActiveTool())
-        {
-        case ADD_CUBE:
-            newObj.SetObjectType(0); // Cube
-            newObj.SetObjectName(baseName + " (Cube)");
-            break;
-        case ADD_SPHERE:
-            newObj.SetObjectType(1); // Sphere
-            newObj.SetObjectName(baseName + " (Sphere)");
-            break;
-        case ADD_CYLINDER:
-            newObj.SetObjectType(2); // Cylinder
-            newObj.SetObjectName(baseName + " (Cylinder)");
-            break;
-        case ADD_MODEL:
-            newObj.SetObjectType(5); // Model
-            newObj.SetModelAssetName(m_currentlySelectedModelName);
-            newObj.SetObjectName(m_currentlySelectedModelName + " " +
-                                 std::to_string(m_sceneManager->GetObjects().size()));
-            break;
-        case ADD_SPAWN_ZONE:
-            newObj.SetObjectType(6); // Spawn Zone
-            newObj.SetObjectName("Spawn Zone");
-            newObj.SetColor({255, 100, 100, 200}); // Semi-transparent red
-            break;
-        default:
-            break;
-        }
-
-        // Set default position, scale, and other properties
-        newObj.SetPosition({0.0f, 0.0f, 0.0f});
-        newObj.SetScale({1.0f, 1.0f, 1.0f});
-        newObj.SetRotation({0.0f, 0.0f, 0.0f});
-        newObj.SetColor({255, 255, 255, 255}); // White color
-
-        m_sceneManager->AddObject(newObj);
+        m_objectFactory->CreateObject(GetActiveTool(), m_currentlySelectedModelName);
         m_pendingObjectCreation = false;
         SetActiveTool(SELECT);
     }
@@ -756,144 +707,4 @@ int UIManager::GetGridSize() const
     return m_gridSizes;
 }
 
-void UIManager::RenderSkyboxPanel()
-{
-    const int screenWidth = GetScreenWidth();
-    const int screenHeight = GetScreenHeight();
-
-    ImVec2 windowSize(440, 540);
-    ImVec2 desiredPos(static_cast<float>(screenWidth) - 460, 80);
-    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
-    
-    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-
-    // Lazily load placeholder texture on first open of the panel. This keeps logic in one
-    // function and avoids per-frame loading while keeping the change minimal.
-    if (!m_skyboxPlaceholderInitialized)
-    {
-        const char *placeholderPath = PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
-        Image placeholderImg = LoadImage(placeholderPath);
-        if (placeholderImg.data != nullptr)
-        {
-            m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
-            UnloadImage(placeholderImg);
-            m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
-        }
-    }
-
-    bool isOpen = true;
-    if (ImGui::Begin("Set Skybox", &isOpen, ImGuiWindowFlags_NoCollapse))
-    {
-        ImGui::TextWrapped("Current skybox: No skybox loaded");
-        ImGui::Separator();
-        ImGui::Spacing();
-        
-        if (ImGui::Button("Load Skybox Image", ImVec2(200, 30)))
-        {
-            nfdfilteritem_t filterItem[1] = {{"Images", "png,jpg,jpeg,bmp,hdr,dds"}};
-            nfdchar_t *outPath = nullptr;
-            nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
-
-            if (result == NFD_OKAY)
-            {
-                if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0)
-                {
-                    UnloadTexture(m_skyboxPlaceholderTexture);
-                    m_skyboxPlaceholderTexture = {0};
-                    m_skyboxPlaceholderInitialized = false;
-                    m_skyboxPlaceholderPath.clear();
-                }
-
-                Image image = LoadImage(outPath);
-                if (image.data != nullptr)
-                {
-                    m_skyboxPlaceholderTexture = LoadTextureFromImage(image);
-                    UnloadImage(image);
-                    if (m_skyboxPlaceholderTexture.id != 0)
-                    {
-                        m_skyboxPlaceholderInitialized = true;
-                        m_skyboxPlaceholderPath = outPath;
-                        //TraceLog(LOG_INFO, "Skybox preview loaded: %s", outPath);
-                    }
-                }
-                NFD_FreePath(outPath);
-            }
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Unload", ImVec2(100, 30)))
-        {
-            // Clear editor skybox via Editor API so ownership/unloading is centralized
-            if (m_editor)
-            {
-                m_editor->SetSkyboxTexture(std::string());
-            }
-
-            if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0)
-            {
-                UnloadTexture(m_skyboxPlaceholderTexture);
-                m_skyboxPlaceholderTexture = {0};
-                m_skyboxPlaceholderInitialized = false;
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0)
-        {
-            ImGui::Text("Preview:");
-            
-            rlImGuiImageSize(&m_skyboxPlaceholderTexture, 64, 64);
-        }
-        else
-        {
-            ImGui::Text("Preview:");
-            if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0)
-            {
-                rlImGuiImageSize(&m_skyboxPlaceholderTexture, 64, 64);
-            }
-            else
-            {
-                ImGui::Text("No preview available");
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        // Load and apply skybox image
-        if (m_skyboxPlaceholderInitialized && ImGui::Button("Apply to Scene", ImVec2(200, 30)))
-        {
-            if (m_editor && m_editor->GetSkybox())
-            {
-                // First apply texture
-                m_editor->SetSkyboxTexture(m_skyboxPlaceholderPath);
-                
-                // Then apply shaders if they are set
-                if (!m_skyboxPlaceholderPath.empty())
-                {
-                    m_editor->GetSkybox()->LoadMaterialShader(PROJECT_ROOT_DIR "/resources/shaders/skybox.vs", PROJECT_ROOT_DIR "/resources/shaders/skybox.fs");
-                }
-                
-                TraceLog(LOG_INFO, "Applied skybox to editor scene: %s", m_skyboxPlaceholderPath.c_str());
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Text("Shaders:");
-        ImGui::Spacing();
-
-    }
-    ImGui::End();
-
-    if (!isOpen)
-    {
-        m_displaySkyboxPanel = false;
-    }
-}
 

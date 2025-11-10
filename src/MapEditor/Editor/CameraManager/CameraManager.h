@@ -4,7 +4,7 @@
 #include "ICameraManager.h"
 #include <memory>
 
-#include "Engine/CameraController/CameraController.h"
+#include "Engine/CameraController/Core/CameraController.h"
 
 class CameraManager : public ICameraManager {
 private:
