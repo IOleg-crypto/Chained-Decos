@@ -1,7 +1,7 @@
 #ifndef MAPLOADER_H
 #define MAPLOADER_H
 
-#include "Engine/Map/MapData.h"
+#include "MapData.h"
 #include "Engine/Map/Skybox/skybox.h"
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -31,28 +31,8 @@ struct ModelInfo
 // GameMap Class
 // ============================================================================
 
-// Forward declarations for friend classes
-class MapManager;
-class FileManager;
-
 class GameMap
 {
-    // Friend functions for direct access to private members
-    friend GameMap LoadGameMap(const std::string& path);
-    friend GameMap LoadGameMapFromModelsFormat(const nlohmann::json& j, const std::string& path);
-    friend GameMap LoadGameMapFromEditorFormat(const nlohmann::json& j, const std::string& path);
-    friend bool SaveGameMap(const GameMap& map, const std::string& path);
-    friend void LoadSkyboxForMap(GameMap& map);
-    friend void RenderGameMap(const GameMap& map, Camera3D camera);
-    friend void RenderMapObject(const MapObjectData& object,
-                                const std::unordered_map<std::string, Model>& loadedModels,
-                                Camera3D camera,
-                                bool useEditorColors);
-    //friend std::vector<GameMap> MapLoader::LoadAllMapsFromDirectory(const std::string& directory);
-    
-    // Friend classes for direct access to private members
-    friend class MapManager;
-    friend class FileManager;
 
 public:
     GameMap() = default;
@@ -73,20 +53,23 @@ public:
     // Models
     const std::unordered_map<std::string, Model>& GetMapModels() const;
     void AddMapModels(const std::unordered_map<std::string, Model>& modelsMap);
+    std::unordered_map<std::string, Model>& GetMapModelsMutable();
 
     // Objects
     const std::vector<MapObjectData>& GetMapObjects() const;
     void AddMapObjects(const std::vector<MapObjectData>& mapObjects);
+    std::vector<MapObjectData>& GetMapObjectsMutable();
 
     // Metadata
     const MapMetadata& GetMapMetaData() const;
     void SetMapMetaData(const MapMetadata& mapData);
+    MapMetadata& GetMapMetaDataMutable();
 
 private:
     MapMetadata m_metadata;
     std::vector<MapObjectData> m_objects;
     std::unordered_map<std::string, Model> m_loadedModels;
-    std::shared_ptr<Skybox> m_skybox;  // Змінено на новий клас Skybox
+    std::shared_ptr<Skybox> m_skybox; 
 };
 
 // ============================================================================
@@ -115,17 +98,24 @@ public:
 
     // Get map names from directory
     std::vector<std::string> GetMapNamesFromDirectory(const std::string& directory);
+
+    // Skybox operations
+    void LoadSkyboxForMap(GameMap& map);
+
+    // Rendering operations
+    void RenderMap(const GameMap& map, Camera3D camera);
+    void RenderMapObject(const MapObjectData& object,
+                        const std::unordered_map<std::string, Model>& loadedModels,
+                        Camera3D camera,
+                        bool useEditorColors = false);
+
+private:
+    // Internal loading methods
+    GameMap LoadMapFromFile(const std::string& path);
+    GameMap LoadMapFromModelsFormat(const nlohmann::json& j, const std::string& path);
+    GameMap LoadMapFromEditorFormat(const nlohmann::json& j, const std::string& path);
+    bool SaveMapToFile(const GameMap& map, const std::string& path);
 };
-
-// ============================================================================
-// Free Functions - Map Loading/Saving
-// ============================================================================
-
-GameMap LoadGameMap(const std::string& path);
-GameMap LoadGameMapFromModelsFormat(const nlohmann::json& j, const std::string& path);
-GameMap LoadGameMapFromEditorFormat(const nlohmann::json& j, const std::string& path);
-bool SaveGameMap(const GameMap& map, const std::string& path);
-void LoadSkyboxForMap(GameMap& map);
 
 // ============================================================================
 // Utility Functions
@@ -133,15 +123,5 @@ void LoadSkyboxForMap(GameMap& map);
 
 MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3& position,
                                       const Vector3& scale, const Color& color);
-
-// ============================================================================
-// Rendering Functions
-// ============================================================================
-
-void RenderGameMap(const GameMap& map, Camera3D camera);
-void RenderMapObject(const MapObjectData& object,
-                     const std::unordered_map<std::string, Model>& loadedModels,
-                     Camera3D camera,
-                     bool useEditorColors = false);
 
 #endif // MAPLOADER_H

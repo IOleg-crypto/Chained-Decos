@@ -5,7 +5,7 @@
 #include "Engine/Kernel/Kernel.h"
 #include "Engine/Map/MapLoader.h" // Include the new comprehensive map loader
 #include "Engine/MapFileManager/JsonMapFileManager.h"
-#include "Engine/MapFileManager/MapFileManager.h"
+#include "FileManager/MapObjectConverterEditor.h"
 
 // Subsystem implementations
 #include "CameraManager/CameraManager.h"
@@ -132,46 +132,8 @@ void Editor::Render()
 
 void Editor::RenderObject(const MapObject &obj)
 {
-    // Convert MapObject to MapObjectData for shared rendering
-    MapObjectData data;
-    data.name = obj.GetObjectName();
-    data.position = obj.GetPosition();
-    data.rotation = obj.GetRotation();
-    data.scale = obj.GetScale();
-    data.color = obj.GetColor();
-    data.modelName = obj.GetModelAssetName();
-    data.radius = obj.GetSphereRadius();
-    data.height = obj.GetScale().y;
-    data.size = obj.GetPlaneSize();
-
-    // Convert object type
-    switch (obj.GetObjectType())
-    {
-    case 0:
-        data.type = MapObjectType::CUBE;
-        break;
-    case 1:
-        data.type = MapObjectType::SPHERE;
-        break;
-    case 2:
-        data.type = MapObjectType::CYLINDER;
-        break;
-    case 3:
-        data.type = MapObjectType::PLANE;
-        break;
-    case 4:
-        data.type = MapObjectType::LIGHT;
-        break;
-    case 5:
-        data.type = MapObjectType::MODEL;
-        break;
-    case 6:
-        data.type = MapObjectType::SPAWN_ZONE;
-        break;
-    default:
-        data.type = MapObjectType::CUBE;
-        break;
-    }
+    // Convert MapObject to MapObjectData using MapObjectConverterEditor
+    MapObjectData data = MapObjectConverterEditor::MapObjectToMapObjectData(obj);
 
     // Handle spawn zone rendering separately
     if (data.type == MapObjectType::SPAWN_ZONE)
@@ -202,10 +164,14 @@ void Editor::RenderObject(const MapObject &obj)
         }
     }
 
-    // Use shared RenderMapObject function for consistency with Game
+    // Use MapLoader::RenderMapObject for consistency with Game
     // Pass useEditorColors=true to show textures properly in editor
     Camera3D camera = m_cameraManager->GetCamera();
-    RenderMapObject(data, loadedModels, camera, true);
+    MapLoader loader;
+    loader.RenderMapObject(data, loadedModels, camera, true);
+    
+    // Note: This could also use MapService::RenderMapObject for consistency,
+    // but MapLoader is already available and works correctly
 
     // Additional editor-specific rendering: selection wireframe
     if (obj.IsSelected())
@@ -421,52 +387,40 @@ void Editor::LoadMap(const std::string &filename)
         std::vector<MapObject> objects;
         if (m_fileManager->LoadMap(filename, objects))
         {
-            // Clear and reload scene
-
+            // Clear selection first
             m_sceneManager->ClearSelection();
-            // Note: SceneManager doesn't have a ClearAll method, so we need to recreate it
-            // For now, we'll assume the file manager handles scene clearing internally
-            std::cout << "Map loaded successfully!" << std::endl;
+            
+            // Clear existing objects by removing them one by one (from back to front to avoid index issues)
+            // Note: This is a workaround until SceneManager has a ClearAll method
+            const auto& existingObjects = m_sceneManager->GetObjects();
+            for (int i = static_cast<int>(existingObjects.size()) - 1; i >= 0; --i)
+            {
+                m_sceneManager->RemoveObject(i);
+            }
+            
+            // Add all loaded objects (including all types: CUBE, SPHERE, CYLINDER, PLANE, LIGHT, MODEL, SPAWN_ZONE)
+            for (const auto& obj : objects)
+            {
+                m_sceneManager->AddObject(obj);
+            }
+            
+            std::cout << "Map loaded successfully with " << objects.size() << " objects!" << std::endl;
             m_fileManager->SetCurrentlyLoadedMapFilePath(filename);
-            ApplyMetadata(m_fileManager->GetCurrentMetadata());
+            
+            // Apply metadata (including skybox, skyColor, startPosition, endPosition, etc.) from loaded map
+            const MapMetadata& metadata = m_fileManager->GetCurrentMetadata();
+            ApplyMetadata(metadata);
+            
+            // Ensure skybox is loaded if metadata contains skybox texture
+            // ApplyMetadata already calls SetSkyboxTexture, but we ensure it's applied
+            if (!metadata.skyboxTexture.empty())
+            {
+                SetSkyboxTexture(metadata.skyboxTexture, false);
+            }
         }
         else
         {
             std::cout << "Failed to load map!" << std::endl;
-        }
-    }
-}
-
-void Editor::ExportMapForGame(const std::string &filename)
-{
-    // Delegate to file manager
-    if (m_fileManager && m_sceneManager)
-    {
-        const auto &objects = m_sceneManager->GetObjects();
-        if (m_fileManager->ExportForGame(filename, objects))
-        {
-            std::cout << "Map exported for game successfully!" << std::endl;
-        }
-        else
-        {
-            std::cout << "Failed to export map for game!" << std::endl;
-        }
-    }
-}
-
-void Editor::ExportMapAsJSON(const std::string &filename)
-{
-    // Delegate to file manager
-    if (m_fileManager && m_sceneManager)
-    {
-        const auto &objects = m_sceneManager->GetObjects();
-        if (m_fileManager->ExportAsJSON(filename, objects))
-        {
-            std::cout << "Map exported as JSON successfully!" << std::endl;
-        }
-        else
-        {
-            std::cout << "Failed to export map as JSON!" << std::endl;
         }
     }
 }
@@ -503,6 +457,12 @@ void Editor::ApplyMetadata(const MapMetadata &metadata)
     m_activeMetadata = metadata;
     m_clearColor = metadata.skyColor;
     SetSkyboxTexture(metadata.skyboxTexture, false);
+    
+    // Update FileManager metadata to keep them in sync
+    if (m_fileManager)
+    {
+        m_fileManager->SetCurrentMetadata(metadata);
+    }
 }
 
 void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileManager)
@@ -520,6 +480,14 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
     if (!m_skybox)
     {
         m_skybox = std::make_unique<Skybox>();
+    }
+
+    // Initialize skybox if not already initialized
+    if (!m_skybox->IsInitialized())
+    {
+        m_skybox->Init();
+        // Automatically load shaders
+        m_skybox->LoadShadersAutomatically();
     }
 
     std::string absolutePath = ResolveSkyboxAbsolutePath(normalized.empty() ? texturePath : normalized);
@@ -544,6 +512,11 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
         m_skybox->LoadMaterialTexture(absolutePath);
         TraceLog(LOG_INFO, "Editor::SetSkyboxTexture() - Loaded skybox from %s",
                  absolutePath.c_str());
+    }
+    else if (normalized.empty())
+    {
+        // Clear skybox - use skyColor instead
+        m_clearColor = m_activeMetadata.skyColor;
     }
 
     if (updateFileManager && m_fileManager)
@@ -629,39 +602,6 @@ std::string Editor::GetSkyboxAbsolutePath() const
 // The Editor class has been successfully refactored to use the Facade pattern.
 // All major functionality has been delegated to subsystem managers.
 // Remaining old code in this file needs to be cleaned up in future iterations.
-
-void Editor::LoadParkourMap(const std::string &mapName)
-{
-    // Delegate to file manager
-    if (m_fileManager && m_sceneManager)
-    {
-        std::vector<MapObject> objects;
-        m_fileManager->LoadParkourMap(mapName, objects);
-        // SceneManager will be updated by file manager
-        TraceLog(LOG_INFO, "Loaded parkour map '%s'", mapName.c_str());
-    }
-}
-
-void Editor::GenerateParkourMap(const std::string &mapName)
-{
-    // Delegate to file manager
-    if (m_fileManager && m_sceneManager)
-    {
-        std::vector<MapObject> objects;
-        m_fileManager->GenerateParkourMap(mapName, objects);
-        // SceneManager will be updated by file manager
-        TraceLog(LOG_INFO, "Generated parkour map '%s'", mapName.c_str());
-    }
-}
-
-void Editor::ShowParkourMapSelector()
-{
-    // Delegate to file manager
-    if (m_fileManager)
-    {
-        m_fileManager->ShowParkourMapSelector();
-    }
-}
 
 void Editor::LoadSpawnTexture()
 {
