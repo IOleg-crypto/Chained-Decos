@@ -136,13 +136,11 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
         // Load and apply skybox image
         if (m_skyboxPlaceholderInitialized && ImGui::Button("Apply to Scene", ImVec2(200, 30)))
         {
-            if (m_editor && m_editor->GetSkybox())
+            if (m_editor)
             {
-                // First apply texture
+                // Apply texture (shaders are loaded automatically in SetSkyboxTexture)
                 m_editor->SetSkyboxTexture(m_skyboxPlaceholderPath);
-                
-                // Then apply shaders if they are set
-                if (!m_skyboxPlaceholderPath.empty())
+                if(m_editor->GetSkybox())
                 {
                     m_editor->GetSkybox()->LoadMaterialShader(PROJECT_ROOT_DIR "/resources/shaders/skybox.vs", PROJECT_ROOT_DIR "/resources/shaders/skybox.fs");
                 }
@@ -151,9 +149,6 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
             }
         }
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Text("Shaders:");
         ImGui::Spacing();
     }
     ImGui::End();
