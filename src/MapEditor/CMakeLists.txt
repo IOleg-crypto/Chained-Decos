@@ -66,7 +66,7 @@ target_include_directories(ChainedDecosMapEditor PRIVATE
 )
 
 # Link with ChainedDecosEngine, raylib (map is included via ChainedDecosEngine)
-target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib nlohmann_json nfd imguilib)
+target_link_libraries(ChainedDecosMapEditor PRIVATE ChainedDecosEngine raylib nlohmann_json nfd imguilib config)
 
 # Compiler definitions
 target_compile_definitions(ChainedDecosMapEditor PRIVATE
