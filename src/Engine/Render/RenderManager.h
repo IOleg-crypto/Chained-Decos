@@ -30,7 +30,7 @@ public:
     // Initialization
     virtual bool Initialize() override;
 
-    static void InitializeImGuiFont(const std::string &fontPath, float fontSize);
+    static void InitializeImGuiFont(const std::string &fontPath, float fontSize); // Delegates to ImGuiHelper
 
     // Main rendering methods
     void BeginFrame() const;

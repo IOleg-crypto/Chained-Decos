@@ -6,6 +6,8 @@
 #include "Engine/Map/MapLoader.h" // Include the new comprehensive map loader
 #include "Engine/MapFileManager/JsonMapFileManager.h"
 #include "FileManager/MapObjectConverterEditor.h"
+#include "Renderer/EditorRenderer.h"
+#include "Utils/PathUtils.h"
 
 // Subsystem implementations
 #include "CameraManager/CameraManager.h"
@@ -93,6 +95,9 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
     m_modelManager = std::make_unique<ModelManager>(std::move(modelLoader));
     m_uiManager = std::make_unique<UIManager>(this, m_sceneManager.get(), m_fileManager.get(),
                                               m_toolManager.get(), m_modelManager.get());
+    
+    // Initialize renderer
+    m_renderer = std::make_unique<EditorRenderer>(m_toolManager.get(), m_cameraManager.get(), m_modelManager.get());
                                               
 }
 
@@ -125,6 +130,9 @@ void Editor::Render()
 
 void Editor::RenderObject(const MapObject &obj)
 {
+    if (!m_renderer)
+        return;
+        
     // Convert MapObject to MapObjectData using MapObjectConverterEditor
     MapObjectData data = MapObjectConverterEditor::MapObjectToMapObjectData(obj);
 
@@ -134,7 +142,7 @@ void Editor::RenderObject(const MapObject &obj)
         // Render spawn zone with texture
         const float spawnSize = 2.0f;
         Color spawnColor = obj.GetColor();
-        RenderSpawnZoneWithTexture(data.position, spawnSize, spawnColor);
+        m_renderer->RenderSpawnZoneWithTexture(m_spawnTexture, data.position, spawnSize, spawnColor, m_spawnTextureLoaded);
 
         // Additional editor-specific rendering: selection wireframe
         if (obj.IsSelected())
@@ -144,127 +152,8 @@ void Editor::RenderObject(const MapObject &obj)
         return; // Don't render spawn zone as regular object
     }
 
-    // Get loaded models from ModelManager for MODEL type objects
-    std::unordered_map<std::string, Model> loadedModels;
-    if (m_modelManager && data.type == MapObjectType::MODEL && !data.modelName.empty())
-    {
-        auto modelOpt = m_modelManager->GetModelLoader().GetModelByName(data.modelName);
-        if (modelOpt)
-        {
-            // Deep copy the model for loadedModels map
-            Model modelCopy = modelOpt->get();
-            loadedModels[data.modelName] = modelCopy;
-        }
-    }
-
-    Camera3D camera = m_cameraManager->GetCamera();
-    MapLoader loader;
-    loader.RenderMapObject(data, loadedModels, camera, true);
-
-    // Additional editor-specific rendering: selection wireframe
-    if (obj.IsSelected())
-    {
-        // Render gizmo for MOVE and SCALE tools
-        RenderGizmo(obj, data);
-    }
-
-    if (obj.IsSelected() && data.type == MapObjectType::MODEL)
-    {
-        auto it = loadedModels.find(data.modelName);
-        if (it != loadedModels.end())
-        {
-            // Draw wireframe for selected models
-            DrawModelWires(it->second, {0, 0, 0}, 1.0f, YELLOW);
-        }
-    }
-    else if (obj.IsSelected())
-    {
-        // Draw selection indicator for primitives
-        Color selectionColor = YELLOW;
-        selectionColor.a = 100; // Semi-transparent
-        switch (data.type)
-        {
-        case MapObjectType::CUBE:
-        {
-            DrawCubeWires(data.position, data.scale.x, data.scale.y, data.scale.z, YELLOW);
-            break;
-        }
-        case MapObjectType::SPHERE:
-        {
-            DrawSphereWires(data.position, data.radius, 16, 16, YELLOW);
-            break;
-        }
-        case MapObjectType::CYLINDER:
-        {
-            DrawCylinderWires(data.position, data.radius, data.radius, data.height, 16, YELLOW);
-            break;
-        }
-        case MapObjectType::PLANE:
-        {
-            // Draw plane selection indicator using lines
-            Vector3 p1 = {data.position.x - data.size.x * 0.5f, data.position.y,
-                          data.position.z - data.size.y * 0.5f};
-            Vector3 p2 = {data.position.x + data.size.x * 0.5f, data.position.y,
-                          data.position.z - data.size.y * 0.5f};
-            Vector3 p3 = {data.position.x + data.size.x * 0.5f, data.position.y,
-                          data.position.z + data.size.y * 0.5f};
-            Vector3 p4 = {data.position.x - data.size.x * 0.5f, data.position.y,
-                          data.position.z + data.size.y * 0.5f};
-            DrawLine3D(p1, p2, YELLOW);
-            DrawLine3D(p2, p3, YELLOW);
-            DrawLine3D(p3, p4, YELLOW);
-            DrawLine3D(p4, p1, YELLOW);
-            break;
-        }
-        default:
-            break;
-        }
-    }
-}
-
-void Editor::RenderGizmo(const MapObject &obj, const MapObjectData &data)
-{
-    // Only show gizmo for MOVE and SCALE tools
-    if (!m_toolManager || !m_cameraManager)
-        return;
-    Tool activeTool = m_toolManager->GetActiveTool();
-    if (activeTool != MOVE && activeTool != SCALE)
-        return;
-
-    Vector3 pos = obj.GetPosition();
-    float gizmoLength = 2.0f;
-    float gizmoThickness = 0.1f;
-
-    // Get camera to determine gizmo scale
-    Camera3D camera = m_cameraManager->GetCamera();
-    Vector3 toCamera = Vector3Subtract(camera.position, pos);
-    float distance = Vector3Length(toCamera);
-    float scale = distance * 0.1f; // Scale gizmo based on distance from camera
-    if (scale < 0.5f)
-        scale = 0.5f;
-    if (scale > 2.0f)
-        scale = 2.0f;
-
-    float arrowLength = gizmoLength * scale;
-    float arrowRadius = gizmoThickness * scale;
-
-    // Draw X axis (red) - right
-    DrawLine3D(pos, Vector3Add(pos, {arrowLength, 0, 0}), RED);
-    DrawCylinderEx(Vector3Add(pos, {arrowLength * 0.7f, 0, 0}),
-                   Vector3Add(pos, {arrowLength, 0, 0}), arrowRadius * 0.5f, arrowRadius, 8, RED);
-
-    // Draw Y axis (green) - up
-    DrawLine3D(pos, Vector3Add(pos, {0, arrowLength, 0}), GREEN);
-    DrawCylinderEx(Vector3Add(pos, {0, arrowLength * 0.7f, 0}),
-                   Vector3Add(pos, {0, arrowLength, 0}), arrowRadius * 0.5f, arrowRadius, 8, GREEN);
-
-    // Draw Z axis (blue) - forward
-    DrawLine3D(pos, Vector3Add(pos, {0, 0, arrowLength}), BLUE);
-    DrawCylinderEx(Vector3Add(pos, {0, 0, arrowLength * 0.7f}),
-                   Vector3Add(pos, {0, 0, arrowLength}), arrowRadius * 0.5f, arrowRadius, 8, BLUE);
-
-    // Draw center sphere
-    DrawSphere(pos, arrowRadius * 1.5f, YELLOW);
+    // Delegate rendering to EditorRenderer
+    m_renderer->RenderObject(obj, data, obj.IsSelected());
 }
 
 void Editor::RenderImGui()
@@ -413,22 +302,6 @@ void Editor::LoadMap(const std::string &filename)
     }
 }
 
-void Editor::RenderSpawnZoneWithTexture(const Vector3 &position, float size, Color color) const
-{
-    if (!m_spawnTextureLoaded)
-    {
-        // Fallback to simple cube if texture not loaded
-        DrawCube(position, size, size, size, color);
-        DrawCubeWires(position, size, size, size, WHITE);
-        return;
-    }
-
-    // Use shared RenderUtils function to draw textured cube
-    RenderUtils::DrawCubeTexture(m_spawnTexture, position, size, size, size, color);
-
-    // Draw wireframe for better visibility
-    DrawCubeWires(position, size, size, size, WHITE);
-}
 
 int Editor::GetGridSize() const
 {
@@ -455,8 +328,9 @@ void Editor::ApplyMetadata(const MapMetadata &metadata)
 
 void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileManager)
 {
-    std::string normalized = NormalizeSkyboxPath(texturePath);
-    if (normalized == m_skyboxTexturePath && m_skybox && !normalized.empty())
+    // NFD returns absolute paths, so we can use the path directly
+    // For relative paths from JSON files, ResolveSkyboxAbsolutePath will handle them
+    if (texturePath == m_skyboxTexturePath && m_skybox && !texturePath.empty())
     {
         if (updateFileManager && m_fileManager)
         {
@@ -478,21 +352,22 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
         m_skybox->LoadShadersAutomatically();
     }
 
-    std::string absolutePath = ResolveSkyboxAbsolutePath(normalized.empty() ? texturePath : normalized);
+    // Resolve absolute path (handles both absolute from NFD and relative from JSON)
+    std::string absolutePath = PathUtils::ResolveSkyboxAbsolutePath(texturePath);
 
-    if (!normalized.empty())
+    if (!texturePath.empty())
     {
         std::error_code fileErr;
         if (!fs::exists(absolutePath, fileErr))
         {
             TraceLog(LOG_WARNING, "Editor::SetSkyboxTexture() - Skybox texture not found: %s",
                      absolutePath.c_str());
-            normalized.clear();
             absolutePath.clear();
         }
     }
 
-    m_skyboxTexturePath = normalized;
+    // Store the original path (absolute from NFD or relative from JSON)
+    m_skyboxTexturePath = texturePath;
     m_activeMetadata.skyboxTexture = m_skyboxTexturePath;
 
     if (!absolutePath.empty())
@@ -501,7 +376,7 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
         TraceLog(LOG_INFO, "Editor::SetSkyboxTexture() - Loaded skybox from %s",
                  absolutePath.c_str());
     }
-    else if (normalized.empty())
+    else if (texturePath.empty())
     {
         // Clear skybox - use skyColor instead
         m_clearColor = m_activeMetadata.skyColor;
@@ -513,78 +388,13 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
     }
 }
 
-std::string Editor::NormalizeSkyboxPath(const std::string &texturePath) const
-{
-    if (texturePath.empty())
-    {
-        return "";
-    }
-
-    fs::path projectRoot(PROJECT_ROOT_DIR);
-    fs::path input(texturePath);
-    std::error_code ec;
-    fs::path absolute = input.is_absolute() ? fs::weakly_canonical(input, ec)
-                                            : fs::weakly_canonical(projectRoot / input, ec);
-
-    if (ec)
-    {
-        absolute = input.is_absolute() ? input : projectRoot / input;
-    }
-
-    fs::path relative = fs::relative(absolute, projectRoot, ec);
-    if (!ec && !relative.empty() && relative.generic_string() != ".")
-    {
-        return relative.generic_string();
-    }
-
-    return absolute.generic_string();
-}
-
-std::string Editor::ResolveSkyboxAbsolutePath(const std::string &texturePath) const
-{
-    if (texturePath.empty())
-    {
-        return "";
-    }
-
-    fs::path input(texturePath);
-    std::error_code ec;
-
-    if (input.is_absolute())
-    {
-        fs::path canonical = fs::weakly_canonical(input, ec);
-        if (!ec && fs::exists(canonical))
-        {
-            return canonical.string();
-        }
-        if (fs::exists(input))
-        {
-            return input.string();
-        }
-    }
-
-    fs::path projectRoot(PROJECT_ROOT_DIR);
-    fs::path combined = projectRoot / input;
-    fs::path canonicalCombined = fs::weakly_canonical(combined, ec);
-    if (!ec && fs::exists(canonicalCombined))
-    {
-        return canonicalCombined.string();
-    }
-    if (fs::exists(combined))
-    {
-        return combined.string();
-    }
-
-    return (input.is_absolute() ? input : combined).string();
-}
-
 std::string Editor::GetSkyboxAbsolutePath() const
 {
     if (m_skyboxTexturePath.empty())
     {
         return "";
     }
-    return ResolveSkyboxAbsolutePath(m_skyboxTexturePath);
+    return PathUtils::ResolveSkyboxAbsolutePath(m_skyboxTexturePath);
 }
 
 // The Editor class has been successfully refactored to use the Facade pattern.
