@@ -36,6 +36,10 @@ set(MAPEDITOR_SOURCES
     Editor/ModelManager/ModelManager.cpp
     Editor/ModelManager/ModelManager.h
     Editor/ModelManager/IModelManager.h
+    Editor/Renderer/EditorRenderer.cpp
+    Editor/Renderer/EditorRenderer.h
+    Editor/Utils/PathUtils.cpp
+    Editor/Utils/PathUtils.h
     Modules/EditorModule.cpp
     Modules/EditorModule.h
 )

@@ -25,6 +25,10 @@
 #include "ToolManager/IToolManager.h"
 #include "CameraManager/ICameraManager.h"
 
+// Rendering and utilities
+#include "Renderer/EditorRenderer.h"
+#include "Utils/PathUtils.h"
+
 // Main editor class for the map editor - now acts as a facade
 class Editor
 {
@@ -37,6 +41,9 @@ private:
     std::unique_ptr<ICameraManager> m_cameraManager;
     std::unique_ptr<IModelManager> m_modelManager;
     std::unique_ptr<Skybox> m_skybox;
+    
+    // Rendering helper
+    std::unique_ptr<EditorRenderer> m_renderer;
 
     // Legacy compatibility - minimal state kept for backward compatibility
     int m_gridSizes;
@@ -95,12 +102,9 @@ public:
 private:
     // Helper methods for subsystem coordination
     void InitializeSubsystems(std::shared_ptr<CameraController> cameraController, std::unique_ptr<ModelLoader> modelLoader);
-    void RenderObject(const MapObject& obj); // Render a single object
-    void RenderGizmo(const MapObject& obj, const MapObjectData& data); // Render transform gizmo
-    void RenderSpawnZoneWithTexture(const Vector3& position, float size, Color color) const; // Render textured spawn zone
-
-    std::string NormalizeSkyboxPath(const std::string& texturePath) const;
-    std::string ResolveSkyboxAbsolutePath(const std::string& texturePath) const;
+    
+    // Rendering helper - delegates to EditorRenderer
+    void RenderObject(const MapObject& obj);
     
 public:
     // Public helper to get absolute skybox path
