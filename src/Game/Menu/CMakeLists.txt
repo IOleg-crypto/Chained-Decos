@@ -1,16 +1,16 @@
 add_library(menu STATIC
     Menu.cpp
     Menu.h
-    MenuController.cpp
-    MenuController.h
-    SettingsManager.cpp
-    SettingsManager.h
-    ConsoleManager.cpp
-    ConsoleManager.h
-    ConsoleManagerHelpers.cpp
-    ConsoleManagerHelpers.h
-    MapSelector.cpp
-    MapSelector.h
+    MenuController/MenuController.cpp
+    MenuController/MenuController.h
+    Settings/SettingsManager.cpp
+    Settings/SettingsManager.h
+    Console/ConsoleManager.cpp
+    Console/ConsoleManager.h
+    Console/ConsoleManagerHelpers.cpp
+    Console/ConsoleManagerHelpers.h
+    MapSelector/MapSelector.cpp
+    MapSelector/MapSelector.h
     MenuConstants.h
 )
 

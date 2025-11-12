@@ -19,7 +19,7 @@
 #include "Systems/MapSystem/MapSystem.h"
 #include "Systems/UIController/UIController.h"
 #include "Systems/RenderingSystem/RenderingSystem.h"
-#include "Menu/ConsoleManagerHelpers.h"
+#include "Menu/Console/ConsoleManagerHelpers.h"
 #include "imgui.h"
 #include "rlImGui.h"
 #include <raylib.h>

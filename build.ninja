@@ -1995,14 +1995,14 @@ build src/Engine/Model/install/strip: phony src/Engine/Model/CMakeFiles/install/
 #############################################
 # Order-only phony target for map
 
-build cmake_object_order_depends_target_map: phony || cmake_object_order_depends_target_glfw cmake_object_order_depends_target_raylib
+build cmake_object_order_depends_target_map: phony || cmake_object_order_depends_target_config cmake_object_order_depends_target_glfw cmake_object_order_depends_target_raylib
 
 build src/Engine/Map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__map_unscanned_Debug D$:/gitnext/Chained$ Decos/src/Engine/Map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_map
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = src\Engine\Map\CMakeFiles\map.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include"
+  INCLUDES = -I"D:/gitnext/Chained Decos/src/Engine/Map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/src/Engine/Config"
   OBJECT_DIR = src\Engine\Map\CMakeFiles\map.dir
   OBJECT_FILE_DIR = src\Engine\Map\CMakeFiles\map.dir\Unity
 
@@ -2014,7 +2014,7 @@ build src/Engine/Map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER_
 #############################################
 # Link the static library src\Engine\Map\libmap.a
 
-build src/Engine/Map/libmap.a: CXX_STATIC_LIBRARY_LINKER__map_Debug src/Engine/Map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a
+build src/Engine/Map/libmap.a: CXX_STATIC_LIBRARY_LINKER__map_Debug src/Engine/Map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a src/Engine/Config/libconfig.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = src\Engine\Map\CMakeFiles\map.dir
@@ -3815,14 +3815,14 @@ build src/Game/Player/install/strip: phony src/Game/Player/CMakeFiles/install/st
 #############################################
 # Order-only phony target for ChainedDecosUnitTests
 
-build cmake_object_order_depends_target_ChainedDecosUnitTests: phony || cmake_object_order_depends_target_gmock cmake_object_order_depends_target_gmock_main cmake_object_order_depends_target_gtest cmake_object_order_depends_target_gtest_main
+build cmake_object_order_depends_target_ChainedDecosUnitTests: phony || cmake_object_order_depends_target_config cmake_object_order_depends_target_glfw cmake_object_order_depends_target_gmock cmake_object_order_depends_target_gmock_main cmake_object_order_depends_target_gtest cmake_object_order_depends_target_gtest_main cmake_object_order_depends_target_raylib
 
 build tests/CMakeFiles/ChainedDecosUnitTests.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__ChainedDecosUnitTests_unscanned_Debug D$:/gitnext/Chained$ Decos/tests/CMakeFiles/ChainedDecosUnitTests.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_ChainedDecosUnitTests
   CONFIG = Debug
-  DEFINES = -DGTEST_CREATE_SHARED_LIBRARY=1 -DGTEST_LINKED_AS_SHARED_LIBRARY=1 -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
+  DEFINES = -DGRAPHICS_API_OPENGL_33 -DGTEST_CREATE_SHARED_LIBRARY=1 -DGTEST_LINKED_AS_SHARED_LIBRARY=1 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = tests\CMakeFiles\ChainedDecosUnitTests.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++20 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/tests" -I"D:/gitnext/Chained Decos/src" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock"
+  INCLUDES = -I"D:/gitnext/Chained Decos/tests" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/src/Engine/Config" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock"
   OBJECT_DIR = tests\CMakeFiles\ChainedDecosUnitTests.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\ChainedDecosUnitTests.dir\Unity
 
@@ -3834,10 +3834,10 @@ build tests/CMakeFiles/ChainedDecosUnitTests.dir/Unity/unity_0_cxx.cxx.obj: CXX_
 #############################################
 # Link the executable bin\tests\ChainedDecosUnitTests.exe
 
-build bin/tests/ChainedDecosUnitTests.exe: CXX_EXECUTABLE_LINKER__ChainedDecosUnitTests_Debug tests/CMakeFiles/ChainedDecosUnitTests.dir/Unity/unity_0_cxx.cxx.obj | lib/libgtest_main.a lib/libgmock_main.a lib/libgmock.a lib/libgtest.a || lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a
+build bin/tests/ChainedDecosUnitTests.exe: CXX_EXECUTABLE_LINKER__ChainedDecosUnitTests_Debug tests/CMakeFiles/ChainedDecosUnitTests.dir/Unity/unity_0_cxx.cxx.obj | lib/libgtest_main.a lib/libgmock_main.a src/Engine/Config/libconfig.a lib/libgmock.a lib/libgtest.a .deps/raylib-build/raylib/libraylib.a || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a src/Engine/Config/libconfig.a
   CONFIG = Debug
   FLAGS = -g
-  LINK_LIBRARIES = -lwinmm  lib/libgtest_main.a  lib/libgmock_main.a  -lwinmm  lib/libgmock.a  lib/libgtest.a  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_LIBRARIES = -lwinmm  lib/libgtest_main.a  lib/libgmock_main.a  src/Engine/Config/libconfig.a  -lwinmm  lib/libgmock.a  lib/libgtest.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = tests\CMakeFiles\ChainedDecosUnitTests.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -4000,7 +4000,7 @@ build tests/install/strip: phony tests/CMakeFiles/install/strip.util
 #############################################
 # Custom command for tests\CMakeFiles\test
 
-build tests/CMakeFiles/test | ${cmake_ninja_workdir}tests/CMakeFiles/test: CUSTOM_COMMAND bin/tests/ChainedDecosUnitTests.exe || bin/tests/ChainedDecosUnitTests.exe lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a
+build tests/CMakeFiles/test | ${cmake_ninja_workdir}tests/CMakeFiles/test: CUSTOM_COMMAND bin/tests/ChainedDecosUnitTests.exe || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a bin/tests/ChainedDecosUnitTests.exe lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a src/Engine/Config/libconfig.a
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\tests" && "D:\gitnext\Chained Decos\bin\tests\ChainedDecosUnitTests.exe""
   DESC = Running unit tests
 
@@ -4008,7 +4008,7 @@ build tests/CMakeFiles/test | ${cmake_ninja_workdir}tests/CMakeFiles/test: CUSTO
 #############################################
 # Custom command for tests\CMakeFiles\run_unit_tests
 
-build tests/CMakeFiles/run_unit_tests | ${cmake_ninja_workdir}tests/CMakeFiles/run_unit_tests: CUSTOM_COMMAND bin/tests/ChainedDecosUnitTests.exe || bin/tests/ChainedDecosUnitTests.exe lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a
+build tests/CMakeFiles/run_unit_tests | ${cmake_ninja_workdir}tests/CMakeFiles/run_unit_tests: CUSTOM_COMMAND bin/tests/ChainedDecosUnitTests.exe || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a bin/tests/ChainedDecosUnitTests.exe lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a src/Engine/Config/libconfig.a
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\tests" && "D:\gitnext\Chained Decos\bin\tests\ChainedDecosUnitTests.exe""
   DESC = Running unit tests
 
@@ -4068,10 +4068,10 @@ build src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_0_cxx.cxx.o
 #############################################
 # Link the executable src\MapEditor\ChainedDecosMapEditor.exe
 
-build src/MapEditor/ChainedDecosMapEditor.exe: CXX_EXECUTABLE_LINKER__ChainedDecosMapEditor_Debug src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_1_cxx.cxx.obj src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_0_cxx.cxx.obj | src/Engine/libChainedDecosEngine.a .deps/raylib-build/raylib/libraylib.a .deps/nfd-build/src/libnfd.a libimguilib.a src/Engine/Config/libconfig.a src/Engine/Input/libinput.a src/Engine/Map/libmap.a src/Engine/Render/librender.a src/Game/Player/libplayer.a src/Engine/Collision/libcollision.a src/Engine/Model/libmodel.a src/Engine/Collision/libcollision.a src/Engine/Model/libmodel.a src/Engine/CameraController/libcameracontroller.a src/Engine/World/libworld.a src/Engine/Physics/libphysics.a src/Engine/Module/libmodule.a src/Engine/Kernel/libkernel.a src/Engine/Audio/libaudio.a src/Engine/Event/libevent.a src/Engine/GUI/libgui.a libimguilib.a src/Engine/CommandLineHandler/libcmdhandler.a .deps/raylib-build/raylib/libraylib.a || .deps/nfd-build/src/libnfd.a .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a libimguilib.a src/Engine/Audio/libaudio.a src/Engine/CameraController/libcameracontroller.a src/Engine/Collision/libcollision.a src/Engine/CommandLineHandler/libcmdhandler.a src/Engine/Config/libconfig.a src/Engine/Event/libevent.a src/Engine/GUI/libgui.a src/Engine/Input/libinput.a src/Engine/Kernel/libkernel.a src/Engine/Map/libmap.a src/Engine/Module/libmodule.a src/Engine/Physics/libphysics.a src/Engine/Render/librender.a src/Engine/World/libworld.a src/Engine/libChainedDecosEngine.a src/Game/Player/libplayer.a
+build src/MapEditor/ChainedDecosMapEditor.exe: CXX_EXECUTABLE_LINKER__ChainedDecosMapEditor_Debug src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_1_cxx.cxx.obj src/MapEditor/CMakeFiles/ChainedDecosMapEditor.dir/Unity/unity_0_cxx.cxx.obj | src/Engine/libChainedDecosEngine.a .deps/raylib-build/raylib/libraylib.a .deps/nfd-build/src/libnfd.a libimguilib.a src/Engine/Config/libconfig.a src/Engine/Input/libinput.a src/Engine/Map/libmap.a src/Engine/Config/libconfig.a src/Engine/Render/librender.a src/Game/Player/libplayer.a src/Engine/Collision/libcollision.a src/Engine/Model/libmodel.a src/Engine/Collision/libcollision.a src/Engine/Model/libmodel.a src/Engine/CameraController/libcameracontroller.a src/Engine/World/libworld.a src/Engine/Physics/libphysics.a src/Engine/Module/libmodule.a src/Engine/Kernel/libkernel.a src/Engine/Audio/libaudio.a src/Engine/Event/libevent.a src/Engine/GUI/libgui.a libimguilib.a src/Engine/CommandLineHandler/libcmdhandler.a .deps/raylib-build/raylib/libraylib.a || .deps/nfd-build/src/libnfd.a .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a libimguilib.a src/Engine/Audio/libaudio.a src/Engine/CameraController/libcameracontroller.a src/Engine/Collision/libcollision.a src/Engine/CommandLineHandler/libcmdhandler.a src/Engine/Config/libconfig.a src/Engine/Event/libevent.a src/Engine/GUI/libgui.a src/Engine/Input/libinput.a src/Engine/Kernel/libkernel.a src/Engine/Map/libmap.a src/Engine/Module/libmodule.a src/Engine/Physics/libphysics.a src/Engine/Render/librender.a src/Engine/World/libworld.a src/Engine/libChainedDecosEngine.a src/Game/Player/libplayer.a
   CONFIG = Debug
   FLAGS = -g
-  LINK_LIBRARIES = -lwinmm  src/Engine/libChainedDecosEngine.a  .deps/raylib-build/raylib/libraylib.a  .deps/nfd-build/src/libnfd.a  libimguilib.a  src/Engine/Config/libconfig.a  src/Engine/Input/libinput.a  src/Engine/Map/libmap.a  src/Engine/Render/librender.a  src/Game/Player/libplayer.a  src/Engine/Collision/libcollision.a  src/Engine/Model/libmodel.a  src/Engine/Collision/libcollision.a  src/Engine/Model/libmodel.a  src/Engine/CameraController/libcameracontroller.a  src/Engine/World/libworld.a  src/Engine/Physics/libphysics.a  src/Engine/Module/libmodule.a  src/Engine/Kernel/libkernel.a  src/Engine/Audio/libaudio.a  src/Engine/Event/libevent.a  src/Engine/GUI/libgui.a  libimguilib.a  src/Engine/CommandLineHandler/libcmdhandler.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_LIBRARIES = -lwinmm  src/Engine/libChainedDecosEngine.a  .deps/raylib-build/raylib/libraylib.a  .deps/nfd-build/src/libnfd.a  libimguilib.a  src/Engine/Config/libconfig.a  src/Engine/Input/libinput.a  src/Engine/Map/libmap.a  src/Engine/Config/libconfig.a  src/Engine/Render/librender.a  src/Game/Player/libplayer.a  src/Engine/Collision/libcollision.a  src/Engine/Model/libmodel.a  src/Engine/Collision/libcollision.a  src/Engine/Model/libmodel.a  src/Engine/CameraController/libcameracontroller.a  src/Engine/World/libworld.a  src/Engine/Physics/libphysics.a  src/Engine/Module/libmodule.a  src/Engine/Kernel/libkernel.a  src/Engine/Audio/libaudio.a  src/Engine/Event/libevent.a  src/Engine/GUI/libgui.a  libimguilib.a  src/Engine/CommandLineHandler/libcmdhandler.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = src\MapEditor\CMakeFiles\ChainedDecosMapEditor.dir
   POST_BUILD = cd .
   PRE_LINK = cd .

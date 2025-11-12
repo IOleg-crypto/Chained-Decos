@@ -3,17 +3,17 @@ add_library(player STATIC
     Player.h
     PlayerRenderable.cpp
     PlayerRenderable.h
-    PlayerCollision.cpp
-    PlayerCollision.h
+    Collision/PlayerCollision.cpp
+    Collision/PlayerCollision.h
     PlayerInput.cpp
     PlayerInput.h
-    IPlayerInput.h
-    IPlayerMediator.h
+    Interfaces/IPlayerInput.h
+    Interfaces/IPlayerMediator.h
     PlayerModel.h
     PlayerModel.cpp
     PlayerMovement.h
     PlayerMovement.cpp
-    IPlayerMovement.h
+    Interfaces/IPlayerMovement.h
 )
 
 target_include_directories(player PUBLIC

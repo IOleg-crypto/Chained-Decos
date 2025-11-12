@@ -8,7 +8,7 @@
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include "MenuConstants.h"
-#include "Game/Player/IPlayerProvider.h"
+#include "Game/Player/Interfaces/IPlayerProvider.h"
 #include "Game/Managers/IMapManagerProvider.h"
 #include "Engine/IEngineProvider.h"
 
