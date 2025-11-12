@@ -109,28 +109,7 @@ void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fs
     TraceLog(LOG_INFO, "Skybox::LoadMaterialShader() - Shaders loaded successfully");
 }
 
-void Skybox::LoadShadersAutomatically()
-{
-    if (!m_initialized)
-    {
-        TraceLog(LOG_WARNING, "Skybox::LoadShadersAutomatically() - Skybox not initialized");
-        return;
-    }
 
-    // Try to find shaders in resources/shaders/
-    std::string basePath = std::string(PROJECT_ROOT_DIR) + "resources/shaders/";
-    std::string vsPath = basePath + "skybox.vs";
-    std::string fsPath = basePath + "skybox.fs";
-
-    // Check if shaders exist
-    if (std::filesystem::exists(vsPath) && std::filesystem::exists(fsPath))
-    {
-        TraceLog(LOG_INFO, "Skybox::LoadShadersAutomatically() - Found shaders in resources/shaders/");
-        LoadMaterialShader(vsPath, fsPath);
-        return;
-    }
-    TraceLog(LOG_WARNING, "Skybox::LoadShadersAutomatically() - Could not find skybox shaders in resources/shaders/");
-}
 
 void Skybox::LoadMaterialTexture(const std::string &texturePath)
 {
