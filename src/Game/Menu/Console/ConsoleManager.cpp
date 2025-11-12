@@ -2,7 +2,7 @@
 #include "Engine/Engine.h"
 #include "Game/Managers/MapManager.h"
 #include "Game/Player/Player.h"
-#include "Game/Player/PlayerCollision.h"
+#include "Game/Player/Collision/PlayerCollision.h"
 #include <algorithm>
 #include <cctype>
 #include <imgui/imgui.h>
@@ -436,49 +436,6 @@ void ConsoleManager::RegisterBuiltinCommands()
                         float frameTime = GetFrameTime() * 1000.0f; // Convert to milliseconds
                         console->AddOutput("FPS: " + std::to_string(fps) +
                                            " | Frame time: " + std::to_string(frameTime) + "ms");
-                    });
-
-    // Map command (Source Engine style)
-    RegisterCommand("map", "Load a map", "map <mapname>",
-                    [](const std::vector<std::string> &args, ConsoleManager *console)
-                    {
-                        if (args.empty())
-                        {
-                            MapManager *mapManager = console->GetMapManager();
-                            if (mapManager)
-                            {
-                                std::string currentMap = mapManager->GetCurrentMapPath();
-                                if (currentMap.empty())
-                                {
-                                    console->AddOutput("No map currently loaded.");
-                                }
-                                else
-                                {
-                                    console->AddOutput("Current map: " + currentMap);
-                                }
-                            }
-                            console->AddOutput("Usage: map <mapname>");
-                            return;
-                        }
-
-                        std::string mapName = args[0];
-                        // Add .json extension if not present
-                        if (mapName.find('.') == std::string::npos)
-                        {
-                            mapName += ".json";
-                        }
-
-                        MapManager *mapManager = console->GetMapManager();
-                        if (!mapManager)
-                        {
-                            console->AddOutput("Error: MapManager not available.");
-                            return;
-                        }
-
-                        std::string mapPath = std::string(PROJECT_ROOT_DIR) + "/maps/" + mapName;
-                        console->AddOutput("Loading map: " + mapPath);
-                        mapManager->LoadEditorMap(mapPath);
-                        console->AddOutput("Map loaded successfully!");
                     });
 
     // Quit command (Source Engine style)

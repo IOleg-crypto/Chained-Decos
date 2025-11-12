@@ -14,9 +14,9 @@
 #include <Model/Core/Model.h>
 
 // Include component interfaces
-#include "IPlayerInput.h"
-#include "IPlayerMovement.h"
-#include "IPlayerMediator.h"
+#include "Interfaces/IPlayerInput.h"
+#include "Interfaces/IPlayerMovement.h"
+#include "Interfaces/IPlayerMediator.h"
 #include "PlayerModel.h"
 
 // Forward declarations

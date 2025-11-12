@@ -5,7 +5,7 @@
 #include "../../Player/Player.h"
 #include "../../Managers/PlayerManager.h"
 #include "../../Menu/Menu.h"
-#include "../../Menu/ConsoleManagerHelpers.h"
+#include "../../Menu/Console/ConsoleManagerHelpers.h"
 #include "Engine/Collision/Manager/CollisionManager.h"
 #include "Engine/Model/Core/Model.h"
 #include <raylib.h>
