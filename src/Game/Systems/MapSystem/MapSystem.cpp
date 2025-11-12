@@ -8,7 +8,7 @@
 #include "Engine/Render/Manager/RenderManager.h"
 #include "../../Player/Player.h"
 #include "../../Menu/Menu.h"
-#include "../../Menu/ConsoleManagerHelpers.h"
+#include "../../Menu/Console/ConsoleManagerHelpers.h"
 #include <raylib.h>
 
 MapSystem::MapSystem()

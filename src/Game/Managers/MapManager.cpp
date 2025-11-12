@@ -10,7 +10,7 @@
 #include "Engine/Map/Renderer/MapRenderer.h"
 #include "MapCollisionInitializer.h"
 #include "Game/Menu/Menu.h"
-#include "Player/PlayerCollision.h"
+#include "Player/Collision/PlayerCollision.h"
 #include <raylib.h>
 #include <rlgl.h>
 #include <cmath>
