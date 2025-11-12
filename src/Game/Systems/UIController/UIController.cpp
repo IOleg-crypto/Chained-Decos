@@ -3,7 +3,7 @@
 #include "Engine/Kernel/Core/KernelServices.h"
 #include "Engine/Engine.h"
 #include "../../Menu/Menu.h"
-#include "../../Menu/ConsoleManager.h"
+#include "../../Menu/Console/ConsoleManager.h"
 #include "../../Player/Player.h"
 #include <raylib.h>
 

@@ -10,7 +10,7 @@
 #include "../Event/Core/EventSystem.h"
 #include "../Asset/Core/AssetManager.h"
 #include "../Render/Manager/RenderManager.h"
-#include "../../Game/Player/IPlayerProvider.h"
+#include "../../Game/Player/Interfaces/IPlayerProvider.h"
 #include "../../Game/Managers/IMapManagerProvider.h"
 #include "../IEngineProvider.h"
 

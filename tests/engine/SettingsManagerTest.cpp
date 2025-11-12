@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <fstream>
 #include <filesystem>
-#include "Game/Menu/SettingsManager.h"
+#include "Game/Menu/Settings/SettingsManager.h"
 
 class SettingsManagerTest : public ::testing::Test {
 protected:

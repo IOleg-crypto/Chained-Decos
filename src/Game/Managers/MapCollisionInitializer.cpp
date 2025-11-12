@@ -1,6 +1,6 @@
 #include "MapCollisionInitializer.h"
 #include "../Player/Player.h"
-#include "Player/PlayerCollision.h"
+#include "Player/Collision/PlayerCollision.h"
 #include <raylib.h>
 
 MapCollisionInitializer::MapCollisionInitializer(CollisionManager* collisionManager, ModelLoader* models, Player* player)

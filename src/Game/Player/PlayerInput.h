@@ -5,8 +5,8 @@
 #include <iostream>
 #include <raylib.h>
 #include <raymath.h>
-#include "IPlayerInput.h"
-#include "IPlayerMediator.h"
+#include "Interfaces/IPlayerInput.h"
+#include "Interfaces/IPlayerMediator.h"
 
 // PlayerInput: handles all input-related functionality
 class PlayerInput : public IPlayerInput

@@ -7,9 +7,9 @@
 #include <optional>
 #include <memory>
 #include <functional>
-#include "SettingsManager.h"
-#include "ConsoleManager.h"
-#include "MapSelector.h"
+#include "Settings/SettingsManager.h"
+#include "Console/ConsoleManager.h"
+#include "MapSelector/MapSelector.h"
 #include "Engine.h"
 #include "Engine/CameraController/Interfaces/ICameraSensitivityController.h"
 #include <Render/Interfaces/IMenuRenderable.h>

@@ -2,7 +2,7 @@
 #include "PlayerRenderable.h"
 #include "PlayerMovement.h"
 #include "PlayerInput.h"
-#include "PlayerCollision.h"
+#include "Collision/PlayerCollision.h"
 #include "PlayerModel.h"
 #include <Render/Interfaces/IGameRenderable.h>
 #include <CameraController/Core/CameraController.h>
