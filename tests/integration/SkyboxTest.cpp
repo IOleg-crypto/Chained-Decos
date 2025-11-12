@@ -105,7 +105,11 @@ TEST_F(SkyboxTest, UpdateGammaFromConfig) {
     
     // The gamma settings should remain at their current values
     // (either defaults or previously set values)
+#if WIN32
     EXPECT_FALSE(std::isnan(skybox.GetGammaValue()));
+#else
+    EXPECT_FALSE(isnan(skybox.GetGammaValue()));
+#endif
     EXPECT_GE(skybox.GetGammaValue(), 0.5f);
     EXPECT_LE(skybox.GetGammaValue(), 3.0f);
 }
