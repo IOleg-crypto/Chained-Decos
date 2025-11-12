@@ -171,356 +171,6 @@ GameMap::~GameMap()
 // MapLoader Implementation
 // ============================================================================
 
-GameMap MapLoader::LoadMapFromFile(const std::string &path)
-{
-    GameMap map;
-
-    if (!FileExists(path.c_str()))
-    {
-        TraceLog(LOG_ERROR, "Map file not found: %s", path.c_str());
-        return map;
-    }
-
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        TraceLog(LOG_ERROR, "Failed to open map file: %s", path.c_str());
-        return map;
-    }
-
-    json j;
-    try
-    {
-        file >> j;
-    }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_ERROR, "Failed to parse map JSON: %s", e.what());
-        return map;
-    }
-
-    // Detect format: check if it's models.json format (array of models) or editor format (metadata
-    // + objects)
-    if (j.is_array() && !j.empty() && j[0].contains("name") && j[0].contains("instances"))
-    {
-        // This is models.json format
-        return LoadMapFromModelsFormat(j, path);
-    }
-    else
-    {
-        // This is editor format with metadata and objects
-        return LoadMapFromEditorFormat(j, path);
-    }
-}
-
-GameMap MapLoader::LoadMapFromModelsFormat(const json &j, const std::string &path)
-{
-    GameMap map;
-
-    // Load models from the models.json format
-    for (const auto &modelData : j)
-    {
-        std::string modelName = modelData.value("name", "");
-        std::string modelPath = modelData.value("path", "");
-
-        // Load the model
-        if (!modelPath.empty())
-        {
-            // Try multiple path variations for the model
-            std::vector<std::string> possiblePaths;
-
-            // Build possible paths
-            if (modelPath.find('/') == std::string::npos &&
-                modelPath.find('\\') == std::string::npos)
-            {
-                // Relative path, try in resources folder
-                possiblePaths = ResolveModelPaths(modelPath);
-            }
-            else
-            {
-                // Absolute or relative path with separators
-                possiblePaths.push_back(modelPath);
-                if (modelPath[0] == '/')
-                {
-                    possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + modelPath);
-                }
-            }
-
-            // Try to find and load the model
-            if (!LoadModelWithErrorHandling(modelName, possiblePaths, map.GetMapModelsMutable()))
-            {
-                TraceLog(LOG_WARNING, "Model file not found for %s", modelName.c_str());
-                continue;
-            }
-        }
-        else
-        {
-            TraceLog(LOG_WARNING, "Empty model path for model: %s", modelName.c_str());
-            continue;
-        }
-
-        // Load instances for this model
-        if (modelData.contains("instances") && modelData["instances"].is_array())
-        {
-            size_t objectIndex = map.GetMapObjects().size();
-            for (const auto &instance : modelData["instances"])
-            {
-                MapObjectData objectData;
-
-                // Set basic properties
-                objectData.name = modelName + "_" + std::to_string(objectIndex++);
-                objectData.type = MapObjectType::MODEL;
-                objectData.modelName = modelName;
-
-                // Load position
-                if (instance.contains("position") && instance["position"].is_object())
-                {
-                    auto &pos = instance["position"];
-                    objectData.position =
-                        Vector3{pos.value("x", 0.0f), pos.value("y", 0.0f), pos.value("z", 0.0f)};
-                }
-
-                // Load scale
-                float scaleValue = instance.value("scale", 1.0f);
-                objectData.scale = Vector3{scaleValue, scaleValue, scaleValue};
-
-                // Set default color
-                objectData.color = WHITE;
-
-                map.GetMapObjectsMutable().push_back(objectData);
-            }
-        }
-    }
-
-    TraceLog(LOG_INFO, "Successfully loaded models.json format map: %s with %d objects",
-             path.c_str(), map.GetMapObjects().size());
-
-    return map;
-}
-
-GameMap MapLoader::LoadMapFromEditorFormat(const json &j, const std::string &path)
-{
-    GameMap map;
-
-    // Load metadata
-    if (j.contains("metadata"))
-    {
-        const auto &meta = j["metadata"];
-        MapMetadata &metadata = map.GetMapMetaDataMutable();
-        metadata.name = meta.value("name", "unnamed_map");
-        metadata.displayName = meta.value("displayName", "Unnamed Map");
-        metadata.description = meta.value("description", "");
-        metadata.author = meta.value("author", "");
-        metadata.version = meta.value("version", "1.0");
-        metadata.difficulty = meta.value("difficulty", 1.0f);
-
-        // Load colors
-        if (meta.contains("skyColor"))
-        {
-            auto &sky = meta["skyColor"];
-            metadata.skyColor = Color{static_cast<unsigned char>(sky.value("r", 135)),
-                                            static_cast<unsigned char>(sky.value("g", 206)),
-                                            static_cast<unsigned char>(sky.value("b", 235)),
-                                            static_cast<unsigned char>(sky.value("a", 255))};
-        }
-
-        if (meta.contains("groundColor"))
-        {
-            auto &ground = meta["groundColor"];
-            metadata.groundColor = Color{static_cast<unsigned char>(ground.value("r", 34)),
-                                               static_cast<unsigned char>(ground.value("g", 139)),
-                                               static_cast<unsigned char>(ground.value("b", 34)),
-                                               static_cast<unsigned char>(ground.value("a", 255))};
-        }
-
-        // Load positions
-        if (meta.contains("startPosition"))
-        {
-            auto &start = meta["startPosition"];
-            metadata.startPosition =
-                Vector3{start.value("x", 0.0f), start.value("y", 0.0f), start.value("z", 0.0f)};
-        }
-
-        if (meta.contains("endPosition"))
-        {
-            auto &end = meta["endPosition"];
-            metadata.endPosition =
-                Vector3{end.value("x", 0.0f), end.value("y", 0.0f), end.value("z", 0.0f)};
-        }
-
-        // Load skybox texture path
-        if (meta.contains("skyboxTexture"))
-        {
-            metadata.skyboxTexture = meta.value("skyboxTexture", "");
-        }
-    }
-
-    // Note: Skybox loading will be done by the caller after map is loaded
-    // This allows the caller to control when skybox is loaded
-
-    // Load objects
-    if (j.contains("objects"))
-    {
-        size_t objectIndex = map.GetMapObjects().size();
-        for (const auto &obj : j["objects"])
-        {
-            MapObjectData objectData;
-
-            // Basic properties
-            objectData.name = obj.value("name", "object_" + std::to_string(objectIndex++));
-            objectData.type = static_cast<MapObjectType>(obj.value("type", 0));
-            TraceLog(LOG_INFO, "MapLoader: Loading object %s, type %d", objectData.name.c_str(),
-                     static_cast<int>(objectData.type));
-
-            // Position
-            if (obj.contains("position"))
-            {
-                auto &pos = obj["position"];
-                objectData.position =
-                    Vector3{pos.value("x", 0.0f), pos.value("y", 0.0f), pos.value("z", 0.0f)};
-            }
-
-            // Rotation
-            if (obj.contains("rotation"))
-            {
-                auto &rot = obj["rotation"];
-                objectData.rotation =
-                    Vector3{rot.value("x", 0.0f), rot.value("y", 0.0f), rot.value("z", 0.0f)};
-            }
-
-            // Scale - ensure consistent handling
-            if (obj.contains("scale"))
-            {
-                auto &scl = obj["scale"];
-                objectData.scale =
-                    Vector3{scl.value("x", 1.0f), scl.value("y", 1.0f), scl.value("z", 1.0f)};
-
-                // Normalize scale values to prevent zero/negative scales
-                objectData.scale.x = (objectData.scale.x <= 0.0f) ? 1.0f : objectData.scale.x;
-                objectData.scale.y = (objectData.scale.y <= 0.0f) ? 1.0f : objectData.scale.y;
-                objectData.scale.z = (objectData.scale.z <= 0.0f) ? 1.0f : objectData.scale.z;
-            }
-            else
-            {
-                // Default scale if not specified
-                objectData.scale = Vector3{1.0f, 1.0f, 1.0f};
-            }
-
-            // Color
-            if (obj.contains("color"))
-            {
-                auto &col = obj["color"];
-                objectData.color = Color{static_cast<unsigned char>(col.value("r", 255)),
-                                         static_cast<unsigned char>(col.value("g", 255)),
-                                         static_cast<unsigned char>(col.value("b", 255)),
-                                         static_cast<unsigned char>(col.value("a", 255))};
-            }
-
-            // Model name (for MODEL type)
-            objectData.modelName = obj.value("modelName", "");
-
-            // Shape-specific properties - ensure consistency with scale
-            objectData.radius =
-                obj.value("radius", objectData.scale.x); // Default to scale.x if not specified
-            objectData.height =
-                obj.value("height", objectData.scale.y); // Default to scale.y if not specified
-
-            if (obj.contains("size"))
-            {
-                auto &sz = obj["size"];
-                objectData.size = Vector2{
-                    sz.value("width", objectData.scale.x), // Default to scale.x if not specified
-                    sz.value("height", objectData.scale.z) // Default to scale.z if not specified
-                };
-            }
-            else
-            {
-                // Set size based on scale for consistency
-                objectData.size = Vector2{objectData.scale.x, objectData.scale.z};
-            }
-
-            // Collision properties
-            objectData.isPlatform = obj.value("isPlatform", true);
-            objectData.isObstacle = obj.value("isObstacle", false);
-
-            map.GetMapObjectsMutable().push_back(objectData);
-
-            // Load model if it's a MODEL type object
-            if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
-            {
-                TraceLog(LOG_INFO, "MapLoader: Loading MODEL object %s with modelName %s",
-                         objectData.name.c_str(), objectData.modelName.c_str());
-
-                // Use helper function to resolve paths and load model
-                std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
-                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
-            }
-            // Handle LIGHT type objects that may actually be misclassified MODEL objects from map
-            // editor
-            else if (objectData.type == MapObjectType::LIGHT && !objectData.modelName.empty())
-            {
-                TraceLog(LOG_INFO,
-                         "MapLoader: LIGHT object %s has modelName %s - treating as MODEL (map "
-                         "editor export issue)",
-                         objectData.name.c_str(), objectData.modelName.c_str());
-
-                // Change type to MODEL and load the model
-                objectData.type = MapObjectType::MODEL;
-                std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
-                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
-            }
-            // Also handle LIGHT objects that might have been exported without modelName but should
-            // be models
-            else if (objectData.type == MapObjectType::LIGHT)
-            {
-                // Check if this LIGHT object has properties that suggest it should be a MODEL
-                // This handles cases where the map editor incorrectly exports models as lights
-                bool shouldBeModel = false;
-
-                // Check for model-like properties (non-zero scale, specific naming patterns, etc.)
-                if (objectData.scale.x != 1.0f || objectData.scale.y != 1.0f ||
-                    objectData.scale.z != 1.0f)
-                {
-                    shouldBeModel = true;
-                }
-                else if (objectData.name.find("model") != std::string::npos ||
-                         objectData.name.find("Model") != std::string::npos ||
-                         objectData.name.find("MODEL") != std::string::npos)
-                {
-                    shouldBeModel = true;
-                }
-
-                if (shouldBeModel)
-                {
-                    TraceLog(LOG_INFO,
-                             "MapLoader: LIGHT object %s appears to be a misclassified MODEL - "
-                             "converting",
-                             objectData.name.c_str());
-                    objectData.type = MapObjectType::MODEL;
-                    // Try to infer model name from object name
-                    if (objectData.modelName.empty())
-                    {
-                        objectData.modelName = objectData.name;
-                        // Remove common prefixes/suffixes
-                        if (objectData.modelName.find("parkour_element_") == 0)
-                        {
-                            objectData.modelName = objectData.modelName.substr(16);
-                        }
-                    }
-                    std::vector<std::string> possiblePaths =
-                        ResolveModelPaths(objectData.modelName);
-                    LoadModelWithErrorHandling(objectData.modelName, possiblePaths,
-                                               map.GetMapModelsMutable());
-                }
-            }
-        }
-    }
-
-    TraceLog(LOG_INFO, "Successfully loaded editor format map: %s with %d objects", path.c_str(),
-             map.GetMapObjects().size());
-
-    return map;
-}
 
 bool MapLoader::SaveMapToFile(const GameMap &map, const std::string &path)
 {
@@ -765,8 +415,242 @@ void MapLoader::LoadSkyboxForMap(GameMap &map)
 
 GameMap MapLoader::LoadMap(const std::string &path)
 {
-    GameMap map = LoadMapFromFile(path);
-    
+    GameMap map;
+
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        TraceLog(LOG_ERROR, "Failed to open map file: %s", path.c_str());
+        return map;
+    }
+    json j;
+    try
+    {
+        file >> j;
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_ERROR, "Failed to parse map JSON: %s", e.what());
+        return map;
+    }
+    // Load metadata
+    if (j.contains("metadata"))
+    {
+        const auto &meta = j["metadata"];
+        // By default, set some reasonable defaults
+        MapMetadata &metadata = map.GetMapMetaDataMutable();
+        metadata.name = meta.value("name", "unnamed_map");
+        metadata.displayName = meta.value("displayName", "Unnamed Map");
+        metadata.description = meta.value("description", "");
+        metadata.author = meta.value("author", "");
+        metadata.version = meta.value("version", "1.0");
+
+        metadata.difficulty = meta.value("difficulty", 1.0f);
+
+        // Load colors
+        if (meta.contains("skyColor"))
+        {
+            auto &sky = meta["skyColor"];
+            metadata.skyColor = Color{static_cast<unsigned char>(sky.value("r", 135)),
+                                            static_cast<unsigned char>(sky.value("g", 206)),
+                                            static_cast<unsigned char>(sky.value("b", 235)),
+                                            static_cast<unsigned char>(sky.value("a", 255))};
+        }
+
+        if (meta.contains("groundColor"))
+        {
+            auto &ground = meta["groundColor"];
+            metadata.groundColor = Color{static_cast<unsigned char>(ground.value("r", 34)),
+                                               static_cast<unsigned char>(ground.value("g", 139)),
+                                               static_cast<unsigned char>(ground.value("b", 34)),
+                                               static_cast<unsigned char>(ground.value("a", 255))};
+        }
+
+        // Load positions
+        if (meta.contains("startPosition"))
+        {
+            auto &start = meta["startPosition"];
+            metadata.startPosition =
+                Vector3{start.value("x", 0.0f), start.value("y", 0.0f), start.value("z", 0.0f)};
+        }
+
+        if (meta.contains("endPosition"))
+        {
+            auto &end = meta["endPosition"];
+            metadata.endPosition =
+                Vector3{end.value("x", 0.0f), end.value("y", 0.0f), end.value("z", 0.0f)};
+        }
+
+        // Load skybox texture path
+        if (meta.contains("skyboxTexture"))
+        {
+            metadata.skyboxTexture = meta.value("skyboxTexture", "");
+        }
+    }
+
+    // Note: Skybox loading will be done by the caller after map is loaded
+    // This allows the caller to control when skybox is loaded
+
+    // Load objects
+    if (j.contains("objects"))
+    {
+        size_t objectIndex = map.GetMapObjects().size();
+        for (const auto &obj : j["objects"])
+        {
+            MapObjectData objectData;
+
+            // Basic properties
+            objectData.name = obj.value("name", "object_" + std::to_string(objectIndex++));
+            objectData.type = static_cast<MapObjectType>(obj.value("type", 0));
+            TraceLog(LOG_INFO, "MapLoader: Loading object %s, type %d", objectData.name.c_str(),
+                     static_cast<int>(objectData.type));
+
+            // Position
+            if (obj.contains("position"))
+            {
+                auto &pos = obj["position"];
+                objectData.position =
+                    Vector3{pos.value("x", 0.0f), pos.value("y", 0.0f), pos.value("z", 0.0f)};
+            }
+
+            // Rotation
+            if (obj.contains("rotation"))
+            {
+                auto &rot = obj["rotation"];
+                objectData.rotation =
+                    Vector3{rot.value("x", 0.0f), rot.value("y", 0.0f), rot.value("z", 0.0f)};
+            }
+
+            // Scale - ensure consistent handling
+            if (obj.contains("scale"))
+            {
+                auto &scl = obj["scale"];
+                objectData.scale =
+                    Vector3{scl.value("x", 1.0f), scl.value("y", 1.0f), scl.value("z", 1.0f)};
+
+                // Normalize scale values to prevent zero/negative scales
+                objectData.scale.x = (objectData.scale.x <= 0.0f) ? 1.0f : objectData.scale.x;
+                objectData.scale.y = (objectData.scale.y <= 0.0f) ? 1.0f : objectData.scale.y;
+                objectData.scale.z = (objectData.scale.z <= 0.0f) ? 1.0f : objectData.scale.z;
+            }
+            else
+            {
+                // Default scale if not specified
+                objectData.scale = Vector3{1.0f, 1.0f, 1.0f};
+            }
+
+            // Color
+            if (obj.contains("color"))
+            {
+                auto &col = obj["color"];
+                objectData.color = Color{static_cast<unsigned char>(col.value("r", 255)),
+                                         static_cast<unsigned char>(col.value("g", 255)),
+                                         static_cast<unsigned char>(col.value("b", 255)),
+                                         static_cast<unsigned char>(col.value("a", 255))};
+            }
+
+            // Model name (for MODEL type)
+            objectData.modelName = obj.value("modelName", "");
+
+            // Shape-specific properties - ensure consistency with scale
+            objectData.radius =
+                obj.value("radius", objectData.scale.x); // Default to scale.x if not specified
+            objectData.height =
+                obj.value("height", objectData.scale.y); // Default to scale.y if not specified
+
+            if (obj.contains("size"))
+            {
+                auto &sz = obj["size"];
+                objectData.size = Vector2{
+                    sz.value("width", objectData.scale.x), // Default to scale.x if not specified
+                    sz.value("height", objectData.scale.z) // Default to scale.z if not specified
+                };
+            }
+            else
+            {
+                // Set size based on scale for consistency
+                objectData.size = Vector2{objectData.scale.x, objectData.scale.z};
+            }
+
+            // Collision properties
+            objectData.isPlatform = obj.value("isPlatform", true);
+            objectData.isObstacle = obj.value("isObstacle", false);
+
+            map.GetMapObjectsMutable().push_back(objectData);
+
+            // Load model if it's a MODEL type object
+            if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
+            {
+                TraceLog(LOG_INFO, "MapLoader: Loading MODEL object %s with modelName %s",
+                         objectData.name.c_str(), objectData.modelName.c_str());
+
+                // Use helper function to resolve paths and load model
+                std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
+            }
+            // Handle LIGHT type objects that may actually be misclassified MODEL objects from map
+            // editor
+            else if (objectData.type == MapObjectType::LIGHT && !objectData.modelName.empty())
+            {
+                TraceLog(LOG_INFO,
+                         "MapLoader: LIGHT object %s has modelName %s - treating as MODEL (map "
+                         "editor export issue)",
+                         objectData.name.c_str(), objectData.modelName.c_str());
+
+                // Change type to MODEL and load the model
+                objectData.type = MapObjectType::MODEL;
+                std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
+            }
+            // Also handle LIGHT objects that might have been exported without modelName but should
+            // be models
+            else if (objectData.type == MapObjectType::LIGHT)
+            {
+                // Check if this LIGHT object has properties that suggest it should be a MODEL
+                // This handles cases where the map editor incorrectly exports models as lights
+                bool shouldBeModel = false;
+
+                // Check for model-like properties (non-zero scale, specific naming patterns, etc.)
+                if (objectData.scale.x != 1.0f || objectData.scale.y != 1.0f ||
+                    objectData.scale.z != 1.0f)
+                {
+                    shouldBeModel = true;
+                }
+                else if (objectData.name.find("model") != std::string::npos ||
+                         objectData.name.find("Model") != std::string::npos ||
+                         objectData.name.find("MODEL") != std::string::npos)
+                {
+                    shouldBeModel = true;
+                }
+
+                if (shouldBeModel)
+                {
+                    TraceLog(LOG_INFO,
+                             "MapLoader: LIGHT object %s appears to be a misclassified MODEL - "
+                             "converting",
+                             objectData.name.c_str());
+                    objectData.type = MapObjectType::MODEL;
+                    // Try to infer model name from object name
+                    if (objectData.modelName.empty())
+                    {
+                        objectData.modelName = objectData.name;
+                        // Remove common prefixes/suffixes
+                        if (objectData.modelName.find("parkour_element_") == 0)
+                        {
+                            objectData.modelName = objectData.modelName.substr(16);
+                        }
+                    }
+                    std::vector<std::string> possiblePaths =
+                        ResolveModelPaths(objectData.modelName);
+                    LoadModelWithErrorHandling(objectData.modelName, possiblePaths,
+                                               map.GetMapModelsMutable());
+                }
+            }
+        }
+    }
+
+    TraceLog(LOG_INFO, "Successfully loaded editor format map: %s with %d objects", path.c_str(),
+             map.GetMapObjects().size());
     // Load skybox if texture path is specified
     if (!map.GetMapMetaData().skyboxTexture.empty())
     {

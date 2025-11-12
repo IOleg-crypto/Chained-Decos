@@ -237,8 +237,8 @@ void CameraController::AddScreenShake(float intensity, float duration)
         m_shakeIntensity = std::fmax(m_shakeIntensity, intensity);
         m_shakeDuration = std::fmax(m_shakeDuration, duration);
 #else
-        m_shakeIntensity = std::max(m_shakeIntensity, intensity);
-        m_shakeDuration = std::max(m_shakeDuration, duration);
+        m_shakeIntensity = std::fmax(m_shakeIntensity, intensity);
+        m_shakeDuration = std::fmax(m_shakeDuration, duration);
 #endif
     }
     else
