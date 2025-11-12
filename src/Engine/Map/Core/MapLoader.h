@@ -103,10 +103,6 @@ public:
     void LoadSkyboxForMap(GameMap& map);
 
 private:
-    // Internal loading methods
-    GameMap LoadMapFromFile(const std::string& path);
-    GameMap LoadMapFromModelsFormat(const nlohmann::json& j, const std::string& path);
-    GameMap LoadMapFromEditorFormat(const nlohmann::json& j, const std::string& path);
     bool SaveMapToFile(const GameMap& map, const std::string& path);
 };
 
