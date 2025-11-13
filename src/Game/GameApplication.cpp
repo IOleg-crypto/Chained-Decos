@@ -13,7 +13,7 @@
 #include "Managers/StateManager.h"
 #include "Managers/GameRenderHelpers.h"
 #include "Managers/PlayerManager.h"
-#include "Managers/UpdateManager.h"
+
 #include "Managers/MenuActionHandler.h"
 #include "Systems/PlayerSystem/PlayerSystem.h"
 #include "Systems/MapSystem/MapSystem.h"
@@ -189,9 +189,7 @@ void GameApplication::OnPostInitialize()
     if (player && menu) {
         m_renderHelper = std::make_unique<GameRenderHelpers>(m_collisionManager.get());
     }
-    if (m_collisionManager && mapManager) {
-        m_updateManager = std::make_unique<UpdateManager>(m_collisionManager.get(), mapManager);
-    }
+    
     // Create managers that need components from systems
     if (player && menu) {
         m_stateManager = std::make_unique<StateManager>(player, menu);
@@ -327,7 +325,6 @@ void GameApplication::OnPostUpdate(float deltaTime)
             if (!consoleOpen)
             {
                 UpdatePlayerLogic();
-                UpdatePhysicsLogic();
             }
             else
             {
@@ -587,13 +584,7 @@ void GameApplication::UpdatePlayerLogic()
     }
 }
 
-void GameApplication::UpdatePhysicsLogic()
-{
-    if (m_updateManager)
-    {
-        m_updateManager->UpdatePhysicsLogic();
-    }
-}
+
 
 void GameApplication::SaveGameState()
 {

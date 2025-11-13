@@ -2,11 +2,11 @@
 #define RENDERING_SYSTEM_H
 
 #include "Engine/Module/Interfaces/IEngineModule.h"
+#include "Engine/Kernel/Core/Kernel.h"
 #include <memory>
 #include <vector>
 #include <string>
 
-class Kernel;
 class Player;
 class MapManager;
 class CollisionManager;

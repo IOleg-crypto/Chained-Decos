@@ -3,12 +3,11 @@
 
 #include "Engine/Module/Interfaces/IEngineModule.h"
 #include "Engine/Audio/Core/AudioManager.h"
+#include "Engine/Kernel/Core/Kernel.h"
 #include <memory>
 #include <vector>
 #include <string>
 
-// Forward declarations
-class Kernel;
 class Player;
 class PlayerManager;
 class CollisionManager;

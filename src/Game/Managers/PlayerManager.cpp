@@ -142,35 +142,33 @@ void PlayerManager::InitPlayer()
 
 void PlayerManager::UpdatePlayerLogic()
 {
-    if (!m_engine || !m_player)
+    if (!m_player)
     {
-        // Skip player logic if no engine or player is available
-        if (m_player)
-        {
-            m_player->Update(*m_collisionManager);
-        }
         return;
     }
-      
     
     const ImGuiIO &io = ImGui::GetIO();
     if (io.WantCaptureMouse)
     {
         // Still update camera rotation even when ImGui wants mouse capture
-        // This allows camera to work when menu is open or when hovering over UI
         m_player->GetCameraController()->UpdateCameraRotation();
         m_player->GetCameraController()->UpdateMouseRotation(
             m_player->GetCameraController()->GetCamera(), m_player->GetMovement()->GetPosition());
         m_player->GetCameraController()->Update();
         
-        // Show meters only if player is initialized (position check done above)
-        m_engine->GetRenderManager()->ShowMetersPlayer(*m_player->GetRenderable());
-        // return;
+        // Show meters only if engine is available
+        if (m_engine)
+        {
+            m_engine->GetRenderManager()->ShowMetersPlayer(*m_player->GetRenderable());
+        }
     }
     
     m_player->Update(*m_collisionManager);
     
-    // Show meters only if player is initialized (position check done above)
-    m_engine->GetRenderManager()->ShowMetersPlayer(*m_player->GetRenderable());
+    // Show meters only if engine is available
+    if (m_engine)
+    {
+        m_engine->GetRenderManager()->ShowMetersPlayer(*m_player->GetRenderable());
+    }
 }
 

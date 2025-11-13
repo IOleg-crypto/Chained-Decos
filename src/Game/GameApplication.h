@@ -14,7 +14,7 @@
 #include "Managers/StateManager.h"
 #include "Managers/GameRenderHelpers.h"
 #include "Managers/PlayerManager.h"
-#include "Managers/UpdateManager.h"
+
 #include "Managers/MenuActionHandler.h"
 #include <memory>
 
@@ -67,9 +67,7 @@ private:
     std::unique_ptr<ResourceManager> m_modelManager;
     std::unique_ptr<StateManager> m_stateManager;
     std::unique_ptr<GameRenderHelpers> m_renderHelper;
-    std::unique_ptr<UpdateManager> m_updateManager;
     std::unique_ptr<AudioManager> m_soundSystem;
-    // GameRenderManager replaced with RenderingSystem
     std::unique_ptr<MenuActionHandler> m_menuActionHandler;
     
     // Game state
@@ -89,7 +87,6 @@ private:
     void InitInput();
     void HandleMenuActions();
     void UpdatePlayerLogic();
-    void UpdatePhysicsLogic();
     
     // Game state management
     void SaveGameState();
