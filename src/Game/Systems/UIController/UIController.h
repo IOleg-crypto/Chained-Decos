@@ -2,12 +2,11 @@
 #define UI_CONTROLLER_H
 
 #include "Engine/Module/Interfaces/IEngineModule.h"
+#include "Engine/Kernel/Core/Kernel.h"
 #include <memory>
 #include <vector>
 #include <string>
 
-// Forward declarations
-class Kernel;
 class Menu;
 class ConsoleManager;
 class Engine;

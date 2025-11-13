@@ -1,16 +1,17 @@
 #include "MapManager.h"
-#include "../Player/Player.h"
+#include "Player/Player.h"
+#include "Player/Collision/PlayerCollision.h"
 #include "Engine/Collision/Manager/CollisionManager.h"
 #include "Engine/Model/Core/Model.h"
 #include "Engine/Render/Manager/RenderManager.h"
 #include "Engine/Kernel/Core/Kernel.h"
 #include "Engine/Kernel/Core/KernelServices.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include "Engine/Map/Core/MapService.h"
 #include "Engine/Map/Converter/MapObjectConverter.h"
 #include "Engine/Map/Renderer/MapRenderer.h"
 #include "MapCollisionInitializer.h"
-#include "Game/Menu/Menu.h"
-#include "Player/Collision/PlayerCollision.h"
+#include "Menu/Menu.h"
 #include <raylib.h>
 #include <rlgl.h>
 #include <cmath>
@@ -20,7 +21,8 @@
 #include <unordered_set>
 
 MapManager::MapManager(Player* player, CollisionManager* collisionManager, ModelLoader* models, RenderManager* renderManager, Kernel* kernel, Menu* menu)
-    : m_player(player), m_collisionManager(collisionManager), m_models(models), m_renderManager(renderManager), m_kernel(kernel), m_menu(menu),
+    : m_gameMap(std::make_unique<GameMap>()),
+      m_player(player), m_collisionManager(collisionManager), m_models(models), m_renderManager(renderManager), m_kernel(kernel), m_menu(menu),
       m_hasSpawnZone(false), m_spawnTextureLoaded(false),
       m_collisionInitializer(std::make_unique<MapCollisionInitializer>(collisionManager, models, player))
 {
@@ -88,7 +90,7 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
     // to prevent double free - models registered from GameMap::loadedModels share
     // the same GPU resources, so we must unregister them first
     // Also try to unload aliases (stem, lowercase variants) that might have been registered
-    for (const auto &pair : m_gameMap.GetMapModels())
+    for (const auto &pair : m_gameMap->GetMapModels())
     {
         const std::string &modelName = pair.first;
         // Try to unload from ModelLoader if it was registered
@@ -106,7 +108,7 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
         }
     }
     
-    m_gameMap.Cleanup(); // This clears loadedModels and calls UnloadModel() - but models are already unregistered
+    m_gameMap->Cleanup(); // This clears loadedModels and calls UnloadModel() - but models are already unregistered
     
     // Clear previous spawn zone
     m_hasSpawnZone = false;
@@ -141,18 +143,18 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
 
         TraceLog(LOG_INFO,
                  "MapManager::LoadEditorMap() - MapService loaded %zu objects successfully",
-                 m_gameMap.GetMapObjects().size());
+                 m_gameMap->GetMapObjects().size());
 
         m_currentMapPath = mapPath;
 
         // Register any models preloaded by MapLoader into the runtime ModelLoader
-        if (!m_gameMap.GetMapModels().empty())
+        if (!m_gameMap->GetMapModels().empty())
         {
             TraceLog(LOG_INFO,
                      "MapManager::LoadEditorMap() - Registering %zu preloaded models from map into "
                      "ModelLoader",
-                     m_gameMap.GetMapModels().size());
-            for (const auto &p : m_gameMap.GetMapModels())
+                     m_gameMap->GetMapModels().size());
+            for (const auto &p : m_gameMap->GetMapModels())
             {
                 const std::string &modelName = p.first;
                 const ::Model &loaded = p.second;
@@ -192,39 +194,39 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
 
         TraceLog(LOG_INFO,
                  "MapManager::LoadEditorMap() - MapService import successful, processing %zu objects",
-                 m_gameMap.GetMapObjects().size());
+                 m_gameMap->GetMapObjects().size());
 
         TraceLog(LOG_INFO,
                  "MapManager::LoadEditorMap() - Successfully loaded JSON map with %zu objects",
-                 m_gameMap.GetMapObjects().size());
+                 m_gameMap->GetMapObjects().size());
     }
 
     TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Map loaded, checking object count: %zu",
-             m_gameMap.GetMapObjects().size());
-    if (m_gameMap.GetMapObjects().empty())
+             m_gameMap->GetMapObjects().size());
+    if (m_gameMap->GetMapObjects().empty())
     {
         TraceLog(LOG_ERROR, "MapManager::LoadEditorMap() - No objects loaded from map");
         return;
     }
 
     // Validate map object count to prevent memory issues
-    if (m_gameMap.GetMapObjects().size() > 10000)
+    if (m_gameMap->GetMapObjects().size() > 10000)
     {
         TraceLog(LOG_ERROR,
                  "MapManager::LoadEditorMap() - Map has too many objects (%d), limiting to 10000",
-                 m_gameMap.GetMapObjects().size());
+                 m_gameMap->GetMapObjects().size());
         return;
     }
 
     // Create collision boxes for all objects in the map
     TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Creating collision boxes for %d objects",
-             m_gameMap.GetMapObjects().size());
+             m_gameMap->GetMapObjects().size());
     size_t collisionCreationCount = 0;
     size_t collisionSkippedCount = 0;
 
-    for (size_t i = 0; i < m_gameMap.GetMapObjects().size(); ++i)
+    for (size_t i = 0; i < m_gameMap->GetMapObjects().size(); ++i)
     {
-        const auto &object = m_gameMap.GetMapObjects()[i];
+        const auto &object = m_gameMap->GetMapObjects()[i];
 
         // Debug log for each object's details
         TraceLog(LOG_INFO,
@@ -352,17 +354,17 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
                     // Fallback to models preloaded by MapLoader but not registered in ModelLoader yet
                     if (!modelPtr)
                     {
-                        auto mapModelIt = m_gameMap.GetMapModels().find(object.modelName);
-                        if (mapModelIt == m_gameMap.GetMapModels().end())
+                        auto mapModelIt = m_gameMap->GetMapModels().find(object.modelName);
+                        if (mapModelIt == m_gameMap->GetMapModels().end())
                         {
                             std::string stem = std::filesystem::path(object.modelName).stem().string();
                             if (!stem.empty())
                             {
-                                mapModelIt = m_gameMap.GetMapModels().find(stem);
+                                mapModelIt = m_gameMap->GetMapModels().find(stem);
                             }
                         }
 
-                        if (mapModelIt != m_gameMap.GetMapModels().end())
+                        if (mapModelIt != m_gameMap->GetMapModels().end())
                         {
                             modelPtr = &mapModelIt->second;
                         }
@@ -475,12 +477,12 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
     }
 
     // Create player spawn zone from startPosition if specified in map metadata
-    if (m_gameMap.GetMapMetaData().startPosition.x != 0.0f || m_gameMap.GetMapMetaData().startPosition.y != 0.0f ||
-        m_gameMap.GetMapMetaData().startPosition.z != 0.0f)
+    if (m_gameMap->GetMapMetaData().startPosition.x != 0.0f || m_gameMap->GetMapMetaData().startPosition.y != 0.0f ||
+        m_gameMap->GetMapMetaData().startPosition.z != 0.0f)
     {
         // Create BoundingBox for spawn zone (2x2x2 units around start position)
         const float spawnSize = 2.0f;
-        Vector3 spawnPos = m_gameMap.GetMapMetaData().startPosition;
+        Vector3 spawnPos = m_gameMap->GetMapMetaData().startPosition;
         m_playerSpawnZone.min = {spawnPos.x - spawnSize/2, spawnPos.y - spawnSize/2, spawnPos.z - spawnSize/2};
         m_playerSpawnZone.max = {spawnPos.x + spawnSize/2, spawnPos.y + spawnSize/2, spawnPos.z + spawnSize/2};
         m_hasSpawnZone = true;
@@ -499,7 +501,7 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
     m_collisionManager->Initialize();
     
     TraceLog(LOG_INFO, "MapManager::LoadEditorMap() - Successfully loaded map with %d objects",
-             m_gameMap.GetMapObjects().size());
+             m_gameMap->GetMapObjects().size());
     TraceLog(LOG_INFO,
              "MapManager::LoadEditorMap() - Collision creation summary: %zu created, %zu skipped",
              collisionCreationCount, collisionSkippedCount);
@@ -510,7 +512,7 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
 
     // Log object types breakdown
     int modelObjects = 0, lightObjects = 0, cubeObjects = 0, otherObjects = 0;
-    for (const auto &obj : m_gameMap.GetMapObjects())
+    for (const auto &obj : m_gameMap->GetMapObjects())
     {
         if (obj.type == MapObjectType::MODEL)
             modelObjects++;
@@ -526,7 +528,7 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
              modelObjects, lightObjects, cubeObjects, otherObjects);
 
     // Validate critical resources
-    if (modelObjects > 0 && m_gameMap.GetMapModels().empty())
+    if (modelObjects > 0 && m_gameMap->GetMapModels().empty())
     {
         TraceLog(
             LOG_WARNING,
@@ -546,12 +548,12 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
     // Create model instances in the ModelLoader for all MODEL objects so they are drawn
     TraceLog(LOG_INFO,
              "MapManager::LoadEditorMap() - Creating model instances for %d objects if applicable",
-             m_gameMap.GetMapObjects().size());
+             m_gameMap->GetMapObjects().size());
     // First, ensure that all referenced model files are registered in the ModelLoader.
     // Some maps may reference model names (stems) or filenames with extensions — try common
     // extensions.
     std::set<std::string> uniqueModelNames;
-    for (const auto &object : m_gameMap.GetMapObjects())
+    for (const auto &object : m_gameMap->GetMapObjects())
     {
         if (object.type == MapObjectType::MODEL && !object.modelName.empty())
             uniqueModelNames.insert(object.modelName);
@@ -618,7 +620,7 @@ void MapManager::LoadEditorMap(const std::string &mapPath)
 
     // Refresh available list (some models may have been loaded)
     available = m_models->GetAvailableModels();
-    for (const auto &object : m_gameMap.GetMapObjects())
+    for (const auto &object : m_gameMap->GetMapObjects())
     {
         if (object.type == MapObjectType::MODEL && !object.modelName.empty())
         {
@@ -770,7 +772,7 @@ void MapManager::RenderEditorMap()
     MapRenderer renderer;
     Camera3D dummyCamera = {0}; // Not used for primitive rendering
     
-    for (const auto &object : m_gameMap.GetMapObjects())
+    for (const auto &object : m_gameMap->GetMapObjects())
     {
         // Skip models - they are rendered through ModelLoader instances
         if (object.type == MapObjectType::MODEL)
@@ -785,7 +787,7 @@ void MapManager::RenderEditorMap()
         }
         
         // Use MapRenderer to render the object
-        renderer.RenderMapObject(object, m_gameMap.GetMapModels(), dummyCamera, false);
+        renderer.RenderMapObject(object, m_gameMap->GetMapModels(), dummyCamera, false);
     }
     
     // Render spawn zone if it exists
@@ -834,11 +836,11 @@ void MapManager::RenderSpawnZone() const
 
 void MapManager::DumpMapDiagnostics() const
 {
-    TraceLog(LOG_INFO, "MapManager::DumpMapDiagnostics() - Map objects: %d", m_gameMap.GetMapObjects().size());
+    TraceLog(LOG_INFO, "MapManager::DumpMapDiagnostics() - Map objects: %d", m_gameMap->GetMapObjects().size());
 
-    for (size_t i = 0; i < m_gameMap.GetMapObjects().size(); ++i)
+    for (size_t i = 0; i < m_gameMap->GetMapObjects().size(); ++i)
     {
-        const auto &o = m_gameMap.GetMapObjects()[i];
+        const auto &o = m_gameMap->GetMapObjects()[i];
         TraceLog(LOG_INFO,
                  "MapManager::DumpMapDiagnostics() - Object %d: name='%s' type=%d modelName='%s' "
                  "pos=(%.2f,%.2f,%.2f) scale=(%.2f,%.2f,%.2f)",
@@ -847,11 +849,11 @@ void MapManager::DumpMapDiagnostics() const
     }
 
     // If MapLoader preloaded models into the map, list them
-    if (!m_gameMap.GetMapModels().empty())
+    if (!m_gameMap->GetMapModels().empty())
     {
         TraceLog(LOG_INFO, "MapManager::DumpMapDiagnostics() - GameMap.loadedModels contains %d entries",
-                 m_gameMap.GetMapModels().size());
-        for (const auto &p : m_gameMap.GetMapModels())
+                 m_gameMap->GetMapModels().size());
+        for (const auto &p : m_gameMap->GetMapModels())
         {
             TraceLog(LOG_INFO, "MapManager::DumpMapDiagnostics() -   loadedModel key: %s (meshCount: %d)",
                      p.first.c_str(), p.second.meshCount);
@@ -905,4 +907,9 @@ void MapManager::SetPlayer(Player* player)
         m_collisionInitializer->SetPlayer(player);
     }
     TraceLog(LOG_INFO, "MapManager::SetPlayer() - Player reference updated");
+}
+
+GameMap& MapManager::GetGameMap()
+{
+    return *m_gameMap;
 }

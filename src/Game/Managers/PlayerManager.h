@@ -2,13 +2,16 @@
 #define PLAYER_MANAGER_H
 
 #include <raylib.h>
-#include "../Player/Player.h"
-#include "Engine/Collision/Manager/CollisionManager.h"
-#include "Engine/Model/Core/Model.h"
-#include "Engine/Engine.h"
-#include "MapManager.h"
-#include "Engine/Audio/Core/AudioManager.h"
 
+class Player;
+class CollisionManager;
+class ModelLoader;
+class Engine;
+class MapManager;
+class AudioManager;
+
+// Manages player initialization and update logic
+// Single Responsibility: Only handles player lifecycle
 class PlayerManager
 {
 private:
@@ -19,7 +22,7 @@ private:
     ModelLoader* m_models;
     Engine* m_engine;
     MapManager* m_mapManager;
-    AudioManager* m_audioManager = nullptr;
+    AudioManager* m_audioManager;
 
 public:
     PlayerManager(Player* player, CollisionManager* collisionManager, 
