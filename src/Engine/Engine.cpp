@@ -56,7 +56,7 @@ void Engine::Init()
     TraceLog(LOG_INFO, "Initializing Engine...");
 
     // FLAG_MOUSE_CAPTURE_ALWAYS helps with mouse input on virtual machines
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT); 
     InitWindow(m_screenX, m_screenY, m_windowName.c_str());
     m_windowInitialized = true;
     SetExitKey(KEY_NULL);
@@ -93,9 +93,9 @@ void Engine::Init()
     m_isEngineInit = true;
 
     if (m_kernel) {
-        m_kernel->RegisterService<RenderService>(Kernel::ServiceType::Render,
+        m_kernel->RegisterService<RenderService>(
             std::make_shared<RenderService>(m_renderManager.get()));
-        m_kernel->RegisterService<InputService>(Kernel::ServiceType::Input,
+        m_kernel->RegisterService<InputService>(
             std::make_shared<InputService>(m_inputManager.get()));
     }
 

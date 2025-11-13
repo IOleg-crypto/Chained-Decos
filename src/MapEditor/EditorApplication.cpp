@@ -13,12 +13,7 @@
 EditorApplication::EditorApplication()
     : EngineApplication()
 {
-    auto& config = GetConfig();
-    config.windowName = "ChainedEditor";
-    config.width = 1280;
-    config.height = 720;
-    config.resizable = true;
-    config.enableMSAA = true;
+    
 }
 
 EditorApplication::~EditorApplication()
@@ -34,6 +29,14 @@ void EditorApplication::OnPreInitialize()
 void EditorApplication::OnInitializeServices()
 {
     TraceLog(LOG_INFO, "[EditorApplication] Initializing editor components...");
+
+    
+    auto engine = GetEngine();
+    if (!engine) {
+        TraceLog(LOG_ERROR, "[EditorApplication] No engine available during initialization!");
+        return;
+    }
+    engine->SetWindowName("Chained Editor");
 
     // Create Editor components using engine services
     auto camera = std::make_shared<CameraController>();

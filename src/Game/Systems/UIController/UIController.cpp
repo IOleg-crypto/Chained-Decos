@@ -28,7 +28,7 @@ bool UIController::Initialize(Kernel* kernel)
     TraceLog(LOG_INFO, "[UIController] Initializing...");
 
     // Get engine dependencies through Kernel
-    auto engineService = kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
+    auto engineService = kernel->GetService<EngineService>();
 
     // Engine not required for Menu, but preferred
     m_engine = engineService ? engineService->engine : nullptr;
@@ -107,7 +107,6 @@ void UIController::RegisterServices(Kernel* kernel)
     // Register our own components as services
     if (m_menu) {
         kernel->RegisterService<MenuService>(
-            Kernel::ServiceType::Menu,
             std::make_shared<MenuService>(m_menu.get())
         );
         TraceLog(LOG_INFO, "[UIController] MenuService registered");

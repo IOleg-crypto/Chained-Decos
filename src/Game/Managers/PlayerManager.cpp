@@ -9,9 +9,9 @@
 #include <imgui.h>
 
 PlayerManager::PlayerManager(Player* player, CollisionManager* collisionManager,
-                             ModelLoader* models, Engine* engine, MapManager* mapManager)
+                             ModelLoader* models, Engine* engine, MapManager* mapManager, AudioManager* audioManager)
     : m_player(player), m_collisionManager(collisionManager), 
-      m_models(models), m_engine(engine), m_mapManager(mapManager)
+      m_models(models), m_engine(engine), m_mapManager(mapManager), m_audioManager(audioManager)
 {
     TraceLog(LOG_INFO, "PlayerManager created");
 }
@@ -135,6 +135,9 @@ void PlayerManager::InitPlayer()
           finalPos.y, finalPos.z);
     
     TraceLog(LOG_INFO, "PlayerManager::InitPlayer() - Player initialization complete");
+
+
+    m_player->SetAudioManager(m_audioManager);
 }
 
 void PlayerManager::UpdatePlayerLogic()

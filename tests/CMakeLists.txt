@@ -2,7 +2,6 @@
 cmake_minimum_required(VERSION 3.25)
 
 set(UNIT_TEST_SOURCES
-    main.cpp
     engine/PhysicsComponentTest.cpp
     engine/CollisionSystemTest.cpp
     engine/ConfigManagerTest.cpp

@@ -70,47 +70,47 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
 
 bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
 {
-    // Möller-Trumbore ray-triangle intersection algorithm with enhanced safety checks
-    Vector3 edge1 = Vector3Subtract(m_v1, m_v0);
-    Vector3 edge2 = Vector3Subtract(m_v2, m_v0);
+    // Möller–Trumbore ray-triangle intersection algorithm (optimized for Raylib)
+    Vector3 edgeA = Vector3Subtract(m_v1, m_v0);
+    Vector3 edgeB = Vector3Subtract(m_v2, m_v0);
 
-    // Check for degenerate triangles
-    if (Vector3LengthSqr(edge1) < 1e-12f || Vector3LengthSqr(edge2) < 1e-12f)
-        return false; // Degenerate triangle
-
-    Vector3 h = Vector3CrossProduct(ray.GetDirection(), edge2);
-    float a = Vector3DotProduct(edge1, h);
-
-    // Enhanced check for parallel rays with better epsilon handling
-    const float EPS_PARALLEL = 1e-8f;
-    if (fabsf(a) < EPS_PARALLEL)
-        return false; // Ray is parallel to triangle
-
-    float f = 1.0f / a;
-
-    // Check for invalid division result
-    if (!std::isfinite(f))
+    // Skip degenerate triangles (zero area)
+    if (Vector3LengthSqr(edgeA) < 1e-12f || Vector3LengthSqr(edgeB) < 1e-12f)
         return false;
 
-    Vector3 s = Vector3Subtract(ray.GetOrigin(), m_v0);
-    float u = f * Vector3DotProduct(s, h);
+    Vector3 dirCrossEdgeB = Vector3CrossProduct(ray.GetDirection(), edgeB);
+    float determinant = Vector3DotProduct(edgeA, dirCrossEdgeB);
 
-    if (u < 0.0f || u > 1.0f)
+    const float EPSILON_FUNC = 1e-8f;
+    if (fabsf(determinant) < EPSILON_FUNC)
+        return false; // Ray is parallel to the triangle
+
+    float invDeterminant = 1.0f / determinant;
+
+    // Protect against NaN or infinity
+    if (!std::isinf(invDeterminant))
         return false;
 
-    Vector3 q = Vector3CrossProduct(s, edge1);
-    float v = f * Vector3DotProduct(ray.GetDirection(), q);
+    Vector3 originToVertex = Vector3Subtract(ray.GetOrigin(), m_v0);
+    float baryU = invDeterminant * Vector3DotProduct(originToVertex, dirCrossEdgeB);
 
-    if (v < 0.0f || u + v > 1.0f)
+    if (baryU < 0.0f || baryU > 1.0f)
         return false;
 
-    t = f * Vector3DotProduct(edge2, q);
+    Vector3 originCrossEdgeA = Vector3CrossProduct(originToVertex, edgeA);
+    float baryV = invDeterminant * Vector3DotProduct(ray.GetDirection(), originCrossEdgeA);
 
-    // Check for valid intersection distance
-    if (!std::isfinite(t) || t <= EPS)
+    if (baryV < 0.0f || (baryU + baryV) > 1.0f)
         return false;
 
-    return t > EPS; // Ray intersection
+    float distance = invDeterminant * Vector3DotProduct(edgeB, originCrossEdgeA);
+
+    // Ensure the intersection is in front of the ray origin
+    if (!std::isinf(distance) || distance <= EPSILON_FUNC)
+        return false;
+
+    t = distance;
+    return true;
 }
 
 bool CollisionTriangle::Intersects(const Vector3 &origin, const Vector3 &direction, float &t) const
