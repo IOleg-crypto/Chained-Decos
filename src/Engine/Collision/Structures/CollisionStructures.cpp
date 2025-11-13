@@ -17,7 +17,7 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
 
     // Normal (with safety check)
     Vector3 normalCross = Vector3CrossProduct(m_e0, m_e1);
-    float normalLength  = Vector3Length(normalCross);
+    float normalLength = Vector3Length(normalCross);
 
     if (std::isfinite(normalLength) && normalLength > 1e-12f)
     {
@@ -56,7 +56,7 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
 
     // Area (with safety check)
     Vector3 crossProduct = Vector3CrossProduct(m_e0, m_e1);
-    float crossLength    = Vector3Length(crossProduct);
+    float crossLength = Vector3Length(crossProduct);
 
     if (std::isfinite(crossLength))
     {
@@ -79,7 +79,7 @@ bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
         return false; // Degenerate triangle
 
     Vector3 h = Vector3CrossProduct(ray.GetDirection(), edge2);
-    float a   = Vector3DotProduct(edge1, h);
+    float a = Vector3DotProduct(edge1, h);
 
     // Enhanced check for parallel rays with better epsilon handling
     const float EPS_PARALLEL = 1e-8f;
@@ -93,13 +93,13 @@ bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
         return false;
 
     Vector3 s = Vector3Subtract(ray.GetOrigin(), m_v0);
-    float u   = f * Vector3DotProduct(s, h);
+    float u = f * Vector3DotProduct(s, h);
 
     if (u < 0.0f || u > 1.0f)
         return false;
 
     Vector3 q = Vector3CrossProduct(s, edge1);
-    float v   = f * Vector3DotProduct(ray.GetDirection(), q);
+    float v = f * Vector3DotProduct(ray.GetDirection(), q);
 
     if (v < 0.0f || u + v > 1.0f)
         return false;
@@ -124,14 +124,44 @@ bool CollisionTriangle::Intersects(const Vector3 &origin, const Vector3 &directi
     return Intersects(ray, t);
 }
 
-CollisionRay::CollisionRay(const Vector3 &orig, const Vector3 &dir) : m_origin(orig), m_direction(dir) {}
+CollisionRay::CollisionRay(const Vector3 &orig, const Vector3 &dir)
+    : m_origin(orig), m_direction(dir)
+{
+}
 
-const Vector3 &CollisionRay::GetOrigin() const { return m_origin; }
-const Vector3 &CollisionRay::GetDirection() const { return m_direction; }
-Vector3 CollisionTriangle::GetMin() const { return m_min; }
-Vector3 CollisionTriangle::GetMax() const { return m_max; }
-float CollisionTriangle::GetArea() const { return m_area; }
-Vector3 CollisionTriangle::GetNormal() const { return m_normal; }
-const Vector3 &CollisionTriangle::V0() const { return m_v0; }
-const Vector3 &CollisionTriangle::V1() const { return m_v1; }
-const Vector3 &CollisionTriangle::V2() const { return m_v2; }
+const Vector3 &CollisionRay::GetOrigin() const
+{
+    return m_origin;
+}
+const Vector3 &CollisionRay::GetDirection() const
+{
+    return m_direction;
+}
+Vector3 CollisionTriangle::GetMin() const
+{
+    return m_min;
+}
+Vector3 CollisionTriangle::GetMax() const
+{
+    return m_max;
+}
+float CollisionTriangle::GetArea() const
+{
+    return m_area;
+}
+Vector3 CollisionTriangle::GetNormal() const
+{
+    return m_normal;
+}
+const Vector3 &CollisionTriangle::V0() const
+{
+    return m_v0;
+}
+const Vector3 &CollisionTriangle::V1() const
+{
+    return m_v1;
+}
+const Vector3 &CollisionTriangle::V2() const
+{
+    return m_v2;
+}
