@@ -3,21 +3,20 @@
 
 #include "Engine/Application/Core/EngineApplication.h"
 #include "Engine/CommandLineHandler/Core/CommandLineHandler.h"
+#include "Engine/Audio/Core/AudioManager.h"
+#include "Player/Player.h"
+#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
+#include "Engine/World/Core/World.h"
+#include "Menu/Menu.h"
+#include "Managers/MapManager.h"
+#include "Managers/ResourceManager.h"
+#include "Managers/StateManager.h"
+#include "Managers/GameRenderHelpers.h"
+#include "Managers/PlayerManager.h"
+#include "Managers/UpdateManager.h"
+#include "Managers/MenuActionHandler.h"
 #include <memory>
-
-// Forward declarations
-class Player;
-class CollisionManager;
-class ModelLoader;
-class WorldManager;
-class Menu;
-class MapManager;
-class ResourceManager;
-class StateManager;
-class GameRenderHelpers;
-class PlayerManager;
-class UpdateManager;
-class MenuActionHandler;
 
 // Game application - uses full engine + own modules
 class GameApplication : public EngineApplication {
@@ -69,6 +68,7 @@ private:
     std::unique_ptr<StateManager> m_stateManager;
     std::unique_ptr<GameRenderHelpers> m_renderHelper;
     std::unique_ptr<UpdateManager> m_updateManager;
+    std::unique_ptr<AudioManager> m_soundSystem;
     // GameRenderManager replaced with RenderingSystem
     std::unique_ptr<MenuActionHandler> m_menuActionHandler;
     

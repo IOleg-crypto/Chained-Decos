@@ -107,6 +107,17 @@ void GameApplication::OnInitializeServices()
     m_collisionManager = std::make_unique<CollisionManager>();
     m_models = std::make_unique<ModelLoader>();
     m_world = std::make_unique<WorldManager>();
+    m_soundSystem = std::make_unique<AudioManager>();
+    if(m_soundSystem->Initialize())
+    {
+        TraceLog(LOG_INFO, "[GameApplication] AudioManager initialized successfully.");
+        // [NEW]: preload fall sound!
+        // m_soundSystem->LoadSound("player_fall", PROJECT_ROOT_DIR "/resources/audio/wind-gust_fall.wav");
+    }
+    else
+    {
+        TraceLog(LOG_ERROR, "[GameApplication] AudioManager failed to initialize.");
+    }
     
     // Initialize managers that don't have their own systems yet
     InitializeManagers();
@@ -162,10 +173,10 @@ void GameApplication::OnPostInitialize()
     io.MouseDrawCursor = false; // Use system cursor, not ImGui cursor
     
     // Systems now initialized, get components through Kernel
-    auto playerService = GetKernel()->GetService<PlayerService>(Kernel::ServiceType::Player);
-    auto menuService = GetKernel()->GetService<MenuService>(Kernel::ServiceType::Menu);
-    auto mapService = GetKernel()->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
-    auto playerManagerService = GetKernel()->GetService<PlayerManagerService>(Kernel::ServiceType::PlayerManager);
+    auto playerService = GetKernel()->GetService<PlayerService>();
+    auto menuService = GetKernel()->GetService<MenuService>();
+    auto mapService = GetKernel()->GetService<MapManagerService>();
+    auto playerManagerService = GetKernel()->GetService<PlayerManagerService>();
     
     auto* player = playerService ? playerService->player : nullptr;
     auto* menu = menuService ? menuService->menu : nullptr;
@@ -201,7 +212,7 @@ void GameApplication::OnPostInitialize()
     if (m_stateManager) {
         auto kernel = GetKernel();
         if (kernel) {
-            kernel->RegisterService<StateManagerService>(Kernel::ServiceType::StateManager,
+            kernel->RegisterService<StateManagerService>(
                 std::make_shared<StateManagerService>(m_stateManager.get()));
             TraceLog(LOG_INFO, "[GameApplication] StateManagerService registered.");
         }
@@ -239,7 +250,7 @@ void GameApplication::OnPostUpdate(float deltaTime)
     (void)deltaTime;  // Unused for now
     
     // Get Menu through Kernel
-    auto menuService = GetKernel()->GetService<MenuService>(Kernel::ServiceType::Menu);
+    auto menuService = GetKernel()->GetService<MenuService>();
     auto* menu = menuService ? menuService->menu : nullptr;
     
     if (IsKeyPressed(KEY_GRAVE) && menu)
@@ -321,7 +332,7 @@ void GameApplication::OnPostUpdate(float deltaTime)
             else
             {
                 // Only show player metrics if game is initialized (map selected)
-                auto playerService = GetKernel()->GetService<PlayerService>(Kernel::ServiceType::Player);
+                auto playerService = GetKernel()->GetService<PlayerService>();
                 auto* player = playerService ? playerService->player : nullptr;
                 
                 if (player)
@@ -331,7 +342,8 @@ void GameApplication::OnPostUpdate(float deltaTime)
                     player->GetCameraController()->UpdateMouseRotation(
                     player->GetCameraController()->GetCamera(), player->GetMovement()->GetPosition());
                     player->GetCameraController()->Update();
-                    
+                    // m_soundSystem->PlaySound("player_fall");
+                                     
                     GetEngine()->GetRenderManager()->ShowMetersPlayer(*player->GetRenderable());
                 }
             }
@@ -354,10 +366,10 @@ void GameApplication::OnPostRender()
     if (!engine) return;
 
     // Get Menu and Player through Kernel
-    auto menuService = GetKernel()->GetService<MenuService>(Kernel::ServiceType::Menu);
+    auto menuService = GetKernel()->GetService<MenuService>();
     auto* menu = menuService ? menuService->menu : nullptr;
     
-    auto playerService = GetKernel()->GetService<PlayerService>(Kernel::ServiceType::Player);
+    auto playerService = GetKernel()->GetService<PlayerService>();
     auto* player = playerService ? playerService->player : nullptr;
     
     if (m_showMenu && menu)
@@ -422,13 +434,13 @@ void GameApplication::OnPreShutdown()
     }
 
     // Get components through Kernel (they're deleted by systems)
-    auto playerService = GetKernel()->GetService<PlayerService>(Kernel::ServiceType::Player);
+    auto playerService = GetKernel()->GetService<PlayerService>();
     auto* player = playerService ? playerService->player : nullptr;
     
-    auto mapService = GetKernel()->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
+    auto mapService = GetKernel()->GetService<MapManagerService>();
     auto* mapManager = mapService ? mapService->mapManager : nullptr;
     
-    auto menuService = GetKernel()->GetService<MenuService>(Kernel::ServiceType::Menu);
+    auto menuService = GetKernel()->GetService<MenuService>();
     auto* menu = menuService ? menuService->menu : nullptr;
 
     if (player)
@@ -462,14 +474,14 @@ void GameApplication::RegisterCoreKernelServices()
     
     // Register only basic engine services
     // Player and Menu are registered by their systems (PlayerSystem, UIController)
-    kernel->RegisterService<CollisionService>(Kernel::ServiceType::Collision,
-                                             std::make_shared<CollisionService>(m_collisionManager.get()));
+    kernel->RegisterService<CollisionService>(
+        std::make_shared<CollisionService>(m_collisionManager.get()));
     
-    kernel->RegisterService<ModelsService>(Kernel::ServiceType::Models,
-                                         std::make_shared<ModelsService>(m_models.get()));
+    kernel->RegisterService<ModelsService>(
+        std::make_shared<ModelsService>(m_models.get()));
     
-    kernel->RegisterService<WorldService>(Kernel::ServiceType::World,
-                                        std::make_shared<WorldService>(m_world.get()));
+    kernel->RegisterService<WorldService>(
+        std::make_shared<WorldService>(m_world.get()));
     
     TraceLog(LOG_INFO, "[GameApplication] Core engine services registered.");
     TraceLog(LOG_INFO, "[GameApplication] Game services will be registered by systems.");
@@ -485,8 +497,8 @@ void GameApplication::RegisterManagerKernelServices()
     // MapManager and PlayerManager are registered by their systems (MapSystem, PlayerSystem)
     // Only register ResourceManager which doesn't have its own system yet
     if (m_modelManager) {
-        kernel->RegisterService<ResourceManagerService>(Kernel::ServiceType::ResourceManager,
-                                                       std::make_shared<ResourceManagerService>(m_modelManager.get()));
+        kernel->RegisterService<ResourceManagerService>(
+            std::make_shared<ResourceManagerService>(m_modelManager.get()));
     }
     
     TraceLog(LOG_INFO, "[GameApplication] Manager services registered.");
@@ -522,7 +534,7 @@ void GameApplication::InitInput()
     }
 
     // Get Menu through Kernel
-    auto menuService = GetKernel()->GetService<MenuService>(Kernel::ServiceType::Menu);
+    auto menuService = GetKernel()->GetService<MenuService>();
     auto* menu = menuService ? menuService->menu : nullptr;
     
     if (!menu) {
@@ -568,7 +580,7 @@ void GameApplication::HandleMenuActions()
 void GameApplication::UpdatePlayerLogic()
 {
     // Get PlayerManager through Kernel
-    auto playerManagerService = GetKernel()->GetService<PlayerManagerService>(Kernel::ServiceType::PlayerManager);
+    auto playerManagerService = GetKernel()->GetService<PlayerManagerService>();
     if (playerManagerService && playerManagerService->playerManager)
     {
         playerManagerService->playerManager->UpdatePlayerLogic();
@@ -591,7 +603,7 @@ void GameApplication::SaveGameState()
     }
     
     // Get MapManager through Kernel to get current map path
-    auto mapService = GetKernel()->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
+    auto mapService = GetKernel()->GetService<MapManagerService>();
     if (!mapService || !mapService->mapManager)
     {
         TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - MapManager not available");
