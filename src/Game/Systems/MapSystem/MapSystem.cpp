@@ -40,15 +40,15 @@ bool MapSystem::Initialize(Kernel* kernel)
     TraceLog(LOG_INFO, "[MapSystem] Initializing...");
 
     // Get engine dependencies through Kernel
-    auto worldService = kernel->GetService<WorldService>(Kernel::ServiceType::World);
-    auto collisionService = kernel->GetService<CollisionService>(Kernel::ServiceType::Collision);
-    auto modelsService = kernel->GetService<ModelsService>(Kernel::ServiceType::Models);
-    auto renderService = kernel->GetService<RenderService>(Kernel::ServiceType::Render);
-    auto engineService = kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
+    auto worldService = kernel->GetService<WorldService>();
+    auto collisionService = kernel->GetService<CollisionService>();
+    auto modelsService = kernel->GetService<ModelsService>();
+    auto renderService = kernel->GetService<RenderService>();
+    auto engineService = kernel->GetService<EngineService>();
     
     // Player and Menu can be from other systems
-    auto playerService = kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
-    auto menuService = kernel->GetService<MenuService>(Kernel::ServiceType::Menu);
+    auto playerService = kernel->GetService<PlayerService>();
+    auto menuService = kernel->GetService<MenuService>();
 
     // Validate required engine dependencies
     if (!worldService || !collisionService || !modelsService || !renderService) {
@@ -115,7 +115,7 @@ void MapSystem::Update(float deltaTime)
 {
     // Update Player reference if it became available
     if (!m_player && m_kernel && m_mapManager) {
-        auto playerService = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
+        auto playerService = m_kernel->GetService<PlayerService>();
         if (playerService && playerService->player) {
             m_player = playerService->player;
             m_mapManager->SetPlayer(m_player);
@@ -146,7 +146,6 @@ void MapSystem::RegisterServices(Kernel* kernel)
     // Register our own components as services
     if (m_mapManager) {
         kernel->RegisterService<MapManagerService>(
-            Kernel::ServiceType::MapManager,
             std::make_shared<MapManagerService>(m_mapManager.get())
         );
         TraceLog(LOG_INFO, "[MapSystem] MapManagerService registered");

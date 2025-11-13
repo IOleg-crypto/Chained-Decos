@@ -83,5 +83,6 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp"
-    }
+    },
+    "kiroAgent.configureMCP": "Disabled"
 }

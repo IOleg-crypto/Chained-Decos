@@ -92,6 +92,7 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
                 float shakeIntensity = normalizedFall * 0.15f; // Max 0.15 intensity
                 float shakeDuration = 0.3f; // Short continuous shake during fall
                 m_cameraController->AddScreenShake(shakeIntensity, shakeDuration);
+                
             }
         }
 
@@ -113,6 +114,7 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
                 float impactIntensity = normalizedFall * 0.3f; // Max 0.3 intensity
                 float impactDuration = 0.4f;
                 m_cameraController->AddScreenShake(impactIntensity, impactDuration);
+                if (m_audioManager) { m_audioManager->PlaySound("player_fall", 10.0f); }
             }
             
             wasFalling = false;

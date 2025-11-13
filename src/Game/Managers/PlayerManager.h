@@ -7,6 +7,7 @@
 #include "Engine/Model/Core/Model.h"
 #include "Engine/Engine.h"
 #include "MapManager.h"
+#include "Engine/Audio/Core/AudioManager.h"
 
 class PlayerManager
 {
@@ -18,10 +19,11 @@ private:
     ModelLoader* m_models;
     Engine* m_engine;
     MapManager* m_mapManager;
+    AudioManager* m_audioManager = nullptr;
 
 public:
     PlayerManager(Player* player, CollisionManager* collisionManager, 
-                  ModelLoader* models, Engine* engine, MapManager* mapManager);
+                  ModelLoader* models, Engine* engine, MapManager* mapManager, AudioManager* audioManager);
     ~PlayerManager() = default;
 
     void InitPlayer();

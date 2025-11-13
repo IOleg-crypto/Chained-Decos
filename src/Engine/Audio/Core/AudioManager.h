@@ -20,7 +20,7 @@ public:
     bool LoadMusic(const std::string& name, const std::string& filePath);
 
     // Play audio
-    void PlaySound(const std::string& name, float volume = 1.0f, float pitch = 1.0f);
+    void PlaySound(const std::string& name, float volume = 5.0f, float pitch = 1.0f);
     void PlayMusic(const std::string& name, float volume = 1.0f);
     void StopMusic();
 

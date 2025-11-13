@@ -9,16 +9,16 @@ void UpdateConsoleManagerProviders(Kernel* kernel)
 {
     if (!kernel) return;
     
-    auto menuService = kernel->GetService<MenuService>(Kernel::ServiceType::Menu);
+    auto menuService = kernel->GetService<MenuService>();
     if (!menuService || !menuService->menu) return;
     
     auto consoleManager = menuService->menu->GetConsoleManager();
     if (!consoleManager) return;
     
     // Get current providers
-    auto playerService = kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
-    auto mapService = kernel->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
-    auto engineService = kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
+    auto playerService = kernel->GetService<PlayerService>();
+    auto mapService = kernel->GetService<MapManagerService>();
+    auto engineService = kernel->GetService<EngineService>();
     
     // Update providers (may be nullptr if services not yet registered)
     consoleManager->SetProviders(

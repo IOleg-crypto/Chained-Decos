@@ -14,7 +14,6 @@ option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
 option(ENABLE_WARNINGS "Enable strict compiler warnings" OFF)
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" ON)
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(ENABLE_UNITY_BUILD "Enable unity build for faster compilation" ON)
 
 # Platform-specific options
@@ -26,6 +25,9 @@ option(ENABLE_MULTITHREADING "Enable multithreading support" ON)
 option(ENABLE_DEV_TOOLS "Enable development tools" OFF)
 option(ENABLE_DEBUG_INFO "Enable debug information" ON)
 option(ENABLE_SANITIZERS "Enable sanitizers for debugging" OFF)
+
+# Force static linking
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 if(FAST_CONFIG)
     set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/.deps" CACHE PATH "Deps cache")
@@ -69,11 +71,11 @@ if(MSVC)
         endif()
     endif()
 
-    # Set consistent CRT settings for all targets
+    # Use static CRT for static linking
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_compile_options(/MDd)  # MultiThreadedDebugDLL
+        add_compile_options(/MTd)  # MultiThreadedDebug (static)
     else()
-        add_compile_options(/MD)   # MultiThreadedDLL
+        add_compile_options(/MT)   # MultiThreaded (static)
     endif()
 
     if(ENABLE_SANITIZERS)
@@ -163,9 +165,10 @@ if(NOT raylib_FOUND)
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
 
-    # Raylib build configuration
+    # Raylib build configuration - static only
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
     # Platform-specific raylib options
     if(UNIX AND NOT APPLE)
@@ -225,16 +228,13 @@ if(BUILD_TESTS)
             URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
             DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         )
-        # Use dynamic CRT for better Windows compatibility and consistent debug levels
-        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-        # Force GoogleTest to use the same CRT settings as the main project
+        # Use static CRT to match main project
+        set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)
+        
         if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             add_compile_definitions(_DEBUG)
-            set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         else()
             add_compile_definitions(NDEBUG)
-            set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         endif()
         FetchContent_MakeAvailable(googletest)
     endif()
@@ -301,7 +301,6 @@ set_target_properties(ChainedDecos PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    POSITION_INDEPENDENT_CODE ON
 )
 
 # Set output name based on build type

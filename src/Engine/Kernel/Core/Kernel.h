@@ -6,34 +6,19 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <typeindex>
 #include <unordered_map>
 #include <vector>
 
 #include "../Interfaces/IKernelService.h"
 
+// SOLID-compliant Kernel using type-based service location
+// Open/Closed: Can register any service type without modifying Kernel
+// Interface Segregation: No need to know about all service types
+// Dependency Inversion: Depends on IKernelService abstraction
 class Kernel
 {
 public:
-    enum class ServiceType : uint32_t
-    {
-        Render,
-        Input,
-        Models,
-        Collision,
-        World,
-        Physics,
-        Engine,
-        // Game services
-        Player,
-        Menu,
-        MapManager,
-        ResourceManager,
-        PlayerManager,
-        StateManager,
-        Custom1,
-        Custom2
-    };
-
     bool Initialize(const std::string &configFile = "");
     void Shutdown();
     void Update(float deltaTime);
@@ -42,26 +27,38 @@ public:
     void SetConfigValue(const std::string &key, const std::string &value);
     std::string GetConfigValue(const std::string &key, const std::string &defaultValue = "") const;
 
+    // Type-safe service registration without enum
+    // Uses C++ RTTI for type identification
     template <typename T>
-    void RegisterService(ServiceType type, std::shared_ptr<T> service)
+    void RegisterService(std::shared_ptr<T> service)
     {
         static_assert(std::is_base_of_v<IKernelService, T>, "Service must implement IKernelService");
-        m_services[type] = std::static_pointer_cast<IKernelService>(service);
+        const std::type_index typeId = std::type_index(typeid(T));
+        m_services[typeId] = std::static_pointer_cast<IKernelService>(service);
     }
 
+    // Type-safe service retrieval
     template <typename T>
-    std::shared_ptr<T> GetService(ServiceType type)
+    std::shared_ptr<T> GetService()
     {
-        auto it = m_services.find(type);
+        const std::type_index typeId = std::type_index(typeid(T));
+        auto it = m_services.find(typeId);
         if (it == m_services.end())
             return nullptr;
         return std::static_pointer_cast<T>(it->second);
     }
 
+    // Check if service exists
+    template <typename T>
+    bool HasService() const
+    {
+        const std::type_index typeId = std::type_index(typeid(T));
+        return m_services.find(typeId) != m_services.end();
+    }
+
     void PrintServiceStatus();
     void Log(const std::string &message, int level = 3);
 
-    // Constructor and destructor - no longer private
     Kernel() = default;
     ~Kernel() = default;
     Kernel(const Kernel &) = delete;
@@ -71,16 +68,17 @@ public:
     void ShutdownServices();
 
 private:
-    std::unordered_map<ServiceType, std::shared_ptr<IKernelService>> m_services;
+    // Type-indexed service storage (no enum needed!)
+    std::unordered_map<std::type_index, std::shared_ptr<IKernelService>> m_services;
     std::map<std::string, std::string> m_config;
 };
 
-// Macros updated to require Kernel reference/pointer
-#define REGISTER_KERNEL_SERVICE(kernel, Type, ServiceType) \
-    kernel.RegisterService<Type>(Kernel::ServiceType::ServiceType, std::make_shared<Type>())
+// Simplified macros using type-based registration
+#define REGISTER_KERNEL_SERVICE(kernel, Type) \
+    kernel.RegisterService<Type>(std::make_shared<Type>())
 
-#define GET_KERNEL_SERVICE(kernel, Type, ServiceType) \
-    kernel.GetService<Type>(Kernel::ServiceType::ServiceType)
+#define GET_KERNEL_SERVICE(kernel, Type) \
+    kernel.GetService<Type>()
 
 #endif // KERNEL_H
 

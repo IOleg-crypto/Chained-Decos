@@ -12,6 +12,7 @@
 #include <Collision/System/CollisionSystem.h>
 #include <World/Core/World.h>
 #include <Model/Core/Model.h>
+#include "Engine/Audio/Core/AudioManager.h"
 
 // Include component interfaces
 #include "Interfaces/IPlayerInput.h"
@@ -83,6 +84,7 @@ public:
     
     
     void Update(CollisionManager& collisionManager);
+    void SetAudioManager(AudioManager* audioManager) { m_audioManager = audioManager; }
 
 private:
     // Component objects - using interfaces for better decoupling
@@ -100,6 +102,7 @@ private:
     // Player state
     bool m_isJumping = false;
     Vector3 m_boundingBoxSize{};
+    AudioManager* m_audioManager = nullptr;
 };
 
 #endif // PLAYER_H

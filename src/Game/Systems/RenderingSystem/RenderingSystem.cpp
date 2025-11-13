@@ -47,28 +47,28 @@ void RenderingSystem::EnsureDependencies()
     }
 
     if (!m_models) {
-        auto modelsService = m_kernel->GetService<ModelsService>(Kernel::ServiceType::Models);
+        auto modelsService = m_kernel->GetService<ModelsService>();
         if (modelsService) {
             m_models = modelsService->models;
         }
     }
     // Get dependencies through Kernel (lazy loading)
     if (!m_player) {
-        auto playerService = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
+        auto playerService = m_kernel->GetService<PlayerService>();
         if (playerService) {
             m_player = playerService->player;
         }
     }
     
     if (!m_mapManager) {
-        auto mapService = m_kernel->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
+        auto mapService = m_kernel->GetService<MapManagerService>();
         if (mapService) {
             m_mapManager = mapService->mapManager;
         }
     }
     
     if (!m_collisionManager) {
-        auto collisionService = m_kernel->GetService<CollisionService>(Kernel::ServiceType::Collision);
+        auto collisionService = m_kernel->GetService<CollisionService>();
         if (collisionService) {
             m_collisionManager = collisionService->cm;
         }
@@ -76,7 +76,7 @@ void RenderingSystem::EnsureDependencies()
     
     
     if (!m_engine) {
-        auto engineService = m_kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
+        auto engineService = m_kernel->GetService<EngineService>();
         if (engineService) {
             m_engine = engineService->engine;
         }

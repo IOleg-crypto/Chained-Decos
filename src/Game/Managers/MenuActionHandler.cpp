@@ -27,55 +27,55 @@ MenuActionHandler::MenuActionHandler(Kernel* kernel, bool* showMenu, bool* isGam
 
 Player* MenuActionHandler::GetPlayer() const
 {
-    auto service = m_kernel->GetService<PlayerService>(Kernel::ServiceType::Player);
+    auto service = m_kernel->GetService<PlayerService>();
     return service ? service->player : nullptr;
 }
 
 Menu* MenuActionHandler::GetMenu() const
 {
-    auto service = m_kernel->GetService<MenuService>(Kernel::ServiceType::Menu);
+    auto service = m_kernel->GetService<MenuService>();
     return service ? service->menu : nullptr;
 }
 
 CollisionManager* MenuActionHandler::GetCollisionManager() const
 {
-    auto service = m_kernel->GetService<CollisionService>(Kernel::ServiceType::Collision);
+    auto service = m_kernel->GetService<CollisionService>();
     return service ? service->cm : nullptr;
 }
 
 ModelLoader* MenuActionHandler::GetModels() const
 {
-    auto service = m_kernel->GetService<ModelsService>(Kernel::ServiceType::Models);
+    auto service = m_kernel->GetService<ModelsService>();
     return service ? service->models : nullptr;
 }
 
 MapManager* MenuActionHandler::GetMapManager() const
 {
-    auto service = m_kernel->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
+    auto service = m_kernel->GetService<MapManagerService>();
     return service ? service->mapManager : nullptr;
 }
 
 ResourceManager* MenuActionHandler::GetResourceManager() const
 {
-    auto service = m_kernel->GetService<ResourceManagerService>(Kernel::ServiceType::ResourceManager);
+    auto service = m_kernel->GetService<ResourceManagerService>();
     return service ? service->resourceManager : nullptr;
 }
 
 PlayerManager* MenuActionHandler::GetPlayerManager() const
 {
-    auto service = m_kernel->GetService<PlayerManagerService>(Kernel::ServiceType::PlayerManager);
+    auto service = m_kernel->GetService<PlayerManagerService>();
     return service ? service->playerManager : nullptr;
 }
 
 Engine* MenuActionHandler::GetEngine() const
 {
-    auto service = m_kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
+    auto service = m_kernel->GetService<EngineService>();
     return service ? service->engine : nullptr;
 }
 
 StateManager* MenuActionHandler::GetStateManager() const
 {
-    auto service = m_kernel->GetService<StateManagerService>(Kernel::ServiceType::StateManager);
+    auto service = m_kernel->GetService<StateManagerService>();
     return service ? service->stateManager : nullptr;
 }
 
