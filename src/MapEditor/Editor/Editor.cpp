@@ -84,7 +84,8 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
 {
     // Initialize NFD once (before subsystems that use it)
     NFD_Init();
-
+    
+    
     // Initialize subsystems in dependency order
     m_cameraManager = std::make_unique<CameraManager>(cameraController);
     m_sceneManager = std::make_unique<SceneManager>();

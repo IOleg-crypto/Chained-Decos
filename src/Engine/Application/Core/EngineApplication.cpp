@@ -77,7 +77,7 @@ void EngineApplication::Initialize()
     m_engine->Init();
     
     // Step 7.5: Register Engine as service
-    m_kernel->RegisterService<EngineService>(Kernel::ServiceType::Engine,
+    m_kernel->RegisterService<EngineService>(
         std::make_shared<EngineService>(m_engine.get()));
     TraceLog(LOG_INFO, "[EngineApplication] EngineService registered");
     

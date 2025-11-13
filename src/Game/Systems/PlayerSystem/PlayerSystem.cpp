@@ -34,10 +34,10 @@ bool PlayerSystem::Initialize(Kernel* kernel)
     TraceLog(LOG_INFO, "[PlayerSystem] Initializing...");
 
     // Get engine dependencies through Kernel
-    auto collisionService = kernel->GetService<CollisionService>(Kernel::ServiceType::Collision);
-    auto modelsService = kernel->GetService<ModelsService>(Kernel::ServiceType::Models);
-    auto mapService = kernel->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
-    auto engineService = kernel->GetService<EngineService>(Kernel::ServiceType::Engine);
+    auto collisionService = kernel->GetService<CollisionService>();
+    auto modelsService = kernel->GetService<ModelsService>();
+    auto mapService = kernel->GetService<MapManagerService>();
+    auto engineService = kernel->GetService<EngineService>();
 
     // Validate required engine dependencies
     if (!collisionService || !modelsService) {
@@ -72,7 +72,8 @@ bool PlayerSystem::Initialize(Kernel* kernel)
                 m_collisionManager,
                 m_models,
                 m_engine,  // Can be nullptr
-                m_mapManager  // Can be nullptr, updated later
+                m_mapManager, // Can be nullptr, updated later
+                m_audioManager
             );
             TraceLog(LOG_INFO, "[PlayerSystem] PlayerManager created");
         } else {
@@ -114,7 +115,7 @@ void PlayerSystem::Update(float deltaTime)
     // MapManager should be available since PlayerSystem depends on MapSystem
     // But check anyway
     if (!m_mapManager && m_kernel) {
-        auto mapService = m_kernel->GetService<MapManagerService>(Kernel::ServiceType::MapManager);
+        auto mapService = m_kernel->GetService<MapManagerService>();
         if (mapService && mapService->mapManager) {
             m_mapManager = mapService->mapManager;
             TraceLog(LOG_INFO, "[PlayerSystem] MapManager obtained from Kernel");
@@ -124,6 +125,8 @@ void PlayerSystem::Update(float deltaTime)
     if (!m_playerManager || !m_player) {
         return;
     }
+
+    
 
     // Check if player is at uninitialized position
     // Player starts at (-999999, -999999, -999999) until InitPlayer() is called
@@ -157,7 +160,6 @@ void PlayerSystem::RegisterServices(Kernel* kernel)
     // Register our own components as services
     if (m_player) {
         kernel->RegisterService<PlayerService>(
-            Kernel::ServiceType::Player,
             std::make_shared<PlayerService>(m_player.get())
         );
         TraceLog(LOG_INFO, "[PlayerSystem] PlayerService registered");
@@ -166,7 +168,7 @@ void PlayerSystem::RegisterServices(Kernel* kernel)
         UpdateConsoleManagerProviders(kernel);
         
         // Dependency Injection: inject camera into Menu
-        auto menuService = kernel->GetService<MenuService>(Kernel::ServiceType::Menu);
+        auto menuService = kernel->GetService<MenuService>();
         if (menuService && menuService->menu) {
             auto cameraController = m_player->GetCameraController();
             if (cameraController) {
@@ -178,7 +180,6 @@ void PlayerSystem::RegisterServices(Kernel* kernel)
 
     if (m_playerManager) {
         kernel->RegisterService<PlayerManagerService>(
-            Kernel::ServiceType::PlayerManager,
             std::make_shared<PlayerManagerService>(m_playerManager.get())
         );
         TraceLog(LOG_INFO, "[PlayerSystem] PlayerManagerService registered");

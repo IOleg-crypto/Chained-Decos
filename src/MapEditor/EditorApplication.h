@@ -2,10 +2,8 @@
 #define EDITOR_APPLICATION_H
 
 #include "Engine/Application/Core/EngineApplication.h"
+#include "Editor/Editor.h"
 #include <memory>
-
-// Forward declaration
-class Editor;
 
 // Editor application - uses full engine + own modules
 class EditorApplication : public EngineApplication {

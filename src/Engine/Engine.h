@@ -21,9 +21,7 @@
 #include "Input/Core/InputManager.h"
 #include "Kernel/Core/Kernel.h"
 #include "Render/Manager/RenderManager.h"
-
-// Forward declaration
-class ModuleManager;
+#include "Module/Core/ModuleManager.h"
 
 CHAINEDDECOSENGINE_API class Engine
 {
@@ -48,6 +46,8 @@ public:
     InputManager &GetInputManager() const;
     
     Kernel* GetKernel() const { return m_kernel; }
+    std::string GetWindowName() const { return m_windowName; }
+    void SetWindowName(const std::string& name) { m_windowName = name; }
 
     // ==================== Module System ====================
     ModuleManager* GetModuleManager() { return m_moduleManager.get(); }

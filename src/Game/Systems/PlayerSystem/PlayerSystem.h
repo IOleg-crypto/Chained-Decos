@@ -2,6 +2,7 @@
 #define PLAYER_SYSTEM_H
 
 #include "Engine/Module/Interfaces/IEngineModule.h"
+#include "Engine/Audio/Core/AudioManager.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -44,7 +45,8 @@ private:
     // System OWNS its components
     std::unique_ptr<Player> m_player;
     std::unique_ptr<PlayerManager> m_playerManager;
-    
+
+    AudioManager* m_audioManager;
     // Kernel reference (for accessing services)
     Kernel* m_kernel;
     
