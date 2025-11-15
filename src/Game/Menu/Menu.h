@@ -16,10 +16,7 @@
 #include <imgui.h>
 #include <raylib.h>
 #include <GLFW/glfw3.h>
-
-// Forward declarations to break circular dependencies
-class Kernel;
-
+#include "Engine/Kernel/Core/Kernel.h"
 
 enum class MenuAction : uint8_t
 {
@@ -129,6 +126,9 @@ public:
     void ToggleConsole();
     [[nodiscard]] bool IsConsoleOpen() const;
     [[nodiscard]] ConsoleManager* GetConsoleManager() const;
+
+    // Settings manager access
+    [[nodiscard]] SettingsManager* GetSettingsManager() const { return m_settingsManager.get(); }
     
     // Dependency Injection for camera
     void SetCameraController(ICameraSensitivityController* controller);
@@ -190,8 +190,8 @@ private:
     void RenderPaginationControls();
 
     // Settings synchronization
-    void SyncVideoSettingsToConfig();
-    void SyncAudioSettingsToConfig();
+    void SyncVideoSettingsToConfig() const;
+    void SyncAudioSettingsToConfig() const;
     void SyncControlSettingsToConfig();
     
     // Apply camera sensitivity to CameraController (Dependency Injection)
@@ -203,7 +203,6 @@ private:
 
     // Core state
     Engine *m_engine = nullptr;
-    Kernel* m_kernel = nullptr;
     std::unique_ptr<SettingsManager> m_settingsManager;
     
     // Explicit dependency via interface (Dependency Injection)

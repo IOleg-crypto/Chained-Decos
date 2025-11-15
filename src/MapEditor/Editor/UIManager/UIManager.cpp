@@ -26,15 +26,22 @@
 
 namespace fs = std::filesystem;
 
-UIManager::UIManager(Editor *editor, ISceneManager *sceneManager, IFileManager *fileManager,
-                     IToolManager *toolManager, IModelManager *modelManager)
-    : m_editor(editor), m_sceneManager(sceneManager), m_fileManager(fileManager),
-      m_toolManager(toolManager), m_modelManager(modelManager), m_displayImGuiInterface(true),
-      m_displayObjectListPanel(true), m_displayPropertiesPanel(true),
-      m_pendingObjectCreation(false), m_displaySkyboxPanel(false), m_displayParkourMapDialog(false),
-      m_currentlySelectedParkourMapIndex(0), m_gridSizes(900),
-      m_skyboxBrowser(std::make_unique<SkyboxBrowser>(editor)),
-      m_objectFactory(std::make_unique<ObjectFactory>(sceneManager, toolManager))
+UIManager::UIManager(const UIManagerConfig& config)
+    : m_editor(config.editor), 
+      m_sceneManager(config.sceneManager), 
+      m_fileManager(config.fileManager),
+      m_toolManager(config.toolManager), 
+      m_modelManager(config.modelManager), 
+      m_displayImGuiInterface(true),
+      m_displayObjectListPanel(true), 
+      m_displayPropertiesPanel(true),
+      m_pendingObjectCreation(false), 
+      m_displaySkyboxPanel(false), 
+      m_displayParkourMapDialog(false),
+      m_currentlySelectedParkourMapIndex(0), 
+      m_gridSizes(config.initialGridSize),
+      m_skyboxBrowser(std::make_unique<SkyboxBrowser>(config.editor)),
+      m_objectFactory(std::make_unique<ObjectFactory>(config.sceneManager, config.toolManager))
 {
 }
 

@@ -4,16 +4,15 @@
 #include "Engine/Module/Interfaces/IEngineModule.h"
 #include "Engine/Audio/Core/AudioManager.h"
 #include "Engine/Kernel/Core/Kernel.h"
+#include "Game/Player/Core/Player.h"
+#include "Engine/Collision/Core/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
+#include "Engine/Engine.h"
 #include <memory>
 #include <vector>
 #include <string>
 
-class Player;
-class PlayerManager;
-class CollisionManager;
-class MapManager;
-class ModelLoader;
-class Engine;
+class MapSystem;
 
 // System for managing player and gameplay logic
 // Creates and owns its components independently
@@ -38,12 +37,21 @@ public:
 
     // Accessors
     Player* GetPlayer() const { return m_player.get(); }
-    PlayerManager* GetPlayerManager() const { return m_playerManager.get(); }
+
+    // Player management methods (from PlayerManager)
+    void InitializePlayer();
+    void UpdatePlayerLogic();
+
+    // State management methods (from StateManager)
+    void SavePlayerState(const std::string& currentMapPath);
+    void RestorePlayerState();
+    bool HasSavedState() const { return !m_savedMapPath.empty(); }
+    const std::string& GetSavedMapPath() const { return m_savedMapPath; }
 
 private:
+    static constexpr float PLAYER_SAFE_SPAWN_HEIGHT = 1.5f;
     // System OWNS its components
     std::unique_ptr<Player> m_player;
-    std::unique_ptr<PlayerManager> m_playerManager;
 
     AudioManager* m_audioManager;
     // Kernel reference (for accessing services)
@@ -51,9 +59,14 @@ private:
     
     // Dependencies obtained through Kernel (references only)
     CollisionManager* m_collisionManager;
-    MapManager* m_mapManager;
+    MapSystem* m_mapSystem;
     ModelLoader* m_models;
     Engine* m_engine;
+
+    // Saved state (from StateManager)
+    std::string m_savedMapPath;
+    Vector3 m_savedPlayerPosition;
+    Vector3 m_savedPlayerVelocity;
 };
 
 #endif // PLAYER_SYSTEM_H

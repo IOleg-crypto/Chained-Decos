@@ -12,7 +12,7 @@
 #include <Color/ColorParser.h>
 #include <Engine/Engine.h>
 #include <Input/Core/InputManager.h>
-#include <Map/MapLoader.h>
+#include <Map/Core/MapLoader.h>
 #include <Menu/Menu.h>
 #include <Model/Model.h>
 #include <Player/Player.h>

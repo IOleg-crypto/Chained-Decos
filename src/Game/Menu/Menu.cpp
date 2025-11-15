@@ -95,17 +95,14 @@ void Menu::Initialize(Engine *engine)
 
 void Menu::SetKernel(Kernel *kernel)
 {
-    m_kernel = kernel;
-    if (m_kernel && !m_consoleManager)
+    // Use Kernel::Instance() for global access instead of storing pointer
+    (void)kernel; // Suppress unused parameter warning
+    
+    if (!m_consoleManager)
     {
-        // Create ConsoleManager with nullptr providers
-        // Providers will be injected later via SetProviders()
-        // when services become available (Engine, MapSystem, PlayerSystem)
-        m_consoleManager = std::make_unique<ConsoleManager>(
-            nullptr, // IPlayerProvider* - will be injected later
-            nullptr, // IMapManagerProvider* - will be injected later
-            nullptr  // IEngineProvider* - will be injected later
-        );
+        // Create ConsoleManager
+        // Services will be accessed through Kernel::Instance() when needed
+        m_consoleManager = std::make_unique<ConsoleManager>();
         TraceLog(LOG_INFO,
                  "Menu::SetKernel() - ConsoleManager created, providers will be injected later");
     }
@@ -1136,8 +1133,7 @@ void Menu::RenderPaginationControls()
 }
 
 // Settings synchronization methods
-void Menu::SyncVideoSettingsToConfig()
-{
+void Menu::SyncVideoSettingsToConfig() const {
     if (m_settingsManager)
     {
         // Convert resolution index from m_resolutionOptions to MenuConstants::RESOLUTION_OPTIONS
@@ -1196,8 +1192,7 @@ void Menu::SyncVideoSettingsToConfig()
     }
 }
 
-void Menu::SyncAudioSettingsToConfig()
-{
+void Menu::SyncAudioSettingsToConfig() const {
     if (m_settingsManager)
     {
         m_settingsManager->SetMasterVolume(m_audioSettings.masterVolume);
@@ -1440,6 +1435,9 @@ void Menu::LoadConfiguration()
         m_audioSettings.musicVolume = m_settingsManager->GetMusicVolume();
         m_audioSettings.sfxVolume = m_settingsManager->GetSfxVolume();
         m_audioSettings.muted = m_settingsManager->IsMuted();
+
+        // Apply initial audio settings to AudioManager
+        m_settingsManager->ApplyAudioSettings();
 
         m_controlSettings.mouseSensitivity = m_settingsManager->GetMouseSensitivity();
         m_controlSettings.invertYAxis = m_settingsManager->GetInvertYAxis();

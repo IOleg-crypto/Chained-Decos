@@ -3,24 +3,33 @@
 
 #include "Engine/Module/Interfaces/IEngineModule.h"
 #include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Map/Core/MapLoader.h"
+#include "Engine/Collision/Core/CollisionManager.h"
+#include "Engine/Model/Core/Model.h"
+#include "Engine/Render/Core/RenderManager.h"
+#include "Engine/World/Core/World.h"
+#include "Engine/Engine.h"
 #include <memory>
 #include <vector>
 #include <string>
+#include <raylib.h>
 
-class MapManager;
-class WorldManager;
-class CollisionManager;
-class ModelLoader;
-class RenderManager;
 class Player;
 class Menu;
-class Engine;
+class MapCollisionInitializer;
+
+// Configuration for MapSystem
+struct MapSystemConfig {
+    std::string resourcePath = "resources/maps";
+    bool enableDebugRendering = false;
+    bool enableSpawnZoneRendering = true;
+};
 
 // System for managing maps and levels
-// Creates and owns its components independently
+// Integrates all map loading, rendering, and collision initialization logic
 class MapSystem : public IEngineModule {
 public:
-    MapSystem();
+    explicit MapSystem(const MapSystemConfig& config = {});
     ~MapSystem() override;
 
     // IEngineModule interface
@@ -37,12 +46,42 @@ public:
     void RegisterServices(Kernel* kernel) override;
     std::vector<std::string> GetDependencies() const override;
 
+    // Map loading and management
+    void LoadEditorMap(const std::string& mapPath);
+    void RenderEditorMap();
+    void RenderSpawnZone() const;
+    void DumpMapDiagnostics() const;
+    
+    // Collision initialization
+    void InitCollisions();
+    void InitCollisionsWithModels(const std::vector<std::string>& requiredModels);
+    bool InitCollisionsWithModelsSafe(const std::vector<std::string>& requiredModels);
+    
     // Accessors
-    MapManager* GetMapManager() const { return m_mapManager.get(); }
+    GameMap& GetGameMap();
+    const std::string& GetCurrentMapPath() const { return m_currentMapPath; }
+    Vector3 GetPlayerSpawnPosition() const;
+    bool HasSpawnZone() const { return m_hasSpawnZone; }
+    MapCollisionInitializer* GetCollisionInitializer() { return m_collisionInitializer.get(); }
+    
+    void SetPlayer(Player* player);
 
 private:
-    // System OWNS its components
-    std::unique_ptr<MapManager> m_mapManager;
+    // Configuration
+    MapSystemConfig m_config;
+    
+    // Map data
+    std::unique_ptr<GameMap> m_gameMap;
+    std::string m_currentMapPath;
+    
+    // Player spawn zone
+    BoundingBox m_playerSpawnZone;
+    Texture2D m_spawnTexture;
+    bool m_hasSpawnZone;
+    bool m_spawnTextureLoaded;
+    
+    // Collision initializer
+    std::unique_ptr<MapCollisionInitializer> m_collisionInitializer;
     
     // Kernel reference (for accessing services)
     Kernel* m_kernel;

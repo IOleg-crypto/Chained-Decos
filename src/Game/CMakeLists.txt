@@ -1,22 +1,8 @@
 add_library(ChainedDecosGame STATIC
     GameApplication.cpp
     GameApplication.h
-    Managers/MapManager.cpp
-    Managers/MapManager.h
     Managers/MapCollisionInitializer.cpp
     Managers/MapCollisionInitializer.h
-    Managers/ResourceManager.cpp
-    Managers/ResourceManager.h
-    Managers/StateManager.cpp
-    Managers/StateManager.h
-    Managers/GameRenderHelpers.cpp
-    Managers/GameRenderHelpers.h
-    Managers/PlayerManager.cpp
-    Managers/PlayerManager.h
-    Managers/UpdateManager.cpp
-    Managers/UpdateManager.h
-    Managers/MenuActionHandler.cpp
-    Managers/MenuActionHandler.h
     # Systems (modular architecture)
     Systems/PlayerSystem/PlayerSystem.cpp
     Systems/PlayerSystem/PlayerSystem.h

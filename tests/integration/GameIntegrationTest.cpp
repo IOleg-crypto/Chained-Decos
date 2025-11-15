@@ -2,9 +2,9 @@
 #include <memory>
 
 #include "Game/GameApplication.h"
-#include "Game/Player/Player.h"
+#include "Game/Player/Core/Player.h"
 #include "Engine/Engine.h"
-#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Collision/Core/CollisionManager.h"
 #include "Engine/Model/Core/Model.h"
 #include "Engine/World/Core/World.h"
 #include "Game/Menu/Menu.h"

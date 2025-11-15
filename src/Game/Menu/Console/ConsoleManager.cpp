@@ -1,7 +1,10 @@
 #include "ConsoleManager.h"
 #include "Engine/Engine.h"
-#include "Game/Managers/MapManager.h"
-#include "Game/Player/Player.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Kernel/Core/KernelServices.h"
+#include "Game/Systems/MapSystem/MapSystem.h"
+#include "Game/Systems/PlayerSystem/PlayerSystem.h"
+#include "Game/Player/Core/Player.h"
 #include "Game/Player/Collision/PlayerCollision.h"
 #include <algorithm>
 #include <cctype>
@@ -13,11 +16,7 @@
 #include <sstream>
 #include <unordered_set>
 
-ConsoleManager::ConsoleManager(IPlayerProvider *playerProvider,
-                               IMapManagerProvider *mapManagerProvider,
-                               IEngineProvider *engineProvider)
-    : m_playerProvider(playerProvider), m_mapManagerProvider(mapManagerProvider),
-      m_engineProvider(engineProvider)
+ConsoleManager::ConsoleManager()
 {
     TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER INITIALIZED");
 
@@ -28,30 +27,25 @@ ConsoleManager::ConsoleManager(IPlayerProvider *playerProvider,
              m_commands.size());
 }
 
-void ConsoleManager::SetProviders(IPlayerProvider *playerProvider,
-                                  IMapManagerProvider *mapManagerProvider,
-                                  IEngineProvider *engineProvider)
-{
-    m_playerProvider     = playerProvider;
-    m_mapManagerProvider = mapManagerProvider;
-    m_engineProvider     = engineProvider;
-    TraceLog(LOG_INFO,
-             "ConsoleManager::SetProviders() - Providers updated via Dependency Injection");
-}
-
 Player *ConsoleManager::GetPlayer() const
 {
-    return m_playerProvider ? m_playerProvider->GetPlayer() : nullptr;
+    // Get Player through Kernel -> PlayerService
+    auto playerService = Kernel::Instance().GetService<PlayerService>();
+    return playerService ? playerService->player : nullptr;
 }
 
 MapManager *ConsoleManager::GetMapManager() const
 {
-    return m_mapManagerProvider ? m_mapManagerProvider->GetMapManager() : nullptr;
+    // MapManager has been eliminated - return nullptr
+    // Console commands that need map functionality should use MapSystem through Kernel
+    return nullptr;
 }
 
 Engine *ConsoleManager::GetEngine() const
 {
-    return m_engineProvider ? m_engineProvider->GetEngine() : nullptr;
+    // Get Engine through Kernel
+    auto engineService = Kernel::Instance().GetService<EngineService>();
+    return engineService ? engineService->engine : nullptr;
 }
 
 void ConsoleManager::ToggleConsole() { consoleOpen = !consoleOpen; }

@@ -1,9 +1,10 @@
 #ifndef IMAPFILEOPERATIONS_H
 #define IMAPFILEOPERATIONS_H
 
+#include "Core/MapData.h"
+
 #include <string>
 #include <vector>
-#include "../Core/MapData.h"
 
 class IMapFileOperations
 {
