@@ -67,12 +67,16 @@ BoundingBox EllipseBoundingBoxCalculator::CalculateBoundingBox(const MapObject& 
 BoundingBox ModelBoundingBoxCalculator::CalculateBoundingBox(const MapObject& obj) const {
     Vector3 position = obj.GetPosition();
     Vector3 scale = obj.GetScale();
-    
-    // For models, use a default bounding box for now
-    // TODO: In future, get actual model bounds from ModelLoader
+
+    // For models, use a tighter bounding box (0.5x scale) to reduce false positives
+    // Most models don't fill their entire scale volume
+    // TODO: In future, get actual model bounds from ModelLoader using GetModelBoundingBox
+    float scaleFactor = 0.5f;
+    Vector3 halfExtents = Vector3Scale(scale, scaleFactor);
+
     return {
-        Vector3{position.x - scale.x, position.y - scale.y, position.z - scale.z},
-        Vector3{position.x + scale.x, position.y + scale.y, position.z + scale.z}
+        Vector3{position.x - halfExtents.x, position.y - halfExtents.y, position.z - halfExtents.z},
+        Vector3{position.x + halfExtents.x, position.y + halfExtents.y, position.z + halfExtents.z}
     };
 }
 

@@ -85,8 +85,10 @@ public:
     PhysicsComponent &GetPhysics();             // Get physics component (non-const)
     IPlayerMovement *GetMovement() const;
     IGameRenderable* GetRenderable() const;
-    
-    
+
+    // Service injection
+    void SetAudioManager(std::shared_ptr<AudioManager> audioManager) { m_audioManager = audioManager; }
+
     void Update(CollisionManager& collisionManager);
 
 private:
