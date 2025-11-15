@@ -8,9 +8,11 @@
 #include <raylib.h>
 #include <imgui/imgui.h>
 #include "MenuConstants.h"
-#include "Game/Player/Interfaces/IPlayerProvider.h"
-#include "Game/Managers/IMapManagerProvider.h"
-#include "Engine/IEngineProvider.h"
+
+// Forward declarations
+class Player;
+class MapManager;
+class Engine;
 
 // Command callback function type
 using CommandCallback = std::function<void(const std::vector<std::string>&, class ConsoleManager*)>;
@@ -32,10 +34,6 @@ struct CommandInfo {
 
 class ConsoleManager {
 private:
-    // Explicit dependencies via interfaces (Dependency Injection)
-    IPlayerProvider* m_playerProvider = nullptr;
-    IMapManagerProvider* m_mapManagerProvider = nullptr;
-    IEngineProvider* m_engineProvider = nullptr;
     
     bool consoleOpen = false;
     std::vector<std::string> consoleHistory;
@@ -49,19 +47,8 @@ private:
     static constexpr size_t MAX_HISTORY_LINES = 50;
 
 public:
-    // Dependency Injection via constructor (providers can be nullptr)
-    ConsoleManager(
-        IPlayerProvider* playerProvider = nullptr,
-        IMapManagerProvider* mapManagerProvider = nullptr,
-        IEngineProvider* engineProvider = nullptr
-    );
-    
-    // Update providers later (when services become available)
-    void SetProviders(
-        IPlayerProvider* playerProvider,
-        IMapManagerProvider* mapManagerProvider,
-        IEngineProvider* engineProvider
-    );
+    // Constructor
+    ConsoleManager();
 
     // Console state management
     void ToggleConsole();

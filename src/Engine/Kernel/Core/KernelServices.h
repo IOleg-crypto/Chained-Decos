@@ -3,16 +3,13 @@
 
 #include "../Interfaces/IKernelService.h"
 #include "../Input/Core/InputManager.h"
-#include "../Collision/Manager/CollisionManager.h"
+#include "../Collision/Core/CollisionManager.h"
 #include "../Model/Core/Model.h"
 #include "../World/Core/World.h"
 #include "../Audio/Core/AudioManager.h"
 #include "../Event/Core/EventSystem.h"
 #include "../Asset/Core/AssetManager.h"
-#include "../Render/Manager/RenderManager.h"
-#include "../../Game/Player/Interfaces/IPlayerProvider.h"
-#include "../../Game/Managers/IMapManagerProvider.h"
-#include "../IEngineProvider.h"
+#include "../Render/Core/RenderManager.h"
 
 struct RenderService : public IKernelService
 {
@@ -83,19 +80,17 @@ struct AssetService : public IKernelService
 class Player;
 class Menu;
 class MapManager;
-class ResourceManager;
-class PlayerManager;
-class StateManager;
+class MapSystem;
+class PlayerSystem;
 class Engine;
 
-struct PlayerService : public IKernelService, public IPlayerProvider
+struct PlayerService : public IKernelService
 {
     Player *player = nullptr;
     explicit PlayerService(Player *p) : player(p) {}
     bool Initialize() override { return player != nullptr; }
     void Shutdown() override {}
     const char *GetName() const override { return "PlayerService"; }
-    Player* GetPlayer() override { return player; }
 };
 
 struct MenuService : public IKernelService
@@ -107,51 +102,40 @@ struct MenuService : public IKernelService
     const char *GetName() const override { return "MenuService"; }
 };
 
-struct MapManagerService : public IKernelService, public IMapManagerProvider
+struct MapManagerService : public IKernelService
 {
     MapManager *mapManager = nullptr;
     explicit MapManagerService(MapManager *mm) : mapManager(mm) {}
     bool Initialize() override { return mapManager != nullptr; }
     void Shutdown() override {}
     const char *GetName() const override { return "MapManagerService"; }
-    MapManager* GetMapManager() override { return mapManager; }
 };
 
-struct ResourceManagerService : public IKernelService
+struct MapSystemService : public IKernelService
 {
-    ResourceManager *resourceManager = nullptr;
-    explicit ResourceManagerService(ResourceManager *rm) : resourceManager(rm) {}
-    bool Initialize() override { return resourceManager != nullptr; }
+    MapSystem *mapSystem = nullptr;
+    explicit MapSystemService(MapSystem *ms) : mapSystem(ms) {}
+    bool Initialize() override { return mapSystem != nullptr; }
     void Shutdown() override {}
-    const char *GetName() const override { return "ResourceManagerService"; }
+    const char *GetName() const override { return "MapSystemService"; }
 };
 
-struct PlayerManagerService : public IKernelService
+struct PlayerSystemService : public IKernelService
 {
-    PlayerManager *playerManager = nullptr;
-    explicit PlayerManagerService(PlayerManager *pm) : playerManager(pm) {}
-    bool Initialize() override { return playerManager != nullptr; }
+    PlayerSystem *playerSystem = nullptr;
+    explicit PlayerSystemService(PlayerSystem *ps) : playerSystem(ps) {}
+    bool Initialize() override { return playerSystem != nullptr; }
     void Shutdown() override {}
-    const char *GetName() const override { return "PlayerManagerService"; }
+    const char *GetName() const override { return "PlayerSystemService"; }
 };
 
-struct StateManagerService : public IKernelService
-{
-    StateManager *stateManager = nullptr;
-    explicit StateManagerService(StateManager *sm) : stateManager(sm) {}
-    bool Initialize() override { return stateManager != nullptr; }
-    void Shutdown() override {}
-    const char *GetName() const override { return "StateManagerService"; }
-};
-
-struct EngineService : public IKernelService, public IEngineProvider
+struct EngineService : public IKernelService
 {
     Engine *engine = nullptr;
     explicit EngineService(Engine *e) : engine(e) {}
     bool Initialize() override { return engine != nullptr; }
     void Shutdown() override {}
     const char *GetName() const override { return "EngineService"; }
-    Engine* GetEngine() override { return engine; }
 };
 
 #endif // KERNELSERVICES_H

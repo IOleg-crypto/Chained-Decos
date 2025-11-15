@@ -3,6 +3,7 @@ add_library(model STATIC
         Core/Model.h
         Core/ModelInstance.cpp
         Core/ModelInstance.h
+        Interfaces/IModelLoader.h
         Animation/Animation.cpp
         Animation/Animation.h
         Config/ModelConfig.h
@@ -12,6 +13,8 @@ add_library(model STATIC
         Parser/JsonHelper.cpp
         Cache/ModelCache.cpp
         Cache/ModelCache.h
+        Utils/ModelAnalyzer.cpp
+        Utils/ModelAnalyzer.h
 )
 
 # Add PROJECT_ROOT_DIR definition for consistent path handling
@@ -29,6 +32,7 @@ target_link_libraries(model PUBLIC
          raylib
          nlohmann_json
          collision
+         map
 )
 
 set_target_properties(model PROPERTIES POSITION_INDEPENDENT_CODE ON)

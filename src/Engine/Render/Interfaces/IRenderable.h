@@ -6,7 +6,7 @@
 
 // Include necessary headers
 #include "Model/Core/Model.h"
-#include "Collision/Manager/CollisionManager.h"
+#include "Collision/Core/CollisionManager.h"
 #include "Collision/System/CollisionSystem.h"
 
 class IRenderable

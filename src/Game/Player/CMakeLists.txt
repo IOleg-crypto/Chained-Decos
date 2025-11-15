@@ -1,18 +1,25 @@
 add_library(player STATIC
-    Player.cpp
-    Player.h
-    PlayerRenderable.cpp
-    PlayerRenderable.h
+    # Core
+    Core/Player.cpp
+    Core/Player.h
+    
+    # Components
+    Components/PlayerRenderable.cpp
+    Components/PlayerRenderable.h
+    Components/PlayerInput.cpp
+    Components/PlayerInput.h
+    Components/PlayerModel.h
+    Components/PlayerModel.cpp
+    Components/PlayerMovement.h
+    Components/PlayerMovement.cpp
+    
+    # Collision
     Collision/PlayerCollision.cpp
     Collision/PlayerCollision.h
-    PlayerInput.cpp
-    PlayerInput.h
+    
+    # Interfaces
     Interfaces/IPlayerInput.h
     Interfaces/IPlayerMediator.h
-    PlayerModel.h
-    PlayerModel.cpp
-    PlayerMovement.h
-    PlayerMovement.cpp
     Interfaces/IPlayerMovement.h
 )
 

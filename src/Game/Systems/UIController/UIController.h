@@ -3,13 +3,12 @@
 
 #include "Engine/Module/Interfaces/IEngineModule.h"
 #include "Engine/Kernel/Core/Kernel.h"
+#include "Game/Menu/Menu.h"
+#include "Game/Menu/Console/ConsoleManager.h"
+#include "Engine/Interfaces/IEngine.h"
 #include <memory>
 #include <vector>
 #include <string>
-
-class Menu;
-class ConsoleManager;
-class Engine;
 
 // System for managing user interface and menus
 // Creates and owns its components independently
@@ -36,6 +35,9 @@ public:
     Menu* GetMenu() const { return m_menu.get(); }
     ConsoleManager* GetConsoleManager() const;
 
+    // Menu action handling
+    void HandleMenuActions(bool* showMenu, bool* isGameInitialized);
+
 private:
     // System OWNS its components
     std::unique_ptr<Menu> m_menu;
@@ -45,6 +47,25 @@ private:
     
     // Dependencies obtained through Kernel (references only)
     Engine* m_engine;
+
+    // Individual action handlers
+    void HandleSinglePlayer(bool* showMenu, bool* isGameInitialized);
+    void HandleResumeGame(bool* showMenu, bool* isGameInitialized);
+    void HandleStartGameWithMap(bool* showMenu, bool* isGameInitialized);
+    void HandleExitGame(bool* showMenu);
+
+    // Helper methods
+    void HideMenuAndStartGame(bool* showMenu);
+    void EnsurePlayerSafePosition();
+    void ReinitializeCollisionSystemForResume();
+    std::string ConvertMapNameToPath(const std::string& selectedMapName);
+    std::vector<std::string> AnalyzeMapForRequiredModels(const std::string& mapPath);
+    bool LoadRequiredModels(const std::vector<std::string>& requiredModels);
+    bool InitializeCollisionSystemWithModels(const std::vector<std::string>& requiredModels);
+    void LoadMapObjects(const std::string& mapPath);
+    void RegisterPreloadedModels();
+    void CreateModelInstancesForMap();
+    bool AutoLoadModelIfNeeded(const std::string& requested, std::string& candidateName);
 };
 
 #endif // UI_CONTROLLER_H
