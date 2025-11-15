@@ -50,13 +50,99 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
     // Lazily load placeholder texture on first open of the panel
     if (!m_skyboxPlaceholderInitialized)
     {
-        const char* placeholderPath = PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
-        Image placeholderImg = LoadImage(placeholderPath);
-        if (placeholderImg.data != nullptr)
+        const std::string& currentSkyboxTexture = m_editor->GetFileManager()->GetCurrentMetadata().skyboxTexture;
+
+        // If there's a skybox in metadata, load it
+        if (!currentSkyboxTexture.empty())
         {
-            m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
-            UnloadImage(placeholderImg);
-            m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
+            std::string skyboxPath = currentSkyboxTexture;
+            // Ensure path starts with /
+            if (skyboxPath[0] != '/' && skyboxPath[0] != '\\')
+            {
+                skyboxPath = "/" + skyboxPath;
+            }
+            std::string fullPathProject = std::string(PROJECT_ROOT_DIR) + skyboxPath;
+
+            Image image = LoadImage(fullPathProject.c_str());
+            if (image.data != nullptr)
+            {
+                m_skyboxPlaceholderTexture = LoadTextureFromImage(image);
+                UnloadImage(image);
+                if (m_skyboxPlaceholderTexture.id != 0)
+                {
+                    m_skyboxPlaceholderInitialized = true;
+                    m_skyboxPlaceholderPath = fullPathProject;
+                    m_lastLoadedMetadataSkybox = currentSkyboxTexture;
+                }
+            }
+        }
+
+        // If no skybox in metadata or failed to load, use placeholder
+        if (!m_skyboxPlaceholderInitialized)
+        {
+            const char* placeholderPath = PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
+            Image placeholderImg = LoadImage(placeholderPath);
+            if (placeholderImg.data != nullptr)
+            {
+                m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
+                UnloadImage(placeholderImg);
+                m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
+                m_lastLoadedMetadataSkybox = ""; // No skybox loaded
+            }
+        }
+    }
+    else
+    {
+        // Check if metadata skybox has changed
+        const std::string& currentSkyboxTexture = m_editor->GetFileManager()->GetCurrentMetadata().skyboxTexture;
+        if (currentSkyboxTexture != m_lastLoadedMetadataSkybox)
+        {
+            // Unload current texture
+            if (m_skyboxPlaceholderTexture.id != 0)
+            {
+                UnloadTexture(m_skyboxPlaceholderTexture);
+                m_skyboxPlaceholderTexture = {0};
+            }
+            m_skyboxPlaceholderInitialized = false;
+            m_skyboxPlaceholderPath.clear();
+
+            // Reload with new skybox from metadata
+            if (!currentSkyboxTexture.empty())
+            {
+                std::string skyboxPath = currentSkyboxTexture;
+                // Ensure path starts with /
+                if (skyboxPath[0] != '/' && skyboxPath[0] != '\\')
+                {
+                    skyboxPath = "/" + skyboxPath;
+                }
+                std::string fullPathProject = std::string(PROJECT_ROOT_DIR) + skyboxPath;
+
+                Image image = LoadImage(fullPathProject.c_str());
+                if (image.data != nullptr)
+                {
+                    m_skyboxPlaceholderTexture = LoadTextureFromImage(image);
+                    UnloadImage(image);
+                    if (m_skyboxPlaceholderTexture.id != 0)
+                    {
+                        m_skyboxPlaceholderInitialized = true;
+                        m_skyboxPlaceholderPath = fullPathProject;
+                        m_lastLoadedMetadataSkybox = currentSkyboxTexture;
+                    }
+                }
+            }
+            else
+            {
+                // Load placeholder
+                const char* placeholderPath = PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
+                Image placeholderImg = LoadImage(placeholderPath);
+                if (placeholderImg.data != nullptr)
+                {
+                    m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
+                    UnloadImage(placeholderImg);
+                    m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
+                    m_lastLoadedMetadataSkybox = "";
+                }
+            }
         }
     }
 
@@ -80,6 +166,7 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
                     m_skyboxPlaceholderTexture = {0};
                     m_skyboxPlaceholderInitialized = false;
                     m_skyboxPlaceholderPath.clear();
+                    m_lastLoadedMetadataSkybox.clear(); // Clear tracking
                 }
 
                 Image image = LoadImage(outPath);
@@ -91,6 +178,7 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
                     {
                         m_skyboxPlaceholderInitialized = true;
                         m_skyboxPlaceholderPath = outPath;
+                        m_lastLoadedMetadataSkybox = ""; // User-loaded, not from metadata
                     }
                 }
                 NFD_FreePath(outPath);
@@ -111,6 +199,8 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
                 UnloadTexture(m_skyboxPlaceholderTexture);
                 m_skyboxPlaceholderTexture = {0};
                 m_skyboxPlaceholderInitialized = false;
+                m_skyboxPlaceholderPath.clear();
+                m_lastLoadedMetadataSkybox.clear(); // Clear tracking variable
             }
         }
 
