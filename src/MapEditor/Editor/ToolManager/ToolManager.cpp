@@ -5,6 +5,7 @@
 #include "Engine/CameraController/Core/CameraController.h"
 #include <iostream>
 #include <cmath>
+#include <cfloat>
 
 // Cast ISceneManager to SceneManager for implementation
 #define SCENE_CAST(scene) dynamic_cast<SceneManager&>(scene)
@@ -12,8 +13,26 @@
 ToolManager::ToolManager()
     : m_activeTool(SELECT), m_pendingObjectCreation(false), m_currentlySelectedModelName(""),
       m_isTransforming(false), m_selectedAxis(GizmoAxis::NONE), m_transformStartPoint({0, 0, 0}), m_lastMouseRayPoint({0, 0, 0}),
-      m_transformStartPosition({0, 0, 0}), m_transformStartRotation({0, 0, 0}), m_transformStartScale({1, 1, 1})
+      m_transformStartPosition({0, 0, 0}), m_transformStartRotation({0, 0, 0}), m_transformStartScale({1, 1, 1}),
+      m_camera({})
 {
+}
+
+void ToolManager::SetCamera(const Camera3D& camera)
+{
+    m_camera = camera;
+}
+
+float ToolManager::GetGizmoScale(const Vector3& position) const
+{
+    Vector3 toCamera = Vector3Subtract(m_camera.position, position);
+    float distance = Vector3Length(toCamera);
+    float scale = distance * 0.1f; // Scale gizmo based on distance from camera
+    if (scale < 0.5f)
+        scale = 0.5f;
+    if (scale > 2.0f)
+        scale = 2.0f;
+    return scale;
 }
 
 void ToolManager::SetActiveTool(Tool tool)
@@ -73,10 +92,11 @@ void ToolManager::HandleToolInput(bool mousePressed, const Ray& ray, ISceneManag
             // For MOVE and SCALE, check if clicking on a gizmo axis
             if (m_activeTool == MOVE || m_activeTool == SCALE)
             {
-                // Calculate gizmo scale (simplified, should ideally come from camera)
-                Vector3 gizmoScale = {1.0f, 1.0f, 1.0f};
+                // Calculate gizmo scale based on camera distance
+                float scale = GetGizmoScale(selectedObj->GetPosition());
+                Vector3 gizmoScale = {scale, scale, scale};
                 m_selectedAxis = PickGizmoAxis(ray, selectedObj->GetPosition(), gizmoScale);
-                
+
                 // If no axis was picked, use ground plane intersection
                 if (m_selectedAxis == GizmoAxis::NONE)
                 {
@@ -93,7 +113,7 @@ void ToolManager::HandleToolInput(bool mousePressed, const Ray& ray, ISceneManag
                 m_selectedAxis = GizmoAxis::NONE;
                 m_transformStartPoint = selectedObj->GetPosition();
             }
-            
+
             // Start transform operation
             m_isTransforming = true;
             m_transformStartPosition = selectedObj->GetPosition();
@@ -273,33 +293,67 @@ GizmoAxis ToolManager::PickGizmoAxis(const Ray& ray, const Vector3& objPos, cons
 {
     float gizmoLength = 2.0f;
     float arrowLength = gizmoLength * gizmoScale.x;
-    
+
     // Define gizmo axes (these match what we render in Editor::RenderGizmo)
     Vector3 axes[3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; // X, Y, Z
     GizmoAxis axisEnums[3] = {GizmoAxis::X, GizmoAxis::Y, GizmoAxis::Z};
-    
-    float minDistance = 0.5f * arrowLength * 0.7f; // Within 70% of arrow length
+
+    float pickThreshold = 0.3f; // Maximum distance from axis to consider a pick
+    float minDistance = FLT_MAX;
     GizmoAxis closestAxis = GizmoAxis::NONE;
-    
+
     for (int i = 0; i < 3; i++)
     {
-        Vector3 axisEnd = Vector3Add(objPos, Vector3Scale(axes[i], arrowLength));
-        Vector3 closestPointOnAxis = GetClosestPointOnRay(ray.position, objPos, axes[i]);
-        
-        // Check if closest point is within the arrow range
-        float distOnAxis = Vector3Length(Vector3Subtract(closestPointOnAxis, objPos));
-        if (distOnAxis < 0.0f || distOnAxis > arrowLength) continue;
-        
-        // Calculate distance from ray start to closest point
-        float distToAxis = Vector3Distance(ray.position, closestPointOnAxis);
-        
-        if (distToAxis < minDistance)
+        // For each axis, find the closest point on the axis to the ray
+        // We need to find the shortest distance between two lines (ray and axis)
+
+        Vector3 axisDir = axes[i];
+        Vector3 axisStart = objPos;
+        Vector3 axisEnd = Vector3Add(objPos, Vector3Scale(axisDir, arrowLength));
+
+        // Calculate closest points between ray and axis line segment
+        Vector3 rayDir = ray.direction;
+        Vector3 w0 = Vector3Subtract(ray.position, axisStart);
+
+        float a = Vector3DotProduct(rayDir, rayDir);
+        float b = Vector3DotProduct(rayDir, axisDir);
+        float c = Vector3DotProduct(axisDir, axisDir);
+        float d = Vector3DotProduct(rayDir, w0);
+        float e = Vector3DotProduct(axisDir, w0);
+
+        float denom = a * c - b * b;
+        float t_ray, t_axis;
+
+        if (fabs(denom) < 0.0001f)
         {
-            minDistance = distToAxis;
+            // Lines are parallel
+            t_ray = 0.0f;
+            t_axis = (b > c ? d / b : e / c);
+        }
+        else
+        {
+            t_ray = (b * e - c * d) / denom;
+            t_axis = (a * e - b * d) / denom;
+        }
+
+        // Clamp t_axis to axis segment [0, arrowLength]
+        t_axis = fmaxf(0.0f, fminf(arrowLength, t_axis));
+
+        // Calculate closest points
+        Vector3 pointOnRay = Vector3Add(ray.position, Vector3Scale(rayDir, t_ray));
+        Vector3 pointOnAxis = Vector3Add(axisStart, Vector3Scale(axisDir, t_axis));
+
+        // Distance between the two closest points
+        float distance = Vector3Distance(pointOnRay, pointOnAxis);
+
+        // Check if this is the closest axis and within threshold
+        if (distance < minDistance && distance < pickThreshold)
+        {
+            minDistance = distance;
             closestAxis = axisEnums[i];
         }
     }
-    
+
     return closestAxis;
 }
 

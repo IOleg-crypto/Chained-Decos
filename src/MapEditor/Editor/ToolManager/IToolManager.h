@@ -36,6 +36,7 @@ public:
     virtual void HandleToolInput(bool mousePressed, const Ray& ray, ISceneManager& scene) = 0;
     virtual void UpdateTool(const Ray& ray, ISceneManager& scene) = 0;
     virtual void EndTransform() = 0;
+    virtual void SetCamera(const Camera3D& camera) = 0;
 };
 
 #endif // ITOOLMANAGER_H

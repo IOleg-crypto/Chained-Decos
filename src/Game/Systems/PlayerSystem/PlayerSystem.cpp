@@ -66,6 +66,14 @@ bool PlayerSystem::Initialize(Kernel* kernel)
         m_player = std::make_unique<Player>();
         TraceLog(LOG_INFO, "[PlayerSystem] Player created");
 
+        // Inject AudioManager into Player
+        if (m_audioManager) {
+            m_player->SetAudioManager(std::shared_ptr<AudioManager>(m_audioManager, [](AudioManager*){}));
+            TraceLog(LOG_INFO, "[PlayerSystem] AudioManager injected into Player");
+        } else {
+            TraceLog(LOG_WARNING, "[PlayerSystem] AudioManager is null, fall sounds will not work");
+        }
+
         // Register services in Initialize so they're available to other systems
         RegisterServices(kernel);
 

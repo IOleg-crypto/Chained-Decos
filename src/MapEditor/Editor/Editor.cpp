@@ -114,7 +114,12 @@ void Editor::Update()
     // Update subsystems
     if (m_cameraManager)
         m_cameraManager->Update();
-    
+
+    // Update camera in tool manager for gizmo calculations
+    if (m_toolManager && m_cameraManager)
+    {
+        m_toolManager->SetCamera(m_cameraManager->GetCamera());
+    }
 }
 
 void Editor::Render()
@@ -303,6 +308,7 @@ void Editor::LoadMap(const std::string &filename)
             if (!metadata.skyboxTexture.empty())
             {
                 SetSkyboxTexture(metadata.skyboxTexture, false);
+                
             }
         }
         else

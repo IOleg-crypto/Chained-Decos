@@ -759,26 +759,26 @@ void UIController::HandleStartGameWithMap(bool* showMenu, bool* isGameInitialize
     
     // Verify all required services are available
     TraceLog(LOG_INFO, "[UIController] HandleStartGameWithMap() - Getting services...");
-    auto mapManagerService = m_kernel->GetService<MapManagerService>();
+    auto mapSystemService = m_kernel->GetService<MapSystemService>();
     auto modelsService = m_kernel->GetService<ModelsService>();
     auto playerSystemService = m_kernel->GetService<PlayerSystemService>();
-    
-    if (!mapManagerService || !mapManagerService->mapManager) {
-        TraceLog(LOG_ERROR, "[UIController] HandleStartGameWithMap() - MapManager not available");
+
+    if (!mapSystemService || !mapSystemService->mapSystem) {
+        TraceLog(LOG_ERROR, "[UIController] HandleStartGameWithMap() - MapSystem not available");
         return;
     }
-    
+
     if (!modelsService || !modelsService->models) {
         TraceLog(LOG_ERROR, "[UIController] HandleStartGameWithMap() - ModelLoader not available");
         return;
     }
-    
+
     if (!playerSystemService || !playerSystemService->playerSystem) {
         TraceLog(LOG_ERROR, "[UIController] HandleStartGameWithMap() - PlayerSystem not available");
         return;
     }
-    
-    MapManager* mapManager = mapManagerService->mapManager;
+
+    MapSystem* mapSystem = mapSystemService->mapSystem;
     PlayerSystem* playerSystem = playerSystemService->playerSystem;
     
     TraceLog(LOG_INFO, "[UIController] HandleStartGameWithMap() - All services available, proceeding...");

@@ -41,18 +41,7 @@ Player::~Player() = default;
 
 void Player::InitializeServices()
 {
-    // Get services from Kernel using the current service wrapper pattern
-    // Note: This should be called after Kernel services are registered
-    // TODO: Once task 14 is complete, services will be registered directly without wrappers
-    
-    // Try to get AudioService wrapper
-    auto& kernel = Kernel::Instance();
-    
-    // For now, services aren't registered with Kernel yet, so this will return nullptr
-    // The services will continue to be set externally until task 14 is complete
-    // This method is here to prepare for the future Kernel-based service access
-    
-    TraceLog(LOG_INFO, "[Player] InitializeServices called (services will be set externally until Kernel registration is complete)");
+    TraceLog(LOG_INFO, "[Player] InitializeServices called (AudioManager will be set externally)");
 }
 
 // Main update function called every frame
