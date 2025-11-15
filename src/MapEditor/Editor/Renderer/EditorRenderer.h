@@ -10,9 +10,7 @@
 #include <raylib.h>
 #include <unordered_map>
 #include <string>
-
-// Forward declarations
-class Model;
+#include "Engine/Model/Core/Model.h"
 
 // EditorRenderer - handles all rendering operations for the editor
 class EditorRenderer

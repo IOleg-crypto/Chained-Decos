@@ -5,12 +5,14 @@ set(UNIT_TEST_SOURCES
     engine/PhysicsComponentTest.cpp
     engine/CollisionSystemTest.cpp
     engine/ConfigManagerTest.cpp
+    engine/KernelTest.cpp
 )
 
 set(INTEGRATION_TEST_SOURCES
     game/PlayerTest.cpp
     integration/GameIntegrationTest.cpp
     integration/SkyboxTest.cpp
+    integration/HeaderIndependenceTest.cpp
     engine/SettingsManagerTest.cpp
 )
 
@@ -23,6 +25,7 @@ target_link_libraries(ChainedDecosUnitTests
         GTest::gtest_main
         GTest::gmock_main
         config
+        kernel
 )
 
 # Create integration test executable (with full game dependencies)
