@@ -3,7 +3,7 @@
 
 #include <raylib.h>
 #include "Model/Core/Model.h"
-#include "Collision/Manager/CollisionManager.h"
+#include "Collision/Core/CollisionManager.h"
 #include "Collision/System/CollisionSystem.h"
 
 // Interface for objects that require full game rendering (Player, NPC, etc.)

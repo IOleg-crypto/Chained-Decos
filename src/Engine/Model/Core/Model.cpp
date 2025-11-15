@@ -1,6 +1,7 @@
 
 #include <Model/Core/Model.h>
 #include <Model/Parser/JsonParser.h>
+#include <Map/Core/MapLoader.h>
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -1096,4 +1097,259 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
     catch (...) { /* ignore */ }
 
     return true;
+}
+
+void ModelLoader::UnloadAllModels()
+{
+    // Clear all instances
+    m_instances.clear();
+    
+    // Unload all models
+    for (auto& [name, model] : m_modelByName)
+    {
+        if (model)
+        {
+            ::UnloadModel(*model);
+            delete model;
+        }
+    }
+    m_modelByName.clear();
+    
+    // Clear animations and configs
+    m_animations.clear();
+    m_configs.clear();
+    
+    TraceLog(LOG_INFO, "ModelLoader: All models unloaded");
+}
+
+// ==================== GAME MODEL LOADING METHODS ====================
+
+std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
+{
+    TraceLog(LOG_INFO, "[ModelLoader] Loading game models from resources directory...");
+    
+    // Configure for optimal game performance
+    SetCacheEnabled(true);
+    SetMaxCacheSize(50);
+    EnableLOD(true);
+    SetSelectiveMode(false);
+
+    MapLoader mapLoader;
+    std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
+    auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+    if (models.empty())
+    {
+        TraceLog(LOG_WARNING, "[ModelLoader] No models found in resources directory");
+        return std::nullopt;
+    }
+
+    TraceLog(LOG_INFO, "[ModelLoader] Found %d models in resources directory", 
+             static_cast<int>(models.size()));
+
+    LoadResult result = {
+        static_cast<int>(models.size()), // totalModels
+        0,                               // loadedModels
+        0,                               // failedModels
+        0.0f                             // loadingTime
+    };
+
+    auto startTime = std::chrono::steady_clock::now();
+
+    // Load each model found in the directory
+    for (const auto &modelInfo : models)
+    {
+        TraceLog(LOG_INFO, "[ModelLoader] Loading model: %s from %s",
+                 modelInfo.name.c_str(), modelInfo.path.c_str());
+
+        if (LoadSingleModel(modelInfo.name, modelInfo.path, true))
+        {
+            result.loadedModels++;
+            TraceLog(LOG_INFO, "[ModelLoader] Successfully loaded model: %s", modelInfo.name.c_str());
+        }
+        else
+        {
+            result.failedModels++;
+            TraceLog(LOG_WARNING, "[ModelLoader] Failed to load model: %s", modelInfo.name.c_str());
+        }
+    }
+
+    auto endTime = std::chrono::steady_clock::now();
+    result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+
+    PrintStatistics();
+    TraceLog(LOG_INFO, "[ModelLoader] Loaded %d/%d models in %.2f seconds",
+             result.loadedModels, result.totalModels, result.loadingTime);
+
+    // Validate that we have essential models
+    auto availableModels = GetAvailableModels();
+    bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player_low") !=
+                          availableModels.end();
+
+    if (!hasPlayerModel)
+    {
+        TraceLog(LOG_WARNING, "[ModelLoader] Player model not found, player may not render correctly");
+    }
+
+    return result;
+}
+
+std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModelsSelective(
+    const std::vector<std::string> &modelNames)
+{
+    TraceLog(LOG_INFO, "[ModelLoader] Loading selective models: %d models", 
+             static_cast<int>(modelNames.size()));
+    
+    // Configure for selective loading
+    SetCacheEnabled(true);
+    SetMaxCacheSize(50);
+    EnableLOD(false);
+    SetSelectiveMode(true);
+
+    MapLoader mapLoader;
+    std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
+    auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+    if (allModels.empty())
+    {
+        TraceLog(LOG_WARNING, "[ModelLoader] No models found in resources directory");
+        return std::nullopt;
+    }
+
+    TraceLog(LOG_INFO, "[ModelLoader] Found %d models in resources directory", 
+             static_cast<int>(allModels.size()));
+
+    LoadResult result = {
+        static_cast<int>(modelNames.size()), // totalModels (only count requested models)
+        0,                                   // loadedModels
+        0,                                   // failedModels
+        0.0f                                 // loadingTime
+    };
+
+    auto startTime = std::chrono::steady_clock::now();
+
+    // Load only the models that are in the required list
+    for (const auto &modelName : modelNames)
+    {
+        auto it = std::find_if(allModels.begin(), allModels.end(),
+                              [&modelName](const ModelInfo &info) { return info.name == modelName; });
+
+        if (it != allModels.end())
+        {
+            TraceLog(LOG_INFO, "[ModelLoader] Loading required model: %s from %s",
+                     modelName.c_str(), it->path.c_str());
+
+            if (LoadSingleModel(modelName, it->path, true))
+            {
+                result.loadedModels++;
+                TraceLog(LOG_INFO, "[ModelLoader] Successfully loaded model: %s", modelName.c_str());
+            }
+            else
+            {
+                result.failedModels++;
+                TraceLog(LOG_WARNING, "[ModelLoader] Failed to load model: %s", modelName.c_str());
+            }
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "[ModelLoader] Model not found in resources: %s", modelName.c_str());
+            result.failedModels++;
+        }
+    }
+
+    auto endTime = std::chrono::steady_clock::now();
+    result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+
+    PrintStatistics();
+    TraceLog(LOG_INFO, "[ModelLoader] Loaded %d/%d models in %.2f seconds",
+             result.loadedModels, result.totalModels, result.loadingTime);
+
+    // Validate that we have essential models
+    auto availableModels = GetAvailableModels();
+    bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") !=
+                          availableModels.end();
+
+    if (!hasPlayerModel)
+    {
+        TraceLog(LOG_WARNING, "[ModelLoader] Player model not found, player may not render correctly");
+    }
+
+    return result;
+}
+
+std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModelsSelectiveSafe(
+    const std::vector<std::string> &modelNames)
+{
+    TraceLog(LOG_INFO, "[ModelLoader] Loading selective models (safe): %d models", 
+             static_cast<int>(modelNames.size()));
+    
+    // Configure for selective loading
+    SetCacheEnabled(true);
+    SetMaxCacheSize(50);
+    EnableLOD(false);
+    SetSelectiveMode(true);
+
+    MapLoader mapLoader;
+    std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
+    auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+
+    if (allModels.empty())
+    {
+        TraceLog(LOG_WARNING, "[ModelLoader] No models found in resources directory");
+        return std::nullopt;
+    }
+
+    TraceLog(LOG_INFO, "[ModelLoader] Found %d models in resources directory", 
+             static_cast<int>(allModels.size()));
+
+    LoadResult result = {
+        static_cast<int>(modelNames.size()), // totalModels (only count requested models)
+        0,                                   // loadedModels
+        0,                                   // failedModels
+        0.0f                                 // loadingTime
+    };
+
+    auto startTime = std::chrono::steady_clock::now();
+
+    // Use hash set for faster lookup
+    std::unordered_set<std::string> modelNameSet(modelNames.begin(), modelNames.end());
+
+    for (const auto &modelInfo : allModels)
+    {
+        if (modelNameSet.find(modelInfo.name) != modelNameSet.end())
+        {
+            TraceLog(LOG_INFO, "[ModelLoader] Loading required model: %s from %s",
+                     modelInfo.name.c_str(), modelInfo.path.c_str());
+
+            if (LoadSingleModel(modelInfo.name, modelInfo.path, true))
+            {
+                result.loadedModels++;
+                TraceLog(LOG_INFO, "[ModelLoader] Successfully loaded model: %s", modelInfo.name.c_str());
+            }
+            else
+            {
+                result.failedModels++;
+                TraceLog(LOG_WARNING, "[ModelLoader] Failed to load model: %s", modelInfo.name.c_str());
+            }
+        }
+    }
+
+    auto endTime = std::chrono::steady_clock::now();
+    result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
+
+    PrintStatistics();
+    TraceLog(LOG_INFO, "[ModelLoader] Loaded %d/%d models in %.2f seconds",
+             result.loadedModels, result.totalModels, result.loadingTime);
+
+    // Validate that we have essential models
+    auto availableModels = GetAvailableModels();
+    bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") !=
+                          availableModels.end();
+
+    if (!hasPlayerModel)
+    {
+        TraceLog(LOG_WARNING, "[ModelLoader] Player model not found, player may not render correctly");
+    }
+
+    return result;
 }

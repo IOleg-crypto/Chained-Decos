@@ -4,6 +4,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <typeindex>
@@ -27,6 +28,9 @@ public:
     void SetConfigValue(const std::string &key, const std::string &value);
     std::string GetConfigValue(const std::string &key, const std::string &defaultValue = "") const;
 
+    // Global kernel instance access
+    static Kernel& Instance();
+
     // Type-safe service registration without enum
     // Uses C++ RTTI for type identification
     template <typename T>
@@ -44,7 +48,25 @@ public:
         const std::type_index typeId = std::type_index(typeid(T));
         auto it = m_services.find(typeId);
         if (it == m_services.end())
+        {
+            Log("Service not found: " + std::string(typeid(T).name()), 2); // LOG_WARNING
             return nullptr;
+        }
+        return std::static_pointer_cast<T>(it->second);
+    }
+
+    // Required service retrieval - throws if service is missing
+    template <typename T>
+    std::shared_ptr<T> RequireService()
+    {
+        const std::type_index typeId = std::type_index(typeid(T));
+        auto it = m_services.find(typeId);
+        if (it == m_services.end())
+        {
+            std::string errorMsg = "Required service not found: " + std::string(typeid(T).name());
+            Log(errorMsg, 1); // LOG_ERROR
+            throw std::runtime_error(errorMsg);
+        }
         return std::static_pointer_cast<T>(it->second);
     }
 
@@ -71,6 +93,9 @@ private:
     // Type-indexed service storage (no enum needed!)
     std::unordered_map<std::type_index, std::shared_ptr<IKernelService>> m_services;
     std::map<std::string, std::string> m_config;
+    
+    // Global instance
+    static Kernel* s_instance;
 };
 
 // Simplified macros using type-based registration
@@ -79,6 +104,11 @@ private:
 
 #define GET_KERNEL_SERVICE(kernel, Type) \
     kernel.GetService<Type>()
+
+// Global kernel access helper macros
+#define KERNEL Kernel::Instance()
+#define GET_SERVICE(Type) KERNEL.GetService<Type>()
+#define REQUIRE_SERVICE(Type) KERNEL.RequireService<Type>()
 
 #endif // KERNEL_H
 
