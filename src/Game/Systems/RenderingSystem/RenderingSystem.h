@@ -3,15 +3,14 @@
 
 #include "Engine/Module/Interfaces/IEngineModule.h"
 #include "Engine/Kernel/Core/Kernel.h"
+#include "Game/Player/Core/Player.h"
+#include "Game/Systems/MapSystem/MapSystem.h"
+#include "Engine/Collision/Core/CollisionManager.h"
+#include "Engine/Model/Interfaces/IModelLoader.h"
+#include "Engine/Engine.h"
 #include <memory>
 #include <vector>
 #include <string>
-
-class Player;
-class MapManager;
-class CollisionManager;
-class ModelLoader;
-class Engine;
 
 class RenderingSystem : public IEngineModule {
 public:
@@ -46,7 +45,7 @@ private:
     
     // Dependencies obtained through Kernel (references only)
     Player* m_player;
-    MapManager* m_mapManager;
+    MapSystem* m_mapSystem;
     CollisionManager* m_collisionManager;
     ModelLoader* m_models;
     Engine* m_engine;

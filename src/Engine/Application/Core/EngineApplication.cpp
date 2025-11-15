@@ -3,7 +3,7 @@
 // Created by Auto on 2025
 //
 #include "EngineApplication.h"
-#include "Engine/Render/Manager/RenderManager.h"
+#include "Engine/Render/Core/RenderManager.h"
 #include "Engine/Input/Core/InputManager.h"
 #include "Engine/Kernel/Core/KernelServices.h"
 #include "Engine/Engine.h"
@@ -53,14 +53,15 @@ void EngineApplication::Initialize()
     auto renderManager = std::make_shared<RenderManager>();
     auto inputManager = std::make_shared<InputManager>();
     
-    // Step 4: Create Engine
-    m_engine = std::make_unique<Engine>(
-        m_config.width,
-        m_config.height,
-        renderManager,
-        inputManager,
-        m_kernel.get()
-    );
+    // Step 4: Create Engine with simplified config
+    EngineConfig engineConfig;
+    engineConfig.screenWidth = m_config.width;
+    engineConfig.screenHeight = m_config.height;
+    engineConfig.renderManager = renderManager;
+    engineConfig.inputManager = inputManager;
+    engineConfig.kernel = m_kernel.get();
+    
+    m_engine = std::make_unique<Engine>(engineConfig);
     
     // Update window name if needed
     // (Engine doesn't have SetWindowName yet, can be added later)

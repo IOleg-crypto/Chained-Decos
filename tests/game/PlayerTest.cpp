@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "Game/Player/Player.h"
-#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Game/Player/Core/Player.h"
+#include "Engine/Collision/Core/CollisionManager.h"
 
 class PlayerTest : public ::testing::Test {
 protected:

@@ -4,18 +4,12 @@
 #include "Engine/Application/Core/EngineApplication.h"
 #include "Engine/CommandLineHandler/Core/CommandLineHandler.h"
 #include "Engine/Audio/Core/AudioManager.h"
-#include "Player/Player.h"
-#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Game/Player/Core/Player.h"
+#include "Engine/Collision/Core/CollisionManager.h"
 #include "Engine/Model/Core/Model.h"
 #include "Engine/World/Core/World.h"
 #include "Menu/Menu.h"
-#include "Managers/MapManager.h"
-#include "Managers/ResourceManager.h"
-#include "Managers/StateManager.h"
-#include "Managers/GameRenderHelpers.h"
-#include "Managers/PlayerManager.h"
-
-#include "Managers/MenuActionHandler.h"
+// =================================================
 #include <memory>
 
 // Game application - uses full engine + own modules
@@ -64,11 +58,7 @@ private:
     // - MapManager → MapSystem
     
     // Game manager components (created after system initialization)
-    std::unique_ptr<ResourceManager> m_modelManager;
-    std::unique_ptr<StateManager> m_stateManager;
-    std::unique_ptr<GameRenderHelpers> m_renderHelper;
     std::unique_ptr<AudioManager> m_soundSystem;
-    std::unique_ptr<MenuActionHandler> m_menuActionHandler;
     
     // Game state
     bool m_showMenu;
@@ -79,15 +69,12 @@ private:
     
     // Command line configuration
     GameConfig m_gameConfig;
-    
+
     // Helper methods
-    void RegisterCoreKernelServices();
-    void RegisterManagerKernelServices();
-    void InitializeManagers();
     void InitInput();
     void HandleMenuActions();
     void UpdatePlayerLogic();
-    
+
     // Game state management
     void SaveGameState();
 };

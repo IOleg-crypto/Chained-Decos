@@ -4,6 +4,7 @@
 #include <string>
 #include "../Config/Core/ConfigManager.h"
 #include "MenuConstants.h"
+#include "Engine/Audio/Core/AudioManager.h"
 
 namespace MenuConstants {
     using namespace MenuConstants;
@@ -51,6 +52,7 @@ private:
     ControlSettings m_controlSettings;
     ParkourControlSettings m_parkourSettings;
     GameplaySettings m_gameplaySettings;
+    AudioManager* m_audioManager = nullptr;
 
     // Video settings indices
     int m_currentResolutionIndex = 1; // Default to 1280x720
@@ -76,6 +78,8 @@ public:
     float GetMusicVolume() const;
     float GetSfxVolume() const;
     bool IsMuted() const;
+
+    void SetAudioManager(AudioManager* audioManager) { m_audioManager = audioManager; }
 
     // Control settings
     void SetMouseSensitivity(float sensitivity);

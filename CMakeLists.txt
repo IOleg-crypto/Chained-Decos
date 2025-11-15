@@ -199,10 +199,7 @@ if(raylib_FOUND OR raylib_POPULATED)
     endif()
 endif()
 
-# Add winmm library for Windows timer functions (needed by raylib)
-if(WIN32)
-    link_libraries(winmm)
-endif()
+# Raylib uses miniaudio for audio backend, winmm is not needed
 
 # nlohmann_json
 find_package(nlohmann_json CONFIG QUIET)

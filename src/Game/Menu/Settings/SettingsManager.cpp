@@ -204,22 +204,24 @@ void SettingsManager::ApplyVideoSettings() {
 void SettingsManager::ApplyAudioSettings() {
     TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Applying audio settings");
 
-    // Apply master volume (this would integrate with your audio manager)
-    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Master volume: %.2f", m_audioSettings.masterVolume);
+    if (m_audioManager) {
+        // Apply master volume
+        float effectiveMaster = m_audioSettings.muted ? 0.0f : m_audioSettings.masterVolume;
+        m_audioManager->SetMasterVolume(effectiveMaster);
+        TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Master volume: %.2f (muted: %s)", effectiveMaster, m_audioSettings.muted ? "true" : "false");
 
-    // Apply music volume
-    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Music volume: %.2f", m_audioSettings.musicVolume);
+        // Apply music volume
+        m_audioManager->SetMusicVolume(m_audioSettings.musicVolume);
+        TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Music volume: %.2f", m_audioSettings.musicVolume);
 
-    // Apply SFX volume
-    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - SFX volume: %.2f", m_audioSettings.sfxVolume);
+        // Apply SFX volume
+        m_audioManager->SetSoundVolume(m_audioSettings.sfxVolume);
+        TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - SFX volume: %.2f", m_audioSettings.sfxVolume);
 
-    // Apply mute state
-    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Muted: %s", m_audioSettings.muted ? "true" : "false");
-
-    // TODO: Integrate with actual audio manager when available
-    // For now, we'll just log the settings that would be applied
-
-    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Audio settings applied successfully");
+        TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Audio settings applied to AudioManager successfully");
+    } else {
+        TraceLog(LOG_WARNING, "SettingsManager::ApplyAudioSettings() - AudioManager not set, cannot apply audio settings");
+    }
 }
 
 // Audio settings methods

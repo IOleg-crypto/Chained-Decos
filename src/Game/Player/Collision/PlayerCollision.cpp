@@ -1,5 +1,5 @@
 #include "PlayerCollision.h"
-#include "Player.h"
+#include "../Core/Player.h"
 #include <cmath>
 
 PlayerCollision::PlayerCollision(IPlayerMediator* player)

@@ -2,11 +2,11 @@
 #include "Engine/Kernel/Core/Kernel.h"
 #include "Engine/Kernel/Core/KernelServices.h"
 #include "Engine/Engine.h"
-#include "Engine/Render/Manager/RenderManager.h"
-#include "../../Player/Player.h"
-#include "../../Managers/MapManager.h"
-#include "../../Managers/GameRenderHelpers.h"
-#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Render/Core/RenderManager.h"
+#include "Game/Player/Core/Player.h"
+#include "../MapSystem/MapSystem.h"
+
+#include "Engine/Collision/Core/CollisionManager.h"
 #include "Engine/Model/Core/Model.h"
 #include "Engine/Map/Renderer/MapRenderer.h"
 #include <raylib.h>
@@ -14,7 +14,7 @@
 RenderingSystem::RenderingSystem()
     : m_kernel(nullptr),
       m_player(nullptr),
-      m_mapManager(nullptr),
+      m_mapSystem(nullptr),
       m_collisionManager(nullptr),
       m_models(nullptr),
       m_engine(nullptr),
@@ -60,10 +60,10 @@ void RenderingSystem::EnsureDependencies()
         }
     }
     
-    if (!m_mapManager) {
-        auto mapService = m_kernel->GetService<MapManagerService>();
-        if (mapService) {
-            m_mapManager = mapService->mapManager;
+    if (!m_mapSystem) {
+        auto mapSystemService = m_kernel->GetService<MapSystemService>();
+        if (mapSystemService) {
+            m_mapSystem = mapSystemService->mapSystem;
         }
     }
     
@@ -89,7 +89,7 @@ void RenderingSystem::Shutdown()
     
     m_kernel = nullptr;
     m_player = nullptr;
-    m_mapManager = nullptr;
+    m_mapSystem = nullptr;
     m_collisionManager = nullptr;
     m_models = nullptr;
     m_engine = nullptr;
@@ -129,7 +129,7 @@ void RenderingSystem::RenderGameWorld()
     // Lazy load dependencies
     EnsureDependencies();
     
-    if (!m_engine || !m_player || !m_mapManager) {
+    if (!m_engine || !m_player || !m_mapSystem) {
         TraceLog(LOG_WARNING, "[RenderingSystem] Missing dependencies for RenderGameWorld");
         return;
     }
@@ -139,14 +139,14 @@ void RenderingSystem::RenderGameWorld()
     
     // Render editor-created map using MapRenderer (includes skybox)
     // Note: RenderMap handles BeginMode3D/EndMode3D internally
-    GameMap& gameMap = m_mapManager->GetGameMap();
+    GameMap& gameMap = m_mapSystem->GetGameMap();
     if (!gameMap.GetMapObjects().empty()) {
         MapRenderer renderer;
         renderer.RenderMap(gameMap, camera);
     }
     
     // Render spawn zone (commented out - only in Map Editor)
-    // m_mapManager->RenderSpawnZone();
+    // m_mapSystem->RenderSpawnZone();
     
     // Begin 3D rendering for game world elements
     BeginMode3D(camera);
@@ -185,7 +185,10 @@ void RenderingSystem::RenderGameUI() const
         ? m_engine->GetRenderManager()->GetFont()
         : GetFontDefault();
     
-    float fontSize = GameRenderHelpers::CalculateDynamicFontSize(24.0f);
+    // Calculate dynamic font size based on screen width
+    int screenWidth = GetScreenWidth();
+    float fontSize = 24.0f * (screenWidth / 1920.0f);
+    fontSize = std::max(16.0f, std::min(fontSize, 48.0f));
     DrawTextEx(fontToUse, timerText.c_str(), timerPos, fontSize, 2.0f, WHITE);
 }
 

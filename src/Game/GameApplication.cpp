@@ -1,25 +1,19 @@
 #include "GameApplication.h"
 #include "Engine/Kernel/Core/KernelServices.h"
 #include "Engine/Module/Core/ModuleManager.h"
-#include "Engine/Render/Manager/RenderManager.h"
+#include "Engine/Render/Core/RenderManager.h"
 #include "Engine/Config/Core/ConfigManager.h"
-#include "Player/Player.h"
-#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Collision/Core/CollisionManager.h"
 #include "Engine/Model/Core/Model.h"
 #include "Engine/World/Core/World.h"
 #include "Menu/Menu.h"
-#include "Managers/MapManager.h"
-#include "Managers/ResourceManager.h"
-#include "Managers/StateManager.h"
-#include "Managers/GameRenderHelpers.h"
-#include "Managers/PlayerManager.h"
-
-#include "Managers/MenuActionHandler.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include "Systems/PlayerSystem/PlayerSystem.h"
 #include "Systems/MapSystem/MapSystem.h"
 #include "Systems/UIController/UIController.h"
 #include "Systems/RenderingSystem/RenderingSystem.h"
 #include "Menu/Console/ConsoleManagerHelpers.h"
+
 #include "imgui.h"
 #include "rlImGui.h"
 #include <raylib.h>
@@ -52,11 +46,6 @@ void GameApplication::ProcessCommandLine(int argc, char* argv[])
         TraceLog(LOG_INFO, "[GameApplication] Loaded config from bin/game.cfg");
         configLoaded = true;
     }
-    // Or from current directory
-    else if (configManager.LoadFromFile("game.cfg")) {
-        TraceLog(LOG_INFO, "[GameApplication] Loaded config from game.cfg");
-        configLoaded = true;
-    }
     else {
         TraceLog(LOG_WARNING, "[GameApplication] Could not load game.cfg, using defaults");
     }
@@ -82,12 +71,8 @@ void GameApplication::ProcessCommandLine(int argc, char* argv[])
         CommandLineHandler::ShowConfig(m_gameConfig);
     }
     
-    // Set window configuration
-    auto& config = GetConfig();
-    config.width = width;
-    config.height = height;
-    config.windowName = "Chained Decos";
     
+    auto& config = GetConfig();
     TraceLog(LOG_INFO, "[GameApplication] Window config: %dx%d (fullscreen: %s)", 
              config.width, config.height, m_gameConfig.fullscreen ? "yes" : "no");
 }
@@ -111,17 +96,21 @@ void GameApplication::OnInitializeServices()
     if(m_soundSystem->Initialize())
     {
         TraceLog(LOG_INFO, "[GameApplication] AudioManager initialized successfully.");
-        // [NEW]: preload fall sound!
-        // m_soundSystem->LoadSound("player_fall", PROJECT_ROOT_DIR "/resources/audio/wind-gust_fall.wav");
+        // Preload fall sound
+        if (m_soundSystem->LoadSound("player_fall", "D:\\gitnext\\Chained Decos\\resources\\audio\\wind-gust_fall.wav"))
+        {
+            TraceLog(LOG_INFO, "[GameApplication] Fall sound loaded successfully.");
+        }
+        else
+        {
+            TraceLog(LOG_ERROR, "[GameApplication] Failed to load fall sound.");
+        }
     }
     else
     {
         TraceLog(LOG_ERROR, "[GameApplication] AudioManager failed to initialize.");
     }
-    
-    // Initialize managers that don't have their own systems yet
-    InitializeManagers();
-    
+
     TraceLog(LOG_INFO, "[GameApplication] Engine services initialized.");
     TraceLog(LOG_INFO, "[GameApplication] Game-specific components will be created by systems.");
 }
@@ -149,11 +138,30 @@ void GameApplication::OnRegisterProjectModules()
 
 void GameApplication::OnRegisterProjectServices()
 {
-    // First register core services
-    RegisterCoreKernelServices();
-    
-    // Then managers
-    RegisterManagerKernelServices();
+    TraceLog(LOG_INFO, "[GameApplication] Registering project services...");
+
+    auto kernel = GetKernel();
+    if (!kernel) {
+        TraceLog(LOG_ERROR, "[GameApplication] Kernel is null");
+        return;
+    }
+
+    // Register core engine services that need to be available before Systems initialize
+    // Systems will register themselves and their components during Initialize()
+    kernel->RegisterService<CollisionService>(
+        std::make_shared<CollisionService>(m_collisionManager.get()));
+
+    kernel->RegisterService<ModelsService>(
+        std::make_shared<ModelsService>(m_models.get()));
+
+    kernel->RegisterService<WorldService>(
+        std::make_shared<WorldService>(m_world.get()));
+
+    kernel->RegisterService<AudioService>(
+        std::make_shared<AudioService>(m_soundSystem.get()));
+
+    TraceLog(LOG_INFO, "[GameApplication] Core engine services registered.");
+    TraceLog(LOG_INFO, "[GameApplication] Game services will be registered by Systems during initialization.");
 }
 
 void GameApplication::OnPostInitialize()
@@ -175,46 +183,24 @@ void GameApplication::OnPostInitialize()
     // Systems now initialized, get components through Kernel
     auto playerService = GetKernel()->GetService<PlayerService>();
     auto menuService = GetKernel()->GetService<MenuService>();
-    auto mapService = GetKernel()->GetService<MapManagerService>();
-    auto playerManagerService = GetKernel()->GetService<PlayerManagerService>();
+    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
+    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
     
     auto* player = playerService ? playerService->player : nullptr;
     auto* menu = menuService ? menuService->menu : nullptr;
-    auto* mapManager = mapService ? mapService->mapManager : nullptr;
-    auto* playerManager = playerManagerService ? playerManagerService->playerManager : nullptr;
+    auto* mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
+    auto* playerSystem = playerSystemService ? playerSystemService->playerSystem : nullptr;
     
     // Dependency Injection: update ConsoleManager providers after all services are registered
     UpdateConsoleManagerProviders(GetKernel());
     
-    if (player && menu) {
-        m_renderHelper = std::make_unique<GameRenderHelpers>(m_collisionManager.get());
-    }
-    
-    // Create managers that need components from systems
-    if (player && menu) {
-        m_stateManager = std::make_unique<StateManager>(player, menu);
-    }
-    
 
+    
     // Raw mouse motion is now initialized in Engine::Init() to avoid duplication
     // GameRenderManager replaced with RenderingSystem
     // RenderingSystem is created and initialized through ModuleManager
     
-    
-    if (menu && player) {
-        m_menuActionHandler = std::make_unique<MenuActionHandler>(
-            GetKernel(), &m_showMenu, &m_isGameInitialized);
-    }
-    
-    // Register StateManagerService after creation
-    if (m_stateManager) {
-        auto kernel = GetKernel();
-        if (kernel) {
-            kernel->RegisterService<StateManagerService>(
-                std::make_shared<StateManagerService>(m_stateManager.get()));
-            TraceLog(LOG_INFO, "[GameApplication] StateManagerService registered.");
-        }
-    }
+    // MenuActionHandler logic is now in UIController
     
     // Initialize input after everything is ready
     InitInput();
@@ -339,7 +325,7 @@ void GameApplication::OnPostUpdate(float deltaTime)
                     player->GetCameraController()->UpdateMouseRotation(
                     player->GetCameraController()->GetCamera(), player->GetMovement()->GetPosition());
                     player->GetCameraController()->Update();
-                    // m_soundSystem->PlaySound("player_fall");
+                    
                                      
                     GetEngine()->GetRenderManager()->ShowMetersPlayer(*player->GetRenderable());
                 }
@@ -434,8 +420,8 @@ void GameApplication::OnPreShutdown()
     auto playerService = GetKernel()->GetService<PlayerService>();
     auto* player = playerService ? playerService->player : nullptr;
     
-    auto mapService = GetKernel()->GetService<MapManagerService>();
-    auto* mapManager = mapService ? mapService->mapManager : nullptr;
+    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
+    auto* mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
     
     auto menuService = GetKernel()->GetService<MenuService>();
     auto* menu = menuService ? menuService->menu : nullptr;
@@ -446,9 +432,9 @@ void GameApplication::OnPreShutdown()
         player->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
     }
 
-    if (mapManager && !mapManager->GetGameMap().GetMapObjects().empty())
+    if (mapSystem && !mapSystem->GetGameMap().GetMapObjects().empty())
     {
-        mapManager->GetGameMap().Cleanup();
+        mapSystem->GetGameMap().Cleanup();
         TraceLog(LOG_INFO, "[GameApplication] Editor map cleared");
     }
 
@@ -462,62 +448,6 @@ void GameApplication::OnPreShutdown()
     TraceLog(LOG_INFO, "[GameApplication] Game resources cleaned up successfully");
 }
 
-void GameApplication::RegisterCoreKernelServices()
-{
-    TraceLog(LOG_INFO, "[GameApplication] Registering core engine services...");
-    
-    auto kernel = GetKernel();
-    if (!kernel) return;
-    
-    // Register only basic engine services
-    // Player and Menu are registered by their systems (PlayerSystem, UIController)
-    kernel->RegisterService<CollisionService>(
-        std::make_shared<CollisionService>(m_collisionManager.get()));
-    
-    kernel->RegisterService<ModelsService>(
-        std::make_shared<ModelsService>(m_models.get()));
-    
-    kernel->RegisterService<WorldService>(
-        std::make_shared<WorldService>(m_world.get()));
-    
-    TraceLog(LOG_INFO, "[GameApplication] Core engine services registered.");
-    TraceLog(LOG_INFO, "[GameApplication] Game services will be registered by systems.");
-}
-
-void GameApplication::RegisterManagerKernelServices()
-{
-    TraceLog(LOG_INFO, "[GameApplication] Registering manager services...");
-    
-    auto kernel = GetKernel();
-    if (!kernel) return;
-    
-    // MapManager and PlayerManager are registered by their systems (MapSystem, PlayerSystem)
-    // Only register ResourceManager which doesn't have its own system yet
-    if (m_modelManager) {
-        kernel->RegisterService<ResourceManagerService>(
-            std::make_shared<ResourceManagerService>(m_modelManager.get()));
-    }
-    
-    TraceLog(LOG_INFO, "[GameApplication] Manager services registered.");
-    TraceLog(LOG_INFO, "[GameApplication] MapManager and PlayerManager registered by their systems.");
-}
-
-void GameApplication::InitializeManagers()
-{
-    TraceLog(LOG_INFO, "[GameApplication] Creating remaining manager components...");
-
-    // MapManager and PlayerManager are now created in systems
-    // Only create managers that don't have their own systems yet
-    m_modelManager = std::make_unique<ResourceManager>(m_models.get());
-    
-    // StateManager, MenuActionHandler, UpdateManager remain here for now
-    // GameRenderManager already converted to RenderingSystem
-    // They will be initialized later through OnPostInitialize after systems create their components
-    // TODO: Convert to systems
-    
-    TraceLog(LOG_INFO, "[GameApplication] Manager components initialized.");
-    TraceLog(LOG_INFO, "[GameApplication] MapManager and PlayerManager created by their systems.");
-}
 
 void GameApplication::InitInput()
 {
@@ -568,19 +498,30 @@ void GameApplication::InitInput()
 
 void GameApplication::HandleMenuActions()
 {
-    if (m_menuActionHandler)
+    // Get UIController through ModuleManager
+    auto* engine = GetEngine();
+    if (!engine) return;
+    
+    auto moduleManager = engine->GetModuleManager();
+    if (!moduleManager) return;
+    
+    auto* uiModule = moduleManager->GetModule("UI");
+    if (!uiModule) return;
+    
+    auto* uiController = dynamic_cast<UIController*>(uiModule);
+    if (uiController)
     {
-        m_menuActionHandler->HandleMenuActions();
+        uiController->HandleMenuActions(&m_showMenu, &m_isGameInitialized);
     }
 }
 
 void GameApplication::UpdatePlayerLogic()
 {
-    // Get PlayerManager through Kernel
-    auto playerManagerService = GetKernel()->GetService<PlayerManagerService>();
-    if (playerManagerService && playerManagerService->playerManager)
+    // Get PlayerSystem through Kernel
+    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
+    if (playerSystemService && playerSystemService->playerSystem)
     {
-        playerManagerService->playerManager->UpdatePlayerLogic();
+        playerSystemService->playerSystem->UpdatePlayerLogic();
     }
 }
 
@@ -588,22 +529,29 @@ void GameApplication::UpdatePlayerLogic()
 
 void GameApplication::SaveGameState()
 {
-    if (!m_stateManager || !m_isGameInitialized)
+    if (!m_isGameInitialized)
     {
         return; // No state to save if game is not initialized
     }
     
-    // Get MapManager through Kernel to get current map path
-    auto mapService = GetKernel()->GetService<MapManagerService>();
-    if (!mapService || !mapService->mapManager)
+    // Get PlayerSystem through Kernel
+    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
+    if (!playerSystemService || !playerSystemService->playerSystem)
     {
-        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - MapManager not available");
+        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - PlayerSystem not available");
         return;
     }
     
-    // Get current map path (need to make GetCurrentMapPath public or add public method)
-    // For now, we'll use a workaround - get from MapManager if it has public access
-    std::string currentMapPath = mapService->mapManager->GetCurrentMapPath();
+    // Get MapSystem through Kernel to get current map path
+    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
+    if (!mapSystemService || !mapSystemService->mapSystem)
+    {
+        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - MapSystem not available");
+        return;
+    }
+    
+    // Get current map path
+    std::string currentMapPath = mapSystemService->mapSystem->GetCurrentMapPath();
     
     if (currentMapPath.empty())
     {
@@ -611,10 +559,9 @@ void GameApplication::SaveGameState()
         return;
     }
     
-    m_stateManager->SaveGameState(currentMapPath);
+    playerSystemService->playerSystem->SavePlayerState(currentMapPath);
     TraceLog(LOG_INFO, "[GameApplication] Game state saved (map: %s)", currentMapPath.c_str());
 }
 
-// RenderGameWorld() and RenderGameUI() are now in RenderingSystem
-// Called through OnPostRender() -> RenderingSystem::RenderGameWorld/UI()
+
 

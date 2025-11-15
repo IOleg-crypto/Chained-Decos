@@ -4,7 +4,7 @@
 #include <raylib.h>
 #include <Collision/System/CollisionSystem.h>
 #include <vector>
-#include "Interfaces/IPlayerMediator.h"
+#include "../Interfaces/IPlayerMediator.h"
 
 // PlayerCollision: handles collision detection and response
 class PlayerCollision : public Collision {

@@ -32,7 +32,7 @@ void MapRenderer::RenderMap(const GameMap& map, Camera3D camera)
     if (skybox && skybox->IsLoaded())
     {
         // Update gamma settings from config before rendering
-        skybox->UpdateGammaFromConfig();
+        //skybox->UpdateGammaFromConfig();
         skybox->DrawSkybox();
     }
 

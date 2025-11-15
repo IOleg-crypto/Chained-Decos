@@ -9,7 +9,7 @@
 #include "../Cache/ModelCache.h"
 #include "../Config/ModelConfig.h"
 #include "ModelInstance.h"
-
+#include "../Interfaces/IModelLoader.h"
 #include "../Animation/Animation.h"
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -22,7 +22,7 @@
 using json = nlohmann::json;
 
 // Model loader with caching and statistics
-class ModelLoader
+class ModelLoader : public IModelLoader
 {
 public:
     // Model constants
@@ -54,7 +54,7 @@ public:
     void DrawAllModels() const;
 
     // Get model by name
-    std::optional<std::reference_wrapper<Model>> GetModelByName(const std::string &name);
+    std::optional<std::reference_wrapper<Model>> GetModelByName(const std::string &name) override;
 
     // Add instance (legacy method)
     void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
@@ -64,10 +64,45 @@ public:
 
     // Add instance with enhanced config
     bool AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config);
+    
+    // ==================== GAME MODEL LOADING ====================
+    
+    /**
+     * @brief Load all game models from resources directory
+     * 
+     * Scans the resources directory for all available models and loads them.
+     * Configures cache and LOD settings for optimal game performance.
+     * 
+     * @return LoadResult with statistics, or nullopt on failure
+     */
+    std::optional<LoadResult> LoadGameModels();
+    
+    /**
+     * @brief Load specific models required for a map
+     * 
+     * Loads only the models specified in the modelNames list.
+     * More efficient than LoadGameModels() for map-specific loading.
+     * 
+     * @param modelNames List of model names to load
+     * @return LoadResult with statistics, or nullopt on failure
+     */
+    std::optional<LoadResult> LoadGameModelsSelective(const std::vector<std::string> &modelNames);
+    
+    /**
+     * @brief Load specific models with safe fallback handling
+     * 
+     * Similar to LoadGameModelsSelective but with enhanced error handling
+     * and validation. Uses hash set for faster lookup.
+     * 
+     * @param modelNames List of model names to load
+     * @return LoadResult with statistics, or nullopt on failure
+     */
+    std::optional<LoadResult> LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames);
 
     // Model management
-    bool LoadSingleModel(const std::string &name, const std::string &path, bool preload = true);
+    bool LoadSingleModel(const std::string &name, const std::string &path, bool preload = true) override;
     bool UnloadModel(const std::string &name);
+    void UnloadAllModels() override;
     bool ReloadModel(const std::string &name);
     // Register a raylib::Model that was already loaded elsewhere (e.g. MapLoader)
     bool RegisterLoadedModel(const std::string &name, const ::Model &model);
@@ -75,7 +110,7 @@ public:
     // Filtering and search
     std::vector<ModelInstance *> GetInstancesByTag(const std::string &tag);
     std::vector<ModelInstance *> GetInstancesByCategory(const std::string &category);
-    [[nodiscard]] std::vector<std::string> GetAvailableModels() const;
+    [[nodiscard]] std::vector<std::string> GetAvailableModels() const override;
 
     // Configuration access
     [[nodiscard]] bool HasCollision(const std::string &modelName) const;

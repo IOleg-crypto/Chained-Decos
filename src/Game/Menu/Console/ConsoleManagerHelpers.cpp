@@ -5,26 +5,14 @@
 
 // Helper function to update ConsoleManager providers via Dependency Injection
 // Used in EngineApplication, MapSystem, PlayerSystem after service registration
+// NOTE: ConsoleManager now accesses services directly through Kernel::Instance(), 
+// so this function is now a no-op but kept for backward compatibility
 void UpdateConsoleManagerProviders(Kernel* kernel)
 {
-    if (!kernel) return;
+    // ConsoleManager now accesses all services directly through Kernel::Instance()
+    // No need to inject providers anymore
+    (void)kernel; // Suppress unused parameter warning
     
-    auto menuService = kernel->GetService<MenuService>();
-    if (!menuService || !menuService->menu) return;
-    
-    auto consoleManager = menuService->menu->GetConsoleManager();
-    if (!consoleManager) return;
-    
-    // Get current providers
-    auto playerService = kernel->GetService<PlayerService>();
-    auto mapService = kernel->GetService<MapManagerService>();
-    auto engineService = kernel->GetService<EngineService>();
-    
-    // Update providers (may be nullptr if services not yet registered)
-    consoleManager->SetProviders(
-        playerService ? playerService.get() : nullptr,
-        mapService ? mapService.get() : nullptr,
-        engineService ? engineService.get() : nullptr
-    );
+    TraceLog(LOG_INFO, "UpdateConsoleManagerProviders() - Using Kernel::Instance() for service access");
 }
 

@@ -84,5 +84,13 @@
         "xtr1common": "cpp",
         "xtree": "cpp"
     },
-    "kiroAgent.configureMCP": "Disabled"
+    "kiloCode.ai.provider": "openai",
+"kiloCode.ai.apiKey": "sk-mega-bdcfea1538c733d7385698a027b85b03aba0b73dc6064c5c8ac016308c069678",
+"kiloCode.ai.provider.customModels": [
+    "gpt-4o-mini",
+    "gpt-4o",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-preview"
+],
 }

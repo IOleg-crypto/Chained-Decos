@@ -20,14 +20,23 @@
 // Project headers
 #include "Input/Core/InputManager.h"
 #include "Kernel/Core/Kernel.h"
-#include "Render/Manager/RenderManager.h"
+#include "Render/Core/RenderManager.h"
 #include "Module/Core/ModuleManager.h"
+#include "Interfaces/IEngine.h"
 
-CHAINEDDECOSENGINE_API class Engine
+// Configuration for Engine initialization
+struct EngineConfig {
+    int screenWidth = 1920;
+    int screenHeight = 1080;
+    std::shared_ptr<RenderManager> renderManager;
+    std::shared_ptr<InputManager> inputManager;
+    Kernel* kernel = nullptr;
+};
+
+CHAINEDDECOSENGINE_API class Engine : public IEngine
 {
 public:
-    Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel = nullptr);
-    Engine(int screenX, int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel = nullptr);
+    explicit Engine(const EngineConfig& config);
     ~Engine();
     Engine(Engine &&other) = delete;
     Engine &operator=(const Engine &other) = delete;
@@ -41,25 +50,25 @@ public:
     void Shutdown() const;
 
     // ==================== Public Getters for Engine Services ====================
-    [[nodiscard]] RenderManager *GetRenderManager() const;
+    [[nodiscard]] RenderManager *GetRenderManager() const override;
 
-    InputManager &GetInputManager() const;
+    InputManager &GetInputManager() const override;
     
     Kernel* GetKernel() const { return m_kernel; }
     std::string GetWindowName() const { return m_windowName; }
     void SetWindowName(const std::string& name) { m_windowName = name; }
 
     // ==================== Module System ====================
-    ModuleManager* GetModuleManager() { return m_moduleManager.get(); }
+    ModuleManager* GetModuleManager() override { return m_moduleManager.get(); }
     const ModuleManager* GetModuleManager() const { return m_moduleManager.get(); }
 
     void RegisterModule(std::unique_ptr<class IEngineModule> module);
 
     // ==================== Engine State Control ====================
     void RequestExit();
-    bool IsDebugInfoVisible() const;
+    bool IsDebugInfoVisible() const override;
 
-    bool IsCollisionDebugVisible() const;
+    bool IsCollisionDebugVisible() const override;
 
 private:
     void HandleEngineInput(); // For engine-level shortcuts (e.g., F11 for fullscreen)

@@ -1,5 +1,5 @@
 #include "MapCollisionInitializer.h"
-#include "../Player/Player.h"
+#include "Game/Player/Core/Player.h"
 #include "Player/Collision/PlayerCollision.h"
 #include <raylib.h>
 
