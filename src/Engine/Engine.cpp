@@ -3,7 +3,7 @@
 //
 
 #include "Engine.h"
-#include "Render/Manager/RenderManager.h"
+#include "Render/Core/RenderManager.h"
 #include "Kernel/Core/Kernel.h"
 #include "Kernel/Core/KernelServices.h"
 #include "Module/Core/ModuleManager.h"
@@ -15,14 +15,17 @@
 #include "GLFW/glfw3.h"
 #endif
 
-Engine::Engine(std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel)
-    : Engine(800, 600, std::move(renderManager), std::move(inputManager), kernel) {}
-
-Engine::Engine(const int screenX, const int screenY, std::shared_ptr<RenderManager> renderManager, std::shared_ptr<InputManager> inputManager, Kernel* kernel)
-    : m_screenX(screenX), m_screenY(screenY), m_windowName("Chained Decos"),
-       m_windowInitialized(false), m_renderManager(std::move(renderManager)), m_inputManager(std::move(inputManager)), m_kernel(kernel), 
-       m_moduleManager(std::make_unique<ModuleManager>(kernel)), m_shouldExit(false),
-       m_isEngineInit(false)
+Engine::Engine(const EngineConfig& config)
+    : m_screenX(config.screenWidth), 
+      m_screenY(config.screenHeight), 
+      m_windowName("Chained Decos"),
+      m_windowInitialized(false), 
+      m_renderManager(config.renderManager), 
+      m_inputManager(config.inputManager), 
+      m_kernel(config.kernel), 
+      m_moduleManager(std::make_unique<ModuleManager>(config.kernel)), 
+      m_shouldExit(false),
+      m_isEngineInit(false)
 {
     if (m_screenX <= 0 || m_screenY <= 0)
     {

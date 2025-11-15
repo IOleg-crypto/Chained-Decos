@@ -1,8 +1,26 @@
 #include "Kernel.h"
 #include <raylib.h>
 
+// Initialize static instance pointer
+Kernel* Kernel::s_instance = nullptr;
+
+Kernel& Kernel::Instance()
+{
+    if (s_instance == nullptr)
+    {
+        throw std::runtime_error("Kernel::Instance() called before Kernel was created. Create a Kernel instance first.");
+    }
+    return *s_instance;
+}
+
 bool Kernel::Initialize(const std::string &configFile)
 {
+    // Set global instance on first initialization
+    if (s_instance == nullptr)
+    {
+        s_instance = this;
+    }
+    
     (void)configFile;
     InitializeServices();
     return true;
@@ -11,6 +29,12 @@ bool Kernel::Initialize(const std::string &configFile)
 void Kernel::Shutdown()
 {
     ShutdownServices();
+    
+    // Clear global instance on shutdown
+    if (s_instance == this)
+    {
+        s_instance = nullptr;
+    }
 }
 
 void Kernel::Update(float deltaTime)

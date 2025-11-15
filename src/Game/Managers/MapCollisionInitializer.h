@@ -4,10 +4,9 @@
 #include <string>
 #include <vector>
 #include "Engine/Map/Core/MapLoader.h"
-#include "Engine/Collision/Manager/CollisionManager.h"
+#include "Engine/Collision/Core/CollisionManager.h"
 #include "Engine/Model/Core/Model.h"
 
-// Forward declarations
 class Player;
 
 // MapCollisionInitializer - handles collision initialization for maps

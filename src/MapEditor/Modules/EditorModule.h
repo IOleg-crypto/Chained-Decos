@@ -5,9 +5,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-
-// Forward declarations
-class Kernel;
+#include "Engine/Kernel/Core/Kernel.h"
 
 // Editor module - minimal implementation
 // Editor functionality is handled directly in EditorApplication
