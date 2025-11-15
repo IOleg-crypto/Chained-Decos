@@ -220,12 +220,8 @@ void Skybox::UpdateGammaFromConfig()
     {
         return;
     }
-    
-    // Create a temporary ConfigManager to read settings
-    ConfigManager config;
-    config.LoadFromFile("game.cfg");
-    
+      
     // Update gamma settings from config
-    SetGammaEnabled(config.IsSkyboxGammaEnabled());
-    SetGammaValue(config.GetSkyboxGammaValue());
+    //SetGammaEnabled(IsSkyboxGammaEnabled());
+    //SetGammaValue(GetSkyboxGammaValue());
 }

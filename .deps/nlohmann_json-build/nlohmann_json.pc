@@ -1,4 +1,4 @@
-prefix=D:/gitnext/Chained Decos/build/install
+prefix=D:/gitnext/Chained Decos/install
 includedir=${prefix}/include
 
 Name: nlohmann_json

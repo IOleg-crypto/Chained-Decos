@@ -1,13 +1,14 @@
 add_library(collision STATIC
-    Manager/CollisionManager.cpp
-    Manager/CollisionManager.h
+    Core/CollisionManager.cpp
+    Core/CollisionManager.h
+    Interfaces/ICollisionManager.h
     System/CollisionSystem.cpp
     System/CollisionSystem.h
-    Debug/CollisionDebugRenderer.cpp
-    Debug/CollisionDebugRenderer.h
     Structures/CollisionStructures.cpp
     Structures/CollisionStructures.h
     Structures/CollisionComponent.h
+    Debug/CollisionDebugRenderer.cpp
+    Debug/CollisionDebugRenderer.h
 )
 
 # Disable Unity build for this library to avoid duplicate definitions

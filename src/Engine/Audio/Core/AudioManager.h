@@ -5,22 +5,27 @@
 #include <unordered_map>
 #include <memory>
 #include <raylib.h>
+#include "../Interfaces/IAudioManager.h"
 
-class AudioManager
+class AudioManager : public IAudioManager
 {
 public:
     AudioManager();
-    ~AudioManager();
+    ~AudioManager() override;
 
     // Initialize audio system
-    bool Initialize();
+    bool Initialize() override;
+    void Shutdown() override;
 
     // Load audio files
     bool LoadSound(const std::string& name, const std::string& filePath);
     bool LoadMusic(const std::string& name, const std::string& filePath);
 
     // Play audio
-    void PlaySound(const std::string& name, float volume = 5.0f, float pitch = 1.0f);
+    void PlaySoundEffect(const std::string& name, float volume = 5.0f, float pitch = 1.0f);
+    void PlayLoopingSoundEffect(const std::string& name, float volume = 1.0f, float pitch = 1.0f);
+    void StopLoopingSoundEffect(const std::string& name);
+    void UpdateLoopingSounds();
     void PlayMusic(const std::string& name, float volume = 1.0f);
     void StopMusic();
 
@@ -30,7 +35,7 @@ public:
     bool IsMusicPlaying() const;
 
     // Volume control
-    void SetMasterVolume(float volume);
+    void SetMasterVolume(float volume) override;
     void SetMusicVolume(float volume);
     void SetSoundVolume(float volume);
 
@@ -42,6 +47,7 @@ public:
 private:
     std::unordered_map<std::string, Sound> m_sounds;
     std::unordered_map<std::string, Music> m_music;
+    std::unordered_map<std::string, bool> m_loopingSounds;
     Music m_currentMusic;
     bool m_musicPlaying;
 
