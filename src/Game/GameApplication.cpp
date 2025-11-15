@@ -268,7 +268,7 @@ void GameApplication::OnPostUpdate(float deltaTime)
     {
         // Menu is closed - disable keyboard navigation to allow game input
         ImGuiIO& io = ImGui::GetIO();
-        io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard ;
         
         // Force clear ImGui navigation state when menu closes to prevent input blocking
         // This ensures player input works immediately after closing menu
@@ -277,6 +277,10 @@ void GameApplication::OnPostUpdate(float deltaTime)
             io.NavActive = false;
             io.NavVisible = false;
         }
+
+        // Also clear WantCaptureKeyboard and WantCaptureMouse to ensure player input isn't blocked
+        io.WantCaptureKeyboard = false;
+        io.WantCaptureMouse = false;
         
         // Game is running - check console state
         if (m_isGameInitialized)

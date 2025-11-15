@@ -16,7 +16,7 @@ private:
     Tool m_activeTool;
     bool m_pendingObjectCreation;
     std::string m_currentlySelectedModelName;
-    
+
     // State for transform operations (Move, Rotate, Scale)
     bool m_isTransforming;
     GizmoAxis m_selectedAxis;      // Which gizmo axis is selected
@@ -25,6 +25,9 @@ private:
     Vector3 m_transformStartPosition; // Object position when transform started
     Vector3 m_transformStartRotation; // Object rotation when transform started
     Vector3 m_transformStartScale;    // Object scale when transform started
+
+    // Camera for gizmo calculations
+    Camera3D m_camera;
 
 public:
     ToolManager();
@@ -36,10 +39,16 @@ public:
     void SetSelectedModel(const std::string& modelName) override;
     const std::string& GetSelectedModel() const override;
     void HandleToolInput(bool mousePressed, const Ray& ray, ISceneManager& scene) override;
-    
+
     // Update tool during drag operations
-    void UpdateTool(const Ray& ray, ISceneManager& scene);
-    void EndTransform();
+    void UpdateTool(const Ray& ray, ISceneManager& scene) override;
+    void EndTransform() override;
+
+    // Set camera for gizmo calculations
+    void SetCamera(const Camera3D& camera);
+
+    // Get gizmo scale based on distance from camera
+    float GetGizmoScale(const Vector3& position) const;
 
 private:
     void CreateObjectForTool(Tool tool, ISceneManager& scene);
