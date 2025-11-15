@@ -1,19 +1,19 @@
 
 
 add_library(render STATIC
-    Manager/RenderManager.cpp
-    Manager/RenderManager.h
-    Helpers/ImGuiHelper.cpp
-    Helpers/ImGuiHelper.h
+    Core/RenderManager.cpp
+    Core/RenderManager.h
     Interfaces/IGameRenderable.h
     Interfaces/IMenuRenderable.h
     Interfaces/IRenderable.h
+    Helpers/ImGuiHelper.cpp
+    Helpers/ImGuiHelper.h
+    Shader/ShaderManager.cpp
+    Shader/ShaderManager.h
     Utils/RenderUtils.cpp
     Utils/RenderUtils.h
     Utils/RenderUtilities.cpp
     Utils/RenderUtilities.h
-    Shader/ShaderManager.cpp
-    Shader/ShaderManager.h
 )
 
 target_include_directories(render PUBLIC

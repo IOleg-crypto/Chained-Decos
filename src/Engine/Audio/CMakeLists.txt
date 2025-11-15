@@ -1,6 +1,7 @@
 add_library(audio STATIC
     Core/AudioManager.cpp
     Core/AudioManager.h
+    Interfaces/IAudioManager.h
 )
 
 target_include_directories(audio PUBLIC

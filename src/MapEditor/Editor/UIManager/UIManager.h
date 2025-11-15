@@ -21,6 +21,15 @@
 
 class Editor;
 
+// Configuration for UIManager
+struct UIManagerConfig {
+    Editor* editor = nullptr;
+    ISceneManager* sceneManager = nullptr;
+    IFileManager* fileManager = nullptr;
+    IToolManager* toolManager = nullptr;
+    IModelManager* modelManager = nullptr;
+    int initialGridSize = 900;
+};
 
 // Concrete UI Manager implementation
 class UIManager : public IUIManager {
@@ -50,9 +59,7 @@ private:
     std::unique_ptr<class SkyboxBrowser> m_skyboxBrowser;
 
 public:
-    UIManager(Editor* editor,
-              ISceneManager* sceneManager, IFileManager* fileManager,
-              IToolManager* toolManager, IModelManager* modelManager);
+    explicit UIManager(const UIManagerConfig& config);
     ~UIManager() override;
 
     // IUIManager interface
