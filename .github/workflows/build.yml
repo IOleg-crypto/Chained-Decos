@@ -200,7 +200,6 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DBUILD_TESTS=ON \
-            -DBUILD_BENCHMARKS=ON \
             -DBUILD_MAP_EDITOR=ON \
             -DDISABLE_ALL_WARNINGS=ON \
             -DENABLE_OPTIMIZATIONS=$OPTIMIZATIONS \
