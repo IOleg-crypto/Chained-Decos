@@ -153,7 +153,6 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
             -DBUILD_TESTS=OFF \
-            -DBUILD_BENCHMARKS=OFF \
             -DBUILD_MAP_EDITOR=ON \
             -DENABLE_OPTIMIZATIONS=ON \
             -DENABLE_UNITY_BUILD=OFF \
