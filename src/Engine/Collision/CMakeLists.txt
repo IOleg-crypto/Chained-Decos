@@ -7,8 +7,8 @@ add_library(collision STATIC
     Structures/CollisionStructures.cpp
     Structures/CollisionStructures.h
     Structures/CollisionComponent.h
-    Debug/CollisionDebugRenderer.cpp
-    Debug/CollisionDebugRenderer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Debug/CollisionDebugRenderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Debug/CollisionDebugRenderer.h
 )
 
 # Disable Unity build for this library to avoid duplicate definitions
