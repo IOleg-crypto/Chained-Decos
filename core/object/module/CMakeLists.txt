@@ -1,6 +1,7 @@
 add_library(module STATIC
     Core/ModuleManager.h
     Core/ModuleManager.cpp
+    Core/ModuleContext.h
     Interfaces/IEngineModule.h
 )
 
@@ -11,6 +12,7 @@ target_include_directories(module PUBLIC
 
 target_link_libraries(module PUBLIC
     kernel
+    event
     raylib
 )
 
@@ -32,4 +34,3 @@ if(TARGET raylib)
 endif()
 
 set_target_properties(module PROPERTIES POSITION_INDEPENDENT_CODE ON)
-

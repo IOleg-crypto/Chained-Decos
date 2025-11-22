@@ -7,20 +7,21 @@
 #include <raylib.h>
 #include <raymath.h>
 
+#include "Engine/Audio/Core/AudioManager.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Kernel/Interfaces/IKernelService.h"
 #include <CameraController/Core/CameraController.h>
 #include <Collision/Core/CollisionManager.h>
 #include <Collision/System/CollisionSystem.h>
-#include <World/Core/World.h>
 #include <Model/Core/Model.h>
-#include "Engine/Audio/Core/AudioManager.h"
-#include "Engine/Kernel/Core/Kernel.h"
+#include <World/Core/World.h>
 
 // Include component interfaces
-#include "../Interfaces/IPlayerInput.h"
-#include "../Interfaces/IPlayerMovement.h"
-#include "../Interfaces/IPlayerMediator.h"
-#include "../Components/PlayerModel.h"
 #include "../Collision/PlayerCollision.h"
+#include "../Components/PlayerModel.h"
+#include "../Interfaces/IPlayerInput.h"
+#include "../Interfaces/IPlayerMediator.h"
+#include "../Interfaces/IPlayerMovement.h"
 #include "Engine/Render/Interfaces/IGameRenderable.h"
 
 // Forward declaration to break circular dependency
@@ -38,13 +39,13 @@ public:
     // Constructors and methods
     Player();
     ~Player();
-    
+
     // Initialize services from Kernel (call after Kernel services are registered)
     void InitializeServices();
 
     void UpdateImpl(CollisionManager &collisionManager); // Main update
-    void UpdatePlayerBox() const;                          // Update bounding box
-    void UpdatePlayerCollision() const;                    // Update collisions
+    void UpdatePlayerBox() const;                        // Update bounding box
+    void UpdatePlayerCollision() const;                  // Update collisions
     void SyncCollision() const;
 
     void ApplyGravityForPlayer(CollisionManager &collisionManager); // Gravity + collisions
@@ -66,30 +67,33 @@ public:
     std::shared_ptr<CameraController> GetCameraController() const; // Get camera
 
     // Delegate to PlayerModel
-    void SetPlayerModel(Model *model) const;        // Set 3D model
-    void ToggleModelRendering(bool useModel) const; // Show/hide model
-    [[nodiscard]] ModelLoader &GetModelManager() const;                // Get model manager
+    void SetPlayerModel(Model *model) const;            // Set 3D model
+    void ToggleModelRendering(bool useModel) const;     // Show/hide model
+    [[nodiscard]] ModelLoader &GetModelManager() const; // Get model manager
     void SetRotationY(float rotationY) const;
 
     // Getters/Setters
-    [[nodiscard]] float GetSpeed() const;             // Get current speed
+    [[nodiscard]] float GetSpeed() const;       // Get current speed
     [[nodiscard]] float GetRotationY() const;   // Get Y rotation
     void SetSpeed(float speed) const;           // Set speed
     Vector3 GetPlayerPosition() const;          // Get position
     Vector3 GetPlayerSize() const;              // Get player size
-    PlayerCollision &GetCollisionMutable();           // Add this method
+    PlayerCollision &GetCollisionMutable();     // Add this method
     const Collision &GetCollision() const;      // Get collision info
     bool IsJumpCollision() const;               // Check jump collision flag
     BoundingBox GetPlayerBoundingBox() const;   // Get bounding box
     const PhysicsComponent &GetPhysics() const; // Get physics component (const)
     PhysicsComponent &GetPhysics();             // Get physics component (non-const)
     IPlayerMovement *GetMovement() const;
-    IGameRenderable* GetRenderable() const;
+    IGameRenderable *GetRenderable() const;
 
     // Service injection
-    void SetAudioManager(std::shared_ptr<AudioManager> audioManager) { m_audioManager = audioManager; }
+    void SetAudioManager(std::shared_ptr<AudioManager> audioManager)
+    {
+        m_audioManager = audioManager;
+    }
 
-    void Update(CollisionManager& collisionManager);
+    void Update(CollisionManager &collisionManager);
 
 private:
     // Component objects - using interfaces for better decoupling
@@ -98,7 +102,6 @@ private:
     std::unique_ptr<PlayerModel> m_model;
     std::unique_ptr<PlayerCollision> m_collision;
 
-    
     std::unique_ptr<PlayerRenderable> m_renderable;
 
     // Camera control
@@ -108,10 +111,35 @@ private:
     bool m_isJumping = false;
     bool m_isFallSoundPlaying = false;
     Vector3 m_boundingBoxSize{};
-    
+
     // Services from Kernel (cached)
     std::shared_ptr<AudioManager> m_audioManager;
     std::shared_ptr<CollisionManager> m_collisionManager;
+};
+
+struct PlayerService : public IKernelService
+{
+    Player *player = nullptr;
+    explicit PlayerService(Player *p) : player(p)
+    {
+    }
+    bool Initialize() override
+    {
+        return player != nullptr;
+    }
+    void Shutdown() override
+    {
+    }
+    void Update(float deltaTime) override
+    {
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "PlayerService";
+    }
 };
 
 #endif // PLAYER_H

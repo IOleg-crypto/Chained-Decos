@@ -16,7 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
-void CollisionManager::Initialize() const
+bool CollisionManager::Initialize()
 {
     TraceLog(LOG_INFO, "CollisionManager::Initialize() - Starting collision system initialization");
 
@@ -34,7 +34,9 @@ void CollisionManager::Initialize() const
         }
     }
 
-    TraceLog(LOG_INFO, "CollisionManager::Initialize() - Found %zu objects requiring BVH initialization out of %zu total",
+    TraceLog(LOG_INFO,
+             "CollisionManager::Initialize() - Found %zu objects requiring BVH initialization out "
+             "of %zu total",
              bvhObjects.size(), m_collisionObjects.size());
 
     // Initialize BVH for collected objects in parallel if many
@@ -46,13 +48,15 @@ void CollisionManager::Initialize() const
         {
             std::for_each(std::execution::par, bvhObjects.begin(), bvhObjects.end(),
                           [](Collision *obj) { obj->InitializeBVH(); });
-            TraceLog(LOG_INFO, "CollisionManager::Initialize() - BVH initialization completed using parallel execution");
+            TraceLog(LOG_INFO, "CollisionManager::Initialize() - BVH initialization completed "
+                               "using parallel execution");
         }
         catch (const std::exception &e)
         {
             // Fallback to sequential if parallel execution fails
             TraceLog(LOG_WARNING,
-                     "CollisionManager::Initialize() - Parallel BVH initialization failed, falling back to sequential: %s",
+                     "CollisionManager::Initialize() - Parallel BVH initialization failed, falling "
+                     "back to sequential: %s",
                      e.what());
             for (Collision *obj : bvhObjects)
             {
@@ -61,7 +65,8 @@ void CollisionManager::Initialize() const
         }
 #else
         // Fallback for platforms without std::execution support (older macOS, etc.)
-        TraceLog(LOG_INFO, "CollisionManager::Initialize() - Using sequential BVH initialization (parallel execution not supported on this platform)");
+        TraceLog(LOG_INFO, "CollisionManager::Initialize() - Using sequential BVH initialization "
+                           "(parallel execution not supported on this platform)");
         for (Collision *obj : bvhObjects)
         {
             obj->InitializeBVH();
@@ -70,15 +75,27 @@ void CollisionManager::Initialize() const
     }
     else
     {
-        TraceLog(LOG_INFO, "CollisionManager::Initialize() - Using sequential BVH initialization for %zu objects", bvhObjects.size());
+        TraceLog(
+            LOG_INFO,
+            "CollisionManager::Initialize() - Using sequential BVH initialization for %zu objects",
+            bvhObjects.size());
         for (Collision *obj : bvhObjects)
         {
             obj->InitializeBVH();
         }
     }
 
-    TraceLog(LOG_INFO, "CollisionManager::Initialize() - Collision system initialized with %zu collision objects (%zu with BVH)",
+    TraceLog(LOG_INFO,
+             "CollisionManager::Initialize() - Collision system initialized with %zu collision "
+             "objects (%zu with BVH)",
              m_collisionObjects.size(), bvhObjects.size());
+    return true;
+}
+
+void CollisionManager::Shutdown()
+{
+    ClearColliders();
+    TraceLog(LOG_INFO, "CollisionManager::Shutdown() - Collision system shutdown");
 }
 
 // Spatial partitioning optimization
@@ -140,7 +157,10 @@ void CollisionManager::AddCollider(Collision &&collisionObject)
     }
 }
 
-void CollisionManager::ClearColliders() { m_collisionObjects.clear(); }
+void CollisionManager::ClearColliders()
+{
+    m_collisionObjects.clear();
+}
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 {
@@ -398,7 +418,6 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision,
 
     return collisionDetected;
 }
-
 
 void CollisionManager::CreateAutoCollisionsFromModelsSelective(
     ModelLoader &models, const std::vector<std::string> &modelNames)
@@ -806,7 +825,7 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
             // AABB-only fallback: intersect ray with top face of AABB
             const Vector3 mn = collisionObject->GetMin();
             const Vector3 mx = collisionObject->GetMax();
-            
+
             // Check if raycast origin is within or above the AABB on X and Z axes
             // Allow some tolerance for X and Z to catch nearby platforms
             const float tolerance = 2.0f; // Increase tolerance to catch nearby platforms
@@ -829,7 +848,8 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
                     }
                 }
                 // If origin is inside the AABB (between min and max Y), use top face as hit point
-                // This is important for detecting ground when player is standing on/inside the collision box
+                // This is important for detecting ground when player is standing on/inside the
+                // collision box
                 else if (raycastOrigin.y >= mn.y && raycastOrigin.y <= mx.y)
                 {
                     float dist = 0.0f; // Player is inside or on top of the collision box
@@ -915,9 +935,8 @@ bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &
     {
         // Get model bounding box
         BoundingBox bounds = GetModelBoundingBox(model);
-        Vector3 size = {bounds.max.x - bounds.min.x,
-                       bounds.max.y - bounds.min.y,
-                       bounds.max.z - bounds.min.z};
+        Vector3 size = {bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y,
+                        bounds.max.z - bounds.min.z};
 
         // Calculate aspect ratios to detect rectangular shapes
         float maxDim = fmaxf(fmaxf(size.x, size.y), size.z);
@@ -925,7 +944,8 @@ bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &
 
         if (maxDim <= 0.0f || minDim <= 0.0f)
         {
-            TraceLog(LOG_WARNING, "Model '%s' has invalid dimensions, defaulting to AABB", modelName.c_str());
+            TraceLog(LOG_WARNING, "Model '%s' has invalid dimensions, defaulting to AABB",
+                     modelName.c_str());
             return false; // Use AABB for invalid shapes
         }
 
@@ -936,9 +956,12 @@ bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &
 
         // For rectangular shapes, aspect ratios should be reasonable (not extreme)
         const float MAX_RECTANGULAR_RATIO = 10.0f; // Max ratio for rectangular detection
-        bool isRectangular = (aspectRatioXY <= MAX_RECTANGULAR_RATIO && aspectRatioXY >= 1.0f/MAX_RECTANGULAR_RATIO) &&
-                            (aspectRatioXZ <= MAX_RECTANGULAR_RATIO && aspectRatioXZ >= 1.0f/MAX_RECTANGULAR_RATIO) &&
-                            (aspectRatioYZ <= MAX_RECTANGULAR_RATIO && aspectRatioYZ >= 1.0f/MAX_RECTANGULAR_RATIO);
+        bool isRectangular = (aspectRatioXY <= MAX_RECTANGULAR_RATIO &&
+                              aspectRatioXY >= 1.0f / MAX_RECTANGULAR_RATIO) &&
+                             (aspectRatioXZ <= MAX_RECTANGULAR_RATIO &&
+                              aspectRatioXZ >= 1.0f / MAX_RECTANGULAR_RATIO) &&
+                             (aspectRatioYZ <= MAX_RECTANGULAR_RATIO &&
+                              aspectRatioYZ >= 1.0f / MAX_RECTANGULAR_RATIO);
 
         // Additional check: analyze triangle count and complexity
         int totalTriangles = 0;
@@ -954,16 +977,19 @@ bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &
         // If very few triangles and rectangular, definitely use AABB
         if (totalTriangles <= 12 && isRectangular)
         {
-            TraceLog(LOG_DEBUG, "Model '%s' detected as simple rectangular shape (%d triangles), using AABB",
-                    modelName.c_str(), totalTriangles);
+            TraceLog(LOG_DEBUG,
+                     "Model '%s' detected as simple rectangular shape (%d triangles), using AABB",
+                     modelName.c_str(), totalTriangles);
             return false; // Use AABB
         }
 
         // If many triangles or non-rectangular, use BVH
         if (totalTriangles > 100 || !isRectangular)
         {
-            TraceLog(LOG_DEBUG, "Model '%s' detected as complex shape (%d triangles, rectangular=%s), using BVH",
-                    modelName.c_str(), totalTriangles, isRectangular ? "true" : "false");
+            TraceLog(
+                LOG_DEBUG,
+                "Model '%s' detected as complex shape (%d triangles, rectangular=%s), using BVH",
+                modelName.c_str(), totalTriangles, isRectangular ? "true" : "false");
             return true; // Use BVH
         }
 
@@ -976,26 +1002,27 @@ bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &
             if (!hasIrregularGeometry && isRectangular)
             {
                 TraceLog(LOG_DEBUG, "Model '%s' medium complexity but regular geometry, using AABB",
-                        modelName.c_str());
+                         modelName.c_str());
                 return false; // Use AABB
             }
             else
             {
-                TraceLog(LOG_DEBUG, "Model '%s' medium complexity with irregular geometry, using BVH",
-                        modelName.c_str());
+                TraceLog(LOG_DEBUG,
+                         "Model '%s' medium complexity with irregular geometry, using BVH",
+                         modelName.c_str());
                 return true; // Use BVH
             }
         }
 
         // Default fallback
-        TraceLog(LOG_DEBUG, "Model '%s' analysis inconclusive, defaulting to AABB", modelName.c_str());
+        TraceLog(LOG_DEBUG, "Model '%s' analysis inconclusive, defaulting to AABB",
+                 modelName.c_str());
         return false; // Use AABB as safe default
-
     }
     catch (const std::exception &e)
     {
         TraceLog(LOG_WARNING, "Shape analysis failed for model '%s': %s, defaulting to AABB",
-                modelName.c_str(), e.what());
+                 modelName.c_str(), e.what());
         return false; // Use AABB on analysis failure
     }
 }
@@ -1029,7 +1056,6 @@ bool CollisionManager::AnalyzeGeometryIrregularity(const Model &model)
 
         // If more than 30% of meshes show irregular features, consider it irregular
         return (irregularFeatures * 3) > totalFaces;
-
     }
     catch (const std::exception &e)
     {
@@ -1040,9 +1066,9 @@ bool CollisionManager::AnalyzeGeometryIrregularity(const Model &model)
 
 // Helper method to create base collision for caching
 std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &model,
-                                                                  const std::string &modelName,
-                                                                  const ModelFileConfig *config,
-                                                                  bool needsPreciseCollision)
+                                                                 const std::string &modelName,
+                                                                 const ModelFileConfig *config,
+                                                                 bool needsPreciseCollision)
 {
     std::shared_ptr<Collision> collision;
 
@@ -1168,7 +1194,6 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
 {
     Collision instanceCollision;
 
-
     Matrix transform = MatrixIdentity();
     transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
     // If there is rotation:
@@ -1195,11 +1220,9 @@ CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cach
 
     Collision instance;
 
-
     Matrix transform = MatrixIdentity();
     transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
     transform = MatrixMultiply(transform, MatrixTranslate(position.x, position.y, position.z));
-
 
     const auto &tris = cachedCollision.GetTriangles();
     instance = Collision{};
@@ -1210,7 +1233,6 @@ CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cach
         Vector3 v2 = Vector3Transform(t.V2(), transform);
         instance.AddTriangle(CollisionTriangle(v0, v1, v2));
     }
-
 
     instance.UpdateAABBFromTriangles();
     instance.InitializeBVH();

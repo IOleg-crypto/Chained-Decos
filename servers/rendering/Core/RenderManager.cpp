@@ -3,19 +3,24 @@
 //
 
 #include "RenderManager.h"
+
+// Include concrete implementations that were forward declared in header
+#include "Collision/Core/CollisionManager.h"
+#include "Collision/Debug/CollisionDebugRenderer.h"
+#include "Commands/IRenderCommand.h"
+#include "Interfaces/IGameRenderable.h"
+#include "Interfaces/IMenuRenderable.h"
+#include "Model/Core/Model.h"
+#include "Shader/ShaderManager.h"
+
 #include "../Helpers/ImGuiHelper.h"
-#include "../Interfaces/IGameRenderable.h"
-#include <Collision/Debug/CollisionDebugRenderer.h>
-#include <Collision/Core/CollisionManager.h>
 #include <Engine/World/Core/World.h>
-#include <Model/Core/Model.h>
 #include <Physics/Components/PhysicsComponent.h>
+#include <filesystem>
+#include <fstream>
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
-#include <fstream>
-#include <filesystem>
-
 
 // ==================== CONSTANTS ====================
 
@@ -23,7 +28,8 @@ RenderManager::RenderManager()
     : m_collisionDebugRenderer(std::make_unique<CollisionDebugRenderer>()),
       m_shaderManager(std::make_unique<ShaderManager>())
 {
-    m_collisionDebugRenderer->SetWireframeMode(true); // Use wireframe for collision shapes in normal gameplay
+    m_collisionDebugRenderer->SetWireframeMode(
+        true); // Use wireframe for collision shapes in normal gameplay
     m_font = {0};
     TraceLog(LOG_INFO, "RenderManager created");
 }
@@ -61,12 +67,13 @@ bool RenderManager::Initialize()
             // Set texture filter to linear for smoother scaling
             SetTextureFilter(m_font.texture, TEXTURE_FILTER_BILINEAR);
             TraceLog(LOG_INFO, "Alan Sans font loaded successfully with smooth filtering: %s",
-                      alanSansFontPath.c_str());
+                     alanSansFontPath.c_str());
         }
         else
         {
-            TraceLog(LOG_WARNING, "Failed to load Alan Sans font for raylib: %s, using default font",
-                      alanSansFontPath.c_str());
+            TraceLog(LOG_WARNING,
+                     "Failed to load Alan Sans font for raylib: %s, using default font",
+                     alanSansFontPath.c_str());
             m_font = GetFontDefault();
         }
     }
@@ -84,7 +91,6 @@ bool RenderManager::Initialize()
     return true;
 }
 
-
 void RenderManager::InitializeImGuiFont(const std::string &fontPath, float fontSize)
 {
     ImGuiHelper::InitializeFont(fontPath, fontSize);
@@ -94,23 +100,28 @@ void RenderManager::BeginFrame() const
 {
     BeginDrawing();
     ClearBackground(m_backgroundColor);
-    
+
     // Build ImGui fonts on first frame to ensure proper OpenGL context
     // Must be called after BeginDrawing() but before rlImGuiBegin()
     static bool fontsBuilt = false;
-    if (!fontsBuilt) {
+    if (!fontsBuilt)
+    {
         ImGuiIO &io = ImGui::GetIO();
-        if (!io.Fonts->IsBuilt()) {
+        if (!io.Fonts->IsBuilt())
+        {
             io.Fonts->Build();
             fontsBuilt = true;
         }
     }
 }
 
-void RenderManager::EndFrame() { EndDrawing(); }
+void RenderManager::EndFrame()
+{
+    EndDrawing();
+}
 
 void RenderManager::RenderGame(IGameRenderable &renderable, const ModelLoader &models,
-                                 const CollisionManager &collisionManager, bool showCollisionDebug)
+                               const CollisionManager &collisionManager, bool showCollisionDebug)
 {
     // NOTE: BeginMode3D/EndMode3D are now handled by Game::RenderGameWorld()
     // to allow RenderEditorMap() to be called inside the 3D context
@@ -139,7 +150,7 @@ void RenderManager::RenderMenu(IMenuRenderable &renderable)
 }
 
 void RenderManager::RenderDebugInfo(IGameRenderable &renderable, const ModelLoader &models,
-                                     const CollisionManager &collisionManager)
+                                    const CollisionManager &collisionManager)
 {
     if (m_showDebugInfo)
     {
@@ -147,9 +158,43 @@ void RenderManager::RenderDebugInfo(IGameRenderable &renderable, const ModelLoad
     }
 }
 
-void RenderManager::BeginMode3D(const Camera &camera) { ::BeginMode3D(camera); }
+// ==================== COMMAND QUEUE METHODS ====================
 
-void RenderManager::EndMode3D() { ::EndMode3D(); }
+void RenderManager::SubmitCommand(std::unique_ptr<IRenderCommand> command)
+{
+    if (command)
+    {
+        m_commandQueue.push_back(std::move(command));
+    }
+}
+
+void RenderManager::ExecuteCommands()
+{
+    for (auto &command : m_commandQueue)
+    {
+        if (command)
+        {
+            command->Execute();
+        }
+    }
+}
+
+void RenderManager::ClearCommands()
+{
+    m_commandQueue.clear();
+}
+
+// ==================== LEGACY METHODS (DEPRECATED) ====================
+
+void RenderManager::BeginMode3D(const Camera &camera)
+{
+    ::BeginMode3D(camera);
+}
+
+void RenderManager::EndMode3D()
+{
+    ::EndMode3D();
+}
 
 void RenderManager::DrawScene3D(const ModelLoader &models)
 {
@@ -165,7 +210,8 @@ void RenderManager::DrawPlayer(IGameRenderable &renderable, const ModelLoader &m
 {
     // Get player model from models cache
     auto playerModelOpt = const_cast<ModelLoader &>(models).GetModelByName("player_low");
-    if (!playerModelOpt) {
+    if (!playerModelOpt)
+    {
         TraceLog(LOG_ERROR, "RenderManager::DrawPlayer() - Player model not found!");
         // Draw a simple cube as fallback
         Vector3 pos = renderable.GetPosition();
@@ -175,8 +221,9 @@ void RenderManager::DrawPlayer(IGameRenderable &renderable, const ModelLoader &m
         return;
     }
 
-    Model& playerModel = playerModelOpt->get();
-    if (playerModel.meshCount == 0) {
+    Model &playerModel = playerModelOpt->get();
+    if (playerModel.meshCount == 0)
+    {
         TraceLog(LOG_ERROR, "RenderManager::DrawPlayer() - Player model has no meshes!");
         // Draw a simple cube as fallback
         Vector3 pos = renderable.GetPosition();
@@ -195,14 +242,15 @@ void RenderManager::DrawPlayer(IGameRenderable &renderable, const ModelLoader &m
 
     // Draw player model and bounding box
     DrawModel(playerModel, adjustedPos, MODEL_SCALE, WHITE);
-    
+
     DrawBoundingBox(renderable.GetBoundingBox(), GREEN);
 }
 
 void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManager,
-                                           IGameRenderable &renderable) const
+                                         IGameRenderable &renderable) const
 {
-    TraceLog(LOG_DEBUG, "RenderManager::RenderCollisionDebug() - Starting collision debug rendering");
+    TraceLog(LOG_DEBUG,
+             "RenderManager::RenderCollisionDebug() - Starting collision debug rendering");
 
     // Draw small debug cube at player position for reference (less intrusive)
     const Vector3 playerPos = renderable.GetPosition();
@@ -211,12 +259,14 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
 
     if (!m_collisionDebugRenderer)
     {
-        TraceLog(LOG_WARNING, "RenderManager::RenderCollisionDebug() - No collision debug renderer available");
+        TraceLog(LOG_WARNING,
+                 "RenderManager::RenderCollisionDebug() - No collision debug renderer available");
         return;
     }
 
     const auto &colliders = collisionManager.GetColliders();
-    TraceLog(LOG_DEBUG, "RenderManager::RenderCollisionDebug() - Rendering %zu collision objects", colliders.size());
+    TraceLog(LOG_DEBUG, "RenderManager::RenderCollisionDebug() - Rendering %zu collision objects",
+             colliders.size());
 
     // Render all collisions
     m_collisionDebugRenderer->RenderAllCollisions(colliders);
@@ -230,22 +280,26 @@ void RenderManager::RenderCollisionDebug(const CollisionManager &collisionManage
     int count = 0;
     for (const auto &c : colliders)
     {
-        if (count >= 8) break; // Limit to 8 entries max
+        if (count >= 8)
+            break; // Limit to 8 entries max
         DrawText(TextFormat("tri:%zu", c->GetTriangleCount()), x, y, 10, YELLOW);
         y += 12;
         count++;
     }
 
-    TraceLog(LOG_DEBUG, "RenderManager::RenderCollisionDebug() - Collision debug rendered via CollisionDebugRenderer with %zu colliders",
-              colliders.size());
+    TraceLog(LOG_DEBUG,
+             "RenderManager::RenderCollisionDebug() - Collision debug rendered via "
+             "CollisionDebugRenderer with %zu colliders",
+             colliders.size());
 }
 
 void RenderManager::RenderCollisionShapes(const CollisionManager &collisionManager,
-                                           IGameRenderable &renderable) const
+                                          IGameRenderable &renderable) const
 {
     if (!m_collisionDebugRenderer)
     {
-        TraceLog(LOG_WARNING, "RenderManager::RenderCollisionShapes() - No collision debug renderer available");
+        TraceLog(LOG_WARNING,
+                 "RenderManager::RenderCollisionShapes() - No collision debug renderer available");
         return;
     }
 
@@ -265,12 +319,18 @@ void RenderManager::RenderCollisionShapes(const CollisionManager &collisionManag
     m_collisionDebugRenderer->RenderPlayerCollision(renderable.GetCollision());
 }
 
-void RenderManager::SetBackgroundColor(Color color) { m_backgroundColor = color; }
+void RenderManager::SetBackgroundColor(Color color)
+{
+    m_backgroundColor = color;
+}
 
-void RenderManager::ToggleDebugInfo() { m_showDebugInfo = !m_showDebugInfo; }
+void RenderManager::ToggleDebugInfo()
+{
+    m_showDebugInfo = !m_showDebugInfo;
+}
 
 void RenderManager::DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
-                                         const CollisionManager &collisionManager)
+                                        const CollisionManager &collisionManager)
 {
     rlImGuiBegin();
 
@@ -391,31 +451,50 @@ void RenderManager::DrawControlsInfo()
     ImGui::Text("- F3: Toggle Collision Debug");
 }
 
-void RenderManager::ToggleCollisionDebug() { m_showCollisionDebug = !m_showCollisionDebug; }
+void RenderManager::ToggleCollisionDebug()
+{
+    m_showCollisionDebug = !m_showCollisionDebug;
+}
 
-void RenderManager::ForceCollisionDebugNextFrame() { m_forceCollisionDebugNextFrame = true; }
+void RenderManager::ForceCollisionDebugNextFrame()
+{
+    m_forceCollisionDebugNextFrame = true;
+}
 
-void RenderManager::SetDebugInfo(bool enabled) { m_showDebugInfo = enabled; }
+void RenderManager::SetDebugInfo(bool enabled)
+{
+    m_showDebugInfo = enabled;
+}
 
-void RenderManager::SetCollisionDebug(bool enabled) { m_showCollisionDebug = enabled; }
+void RenderManager::SetCollisionDebug(bool enabled)
+{
+    m_showCollisionDebug = enabled;
+}
 
-bool RenderManager::IsDebugInfoVisible() const { return m_showDebugInfo; }
+bool RenderManager::IsDebugInfoVisible() const
+{
+    return m_showDebugInfo;
+}
 
-bool RenderManager::IsCollisionDebugVisible() const { return m_showCollisionDebug; }
+bool RenderManager::IsCollisionDebugVisible() const
+{
+    return m_showCollisionDebug;
+}
 
 void RenderManager::ShowMetersPlayer(const IGameRenderable &renderable) const
 {
     Vector3 playerPosition = renderable.GetPosition();
-    
+
     // Don't show meters if player is at uninitialized position
     // Check for both default (0,0,0) and explicit uninitialized position (-999999)
     constexpr float UNINITIALIZED_POS = -999999.0f;
     if ((playerPosition.x == 0.0f && playerPosition.y == 0.0f && playerPosition.z == 0.0f) ||
-        (playerPosition.x <= UNINITIALIZED_POS + 1000.0f && playerPosition.y <= UNINITIALIZED_POS + 1000.0f))
+        (playerPosition.x <= UNINITIALIZED_POS + 1000.0f &&
+         playerPosition.y <= UNINITIALIZED_POS + 1000.0f))
     {
         return;
     }
-    
+
     float groundLevel = PhysicsComponent::WORLD_FLOOR_Y;
     float heightAboveGround = playerPosition.y - groundLevel;
 
@@ -494,9 +573,14 @@ void RenderManager::ShowMetersPlayer(const IGameRenderable &renderable) const
     }
 }
 
-Font RenderManager::GetFont() const { return m_font; }
+Font RenderManager::GetFont() const
+{
+    return m_font;
+}
 
-void RenderManager::Render() {}
+void RenderManager::Render()
+{
+}
 
 void RenderManager::Shutdown()
 {
@@ -516,27 +600,28 @@ bool RenderManager::LoadWindShader()
     {
         m_shaderManager->UnloadShader("player_wind");
     }
-    
+
     std::string vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.vs";
     std::string fsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.fs";
-    
+
     // Check if files exist
     if (!std::filesystem::exists(vsPath) || !std::filesystem::exists(fsPath))
     {
-        TraceLog(LOG_WARNING, "Wind shader files not found: %s or %s", vsPath.c_str(), fsPath.c_str());
+        TraceLog(LOG_WARNING, "Wind shader files not found: %s or %s", vsPath.c_str(),
+                 fsPath.c_str());
         return false;
     }
-    
+
     // Only try to load if OpenGL context is ready
     if (!IsWindowReady())
     {
         TraceLog(LOG_DEBUG, "Wind shader loading deferred - OpenGL context not ready yet");
         return false;
     }
-    
+
     if (m_shaderManager->LoadShaderPair("player_wind", vsPath, fsPath))
     {
-        Shader* windShader = m_shaderManager->GetShader("player_wind");
+        Shader *windShader = m_shaderManager->GetShader("player_wind");
         if (windShader && windShader->id != 0)
         {
             // Verify shader is valid using raylib's IsShaderValid
@@ -545,14 +630,14 @@ bool RenderManager::LoadWindShader()
                 m_fallSpeedLoc = GetShaderLocation(*windShader, "fallSpeed");
                 m_timeLoc = GetShaderLocation(*windShader, "time");
                 m_windDirectionLoc = GetShaderLocation(*windShader, "windDirection");
-                
+
                 TraceLog(LOG_INFO, "Player wind effect shader loaded successfully");
-                TraceLog(LOG_INFO, "Shader locations: fallSpeed=%d, time=%d, windDirection=%d", 
+                TraceLog(LOG_INFO, "Shader locations: fallSpeed=%d, time=%d, windDirection=%d",
                          m_fallSpeedLoc, m_timeLoc, m_windDirectionLoc);
-                
+
                 // Reset shader time when shader is loaded
                 m_shaderTime = 0.0f;
-                
+
                 return true;
             }
             else
@@ -570,7 +655,8 @@ bool RenderManager::LoadWindShader()
     }
     else
     {
-        TraceLog(LOG_WARNING, "Failed to load player wind effect shader from %s + %s", vsPath.c_str(), fsPath.c_str());
+        TraceLog(LOG_WARNING, "Failed to load player wind effect shader from %s + %s",
+                 vsPath.c_str(), fsPath.c_str());
         return false;
     }
 }

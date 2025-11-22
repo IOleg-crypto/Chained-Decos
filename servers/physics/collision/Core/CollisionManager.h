@@ -1,20 +1,20 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
+#include "../../Kernel/Interfaces/IKernelService.h"
+#include "../Interfaces/ICollisionManager.h"
+#include "../System/CollisionSystem.h"
+#include "Model/Config/ModelConfig.h"
+#include <algorithm>
+#include <array>
+#include <execution>
+#include <future>
+#include <memory>
 #include <raylib.h>
 #include <raymath.h>
-#include "Model/Config/ModelConfig.h"
-#include "../System/CollisionSystem.h"
-#include "../Interfaces/ICollisionManager.h"
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <algorithm>
-#include <execution>
-#include <future>
-#include <array>
-
 
 // Include ModelLoader header
 #include "Model/Core/Model.h"
@@ -35,13 +35,24 @@ struct ModelCollisionTask
 // Supports adding, clearing, and checking collisions.
 // Uses AABB for fast checks and optional BVH for precise collisions.
 //
-class CollisionManager : public ICollisionManager
+class CollisionManager : public ICollisionManager, public IKernelService
 {
 public:
     CollisionManager() = default;
 
     // Initialize the collision system
-    void Initialize() const;
+    bool Initialize() override;
+    void Shutdown() override;
+    void Update(float deltaTime) override
+    {
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "CollisionManager";
+    }
 
     // Update spatial partitioning for optimized collision queries
     void UpdateSpatialPartitioning();
@@ -69,7 +80,8 @@ public:
                      Vector3 &hitPoint, Vector3 &hitNormal) const;
 
     // Create collisions only for specific models
-    void CreateAutoCollisionsFromModelsSelective(ModelLoader &models, const std::vector<std::string> &modelNames);
+    void CreateAutoCollisionsFromModelsSelective(ModelLoader &models,
+                                                 const std::vector<std::string> &modelNames);
 
     // Helper function to create cache key
     [[nodiscard]] std::string MakeCollisionCacheKey(const std::string &modelName,
@@ -77,24 +89,24 @@ public:
 
     // Create collision for a specific model instance
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
-                                     Vector3 position, float scale, const ModelLoader &models);
+                                  Vector3 position, float scale, const ModelLoader &models);
 
     // Create a base collision for caching (AABB or BVH)
     std::shared_ptr<Collision> CreateBaseCollision(const Model &model, const std::string &modelName,
-                                                      const ModelFileConfig *config,
-                                                      bool needsPreciseCollision);
+                                                   const ModelFileConfig *config,
+                                                   bool needsPreciseCollision);
 
     // Create precise collision (Triangle/BVH) for an instance
     Collision CreatePreciseInstanceCollision(const Model &model, Vector3 position, float scale,
-                                              const ModelFileConfig *config);
+                                             const ModelFileConfig *config);
 
     // Create precise collision from cached triangles to avoid re-reading model meshes
     Collision CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
                                                        Vector3 position, float scale);
 
     // Create simple AABB collision for an instance
-    Collision CreateSimpleAABBInstanceCollision(
-        const Collision &cachedCollision,  const Vector3 &position, float scale);
+    Collision CreateSimpleAABBInstanceCollision(const Collision &cachedCollision,
+                                                const Vector3 &position, float scale);
 
     // Prediction cache management
     void UpdateFrameCache();
@@ -112,15 +124,19 @@ private:
     static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 50;
 
     // Spatial partitioning for faster collision queries
-    struct GridKey {
+    struct GridKey
+    {
         int x, z;
-        bool operator==(const GridKey& other) const {
+        bool operator==(const GridKey &other) const
+        {
             return x == other.x && z == other.z;
         }
     };
 
-    struct GridKeyHash {
-        std::size_t operator()(const GridKey& key) const {
+    struct GridKeyHash
+    {
+        std::size_t operator()(const GridKey &key) const
+        {
             return std::hash<int>()(key.x) ^ (std::hash<int>()(key.z) << 1);
         }
     };
@@ -128,7 +144,8 @@ private:
     std::unordered_map<GridKey, std::vector<size_t>, GridKeyHash> m_spatialGrid;
 
     // Collision prediction cache for frequently checked objects
-    struct PredictionCacheEntry {
+    struct PredictionCacheEntry
+    {
         bool hasCollision;
         Vector3 response;
         size_t frameCount;

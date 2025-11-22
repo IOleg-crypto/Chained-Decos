@@ -1,34 +1,44 @@
 #ifndef RENDERING_SYSTEM_H
 #define RENDERING_SYSTEM_H
 
-#include "Engine/Module/Interfaces/IEngineModule.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Game/Player/Core/Player.h"
-#include "Game/Systems/MapSystem/MapSystem.h"
-#include "Engine/Collision/Core/CollisionManager.h"
-#include "Engine/Model/Interfaces/IModelLoader.h"
 #include "Engine/Engine.h"
+#include "Engine/Kernel/Core/Kernel.h"
+#include "Engine/Module/Interfaces/IEngineModule.h"
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
-class RenderingSystem : public IEngineModule {
+// Forward declarations to avoid circular dependencies
+class Player;
+class MapSystem;
+class CollisionManager;
+class ModelLoader;
+
+class RenderingSystem : public IEngineModule
+{
 public:
     RenderingSystem();
     ~RenderingSystem() override = default;
 
     // IEngineModule interface
-    const char* GetModuleName() const override { return "Rendering"; }
-    const char* GetModuleVersion() const override { return "1.0.0"; }
-    const char* GetModuleDescription() const override { 
-        return "Game world and UI rendering"; 
+    const char *GetModuleName() const override
+    {
+        return "Rendering";
     }
-    
-    bool Initialize(Kernel* kernel) override;
+    const char *GetModuleVersion() const override
+    {
+        return "1.0.0";
+    }
+    const char *GetModuleDescription() const override
+    {
+        return "Game world and UI rendering";
+    }
+
+    bool Initialize(Kernel *kernel) override;
     void Shutdown() override;
     void Update(float deltaTime) override;
     void Render() override;
-    void RegisterServices(Kernel* kernel) override;
+    void RegisterServices(Kernel *kernel) override;
     std::vector<std::string> GetDependencies() const override;
 
     // Rendering methods
@@ -41,18 +51,17 @@ private:
 
 private:
     // Kernel reference
-    Kernel* m_kernel;
-    
+    Kernel *m_kernel;
+
     // Dependencies obtained through Kernel (references only)
-    Player* m_player;
-    MapSystem* m_mapSystem;
-    CollisionManager* m_collisionManager;
-    ModelLoader* m_models;
-    Engine* m_engine;
-    
+    Player *m_player;
+    MapSystem *m_mapSystem;
+    CollisionManager *m_collisionManager;
+    ModelLoader *m_models;
+    Engine *m_engine;
+
     // Timer state for UI
     float m_gameTime;
 };
 
 #endif // RENDERING_SYSTEM_H
-

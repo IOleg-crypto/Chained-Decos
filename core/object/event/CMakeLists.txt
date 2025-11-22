@@ -1,6 +1,10 @@
 add_library(event STATIC
     Core/EventSystem.cpp
     Core/EventSystem.h
+    Core/Event.h
+    Core/EventDispatcher.h
+    Core/EventDispatcher.cpp
+    Events/GameEvents.h
 )
 
 target_include_directories(event PUBLIC

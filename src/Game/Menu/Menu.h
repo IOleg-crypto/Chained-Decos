@@ -1,22 +1,22 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include <cstdint>
-#include <string>
-#include <vector>
-#include <optional>
-#include <memory>
-#include <functional>
-#include "Settings/SettingsManager.h"
 #include "Console/ConsoleManager.h"
-#include "MapSelector/MapSelector.h"
 #include "Engine.h"
 #include "Engine/CameraController/Interfaces/ICameraSensitivityController.h"
-#include <Render/Interfaces/IMenuRenderable.h>
-#include <imgui.h>
-#include <raylib.h>
-#include <GLFW/glfw3.h>
 #include "Engine/Kernel/Core/Kernel.h"
+#include "MapSelector/MapSelector.h"
+#include "Settings/SettingsManager.h"
+#include <GLFW/glfw3.h>
+#include <Render/Interfaces/IMenuRenderable.h>
+#include <cstdint>
+#include <functional>
+#include <imgui.h>
+#include <memory>
+#include <optional>
+#include <raylib.h>
+#include <string>
+#include <vector>
 
 enum class MenuAction : uint8_t
 {
@@ -66,7 +66,6 @@ struct MenuItem
     std::string shortcut;
 };
 
-
 struct VideoSettings
 {
     int resolutionIndex = 1;
@@ -74,7 +73,6 @@ struct VideoSettings
     int vsyncIndex = 1;
     int fpsIndex = 1;
 };
-
 
 class Menu : public IMenuRenderable
 {
@@ -84,7 +82,7 @@ public:
 
     // Core functionality
     void Initialize(Engine *engine);
-    void SetKernel(Kernel* kernel);
+    void SetKernel(Kernel *kernel);
 
     // State management
     void SetGameInProgress(bool inProgress);
@@ -125,13 +123,16 @@ public:
     // Console functionality
     void ToggleConsole();
     [[nodiscard]] bool IsConsoleOpen() const;
-    [[nodiscard]] ConsoleManager* GetConsoleManager() const;
+    [[nodiscard]] ConsoleManager *GetConsoleManager() const;
 
     // Settings manager access
-    [[nodiscard]] SettingsManager* GetSettingsManager() const { return m_settingsManager.get(); }
-    
+    [[nodiscard]] SettingsManager *GetSettingsManager() const
+    {
+        return m_settingsManager.get();
+    }
+
     // Dependency Injection for camera
-    void SetCameraController(ICameraSensitivityController* controller);
+    void SetCameraController(ICameraSensitivityController *controller);
 
     // Keyboard navigation
     void HandleKeyboardNavigation();
@@ -165,19 +166,20 @@ private:
 
     // Helper methods
     void HandleAction(MenuAction action);
-    static const char *GetStateTitle(MenuState state) ;
+    static const char *GetStateTitle(MenuState state);
 
     // ImGui UI components
-    bool RenderActionButton(const char *label, MenuAction action, const ImVec2 &size = ImVec2(0, 0));
+    bool RenderActionButton(const char *label, MenuAction action,
+                            const ImVec2 &size = ImVec2(0, 0));
     bool RenderBackButton(float width = 0.0f);
     void RenderSectionHeader(const char *title, const char *subtitle = nullptr) const;
     void RenderMenuHint(const char *text) const;
     void RenderMapCard(int index, const MapInfo &map, bool selected, float cardWidth) const;
-    
+
     // Video settings helpers
-    bool RenderVideoSettingCombo(const char* label, const char* id, 
-                                const std::vector<std::string>& options, 
-                                int& currentIndex, float labelWidth, float comboWidth, float startX);
+    bool RenderVideoSettingCombo(const char *label, const char *id,
+                                 const std::vector<std::string> &options, int &currentIndex,
+                                 float labelWidth, float comboWidth, float startX);
     bool HasUnsavedVideoChanges() const;
 
     // Pagination methods
@@ -193,7 +195,7 @@ private:
     void SyncVideoSettingsToConfig() const;
     void SyncAudioSettingsToConfig() const;
     void SyncControlSettingsToConfig();
-    
+
     // Apply camera sensitivity to CameraController (Dependency Injection)
     void ApplyCameraSensitivity(float sensitivity);
 
@@ -204,9 +206,9 @@ private:
     // Core state
     Engine *m_engine = nullptr;
     std::unique_ptr<SettingsManager> m_settingsManager;
-    
+
     // Explicit dependency via interface (Dependency Injection)
-    ICameraSensitivityController* m_cameraController = nullptr;
+    ICameraSensitivityController *m_cameraController = nullptr;
 
     // Menu state
     MenuState m_state = MenuState::Main;
@@ -247,6 +249,31 @@ private:
     std::vector<std::string> m_displayModeOptions;
     std::vector<std::string> m_vsyncOptions;
     std::vector<std::string> m_fpsOptions;
+};
+
+struct MenuService : public IKernelService
+{
+    Menu *menu = nullptr;
+    explicit MenuService(Menu *m) : menu(m)
+    {
+    }
+    bool Initialize() override
+    {
+        return menu != nullptr;
+    }
+    void Shutdown() override
+    {
+    }
+    void Update(float deltaTime) override
+    {
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "MenuService";
+    }
 };
 
 #endif // MENU_H
