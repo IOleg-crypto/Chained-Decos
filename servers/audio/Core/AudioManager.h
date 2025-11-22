@@ -1,13 +1,15 @@
 #ifndef AUDIOMANAGER_H
 #define AUDIOMANAGER_H
 
-#include <string>
-#include <unordered_map>
+#include "../Interfaces/IAudioManager.h"
 #include <memory>
 #include <raylib.h>
-#include "../Interfaces/IAudioManager.h"
+#include <string>
+#include <unordered_map>
 
-class AudioManager : public IAudioManager
+#include "../../Kernel/Interfaces/IKernelService.h"
+
+class AudioManager : public IAudioManager, public IKernelService
 {
 public:
     AudioManager();
@@ -16,17 +18,28 @@ public:
     // Initialize audio system
     bool Initialize() override;
     void Shutdown() override;
+    void Update(float deltaTime) override
+    {
+        UpdateLoopingSounds();
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "AudioManager";
+    }
 
     // Load audio files
-    bool LoadSound(const std::string& name, const std::string& filePath);
-    bool LoadMusic(const std::string& name, const std::string& filePath);
+    bool LoadSound(const std::string &name, const std::string &filePath);
+    bool LoadMusic(const std::string &name, const std::string &filePath);
 
     // Play audio
-    void PlaySoundEffect(const std::string& name, float volume = 5.0f, float pitch = 1.0f);
-    void PlayLoopingSoundEffect(const std::string& name, float volume = 1.0f, float pitch = 1.0f);
-    void StopLoopingSoundEffect(const std::string& name);
+    void PlaySoundEffect(const std::string &name, float volume = 5.0f, float pitch = 1.0f);
+    void PlayLoopingSoundEffect(const std::string &name, float volume = 1.0f, float pitch = 1.0f);
+    void StopLoopingSoundEffect(const std::string &name);
     void UpdateLoopingSounds();
-    void PlayMusic(const std::string& name, float volume = 1.0f);
+    void PlayMusic(const std::string &name, float volume = 1.0f);
     void StopMusic();
 
     // Control music playback
@@ -40,8 +53,8 @@ public:
     void SetSoundVolume(float volume);
 
     // Cleanup
-    void UnloadSound(const std::string& name);
-    void UnloadMusic(const std::string& name);
+    void UnloadSound(const std::string &name);
+    void UnloadMusic(const std::string &name);
     void UnloadAll();
 
 private:

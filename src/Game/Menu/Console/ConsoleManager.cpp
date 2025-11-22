@@ -1,11 +1,10 @@
 #include "ConsoleManager.h"
 #include "Engine/Engine.h"
 #include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Kernel/Core/KernelServices.h"
+#include "Game/Player/Collision/PlayerCollision.h"
+#include "Game/Player/Core/Player.h"
 #include "Game/Systems/MapSystem/MapSystem.h"
 #include "Game/Systems/PlayerSystem/PlayerSystem.h"
-#include "Game/Player/Core/Player.h"
-#include "Game/Player/Collision/PlayerCollision.h"
 #include <algorithm>
 #include <cctype>
 #include <imgui/imgui.h>
@@ -48,11 +47,20 @@ Engine *ConsoleManager::GetEngine() const
     return engineService ? engineService->engine : nullptr;
 }
 
-void ConsoleManager::ToggleConsole() { consoleOpen = !consoleOpen; }
+void ConsoleManager::ToggleConsole()
+{
+    consoleOpen = !consoleOpen;
+}
 
-void ConsoleManager::OpenConsole() { consoleOpen = true; }
+void ConsoleManager::OpenConsole()
+{
+    consoleOpen = true;
+}
 
-void ConsoleManager::CloseConsole() { consoleOpen = false; }
+void ConsoleManager::CloseConsole()
+{
+    consoleOpen = false;
+}
 
 // Input handling removed as ImGui handles it
 
@@ -132,7 +140,7 @@ void ConsoleManager::RegisterCommandWithPrefix(const std::string &category, cons
                                                const std::string &usage, CommandCallback callback,
                                                bool alsoRegisterWithoutPrefix)
 {
-    std::string catLower  = category;
+    std::string catLower = category;
     std::string nameLower = name;
     std::transform(catLower.begin(), catLower.end(), catLower.begin(), ::tolower);
     std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
@@ -259,7 +267,7 @@ void ConsoleManager::RegisterBuiltinCommands()
                 }
 
                 // Show commands without category
-                auto allCommands        = console->GetAvailableCommandNames();
+                auto allCommands = console->GetAvailableCommandNames();
                 bool hasGeneralCommands = false;
                 for (const auto &cmdName : allCommands)
                 {
@@ -341,7 +349,7 @@ void ConsoleManager::RegisterBuiltinCommands()
                             return;
                         }
                         PlayerCollision &collision = player->GetCollisionMutable();
-                        bool current               = collision.IsUsingBVH();
+                        bool current = collision.IsUsingBVH();
                         collision.EnableBVHCollision(!current);
                         console->AddOutput("Noclip: " +
                                            std::string(!current ? "enabled" : "disabled"));
@@ -359,7 +367,7 @@ void ConsoleManager::RegisterBuiltinCommands()
             }
             try
             {
-                float speed    = std::stof(args[0]);
+                float speed = std::stof(args[0]);
                 Player *player = console->GetPlayer();
                 if (!player)
                 {
@@ -387,9 +395,9 @@ void ConsoleManager::RegisterBuiltinCommands()
             }
             try
             {
-                float x        = std::stof(args[0]);
-                float y        = std::stof(args[1]);
-                float z        = std::stof(args[2]);
+                float x = std::stof(args[0]);
+                float y = std::stof(args[1]);
+                float z = std::stof(args[2]);
                 Player *player = console->GetPlayer();
                 if (!player)
                 {
@@ -426,7 +434,7 @@ void ConsoleManager::RegisterBuiltinCommands()
     RegisterCommand("fps", "Show current FPS", "fps",
                     [](const std::vector<std::string> &args, ConsoleManager *console)
                     {
-                        int fps         = GetFPS();
+                        int fps = GetFPS();
                         float frameTime = GetFrameTime() * 1000.0f; // Convert to milliseconds
                         console->AddOutput("FPS: " + std::to_string(fps) +
                                            " | Frame time: " + std::to_string(frameTime) + "ms");
@@ -457,7 +465,10 @@ void ConsoleManager::AddOutput(const std::string &text)
     }
 }
 
-void ConsoleManager::ClearOutput() { consoleOutput.clear(); }
+void ConsoleManager::ClearOutput()
+{
+    consoleOutput.clear();
+}
 
 void ConsoleManager::AddToHistory(const std::string &command)
 {
