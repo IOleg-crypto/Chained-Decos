@@ -1,6 +1,6 @@
 #include "SceneManager.h"
 #include "../Object/MapObject.h"
-#include "Engine/Collision/Structures/CollisionStructures.h"
+#include "servers/physics/collision/Structures/CollisionStructures.h"
 #include "BoundingBoxCalculators.h"
 #include <algorithm>
 #include <limits>

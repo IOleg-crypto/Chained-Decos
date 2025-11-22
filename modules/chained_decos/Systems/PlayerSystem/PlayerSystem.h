@@ -1,14 +1,14 @@
 #ifndef PLAYER_SYSTEM_H
 #define PLAYER_SYSTEM_H
 
-#include "Engine/Audio/Core/AudioManager.h"
-#include "Engine/Collision/Core/CollisionManager.h"
+#include "servers/audio/Core/AudioManager.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include "Engine/Engine.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Kernel/Interfaces/IKernelService.h"
-#include "Engine/Model/Core/Model.h"
-#include "Engine/Module/Interfaces/IEngineModule.h"
-#include "Game/Player/Core/Player.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
+#include "scene/resources/model/Core/Model.h"
+#include "core/object/module/Interfaces/IEngineModule.h"
+#include "modules/chained_decos/Player/Core/Player.h"
 #include <memory>
 #include <string>
 #include <vector>

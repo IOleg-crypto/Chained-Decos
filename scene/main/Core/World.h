@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../Physics/Components/PhysicsComponent.h"
+#include "servers/physics/dynamics/Components/PhysicsComponent.h"
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
 
-#include "../../Kernel/Interfaces/IKernelService.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 
 class WorldManager : public IKernelService
 {

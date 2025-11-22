@@ -1,13 +1,13 @@
 #include "RenderingSystem.h"
 #include "../MapSystem/MapSystem.h"
 #include "Engine/Engine.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Render/Core/RenderManager.h"
-#include "Game/Player/Core/Player.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "servers/rendering/Core/RenderManager.h"
+#include "modules/chained_decos/Player/Core/Player.h"
 
-#include "Engine/Collision/Core/CollisionManager.h"
-#include "Engine/Map/Renderer/MapRenderer.h"
-#include "Engine/Model/Core/Model.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
+#include "scene/resources/map/Renderer/MapRenderer.h"
+#include "scene/resources/model/Core/Model.h"
 #include <raylib.h>
 
 RenderingSystem::RenderingSystem()

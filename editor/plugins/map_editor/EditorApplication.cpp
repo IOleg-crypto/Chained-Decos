@@ -1,8 +1,8 @@
 #include "EditorApplication.h"
-#include "Editor/Editor.h"
-#include "Engine/CameraController/Core/CameraController.h"
-#include "Engine/Map/Skybox/Skybox.h"
-#include "Engine/Model/Core/Model.h"
+#include "editor/plugins/map_editor/Editor/Editor.h"
+#include "scene/3d/camera/Core/CameraController.h"
+#include "scene/resources/map/Skybox/Skybox.h"
+#include "scene/resources/model/Core/Model.h"
 #include "Modules/EditorModule.h"
 //===============================================
 #include <imgui/imgui.h>

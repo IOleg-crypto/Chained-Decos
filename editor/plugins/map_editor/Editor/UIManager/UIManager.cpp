@@ -5,9 +5,9 @@
 #include "UIManager.h"
 #include "SkyboxBrowser.h"
 #include "ObjectFactory.h"
-#include "Editor/Editor.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Map/Core/MapLoader.h"
+#include "editor/plugins/map_editor/Editor/Editor.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "scene/resources/map/Core/MapLoader.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

@@ -1,8 +1,8 @@
 #include "ToolManager.h"
 #include "../SceneManager/SceneManager.h"
 #include "../Object/MapObject.h"
-#include "Engine/Collision/Structures/CollisionStructures.h"
-#include "Engine/CameraController/Core/CameraController.h"
+#include "servers/physics/collision/Structures/CollisionStructures.h"
+#include "scene/3d/camera/Core/CameraController.h"
 #include <iostream>
 #include <cmath>
 #include <cfloat>

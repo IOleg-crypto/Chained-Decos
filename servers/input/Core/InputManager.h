@@ -18,7 +18,7 @@
 #include <functional>
 #include <raylib.h>
 #include <unordered_map>
-#include "Engine/Kernel/Interfaces/IKernelService.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 
 //
 // InputManager

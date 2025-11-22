@@ -1,5 +1,5 @@
 #include "CameraManager.h"
-#include "Engine/CameraController/Core/CameraController.h"
+#include "scene/3d/camera/Core/CameraController.h"
 #include <imgui.h>
 #include <raylib.h>
 #include <raymath.h>

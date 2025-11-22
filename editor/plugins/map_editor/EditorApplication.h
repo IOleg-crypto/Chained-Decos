@@ -1,7 +1,7 @@
 #ifndef EDITOR_APPLICATION_H
 #define EDITOR_APPLICATION_H
 
-#include "Editor/Editor.h"
+#include "editor/plugins/map_editor/Editor/Editor.h"
 #include "Engine/Application/Core/IApplication.h"
 #include <memory>
 
