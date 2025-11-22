@@ -6,6 +6,10 @@ add_library(render STATIC
     Interfaces/IGameRenderable.h
     Interfaces/IMenuRenderable.h
     Interfaces/IRenderable.h
+    Commands/IRenderCommand.h
+    Commands/RenderModelCommand.h
+    Commands/RenderDebugCommand.h
+    Commands/RenderPrimitiveCommand.h
     Helpers/ImGuiHelper.cpp
     Helpers/ImGuiHelper.h
     Shader/ShaderManager.cpp

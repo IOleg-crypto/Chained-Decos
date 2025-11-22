@@ -5,12 +5,12 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include "../Parser/JsonParser.h"
+#include "../Animation/Animation.h"
 #include "../Cache/ModelCache.h"
 #include "../Config/ModelConfig.h"
-#include "ModelInstance.h"
 #include "../Interfaces/IModelLoader.h"
-#include "../Animation/Animation.h"
+#include "../Parser/JsonParser.h"
+#include "ModelInstance.h"
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <raylib.h>
@@ -21,8 +21,10 @@
 
 using json = nlohmann::json;
 
+#include "../../Kernel/Interfaces/IKernelService.h"
+
 // Model loader with caching and statistics
-class ModelLoader : public IModelLoader
+class ModelLoader : public IModelLoader, public IKernelService
 {
 public:
     // Model constants
@@ -32,20 +34,43 @@ public:
     ModelLoader();
     ~ModelLoader();
 
+    // IKernelService implementation
+    bool Initialize() override
+    {
+        return true;
+    }
+    void Shutdown() override
+    {
+        UnloadAllModels();
+    }
+    void Update(float deltaTime) override
+    {
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "ModelLoader";
+    }
+
     // ==================== CORE METHODS ====================
 
     // Load models from JSON config
-    struct LoadResult {
+    struct LoadResult
+    {
         int totalModels;
         int loadedModels;
         int failedModels;
         float loadingTime;
     };
-    
+
     std::optional<LoadResult> LoadModelsFromJson(const std::string &path);
 
     // Load only specific models from JSON config
-    std::optional<LoadResult> LoadModelsFromJsonSelective(const std::string &path, const std::vector<std::string> &modelNames);
+    std::optional<LoadResult>
+    LoadModelsFromJsonSelective(const std::string &path,
+                                const std::vector<std::string> &modelNames);
 
     // Set selective loading mode
     void SetSelectiveMode(bool enabled);
@@ -64,43 +89,45 @@ public:
 
     // Add instance with enhanced config
     bool AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config);
-    
+
     // ==================== GAME MODEL LOADING ====================
-    
+
     /**
      * @brief Load all game models from resources directory
-     * 
+     *
      * Scans the resources directory for all available models and loads them.
      * Configures cache and LOD settings for optimal game performance.
-     * 
+     *
      * @return LoadResult with statistics, or nullopt on failure
      */
     std::optional<LoadResult> LoadGameModels();
-    
+
     /**
      * @brief Load specific models required for a map
-     * 
+     *
      * Loads only the models specified in the modelNames list.
      * More efficient than LoadGameModels() for map-specific loading.
-     * 
+     *
      * @param modelNames List of model names to load
      * @return LoadResult with statistics, or nullopt on failure
      */
     std::optional<LoadResult> LoadGameModelsSelective(const std::vector<std::string> &modelNames);
-    
+
     /**
      * @brief Load specific models with safe fallback handling
-     * 
+     *
      * Similar to LoadGameModelsSelective but with enhanced error handling
      * and validation. Uses hash set for faster lookup.
-     * 
+     *
      * @param modelNames List of model names to load
      * @return LoadResult with statistics, or nullopt on failure
      */
-    std::optional<LoadResult> LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames);
+    std::optional<LoadResult>
+    LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames);
 
     // Model management
-    bool LoadSingleModel(const std::string &name, const std::string &path, bool preload = true) override;
+    bool LoadSingleModel(const std::string &name, const std::string &path,
+                         bool preload = true) override;
     bool UnloadModel(const std::string &name);
     void UnloadAllModels() override;
     bool ReloadModel(const std::string &name);
@@ -133,7 +160,7 @@ public:
     // Cleanup and optimization
     void CleanupUnusedModels() const;
     void OptimizeCache() const;
-    
+
     // Clear all model instances (useful when loading new maps)
     void ClearInstances();
 
@@ -160,10 +187,9 @@ private:
     bool ValidateModelPath(const std::string &path) const;
 
     // Validation helper functions for crash prevention
-    static bool IsValidVector3(const Vector3& v);
-    static bool IsValidColor(const Color& c);
-    static bool IsValidMatrix(const Matrix& m);
-
+    static bool IsValidVector3(const Vector3 &v);
+    static bool IsValidColor(const Color &c);
+    static bool IsValidMatrix(const Matrix &m);
 };
 
 #endif // MODEL_H

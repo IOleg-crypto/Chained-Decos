@@ -1,15 +1,15 @@
 #include "EditorModule.h"
 #include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Kernel/Core/KernelServices.h"
 #include <raylib.h>
 
 EditorModule::EditorModule()
 {
 }
 
-bool EditorModule::Initialize(Kernel* kernel)
+bool EditorModule::Initialize(Kernel *kernel)
 {
-    if (!kernel) {
+    if (!kernel)
+    {
         TraceLog(LOG_ERROR, "[EditorModule] Kernel is null");
         return false;
     }
@@ -37,10 +37,11 @@ void EditorModule::Render()
     // Editor rendering is handled by EditorApplication::OnPostRender()
 }
 
-void EditorModule::RegisterServices(Kernel* kernel)
+void EditorModule::RegisterServices(Kernel *kernel)
 {
-    if (!kernel) return;
-    
+    if (!kernel)
+        return;
+
     // Editor doesn't need additional services registered here
     // All editor functionality is handled directly in EditorApplication
 }
@@ -49,4 +50,3 @@ std::vector<std::string> EditorModule::GetDependencies() const
 {
     return {}; // No dependencies
 }
-

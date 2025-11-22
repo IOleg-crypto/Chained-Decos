@@ -2,7 +2,6 @@
 #include "Engine.h"
 #include "Engine/Collision/System/CollisionSystem.h"
 #include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Kernel/Core/KernelServices.h"
 #include "MenuConstants.h"
 #include "Settings/SettingsManager.h"
 #include "rlImGui.h"
@@ -97,7 +96,7 @@ void Menu::SetKernel(Kernel *kernel)
 {
     // Use Kernel::Instance() for global access instead of storing pointer
     (void)kernel; // Suppress unused parameter warning
-    
+
     if (!m_consoleManager)
     {
         // Create ConsoleManager
@@ -1133,7 +1132,8 @@ void Menu::RenderPaginationControls()
 }
 
 // Settings synchronization methods
-void Menu::SyncVideoSettingsToConfig() const {
+void Menu::SyncVideoSettingsToConfig() const
+{
     if (m_settingsManager)
     {
         // Convert resolution index from m_resolutionOptions to MenuConstants::RESOLUTION_OPTIONS
@@ -1192,7 +1192,8 @@ void Menu::SyncVideoSettingsToConfig() const {
     }
 }
 
-void Menu::SyncAudioSettingsToConfig() const {
+void Menu::SyncAudioSettingsToConfig() const
+{
     if (m_settingsManager)
     {
         m_settingsManager->SetMasterVolume(m_audioSettings.masterVolume);

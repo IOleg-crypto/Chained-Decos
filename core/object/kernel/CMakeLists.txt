@@ -1,7 +1,7 @@
 add_library(kernel STATIC
         Core/Kernel.cpp
         Core/Kernel.h
-        Core/KernelServices.h
+
         Interfaces/IKernelService.h
 )
 
