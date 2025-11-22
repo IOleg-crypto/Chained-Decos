@@ -1,6 +1,6 @@
 #include "ModuleManager.h"
 #include "../Interfaces/IEngineModule.h"
-#include "Kernel/Core/Kernel.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include <raylib.h>
 #include <algorithm>
 #include <set>

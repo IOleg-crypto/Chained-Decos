@@ -1,39 +1,23 @@
+cmake_minimum_required(VERSION 3.20)
 
-
+# Rendering server
 add_library(render STATIC
     Core/RenderManager.cpp
-    Core/RenderManager.h
-    Interfaces/IGameRenderable.h
-    Interfaces/IMenuRenderable.h
-    Interfaces/IRenderable.h
-    Commands/IRenderCommand.h
-    Commands/RenderModelCommand.h
-    Commands/RenderDebugCommand.h
-    Commands/RenderPrimitiveCommand.h
-    Helpers/ImGuiHelper.cpp
-    Helpers/ImGuiHelper.h
     Shader/ShaderManager.cpp
-    Shader/ShaderManager.h
-    Utils/RenderUtils.cpp
-    Utils/RenderUtils.h
     Utils/RenderUtilities.cpp
-    Utils/RenderUtilities.h
+    Utils/RenderUtils.cpp
+    Helpers/ImGuiHelper.cpp
 )
 
-target_include_directories(render PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/src/Engine
-    ${CMAKE_SOURCE_DIR}/src
+target_include_directories(render
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/servers/rendering
 )
 
-target_link_libraries(render PUBLIC
-    raylib
-    imguilib
-    collision
-    model
-    world
-    player
-    nlohmann_json
+target_link_libraries(render
+    PUBLIC
+        raylib
+        imguilib
+        core
 )
-
-set_target_properties(render PROPERTIES POSITION_INDEPENDENT_CODE ON)

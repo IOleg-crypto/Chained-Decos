@@ -1,11 +1,11 @@
 #ifndef EDITOR_MODULE_H
 #define EDITOR_MODULE_H
 
-#include "Engine/Module/Interfaces/IEngineModule.h"
+#include "core/object/module/Interfaces/IEngineModule.h"
 #include <memory>
 #include <vector>
 #include <string>
-#include "Engine/Kernel/Core/Kernel.h"
+#include "core/object/kernel/Core/Kernel.h"
 
 // Editor module - minimal implementation
 // Editor functionality is handled directly in EditorApplication

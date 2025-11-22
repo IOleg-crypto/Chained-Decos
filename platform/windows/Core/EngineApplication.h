@@ -6,8 +6,8 @@
 #define ENGINE_APPLICATION_H
 
 #include "Engine/Engine.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Module/Core/ModuleManager.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "core/object/module/Core/ModuleManager.h"
 #include "IApplication.h"
 #include <functional>
 #include <memory>

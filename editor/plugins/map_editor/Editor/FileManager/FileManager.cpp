@@ -5,8 +5,8 @@
 #include "FileManager.h"
 #include "MapObjectConverterEditor.h"
 #include "../Object/MapObject.h"
-#include "Engine/Map/Core/MapService.h"
-#include "Engine/Map/Core/MapLoader.h"
+#include "scene/resources/map/Core/MapService.h"
+#include "scene/resources/map/Core/MapLoader.h"
 #include "../Utils/PathUtils.h"
 #include <filesystem>
 #include <iostream>

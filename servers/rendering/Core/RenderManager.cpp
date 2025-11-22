@@ -5,16 +5,16 @@
 #include "RenderManager.h"
 
 // Include concrete implementations that were forward declared in header
-#include "Collision/Core/CollisionManager.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include "Collision/Debug/CollisionDebugRenderer.h"
 #include "Commands/IRenderCommand.h"
 #include "Interfaces/IGameRenderable.h"
 #include "Interfaces/IMenuRenderable.h"
-#include "Model/Core/Model.h"
+#include "scene/resources/model/Core/Model.h"
 #include "Shader/ShaderManager.h"
 
 #include "../Helpers/ImGuiHelper.h"
-#include <Engine/World/Core/World.h>
+#include <scene/main/Core/World.h>
 #include <Physics/Components/PhysicsComponent.h>
 #include <filesystem>
 #include <fstream>

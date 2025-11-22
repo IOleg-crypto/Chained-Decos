@@ -7,13 +7,13 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include "Engine/Audio/Core/AudioManager.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Kernel/Interfaces/IKernelService.h"
+#include "servers/audio/Core/AudioManager.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 #include <CameraController/Core/CameraController.h>
 #include <Collision/Core/CollisionManager.h>
 #include <Collision/System/CollisionSystem.h>
-#include <Model/Core/Model.h>
+#include <scene/resources/model/Core/Model.h>
 #include <World/Core/World.h>
 
 // Include component interfaces
@@ -22,7 +22,7 @@
 #include "../Interfaces/IPlayerInput.h"
 #include "../Interfaces/IPlayerMediator.h"
 #include "../Interfaces/IPlayerMovement.h"
-#include "Engine/Render/Interfaces/IGameRenderable.h"
+#include "servers/rendering/Interfaces/IGameRenderable.h"
 
 // Forward declaration to break circular dependency
 class PlayerRenderable;

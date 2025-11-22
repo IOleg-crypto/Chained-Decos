@@ -2,8 +2,8 @@
 //
 
 #include "Editor.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Map/Core/MapLoader.h" // Include the new comprehensive map loader
+#include "core/object/kernel/Core/Kernel.h"
+#include "scene/resources/map/Core/MapLoader.h" // Include the new comprehensive map loader
 #include "Engine/MapFileManager/Json/JsonMapFileManager.h"
 #include "FileManager/MapObjectConverterEditor.h"
 #include "Renderer/EditorRenderer.h"
@@ -17,7 +17,7 @@
 #include "UIManager/UIManager.h"
 
 // Model and rendering subsystems
-#include "Engine/Model/Core/Model.h"
+#include "scene/resources/model/Core/Model.h"
 #include "ModelManager/ModelManager.h"
 
 #include <algorithm>
@@ -34,7 +34,7 @@
 #include <raylib.h>
 #include <rlImGui.h>
 
-#include "Engine/Render/Utils/RenderUtils.h"
+#include "servers/rendering/Utils/RenderUtils.h"
 #include <raymath.h>
 #include <rlgl.h>
 #include <string>
