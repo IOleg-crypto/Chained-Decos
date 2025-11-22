@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "Map/Core/MapData.h"
+#include "scene/resources/map/Core/MapData.h"
 
 /**
  * @brief Utility class for analyzing map files and determining model requirements

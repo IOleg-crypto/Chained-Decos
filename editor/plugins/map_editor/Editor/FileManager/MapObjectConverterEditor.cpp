@@ -1,6 +1,6 @@
 #include "MapObjectConverterEditor.h"
 #include "../Object/MapObject.h"
-#include "Engine/Map/Converter/MapObjectConverter.h"
+#include "scene/resources/map/Converter/MapObjectConverter.h"
 #include "Engine/MapFileManager/Json/JsonMapFileManager.h"
 #include <ctime>
 #include <cstdlib>

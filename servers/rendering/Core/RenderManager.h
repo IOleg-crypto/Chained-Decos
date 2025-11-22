@@ -15,7 +15,7 @@ class CollisionDebugRenderer;
 class ShaderManager;
 
 // Include only necessary interfaces
-#include "Engine/Kernel/Interfaces/IKernelService.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 #include <memory>
 #include <vector>
 

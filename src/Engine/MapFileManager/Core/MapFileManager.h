@@ -5,7 +5,7 @@
 #ifndef MAPFILEMANAGER_H
 #define MAPFILEMANAGER_H
 
-#include <Model/Core/Model.h>
+#include <scene/resources/model/Core/Model.h>
 #include <raylib.h>
 #include <string>
 #include <vector>

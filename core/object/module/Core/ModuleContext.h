@@ -1,8 +1,8 @@
 #ifndef MODULE_CONTEXT_H
 #define MODULE_CONTEXT_H
 
-#include "../Event/Core/EventDispatcher.h"
-#include "../Kernel/Core/Kernel.h"
+#include "core/object/event/Core/EventDispatcher.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include <memory>
 #include <typeindex>
 

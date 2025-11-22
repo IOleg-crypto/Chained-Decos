@@ -11,12 +11,12 @@
 #include <string>
 #include <vector>
 
-#include "Engine/CameraController/Core/CameraController.h"
-#include "Engine/Model/Core/Model.h"
+#include "scene/3d/camera/Core/CameraController.h"
+#include "scene/resources/model/Core/Model.h"
 #include "Object/MapObject.h"
-#include "Engine/Map/Core/MapLoader.h"
+#include "scene/resources/map/Core/MapLoader.h"
 #include "ModelManager/IModelManager.h"
-#include "Engine/Map/Skybox/Skybox.h"
+#include "scene/resources/map/Skybox/Skybox.h"
 
 // Subsystem interfaces
 #include "SceneManager/ISceneManager.h"

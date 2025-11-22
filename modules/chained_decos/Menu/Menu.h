@@ -3,8 +3,8 @@
 
 #include "Console/ConsoleManager.h"
 #include "Engine.h"
-#include "Engine/CameraController/Interfaces/ICameraSensitivityController.h"
-#include "Engine/Kernel/Core/Kernel.h"
+#include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include "MapSelector/MapSelector.h"
 #include "Settings/SettingsManager.h"
 #include <GLFW/glfw3.h>

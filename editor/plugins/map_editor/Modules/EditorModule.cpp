@@ -1,5 +1,5 @@
 #include "EditorModule.h"
-#include "Engine/Kernel/Core/Kernel.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include <raylib.h>
 
 EditorModule::EditorModule()

@@ -2,15 +2,15 @@
 #define EDITOR_RENDERER_H
 
 #include "../Object/MapObject.h"
-#include "Engine/Map/Core/MapLoader.h"
-#include "Engine/Map/Core/MapData.h"
+#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/map/Core/MapData.h"
 #include "../ToolManager/IToolManager.h"
 #include "../CameraManager/ICameraManager.h"
 #include "../ModelManager/IModelManager.h"
 #include <raylib.h>
 #include <unordered_map>
 #include <string>
-#include "Engine/Model/Core/Model.h"
+#include "scene/resources/model/Core/Model.h"
 
 // EditorRenderer - handles all rendering operations for the editor
 class EditorRenderer

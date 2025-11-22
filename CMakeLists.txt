@@ -273,10 +273,13 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
     file(COPY "${CMAKE_SOURCE_DIR}/resources" DESTINATION "${CMAKE_BINARY_DIR}")
 endif()
 
-add_subdirectory(src/Engine)
-add_subdirectory(src/Game)
+# Add new modular structure
+add_subdirectory(core)
+add_subdirectory(servers)
+add_subdirectory(scene)
+add_subdirectory(modules/chained_decos)
 
-add_executable(ChainedDecos src/Game/main.cpp)
+add_executable(ChainedDecos modules/chained_decos/main.cpp)
 target_link_libraries(ChainedDecos PRIVATE
     ChainedDecosGame
     imguilib
@@ -287,7 +290,7 @@ if(BUILD_TESTS)
 endif()
 
 if(BUILD_MAP_EDITOR)
-    add_subdirectory(src/MapEditor)
+    add_subdirectory(editor/plugins/map_editor)
 endif()
 
 # Set the target properties

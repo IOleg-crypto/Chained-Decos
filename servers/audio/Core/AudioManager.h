@@ -7,7 +7,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "../../Kernel/Interfaces/IKernelService.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 
 class AudioManager : public IAudioManager, public IKernelService
 {

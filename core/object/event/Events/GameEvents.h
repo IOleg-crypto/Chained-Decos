@@ -1,7 +1,7 @@
 #ifndef GAME_EVENTS_H
 #define GAME_EVENTS_H
 
-#include "../Core/Event.h"
+#include "core/object/event/Core/Event.h"
 #include <raylib.h>
 #include <string>
 

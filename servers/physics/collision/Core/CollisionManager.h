@@ -1,7 +1,7 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
-#include "../../Kernel/Interfaces/IKernelService.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 #include "../Interfaces/ICollisionManager.h"
 #include "../System/CollisionSystem.h"
 #include "Model/Config/ModelConfig.h"
@@ -17,7 +17,7 @@
 #include <vector>
 
 // Include ModelLoader header
-#include "Model/Core/Model.h"
+#include "scene/resources/model/Core/Model.h"
 
 // Structure to hold model processing data for parallel processing
 struct ModelCollisionTask

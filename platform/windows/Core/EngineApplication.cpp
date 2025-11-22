@@ -1,7 +1,7 @@
-#include "EngineApplication.h"
+#include "platform/windows/Core/EngineApplication.h"
 #include "Engine/Engine.h"
-#include "Engine/Input/Core/InputManager.h"
-#include "Engine/Render/Core/RenderManager.h"
+#include "servers/input/Core/InputManager.h"
+#include "servers/rendering/Core/RenderManager.h"
 #include <cassert>
 #include <raylib.h>
 

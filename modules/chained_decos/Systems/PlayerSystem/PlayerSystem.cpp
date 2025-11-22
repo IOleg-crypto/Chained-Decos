@@ -1,12 +1,12 @@
 #include "PlayerSystem.h"
 #include "../MapSystem/MapSystem.h"
-#include "Engine/Collision/Core/CollisionManager.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include "Engine/Engine.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Model/Core/Model.h"
-#include "Game/Player/Core/Player.h"
-#include "Menu/Console/ConsoleManagerHelpers.h"
-#include "Menu/Menu.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "scene/resources/model/Core/Model.h"
+#include "modules/chained_decos/Player/Core/Player.h"
+#include "modules/chained_decos/Menu/Console/ConsoleManagerHelpers.h"
+#include "modules/chained_decos/Menu/Menu.h"
 #include <imgui.h>
 #include <raylib.h>
 

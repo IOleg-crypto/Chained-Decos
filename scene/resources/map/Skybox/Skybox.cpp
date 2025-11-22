@@ -3,7 +3,7 @@
 #include "rlImGui/rlImGui.h"
 #include "rlgl.h"
 #include "Skybox.h"
-#include "Engine/Config/Core/ConfigManager.h"
+#include "core/config/Core/ConfigManager.h"
 
 #ifndef PROJECT_ROOT_DIR
 #define PROJECT_ROOT_DIR ""

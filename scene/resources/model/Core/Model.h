@@ -21,7 +21,7 @@
 
 using json = nlohmann::json;
 
-#include "../../Kernel/Interfaces/IKernelService.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 
 // Model loader with caching and statistics
 class ModelLoader : public IModelLoader, public IKernelService

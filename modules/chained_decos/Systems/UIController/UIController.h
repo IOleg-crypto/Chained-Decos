@@ -1,8 +1,8 @@
 #ifndef UI_CONTROLLER_H
 #define UI_CONTROLLER_H
 
-#include "Engine/Module/Interfaces/IEngineModule.h"
-#include "Engine/Kernel/Core/Kernel.h"
+#include "core/object/module/Interfaces/IEngineModule.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include "Game/Menu/Menu.h"
 #include "Game/Menu/Console/ConsoleManager.h"
 #include "Engine/Interfaces/IEngine.h"

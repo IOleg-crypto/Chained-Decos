@@ -2,8 +2,8 @@
 #define IGAMERENDERABLE_H
 
 #include <raylib.h>
-#include "Model/Core/Model.h"
-#include "Collision/Core/CollisionManager.h"
+#include "scene/resources/model/Core/Model.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include "Collision/System/CollisionSystem.h"
 
 // Interface for objects that require full game rendering (Player, NPC, etc.)

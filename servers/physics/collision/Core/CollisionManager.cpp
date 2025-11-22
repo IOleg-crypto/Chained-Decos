@@ -1,6 +1,6 @@
 #include "CollisionManager.h"
 #include <Collision/System/CollisionSystem.h>
-#include <Model/Core/Model.h>
+#include <scene/resources/model/Core/Model.h>
 #include <algorithm>
 #include <array>
 #include <cfloat>

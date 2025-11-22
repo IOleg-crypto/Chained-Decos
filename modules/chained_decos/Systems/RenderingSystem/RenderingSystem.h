@@ -2,8 +2,8 @@
 #define RENDERING_SYSTEM_H
 
 #include "Engine/Engine.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Module/Interfaces/IEngineModule.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "core/object/module/Interfaces/IEngineModule.h"
 #include <memory>
 #include <string>
 #include <vector>
