@@ -18,11 +18,11 @@
 #include <memory>
 #include <string>
 // Project headers
-#include "Input/Core/InputManager.h"
+#include "servers/input/Core/InputManager.h"
 #include "Interfaces/IEngine.h"
-#include "Kernel/Core/Kernel.h"
-#include "Module/Core/ModuleManager.h"
-#include "Render/Core/RenderManager.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "core/object/module/Core/ModuleManager.h"
+#include "servers/rendering/Core/RenderManager.h"
 
 // Configuration for Engine initialization
 struct EngineConfig

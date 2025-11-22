@@ -5,8 +5,8 @@
 #include <string>
 
 // Include necessary headers
-#include "Model/Core/Model.h"
-#include "Collision/Core/CollisionManager.h"
+#include "scene/resources/model/Core/Model.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include "Collision/System/CollisionSystem.h"
 
 class IRenderable

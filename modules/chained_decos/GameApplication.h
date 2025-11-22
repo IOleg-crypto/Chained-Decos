@@ -1,14 +1,14 @@
 #ifndef GAME_APPLICATION_H
 #define GAME_APPLICATION_H
 
-#include "Engine/Application/Core/IApplication.h"
-#include "Engine/Audio/Core/AudioManager.h"
-#include "Engine/Collision/Core/CollisionManager.h"
-#include "Engine/CommandLineHandler/Core/CommandLineHandler.h"
-#include "Engine/Model/Core/Model.h"
-#include "Engine/World/Core/World.h"
-#include "Game/Player/Core/Player.h"
-#include "Menu/Menu.h"
+#include "src/Engine/CommandLineHandler/Core/CommandLineHandler.h"
+#include "modules/chained_decos/Player/Core/Player.h"
+#include "modules/chained_decos/Menu/Menu.h"
+#include "platform/windows/Core/IApplication.h"
+#include "scene/main/Core/World.h"
+#include "scene/resources/model/Core/Model.h"
+#include "servers/audio/Core/AudioManager.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 // =================================================
 #include <memory>
 

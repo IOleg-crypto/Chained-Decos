@@ -2,7 +2,7 @@
 #define MODELMANAGER_H
 
 #include "IModelManager.h"
-#include "Engine/Model/Core/Model.h"
+#include "scene/resources/model/Core/Model.h"
 #include <memory>
 #include <string>
 #include <vector>

@@ -3,9 +3,9 @@
 
 #include <string>
 #include <vector>
-#include "Engine/Map/Core/MapLoader.h"
-#include "Engine/Collision/Core/CollisionManager.h"
-#include "Engine/Model/Core/Model.h"
+#include "scene/resources/map/Core/MapLoader.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
+#include "scene/resources/model/Core/Model.h"
 
 class Player;
 

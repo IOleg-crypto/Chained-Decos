@@ -1,14 +1,14 @@
 #ifndef MAP_SYSTEM_H
 #define MAP_SYSTEM_H
 
-#include "Engine/Collision/Core/CollisionManager.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include "Engine/Engine.h"
-#include "Engine/Kernel/Core/Kernel.h"
-#include "Engine/Map/Core/MapLoader.h"
-#include "Engine/Model/Core/Model.h"
-#include "Engine/Module/Interfaces/IEngineModule.h"
-#include "Engine/Render/Core/RenderManager.h"
-#include "Engine/World/Core/World.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/model/Core/Model.h"
+#include "core/object/module/Interfaces/IEngineModule.h"
+#include "servers/rendering/Core/RenderManager.h"
+#include "scene/main/Core/World.h"
 #include <memory>
 #include <raylib.h>
 #include <string>
@@ -115,7 +115,7 @@ private:
     Engine *m_engine;
 };
 
-#include "Engine/Kernel/Interfaces/IKernelService.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 
 struct MapSystemService : public IKernelService
 {
