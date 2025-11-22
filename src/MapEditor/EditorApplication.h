@@ -1,38 +1,38 @@
 #ifndef EDITOR_APPLICATION_H
 #define EDITOR_APPLICATION_H
 
-#include "Engine/Application/Core/EngineApplication.h"
 #include "Editor/Editor.h"
+#include "Engine/Application/Core/IApplication.h"
 #include <memory>
 
 // Editor application - uses full engine + own modules
-class EditorApplication : public EngineApplication {
+class EditorApplication : public IApplication
+{
 public:
     EditorApplication();
     ~EditorApplication();
 
-protected:
     // Settings before initialization
     void OnPreInitialize() override;
-    
+
     // Initialize Editor components
     void OnInitializeServices() override;
-    
+
     // Register Editor modules (REQUIRED)
     void OnRegisterProjectModules() override;
-    
+
     // Register Editor services
     void OnRegisterProjectServices() override;
-    
+
     // After initialization
     void OnPostInitialize() override;
-    
+
     // Custom update logic
     void OnPostUpdate(float deltaTime) override;
-    
+
     // Custom rendering logic
     void OnPostRender() override;
-    
+
     // Before shutdown
     void OnPreShutdown() override;
 
@@ -41,4 +41,3 @@ private:
 };
 
 #endif // EDITOR_APPLICATION_H
-

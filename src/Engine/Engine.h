@@ -15,28 +15,29 @@
 #define CHAINEDDECOSENGINE_API
 #endif
 
-#include <string>
 #include <memory>
+#include <string>
 // Project headers
 #include "Input/Core/InputManager.h"
-#include "Kernel/Core/Kernel.h"
-#include "Render/Core/RenderManager.h"
-#include "Module/Core/ModuleManager.h"
 #include "Interfaces/IEngine.h"
+#include "Kernel/Core/Kernel.h"
+#include "Module/Core/ModuleManager.h"
+#include "Render/Core/RenderManager.h"
 
 // Configuration for Engine initialization
-struct EngineConfig {
+struct EngineConfig
+{
     int screenWidth = 1920;
     int screenHeight = 1080;
     std::shared_ptr<RenderManager> renderManager;
     std::shared_ptr<InputManager> inputManager;
-    Kernel* kernel = nullptr;
+    Kernel *kernel = nullptr;
 };
 
 CHAINEDDECOSENGINE_API class Engine : public IEngine
 {
 public:
-    explicit Engine(const EngineConfig& config);
+    explicit Engine(const EngineConfig &config);
     ~Engine();
     Engine(Engine &&other) = delete;
     Engine &operator=(const Engine &other) = delete;
@@ -50,47 +51,89 @@ public:
     void Shutdown() const;
 
     // ==================== Public Getters for Engine Services ====================
-    [[nodiscard]] RenderManager *GetRenderManager() const override;
+    // Getters
+    RenderManager *GetRenderManager() const override
+    {
+        return m_renderManager.get();
+    }
+    InputManager &GetInputManager() const override
+    {
+        return *m_inputManager;
+    }
+    Kernel *GetKernel() const
+    {
+        return m_kernel.get();
+    }
+    ModuleManager *GetModuleManager() override
+    {
+        return m_moduleManager.get();
+    }
 
-    InputManager &GetInputManager() const override;
-    
-    Kernel* GetKernel() const { return m_kernel; }
-    std::string GetWindowName() const { return m_windowName; }
-    void SetWindowName(const std::string& name) { m_windowName = name; }
-
-    // ==================== Module System ====================
-    ModuleManager* GetModuleManager() override { return m_moduleManager.get(); }
-    const ModuleManager* GetModuleManager() const { return m_moduleManager.get(); }
+    // Configuration
+    const EngineConfig &GetConfig() const
+    {
+        return m_config;
+    }
 
     void RegisterModule(std::unique_ptr<class IEngineModule> module);
 
     // ==================== Engine State Control ====================
     void RequestExit();
-    bool IsDebugInfoVisible() const override;
+    void SetWindowName(const std::string &name);
 
+    bool IsDebugInfoVisible() const override;
     bool IsCollisionDebugVisible() const override;
 
 private:
     void HandleEngineInput(); // For engine-level shortcuts (e.g., F11 for fullscreen)
 
 private:
+    EngineConfig m_config;
+
     // Window & Display
     int m_screenX;
     int m_screenY;
     std::string m_windowName;
     bool m_windowInitialized; // Track if this Engine instance initialized the window
 
-    // Core Engine Services
-    std::shared_ptr<InputManager> m_inputManager;
-    std::shared_ptr<RenderManager> m_renderManager;
-    Kernel* m_kernel;
-    
-    // Module System
+    // Core systems
+    std::unique_ptr<Kernel> m_kernel;
     std::unique_ptr<ModuleManager> m_moduleManager;
+    std::shared_ptr<RenderManager> m_renderManager;
+    std::shared_ptr<InputManager> m_inputManager;
 
     // Engine State
     bool m_shouldExit;
     bool m_isEngineInit;
+    bool m_initialized;
+    bool m_running;
+};
+
+#include "Kernel/Interfaces/IKernelService.h"
+
+struct EngineService : public IKernelService
+{
+    Engine *engine = nullptr;
+    explicit EngineService(Engine *e) : engine(e)
+    {
+    }
+    bool Initialize() override
+    {
+        return engine != nullptr;
+    }
+    void Shutdown() override
+    {
+    }
+    void Update(float deltaTime) override
+    {
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "EngineService";
+    }
 };
 
 #endif // ENGINE_H
