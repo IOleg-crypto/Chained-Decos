@@ -7,9 +7,13 @@
 #include "IApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/module/Core/ModuleManager.h"
-#include "servers/input/Core/InputManager.h"
-#include "servers/rendering/Core/RenderManager.h"
+#include <memory>
 #include <string>
+
+// Forward declarations
+class Engine;
+class RenderManager;
+class InputManager;
 
 // Engine Runtime - Runs the application
 // Manages the lifecycle of the engine and delegates application logic to IApplication
@@ -47,10 +51,7 @@ public:
     {
         return m_kernel.get();
     }
-    ModuleManager *GetModuleManager() const
-    {
-        return m_engine ? m_engine->GetModuleManager() : nullptr;
-    }
+    ModuleManager *GetModuleManager() const;
 
     // Configuration
     Config &GetConfig()
@@ -74,5 +75,3 @@ private:
     std::unique_ptr<Engine> m_engine;
     bool m_initialized = false;
 };
-
-#endif // ENGINE_APPLICATION_H
