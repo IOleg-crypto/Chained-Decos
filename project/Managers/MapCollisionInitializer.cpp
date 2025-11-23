@@ -1,5 +1,5 @@
 #include "MapCollisionInitializer.h"
-#include "modules/chained_decos/Player/Core/Player.h"
+#include "project/Player/Core/Player.h"
 #include "Player/Collision/PlayerCollision.h"
 #include <raylib.h>
 
