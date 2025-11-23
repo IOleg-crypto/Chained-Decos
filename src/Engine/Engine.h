@@ -18,10 +18,11 @@
 #include <memory>
 #include <string>
 // Project headers
-#include "servers/input/Core/InputManager.h"
-#include "Interfaces/IEngine.h"
 #include "core/object/kernel/Core/Kernel.h"
+#include "core/object/kernel/Interfaces/IEngine.h"
+#include "core/object/kernel/Interfaces/IKernelService.h"
 #include "core/object/module/Core/ModuleManager.h"
+#include "servers/input/Core/InputManager.h"
 #include "servers/rendering/Core/RenderManager.h"
 
 // Configuration for Engine initialization

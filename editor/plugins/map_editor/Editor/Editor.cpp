@@ -27,7 +27,7 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <iostream>
 #include <imgui/misc/cpp/imgui_stdlib.h>
 #include <nfd.h>
