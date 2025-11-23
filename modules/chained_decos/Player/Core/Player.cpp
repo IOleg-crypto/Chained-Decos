@@ -4,7 +4,7 @@
 #include "../Components/PlayerModel.h"
 #include "../Components/PlayerMovement.h"
 #include "../Components/PlayerRenderable.h"
-#include <CameraController/Core/CameraController.h>
+#include <scene/3d/camera/Core/CameraController.h>
 #include <Render/Interfaces/IGameRenderable.h>
 #include <World/Core/World.h>
 #include <memory>
