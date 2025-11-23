@@ -7,7 +7,7 @@
 #include "Game/Systems/PlayerSystem/PlayerSystem.h"
 #include <algorithm>
 #include <cctype>
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <iomanip>
 #include <iostream>
 #include <iterator>

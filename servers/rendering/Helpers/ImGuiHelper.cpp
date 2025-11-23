@@ -1,5 +1,5 @@
 #include "ImGuiHelper.h"
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <raylib.h>
 
 bool ImGuiHelper::InitializeFont(const std::string& fontPath, float fontSize)

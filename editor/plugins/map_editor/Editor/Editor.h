@@ -5,7 +5,7 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include "raylib.h"
 #include <memory>
 #include <string>

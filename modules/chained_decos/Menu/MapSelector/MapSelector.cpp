@@ -5,7 +5,7 @@
 #include <iostream>
 #include <filesystem>
 #include <algorithm>
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <cctype> // For std::tolower
 
 // Use constants from namespace

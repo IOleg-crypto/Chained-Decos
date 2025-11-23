@@ -3,7 +3,7 @@
 
 #include "CameraController.h"
 #include "raylib.h"
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include "rlgl.h"
 #include <cmath>
 
