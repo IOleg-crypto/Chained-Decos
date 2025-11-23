@@ -9,7 +9,7 @@
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
 #include "Game/Menu/Console/ConsoleManager.h"
 #include "Game/Menu/Menu.h"
-#include "modules/chained_decos/Player/Core/Player.h"
+#include "project/Player/Core/Player.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>

@@ -1,8 +1,8 @@
 #include "ConsoleManager.h"
 #include "Engine/Engine.h"
 #include "core/object/kernel/Core/Kernel.h"
-#include "modules/chained_decos/Player/Collision/PlayerCollision.h"
-#include "modules/chained_decos/Player/Core/Player.h"
+#include "project/Player/Collision/PlayerCollision.h"
+#include "project/Player/Core/Player.h"
 #include "Game/Systems/MapSystem/MapSystem.h"
 #include "Game/Systems/PlayerSystem/PlayerSystem.h"
 #include <algorithm>
