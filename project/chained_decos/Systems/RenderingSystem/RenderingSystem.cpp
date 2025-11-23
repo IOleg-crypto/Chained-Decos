@@ -1,6 +1,6 @@
 #include "RenderingSystem.h"
 #include "../MapSystem/MapSystem.h"
-#include "Engine/Engine.h"
+#include "platform/windows/Core/EngineApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "servers/rendering/Core/RenderManager.h"
 #include "project/chained_decos/Player/Core/Player.h"
