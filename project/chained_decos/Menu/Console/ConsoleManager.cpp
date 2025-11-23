@@ -1,6 +1,6 @@
 #include "ConsoleManager.h"
-#include "platform/windows/Core/EngineApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
+#include "platform/windows/Core/EngineApplication.h"
 #include "project/chained_decos/Player/Collision/PlayerCollision.h"
 #include "project/chained_decos/Player/Core/Player.h"
 #include "project/chained_decos/Systems/MapSystem/MapSystem.h"
@@ -43,8 +43,10 @@ MapManager *ConsoleManager::GetMapManager() const
 Engine *ConsoleManager::GetEngine() const
 {
     // Get Engine through Kernel
-    auto engineService = Kernel::Instance().GetService<EngineService>();
-    return engineService ? engineService->engine : nullptr;
+    // TODO: Create EngineService
+    // auto engineService = Kernel::Instance().GetService<EngineService>();
+    // return engineService ? engineService->engine : nullptr;
+    return nullptr; // Temporarily return nullptr until EngineService is created
 }
 
 void ConsoleManager::ToggleConsole()
@@ -445,11 +447,13 @@ void ConsoleManager::RegisterBuiltinCommands()
                     [](const std::vector<std::string> &args, ConsoleManager *console)
                     {
                         console->AddOutput("Quitting game...");
-                        Engine *engine = console->GetEngine();
-                        if (engine)
-                        {
-                            engine->RequestExit();
-                        }
+                        // Engine *engine = console->GetEngine();
+                        // if (engine)
+                        // {
+                        //     engine->RequestExit(); // TODO: Add RequestExit to Engine
+                        // }
+                        // For now, use exit()
+                        exit(0);
                     });
 }
 
