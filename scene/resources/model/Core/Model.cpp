@@ -13,7 +13,7 @@
 #include <string>
 #include <unordered_set>
 
-#include <src/Engine/Color/Parser/ColorParser.h>
+#include <scene/resources/color/ColorParser.h>
 
 ModelLoader::ModelLoader() : m_cache(std::make_shared<ModelCache>())
 {

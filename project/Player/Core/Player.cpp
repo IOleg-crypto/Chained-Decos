@@ -5,7 +5,7 @@
 #include "../Components/PlayerMovement.h"
 #include "../Components/PlayerRenderable.h"
 #include <scene/3d/camera/Core/CameraController.h>
-#include <Render/Interfaces/IGameRenderable.h>
+#include <servers/rendering/Interfaces/IGameRenderable.h>
 #include <scene/main/Core/World.h>
 #include <memory>
 #include <raylib.h>
