@@ -5,9 +5,7 @@
 #include <raymath.h>
 #include <vector>
 
-#include "core/object/kernel/Interfaces/IKernelService.h"
-
-class WorldManager : public IKernelService
+class WorldManager
 {
 public:
     // World constants
@@ -19,21 +17,21 @@ public:
     ~WorldManager() = default;
 
     // World update
-    void Update(float deltaTime) override;
+    void Update(float deltaTime);
 
-    // IKernelService implementation
-    bool Initialize() override
+    // Service implementation
+    bool Initialize()
     {
         InitializeWorld();
         return true;
     }
-    void Shutdown() override
+    void Shutdown()
     {
     }
-    void Render() override
+    void Render()
     {
     }
-    const char *GetName() const override
+    const char *GetName() const
     {
         return "WorldManager";
     }
