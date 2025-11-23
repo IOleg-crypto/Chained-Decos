@@ -4,9 +4,9 @@
 #include "Engine/Engine.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "scene/resources/model/Core/Model.h"
-#include "project/Player/Core/Player.h"
-#include "project/Menu/Console/ConsoleManagerHelpers.h"
-#include "project/Menu/Menu.h"
+#include "project/chained_decos/Player/Core/Player.h"
+#include "project/chained_decos/Menu/Console/ConsoleManagerHelpers.h"
+#include "project/chained_decos/Menu/Menu.h"
 #include <imgui.h>
 #include <raylib.h>
 

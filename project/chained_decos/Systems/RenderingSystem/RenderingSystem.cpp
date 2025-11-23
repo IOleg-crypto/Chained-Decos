@@ -3,7 +3,7 @@
 #include "Engine/Engine.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "servers/rendering/Core/RenderManager.h"
-#include "project/Player/Core/Player.h"
+#include "project/chained_decos/Player/Core/Player.h"
 
 #include "servers/physics/collision/Core/CollisionManager.h"
 #include "scene/resources/map/Renderer/MapRenderer.h"
