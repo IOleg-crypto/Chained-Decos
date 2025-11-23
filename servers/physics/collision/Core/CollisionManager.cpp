@@ -1,5 +1,5 @@
 #include "CollisionManager.h"
-#include <Collision/System/CollisionSystem.h>
+#include <servers/physics/collision/System/CollisionSystem.h>
 #include <scene/resources/model/Core/Model.h>
 #include <algorithm>
 #include <array>

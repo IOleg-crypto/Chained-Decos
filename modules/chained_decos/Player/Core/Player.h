@@ -10,9 +10,9 @@
 #include "servers/audio/Core/AudioManager.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/kernel/Interfaces/IKernelService.h"
-#include <CameraController/Core/CameraController.h>
-#include <Collision/Core/CollisionManager.h>
-#include <Collision/System/CollisionSystem.h>
+#include <scene/3d/camera/Core/CameraController.h>
+#include <servers/physics/collision/Core/CollisionManager.h>
+#include <servers/physics/collision/System/CollisionSystem.h>
 #include <scene/resources/model/Core/Model.h>
 #include <World/Core/World.h>
 

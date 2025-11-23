@@ -2,7 +2,7 @@
 #define MAPOBJECTCONVERTER_H
 
 #include "../Core/MapData.h"
-#include "MapFileManager/Json/JsonMapFileManager.h"
+#include "scene/resources/map/MapFileManager/Json/JsonMapFileManager.h"
 #include <string>
 #include <ctime>
 #include <cstdlib>

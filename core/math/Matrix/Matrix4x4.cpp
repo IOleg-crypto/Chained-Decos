@@ -1,5 +1,5 @@
-#include "Matrix4x4.h"
-#include "Vector3.h"
+#include "core/math/Matrix/Matrix4x4.h"
+#include "core/math/Vector/Vector3.h"
 
 namespace Engine {
 namespace Math {

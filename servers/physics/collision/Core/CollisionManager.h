@@ -4,7 +4,7 @@
 #include "core/object/kernel/Interfaces/IKernelService.h"
 #include "../Interfaces/ICollisionManager.h"
 #include "../System/CollisionSystem.h"
-#include "Model/Config/ModelConfig.h"
+#include "scene/resources/model/Config/ModelConfig.h"
 #include <algorithm>
 #include <array>
 #include <execution>
