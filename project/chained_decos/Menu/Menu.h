@@ -2,19 +2,17 @@
 #define MENU_H
 
 #include "Console/ConsoleManager.h"
-#include "core/object/kernel/Core/Kernel.h"
-#include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
-#include "core/object/kernel/Core/Kernel.h"
 #include "MapSelector/MapSelector.h"
 #include "Settings/SettingsManager.h"
+#include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
 #include <GLFW/glfw3.h>
-#include <servers/rendering/Interfaces/IMenuRenderable.h>
 #include <cstdint>
 #include <functional>
 #include <imgui.h>
 #include <memory>
 #include <optional>
 #include <raylib.h>
+#include <servers/rendering/Interfaces/IMenuRenderable.h>
 #include <string>
 #include <vector>
 
