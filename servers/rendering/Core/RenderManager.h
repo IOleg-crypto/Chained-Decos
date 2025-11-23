@@ -89,11 +89,11 @@ private:
                                IGameRenderable &renderable) const;
     void SetBackgroundColor(Color color);
     void DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
-                             const CollisionManager &collisionManager);
-    void DrawCameraInfo(const Camera &camera, int cameraMode);
-    void DrawModelManagerInfo(const ModelLoader &models);
-    void DrawCollisionSystemInfo(const CollisionManager &collisionManager);
-    void DrawControlsInfo();
+                             const CollisionManager &collisionManager) const;
+    void DrawCameraInfo(const Camera &camera, int cameraMode) const;
+    void DrawModelManagerInfo(const ModelLoader &models) const;
+    void DrawCollisionSystemInfo(const CollisionManager &collisionManager) const;
+    void DrawControlsInfo() const;
     Font GetFont() const;
     bool LoadWindShader();
 

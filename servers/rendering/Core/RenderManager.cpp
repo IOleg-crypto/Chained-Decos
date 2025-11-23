@@ -5,22 +5,22 @@
 #include "RenderManager.h"
 
 // Include concrete implementations that were forward declared in header
-#include "servers/physics/collision/Core/CollisionManager.h"
-#include "servers/physics/collision/Debug/CollisionDebugRenderer.h"
 #include "Commands/IRenderCommand.h"
 #include "Interfaces/IGameRenderable.h"
 #include "Interfaces/IMenuRenderable.h"
-#include "scene/resources/model/Core/Model.h"
 #include "Shader/ShaderManager.h"
+#include "scene/resources/model/Core/Model.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
+#include "servers/physics/collision/Debug/CollisionDebugRenderer.h"
 
 #include "../Helpers/ImGuiHelper.h"
-#include <scene/main/Core/World.h>
-#include <servers/physics/dynamics/Components/PhysicsComponent.h>
 #include <filesystem>
 #include <fstream>
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
+#include <scene/main/Core/World.h>
+#include <servers/physics/dynamics/Components/PhysicsComponent.h>
 
 // ==================== CONSTANTS ====================
 
@@ -149,12 +149,12 @@ void RenderManager::RenderMenu(IMenuRenderable &renderable)
     renderable.Render();
 }
 
-void RenderManager::RenderDebugInfo(IGameRenderable &renderable, const ModelLoader &models,
-                                    const CollisionManager &collisionManager)
+void RenderManager::RenderDebugInfo(const IGameRenderable &renderable, const ModelLoader &models,
+                                    const CollisionManager &collision) const
 {
     if (m_showDebugInfo)
     {
-        DrawDebugInfoWindow(renderable, models, collisionManager);
+        DrawDebugInfoWindow(const_cast<IGameRenderable &>(renderable), models, collision);
     }
 }
 
@@ -330,7 +330,7 @@ void RenderManager::ToggleDebugInfo()
 }
 
 void RenderManager::DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
-                                        const CollisionManager &collisionManager)
+                                        const CollisionManager &collisionManager) const
 {
     rlImGuiBegin();
 
@@ -357,7 +357,7 @@ void RenderManager::DrawDebugInfoWindow(IGameRenderable &renderable, const Model
     rlImGuiEnd();
 }
 
-void RenderManager::DrawCameraInfo(const Camera &camera, int cameraMode)
+void RenderManager::DrawCameraInfo(const Camera &camera, int cameraMode) const
 {
     ImGui::Text("Camera Status:");
 
@@ -381,7 +381,7 @@ void RenderManager::DrawCameraInfo(const Camera &camera, int cameraMode)
     ImGui::Text("FPS: %d", GetFPS());
 }
 
-void RenderManager::DrawModelManagerInfo(const ModelLoader &models)
+void RenderManager::DrawModelManagerInfo(const ModelLoader &models) const
 {
     ImGui::Text("Model Manager:");
 
@@ -413,7 +413,7 @@ void RenderManager::DrawModelManagerInfo(const ModelLoader &models)
     }
 }
 
-void RenderManager::DrawCollisionSystemInfo(const CollisionManager &collisionManager)
+void RenderManager::DrawCollisionSystemInfo(const CollisionManager &collisionManager) const
 {
     ImGui::Text("Collision System:");
 
@@ -444,7 +444,7 @@ void RenderManager::DrawCollisionSystemInfo(const CollisionManager &collisionMan
     }
 }
 
-void RenderManager::DrawControlsInfo()
+void RenderManager::DrawControlsInfo() const
 {
     ImGui::Text("Controls:");
     ImGui::Text("- F2: Toggle Debug Info");
