@@ -1,36 +1,41 @@
 #ifndef SETTINGS_MANAGER_H
 #define SETTINGS_MANAGER_H
 
-#include <string>
-#include "../Config/Core/ConfigManager.h"
 #include "MenuConstants.h"
+#include "core/config/Core/ConfigManager.h"
 #include "servers/audio/Core/AudioManager.h"
+#include <string>
 
-namespace MenuConstants {
-    using namespace MenuConstants;
+namespace MenuConstants
+{
+using namespace MenuConstants;
 }
 
-struct AudioSettings {
+struct AudioSettings
+{
     float masterVolume = MenuConstants::DEFAULT_MASTER_VOLUME;
     float musicVolume = MenuConstants::DEFAULT_MUSIC_VOLUME;
     float sfxVolume = MenuConstants::DEFAULT_SFX_VOLUME;
     bool muted = false;
 };
 
-struct ControlSettings {
+struct ControlSettings
+{
     float mouseSensitivity = MenuConstants::DEFAULT_MOUSE_SENSITIVITY;
     bool invertYAxis = false;
     bool controllerSupport = true;
 };
 
-struct ParkourControlSettings {
+struct ParkourControlSettings
+{
     float wallRunSensitivity = MenuConstants::DEFAULT_WALL_RUN_SENSITIVITY;
     float jumpTiming = MenuConstants::DEFAULT_JUMP_TIMING;
     float slideControl = MenuConstants::DEFAULT_SLIDE_CONTROL;
     float grappleSensitivity = MenuConstants::DEFAULT_GRAPPLE_SENSITIVITY;
 };
 
-struct GameplaySettings {
+struct GameplaySettings
+{
     int difficultyLevel = MenuConstants::DEFAULT_DIFFICULTY_LEVEL;
     bool timerEnabled = true;
     bool checkpointsEnabled = true;
@@ -45,21 +50,22 @@ struct GameplaySettings {
     bool slowMotionOnTrick = false;
 };
 
-class SettingsManager {
+class SettingsManager
+{
 private:
     ConfigManager m_config;
     AudioSettings m_audioSettings;
     ControlSettings m_controlSettings;
     ParkourControlSettings m_parkourSettings;
     GameplaySettings m_gameplaySettings;
-    AudioManager* m_audioManager = nullptr;
+    AudioManager *m_audioManager = nullptr;
 
     // Video settings indices
-    int m_currentResolutionIndex = 1; // Default to 1280x720
+    int m_currentResolutionIndex = 1;  // Default to 1280x720
     int m_currentAspectRatioIndex = 0; // Default to 16:9
     int m_currentDisplayModeIndex = 0; // Default to Windowed
-    int m_currentVSyncIndex = 1; // Default to On
-    int m_currentFpsIndex = 1; // Default to 60 FPS
+    int m_currentVSyncIndex = 1;       // Default to On
+    int m_currentFpsIndex = 1;         // Default to 60 FPS
 
 public:
     SettingsManager();
@@ -79,7 +85,10 @@ public:
     float GetSfxVolume() const;
     bool IsMuted() const;
 
-    void SetAudioManager(AudioManager* audioManager) { m_audioManager = audioManager; }
+    void SetAudioManager(AudioManager *audioManager)
+    {
+        m_audioManager = audioManager;
+    }
 
     // Control settings
     void SetMouseSensitivity(float sensitivity);
@@ -142,7 +151,7 @@ public:
     // Apply settings to the system
     void ApplyVideoSettings();
     void ApplyAudioSettings();
-    
+
     // Skybox gamma settings
     void SetSkyboxGammaEnabled(bool enabled);
     void SetSkyboxGammaValue(float gamma);
@@ -150,14 +159,26 @@ public:
     float GetSkyboxGammaValue() const;
 
     // Get current setting values as strings
-    std::string GetCurrentSettingValue(const std::string& settingName) const;
+    std::string GetCurrentSettingValue(const std::string &settingName) const;
 
 private:
     // Validation helpers
-    float ClampVolume(float volume) const { return std::max(0.0f, std::min(1.0f, volume)); }
-    float ClampSensitivity(float sensitivity) const { return std::max(0.1f, std::min(5.0f, sensitivity)); }
-    int ClampDifficulty(int level) const { return std::max(0, std::min(2, level)); }
-    int ClampOptionIndex(int index, int maxValue) const { return std::max(0, std::min(maxValue - 1, index)); }
+    float ClampVolume(float volume) const
+    {
+        return std::max(0.0f, std::min(1.0f, volume));
+    }
+    float ClampSensitivity(float sensitivity) const
+    {
+        return std::max(0.1f, std::min(5.0f, sensitivity));
+    }
+    int ClampDifficulty(int level) const
+    {
+        return std::max(0, std::min(2, level));
+    }
+    int ClampOptionIndex(int index, int maxValue) const
+    {
+        return std::max(0, std::min(maxValue - 1, index));
+    }
 
     // Internal helpers
     void ResetToDefaults();
