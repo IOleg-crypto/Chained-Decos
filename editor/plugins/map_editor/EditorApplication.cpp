@@ -5,7 +5,7 @@
 #include "scene/resources/model/Core/Model.h"
 #include "Modules/EditorModule.h"
 //===============================================
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
 

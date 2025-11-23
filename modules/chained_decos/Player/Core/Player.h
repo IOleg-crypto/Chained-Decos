@@ -14,7 +14,7 @@
 #include <servers/physics/collision/Core/CollisionManager.h>
 #include <servers/physics/collision/System/CollisionSystem.h>
 #include <scene/resources/model/Core/Model.h>
-#include <World/Core/World.h>
+#include <scene/main/Core/World.h>
 
 // Include component interfaces
 #include "../Collision/PlayerCollision.h"

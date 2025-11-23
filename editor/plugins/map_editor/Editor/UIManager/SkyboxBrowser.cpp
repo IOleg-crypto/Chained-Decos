@@ -4,7 +4,7 @@
 #include <nfd.h>
 #include <raylib.h>
 #include <rlImGui.h>
-#include <imgui/imgui.h>
+#include <imgui.h>
 
 namespace fs = std::filesystem;
 
