@@ -8,6 +8,21 @@ add_library(menu STATIC
     Console/ConsoleManager.cpp
     Console/ConsoleManager.h
     Console/ConsoleManagerHelpers.cpp
+    Console/ConsoleManagerHelpers.h
+    MapSelector/MapSelector.cpp
+    MapSelector/MapSelector.h
+    MenuConstants.h
+)
+
+target_include_directories(menu PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/project/chained_decos/Menu
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/rlImGui
+    ${CMAKE_SOURCE_DIR}/include/imgui
+)
+
 # Add PROJECT_ROOT_DIR definition for consistent path handling
 target_compile_definitions(menu PRIVATE
     PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"

@@ -5,7 +5,7 @@
 #include "MenuConstants.h"
 #include "Settings/SettingsManager.h"
 #include "rlImGui.h"
-#include <Collision/Structures/CollisionStructures.h>
+#include <servers/physics/collision/Structures/CollisionStructures.h>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
