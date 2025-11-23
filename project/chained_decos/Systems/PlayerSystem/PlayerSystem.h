@@ -8,7 +8,7 @@
 #include "core/object/kernel/Interfaces/IKernelService.h"
 #include "scene/resources/model/Core/Model.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
-#include "project/Player/Core/Player.h"
+#include "project/chained_decos/Player/Core/Player.h"
 #include <memory>
 #include <string>
 #include <vector>
