@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include "raylib.h"
 
 #include "scene/resources/map/Core/MapLoader.h"

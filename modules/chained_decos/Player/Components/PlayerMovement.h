@@ -2,7 +2,7 @@
 #define PLAYER_MOVEMENT_H
 
 #include <servers/physics/collision/Core/CollisionManager.h>
-#include <World/Core/World.h>
+#include <scene/main/Core/World.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <servers/physics/dynamics/Components/PhysicsComponent.h>
