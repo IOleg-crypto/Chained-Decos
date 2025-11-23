@@ -4,16 +4,12 @@
 //
 #pragma once
 
+#include "Engine.h"
 #include "IApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/module/Core/ModuleManager.h"
 #include <memory>
 #include <string>
-
-// Forward declarations
-class Engine;
-class RenderManager;
-class InputManager;
 
 // Engine Runtime - Runs the application
 // Manages the lifecycle of the engine and delegates application logic to IApplication
