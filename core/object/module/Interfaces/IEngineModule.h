@@ -66,7 +66,6 @@ public:
         m_initialized = value;
     }
 
-protected:
 private:
     bool m_initialized = false;
 };

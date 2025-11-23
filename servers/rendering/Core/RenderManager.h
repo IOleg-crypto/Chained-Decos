@@ -69,12 +69,16 @@ public:
         return "RenderManager";
     }
 
+public:
+    // Debug rendering (moved to public for GameApplication access)
+    void ShowMetersPlayer(const IGameRenderable &renderable) const;
+    void RenderDebugInfo(const IGameRenderable &renderable, const ModelLoader &models,
+                         const CollisionManager &collision) const;
+
 private:
     // Private helper methods (still used internally)
     void RenderGame(IGameRenderable &renderable, const ModelLoader &models,
                     const CollisionManager &collisionManager, bool showCollisionDebug = false);
-    void RenderDebugInfo(IGameRenderable &renderable, const ModelLoader &models,
-                         const CollisionManager &collisionManager);
     void BeginMode3D(const Camera &camera);
     void EndMode3D();
     void DrawScene3D(const ModelLoader &models);
@@ -90,7 +94,6 @@ private:
     void DrawModelManagerInfo(const ModelLoader &models);
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager);
     void DrawControlsInfo();
-    void ShowMetersPlayer(const IGameRenderable &renderable) const;
     Font GetFont() const;
     bool LoadWindShader();
 
