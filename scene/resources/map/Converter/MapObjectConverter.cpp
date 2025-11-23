@@ -71,6 +71,63 @@ float SanitizeFloat(float value, float fallback)
     return std::isfinite(value) ? value : fallback;
 }
 
+// Color conversion helpers
+Color StringToColor(const std::string &colorStr)
+{
+    // Simple color name to Color conversion
+    if (colorStr == "white")
+        return WHITE;
+    if (colorStr == "black")
+        return BLACK;
+    if (colorStr == "red")
+        return RED;
+    if (colorStr == "green")
+        return GREEN;
+    if (colorStr == "blue")
+        return BLUE;
+    if (colorStr == "yellow")
+        return YELLOW;
+    if (colorStr == "orange")
+        return ORANGE;
+    if (colorStr == "pink")
+        return PINK;
+    if (colorStr == "purple")
+        return PURPLE;
+    if (colorStr == "brown")
+        return BROWN;
+    if (colorStr == "gray")
+        return GRAY;
+    return WHITE; // Default
+}
+
+std::string ColorToString(const Color &color)
+{
+    // Convert Color to string (simple version)
+    if (ColorIsEqual(color, WHITE))
+        return "white";
+    if (ColorIsEqual(color, BLACK))
+        return "black";
+    if (ColorIsEqual(color, RED))
+        return "red";
+    if (ColorIsEqual(color, GREEN))
+        return "green";
+    if (ColorIsEqual(color, BLUE))
+        return "blue";
+    if (ColorIsEqual(color, YELLOW))
+        return "yellow";
+    if (ColorIsEqual(color, ORANGE))
+        return "orange";
+    if (ColorIsEqual(color, PINK))
+        return "pink";
+    if (ColorIsEqual(color, PURPLE))
+        return "purple";
+    if (ColorIsEqual(color, BROWN))
+        return "brown";
+    if (ColorIsEqual(color, GRAY))
+        return "gray";
+    return "white"; // Default
+}
+
 // ============================================================================
 // JsonSerializableObject <-> MapObjectData conversions
 // ============================================================================
@@ -91,7 +148,7 @@ MapObjectData JsonSerializableObjectToMapObjectData(const JsonSerializableObject
         data.scale = {1.0f, 1.0f, 1.0f};
     }
 
-    data.color = jsonObj.color;
+    data.color = StringToColor(jsonObj.color);
     data.modelName = jsonObj.modelName;
 
     // Set shape-specific properties based on object type
@@ -152,7 +209,7 @@ JsonSerializableObject MapObjectDataToJsonSerializableObject(const MapObjectData
     jsonObj.position = data.position;
     jsonObj.rotation = data.rotation;
     jsonObj.scale = (data.scale.x + data.scale.y + data.scale.z) / 3.0f; // Average scale
-    jsonObj.color = data.color;
+    jsonObj.color = ColorToString(data.color);
     jsonObj.modelName = data.modelName;
     jsonObj.visible = true;
     jsonObj.layer = "default";
