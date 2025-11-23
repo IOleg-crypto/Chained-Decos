@@ -5,7 +5,7 @@
 #include "scene/resources/map/Core/MapService.h"
 #include "scene/resources/map/Renderer/MapRenderer.h"
 #include "scene/main/Core/World.h"
-#include "Game/Menu/Console/ConsoleManagerHelpers.h"
+#include "project/chained_decos/Menu/Console/ConsoleManagerHelpers.h"
 #include "project/chained_decos/Menu/Menu.h"
 #include "project/chained_decos/Player/Collision/PlayerCollision.h"
 #include "project/chained_decos/Player/Core/Player.h"
