@@ -1,6 +1,7 @@
 #ifndef GAME_APPLICATION_H
 #define GAME_APPLICATION_H
 
+#include "core/config/Core/GameConfig.h"
 #include "platform/windows/Core/IApplication.h"
 #include "project/chained_decos/Menu/Menu.h"
 #include "project/chained_decos/Player/Core/Player.h"
