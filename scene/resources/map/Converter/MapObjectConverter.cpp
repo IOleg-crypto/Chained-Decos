@@ -151,7 +151,7 @@ JsonSerializableObject MapObjectDataToJsonSerializableObject(const MapObjectData
     jsonObj.type = MapObjectTypeToInt(data.type);
     jsonObj.position = data.position;
     jsonObj.rotation = data.rotation;
-    jsonObj.scale = data.scale;
+    jsonObj.scale = (data.scale.x + data.scale.y + data.scale.z) / 3.0f; // Average scale
     jsonObj.color = data.color;
     jsonObj.modelName = data.modelName;
     jsonObj.visible = true;
