@@ -2,15 +2,13 @@
 // EngineApplication.h - Base application class for all projects using the engine
 // Created by Auto on 2025
 //
-#ifndef ENGINE_APPLICATION_H
-#define ENGINE_APPLICATION_H
+#pragma once
 
-#include "Engine/Engine.h"
+#include "IApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/module/Core/ModuleManager.h"
-#include "IApplication.h"
-#include <functional>
-#include <memory>
+#include "servers/input/Core/InputManager.h"
+#include "servers/rendering/Core/RenderManager.h"
 #include <string>
 
 // Engine Runtime - Runs the application
