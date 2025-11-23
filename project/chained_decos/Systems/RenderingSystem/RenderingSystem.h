@@ -1,7 +1,7 @@
 #ifndef RENDERING_SYSTEM_H
 #define RENDERING_SYSTEM_H
 
-#include "Engine/Engine.h"
+#include "platform/windows/Core/EngineApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
 #include <memory>
