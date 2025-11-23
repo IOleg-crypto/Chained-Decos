@@ -1,5 +1,5 @@
 #include "JsonParser.h"
-#include "src/Engine/Color/Parser/ColorParser.h"
+#include "scene/resources/color/ColorParser.h"
 #include <raylib.h>
 
 // Safe value retrieval

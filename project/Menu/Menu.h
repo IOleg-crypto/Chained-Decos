@@ -2,13 +2,13 @@
 #define MENU_H
 
 #include "Console/ConsoleManager.h"
-#include "Engine.h"
+#include "platform/windows/Core/EngineApplication.h"
 #include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "MapSelector/MapSelector.h"
 #include "Settings/SettingsManager.h"
 #include <GLFW/glfw3.h>
-#include <Render/Interfaces/IMenuRenderable.h>
+#include <servers/rendering/Interfaces/IMenuRenderable.h>
 #include <cstdint>
 #include <functional>
 #include <imgui.h>
