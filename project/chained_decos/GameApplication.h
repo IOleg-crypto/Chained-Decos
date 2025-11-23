@@ -2,8 +2,8 @@
 #define GAME_APPLICATION_H
 
 #include "src/Engine/CommandLineHandler/Core/CommandLineHandler.h"
-#include "project/Player/Core/Player.h"
-#include "project/Menu/Menu.h"
+#include "project/chained_decos/Player/Core/Player.h"
+#include "project/chained_decos/Menu/Menu.h"
 #include "platform/windows/Core/IApplication.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
