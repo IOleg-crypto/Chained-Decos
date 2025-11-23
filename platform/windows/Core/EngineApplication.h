@@ -32,12 +32,13 @@ public:
     };
 
     // Constructor now takes the application instance
-    EngineApplication(IApplication *app, const Config &config = Config());
+    EngineApplication(Config config, IApplication *application);
     ~EngineApplication();
 
-    // Main lifecycle loop (called from main)
+    // Main run loop
     void Run();
 
+    // Accessors
     // Public API for engine access
     Engine *GetEngine() const
     {
