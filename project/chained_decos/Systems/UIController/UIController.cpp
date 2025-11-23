@@ -8,7 +8,7 @@
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
 #include "Game/Menu/Console/ConsoleManager.h"
-#include "Game/Menu/Menu.h"
+#include "project/chained_decos/Menu/Menu.h"
 #include "project/chained_decos/Player/Core/Player.h"
 #include <algorithm>
 #include <filesystem>
