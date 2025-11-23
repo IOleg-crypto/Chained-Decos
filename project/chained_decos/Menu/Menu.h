@@ -2,7 +2,7 @@
 #define MENU_H
 
 #include "Console/ConsoleManager.h"
-#include "platform/windows/Core/EngineApplication.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "MapSelector/MapSelector.h"
