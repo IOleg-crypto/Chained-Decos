@@ -3,8 +3,8 @@
 #include "core/object/kernel/Core/Kernel.h"
 #include "project/chained_decos/Player/Collision/PlayerCollision.h"
 #include "project/chained_decos/Player/Core/Player.h"
-#include "Game/Systems/MapSystem/MapSystem.h"
-#include "Game/Systems/PlayerSystem/PlayerSystem.h"
+#include "project/chained_decos/Systems/MapSystem/MapSystem.h"
+#include "project/chained_decos/Systems/PlayerSystem/PlayerSystem.h"
 #include <algorithm>
 #include <cctype>
 #include <imgui.h>
