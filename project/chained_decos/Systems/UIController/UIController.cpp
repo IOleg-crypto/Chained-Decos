@@ -2,7 +2,7 @@
 #include "../MapSystem/MapSystem.h"
 #include "../PlayerSystem/PlayerSystem.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
-#include "Engine/Engine.h"
+#include "platform/windows/Core/EngineApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
