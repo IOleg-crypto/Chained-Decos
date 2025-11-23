@@ -7,7 +7,7 @@
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
-#include "Game/Menu/Console/ConsoleManager.h"
+#include "project/chained_decos/Menu/Console/ConsoleManager.h"
 #include "project/chained_decos/Menu/Menu.h"
 #include "project/chained_decos/Player/Core/Player.h"
 #include <algorithm>
