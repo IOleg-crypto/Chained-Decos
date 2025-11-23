@@ -1,9 +1,11 @@
+```cpp
 #ifndef MENU_H
 #define MENU_H
 
 #include "Console/ConsoleManager.h"
 #include "MapSelector/MapSelector.h"
 #include "Settings/SettingsManager.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -16,30 +18,29 @@
 #include <string>
 #include <vector>
 
-enum class MenuAction : uint8_t
-{
-    None,
-    StartGame,
-    ResumeGame,
-    OpenOptions,
-    OpenCredits,
-    OpenVideoMode,
-    OpenAudio,
-    OpenControls,
-    OpenMods,
-    BackToMainMenu,
-    SinglePlayer,
-    MultiPlayer,
-    ExitGame,
-    StartGameWithMap,
-    ToggleMute,
-    OpenKeyBinding,
-    ToggleInvertY,
-    ToggleController,
-    ApplyVideoSettings,
-    ApplyAudioSettings,
-    ApplyControlSettings
-};
+    enum class MenuAction : uint8_t {
+        None,
+        StartGame,
+        ResumeGame,
+        OpenOptions,
+        OpenCredits,
+        OpenVideoMode,
+        OpenAudio,
+        OpenControls,
+        OpenMods,
+        BackToMainMenu,
+        SinglePlayer,
+        MultiPlayer,
+        ExitGame,
+        StartGameWithMap,
+        ToggleMute,
+        OpenKeyBinding,
+        ToggleInvertY,
+        ToggleController,
+        ApplyVideoSettings,
+        ApplyAudioSettings,
+        ApplyControlSettings
+    };
 
 enum class MenuState : uint8_t
 {
