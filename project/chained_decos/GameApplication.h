@@ -1,10 +1,9 @@
 #ifndef GAME_APPLICATION_H
 #define GAME_APPLICATION_H
 
-#include "src/Engine/CommandLineHandler/Core/CommandLineHandler.h"
-#include "project/chained_decos/Player/Core/Player.h"
-#include "project/chained_decos/Menu/Menu.h"
 #include "platform/windows/Core/IApplication.h"
+#include "project/chained_decos/Menu/Menu.h"
+#include "project/chained_decos/Player/Core/Player.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
 #include "servers/audio/Core/AudioManager.h"

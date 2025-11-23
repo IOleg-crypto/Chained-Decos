@@ -1,4 +1,4 @@
-#include "platform/windows/Core/EngineApplication.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include "Engine/Engine.h"
 #include "servers/input/Core/InputManager.h"
 #include "servers/rendering/Core/RenderManager.h"
