@@ -7,8 +7,8 @@
 #include "scene/main/Core/World.h"
 #include "Game/Menu/Console/ConsoleManagerHelpers.h"
 #include "Game/Menu/Menu.h"
-#include "modules/chained_decos/Player/Collision/PlayerCollision.h"
-#include "modules/chained_decos/Player/Core/Player.h"
+#include "project/Player/Collision/PlayerCollision.h"
+#include "project/Player/Core/Player.h"
 #include <cmath>
 #include <filesystem>
 #include <fstream>
