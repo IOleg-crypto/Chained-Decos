@@ -475,7 +475,7 @@ void GameApplication::InitInput()
         return;
     }
 
-    engine->GetInputManager().RegisterAction(
+    engine->GetInputManager()->RegisterAction(
         KEY_F1,
         [this, menu]
         {
@@ -488,7 +488,7 @@ void GameApplication::InitInput()
             }
         });
 
-    engine->GetInputManager().RegisterAction(
+    engine->GetInputManager()->RegisterAction(
         KEY_ESCAPE,
         [this, menu]
         {
