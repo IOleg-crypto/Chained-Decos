@@ -7,7 +7,7 @@
 // Include necessary headers
 #include "scene/resources/model/Core/Model.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
-#include "Collision/System/CollisionSystem.h"
+#include "servers/physics/collision/System/CollisionSystem.h"
 
 class IRenderable
 {

@@ -4,7 +4,7 @@
 #include <raylib.h>
 #include "scene/resources/model/Core/Model.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
-#include "Collision/System/CollisionSystem.h"
+#include "servers/physics/collision/System/CollisionSystem.h"
 
 // Interface for objects that require full game rendering (Player, NPC, etc.)
 // Follows Interface Segregation Principle - only methods needed for game objects
