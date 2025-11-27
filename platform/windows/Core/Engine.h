@@ -16,6 +16,7 @@ public:
     ~Engine();
 
     bool Initialize();
+    void Update(float deltaTime);
     void Shutdown();
 
     // Accessors
@@ -37,7 +38,7 @@ public:
     }
 
     // Module registration
-    void RegisterModule(std::unique_ptr<IModule> module);
+    void RegisterModule(std::unique_ptr<IEngineModule> module);
 
     // Debug
     bool IsDebugInfoVisible() const
@@ -48,6 +49,8 @@ public:
     {
         m_debugInfoVisible = visible;
     }
+
+    bool IsCollisionDebugVisible() const;
 
     // Application control
     void RequestExit()
@@ -62,8 +65,8 @@ public:
 private:
     Kernel *m_kernel;
     std::unique_ptr<ModuleManager> m_moduleManager;
-    std::shared_ptr<RenderManager> m_renderManager;
-    std::shared_ptr<InputManager> m_inputManager;
+    std::unique_ptr<RenderManager> m_renderManager;
+    std::unique_ptr<InputManager> m_inputManager;
     bool m_debugInfoVisible = false;
     bool m_shouldExit = false;
 };

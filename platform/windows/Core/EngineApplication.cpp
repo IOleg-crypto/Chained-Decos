@@ -1,3 +1,4 @@
+#include "EngineApplication.h"
 #include "Engine.h"
 #include "IApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
@@ -6,8 +7,8 @@
 #include <cassert>
 #include <raylib.h>
 
-EngineApplication::EngineApplication(IApplication *app, const Config &config)
-    : m_app(app), m_config(config)
+EngineApplication::EngineApplication(Config config, IApplication *application)
+    : m_app(application), m_config(config)
 {
     assert(m_app != nullptr && "Application instance cannot be null!");
 }
@@ -54,16 +55,6 @@ void EngineApplication::Initialize()
     // Step 3: Create core Engine services
     auto renderManager = std::make_shared<RenderManager>();
     auto inputManager = std::make_shared<InputManager>();
-
-    // Step 4: Create Engine with simplified config
-    EngineConfig engineConfig;
-    engineConfig.screenWidth = m_config.width;
-    engineConfig.screenHeight = m_config.height;
-    engineConfig.renderManager = renderManager;
-    engineConfig.inputManager = inputManager;
-    engineConfig.kernel = m_kernel.get();
-
-    m_engine = std::make_shared<Engine>(engineConfig);
 
     // Pass Engine and Kernel to Application
     if (m_app)
@@ -117,8 +108,8 @@ void EngineApplication::Update()
 
     if (m_engine)
     {
-        m_engine->Update(); // Updates Kernel and Modules
-        m_engine->GetInputManager().ProcessInput();
+        m_engine->Update(deltaTime); // Updates Kernel and Modules
+        m_engine->GetInputManager()->ProcessInput();
     }
 
     if (m_app)

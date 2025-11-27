@@ -18,17 +18,11 @@ class EngineApplication
 public:
     struct Config
     {
-        int width;
-        int height;
-        std::string windowName;
-        bool enableMSAA;
-        bool resizable;
-
-        Config()
-            : width(1280), height(720), windowName("Engine Application"), enableMSAA(true),
-              resizable(true)
-        {
-        }
+        int width = 1280;
+        int height = 720;
+        std::string windowName = "Engine Application";
+        bool enableMSAA = true;
+        bool resizable = true;
     };
 
     // Constructor now takes the application instance
