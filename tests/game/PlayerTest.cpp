@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "project/chained_decos/Player/Core/Player.h"
+#include "project/chaineddecos/Player/Core/Player.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
 
 class PlayerTest : public ::testing::Test

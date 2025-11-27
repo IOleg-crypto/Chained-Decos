@@ -1,22 +1,23 @@
 #ifndef MAP_SYSTEM_H
 #define MAP_SYSTEM_H
 
-// Clean includes from project root
-#include "Managers/MapCollisionInitializer.h"
-#include "Menu/Menu.h"
-#include "Player/Core/Player.h"
-#include "core/object/kernel/Core/Kernel.h"
-#include "core/object/module/Interfaces/IEngineModule.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include "platform/windows/Core/EngineApplication.h"
-#include "scene/main/Core/World.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
+#include "core/object/module/Interfaces/IEngineModule.h"
 #include "servers/rendering/Core/RenderManager.h"
+#include "scene/main/Core/World.h"
 #include <memory>
 #include <raylib.h>
 #include <string>
 #include <vector>
+
+// Forward declarations to avoid circular dependencies
+class Player;
+class Menu;
+class MapCollisionInitializer;
 
 // Configuration for MapSystem
 struct MapSystemConfig
@@ -115,5 +116,30 @@ private:
 };
 
 #include "core/object/kernel/Interfaces/IKernelService.h"
+
+struct MapSystemService : public IKernelService
+{
+    MapSystem *mapSystem = nullptr;
+    explicit MapSystemService(MapSystem *ms) : mapSystem(ms)
+    {
+    }
+    bool Initialize() override
+    {
+        return mapSystem != nullptr;
+    }
+    void Shutdown() override
+    {
+    }
+    void Update(float deltaTime) override
+    {
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "MapSystemService";
+    }
+};
 
 #endif // MAP_SYSTEM_H

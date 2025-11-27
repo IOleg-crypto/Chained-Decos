@@ -1,10 +1,10 @@
 #include "PlayerSystem.h"
 #include "../MapSystem/MapSystem.h"
-#include "Menu/Console/ConsoleManagerHelpers.h"
-#include "Menu/Menu.h"
-#include "Player/Core/Player.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "platform/windows/Core/EngineApplication.h"
+#include "project/chaineddecos/Menu/Console/ConsoleManagerHelpers.h"
+#include "project/chaineddecos/Menu/Menu.h"
+#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/resources/model/Core/Model.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
 #include <imgui.h>
@@ -37,8 +37,7 @@ bool PlayerSystem::Initialize(Kernel *kernel)
     m_models = kernel->GetService<ModelLoader>().get();
     m_audioManager = kernel->GetService<AudioManager>().get();
 
-    auto mapSystemObj = kernel->GetObject<MapSystem>();
-    auto engineObj = kernel->GetObject<Engine>();
+    auto mapSystemService = kernel->GetService<MapSystemService>();
 
     // Validate required engine dependencies
     if (!m_collisionManager || !m_models || !m_audioManager)
@@ -48,15 +47,16 @@ bool PlayerSystem::Initialize(Kernel *kernel)
     }
 
     // MapSystem can be nullptr if MapSystem isn't initialized yet
-    m_mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
+    m_mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
 
-    // Get Engine through EngineService
-    m_engine = engineService ? engineObj.get() : nullptr;
+    // Get Engine through Kernel
+    // Get Engine through Kernel
+    auto engineObj = kernel->GetObject<Engine>();
+    m_engine = engineObj ? engineObj.get() : nullptr;
 
     if (!m_engine)
     {
-        TraceLog(LOG_WARNING,
-                 "[PlayerSystem] Engine service not found - some features may be limited");
+        TraceLog(LOG_WARNING, "[PlayerSystem] Engine not found - some features may be disabled");
     }
 
     // Create our own components
@@ -113,10 +113,10 @@ void PlayerSystem::Update(float deltaTime)
     // But check anyway
     if (!m_mapSystem && m_kernel)
     {
-        auto mapSystemObj = m_kernel->GetObject<MapSystem>();
-        if (mapSystemObj)
+        auto mapSystemService = m_kernel->GetService<MapSystemService>();
+        if (mapSystemService && mapSystemService->mapSystem)
         {
-            m_mapSystem = mapSystemObj.get();
+            m_mapSystem = mapSystemService->mapSystem;
             TraceLog(LOG_INFO, "[PlayerSystem] MapSystem obtained from Kernel");
         }
     }
@@ -157,27 +157,26 @@ void PlayerSystem::RegisterServices(Kernel *kernel)
     TraceLog(LOG_INFO, "[PlayerSystem] Registering services...");
 
     // Register PlayerSystem itself as a service
-    kernel->RegisterObject<PlayerSystem>(std::shared_ptr<PlayerSystem>(this, [](PlayerSystem*){}));
+    kernel->RegisterService<PlayerSystemService>(std::make_shared<PlayerSystemService>(this));
     TraceLog(LOG_INFO, "[PlayerSystem] PlayerSystemService registered");
 
-    // Register our own components as objects (not services)
+    // Register our own components as services
     if (m_player)
     {
-        // Share ownership with Kernel
-        kernel->RegisterObject<Player>(std::shared_ptr<Player>(m_player.get(), [](Player *) {}));
-        TraceLog(LOG_INFO, "[PlayerSystem] Player registered as object");
+        kernel->RegisterService<PlayerService>(std::make_shared<PlayerService>(m_player.get()));
+        TraceLog(LOG_INFO, "[PlayerSystem] PlayerService registered");
 
         // Dependency Injection: inject PlayerProvider into ConsoleManager
         UpdateConsoleManagerProviders(kernel);
 
         // Dependency Injection: inject camera into Menu
-        auto menuObj = kernel->GetObject<Menu>();
-        if (menuObj)
+        auto menuService = kernel->GetService<MenuService>();
+        if (menuService && menuService->menu)
         {
             auto cameraController = m_player->GetCameraController();
             if (cameraController)
             {
-                menuObj.get()->SetCameraController(cameraController.get());
+                menuService->menu->SetCameraController(cameraController.get());
                 TraceLog(LOG_INFO, "[PlayerSystem] CameraController injected into Menu");
             }
         }
@@ -389,10 +388,10 @@ void PlayerSystem::SavePlayerState(const std::string &currentMapPath)
     // Enable resume button in menu
     if (m_kernel)
     {
-        auto menuObj = m_kernel->GetObject<Menu>();
-        if (menuObj)
+        auto menuService = m_kernel->GetService<MenuService>();
+        if (menuService && menuService->menu)
         {
-            menuObj.get()->SetResumeButtonOn(true);
+            menuService->menu->SetResumeButtonOn(true);
             TraceLog(LOG_INFO, "[PlayerSystem] SavePlayerState() - Resume button enabled");
         }
     }
