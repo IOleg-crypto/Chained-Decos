@@ -17,7 +17,7 @@ add_library(menu STATIC
 target_include_directories(menu PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/project/chaineddecos/Menu
+    ${CMAKE_SOURCE_DIR}/project/chained_decos/Menu
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/rlImGui
     ${CMAKE_SOURCE_DIR}/include/imgui
@@ -39,5 +39,5 @@ target_link_libraries(menu PUBLIC
     raylib
     imguilib
     nlohmann_json::nlohmann_json
-    core
+    config
 )

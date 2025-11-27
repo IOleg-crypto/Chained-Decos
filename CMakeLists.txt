@@ -277,9 +277,10 @@ endif()
 add_subdirectory(core)
 add_subdirectory(servers)
 add_subdirectory(scene)
-add_subdirectory(project/chained_decos)
+add_subdirectory(platform)
+add_subdirectory(project/chaineddecos)
 
-add_executable(ChainedDecos project/chained_decos/main.cpp)
+add_executable(ChainedDecos project/chaineddecos/main.cpp)
 target_link_libraries(ChainedDecos PRIVATE
     ChainedDecosGame
     imguilib
