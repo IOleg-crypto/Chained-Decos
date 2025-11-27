@@ -1,14 +1,14 @@
 #include "MapSystem.h"
 #include "../../Managers/MapCollisionInitializer.h"
 #include "core/object/kernel/Core/Kernel.h"
-#include "scene/resources/map/Converter/MapObjectConverter.h"
-#include "scene/resources/map/Core/MapService.h"
-#include "scene/resources/map/Renderer/MapRenderer.h"
-#include "scene/main/Core/World.h"
 #include "project/chained_decos/Menu/Console/ConsoleManagerHelpers.h"
 #include "project/chained_decos/Menu/Menu.h"
 #include "project/chained_decos/Player/Collision/PlayerCollision.h"
 #include "project/chained_decos/Player/Core/Player.h"
+#include "scene/main/Core/World.h"
+#include "scene/resources/map/Converter/MapObjectConverter.h"
+#include "scene/resources/map/Core/MapService.h"
+#include "scene/resources/map/Renderer/MapRenderer.h"
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -56,7 +56,6 @@ bool MapSystem::Initialize(Kernel *kernel)
     auto collisionManager = kernel->GetService<CollisionManager>();
     auto modelLoader = kernel->GetService<ModelLoader>();
     auto renderManager = kernel->GetService<RenderManager>();
-    auto engineService = kernel->GetService<EngineService>();
 
     // Player and Menu can be from other systems
     auto playerService = kernel->GetService<PlayerService>();
@@ -68,20 +67,6 @@ bool MapSystem::Initialize(Kernel *kernel)
         TraceLog(LOG_ERROR, "[MapSystem] Required engine services not found");
         return false;
     }
-
-    m_worldManager = worldManager.get();
-    m_collisionManager = collisionManager.get();
-    m_modelLoader = modelLoader.get();
-    m_renderManager = renderManager.get();
-    m_engine = engineService ? engineService->engine : nullptr;
-
-    // Player and Menu can be nullptr if their systems aren't initialized yet
-    m_player = playerService ? playerService->player : nullptr;
-    m_menu = menuService ? menuService->menu : nullptr;
-
-    // Create collision initializer
-    m_collisionInitializer =
-        std::make_unique<MapCollisionInitializer>(m_collisionManager, m_modelLoader, m_player);
 
     // Load spawn texture
     std::string texturePath =
@@ -156,9 +141,9 @@ void MapSystem::Update(float deltaTime)
 void MapSystem::Render()
 {
     // MapSystem::Render is called through ModuleManager::RenderAllModules()
-    // RenderEditorMap() and RenderSpawnZone() are now called in RenderingSystem::RenderGameWorld()
-    // for correct rendering order (inside BeginMode3D/EndMode3D)
-    // Empty function - rendering is handled by RenderingSystem
+    // RenderEditorMap() and RenderSpawnZone() are now called in
+    // RenderingSystem::RenderGameWorld() for correct rendering order (inside
+    // BeginMode3D/EndMode3D) Empty function - rendering is handled by RenderingSystem
 }
 
 void MapSystem::RegisterServices(Kernel *kernel)

@@ -1,5 +1,5 @@
-#include "core/object/kernel/Core/Kernel.h"
 #include "Engine/Engine.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include "servers/input/Core/InputManager.h"
 #include "servers/rendering/Core/RenderManager.h"
 #include <cassert>
@@ -27,7 +27,7 @@ void EngineApplication::Run()
         m_initialized = true;
     }
 
-    while (!m_engine->ShouldClose())
+    while (!m_engine->ShouldExit())
     {
         Update();
         Render();
@@ -62,7 +62,7 @@ void EngineApplication::Initialize()
     engineConfig.inputManager = inputManager;
     engineConfig.kernel = m_kernel.get();
 
-    m_engine = std::make_unique<Engine>(engineConfig);
+    m_engine = std::make_shared<Engine>(engineConfig);
 
     // Pass Engine and Kernel to Application
     if (m_app)
@@ -83,22 +83,8 @@ void EngineApplication::Initialize()
 
     // Step 6: Allow project to initialize its services
     if (m_app)
-        m_app->OnInitializeServices();
-
-    // Step 7: Initialize Engine (registers Render and Input services)
-    m_engine->Init();
-
-    // Step 7.5: Register Engine as service
-    m_kernel->RegisterService<EngineService>(std::make_shared<EngineService>(m_engine.get()));
-    TraceLog(LOG_INFO, "[EngineApplication] EngineService registered");
-
-    // Step 8: Allow project to register additional services after Engine
-    if (m_app)
-        m_app->OnRegisterEngineServices();
-
-    // Step 9: Register project modules (REQUIRED)
-    if (m_app)
-        m_app->OnRegisterProjectModules();
+        if (m_app)
+            m_app->OnRegisterProjectModules();
 
     // Step 10: Register project services
     if (m_app)
