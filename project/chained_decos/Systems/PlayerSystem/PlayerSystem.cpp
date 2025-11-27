@@ -1,12 +1,12 @@
 #include "PlayerSystem.h"
 #include "../MapSystem/MapSystem.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
-#include "platform/windows/Core/EngineApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
+#include "platform/windows/Core/EngineApplication.h"
+#include "project/chaineddecos/Menu/Console/ConsoleManagerHelpers.h"
+#include "project/chaineddecos/Menu/Menu.h"
+#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/resources/model/Core/Model.h"
-#include "project/chained_decos/Player/Core/Player.h"
-#include "project/chained_decos/Menu/Console/ConsoleManagerHelpers.h"
-#include "project/chained_decos/Menu/Menu.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include <imgui.h>
 #include <raylib.h>
 
@@ -38,7 +38,6 @@ bool PlayerSystem::Initialize(Kernel *kernel)
     m_audioManager = kernel->GetService<AudioManager>().get();
 
     auto mapSystemService = kernel->GetService<MapSystemService>();
-    auto engineService = kernel->GetService<EngineService>();
 
     // Validate required engine dependencies
     if (!m_collisionManager || !m_models || !m_audioManager)
@@ -50,13 +49,13 @@ bool PlayerSystem::Initialize(Kernel *kernel)
     // MapSystem can be nullptr if MapSystem isn't initialized yet
     m_mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
 
-    // Get Engine through EngineService
-    m_engine = engineService ? engineService->engine : nullptr;
+    // Get Engine through Kernel
+    auto engineObj = kernel->GetObject<Engine>();
+    m_engine = engineObj ? engineObj.get() : nullptr;
 
     if (!m_engine)
     {
-        TraceLog(LOG_WARNING,
-                 "[PlayerSystem] Engine service not found - some features may be limited");
+        TraceLog(LOG_WARNING, "[PlayerSystem] Engine not found - some features may be disabled");
     }
 
     // Create our own components
