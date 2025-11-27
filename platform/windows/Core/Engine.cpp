@@ -3,6 +3,7 @@
 #include "core/object/module/Core/ModuleManager.h"
 #include "servers/input/Core/InputManager.h"
 #include "servers/rendering/Core/RenderManager.h"
+#include <memory>
 
 Engine::Engine(Kernel *kernel) : m_kernel(kernel)
 {
@@ -18,10 +19,10 @@ bool Engine::Initialize()
 {
     // Get managers from Kernel (they are registered by EngineApplication)
     auto renderMgr = m_kernel->GetService<RenderManager>();
-    m_renderManager = renderMgr ? renderMgr.get() : nullptr;
+    m_renderManager = std::make_unique<RenderManager>();
 
     auto inputMgr = m_kernel->GetService<InputManager>();
-    m_inputManager = inputMgr ? inputMgr.get() : nullptr;
+    m_inputManager = std::make_unique<InputManager>();
 
     // Initialize ModuleManager
     if (m_moduleManager)
@@ -29,6 +30,14 @@ bool Engine::Initialize()
         // ModuleManager doesn't have Initialize, it has InitializeAllModules
     }
     return true;
+}
+
+void Engine::Update(float deltaTime)
+{
+    if (m_moduleManager)
+    {
+        m_moduleManager->UpdateAllModules(deltaTime);
+    }
 }
 
 void Engine::Shutdown()
