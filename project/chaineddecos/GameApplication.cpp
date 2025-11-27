@@ -1,7 +1,4 @@
 #include "GameApplication.h"
-#include "Menu/Console/ConsoleManagerHelpers.h"
-#include "Menu/Menu.h"
-#include "Player/Core/Player.h"
 #include "Systems/MapSystem/MapSystem.h"
 #include "Systems/PlayerSystem/PlayerSystem.h"
 #include "Systems/RenderingSystem/RenderingSystem.h"
@@ -10,6 +7,9 @@
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/module/Core/ModuleManager.h"
 #include "platform/windows/Core/EngineApplication.h"
+#include "project/chaineddecos/Menu/Console/ConsoleManagerHelpers.h"
+#include "project/chaineddecos/Menu/Menu.h"
+#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
@@ -159,18 +159,6 @@ void GameApplication::OnRegisterProjectServices()
     kernel->RegisterService<WorldManager>(m_world);
     kernel->RegisterService<AudioManager>(m_soundSystem);
 
-    // Register EngineService if engine is available
-    // Note: Engine is not available here in GameApplication directly, but we can try to get it
-    // However, EngineApplication registers itself usually.
-    // Let's check if we can get it from somewhere or if we need to pass it.
-    // Actually, EngineApplication creates GameApplication, so GameApplication doesn't own Engine.
-    // We need to register EngineService in EngineApplication or pass Engine to GameApplication.
-    // But for now, let's assume EngineApplication handles it or we skip it here.
-    // WAIT, the error was in Systems trying to get EngineService.
-    // We need to register it.
-    // Since GameApplication doesn't have Engine pointer easily, let's modify EngineApplication to
-    // register it.
-
     TraceLog(LOG_INFO, "[GameApplication] Core engine services registered.");
     TraceLog(
         LOG_INFO,
@@ -194,15 +182,15 @@ void GameApplication::OnPostInitialize()
     io.MouseDrawCursor = false;                           // Use system cursor, not ImGui cursor
 
     // Systems now initialized, get components through Kernel
-    auto playerObj = GetKernel()->GetObject<Player>();
-    auto menuObj = GetKernel()->GetObject<Menu>();
-    auto mapSystemObj = GetKernel()->GetObject<MapSystem>();
-    auto playerSystemObj = GetKernel()->GetObject<PlayerSystem>();
+    auto playerService = GetKernel()->GetService<PlayerService>();
+    auto menuService = GetKernel()->GetService<MenuService>();
+    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
+    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
 
-    auto *player = playerObj ? playerObj.get() : nullptr;
-    auto *menu = menuObj ? menuObj.get() : nullptr;
-    auto *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
-    auto *playerSystem = playerSystemObj ? playerSystemObj.get() : nullptr;
+    auto *player = playerService ? playerService->player : nullptr;
+    auto *menu = menuService ? menuService->menu : nullptr;
+    auto *mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
+    auto *playerSystem = playerSystemService ? playerSystemService->playerSystem : nullptr;
 
     // Dependency Injection: update ConsoleManager providers after all services are registered
     UpdateConsoleManagerProviders(GetKernel());
@@ -248,8 +236,8 @@ void GameApplication::OnPostUpdate(float deltaTime)
     (void)deltaTime; // Unused for now
 
     // Get Menu through Kernel
-    auto menuObj = GetKernel()->GetObject<Menu>();
-    auto *menu = menuObj ? menuObj.get() : nullptr;
+    auto menuService = GetKernel()->GetService<MenuService>();
+    auto *menu = menuService ? menuService->menu : nullptr;
 
     if (IsKeyPressed(KEY_GRAVE) && menu)
     {
@@ -328,8 +316,8 @@ void GameApplication::OnPostUpdate(float deltaTime)
             else
             {
                 // Only show player metrics if game is initialized (map selected)
-                auto playerObj = GetKernel()->GetObject<Player>();
-                auto *player = playerObj ? playerObj.get() : nullptr;
+                auto playerService = GetKernel()->GetService<PlayerService>();
+                auto *player = playerService ? playerService->player : nullptr;
 
                 if (player)
                 {
@@ -363,11 +351,11 @@ void GameApplication::OnPostRender()
         return;
 
     // Get Menu and Player through Kernel
-    auto menuObj = GetKernel()->GetObject<Menu>();
-    auto *menu = menuObj ? menuObj.get() : nullptr;
+    auto menuService = GetKernel()->GetService<MenuService>();
+    auto *menu = menuService ? menuService->menu : nullptr;
 
-    auto playerObj = GetKernel()->GetObject<Player>();
-    auto *player = playerObj ? playerObj.get() : nullptr;
+    auto playerService = GetKernel()->GetService<PlayerService>();
+    auto *player = playerService ? playerService->player : nullptr;
 
     if (m_showMenu && menu)
     {
@@ -435,14 +423,14 @@ void GameApplication::OnPreShutdown()
     }
 
     // Get components through Kernel (they're deleted by systems)
-    auto playerObj = GetKernel()->GetObject<Player>();
-    auto *player = playerObj ? playerObj.get() : nullptr;
+    auto playerService = GetKernel()->GetService<PlayerService>();
+    auto *player = playerService ? playerService->player : nullptr;
 
-    auto mapSystemObj = GetKernel()->GetObject<MapSystem>();
-    auto *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
+    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
+    auto *mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
 
-    auto menuObj = GetKernel()->GetObject<Menu>();
-    auto *menu = menuObj ? menuObj.get() : nullptr;
+    auto menuService = GetKernel()->GetService<MenuService>();
+    auto *menu = menuService ? menuService->menu : nullptr;
 
     if (player)
     {
@@ -478,8 +466,8 @@ void GameApplication::InitInput()
     }
 
     // Get Menu through Kernel
-    auto menuObj = GetKernel()->GetObject<Menu>();
-    auto *menu = menuObj ? menuObj.get() : nullptr;
+    auto menuService = GetKernel()->GetService<MenuService>();
+    auto *menu = menuService ? menuService->menu : nullptr;
 
     if (!menu)
     {
@@ -541,10 +529,10 @@ void GameApplication::HandleMenuActions()
 void GameApplication::UpdatePlayerLogic()
 {
     // Get PlayerSystem through Kernel
-    auto playerSystemObj = GetKernel()->GetObject<PlayerSystem>();
-    if (playerSystemObj)
+    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
+    if (playerSystemService && playerSystemService->playerSystem)
     {
-        playerSystemObj.get()->UpdatePlayerLogic();
+        playerSystemService->playerSystem->UpdatePlayerLogic();
     }
 }
 
@@ -556,23 +544,23 @@ void GameApplication::SaveGameState()
     }
 
     // Get PlayerSystem through Kernel
-    auto playerSystemObj = GetKernel()->GetObject<PlayerSystem>();
-    if (!playerSystemObj)
+    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
+    if (!playerSystemService || !playerSystemService->playerSystem)
     {
         TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - PlayerSystem not available");
         return;
     }
 
     // Get MapSystem through Kernel to get current map path
-    auto mapSystemObj = GetKernel()->GetObject<MapSystem>();
-    if (!mapSystemObj)
+    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
+    if (!mapSystemService || !mapSystemService->mapSystem)
     {
         TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - MapSystem not available");
         return;
     }
 
     // Get current map path
-    std::string currentMapPath = mapSystemObj.get()->GetCurrentMapPath();
+    std::string currentMapPath = mapSystemService->mapSystem->GetCurrentMapPath();
 
     if (currentMapPath.empty())
     {
@@ -580,6 +568,6 @@ void GameApplication::SaveGameState()
         return;
     }
 
-    playerSystemObj.get()->SavePlayerState(currentMapPath);
+    playerSystemService->playerSystem->SavePlayerState(currentMapPath);
     TraceLog(LOG_INFO, "[GameApplication] Game state saved (map: %s)", currentMapPath.c_str());
 }

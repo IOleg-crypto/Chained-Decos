@@ -1,10 +1,10 @@
 #include "ConsoleManager.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "platform/windows/Core/EngineApplication.h"
-#include "Player/Collision/PlayerCollision.h"
-#include "Player/Core/Player.h"
-#include "Systems/MapSystem/MapSystem.h"
-#include "Systems/PlayerSystem/PlayerSystem.h"
+#include "project/chaineddecos/Player/Collision/PlayerCollision.h"
+#include "project/chaineddecos/Player/Core/Player.h"
+#include "project/chaineddecos/Systems/MapSystem/MapSystem.h"
+#include "project/chaineddecos/Systems/PlayerSystem/PlayerSystem.h"
 #include <algorithm>
 #include <cctype>
 #include <imgui.h>
@@ -28,16 +28,9 @@ ConsoleManager::ConsoleManager()
 
 Player *ConsoleManager::GetPlayer() const
 {
-    // Get Player directly from Kernel
-    auto player = Kernel::Instance().GetObject<Player>();
-    return player ? player.get() : nullptr;
-}
-
-MapManager *ConsoleManager::GetMapManager() const
-{
-    // MapManager has been eliminated - return nullptr
-    // Console commands that need map functionality should use MapSystem through Kernel
-    return nullptr;
+    // Get Player through Kernel -> PlayerService
+    auto playerService = Kernel::Instance().GetService<PlayerService>();
+    return playerService ? playerService->player : nullptr;
 }
 
 Engine *ConsoleManager::GetEngine() const
@@ -46,8 +39,7 @@ Engine *ConsoleManager::GetEngine() const
     // TODO: Create EngineService
     // auto engineService = Kernel::Instance().GetService<EngineService>();
     // return engineService ? engineService->engine : nullptr;
-    auto engine = Kernel::Instance().GetObject<Engine>();
-    return engine ? engine.get() : nullptr;
+    return nullptr; // Temporarily return nullptr until EngineService is created
 }
 
 void ConsoleManager::ToggleConsole()

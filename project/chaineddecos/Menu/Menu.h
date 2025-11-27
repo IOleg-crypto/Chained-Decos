@@ -250,4 +250,29 @@ private:
     std::vector<std::string> m_fpsOptions;
 };
 
+struct MenuService : public IKernelService
+{
+    Menu *menu = nullptr;
+    explicit MenuService(Menu *m) : menu(m)
+    {
+    }
+    bool Initialize() override
+    {
+        return menu != nullptr;
+    }
+    void Shutdown() override
+    {
+    }
+    void Update(float deltaTime) override
+    {
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "MenuService";
+    }
+};
+
 #endif // MENU_H

@@ -1,13 +1,12 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "Engine/Engine.h"
-#include "Engine/Map/Core/MapLoader.h"
-#include "Engine/Model/Core/Model.h"
-#include "Engine/World/Core/World.h"
-#include "Game/Menu/Menu.h"
-#include "Game/Player/Core/Player.h"
-#include "project/chained_decos/GameApplication.h"
+#include "platform/windows/Core/Engine.h"
+#include "project/chaineddecos/GameApplication.h"
+#include "project/chaineddecos/Menu/Menu.h"
+#include "project/chaineddecos/Player/Core/Player.h"
+#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/model/Core/Model.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
 
 class GameIntegrationTest : public ::testing::Test

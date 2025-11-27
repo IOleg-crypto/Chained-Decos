@@ -1,19 +1,21 @@
 #ifndef PLAYER_SYSTEM_H
 #define PLAYER_SYSTEM_H
 
-// Clean includes from project root
-#include "Player/Core/Player.h"
-#include "Systems/MapSystem/MapSystem.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/kernel/Interfaces/IKernelService.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
 #include "platform/windows/Core/EngineApplication.h"
+#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/resources/model/Core/Model.h"
 #include "servers/audio/Core/AudioManager.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
 #include <memory>
 #include <string>
 #include <vector>
+
+
+// Forward declaration to avoid circular dependency
+class MapSystem;
 
 // System for managing player and gameplay logic
 // Creates and owns its components independently
@@ -85,6 +87,31 @@ private:
     std::string m_savedMapPath;
     Vector3 m_savedPlayerPosition;
     Vector3 m_savedPlayerVelocity;
+};
+
+struct PlayerSystemService : public IKernelService
+{
+    PlayerSystem *playerSystem = nullptr;
+    explicit PlayerSystemService(PlayerSystem *ps) : playerSystem(ps)
+    {
+    }
+    bool Initialize() override
+    {
+        return playerSystem != nullptr;
+    }
+    void Shutdown() override
+    {
+    }
+    void Update(float deltaTime) override
+    {
+    }
+    void Render() override
+    {
+    }
+    const char *GetName() const override
+    {
+        return "PlayerSystemService";
+    }
 };
 
 #endif // PLAYER_SYSTEM_H

@@ -1,12 +1,10 @@
 #include "MapSystem.h"
 #include "../../Managers/MapCollisionInitializer.h"
-#include "Menu/Console/ConsoleManagerHelpers.h"
-#include "Menu/Menu.h"
-#include "Player/Collision/PlayerCollision.h"
-#include "Player/Core/Player.h"
-#include "core/events/EventBus.h"
-#include "core/events/GameEvents.h"
 #include "core/object/kernel/Core/Kernel.h"
+#include "project/chaineddecos/Menu/Console/ConsoleManagerHelpers.h"
+#include "project/chaineddecos/Menu/Menu.h"
+#include "project/chaineddecos/Player/Collision/PlayerCollision.h"
+#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/map/Converter/MapObjectConverter.h"
 #include "scene/resources/map/Core/MapService.h"
@@ -58,11 +56,10 @@ bool MapSystem::Initialize(Kernel *kernel)
     auto collisionManager = kernel->GetService<CollisionManager>();
     auto modelLoader = kernel->GetService<ModelLoader>();
     auto renderManager = kernel->GetService<RenderManager>();
-    auto engineObj = kernel->GetObject<Engine>();
 
     // Player and Menu can be from other systems
-    auto playerObj = kernel->GetObject<Player>();
-    auto menuObj = kernel->GetObject<Menu>();
+    auto playerService = kernel->GetService<PlayerService>();
+    auto menuService = kernel->GetService<MenuService>();
 
     // Validate required engine dependencies
     if (!worldManager || !collisionManager || !modelLoader || !renderManager)
@@ -70,20 +67,6 @@ bool MapSystem::Initialize(Kernel *kernel)
         TraceLog(LOG_ERROR, "[MapSystem] Required engine services not found");
         return false;
     }
-
-    m_worldManager = worldManager.get();
-    m_collisionManager = collisionManager.get();
-    m_modelLoader = modelLoader.get();
-    m_renderManager = renderManager.get();
-    m_engine = engineService ? engineObj.get() : nullptr;
-
-    // Player and Menu can be nullptr if their systems aren't initialized yet
-    m_player = playerObj ? playerObj.get() : nullptr;
-    m_menu = menuObj ? menuObj.get() : nullptr;
-
-    // Create collision initializer
-    m_collisionInitializer =
-        std::make_unique<MapCollisionInitializer>(m_collisionManager, m_modelLoader, m_player);
 
     // Load spawn texture
     std::string texturePath =
@@ -142,10 +125,10 @@ void MapSystem::Update(float deltaTime)
     // Update Player reference if it became available
     if (!m_player && m_kernel && m_collisionInitializer)
     {
-        auto playerObj = m_kernel->GetObject<Player>();
-        if (playerObj)
+        auto playerService = m_kernel->GetService<PlayerService>();
+        if (playerService && playerService->player)
         {
-            m_player = playerObj.get();
+            m_player = playerService->player;
             m_collisionInitializer->SetPlayer(m_player);
             TraceLog(LOG_INFO, "[MapSystem] Player reference updated in collision initializer");
         }
@@ -158,9 +141,9 @@ void MapSystem::Update(float deltaTime)
 void MapSystem::Render()
 {
     // MapSystem::Render is called through ModuleManager::RenderAllModules()
-    // RenderEditorMap() and RenderSpawnZone() are now called in RenderingSystem::RenderGameWorld()
-    // for correct rendering order (inside BeginMode3D/EndMode3D)
-    // Empty function - rendering is handled by RenderingSystem
+    // RenderEditorMap() and RenderSpawnZone() are now called in
+    // RenderingSystem::RenderGameWorld() for correct rendering order (inside
+    // BeginMode3D/EndMode3D) Empty function - rendering is handled by RenderingSystem
 }
 
 void MapSystem::RegisterServices(Kernel *kernel)
@@ -173,7 +156,7 @@ void MapSystem::RegisterServices(Kernel *kernel)
     TraceLog(LOG_INFO, "[MapSystem] Registering services...");
 
     // Register MapSystem itself as a service
-    kernel->RegisterObject<MapSystem>(std::shared_ptr<MapSystem>(this, [](MapSystem*){}));
+    kernel->RegisterService<MapSystemService>(std::make_shared<MapSystemService>(this));
     TraceLog(LOG_INFO, "[MapSystem] MapSystemService registered");
 
     // Dependency Injection: inject MapSystem into ConsoleManager
@@ -833,10 +816,4 @@ void MapSystem::LoadEditorMap(const std::string &mapPath)
                 object.name.c_str());
         }
     }
-
-    // Publish MapLoadedEvent
-    EventBus::Instance().Publish(
-        MapLoadedEvent{.mapPath = mapPath, .spawnPosition = GetPlayerSpawnPosition()});
-
-    TraceLog(LOG_INFO, "[MapSystem] Published MapLoadedEvent for '%s'", mapPath.c_str());
 }

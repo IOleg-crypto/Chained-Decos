@@ -1,11 +1,11 @@
 #include "UIController.h"
 #include "../MapSystem/MapSystem.h"
 #include "../PlayerSystem/PlayerSystem.h"
-#include "Menu/Console/ConsoleManager.h"
-#include "Menu/Menu.h"
-#include "Player/Core/Player.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "platform/windows/Core/EngineApplication.h"
+#include "project/chaineddecos/Menu/Console/ConsoleManager.h"
+#include "project/chaineddecos/Menu/Menu.h"
+#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
@@ -36,10 +36,11 @@ bool UIController::Initialize(Kernel *kernel)
     TraceLog(LOG_INFO, "[UIController] Initializing...");
 
     // Get engine dependencies through Kernel
+    // Get engine dependencies through Kernel
     auto engineObj = kernel->GetObject<Engine>();
 
     // Engine not required for Menu, but preferred
-    m_engine = engineService ? engineObj.get() : nullptr;
+    m_engine = engineObj ? engineObj.get() : nullptr;
 
     if (!m_engine)
     {
@@ -139,7 +140,7 @@ void UIController::RegisterServices(Kernel *kernel)
     // Register our own components as services
     if (m_menu)
     {
-        kernel->RegisterObject<Menu>(std::shared_ptr<Menu>(m_menu.get(), [](Menu *) {}));
+        kernel->RegisterService<MenuService>(std::make_shared<MenuService>(m_menu.get()));
         TraceLog(LOG_INFO, "[UIController] MenuService registered");
     }
 }
@@ -201,8 +202,8 @@ void UIController::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
         return;
     }
 
-    auto playerSystemObj = m_kernel->GetObject<PlayerSystem>();
-    if (!playerSystemObj)
+    auto playerSystemService = m_kernel->GetService<PlayerSystemService>();
+    if (!playerSystemService || !playerSystemService->playerSystem)
     {
         TraceLog(LOG_ERROR, "[UIController] HandleSinglePlayer() - PlayerSystem not available");
         return;
@@ -213,7 +214,7 @@ void UIController::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
     // Initialize player after map is loaded
     try
     {
-        playerSystemObj.get()->InitializePlayer();
+        playerSystemService->playerSystem->InitializePlayer();
         TraceLog(LOG_INFO, "[UIController] HandleSinglePlayer() - Player initialized successfully");
     }
     catch (const std::exception &e)
@@ -249,17 +250,17 @@ void UIController::EnsurePlayerSafePosition()
         return;
     }
 
-    auto playerObj = m_kernel->GetObject<Player>();
+    auto playerService = m_kernel->GetService<PlayerService>();
     auto collisionManager = m_kernel->GetService<CollisionManager>();
 
-    if (!playerObj || !collisionManager)
+    if (!playerService || !playerService->player || !collisionManager)
     {
         TraceLog(LOG_ERROR,
                  "[UIController] EnsurePlayerSafePosition() - Required services not available");
         return;
     }
 
-    Player *player = playerObj.get();
+    Player *player = playerService->player;
 
     if (player->GetPlayerPosition().x == 0.0f && player->GetPlayerPosition().y == 0.0f &&
         player->GetPlayerPosition().z == 0.0f)
@@ -285,17 +286,17 @@ void UIController::ReinitializeCollisionSystemForResume()
     }
 
     auto models = m_kernel->GetService<ModelLoader>();
-    auto mapSystemObj = m_kernel->GetObject<MapSystem>();
+    auto mapSystemService = m_kernel->GetService<MapSystemService>();
     auto collisionManager = m_kernel->GetService<CollisionManager>();
 
-    if (!mapSystemObj || !collisionManager || !models)
+    if (!mapSystemService || !mapSystemService->mapSystem || !collisionManager || !models)
     {
         TraceLog(LOG_ERROR, "[UIController] ReinitializeCollisionSystemForResume() - Required "
                             "services not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
+    MapSystem *mapSystem = mapSystemService->mapSystem;
 
     TraceLog(LOG_WARNING, "[UIController] ReinitializeCollisionSystemForResume() - No colliders "
                           "found, reinitializing...");
@@ -355,18 +356,19 @@ void UIController::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
     }
 
     auto models = m_kernel->GetService<ModelLoader>();
-    auto mapSystemObj = m_kernel->GetObject<MapSystem>();
-    auto playerSystemObj = m_kernel->GetObject<PlayerSystem>();
+    auto mapSystemService = m_kernel->GetService<MapSystemService>();
+    auto playerSystemService = m_kernel->GetService<PlayerSystemService>();
     auto collisionManager = m_kernel->GetService<CollisionManager>();
 
-    if (!models || !mapSystemObj || !playerSystemObj || !collisionManager)
+    if (!models || !mapSystemService || !mapSystemService->mapSystem || !playerSystemService ||
+        !playerSystemService->playerSystem || !collisionManager)
     {
         TraceLog(LOG_ERROR, "[UIController] HandleResumeGame() - Required services not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
-    PlayerSystem *playerSystem = playerSystemObj ? playerSystemObj.get() : nullptr;
+    MapSystem *mapSystem = mapSystemService->mapSystem;
+    PlayerSystem *playerSystem = playerSystemService->playerSystem;
 
     m_menu->SetAction(MenuAction::SinglePlayer);
 
@@ -538,15 +540,15 @@ bool UIController::InitializeCollisionSystemWithModels(
         return false;
     }
 
-    auto mapSystemObj = m_kernel->GetObject<MapSystem>();
-    if (!mapSystemObj)
+    auto mapSystemService = m_kernel->GetService<MapSystemService>();
+    if (!mapSystemService || !mapSystemService->mapSystem)
     {
         TraceLog(LOG_ERROR,
                  "[UIController] InitializeCollisionSystemWithModels() - MapSystem not available");
         return false;
     }
 
-    MapSystem *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
+    MapSystem *mapSystem = mapSystemService->mapSystem;
 
     if (!mapSystem->InitCollisionsWithModelsSafe(requiredModels))
     {
@@ -569,17 +571,17 @@ void UIController::RegisterPreloadedModels()
         return;
     }
 
-    auto mapSystemObj = m_kernel->GetObject<MapSystem>();
+    auto mapSystemService = m_kernel->GetService<MapSystemService>();
     auto models = m_kernel->GetService<ModelLoader>();
 
-    if (!mapSystemObj || !models)
+    if (!mapSystemService || !mapSystemService->mapSystem || !models)
     {
         TraceLog(LOG_ERROR,
                  "[UIController] RegisterPreloadedModels() - Required services not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
+    MapSystem *mapSystem = mapSystemService->mapSystem;
 
     if (!mapSystem->GetGameMap().GetMapModels().empty())
     {
@@ -691,17 +693,17 @@ void UIController::CreateModelInstancesForMap()
         return;
     }
 
-    auto mapSystemObj = m_kernel->GetObject<MapSystem>();
+    auto mapSystemService = m_kernel->GetService<MapSystemService>();
     auto models = m_kernel->GetService<ModelLoader>();
 
-    if (!mapSystemObj || !models)
+    if (!mapSystemService || !mapSystemService->mapSystem || !models)
     {
         TraceLog(LOG_ERROR,
                  "[UIController] CreateModelInstancesForMap() - Required services not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
+    MapSystem *mapSystem = mapSystemService->mapSystem;
 
     TraceLog(LOG_INFO,
              "[UIController] CreateModelInstancesForMap() - Creating model instances for "
@@ -766,14 +768,14 @@ void UIController::LoadMapObjects(const std::string &mapPath)
         throw std::runtime_error("Kernel not available");
     }
 
-    auto mapSystemObj = m_kernel->GetObject<MapSystem>();
-    if (!mapSystemObj)
+    auto mapSystemService = m_kernel->GetService<MapSystemService>();
+    if (!mapSystemService || !mapSystemService->mapSystem)
     {
         TraceLog(LOG_ERROR, "[UIController] LoadMapObjects() - MapSystem not available");
         throw std::runtime_error("MapSystem not available");
     }
 
-    MapSystem *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
+    MapSystem *mapSystem = mapSystemService->mapSystem;
 
     try
     {
@@ -841,11 +843,11 @@ void UIController::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialize
 
     // Verify all required services are available
     TraceLog(LOG_INFO, "[UIController] HandleStartGameWithMap() - Getting services...");
-    auto mapSystemObj = m_kernel->GetObject<MapSystem>();
+    auto mapSystemService = m_kernel->GetService<MapSystemService>();
     auto models = m_kernel->GetService<ModelLoader>();
-    auto playerSystemObj = m_kernel->GetObject<PlayerSystem>();
+    auto playerSystemService = m_kernel->GetService<PlayerSystemService>();
 
-    if (!mapSystemObj)
+    if (!mapSystemService || !mapSystemService->mapSystem)
     {
         TraceLog(LOG_ERROR, "[UIController] HandleStartGameWithMap() - MapSystem not available");
         return;
@@ -857,14 +859,14 @@ void UIController::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialize
         return;
     }
 
-    if (!playerSystemObj)
+    if (!playerSystemService || !playerSystemService->playerSystem)
     {
         TraceLog(LOG_ERROR, "[UIController] HandleStartGameWithMap() - PlayerSystem not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystemObj ? mapSystemObj.get() : nullptr;
-    PlayerSystem *playerSystem = playerSystemObj ? playerSystemObj.get() : nullptr;
+    MapSystem *mapSystem = mapSystemService->mapSystem;
+    PlayerSystem *playerSystem = playerSystemService->playerSystem;
 
     TraceLog(LOG_INFO,
              "[UIController] HandleStartGameWithMap() - All services available, proceeding...");

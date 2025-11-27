@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ENGINE_H
+#define ENGINE_H
 
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/module/Core/ModuleManager.h"
@@ -61,8 +62,10 @@ public:
 private:
     Kernel *m_kernel;
     std::unique_ptr<ModuleManager> m_moduleManager;
-    std::unique_ptr<RenderManager> m_renderManager;
-    std::unique_ptr<InputManager> m_inputManager;
+    std::shared_ptr<RenderManager> m_renderManager;
+    std::shared_ptr<InputManager> m_inputManager;
     bool m_debugInfoVisible = false;
     bool m_shouldExit = false;
 };
+
+#endif // ENGINE_H

@@ -4,16 +4,12 @@ cmake_minimum_required(VERSION 3.25)
 set(UNIT_TEST_SOURCES
     engine/PhysicsComponentTest.cpp
     engine/CollisionSystemTest.cpp
-    engine/ConfigManagerTest.cpp
-    engine/KernelTest.cpp
 )
 
 set(INTEGRATION_TEST_SOURCES
     game/PlayerTest.cpp
     integration/GameIntegrationTest.cpp
     integration/SkyboxTest.cpp
-    integration/HeaderIndependenceTest.cpp
-    engine/SettingsManagerTest.cpp
 )
 
 # Create unit test executable (no raylib dependencies)

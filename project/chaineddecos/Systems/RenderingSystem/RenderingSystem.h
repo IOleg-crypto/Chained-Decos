@@ -1,17 +1,18 @@
 #ifndef RENDERING_SYSTEM_H
 #define RENDERING_SYSTEM_H
 
-// Clean includes from project root
+#include "platform/windows/Core/EngineApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
-#include "platform/windows/Core/EngineApplication.h"
-#include "Player/Core/Player.h"
-#include "Systems/MapSystem/MapSystem.h"
-#include "scene/resources/model/Interfaces/IModelLoader.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
 #include <memory>
 #include <string>
 #include <vector>
+
+// Forward declarations to avoid circular dependencies
+class Player;
+class MapSystem;
+class CollisionManager;
+class ModelLoader;
 
 class RenderingSystem : public IEngineModule
 {

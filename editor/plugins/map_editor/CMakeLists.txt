@@ -12,7 +12,8 @@ target_include_directories(map_editor PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/thirdparty/imgui
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/imgui
 )
 
 target_link_libraries(map_editor PUBLIC 

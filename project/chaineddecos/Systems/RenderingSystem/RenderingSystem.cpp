@@ -1,8 +1,8 @@
 #include "RenderingSystem.h"
 #include "../MapSystem/MapSystem.h"
-#include "Player/Core/Player.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include "platform/windows/Core/EngineApplication.h"
+#include "project/chaineddecos/Player/Core/Player.h"
 #include "servers/rendering/Core/RenderManager.h"
 
 #include "scene/resources/map/Renderer/MapRenderer.h"
@@ -54,19 +54,19 @@ void RenderingSystem::EnsureDependencies()
     // Get dependencies through Kernel (lazy loading)
     if (!m_player)
     {
-        auto playerObj = m_kernel->GetObject<Player>();
-        if (playerObj)
+        auto playerService = m_kernel->GetService<PlayerService>();
+        if (playerService)
         {
-            m_player = playerObj.get();
+            m_player = playerService->player;
         }
     }
 
     if (!m_mapSystem)
     {
-        auto mapSystemObj = m_kernel->GetObject<MapSystem>();
-        if (mapSystemObj)
+        auto mapSystemService = m_kernel->GetService<MapSystemService>();
+        if (mapSystemService)
         {
-            m_mapSystem = mapSystemObj.get();
+            m_mapSystem = mapSystemService->mapSystem;
         }
     }
 
@@ -82,7 +82,7 @@ void RenderingSystem::EnsureDependencies()
     if (!m_engine)
     {
         auto engineObj = m_kernel->GetObject<Engine>();
-        if (engineService)
+        if (engineObj)
         {
             m_engine = engineObj.get();
         }
@@ -160,9 +160,9 @@ void RenderingSystem::RenderGameWorld()
     BeginMode3D(camera);
 
     // Render game world (models, player, etc.) and collision shapes AFTER primitives
-    m_engine->GetRenderManager()->RenderGame(*m_player->GetRenderable(), *m_models,
-                                             *m_collisionManager,
-                                             m_engine->IsCollisionDebugVisible());
+    m_engine->GetRenderManager()->RenderGame(
+        *m_player->GetRenderable(), *m_models, *m_collisionManager,
+        m_engine->GetRenderManager()->IsCollisionDebugVisible());
 
     // End 3D rendering
     EndMode3D();
