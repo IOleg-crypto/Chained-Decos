@@ -1,11 +1,12 @@
 #pragma once
 
+#include "core/object/kernel/Interfaces/IKernelService.h"
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
 
-class WorldManager
+class WorldManager : public IKernelService
 {
 public:
     // World constants
