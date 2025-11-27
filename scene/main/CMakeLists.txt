@@ -5,6 +5,7 @@ add_library(world STATIC
 
 target_include_directories(world PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src/Engine
     ${CMAKE_SOURCE_DIR}/include
 )

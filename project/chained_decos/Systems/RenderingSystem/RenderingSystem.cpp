@@ -1,13 +1,13 @@
 #include "RenderingSystem.h"
 #include "../MapSystem/MapSystem.h"
-#include "platform/windows/Core/EngineApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
-#include "servers/rendering/Core/RenderManager.h"
+#include "platform/windows/Core/EngineApplication.h"
 #include "project/chained_decos/Player/Core/Player.h"
+#include "servers/rendering/Core/RenderManager.h"
 
-#include "servers/physics/collision/Core/CollisionManager.h"
 #include "scene/resources/map/Renderer/MapRenderer.h"
 #include "scene/resources/model/Core/Model.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include <raylib.h>
 
 RenderingSystem::RenderingSystem()
@@ -81,10 +81,10 @@ void RenderingSystem::EnsureDependencies()
 
     if (!m_engine)
     {
-        auto engineService = m_kernel->GetService<EngineService>();
-        if (engineService)
+        auto engineObj = m_kernel->GetObject<Engine>();
+        if (engineObj)
         {
-            m_engine = engineService->engine;
+            m_engine = engineObj.get();
         }
     }
 }
@@ -160,9 +160,9 @@ void RenderingSystem::RenderGameWorld()
     BeginMode3D(camera);
 
     // Render game world (models, player, etc.) and collision shapes AFTER primitives
-    m_engine->GetRenderManager()->RenderGame(*m_player->GetRenderable(), *m_models,
-                                             *m_collisionManager,
-                                             m_engine->IsCollisionDebugVisible());
+    m_engine->GetRenderManager()->RenderGame(
+        *m_player->GetRenderable(), *m_models, *m_collisionManager,
+        m_engine->GetRenderManager()->IsCollisionDebugVisible());
 
     // End 3D rendering
     EndMode3D();

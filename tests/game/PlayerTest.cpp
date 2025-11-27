@@ -1,17 +1,20 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-#include "Game/Player/Core/Player.h"
-#include "Engine/Collision/Core/CollisionManager.h"
+#include "project/chained_decos/Player/Core/Player.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 
-class PlayerTest : public ::testing::Test {
+class PlayerTest : public ::testing::Test
+{
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         player = std::make_unique<Player>();
         collisionManager = std::make_unique<CollisionManager>();
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         player.reset();
         collisionManager.reset();
     }
@@ -20,7 +23,8 @@ protected:
     std::unique_ptr<CollisionManager> collisionManager;
 };
 
-TEST_F(PlayerTest, ConstructorInitializesDefaults) {
+TEST_F(PlayerTest, ConstructorInitializesDefaults)
+{
     EXPECT_NE(player.get(), nullptr);
 
     // Player should have a valid position
@@ -36,7 +40,8 @@ TEST_F(PlayerTest, ConstructorInitializesDefaults) {
     EXPECT_GT(size.z, 0.0f);
 }
 
-TEST_F(PlayerTest, PlayerMovementWorks) {
+TEST_F(PlayerTest, PlayerMovementWorks)
+{
     Vector3 initialPosition = player->GetPlayerPosition();
 
     // Move player
@@ -49,7 +54,8 @@ TEST_F(PlayerTest, PlayerMovementWorks) {
     EXPECT_FALSE(std::isnan(newPosition.z));
 }
 
-TEST_F(PlayerTest, PlayerPositionCanBeSet) {
+TEST_F(PlayerTest, PlayerPositionCanBeSet)
+{
     Vector3 newPosition = {10.0f, 5.0f, 10.0f};
 
     // Note: SetPlayerPosition might be const, so we need to check if there's a non-const version
@@ -60,7 +66,8 @@ TEST_F(PlayerTest, PlayerPositionCanBeSet) {
     EXPECT_FALSE(std::isnan(currentPosition.z));
 }
 
-TEST_F(PlayerTest, PlayerHasSpeed) {
+TEST_F(PlayerTest, PlayerHasSpeed)
+{
     float speed = player->GetSpeed();
     EXPECT_GE(speed, 0.0f); // Speed should be non-negative
 
@@ -69,7 +76,8 @@ TEST_F(PlayerTest, PlayerHasSpeed) {
     // EXPECT_EQ(player->GetSpeed(), 10.0f);
 }
 
-TEST_F(PlayerTest, PlayerHasRotation) {
+TEST_F(PlayerTest, PlayerHasRotation)
+{
     float rotation = player->GetRotationY();
     EXPECT_FALSE(std::isnan(rotation));
 
@@ -78,15 +86,17 @@ TEST_F(PlayerTest, PlayerHasRotation) {
     // EXPECT_NEAR(player->GetRotationY(), 1.57f, 0.01f);
 }
 
-TEST_F(PlayerTest, PlayerHasBoundingBox) {
+TEST_F(PlayerTest, PlayerHasBoundingBox)
+{
     BoundingBox bbox = player->GetPlayerBoundingBox();
     EXPECT_GT(bbox.max.x, bbox.min.x);
     EXPECT_GT(bbox.max.y, bbox.min.y);
     EXPECT_GT(bbox.max.z, bbox.min.z);
 }
 
-TEST_F(PlayerTest, PlayerHasCollision) {
-    const Collision& collision = player->GetCollision();
+TEST_F(PlayerTest, PlayerHasCollision)
+{
+    const Collision &collision = player->GetCollision();
     EXPECT_NE(&collision, nullptr);
 
     // Test mutable access if available
@@ -94,21 +104,20 @@ TEST_F(PlayerTest, PlayerHasCollision) {
     // EXPECT_NE(&mutableCollision, nullptr);
 }
 
-TEST_F(PlayerTest, PlayerUpdateWorks) {
+TEST_F(PlayerTest, PlayerUpdateWorks)
+{
     // Update should not crash
-    EXPECT_NO_THROW({
-        player->Update(*collisionManager);
-    });
+    EXPECT_NO_THROW({ player->Update(*collisionManager); });
 }
 
-TEST_F(PlayerTest, PlayerCanJump) {
+TEST_F(PlayerTest, PlayerCanJump)
+{
     // Test jump impulse if the method exists
-    EXPECT_NO_THROW({
-        player->ApplyJumpImpulse(5.0f);
-    });
+    EXPECT_NO_THROW({ player->ApplyJumpImpulse(5.0f); });
 }
 
-TEST_F(PlayerTest, PlayerHasCameraController) {
+TEST_F(PlayerTest, PlayerHasCameraController)
+{
     auto cameraController = player->GetCameraController();
     EXPECT_NE(cameraController, nullptr);
     EXPECT_NE(cameraController.get(), nullptr);

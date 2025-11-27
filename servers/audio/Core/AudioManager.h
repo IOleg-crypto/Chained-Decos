@@ -20,6 +20,7 @@ public:
     void Shutdown() override;
     void Update(float deltaTime) override
     {
+
         UpdateLoopingSounds();
     }
     void Render() override

@@ -29,21 +29,20 @@ public:
     std::string GetConfigValue(const std::string &key, const std::string &defaultValue = "") const;
 
     // Global kernel instance access
-    static Kernel& Instance();
+    static Kernel &Instance();
 
     // Type-safe service registration without enum
     // Uses C++ RTTI for type identification
-    template <typename T>
-    void RegisterService(std::shared_ptr<T> service)
+    template <typename T> void RegisterService(std::shared_ptr<T> service)
     {
-        static_assert(std::is_base_of_v<IKernelService, T>, "Service must implement IKernelService");
+        static_assert(std::is_base_of_v<IKernelService, T>,
+                      "Service must implement IKernelService");
         const std::type_index typeId = std::type_index(typeid(T));
         m_services[typeId] = std::static_pointer_cast<IKernelService>(service);
     }
 
     // Type-safe service retrieval
-    template <typename T>
-    std::shared_ptr<T> GetService()
+    template <typename T> std::shared_ptr<T> GetService()
     {
         const std::type_index typeId = std::type_index(typeid(T));
         auto it = m_services.find(typeId);
@@ -56,8 +55,7 @@ public:
     }
 
     // Required service retrieval - throws if service is missing
-    template <typename T>
-    std::shared_ptr<T> RequireService()
+    template <typename T> std::shared_ptr<T> RequireService()
     {
         const std::type_index typeId = std::type_index(typeid(T));
         auto it = m_services.find(typeId);
@@ -71,8 +69,7 @@ public:
     }
 
     // Check if service exists
-    template <typename T>
-    bool HasService() const
+    template <typename T> bool HasService() const
     {
         const std::type_index typeId = std::type_index(typeid(T));
         return m_services.find(typeId) != m_services.end();
@@ -89,21 +86,41 @@ public:
     void InitializeServices();
     void ShutdownServices();
 
+    // Generic object registration (for non-service objects)
+    template <typename T> void RegisterObject(std::shared_ptr<T> object)
+    {
+        m_objects[std::type_index(typeid(T))] = object;
+    }
+
+    template <typename T> std::shared_ptr<T> GetObject()
+    {
+        auto it = m_objects.find(std::type_index(typeid(T)));
+        if (it != m_objects.end())
+        {
+            return std::static_pointer_cast<T>(it->second);
+        }
+        return nullptr;
+    }
+
+    template <typename T> bool HasObject() const
+    {
+        return m_objects.find(std::type_index(typeid(T))) != m_objects.end();
+    }
+
 private:
     // Type-indexed service storage (no enum needed!)
     std::unordered_map<std::type_index, std::shared_ptr<IKernelService>> m_services;
+    std::unordered_map<std::type_index, std::shared_ptr<void>> m_objects;
     std::map<std::string, std::string> m_config;
-    
+
     // Global instance
-    static Kernel* s_instance;
+    static Kernel *s_instance;
 };
 
 // Simplified macros using type-based registration
-#define REGISTER_KERNEL_SERVICE(kernel, Type) \
-    kernel.RegisterService<Type>(std::make_shared<Type>())
+#define REGISTER_KERNEL_SERVICE(kernel, Type) kernel.RegisterService<Type>(std::make_shared<Type>())
 
-#define GET_KERNEL_SERVICE(kernel, Type) \
-    kernel.GetService<Type>()
+#define GET_KERNEL_SERVICE(kernel, Type) kernel.GetService<Type>()
 
 // Global kernel access helper macros
 #define KERNEL Kernel::Instance()
@@ -111,5 +128,3 @@ private:
 #define REQUIRE_SERVICE(Type) KERNEL.RequireService<Type>()
 
 #endif // KERNEL_H
-
-

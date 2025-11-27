@@ -4,6 +4,7 @@
 #include <memory>
 #include <raylib.h>
 #include <string>
+#include <vector>
 
 // Forward declarations to reduce dependencies
 class IRenderCommand;
@@ -16,8 +17,6 @@ class ShaderManager;
 
 // Include only necessary interfaces
 #include "core/object/kernel/Interfaces/IKernelService.h"
-#include <memory>
-#include <vector>
 
 //
 // RenderManager - Handles all rendering operations
@@ -69,22 +68,6 @@ public:
         return "RenderManager";
     }
 
-public:
-    // Debug rendering (moved to public for GameApplication access)
-    void ShowMetersPlayer(const IGameRenderable &renderable) const;
-    void RenderDebugInfo(const IGameRenderable &renderable, const ModelLoader &models,
-                         const CollisionManager &collision) const;
-
-private:
-    // Private helper methods (still used internally)
-    void RenderGame(IGameRenderable &renderable, const ModelLoader &models,
-                    const CollisionManager &collisionManager, bool showCollisionDebug = false);
-    void BeginMode3D(const Camera &camera);
-    void EndMode3D();
-    void DrawScene3D(const ModelLoader &models);
-    void DrawPlayer(IGameRenderable &renderable, const ModelLoader &models);
-    void RenderCollisionDebug(const CollisionManager &collisionManager,
-                              IGameRenderable &renderable) const;
     void RenderCollisionShapes(const CollisionManager &collisionManager,
                                IGameRenderable &renderable) const;
     void SetBackgroundColor(Color color);
@@ -94,9 +77,28 @@ private:
     void DrawModelManagerInfo(const ModelLoader &models) const;
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager) const;
     void DrawControlsInfo() const;
-    Font GetFont() const;
     bool LoadWindShader();
 
+    // Public rendering method for game world
+    void RenderGame(IGameRenderable &renderable, const ModelLoader &models,
+                    const CollisionManager &collisionManager, bool showCollisionDebug = false);
+
+    // Debug rendering (moved to public for GameApplication access)
+    void ShowMetersPlayer(const IGameRenderable &renderable) const;
+    void RenderDebugInfo(const IGameRenderable &renderable, const ModelLoader &models,
+                         const CollisionManager &collision) const;
+
+    Font GetFont() const;
+
+private:
+    void BeginMode3D(const Camera &camera);
+    void EndMode3D();
+    void DrawScene3D(const ModelLoader &models);
+    void DrawPlayer(IGameRenderable &renderable, const ModelLoader &models);
+    void RenderCollisionDebug(const CollisionManager &collisionManager,
+                              IGameRenderable &renderable) const;
+
+public:
     // Command queue for rendering
     std::vector<std::unique_ptr<IRenderCommand>> m_commandQueue;
 

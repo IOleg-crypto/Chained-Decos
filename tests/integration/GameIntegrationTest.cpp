@@ -1,18 +1,20 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "Game/GameApplication.h"
-#include "Game/Player/Core/Player.h"
 #include "Engine/Engine.h"
-#include "Engine/Collision/Core/CollisionManager.h"
+#include "Engine/Map/Core/MapLoader.h"
 #include "Engine/Model/Core/Model.h"
 #include "Engine/World/Core/World.h"
 #include "Game/Menu/Menu.h"
-#include "Engine/Map/Core/MapLoader.h"
+#include "Game/Player/Core/Player.h"
+#include "project/chained_decos/GameApplication.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 
-class GameIntegrationTest : public ::testing::Test {
+class GameIntegrationTest : public ::testing::Test
+{
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         // Create dependencies
         player = std::make_shared<Player>();
         collisionManager = std::make_shared<CollisionManager>();
@@ -26,7 +28,8 @@ protected:
         engine = nullptr;
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         game.reset();
         engine.reset();
         collisionManager.reset();
@@ -45,17 +48,17 @@ protected:
     std::shared_ptr<Menu> menu;
 };
 
-//TEST_F(GameIntegrationTest, GameInitialization) {
-//    EXPECT_TRUE(game != nullptr);
-//    EXPECT_TRUE(engine != nullptr);
-//    EXPECT_TRUE(collisionManager != nullptr);
-//    EXPECT_TRUE(mapGenerator != nullptr);
-//}
+// TEST_F(GameIntegrationTest, GameInitialization) {
+//     EXPECT_TRUE(game != nullptr);
+//     EXPECT_TRUE(engine != nullptr);
+//     EXPECT_TRUE(collisionManager != nullptr);
+//     EXPECT_TRUE(mapGenerator != nullptr);
+// }
 //
-//TEST_F(GameIntegrationTest, CollisionManagerHasColliders) {
-//    const auto& colliders = collisionManager->GetColliders();
-//    EXPECT_GE(colliders.size(), 0);
-//}
+// TEST_F(GameIntegrationTest, CollisionManagerHasColliders) {
+//     const auto& colliders = collisionManager->GetColliders();
+//     EXPECT_GE(colliders.size(), 0);
+// }
 //
 ////TEST_F(GameIntegrationTest, GameUpdateDoesNotCrash) {
 ////    EXPECT_NO_THROW({
@@ -74,53 +77,51 @@ protected:
 ////}
 //
 
-//TEST_F(GameIntegrationTest, LoadEditorMapAndErrorHandling) {
+// TEST_F(GameIntegrationTest, LoadEditorMapAndErrorHandling) {
 //
-//    EXPECT_NO_THROW({
+//     EXPECT_NO_THROW({
 //
-//        auto& gameMap = game->GetGameMap();
-//        EXPECT_GE(gameMap.objects.size(), 0);
-//    });
-//}
+//         auto& gameMap = game->GetGameMap();
+//         EXPECT_GE(gameMap.objects.size(), 0);
+//     });
+// }
 
 // Safe tests that don't trigger graphics initialization
 
-//TEST_F(GameIntegrationTest, GameBasicState) {
-//    // Test very basic game state without accessing components that might trigger graphics
-//    EXPECT_TRUE(game != nullptr);
+// TEST_F(GameIntegrationTest, GameBasicState) {
+//     // Test very basic game state without accessing components that might trigger graphics
+//     EXPECT_TRUE(game != nullptr);
 //
-//    // Test basic state queries that don't trigger initialization
-//    EXPECT_NO_THROW({
-//        bool isRunning = game->IsRunning();
-//        bool isInitialized = game->IsInitialized();
-//    });
+//     // Test basic state queries that don't trigger initialization
+//     EXPECT_NO_THROW({
+//         bool isRunning = game->IsRunning();
+//         bool isInitialized = game->IsInitialized();
+//     });
 //
-//    // Test basic operations that don't require graphics
-//    EXPECT_NO_THROW({
-//        game->RequestExit();
-//    });
-//}
-//
-//
-// GameApplication doesn't have IsRunning/IsInitialized methods
-// These tests need to be rewritten for GameApplication architecture
-// TEST_F(GameIntegrationTest, GameStateQueries) {
-//    // Test state queries that don't trigger graphics
-//    EXPECT_NO_THROW({
-//        bool isRunning = game->IsRunning();
-//        bool isInitialized = game->IsInitialized();
-//    });
+//     // Test basic operations that don't require graphics
+//     EXPECT_NO_THROW({
+//         game->RequestExit();
+//     });
 // }
-
-
-//TEST_F(GameIntegrationTest, CollisionManagerStandalone) {
-//    // Test collision manager independently (doesn't need game instance)
-//    EXPECT_NO_THROW({
-//        const auto& colliders = collisionManager->GetColliders();
-//        EXPECT_GE(colliders.size(), 0);
 //
-//        collisionManager->ClearColliders();
-//        EXPECT_TRUE(collisionManager->GetColliders().empty());
-//    });
-//}
+//
+//  GameApplication doesn't have IsRunning/IsInitialized methods
+//  These tests need to be rewritten for GameApplication architecture
+//  TEST_F(GameIntegrationTest, GameStateQueries) {
+//     // Test state queries that don't trigger graphics
+//     EXPECT_NO_THROW({
+//         bool isRunning = game->IsRunning();
+//         bool isInitialized = game->IsInitialized();
+//     });
+//  }
 
+// TEST_F(GameIntegrationTest, CollisionManagerStandalone) {
+//     // Test collision manager independently (doesn't need game instance)
+//     EXPECT_NO_THROW({
+//         const auto& colliders = collisionManager->GetColliders();
+//         EXPECT_GE(colliders.size(), 0);
+//
+//         collisionManager->ClearColliders();
+//         EXPECT_TRUE(collisionManager->GetColliders().empty());
+//     });
+// }

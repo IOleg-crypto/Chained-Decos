@@ -7,7 +7,6 @@
 #include "servers/rendering/Core/RenderManager.h"
 #include <memory>
 
-
 // Main Engine class
 class Engine
 {
@@ -49,10 +48,21 @@ public:
         m_debugInfoVisible = visible;
     }
 
+    // Application control
+    void RequestExit()
+    {
+        m_shouldExit = true;
+    }
+    bool ShouldExit() const
+    {
+        return m_shouldExit;
+    }
+
 private:
     Kernel *m_kernel;
     std::unique_ptr<ModuleManager> m_moduleManager;
     std::unique_ptr<RenderManager> m_renderManager;
     std::unique_ptr<InputManager> m_inputManager;
     bool m_debugInfoVisible = false;
+    bool m_shouldExit = false;
 };

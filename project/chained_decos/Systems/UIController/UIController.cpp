@@ -1,19 +1,20 @@
 #include "UIController.h"
 #include "../MapSystem/MapSystem.h"
 #include "../PlayerSystem/PlayerSystem.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
-#include "platform/windows/Core/EngineApplication.h"
 #include "core/object/kernel/Core/Kernel.h"
-#include "scene/resources/map/Core/MapLoader.h"
-#include "scene/resources/model/Core/Model.h"
-#include "scene/resources/model/Utils/ModelAnalyzer.h"
+#include "platform/windows/Core/EngineApplication.h"
 #include "project/chained_decos/Menu/Console/ConsoleManager.h"
 #include "project/chained_decos/Menu/Menu.h"
 #include "project/chained_decos/Player/Core/Player.h"
+#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/model/Core/Model.h"
+#include "scene/resources/model/Utils/ModelAnalyzer.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <raylib.h>
+
 
 UIController::UIController() : m_menu(nullptr), m_kernel(nullptr), m_engine(nullptr)
 {
@@ -36,10 +37,11 @@ bool UIController::Initialize(Kernel *kernel)
     TraceLog(LOG_INFO, "[UIController] Initializing...");
 
     // Get engine dependencies through Kernel
-    auto engineService = kernel->GetService<EngineService>();
+    // Get engine dependencies through Kernel
+    auto engineObj = kernel->GetObject<Engine>();
 
     // Engine not required for Menu, but preferred
-    m_engine = engineService ? engineService->engine : nullptr;
+    m_engine = engineObj ? engineObj.get() : nullptr;
 
     if (!m_engine)
     {

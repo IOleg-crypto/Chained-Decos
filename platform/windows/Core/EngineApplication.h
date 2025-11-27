@@ -69,6 +69,6 @@ private:
     IApplication *m_app; // The application instance
     Config m_config;
     std::unique_ptr<Kernel> m_kernel;
-    std::unique_ptr<Engine> m_engine;
+    std::shared_ptr<Engine> m_engine;
     bool m_initialized = false;
 };
