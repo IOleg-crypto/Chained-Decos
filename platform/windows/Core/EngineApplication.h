@@ -1,8 +1,8 @@
 //
 // EngineApplication.h - Base application class for all projects using the engine
-// Created by Auto on 2025
 //
-#pragma once
+#ifndef ENGINE_APPLICATION_H
+#define ENGINE_APPLICATION_H
 
 #include "Engine.h"
 #include "IApplication.h"
@@ -72,3 +72,5 @@ private:
     std::shared_ptr<Engine> m_engine;
     bool m_initialized = false;
 };
+
+#endif // ENGINE_APPLICATION_H
