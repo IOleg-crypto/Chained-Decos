@@ -15,7 +15,7 @@ set(INTEGRATION_TEST_SOURCES
 # Create unit test executable (no raylib dependencies)
 add_executable(ChainedDecosUnitTests ${UNIT_TEST_SOURCES})
 
-# Link unit tests - need config library for ConfigManager tests
+# Link unit tests
 target_link_libraries(ChainedDecosUnitTests
     PRIVATE
         GTest::gtest_main

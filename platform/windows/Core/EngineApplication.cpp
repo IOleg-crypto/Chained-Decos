@@ -42,7 +42,13 @@ void EngineApplication::Initialize()
 {
     TraceLog(LOG_INFO, "[EngineApplication] Initializing application...");
 
-    // Step 1: Configuration before initialization
+    // Step 1: Create window FIRST (before any OpenGL operations)
+    InitWindow(m_config.width, m_config.height, m_config.windowName.c_str());
+    SetTargetFPS(60);
+    TraceLog(LOG_INFO, "[EngineApplication] Window created: %dx%d '%s'", m_config.width,
+             m_config.height, m_config.windowName.c_str());
+
+    // Step 2: Configuration before initialization
     if (m_app)
         m_app->OnPreInitialize();
 
@@ -52,9 +58,11 @@ void EngineApplication::Initialize()
         m_app->ConfigureKernel(m_kernel.get());
     m_kernel->Initialize();
 
-    // Step 3: Create core Engine services
-    auto renderManager = std::make_shared<RenderManager>();
-    auto inputManager = std::make_shared<InputManager>();
+    // Step 3: Create Engine (MUST be after Kernel creation)
+    m_engine = std::make_shared<Engine>(m_kernel.get());
+
+    // Step 4: Initialize Engine (creates RenderManager and InputManager)
+    m_engine->Initialize();
 
     // Pass Engine and Kernel to Application
     if (m_app)

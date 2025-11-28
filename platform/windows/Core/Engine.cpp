@@ -17,18 +17,23 @@ Engine::~Engine()
 
 bool Engine::Initialize()
 {
-    // Get managers from Kernel (they are registered by EngineApplication)
-    auto renderMgr = m_kernel->GetService<RenderManager>();
+    // Create and initialize RenderManager
     m_renderManager = std::make_unique<RenderManager>();
-
-    auto inputMgr = m_kernel->GetService<InputManager>();
-    m_inputManager = std::make_unique<InputManager>();
-
-    // Initialize ModuleManager
-    if (m_moduleManager)
+    if (!m_renderManager->Initialize())
     {
-        // ModuleManager doesn't have Initialize, it has InitializeAllModules
+        TraceLog(LOG_ERROR, "[Engine] Failed to initialize RenderManager");
+        return false;
     }
+
+    // Create and initialize InputManager
+    m_inputManager = std::make_unique<InputManager>();
+    if (!m_inputManager->Initialize())
+    {
+        TraceLog(LOG_ERROR, "[Engine] Failed to initialize InputManager");
+        return false;
+    }
+
+    TraceLog(LOG_INFO, "[Engine] Engine initialized successfully");
     return true;
 }
 
