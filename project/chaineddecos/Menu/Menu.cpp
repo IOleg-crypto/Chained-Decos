@@ -1,11 +1,10 @@
 #include "Menu.h"
-#include "core/object/kernel/Core/Kernel.h"
-#include "servers/physics/collision/System/CollisionSystem.h"
-#include "core/object/kernel/Core/Kernel.h"
 #include "MenuConstants.h"
 #include "Settings/SettingsManager.h"
+#include "core/object/kernel/Core/Kernel.h"
 #include "rlImGui.h"
-#include <servers/physics/collision/Structures/CollisionStructures.h>
+#include "servers/physics/collision/System/CollisionSystem.h"
+#include "windows/Core/Engine.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -16,6 +15,7 @@
 #include <iostream>
 #include <memory>
 #include <raylib.h>
+#include <servers/physics/collision/Structures/CollisionStructures.h>
 #include <set>
 #include <sstream>
 #include <string>
@@ -872,11 +872,6 @@ void Menu::RenderConfirmExitDialog()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
 
-    // Semi-transparent background
-    ImGui::GetForegroundDrawList()->AddRectFilled(
-        ImVec2(0, 0), ImVec2(windowSize.x, windowSize.y),
-        ImGui::GetColorU32(ImVec4(0.0f, 0.0f, 0.0f, 0.7f)));
-
     // Modal window
     ImGui::SetNextWindowPos(ImVec2(windowSize.x / 2 - 200, windowSize.y / 2 - 150));
     ImGui::SetNextWindowSize(ImVec2(400, 300));
@@ -893,7 +888,7 @@ void Menu::RenderConfirmExitDialog()
 
     if (ImGui::Button("YES", ImVec2(80, 40)))
     {
-        m_pendingAction = MenuAction::ExitGame;
+        m_engine->Shutdown();
     }
 
     ImGui::SameLine();
