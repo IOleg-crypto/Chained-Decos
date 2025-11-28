@@ -33,6 +33,7 @@ target_link_libraries(model PUBLIC
          nlohmann_json
          collision
          map
+         color
 )
 
 set_target_properties(model PROPERTIES POSITION_INDEPENDENT_CODE ON)

@@ -2,7 +2,7 @@
 #define EDITOR_APPLICATION_H
 
 #include "editor/plugins/map_editor/Editor/Editor.h"
-#include "Engine/Application/Core/IApplication.h"
+#include "platform/windows/Core/IApplication.h"
 #include <memory>
 
 // Editor application - uses full engine + own modules
