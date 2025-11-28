@@ -40,10 +40,10 @@ void GameApplication::ProcessCommandLine(int argc, char *argv[])
     ConfigManager configManager;
     bool configLoaded = false;
 
-    // Try loading from bin/game.cfg (where game is launched)
-    if (configManager.LoadFromFile("bin/game.cfg"))
+    // Try loading from game.cfg (relative to build/bin directory)
+    if (configManager.LoadFromFile("../../game.cfg"))
     {
-        TraceLog(LOG_INFO, "[GameApplication] Loaded config from bin/game.cfg");
+        TraceLog(LOG_INFO, "[GameApplication] Loaded config from ../../game.cfg");
         configLoaded = true;
     }
     else

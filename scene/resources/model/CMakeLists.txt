@@ -30,7 +30,7 @@ target_include_directories(model PUBLIC
 
 target_link_libraries(model PUBLIC
          raylib
-         nlohmann_json
+         nlohmann_json::nlohmann_json
          collision
          map
          color
