@@ -1,23 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 
+# Add subdirectories
+add_subdirectory(config)
+add_subdirectory(object/event)
+add_subdirectory(object/kernel)
+add_subdirectory(object/module)
+
 # Core library - базові системи
 add_library(core STATIC
     # Math
     math/Matrix/Matrix4x4.cpp
     math/Vector/Vector3.cpp
-    
-    # Config
-    config/Core/ConfigManager.cpp
-    config/Core/GameConfig.cpp
-    
-    # Event System
-    object/event/Core/EventDispatcher.cpp
-    
-    # Kernel
-    object/kernel/Core/Kernel.cpp
-    
-    # Module System
-    object/module/Core/ModuleManager.cpp
 )
 
 target_include_directories(core
@@ -30,4 +23,8 @@ target_link_libraries(core
     PUBLIC
         nlohmann_json
         raylib
+        config
+        event
+        kernel
+        module
 )
