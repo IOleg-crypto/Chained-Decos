@@ -39,5 +39,4 @@ target_link_libraries(menu PUBLIC
     raylib
     imguilib
     nlohmann_json::nlohmann_json
-    config
 )

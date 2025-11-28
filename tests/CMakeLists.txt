@@ -20,8 +20,6 @@ target_link_libraries(ChainedDecosUnitTests
     PRIVATE
         GTest::gtest_main
         GTest::gmock_main
-        config
-        kernel
 )
 
 # Create integration test executable (with full game dependencies)

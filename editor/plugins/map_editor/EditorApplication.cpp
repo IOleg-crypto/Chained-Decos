@@ -1,15 +1,17 @@
 #include "EditorApplication.h"
+#include "Modules/EditorModule.h"
 #include "editor/plugins/map_editor/Editor/Editor.h"
+#include "platform/windows/Core/Engine.h"
 #include "scene/3d/camera/Core/CameraController.h"
 #include "scene/resources/map/Skybox/Skybox.h"
 #include "scene/resources/model/Core/Model.h"
-#include "Modules/EditorModule.h"
+
 //===============================================
 #include <imgui.h>
 #include <raylib.h>
-#include <rlImGui.h>
+#include <rlImGui/rlImGui.h>
 
-EditorApplication::EditorApplication() : EngineApplication()
+EditorApplication::EditorApplication()
 {
 }
 
@@ -33,7 +35,6 @@ void EditorApplication::OnInitializeServices()
         TraceLog(LOG_ERROR, "[EditorApplication] No engine available during initialization!");
         return;
     }
-    engine->SetWindowName("Chained Editor");
 
     // Create Editor components using engine services
     auto camera = std::make_shared<CameraController>();

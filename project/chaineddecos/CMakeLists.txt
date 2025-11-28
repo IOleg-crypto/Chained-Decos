@@ -55,5 +55,4 @@ target_link_libraries(ChainedDecosGame
         raylib
         imguilib
         nlohmann_json
-        module
 )
