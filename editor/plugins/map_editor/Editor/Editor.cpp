@@ -2,12 +2,12 @@
 //
 
 #include "Editor.h"
-#include "core/object/kernel/Core/Kernel.h"
-#include "scene/resources/map/Core/MapLoader.h" // Include the new comprehensive map loader
-#include "Engine/MapFileManager/Json/JsonMapFileManager.h"
 #include "FileManager/MapObjectConverterEditor.h"
 #include "Renderer/EditorRenderer.h"
 #include "Utils/PathUtils.h"
+#include "core/object/kernel/Core/Kernel.h"
+#include "scene/resources/map/Core/MapLoader.h" // Include the new comprehensive map loader
+#include "scene/resources/map/MapFileManager/Json/JsonMapFileManager.h"
 
 // Subsystem implementations
 #include "CameraManager/CameraManager.h"
@@ -17,8 +17,8 @@
 #include "UIManager/UIManager.h"
 
 // Model and rendering subsystems
-#include "scene/resources/model/Core/Model.h"
 #include "ModelManager/ModelManager.h"
+#include "scene/resources/model/Core/Model.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -28,11 +28,11 @@
 #include <filesystem>
 #include <fstream>
 #include <imgui.h>
-#include <iostream>
 #include <imgui/misc/cpp/imgui_stdlib.h>
-#include <nfd.h>
+#include <iostream>
+#include <nfd/nfd.h>
 #include <raylib.h>
-#include <rlImGui.h>
+#include <rlImGui/rlImGui.h>
 
 #include "servers/rendering/Utils/RenderUtils.h"
 #include <raymath.h>
@@ -41,10 +41,10 @@
 
 namespace fs = std::filesystem;
 
-
 Editor::Editor(std::shared_ptr<CameraController> cameraController,
                std::unique_ptr<ModelLoader> modelLoader)
-    : m_gridSizes(900), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()), m_skyboxTexturePath("")
+    : m_gridSizes(900), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
+      m_skyboxTexturePath("")
 {
     // Initialize spawn texture (will be loaded after window initialization)
     m_spawnTexture = {0};
@@ -84,8 +84,7 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
 {
     // Initialize NFD once (before subsystems that use it)
     NFD_Init();
-    
-    
+
     // Initialize subsystems in dependency order
     m_cameraManager = std::make_unique<CameraManager>(cameraController);
     m_sceneManager = std::make_unique<SceneManager>();
@@ -94,7 +93,7 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
 
     // Initialize remaining subsystems
     m_modelManager = std::make_unique<ModelManager>(std::move(modelLoader));
-    
+
     // Create UIManager with config
     UIManagerConfig uiConfig;
     uiConfig.editor = this;
@@ -103,10 +102,10 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
     uiConfig.toolManager = m_toolManager.get();
     uiConfig.modelManager = m_modelManager.get();
     m_uiManager = std::make_unique<UIManager>(uiConfig);
-    
+
     // Initialize renderer
-    m_renderer = std::make_unique<EditorRenderer>(m_toolManager.get(), m_cameraManager.get(), m_modelManager.get());
-                                              
+    m_renderer = std::make_unique<EditorRenderer>(m_toolManager.get(), m_cameraManager.get(),
+                                                  m_modelManager.get());
 }
 
 void Editor::Update()
@@ -131,7 +130,6 @@ void Editor::Render()
         m_skybox->DrawSkybox();
     }
 
-
     if (m_sceneManager)
     {
         const auto &objects = m_sceneManager->GetObjects();
@@ -147,7 +145,7 @@ void Editor::RenderObject(const MapObject &obj)
 {
     if (!m_renderer)
         return;
-        
+
     // Convert MapObject to MapObjectData using MapObjectConverterEditor
     MapObjectData data = MapObjectConverterEditor::MapObjectToMapObjectData(obj);
 
@@ -157,7 +155,8 @@ void Editor::RenderObject(const MapObject &obj)
         // Render spawn zone with texture
         const float spawnSize = 2.0f;
         Color spawnColor = obj.GetColor();
-        m_renderer->RenderSpawnZoneWithTexture(m_spawnTexture, data.position, spawnSize, spawnColor, m_spawnTextureLoaded);
+        m_renderer->RenderSpawnZoneWithTexture(m_spawnTexture, data.position, spawnSize, spawnColor,
+                                               m_spawnTextureLoaded);
 
         // Additional editor-specific rendering: selection wireframe
         if (obj.IsSelected())
@@ -281,34 +280,36 @@ void Editor::LoadMap(const std::string &filename)
         {
             // Clear selection first
             m_sceneManager->ClearSelection();
-            
-            // Clear existing objects by removing them one by one (from back to front to avoid index issues)
-            // Note: This is a workaround until SceneManager has a ClearAll method
-            const auto& existingObjects = m_sceneManager->GetObjects();
+
+            // Clear existing objects by removing them one by one (from back to front to avoid index
+            // issues) Note: This is a workaround until SceneManager has a ClearAll method
+            const auto &existingObjects = m_sceneManager->GetObjects();
             for (int i = static_cast<int>(existingObjects.size()) - 1; i >= 0; --i)
             {
                 m_sceneManager->RemoveObject(i);
             }
-            
-            // Add all loaded objects (including all types: CUBE, SPHERE, CYLINDER, PLANE, LIGHT, MODEL, SPAWN_ZONE)
-            for (const auto& obj : objects)
+
+            // Add all loaded objects (including all types: CUBE, SPHERE, CYLINDER, PLANE, LIGHT,
+            // MODEL, SPAWN_ZONE)
+            for (const auto &obj : objects)
             {
                 m_sceneManager->AddObject(obj);
             }
-            
-            std::cout << "Map loaded successfully with " << objects.size() << " objects!" << std::endl;
+
+            std::cout << "Map loaded successfully with " << objects.size() << " objects!"
+                      << std::endl;
             m_fileManager->SetCurrentlyLoadedMapFilePath(filename);
-            
-            // Apply metadata (including skybox, skyColor, startPosition, endPosition, etc.) from loaded map
-            const MapMetadata& metadata = m_fileManager->GetCurrentMetadata();
+
+            // Apply metadata (including skybox, skyColor, startPosition, endPosition, etc.) from
+            // loaded map
+            const MapMetadata &metadata = m_fileManager->GetCurrentMetadata();
             ApplyMetadata(metadata);
-            
+
             // Ensure skybox is loaded if metadata contains skybox texture
             // ApplyMetadata already calls SetSkyboxTexture, but we ensure it's applied
             if (!metadata.skyboxTexture.empty())
             {
                 SetSkyboxTexture(metadata.skyboxTexture, false);
-                
             }
         }
         else
@@ -317,7 +318,6 @@ void Editor::LoadMap(const std::string &filename)
         }
     }
 }
-
 
 int Editor::GetGridSize() const
 {
@@ -334,7 +334,7 @@ void Editor::ApplyMetadata(const MapMetadata &metadata)
     m_activeMetadata = metadata;
     m_clearColor = metadata.skyColor;
     SetSkyboxTexture(metadata.skyboxTexture, false);
-    
+
     // Update FileManager metadata to keep them in sync
     if (m_fileManager)
     {
