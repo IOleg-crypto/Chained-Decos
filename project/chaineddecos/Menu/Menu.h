@@ -4,7 +4,7 @@
 #include "Console/ConsoleManager.h"
 #include "MapSelector/MapSelector.h"
 #include "Settings/SettingsManager.h"
-#include "core/object/kernel/Core/Kernel.h"
+
 #include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -81,7 +81,6 @@ public:
 
     // Core functionality
     void Initialize(Engine *engine);
-    void SetKernel(Kernel *kernel);
 
     // State management
     void SetGameInProgress(bool inProgress);
@@ -248,31 +247,6 @@ private:
     std::vector<std::string> m_displayModeOptions;
     std::vector<std::string> m_vsyncOptions;
     std::vector<std::string> m_fpsOptions;
-};
-
-struct MenuService : public IKernelService
-{
-    Menu *menu = nullptr;
-    explicit MenuService(Menu *m) : menu(m)
-    {
-    }
-    bool Initialize() override
-    {
-        return menu != nullptr;
-    }
-    void Shutdown() override
-    {
-    }
-    void Update(float deltaTime) override
-    {
-    }
-    void Render() override
-    {
-    }
-    const char *GetName() const override
-    {
-        return "MenuService";
-    }
 };
 
 #endif // MENU_H

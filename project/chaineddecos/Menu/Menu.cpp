@@ -1,10 +1,10 @@
 #include "Menu.h"
 #include "MenuConstants.h"
 #include "Settings/SettingsManager.h"
-#include "core/object/kernel/Core/Kernel.h"
+
+#include "core/engine/Engine.h"
 #include "rlImGui.h"
 #include "servers/physics/collision/System/CollisionSystem.h"
-#include "windows/Core/Engine.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -86,31 +86,6 @@ Menu::Menu()
 void Menu::Initialize(Engine *engine)
 {
     m_engine = engine;
-    SetupStyle();
-    m_mapSelector = std::make_unique<MapSelector>();
-    m_mapSelector->InitializeMaps();
-    InitializeMaps();
-}
-
-void Menu::SetKernel(Kernel *kernel)
-{
-    // Use Kernel::Instance() for global access instead of storing pointer
-    (void)kernel; // Suppress unused parameter warning
-
-    if (!m_consoleManager)
-    {
-        // Create ConsoleManager
-        // Services will be accessed through Kernel::Instance() when needed
-        m_consoleManager = std::make_unique<ConsoleManager>();
-        TraceLog(LOG_INFO,
-                 "Menu::SetKernel() - ConsoleManager created, providers will be injected later");
-    }
-}
-
-// IMenuRenderable interface implementations
-void Menu::Update()
-{
-    // Handle keyboard navigation
     HandleKeyboardNavigation();
 
     // Sync map selection

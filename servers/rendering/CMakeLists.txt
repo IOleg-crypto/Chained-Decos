@@ -20,4 +20,5 @@ target_link_libraries(render
         raylib
         imguilib
         core
+        collision
 )
