@@ -1,9 +1,9 @@
 #include "ConsoleManager.h"
+#include "../../Systems/MapSystem/LevelManager.h"
 #include "core/engine/Engine.h"
 #include "core/engine/EngineApplication.h"
 #include "project/chaineddecos/Player/Collision/PlayerCollision.h"
 #include "project/chaineddecos/Player/Core/Player.h"
-#include "project/chaineddecos/Systems/MapSystem/MapSystem.h"
 #include "project/chaineddecos/Systems/PlayerSystem/PlayerController.h"
 #include <algorithm>
 #include <cctype>
@@ -30,7 +30,7 @@ Player *ConsoleManager::GetPlayer() const
 {
     // Get Player through Engine -> PlayerService
     auto player = Engine::Instance().GetPlayer();
-    return playerService ? player : nullptr;
+    return player;
 }
 
 Engine *ConsoleManager::GetEngine() const

@@ -1,11 +1,11 @@
 #include "RenderingSystem.h"
+#include "../../../core/engine/EngineApplication.h"
+#include "../../Player/Core/Player.h"
 #include "../MapSystem/LevelManager.h"
 #include "core/engine/Engine.h"
-#include "core/engine/EngineApplication.h"
-#include "project/chaineddecos/Player/Core/Player.h"
 #include "servers/rendering/Core/RenderManager.h"
 
-#include "scene/resources/map/Renderer/MapRenderer.h"
+#include "../../../scene/resources/map/Renderer/MapRenderer.h"
 #include "scene/resources/model/Core/Model.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
 #include <raylib.h>
@@ -54,20 +54,12 @@ void RenderingSystem::EnsureDependencies()
     // Get dependencies through Engine (lazy loading)
     if (!m_player)
     {
-        auto player = m_engine->GetPlayer();
-        if (playerService)
-        {
-            m_player = player;
-        }
+        m_player = m_engine->GetPlayer();
     }
 
     if (!m_mapSystem)
     {
-        auto mapSystem = m_engine->GetMapSystem();
-        if (mapSystemService)
-        {
-            m_mapSystem = mapSystem;
-        }
+        m_mapSystem = m_engine->GetLevelManager();
     }
 
     if (!m_collisionManager)
@@ -116,8 +108,8 @@ void RenderingSystem::RegisterServices(Engine *engine)
 
 std::vector<std::string> RenderingSystem::GetDependencies() const
 {
-    // Depends on PlayerSystem and MapSystem
-    return {"Player", "Map"};
+    // Depends on PlayerSystem and LevelManager
+    return {"Player", "LevelManager"};
 }
 
 void RenderingSystem::RenderGameWorld()

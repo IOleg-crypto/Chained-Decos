@@ -1,64 +1,102 @@
 #include "LevelManager.h"
+#include "../../../core/engine/Engine.h"
+#include "../../../scene/resources/map/Core/MapService.h"
+#include "../../../scene/resources/map/Renderer/MapRenderer.h"
 #include "../../Managers/MapCollisionInitializer.h"
-#include "core/engine/Engine.h"
-#include "project/chaineddecos/Menu/Console/ConsoleManagerHelpers.h"
-#include "project/chaineddecos/Menu/Menu.h"
-#include "project/chaineddecos/Player/Collision/PlayerCollision.h"
-#include "project/chaineddecos/Player/Core/Player.h"
-#include "scene/main/Core/World.h"
-#include "scene/resources/map/Converter/MapObjectConverter.h"
-#include "scene/resources/map/Core/MapService.h"
-#include "scene/resources/map/Renderer/MapRenderer.h"
-#include <cmath>
-#include <filesystem>
+#include <fstream>
+#include <set>
 
-// Validate required engine dependencies
-if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
+LevelManager::LevelManager(const MapSystemConfig &config)
+    : m_config(config), m_gameMap(std::make_unique<GameMap>()), m_currentMapPath(""),
+      m_playerSpawnZone({0}), m_spawnTexture({0}), m_hasSpawnZone(false),
+      m_spawnTextureLoaded(false), m_collisionInitializer(nullptr), m_worldManager(nullptr),
+      m_collisionManager(nullptr), m_modelLoader(nullptr), m_renderManager(nullptr),
+      m_player(nullptr), m_menu(nullptr), m_engine(nullptr)
 {
-    TraceLog(LOG_ERROR, "[LevelManager] Required engine services not found");
-    return false;
+    TraceLog(LOG_INFO, "[LevelManager] Constructor called");
 }
 
-// Load spawn texture
-std::string texturePath = std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
-if (FileExists(texturePath.c_str()))
+LevelManager::~LevelManager()
 {
-    m_spawnTexture = LoadTexture(texturePath.c_str());
-    if (m_spawnTexture.id != 0)
-    {
-        m_spawnTextureLoaded = true;
-        TraceLog(LOG_INFO, "LevelManager::Initialize() - Loaded spawn texture: %dx%d",
-                 m_spawnTexture.width, m_spawnTexture.height);
-    }
-    else
-    {
-        TraceLog(LOG_WARNING, "LevelManager::Initialize() - Failed to load spawn texture from: %s",
-                 texturePath.c_str());
-    }
-}
-else
-{
-    TraceLog(LOG_WARNING, "LevelManager::Initialize() - Spawn texture not found at: %s",
-             texturePath.c_str());
-}
-
-// Register services in Initialize so they're available to other systems
-RegisterServices(engine);
-
-TraceLog(LOG_INFO, "[LevelManager] Initialized successfully");
-return true;
+    TraceLog(LOG_INFO, "[LevelManager] Destructor called");
+    Shutdown();
 }
 
 void LevelManager::Shutdown()
 {
     TraceLog(LOG_INFO, "[LevelManager] Shutting down...");
-
-    // Clean up our own resources (we own them)
-    m_collisionInitializer.reset();
-    m_gameMap.reset();
-
-    // Dependencies - references only, don't delete
+    m_gameMap->Cleanup();
+    m_currentMapPath = "";
+    m_hasSpawnZone = false;
+    if (m_spawnTextureLoaded)
+    {
+        UnloadTexture(m_spawnTexture);
+        m_spawnTextureLoaded = false;
+    }
+    m_collisionInitializer = nullptr;
     m_worldManager = nullptr;
+    m_collisionManager = nullptr;
+    m_modelLoader = nullptr;
+    m_renderManager = nullptr;
+    m_player = nullptr;
+    m_menu = nullptr;
+    m_engine = nullptr;
+    TraceLog(LOG_INFO, "[LevelManager] Shutdown complete");
+}
+
+bool LevelManager::Initialize(Engine *engine)
+{
+    if (!engine)
+    {
+        TraceLog(LOG_ERROR, "[LevelManager] Engine is null");
+        return false;
+    }
+
+    m_engine = engine;
+
+    // Get required dependencies from Engine (GetService returns shared_ptr)
+    auto worldMgr = engine->GetService<WorldManager>();
+    m_worldManager = worldMgr ? worldMgr.get() : nullptr;
+
+    auto collMgr = engine->GetService<CollisionManager>();
+    m_collisionManager = collMgr ? collMgr.get() : nullptr;
+
+    auto modelLdr = engine->GetService<ModelLoader>();
+    m_modelLoader = modelLdr ? modelLdr.get() : nullptr;
+
+    // RenderManager is accessed directly through Engine
+    m_renderManager = dynamic_cast<RenderManager *>(engine->GetRenderManager());
+
+    // Validate required engine dependencies
+    if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
+    {
+        TraceLog(LOG_ERROR, "[LevelManager] Required engine services not found");
+        return false;
+    }
+
+    // Create collision initializer with dependencies
+    m_collisionInitializer =
+        std::make_unique<MapCollisionInitializer>(m_collisionManager, m_modelLoader);
+
+    // Load spawn texture
+    std::string texturePath =
+        std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
+    if (FileExists(texturePath.c_str()))
+    {
+        m_spawnTexture = LoadTexture(texturePath.c_str());
+        if (m_spawnTexture.id != 0)
+        {
+            m_spawnTextureLoaded = true;
+            TraceLog(LOG_INFO, "LevelManager::Initialize() - Loaded spawn texture: %dx%d",
+                     m_spawnTexture.width, m_spawnTexture.height);
+        }
+        else
+        {
+            TraceLog(LOG_WARNING,
+                     "LevelManager::Initialize() - Failed to load spawn texture from: %s",
+                     texturePath.c_str());
+        }
+    }
     m_collisionManager = nullptr;
     m_modelLoader = nullptr;
     m_renderManager = nullptr;
@@ -75,7 +113,7 @@ void LevelManager::Update(float deltaTime)
     if (!m_player && m_engine && m_collisionInitializer)
     {
         auto player = m_engine->GetPlayer();
-        if (playerService && player)
+        if (player)
         {
             m_player = player;
             m_collisionInitializer->SetPlayer(m_player);
@@ -104,9 +142,10 @@ void LevelManager::RegisterServices(Engine *engine)
 
     TraceLog(LOG_INFO, "[LevelManager] Registering services...");
 
-    // Register MapSystem directly
-    engine->RegisterService<MapSystem>(std::shared_ptr<MapSystem>(this, [](MapSystem *) {}));
-    TraceLog(LOG_INFO, "[LevelManager] MapSystem registered");
+    // Register LevelManager directly
+    engine->RegisterService<LevelManager>(
+        std::shared_ptr<LevelManager>(this, [](LevelManager *) {}));
+    TraceLog(LOG_INFO, "[LevelManager] LevelManager registered");
 
     // Dependency Injection: inject MapSystem into ConsoleManager
     // Note: ConsoleManagerHelpers might need update if it uses Kernel

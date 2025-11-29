@@ -1,17 +1,16 @@
 #include "UIManager.h"
+#include "../../../core/engine/Engine.h"
+#include "../../../core/engine/EngineApplication.h"
+#include "../../Menu/Console/ConsoleManager.h"
+#include "../../Menu/Menu.h"
+#include "../../Player/Core/Player.h"
 #include "../MapSystem/LevelManager.h"
 #include "../PlayerSystem/PlayerController.h"
-#include "core/engine/Engine.h"
-#include "core/engine/EngineApplication.h"
-#include "project/chaineddecos/Menu/Console/ConsoleManager.h"
-#include "project/chaineddecos/Menu/Menu.h"
-#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
 #include <algorithm>
-#include <filesystem>
 #include <fstream>
 #include <raylib.h>
 
@@ -125,8 +124,8 @@ void UIManager::RegisterServices(Engine *engine)
     // Register our own components as services
     if (m_menu)
     {
-        engine->RegisterService<MenuService>(std::make_shared<MenuService>(m_menu.get()));
-        TraceLog(LOG_INFO, "[UIManager] MenuService registered");
+        // Menu is accessed via UIManager, no need to register separate service
+        TraceLog(LOG_INFO, "[UIManager] Menu initialized");
     }
 }
 
@@ -185,10 +184,20 @@ void UIManager::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
         return;
     }
 
-    auto playerSystemService = m_engine->GetService<PlayerSystemService>();
-    if (!playerSystemService || !playerSystemService->playerSystem)
+    // Get PlayerController through ModuleManager
+    PlayerController *playerController = nullptr;
+    if (m_engine->GetModuleManager())
     {
-        TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - PlayerSystem not available");
+        auto *module = m_engine->GetModuleManager()->GetModule("Player");
+        if (module)
+        {
+            playerController = dynamic_cast<PlayerController *>(module);
+        }
+    }
+
+    if (!playerController)
+    {
+        TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - PlayerController not available");
         return;
     }
 
@@ -197,7 +206,7 @@ void UIManager::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
     // Initialize player after map is loaded
     try
     {
-        playerSystemService->playerSystem->InitializePlayer();
+        playerController->InitializePlayer();
         TraceLog(LOG_INFO, "[UIManager] HandleSinglePlayer() - Player initialized successfully");
     }
     catch (const std::exception &e)
@@ -235,14 +244,12 @@ void UIManager::EnsurePlayerSafePosition()
     auto player = m_engine->GetPlayer();
     auto collisionManager = m_engine->GetService<CollisionManager>();
 
-    if (!playerService || !player || !collisionManager)
+    if (!player || !collisionManager)
     {
         TraceLog(LOG_ERROR,
                  "[UIManager] EnsurePlayerSafePosition() - Required services not available");
         return;
     }
-
-    Player *player = player;
 
     if (player->GetPlayerPosition().x == 0.0f && player->GetPlayerPosition().y == 0.0f &&
         player->GetPlayerPosition().z == 0.0f)
@@ -268,22 +275,20 @@ void UIManager::ReinitializeCollisionSystemForResume()
     }
 
     auto models = m_engine->GetService<ModelLoader>();
-    auto mapSystem = m_engine->GetMapSystem();
+    auto levelManager = m_engine->GetLevelManager();
     auto collisionManager = m_engine->GetService<CollisionManager>();
 
-    if (!mapSystemService || !mapSystem || !collisionManager || !models)
+    if (!levelManager || !collisionManager || !models)
     {
         TraceLog(LOG_ERROR, "[UIManager] ReinitializeCollisionSystemForResume() - Required "
                             "services not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystem;
-
     TraceLog(LOG_WARNING, "[UIManager] ReinitializeCollisionSystemForResume() - No colliders "
                           "found, reinitializing...");
     std::vector<std::string> requiredModels =
-        ModelAnalyzer::GetModelsRequiredForMap(mapSystem->GetCurrentMapPath());
+        ModelAnalyzer::GetModelsRequiredForMap(levelManager->GetCurrentMapPath());
 
     // Reinitialize collision system safely
     try
@@ -336,24 +341,30 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
     }
 
     auto models = m_engine->GetService<ModelLoader>();
-    auto mapSystem = m_engine->GetMapSystem();
-    auto playerSystemService = m_engine->GetService<PlayerSystemService>();
+    auto levelManager = m_engine->GetLevelManager();
     auto collisionManager = m_engine->GetService<CollisionManager>();
 
-    if (!models || !mapSystemService || !mapSystem || !playerSystemService ||
-        !playerSystemService->playerSystem || !collisionManager)
+    // Get PlayerController through ModuleManager
+    PlayerController *playerController = nullptr;
+    if (m_engine->GetModuleManager())
+    {
+        auto *module = m_engine->GetModuleManager()->GetModule("Player");
+        if (module)
+        {
+            playerController = dynamic_cast<PlayerController *>(module);
+        }
+    }
+
+    if (!models || !levelManager || !playerController || !collisionManager)
     {
         TraceLog(LOG_ERROR, "[UIManager] HandleResumeGame() - Required services not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystem;
-    PlayerSystem *playerSystem = playerSystemService->playerSystem;
-
     m_menu->SetAction(MenuAction::SinglePlayer);
 
     // Restore game state first (player position, velocity, etc.)
-    playerSystem->RestorePlayerState();
+    playerController->RestorePlayerState();
     TraceLog(LOG_INFO, "[UIManager] HandleResumeGame() - Game state restored");
 
     // Ensure game is properly initialized for resume
@@ -363,11 +374,11 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
 
         // Load models for the current map (use saved map)
         std::vector<std::string> requiredModels =
-            ModelAnalyzer::GetModelsRequiredForMap(mapSystem->GetCurrentMapPath());
+            ModelAnalyzer::GetModelsRequiredForMap(levelManager->GetCurrentMapPath());
         models->LoadGameModelsSelective(requiredModels);
 
         // Initialize basic collision system first
-        if (!mapSystem->InitCollisionsWithModelsSafe(requiredModels))
+        if (!levelManager->InitCollisionsWithModelsSafe(requiredModels))
         {
             TraceLog(LOG_ERROR, "[UIManager] HandleResumeGame() - Failed to initialize basic "
                                 "collision system for singleplayer");
@@ -381,7 +392,7 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
         // Initialize player after map is loaded
         try
         {
-            playerSystem->InitializePlayer();
+            playerController->InitializePlayer();
             TraceLog(LOG_INFO, "[UIManager] HandleResumeGame() - Player initialized for resume");
         }
         catch (const std::exception &e)
@@ -515,17 +526,15 @@ bool UIManager::InitializeCollisionSystemWithModels(const std::vector<std::strin
         return false;
     }
 
-    auto mapSystem = m_engine->GetMapSystem();
-    if (!mapSystemService || !mapSystem)
+    auto levelManager = m_engine->GetLevelManager();
+    if (!levelManager)
     {
         TraceLog(LOG_ERROR,
-                 "[UIManager] InitializeCollisionSystemWithModels() - MapSystem not available");
+                 "[UIManager] InitializeCollisionSystemWithModels() - LevelManager not available");
         return false;
     }
 
-    MapSystem *mapSystem = mapSystem;
-
-    if (!mapSystem->InitCollisionsWithModelsSafe(requiredModels))
+    if (!levelManager->InitCollisionsWithModelsSafe(requiredModels))
     {
         TraceLog(LOG_ERROR, "[UIManager] InitializeCollisionSystemWithModels() - Failed to "
                             "initialize collision system with required models");
@@ -546,25 +555,23 @@ void UIManager::RegisterPreloadedModels()
         return;
     }
 
-    auto mapSystem = m_engine->GetMapSystem();
+    auto levelManager = m_engine->GetLevelManager();
     auto models = m_engine->GetService<ModelLoader>();
 
-    if (!mapSystemService || !mapSystem || !models)
+    if (!levelManager || !models)
     {
         TraceLog(LOG_ERROR,
                  "[UIManager] RegisterPreloadedModels() - Required services not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystem;
-
-    if (!mapSystem->GetGameMap().GetMapModels().empty())
+    if (!levelManager->GetGameMap().GetMapModels().empty())
     {
         TraceLog(LOG_INFO,
                  "[UIManager] RegisterPreloadedModels() - Registering %d preloaded models from "
                  "map into ModelLoader",
-                 mapSystem->GetGameMap().GetMapModels().size());
-        for (const auto &p : mapSystem->GetGameMap().GetMapModels())
+                 levelManager->GetGameMap().GetMapModels().size());
+        for (const auto &p : levelManager->GetGameMap().GetMapModels())
         {
             const std::string &modelName = p.first;
             const ::Model &loaded = p.second;
@@ -668,23 +675,21 @@ void UIManager::CreateModelInstancesForMap()
         return;
     }
 
-    auto mapSystem = m_engine->GetMapSystem();
+    auto levelManager = m_engine->GetLevelManager();
     auto models = m_engine->GetService<ModelLoader>();
 
-    if (!mapSystemService || !mapSystem || !models)
+    if (!levelManager || !models)
     {
         TraceLog(LOG_ERROR,
                  "[UIManager] CreateModelInstancesForMap() - Required services not available");
         return;
     }
 
-    MapSystem *mapSystem = mapSystem;
-
     TraceLog(LOG_INFO,
              "[UIManager] CreateModelInstancesForMap() - Creating model instances for "
              "array-format map (%d objects)",
-             mapSystem->GetGameMap().GetMapObjects().size());
-    for (const auto &object : mapSystem->GetGameMap().GetMapObjects())
+             levelManager->GetGameMap().GetMapObjects().size());
+    for (const auto &object : levelManager->GetGameMap().GetMapObjects())
     {
         if (object.type == MapObjectType::MODEL && !object.modelName.empty())
         {
@@ -743,14 +748,12 @@ void UIManager::LoadMapObjects(const std::string &mapPath)
         throw std::runtime_error("Engine not available");
     }
 
-    auto mapSystem = m_engine->GetMapSystem();
-    if (!mapSystemService || !mapSystem)
+    auto levelManager = m_engine->GetLevelManager();
+    if (!levelManager)
     {
-        TraceLog(LOG_ERROR, "[UIManager] LoadMapObjects() - MapSystem not available");
-        throw std::runtime_error("MapSystem not available");
+        TraceLog(LOG_ERROR, "[UIManager] LoadMapObjects() - LevelManager not available");
+        throw std::runtime_error("LevelManager not available");
     }
-
-    MapSystem *mapSystem = mapSystem;
 
     try
     {
@@ -769,7 +772,7 @@ void UIManager::LoadMapObjects(const std::string &mapPath)
                          "[UIManager] LoadMapObjects() - Detected array format, using LoadGameMap");
 
                 MapLoader loader;
-                mapSystem->GetGameMap() = loader.LoadMap(mapPath.c_str());
+                levelManager->GetGameMap() = loader.LoadMap(mapPath.c_str());
 
                 // Register any models that MapLoader preloaded into the GameMap
                 RegisterPreloadedModels();
@@ -782,7 +785,7 @@ void UIManager::LoadMapObjects(const std::string &mapPath)
                 // Assume standard JSON object format
                 TraceLog(LOG_INFO, "[UIManager] LoadMapObjects() - Detected object format, using "
                                    "LoadMapObjects");
-                mapSystem->LoadEditorMap(mapPath);
+                levelManager->LoadEditorMap(mapPath);
             }
         }
         else
@@ -791,7 +794,7 @@ void UIManager::LoadMapObjects(const std::string &mapPath)
                      "[UIManager] LoadMapObjects() - Could not open file to detect format, "
                      "defaulting to LoadMapObjects: %s",
                      mapPath.c_str());
-            mapSystem->LoadEditorMap(mapPath);
+            levelManager->LoadEditorMap(mapPath);
         }
 
         TraceLog(LOG_INFO, "[UIManager] LoadMapObjects() - Map objects loaded successfully");
@@ -826,19 +829,23 @@ void UIManager::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialized)
         return;
     }
 
-    auto mapSystem = m_engine->GetMapSystem();
-    auto playerSystemService = m_engine->GetService<PlayerSystemService>();
+    auto levelManager = m_engine->GetLevelManager();
+    PlayerController *playerController = nullptr;
+    if (m_engine->GetModuleManager())
+    {
+        auto *module = m_engine->GetModuleManager()->GetModule("Player");
+        if (module)
+        {
+            playerController = dynamic_cast<PlayerController *>(module);
+        }
+    }
 
-    if (!mapSystemService || !mapSystem || !playerSystemService ||
-        !playerSystemService->playerSystem)
+    if (!levelManager || !playerController)
     {
         TraceLog(LOG_ERROR,
                  "[UIManager] HandleStartGameWithMap() - Required services not available");
         return;
     }
-
-    MapSystem *mapSystem = mapSystem;
-    PlayerSystem *playerSystem = playerSystemService->playerSystem;
 
     m_menu->SetGameInProgress(true);
     // Map path is set by LoadEditorMap
@@ -864,7 +871,7 @@ void UIManager::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialized)
         LoadMapObjects(mapPath);
 
         // 5. Initialize player
-        playerSystem->InitializePlayer();
+        playerController->InitializePlayer();
         TraceLog(LOG_INFO,
                  "[UIManager] HandleStartGameWithMap() - Player initialized successfully");
 

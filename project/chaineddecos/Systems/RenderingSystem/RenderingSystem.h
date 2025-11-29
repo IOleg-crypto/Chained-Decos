@@ -1,7 +1,7 @@
 #ifndef RENDERING_SYSTEM_H
 #define RENDERING_SYSTEM_H
 
-#include "core/engine/EngineApplication.h"
+#include "../../../core/engine/EngineApplication.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
 #include <memory>
 #include <string>
@@ -9,7 +9,7 @@
 
 // Forward declarations to avoid circular dependencies
 class Player;
-class MapSystem;
+class LevelManager;
 class CollisionManager;
 class ModelLoader;
 
@@ -51,7 +51,7 @@ private:
 private:
     // Dependencies obtained through Engine (references only)
     Player *m_player;
-    MapSystem *m_mapSystem;
+    LevelManager *m_mapSystem;
     CollisionManager *m_collisionManager;
     ModelLoader *m_models;
     Engine *m_engine;

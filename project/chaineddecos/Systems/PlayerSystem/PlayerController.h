@@ -12,7 +12,6 @@
 #include <vector>
 
 // Forward declaration to avoid circular dependency
-// Forward declaration to avoid circular dependency
 class LevelManager;
 
 class PlayerController : public IEngineModule
@@ -71,7 +70,6 @@ private:
 
     AudioManager *m_audioManager;
 
-    // Dependencies obtained through Engine (references only)
     // Dependencies obtained through Engine (references only)
     CollisionManager *m_collisionManager;
     LevelManager *m_mapSystem;
