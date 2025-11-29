@@ -30,13 +30,6 @@
 CHAINEDDECOSENGINE_API class InputManager : public IInputManager
 {
 public:
-    enum class InputType
-    {
-        PRESSED, // Single press
-        HELD,    // Continuous while held
-        RELEASED // On key release
-    };
-
     InputManager() = default;
     ~InputManager() override = default;
 

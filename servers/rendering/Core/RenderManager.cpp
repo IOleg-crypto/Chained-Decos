@@ -329,6 +329,31 @@ void RenderManager::ToggleDebugInfo()
     m_showDebugInfo = !m_showDebugInfo;
 }
 
+void RenderManager::ToggleCollisionDebug()
+{
+    m_showCollisionDebug = !m_showCollisionDebug;
+}
+
+void RenderManager::ForceCollisionDebugNextFrame()
+{
+    m_forceCollisionDebugNextFrame = true;
+}
+
+void RenderManager::SetDebugInfo(bool enabled)
+{
+    m_showDebugInfo = enabled;
+}
+
+void RenderManager::SetCollisionDebug(bool enabled)
+{
+    m_showCollisionDebug = enabled;
+}
+
+bool RenderManager::IsDebugInfoVisible() const
+{
+    return m_showDebugInfo;
+}
+
 void RenderManager::DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
                                         const CollisionManager &collisionManager) const
 {
@@ -451,42 +476,11 @@ void RenderManager::DrawControlsInfo() const
     ImGui::Text("- F3: Toggle Collision Debug");
 }
 
-void RenderManager::ToggleCollisionDebug()
-{
-    m_showCollisionDebug = !m_showCollisionDebug;
-}
-
-void RenderManager::ForceCollisionDebugNextFrame()
-{
-    m_forceCollisionDebugNextFrame = true;
-}
-
-void RenderManager::SetDebugInfo(bool enabled)
-{
-    m_showDebugInfo = enabled;
-}
-
-void RenderManager::SetCollisionDebug(bool enabled)
-{
-    m_showCollisionDebug = enabled;
-}
-
-bool RenderManager::IsDebugInfoVisible() const
-{
-    return m_showDebugInfo;
-}
-
-bool RenderManager::IsCollisionDebugVisible() const
-{
-    return m_showCollisionDebug;
-}
-
 void RenderManager::ShowMetersPlayer(const IGameRenderable &renderable) const
 {
     Vector3 playerPosition = renderable.GetPosition();
 
     // Don't show meters if player is at uninitialized position
-    // Check for both default (0,0,0) and explicit uninitialized position (-999999)
     constexpr float UNINITIALIZED_POS = -999999.0f;
     if ((playerPosition.x == 0.0f && playerPosition.y == 0.0f && playerPosition.z == 0.0f) ||
         (playerPosition.x <= UNINITIALIZED_POS + 1000.0f &&
@@ -516,17 +510,14 @@ void RenderManager::ShowMetersPlayer(const IGameRenderable &renderable) const
     int textX = 20;
     int textY = 20;
 
-    // Improved font rendering with better spacing for smoother text
     if (m_font.texture.id != 0)
     {
-        // Use improved spacing (2.0f instead of 1.0f) for smoother text rendering
         DrawTextEx(m_font, heightText.c_str(), {(float)textX, (float)textY}, 24, 2.0f, textColor);
         DrawTextEx(m_font, recordText.c_str(), {(float)textX, (float)(textY + 30)}, 24, 2.0f,
                    textColor);
     }
     else
     {
-        // Use default font with DrawTextEx for better rendering even in fallback
         const Font defaultFont = GetFontDefault();
         DrawTextEx(defaultFont, heightText.c_str(), {(float)textX, (float)textY}, 24, 2.0f,
                    textColor);
@@ -542,7 +533,6 @@ void RenderManager::ShowMetersPlayer(const IGameRenderable &renderable) const
 
     bool isPhysicsGrounded = renderable.IsGrounded();
     bool isCloseToGround = (heightAboveGround <= 0.5f && heightAboveGround >= -0.1f);
-
     bool isOnGround = isPhysicsGrounded || isCloseToGround;
 
     if (isOnGround)
@@ -550,7 +540,6 @@ void RenderManager::ShowMetersPlayer(const IGameRenderable &renderable) const
         Color groundColor = isPhysicsGrounded ? GREEN : YELLOW;
         DrawCircle(circleX, circleY, circleRadius - 2, groundColor);
 
-        // Use DrawTextEx for status labels as well for consistency and smoothness
         Font fontToUse = (m_font.texture.id != 0) ? m_font : GetFontDefault();
         if (isPhysicsGrounded)
         {
@@ -578,10 +567,6 @@ Font RenderManager::GetFont() const
     return m_font;
 }
 
-void RenderManager::Render()
-{
-}
-
 void RenderManager::Shutdown()
 {
     TraceLog(LOG_INFO, "Shutting down render manager...");
@@ -595,7 +580,6 @@ void RenderManager::Shutdown()
 
 bool RenderManager::LoadWindShader()
 {
-    // Unload existing shader if it exists (in case of reload)
     if (m_shaderManager->IsShaderLoaded("player_wind"))
     {
         m_shaderManager->UnloadShader("player_wind");
@@ -604,7 +588,6 @@ bool RenderManager::LoadWindShader()
     std::string vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.vs";
     std::string fsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.fs";
 
-    // Check if files exist
     if (!std::filesystem::exists(vsPath) || !std::filesystem::exists(fsPath))
     {
         TraceLog(LOG_WARNING, "Wind shader files not found: %s or %s", vsPath.c_str(),
@@ -612,7 +595,6 @@ bool RenderManager::LoadWindShader()
         return false;
     }
 
-    // Only try to load if OpenGL context is ready
     if (!IsWindowReady())
     {
         TraceLog(LOG_DEBUG, "Wind shader loading deferred - OpenGL context not ready yet");
@@ -624,7 +606,6 @@ bool RenderManager::LoadWindShader()
         Shader *windShader = m_shaderManager->GetShader("player_wind");
         if (windShader && windShader->id != 0)
         {
-            // Verify shader is valid using raylib's IsShaderValid
             if (IsShaderValid(*windShader))
             {
                 m_fallSpeedLoc = GetShaderLocation(*windShader, "fallSpeed");
@@ -632,12 +613,7 @@ bool RenderManager::LoadWindShader()
                 m_windDirectionLoc = GetShaderLocation(*windShader, "windDirection");
 
                 TraceLog(LOG_INFO, "Player wind effect shader loaded successfully");
-                TraceLog(LOG_INFO, "Shader locations: fallSpeed=%d, time=%d, windDirection=%d",
-                         m_fallSpeedLoc, m_timeLoc, m_windDirectionLoc);
-
-                // Reset shader time when shader is loaded
                 m_shaderTime = 0.0f;
-
                 return true;
             }
             else

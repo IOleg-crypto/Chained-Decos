@@ -32,8 +32,8 @@ struct MapSystemConfig
 class LevelManager : public IEngineModule
 {
 public:
-    explicit MapSystem(const MapSystemConfig &config = {});
-    ~MapSystem() override;
+    explicit LevelManager(const MapSystemConfig &config = {});
+    ~LevelManager() override;
 
     // IEngineModule interface
     const char *GetModuleName() const override

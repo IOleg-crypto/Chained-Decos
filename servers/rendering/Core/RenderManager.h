@@ -23,6 +23,8 @@ public:
 
     // Initialization
     bool Initialize() override;
+    void Shutdown() override;
+    void Update(float deltaTime); // Not virtual in IRenderManager
 
     static void InitializeImGuiFont(const std::string &fontPath,
                                     float fontSize); // Delegates to ImGuiHelper
@@ -32,22 +34,34 @@ public:
     void EndFrame() override;
 
     // Command-based rendering (NEW APPROACH)
-    void SubmitCommand(std::unique_ptr<IRenderCommand> command);
-    void ExecuteCommands();
-    void ClearCommands();
+    void SubmitCommand(std::unique_ptr<IRenderCommand> command) override;
+    void ExecuteCommands() override;
+    void ClearCommands() override;
 
     // Legacy methods (DEPRECATED - will be removed)
-    // These are kept temporarily for backward compatibility
     void RenderMenu(IMenuRenderable &renderable);
 
     // Debug rendering
-    void ToggleDebugInfo();
+    void ToggleDebugInfo() override;
     void ToggleCollisionDebug() override;
+    void ForceCollisionDebugNextFrame() override;
+    void SetDebugInfo(bool enabled) override;
+    void SetCollisionDebug(bool enabled) override;
+    bool IsDebugInfoVisible() const override;
+
     void DrawCameraInfo(const Camera &camera, int cameraMode) const;
     void DrawModelManagerInfo(const ModelLoader &models) const;
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager) const;
     void DrawControlsInfo() const;
     bool LoadWindShader();
+
+    void DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
+                             const CollisionManager &collisionManager) const;
+
+    void RenderCollisionShapes(const CollisionManager &collisionManager,
+                               IGameRenderable &renderable) const;
+
+    void SetBackgroundColor(Color color);
 
     // Public rendering method for game world
     void RenderGame(IGameRenderable &renderable, const ModelLoader &models,
@@ -55,11 +69,11 @@ public:
                     bool showCollisionDebug = false) override;
 
     // Debug rendering (moved to public for GameApplication access)
-    void ShowMetersPlayer(const IGameRenderable &renderable) const;
+    void ShowMetersPlayer(const IGameRenderable &renderable) const override;
     void RenderDebugInfo(const IGameRenderable &renderable, const ModelLoader &models,
                          const CollisionManager &collision) const override;
 
-    Font GetFont() const;
+    Font GetFont() const override;
 
     bool IsCollisionDebugVisible() const override
     {
