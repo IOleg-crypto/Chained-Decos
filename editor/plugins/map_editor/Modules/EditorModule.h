@@ -1,7 +1,7 @@
 #ifndef EDITOR_MODULE_H
 #define EDITOR_MODULE_H
 
-#include "core/object/kernel/Core/Kernel.h"
+#include "core/engine/Engine.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
 #include <memory>
 #include <string>
@@ -29,13 +29,13 @@ public:
         return "Map editor functionality";
     }
 
-    bool Initialize(Kernel *kernel) override;
+    bool Initialize(Engine *engine) override;
     void Shutdown() override;
 
     void Update(float deltaTime) override;
     void Render() override;
 
-    void RegisterServices(Kernel *kernel) override;
+    void RegisterServices(Engine *engine) override;
     std::vector<std::string> GetDependencies() const override;
 };
 

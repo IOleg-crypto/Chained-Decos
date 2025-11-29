@@ -1,5 +1,5 @@
 #include "EditorApplication.h"
-#include "platform/windows/Core/EngineApplication.h"
+#include "core/engine/EngineApplication.h"
 
 // # --------
 // # int main - init map editor

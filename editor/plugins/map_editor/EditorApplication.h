@@ -1,8 +1,8 @@
 #ifndef EDITOR_APPLICATION_H
 #define EDITOR_APPLICATION_H
 
+#include "core/engine/IApplication.h"
 #include "editor/plugins/map_editor/Editor/Editor.h"
-#include "platform/windows/Core/IApplication.h"
 #include <memory>
 
 // Editor application - uses full engine + own modules
@@ -12,29 +12,23 @@ public:
     EditorApplication();
     ~EditorApplication();
 
-    // Settings before initialization
-    void OnPreInitialize() override;
+    // 1. Configuration
+    void OnConfigure(EngineConfig &config) override;
 
-    // Initialize Editor components
-    void OnInitializeServices() override;
+    // 2. Registration
+    void OnRegister() override;
 
-    // Register Editor modules (REQUIRED)
-    void OnRegisterProjectModules() override;
+    // 3. Start
+    void OnStart() override;
 
-    // Register Editor services
-    void OnRegisterProjectServices() override;
+    // Update
+    void OnUpdate(float deltaTime) override;
 
-    // After initialization
-    void OnPostInitialize() override;
+    // Render
+    void OnRender() override;
 
-    // Custom update logic
-    void OnPostUpdate(float deltaTime) override;
-
-    // Custom rendering logic
-    void OnPostRender() override;
-
-    // Before shutdown
-    void OnPreShutdown() override;
+    // Shutdown
+    void OnShutdown() override;
 
 private:
     std::unique_ptr<Editor> m_editor;

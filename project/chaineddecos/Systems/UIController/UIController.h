@@ -1,15 +1,13 @@
 #ifndef UI_CONTROLLER_H
 #define UI_CONTROLLER_H
 
-#include "core/object/kernel/Core/Kernel.h"
+#include "core/engine/EngineApplication.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
-#include "platform/windows/Interfaces/IEngine.h"
 #include "project/chaineddecos/Menu/Console/ConsoleManager.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include <memory>
 #include <string>
 #include <vector>
-
 
 // System for managing user interface and menus
 // Creates and owns its components independently
@@ -33,11 +31,11 @@ public:
         return "User interface and menu management";
     }
 
-    bool Initialize(Kernel *kernel) override;
+    bool Initialize(Engine *engine) override;
     void Shutdown() override;
     void Update(float deltaTime) override;
     void Render() override;
-    void RegisterServices(Kernel *kernel) override;
+    void RegisterServices(Engine *engine) override;
     std::vector<std::string> GetDependencies() const override;
 
     // Accessors
@@ -54,10 +52,7 @@ private:
     // System OWNS its components
     std::unique_ptr<Menu> m_menu;
 
-    // Kernel reference (for accessing services)
-    Kernel *m_kernel;
-
-    // Dependencies obtained through Kernel (references only)
+    // Dependencies obtained through Engine (references only)
     Engine *m_engine;
 
     // Individual action handlers

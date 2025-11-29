@@ -1,7 +1,7 @@
 #include "RenderingSystem.h"
 #include "../MapSystem/MapSystem.h"
-#include "core/object/kernel/Core/Kernel.h"
-#include "platform/windows/Core/EngineApplication.h"
+#include "core/engine/Engine.h"
+#include "core/engine/EngineApplication.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "servers/rendering/Core/RenderManager.h"
 
@@ -11,20 +11,20 @@
 #include <raylib.h>
 
 RenderingSystem::RenderingSystem()
-    : m_kernel(nullptr), m_player(nullptr), m_mapSystem(nullptr), m_collisionManager(nullptr),
-      m_models(nullptr), m_engine(nullptr), m_gameTime(0.0f)
+    : m_player(nullptr), m_mapSystem(nullptr), m_collisionManager(nullptr), m_models(nullptr),
+      m_engine(nullptr), m_gameTime(0.0f)
 {
 }
 
-bool RenderingSystem::Initialize(Kernel *kernel)
+bool RenderingSystem::Initialize(Engine *engine)
 {
-    if (!kernel)
+    if (!engine)
     {
-        TraceLog(LOG_ERROR, "[RenderingSystem] Kernel is null");
+        TraceLog(LOG_ERROR, "[RenderingSystem] Engine is null");
         return false;
     }
 
-    m_kernel = kernel;
+    m_engine = engine;
     TraceLog(LOG_INFO, "[RenderingSystem] Initializing...");
 
     // Lazy loading: don't get services now, only when first used
@@ -37,24 +37,24 @@ bool RenderingSystem::Initialize(Kernel *kernel)
 
 void RenderingSystem::EnsureDependencies()
 {
-    if (!m_kernel)
+    if (!m_engine)
     {
-        TraceLog(LOG_ERROR, "[RenderingSystem] Kernel is null, cannot load dependencies");
+        TraceLog(LOG_ERROR, "[RenderingSystem] Engine is null, cannot load dependencies");
         return;
     }
 
     if (!m_models)
     {
-        auto modelLoader = m_kernel->GetService<ModelLoader>();
+        auto modelLoader = m_engine->GetService<ModelLoader>();
         if (modelLoader)
         {
             m_models = modelLoader.get();
         }
     }
-    // Get dependencies through Kernel (lazy loading)
+    // Get dependencies through Engine (lazy loading)
     if (!m_player)
     {
-        auto playerService = m_kernel->GetService<PlayerService>();
+        auto playerService = m_engine->GetService<PlayerService>();
         if (playerService)
         {
             m_player = playerService->player;
@@ -63,7 +63,7 @@ void RenderingSystem::EnsureDependencies()
 
     if (!m_mapSystem)
     {
-        auto mapSystemService = m_kernel->GetService<MapSystemService>();
+        auto mapSystemService = m_engine->GetService<MapSystemService>();
         if (mapSystemService)
         {
             m_mapSystem = mapSystemService->mapSystem;
@@ -72,19 +72,10 @@ void RenderingSystem::EnsureDependencies()
 
     if (!m_collisionManager)
     {
-        auto collisionManager = m_kernel->GetService<CollisionManager>();
+        auto collisionManager = m_engine->GetService<CollisionManager>();
         if (collisionManager)
         {
             m_collisionManager = collisionManager.get();
-        }
-    }
-
-    if (!m_engine)
-    {
-        auto engineObj = m_kernel->GetObject<Engine>();
-        if (engineObj)
-        {
-            m_engine = engineObj.get();
         }
     }
 }
@@ -93,7 +84,6 @@ void RenderingSystem::Shutdown()
 {
     TraceLog(LOG_INFO, "[RenderingSystem] Shutting down...");
 
-    m_kernel = nullptr;
     m_player = nullptr;
     m_mapSystem = nullptr;
     m_collisionManager = nullptr;
@@ -117,11 +107,11 @@ void RenderingSystem::Render()
     // rendering is done in GameApplication::OnPostRender() through RenderGameWorld()
 }
 
-void RenderingSystem::RegisterServices(Kernel *kernel)
+void RenderingSystem::RegisterServices(Engine *engine)
 {
     // RenderingSystem doesn't register services - it only renders
     // Components it renders are already registered by other systems
-    (void)kernel; // Suppress unused parameter warning
+    (void)engine; // Suppress unused parameter warning
 }
 
 std::vector<std::string> RenderingSystem::GetDependencies() const

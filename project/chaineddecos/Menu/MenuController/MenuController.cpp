@@ -1,14 +1,15 @@
 #include "MenuController.h"
-#include "platform/windows/Core/EngineApplication.h"
-#include <raylib.h>
-#include <iostream>
+#include "core/engine/EngineApplication.h"
 #include <imgui.h>
+#include <iostream>
+#include <raylib.h>
 #include <rlImGui/rlImGui.h>
+
 
 // Unified ImGui-based menu system implementation
 // Provides clean separation between menu logic and rendering
 
-void MenuController::Initialize(Menu* menu)
+void MenuController::Initialize(Menu *menu)
 {
     if (menu)
     {
@@ -17,7 +18,7 @@ void MenuController::Initialize(Menu* menu)
     }
 }
 
-void MenuController::Update(Menu* menu)
+void MenuController::Update(Menu *menu)
 {
     if (menu)
     {
@@ -25,7 +26,7 @@ void MenuController::Update(Menu* menu)
     }
 }
 
-void MenuController::Render(Menu* menu)
+void MenuController::Render(Menu *menu)
 {
     if (menu)
     {
@@ -33,7 +34,7 @@ void MenuController::Render(Menu* menu)
     }
 }
 
-void MenuController::ExecuteAction(Menu* menu)
+void MenuController::ExecuteAction(Menu *menu)
 {
     if (menu)
     {
@@ -46,7 +47,7 @@ void MenuController::ExecuteAction(Menu* menu)
     }
 }
 
-MenuAction MenuController::GetAction(Menu* menu)
+MenuAction MenuController::GetAction(Menu *menu)
 {
     if (menu)
     {
@@ -55,7 +56,7 @@ MenuAction MenuController::GetAction(Menu* menu)
     return MenuAction::None;
 }
 
-void MenuController::SetAction(Menu* menu, MenuAction action)
+void MenuController::SetAction(Menu *menu, MenuAction action)
 {
     if (menu)
     {
@@ -63,7 +64,7 @@ void MenuController::SetAction(Menu* menu, MenuAction action)
     }
 }
 
-void MenuController::LoadSettings(Menu* menu)
+void MenuController::LoadSettings(Menu *menu)
 {
     if (menu)
     {
@@ -71,7 +72,7 @@ void MenuController::LoadSettings(Menu* menu)
     }
 }
 
-void MenuController::SaveSettings(Menu* menu)
+void MenuController::SaveSettings(Menu *menu)
 {
     if (menu)
     {
@@ -79,7 +80,7 @@ void MenuController::SaveSettings(Menu* menu)
     }
 }
 
-void MenuController::SetGameInProgress(Menu* menu, bool inProgress)
+void MenuController::SetGameInProgress(Menu *menu, bool inProgress)
 {
     if (menu)
     {
@@ -90,7 +91,7 @@ void MenuController::SetGameInProgress(Menu* menu, bool inProgress)
 // Enhanced theme system with modern color scheme
 void MenuController::SetupImGuiStyle()
 {
-    ImGuiStyle& style = ImGui::GetStyle();
+    ImGuiStyle &style = ImGui::GetStyle();
 
     // Modern rounded corners and spacing
     style.WindowRounding = 12.0f;
@@ -116,21 +117,17 @@ void MenuController::SetupImGuiStyle()
 }
 
 // Helper function to mix two colors
-ImVec4 MixColors(const ImVec4& a, const ImVec4& b, float ratio)
+ImVec4 MixColors(const ImVec4 &a, const ImVec4 &b, float ratio)
 {
-    return {
-        a.x * (1.0f - ratio) + b.x * ratio,
-        a.y * (1.0f - ratio) + b.y * ratio,
-        a.z * (1.0f - ratio) + b.z * ratio,
-        a.w * (1.0f - ratio) + b.w * ratio
-    };
+    return {a.x * (1.0f - ratio) + b.x * ratio, a.y * (1.0f - ratio) + b.y * ratio,
+            a.z * (1.0f - ratio) + b.z * ratio, a.w * (1.0f - ratio) + b.w * ratio};
 }
 
 // Modern dark theme with enhanced contrast and readability
 void MenuController::SetupModernDarkTheme()
 {
-    ImGuiStyle& style = ImGui::GetStyle();
-    ImVec4* colors = style.Colors;
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImVec4 *colors = style.Colors;
 
     // Modern dark color palette
     const ImVec4 colorBackground = ImVec4(0.08f, 0.08f, 0.10f, 1.00f);
@@ -159,7 +156,9 @@ void MenuController::SetupModernDarkTheme()
 
     // Frame colors (input fields, checkboxes, etc.)
     colors[ImGuiCol_FrameBg] = colorSurfaceVariant;
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(colorSurfaceVariant.x + 0.05f, colorSurfaceVariant.y + 0.05f, colorSurfaceVariant.z + 0.05f, 1.0f);
+    colors[ImGuiCol_FrameBgHovered] =
+        ImVec4(colorSurfaceVariant.x + 0.05f, colorSurfaceVariant.y + 0.05f,
+               colorSurfaceVariant.z + 0.05f, 1.0f);
     colors[ImGuiCol_FrameBgActive] = MixColors(colorPrimary, colorSurfaceVariant, 0.4f);
 
     // Button colors
@@ -181,7 +180,8 @@ void MenuController::SetupModernDarkTheme()
 
     // Text colors
     colors[ImGuiCol_Text] = colorText;
-    colors[ImGuiCol_TextDisabled] = ImVec4(colorTextSecondary.x * 0.6f, colorTextSecondary.y * 0.6f, colorTextSecondary.z * 0.6f, 1.0f);
+    colors[ImGuiCol_TextDisabled] = ImVec4(colorTextSecondary.x * 0.6f, colorTextSecondary.y * 0.6f,
+                                           colorTextSecondary.z * 0.6f, 1.0f);
 
     // Border and separator colors
     colors[ImGuiCol_Border] = colorBorder;
@@ -226,7 +226,8 @@ void MenuController::SetupModernDarkTheme()
     colors[ImGuiCol_DragDropTarget] = colorAccent;
     colors[ImGuiCol_TableHeaderBg] = colorSurface;
     colors[ImGuiCol_TableBorderStrong] = colorBorder;
-    colors[ImGuiCol_TableBorderLight] = ImVec4(colorBorder.x * 0.7f, colorBorder.y * 0.7f, colorBorder.z * 0.7f, 1.0f);
+    colors[ImGuiCol_TableBorderLight] =
+        ImVec4(colorBorder.x * 0.7f, colorBorder.y * 0.7f, colorBorder.z * 0.7f, 1.0f);
     colors[ImGuiCol_TableRowBg] = colorBackground;
     colors[ImGuiCol_TableRowBgAlt] = MixColors(colorSurface, colorBackground, 0.3f);
 }
@@ -241,7 +242,7 @@ void MenuController::EndImGuiFrame()
     rlImGuiEnd();
 }
 
-void MenuController::ApplyCustomTheme(Menu* menu)
+void MenuController::ApplyCustomTheme(Menu *menu)
 {
     if (menu)
     {
@@ -255,7 +256,7 @@ void MenuController::ResetToDefaultTheme()
     SetupModernDarkTheme();
 }
 
-bool MenuController::IsMenuVisible(Menu* menu)
+bool MenuController::IsMenuVisible(Menu *menu)
 {
     if (menu)
     {
@@ -264,7 +265,7 @@ bool MenuController::IsMenuVisible(Menu* menu)
     return false;
 }
 
-void MenuController::ToggleMenuVisibility(Menu* menu)
+void MenuController::ToggleMenuVisibility(Menu *menu)
 {
     if (menu)
     {

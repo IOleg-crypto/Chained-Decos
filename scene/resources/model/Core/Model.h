@@ -21,10 +21,8 @@
 
 using json = nlohmann::json;
 
-#include "core/object/kernel/Interfaces/IKernelService.h"
-
 // Model loader with caching and statistics
-class ModelLoader : public IModelLoader, public IKernelService
+class ModelLoader : public IModelLoader
 {
 public:
     // Model constants
@@ -34,25 +32,8 @@ public:
     ModelLoader();
     ~ModelLoader();
 
-    // IKernelService implementation
-    bool Initialize() override
-    {
-        return true;
-    }
-    void Shutdown() override
-    {
-        UnloadAllModels();
-    }
-    void Update(float deltaTime) override
-    {
-    }
-    void Render() override
-    {
-    }
-    const char *GetName() const override
-    {
-        return "ModelLoader";
-    }
+    bool Initialize();
+    void Shutdown();
 
     // ==================== CORE METHODS ====================
 

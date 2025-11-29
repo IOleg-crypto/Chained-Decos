@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.20)
 # Add subdirectories
 add_subdirectory(config)
 add_subdirectory(object/event)
-add_subdirectory(object/kernel)
 add_subdirectory(object/module)
 
 # Core library - базові системи
@@ -25,6 +24,5 @@ target_link_libraries(core
         raylib
         config
         event
-        kernel
         module
 )

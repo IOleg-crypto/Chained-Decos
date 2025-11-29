@@ -1,117 +1,149 @@
-# ninja log v7
-100	24440	7860452577731010	build.ninja	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/googletest-build/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/googletest-build/googlemock/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/googletest-build/googletest/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/core/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/servers/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/servers/rendering/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/servers/physics/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/servers/physics/collision/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/servers/physics/dynamics/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/servers/audio/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/servers/input/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/scene/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/scene/main/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/scene/resources/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/scene/resources/model/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/scene/resources/map/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/scene/3d/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/scene/3d/camera/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/scene/gui/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/platform/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/project/chaineddecos/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/project/chaineddecos/Menu/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/project/chaineddecos/Player/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/tests/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/editor/plugins/map_editor/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/nfd-build/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/nfd-build/src/cmake_install.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/googletest-build/CTestTestfile.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/googletest-build/googlemock/CTestTestfile.cmake	2e2efba4a49ab026
-100	24440	7860452577731010	D:/gitnext/Chained Decos/.deps/googletest-build/googletest/CTestTestfile.cmake	2e2efba4a49ab026
-107	1715	7860452585068081	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj	dcc464cdad93a00e
-96	2453	7860452584954118	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	3dab3ad5ac2a2264
-100	3787	7860452584991787	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj	b9e0f6336130d94d
-135	4734	7860452585338682	CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj	fd6658b659c0258f
-2453	5157	7860452608511285	CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj	3fafacb309ddb86d
-3787	5749	7860452621857546	core/CMakeFiles/core.dir/Unity/unity_0_cxx.cxx.obj	6c6b1f974431bf38
-127	5971	7860452585252463	core/object/kernel/CMakeFiles/kernel.dir/Unity/unity_0_cxx.cxx.obj	5c9a3d4e1152e6fe
-119	6086	7860452585175859	core/object/event/CMakeFiles/event.dir/Unity/unity_0_cxx.cxx.obj	16233abe72ac69f
-6086	7693	7860452644837368	core/object/event/libevent.a	c9a50a1204eae353
-111	7714	7860452585102926	.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_1_c.c.obj	6d4d23ec545ffa7b
-130	7750	7860452585285104	core/object/module/CMakeFiles/module.dir/Unity/unity_0_cxx.cxx.obj	9e2b06695ee273c3
-1716	8302	7860452601130766	CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj	14e218216d3ea7bf
-115	8978	7860452585144510	.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_0_c.c.obj	d4cf8243332f6b0c
-123	9039	7860452585225266	core/config/CMakeFiles/config.dir/Unity/unity_0_cxx.cxx.obj	bee3ff082e2ff8b
-92	9166	7860452584915547	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	6acbba89015d0cd5
-5749	9239	7860452641473751	scene/resources/color/CMakeFiles/color.dir/Unity/unity_0_cxx.cxx.obj	299c9ef5b9617a6d
-151	9251	7860452585478556	CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj	fd21a085657f48b9
-88	9791	7860452584859187	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj	25bc110bf63ac36e
-7714	11096	7860452661131024	servers/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj	4a5bb220f9c3b690
-9791	11975	7860452681878898	scene/3d/camera/CMakeFiles/cameracontroller.dir/Unity/unity_0_cxx.cxx.obj	6582180417d3c54b
-7693	12496	7860452660912274	servers/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj	2720df04ae9bd92b
-143	12794	7860452585398328	CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj	932d744368806c6f
-9251	13135	7860452676495430	scene/main/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj	6d42253782e63ec1
-9166	13303	7860452675637976	servers/physics/collision/CMakeFiles/collision.dir/Structures/CollisionStructures.cpp.obj	e514c92be1592020
-9239	13366	7860452676367305	servers/physics/collision/CMakeFiles/collision.dir/Debug/CollisionDebugRenderer.cpp.obj	62c00d12249fd323
-104	13542	7860452585021495	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	7b5560e4370376a7
-147	13722	7860452585452763	CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj	d6824100ebb9ba6f
-9039	14481	7860452674352598	servers/physics/collision/CMakeFiles/collision.dir/System/CollisionSystem.cpp.obj	6a2d3f595e22d2ac
-5971	14501	7860452643691828	servers/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj	3dd5e686478f2e89
-11096	16107	7860452694944378	platform/CMakeFiles/ChainedDecosEngine.dir/Unity/unity_0_cxx.cxx.obj	b71694934fd810b9
-139	16959	7860452585376522	CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj	a3326dafc3be48c6
-14482	17484	7860452728787768	scene/gui/CMakeFiles/gui.dir/Unity/unity_0_cxx.cxx.obj	6b959c94a52a15d1
-13543	19698	7860452719414009	.deps/nfd-build/src/CMakeFiles/nfd.dir/Unity/unity_0_cxx.cxx.obj	a079e37530c7097b
-13303	20177	7860452717016139	.deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/Unity/unity_0_cxx.cxx.obj	7b53cadc5b89bbec
-83	21757	7860452584819480	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj	fa11d25efde47917
-19698	21884	7860452780979908	.deps/nfd-build/src/libnfd.a	f35ba8d4e688dd7a
-13135	21913	7860452715335179	.deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/Unity/unity_0_cxx.cxx.obj	ad4962931ad367bd
-4734	22258	7860452631308968	servers/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj	e74a6eb861f294a1
-14501	22324	7860452728978302	tests/CMakeFiles/ChainedDecosUnitTests.dir/Unity/unity_0_cxx.cxx.obj	65d40a49bf16496a
-21757	22352	7860452801565800	.deps/raylib-build/raylib/libraylib.a	6d7b3c9ce855521e
-22360	22709	7860452807586124	core/object/kernel/libkernel.a	7d29d931ec8cdfd1
-22383	22718	7860452807814567	scene/resources/color/libcolor.a	2cf568b1e3b177ca
-22352	22833	7860452807513554	core/config/libconfig.a	36cb7338536dbb4a
-22368	22854	7860452807665982	core/object/module/libmodule.a	67fb3412bb7f9e73
-22391	22921	7860452807902340	servers/physics/dynamics/libphysics.a	518da1b08fb33a14
-22375	22929	7860452807739764	libimguilib.a	8dbbaae770bedeb2
-22855	23290	7860452812525293	core/libcore.a	94377ce9571db60c
-22719	23360	7860452811179423	servers/input/libinput.a	e861c48ea15e1c0b
-22833	23360	7860452812305585	scene/3d/camera/libcameracontroller.a	3a07570a851e525b
-22922	23394	7860452813209427	scene/main/libworld.a	e5eb562f9d7203bf
-22929	23422	7860452813274852	scene/gui/libgui.a	fa689f73ace60516
-22709	23433	7860452811080738	servers/audio/libaudio.a	1fd495d157ddab84
-23290	23733	7860452816892770	servers/rendering/librender.a	b3946b3771e6f36
-23733	24049	7860452821312699	platform/libChainedDecosEngine.a	d080fa30777f3083
-11976	24334	7860452703750586	.deps/googletest-build/googlemock/CMakeFiles/gmock.dir/Unity/unity_0_cxx.cxx.obj	8cd8a12726f2f516
-12794	24916	7860452711914858	project/chaineddecos/Player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.obj	923fc8e5d68587ff
-13722	24951	7860452721207996	CMakeFiles/ChainedDecos.dir/Unity/unity_0_cxx.cxx.obj	325ab9b84999b1b9
-8978	25101	7860452673762716	servers/physics/collision/CMakeFiles/collision.dir/Core/CollisionManager.cpp.obj	95a85106ce7b57df
-16959	25785	7860452753586899	editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_1_cxx.cxx.obj	c8aa8ac2c7505dc1
-5158	26919	7860452635559269	scene/resources/map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj	ada968b474c0d394
-26919	27135	7860452853142092	scene/resources/map/libmap.a	13dafeb39fda590d
-16107	27285	7860452745053436	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/Unity/unity_0_cxx.cxx.obj	4072914c4cbb3ab2
-12496	27698	7860452708940710	project/chaineddecos/Menu/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj	7af804695f273c50
-27698	27858	7860452860963838	project/chaineddecos/Menu/libmenu.a	ee1992fd51f1ad2d
-13366	28370	7860452717643178	project/chaineddecos/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx.obj	ee3f8bfcfe67ed9b
-17484	29176	7860452758704193	editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_0_cxx.cxx.obj	b77f84fefd374e04
-8302	29645	7860452667005197	.deps/googletest-build/googletest/CMakeFiles/gtest.dir/Unity/unity_0_cxx.cxx.obj	20a26cbd96c664df
-29645	29839	7860452880442221	lib/libgtest.a	ea39896d9a80a322
-29845	29946	7860452882438968	lib/libgtest_main.a	197ddfd40b53ef3
-29839	29976	7860452882385054	lib/libgmock.a	190e0303695249d3
-29976	30071	7860452883747658	lib/libgmock_main.a	112245a02b4880
-30071	30605	7860452884708929	bin/tests/ChainedDecosUnitTests.exe	59ffd32314d8f9a0
-7750	30697	7860452661472501	scene/resources/model/CMakeFiles/model.dir/Unity/unity_0_cxx.cxx.obj	620d1cd911ec14f0
-30697	30968	7860452890965750	scene/resources/model/libmodel.a	aa2bc434d8f4e7dc
-30968	31135	7860452893673330	servers/physics/collision/libcollision.a	e4c49bb69815ed1b
-31135	31239	7860452895344299	project/chaineddecos/Player/libplayer.a	16a91bcc314dc772
-31239	31408	7860452896385699	project/chaineddecos/libChainedDecosGame.a	662aaaf11cb4c6d1
+# ninja log v6
+9	19333	7860476572178523	D:/gitnext/Chained Decos/.deps/googletest-build/googlemock/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572988503	build.ninja	2e7c38659ccd9623
+9	19333	7860476572091817	D:/gitnext/Chained Decos/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572099003	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572901368	D:/gitnext/Chained Decos/.deps/nfd-build/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572126587	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572154918	D:/gitnext/Chained Decos/.deps/googletest-build/cmake_install.cmake	2e7c38659ccd9623
+97	2959	7860471996750397	CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj	a4b327c02f6551e3
+9	19333	7860476572579991	D:/gitnext/Chained Decos/servers/physics/collision/cmake_install.cmake	2e7c38659ccd9623
+10088	10219	7860472096667114	.deps/raylib-build/raylib/libraylib.a	eed493188523d232
+9	19333	7860476572133905	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572144941	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	2e7c38659ccd9623
+89	3708	7860471996666369	core/object/kernel/CMakeFiles/kernel.dir/Unity/unity_0_cxx.cxx.obj	1f0e92578f8eb42
+9	19333	7860476572144941	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	2e7c38659ccd9623
+2959	4571	7860472025357703	scene/resources/color/CMakeFiles/color.dir/Unity/unity_0_cxx.cxx.obj	cf61fae05d904389
+9	19333	7860476572424023	D:/gitnext/Chained Decos/.deps/googletest-build/googletest/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572702651	D:/gitnext/Chained Decos/scene/resources/map/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572917897	D:/gitnext/Chained Decos/.deps/nfd-build/src/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572451339	D:/gitnext/Chained Decos/core/cmake_install.cmake	2e7c38659ccd9623
+68	2262	7860471996456398	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.obj	319822e3d412f230
+9	19333	7860476572468316	D:/gitnext/Chained Decos/core/config/cmake_install.cmake	2e7c38659ccd9623
+10383	10495	7860472099605080	servers/input/libinput.a	3dbd1685cc5413ef
+9	19333	7860476572813824	D:/gitnext/Chained Decos/project/chaineddecos/Menu/cmake_install.cmake	2e7c38659ccd9623
+2262	2911	7860472018403215	core/CMakeFiles/core.dir/Unity/unity_0_cxx.cxx.obj	937a025f8212df17
+9	19333	7860476572490898	D:/gitnext/Chained Decos/core/object/event/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572597655	D:/gitnext/Chained Decos/servers/physics/dynamics/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572502463	D:/gitnext/Chained Decos/core/object/kernel/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572715898	D:/gitnext/Chained Decos/scene/resources/color/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572520715	D:/gitnext/Chained Decos/core/object/module/cmake_install.cmake	2e7c38659ccd9623
+84	3748	7860471996612577	core/object/event/CMakeFiles/event.dir/Unity/unity_0_cxx.cxx.obj	6bf9f46318c1668c
+9	19333	7860476572530113	D:/gitnext/Chained Decos/servers/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572560039	D:/gitnext/Chained Decos/servers/rendering/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572560039	D:/gitnext/Chained Decos/servers/physics/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572614492	D:/gitnext/Chained Decos/servers/audio/cmake_install.cmake	2e7c38659ccd9623
+87	5129	7860471996645760	core/config/CMakeFiles/config.dir/Unity/unity_0_cxx.cxx.obj	976301e4d14033d0
+9	19333	7860476572126587	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	2e7c38659ccd9623
+4934	5786	7860472045098972	scene/3d/camera/CMakeFiles/cameracontroller.dir/Unity/unity_0_cxx.cxx.obj	d0486883ec43758f
+9	19333	7860476572631852	D:/gitnext/Chained Decos/servers/input/cmake_install.cmake	2e7c38659ccd9623
+10262	10380	7860472098402668	scene/3d/camera/libcameracontroller.a	32df862c11a08766
+9	19333	7860476572631852	D:/gitnext/Chained Decos/scene/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572659091	D:/gitnext/Chained Decos/scene/main/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572659091	D:/gitnext/Chained Decos/scene/resources/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572901368	D:/gitnext/Chained Decos/editor/plugins/map_editor/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572679962	D:/gitnext/Chained Decos/scene/resources/model/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572722179	D:/gitnext/Chained Decos/scene/3d/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572736391	D:/gitnext/Chained Decos/scene/3d/camera/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572763584	D:/gitnext/Chained Decos/platform/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572753579	D:/gitnext/Chained Decos/scene/gui/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572792556	D:/gitnext/Chained Decos/project/chaineddecos/cmake_install.cmake	2e7c38659ccd9623
+3790	4117	7860475067663899	.deps/nfd-build/src/libnfd.a	cdea471f81e810d8
+9	19333	7860476572830674	D:/gitnext/Chained Decos/project/chaineddecos/Player/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572864432	D:/gitnext/Chained Decos/tests/cmake_install.cmake	2e7c38659ccd9623
+9	19333	7860476572099003	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	2e7c38659ccd9623
+9	19333	7860476572161183	D:/gitnext/Chained Decos/.deps/googletest-build/CTestTestfile.cmake	2e7c38659ccd9623
+9	19333	7860476572178523	D:/gitnext/Chained Decos/.deps/googletest-build/googlemock/CTestTestfile.cmake	2e7c38659ccd9623
+9	19333	7860476572435741	D:/gitnext/Chained Decos/.deps/googletest-build/googletest/CTestTestfile.cmake	2e7c38659ccd9623
+74	1361	7860471996527172	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.obj	f6af46901cdd642d
+58	5418	7860471996357588	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.obj	c54a4c7093137d6a
+64	1631	7860471996413991	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	aa4e679cbf0265f
+1631	2491	7860472012083952	CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj	e36f1b002c73d1fb
+1362	4170	7860472009387502	CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj	ca7700065a8b0242
+93	4475	7860471996713970	core/object/module/CMakeFiles/module.dir/Unity/unity_0_cxx.cxx.obj	ab1706040ba27824
+3748	4672	7860472033256781	core/object/event/libevent.a	42f47e6f69654c3f
+61	4934	7860471996380741	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	1693722d5d34a77e
+78	4691	7860471996561579	.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_1_c.c.obj	7fb4cecd71d5ff7
+113	4846	7860471996887753	CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj	14496c16a2aa16f6
+81	5353	7860471996592187	.deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_0_c.c.obj	eaec5a5d1426fe6b
+4171	5704	7860472037445484	servers/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj	732f9dbfee354cb3
+3708	6007	7860472032861543	servers/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj	b9577a98820ffa0a
+4691	6204	7860472042648988	servers/physics/collision/CMakeFiles/collision.dir/Structures/CollisionStructures.cpp.obj	c664ba4e6879968b
+4846	6450	7860472044228022	servers/physics/collision/CMakeFiles/collision.dir/Debug/CollisionDebugRenderer.cpp.obj	8eb011fa8e447232
+105	6617	7860471996823820	CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj	5089f38b14b21114
+71	6962	7860471996489562	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	66359294fed7d2e6
+4672	6971	7860472042510243	servers/physics/collision/CMakeFiles/collision.dir/System/CollisionSystem.cpp.obj	c0e4dce10e467c3f
+109	6988	7860471996864910	CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj	cea6c7f1668d7fe0
+56	3445	7860475030316994	platform/CMakeFiles/ChainedDecosEngine.dir/Unity/unity_0_cxx.cxx.obj	5be38284c3bb83bd
+60	3790	7860475030357536	.deps/nfd-build/src/CMakeFiles/nfd.dir/Unity/unity_0_cxx.cxx.obj	d9f471a5eb1eb833
+101	8541	7860471996786912	CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj	a6a4b3dd096c8aad
+63	6263	7860475030393433	editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_1_cxx.cxx.obj	28e3f2ca0b2185b5
+51	7412	7860475030275145	servers/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj	fcf9965ed6246298
+55	10088	7860471996322447	.deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.obj	599d78be43a704f5
+10219	10349	7860472097970764	core/config/libconfig.a	af7cd5a2c2ac8236
+10226	10383	7860472098031659	core/object/kernel/libkernel.a	ab3d439541215ccf
+10248	10393	7860472098255581	scene/resources/color/libcolor.a	ec96d6468ef09126
+10255	10393	7860472098326761	servers/audio/libaudio.a	dd7442fba6e26411
+10234	10393	7860472098121084	core/object/module/libmodule.a	7abcfbeb43334483
+10241	10467	7860472098191337	libimguilib.a	cfc937bc6480933
+10393	10488	7860472099708108	core/libcore.a	ec2b00afd6fdb8f2
+11583	11700	7860475145578531	servers/rendering/librender.a	7013a356ce866da7
+11700	11816	7860475146767365	platform/libChainedDecosEngine.a	c6c44f37a7bcb0af
+4572	11492	7860472041475353	servers/physics/collision/CMakeFiles/collision.dir/Core/CollisionManager.cpp.obj	43f5e81812b6c3d2
+67	9862	7860475030429356	editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_0_cxx.cxx.obj	9179ec11cf4e1db0
+47	11354	7860475030231402	scene/resources/map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj	6963c689fd515a78
+11354	11582	7860475143292511	scene/resources/map/libmap.a	ad4699683f172e62
+4475	16271	7860472040473987	scene/resources/model/CMakeFiles/model.dir/Unity/unity_0_cxx.cxx.obj	8322b61ae74dde43
+16272	16541	7860472158488769	scene/resources/model/libmodel.a	c7b4528f31d2af70
+16541	16698	7860472161191094	servers/physics/collision/libcollision.a	49cdcd4540dd7351
+11816	14562	7860475174827507	editor/plugins/map_editor/libmap_editor.dll	7c45b46f9775549d
+11816	14562	7860475174827507	editor/plugins/map_editor/libmap_editor.dll.a	7c45b46f9775549d
+30	18865	7860476572988503	build.ninja	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/raylib-build/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/nlohmann_json-build/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/googletest-build/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/googletest-build/googlemock/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/googletest-build/googletest/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/core/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/core/config/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/core/object/event/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/core/object/kernel/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/core/object/module/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/servers/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/servers/rendering/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/servers/physics/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/servers/physics/collision/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/servers/physics/dynamics/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/servers/audio/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/servers/input/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/main/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/resources/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/resources/model/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/resources/map/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/resources/color/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/3d/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/3d/camera/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/scene/gui/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/platform/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/project/chaineddecos/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/project/chaineddecos/Menu/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/project/chaineddecos/Player/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/tests/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/editor/plugins/map_editor/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/nfd-build/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/nfd-build/src/cmake_install.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/raylib-build/CTestTestfile.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/raylib-build/raylib/CTestTestfile.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/googletest-build/CTestTestfile.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/googletest-build/googlemock/CTestTestfile.cmake	2e7c38659ccd9623
+30	18865	7860476572988503	D:/gitnext/Chained Decos/.deps/googletest-build/googletest/CTestTestfile.cmake	2e7c38659ccd9623
+36	1080	7860476576734785	.deps/nfd-build/src/CMakeFiles/nfd.dir/Unity/unity_0_cxx.cxx.obj	d9f471a5eb1eb833
+1080	1168	7860476587163265	.deps/nfd-build/src/libnfd.a	cdea471f81e810d8
+38	2717	7860476576764378	editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_1_cxx.cxx.obj	1ca110feeccdf291
+41	5886	7860476576791155	editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_0_cxx.cxx.obj	1451af3140ae20fc
+5886	7109	7860476635246524	bin/map_editor.exe	2bf276626346a5fd

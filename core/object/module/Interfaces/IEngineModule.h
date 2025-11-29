@@ -6,10 +6,10 @@
 #include <vector>
 
 // Forward declaration
-class Kernel;
+class Engine;
 
-// Interface for engine modules with kernel integration
-// Extends IModule with kernel-specific functionality
+// Interface for engine modules with engine integration
+// Extends IModule with engine-specific functionality
 class IEngineModule : public IModule
 {
 public:
@@ -18,7 +18,7 @@ public:
     // IModule interface - implemented as adapters
     bool Initialize() override final
     {
-        // Simple modules don't need kernel
+        // Simple modules don't need engine
         return true;
     }
 
@@ -47,9 +47,9 @@ public:
         return "";
     }
 
-    // Engine-specific methods with kernel parameter
-    virtual bool Initialize(Kernel *kernel) = 0;
-    virtual void RegisterServices(Kernel *kernel)
+    // Engine-specific methods with engine parameter
+    virtual bool Initialize(Engine *engine) = 0;
+    virtual void RegisterServices(Engine *engine)
     {
     }
     virtual std::vector<std::string> GetDependencies() const

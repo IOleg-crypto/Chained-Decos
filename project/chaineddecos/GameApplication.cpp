@@ -4,9 +4,8 @@
 #include "Systems/RenderingSystem/RenderingSystem.h"
 #include "Systems/UIController/UIController.h"
 #include "core/config/Core/ConfigManager.h"
-#include "core/object/kernel/Core/Kernel.h"
+#include "core/engine/EngineApplication.h"
 #include "core/object/module/Core/ModuleManager.h"
-#include "platform/windows/Core/EngineApplication.h"
 #include "project/chaineddecos/Menu/Console/ConsoleManagerHelpers.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
@@ -24,7 +23,8 @@
 GameApplication::GameApplication(int argc, char *argv[])
     : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false)
 {
-    ProcessCommandLine(argc, argv);
+    // Parse command line arguments
+    m_gameConfig = CommandLineHandler::ParseArguments(argc, argv);
 }
 
 GameApplication::~GameApplication()
@@ -32,9 +32,10 @@ GameApplication::~GameApplication()
     TraceLog(LOG_INFO, "GameApplication destructor called.");
 }
 
-void GameApplication::ProcessCommandLine(int argc, char *argv[])
+void GameApplication::OnConfigure(EngineConfig &config)
 {
-    m_gameConfig = CommandLineHandler::ParseArguments(argc, argv);
+    TraceLog(LOG_INFO, "[GameApplication] Pre-initialization...");
+    SetTraceLogLevel(LOG_INFO);
 
     // Load config from game.cfg BEFORE setting window size
     ConfigManager configManager;
@@ -74,26 +75,35 @@ void GameApplication::ProcessCommandLine(int argc, char *argv[])
         CommandLineHandler::ShowConfig(m_gameConfig);
     }
 
-    TraceLog(LOG_INFO, "[GameApplication] Window config: %dx%d (fullscreen: %s)",
-             m_gameConfig.width, m_gameConfig.height, m_gameConfig.fullscreen ? "yes" : "no");
+    TraceLog(LOG_INFO, "[GameApplication] Window config: %dx%d (fullscreen: %s)", width, height,
+             m_gameConfig.fullscreen ? "yes" : "no");
+
+    // Update EngineConfig
+    config.width = width;
+    config.height = height;
+    config.title = "Chained Decos";
+    config.fullscreen = m_gameConfig.fullscreen;
+    config.vsync = true;
+    config.enableAudio = true;
 }
 
-void GameApplication::OnPreInitialize()
+void GameApplication::OnRegister()
 {
-    SetTraceLogLevel(LOG_INFO);
-    TraceLog(LOG_INFO, "[GameApplication] Pre-initialization...");
-}
+    TraceLog(LOG_INFO, "[GameApplication] Registering services and modules...");
 
-void GameApplication::OnInitializeServices()
-{
-    TraceLog(LOG_INFO, "[GameApplication] Initializing engine services...");
+    auto engine = GetEngine();
+    if (!engine)
+    {
+        TraceLog(LOG_ERROR, "[GameApplication] Engine is null");
+        return;
+    }
 
-    // Create only basic engine components needed BEFORE system initialization
-    // Player, Menu and managers are now created in systems
+    // 1. Initialize Core Services
     m_collisionManager = std::make_shared<CollisionManager>();
     m_models = std::make_shared<ModelLoader>();
     m_world = std::make_shared<WorldManager>();
     m_soundSystem = std::make_shared<AudioManager>();
+
     if (m_soundSystem->Initialize())
     {
         TraceLog(LOG_INFO, "[GameApplication] AudioManager initialized successfully.");
@@ -113,60 +123,32 @@ void GameApplication::OnInitializeServices()
         TraceLog(LOG_ERROR, "[GameApplication] AudioManager failed to initialize.");
     }
 
-    TraceLog(LOG_INFO, "[GameApplication] Engine services initialized.");
-    TraceLog(LOG_INFO, "[GameApplication] Game-specific components will be created by systems.");
-}
-
-void GameApplication::OnRegisterProjectModules()
-{
-    TraceLog(LOG_INFO, "[GameApplication] Registering game systems...");
-
-    if (auto engine = GetEngine())
-    {
-        // Register systems in dependency order:
-        // 1. MapSystem (base, no dependencies on other game systems)
-        // 2. UIController (also base)
-        // 3. PlayerSystem (depends on MapSystem)
-        // 4. RenderingSystem (depends on PlayerSystem and MapSystem)
-        engine->RegisterModule(std::make_unique<MapSystem>());
-        engine->RegisterModule(std::make_unique<UIController>());
-        engine->RegisterModule(std::make_unique<PlayerSystem>());
-        engine->RegisterModule(std::make_unique<RenderingSystem>());
-
-        TraceLog(LOG_INFO, "[GameApplication] Game systems registered.");
-    }
-    else
-    {
-        TraceLog(LOG_WARNING, "[GameApplication] No engine available, cannot register systems");
-    }
-}
-
-void GameApplication::OnRegisterProjectServices()
-{
-    TraceLog(LOG_INFO, "[GameApplication] Registering project services...");
-
-    auto kernel = GetKernel();
-    if (!kernel)
-    {
-        TraceLog(LOG_ERROR, "[GameApplication] Kernel is null");
-        return;
-    }
-
-    // Register core engine services that need to be available before Systems initialize
-    // Systems will register themselves and their components during Initialize()
-    kernel->RegisterService<CollisionManager>(m_collisionManager);
-    kernel->RegisterService<ModelLoader>(m_models);
-    kernel->RegisterService<WorldManager>(m_world);
-    kernel->RegisterService<AudioManager>(m_soundSystem);
+    // Register core services
+    engine->RegisterService<CollisionManager>(m_collisionManager);
+    engine->RegisterService<ModelLoader>(m_models);
+    engine->RegisterService<WorldManager>(m_world);
+    engine->RegisterService<AudioManager>(m_soundSystem);
 
     TraceLog(LOG_INFO, "[GameApplication] Core engine services registered.");
-    TraceLog(
-        LOG_INFO,
-        "[GameApplication] Game services will be registered by Systems during initialization.");
+
+    // 2. Register Game Systems (Modules)
+    // Register systems in dependency order:
+    // 1. MapSystem (base, no dependencies on other game systems)
+    // 2. UIController (also base)
+    // 3. PlayerSystem (depends on MapSystem)
+    // 4. RenderingSystem (depends on PlayerSystem and MapSystem)
+    engine->RegisterModule(std::make_unique<MapSystem>());
+    engine->RegisterModule(std::make_unique<UIController>());
+    engine->RegisterModule(std::make_unique<PlayerSystem>());
+    engine->RegisterModule(std::make_unique<RenderingSystem>());
+
+    TraceLog(LOG_INFO, "[GameApplication] Game systems registered.");
 }
 
-void GameApplication::OnPostInitialize()
+void GameApplication::OnStart()
 {
+    TraceLog(LOG_INFO, "[GameApplication] Starting game...");
+
     // Initial state - show menu
     m_showMenu = true;
 
@@ -181,25 +163,8 @@ void GameApplication::OnPostInitialize()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard navigation
     io.MouseDrawCursor = false;                           // Use system cursor, not ImGui cursor
 
-    // Systems now initialized, get components through Kernel
-    auto playerService = GetKernel()->GetService<PlayerService>();
-    auto menuService = GetKernel()->GetService<MenuService>();
-    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
-    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
-
-    auto *player = playerService ? playerService->player : nullptr;
-    auto *menu = menuService ? menuService->menu : nullptr;
-    auto *mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
-    auto *playerSystem = playerSystemService ? playerSystemService->playerSystem : nullptr;
-
     // Dependency Injection: update ConsoleManager providers after all services are registered
-    UpdateConsoleManagerProviders(GetKernel());
-
-    // Raw mouse motion is now initialized in Engine::Init() to avoid duplication
-    // GameRenderManager replaced with RenderingSystem
-    // RenderingSystem is created and initialized through ModuleManager
-
-    // MenuActionHandler logic is now in UIController
+    UpdateConsoleManagerProviders(GetEngine());
 
     // Initialize input after everything is ready
     InitInput();
@@ -217,9 +182,6 @@ void GameApplication::OnPostInitialize()
     if (m_gameConfig.fullscreen && !IsWindowFullscreen())
     {
         TraceLog(LOG_INFO, "[GameApplication] Setting fullscreen mode from config");
-        // Use raylib function to toggle fullscreen
-        // (ToggleFullscreen registered as callback for F11, but we can call directly via
-        // SetWindowState)
         int monitor = GetCurrentMonitor();
         int monitorWidth = GetMonitorWidth(monitor);
         int monitorHeight = GetMonitorHeight(monitor);
@@ -231,13 +193,36 @@ void GameApplication::OnPostInitialize()
                        "when map is selected).");
 }
 
-void GameApplication::OnPostUpdate(float deltaTime)
+void GameApplication::OnUpdate(float deltaTime)
 {
     (void)deltaTime; // Unused for now
 
-    // Get Menu through Kernel
-    auto menuService = GetKernel()->GetService<MenuService>();
-    auto *menu = menuService ? menuService->menu : nullptr;
+    // Get Menu through Engine
+    // Note: MenuService was removed, accessing Menu via UIController or directly if registered
+    // Wait, MenuService was removed. How do we access Menu?
+    // UIController manages Menu.
+    // Let's get UIController module.
+
+    auto engine = GetEngine();
+    if (!engine)
+        return;
+
+    auto moduleManager = engine->GetModuleManager();
+    UIController *uiController = nullptr;
+    Menu *menu = nullptr;
+
+    if (moduleManager)
+    {
+        auto *uiModule = moduleManager->GetModule("UI");
+        if (uiModule)
+        {
+            uiController = dynamic_cast<UIController *>(uiModule);
+            if (uiController)
+            {
+                menu = uiController->GetMenu();
+            }
+        }
+    }
 
     if (IsKeyPressed(KEY_GRAVE) && menu)
     {
@@ -245,7 +230,6 @@ void GameApplication::OnPostUpdate(float deltaTime)
     }
 
     // Manage cursor visibility based on menu state
-    // Only call EnableCursor/DisableCursor when state changes to avoid centering cursor every frame
     if (m_showMenu)
     {
         // Menu is open - show system cursor (more reliable than ImGui cursor)
@@ -271,7 +255,6 @@ void GameApplication::OnPostUpdate(float deltaTime)
         io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 
         // Force clear ImGui navigation state when menu closes to prevent input blocking
-        // This ensures player input works immediately after closing menu
         if (io.NavActive)
         {
             io.NavActive = false;
@@ -316,13 +299,11 @@ void GameApplication::OnPostUpdate(float deltaTime)
             else
             {
                 // Only show player metrics if game is initialized (map selected)
-                auto playerService = GetKernel()->GetService<PlayerService>();
+                auto playerService = GetEngine()->GetService<PlayerService>();
                 auto *player = playerService ? playerService->player : nullptr;
 
                 if (player)
                 {
-
-                    // player->GetCameraController()->UpdateCameraRotation();
                     player->GetCameraController()->UpdateMouseRotation(
                         player->GetCameraController()->GetCamera(),
                         player->GetMovement()->GetPosition());
@@ -344,24 +325,39 @@ void GameApplication::OnPostUpdate(float deltaTime)
     }
 }
 
-void GameApplication::OnPostRender()
+void GameApplication::OnRender()
 {
     auto *engine = GetEngine();
     if (!engine)
         return;
 
-    // Get Menu and Player through Kernel
-    auto menuService = GetKernel()->GetService<MenuService>();
-    auto *menu = menuService ? menuService->menu : nullptr;
+    // Get Menu via UIController
+    auto moduleManager = engine->GetModuleManager();
+    UIController *uiController = nullptr;
+    Menu *menu = nullptr;
 
-    auto playerService = GetKernel()->GetService<PlayerService>();
+    if (moduleManager)
+    {
+        auto *uiModule = moduleManager->GetModule("UI");
+        if (uiModule)
+        {
+            uiController = dynamic_cast<UIController *>(uiModule);
+            if (uiController)
+            {
+                menu = uiController->GetMenu();
+            }
+        }
+    }
+
+    auto playerService = GetEngine()->GetService<PlayerService>();
     auto *player = playerService ? playerService->player : nullptr;
 
     if (m_showMenu && menu)
     {
         // Need to call rlImGuiBegin before rendering menu
         rlImGuiBegin();
-        engine->GetRenderManager()->RenderMenu(*menu);
+        // engine->GetRenderManager()->RenderMenu(*menu); // DEPRECATED - Menu renders itself via
+        // ImGui
 
         // Render console in menu if open
         if (menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
@@ -412,7 +408,7 @@ void GameApplication::OnPostRender()
     }
 }
 
-void GameApplication::OnPreShutdown()
+void GameApplication::OnShutdown()
 {
     TraceLog(LOG_INFO, "[GameApplication] Cleaning up game resources...");
 
@@ -422,15 +418,14 @@ void GameApplication::OnPreShutdown()
         TraceLog(LOG_INFO, "[GameApplication] Collision system cleared");
     }
 
-    // Get components through Kernel (they're deleted by systems)
-    auto playerService = GetKernel()->GetService<PlayerService>();
+    // Get components through Engine
+    auto playerService = GetEngine()->GetService<PlayerService>();
     auto *player = playerService ? playerService->player : nullptr;
 
-    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
+    auto mapSystemService = GetEngine()->GetService<MapSystemService>();
     auto *mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
 
-    auto menuService = GetKernel()->GetService<MenuService>();
-    auto *menu = menuService ? menuService->menu : nullptr;
+    // MenuService removed, access via UIController if needed, but here we just reset state
 
     if (player)
     {
@@ -446,9 +441,24 @@ void GameApplication::OnPreShutdown()
 
     m_showMenu = true;
     m_isGameInitialized = false;
-    if (menu)
+
+    // Access menu to reset state
+    auto engine = GetEngine();
+    if (engine)
     {
-        menu->SetGameInProgress(false);
+        auto moduleManager = engine->GetModuleManager();
+        if (moduleManager)
+        {
+            auto *uiModule = moduleManager->GetModule("UI");
+            if (uiModule)
+            {
+                auto *uiController = dynamic_cast<UIController *>(uiModule);
+                if (uiController && uiController->GetMenu())
+                {
+                    uiController->GetMenu()->SetGameInProgress(false);
+                }
+            }
+        }
     }
 
     TraceLog(LOG_INFO, "[GameApplication] Game resources cleaned up successfully");
@@ -465,9 +475,21 @@ void GameApplication::InitInput()
         return;
     }
 
-    // Get Menu through Kernel
-    auto menuService = GetKernel()->GetService<MenuService>();
-    auto *menu = menuService ? menuService->menu : nullptr;
+    // Get Menu through UIController
+    auto moduleManager = engine->GetModuleManager();
+    Menu *menu = nullptr;
+    if (moduleManager)
+    {
+        auto *uiModule = moduleManager->GetModule("UI");
+        if (uiModule)
+        {
+            auto *uiController = dynamic_cast<UIController *>(uiModule);
+            if (uiController)
+            {
+                menu = uiController->GetMenu();
+            }
+        }
+    }
 
     if (!menu)
     {
@@ -528,8 +550,8 @@ void GameApplication::HandleMenuActions()
 
 void GameApplication::UpdatePlayerLogic()
 {
-    // Get PlayerSystem through Kernel
-    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
+    // Get PlayerSystem through Engine
+    auto playerSystemService = GetEngine()->GetService<PlayerSystemService>();
     if (playerSystemService && playerSystemService->playerSystem)
     {
         playerSystemService->playerSystem->UpdatePlayerLogic();
@@ -543,16 +565,16 @@ void GameApplication::SaveGameState()
         return; // No state to save if game is not initialized
     }
 
-    // Get PlayerSystem through Kernel
-    auto playerSystemService = GetKernel()->GetService<PlayerSystemService>();
+    // Get PlayerSystem through Engine
+    auto playerSystemService = GetEngine()->GetService<PlayerSystemService>();
     if (!playerSystemService || !playerSystemService->playerSystem)
     {
         TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - PlayerSystem not available");
         return;
     }
 
-    // Get MapSystem through Kernel to get current map path
-    auto mapSystemService = GetKernel()->GetService<MapSystemService>();
+    // Get MapSystem through Engine to get current map path
+    auto mapSystemService = GetEngine()->GetService<MapSystemService>();
     if (!mapSystemService || !mapSystemService->mapSystem)
     {
         TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - MapSystem not available");

@@ -1,5 +1,5 @@
 #include "GameApplication.h"
-#include "platform/windows/Core/EngineApplication.h"
+#include "core/engine/EngineApplication.h"
 
 int main(int argc, char *argv[])
 {

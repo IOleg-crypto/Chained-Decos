@@ -3,10 +3,10 @@
 //
 
 #include "UIManager.h"
-#include "SkyboxBrowser.h"
 #include "ObjectFactory.h"
+#include "SkyboxBrowser.h"
 #include "editor/plugins/map_editor/Editor/Editor.h"
-#include "core/object/kernel/Core/Kernel.h"
+
 #include "scene/resources/map/Core/MapLoader.h"
 #include <algorithm>
 #include <cstdio>
@@ -26,20 +26,13 @@
 
 namespace fs = std::filesystem;
 
-UIManager::UIManager(const UIManagerConfig& config)
-    : m_editor(config.editor), 
-      m_sceneManager(config.sceneManager), 
-      m_fileManager(config.fileManager),
-      m_toolManager(config.toolManager), 
-      m_modelManager(config.modelManager), 
-      m_displayImGuiInterface(true),
-      m_displayObjectListPanel(true), 
-      m_displayPropertiesPanel(true),
-      m_pendingObjectCreation(false), 
-      m_displaySkyboxPanel(false), 
-      m_displayParkourMapDialog(false),
-      m_currentlySelectedParkourMapIndex(0), 
-      m_gridSizes(config.initialGridSize),
+UIManager::UIManager(const UIManagerConfig &config)
+    : m_editor(config.editor), m_sceneManager(config.sceneManager),
+      m_fileManager(config.fileManager), m_toolManager(config.toolManager),
+      m_modelManager(config.modelManager), m_displayImGuiInterface(true),
+      m_displayObjectListPanel(true), m_displayPropertiesPanel(true),
+      m_pendingObjectCreation(false), m_displaySkyboxPanel(false), m_displayParkourMapDialog(false),
+      m_currentlySelectedParkourMapIndex(0), m_gridSizes(config.initialGridSize),
       m_skyboxBrowser(std::make_unique<SkyboxBrowser>(config.editor)),
       m_objectFactory(std::make_unique<ObjectFactory>(config.sceneManager, config.toolManager))
 {
@@ -100,7 +93,6 @@ void UIManager::ShowPropertiesPanel(bool show)
 {
     m_displayPropertiesPanel = show;
 }
-
 
 Tool UIManager::GetActiveTool() const
 {
@@ -713,5 +705,3 @@ int UIManager::GetGridSize() const
 {
     return m_gridSizes;
 }
-
-

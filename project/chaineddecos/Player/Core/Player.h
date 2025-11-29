@@ -1,5 +1,3 @@
-//
-
 #ifndef PLAYER_H
 #define PLAYER_H
 
@@ -8,13 +6,11 @@
 #include <raymath.h>
 
 #include "servers/audio/Core/AudioManager.h"
-#include "core/object/kernel/Core/Kernel.h"
-#include "core/object/kernel/Interfaces/IKernelService.h"
 #include <scene/3d/camera/Core/CameraController.h>
+#include <scene/main/Core/World.h>
+#include <scene/resources/model/Core/Model.h>
 #include <servers/physics/collision/Core/CollisionManager.h>
 #include <servers/physics/collision/System/CollisionSystem.h>
-#include <scene/resources/model/Core/Model.h>
-#include <scene/main/Core/World.h>
 
 // Include component interfaces
 #include "../Collision/PlayerCollision.h"
@@ -115,31 +111,6 @@ private:
     // Services from Kernel (cached)
     std::shared_ptr<AudioManager> m_audioManager;
     std::shared_ptr<CollisionManager> m_collisionManager;
-};
-
-struct PlayerService : public IKernelService
-{
-    Player *player = nullptr;
-    explicit PlayerService(Player *p) : player(p)
-    {
-    }
-    bool Initialize() override
-    {
-        return player != nullptr;
-    }
-    void Shutdown() override
-    {
-    }
-    void Update(float deltaTime) override
-    {
-    }
-    void Render() override
-    {
-    }
-    const char *GetName() const override
-    {
-        return "PlayerService";
-    }
 };
 
 #endif // PLAYER_H

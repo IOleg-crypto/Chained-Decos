@@ -1,9 +1,9 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
-#include "core/object/kernel/Interfaces/IKernelService.h"
 #include "../Interfaces/ICollisionManager.h"
 #include "../System/CollisionSystem.h"
+
 #include "scene/resources/model/Config/ModelConfig.h"
 #include <algorithm>
 #include <array>
@@ -35,23 +35,25 @@ struct ModelCollisionTask
 // Supports adding, clearing, and checking collisions.
 // Uses AABB for fast checks and optional BVH for precise collisions.
 //
-class CollisionManager : public ICollisionManager, public IKernelService
+//
+// CollisionManager
+// Manages all collision boxes in the game.
+// Supports adding, clearing, and checking collisions.
+// Uses AABB for fast checks and optional BVH for precise collisions.
+//
+class CollisionManager : public ICollisionManager
 {
 public:
     CollisionManager() = default;
 
     // Initialize the collision system
-    bool Initialize() override;
-    void Shutdown() override;
-    void Update(float deltaTime) override
+    bool Initialize();
+    void Shutdown();
+    void Update(float deltaTime)
     {
     }
-    void Render() override
+    void Render()
     {
-    }
-    const char *GetName() const override
-    {
-        return "CollisionManager";
     }
 
     // Update spatial partitioning for optimized collision queries

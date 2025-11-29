@@ -1,8 +1,7 @@
 #ifndef RENDERING_SYSTEM_H
 #define RENDERING_SYSTEM_H
 
-#include "platform/windows/Core/EngineApplication.h"
-#include "core/object/kernel/Core/Kernel.h"
+#include "core/engine/EngineApplication.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
 #include <memory>
 #include <string>
@@ -34,11 +33,11 @@ public:
         return "Game world and UI rendering";
     }
 
-    bool Initialize(Kernel *kernel) override;
+    bool Initialize(Engine *engine) override;
     void Shutdown() override;
     void Update(float deltaTime) override;
     void Render() override;
-    void RegisterServices(Kernel *kernel) override;
+    void RegisterServices(Engine *engine) override;
     std::vector<std::string> GetDependencies() const override;
 
     // Rendering methods
@@ -50,10 +49,7 @@ private:
     void EnsureDependencies();
 
 private:
-    // Kernel reference
-    Kernel *m_kernel;
-
-    // Dependencies obtained through Kernel (references only)
+    // Dependencies obtained through Engine (references only)
     Player *m_player;
     MapSystem *m_mapSystem;
     CollisionManager *m_collisionManager;

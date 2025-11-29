@@ -1,6 +1,6 @@
 #include "ConsoleManager.h"
-#include "core/object/kernel/Core/Kernel.h"
-#include "platform/windows/Core/EngineApplication.h"
+#include "core/engine/Engine.h"
+#include "core/engine/EngineApplication.h"
 #include "project/chaineddecos/Player/Collision/PlayerCollision.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "project/chaineddecos/Systems/MapSystem/MapSystem.h"
@@ -28,18 +28,14 @@ ConsoleManager::ConsoleManager()
 
 Player *ConsoleManager::GetPlayer() const
 {
-    // Get Player through Kernel -> PlayerService
-    auto playerService = Kernel::Instance().GetService<PlayerService>();
+    // Get Player through Engine -> PlayerService
+    auto playerService = Engine::Instance().GetService<PlayerService>();
     return playerService ? playerService->player : nullptr;
 }
 
 Engine *ConsoleManager::GetEngine() const
 {
-    // Get Engine through Kernel
-    // TODO: Create EngineService
-    // auto engineService = Kernel::Instance().GetService<EngineService>();
-    // return engineService ? engineService->engine : nullptr;
-    return nullptr; // Temporarily return nullptr until EngineService is created
+    return &Engine::Instance();
 }
 
 void ConsoleManager::ToggleConsole()
@@ -485,7 +481,7 @@ void ConsoleManager::AddToHistory(const std::string &command)
     }
 }
 
-// Scrolling functions removed as ImGui handles scrolling
+// Scrolling functions removed as ImGui handles it
 
 void ConsoleManager::CopyToClipboard(const std::string &text)
 {

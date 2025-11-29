@@ -1,4 +1,4 @@
-add_library(map_editor SHARED
+add_executable(map_editor
     Modules/EditorModule.cpp
     Modules/EditorModule.h
     EditorApplication.cpp
@@ -41,4 +41,6 @@ target_link_libraries(map_editor PUBLIC
 
 target_compile_definitions(map_editor PRIVATE CHAINEDDECOSEDITOR_EXPORTS)
 
-set_target_properties(map_editor PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(map_editor PROPERTIES 
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
