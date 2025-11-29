@@ -9,13 +9,13 @@
 #include <imgui.h>
 #include <raylib.h>
 
-PlayerController::PlayerSystem()
+PlayerController::PlayerController()
     : m_player(nullptr), m_audioManager(nullptr), m_collisionManager(nullptr), m_mapSystem(nullptr),
       m_models(nullptr), m_engine(nullptr)
 {
 }
 
-PlayerController::~PlayerSystem()
+PlayerController::~PlayerController()
 {
     Shutdown();
 }
@@ -36,7 +36,7 @@ bool PlayerController::Initialize(Engine *engine)
     m_models = engine->GetService<ModelLoader>().get();
     m_audioManager = engine->GetService<AudioManager>().get();
 
-    auto mapSystem = engine->GetMapSystem();
+    auto mapSystem = engine->GetLevelManager();
 
     // Validate required engine dependencies
     if (!m_collisionManager || !m_models || !m_audioManager)
@@ -45,8 +45,8 @@ bool PlayerController::Initialize(Engine *engine)
         return false;
     }
 
-    // MapSystem can be nullptr if MapSystem isn't initialized yet
-    m_mapSystem = mapSystemService ? mapSystem : nullptr;
+    // LevelManager can be nullptr if LevelManager isn't initialized yet
+    m_mapSystem = mapSystem;
 
     // Create our own components
     try
@@ -63,7 +63,8 @@ bool PlayerController::Initialize(Engine *engine)
         }
         else
         {
-            TraceLog(LOG_WARNING, "[PlayerController] AudioManager is null, fall sounds will not work");
+            TraceLog(LOG_WARNING,
+                     "[PlayerController] AudioManager is null, fall sounds will not work");
         }
 
         // Register services in Initialize so they're available to other systems
@@ -97,15 +98,15 @@ void PlayerController::Shutdown()
 
 void PlayerController::Update(float deltaTime)
 {
-    // MapSystem should be available since PlayerSystem depends on MapSystem
+    // LevelManager should be available since PlayerController depends on LevelManager
     // But check anyway
     if (!m_mapSystem && m_engine)
     {
-        auto mapSystem = m_engine->GetMapSystem();
-        if (mapSystemService && mapSystem)
+        auto mapSystem = m_engine->GetLevelManager();
+        if (mapSystem)
         {
             m_mapSystem = mapSystem;
-            TraceLog(LOG_INFO, "[PlayerController] MapSystem obtained from Engine");
+            TraceLog(LOG_INFO, "[PlayerController] LevelManager obtained from Engine");
         }
     }
 
@@ -144,10 +145,10 @@ void PlayerController::RegisterServices(Engine *engine)
 
     TraceLog(LOG_INFO, "[PlayerController] Registering services...");
 
-    // Register PlayerSystem directly
-    engine->RegisterService<PlayerSystem>(
-        std::shared_ptr<PlayerSystem>(this, [](PlayerSystem *) {}));
-    TraceLog(LOG_INFO, "[PlayerController] PlayerSystem registered");
+    // Register PlayerController directly
+    engine->RegisterService<PlayerController>(
+        std::shared_ptr<PlayerController>(this, [](PlayerController *) {}));
+    TraceLog(LOG_INFO, "[PlayerController] PlayerController registered");
 
     // Register Player directly (no wrapper needed)
     if (m_player)
@@ -196,7 +197,8 @@ void PlayerController::InitializePlayer()
              "[PlayerController] InitializePlayer() - Checking if player is stuck in collision...");
     if (m_player->GetMovement()->ExtractFromCollider())
     {
-        TraceLog(LOG_INFO, "[PlayerController] InitializePlayer() - Player extracted from collider");
+        TraceLog(LOG_INFO,
+                 "[PlayerController] InitializePlayer() - Player extracted from collider");
     }
 
     // Allow physics to determine grounded state; start ungrounded so gravity applies
@@ -263,9 +265,8 @@ void PlayerController::InitializePlayer()
     // Validate player position is safe (above ground but not too high)
     if (currentPos.y < 0.0f)
     {
-        TraceLog(
-            LOG_WARNING,
-            "[PlayerController] InitializePlayer() - Player position below ground level, adjusting");
+        TraceLog(LOG_WARNING, "[PlayerController] InitializePlayer() - Player position below "
+                              "ground level, adjusting");
         m_player->SetPlayerPosition({currentPos.x, PLAYER_SAFE_SPAWN_HEIGHT, currentPos.z});
     }
     else if (currentPos.y > 50.0f)
@@ -374,8 +375,9 @@ void PlayerController::SavePlayerState(const std::string &currentMapPath)
                 // Since we don't want to include UIController.h here to avoid circular deps
                 // (maybe), we can assume UIController handles this state or we can add a method to
                 // IEngineModule or similar. Actually, let's just log for now.
-                TraceLog(LOG_INFO,
-                         "[PlayerController] SavePlayerState() - TODO: Enable resume button in menu");
+                TraceLog(
+                    LOG_INFO,
+                    "[PlayerController] SavePlayerState() - TODO: Enable resume button in menu");
             }
         }
     }
@@ -397,11 +399,12 @@ void PlayerController::RestorePlayerState()
     {
         m_player->SetPlayerPosition(m_savedPlayerPosition);
         m_player->GetPhysics().SetVelocity(m_savedPlayerVelocity);
-        TraceLog(
-            LOG_INFO,
-            "[PlayerController] RestorePlayerState() - Restored player position: (%.2f, %.2f, %.2f)",
-            m_savedPlayerPosition.x, m_savedPlayerPosition.y, m_savedPlayerPosition.z);
+        TraceLog(LOG_INFO,
+                 "[PlayerController] RestorePlayerState() - Restored player position: (%.2f, %.2f, "
+                 "%.2f)",
+                 m_savedPlayerPosition.x, m_savedPlayerPosition.y, m_savedPlayerPosition.z);
     }
 
-    TraceLog(LOG_INFO, "[PlayerController] RestorePlayerState() - Game state restored successfully");
+    TraceLog(LOG_INFO,
+             "[PlayerController] RestorePlayerState() - Game state restored successfully");
 }

@@ -15,11 +15,11 @@
 #include <fstream>
 #include <raylib.h>
 
-UIManager::UIController() : m_menu(nullptr), m_engine(nullptr)
+UIManager::UIManager() : m_menu(nullptr), m_engine(nullptr)
 {
 }
 
-UIManager::~UIController()
+UIManager::~UIManager()
 {
     Shutdown();
 }
@@ -66,8 +66,7 @@ bool UIManager::Initialize(Engine *engine)
         }
         else
         {
-            TraceLog(LOG_WARNING,
-                     "[UIManager] Menu created but not fully initialized (no Engine)");
+            TraceLog(LOG_WARNING, "[UIManager] Menu created but not fully initialized (no Engine)");
         }
 
         // Register services in Initialize so they're available to other systems
@@ -165,8 +164,7 @@ void UIManager::HandleMenuActions(bool *showMenu, bool *isGameInitialized)
         HandleResumeGame(showMenu, isGameInitialized);
         break;
     case MenuAction::StartGameWithMap:
-        TraceLog(LOG_INFO,
-                 "[UIManager] HandleMenuActions() - Starting HandleStartGameWithMap()");
+        TraceLog(LOG_INFO, "[UIManager] HandleMenuActions() - Starting HandleStartGameWithMap()");
         HandleStartGameWithMap(showMenu, isGameInitialized);
         break;
     case MenuAction::ExitGame:
@@ -183,8 +181,7 @@ void UIManager::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
 
     if (!m_menu || !m_engine)
     {
-        TraceLog(LOG_ERROR,
-                 "[UIManager] HandleSinglePlayer() - Required services not available");
+        TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - Required services not available");
         return;
     }
 
@@ -207,8 +204,7 @@ void UIManager::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
     {
         TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - Failed to initialize player: %s",
                  e.what());
-        TraceLog(LOG_WARNING,
-                 "[UIManager] HandleSinglePlayer() - Player may not render correctly");
+        TraceLog(LOG_WARNING, "[UIManager] HandleSinglePlayer() - Player may not render correctly");
     }
 
     *showMenu = false;         // Hide menu
@@ -303,10 +299,9 @@ void UIManager::ReinitializeCollisionSystemForResume()
         {
             collisionManager->CreateAutoCollisionsFromModelsSelective(*models.get(),
                                                                       requiredModels);
-            TraceLog(
-                LOG_INFO,
-                "[UIManager] ReinitializeCollisionSystemForResume() - Resume model collisions "
-                "created successfully");
+            TraceLog(LOG_INFO,
+                     "[UIManager] ReinitializeCollisionSystemForResume() - Resume model collisions "
+                     "created successfully");
         }
         catch (const std::exception &modelCollisionException)
         {
@@ -315,10 +310,9 @@ void UIManager::ReinitializeCollisionSystemForResume()
                      "collision creation "
                      "failed: %s",
                      modelCollisionException.what());
-            TraceLog(
-                LOG_WARNING,
-                "[UIManager] ReinitializeCollisionSystemForResume() - Continuing with basic "
-                "collision system only");
+            TraceLog(LOG_WARNING,
+                     "[UIManager] ReinitializeCollisionSystemForResume() - Continuing with basic "
+                     "collision system only");
         }
     }
     catch (const std::exception &e)
@@ -377,14 +371,12 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
         {
             TraceLog(LOG_ERROR, "[UIManager] HandleResumeGame() - Failed to initialize basic "
                                 "collision system for singleplayer");
-            TraceLog(
-                LOG_ERROR,
-                "[UIManager] HandleResumeGame() - Cannot continue without collision system");
+            TraceLog(LOG_ERROR,
+                     "[UIManager] HandleResumeGame() - Cannot continue without collision system");
             return;
         }
-        TraceLog(
-            LOG_INFO,
-            "[UIManager] HandleResumeGame() - Collision system initialized for singleplayer");
+        TraceLog(LOG_INFO,
+                 "[UIManager] HandleResumeGame() - Collision system initialized for singleplayer");
 
         // Initialize player after map is loaded
         try
@@ -394,10 +386,9 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
         }
         catch (const std::exception &e)
         {
-            TraceLog(
-                LOG_ERROR,
-                "[UIManager] HandleResumeGame() - Failed to initialize player for resume: %s",
-                e.what());
+            TraceLog(LOG_ERROR,
+                     "[UIManager] HandleResumeGame() - Failed to initialize player for resume: %s",
+                     e.what());
             TraceLog(LOG_WARNING,
                      "[UIManager] HandleResumeGame() - Player may not render correctly");
         }
@@ -482,8 +473,7 @@ std::vector<std::string> UIManager::AnalyzeMapForRequiredModels(const std::strin
 
 bool UIManager::LoadRequiredModels(const std::vector<std::string> &requiredModels)
 {
-    TraceLog(LOG_INFO,
-             "[UIManager] LoadRequiredModels() - Loading required models selectively...");
+    TraceLog(LOG_INFO, "[UIManager] LoadRequiredModels() - Loading required models selectively...");
 
     if (!m_engine)
     {
@@ -513,8 +503,7 @@ bool UIManager::LoadRequiredModels(const std::vector<std::string> &requiredModel
     return true;
 }
 
-bool UIManager::InitializeCollisionSystemWithModels(
-    const std::vector<std::string> &requiredModels)
+bool UIManager::InitializeCollisionSystemWithModels(const std::vector<std::string> &requiredModels)
 {
     TraceLog(LOG_INFO, "[UIManager] InitializeCollisionSystemWithModels() - Initializing "
                        "collision system with required models...");
@@ -776,9 +765,8 @@ void UIManager::LoadMapObjects(const std::string &mapPath)
             // Check if this looks like array format (old models.json format)
             if (firstLine.find("[") == 0)
             {
-                TraceLog(
-                    LOG_INFO,
-                    "[UIManager] LoadMapObjects() - Detected array format, using LoadGameMap");
+                TraceLog(LOG_INFO,
+                         "[UIManager] LoadMapObjects() - Detected array format, using LoadGameMap");
 
                 MapLoader loader;
                 mapSystem->GetGameMap() = loader.LoadMap(mapPath.c_str());
@@ -792,9 +780,8 @@ void UIManager::LoadMapObjects(const std::string &mapPath)
             else
             {
                 // Assume standard JSON object format
-                TraceLog(LOG_INFO,
-                         "[UIManager] LoadMapObjects() - Detected object format, using "
-                         "LoadMapObjects");
+                TraceLog(LOG_INFO, "[UIManager] LoadMapObjects() - Detected object format, using "
+                                   "LoadMapObjects");
                 mapSystem->LoadEditorMap(mapPath);
             }
         }
