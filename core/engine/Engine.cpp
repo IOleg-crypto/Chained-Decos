@@ -38,8 +38,6 @@ bool Engine::Initialize()
         return false;
     }
     m_inputManager = std::move(inputManager);
-    RegisterService<IInputManager>(
-        std::shared_ptr<IInputManager>(m_inputManager.get(), [](IInputManager *) {}));
 
     // 2. Create and Initialize RenderManager
     auto renderManager = std::make_unique<RenderManager>();
@@ -49,8 +47,6 @@ bool Engine::Initialize()
         return false;
     }
     m_renderManager = std::move(renderManager);
-    RegisterService<IRenderManager>(
-        std::shared_ptr<IRenderManager>(m_renderManager.get(), [](IRenderManager *) {}));
 
     TraceLog(LOG_INFO, "[Engine] Engine initialized successfully");
     return true;
@@ -102,15 +98,15 @@ Player *Engine::GetPlayer() const
     return service.get();
 }
 
-PlayerSystem *Engine::GetPlayerSystem() const
+PlayerController *Engine::GetPlayerController() const
 {
-    auto service = GetService<PlayerSystem>();
+    auto service = GetService<PlayerController>();
     return service.get();
 }
 
-MapSystem *Engine::GetMapSystem() const
+LevelManager *Engine::GetLevelManager() const
 {
-    auto service = GetService<MapSystem>();
+    auto service = GetService<LevelManager>();
     return service.get();
 }
 

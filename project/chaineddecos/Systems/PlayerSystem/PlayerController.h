@@ -16,7 +16,7 @@ class MapSystem;
 
 // System for managing player and gameplay logic
 // Creates and owns its components independently
-class PlayerSystem : public IEngineModule
+class PlayerController : public IEngineModule
 {
 public:
     PlayerSystem();

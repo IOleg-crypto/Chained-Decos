@@ -1,6 +1,6 @@
-#include "UIController.h"
-#include "../MapSystem/MapSystem.h"
-#include "../PlayerSystem/PlayerSystem.h"
+#include "UIManager.h"
+#include "../MapSystem/LevelManager.h"
+#include "../PlayerSystem/PlayerController.h"
 #include "core/engine/Engine.h"
 #include "core/engine/EngineApplication.h"
 #include "project/chaineddecos/Menu/Console/ConsoleManager.h"
@@ -15,25 +15,25 @@
 #include <fstream>
 #include <raylib.h>
 
-UIController::UIController() : m_menu(nullptr), m_engine(nullptr)
+UIManager::UIController() : m_menu(nullptr), m_engine(nullptr)
 {
 }
 
-UIController::~UIController()
+UIManager::~UIController()
 {
     Shutdown();
 }
 
-bool UIController::Initialize(Engine *engine)
+bool UIManager::Initialize(Engine *engine)
 {
     if (!engine)
     {
-        TraceLog(LOG_ERROR, "[UIController] Engine is null");
+        TraceLog(LOG_ERROR, "[UIManager] Engine is null");
         return false;
     }
 
     m_engine = engine;
-    TraceLog(LOG_INFO, "[UIController] Initializing...");
+    TraceLog(LOG_INFO, "[UIManager] Initializing...");
 
     // Create our own components
     try
@@ -51,41 +51,41 @@ bool UIController::Initialize(Engine *engine)
             if (audioManager && m_menu->GetSettingsManager())
             {
                 m_menu->GetSettingsManager()->SetAudioManager(audioManager.get());
-                TraceLog(LOG_INFO, "[UIController] AudioManager connected to SettingsManager");
+                TraceLog(LOG_INFO, "[UIManager] AudioManager connected to SettingsManager");
             }
             else
             {
                 TraceLog(LOG_WARNING,
-                         "[UIController] Could not connect AudioManager to SettingsManager");
+                         "[UIManager] Could not connect AudioManager to SettingsManager");
             }
 
             // Camera will be injected later in PlayerSystem::RegisterServices
             // after Player is created, so we don't do anything here
 
-            TraceLog(LOG_INFO, "[UIController] Menu initialized");
+            TraceLog(LOG_INFO, "[UIManager] Menu initialized");
         }
         else
         {
             TraceLog(LOG_WARNING,
-                     "[UIController] Menu created but not fully initialized (no Engine)");
+                     "[UIManager] Menu created but not fully initialized (no Engine)");
         }
 
         // Register services in Initialize so they're available to other systems
         RegisterServices(engine);
 
-        TraceLog(LOG_INFO, "[UIController] Initialized successfully");
+        TraceLog(LOG_INFO, "[UIManager] Initialized successfully");
         return true;
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "[UIController] Failed to create components: %s", e.what());
+        TraceLog(LOG_ERROR, "[UIManager] Failed to create components: %s", e.what());
         return false;
     }
 }
 
-void UIController::Shutdown()
+void UIManager::Shutdown()
 {
-    TraceLog(LOG_INFO, "[UIController] Shutting down...");
+    TraceLog(LOG_INFO, "[UIManager] Shutting down...");
 
     // Clean up our own resources (we own them)
     if (m_menu)
@@ -96,10 +96,10 @@ void UIController::Shutdown()
     // Dependencies - references only, don't delete
     m_engine = nullptr;
 
-    TraceLog(LOG_INFO, "[UIController] Shutdown complete");
+    TraceLog(LOG_INFO, "[UIManager] Shutdown complete");
 }
 
-void UIController::Update(float deltaTime)
+void UIManager::Update(float deltaTime)
 {
     if (m_menu)
     {
@@ -108,36 +108,36 @@ void UIController::Update(float deltaTime)
     (void)deltaTime;
 }
 
-void UIController::Render()
+void UIManager::Render()
 {
     // Menu rendering handled separately by RenderManager
     // This system focuses on logic only
 }
 
-void UIController::RegisterServices(Engine *engine)
+void UIManager::RegisterServices(Engine *engine)
 {
     if (!engine)
     {
         return;
     }
 
-    TraceLog(LOG_INFO, "[UIController] Registering services...");
+    TraceLog(LOG_INFO, "[UIManager] Registering services...");
 
     // Register our own components as services
     if (m_menu)
     {
         engine->RegisterService<MenuService>(std::make_shared<MenuService>(m_menu.get()));
-        TraceLog(LOG_INFO, "[UIController] MenuService registered");
+        TraceLog(LOG_INFO, "[UIManager] MenuService registered");
     }
 }
 
-std::vector<std::string> UIController::GetDependencies() const
+std::vector<std::string> UIManager::GetDependencies() const
 {
     // No dependencies on other game systems
     return {};
 }
 
-ConsoleManager *UIController::GetConsoleManager() const
+ConsoleManager *UIManager::GetConsoleManager() const
 {
     if (!m_menu)
     {
@@ -146,11 +146,11 @@ ConsoleManager *UIController::GetConsoleManager() const
     return m_menu->GetConsoleManager();
 }
 
-void UIController::HandleMenuActions(bool *showMenu, bool *isGameInitialized)
+void UIManager::HandleMenuActions(bool *showMenu, bool *isGameInitialized)
 {
     if (!m_menu)
     {
-        TraceLog(LOG_WARNING, "[UIController] HandleMenuActions() - Menu not available");
+        TraceLog(LOG_WARNING, "[UIManager] HandleMenuActions() - Menu not available");
         return;
     }
 
@@ -166,7 +166,7 @@ void UIController::HandleMenuActions(bool *showMenu, bool *isGameInitialized)
         break;
     case MenuAction::StartGameWithMap:
         TraceLog(LOG_INFO,
-                 "[UIController] HandleMenuActions() - Starting HandleStartGameWithMap()");
+                 "[UIManager] HandleMenuActions() - Starting HandleStartGameWithMap()");
         HandleStartGameWithMap(showMenu, isGameInitialized);
         break;
     case MenuAction::ExitGame:
@@ -177,21 +177,21 @@ void UIController::HandleMenuActions(bool *showMenu, bool *isGameInitialized)
     }
 }
 
-void UIController::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
+void UIManager::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
 {
-    TraceLog(LOG_INFO, "[UIController] HandleSinglePlayer() - Starting singleplayer...");
+    TraceLog(LOG_INFO, "[UIManager] HandleSinglePlayer() - Starting singleplayer...");
 
     if (!m_menu || !m_engine)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] HandleSinglePlayer() - Required services not available");
+                 "[UIManager] HandleSinglePlayer() - Required services not available");
         return;
     }
 
     auto playerSystemService = m_engine->GetService<PlayerSystemService>();
     if (!playerSystemService || !playerSystemService->playerSystem)
     {
-        TraceLog(LOG_ERROR, "[UIController] HandleSinglePlayer() - PlayerSystem not available");
+        TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - PlayerSystem not available");
         return;
     }
 
@@ -201,21 +201,21 @@ void UIController::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
     try
     {
         playerSystemService->playerSystem->InitializePlayer();
-        TraceLog(LOG_INFO, "[UIController] HandleSinglePlayer() - Player initialized successfully");
+        TraceLog(LOG_INFO, "[UIManager] HandleSinglePlayer() - Player initialized successfully");
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "[UIController] HandleSinglePlayer() - Failed to initialize player: %s",
+        TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - Failed to initialize player: %s",
                  e.what());
         TraceLog(LOG_WARNING,
-                 "[UIController] HandleSinglePlayer() - Player may not render correctly");
+                 "[UIManager] HandleSinglePlayer() - Player may not render correctly");
     }
 
     *showMenu = false;         // Hide menu
     *isGameInitialized = true; // Mark game as initialized
 }
 
-void UIController::HideMenuAndStartGame(bool *showMenu)
+void UIManager::HideMenuAndStartGame(bool *showMenu)
 {
     *showMenu = false;
 
@@ -228,11 +228,11 @@ void UIController::HideMenuAndStartGame(bool *showMenu)
     }
 }
 
-void UIController::EnsurePlayerSafePosition()
+void UIManager::EnsurePlayerSafePosition()
 {
     if (!m_engine)
     {
-        TraceLog(LOG_ERROR, "[UIController] EnsurePlayerSafePosition() - Engine not available");
+        TraceLog(LOG_ERROR, "[UIManager] EnsurePlayerSafePosition() - Engine not available");
         return;
     }
 
@@ -242,7 +242,7 @@ void UIController::EnsurePlayerSafePosition()
     if (!playerService || !player || !collisionManager)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] EnsurePlayerSafePosition() - Required services not available");
+                 "[UIManager] EnsurePlayerSafePosition() - Required services not available");
         return;
     }
 
@@ -251,7 +251,7 @@ void UIController::EnsurePlayerSafePosition()
     if (player->GetPlayerPosition().x == 0.0f && player->GetPlayerPosition().y == 0.0f &&
         player->GetPlayerPosition().z == 0.0f)
     {
-        TraceLog(LOG_INFO, "[UIController] EnsurePlayerSafePosition() - Player position is origin, "
+        TraceLog(LOG_INFO, "[UIManager] EnsurePlayerSafePosition() - Player position is origin, "
                            "resetting to safe position");
         player->SetPlayerPosition({0.0f, 2.0f, 0.0f}); // PLAYER_SAFE_SPAWN_HEIGHT = 2.0f
     }
@@ -262,12 +262,12 @@ void UIController::EnsurePlayerSafePosition()
     player->UpdatePlayerCollision();
 }
 
-void UIController::ReinitializeCollisionSystemForResume()
+void UIManager::ReinitializeCollisionSystemForResume()
 {
     if (!m_engine)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] ReinitializeCollisionSystemForResume() - Engine not available");
+                 "[UIManager] ReinitializeCollisionSystemForResume() - Engine not available");
         return;
     }
 
@@ -277,14 +277,14 @@ void UIController::ReinitializeCollisionSystemForResume()
 
     if (!mapSystemService || !mapSystem || !collisionManager || !models)
     {
-        TraceLog(LOG_ERROR, "[UIController] ReinitializeCollisionSystemForResume() - Required "
+        TraceLog(LOG_ERROR, "[UIManager] ReinitializeCollisionSystemForResume() - Required "
                             "services not available");
         return;
     }
 
     MapSystem *mapSystem = mapSystem;
 
-    TraceLog(LOG_WARNING, "[UIController] ReinitializeCollisionSystemForResume() - No colliders "
+    TraceLog(LOG_WARNING, "[UIManager] ReinitializeCollisionSystemForResume() - No colliders "
                           "found, reinitializing...");
     std::vector<std::string> requiredModels =
         ModelAnalyzer::GetModelsRequiredForMap(mapSystem->GetCurrentMapPath());
@@ -305,39 +305,39 @@ void UIController::ReinitializeCollisionSystemForResume()
                                                                       requiredModels);
             TraceLog(
                 LOG_INFO,
-                "[UIController] ReinitializeCollisionSystemForResume() - Resume model collisions "
+                "[UIManager] ReinitializeCollisionSystemForResume() - Resume model collisions "
                 "created successfully");
         }
         catch (const std::exception &modelCollisionException)
         {
             TraceLog(LOG_WARNING,
-                     "[UIController] ReinitializeCollisionSystemForResume() - Resume model "
+                     "[UIManager] ReinitializeCollisionSystemForResume() - Resume model "
                      "collision creation "
                      "failed: %s",
                      modelCollisionException.what());
             TraceLog(
                 LOG_WARNING,
-                "[UIController] ReinitializeCollisionSystemForResume() - Continuing with basic "
+                "[UIManager] ReinitializeCollisionSystemForResume() - Continuing with basic "
                 "collision system only");
         }
     }
     catch (const std::exception &e)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] ReinitializeCollisionSystemForResume() - Failed to reinitialize "
+                 "[UIManager] ReinitializeCollisionSystemForResume() - Failed to reinitialize "
                  "collision system "
                  "for resume: %s",
                  e.what());
     }
 }
 
-void UIController::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
+void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
 {
-    TraceLog(LOG_INFO, "[UIController] HandleResumeGame() - Resuming game...");
+    TraceLog(LOG_INFO, "[UIManager] HandleResumeGame() - Resuming game...");
 
     if (!m_menu || !m_engine)
     {
-        TraceLog(LOG_ERROR, "[UIController] HandleResumeGame() - Required services not available");
+        TraceLog(LOG_ERROR, "[UIManager] HandleResumeGame() - Required services not available");
         return;
     }
 
@@ -349,7 +349,7 @@ void UIController::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
     if (!models || !mapSystemService || !mapSystem || !playerSystemService ||
         !playerSystemService->playerSystem || !collisionManager)
     {
-        TraceLog(LOG_ERROR, "[UIController] HandleResumeGame() - Required services not available");
+        TraceLog(LOG_ERROR, "[UIManager] HandleResumeGame() - Required services not available");
         return;
     }
 
@@ -360,12 +360,12 @@ void UIController::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
 
     // Restore game state first (player position, velocity, etc.)
     playerSystem->RestorePlayerState();
-    TraceLog(LOG_INFO, "[UIController] HandleResumeGame() - Game state restored");
+    TraceLog(LOG_INFO, "[UIManager] HandleResumeGame() - Game state restored");
 
     // Ensure game is properly initialized for resume
     if (!(*isGameInitialized))
     {
-        TraceLog(LOG_INFO, "[UIController] HandleResumeGame() - Initializing game for resume...");
+        TraceLog(LOG_INFO, "[UIManager] HandleResumeGame() - Initializing game for resume...");
 
         // Load models for the current map (use saved map)
         std::vector<std::string> requiredModels =
@@ -375,31 +375,31 @@ void UIController::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
         // Initialize basic collision system first
         if (!mapSystem->InitCollisionsWithModelsSafe(requiredModels))
         {
-            TraceLog(LOG_ERROR, "[UIController] HandleResumeGame() - Failed to initialize basic "
+            TraceLog(LOG_ERROR, "[UIManager] HandleResumeGame() - Failed to initialize basic "
                                 "collision system for singleplayer");
             TraceLog(
                 LOG_ERROR,
-                "[UIController] HandleResumeGame() - Cannot continue without collision system");
+                "[UIManager] HandleResumeGame() - Cannot continue without collision system");
             return;
         }
         TraceLog(
             LOG_INFO,
-            "[UIController] HandleResumeGame() - Collision system initialized for singleplayer");
+            "[UIManager] HandleResumeGame() - Collision system initialized for singleplayer");
 
         // Initialize player after map is loaded
         try
         {
             playerSystem->InitializePlayer();
-            TraceLog(LOG_INFO, "[UIController] HandleResumeGame() - Player initialized for resume");
+            TraceLog(LOG_INFO, "[UIManager] HandleResumeGame() - Player initialized for resume");
         }
         catch (const std::exception &e)
         {
             TraceLog(
                 LOG_ERROR,
-                "[UIController] HandleResumeGame() - Failed to initialize player for resume: %s",
+                "[UIManager] HandleResumeGame() - Failed to initialize player for resume: %s",
                 e.what());
             TraceLog(LOG_WARNING,
-                     "[UIController] HandleResumeGame() - Player may not render correctly");
+                     "[UIManager] HandleResumeGame() - Player may not render correctly");
         }
     }
     else
@@ -416,10 +416,10 @@ void UIController::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
 
     // Hide the menu and resume the game
     HideMenuAndStartGame(showMenu);
-    TraceLog(LOG_INFO, "[UIController] HandleResumeGame() - Game resumed successfully");
+    TraceLog(LOG_INFO, "[UIManager] HandleResumeGame() - Game resumed successfully");
 }
 
-std::string UIController::ConvertMapNameToPath(const std::string &selectedMapName)
+std::string UIManager::ConvertMapNameToPath(const std::string &selectedMapName)
 {
     std::string mapPath;
     if (selectedMapName.length() >= 3 && isalpha(selectedMapName[0]) && selectedMapName[1] == ':' &&
@@ -442,9 +442,9 @@ std::string UIController::ConvertMapNameToPath(const std::string &selectedMapNam
     return mapPath;
 }
 
-std::vector<std::string> UIController::AnalyzeMapForRequiredModels(const std::string &mapPath)
+std::vector<std::string> UIManager::AnalyzeMapForRequiredModels(const std::string &mapPath)
 {
-    TraceLog(LOG_INFO, "[UIController] AnalyzeMapForRequiredModels() - Analyzing map to determine "
+    TraceLog(LOG_INFO, "[UIManager] AnalyzeMapForRequiredModels() - Analyzing map to determine "
                        "required models...");
     std::vector<std::string> requiredModels;
 
@@ -453,7 +453,7 @@ std::vector<std::string> UIController::AnalyzeMapForRequiredModels(const std::st
         requiredModels = ModelAnalyzer::GetModelsRequiredForMap(mapPath);
         if (requiredModels.empty())
         {
-            TraceLog(LOG_WARNING, "[UIController] AnalyzeMapForRequiredModels() - No models "
+            TraceLog(LOG_WARNING, "[UIManager] AnalyzeMapForRequiredModels() - No models "
                                   "required for map, but player model is always needed");
             requiredModels.emplace_back("player_low"); // Always include player model
         }
@@ -461,40 +461,40 @@ std::vector<std::string> UIController::AnalyzeMapForRequiredModels(const std::st
     catch (const std::exception &e)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] AnalyzeMapForRequiredModels() - Failed to analyze map for "
+                 "[UIManager] AnalyzeMapForRequiredModels() - Failed to analyze map for "
                  "required models: %s",
                  e.what());
-        TraceLog(LOG_ERROR, "[UIController] AnalyzeMapForRequiredModels() - Cannot continue "
+        TraceLog(LOG_ERROR, "[UIManager] AnalyzeMapForRequiredModels() - Cannot continue "
                             "without model analysis");
         throw;
     }
 
-    TraceLog(LOG_INFO, "[UIController] AnalyzeMapForRequiredModels() - Required models for map:");
+    TraceLog(LOG_INFO, "[UIManager] AnalyzeMapForRequiredModels() - Required models for map:");
     for (const auto &model : requiredModels)
     {
-        TraceLog(LOG_INFO, "[UIController] AnalyzeMapForRequiredModels() -   - %s", model.c_str());
+        TraceLog(LOG_INFO, "[UIManager] AnalyzeMapForRequiredModels() -   - %s", model.c_str());
     }
-    TraceLog(LOG_INFO, "[UIController] AnalyzeMapForRequiredModels() - Total models required: %d",
+    TraceLog(LOG_INFO, "[UIManager] AnalyzeMapForRequiredModels() - Total models required: %d",
              requiredModels.size());
 
     return requiredModels;
 }
 
-bool UIController::LoadRequiredModels(const std::vector<std::string> &requiredModels)
+bool UIManager::LoadRequiredModels(const std::vector<std::string> &requiredModels)
 {
     TraceLog(LOG_INFO,
-             "[UIController] LoadRequiredModels() - Loading required models selectively...");
+             "[UIManager] LoadRequiredModels() - Loading required models selectively...");
 
     if (!m_engine)
     {
-        TraceLog(LOG_ERROR, "[UIController] LoadRequiredModels() - Engine not available");
+        TraceLog(LOG_ERROR, "[UIManager] LoadRequiredModels() - Engine not available");
         return false;
     }
 
     auto models = m_engine->GetService<ModelLoader>();
     if (!models)
     {
-        TraceLog(LOG_ERROR, "[UIController] LoadRequiredModels() - ModelLoader not available");
+        TraceLog(LOG_ERROR, "[UIManager] LoadRequiredModels() - ModelLoader not available");
         return false;
     }
 
@@ -502,27 +502,27 @@ bool UIController::LoadRequiredModels(const std::vector<std::string> &requiredMo
     if (!loadResult || loadResult->loadedModels == 0)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] LoadRequiredModels() - Failed to load any required models");
-        TraceLog(LOG_ERROR, "[UIController] LoadRequiredModels() - Cannot continue without models");
+                 "[UIManager] LoadRequiredModels() - Failed to load any required models");
+        TraceLog(LOG_ERROR, "[UIManager] LoadRequiredModels() - Cannot continue without models");
         return false;
     }
     TraceLog(LOG_INFO,
-             "[UIController] LoadRequiredModels() - Successfully loaded %d/%d required models in "
+             "[UIManager] LoadRequiredModels() - Successfully loaded %d/%d required models in "
              "%.2f seconds",
              loadResult->loadedModels, loadResult->totalModels, loadResult->loadingTime);
     return true;
 }
 
-bool UIController::InitializeCollisionSystemWithModels(
+bool UIManager::InitializeCollisionSystemWithModels(
     const std::vector<std::string> &requiredModels)
 {
-    TraceLog(LOG_INFO, "[UIController] InitializeCollisionSystemWithModels() - Initializing "
+    TraceLog(LOG_INFO, "[UIManager] InitializeCollisionSystemWithModels() - Initializing "
                        "collision system with required models...");
 
     if (!m_engine)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] InitializeCollisionSystemWithModels() - Engine not available");
+                 "[UIManager] InitializeCollisionSystemWithModels() - Engine not available");
         return false;
     }
 
@@ -530,7 +530,7 @@ bool UIController::InitializeCollisionSystemWithModels(
     if (!mapSystemService || !mapSystem)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] InitializeCollisionSystemWithModels() - MapSystem not available");
+                 "[UIManager] InitializeCollisionSystemWithModels() - MapSystem not available");
         return false;
     }
 
@@ -538,22 +538,22 @@ bool UIController::InitializeCollisionSystemWithModels(
 
     if (!mapSystem->InitCollisionsWithModelsSafe(requiredModels))
     {
-        TraceLog(LOG_ERROR, "[UIController] InitializeCollisionSystemWithModels() - Failed to "
+        TraceLog(LOG_ERROR, "[UIManager] InitializeCollisionSystemWithModels() - Failed to "
                             "initialize collision system with required models");
-        TraceLog(LOG_ERROR, "[UIController] InitializeCollisionSystemWithModels() - Cannot "
+        TraceLog(LOG_ERROR, "[UIManager] InitializeCollisionSystemWithModels() - Cannot "
                             "continue without collision system");
         return false;
     }
-    TraceLog(LOG_INFO, "[UIController] InitializeCollisionSystemWithModels() - Collision system "
+    TraceLog(LOG_INFO, "[UIManager] InitializeCollisionSystemWithModels() - Collision system "
                        "initialized successfully");
     return true;
 }
 
-void UIController::RegisterPreloadedModels()
+void UIManager::RegisterPreloadedModels()
 {
     if (!m_engine)
     {
-        TraceLog(LOG_ERROR, "[UIController] RegisterPreloadedModels() - Engine not available");
+        TraceLog(LOG_ERROR, "[UIManager] RegisterPreloadedModels() - Engine not available");
         return;
     }
 
@@ -563,7 +563,7 @@ void UIController::RegisterPreloadedModels()
     if (!mapSystemService || !mapSystem || !models)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] RegisterPreloadedModels() - Required services not available");
+                 "[UIManager] RegisterPreloadedModels() - Required services not available");
         return;
     }
 
@@ -572,7 +572,7 @@ void UIController::RegisterPreloadedModels()
     if (!mapSystem->GetGameMap().GetMapModels().empty())
     {
         TraceLog(LOG_INFO,
-                 "[UIController] RegisterPreloadedModels() - Registering %d preloaded models from "
+                 "[UIManager] RegisterPreloadedModels() - Registering %d preloaded models from "
                  "map into ModelLoader",
                  mapSystem->GetGameMap().GetMapModels().size());
         for (const auto &p : mapSystem->GetGameMap().GetMapModels())
@@ -586,14 +586,14 @@ void UIController::RegisterPreloadedModels()
                 if (models->RegisterLoadedModel(modelName, loaded))
                 {
                     TraceLog(LOG_INFO,
-                             "[UIController] RegisterPreloadedModels() - Successfully registered "
+                             "[UIManager] RegisterPreloadedModels() - Successfully registered "
                              "model from map: %s (meshCount: %d)",
                              modelName.c_str(), loaded.meshCount);
                 }
                 else
                 {
                     TraceLog(LOG_WARNING,
-                             "[UIController] RegisterPreloadedModels() - Failed to register model "
+                             "[UIManager] RegisterPreloadedModels() - Failed to register model "
                              "from map: %s",
                              modelName.c_str());
                 }
@@ -601,7 +601,7 @@ void UIController::RegisterPreloadedModels()
             else
             {
                 TraceLog(LOG_WARNING,
-                         "[UIController] RegisterPreloadedModels() - Skipping invalid model from "
+                         "[UIManager] RegisterPreloadedModels() - Skipping invalid model from "
                          "map: %s (meshCount: %d)",
                          modelName.c_str(), loaded.meshCount);
             }
@@ -609,23 +609,23 @@ void UIController::RegisterPreloadedModels()
     }
     else
     {
-        TraceLog(LOG_INFO, "[UIController] RegisterPreloadedModels() - No preloaded models in "
+        TraceLog(LOG_INFO, "[UIManager] RegisterPreloadedModels() - No preloaded models in "
                            "GameMap to register");
     }
 }
 
-bool UIController::AutoLoadModelIfNeeded(const std::string &requested, std::string &candidateName)
+bool UIManager::AutoLoadModelIfNeeded(const std::string &requested, std::string &candidateName)
 {
     if (!m_engine)
     {
-        TraceLog(LOG_ERROR, "[UIController] AutoLoadModelIfNeeded() - Engine not available");
+        TraceLog(LOG_ERROR, "[UIManager] AutoLoadModelIfNeeded() - Engine not available");
         return false;
     }
 
     auto models = m_engine->GetService<ModelLoader>();
     if (!models)
     {
-        TraceLog(LOG_ERROR, "[UIController] AutoLoadModelIfNeeded() - ModelLoader not available");
+        TraceLog(LOG_ERROR, "[UIManager] AutoLoadModelIfNeeded() - ModelLoader not available");
         return false;
     }
 
@@ -652,7 +652,7 @@ bool UIController::AutoLoadModelIfNeeded(const std::string &requested, std::stri
                     resourcePath = std::string(PROJECT_ROOT_DIR) + "/resources/" + requested + ext;
 
                 TraceLog(LOG_INFO,
-                         "[UIController] AutoLoadModelIfNeeded() - Attempting to auto-load model "
+                         "[UIManager] AutoLoadModelIfNeeded() - Attempting to auto-load model "
                          "'%s' from %s",
                          requested.c_str(), resourcePath.c_str());
                 if (models->LoadSingleModel(stem.empty() ? requested : stem, resourcePath, true))
@@ -660,7 +660,7 @@ bool UIController::AutoLoadModelIfNeeded(const std::string &requested, std::stri
                     candidateName = stem.empty() ? requested : stem;
                     exists = true;
                     TraceLog(LOG_INFO,
-                             "[UIController] AutoLoadModelIfNeeded() - Auto-loaded model '%s'",
+                             "[UIManager] AutoLoadModelIfNeeded() - Auto-loaded model '%s'",
                              candidateName.c_str());
                     break;
                 }
@@ -671,11 +671,11 @@ bool UIController::AutoLoadModelIfNeeded(const std::string &requested, std::stri
     return exists;
 }
 
-void UIController::CreateModelInstancesForMap()
+void UIManager::CreateModelInstancesForMap()
 {
     if (!m_engine)
     {
-        TraceLog(LOG_ERROR, "[UIController] CreateModelInstancesForMap() - Engine not available");
+        TraceLog(LOG_ERROR, "[UIManager] CreateModelInstancesForMap() - Engine not available");
         return;
     }
 
@@ -685,14 +685,14 @@ void UIController::CreateModelInstancesForMap()
     if (!mapSystemService || !mapSystem || !models)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] CreateModelInstancesForMap() - Required services not available");
+                 "[UIManager] CreateModelInstancesForMap() - Required services not available");
         return;
     }
 
     MapSystem *mapSystem = mapSystem;
 
     TraceLog(LOG_INFO,
-             "[UIController] CreateModelInstancesForMap() - Creating model instances for "
+             "[UIManager] CreateModelInstancesForMap() - Creating model instances for "
              "array-format map (%d objects)",
              mapSystem->GetGameMap().GetMapObjects().size());
     for (const auto &object : mapSystem->GetGameMap().GetMapObjects())
@@ -705,7 +705,7 @@ void UIController::CreateModelInstancesForMap()
             if (!AutoLoadModelIfNeeded(requested, candidateName))
             {
                 TraceLog(LOG_WARNING,
-                         "[UIController] CreateModelInstancesForMap() - Model '%s' not available "
+                         "[UIManager] CreateModelInstancesForMap() - Model '%s' not available "
                          "after auto-load attempts; skipping instance for object '%s'",
                          requested.c_str(), object.name.c_str());
                 continue;
@@ -724,40 +724,40 @@ void UIController::CreateModelInstancesForMap()
             {
                 TraceLog(
                     LOG_WARNING,
-                    "[UIController] CreateModelInstancesForMap() - Failed to add instance for '%s'",
+                    "[UIManager] CreateModelInstancesForMap() - Failed to add instance for '%s'",
                     candidateName.c_str());
             }
             else
             {
                 TraceLog(LOG_INFO,
-                         "[UIController] CreateModelInstancesForMap() - Added instance for '%s'",
+                         "[UIManager] CreateModelInstancesForMap() - Added instance for '%s'",
                          candidateName.c_str());
             }
         }
         else if (object.type == MapObjectType::LIGHT)
         {
             TraceLog(LOG_INFO,
-                     "[UIController] CreateModelInstancesForMap() - Skipping LIGHT object '%s' for "
+                     "[UIManager] CreateModelInstancesForMap() - Skipping LIGHT object '%s' for "
                      "model instance creation",
                      object.name.c_str());
         }
     }
 }
 
-void UIController::LoadMapObjects(const std::string &mapPath)
+void UIManager::LoadMapObjects(const std::string &mapPath)
 {
-    TraceLog(LOG_INFO, "[UIController] LoadMapObjects() - Loading map objects...");
+    TraceLog(LOG_INFO, "[UIManager] LoadMapObjects() - Loading map objects...");
 
     if (!m_engine)
     {
-        TraceLog(LOG_ERROR, "[UIController] LoadMapObjects() - Engine not available");
+        TraceLog(LOG_ERROR, "[UIManager] LoadMapObjects() - Engine not available");
         throw std::runtime_error("Engine not available");
     }
 
     auto mapSystem = m_engine->GetMapSystem();
     if (!mapSystemService || !mapSystem)
     {
-        TraceLog(LOG_ERROR, "[UIController] LoadMapObjects() - MapSystem not available");
+        TraceLog(LOG_ERROR, "[UIManager] LoadMapObjects() - MapSystem not available");
         throw std::runtime_error("MapSystem not available");
     }
 
@@ -778,7 +778,7 @@ void UIController::LoadMapObjects(const std::string &mapPath)
             {
                 TraceLog(
                     LOG_INFO,
-                    "[UIController] LoadMapObjects() - Detected array format, using LoadGameMap");
+                    "[UIManager] LoadMapObjects() - Detected array format, using LoadGameMap");
 
                 MapLoader loader;
                 mapSystem->GetGameMap() = loader.LoadMap(mapPath.c_str());
@@ -793,7 +793,7 @@ void UIController::LoadMapObjects(const std::string &mapPath)
             {
                 // Assume standard JSON object format
                 TraceLog(LOG_INFO,
-                         "[UIController] LoadMapObjects() - Detected object format, using "
+                         "[UIManager] LoadMapObjects() - Detected object format, using "
                          "LoadMapObjects");
                 mapSystem->LoadEditorMap(mapPath);
             }
@@ -801,41 +801,41 @@ void UIController::LoadMapObjects(const std::string &mapPath)
         else
         {
             TraceLog(LOG_WARNING,
-                     "[UIController] LoadMapObjects() - Could not open file to detect format, "
+                     "[UIManager] LoadMapObjects() - Could not open file to detect format, "
                      "defaulting to LoadMapObjects: %s",
                      mapPath.c_str());
             mapSystem->LoadEditorMap(mapPath);
         }
 
-        TraceLog(LOG_INFO, "[UIController] LoadMapObjects() - Map objects loaded successfully");
+        TraceLog(LOG_INFO, "[UIManager] LoadMapObjects() - Map objects loaded successfully");
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "[UIController] LoadMapObjects() - Failed to load map objects: %s",
+        TraceLog(LOG_ERROR, "[UIManager] LoadMapObjects() - Failed to load map objects: %s",
                  e.what());
         throw;
     }
 }
 
-void UIController::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialized)
+void UIManager::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialized)
 {
     std::string selectedMapName = m_menu->GetSelectedMapName();
-    TraceLog(LOG_INFO, "[UIController] HandleStartGameWithMap() - Starting game with map: %s",
+    TraceLog(LOG_INFO, "[UIManager] HandleStartGameWithMap() - Starting game with map: %s",
              selectedMapName.c_str());
 
     if (selectedMapName.empty())
     {
-        TraceLog(LOG_WARNING, "[UIController] HandleStartGameWithMap() - No map selected");
+        TraceLog(LOG_WARNING, "[UIManager] HandleStartGameWithMap() - No map selected");
         return;
     }
 
     std::string mapPath = ConvertMapNameToPath(selectedMapName);
-    TraceLog(LOG_INFO, "[UIController] HandleStartGameWithMap() - Map path: %s", mapPath.c_str());
+    TraceLog(LOG_INFO, "[UIManager] HandleStartGameWithMap() - Map path: %s", mapPath.c_str());
 
     if (!m_engine)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] HandleStartGameWithMap() - Required services not available");
+                 "[UIManager] HandleStartGameWithMap() - Required services not available");
         return;
     }
 
@@ -846,7 +846,7 @@ void UIController::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialize
         !playerSystemService->playerSystem)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] HandleStartGameWithMap() - Required services not available");
+                 "[UIManager] HandleStartGameWithMap() - Required services not available");
         return;
     }
 
@@ -879,7 +879,7 @@ void UIController::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialize
         // 5. Initialize player
         playerSystem->InitializePlayer();
         TraceLog(LOG_INFO,
-                 "[UIController] HandleStartGameWithMap() - Player initialized successfully");
+                 "[UIManager] HandleStartGameWithMap() - Player initialized successfully");
 
         *showMenu = false;
         *isGameInitialized = true;
@@ -887,16 +887,16 @@ void UIController::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialize
     catch (const std::exception &e)
     {
         TraceLog(LOG_ERROR,
-                 "[UIController] HandleStartGameWithMap() - Failed to start game with map: %s",
+                 "[UIManager] HandleStartGameWithMap() - Failed to start game with map: %s",
                  e.what());
         TraceLog(LOG_WARNING,
-                 "[UIController] HandleStartGameWithMap() - Game may not function correctly");
+                 "[UIManager] HandleStartGameWithMap() - Game may not function correctly");
     }
 }
 
-void UIController::HandleExitGame(bool *showMenu)
+void UIManager::HandleExitGame(bool *showMenu)
 {
-    TraceLog(LOG_INFO, "[UIController] HandleExitGame() - Exiting game...");
+    TraceLog(LOG_INFO, "[UIManager] HandleExitGame() - Exiting game...");
     // CloseWindow(); // Let EngineApplication handle shutdown via ShouldClose()
     // But we can signal it if needed. For now, Raylib's CloseWindow or exit(0)
     // is often used in simple apps, but Engine should handle it.

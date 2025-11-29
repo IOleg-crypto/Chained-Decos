@@ -38,49 +38,30 @@ public:
     };
 
     InputManager() = default;
-    ~InputManager() = default;
+    ~InputManager() override = default;
 
     InputManager(const InputManager &other) = delete;
     InputManager(InputManager &&other) = delete;
 
-    // Register different types of input actions
-    void RegisterAction(int key, const std::function<void()> &action,
-                        InputType type = InputType::PRESSED);
-    void RegisterPressedAction(int key, const std::function<void()> &action);
-    void RegisterHeldAction(int key, const std::function<void()> &action);
-    void RegisterReleasedAction(int key, const std::function<void()> &action);
-
-    // Remove actions
-    void UnregisterAction(int key, InputType type);
-    void ClearActions();
-
-    // Process all registered input actions
-    void ProcessInput() const;
-
-    // Direct input queries
-    bool IsKeyPressed(int key) const
-    {
-        return ::IsKeyPressed(key);
-    }
-    bool IsKeyDown(int key) const
-    {
-        return ::IsKeyDown(key);
-    }
-    bool IsKeyReleased(int key) const
-    {
-        return ::IsKeyReleased(key);
-    }
-
     // IInputManager interface
-    virtual bool Initialize() override
-    {
-        return true;
-    }
-    virtual void Shutdown() override
-    {
-        ClearActions();
-    }
-    virtual void Update(float deltaTime) override;
+    bool Initialize() override;
+    void Shutdown() override;
+    void Update(float deltaTime) override;
+
+    void RegisterAction(int key, const std::function<void()> &action,
+                        InputType type = InputType::PRESSED) override;
+    void RegisterPressedAction(int key, const std::function<void()> &action) override;
+    void RegisterHeldAction(int key, const std::function<void()> &action) override;
+    void RegisterReleasedAction(int key, const std::function<void()> &action) override;
+
+    void UnregisterAction(int key, InputType type) override;
+    void ClearActions() override;
+
+    void ProcessInput() const override;
+
+    bool IsKeyPressed(int key) const override;
+    bool IsKeyDown(int key) const override;
+    bool IsKeyReleased(int key) const override;
 
 private:
     std::unordered_map<int, std::function<void()>> m_pressedActions;
