@@ -12,15 +12,14 @@
 #include <vector>
 
 // Forward declaration to avoid circular dependency
-class MapSystem;
+// Forward declaration to avoid circular dependency
+class LevelManager;
 
-// System for managing player and gameplay logic
-// Creates and owns its components independently
 class PlayerController : public IEngineModule
 {
 public:
-    PlayerSystem();
-    ~PlayerSystem() override;
+    PlayerController();
+    ~PlayerController() override;
 
     // IEngineModule interface
     const char *GetModuleName() const override
@@ -73,8 +72,9 @@ private:
     AudioManager *m_audioManager;
 
     // Dependencies obtained through Engine (references only)
+    // Dependencies obtained through Engine (references only)
     CollisionManager *m_collisionManager;
-    MapSystem *m_mapSystem;
+    LevelManager *m_mapSystem;
     ModelLoader *m_models;
     Engine *m_engine;
 

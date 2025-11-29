@@ -94,3 +94,29 @@ void InputManager::Update(float deltaTime)
     ProcessInput();
 }
 
+bool InputManager::Initialize()
+{
+    // InputManager doesn't need special initialization
+    return true;
+}
+
+void InputManager::Shutdown()
+{
+    // Clean up all registered actions
+    ClearActions();
+}
+
+bool InputManager::IsKeyPressed(int key) const
+{
+    return ::IsKeyPressed(key);
+}
+
+bool InputManager::IsKeyDown(int key) const
+{
+    return ::IsKeyDown(key);
+}
+
+bool InputManager::IsKeyReleased(int key) const
+{
+    return ::IsKeyReleased(key);
+}

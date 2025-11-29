@@ -1,5 +1,9 @@
 #include "Engine.h"
 #include "core/object/module/Core/ModuleManager.h"
+#include "project/chaineddecos/Menu/Menu.h"
+#include "project/chaineddecos/Player/Core/Player.h"
+#include "project/chaineddecos/Systems/MapSystem/LevelManager.h"
+#include "project/chaineddecos/Systems/PlayerSystem/PlayerController.h"
 #include "servers/input/Core/InputManager.h"
 #include "servers/rendering/Core/RenderManager.h"
 #include <memory>
@@ -19,7 +23,7 @@ Engine &Engine::Instance()
 Engine::Engine()
 {
     s_instance = this;
-    m_moduleManager = std::make_unique<ModuleManager>(nullptr);
+    m_moduleManager = std::make_unique<ModuleManager>();
 }
 
 Engine::~Engine()
