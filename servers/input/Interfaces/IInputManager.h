@@ -7,7 +7,7 @@
 class IInputManager
 {
 public:
-    enum class InputType
+    enum class InputType : uint8_t
     {
         PRESSED, // Single press
         HELD,    // Continuous while held
