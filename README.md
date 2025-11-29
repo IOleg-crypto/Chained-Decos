@@ -14,6 +14,7 @@ A fast-paced 3D parkour game built with modern C++23 and [raylib](https://www.ra
 Chained Decos is a momentum-based parkour game where players navigate through procedurally generated courses using fluid movement mechanics. The game combines precise physics simulation with intuitive controls to create challenging yet accessible gameplay.
 
 ### Key Highlights
+
 - **Momentum-Based Physics**: Realistic movement with gravity, drag, and collision response
 - **Procedural Generation**: Dynamic parkour courses with varying difficulty levels
 - **Modular Architecture**: Clean separation between engine, game logic, and tools
@@ -21,44 +22,14 @@ Chained Decos is a momentum-based parkour game where players navigate through pr
 
 ## 🏗️ Architecture
 
-> [!WARNING]
-> **Architecture is evolving**: This project is under active development, and the internal architecture may change frequently. The structure described below represents the current state and may not reflect future iterations. Always refer to the source code for the most up-to-date architecture.
+> [!WARNING] > **Architecture is evolving**: This project is under active development, and the internal architecture may change frequently. The structure described below represents the current state and may not reflect future iterations. Always refer to the source code for the most up-to-date architecture.
 
 Chained Decos follows a **modular architecture** with clear separation between engine core, game logic, and development tools:
-
-### High-Level Structure
-
-- **`src/Engine/`** - Core engine layer providing foundational services:
-  - Window management and rendering
-  - Physics and collision detection
-  - Resource management (models, audio, assets)
-  - Input handling
-  - Module system and service locator pattern
-
-- **`src/Game/`** - Game-specific implementation:
-  - Player systems and mechanics
-  - Map management and loading
-  - Game state management
-  - UI and menu systems
-  - Game modules
-
-- **`src/MapEditor/`** - Development tools:
-  - Integrated level editor
-  - Map creation and editing tools
-
-### Architecture Principles
-
-The codebase is organized around these principles:
-- **Separation of Concerns**: Engine, game logic, and tools are clearly separated
-- **Modularity**: Features are organized into independent modules
-- **Dependency Injection**: Services are accessed through a kernel/service system
-- **Component-Based Design**: Entities use composition over inheritance
-
-> **Note**: For detailed architecture documentation, please refer to the source code. The internal structure may be refactored as the project evolves.
 
 ## ✨ Features
 
 ### Core Gameplay
+
 - **3D Parkour Mechanics**: Momentum-based movement with precise controls
 - **Dynamic Map Generation**: Procedurally generated courses with multiple difficulty levels
 - **Real-time Physics**: Advanced collision detection and response system
@@ -66,15 +37,16 @@ The codebase is organized around these principles:
 - **Timer System**: Cross-platform timer display with dynamic font scaling
 
 ### Development Tools
+
 - **Integrated Map Editor**: Full-featured level editor with real-time preview
-- **Particle System** *(Planning)*: Dynamic visual effects for enhanced gameplay
-- **Lighting System** *(Planning)*: Advanced lighting with multiple light sources and shadows
-- **Material Editor** *(Planning)*: Comprehensive material system for visual customization
+- **Particle System** _(Planning)_: Dynamic visual effects for enhanced gameplay
+- **Lighting System** _(Planning)_: Advanced lighting with multiple light sources and shadows
+- **Material Editor** _(Planning)_: Comprehensive material system for visual customization
 
 ### Technical Features
+
 - **High-Performance Engine**: Optimized rendering and physics systems
 - **Cross-Platform Support**: Windows, macOS, and Linux compatibility
-- **Modular Architecture**: Clean separation of engine, game logic, and tools
 - **Comprehensive Testing**: Unit tests with Google Test framework
 - **Advanced Debugging**: Collision visualization, performance metrics, real-time tweaking
 - **Developer Console**: In-game command console with Source engine-style commands
@@ -84,6 +56,7 @@ The codebase is organized around these principles:
 ### Prerequisites
 
 #### Required
+
 - **CMake**: 3.25 or higher
   - Download: https://cmake.org/download/
   - Verify: `cmake --version`
@@ -101,10 +74,12 @@ The codebase is organized around these principles:
 #### System Dependencies
 
 **Windows:**
+
 - Visual Studio 2022 (for MSVC) or MinGW-w64 (for GCC)
 - Windows SDK
 
 **Linux (Ubuntu/Debian):**
+
 ```bash
 sudo apt-get update
 sudo apt-get install build-essential cmake ninja-build \
@@ -113,12 +88,14 @@ sudo apt-get install build-essential cmake ninja-build \
 ```
 
 **Linux (Arch):**
+
 ```bash
 sudo pacman -S base-devel cmake ninja mesa libgl libx11 \
   libxrandr libxi libxcursor libxinerama glfw
 ```
 
 **macOS:**
+
 ```bash
 brew install cmake ninja
 ```
@@ -180,21 +157,25 @@ cd build
 ##### 3. Configure CMake with Ninja
 
 **Release build** (recommended):
+
 ```bash
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
 ```
 
 **Debug build** (for development):
+
 ```bash
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Debug
 ```
 
 **With Map Editor** (enabled by default):
+
 ```bash
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_MAP_EDITOR=ON
 ```
 
 **Without tests** (faster build):
+
 ```bash
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
 ```
@@ -212,6 +193,7 @@ ninja
 ##### 5. Run the Game
 
 The executable will be located at:
+
 - **Windows**: `build/bin/ChainedDecos.exe` (Release) or `build/bin/ChainedDecos_debug.exe` (Debug)
 - **Linux/macOS**: `build/bin/ChainedDecos` (Release) or `build/bin/ChainedDecos_debug` (Debug)
 
@@ -229,11 +211,13 @@ The executable will be located at:
 #### Windows
 
 **Prerequisites:**
+
 - CMake 3.25+
 - Ninja (download from [GitHub](https://github.com/ninja-build/ninja/releases) or install via Chocolatey: `choco install ninja`)
 - Visual Studio 2022 with C++ tools (MSVC) or MinGW-w64 (GCC 13+)
 
 **Build:**
+
 ```bash
 mkdir build && cd build
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -241,6 +225,7 @@ cmake --build . --config Release
 ```
 
 **Common Issues:**
+
 - **"CMake 3.25 required"**: Update CMake from [cmake.org](https://cmake.org/download/)
 - **"Ninja not found"**: Add Ninja to PATH or use full path: `cmake .. -G Ninja -DCMAKE_MAKE_PROGRAM="C:/path/to/ninja.exe"`
 - **"C++23 not supported"**: Update to Visual Studio 2022 17.4+ or MinGW-w64 GCC 13+
@@ -248,6 +233,7 @@ cmake --build . --config Release
 #### Linux
 
 **Ubuntu/Debian:**
+
 ```bash
 # Install dependencies
 sudo apt-get update
@@ -265,6 +251,7 @@ cmake --build . --config Release
 ```
 
 **Arch Linux:**
+
 ```bash
 sudo pacman -S base-devel cmake ninja mesa libgl libx11 \
   libxrandr libxi libxcursor libxinerama glfw
@@ -275,6 +262,7 @@ cmake --build . --config Release
 ```
 
 **Fedora:**
+
 ```bash
 sudo dnf install gcc-c++ cmake ninja-build mesa-libGL-devel \
   libX11-devel libXrandr-devel libXi-devel libXcursor-devel \
@@ -286,6 +274,7 @@ cmake --build . --config Release
 ```
 
 **Common Issues:**
+
 - **OpenGL errors**: `sudo apt-get install libgl1-mesa-dev`
 - **X11 errors**: `sudo apt-get install libx11-dev libxrandr-dev`
 - **Wayland**: Project uses X11 by default (configured in CMakeLists.txt)
@@ -293,11 +282,13 @@ cmake --build . --config Release
 #### macOS
 
 **Prerequisites:**
+
 ```bash
 brew install cmake ninja
 ```
 
 **Build:**
+
 ```bash
 mkdir build && cd build
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -308,6 +299,7 @@ cmake --build . --config Release
 ```
 
 **Common Issues:**
+
 - **"GL_SILENCE_DEPRECATION" warnings**: Normal on macOS, can be ignored
 - **Code signing**: Configure in Xcode if building for distribution
 
@@ -317,20 +309,21 @@ cmake --build . --config Release
 cmake .. -G Ninja -DOPTION_NAME=VALUE
 ```
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `CMAKE_BUILD_TYPE` | `Release` | Build type: `Debug`, `Release`, `RelWithDebInfo`, `MinSizeRel` |
-| `BUILD_TESTS` | `ON` | Build unit tests |
-| `BUILD_MAP_EDITOR` | `ON` | Build the map editor tool |
-| `ENABLE_OPTIMIZATIONS` | `ON` | Enable compiler optimizations |
-| `ENABLE_WARNINGS` | `OFF` | Enable strict compiler warnings |
-| `ENABLE_UNITY_BUILD` | `ON` | Use unity build for faster compilation |
-| `DISABLE_ALL_WARNINGS` | `ON` | Suppress all compiler warnings |
-| `ENABLE_AUDIO` | `ON` | Enable audio support |
-| `ENABLE_PROFILING` | `OFF` | Enable profiling support |
-| `ENABLE_SANITIZERS` | `OFF` | Enable address/undefined sanitizers (Debug only) |
+| Option                 | Default   | Description                                                    |
+| ---------------------- | --------- | -------------------------------------------------------------- |
+| `CMAKE_BUILD_TYPE`     | `Release` | Build type: `Debug`, `Release`, `RelWithDebInfo`, `MinSizeRel` |
+| `BUILD_TESTS`          | `ON`      | Build unit tests                                               |
+| `BUILD_MAP_EDITOR`     | `ON`      | Build the map editor tool                                      |
+| `ENABLE_OPTIMIZATIONS` | `ON`      | Enable compiler optimizations                                  |
+| `ENABLE_WARNINGS`      | `OFF`     | Enable strict compiler warnings                                |
+| `ENABLE_UNITY_BUILD`   | `ON`      | Use unity build for faster compilation                         |
+| `DISABLE_ALL_WARNINGS` | `ON`      | Suppress all compiler warnings                                 |
+| `ENABLE_AUDIO`         | `ON`      | Enable audio support                                           |
+| `ENABLE_PROFILING`     | `OFF`     | Enable profiling support                                       |
+| `ENABLE_SANITIZERS`    | `OFF`     | Enable address/undefined sanitizers (Debug only)               |
 
 **Example with multiple options:**
+
 ```bash
 cmake .. -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
@@ -344,6 +337,7 @@ cmake .. -G Ninja \
 #### Build Errors
 
 **"CMake version 3.25 or higher required"**
+
 ```bash
 # Update CMake
 # Windows: Download from cmake.org
@@ -352,6 +346,7 @@ cmake .. -G Ninja \
 ```
 
 **"Ninja not found"**
+
 ```bash
 # Install Ninja
 # Windows: choco install ninja or download from GitHub
@@ -363,6 +358,7 @@ cmake .. -G Ninja -DCMAKE_MAKE_PROGRAM="/path/to/ninja"
 ```
 
 **"C++23 standard not found"**
+
 ```bash
 # Check compiler version
 g++ --version  # Need GCC 13+
@@ -375,25 +371,30 @@ clang++ --version  # Need Clang 17+
 ```
 
 **"raylib not found"**
+
 - This is normal - CMake auto-fetches raylib on first configure
 - Check internet connection
 - Dependencies cached in `.deps/` for offline builds
 
 **"Undefined reference" errors (Linux)**
+
 - Usually auto-handled, but verify: `cmake .. -DENABLE_MULTITHREADING=ON`
 
 #### Runtime Errors
 
 **"Failed to open window"**
+
 - Check if another instance is running
 - Verify OpenGL 3.3+: `glxinfo | grep "OpenGL version"` (Linux)
 - Update graphics drivers
 
 **"Missing resources"**
+
 - Resources auto-copied to build directory
 - If missing, manually copy `resources/` to `build/bin/`
 
 **"DLL not found" (Windows)**
+
 - Copy required DLLs to `build/bin/`
 - Or add build directory to PATH
 
@@ -431,10 +432,12 @@ cmake --build .
 ### Building Map Editor
 
 The map editor is built by default. Executable location:
+
 - **Windows**: `build/bin/ChainedDecosMapEditor.exe`
 - **Linux/macOS**: `build/bin/ChainedDecosMapEditor`
 
 To disable:
+
 ```bash
 cmake .. -G Ninja -DBUILD_MAP_EDITOR=OFF
 ```
@@ -457,10 +460,12 @@ After building successfully, you should be able to run the game:
 ### What to Expect
 
 1. **Menu Screen**: The game starts with the main menu visible
+
    - Use mouse to navigate
    - Select a game mode or load a map
 
 2. **First Time Setup**:
+
    - The game auto-loads required resources from `resources/` directory
    - Default maps are available in `resources/maps/`
    - If resources are missing, check that `resources/` folder exists in build directory
@@ -482,21 +487,22 @@ After building successfully, you should be able to run the game:
 
 **If you see errors on first launch:**
 
-- **"Resources not found"**: 
+- **"Resources not found"**:
   - Resources are auto-copied during build
   - If missing, manually copy `resources/` folder to `build/bin/`
-  
-- **"Map not found"**: 
+- **"Map not found"**:
+
   - Check `resources/maps/` contains `.json` map files
   - Try loading from menu map selector
 
-- **"Models not loading"**: 
+- **"Models not loading"**:
   - Models should auto-load when needed
   - Check `resources/` contains model files (`.glb`, `.gltf`)
 
 ### Troubleshooting First Launch
 
 **Game won't start:**
+
 ```bash
 # Check executable exists
 ls -la build/bin/ChainedDecos  # Linux/macOS
@@ -508,15 +514,18 @@ cd build
 ```
 
 **Black screen or window doesn't appear:**
+
 - Check graphics drivers are up to date
 - Verify OpenGL 3.3+ support
 - Try windowed mode: `./bin/ChainedDecos -width 1280 -height 720`
 
 **Menu not responding:**
+
 - Make sure you clicked the window to focus it
 - Try pressing `F1` to toggle menu visibility
 
 **Performance issues:**
+
 - First launch may be slower due to resource loading
 - Subsequent launches will be faster (resources cached)
 - Try disabling debug overlays: Press `F2` and `F3` to toggle
@@ -526,24 +535,27 @@ cd build
 ## 🎯 Usage
 
 ### Game Controls
-| Key | Action |
-|-----|--------|
-| `WASD` | Move |
-| `Space` | Jump |
-| `Shift` | Sprint |
-| `Mouse` | Look around |
-| `T` | Emergency reset (teleport to spawn) |
+
+| Key     | Action                              |
+| ------- | ----------------------------------- |
+| `WASD`  | Move                                |
+| `Space` | Jump                                |
+| `Shift` | Sprint                              |
+| `Mouse` | Look around                         |
+| `T`     | Emergency reset (teleport to spawn) |
 
 ### Debug & UI
-| Key | Action |
-|-----|--------|
-| `F1` | Toggle main menu |
-| `F2` | Toggle debug info overlay |
-| `F3` | Toggle collision debug visualization |
-| `ESC` | Pause/return to menu |
-| `~` | Toggle developer console |
+
+| Key   | Action                               |
+| ----- | ------------------------------------ |
+| `F1`  | Toggle main menu                     |
+| `F2`  | Toggle debug info overlay            |
+| `F3`  | Toggle collision debug visualization |
+| `ESC` | Pause/return to menu                 |
+| `~`   | Toggle developer console             |
 
 ### Developer Console Commands
+
 ```bash
 help          # Show available commands
 clear         # Clear console output
@@ -555,11 +567,13 @@ vsync <on/off> # Toggle VSync
 ```
 
 ### Command Line Arguments
+
 ```bash
 ChainedDecos.exe -fullscreen -width 1920 -height 1080 -novsync
 ```
 
 Available options:
+
 - `-width <width>` - Set window width
 - `-height <height>` - Set window height
 - `-fullscreen` - Start in fullscreen mode
@@ -568,7 +582,9 @@ Available options:
 - `-dev` - Enable developer mode
 
 ### Configuration
+
 Edit `game.cfg` for persistent settings:
+
 - Resolution and display options
 - Audio volume and sensitivity
 - Control bindings
@@ -577,6 +593,7 @@ Edit `game.cfg` for persistent settings:
 ## 🧪 Testing
 
 Run the unit tests:
+
 ```bash
 # From build directory
 # Windows
@@ -587,6 +604,7 @@ Run the unit tests:
 ```
 
 Key test modules:
+
 - **Physics Tests**: `tests/engine/PhysicsComponentTest.cpp`
 - **Collision Tests**: BVH and AABB collision accuracy
 - **Integration Tests**: `tests/integration/GameIntegrationTest.cpp`
@@ -594,10 +612,12 @@ Key test modules:
 ## 📊 Performance
 
 ### System Requirements
+
 - **Minimum**: CPU with SSE2, 4GB RAM, OpenGL 3.3+
 - **Recommended**: Modern CPU, 8GB RAM, dedicated GPU
 
 ### Optimization Features
+
 - **BVH Collision Detection**: O(log n) collision queries
 - **Model Caching**: LRU cache for frequently used assets
 - **Parallel Physics**: Multi-threaded physics updates
@@ -624,6 +644,7 @@ We welcome contributions! Please follow these steps:
 6. **Open a Pull Request**
 
 ### Development Guidelines
+
 - Follow C++23 best practices and RAII principles
 - Add unit tests for new features
 - Update documentation for API changes
@@ -644,4 +665,4 @@ This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) fi
 
 **Made with ❤️ using raylib, ImGui, and modern C++23**
 
-*Chained Decos - Where momentum meets precision*
+_Chained Decos - Where momentum meets precision_
