@@ -1,16 +1,15 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "core/object/module/Core/ModuleManager.h"
-#include "core/object/module/Interfaces/IModule.h"
-#include "servers/input/Interfaces/IInputManager.h"
-#include "servers/rendering/Interfaces/IRenderManager.h"
-#include <iostream>
+#include "../../servers/input/Interfaces/IInputManager.h"
+#include "../../servers/rendering/Interfaces/IRenderManager.h"
+#include "../object/module/Core/ModuleManager.h"
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <typeindex>
 #include <unordered_map>
+
 
 // Forward declarations for game objects
 class Player;

@@ -1,14 +1,14 @@
 #ifndef MAP_SYSTEM_H
 #define MAP_SYSTEM_H
 
-#include "core/engine/EngineApplication.h"
+#include "../../../core/engine/EngineApplication.h"
 
-#include "core/object/module/Interfaces/IEngineModule.h"
-#include "scene/main/Core/World.h"
-#include "scene/resources/map/Core/MapLoader.h"
-#include "scene/resources/model/Core/Model.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
-#include "servers/rendering/Core/RenderManager.h"
+#include "../../../core/object/module/Interfaces/IEngineModule.h"
+#include "../../../scene/main/Core/World.h"
+#include "../../../scene/resources/map/Core/MapLoader.h"
+#include "../../../scene/resources/model/Core/Model.h"
+#include "../../../servers/physics/collision/Core/CollisionManager.h"
+#include "../../../servers/rendering/Core/RenderManager.h"
 #include <memory>
 #include <raylib.h>
 #include <string>

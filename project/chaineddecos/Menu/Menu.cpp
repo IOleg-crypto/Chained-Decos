@@ -98,6 +98,20 @@ void Menu::Initialize(Engine *engine)
     HandlePendingActions();
 }
 
+void Menu::Update()
+{
+    // Update console if open
+    if (m_consoleManager && m_consoleManager->IsConsoleOpen())
+    {
+        // Console handles its own update/input
+    }
+    else
+    {
+        // Handle menu navigation
+        HandleKeyboardNavigation();
+    }
+}
+
 void Menu::Render()
 {
 
