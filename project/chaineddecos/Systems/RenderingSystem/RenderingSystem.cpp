@@ -54,19 +54,19 @@ void RenderingSystem::EnsureDependencies()
     // Get dependencies through Engine (lazy loading)
     if (!m_player)
     {
-        auto playerService = m_engine->GetService<PlayerService>();
+        auto player = m_engine->GetPlayer();
         if (playerService)
         {
-            m_player = playerService->player;
+            m_player = player;
         }
     }
 
     if (!m_mapSystem)
     {
-        auto mapSystemService = m_engine->GetService<MapSystemService>();
+        auto mapSystem = m_engine->GetMapSystem();
         if (mapSystemService)
         {
-            m_mapSystem = mapSystemService->mapSystem;
+            m_mapSystem = mapSystem;
         }
     }
 

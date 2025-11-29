@@ -29,8 +29,8 @@ ConsoleManager::ConsoleManager()
 Player *ConsoleManager::GetPlayer() const
 {
     // Get Player through Engine -> PlayerService
-    auto playerService = Engine::Instance().GetService<PlayerService>();
-    return playerService ? playerService->player : nullptr;
+    auto player = Engine::Instance().GetPlayer();
+    return playerService ? player : nullptr;
 }
 
 Engine *ConsoleManager::GetEngine() const

@@ -299,8 +299,8 @@ void GameApplication::OnUpdate(float deltaTime)
             else
             {
                 // Only show player metrics if game is initialized (map selected)
-                auto playerService = GetEngine()->GetService<PlayerService>();
-                auto *player = playerService ? playerService->player : nullptr;
+                auto player = GetEngine()->GetPlayer();
+                auto *player = playerService ? player : nullptr;
 
                 if (player)
                 {
@@ -349,8 +349,8 @@ void GameApplication::OnRender()
         }
     }
 
-    auto playerService = GetEngine()->GetService<PlayerService>();
-    auto *player = playerService ? playerService->player : nullptr;
+    auto player = GetEngine()->GetPlayer();
+    auto *player = playerService ? player : nullptr;
 
     if (m_showMenu && menu)
     {
@@ -419,11 +419,11 @@ void GameApplication::OnShutdown()
     }
 
     // Get components through Engine
-    auto playerService = GetEngine()->GetService<PlayerService>();
-    auto *player = playerService ? playerService->player : nullptr;
+    auto player = GetEngine()->GetPlayer();
+    auto *player = playerService ? player : nullptr;
 
-    auto mapSystemService = GetEngine()->GetService<MapSystemService>();
-    auto *mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
+    auto mapSystem = GetEngine()->GetMapSystem();
+    auto *mapSystem = mapSystemService ? mapSystem : nullptr;
 
     // MenuService removed, access via UIController if needed, but here we just reset state
 
@@ -574,15 +574,15 @@ void GameApplication::SaveGameState()
     }
 
     // Get MapSystem through Engine to get current map path
-    auto mapSystemService = GetEngine()->GetService<MapSystemService>();
-    if (!mapSystemService || !mapSystemService->mapSystem)
+    auto mapSystem = GetEngine()->GetMapSystem();
+    if (!mapSystemService || !mapSystem)
     {
         TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - MapSystem not available");
         return;
     }
 
     // Get current map path
-    std::string currentMapPath = mapSystemService->mapSystem->GetCurrentMapPath();
+    std::string currentMapPath = mapSystem->GetCurrentMapPath();
 
     if (currentMapPath.empty())
     {
