@@ -11,92 +11,42 @@
 #include "scene/resources/map/Renderer/MapRenderer.h"
 #include <cmath>
 #include <filesystem>
-#include <fstream>
-#include <raylib.h>
-#include <rlgl.h>
-#include <set>
-#include <unordered_set>
 
-LevelManager::MapSystem(const MapSystemConfig &config)
-    : m_config(config), m_gameMap(std::make_unique<GameMap>()), m_hasSpawnZone(false),
-      m_spawnTextureLoaded(false), m_worldManager(nullptr), m_collisionManager(nullptr),
-      m_modelLoader(nullptr), m_renderManager(nullptr), m_player(nullptr), m_menu(nullptr),
-      m_engine(nullptr)
+// Validate required engine dependencies
+if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
 {
-    // Initialize spawn zone
-    m_playerSpawnZone = {0};
-    m_spawnTexture = {0};
+    TraceLog(LOG_ERROR, "[LevelManager] Required engine services not found");
+    return false;
 }
 
-LevelManager::~MapSystem()
+// Load spawn texture
+std::string texturePath = std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
+if (FileExists(texturePath.c_str()))
 {
-    // Unload spawn texture if loaded
-    if (m_spawnTextureLoaded && m_spawnTexture.id != 0)
+    m_spawnTexture = LoadTexture(texturePath.c_str());
+    if (m_spawnTexture.id != 0)
     {
-        UnloadTexture(m_spawnTexture);
-        TraceLog(LOG_INFO, "LevelManager::~MapSystem() - Unloaded spawn texture");
-    }
-
-    Shutdown();
-}
-
-bool LevelManager::Initialize(Engine *engine)
-{
-    if (!engine)
-    {
-        TraceLog(LOG_ERROR, "[LevelManager] Engine is null");
-        return false;
-    }
-
-    m_engine = engine;
-    TraceLog(LOG_INFO, "[LevelManager] Initializing...");
-
-    // Get engine dependencies through Engine
-    m_worldManager = engine->GetService<WorldManager>().get();
-    m_collisionManager = engine->GetService<CollisionManager>().get();
-    m_modelLoader = engine->GetService<ModelLoader>().get();
-    m_renderManager = engine->GetService<RenderManager>().get();
-
-    // Player and Menu can be from other systems
-    auto player = engine->GetPlayer();
-    auto menu = engine->GetMenu();
-
-    // Validate required engine dependencies
-    if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
-    {
-        TraceLog(LOG_ERROR, "[LevelManager] Required engine services not found");
-        return false;
-    }
-
-    // Load spawn texture
-    std::string texturePath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
-    if (FileExists(texturePath.c_str()))
-    {
-        m_spawnTexture = LoadTexture(texturePath.c_str());
-        if (m_spawnTexture.id != 0)
-        {
-            m_spawnTextureLoaded = true;
-            TraceLog(LOG_INFO, "LevelManager::Initialize() - Loaded spawn texture: %dx%d",
-                     m_spawnTexture.width, m_spawnTexture.height);
-        }
-        else
-        {
-            TraceLog(LOG_WARNING, "LevelManager::Initialize() - Failed to load spawn texture from: %s",
-                     texturePath.c_str());
-        }
+        m_spawnTextureLoaded = true;
+        TraceLog(LOG_INFO, "LevelManager::Initialize() - Loaded spawn texture: %dx%d",
+                 m_spawnTexture.width, m_spawnTexture.height);
     }
     else
     {
-        TraceLog(LOG_WARNING, "LevelManager::Initialize() - Spawn texture not found at: %s",
+        TraceLog(LOG_WARNING, "LevelManager::Initialize() - Failed to load spawn texture from: %s",
                  texturePath.c_str());
     }
+}
+else
+{
+    TraceLog(LOG_WARNING, "LevelManager::Initialize() - Spawn texture not found at: %s",
+             texturePath.c_str());
+}
 
-    // Register services in Initialize so they're available to other systems
-    RegisterServices(engine);
+// Register services in Initialize so they're available to other systems
+RegisterServices(engine);
 
-    TraceLog(LOG_INFO, "[LevelManager] Initialized successfully");
-    return true;
+TraceLog(LOG_INFO, "[LevelManager] Initialized successfully");
+return true;
 }
 
 void LevelManager::Shutdown()
@@ -331,7 +281,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
 
     // Clear previous map data BEFORE loading new map
     TraceLog(LOG_INFO, "LevelManager::LoadEditorMap() - Clearing previous map data...");
-    TraceLog(LOG_INFO, "LevelManager::LoadEditorMap() - Current collider count before map load: %zu",
+    TraceLog(LOG_INFO,
+             "LevelManager::LoadEditorMap() - Current collider count before map load: %zu",
              m_collisionManager->GetColliders().size());
 
     // Clear old model instances to prevent overlap with new map
@@ -377,7 +328,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
 
     if (extension == "json")
     {
-        TraceLog(LOG_INFO, "LevelManager::LoadEditorMap() - Detected JSON format, using MapService");
+        TraceLog(LOG_INFO,
+                 "LevelManager::LoadEditorMap() - Detected JSON format, using MapService");
 
         // Use MapService to load map
         MapService mapService;
@@ -410,9 +362,10 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                 {
                     if (m_modelLoader->RegisterLoadedModel(modelName, loaded))
                     {
-                        TraceLog(LOG_INFO,
-                                 "LevelManager::LoadEditorMap() - Successfully registered model: %s",
-                                 modelName.c_str());
+                        TraceLog(
+                            LOG_INFO,
+                            "LevelManager::LoadEditorMap() - Successfully registered model: %s",
+                            modelName.c_str());
                     }
                     else
                     {
@@ -423,7 +376,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                 }
                 else
                 {
-                    TraceLog(LOG_WARNING, "LevelManager::LoadEditorMap() - Skipping invalid model: %s",
+                    TraceLog(LOG_WARNING,
+                             "LevelManager::LoadEditorMap() - Skipping invalid model: %s",
                              modelName.c_str());
                 }
             }
@@ -517,7 +471,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                 (object.position.y <= 1.0f && object.position.y >= -1.0f &&
                  (colliderSize.x > 100.0f || colliderSize.z > 100.0f)))
             {
-                TraceLog(LOG_INFO, "LevelManager::LoadEditorMap() - Skipping large ground plane '%s'",
+                TraceLog(LOG_INFO,
+                         "LevelManager::LoadEditorMap() - Skipping large ground plane '%s'",
                          object.name.c_str());
                 collisionSkippedCount++;
                 continue;
@@ -603,9 +558,10 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                 colliderSize = Vector3{std::abs(object.scale.x != 0.0f ? object.scale.x : 1.0f),
                                        std::abs(object.scale.y != 0.0f ? object.scale.y : 1.0f),
                                        std::abs(object.scale.z != 0.0f ? object.scale.z : 1.0f)};
-                TraceLog(LOG_WARNING,
-                         "LevelManager::LoadEditorMap() - Model '%s' not found, using AABB fallback",
-                         object.modelName.c_str());
+                TraceLog(
+                    LOG_WARNING,
+                    "LevelManager::LoadEditorMap() - Model '%s' not found, using AABB fallback",
+                    object.modelName.c_str());
             }
         }
         break;
@@ -632,7 +588,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
             {
                 TraceLog(
                     LOG_WARNING,
-                    "LevelManager::LoadEditorMap() - Object %d has invalid colliderSize, skipping", i);
+                    "LevelManager::LoadEditorMap() - Object %d has invalid colliderSize, skipping",
+                    i);
                 continue;
             }
 
@@ -682,7 +639,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
     TraceLog(LOG_INFO, "LevelManager::LoadEditorMap() - Successfully loaded map with %d objects",
              m_gameMap->GetMapObjects().size());
 
-    TraceLog(LOG_INFO, "LevelManager::LoadEditorMap() - Collision summary: %zu created, %zu skipped",
+    TraceLog(LOG_INFO,
+             "LevelManager::LoadEditorMap() - Collision summary: %zu created, %zu skipped",
              collisionCreationCount, collisionSkippedCount);
 
     // Dump diagnostics
@@ -779,9 +737,10 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
 
             if (!exists)
             {
-                TraceLog(LOG_WARNING,
-                         "LevelManager::LoadEditorMap() - Model '%s' not available, skipping instance",
-                         requested.c_str());
+                TraceLog(
+                    LOG_WARNING,
+                    "LevelManager::LoadEditorMap() - Model '%s' not available, skipping instance",
+                    requested.c_str());
                 continue;
             }
 
