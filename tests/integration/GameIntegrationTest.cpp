@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "platform/windows/Core/Engine.h"
+#include "core/engine/Engine.h"
 #include "project/chaineddecos/GameApplication.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"

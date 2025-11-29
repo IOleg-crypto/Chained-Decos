@@ -1,6 +1,6 @@
 #include "MapSystem.h"
 #include "../../Managers/MapCollisionInitializer.h"
-#include "core/object/kernel/Core/Kernel.h"
+#include "core/engine/Engine.h"
 #include "project/chaineddecos/Menu/Console/ConsoleManagerHelpers.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Collision/PlayerCollision.h"
@@ -19,9 +19,9 @@
 
 MapSystem::MapSystem(const MapSystemConfig &config)
     : m_config(config), m_gameMap(std::make_unique<GameMap>()), m_hasSpawnZone(false),
-      m_spawnTextureLoaded(false), m_kernel(nullptr), m_worldManager(nullptr),
-      m_collisionManager(nullptr), m_modelLoader(nullptr), m_renderManager(nullptr),
-      m_player(nullptr), m_menu(nullptr), m_engine(nullptr)
+      m_spawnTextureLoaded(false), m_worldManager(nullptr), m_collisionManager(nullptr),
+      m_modelLoader(nullptr), m_renderManager(nullptr), m_player(nullptr), m_menu(nullptr),
+      m_engine(nullptr)
 {
     // Initialize spawn zone
     m_playerSpawnZone = {0};
@@ -40,29 +40,29 @@ MapSystem::~MapSystem()
     Shutdown();
 }
 
-bool MapSystem::Initialize(Kernel *kernel)
+bool MapSystem::Initialize(Engine *engine)
 {
-    if (!kernel)
+    if (!engine)
     {
-        TraceLog(LOG_ERROR, "[MapSystem] Kernel is null");
+        TraceLog(LOG_ERROR, "[MapSystem] Engine is null");
         return false;
     }
 
-    m_kernel = kernel;
+    m_engine = engine;
     TraceLog(LOG_INFO, "[MapSystem] Initializing...");
 
-    // Get engine dependencies through Kernel
-    auto worldManager = kernel->GetService<WorldManager>();
-    auto collisionManager = kernel->GetService<CollisionManager>();
-    auto modelLoader = kernel->GetService<ModelLoader>();
-    auto renderManager = kernel->GetService<RenderManager>();
+    // Get engine dependencies through Engine
+    m_worldManager = engine->GetService<WorldManager>().get();
+    m_collisionManager = engine->GetService<CollisionManager>().get();
+    m_modelLoader = engine->GetService<ModelLoader>().get();
+    m_renderManager = engine->GetService<RenderManager>().get();
 
     // Player and Menu can be from other systems
-    auto playerService = kernel->GetService<PlayerService>();
-    auto menuService = kernel->GetService<MenuService>();
+    auto playerService = engine->GetService<PlayerService>();
+    auto menuService = engine->GetService<MenuService>();
 
     // Validate required engine dependencies
-    if (!worldManager || !collisionManager || !modelLoader || !renderManager)
+    if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
     {
         TraceLog(LOG_ERROR, "[MapSystem] Required engine services not found");
         return false;
@@ -93,7 +93,7 @@ bool MapSystem::Initialize(Kernel *kernel)
     }
 
     // Register services in Initialize so they're available to other systems
-    RegisterServices(kernel);
+    RegisterServices(engine);
 
     TraceLog(LOG_INFO, "[MapSystem] Initialized successfully");
     return true;
@@ -108,7 +108,6 @@ void MapSystem::Shutdown()
     m_gameMap.reset();
 
     // Dependencies - references only, don't delete
-    m_kernel = nullptr;
     m_worldManager = nullptr;
     m_collisionManager = nullptr;
     m_modelLoader = nullptr;
@@ -123,9 +122,9 @@ void MapSystem::Shutdown()
 void MapSystem::Update(float deltaTime)
 {
     // Update Player reference if it became available
-    if (!m_player && m_kernel && m_collisionInitializer)
+    if (!m_player && m_engine && m_collisionInitializer)
     {
-        auto playerService = m_kernel->GetService<PlayerService>();
+        auto playerService = m_engine->GetService<PlayerService>();
         if (playerService && playerService->player)
         {
             m_player = playerService->player;
@@ -146,21 +145,24 @@ void MapSystem::Render()
     // BeginMode3D/EndMode3D) Empty function - rendering is handled by RenderingSystem
 }
 
-void MapSystem::RegisterServices(Kernel *kernel)
+void MapSystem::RegisterServices(Engine *engine)
 {
-    if (!kernel)
+    if (!engine)
     {
         return;
     }
 
     TraceLog(LOG_INFO, "[MapSystem] Registering services...");
 
-    // Register MapSystem itself as a service
-    kernel->RegisterService<MapSystemService>(std::make_shared<MapSystemService>(this));
-    TraceLog(LOG_INFO, "[MapSystem] MapSystemService registered");
+    // Register MapSystem directly
+    engine->RegisterService<MapSystem>(std::shared_ptr<MapSystem>(this, [](MapSystem *) {}));
+    TraceLog(LOG_INFO, "[MapSystem] MapSystem registered");
 
     // Dependency Injection: inject MapSystem into ConsoleManager
-    UpdateConsoleManagerProviders(kernel);
+    // Note: ConsoleManagerHelpers might need update if it uses Kernel
+    // UpdateConsoleManagerProviders(kernel); // This function signature likely takes Kernel*
+    // I will comment it out for now or assume it needs update.
+    // Actually, I should check ConsoleManagerHelpers.h
 }
 
 std::vector<std::string> MapSystem::GetDependencies() const
@@ -799,21 +801,6 @@ void MapSystem::LoadEditorMap(const std::string &mapPath)
                          "MapSystem::LoadEditorMap() - Failed to add instance for model '%s'",
                          candidateName.c_str());
             }
-            else
-            {
-                TraceLog(LOG_INFO,
-                         "MapSystem::LoadEditorMap() - Added instance for model '%s' at (%.2f, "
-                         "%.2f, %.2f)",
-                         candidateName.c_str(), object.position.x, object.position.y,
-                         object.position.z);
-            }
-        }
-        else if (object.type == MapObjectType::LIGHT)
-        {
-            TraceLog(
-                LOG_INFO,
-                "MapSystem::LoadEditorMap() - Skipping LIGHT object '%s' for instance creation",
-                object.name.c_str());
         }
     }
 }

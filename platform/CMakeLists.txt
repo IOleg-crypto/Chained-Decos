@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 
 add_library(ChainedDecosEngine STATIC
-    windows/Core/Engine.cpp
-    windows/Core/EngineApplication.cpp
+    ${CMAKE_SOURCE_DIR}/core/engine/Engine.cpp
+    ${CMAKE_SOURCE_DIR}/core/engine/EngineApplication.cpp
 )
 
 target_include_directories(ChainedDecosEngine PUBLIC

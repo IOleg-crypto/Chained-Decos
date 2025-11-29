@@ -1,9 +1,10 @@
 #include "EditorApplication.h"
 #include "Modules/EditorModule.h"
+#include "core/engine/Engine.h"
 #include "editor/plugins/map_editor/Editor/Editor.h"
-#include "platform/windows/Core/Engine.h"
 #include "scene/3d/camera/Core/CameraController.h"
-#include "scene/resources/map/Skybox/Skybox.h"
+
+
 #include "scene/resources/model/Core/Model.h"
 
 //===============================================
@@ -20,33 +21,17 @@ EditorApplication::~EditorApplication()
     TraceLog(LOG_INFO, "[EditorApplication] Destructor called.");
 }
 
-void EditorApplication::OnPreInitialize()
+void EditorApplication::OnConfigure(EngineConfig &config)
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Pre-initialization...");
+    TraceLog(LOG_INFO, "[EditorApplication] Configuring application...");
+    config.windowName = "Chained Decos - Map Editor";
+    config.width = 1600;
+    config.height = 900;
 }
 
-void EditorApplication::OnInitializeServices()
+void EditorApplication::OnRegister()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Initializing editor components...");
-
-    auto engine = GetEngine();
-    if (!engine)
-    {
-        TraceLog(LOG_ERROR, "[EditorApplication] No engine available during initialization!");
-        return;
-    }
-
-    // Create Editor components using engine services
-    auto camera = std::make_shared<CameraController>();
-    auto modelLoader = std::make_unique<ModelLoader>();
-    m_editor = std::make_unique<Editor>(camera, std::move(modelLoader));
-
-    TraceLog(LOG_INFO, "[EditorApplication] Editor components initialized.");
-}
-
-void EditorApplication::OnRegisterProjectModules()
-{
-    TraceLog(LOG_INFO, "[EditorApplication] Registering editor modules...");
+    TraceLog(LOG_INFO, "[EditorApplication] Registering modules...");
 
     if (auto engine = GetEngine())
     {
@@ -59,16 +44,16 @@ void EditorApplication::OnRegisterProjectModules()
     }
 }
 
-void EditorApplication::OnRegisterProjectServices()
+void EditorApplication::OnStart()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Registering editor services...");
-    // Editor doesn't register additional services yet
-    // Can add EditorService if needed
-}
+    TraceLog(LOG_INFO, "[EditorApplication] Starting application...");
 
-void EditorApplication::OnPostInitialize()
-{
-    TraceLog(LOG_INFO, "[EditorApplication] Post-initialization...");
+    // Initialize Editor components
+    auto camera = std::make_shared<CameraController>();
+    auto modelLoader = std::make_unique<ModelLoader>();
+    m_editor = std::make_unique<Editor>(camera, std::move(modelLoader));
+
+    TraceLog(LOG_INFO, "[EditorApplication] Editor components initialized.");
 
     // Configure ImGui for Editor (custom settings)
     ImGuiIO &io = ImGui::GetIO();
@@ -96,13 +81,11 @@ void EditorApplication::OnPostInitialize()
         UnloadImage(icon);
     }
 
-    TraceLog(LOG_INFO, "[EditorApplication] Post-initialization complete.");
+    TraceLog(LOG_INFO, "[EditorApplication] Application started.");
 }
 
-void EditorApplication::OnPostUpdate(float deltaTime)
+void EditorApplication::OnUpdate(float deltaTime)
 {
-    (void)deltaTime;
-
     if (!m_editor)
         return;
 
@@ -113,7 +96,7 @@ void EditorApplication::OnPostUpdate(float deltaTime)
     m_editor->HandleInput();
 }
 
-void EditorApplication::OnPostRender()
+void EditorApplication::OnRender()
 {
     if (!m_editor)
         return;
@@ -155,8 +138,8 @@ void EditorApplication::OnPostRender()
     rlImGuiEnd();
 }
 
-void EditorApplication::OnPreShutdown()
+void EditorApplication::OnShutdown()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Pre-shutdown...");
+    TraceLog(LOG_INFO, "[EditorApplication] Shutting down...");
     // Editor cleans up its own resources in destructor
 }

@@ -1,12 +1,11 @@
 #pragma once
 
-#include "core/object/kernel/Interfaces/IKernelService.h"
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
 
-class WorldManager : public IKernelService
+class WorldManager
 {
 public:
     // World constants
@@ -31,10 +30,6 @@ public:
     }
     void Render()
     {
-    }
-    const char *GetName() const
-    {
-        return "WorldManager";
     }
 
     // World setup
