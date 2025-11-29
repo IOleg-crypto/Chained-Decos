@@ -1,8 +1,8 @@
 #ifndef RENDERMANAGER_H
 #define RENDERMANAGER_H
 
+#include "servers/rendering/Interfaces/IRenderManager.h"
 #include <memory>
-#include <raylib.h>
 #include <string>
 #include <vector>
 
@@ -15,31 +15,21 @@ class CollisionManager;
 class CollisionDebugRenderer;
 class ShaderManager;
 
-// Include only necessary interfaces
-#include "core/object/kernel/Interfaces/IKernelService.h"
-
-//
-// RenderManager - Handles all rendering operations
-// Separates rendering logic from the main Engine class
-//
-class RenderManager : public IKernelService
+class RenderManager : public IRenderManager
 {
 public:
-    // Constructor
-    explicit RenderManager();
-
-    // Destructor
-    ~RenderManager();
+    RenderManager();
+    ~RenderManager() override;
 
     // Initialization
-    virtual bool Initialize() override;
+    bool Initialize() override;
 
     static void InitializeImGuiFont(const std::string &fontPath,
                                     float fontSize); // Delegates to ImGuiHelper
 
     // Main rendering methods
-    void BeginFrame() const;
-    void EndFrame();
+    void BeginFrame() const override;
+    void EndFrame() override;
 
     // Command-based rendering (NEW APPROACH)
     void SubmitCommand(std::unique_ptr<IRenderCommand> command);
@@ -52,27 +42,7 @@ public:
 
     // Debug rendering
     void ToggleDebugInfo();
-    void ToggleCollisionDebug();
-    void ForceCollisionDebugNextFrame();
-    void SetDebugInfo(bool enabled);
-    void SetCollisionDebug(bool enabled);
-    [[nodiscard]] bool IsDebugInfoVisible() const;
-    [[nodiscard]] bool IsCollisionDebugVisible() const;
-
-    // IKernelService overrides
-    virtual void Shutdown() override;
-    virtual void Update(float deltaTime) override;
-    virtual void Render() override;
-    virtual const char *GetName() const override
-    {
-        return "RenderManager";
-    }
-
-    void RenderCollisionShapes(const CollisionManager &collisionManager,
-                               IGameRenderable &renderable) const;
-    void SetBackgroundColor(Color color);
-    void DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
-                             const CollisionManager &collisionManager) const;
+    void ToggleCollisionDebug() override;
     void DrawCameraInfo(const Camera &camera, int cameraMode) const;
     void DrawModelManagerInfo(const ModelLoader &models) const;
     void DrawCollisionSystemInfo(const CollisionManager &collisionManager) const;
@@ -81,14 +51,20 @@ public:
 
     // Public rendering method for game world
     void RenderGame(IGameRenderable &renderable, const ModelLoader &models,
-                    const CollisionManager &collisionManager, bool showCollisionDebug = false);
+                    const CollisionManager &collisionManager,
+                    bool showCollisionDebug = false) override;
 
     // Debug rendering (moved to public for GameApplication access)
     void ShowMetersPlayer(const IGameRenderable &renderable) const;
     void RenderDebugInfo(const IGameRenderable &renderable, const ModelLoader &models,
-                         const CollisionManager &collision) const;
+                         const CollisionManager &collision) const override;
 
     Font GetFont() const;
+
+    bool IsCollisionDebugVisible() const override
+    {
+        return m_showCollisionDebug;
+    }
 
 private:
     void BeginMode3D(const Camera &camera);
@@ -125,4 +101,4 @@ public:
     float m_shaderTime = 0.0f;
 };
 
-#endif // RENDER_MANAGER_H
+#endif // RENDERMANAGER_H

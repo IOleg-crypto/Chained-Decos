@@ -1,17 +1,18 @@
 #include "ConsoleManagerHelpers.h"
-#include "core/object/kernel/Core/Kernel.h"
 #include "Menu.h"
+#include "core/engine/Engine.h"
+
 
 // Helper function to update ConsoleManager providers via Dependency Injection
 // Used in EngineApplication, MapSystem, PlayerSystem after service registration
-// NOTE: ConsoleManager now accesses services directly through Kernel::Instance(),
+// NOTE: ConsoleManager now accesses services directly through Engine::Instance(),
 // so this function is now a no-op but kept for backward compatibility
-void UpdateConsoleManagerProviders(Kernel *kernel)
+void UpdateConsoleManagerProviders(Engine *engine)
 {
-    // ConsoleManager now accesses all services directly through Kernel::Instance()
+    // ConsoleManager now accesses all services directly through Engine::Instance()
     // No need to inject providers anymore
-    (void)kernel; // Suppress unused parameter warning
+    (void)engine; // Suppress unused parameter warning
 
     TraceLog(LOG_INFO,
-             "UpdateConsoleManagerProviders() - Using Kernel::Instance() for service access");
+             "UpdateConsoleManagerProviders() - Using Engine::Instance() for service access");
 }

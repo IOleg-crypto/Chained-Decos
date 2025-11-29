@@ -1,10 +1,8 @@
 #ifndef PLAYER_SYSTEM_H
 #define PLAYER_SYSTEM_H
 
-#include "core/object/kernel/Core/Kernel.h"
-#include "core/object/kernel/Interfaces/IKernelService.h"
+#include "core/engine/EngineApplication.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
-#include "platform/windows/Core/EngineApplication.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/resources/model/Core/Model.h"
 #include "servers/audio/Core/AudioManager.h"
@@ -12,7 +10,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
 
 // Forward declaration to avoid circular dependency
 class MapSystem;
@@ -39,11 +36,11 @@ public:
         return "Player management and gameplay logic";
     }
 
-    bool Initialize(Kernel *kernel) override;
+    bool Initialize(Engine *engine) override;
     void Shutdown() override;
     void Update(float deltaTime) override;
     void Render() override;
-    void RegisterServices(Kernel *kernel) override;
+    void RegisterServices(Engine *engine) override;
     std::vector<std::string> GetDependencies() const override;
 
     // Accessors
@@ -74,10 +71,8 @@ private:
     std::unique_ptr<Player> m_player;
 
     AudioManager *m_audioManager;
-    // Kernel reference (for accessing services)
-    Kernel *m_kernel;
 
-    // Dependencies obtained through Kernel (references only)
+    // Dependencies obtained through Engine (references only)
     CollisionManager *m_collisionManager;
     MapSystem *m_mapSystem;
     ModelLoader *m_models;
@@ -87,31 +82,6 @@ private:
     std::string m_savedMapPath;
     Vector3 m_savedPlayerPosition;
     Vector3 m_savedPlayerVelocity;
-};
-
-struct PlayerSystemService : public IKernelService
-{
-    PlayerSystem *playerSystem = nullptr;
-    explicit PlayerSystemService(PlayerSystem *ps) : playerSystem(ps)
-    {
-    }
-    bool Initialize() override
-    {
-        return playerSystem != nullptr;
-    }
-    void Shutdown() override
-    {
-    }
-    void Update(float deltaTime) override
-    {
-    }
-    void Render() override
-    {
-    }
-    const char *GetName() const override
-    {
-        return "PlayerSystemService";
-    }
 };
 
 #endif // PLAYER_SYSTEM_H

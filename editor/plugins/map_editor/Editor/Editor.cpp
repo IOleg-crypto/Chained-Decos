@@ -5,7 +5,6 @@
 #include "FileManager/MapObjectConverterEditor.h"
 #include "Renderer/EditorRenderer.h"
 #include "Utils/PathUtils.h"
-#include "core/object/kernel/Core/Kernel.h"
 #include "scene/resources/map/Core/MapLoader.h" // Include the new comprehensive map loader
 #include "scene/resources/map/MapFileManager/Json/JsonMapFileManager.h"
 

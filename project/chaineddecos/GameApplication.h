@@ -2,7 +2,7 @@
 #define GAME_APPLICATION_H
 
 #include "core/config/Core/GameConfig.h"
-#include "platform/windows/Core/IApplication.h"
+#include "core/engine/IApplication.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/main/Core/World.h"
@@ -19,32 +19,13 @@ public:
     GameApplication(int argc, char *argv[]);
     ~GameApplication();
 
-    // Command line processing
-    void ProcessCommandLine(int argc, char *argv[]) override;
-
-    // Settings before initialization
-    void OnPreInitialize() override;
-
-    // Initialize Game components
-    void OnInitializeServices() override;
-
-    // Register Game modules (REQUIRED)
-    void OnRegisterProjectModules() override;
-
-    // Register Game services
-    void OnRegisterProjectServices() override;
-
-    // After initialization
-    void OnPostInitialize() override;
-
-    // Custom update logic
-    void OnPostUpdate(float deltaTime) override;
-
-    // Custom rendering logic
-    void OnPostRender() override;
-
-    // Before shutdown
-    void OnPreShutdown() override;
+    // Lifecycle methods
+    void OnConfigure(EngineConfig &config) override;
+    void OnRegister() override;
+    void OnStart() override;
+    void OnUpdate(float deltaTime) override;
+    void OnRender() override;
+    void OnShutdown() override;
 
 private:
     // Basic engine components (created before system initialization)

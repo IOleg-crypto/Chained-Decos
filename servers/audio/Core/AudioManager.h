@@ -7,28 +7,18 @@
 #include <string>
 #include <unordered_map>
 
-#include "core/object/kernel/Interfaces/IKernelService.h"
-
-class AudioManager : public IAudioManager, public IKernelService
+class AudioManager : public IAudioManager
 {
 public:
     AudioManager();
     ~AudioManager() override;
 
     // Initialize audio system
-    bool Initialize() override;
-    void Shutdown() override;
-    void Update(float deltaTime) override
+    bool Initialize();
+    void Shutdown();
+    void Update(float deltaTime);
+    void Render()
     {
-
-        UpdateLoopingSounds();
-    }
-    void Render() override
-    {
-    }
-    const char *GetName() const override
-    {
-        return "AudioManager";
     }
 
     // Load audio files

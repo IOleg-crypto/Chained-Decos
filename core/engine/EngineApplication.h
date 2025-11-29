@@ -1,13 +1,8 @@
-//
-// EngineApplication.h - Base application class for all projects using the engine
-//
 #ifndef ENGINE_APPLICATION_H
 #define ENGINE_APPLICATION_H
 
 #include "Engine.h"
 #include "IApplication.h"
-#include "core/object/kernel/Core/Kernel.h"
-#include "core/object/module/Core/ModuleManager.h"
 #include <memory>
 #include <string>
 
@@ -38,11 +33,6 @@ public:
     {
         return m_engine.get();
     }
-    Kernel *GetKernel() const
-    {
-        return m_kernel.get();
-    }
-    ModuleManager *GetModuleManager() const;
 
     // Configuration
     Config &GetConfig()
@@ -62,8 +52,7 @@ private:
 
     IApplication *m_app; // The application instance
     Config m_config;
-    std::unique_ptr<Kernel> m_kernel;
-    std::shared_ptr<Engine> m_engine;
+    std::shared_ptr<Engine> m_engine; // Engine is now shared/singleton managed
     bool m_initialized = false;
 };
 
