@@ -58,8 +58,8 @@ bool MapSystem::Initialize(Engine *engine)
     m_renderManager = engine->GetService<RenderManager>().get();
 
     // Player and Menu can be from other systems
-    auto playerService = engine->GetService<PlayerService>();
-    auto menuService = engine->GetService<MenuService>();
+    auto player = engine->GetPlayer();
+    auto menu = engine->GetMenu();
 
     // Validate required engine dependencies
     if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
@@ -124,10 +124,10 @@ void MapSystem::Update(float deltaTime)
     // Update Player reference if it became available
     if (!m_player && m_engine && m_collisionInitializer)
     {
-        auto playerService = m_engine->GetService<PlayerService>();
-        if (playerService && playerService->player)
+        auto player = m_engine->GetPlayer();
+        if (playerService && player)
         {
-            m_player = playerService->player;
+            m_player = player;
             m_collisionInitializer->SetPlayer(m_player);
             TraceLog(LOG_INFO, "[MapSystem] Player reference updated in collision initializer");
         }
