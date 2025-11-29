@@ -29,7 +29,7 @@ struct MapSystemConfig
 
 // System for managing maps and levels
 // Integrates all map loading, rendering, and collision initialization logic
-class MapSystem : public IEngineModule
+class LevelManager : public IEngineModule
 {
 public:
     explicit MapSystem(const MapSystemConfig &config = {});

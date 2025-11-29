@@ -11,7 +11,7 @@
 
 // System for managing user interface and menus
 // Creates and owns its components independently
-class UIController : public IEngineModule
+class UIManager : public IEngineModule
 {
 public:
     UIController();
