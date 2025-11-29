@@ -14,8 +14,8 @@
 
 // Forward declarations for game objects
 class Player;
-class PlayerSystem;
-class MapSystem;
+class PlayerController;
+class LevelManager;
 class Menu;
 
 // Main Engine class acting as Service Locator and System Manager
@@ -47,8 +47,8 @@ public:
 
     // Direct access to game objects (replaces service wrappers)
     Player *GetPlayer() const;
-    PlayerSystem *GetPlayerSystem() const;
-    MapSystem *GetMapSystem() const;
+    PlayerController *GetPlayerController() const;
+    LevelManager *GetLevelManager() const;
     Menu *GetMenu() const;
 
     // Service Locator Pattern (Type-safe)
@@ -104,5 +104,17 @@ private:
     std::unique_ptr<ModuleManager> m_moduleManager;
     std::unique_ptr<IRenderManager> m_renderManager;
     std::unique_ptr<IInputManager> m_inputManager;
+
+    // Generic service storage
+    std::unordered_map<std::type_index, std::shared_ptr<void>> m_services;
+
+    bool m_debugInfoVisible = false;
+    bool m_shouldExit = false;
+};
+
+// Global access macros
+#define ENGINE Engine::Instance()
+#define GET_SERVICE(Type) ENGINE.GetService<Type>()
+#define REQUIRE_SERVICE(Type) ENGINE.RequireService<Type>()
 
 #endif // ENGINE_H
