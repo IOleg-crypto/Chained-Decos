@@ -36,7 +36,7 @@ bool PlayerSystem::Initialize(Engine *engine)
     m_models = engine->GetService<ModelLoader>().get();
     m_audioManager = engine->GetService<AudioManager>().get();
 
-    auto mapSystemService = engine->GetService<MapSystemService>();
+    auto mapSystem = engine->GetMapSystem();
 
     // Validate required engine dependencies
     if (!m_collisionManager || !m_models || !m_audioManager)
@@ -46,7 +46,7 @@ bool PlayerSystem::Initialize(Engine *engine)
     }
 
     // MapSystem can be nullptr if MapSystem isn't initialized yet
-    m_mapSystem = mapSystemService ? mapSystemService->mapSystem : nullptr;
+    m_mapSystem = mapSystemService ? mapSystem : nullptr;
 
     // Create our own components
     try
@@ -101,10 +101,10 @@ void PlayerSystem::Update(float deltaTime)
     // But check anyway
     if (!m_mapSystem && m_engine)
     {
-        auto mapSystemService = m_engine->GetService<MapSystemService>();
-        if (mapSystemService && mapSystemService->mapSystem)
+        auto mapSystem = m_engine->GetMapSystem();
+        if (mapSystemService && mapSystem)
         {
-            m_mapSystem = mapSystemService->mapSystem;
+            m_mapSystem = mapSystem;
             TraceLog(LOG_INFO, "[PlayerSystem] MapSystem obtained from Engine");
         }
     }
