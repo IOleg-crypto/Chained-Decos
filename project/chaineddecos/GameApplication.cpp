@@ -135,11 +135,11 @@ void GameApplication::OnRegister()
     // Register systems in dependency order:
     // 1. LevelManager (base, no dependencies on other game systems)
     // 2. UIManager (also base)
-    // 3. PlayerController (depends on MapSystem)
-    // 4. RenderingSystem (depends on PlayerController and MapSystem)
-    engine->RegisterModule(std::make_unique<MapSystem>());
-    engine->RegisterModule(std::make_unique<UIController>());
-    engine->RegisterModule(std::make_unique<PlayerSystem>());
+    // 3. PlayerController (depends on LevelManager)
+    // 4. RenderingSystem (depends on PlayerController and LevelManager)
+    engine->RegisterModule(std::make_unique<LevelManager>());
+    engine->RegisterModule(std::make_unique<UIManager>());
+    engine->RegisterModule(std::make_unique<PlayerController>());
     engine->RegisterModule(std::make_unique<RenderingSystem>());
 
     TraceLog(LOG_INFO, "[GameApplication] Game systems registered.");
@@ -208,7 +208,7 @@ void GameApplication::OnUpdate(float deltaTime)
         return;
 
     auto moduleManager = engine->GetModuleManager();
-    UIManager *UIManager = nullptr;
+    UIManager *uiManager = nullptr;
     Menu *menu = nullptr;
 
     if (moduleManager)
@@ -216,10 +216,10 @@ void GameApplication::OnUpdate(float deltaTime)
         auto *uiModule = moduleManager->GetModule("UI");
         if (uiModule)
         {
-            UIManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiController)
+            uiManager = dynamic_cast<UIManager *>(uiModule);
+            if (uiManager)
             {
-                menu = uiController->GetMenu();
+                menu = uiManager->GetMenu();
             }
         }
     }
@@ -300,7 +300,6 @@ void GameApplication::OnUpdate(float deltaTime)
             {
                 // Only show player metrics if game is initialized (map selected)
                 auto player = GetEngine()->GetPlayer();
-                auto *player = playerService ? player : nullptr;
 
                 if (player)
                 {
@@ -331,9 +330,9 @@ void GameApplication::OnRender()
     if (!engine)
         return;
 
-    // Get Menu via UIController
+    // Get Menu via UIManager
     auto moduleManager = engine->GetModuleManager();
-    UIManager *UIManager = nullptr;
+    UIManager *uiManager = nullptr;
     Menu *menu = nullptr;
 
     if (moduleManager)
@@ -341,16 +340,15 @@ void GameApplication::OnRender()
         auto *uiModule = moduleManager->GetModule("UI");
         if (uiModule)
         {
-            UIManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiController)
+            uiManager = dynamic_cast<UIManager *>(uiModule);
+            if (uiManager)
             {
-                menu = uiController->GetMenu();
+                menu = uiManager->GetMenu();
             }
         }
     }
 
     auto player = GetEngine()->GetPlayer();
-    auto *player = playerService ? player : nullptr;
 
     if (m_showMenu && menu)
     {
@@ -420,10 +418,7 @@ void GameApplication::OnShutdown()
 
     // Get components through Engine
     auto player = GetEngine()->GetPlayer();
-    auto *player = playerService ? player : nullptr;
-
-    auto LevelManager = GetEngine()->GetMapSystem();
-    auto *LevelManager = mapSystemService ? LevelManager : nullptr;
+    auto levelManager = GetEngine()->GetLevelManager();
 
     // MenuService removed, access via UIManager if needed, but here we just reset state
 
@@ -433,9 +428,9 @@ void GameApplication::OnShutdown()
         player->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
     }
 
-    if (LevelManager && !mapSystem->GetGameMap().GetMapObjects().empty())
+    if (levelManager && !levelManager->GetGameMap().GetMapObjects().empty())
     {
-        mapSystem->GetGameMap().Cleanup();
+        levelManager->GetGameMap().Cleanup();
         TraceLog(LOG_INFO, "[GameApplication] Editor map cleared");
     }
 
@@ -452,10 +447,10 @@ void GameApplication::OnShutdown()
             auto *uiModule = moduleManager->GetModule("UI");
             if (uiModule)
             {
-                auto *UIManager = dynamic_cast<UIManager *>(uiModule);
-                if (UIManager && uiController->GetMenu())
+                auto *uiManager = dynamic_cast<UIManager *>(uiModule);
+                if (uiManager && uiManager->GetMenu())
                 {
-                    uiController->GetMenu()->SetGameInProgress(false);
+                    uiManager->GetMenu()->SetGameInProgress(false);
                 }
             }
         }
@@ -483,10 +478,10 @@ void GameApplication::InitInput()
         auto *uiModule = moduleManager->GetModule("UI");
         if (uiModule)
         {
-            auto *UIManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiController)
+            auto *uiManager = dynamic_cast<UIManager *>(uiModule);
+            if (uiManager)
             {
-                menu = uiController->GetMenu();
+                menu = uiManager->GetMenu();
             }
         }
     }
@@ -541,20 +536,29 @@ void GameApplication::HandleMenuActions()
     if (!uiModule)
         return;
 
-    auto *UIManager = dynamic_cast<UIManager *>(uiModule);
-    if (uiController)
+    auto *uiManager = dynamic_cast<UIManager *>(uiModule);
+    if (uiManager)
     {
-        uiController->HandleMenuActions(&m_showMenu, &m_isGameInitialized);
+        uiManager->HandleMenuActions(&m_showMenu, &m_isGameInitialized);
     }
 }
 
 void GameApplication::UpdatePlayerLogic()
 {
     // Get PlayerController through Engine
-    auto playerSystemService = GetEngine()->GetService<PlayerSystemService>();
-    if (playerSystemService && playerSystemService->playerSystem)
+    // Get PlayerController through ModuleManager
+    auto *engine = GetEngine();
+    if (engine && engine->GetModuleManager())
     {
-        playerSystemService->playerSystem->UpdatePlayerLogic();
+        auto *module = engine->GetModuleManager()->GetModule("Player");
+        if (module)
+        {
+            auto *playerController = dynamic_cast<PlayerController *>(module);
+            if (playerController)
+            {
+                playerController->UpdatePlayerLogic();
+            }
+        }
     }
 }
 
@@ -566,23 +570,30 @@ void GameApplication::SaveGameState()
     }
 
     // Get PlayerController through Engine
-    auto playerSystemService = GetEngine()->GetService<PlayerSystemService>();
-    if (!playerSystemService || !playerSystemService->playerSystem)
+    // Get PlayerController through ModuleManager
+    auto *engine = GetEngine();
+    if (!engine || !engine->GetModuleManager())
+        return;
+
+    auto *playerModule = engine->GetModuleManager()->GetModule("Player");
+    auto *playerController = dynamic_cast<PlayerController *>(playerModule);
+
+    if (!playerController)
     {
         TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - PlayerController not available");
         return;
     }
 
-    // Get LevelManager through Engine to get current map path
-    auto LevelManager = GetEngine()->GetMapSystem();
-    if (!mapSystemService || !mapSystem)
+    // Get LevelManager through Engine
+    auto levelManager = engine->GetLevelManager();
+    if (!levelManager)
     {
         TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - LevelManager not available");
         return;
     }
 
     // Get current map path
-    std::string currentMapPath = mapSystem->GetCurrentMapPath();
+    std::string currentMapPath = levelManager->GetCurrentMapPath();
 
     if (currentMapPath.empty())
     {
@@ -590,6 +601,6 @@ void GameApplication::SaveGameState()
         return;
     }
 
-    playerSystemService->playerSystem->SavePlayerState(currentMapPath);
+    playerController->SavePlayerState(currentMapPath);
     TraceLog(LOG_INFO, "[GameApplication] Game state saved (map: %s)", currentMapPath.c_str());
 }
