@@ -1,6 +1,7 @@
 #ifndef INPUTMANAGER_H
 #define INPUTMANAGER_H
 
+#include <cstdint>
 #include <functional>
 #include <raylib.h>
 #include <unordered_map>
@@ -10,7 +11,7 @@
 class InputManager
 {
 public:
-    enum class InputType
+    enum class InputType : uint8_t
     {
         PRESSED, // Single press
         HELD,    // Continuous hold

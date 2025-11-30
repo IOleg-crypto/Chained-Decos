@@ -4,11 +4,12 @@
 #include "../Components/PlayerModel.h"
 #include "../Components/PlayerMovement.h"
 #include "../Components/PlayerRenderable.h"
-#include <scene/3d/camera/Core/CameraController.h>
-#include <servers/rendering/Interfaces/IGameRenderable.h>
-#include <scene/main/Core/World.h>
 #include <memory>
 #include <raylib.h>
+#include <scene/3d/camera/Core/CameraController.h>
+#include <scene/main/Core/World.h>
+#include <servers/rendering/Interfaces/IGameRenderable.h>
+
 
 // Define player constants
 Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 0.0f, 0.0f}; // Safe spawn position above ground
@@ -18,7 +19,7 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
 {
     // TODO: Get services from Kernel once service registration is complete (Task 14)
     // For now, services will be set externally or remain null until properly initialized
-    
+
     m_boundingBoxSize = {1.2f, 2.8f, 1.2f};
 
     // Create component objects
@@ -118,7 +119,8 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
         if (m_movement->GetPhysics().IsGrounded())
         {
             // Check if we just landed (was falling, now grounded)
-            TraceLog(LOG_DEBUG, "[Player] Grounded check: wasFalling=%d, lastFallSpeed=%.2f", wasFalling, lastFallSpeed);
+            TraceLog(LOG_DEBUG, "[Player] Grounded check: wasFalling=%d, lastFallSpeed=%.2f",
+                     wasFalling, lastFallSpeed);
             if (wasFalling)
             {
                 TraceLog(LOG_INFO, "[Player] Landed with fall speed: %.2f", lastFallSpeed);
@@ -140,7 +142,8 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
                 m_cameraController->AddScreenShake(impactIntensity, impactDuration);
                 if (m_audioManager)
                 {
-                    TraceLog(LOG_INFO, "[Player] AudioManager available, playing player_fall sound");
+                    TraceLog(LOG_INFO,
+                             "[Player] AudioManager available, playing player_fall sound");
                     m_audioManager->PlaySoundEffect("player_fall", 1.0f);
                 }
                 else
@@ -166,7 +169,8 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
             // Track falling state for landing impact
             wasFalling = true;
             lastFallSpeed = abs(m_movement->GetPhysics().GetVelocity().y);
-            TraceLog(LOG_DEBUG, "[Player] Falling: velocity.y=%.2f, lastFallSpeed=%.2f", m_movement->GetPhysics().GetVelocity().y, lastFallSpeed);
+            TraceLog(LOG_DEBUG, "[Player] Falling: velocity.y=%.2f, lastFallSpeed=%.2f",
+                     m_movement->GetPhysics().GetVelocity().y, lastFallSpeed);
 
             // Handle continuous fall sound
             if (m_audioManager)
@@ -174,7 +178,8 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
                 if (!m_isFallSoundPlaying && lastFallSpeed > 2.0f)
                 {
                     // Start looping fall sound
-                    m_audioManager->PlayLoopingSoundEffect("player_fall", 6.5f); // Lower volume for continuous
+                    m_audioManager->PlayLoopingSoundEffect("player_fall",
+                                                           6.5f); // Lower volume for continuous
                     m_isFallSoundPlaying = true;
                     TraceLog(LOG_INFO, "[Player] Started looping fall sound");
                 }
@@ -335,12 +340,12 @@ BoundingBox Player::GetPlayerBoundingBox() const
     return m_collision->GetBoundingBox();
 }
 
-const PhysicsComponent &Player::GetPhysics() const
+const LegacyPhysicsComponent &Player::GetPhysics() const
 {
     return m_movement->GetPhysics();
 }
 
-PhysicsComponent &Player::GetPhysics()
+LegacyPhysicsComponent &Player::GetPhysics()
 {
     return m_movement->GetPhysics();
 }

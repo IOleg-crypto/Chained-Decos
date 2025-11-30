@@ -1,13 +1,14 @@
 #ifndef PLAYER_MOVEMENT_H
 #define PLAYER_MOVEMENT_H
 
-#include <servers/physics/collision/Core/CollisionManager.h>
-#include <scene/main/Core/World.h>
+#include "../Interfaces/IPlayerMediator.h"
+#include "../Interfaces/IPlayerMovement.h"
 #include <raylib.h>
 #include <raymath.h>
+#include <scene/main/Core/World.h>
+#include <servers/physics/collision/Core/CollisionManager.h>
 #include <servers/physics/dynamics/Components/PhysicsComponent.h>
-#include "../Interfaces/IPlayerMovement.h"
-#include "../Interfaces/IPlayerMediator.h"
+
 
 class PlayerMovement : public IPlayerMovement
 {
@@ -28,16 +29,17 @@ public:
     void UpdateGrounded(const CollisionManager &collisionManager) override;
     void HandleCollisionVelocity(const Vector3 &responseNormal) override;
     bool ExtractFromCollider() override;
-    Vector3 ValidateCollisionResponse(const Vector3 &response, const Vector3 &currentPosition) override;
+    Vector3 ValidateCollisionResponse(const Vector3 &response,
+                                      const Vector3 &currentPosition) override;
 
     // Getters/Setters
     float GetRotationY() const override;
     void SetRotationY(float rotation) override;
     float GetSpeed() const override;
     void SetSpeed(float speed) override;
-    
-    PhysicsComponent &GetPhysics() override;
-    const PhysicsComponent &GetPhysics() const override;
+
+    LegacyPhysicsComponent &GetPhysics() override;
+    const LegacyPhysicsComponent &GetPhysics() const override;
 
     // Noclip functionality
     void SetNoclip(bool enable) override;
@@ -52,7 +54,7 @@ private:
     float m_rotationY = 0.0f;
 
     float m_walkSpeed = 11.0f;
-    PhysicsComponent m_physics;
+    LegacyPhysicsComponent m_physics;
 
     const CollisionManager *m_lastCollisionManager = nullptr;
 
