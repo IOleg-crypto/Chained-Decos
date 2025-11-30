@@ -4,14 +4,14 @@ add_library(ChainedDecosGame STATIC
     Managers/MapCollisionInitializer.cpp
     Managers/MapCollisionInitializer.h
     # Systems (modular architecture)
-    Systems/PlayerSystem/PlayerController.cpp
-    Systems/PlayerSystem/PlayerController.h
+    # Systems/PlayerSystem/PlayerController.cpp
+    # Systems/PlayerSystem/PlayerController.h
     Systems/MapSystem/LevelManager.cpp
     Systems/MapSystem/LevelManager.h
     Systems/UIController/UIManager.cpp
     Systems/UIController/UIManager.h
-    Systems/RenderingSystem/RenderingSystem.cpp
-    Systems/RenderingSystem/RenderingSystem.h
+    # Systems/RenderingSystem/RenderingSystem.cpp
+    # Systems/RenderingSystem/RenderingSystem.h
 )
 
 target_include_directories(ChainedDecosGame

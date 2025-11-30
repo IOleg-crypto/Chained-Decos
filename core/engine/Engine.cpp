@@ -34,23 +34,8 @@ Engine::~Engine()
 
 bool Engine::Initialize()
 {
-    // 1. Create and Initialize InputManager
-    auto inputManager = std::make_unique<InputManager>();
-    if (!inputManager->Initialize())
-    {
-        TraceLog(LOG_ERROR, "[Engine] Failed to initialize InputManager");
-        return false;
-    }
-    m_inputManager = std::move(inputManager);
-
-    // 2. Create and Initialize RenderManager
-    auto renderManager = std::make_unique<RenderManager>();
-    if (!renderManager->Initialize())
-    {
-        TraceLog(LOG_ERROR, "[Engine] Failed to initialize RenderManager");
-        return false;
-    }
-    m_renderManager = std::move(renderManager);
+    // Managers are now Static Singletons initialized by GameApplication
+    // or lazily initialized on first access (though explicit init is preferred)
 
     TraceLog(LOG_INFO, "[Engine] Engine initialized successfully");
     return true;
@@ -58,8 +43,7 @@ bool Engine::Initialize()
 
 void Engine::Update(float deltaTime)
 {
-    if (m_inputManager)
-        m_inputManager->Update(deltaTime);
+    // InputManager is updated by GameApplication
 
     if (m_moduleManager)
     {
@@ -71,10 +55,18 @@ void Engine::Shutdown()
 {
     if (m_moduleManager)
         m_moduleManager->ShutdownAllModules();
-    if (m_renderManager)
-        m_renderManager->Shutdown();
-    if (m_inputManager)
-        m_inputManager->Shutdown();
+
+    // RenderManager and InputManager are shutdown by GameApplication
+}
+
+RenderManager *Engine::GetRenderManager() const
+{
+    return &RenderManager::Get();
+}
+
+InputManager *Engine::GetInputManager() const
+{
+    return &InputManager::Get();
 }
 
 void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)
@@ -87,11 +79,7 @@ void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)
 
 bool Engine::IsCollisionDebugVisible() const
 {
-    if (m_renderManager)
-    {
-        return m_renderManager->IsCollisionDebugVisible();
-    }
-    return false;
+    return RenderManager::Get().IsCollisionDebugVisible();
 }
 
 // Direct access to game objects (replaces service wrappers)
