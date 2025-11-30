@@ -1,65 +1,78 @@
-//
-// Created by I#Oleg.
-//
-
 #ifndef INPUTMANAGER_H
 #define INPUTMANAGER_H
 
-#ifdef _WIN32
-#ifdef CHAINEDDECOSENGINE_EXPORTS
-#define CHAINEDDECOSENGINE_API __declspec(dllexport)
-#else
-#define CHAINEDDECOSENGINE_API __declspec(dllimport)
-#endif
-#else
-#define CHAINEDDECOSENGINE_API
-#endif
-
-#include "servers/input/Interfaces/IInputManager.h"
 #include <functional>
 #include <raylib.h>
 #include <unordered_map>
 
-//
-// InputManager
-// Enhanced input manager with support for different input types:
-// - Single press actions (KEY_PRESSED)
-// - Continuous hold actions (KEY_DOWN)
-// - Release actions (KEY_RELEASED)
-//
-CHAINEDDECOSENGINE_API class InputManager : public IInputManager
+// InputManager - Static Singleton
+// Enhanced input manager with support for different input types
+class InputManager
 {
 public:
-    InputManager() = default;
-    ~InputManager() override = default;
+    enum class InputType
+    {
+        PRESSED, // Single press
+        HELD,    // Continuous hold
+        RELEASED // Release
+    };
 
-    InputManager(const InputManager &other) = delete;
-    InputManager(InputManager &&other) = delete;
+    // Static Singleton - як у Godot!
+    static InputManager &Get()
+    {
+        static InputManager instance;
+        return instance;
+    }
 
-    // IInputManager interface
-    bool Initialize() override;
-    void Shutdown() override;
-    void Update(float deltaTime) override;
+    // Заборонити копіювання
+    InputManager(const InputManager &) = delete;
+    InputManager &operator=(const InputManager &) = delete;
 
+    // Lifecycle
+    bool Initialize();
+    void Shutdown();
+    void Update(float deltaTime);
+
+    // Action registration
     void RegisterAction(int key, const std::function<void()> &action,
-                        InputType type = InputType::PRESSED) override;
-    void RegisterPressedAction(int key, const std::function<void()> &action) override;
-    void RegisterHeldAction(int key, const std::function<void()> &action) override;
-    void RegisterReleasedAction(int key, const std::function<void()> &action) override;
+                        InputType type = InputType::PRESSED);
+    void RegisterPressedAction(int key, const std::function<void()> &action);
+    void RegisterHeldAction(int key, const std::function<void()> &action);
+    void RegisterReleasedAction(int key, const std::function<void()> &action);
 
-    void UnregisterAction(int key, InputType type) override;
-    void ClearActions() override;
+    void UnregisterAction(int key, InputType type);
+    void ClearActions();
 
-    void ProcessInput() const override;
+    void ProcessInput() const;
 
-    bool IsKeyPressed(int key) const override;
-    bool IsKeyDown(int key) const override;
-    bool IsKeyReleased(int key) const override;
+    // Direct key queries
+    bool IsKeyPressed(int key) const;
+    bool IsKeyDown(int key) const;
+    bool IsKeyReleased(int key) const;
+
+    // Mouse
+    Vector2 GetMousePosition() const;
+    Vector2 GetMouseDelta() const;
+    bool IsMouseButtonPressed(int button) const;
+    bool IsMouseButtonDown(int button) const;
+    bool IsMouseButtonReleased(int button) const;
+
+    // Cursor control
+    void DisableCursor();
+    void EnableCursor();
+    bool IsCursorDisabled() const;
 
 private:
+    // Private constructor для Singleton
+    InputManager() = default;
+    ~InputManager() = default;
+
     std::unordered_map<int, std::function<void()>> m_pressedActions;
     std::unordered_map<int, std::function<void()>> m_heldActions;
     std::unordered_map<int, std::function<void()>> m_releasedActions;
+
+    Vector2 m_lastMousePosition = {0, 0};
+    bool m_initialized = false;
 };
 
 #endif // INPUTMANAGER_H
