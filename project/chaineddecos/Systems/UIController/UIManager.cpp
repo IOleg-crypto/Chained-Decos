@@ -185,6 +185,7 @@ void UIManager::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
     }
 
     // Get PlayerController through ModuleManager
+    /*
     PlayerController *playerController = nullptr;
     if (m_engine->GetModuleManager())
     {
@@ -194,30 +195,50 @@ void UIManager::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
             playerController = dynamic_cast<PlayerController *>(module);
         }
     }
+    */
 
-    if (!playerController)
+    auto models = m_engine->GetService<ModelLoader>();
+    auto levelManager = m_engine->GetLevelManager();
+    auto collisionManager = m_engine->GetService<CollisionManager>();
+
+    if (!models || !levelManager || !collisionManager) // || !playerController
     {
-        TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - PlayerController not available");
+        TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - Required services not available");
         return;
     }
 
-    m_menu->SetGameInProgress(true);
+    m_menu->SetAction(MenuAction::SinglePlayer);
 
-    // Initialize player after map is loaded
-    try
+    // Initialize game for singleplayer
+    if (!(*isGameInitialized))
     {
-        playerController->InitializePlayer();
-        TraceLog(LOG_INFO, "[UIManager] HandleSinglePlayer() - Player initialized successfully");
-    }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_ERROR, "[UIManager] HandleSinglePlayer() - Failed to initialize player: %s",
-                 e.what());
-        TraceLog(LOG_WARNING, "[UIManager] HandleSinglePlayer() - Player may not render correctly");
+        TraceLog(LOG_INFO, "[UIManager] HandleSinglePlayer() - Initializing game...");
+
+        // Load default map if none selected
+        std::string mapPath = levelManager->GetCurrentMapPath();
+        if (mapPath.empty())
+        {
+            mapPath = PROJECT_ROOT_DIR "/resources/maps/test_map.json"; // Default map
+        }
+
+        std::vector<std::string> requiredModels = ModelAnalyzer::GetModelsRequiredForMap(mapPath);
+        models->LoadGameModelsSelective(requiredModels);
+
+        if (!levelManager->InitCollisionsWithModelsSafe(requiredModels))
+        {
+            TraceLog(LOG_ERROR,
+                     "[UIManager] HandleSinglePlayer() - Failed to initialize collision system");
+            return;
+        }
+
+        // Initialize player
+        // playerController->InitializePlayer();
+
+        *isGameInitialized = true;
     }
 
-    *showMenu = false;         // Hide menu
-    *isGameInitialized = true; // Mark game as initialized
+    HideMenuAndStartGame(showMenu);
+    TraceLog(LOG_INFO, "[UIManager] HandleSinglePlayer() - Singleplayer started");
 }
 
 void UIManager::HideMenuAndStartGame(bool *showMenu)
@@ -340,11 +361,8 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
         return;
     }
 
-    auto models = m_engine->GetService<ModelLoader>();
-    auto levelManager = m_engine->GetLevelManager();
-    auto collisionManager = m_engine->GetService<CollisionManager>();
-
     // Get PlayerController through ModuleManager
+    /*
     PlayerController *playerController = nullptr;
     if (m_engine->GetModuleManager())
     {
@@ -354,8 +372,13 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
             playerController = dynamic_cast<PlayerController *>(module);
         }
     }
+    */
 
-    if (!models || !levelManager || !playerController || !collisionManager)
+    auto models = m_engine->GetService<ModelLoader>();
+    auto levelManager = m_engine->GetLevelManager();
+    auto collisionManager = m_engine->GetService<CollisionManager>();
+
+    if (!models || !levelManager || !collisionManager) // || !playerController
     {
         TraceLog(LOG_ERROR, "[UIManager] HandleResumeGame() - Required services not available");
         return;
@@ -364,7 +387,7 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
     m_menu->SetAction(MenuAction::SinglePlayer);
 
     // Restore game state first (player position, velocity, etc.)
-    playerController->RestorePlayerState();
+    // playerController->RestorePlayerState();
     TraceLog(LOG_INFO, "[UIManager] HandleResumeGame() - Game state restored");
 
     // Ensure game is properly initialized for resume
@@ -390,6 +413,7 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
                  "[UIManager] HandleResumeGame() - Collision system initialized for singleplayer");
 
         // Initialize player after map is loaded
+        /*
         try
         {
             playerController->InitializePlayer();
@@ -403,6 +427,7 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
             TraceLog(LOG_WARNING,
                      "[UIManager] HandleResumeGame() - Player may not render correctly");
         }
+        */
     }
     else
     {
@@ -830,6 +855,7 @@ void UIManager::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialized)
     }
 
     auto levelManager = m_engine->GetLevelManager();
+    /*
     PlayerController *playerController = nullptr;
     if (m_engine->GetModuleManager())
     {
@@ -839,8 +865,9 @@ void UIManager::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialized)
             playerController = dynamic_cast<PlayerController *>(module);
         }
     }
+    */
 
-    if (!levelManager || !playerController)
+    if (!levelManager) // || !playerController
     {
         TraceLog(LOG_ERROR,
                  "[UIManager] HandleStartGameWithMap() - Required services not available");
@@ -871,7 +898,7 @@ void UIManager::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialized)
         LoadMapObjects(mapPath);
 
         // 5. Initialize player
-        playerController->InitializePlayer();
+        // playerController->InitializePlayer();
         TraceLog(LOG_INFO,
                  "[UIManager] HandleStartGameWithMap() - Player initialized successfully");
 
