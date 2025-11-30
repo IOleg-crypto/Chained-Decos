@@ -1,17 +1,10 @@
-add_library(kernel STATIC
-        Core/Kernel.cpp
-        Core/Kernel.h
-
-        Interfaces/IKernelService.h
-)
+add_library(kernel INTERFACE)
 
 target_include_directories(kernel
-        PUBLIC
+        INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(kernel PRIVATE raylib)
-
-set_target_properties(kernel PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(kernel INTERFACE raylib)
 
 
