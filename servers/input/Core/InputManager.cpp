@@ -1,39 +1,56 @@
-//
-// Created by I#Oleg.
-//
-
 #include "InputManager.h"
+#include <raylib.h>
 
-void InputManager::RegisterAction(const int key, const std::function<void()> &action,
-                                  InputType type)
+bool InputManager::Initialize()
+{
+    TraceLog(LOG_INFO, "InputManager initialized");
+    m_initialized = true;
+    return true;
+}
+
+void InputManager::Shutdown()
+{
+    ClearActions();
+    m_initialized = false;
+    TraceLog(LOG_INFO, "InputManager shutdown");
+}
+
+void InputManager::Update(float deltaTime)
+{
+    // Update mouse delta
+    Vector2 currentMousePos = GetMousePosition();
+    m_lastMousePosition = currentMousePos;
+}
+
+void InputManager::RegisterAction(int key, const std::function<void()> &action, InputType type)
 {
     switch (type)
     {
     case InputType::PRESSED:
-        m_pressedActions[key] = action;
+        RegisterPressedAction(key, action);
         break;
     case InputType::HELD:
-        m_heldActions[key] = action;
+        RegisterHeldAction(key, action);
         break;
     case InputType::RELEASED:
-        m_releasedActions[key] = action;
+        RegisterReleasedAction(key, action);
         break;
     }
 }
 
 void InputManager::RegisterPressedAction(int key, const std::function<void()> &action)
 {
-    RegisterAction(key, action, InputType::PRESSED);
+    m_pressedActions[key] = action;
 }
 
 void InputManager::RegisterHeldAction(int key, const std::function<void()> &action)
 {
-    RegisterAction(key, action, InputType::HELD);
+    m_heldActions[key] = action;
 }
 
 void InputManager::RegisterReleasedAction(int key, const std::function<void()> &action)
 {
-    RegisterAction(key, action, InputType::RELEASED);
+    m_releasedActions[key] = action;
 }
 
 void InputManager::UnregisterAction(int key, InputType type)
@@ -61,7 +78,7 @@ void InputManager::ClearActions()
 
 void InputManager::ProcessInput() const
 {
-    // Process single press actions
+    // Process pressed actions
     for (const auto &[key, action] : m_pressedActions)
     {
         if (IsKeyPressed(key))
@@ -70,7 +87,7 @@ void InputManager::ProcessInput() const
         }
     }
 
-    // Process continuous hold actions
+    // Process held actions
     for (const auto &[key, action] : m_heldActions)
     {
         if (IsKeyDown(key))
@@ -79,7 +96,7 @@ void InputManager::ProcessInput() const
         }
     }
 
-    // Process release actions
+    // Process released actions
     for (const auto &[key, action] : m_releasedActions)
     {
         if (IsKeyReleased(key))
@@ -87,23 +104,6 @@ void InputManager::ProcessInput() const
             action();
         }
     }
-}
-
-void InputManager::Update(float deltaTime)
-{
-    ProcessInput();
-}
-
-bool InputManager::Initialize()
-{
-    // InputManager doesn't need special initialization
-    return true;
-}
-
-void InputManager::Shutdown()
-{
-    // Clean up all registered actions
-    ClearActions();
 }
 
 bool InputManager::IsKeyPressed(int key) const
@@ -119,4 +119,44 @@ bool InputManager::IsKeyDown(int key) const
 bool InputManager::IsKeyReleased(int key) const
 {
     return ::IsKeyReleased(key);
+}
+
+Vector2 InputManager::GetMousePosition() const
+{
+    return ::GetMousePosition();
+}
+
+Vector2 InputManager::GetMouseDelta() const
+{
+    return ::GetMouseDelta();
+}
+
+bool InputManager::IsMouseButtonPressed(int button) const
+{
+    return ::IsMouseButtonPressed(button);
+}
+
+bool InputManager::IsMouseButtonDown(int button) const
+{
+    return ::IsMouseButtonDown(button);
+}
+
+bool InputManager::IsMouseButtonReleased(int button) const
+{
+    return ::IsMouseButtonReleased(button);
+}
+
+void InputManager::DisableCursor()
+{
+    ::DisableCursor();
+}
+
+void InputManager::EnableCursor()
+{
+    ::EnableCursor();
+}
+
+bool InputManager::IsCursorDisabled() const
+{
+    return ::IsCursorHidden();
 }

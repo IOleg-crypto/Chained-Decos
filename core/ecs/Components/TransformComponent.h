@@ -2,6 +2,7 @@
 #define TRANSFORM_COMPONENT_H
 
 #include <raylib.h>
+#include <raymath.h>
 
 struct TransformComponent
 {

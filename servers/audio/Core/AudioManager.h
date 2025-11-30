@@ -1,25 +1,28 @@
 #ifndef AUDIOMANAGER_H
 #define AUDIOMANAGER_H
 
-#include "../Interfaces/IAudioManager.h"
-#include <memory>
 #include <raylib.h>
 #include <string>
 #include <unordered_map>
 
-class AudioManager : public IAudioManager
+class AudioManager
 {
 public:
-    AudioManager();
-    ~AudioManager() override;
+    // Static Singleton - як у Godot!
+    static AudioManager &Get()
+    {
+        static AudioManager instance;
+        return instance;
+    }
+
+    // Заборонити копіювання
+    AudioManager(const AudioManager &) = delete;
+    AudioManager &operator=(const AudioManager &) = delete;
 
     // Initialize audio system
     bool Initialize();
     void Shutdown();
     void Update(float deltaTime);
-    void Render()
-    {
-    }
 
     // Load audio files
     bool LoadSound(const std::string &name, const std::string &filePath);
@@ -39,9 +42,22 @@ public:
     bool IsMusicPlaying() const;
 
     // Volume control
-    void SetMasterVolume(float volume) override;
+    void SetMasterVolume(float volume);
     void SetMusicVolume(float volume);
     void SetSoundVolume(float volume);
+
+    float GetMasterVolume() const
+    {
+        return m_masterVolume;
+    }
+    float GetMusicVolume() const
+    {
+        return m_musicVolume;
+    }
+    float GetSoundVolume() const
+    {
+        return m_soundVolume;
+    }
 
     // Cleanup
     void UnloadSound(const std::string &name);
@@ -49,15 +65,20 @@ public:
     void UnloadAll();
 
 private:
+    // Private constructor для Singleton
+    AudioManager();
+    ~AudioManager();
+
     std::unordered_map<std::string, Sound> m_sounds;
     std::unordered_map<std::string, Music> m_music;
     std::unordered_map<std::string, bool> m_loopingSounds;
     Music m_currentMusic;
-    bool m_musicPlaying;
+    bool m_musicPlaying = false;
 
-    float m_masterVolume;
-    float m_musicVolume;
-    float m_soundVolume;
+    float m_masterVolume = 1.0f;
+    float m_musicVolume = 1.0f;
+    float m_soundVolume = 1.0f;
+    bool m_initialized = false;
 };
 
 #endif // AUDIOMANAGER_H

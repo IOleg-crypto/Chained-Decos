@@ -1,118 +1,107 @@
 #ifndef RENDERMANAGER_H
 #define RENDERMANAGER_H
 
-#include "servers/rendering/Interfaces/IRenderManager.h"
 #include <memory>
+#include <raylib.h>
 #include <string>
 #include <vector>
 
-// Forward declarations to reduce dependencies
+
+// Forward declarations
 class IRenderCommand;
-class IGameRenderable;
-class IMenuRenderable;
-class ModelLoader;
-class CollisionManager;
-class CollisionDebugRenderer;
 class ShaderManager;
 
-class RenderManager : public IRenderManager
+class RenderManager
 {
 public:
-    RenderManager();
-    ~RenderManager() override;
+    // Static Singleton - як у Godot!
+    static RenderManager &Get()
+    {
+        static RenderManager instance;
+        return instance;
+    }
+
+    // Заборонити копіювання
+    RenderManager(const RenderManager &) = delete;
+    RenderManager &operator=(const RenderManager &) = delete;
 
     // Initialization
-    bool Initialize() override;
-    void Shutdown() override;
-    void Update(float deltaTime); // Not virtual in IRenderManager
+    bool Initialize(int width, int height, const char *title);
+    void Shutdown();
+    void Update(float deltaTime);
 
-    static void InitializeImGuiFont(const std::string &fontPath,
-                                    float fontSize); // Delegates to ImGuiHelper
+    // Main rendering
+    void BeginFrame();
+    void EndFrame();
 
-    // Main rendering methods
-    void BeginFrame() const override;
-    void EndFrame() override;
+    // 3D rendering
+    void BeginMode3D(Camera camera);
+    void EndMode3D();
 
-    // Command-based rendering (NEW APPROACH)
-    void SubmitCommand(std::unique_ptr<IRenderCommand> command) override;
-    void ExecuteCommands() override;
-    void ClearCommands() override;
-
-    // Legacy methods (DEPRECATED - will be removed)
-    void RenderMenu(IMenuRenderable &renderable);
-
-    // Debug rendering
-    void ToggleDebugInfo() override;
-    void ToggleCollisionDebug() override;
-    void ForceCollisionDebugNextFrame() override;
-    void SetDebugInfo(bool enabled) override;
-    void SetCollisionDebug(bool enabled) override;
-    bool IsDebugInfoVisible() const override;
-
-    void DrawCameraInfo(const Camera &camera, int cameraMode) const;
-    void DrawModelManagerInfo(const ModelLoader &models) const;
-    void DrawCollisionSystemInfo(const CollisionManager &collisionManager) const;
-    void DrawControlsInfo() const;
-    bool LoadWindShader();
-
-    void DrawDebugInfoWindow(IGameRenderable &renderable, const ModelLoader &models,
-                             const CollisionManager &collisionManager) const;
-
-    void RenderCollisionShapes(const CollisionManager &collisionManager,
-                               IGameRenderable &renderable) const;
-
-    void SetBackgroundColor(Color color);
-
-    // Public rendering method for game world
-    void RenderGame(IGameRenderable &renderable, const ModelLoader &models,
-                    const CollisionManager &collisionManager,
-                    bool showCollisionDebug = false) override;
-
-    // Debug rendering (moved to public for GameApplication access)
-    void ShowMetersPlayer(const IGameRenderable &renderable) const override;
-    void RenderDebugInfo(const IGameRenderable &renderable, const ModelLoader &models,
-                         const CollisionManager &collision) const override;
-
-    Font GetFont() const override;
-
-    bool IsCollisionDebugVisible() const override
+    // Camera access
+    Camera &GetCamera()
     {
-        return m_showCollisionDebug;
+        return m_camera;
+    }
+    const Camera &GetCamera() const
+    {
+        return m_camera;
+    }
+    void SetCamera(const Camera &camera)
+    {
+        m_camera = camera;
+    }
+
+    // Window
+    int GetScreenWidth() const;
+    int GetScreenHeight() const;
+    void SetBackgroundColor(Color color)
+    {
+        m_backgroundColor = color;
+    }
+    Color GetBackgroundColor() const
+    {
+        return m_backgroundColor;
+    }
+
+    // Debug
+    void ToggleDebugInfo()
+    {
+        m_showDebugInfo = !m_showDebugInfo;
+    }
+    void SetDebugInfo(bool enabled)
+    {
+        m_showDebugInfo = enabled;
+    }
+    bool IsDebugInfoVisible() const
+    {
+        return m_showDebugInfo;
+    }
+
+    // Font
+    Font GetFont() const
+    {
+        return m_font;
+    }
+    void SetFont(Font font)
+    {
+        m_font = font;
     }
 
 private:
-    void BeginMode3D(const Camera &camera);
-    void EndMode3D();
-    void DrawScene3D(const ModelLoader &models);
-    void DrawPlayer(IGameRenderable &renderable, const ModelLoader &models);
-    void RenderCollisionDebug(const CollisionManager &collisionManager,
-                              IGameRenderable &renderable) const;
+    // Private constructor для Singleton
+    RenderManager();
+    ~RenderManager();
 
-public:
-    // Command queue for rendering
-    std::vector<std::unique_ptr<IRenderCommand>> m_commandQueue;
+    Camera m_camera;
+    Color m_backgroundColor = SKYBLUE;
+    Font m_font{};
 
-    // Debug rendering
-    std::unique_ptr<CollisionDebugRenderer>
-        m_collisionDebugRenderer; // incomplete type is fine here
-    // Debug state
     bool m_showDebugInfo = false;
-    bool m_showCollisionDebug = false;
-    bool m_forceCollisionDebugNextFrame = false;
+    bool m_initialized = false;
 
-    // Background color
-    Color m_backgroundColor = BLUE;
-
-    Font m_font{}; // Custom font for raylib
-
-    // Shader management
-    std::unique_ptr<ShaderManager> m_shaderManager;
-
-    // Player wind effect shader uniforms
-    int m_fallSpeedLoc = -1;
-    int m_timeLoc = -1;
-    int m_windDirectionLoc = -1;
-    float m_shaderTime = 0.0f;
+    int m_screenWidth = 1280;
+    int m_screenHeight = 720;
 };
 
 #endif // RENDERMANAGER_H
