@@ -69,17 +69,18 @@ public:
     void SetRotationY(float rotationY) const;
 
     // Getters/Setters
-    [[nodiscard]] float GetSpeed() const;       // Get current speed
-    [[nodiscard]] float GetRotationY() const;   // Get Y rotation
-    void SetSpeed(float speed) const;           // Set speed
-    Vector3 GetPlayerPosition() const;          // Get position
-    Vector3 GetPlayerSize() const;              // Get player size
-    PlayerCollision &GetCollisionMutable();     // Add this method
-    const Collision &GetCollision() const;      // Get collision info
-    bool IsJumpCollision() const;               // Check jump collision flag
-    BoundingBox GetPlayerBoundingBox() const;   // Get bounding box
-    const PhysicsComponent &GetPhysics() const; // Get physics component (const)
-    PhysicsComponent &GetPhysics();             // Get physics component (non-const)
+    [[nodiscard]] float GetSpeed() const;     // Get current speed
+    [[nodiscard]] float GetRotationY() const; // Get Y rotation
+    void SetSpeed(float speed) const;         // Set speed
+
+    Vector3 GetPlayerPosition() const;                // Get position
+    Vector3 GetPlayerSize() const;                    // Get player size
+    PlayerCollision &GetCollisionMutable();           // Add this method
+    const Collision &GetCollision() const;            // Get collision info
+    bool IsJumpCollision() const;                     // Check jump collision flag
+    BoundingBox GetPlayerBoundingBox() const;         // Get bounding box
+    const LegacyPhysicsComponent &GetPhysics() const; // Get physics component (const)
+    LegacyPhysicsComponent &GetPhysics();             // Get physics component (non-const)
     IPlayerMovement *GetMovement() const;
     IGameRenderable *GetRenderable() const;
 

@@ -1,12 +1,13 @@
 #ifndef IPLAYER_MEDIATOR_H
 #define IPLAYER_MEDIATOR_H
 
+#include <memory>
 #include <raylib.h>
 #include <raymath.h>
-#include <memory>
+#include <scene/3d/camera/Core/CameraController.h>
 #include <servers/physics/collision/System/CollisionSystem.h>
 #include <servers/physics/dynamics/Components/PhysicsComponent.h>
-#include <scene/3d/camera/Core/CameraController.h>
+
 
 class IPlayerMediator
 {
@@ -16,11 +17,11 @@ public:
     // Position & Size
     virtual Vector3 GetPlayerPosition() const = 0;
     virtual Vector3 GetPlayerSize() const = 0;
-    virtual void SetPlayerPosition(const Vector3& pos) const = 0;
+    virtual void SetPlayerPosition(const Vector3 &pos) const = 0;
 
     // Physics
-    virtual PhysicsComponent& GetPhysics() = 0;
-    virtual const PhysicsComponent& GetPhysics() const = 0;
+    virtual LegacyPhysicsComponent &GetPhysics() = 0;
+    virtual const LegacyPhysicsComponent &GetPhysics() const = 0;
 
     // Movement & Speed
     virtual float GetSpeed() const = 0;
@@ -30,7 +31,7 @@ public:
     virtual void ApplyJumpImpulse(float impulse) = 0;
 
     // Collision
-    virtual const Collision& GetCollision() const = 0;
+    virtual const Collision &GetCollision() const = 0;
     virtual void SyncCollision() const = 0;
 
     // Camera
@@ -38,4 +39,3 @@ public:
 };
 
 #endif // IPLAYER_MEDIATOR_H
-

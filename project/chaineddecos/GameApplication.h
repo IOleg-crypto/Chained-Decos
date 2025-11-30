@@ -2,6 +2,9 @@
 #define GAME_APPLICATION_H
 
 #include "core/config/Core/GameConfig.h"
+#include "core/ecs/Components.h"
+#include "core/ecs/ECSRegistry.h"
+#include "core/ecs/Systems.h"
 #include "core/engine/IApplication.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
@@ -9,6 +12,8 @@
 #include "scene/resources/model/Core/Model.h"
 #include "servers/audio/Core/AudioManager.h"
 #include "servers/physics/collision/Core/CollisionManager.h"
+#include <entt/entt.hpp>
+
 // =================================================
 #include <memory>
 
@@ -33,13 +38,8 @@ private:
     std::shared_ptr<ModelLoader> m_models;
     std::shared_ptr<WorldManager> m_world;
 
-    // Game components are now created by systems:
-    // - Player and PlayerManager → PlayerSystem
-    // - Menu → UIController
-    // - MapManager → MapSystem
-
-    // Game manager components (created after system initialization)
-    std::shared_ptr<AudioManager> m_soundSystem;
+    // ECS Entities
+    entt::entity m_playerEntity = entt::null;
 
     // Game state
     bool m_showMenu;

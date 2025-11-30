@@ -1,28 +1,28 @@
-#ifndef PHYSICS_COMPONENT_H
-#define PHYSICS_COMPONENT_H
+#ifndef LEGACY_PHYSICS_COMPONENT_H
+#define LEGACY_PHYSICS_COMPONENT_H
 
 #include <raylib.h>
 #include <raymath.h>
 
-#include <memory>
-#include <vector>
 #include "SurfaceComponent.h"
 #include <future>
+#include <memory>
 #include <thread>
+#include <vector>
 
-
-
-class PhysicsComponent {
+class LegacyPhysicsComponent
+{
 public:
     // World physics constants
     static constexpr float WORLD_FLOOR_Y = -1.0f;
 
-    PhysicsComponent();
+    LegacyPhysicsComponent();
 
     void Update(float deltaTime);
 
     // Parallel update for multiple physics components
-    static void UpdatePhysicsComponentsParallel(std::vector<PhysicsComponent*>& components, float deltaTime);
+    static void UpdatePhysicsComponentsParallel(std::vector<LegacyPhysicsComponent *> &components,
+                                                float deltaTime);
 
     // Physics state
     bool IsGrounded() const;
@@ -61,13 +61,12 @@ public:
     void SetInAir();
 
     // Surface interaction
-    void HandleSurfaceInteraction(const SurfaceComponent* surface);
+    void HandleSurfaceInteraction(const SurfaceComponent *surface);
 
     // Utility
-    bool HasExtremeVelocity(const Vector3& velocity) const;
+    bool HasExtremeVelocity(const Vector3 &velocity) const;
 
     bool HasExtremeVelocity() const;
-
 
 private:
     // State

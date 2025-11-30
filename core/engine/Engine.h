@@ -1,8 +1,6 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "../../servers/input/Interfaces/IInputManager.h"
-#include "../../servers/rendering/Interfaces/IRenderManager.h"
 #include "../object/module/Core/ModuleManager.h"
 #include <memory>
 #include <stdexcept>
@@ -10,12 +8,13 @@
 #include <typeindex>
 #include <unordered_map>
 
-
 // Forward declarations for game objects
 class Player;
 class PlayerController;
 class LevelManager;
 class Menu;
+class RenderManager;
+class InputManager;
 
 // Main Engine class acting as Service Locator and System Manager
 class Engine
@@ -35,14 +34,10 @@ public:
     {
         return m_moduleManager.get();
     }
-    IRenderManager *GetRenderManager() const
-    {
-        return m_renderManager.get();
-    }
-    IInputManager *GetInputManager() const
-    {
-        return m_inputManager.get();
-    }
+
+    // Static Singleton Accessors
+    RenderManager *GetRenderManager() const;
+    InputManager *GetInputManager() const;
 
     // Direct access to game objects (replaces service wrappers)
     Player *GetPlayer() const;
@@ -101,10 +96,8 @@ private:
     static Engine *s_instance;
 
     std::unique_ptr<ModuleManager> m_moduleManager;
-    std::unique_ptr<IRenderManager> m_renderManager;
-    std::unique_ptr<IInputManager> m_inputManager;
 
-    // Generic service storage
+    // Services map
     std::unordered_map<std::type_index, std::shared_ptr<void>> m_services;
 
     bool m_debugInfoVisible = false;
