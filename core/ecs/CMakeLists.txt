@@ -7,6 +7,11 @@ add_library(ecs STATIC
     Components/TransformComponent.h
     Components/VelocityComponent.h
     Components/PlayerComponent.h
+    Components/RenderComponent.h
+    Components/PhysicsComponent.h
+    Components/AudioComponent.h
+    Components/CameraComponent.h
+    Components/UtilityComponents.h
 )
 
 target_include_directories(ecs PUBLIC
