@@ -238,6 +238,21 @@ if(BUILD_TESTS)
 endif()
 
 
+# EnTT (Entity Component System)
+set(ENTT_VERSION "3.13.2")
+find_package(EnTT CONFIG QUIET)
+
+if(NOT EnTT_FOUND)
+    message(STATUS "EnTT ${ENTT_VERSION} not found, fetching...")
+    FetchContent_Declare(
+        entt
+        GIT_REPOSITORY https://github.com/skypjack/entt.git
+        GIT_TAG v${ENTT_VERSION}
+    )
+    FetchContent_MakeAvailable(entt)
+    message(STATUS "EnTT fetched successfully")
+endif()
+
 add_library(imguilib STATIC
     include/rlImGui/rlImGui.cpp
     include/rlImGui/rlImGui.h

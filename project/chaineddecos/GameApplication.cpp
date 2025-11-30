@@ -41,10 +41,11 @@ void GameApplication::OnConfigure(EngineConfig &config)
     ConfigManager configManager;
     bool configLoaded = false;
 
-    // Try loading from game.cfg (relative to build/bin directory)
-    if (configManager.LoadFromFile("../../game.cfg"))
+    // Try loading from game.cfg using PROJECT_ROOT_DIR (where the game will be installed)
+    std::string configPath = std::string(PROJECT_ROOT_DIR) + "/game.cfg";
+    if (configManager.LoadFromFile(configPath))
     {
-        TraceLog(LOG_INFO, "[GameApplication] Loaded config from ../../game.cfg");
+        TraceLog(LOG_INFO, "[GameApplication] Loaded config from %s", configPath.c_str());
         configLoaded = true;
     }
     else
@@ -91,12 +92,7 @@ void GameApplication::OnRegister()
 {
     TraceLog(LOG_INFO, "[GameApplication] Registering services and modules...");
 
-    auto engine = GetEngine();
-    if (!engine)
-    {
-        TraceLog(LOG_ERROR, "[GameApplication] Engine is null");
-        return;
-    }
+    auto &engine = Engine::Instance();
 
     // 1. Initialize Core Services
     m_collisionManager = std::make_shared<CollisionManager>();
@@ -124,10 +120,10 @@ void GameApplication::OnRegister()
     }
 
     // Register core services
-    engine->RegisterService<CollisionManager>(m_collisionManager);
-    engine->RegisterService<ModelLoader>(m_models);
-    engine->RegisterService<WorldManager>(m_world);
-    engine->RegisterService<AudioManager>(m_soundSystem);
+    engine.RegisterService<CollisionManager>(m_collisionManager);
+    engine.RegisterService<ModelLoader>(m_models);
+    engine.RegisterService<WorldManager>(m_world);
+    engine.RegisterService<AudioManager>(m_soundSystem);
 
     TraceLog(LOG_INFO, "[GameApplication] Core engine services registered.");
 
@@ -137,10 +133,10 @@ void GameApplication::OnRegister()
     // 2. UIManager (also base)
     // 3. PlayerController (depends on LevelManager)
     // 4. RenderingSystem (depends on PlayerController and LevelManager)
-    engine->RegisterModule(std::make_unique<LevelManager>());
-    engine->RegisterModule(std::make_unique<UIManager>());
-    engine->RegisterModule(std::make_unique<PlayerController>());
-    engine->RegisterModule(std::make_unique<RenderingSystem>());
+    engine.RegisterModule(std::make_unique<LevelManager>());
+    engine.RegisterModule(std::make_unique<UIManager>());
+    engine.RegisterModule(std::make_unique<PlayerController>());
+    engine.RegisterModule(std::make_unique<RenderingSystem>());
 
     TraceLog(LOG_INFO, "[GameApplication] Game systems registered.");
 }
@@ -164,7 +160,7 @@ void GameApplication::OnStart()
     io.MouseDrawCursor = false;                           // Use system cursor, not ImGui cursor
 
     // Dependency Injection: update ConsoleManager providers after all services are registered
-    UpdateConsoleManagerProviders(GetEngine());
+    UpdateConsoleManagerProviders(&Engine::Instance());
 
     // Initialize input after everything is ready
     InitInput();
@@ -203,7 +199,7 @@ void GameApplication::OnUpdate(float deltaTime)
     // UIManager manages Menu.
     // Let's get UIManager module.
 
-    auto engine = GetEngine();
+    auto engine = &Engine::Instance();
     if (!engine)
         return;
 
@@ -299,7 +295,7 @@ void GameApplication::OnUpdate(float deltaTime)
             else
             {
                 // Only show player metrics if game is initialized (map selected)
-                auto player = GetEngine()->GetPlayer();
+                auto player = Engine::Instance().GetPlayer();
 
                 if (player)
                 {
@@ -308,7 +304,8 @@ void GameApplication::OnUpdate(float deltaTime)
                         player->GetMovement()->GetPosition());
                     player->GetCameraController()->Update();
 
-                    GetEngine()->GetRenderManager()->ShowMetersPlayer(*player->GetRenderable());
+                    Engine::Instance().GetRenderManager()->ShowMetersPlayer(
+                        *player->GetRenderable());
                 }
             }
         }
@@ -326,7 +323,7 @@ void GameApplication::OnUpdate(float deltaTime)
 
 void GameApplication::OnRender()
 {
-    auto *engine = GetEngine();
+    auto *engine = &Engine::Instance();
     if (!engine)
         return;
 
@@ -348,7 +345,7 @@ void GameApplication::OnRender()
         }
     }
 
-    auto player = GetEngine()->GetPlayer();
+    auto player = Engine::Instance().GetPlayer();
 
     if (m_showMenu && menu)
     {
@@ -417,8 +414,8 @@ void GameApplication::OnShutdown()
     }
 
     // Get components through Engine
-    auto player = GetEngine()->GetPlayer();
-    auto levelManager = GetEngine()->GetLevelManager();
+    auto player = Engine::Instance().GetPlayer();
+    auto levelManager = Engine::Instance().GetLevelManager();
 
     // MenuService removed, access via UIManager if needed, but here we just reset state
 
@@ -438,7 +435,7 @@ void GameApplication::OnShutdown()
     m_isGameInitialized = false;
 
     // Access menu to reset state
-    auto engine = GetEngine();
+    auto engine = &Engine::Instance();
     if (engine)
     {
         auto moduleManager = engine->GetModuleManager();
@@ -463,7 +460,7 @@ void GameApplication::InitInput()
 {
     TraceLog(LOG_INFO, "[GameApplication] Setting up game-specific input bindings...");
 
-    auto *engine = GetEngine();
+    auto *engine = &Engine::Instance();
     if (!engine)
     {
         TraceLog(LOG_WARNING, "[GameApplication] No engine provided, skipping input bindings");
@@ -524,7 +521,7 @@ void GameApplication::InitInput()
 void GameApplication::HandleMenuActions()
 {
     // Get UIManager through ModuleManager
-    auto *engine = GetEngine();
+    auto *engine = &Engine::Instance();
     if (!engine)
         return;
 
@@ -547,7 +544,7 @@ void GameApplication::UpdatePlayerLogic()
 {
     // Get PlayerController through Engine
     // Get PlayerController through ModuleManager
-    auto *engine = GetEngine();
+    auto *engine = &Engine::Instance();
     if (engine && engine->GetModuleManager())
     {
         auto *module = engine->GetModuleManager()->GetModule("Player");
@@ -571,7 +568,7 @@ void GameApplication::SaveGameState()
 
     // Get PlayerController through Engine
     // Get PlayerController through ModuleManager
-    auto *engine = GetEngine();
+    auto *engine = &Engine::Instance();
     if (!engine || !engine->GetModuleManager())
         return;
 
