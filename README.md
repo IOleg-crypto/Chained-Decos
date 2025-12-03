@@ -68,7 +68,6 @@ Chained Decos follows a **modular architecture** with clear separation between e
 - **C++23 compatible compiler**:
   - **Windows**: MSVC 2022 17.4+ or MinGW-w64 with GCC 13+
   - **Linux**: GCC 13+ or Clang 17+
-  - **macOS**: Xcode 15+ (Clang 17+)
 - **Git**: For cloning the repository
 
 #### System Dependencies
@@ -92,12 +91,6 @@ sudo apt-get install build-essential cmake ninja-build \
 ```bash
 sudo pacman -S base-devel cmake ninja mesa libgl libx11 \
   libxrandr libxi libxcursor libxinerama glfw
-```
-
-**macOS:**
-
-```bash
-brew install cmake ninja
 ```
 
 ### Dependencies
@@ -132,7 +125,7 @@ cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build . --config Release
 
 # 5. Run
-./bin/ChainedDecos  # Linux/macOS
+./bin/ChainedDecos  # Linux
 .\bin\ChainedDecos.exe  # Windows
 ```
 
@@ -279,15 +272,7 @@ cmake --build . --config Release
 - **X11 errors**: `sudo apt-get install libx11-dev libxrandr-dev`
 - **Wayland**: Project uses X11 by default (configured in CMakeLists.txt)
 
-#### macOS
-
-**Prerequisites:**
-
-```bash
-brew install cmake ninja
-```
-
-**Build:**
+### Build
 
 ```bash
 mkdir build && cd build
@@ -297,11 +282,6 @@ cmake --build . --config Release
 # Run
 ./bin/ChainedDecos
 ```
-
-**Common Issues:**
-
-- **"GL_SILENCE_DEPRECATION" warnings**: Normal on macOS, can be ignored
-- **Code signing**: Configure in Xcode if building for distribution
 
 ### CMake Build Options
 
@@ -342,7 +322,6 @@ cmake .. -G Ninja \
 # Update CMake
 # Windows: Download from cmake.org
 # Linux: sudo apt-get upgrade cmake
-# macOS: brew upgrade cmake
 ```
 
 **"Ninja not found"**
@@ -351,7 +330,6 @@ cmake .. -G Ninja \
 # Install Ninja
 # Windows: choco install ninja or download from GitHub
 # Linux: sudo apt-get install ninja-build
-# macOS: brew install ninja
 
 # Or specify path
 cmake .. -G Ninja -DCMAKE_MAKE_PROGRAM="/path/to/ninja"
@@ -366,7 +344,6 @@ clang++ --version  # Need Clang 17+
 
 # Update compiler if needed
 # Ubuntu: sudo apt-get install gcc-13 g++-13
-# macOS: Update Xcode
 # Windows: Update Visual Studio or MinGW
 ```
 
@@ -505,7 +482,7 @@ After building successfully, you should be able to run the game:
 
 ```bash
 # Check executable exists
-ls -la build/bin/ChainedDecos  # Linux/macOS
+ls -la build/bin/ChainedDecos  # Linux
 dir build\bin\ChainedDecos.exe  # Windows
 
 # Run from correct directory
