@@ -7,13 +7,13 @@
 #include "servers/physics/collision/Core/CollisionManager.h"
 #include "scene/resources/model/Core/Model.h"
 
-class Player;
+#include "core/interfaces/IPlayer.h"
 
 // MapCollisionInitializer - handles collision initialization for maps
 class MapCollisionInitializer
 {
 public:
-    MapCollisionInitializer(CollisionManager* collisionManager, ModelLoader* models, Player* player = nullptr);
+    MapCollisionInitializer(CollisionManager* collisionManager, ModelLoader* models, IPlayer* player = nullptr);
     ~MapCollisionInitializer() = default;
 
     // Initialize collisions for map objects
@@ -26,12 +26,12 @@ public:
     bool InitializeCollisionsWithModelsSafe(const GameMap& gameMap, const std::vector<std::string>& requiredModels);
 
     // Set player reference (used when PlayerSystem initializes after MapSystem)
-    void SetPlayer(Player* player);
+    void SetPlayer(IPlayer* player);
 
 private:
     CollisionManager* m_collisionManager;
     ModelLoader* m_models;
-    Player* m_player;
+    IPlayer* m_player;
 };
 
 #endif // MAP_COLLISION_INITIALIZER_H
