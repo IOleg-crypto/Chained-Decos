@@ -3,36 +3,31 @@
 
 #include "../Config/ModelConfig.h"
 #include <nlohmann/json.hpp>
-#include <version>
 #include <optional>
+#include <version>
 
 using json = nlohmann::json;
 
-// Parser class for safe JSON parsing
-class JsonParser
+// Parser namespace for safe JSON parsing
+namespace JsonParser
 {
-public:
-    // Safe JSON value retrieval
-    static std::optional<std::string> GetString(const json &j, const std::string &key);
-    static std::optional<float> GetFloat(const json &j, const std::string &key);
-    static std::optional<bool> GetBool(const json &j, const std::string &key);
-    static std::optional<int> GetInt(const json &j, const std::string &key);
+// Safe JSON value retrieval
+std::optional<std::string> GetString(const json &j, const std::string &key);
+std::optional<float> GetFloat(const json &j, const std::string &key);
+std::optional<bool> GetBool(const json &j, const std::string &key);
+std::optional<int> GetInt(const json &j, const std::string &key);
 
-    // Complex type parsing
-    static Vector3 ParseVector3(const json &j, const Vector3 &defaultValue = {0, 0, 0});
-    static Color ParseColor(const json &j, const Color &defaultValue = WHITE);
+// Complex type parsing
+Vector3 ParseVector3(const json &j, const Vector3 &defaultValue = {0, 0, 0});
+Color ParseColor(const json &j, const Color &defaultValue = WHITE);
 
-    // JSON structure validation
-    static bool ValidateModelEntry(const json &entry);
-    static bool ValidateInstanceEntry(const json &entry);
+// JSON structure validation
+bool ValidateModelEntry(const json &entry);
+bool ValidateInstanceEntry(const json &entry);
 
-    // Configuration parsing
-    static std::optional<ModelFileConfig> ParseModelConfig(const json &entry);
-    static std::optional<ModelInstanceConfig> ParseInstanceConfig(const json &entry);
-
-private:
-    static bool HasRequiredKeys(const json &j, const std::vector<std::string> &keys);
-};
+// Configuration parsing
+std::optional<ModelFileConfig> ParseModelConfig(const json &entry);
+std::optional<ModelInstanceConfig> ParseInstanceConfig(const json &entry);
+} // namespace JsonParser
 
 #endif // JSON_PARSER_H
-
