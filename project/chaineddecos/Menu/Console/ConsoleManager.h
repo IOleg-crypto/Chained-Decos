@@ -10,7 +10,7 @@
 #include <vector>
 
 // Forward declarations
-class Player;
+#include "core/interfaces/IPlayer.h"
 class Engine;
 
 // Command callback function type
@@ -102,7 +102,7 @@ public:
     std::vector<std::string> GetAvailableCategories() const;
 
     // Helpers to get services through Dependency Injection
-    Player *GetPlayer() const;
+    IPlayer *GetPlayer() const;
     Engine *GetEngine() const;
 
 private:

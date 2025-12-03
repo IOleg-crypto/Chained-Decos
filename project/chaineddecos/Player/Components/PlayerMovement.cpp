@@ -3,7 +3,7 @@
 #include <cmath>
 #include <raylib.h>
 
-PlayerMovement::PlayerMovement(IPlayerMediator *player)
+PlayerMovement::PlayerMovement(IPlayer *player)
     : m_player(player), m_position({-999999.0f, -999999.0f, -999999.0f}), m_rotationY(0.0f),
       m_walkSpeed(11.0f)
 {
