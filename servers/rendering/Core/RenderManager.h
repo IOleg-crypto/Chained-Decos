@@ -6,10 +6,6 @@
 #include <string>
 #include <vector>
 
-// Forward declarations
-class IRenderCommand;
-class ShaderManager;
-
 class RenderManager
 {
 public:

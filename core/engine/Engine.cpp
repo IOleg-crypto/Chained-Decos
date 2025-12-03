@@ -3,10 +3,15 @@
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "project/chaineddecos/Systems/MapSystem/LevelManager.h"
+#include "scene/main/Core/World.h"
+#include "scene/resources/model/Core/Model.h"
+#include "servers/audio/Core/AudioManager.h"
 #include "servers/input/Core/InputManager.h"
+#include "servers/physics/collision/Core/CollisionManager.h"
 #include "servers/rendering/Core/RenderManager.h"
 #include <memory>
 #include <raylib.h> // For TraceLog
+
 
 Engine *Engine::s_instance = nullptr;
 
@@ -58,14 +63,34 @@ void Engine::Shutdown()
     // RenderManager and InputManager are shutdown by GameApplication
 }
 
-RenderManager *Engine::GetRenderManager() const
+RenderManager *Engine::GetRenderManager()
 {
     return &RenderManager::Get();
 }
 
-InputManager *Engine::GetInputManager() const
+InputManager *Engine::GetInputManager()
 {
     return &InputManager::Get();
+}
+
+AudioManager *Engine::GetAudioManager()
+{
+    return GetService<AudioManager>().get();
+}
+
+IModelLoader *Engine::GetModelLoader()
+{
+    return GetService<ModelLoader>().get();
+}
+
+ICollisionManager *Engine::GetCollisionManager()
+{
+    return GetService<CollisionManager>().get();
+}
+
+IWorldManager *Engine::GetWorldManager()
+{
+    return GetService<WorldManager>().get();
 }
 
 void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)

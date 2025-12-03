@@ -1,11 +1,12 @@
 #pragma once
 
+#include "scene/main/Interfaces/IWorldManager.h"
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
 
-class WorldManager
+class WorldManager : public IWorldManager
 {
 public:
     // World constants
