@@ -3,16 +3,13 @@ name: Build
 on:
   workflow_dispatch:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
-      - 'src/**/*.cpp'
-      - 'src/**/*.h'
-      - 'include/**/*.h'
-      - 'CMakeLists.txt'
-      - '.github/workflows/build.yml'
-  schedule:
-    # Run weekly builds every Sunday at 2 AM UTC
-    - cron: '0 2 * * 0'
+      - "src/**/*.cpp"
+      - "src/**/*.h"
+      - "include/**/*.h"
+      - "CMakeLists.txt"
+      - ".github/workflows/build.yml"
 
 env:
   CI: true
@@ -60,13 +57,6 @@ jobs:
             version: 2022
             build_type: Release
             generator: "Ninja"
-
-          # macOS with Clang (Release)
-          - os: macos-latest
-            compiler: clang
-            version: 14
-            build_type: Release
-            generator: "Unix Makefiles"
 
     steps:
       - name: Checkout repository
@@ -134,13 +124,6 @@ jobs:
         if: matrix.os == 'windows-2022'
         run: |
           choco install cmake ninja ccache --no-progress
-
-      # macOS setup
-      - name: Install dependencies (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew update
-          brew install cmake ninja ccache
 
       - name: Clear CMake cache
         shell: bash
@@ -215,8 +198,6 @@ jobs:
           # Determine parallel jobs based on platform
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             PARALLEL_JOBS=4
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            PARALLEL_JOBS=3
           else
             PARALLEL_JOBS=$(nproc 2>/dev/null || echo 4)
           fi
