@@ -16,7 +16,7 @@
 #include "../Collision/PlayerCollision.h"
 #include "../Components/PlayerModel.h"
 #include "../Interfaces/IPlayerInput.h"
-#include "../Interfaces/IPlayerMediator.h"
+
 #include "../Interfaces/IPlayerMovement.h"
 #include "servers/rendering/Interfaces/IGameRenderable.h"
 #include "core/interfaces/IPlayer.h"
@@ -25,7 +25,7 @@
 class PlayerRenderable;
 
 // Player: main player class that uses component classes
-class Player : public IPlayer, public IPlayerMediator
+class Player : public IPlayer
 {
 public:
     // Player constants - defined in .cpp file
@@ -44,6 +44,7 @@ public:
     void UpdatePlayerBox() const;                        // Update bounding box
     void UpdatePlayerCollision() const;                  // Update collisions
     void SyncCollision() const;
+    void InitializeCollision() override;
 
     void ApplyGravityForPlayer(CollisionManager &collisionManager); // Gravity + collisions
 
@@ -92,6 +93,9 @@ public:
     void SetPosition(const Vector3& pos) override { SetPlayerPosition(pos); }
     void Update(float deltaTime) override;
     Camera3D& GetCamera() override;
+    void SetNoclip(bool enabled) override;
+    bool IsNoclip() const override;
+
     
     // Service injection
     void SetAudioManager(std::shared_ptr<AudioManager> audioManager);

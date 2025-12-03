@@ -2,7 +2,7 @@
 #include "../../Systems/MapSystem/LevelManager.h"
 #include "core/engine/Engine.h"
 #include "core/engine/EngineApplication.h"
-#include "project/chaineddecos/Player/Collision/PlayerCollision.h"
+
 #include "project/chaineddecos/Player/Core/Player.h"
 #include <algorithm>
 #include <cctype>
@@ -25,10 +25,10 @@ ConsoleManager::ConsoleManager()
              m_commands.size());
 }
 
-Player *ConsoleManager::GetPlayer() const
+IPlayer *ConsoleManager::GetPlayer() const
 {
     // Get Player through Engine -> PlayerService
-    auto player = static_cast<Player*>(Engine::Instance().GetPlayer());
+    auto player = Engine::Instance().GetPlayer();
     return player;
 }
 
@@ -332,15 +332,14 @@ void ConsoleManager::RegisterBuiltinCommands()
     RegisterCommand("noclip", "Toggle player collision (noclip mode)", "noclip",
                     [](const std::vector<std::string> &args, ConsoleManager *console)
                     {
-                        Player *player = console->GetPlayer();
+                        IPlayer *player = console->GetPlayer();
                         if (!player)
                         {
                             console->AddOutput("Error: Player instance not available.");
                             return;
                         }
-                        PlayerCollision &collision = player->GetCollisionMutable();
-                        bool current = collision.IsUsingBVH();
-                        collision.EnableBVHCollision(!current);
+                        bool current = player->IsNoclip();
+                        player->SetNoclip(!current);
                         console->AddOutput("Noclip: " +
                                            std::string(!current ? "enabled" : "disabled"));
                     });
@@ -358,13 +357,13 @@ void ConsoleManager::RegisterBuiltinCommands()
             try
             {
                 float speed = std::stof(args[0]);
-                Player *player = console->GetPlayer();
+                IPlayer *player = console->GetPlayer();
                 if (!player)
                 {
                     console->AddOutput("Error: Player instance not available.");
                     return;
                 }
-                player->GetMovement()->SetSpeed(speed);
+                player->SetSpeed(speed);
                 console->AddOutput("Player speed set to " + std::to_string(speed));
             }
             catch (const std::exception &)
@@ -388,13 +387,13 @@ void ConsoleManager::RegisterBuiltinCommands()
                 float x = std::stof(args[0]);
                 float y = std::stof(args[1]);
                 float z = std::stof(args[2]);
-                Player *player = console->GetPlayer();
+                IPlayer *player = console->GetPlayer();
                 if (!player)
                 {
                     console->AddOutput("Error: Player instance not available.");
                     return;
                 }
-                player->SetPlayerPosition({x, y, z});
+                player->SetPosition({x, y, z});
                 console->AddOutput("Player position set to: " + std::to_string(x) + ", " +
                                    std::to_string(y) + ", " + std::to_string(z));
             }
@@ -408,13 +407,13 @@ void ConsoleManager::RegisterBuiltinCommands()
     RegisterCommandWithPrefix("cl", "getpos", "Get player position", "cl_getpos",
                               [](const std::vector<std::string> &args, ConsoleManager *console)
                               {
-                                  Player *player = console->GetPlayer();
+                                  IPlayer *player = console->GetPlayer();
                                   if (!player)
                                   {
                                       console->AddOutput("Error: Player instance not available.");
                                       return;
                                   }
-                                  Vector3 pos = player->GetPlayerPosition();
+                                  Vector3 pos = player->GetPosition();
                                   console->AddOutput("Player position: " + std::to_string(pos.x) +
                                                      " " + std::to_string(pos.y) + " " +
                                                      std::to_string(pos.z));

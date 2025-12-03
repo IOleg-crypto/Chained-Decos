@@ -1,7 +1,7 @@
 #ifndef PLAYER_MOVEMENT_H
 #define PLAYER_MOVEMENT_H
 
-#include "../Interfaces/IPlayerMediator.h"
+#include "core/interfaces/IPlayer.h"
 #include "../Interfaces/IPlayerMovement.h"
 #include <raylib.h>
 #include <raymath.h>
@@ -13,7 +13,7 @@
 class PlayerMovement : public IPlayerMovement
 {
 public:
-    explicit PlayerMovement(IPlayerMediator *player);
+    explicit PlayerMovement(IPlayer *player);
     ~PlayerMovement() = default;
 
     // IPlayerMovement interface implementation
@@ -49,7 +49,7 @@ public:
     void SetCollisionManager(const CollisionManager *collisionManager) override;
 
 private:
-    IPlayerMediator *m_player;
+    IPlayer *m_player;
     Vector3 m_position;
     float m_rotationY = 0.0f;
 

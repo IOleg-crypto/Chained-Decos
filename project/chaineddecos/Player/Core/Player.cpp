@@ -390,3 +390,18 @@ Camera3D& Player::GetCamera()
 {
     return m_cameraController->GetCamera();
 }
+
+void Player::SetNoclip(bool enabled)
+{
+    GetCollisionMutable().EnableBVHCollision(enabled);
+}
+
+bool Player::IsNoclip() const
+{
+    return GetCollision().IsUsingBVH();
+}
+
+void Player::InitializeCollision()
+{
+    m_collision->InitializeCollision();
+}

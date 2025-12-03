@@ -4,12 +4,12 @@
 #include <raylib.h>
 #include <servers/physics/collision/System/CollisionSystem.h>
 #include <vector>
-#include "../Interfaces/IPlayerMediator.h"
+#include "core/interfaces/IPlayer.h"
 
 // PlayerCollision: handles collision detection and response
 class PlayerCollision : public Collision {
 public:
-    explicit PlayerCollision(IPlayerMediator* player);
+    explicit PlayerCollision(IPlayer* player);
     ~PlayerCollision() = default;
     
     void InitializeCollision();
@@ -25,7 +25,7 @@ public:
     bool CheckCollisionWithBVH(const Collision& other, Vector3& outResponse);
 
 private:
-    IPlayerMediator* m_player;
+    IPlayer* m_player;
     BoundingBox m_boundingBox{};
     bool m_isJumpCollision = false;
     std::vector<Vector3> m_collisionPoints;

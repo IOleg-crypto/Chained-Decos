@@ -2,6 +2,12 @@
 #define IPLAYER_H
 
 #include <raylib.h>
+#include <memory>
+#include <raymath.h>
+#include <scene/3d/camera/Core/CameraController.h>
+#include <servers/physics/collision/System/CollisionSystem.h>
+#include <servers/physics/dynamics/Components/PhysicsComponent.h>
+
 
 /**
  * @brief Minimal Player interface
@@ -29,6 +35,32 @@ public:
 
     // Camera
     virtual Camera3D &GetCamera() = 0;
+
+    // Debug/Cheat
+    virtual void SetNoclip(bool enabled) = 0;
+    virtual bool IsNoclip() const = 0;
+
+
+    // Position & Size (from IPlayerMediator)
+    virtual Vector3 GetPlayerPosition() const = 0;
+    virtual Vector3 GetPlayerSize() const = 0;
+    virtual void SetPlayerPosition(const Vector3 &pos) const = 0;
+
+    // Physics
+    virtual LegacyPhysicsComponent &GetPhysics() = 0;
+    virtual const LegacyPhysicsComponent &GetPhysics() const = 0;
+
+    // Movement
+    virtual void ApplyJumpImpulse(float impulse) = 0;
+
+    // Collision
+    virtual const Collision &GetCollision() const = 0;
+    virtual void SyncCollision() const = 0;
+    virtual void InitializeCollision() = 0;
+
+    // Camera (detailed)
+    virtual std::shared_ptr<CameraController> GetCameraController() const = 0;
+
 };
 
 #endif // IPLAYER_H

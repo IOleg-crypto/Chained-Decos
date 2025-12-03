@@ -1,11 +1,11 @@
 #include "MapCollisionInitializer.h"
 #include "Player/Collision/PlayerCollision.h"
-#include "project/chaineddecos/Player/Core/Player.h"
+
 #include <raylib.h>
 
 
 MapCollisionInitializer::MapCollisionInitializer(CollisionManager *collisionManager,
-                                                 ModelLoader *models, Player *player)
+                                                 ModelLoader *models, IPlayer *player)
     : m_collisionManager(collisionManager), m_models(models), m_player(player)
 {
 }
@@ -71,8 +71,7 @@ void MapCollisionInitializer::InitializeCollisions(const GameMap &gameMap)
     // Initialize player collision (if player is available)
     if (m_player)
     {
-        auto &playerCollision = m_player->GetCollisionMutable();
-        playerCollision.InitializeCollision();
+        m_player->InitializeCollision();
     }
     else
     {
@@ -141,8 +140,7 @@ void MapCollisionInitializer::InitializeCollisionsWithModels(
     // Initialize player collision (if player is available)
     if (m_player)
     {
-        auto &playerCollision = m_player->GetCollisionMutable();
-        playerCollision.InitializeCollision();
+        m_player->InitializeCollision();
     }
     else
     {
@@ -214,8 +212,7 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
     // Initialize player collision (if player is available)
     if (m_player)
     {
-        auto &playerCollision = m_player->GetCollisionMutable();
-        playerCollision.InitializeCollision();
+        m_player->InitializeCollision();
     }
     else
     {
@@ -231,7 +228,7 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
     return true; // Always return true since we have at least basic collision
 }
 
-void MapCollisionInitializer::SetPlayer(Player *player)
+void MapCollisionInitializer::SetPlayer(IPlayer *player)
 {
     m_player = player;
     TraceLog(LOG_INFO, "MapCollisionInitializer::SetPlayer() - Player reference updated");

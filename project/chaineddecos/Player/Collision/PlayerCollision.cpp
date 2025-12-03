@@ -2,7 +2,7 @@
 #include "../Core/Player.h"
 #include <cmath>
 
-PlayerCollision::PlayerCollision(IPlayerMediator* player)
+PlayerCollision::PlayerCollision(IPlayer* player)
     : m_player(player) {
     UpdateBoundingBox();
 }
