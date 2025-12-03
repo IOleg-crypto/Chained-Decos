@@ -19,7 +19,6 @@ add_library(player STATIC
     
     # Interfaces
     Interfaces/IPlayerInput.h
-    Interfaces/IPlayerMediator.h
     Interfaces/IPlayerMovement.h
 )
 

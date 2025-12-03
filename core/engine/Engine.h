@@ -2,19 +2,21 @@
 #define ENGINE_H
 
 #include "../object/module/Core/ModuleManager.h"
-#include <memory>
-#include "core/interfaces/IPlayer.h"
-#include "core/interfaces/IMenu.h"
 #include "core/interfaces/ILevelManager.h"
+#include "core/interfaces/IMenu.h"
+#include "core/interfaces/IPlayer.h"
+#include <memory>
+
 
 #include <stdexcept>
 #include <string>
 #include <typeindex>
 #include <unordered_map>
 
-// Forward declarations for game objects
-class RenderManager;
-class InputManager;
+// Core system includes (replacing forward declarations)
+#include "servers/input/Core/InputManager.h"
+#include "servers/rendering/Core/RenderManager.h"
+
 
 // Main Engine class acting as Service Locator and System Manager
 class Engine
@@ -40,7 +42,8 @@ public:
     InputManager *GetInputManager() const;
 
     // Direct access to game objects (replaces service wrappers)
-    IPlayer *GetPlayer() const;    ILevelManager *GetLevelManager() const;
+    IPlayer *GetPlayer() const;
+    ILevelManager *GetLevelManager() const;
     IMenu *GetMenu() const;
 
     // Service Locator Pattern (Type-safe)
