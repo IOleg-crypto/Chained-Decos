@@ -137,6 +137,22 @@ void GameApplication::OnStart()
     // Initialize RenderManager with config
     RenderManager::Get().Initialize(m_gameConfig.width, m_gameConfig.height, "Chained Decos");
 
+    // Setup ImGui style for menu (after ImGui is initialized by RenderManager)
+    auto *engine = &Engine::Instance();
+    if (engine->GetModuleManager())
+    {
+        auto *uiModule = engine->GetModuleManager()->GetModule("UI");
+        if (uiModule)
+        {
+            UIManager *uiManager = dynamic_cast<UIManager *>(uiModule);
+            if (uiManager && uiManager->GetMenu())
+            {
+                uiManager->GetMenu()->SetupStyle();
+                TraceLog(LOG_INFO, "[GameApplication] ImGui style configured");
+            }
+        }
+    }
+
     // Initialize ECS
     REGISTRY.clear();
 
@@ -172,12 +188,14 @@ void GameApplication::OnStart()
     UnloadImage(m_icon);
 
     // Apply fullscreen
+    /*
     if (m_gameConfig.fullscreen && !IsWindowFullscreen())
     {
         int monitor = GetCurrentMonitor();
         SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
         SetWindowState(FLAG_FULLSCREEN_MODE);
     }
+    */
 
     TraceLog(LOG_INFO, "[GameApplication] Game application initialized with ECS.");
 }
@@ -310,6 +328,10 @@ void GameApplication::OnRender()
     if (m_showMenu && menu)
     {
         rlImGuiBegin();
+
+        // Render the menu
+        menu->Render();
+
         if (menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
         {
             menu->GetConsoleManager()->RenderConsole();

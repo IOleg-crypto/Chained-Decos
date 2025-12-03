@@ -78,33 +78,11 @@ bool LevelManager::Initialize(Engine *engine)
     m_collisionInitializer =
         std::make_unique<MapCollisionInitializer>(m_collisionManager, m_modelLoader);
 
-    // Load spawn texture
-    std::string texturePath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
-    if (FileExists(texturePath.c_str()))
-    {
-        m_spawnTexture = LoadTexture(texturePath.c_str());
-        if (m_spawnTexture.id != 0)
-        {
-            m_spawnTextureLoaded = true;
-            TraceLog(LOG_INFO, "LevelManager::Initialize() - Loaded spawn texture: %dx%d",
-                     m_spawnTexture.width, m_spawnTexture.height);
-        }
-        else
-        {
-            TraceLog(LOG_WARNING,
-                     "LevelManager::Initialize() - Failed to load spawn texture from: %s",
-                     texturePath.c_str());
-        }
-    }
-    m_collisionManager = nullptr;
-    m_modelLoader = nullptr;
-    m_renderManager = nullptr;
-    m_player = nullptr;
-    m_menu = nullptr;
-    m_engine = nullptr;
+    // NOTE: Spawn texture loading moved to lazy loading in RenderSpawnZone()
+    // to avoid loading textures before OpenGL context is created
 
-    TraceLog(LOG_INFO, "[LevelManager] Shutdown complete");
+    TraceLog(LOG_INFO, "[LevelManager] Initialized successfully");
+    return true;
 }
 
 void LevelManager::Update(float deltaTime)
@@ -115,7 +93,7 @@ void LevelManager::Update(float deltaTime)
         auto player = m_engine->GetPlayer();
         if (player)
         {
-            m_player = player;
+            m_player = static_cast<Player*>(player);
             m_collisionInitializer->SetPlayer(m_player);
             TraceLog(LOG_INFO, "[LevelManager] Player reference updated in collision initializer");
         }
@@ -190,7 +168,7 @@ bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &
 
 void LevelManager::SetPlayer(Player *player)
 {
-    m_player = player;
+    m_player = static_cast<Player*>(player);
     if (m_collisionInitializer)
     {
         m_collisionInitializer->SetPlayer(player);
@@ -243,9 +221,39 @@ void LevelManager::RenderEditorMap()
 
 void LevelManager::RenderSpawnZone() const
 {
-    if (!m_hasSpawnZone || !m_spawnTextureLoaded)
+    if (!m_hasSpawnZone)
     {
         return;
+    }
+
+    // Lazy load spawn texture if not already loaded
+    if (!m_spawnTextureLoaded)
+    {
+        std::string texturePath =
+            std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
+        if (FileExists(texturePath.c_str()))
+        {
+            // Cast away const for lazy initialization
+            auto *self = const_cast<LevelManager *>(this);
+            self->m_spawnTexture = LoadTexture(texturePath.c_str());
+            if (self->m_spawnTexture.id != 0)
+            {
+                self->m_spawnTextureLoaded = true;
+                TraceLog(LOG_INFO, "LevelManager::RenderSpawnZone() - Loaded spawn texture: %dx%d",
+                         self->m_spawnTexture.width, self->m_spawnTexture.height);
+            }
+            else
+            {
+                TraceLog(LOG_WARNING,
+                         "LevelManager::RenderSpawnZone() - Failed to load spawn texture from: %s",
+                         texturePath.c_str());
+                return;
+            }
+        }
+        else
+        {
+            return;
+        }
     }
 
     // Calculate size and center of spawn zone

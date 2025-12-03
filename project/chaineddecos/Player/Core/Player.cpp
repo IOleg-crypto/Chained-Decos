@@ -10,7 +10,6 @@
 #include <scene/main/Core/World.h>
 #include <servers/rendering/Interfaces/IGameRenderable.h>
 
-
 // Define player constants
 Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 0.0f, 0.0f}; // Safe spawn position above ground
 const float Player::MODEL_Y_OFFSET = -1.f;
@@ -39,6 +38,11 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
 }
 
 Player::~Player() = default;
+
+void Player::SetAudioManager(std::shared_ptr<AudioManager> audioManager)
+{
+    m_audioManager = audioManager;
+}
 
 void Player::InitializeServices()
 {
@@ -373,4 +377,16 @@ IGameRenderable *Player::GetRenderable() const
 void Player::Update(CollisionManager &collisionManager)
 {
     UpdateImpl(collisionManager);
+}
+
+void Player::Update(float deltaTime)
+{
+    if (m_collisionManager) {
+        Update(*m_collisionManager);
+    }
+}
+
+Camera3D& Player::GetCamera()
+{
+    return m_cameraController->GetCamera();
 }

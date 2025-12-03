@@ -11,6 +11,13 @@ EngineApplication::EngineApplication(Config config, IApplication *application)
     : m_app(application), m_config(std::move(config))
 {
     assert(m_app != nullptr && "Application instance cannot be null!");
+
+    // Create the Engine singleton
+    m_engine = std::make_shared<Engine>();
+    if (!m_engine->Initialize())
+    {
+        throw std::runtime_error("Failed to initialize Engine!");
+    }
 }
 
 EngineApplication::~EngineApplication()

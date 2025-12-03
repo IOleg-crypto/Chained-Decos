@@ -1,14 +1,14 @@
 #ifndef MAP_SELECTOR_H
 #define MAP_SELECTOR_H
 
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include "MenuConstants.h"
+#include "../MenuConstants.h"
 #include <raylib.h> // For Texture2D
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-
-struct MapInfo {
+struct MapInfo
+{
     std::string name;
     std::string displayName;
     std::string description;
@@ -18,7 +18,8 @@ struct MapInfo {
     bool isModelBased; // New field to distinguish model-based maps from JSON maps
 };
 
-class MapSelector {
+class MapSelector
+{
 private:
     std::vector<MapInfo> m_availableMaps;
     std::vector<MapInfo> m_filteredMaps; // For search and filtering
@@ -29,11 +30,14 @@ private:
 
     // New UI variables
     std::string m_searchQuery;
-    enum class MapFilter { JSON };
+    enum class MapFilter
+    {
+        JSON
+    };
     MapFilter m_currentFilter = MapFilter::JSON;
     std::unordered_map<std::string, Texture2D> m_thumbnails; // Map name to texture
-    Texture2D m_placeholderThumbnail; // Placeholder for missing thumbnails
-    bool m_usePanelView = false; // false = grid view, true = panel view
+    Texture2D m_placeholderThumbnail;                        // Placeholder for missing thumbnails
+    bool m_usePanelView = false;                             // false = grid view, true = panel view
 
     // Pagination system
     void UpdatePagination();
@@ -45,8 +49,8 @@ private:
     // New filtering and thumbnail methods
     void ApplyFilters();
     void LoadThumbnails();
-    void LoadThumbnailForMap(const MapInfo& map);
-    Texture2D GetThumbnailForMap(const std::string& mapName) const;
+    void LoadThumbnailForMap(const MapInfo &map);
+    Texture2D GetThumbnailForMap(const std::string &mapName) const;
 
 public:
     MapSelector();
@@ -55,7 +59,7 @@ public:
     // Map management
     void InitializeMaps();
     void ScanForJsonMaps();
-    void AddMap(const MapInfo& mapInfo);
+    void AddMap(const MapInfo &mapInfo);
 
     // Map selection
     void SelectNextMap();
@@ -67,13 +71,28 @@ public:
     void PreviousPageNav();
 
     // Getters
-    const MapInfo* GetSelectedMap() const;
+    const MapInfo *GetSelectedMap() const;
     std::string GetSelectedMapName() const;
-    const std::vector<MapInfo>& GetAvailableMaps() const { return m_availableMaps; }
-    int GetSelectedMapIndex() const { return m_selectedMap; }
-    int GetCurrentPage() const { return m_currentPage; }
-    int GetTotalPages() const { return m_totalPages; }
-    int GetJsonMapsCount() const { return m_jsonMapsCount; }
+    const std::vector<MapInfo> &GetAvailableMaps() const
+    {
+        return m_availableMaps;
+    }
+    int GetSelectedMapIndex() const
+    {
+        return m_selectedMap;
+    }
+    int GetCurrentPage() const
+    {
+        return m_currentPage;
+    }
+    int GetTotalPages() const
+    {
+        return m_totalPages;
+    }
+    int GetJsonMapsCount() const
+    {
+        return m_jsonMapsCount;
+    }
 
     // Rendering
     void RenderMapSelection() const;
@@ -82,23 +101,29 @@ public:
     void RenderMapSelectionPanels(); // Panel-style interface (Half-Life style)
 
     // New UI methods
-    void SetSearchQuery(const std::string& query);
+    void SetSearchQuery(const std::string &query);
     void SetFilter(MapFilter filter);
     void UpdateFilters();
     void HandleKeyboardNavigation();
 
     // Utility
-    bool HasMaps() const { return !m_availableMaps.empty(); }
+    bool HasMaps() const
+    {
+        return !m_availableMaps.empty();
+    }
     void ClearMaps();
 
 private:
     // Validation helpers
-    bool IsValidMapIndex(int index) const { return index >= 0 && index < static_cast<int>(m_availableMaps.size()); }
+    bool IsValidMapIndex(int index) const
+    {
+        return index >= 0 && index < static_cast<int>(m_availableMaps.size());
+    }
     void ValidateSelection();
 
     // Internal scanning helpers
-    void ScanDirectoryForMaps(const std::string& directory);
-    MapInfo CreateMapInfoFromFile(const std::string& filePath, const std::string& rootDir);
+    void ScanDirectoryForMaps(const std::string &directory);
+    MapInfo CreateMapInfoFromFile(const std::string &filePath, const std::string &rootDir);
 };
 
 #endif // MAP_SELECTOR_H

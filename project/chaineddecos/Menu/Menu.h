@@ -14,6 +14,7 @@
 #include <optional>
 #include <raylib.h>
 #include <servers/rendering/Interfaces/IMenuRenderable.h>
+#include "core/interfaces/IMenu.h"
 #include <string>
 #include <vector>
 
@@ -73,7 +74,7 @@ struct VideoSettings
     int fpsIndex = 1;
 };
 
-class Menu : public IMenuRenderable
+class Menu : public IMenu, public IMenuRenderable
 {
 public:
     Menu();
@@ -110,7 +111,7 @@ public:
 
     // Map management
     [[nodiscard]] std::optional<MapInfo> GetSelectedMap() const;
-    [[nodiscard]] std::string GetSelectedMapName() const;
+    std::string GetSelectedMapName() const override;
     void InitializeMaps();
 
     // Action management
@@ -119,8 +120,8 @@ public:
     void ResetAction();
 
     // Console functionality
-    void ToggleConsole();
-    [[nodiscard]] bool IsConsoleOpen() const;
+    void ToggleConsole() override;
+    bool IsConsoleOpen() const override;
     [[nodiscard]] ConsoleManager *GetConsoleManager() const;
 
     // Settings manager access
@@ -136,15 +137,26 @@ public:
     void HandleKeyboardNavigation();
     void HandlePendingActions();
 
+    
+    
+    // IMenu Interface Implementation
+    bool IsOpen() const override { return m_state != MenuState::GameMode; }
+    void Show() override { m_state = MenuState::Main; }
+    void Hide() override { m_state = MenuState::GameMode; }
+    bool ShouldStartGame() const override { return m_action == MenuAction::StartGame || m_action == MenuAction::ResumeGame; }
+    
+    
     // IMenuRenderable interface implementations
     void Update() override;
     void Render() override;
+
+    // Public for initialization
+    void SetupStyle();
 
 private:
     // ImGui rendering methods
     void BeginFrame();
     void EndFrame();
-    void SetupStyle();
     void RenderMenuState();
 
     // Menu screen renderers

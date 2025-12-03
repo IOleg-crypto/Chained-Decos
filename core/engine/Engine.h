@@ -3,16 +3,16 @@
 
 #include "../object/module/Core/ModuleManager.h"
 #include <memory>
+#include "core/interfaces/IPlayer.h"
+#include "core/interfaces/IMenu.h"
+#include "core/interfaces/ILevelManager.h"
+
 #include <stdexcept>
 #include <string>
 #include <typeindex>
 #include <unordered_map>
 
 // Forward declarations for game objects
-class Player;
-class PlayerController;
-class LevelManager;
-class Menu;
 class RenderManager;
 class InputManager;
 
@@ -40,10 +40,8 @@ public:
     InputManager *GetInputManager() const;
 
     // Direct access to game objects (replaces service wrappers)
-    Player *GetPlayer() const;
-    PlayerController *GetPlayerController() const;
-    LevelManager *GetLevelManager() const;
-    Menu *GetMenu() const;
+    IPlayer *GetPlayer() const;    ILevelManager *GetLevelManager() const;
+    IMenu *GetMenu() const;
 
     // Service Locator Pattern (Type-safe)
     template <typename T> void RegisterService(std::shared_ptr<T> service)
