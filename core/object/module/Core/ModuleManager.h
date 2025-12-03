@@ -7,7 +7,6 @@
 #include <unordered_map>
 #include <vector>
 
-
 class ModuleManager
 {
 public:
@@ -25,8 +24,8 @@ public:
     bool IsModuleLoaded(const std::string &name) const;
 
 private:
-    std::vector<std::unique_ptr<IEngineModule>> m_modules;
-    std::unordered_map<std::string, IEngineModule *> m_moduleByName;
+    std::unordered_map<std::string, std::unique_ptr<IEngineModule>> m_modules;
+    std::vector<std::string> m_registrationOrder;
     bool m_initialized;
 
     std::vector<IEngineModule *> SortModulesByDependencies() const;
