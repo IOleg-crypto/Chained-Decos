@@ -5,6 +5,7 @@
 #include "MapSelector/MapSelector.h"
 #include "Settings/SettingsManager.h"
 
+#include "core/interfaces/IMenu.h"
 #include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -13,8 +14,6 @@
 #include <memory>
 #include <optional>
 #include <raylib.h>
-#include <servers/rendering/Interfaces/IMenuRenderable.h>
-#include "core/interfaces/IMenu.h"
 #include <string>
 #include <vector>
 
@@ -74,7 +73,7 @@ struct VideoSettings
     int fpsIndex = 1;
 };
 
-class Menu : public IMenu, public IMenuRenderable
+class Menu : public IMenu // ✅ Single inheritance only
 {
 public:
     Menu();
@@ -137,16 +136,25 @@ public:
     void HandleKeyboardNavigation();
     void HandlePendingActions();
 
-    
-    
     // IMenu Interface Implementation
-    bool IsOpen() const override { return m_state != MenuState::GameMode; }
-    void Show() override { m_state = MenuState::Main; }
-    void Hide() override { m_state = MenuState::GameMode; }
-    bool ShouldStartGame() const override { return m_action == MenuAction::StartGame || m_action == MenuAction::ResumeGame; }
-    
-    
-    // IMenuRenderable interface implementations
+    bool IsOpen() const override
+    {
+        return m_state != MenuState::GameMode;
+    }
+    void Show() override
+    {
+        m_state = MenuState::Main;
+    }
+    void Hide() override
+    {
+        m_state = MenuState::GameMode;
+    }
+    bool ShouldStartGame() const override
+    {
+        return m_action == MenuAction::StartGame || m_action == MenuAction::ResumeGame;
+    }
+
+    // IMenu interface implementations
     void Update() override;
     void Render() override;
 
