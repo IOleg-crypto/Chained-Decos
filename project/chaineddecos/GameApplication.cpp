@@ -169,7 +169,7 @@ void GameApplication::OnStart()
     // Configure ImGui
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.MouseDrawCursor = false;
+    io.MouseDrawCursor = false;
 
     // Initialize input
     InitInput();
@@ -382,7 +382,7 @@ void GameApplication::OnShutdown()
     {
         m_collisionManager->ClearColliders();
         {
-            auto *uiModule = ENGINE.GetModuleManager()->GetModule("UI");
+            auto *uiModule = Engine::Instance().GetModuleManager()->GetModule("UI");
             if (uiModule)
             {
                 auto *uiManager = dynamic_cast<UIManager *>(uiModule);

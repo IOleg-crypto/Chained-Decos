@@ -7,7 +7,6 @@
 #include "core/interfaces/IPlayer.h"
 #include <memory>
 
-
 #include <stdexcept>
 #include <string>
 #include <typeindex>
@@ -16,7 +15,6 @@
 // Core system includes (replacing forward declarations)
 #include "servers/input/Core/InputManager.h"
 #include "servers/rendering/Core/RenderManager.h"
-
 
 // Main Engine class acting as Service Locator and System Manager
 class Engine
@@ -104,10 +102,5 @@ private:
     bool m_debugInfoVisible = false;
     bool m_shouldExit = false;
 };
-
-// Global access macros
-#define ENGINE Engine::Instance()
-#define GET_SERVICE(Type) ENGINE.GetService<Type>()
-#define REQUIRE_SERVICE(Type) ENGINE.RequireService<Type>()
 
 #endif // ENGINE_H

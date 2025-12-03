@@ -27,14 +27,13 @@ void ModuleManager::RegisterModule(std::unique_ptr<IEngineModule> module)
 
     std::string moduleName = module->GetModuleName();
 
-    if (m_moduleByName.find(moduleName) != m_moduleByName.end())
+    if (m_modules.find(moduleName) != m_modules.end())
     {
         return;
     }
 
-    IEngineModule *rawPtr = module.get();
-    m_modules.push_back(std::move(module));
-    m_moduleByName[moduleName] = rawPtr;
+    m_modules[moduleName] = std::move(module);
+    m_registrationOrder.push_back(moduleName);
 }
 
 bool ModuleManager::LoadModule(const std::string &moduleName)
@@ -48,8 +47,6 @@ bool ModuleManager::InitializeAllModules()
     {
         return true;
     }
-
-    // Kernel check removed as we use Engine singleton or explicit systems
 
     auto sortedModules = SortModulesByDependencies();
 
@@ -69,7 +66,6 @@ bool ModuleManager::InitializeAllModules()
         }
 
         // First initialize the module (creates components)
-        // Module can call RegisterServices inside Initialize if needed
         if (!module->Initialize(&Engine::Instance()))
         {
             TraceLog(LOG_WARNING, "[ModuleManager] Failed to initialize module: %s",
@@ -77,8 +73,7 @@ bool ModuleManager::InitializeAllModules()
             continue;
         }
 
-        // Register services after initialization (components created)
-        // This allows modules to register their services after component creation
+        // Register services after initialization
         module->RegisterServices(&Engine::Instance());
 
         module->SetInitialized(true);
@@ -95,11 +90,13 @@ void ModuleManager::ShutdownAllModules()
         return;
     }
 
-    for (auto it = m_modules.rbegin(); it != m_modules.rend(); ++it)
+    // Shutdown in reverse registration order
+    for (auto it = m_registrationOrder.rbegin(); it != m_registrationOrder.rend(); ++it)
     {
-        if (*it && (*it)->IsInitialized())
+        auto modIt = m_modules.find(*it);
+        if (modIt != m_modules.end() && modIt->second && modIt->second->IsInitialized())
         {
-            (*it)->Shutdown();
+            modIt->second->Shutdown();
         }
     }
 
@@ -108,49 +105,56 @@ void ModuleManager::ShutdownAllModules()
 
 void ModuleManager::UpdateAllModules(float deltaTime)
 {
-    for (auto &module : m_modules)
+    if (!m_initialized)
     {
-        if (module && module->IsInitialized())
+        return;
+    }
+
+    for (const auto &name : m_registrationOrder)
+    {
+        auto it = m_modules.find(name);
+        if (it != m_modules.end() && it->second && it->second->IsInitialized())
         {
-            module->Update(deltaTime);
+            it->second->Update(deltaTime);
         }
     }
 }
 
 void ModuleManager::RenderAllModules()
 {
-    for (auto &module : m_modules)
+    if (!m_initialized)
     {
-        if (module && module->IsInitialized())
+        return;
+    }
+
+    for (const auto &name : m_registrationOrder)
+    {
+        auto it = m_modules.find(name);
+        if (it != m_modules.end() && it->second && it->second->IsInitialized())
         {
-            module->Render();
+            it->second->Render();
         }
     }
 }
 
 IEngineModule *ModuleManager::GetModule(const std::string &name) const
 {
-    auto it = m_moduleByName.find(name);
-    if (it != m_moduleByName.end())
+    auto it = m_modules.find(name);
+    if (it != m_modules.end())
     {
-        return it->second;
+        return it->second.get();
     }
     return nullptr;
 }
 
 std::vector<std::string> ModuleManager::GetLoadedModules() const
 {
-    std::vector<std::string> names;
-    for (const auto &pair : m_moduleByName)
-    {
-        names.push_back(pair.first);
-    }
-    return names;
+    return m_registrationOrder;
 }
 
 bool ModuleManager::IsModuleLoaded(const std::string &name) const
 {
-    return m_moduleByName.find(name) != m_moduleByName.end();
+    return m_modules.find(name) != m_modules.end();
 }
 
 std::vector<IEngineModule *> ModuleManager::SortModulesByDependencies() const
@@ -173,6 +177,9 @@ std::vector<IEngineModule *> ModuleManager::SortModulesByDependencies() const
 
         if (visiting.count(name))
         {
+            TraceLog(LOG_WARNING,
+                     "[ModuleManager] Circular dependency detected involving module: %s",
+                     name.c_str());
             return;
         }
 
@@ -181,10 +188,10 @@ std::vector<IEngineModule *> ModuleManager::SortModulesByDependencies() const
         auto deps = module->GetDependencies();
         for (const auto &depName : deps)
         {
-            auto *depModule = GetModule(depName);
-            if (depModule)
+            auto it = m_modules.find(depName);
+            if (it != m_modules.end())
             {
-                visit(depModule);
+                visit(it->second.get());
             }
         }
 
@@ -193,11 +200,11 @@ std::vector<IEngineModule *> ModuleManager::SortModulesByDependencies() const
         sorted.push_back(module);
     };
 
-    for (const auto &module : m_modules)
+    for (const auto &pair : m_modules)
     {
-        if (module)
+        if (pair.second)
         {
-            visit(module.get());
+            visit(pair.second.get());
         }
     }
 
