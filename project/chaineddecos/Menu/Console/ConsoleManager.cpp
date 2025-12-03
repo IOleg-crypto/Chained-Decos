@@ -4,7 +4,6 @@
 #include "core/engine/EngineApplication.h"
 #include "project/chaineddecos/Player/Collision/PlayerCollision.h"
 #include "project/chaineddecos/Player/Core/Player.h"
-#include "project/chaineddecos/Systems/PlayerSystem/PlayerController.h"
 #include <algorithm>
 #include <cctype>
 #include <imgui.h>
@@ -29,7 +28,7 @@ ConsoleManager::ConsoleManager()
 Player *ConsoleManager::GetPlayer() const
 {
     // Get Player through Engine -> PlayerService
-    auto player = Engine::Instance().GetPlayer();
+    auto player = static_cast<Player*>(Engine::Instance().GetPlayer());
     return player;
 }
 
