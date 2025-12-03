@@ -18,18 +18,10 @@ void SettingsManager::LoadSettings() {
         TraceLog(LOG_WARNING, "SettingsManager::LoadSettings() - Could not load game.cfg, using default settings");
     }
 
-    // Apply loaded settings to the game
-    int width, height;
-    m_config.GetResolution(width, height);
-    SetWindowSize(width, height);
 
-    if (m_config.IsFullscreen()) {
-        SetWindowState(FLAG_FULLSCREEN_MODE);
-    }
-
-    if (m_config.IsVSync()) {
-        SetWindowState(FLAG_VSYNC_HINT);
-    }
+    // NOTE: We do NOT apply window settings here (SetWindowSize, SetWindowState)
+    // because this is called from the constructor, before the window exists.
+    // Window settings will be applied by GameApplication::OnConfigure() and OnStart()
 
     // Load audio settings
     m_audioSettings.masterVolume = m_config.GetMasterVolume();

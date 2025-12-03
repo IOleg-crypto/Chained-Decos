@@ -3,7 +3,6 @@
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "project/chaineddecos/Systems/MapSystem/LevelManager.h"
-#include "project/chaineddecos/Systems/PlayerSystem/PlayerController.h"
 #include "servers/input/Core/InputManager.h"
 #include "servers/rendering/Core/RenderManager.h"
 #include <memory>
@@ -84,25 +83,19 @@ bool Engine::IsCollisionDebugVisible() const
 
 // Direct access to game objects (replaces service wrappers)
 // These use the service locator but return raw pointers for convenience
-Player *Engine::GetPlayer() const
+IPlayer *Engine::GetPlayer() const
 {
     auto service = GetService<Player>();
     return service.get();
 }
 
-PlayerController *Engine::GetPlayerController() const
-{
-    auto service = GetService<PlayerController>();
-    return service.get();
-}
-
-LevelManager *Engine::GetLevelManager() const
+ILevelManager *Engine::GetLevelManager() const
 {
     auto service = GetService<LevelManager>();
     return service.get();
 }
 
-Menu *Engine::GetMenu() const
+IMenu *Engine::GetMenu() const
 {
     auto service = GetService<Menu>();
     return service.get();

@@ -4,6 +4,7 @@
 #include "../../../core/engine/EngineApplication.h"
 
 #include "../../../core/object/module/Interfaces/IEngineModule.h"
+#include "core/interfaces/ILevelManager.h"
 #include "../../../scene/main/Core/World.h"
 #include "../../../scene/resources/map/Core/MapLoader.h"
 #include "../../../scene/resources/model/Core/Model.h"
@@ -29,12 +30,21 @@ struct MapSystemConfig
 
 // System for managing maps and levels
 // Integrates all map loading, rendering, and collision initialization logic
-class LevelManager : public IEngineModule
+class LevelManager : public ILevelManager, public IEngineModule
 {
 public:
     explicit LevelManager(const MapSystemConfig &config = {});
     ~LevelManager() override;
 
+    
+    
+    // ILevelManager Interface Implementation
+    bool LoadMap(const std::string& path) override { LoadEditorMap(path); return true; }
+    void UnloadMap() override { /* TODO: Implement unload */ }
+    bool IsMapLoaded() const override { return HasSpawnZone(); } // Use HasSpawnZone as proxy? Or m_gameMap != nullptr
+    std::string GetCurrentMapName() const override { return GetCurrentMapPath(); }
+    Vector3 GetSpawnPosition() const override { return GetPlayerSpawnPosition(); }
+    
     // IEngineModule interface
     const char *GetModuleName() const override
     {
