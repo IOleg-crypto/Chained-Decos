@@ -240,6 +240,7 @@ void Menu::SetupStyle()
     colors[ImGuiCol_HeaderActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.0f);
 }
 
+
 void Menu::RenderMenuState()
 {
     switch (m_state)

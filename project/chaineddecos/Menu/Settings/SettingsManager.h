@@ -1,7 +1,7 @@
 #ifndef SETTINGS_MANAGER_H
 #define SETTINGS_MANAGER_H
 
-#include "MenuConstants.h"
+#include "../MenuConstants.h"
 #include "core/config/Core/ConfigManager.h"
 #include "servers/audio/Core/AudioManager.h"
 #include <string>
