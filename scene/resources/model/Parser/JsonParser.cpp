@@ -2,8 +2,10 @@
 #include "scene/resources/color/ColorParser.h"
 #include <raylib.h>
 
+namespace JsonParser
+{
 // Safe value retrieval
-std::optional<std::string> JsonParser::GetString(const json &j, const std::string &key)
+std::optional<std::string> GetString(const json &j, const std::string &key)
 {
     if (j.contains(key) && j[key].is_string())
     {
@@ -12,7 +14,7 @@ std::optional<std::string> JsonParser::GetString(const json &j, const std::strin
     return std::nullopt;
 }
 
-std::optional<float> JsonParser::GetFloat(const json &j, const std::string &key)
+std::optional<float> GetFloat(const json &j, const std::string &key)
 {
     if (j.contains(key) && j[key].is_number())
     {
@@ -21,7 +23,7 @@ std::optional<float> JsonParser::GetFloat(const json &j, const std::string &key)
     return std::nullopt;
 }
 
-std::optional<bool> JsonParser::GetBool(const json &j, const std::string &key)
+std::optional<bool> GetBool(const json &j, const std::string &key)
 {
     if (j.contains(key) && j[key].is_boolean())
     {
@@ -30,7 +32,7 @@ std::optional<bool> JsonParser::GetBool(const json &j, const std::string &key)
     return std::nullopt;
 }
 
-std::optional<int> JsonParser::GetInt(const json &j, const std::string &key)
+std::optional<int> GetInt(const json &j, const std::string &key)
 {
     if (j.contains(key) && j[key].is_number_integer())
     {
@@ -40,7 +42,7 @@ std::optional<int> JsonParser::GetInt(const json &j, const std::string &key)
 }
 
 // Complex type parsing
-Vector3 JsonParser::ParseVector3(const json &j, const Vector3 &defaultValue)
+Vector3 ParseVector3(const json &j, const Vector3 &defaultValue)
 {
     if (!j.is_object())
         return defaultValue;
@@ -49,7 +51,7 @@ Vector3 JsonParser::ParseVector3(const json &j, const Vector3 &defaultValue)
             j.value("z", defaultValue.z)};
 }
 
-Color JsonParser::ParseColor(const json &j, const Color &defaultValue)
+Color ParseColor(const json &j, const Color &defaultValue)
 {
     if (j.is_string())
     {
@@ -65,19 +67,8 @@ Color JsonParser::ParseColor(const json &j, const Color &defaultValue)
     return defaultValue;
 }
 
-// Validation
-bool JsonParser::ValidateModelEntry(const json &entry)
-{
-    return HasRequiredKeys(entry, {"name", "path"});
-}
-
-bool JsonParser::ValidateInstanceEntry(const json &entry)
-{
-    // Instance may not have mandatory fields
-    return entry.is_object();
-}
-
-bool JsonParser::HasRequiredKeys(const json &j, const std::vector<std::string> &keys)
+// Private helper
+bool HasRequiredKeys(const json &j, const std::vector<std::string> &keys)
 {
     for (const auto &key : keys)
     {
@@ -89,8 +80,20 @@ bool JsonParser::HasRequiredKeys(const json &j, const std::vector<std::string> &
     return true;
 }
 
+// Validation
+bool ValidateModelEntry(const json &entry)
+{
+    return HasRequiredKeys(entry, {"name", "path"});
+}
+
+bool ValidateInstanceEntry(const json &entry)
+{
+    // Instance may not have mandatory fields
+    return entry.is_object();
+}
+
 // Configuration parsing
-std::optional<ModelFileConfig> JsonParser::ParseModelConfig(const json &entry)
+std::optional<ModelFileConfig> ParseModelConfig(const json &entry)
 {
     if (!ValidateModelEntry(entry))
     {
@@ -101,7 +104,7 @@ std::optional<ModelFileConfig> JsonParser::ParseModelConfig(const json &entry)
 
     auto name = GetString(entry, "name");
     auto path = GetString(entry, "path");
-    
+
     if (!name || !path)
     {
         return std::nullopt;
@@ -147,7 +150,7 @@ std::optional<ModelFileConfig> JsonParser::ParseModelConfig(const json &entry)
     return config;
 }
 
-std::optional<ModelInstanceConfig> JsonParser::ParseInstanceConfig(const json &entry)
+std::optional<ModelInstanceConfig> ParseInstanceConfig(const json &entry)
 {
     if (!entry.is_object())
     {
@@ -176,3 +179,4 @@ std::optional<ModelInstanceConfig> JsonParser::ParseInstanceConfig(const json &e
 
     return config;
 }
+} // namespace JsonParser

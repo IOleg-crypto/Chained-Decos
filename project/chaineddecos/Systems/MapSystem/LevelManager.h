@@ -4,16 +4,17 @@
 #include "../../../core/engine/EngineApplication.h"
 
 #include "../../../core/object/module/Interfaces/IEngineModule.h"
-#include "core/interfaces/ILevelManager.h"
 #include "../../../scene/main/Core/World.h"
 #include "../../../scene/resources/map/Core/MapLoader.h"
 #include "../../../scene/resources/model/Core/Model.h"
 #include "../../../servers/physics/collision/Core/CollisionManager.h"
 #include "../../../servers/rendering/Core/RenderManager.h"
+#include "core/interfaces/ILevelManager.h"
 #include <memory>
 #include <raylib.h>
 #include <string>
 #include <vector>
+
 
 // Forward declarations to avoid circular dependencies
 class Player;
@@ -32,20 +33,33 @@ struct MapSystemConfig
 // Integrates all map loading, rendering, and collision initialization logic
 class LevelManager : public ILevelManager, public IEngineModule
 {
-public:
+public: // Lifecycle
     explicit LevelManager(const MapSystemConfig &config = {});
     ~LevelManager() override;
 
-    
-    
-    // ILevelManager Interface Implementation
-    bool LoadMap(const std::string& path) override { LoadEditorMap(path); return true; }
-    void UnloadMap() override { /* TODO: Implement unload */ }
-    bool IsMapLoaded() const override { return HasSpawnZone(); } // Use HasSpawnZone as proxy? Or m_gameMap != nullptr
-    std::string GetCurrentMapName() const override { return GetCurrentMapPath(); }
-    Vector3 GetSpawnPosition() const override { return GetPlayerSpawnPosition(); }
-    
-    // IEngineModule interface
+public: // ILevelManager Implementation
+    bool LoadMap(const std::string &path) override
+    {
+        LoadEditorMap(path);
+        return true;
+    }
+    void UnloadMap() override
+    { /* TODO: Implement unload */
+    }
+    bool IsMapLoaded() const override
+    {
+        return HasSpawnZone();
+    }
+    std::string GetCurrentMapName() const override
+    {
+        return GetCurrentMapPath();
+    }
+    Vector3 GetSpawnPosition() const override
+    {
+        return GetPlayerSpawnPosition();
+    }
+
+public: // IEngineModule Implementation
     const char *GetModuleName() const override
     {
         return "Map";
@@ -66,18 +80,18 @@ public:
     void RegisterServices(Engine *engine) override;
     std::vector<std::string> GetDependencies() const override;
 
-    // Map loading and management
+public: // Map Management
     void LoadEditorMap(const std::string &mapPath);
     void RenderEditorMap();
     void RenderSpawnZone() const;
     void DumpMapDiagnostics() const;
 
-    // Collision initialization
+public: // Collision Initialization
     void InitCollisions();
     void InitCollisionsWithModels(const std::vector<std::string> &requiredModels);
     bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels);
 
-    // Accessors
+public: // Accessors & Setters
     GameMap &GetGameMap();
     const std::string &GetCurrentMapPath() const
     {
@@ -95,24 +109,21 @@ public:
 
     void SetPlayer(Player *player);
 
-private:
-    // Configuration
+private: // Configuration & State
     MapSystemConfig m_config;
-
-    // Map data
     std::unique_ptr<GameMap> m_gameMap;
     std::string m_currentMapPath;
 
-    // Player spawn zone
+private: // Spawn Zone
     BoundingBox m_playerSpawnZone;
     Texture2D m_spawnTexture;
     bool m_hasSpawnZone;
     bool m_spawnTextureLoaded;
 
-    // Collision initializer
+private: // Sub-systems
     std::unique_ptr<MapCollisionInitializer> m_collisionInitializer;
 
-    // Dependencies obtained through Engine (references only)
+private: // Dependencies
     WorldManager *m_worldManager;
     CollisionManager *m_collisionManager;
     ModelLoader *m_modelLoader;
