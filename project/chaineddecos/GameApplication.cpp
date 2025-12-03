@@ -305,8 +305,7 @@ void GameApplication::OnUpdate(float deltaTime)
 
 void GameApplication::OnRender()
 {
-    // Begin Frame
-    RenderManager::Get().BeginFrame();
+    // Frame is begun by EngineApplication::Render()
 
     // Get Menu
     auto *engine = &Engine::Instance();
@@ -368,8 +367,7 @@ void GameApplication::OnRender()
         }
     }
 
-    // End Frame
-    RenderManager::Get().EndFrame();
+    // Frame is ended by EngineApplication::Render()
 }
 
 void GameApplication::OnShutdown()
