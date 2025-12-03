@@ -1,12 +1,5 @@
 #include "GameApplication.h"
-#include "core/engine/EngineApplication.h"
+#include "main/EntryPoint.h"
 
-int main(int argc, char *argv[])
-{
-    GameApplication gameApp(argc, argv);
-    EngineApplication::Config engineConfig;
-    engineConfig.windowName = "Chained Decos";
-    EngineApplication engine(engineConfig, &gameApp);
-    engine.Run();
-    return 0;
-}
+
+ENGINE_MAIN(GameApplication, "Chained Decos")

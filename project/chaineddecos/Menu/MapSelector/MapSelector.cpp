@@ -8,7 +8,6 @@
 #include <iostream>
 #include <raylib.h>
 
-
 // Use constants from namespace
 using namespace MenuConstants;
 
@@ -474,7 +473,7 @@ void MapSelector::ScanForJsonMaps()
     try
     {
         namespace fs = std::filesystem;
-        std::string rootDir = PROJECT_ROOT_DIR "/resources/maps";
+        std::string rootDir = PROJECT_ROOT_DIR;
 
         TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Scanning for JSON map files...");
         TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Project root directory: %s",

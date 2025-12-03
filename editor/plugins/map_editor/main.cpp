@@ -1,15 +1,15 @@
+// Generic entry point for Map Editor
 #include "EditorApplication.h"
-#include "core/engine/EngineApplication.h"
+#include "main/EntryPoint.h"
 
-// # --------
-// # int main - init map editor
-// # --------
-int main(int argc, char *argv[])
+
+// EditorApplication doesn't take argc/argv
+int main()
 {
-    EditorApplication editorApp;
-    EngineApplication::Config engineConfig;
-    engineConfig.windowName = "Chained Decos Map Editor";
-    EngineApplication engine(engineConfig, &editorApp);
+    EditorApplication app;
+    EngineApplication::Config config;
+    config.windowName = "Chained Decos Map Editor";
+    EngineApplication engine(config, &app);
     engine.Run();
     return 0;
 }
