@@ -5,6 +5,7 @@
 #include "core/interfaces/ILevelManager.h"
 #include "core/interfaces/IMenu.h"
 #include "core/interfaces/IPlayer.h"
+#include "core/interfaces/IServiceProvider.h" // Service Provider interface
 #include <memory>
 
 #include <stdexcept>
@@ -12,12 +13,16 @@
 #include <typeindex>
 #include <unordered_map>
 
-// Core system includes (replacing forward declarations)
+// ✅ Core service includes (lightweight interfaces where possible)
+#include "scene/main/Interfaces/IWorldManager.h"
+#include "scene/resources/model/Interfaces/IModelLoader.h"
+#include "servers/audio/Core/AudioManager.h"
 #include "servers/input/Core/InputManager.h"
+#include "servers/physics/collision/Interfaces/ICollisionManager.h"
 #include "servers/rendering/Core/RenderManager.h"
 
-// Main Engine class acting as Service Locator and System Manager
-class Engine
+// Main Engine class - implements IServiceProvider
+class Engine : public IServiceProvider
 {
 public:
     static Engine &Instance();
@@ -43,6 +48,14 @@ public:
     IPlayer *GetPlayer() const;
     ILevelManager *GetLevelManager() const;
     IMenu *GetMenu() const;
+
+    // IServiceProvider implementation (✅ ZERO forward declarations!)
+    InputManager *GetInputManager() override;
+    RenderManager *GetRenderManager() override;
+    AudioManager *GetAudioManager() override;
+    IModelLoader *GetModelLoader() override;
+    ICollisionManager *GetCollisionManager() override;
+    IWorldManager *GetWorldManager() override;
 
     // Service Locator Pattern (Type-safe)
     template <typename T> void RegisterService(std::shared_ptr<T> service)
