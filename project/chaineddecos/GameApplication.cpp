@@ -7,7 +7,6 @@
 #include "core/ecs/Examples.h"
 #include "core/engine/EngineApplication.h"
 #include "core/object/module/Core/ModuleManager.h"
-#include "project/chaineddecos/Menu/Console/ConsoleManagerHelpers.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/main/Core/World.h"
@@ -170,10 +169,7 @@ void GameApplication::OnStart()
     // Configure ImGui
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.MouseDrawCursor = false;
-
-    // Dependency Injection
-    UpdateConsoleManagerProviders(&Engine::Instance());
+    io.MouseDrawCursor = false;
 
     // Initialize input
     InitInput();
