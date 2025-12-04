@@ -1,7 +1,7 @@
 #ifndef PLAYER_RENDERABLE_H
 #define PLAYER_RENDERABLE_H
 
-#include <servers/rendering/Interfaces/IGameRenderable.h>
+#include <components/rendering/Interfaces/IGameRenderable.h>
 
 // Forward declaration to avoid circular dependency
 class Player;

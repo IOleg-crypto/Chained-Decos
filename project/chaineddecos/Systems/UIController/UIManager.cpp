@@ -8,7 +8,7 @@
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
 #include <algorithm>
 #include <fstream>
 #include <raylib.h>
