@@ -3,7 +3,7 @@
 
 #include "ISceneManager.h"
 #include "../Object/MapObject.h"
-#include "servers/physics/collision/Structures/CollisionStructures.h"
+#include "components/physics/collision/Structures/CollisionStructures.h"
 #include <vector>
 #include <memory>
 

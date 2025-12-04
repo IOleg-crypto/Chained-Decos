@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "project/chaineddecos/Player/Core/Player.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
 
 class PlayerTest : public ::testing::Test
 {

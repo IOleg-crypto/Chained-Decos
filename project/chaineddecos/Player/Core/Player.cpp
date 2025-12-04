@@ -8,7 +8,7 @@
 #include <raylib.h>
 #include <scene/3d/camera/Core/CameraController.h>
 #include <scene/main/Core/World.h>
-#include <servers/rendering/Interfaces/IGameRenderable.h>
+#include <components/rendering/Interfaces/IGameRenderable.h>
 
 // Define player constants
 Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 0.0f, 0.0f}; // Safe spawn position above ground

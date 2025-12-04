@@ -33,7 +33,7 @@
 #include <raylib.h>
 #include <rlImGui/rlImGui.h>
 
-#include "servers/rendering/Utils/RenderUtils.h"
+#include "components/rendering/Utils/RenderUtils.h"
 #include <raymath.h>
 #include <rlgl.h>
 #include <string>

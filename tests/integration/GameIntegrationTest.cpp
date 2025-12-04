@@ -7,7 +7,7 @@
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
 
 class GameIntegrationTest : public ::testing::Test
 {

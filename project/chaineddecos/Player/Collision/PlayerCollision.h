@@ -2,7 +2,7 @@
 #define PLAYER_COLLISION_H
 
 #include <raylib.h>
-#include <servers/physics/collision/System/CollisionSystem.h>
+#include <components/physics/collision/System/CollisionSystem.h>
 #include <vector>
 #include "core/interfaces/IPlayer.h"
 

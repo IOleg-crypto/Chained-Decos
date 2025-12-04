@@ -6,8 +6,8 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <scene/main/Core/World.h>
-#include <servers/physics/collision/Core/CollisionManager.h>
-#include <servers/physics/dynamics/Components/PhysicsComponent.h>
+#include <components/physics/collision/Core/CollisionManager.h>
+#include <components/physics/dynamics/Components/PhysicsComponent.h>
 
 
 class PlayerMovement : public IPlayerMovement

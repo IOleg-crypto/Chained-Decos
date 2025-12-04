@@ -4,7 +4,7 @@
 
 #include "core/engine/Engine.h"
 #include "rlImGui.h"
-#include "servers/physics/collision/System/CollisionSystem.h"
+#include "components/physics/collision/System/CollisionSystem.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -15,7 +15,7 @@
 #include <iostream>
 #include <memory>
 #include <raylib.h>
-#include <servers/physics/collision/Structures/CollisionStructures.h>
+#include <components/physics/collision/Structures/CollisionStructures.h>
 #include <set>
 #include <sstream>
 #include <string>
