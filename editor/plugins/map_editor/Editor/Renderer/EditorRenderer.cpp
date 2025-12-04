@@ -1,6 +1,6 @@
 #include "EditorRenderer.h"
 #include "scene/resources/map/Renderer/MapRenderer.h"
-#include "servers/rendering/Utils/RenderUtils.h"
+#include "components/rendering/Utils/RenderUtils.h"
 #include <raylib.h>
 #include <raymath.h>
 
