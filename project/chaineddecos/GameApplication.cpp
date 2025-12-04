@@ -3,6 +3,9 @@
 // #include "Systems/PlayerSystem/PlayerController.h"
 // #include "Systems/RenderingSystem/RenderingSystem.h"
 #include "Systems/UIController/UIManager.h"
+#include "components/input/Core/InputManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
+#include "components/rendering/Core/RenderManager.h"
 #include "core/config/Core/ConfigManager.h"
 #include "core/ecs/Examples.h"
 #include "core/engine/EngineApplication.h"
@@ -12,9 +15,7 @@
 #include "scene/main/Core/World.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
-#include "servers/input/Core/InputManager.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
-#include "servers/rendering/Core/RenderManager.h"
+
 
 #include "imgui.h"
 #include "rlImGui.h"

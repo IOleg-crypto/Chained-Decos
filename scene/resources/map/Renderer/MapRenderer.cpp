@@ -1,16 +1,15 @@
 #include "MapRenderer.h"
-#include "servers/rendering/Utils/RenderUtils.h"
+#include "components/rendering/Utils/RenderUtils.h"
+#include <algorithm>
+#include <filesystem>
 #include <raylib.h>
 #include <raymath.h>
-#include <filesystem>
-#include <algorithm>
 
-
-void MapRenderer::RenderMap(const GameMap& map, Camera3D camera)
+void MapRenderer::RenderMap(const GameMap &map, Camera3D camera)
 {
-    const MapMetadata& metadata = map.GetMapMetaData();
-    Skybox* skybox = map.GetSkyBox();
-    
+    const MapMetadata &metadata = map.GetMapMetaData();
+    Skybox *skybox = map.GetSkyBox();
+
     // Set sky color if no skybox, otherwise use skybox
     if (!skybox || !skybox->IsLoaded())
     {
@@ -32,12 +31,12 @@ void MapRenderer::RenderMap(const GameMap& map, Camera3D camera)
     if (skybox && skybox->IsLoaded())
     {
         // Update gamma settings from config before rendering
-        //skybox->UpdateGammaFromConfig();
+        // skybox->UpdateGammaFromConfig();
         skybox->DrawSkybox();
     }
 
     // Render all objects in the map
-    for (const auto& object : map.GetMapObjects())
+    for (const auto &object : map.GetMapObjects())
     {
         RenderMapObject(object, map.GetMapModels(), camera);
     }
@@ -45,9 +44,9 @@ void MapRenderer::RenderMap(const GameMap& map, Camera3D camera)
     EndMode3D();
 }
 
-void MapRenderer::RenderMapObject(const MapObjectData& object,
-                     const std::unordered_map<std::string, Model>& loadedModels,
-                     [[maybe_unused]] Camera3D camera, bool useEditorColors)
+void MapRenderer::RenderMapObject(const MapObjectData &object,
+                                  const std::unordered_map<std::string, Model> &loadedModels,
+                                  [[maybe_unused]] Camera3D camera, bool useEditorColors)
 {
     // Apply object transformations - ensure consistent order for collision/rendering match
     Matrix translation = MatrixTranslate(object.position.x, object.position.y, object.position.z);
@@ -182,7 +181,8 @@ void MapRenderer::RenderMapObject(const MapObjectData& object,
                                  transform);
 
                         // Restore original color
-                        model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = color;
+                        model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color =
+                            color;
                     }
                     // DrawModelWires(model, Vector3{0, 0, 0}, 1.0f, BLACK);
                 }
@@ -216,12 +216,14 @@ void MapRenderer::RenderMapObject(const MapObjectData& object,
     }
 }
 
-void MapRenderer::RenderSpawnZone(Texture2D spawnTexture, const Vector3& position, float size, Color color, bool textureLoaded) const
+void MapRenderer::RenderSpawnZone(Texture2D spawnTexture, const Vector3 &position, float size,
+                                  Color color, bool textureLoaded) const
 {
     RenderSpawnZoneWithTexture(spawnTexture, position, size, color, textureLoaded);
 }
 
-void MapRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3& position, float size, Color color, bool textureLoaded) const
+void MapRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &position, float size,
+                                             Color color, bool textureLoaded) const
 {
     if (!textureLoaded)
     {
@@ -237,4 +239,3 @@ void MapRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3& p
     // Draw wireframe for better visibility
     DrawCubeWires(position, size, size, size, WHITE);
 }
-
