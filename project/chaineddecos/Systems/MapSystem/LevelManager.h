@@ -7,8 +7,8 @@
 #include "../../../scene/main/Core/World.h"
 #include "../../../scene/resources/map/Core/MapLoader.h"
 #include "../../../scene/resources/model/Core/Model.h"
-#include "../../../servers/physics/collision/Core/CollisionManager.h"
-#include "../../../servers/rendering/Core/RenderManager.h"
+#include "../../../components/physics/collision/Core/CollisionManager.h"
+#include "../../../components/rendering/Core/RenderManager.h"
 #include "core/interfaces/ILevelManager.h"
 #include <memory>
 #include <raylib.h>

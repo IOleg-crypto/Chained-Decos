@@ -89,3 +89,23 @@ void Player::UpdatePhysics(float dt)
         m_physics.IsGrounded = false;
     }
 }
+Servers::Physics &Player::GetPhysics()
+{
+    return m_physics;
+}
+const Servers::Bounds &Player::GetBounds() const
+{
+    return m_bounds;
+}
+Vector3 Player::GetPosition() const
+{
+    return m_bounds.Center;
+}
+float Player::GetRotationY() const
+{
+    return m_rotationY;
+}
+void Player::SetRotationY(float rotation)
+{
+    m_rotationY = rotation;
+}

@@ -20,7 +20,7 @@
 
 #include "../Interfaces/IPlayerMovement.h"
 #include "core/interfaces/IPlayer.h"
-#include "servers/rendering/Interfaces/IGameRenderable.h"
+#include "components/rendering/Interfaces/IGameRenderable.h"
 
 
 // Forward declaration to break circular dependency

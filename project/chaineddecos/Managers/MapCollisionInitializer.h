@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include "scene/resources/map/Core/MapLoader.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
 #include "scene/resources/model/Core/Model.h"
 
 #include "core/interfaces/IPlayer.h"

@@ -14,30 +14,15 @@ public:
     // Interface implementation
     void Update(float deltaTime) override;
 
-    Vector3 GetPosition() const override
-    {
-        return m_bounds.Center;
-    }
+    Vector3 GetPosition() const override;
     void SetPosition(const Vector3 &pos) override;
 
-    float GetRotationY() const override
-    {
-        return m_rotationY;
-    }
-    void SetRotationY(float rotation) override
-    {
-        m_rotationY = rotation;
-    }
+    float GetRotationY() const override;
+    void SetRotationY(float rotation) override;
 
     // Components
-    Servers::Physics &GetPhysics()
-    {
-        return m_physics;
-    }
-    const Servers::Bounds &GetBounds() const
-    {
-        return m_bounds;
-    }
+    Servers::Physics &GetPhysics();
+    const Servers::Bounds &GetBounds() const;
 
     // Actions
     void Jump();
