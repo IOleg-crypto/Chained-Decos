@@ -1,17 +1,16 @@
 #include "Engine.h"
+#include "components/audio/Core/AudioManager.h"
+#include "components/input/Core/InputManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
+#include "components/rendering/Core/RenderManager.h"
 #include "core/object/module/Core/ModuleManager.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "project/chaineddecos/Systems/MapSystem/LevelManager.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
-#include "servers/audio/Core/AudioManager.h"
-#include "servers/input/Core/InputManager.h"
-#include "servers/physics/collision/Core/CollisionManager.h"
-#include "servers/rendering/Core/RenderManager.h"
 #include <memory>
 #include <raylib.h> // For TraceLog
-
 
 Engine *Engine::s_instance = nullptr;
 

@@ -287,10 +287,11 @@ endif()
 
 # Add new modular structure
 add_subdirectory(core)
-add_subdirectory(servers)
+add_subdirectory(components)
 add_subdirectory(scene)
 add_subdirectory(platform)
 add_subdirectory(project/chaineddecos)
+
 
 add_executable(ChainedDecos project/chaineddecos/main.cpp)
 target_link_libraries(ChainedDecos PRIVATE
@@ -345,14 +346,6 @@ install(TARGETS ChainedDecos
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
-# # Install resources (only if directory exists)
-# if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
-#     install(DIRECTORY resources/
-#         DESTINATION share/ChainedDecos/resources
-#         FILES_MATCHING PATTERN "*"
-#     )
-# endif()
-
 # Install configuration files
 install(FILES game.cfg
     DESTINATION share/ChainedDecos
@@ -381,21 +374,3 @@ if(NOT FAST_CONFIG)
     )
 endif()
 
-# CPack configuration for packaging
-if(NOT FAST_CONFIG)
-    set(CPACK_PACKAGE_NAME "ChainedDecos")
-    set(CPACK_PACKAGE_VERSION "1.0.0")
-    set(CPACK_PACKAGE_DESCRIPTION "Chained Decos - 3D Parkour Game")
-    set(CPACK_PACKAGE_VENDOR "Chained Decos Team")
-    set(CPACK_PACKAGE_CONTACT "contact@chaineddecos.com")
-
-    if(WIN32)
-        set(CPACK_GENERATOR "ZIP;NSIS")
-        set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-windows")
-    else()
-        set(CPACK_GENERATOR "TGZ;DEB")
-        set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-linux")
-    endif()
-
-    include(CPack)
-endif()
