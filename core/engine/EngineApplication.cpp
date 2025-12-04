@@ -2,8 +2,8 @@
 #include "Engine.h"
 #include "IApplication.h"
 
-#include "servers/input/Core/InputManager.h"
-#include "servers/rendering/Core/RenderManager.h"
+#include "components/input/Core/InputManager.h"
+#include "components/rendering/Core/RenderManager.h"
 #include <cassert>
 #include <raylib.h>
 

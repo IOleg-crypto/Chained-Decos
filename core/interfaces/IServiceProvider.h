@@ -4,16 +4,14 @@
 // IServiceProvider - Interface for accessing engine services
 // Modules depend on THIS interface, NOT on Engine directly
 
-#include "servers/audio/Core/AudioManager.h"
-#include "servers/input/Core/InputManager.h"
-#include "servers/rendering/Core/RenderManager.h"
-
+#include "components/audio/Core/AudioManager.h"
+#include "components/input/Core/InputManager.h"
+#include "components/rendering/Core/RenderManager.h"
 
 // ✅ Use INTERFACES instead of concrete classes - NO forward declarations!
+#include "components/physics/collision/Interfaces/ICollisionManager.h"
 #include "scene/main/Interfaces/IWorldManager.h"
 #include "scene/resources/model/Interfaces/IModelLoader.h"
-#include "servers/physics/collision/Interfaces/ICollisionManager.h"
-
 
 /**
  * @brief Service Provider Interface

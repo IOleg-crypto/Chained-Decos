@@ -1,14 +1,13 @@
 #include "PlayerSystem.h"
+#include "components/audio/Core/AudioManager.h"
+#include "components/input/Core/InputManager.h"
+#include "components/rendering/Core/RenderManager.h"
 #include "core/ecs/Components/PlayerComponent.h"
 #include "core/ecs/Components/TransformComponent.h"
 #include "core/ecs/Components/VelocityComponent.h"
 #include "core/ecs/ECSRegistry.h"
-#include "servers/audio/Core/AudioManager.h"
-#include "servers/input/Core/InputManager.h"
-#include "servers/rendering/Core/RenderManager.h"
 #include <cmath>
 #include <raylib.h>
-
 
 namespace PlayerSystem
 {

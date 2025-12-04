@@ -1,13 +1,12 @@
 #include "RenderSystem.h"
+#include "components/rendering/Core/RenderManager.h"
 #include "core/ecs/Components/RenderComponent.h"
 #include "core/ecs/Components/TransformComponent.h"
 #include "core/ecs/ECSRegistry.h"
-#include "servers/rendering/Core/RenderManager.h"
 #include <algorithm>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
-
 
 namespace RenderSystem
 {

@@ -8,6 +8,8 @@ add_library(ChainedDecosEngine STATIC
 target_include_directories(ChainedDecosEngine PUBLIC
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/platform
+    ${CMAKE_SOURCE_DIR}/project/chaineddecos
+    ${CMAKE_SOURCE_DIR}/project/chaineddecos/Menu
 )
 
 target_link_libraries(ChainedDecosEngine PUBLIC

@@ -5,12 +5,13 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include "servers/audio/Core/AudioManager.h"
+#include "components/audio/Core/AudioManager.h"
+#include <components/physics/collision/Core/CollisionManager.h>
+#include <components/physics/collision/System/CollisionSystem.h>
 #include <scene/3d/camera/Core/CameraController.h>
 #include <scene/main/Core/World.h>
 #include <scene/resources/model/Core/Model.h>
-#include <servers/physics/collision/Core/CollisionManager.h>
-#include <servers/physics/collision/System/CollisionSystem.h>
+
 
 // Include component interfaces
 #include "../Collision/PlayerCollision.h"
@@ -18,8 +19,9 @@
 #include "../Interfaces/IPlayerInput.h"
 
 #include "../Interfaces/IPlayerMovement.h"
-#include "servers/rendering/Interfaces/IGameRenderable.h"
 #include "core/interfaces/IPlayer.h"
+#include "servers/rendering/Interfaces/IGameRenderable.h"
+
 
 // Forward declaration to break circular dependency
 class PlayerRenderable;
@@ -71,9 +73,9 @@ public:
     void SetRotationY(float rotation) const override;
 
     // Getters/Setters
-    float GetSpeed() const override;     // Get current speed
-    float GetRotationY() const override; // Get Y rotation
-    void SetSpeed(float speed) const override;         // Set speed
+    float GetSpeed() const override;           // Get current speed
+    float GetRotationY() const override;       // Get Y rotation
+    void SetSpeed(float speed) const override; // Set speed
 
     Vector3 GetPlayerPosition() const;                // Get position
     Vector3 GetPlayerSize() const;                    // Get player size
@@ -86,17 +88,20 @@ public:
     IPlayerMovement *GetMovement() const;
     IGameRenderable *GetRenderable() const;
 
-    
-    
     // IPlayer Interface Implementation
-    Vector3 GetPosition() const override { return GetPlayerPosition(); }
-    void SetPosition(const Vector3& pos) override { SetPlayerPosition(pos); }
+    Vector3 GetPosition() const override
+    {
+        return GetPlayerPosition();
+    }
+    void SetPosition(const Vector3 &pos) override
+    {
+        SetPlayerPosition(pos);
+    }
     void Update(float deltaTime) override;
-    Camera3D& GetCamera() override;
+    Camera3D &GetCamera() override;
     void SetNoclip(bool enabled) override;
     bool IsNoclip() const override;
 
-    
     // Service injection
     void SetAudioManager(std::shared_ptr<AudioManager> audioManager);
 
