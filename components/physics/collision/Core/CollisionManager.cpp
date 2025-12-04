@@ -1,14 +1,14 @@
 #include "CollisionManager.h"
-#include <servers/physics/collision/System/CollisionSystem.h>
-#include <scene/resources/model/Core/Model.h>
 #include <algorithm>
 #include <array>
 #include <cfloat>
 #include <compare>
+#include <components/physics/collision/System/CollisionSystem.h>
 #include <execution>
 #include <future>
 #include <raylib.h>
 #include <raymath.h>
+#include <scene/resources/model/Core/Model.h>
 #include <set>
 #include <string>
 #include <thread>
