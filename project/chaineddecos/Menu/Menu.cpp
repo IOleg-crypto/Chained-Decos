@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-
 Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
       m_selectedMapIndex(0), m_mapsPerPage(MenuConstants::MAPS_PER_PAGE), m_currentPage(0),
@@ -87,6 +86,7 @@ Menu::Menu()
 void Menu::Initialize(Engine *engine)
 {
     m_engine = engine;
+    m_mapSelector = std::make_unique<MapSelector>();
     HandleKeyboardNavigation();
 
     // Sync map selection

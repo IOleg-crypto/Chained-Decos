@@ -38,7 +38,7 @@
 [submodule ".deps/entt-src"]
 	path = .deps/entt-src
 	url = https://github.com/skypjack/entt.git
-	branch = master
+	branch = main
 
 [submodule ".deps/googletest-src"]
 	path = .deps/googletest-src
