@@ -143,7 +143,7 @@ build CMakeFiles/ChainedDecos.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__Chain
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = CMakeFiles\ChainedDecos.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=c++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/project/chained_decos" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/project/chained_decos/Player" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/scene/3d/camera" -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/servers/input" -I"D:/gitnext/Chained Decos/servers/audio" -I"D:/gitnext/Chained Decos/project/chaineddecos/Player" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/project/chained_decos/Menu"
+  INCLUDES = -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/project/chained_decos" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/project/chained_decos/Player" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/scene/3d/camera" -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/components/input" -I"D:/gitnext/Chained Decos/components/audio" -I"D:/gitnext/Chained Decos/project/chaineddecos/Player" -I"D:/gitnext/Chained Decos/components/physics/dynamics/src" -I"D:/gitnext/Chained Decos/project/chained_decos/Menu"
   OBJECT_DIR = CMakeFiles\ChainedDecos.dir
   OBJECT_FILE_DIR = CMakeFiles\ChainedDecos.dir\Unity
 
@@ -155,10 +155,10 @@ build CMakeFiles/ChainedDecos.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__Chain
 #############################################
 # Link the executable bin\ChainedDecos_debug.exe
 
-build bin/ChainedDecos_debug.exe: CXX_EXECUTABLE_LINKER__ChainedDecos_Debug CMakeFiles/ChainedDecos.dir/Unity/unity_0_cxx.cxx.obj | project/chaineddecos/libChainedDecosGame.a libimguilib.a project/chaineddecos/Player/libplayer.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a servers/physics/dynamics/libphysics.a project/chaineddecos/Menu/libmenu.a platform/libChainedDecosEngine.a servers/rendering/librender.a servers/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a servers/rendering/librender.a servers/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a libimguilib.a core/libcore.a core/object/module/libmodule.a core/object/event/libevent.a core/ecs/libecs.a scene/resources/color/libcolor.a core/config/libconfig.a servers/input/libinput.a servers/audio/libaudio.a .deps/raylib-build/raylib/libraylib.a || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a project/chaineddecos/libChainedDecosGame.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a servers/audio/libaudio.a servers/input/libinput.a servers/physics/dynamics/libphysics.a servers/rendering/librender.a
+build bin/ChainedDecos_debug.exe: CXX_EXECUTABLE_LINKER__ChainedDecos_Debug CMakeFiles/ChainedDecos.dir/Unity/unity_0_cxx.cxx.obj | project/chaineddecos/libChainedDecosGame.a libimguilib.a project/chaineddecos/Player/libplayer.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a components/physics/dynamics/libphysics.a project/chaineddecos/Menu/libmenu.a platform/libChainedDecosEngine.a components/rendering/librender.a components/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a components/rendering/librender.a components/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a libimguilib.a core/libcore.a core/object/module/libmodule.a core/object/event/libevent.a core/ecs/libecs.a scene/resources/color/libcolor.a core/config/libconfig.a components/input/libinput.a components/audio/libaudio.a .deps/raylib-build/raylib/libraylib.a || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a components/audio/libaudio.a components/input/libinput.a components/physics/dynamics/libphysics.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a project/chaineddecos/libChainedDecosGame.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a
   CONFIG = Debug
   FLAGS = -g
-  LINK_LIBRARIES = project/chaineddecos/libChainedDecosGame.a  libimguilib.a  project/chaineddecos/Player/libplayer.a  scene/3d/camera/libcameracontroller.a  scene/main/libworld.a  servers/physics/dynamics/libphysics.a  project/chaineddecos/Menu/libmenu.a  platform/libChainedDecosEngine.a  servers/rendering/librender.a  servers/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  servers/rendering/librender.a  servers/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  libimguilib.a  core/libcore.a  core/object/module/libmodule.a  core/object/event/libevent.a  core/ecs/libecs.a  scene/resources/color/libcolor.a  core/config/libconfig.a  servers/input/libinput.a  servers/audio/libaudio.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_LIBRARIES = project/chaineddecos/libChainedDecosGame.a  libimguilib.a  project/chaineddecos/Player/libplayer.a  scene/3d/camera/libcameracontroller.a  scene/main/libworld.a  components/physics/dynamics/libphysics.a  project/chaineddecos/Menu/libmenu.a  platform/libChainedDecosEngine.a  components/rendering/librender.a  components/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  components/rendering/librender.a  components/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  libimguilib.a  core/libcore.a  core/object/module/libmodule.a  core/object/event/libevent.a  core/ecs/libecs.a  scene/resources/color/libcolor.a  core/config/libconfig.a  components/input/libinput.a  components/audio/libaudio.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\ChainedDecos.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -2155,95 +2155,95 @@ build core/ecs/install/strip: phony core/ecs/CMakeFiles/install/strip.util
 #############################################
 # Utility command for package
 
-build servers/CMakeFiles/package.util: CUSTOM_COMMAND servers/all
+build components/CMakeFiles/package.util: CUSTOM_COMMAND components/all
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake"
   DESC = Run CPack packaging tool...
   pool = console
   restat = 1
 
-build servers/package: phony servers/CMakeFiles/package.util
+build components/package: phony components/CMakeFiles/package.util
 
 
 #############################################
 # Utility command for package_source
 
-build servers/CMakeFiles/package_source.util: CUSTOM_COMMAND
+build components/CMakeFiles/package_source.util: CUSTOM_COMMAND
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/CPackSourceConfig.cmake""
   DESC = Run CPack packaging tool for source...
   pool = console
   restat = 1
 
-build servers/package_source: phony servers/CMakeFiles/package_source.util
+build components/package_source: phony components/CMakeFiles/package_source.util
 
 
 #############################################
 # Utility command for edit_cache
 
-build servers/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
 
-build servers/edit_cache: phony servers/CMakeFiles/edit_cache.util
+build components/edit_cache: phony components/CMakeFiles/edit_cache.util
 
 
 #############################################
 # Utility command for rebuild_cache
 
-build servers/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
 
-build servers/rebuild_cache: phony servers/CMakeFiles/rebuild_cache.util
+build components/rebuild_cache: phony components/CMakeFiles/rebuild_cache.util
 
 
 #############################################
 # Utility command for list_install_components
 
-build servers/list_install_components: phony
+build components/list_install_components: phony
 
 
 #############################################
 # Utility command for install
 
-build servers/CMakeFiles/install.util: CUSTOM_COMMAND servers/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
+build components/CMakeFiles/install.util: CUSTOM_COMMAND components/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
 
-build servers/install: phony servers/CMakeFiles/install.util
+build components/install: phony components/CMakeFiles/install.util
 
 
 #############################################
 # Utility command for install/local
 
-build servers/CMakeFiles/install/local.util: CUSTOM_COMMAND servers/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+build components/CMakeFiles/install/local.util: CUSTOM_COMMAND components/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
 
-build servers/install/local: phony servers/CMakeFiles/install/local.util
+build components/install/local: phony components/CMakeFiles/install/local.util
 
 
 #############################################
 # Utility command for install/strip
 
-build servers/CMakeFiles/install/strip.util: CUSTOM_COMMAND servers/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+build components/CMakeFiles/install/strip.util: CUSTOM_COMMAND components/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
   DESC = Installing the project stripped...
   pool = console
   restat = 1
 
-build servers/install/strip: phony servers/CMakeFiles/install/strip.util
+build components/install/strip: phony components/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# D:/gitnext/Chained Decos/servers/CMakeLists.txt
+# D:/gitnext/Chained Decos/components/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -2255,14 +2255,14 @@ build servers/install/strip: phony servers/CMakeFiles/install/strip.util
 
 build cmake_object_order_depends_target_render: phony || cmake_object_order_depends_target_collision
 
-build servers/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__render_unscanned_Debug D$:/gitnext/Chained$ Decos/servers/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_render
+build components/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__render_unscanned_Debug D$:/gitnext/Chained$ Decos/components/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_render
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = servers\rendering\CMakeFiles\render.dir\Unity\unity_0_cxx.cxx.obj.d
+  DEP_FILE = components\rendering\CMakeFiles\render.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/scene/resources/color"
-  OBJECT_DIR = servers\rendering\CMakeFiles\render.dir
-  OBJECT_FILE_DIR = servers\rendering\CMakeFiles\render.dir\Unity
+  INCLUDES = -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/scene/resources/color"
+  OBJECT_DIR = components\rendering\CMakeFiles\render.dir
+  OBJECT_FILE_DIR = components\rendering\CMakeFiles\render.dir\Unity
 
 
 # =============================================================================
@@ -2270,205 +2270,205 @@ build servers/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj: CXX_COM
 
 
 #############################################
-# Link the static library servers\rendering\librender.a
+# Link the static library components\rendering\librender.a
 
-build servers/rendering/librender.a: CXX_STATIC_LIBRARY_LINKER__render_Debug servers/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj || servers/physics/collision/libcollision.a
+build components/rendering/librender.a: CXX_STATIC_LIBRARY_LINKER__render_Debug components/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj || components/physics/collision/libcollision.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
-  OBJECT_DIR = servers\rendering\CMakeFiles\render.dir
+  OBJECT_DIR = components\rendering\CMakeFiles\render.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_FILE = servers\rendering\librender.a
+  TARGET_FILE = components\rendering\librender.a
   TARGET_PDB = render.a.dbg
 
 
 #############################################
 # Utility command for package
 
-build servers/rendering/CMakeFiles/package.util: CUSTOM_COMMAND servers/rendering/all
+build components/rendering/CMakeFiles/package.util: CUSTOM_COMMAND components/rendering/all
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake"
   DESC = Run CPack packaging tool...
   pool = console
   restat = 1
 
-build servers/rendering/package: phony servers/rendering/CMakeFiles/package.util
+build components/rendering/package: phony components/rendering/CMakeFiles/package.util
 
 
 #############################################
 # Utility command for package_source
 
-build servers/rendering/CMakeFiles/package_source.util: CUSTOM_COMMAND
+build components/rendering/CMakeFiles/package_source.util: CUSTOM_COMMAND
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/CPackSourceConfig.cmake""
   DESC = Run CPack packaging tool for source...
   pool = console
   restat = 1
 
-build servers/rendering/package_source: phony servers/rendering/CMakeFiles/package_source.util
+build components/rendering/package_source: phony components/rendering/CMakeFiles/package_source.util
 
 
 #############################################
 # Utility command for edit_cache
 
-build servers/rendering/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\rendering" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/rendering/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\rendering" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
 
-build servers/rendering/edit_cache: phony servers/rendering/CMakeFiles/edit_cache.util
+build components/rendering/edit_cache: phony components/rendering/CMakeFiles/edit_cache.util
 
 
 #############################################
 # Utility command for rebuild_cache
 
-build servers/rendering/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\rendering" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/rendering/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\rendering" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
 
-build servers/rendering/rebuild_cache: phony servers/rendering/CMakeFiles/rebuild_cache.util
+build components/rendering/rebuild_cache: phony components/rendering/CMakeFiles/rebuild_cache.util
 
 
 #############################################
 # Utility command for list_install_components
 
-build servers/rendering/list_install_components: phony
+build components/rendering/list_install_components: phony
 
 
 #############################################
 # Utility command for install
 
-build servers/rendering/CMakeFiles/install.util: CUSTOM_COMMAND servers/rendering/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\rendering" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
+build components/rendering/CMakeFiles/install.util: CUSTOM_COMMAND components/rendering/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\rendering" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
 
-build servers/rendering/install: phony servers/rendering/CMakeFiles/install.util
+build components/rendering/install: phony components/rendering/CMakeFiles/install.util
 
 
 #############################################
 # Utility command for install/local
 
-build servers/rendering/CMakeFiles/install/local.util: CUSTOM_COMMAND servers/rendering/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\rendering" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+build components/rendering/CMakeFiles/install/local.util: CUSTOM_COMMAND components/rendering/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\rendering" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
 
-build servers/rendering/install/local: phony servers/rendering/CMakeFiles/install/local.util
+build components/rendering/install/local: phony components/rendering/CMakeFiles/install/local.util
 
 
 #############################################
 # Utility command for install/strip
 
-build servers/rendering/CMakeFiles/install/strip.util: CUSTOM_COMMAND servers/rendering/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\rendering" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+build components/rendering/CMakeFiles/install/strip.util: CUSTOM_COMMAND components/rendering/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\rendering" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
   DESC = Installing the project stripped...
   pool = console
   restat = 1
 
-build servers/rendering/install/strip: phony servers/rendering/CMakeFiles/install/strip.util
+build components/rendering/install/strip: phony components/rendering/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# D:/gitnext/Chained Decos/servers/CMakeLists.txt
+# D:/gitnext/Chained Decos/components/CMakeLists.txt
 # =============================================================================
 
 
 #############################################
 # Utility command for package
 
-build servers/physics/CMakeFiles/package.util: CUSTOM_COMMAND servers/physics/all
+build components/physics/CMakeFiles/package.util: CUSTOM_COMMAND components/physics/all
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake"
   DESC = Run CPack packaging tool...
   pool = console
   restat = 1
 
-build servers/physics/package: phony servers/physics/CMakeFiles/package.util
+build components/physics/package: phony components/physics/CMakeFiles/package.util
 
 
 #############################################
 # Utility command for package_source
 
-build servers/physics/CMakeFiles/package_source.util: CUSTOM_COMMAND
+build components/physics/CMakeFiles/package_source.util: CUSTOM_COMMAND
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/CPackSourceConfig.cmake""
   DESC = Run CPack packaging tool for source...
   pool = console
   restat = 1
 
-build servers/physics/package_source: phony servers/physics/CMakeFiles/package_source.util
+build components/physics/package_source: phony components/physics/CMakeFiles/package_source.util
 
 
 #############################################
 # Utility command for edit_cache
 
-build servers/physics/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/physics/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
 
-build servers/physics/edit_cache: phony servers/physics/CMakeFiles/edit_cache.util
+build components/physics/edit_cache: phony components/physics/CMakeFiles/edit_cache.util
 
 
 #############################################
 # Utility command for rebuild_cache
 
-build servers/physics/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/physics/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
 
-build servers/physics/rebuild_cache: phony servers/physics/CMakeFiles/rebuild_cache.util
+build components/physics/rebuild_cache: phony components/physics/CMakeFiles/rebuild_cache.util
 
 
 #############################################
 # Utility command for list_install_components
 
-build servers/physics/list_install_components: phony
+build components/physics/list_install_components: phony
 
 
 #############################################
 # Utility command for install
 
-build servers/physics/CMakeFiles/install.util: CUSTOM_COMMAND servers/physics/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
+build components/physics/CMakeFiles/install.util: CUSTOM_COMMAND components/physics/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
 
-build servers/physics/install: phony servers/physics/CMakeFiles/install.util
+build components/physics/install: phony components/physics/CMakeFiles/install.util
 
 
 #############################################
 # Utility command for install/local
 
-build servers/physics/CMakeFiles/install/local.util: CUSTOM_COMMAND servers/physics/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+build components/physics/CMakeFiles/install/local.util: CUSTOM_COMMAND components/physics/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
 
-build servers/physics/install/local: phony servers/physics/CMakeFiles/install/local.util
+build components/physics/install/local: phony components/physics/CMakeFiles/install/local.util
 
 
 #############################################
 # Utility command for install/strip
 
-build servers/physics/CMakeFiles/install/strip.util: CUSTOM_COMMAND servers/physics/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+build components/physics/CMakeFiles/install/strip.util: CUSTOM_COMMAND components/physics/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
   DESC = Installing the project stripped...
   pool = console
   restat = 1
 
-build servers/physics/install/strip: phony servers/physics/CMakeFiles/install/strip.util
+build components/physics/install/strip: phony components/physics/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# D:/gitnext/Chained Decos/servers/physics/CMakeLists.txt
+# D:/gitnext/Chained Decos/components/physics/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -2480,41 +2480,41 @@ build servers/physics/install/strip: phony servers/physics/CMakeFiles/install/st
 
 build cmake_object_order_depends_target_collision: phony || cmake_object_order_depends_target_model
 
-build servers/physics/collision/CMakeFiles/collision.dir/Core/CollisionManager.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/servers/physics/collision/Core/CollisionManager.cpp || cmake_object_order_depends_target_collision
+build components/physics/collision/CMakeFiles/collision.dir/Core/CollisionManager.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/components/physics/collision/Core/CollisionManager.cpp || cmake_object_order_depends_target_collision
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = servers\physics\collision\CMakeFiles\collision.dir\Core\CollisionManager.cpp.obj.d
+  DEP_FILE = components\physics\collision\CMakeFiles\collision.dir\Core\CollisionManager.cpp.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
-  OBJECT_DIR = servers\physics\collision\CMakeFiles\collision.dir
-  OBJECT_FILE_DIR = servers\physics\collision\CMakeFiles\collision.dir\Core
+  INCLUDES = -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
+  OBJECT_DIR = components\physics\collision\CMakeFiles\collision.dir
+  OBJECT_FILE_DIR = components\physics\collision\CMakeFiles\collision.dir\Core
 
-build servers/physics/collision/CMakeFiles/collision.dir/System/CollisionSystem.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/servers/physics/collision/System/CollisionSystem.cpp || cmake_object_order_depends_target_collision
+build components/physics/collision/CMakeFiles/collision.dir/System/CollisionSystem.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/components/physics/collision/System/CollisionSystem.cpp || cmake_object_order_depends_target_collision
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = servers\physics\collision\CMakeFiles\collision.dir\System\CollisionSystem.cpp.obj.d
+  DEP_FILE = components\physics\collision\CMakeFiles\collision.dir\System\CollisionSystem.cpp.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
-  OBJECT_DIR = servers\physics\collision\CMakeFiles\collision.dir
-  OBJECT_FILE_DIR = servers\physics\collision\CMakeFiles\collision.dir\System
+  INCLUDES = -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
+  OBJECT_DIR = components\physics\collision\CMakeFiles\collision.dir
+  OBJECT_FILE_DIR = components\physics\collision\CMakeFiles\collision.dir\System
 
-build servers/physics/collision/CMakeFiles/collision.dir/Structures/CollisionStructures.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/servers/physics/collision/Structures/CollisionStructures.cpp || cmake_object_order_depends_target_collision
+build components/physics/collision/CMakeFiles/collision.dir/Structures/CollisionStructures.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/components/physics/collision/Structures/CollisionStructures.cpp || cmake_object_order_depends_target_collision
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = servers\physics\collision\CMakeFiles\collision.dir\Structures\CollisionStructures.cpp.obj.d
+  DEP_FILE = components\physics\collision\CMakeFiles\collision.dir\Structures\CollisionStructures.cpp.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
-  OBJECT_DIR = servers\physics\collision\CMakeFiles\collision.dir
-  OBJECT_FILE_DIR = servers\physics\collision\CMakeFiles\collision.dir\Structures
+  INCLUDES = -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
+  OBJECT_DIR = components\physics\collision\CMakeFiles\collision.dir
+  OBJECT_FILE_DIR = components\physics\collision\CMakeFiles\collision.dir\Structures
 
-build servers/physics/collision/CMakeFiles/collision.dir/Debug/CollisionDebugRenderer.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/servers/physics/collision/Debug/CollisionDebugRenderer.cpp || cmake_object_order_depends_target_collision
+build components/physics/collision/CMakeFiles/collision.dir/Debug/CollisionDebugRenderer.cpp.obj: CXX_COMPILER__collision_unscanned_Debug D$:/gitnext/Chained$ Decos/components/physics/collision/Debug/CollisionDebugRenderer.cpp || cmake_object_order_depends_target_collision
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = servers\physics\collision\CMakeFiles\collision.dir\Debug\CollisionDebugRenderer.cpp.obj.d
+  DEP_FILE = components\physics\collision\CMakeFiles\collision.dir\Debug\CollisionDebugRenderer.cpp.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
-  OBJECT_DIR = servers\physics\collision\CMakeFiles\collision.dir
-  OBJECT_FILE_DIR = servers\physics\collision\CMakeFiles\collision.dir\Debug
+  INCLUDES = -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
+  OBJECT_DIR = components\physics\collision\CMakeFiles\collision.dir
+  OBJECT_FILE_DIR = components\physics\collision\CMakeFiles\collision.dir\Debug
 
 
 # =============================================================================
@@ -2522,110 +2522,110 @@ build servers/physics/collision/CMakeFiles/collision.dir/Debug/CollisionDebugRen
 
 
 #############################################
-# Link the static library servers\physics\collision\libcollision.a
+# Link the static library components\physics\collision\libcollision.a
 
-build servers/physics/collision/libcollision.a: CXX_STATIC_LIBRARY_LINKER__collision_Debug servers/physics/collision/CMakeFiles/collision.dir/Core/CollisionManager.cpp.obj servers/physics/collision/CMakeFiles/collision.dir/System/CollisionSystem.cpp.obj servers/physics/collision/CMakeFiles/collision.dir/Structures/CollisionStructures.cpp.obj servers/physics/collision/CMakeFiles/collision.dir/Debug/CollisionDebugRenderer.cpp.obj || scene/resources/model/libmodel.a
+build components/physics/collision/libcollision.a: CXX_STATIC_LIBRARY_LINKER__collision_Debug components/physics/collision/CMakeFiles/collision.dir/Core/CollisionManager.cpp.obj components/physics/collision/CMakeFiles/collision.dir/System/CollisionSystem.cpp.obj components/physics/collision/CMakeFiles/collision.dir/Structures/CollisionStructures.cpp.obj components/physics/collision/CMakeFiles/collision.dir/Debug/CollisionDebugRenderer.cpp.obj || scene/resources/model/libmodel.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
-  OBJECT_DIR = servers\physics\collision\CMakeFiles\collision.dir
+  OBJECT_DIR = components\physics\collision\CMakeFiles\collision.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_FILE = servers\physics\collision\libcollision.a
+  TARGET_FILE = components\physics\collision\libcollision.a
   TARGET_PDB = collision.a.dbg
 
 
 #############################################
 # Utility command for package
 
-build servers/physics/collision/CMakeFiles/package.util: CUSTOM_COMMAND servers/physics/collision/all
+build components/physics/collision/CMakeFiles/package.util: CUSTOM_COMMAND components/physics/collision/all
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake"
   DESC = Run CPack packaging tool...
   pool = console
   restat = 1
 
-build servers/physics/collision/package: phony servers/physics/collision/CMakeFiles/package.util
+build components/physics/collision/package: phony components/physics/collision/CMakeFiles/package.util
 
 
 #############################################
 # Utility command for package_source
 
-build servers/physics/collision/CMakeFiles/package_source.util: CUSTOM_COMMAND
+build components/physics/collision/CMakeFiles/package_source.util: CUSTOM_COMMAND
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/CPackSourceConfig.cmake""
   DESC = Run CPack packaging tool for source...
   pool = console
   restat = 1
 
-build servers/physics/collision/package_source: phony servers/physics/collision/CMakeFiles/package_source.util
+build components/physics/collision/package_source: phony components/physics/collision/CMakeFiles/package_source.util
 
 
 #############################################
 # Utility command for edit_cache
 
-build servers/physics/collision/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\collision" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/physics/collision/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\collision" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
 
-build servers/physics/collision/edit_cache: phony servers/physics/collision/CMakeFiles/edit_cache.util
+build components/physics/collision/edit_cache: phony components/physics/collision/CMakeFiles/edit_cache.util
 
 
 #############################################
 # Utility command for rebuild_cache
 
-build servers/physics/collision/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\collision" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/physics/collision/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\collision" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
 
-build servers/physics/collision/rebuild_cache: phony servers/physics/collision/CMakeFiles/rebuild_cache.util
+build components/physics/collision/rebuild_cache: phony components/physics/collision/CMakeFiles/rebuild_cache.util
 
 
 #############################################
 # Utility command for list_install_components
 
-build servers/physics/collision/list_install_components: phony
+build components/physics/collision/list_install_components: phony
 
 
 #############################################
 # Utility command for install
 
-build servers/physics/collision/CMakeFiles/install.util: CUSTOM_COMMAND servers/physics/collision/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\collision" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
+build components/physics/collision/CMakeFiles/install.util: CUSTOM_COMMAND components/physics/collision/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\collision" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
 
-build servers/physics/collision/install: phony servers/physics/collision/CMakeFiles/install.util
+build components/physics/collision/install: phony components/physics/collision/CMakeFiles/install.util
 
 
 #############################################
 # Utility command for install/local
 
-build servers/physics/collision/CMakeFiles/install/local.util: CUSTOM_COMMAND servers/physics/collision/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\collision" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+build components/physics/collision/CMakeFiles/install/local.util: CUSTOM_COMMAND components/physics/collision/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\collision" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
 
-build servers/physics/collision/install/local: phony servers/physics/collision/CMakeFiles/install/local.util
+build components/physics/collision/install/local: phony components/physics/collision/CMakeFiles/install/local.util
 
 
 #############################################
 # Utility command for install/strip
 
-build servers/physics/collision/CMakeFiles/install/strip.util: CUSTOM_COMMAND servers/physics/collision/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\collision" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+build components/physics/collision/CMakeFiles/install/strip.util: CUSTOM_COMMAND components/physics/collision/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\collision" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
   DESC = Installing the project stripped...
   pool = console
   restat = 1
 
-build servers/physics/collision/install/strip: phony servers/physics/collision/CMakeFiles/install/strip.util
+build components/physics/collision/install/strip: phony components/physics/collision/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# D:/gitnext/Chained Decos/servers/physics/CMakeLists.txt
+# D:/gitnext/Chained Decos/components/physics/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -2637,14 +2637,14 @@ build servers/physics/collision/install/strip: phony servers/physics/collision/C
 
 build cmake_object_order_depends_target_physics: phony || cmake_object_order_depends_target_glfw cmake_object_order_depends_target_raylib
 
-build servers/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__physics_unscanned_Debug D$:/gitnext/Chained$ Decos/servers/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_physics
+build components/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__physics_unscanned_Debug D$:/gitnext/Chained$ Decos/components/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_physics
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = servers\physics\dynamics\CMakeFiles\physics.dir\Unity\unity_0_cxx.cxx.obj.d
+  DEP_FILE = components\physics\dynamics\CMakeFiles\physics.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
-  OBJECT_DIR = servers\physics\dynamics\CMakeFiles\physics.dir
-  OBJECT_FILE_DIR = servers\physics\dynamics\CMakeFiles\physics.dir\Unity
+  INCLUDES = -I"D:/gitnext/Chained Decos/components/physics/dynamics/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
+  OBJECT_DIR = components\physics\dynamics\CMakeFiles\physics.dir
+  OBJECT_FILE_DIR = components\physics\dynamics\CMakeFiles\physics.dir\Unity
 
 
 # =============================================================================
@@ -2652,110 +2652,110 @@ build servers/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj:
 
 
 #############################################
-# Link the static library servers\physics\dynamics\libphysics.a
+# Link the static library components\physics\dynamics\libphysics.a
 
-build servers/physics/dynamics/libphysics.a: CXX_STATIC_LIBRARY_LINKER__physics_Debug servers/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a
+build components/physics/dynamics/libphysics.a: CXX_STATIC_LIBRARY_LINKER__physics_Debug components/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
-  OBJECT_DIR = servers\physics\dynamics\CMakeFiles\physics.dir
+  OBJECT_DIR = components\physics\dynamics\CMakeFiles\physics.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_FILE = servers\physics\dynamics\libphysics.a
+  TARGET_FILE = components\physics\dynamics\libphysics.a
   TARGET_PDB = physics.a.dbg
 
 
 #############################################
 # Utility command for package
 
-build servers/physics/dynamics/CMakeFiles/package.util: CUSTOM_COMMAND servers/physics/dynamics/all
+build components/physics/dynamics/CMakeFiles/package.util: CUSTOM_COMMAND components/physics/dynamics/all
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake"
   DESC = Run CPack packaging tool...
   pool = console
   restat = 1
 
-build servers/physics/dynamics/package: phony servers/physics/dynamics/CMakeFiles/package.util
+build components/physics/dynamics/package: phony components/physics/dynamics/CMakeFiles/package.util
 
 
 #############################################
 # Utility command for package_source
 
-build servers/physics/dynamics/CMakeFiles/package_source.util: CUSTOM_COMMAND
+build components/physics/dynamics/CMakeFiles/package_source.util: CUSTOM_COMMAND
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/CPackSourceConfig.cmake""
   DESC = Run CPack packaging tool for source...
   pool = console
   restat = 1
 
-build servers/physics/dynamics/package_source: phony servers/physics/dynamics/CMakeFiles/package_source.util
+build components/physics/dynamics/package_source: phony components/physics/dynamics/CMakeFiles/package_source.util
 
 
 #############################################
 # Utility command for edit_cache
 
-build servers/physics/dynamics/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\dynamics" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/physics/dynamics/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\dynamics" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
 
-build servers/physics/dynamics/edit_cache: phony servers/physics/dynamics/CMakeFiles/edit_cache.util
+build components/physics/dynamics/edit_cache: phony components/physics/dynamics/CMakeFiles/edit_cache.util
 
 
 #############################################
 # Utility command for rebuild_cache
 
-build servers/physics/dynamics/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\dynamics" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/physics/dynamics/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\dynamics" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
 
-build servers/physics/dynamics/rebuild_cache: phony servers/physics/dynamics/CMakeFiles/rebuild_cache.util
+build components/physics/dynamics/rebuild_cache: phony components/physics/dynamics/CMakeFiles/rebuild_cache.util
 
 
 #############################################
 # Utility command for list_install_components
 
-build servers/physics/dynamics/list_install_components: phony
+build components/physics/dynamics/list_install_components: phony
 
 
 #############################################
 # Utility command for install
 
-build servers/physics/dynamics/CMakeFiles/install.util: CUSTOM_COMMAND servers/physics/dynamics/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\dynamics" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
+build components/physics/dynamics/CMakeFiles/install.util: CUSTOM_COMMAND components/physics/dynamics/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\dynamics" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
 
-build servers/physics/dynamics/install: phony servers/physics/dynamics/CMakeFiles/install.util
+build components/physics/dynamics/install: phony components/physics/dynamics/CMakeFiles/install.util
 
 
 #############################################
 # Utility command for install/local
 
-build servers/physics/dynamics/CMakeFiles/install/local.util: CUSTOM_COMMAND servers/physics/dynamics/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\dynamics" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+build components/physics/dynamics/CMakeFiles/install/local.util: CUSTOM_COMMAND components/physics/dynamics/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\dynamics" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
 
-build servers/physics/dynamics/install/local: phony servers/physics/dynamics/CMakeFiles/install/local.util
+build components/physics/dynamics/install/local: phony components/physics/dynamics/CMakeFiles/install/local.util
 
 
 #############################################
 # Utility command for install/strip
 
-build servers/physics/dynamics/CMakeFiles/install/strip.util: CUSTOM_COMMAND servers/physics/dynamics/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\physics\dynamics" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+build components/physics/dynamics/CMakeFiles/install/strip.util: CUSTOM_COMMAND components/physics/dynamics/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\physics\dynamics" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
   DESC = Installing the project stripped...
   pool = console
   restat = 1
 
-build servers/physics/dynamics/install/strip: phony servers/physics/dynamics/CMakeFiles/install/strip.util
+build components/physics/dynamics/install/strip: phony components/physics/dynamics/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# D:/gitnext/Chained Decos/servers/CMakeLists.txt
+# D:/gitnext/Chained Decos/components/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -2767,14 +2767,14 @@ build servers/physics/dynamics/install/strip: phony servers/physics/dynamics/CMa
 
 build cmake_object_order_depends_target_audio: phony || cmake_object_order_depends_target_glfw cmake_object_order_depends_target_raylib
 
-build servers/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__audio_unscanned_Debug D$:/gitnext/Chained$ Decos/servers/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_audio
+build components/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__audio_unscanned_Debug D$:/gitnext/Chained$ Decos/components/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_audio
   CONFIG = Debug
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = servers\audio\CMakeFiles\audio.dir\Unity\unity_0_cxx.cxx.obj.d
+  DEP_FILE = components\audio\CMakeFiles\audio.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/servers/audio" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
-  OBJECT_DIR = servers\audio\CMakeFiles\audio.dir
-  OBJECT_FILE_DIR = servers\audio\CMakeFiles\audio.dir\Unity
+  INCLUDES = -I"D:/gitnext/Chained Decos/components/audio" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
+  OBJECT_DIR = components\audio\CMakeFiles\audio.dir
+  OBJECT_FILE_DIR = components\audio\CMakeFiles\audio.dir\Unity
 
 
 # =============================================================================
@@ -2782,110 +2782,110 @@ build servers/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER
 
 
 #############################################
-# Link the static library servers\audio\libaudio.a
+# Link the static library components\audio\libaudio.a
 
-build servers/audio/libaudio.a: CXX_STATIC_LIBRARY_LINKER__audio_Debug servers/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a
+build components/audio/libaudio.a: CXX_STATIC_LIBRARY_LINKER__audio_Debug components/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
-  OBJECT_DIR = servers\audio\CMakeFiles\audio.dir
+  OBJECT_DIR = components\audio\CMakeFiles\audio.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_FILE = servers\audio\libaudio.a
+  TARGET_FILE = components\audio\libaudio.a
   TARGET_PDB = audio.a.dbg
 
 
 #############################################
 # Utility command for package
 
-build servers/audio/CMakeFiles/package.util: CUSTOM_COMMAND servers/audio/all
+build components/audio/CMakeFiles/package.util: CUSTOM_COMMAND components/audio/all
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake"
   DESC = Run CPack packaging tool...
   pool = console
   restat = 1
 
-build servers/audio/package: phony servers/audio/CMakeFiles/package.util
+build components/audio/package: phony components/audio/CMakeFiles/package.util
 
 
 #############################################
 # Utility command for package_source
 
-build servers/audio/CMakeFiles/package_source.util: CUSTOM_COMMAND
+build components/audio/CMakeFiles/package_source.util: CUSTOM_COMMAND
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/CPackSourceConfig.cmake""
   DESC = Run CPack packaging tool for source...
   pool = console
   restat = 1
 
-build servers/audio/package_source: phony servers/audio/CMakeFiles/package_source.util
+build components/audio/package_source: phony components/audio/CMakeFiles/package_source.util
 
 
 #############################################
 # Utility command for edit_cache
 
-build servers/audio/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\audio" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/audio/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\audio" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
 
-build servers/audio/edit_cache: phony servers/audio/CMakeFiles/edit_cache.util
+build components/audio/edit_cache: phony components/audio/CMakeFiles/edit_cache.util
 
 
 #############################################
 # Utility command for rebuild_cache
 
-build servers/audio/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\audio" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/audio/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\audio" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
 
-build servers/audio/rebuild_cache: phony servers/audio/CMakeFiles/rebuild_cache.util
+build components/audio/rebuild_cache: phony components/audio/CMakeFiles/rebuild_cache.util
 
 
 #############################################
 # Utility command for list_install_components
 
-build servers/audio/list_install_components: phony
+build components/audio/list_install_components: phony
 
 
 #############################################
 # Utility command for install
 
-build servers/audio/CMakeFiles/install.util: CUSTOM_COMMAND servers/audio/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\audio" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
+build components/audio/CMakeFiles/install.util: CUSTOM_COMMAND components/audio/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\audio" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
 
-build servers/audio/install: phony servers/audio/CMakeFiles/install.util
+build components/audio/install: phony components/audio/CMakeFiles/install.util
 
 
 #############################################
 # Utility command for install/local
 
-build servers/audio/CMakeFiles/install/local.util: CUSTOM_COMMAND servers/audio/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\audio" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+build components/audio/CMakeFiles/install/local.util: CUSTOM_COMMAND components/audio/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\audio" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
 
-build servers/audio/install/local: phony servers/audio/CMakeFiles/install/local.util
+build components/audio/install/local: phony components/audio/CMakeFiles/install/local.util
 
 
 #############################################
 # Utility command for install/strip
 
-build servers/audio/CMakeFiles/install/strip.util: CUSTOM_COMMAND servers/audio/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\audio" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+build components/audio/CMakeFiles/install/strip.util: CUSTOM_COMMAND components/audio/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\audio" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
   DESC = Installing the project stripped...
   pool = console
   restat = 1
 
-build servers/audio/install/strip: phony servers/audio/CMakeFiles/install/strip.util
+build components/audio/install/strip: phony components/audio/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# D:/gitnext/Chained Decos/servers/CMakeLists.txt
+# D:/gitnext/Chained Decos/components/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -2897,14 +2897,14 @@ build servers/audio/install/strip: phony servers/audio/CMakeFiles/install/strip.
 
 build cmake_object_order_depends_target_input: phony || cmake_object_order_depends_target_glfw cmake_object_order_depends_target_raylib
 
-build servers/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__input_unscanned_Debug D$:/gitnext/Chained$ Decos/servers/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_input
+build components/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__input_unscanned_Debug D$:/gitnext/Chained$ Decos/components/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx || cmake_object_order_depends_target_input
   CONFIG = Debug
   DEFINES = -DCHAINEDDECOSENGINE_EXPORTS -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
-  DEP_FILE = servers\input\CMakeFiles\input.dir\Unity\unity_0_cxx.cxx.obj.d
+  DEP_FILE = components\input\CMakeFiles\input.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/servers/input" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
-  OBJECT_DIR = servers\input\CMakeFiles\input.dir
-  OBJECT_FILE_DIR = servers\input\CMakeFiles\input.dir\Unity
+  INCLUDES = -I"D:/gitnext/Chained Decos/components/input" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include"
+  OBJECT_DIR = components\input\CMakeFiles\input.dir
+  OBJECT_FILE_DIR = components\input\CMakeFiles\input.dir\Unity
 
 
 # =============================================================================
@@ -2912,106 +2912,106 @@ build servers/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER
 
 
 #############################################
-# Link the static library servers\input\libinput.a
+# Link the static library components\input\libinput.a
 
-build servers/input/libinput.a: CXX_STATIC_LIBRARY_LINKER__input_Debug servers/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a
+build components/input/libinput.a: CXX_STATIC_LIBRARY_LINKER__input_Debug components/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
-  OBJECT_DIR = servers\input\CMakeFiles\input.dir
+  OBJECT_DIR = components\input\CMakeFiles\input.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_FILE = servers\input\libinput.a
+  TARGET_FILE = components\input\libinput.a
   TARGET_PDB = input.a.dbg
 
 
 #############################################
 # Utility command for package
 
-build servers/input/CMakeFiles/package.util: CUSTOM_COMMAND servers/input/all
+build components/input/CMakeFiles/package.util: CUSTOM_COMMAND components/input/all
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackConfig.cmake"
   DESC = Run CPack packaging tool...
   pool = console
   restat = 1
 
-build servers/input/package: phony servers/input/CMakeFiles/package.util
+build components/input/package: phony components/input/CMakeFiles/package.util
 
 
 #############################################
 # Utility command for package_source
 
-build servers/input/CMakeFiles/package_source.util: CUSTOM_COMMAND
+build components/input/CMakeFiles/package_source.util: CUSTOM_COMMAND
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos" && "C:\Program Files\CMake\bin\cpack.exe" --config ./CPackSourceConfig.cmake "D:/gitnext/Chained Decos/CPackSourceConfig.cmake""
   DESC = Run CPack packaging tool for source...
   pool = console
   restat = 1
 
-build servers/input/package_source: phony servers/input/CMakeFiles/package_source.util
+build components/input/package_source: phony components/input/CMakeFiles/package_source.util
 
 
 #############################################
 # Utility command for edit_cache
 
-build servers/input/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\input" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/input/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\input" && "C:\Program Files\CMake\bin\cmake-gui.exe" -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
 
-build servers/input/edit_cache: phony servers/input/CMakeFiles/edit_cache.util
+build components/input/edit_cache: phony components/input/CMakeFiles/edit_cache.util
 
 
 #############################################
 # Utility command for rebuild_cache
 
-build servers/input/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\input" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
+build components/input/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\input" && "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S"D:\gitnext\Chained Decos" -B"D:\gitnext\Chained Decos""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
 
-build servers/input/rebuild_cache: phony servers/input/CMakeFiles/rebuild_cache.util
+build components/input/rebuild_cache: phony components/input/CMakeFiles/rebuild_cache.util
 
 
 #############################################
 # Utility command for list_install_components
 
-build servers/input/list_install_components: phony
+build components/input/list_install_components: phony
 
 
 #############################################
 # Utility command for install
 
-build servers/input/CMakeFiles/install.util: CUSTOM_COMMAND servers/input/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\input" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
+build components/input/CMakeFiles/install.util: CUSTOM_COMMAND components/input/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\input" && "C:\Program Files\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
 
-build servers/input/install: phony servers/input/CMakeFiles/install.util
+build components/input/install: phony components/input/CMakeFiles/install.util
 
 
 #############################################
 # Utility command for install/local
 
-build servers/input/CMakeFiles/install/local.util: CUSTOM_COMMAND servers/input/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\input" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+build components/input/CMakeFiles/install/local.util: CUSTOM_COMMAND components/input/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\input" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
 
-build servers/input/install/local: phony servers/input/CMakeFiles/install/local.util
+build components/input/install/local: phony components/input/CMakeFiles/install/local.util
 
 
 #############################################
 # Utility command for install/strip
 
-build servers/input/CMakeFiles/install/strip.util: CUSTOM_COMMAND servers/input/all
-  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\servers\input" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
+build components/input/CMakeFiles/install/strip.util: CUSTOM_COMMAND components/input/all
+  COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\components\input" && "C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake"
   DESC = Installing the project stripped...
   pool = console
   restat = 1
 
-build servers/input/install/strip: phony servers/input/CMakeFiles/install/strip.util
+build components/input/install/strip: phony components/input/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
@@ -3127,7 +3127,7 @@ build scene/main/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__w
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = scene\main\CMakeFiles\world.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src"
+  INCLUDES = -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/components/physics/dynamics/src"
   OBJECT_DIR = scene\main\CMakeFiles\world.dir
   OBJECT_FILE_DIR = scene\main\CMakeFiles\world.dir\Unity
 
@@ -3139,7 +3139,7 @@ build scene/main/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMPILER__w
 #############################################
 # Link the static library scene\main\libworld.a
 
-build scene/main/libworld.a: CXX_STATIC_LIBRARY_LINKER__world_Debug scene/main/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a servers/physics/dynamics/libphysics.a
+build scene/main/libworld.a: CXX_STATIC_LIBRARY_LINKER__world_Debug scene/main/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a components/physics/dynamics/libphysics.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = scene\main\CMakeFiles\world.dir
@@ -3352,7 +3352,7 @@ build scene/resources/model/CMakeFiles/model.dir/Unity/unity_0_cxx.cxx.obj: CXX_
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = scene\resources\model\CMakeFiles\model.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
+  INCLUDES = -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color"
   OBJECT_DIR = scene\resources\model\CMakeFiles\model.dir
   OBJECT_FILE_DIR = scene\resources\model\CMakeFiles\model.dir\Unity
 
@@ -3482,7 +3482,7 @@ build scene/resources/map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj: CXX_COMP
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = scene\resources\map\CMakeFiles\map.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/color"
+  INCLUDES = -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/color"
   OBJECT_DIR = scene\resources\map\CMakeFiles\map.dir
   OBJECT_FILE_DIR = scene\resources\map\CMakeFiles\map.dir\Unity
 
@@ -4097,7 +4097,7 @@ build platform/CMakeFiles/ChainedDecosEngine.dir/Unity/unity_0_cxx.cxx.obj: CXX_
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = platform\CMakeFiles\ChainedDecosEngine.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/servers/input" -I"D:/gitnext/Chained Decos/servers/audio"
+  INCLUDES = -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/components/input" -I"D:/gitnext/Chained Decos/components/audio"
   OBJECT_DIR = platform\CMakeFiles\ChainedDecosEngine.dir
   OBJECT_FILE_DIR = platform\CMakeFiles\ChainedDecosEngine.dir\Unity
 
@@ -4109,7 +4109,7 @@ build platform/CMakeFiles/ChainedDecosEngine.dir/Unity/unity_0_cxx.cxx.obj: CXX_
 #############################################
 # Link the static library platform\libChainedDecosEngine.a
 
-build platform/libChainedDecosEngine.a: CXX_STATIC_LIBRARY_LINKER__ChainedDecosEngine_Debug platform/CMakeFiles/ChainedDecosEngine.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a scene/resources/color/libcolor.a servers/audio/libaudio.a servers/input/libinput.a servers/rendering/librender.a
+build platform/libChainedDecosEngine.a: CXX_STATIC_LIBRARY_LINKER__ChainedDecosEngine_Debug platform/CMakeFiles/ChainedDecosEngine.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a components/audio/libaudio.a components/input/libinput.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a scene/resources/color/libcolor.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = platform\CMakeFiles\ChainedDecosEngine.dir
@@ -4227,7 +4227,7 @@ build project/chaineddecos/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = project\chaineddecos\CMakeFiles\ChainedDecosGame.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/project/chained_decos" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/project/chained_decos/Player" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/scene/3d/camera" -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/servers/input" -I"D:/gitnext/Chained Decos/servers/audio" -I"D:/gitnext/Chained Decos/project/chaineddecos/Player" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/project/chained_decos/Menu"
+  INCLUDES = -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/project/chained_decos" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/project/chained_decos/Player" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/scene/3d/camera" -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/components/input" -I"D:/gitnext/Chained Decos/components/audio" -I"D:/gitnext/Chained Decos/project/chaineddecos/Player" -I"D:/gitnext/Chained Decos/components/physics/dynamics/src" -I"D:/gitnext/Chained Decos/project/chained_decos/Menu"
   OBJECT_DIR = project\chaineddecos\CMakeFiles\ChainedDecosGame.dir
   OBJECT_FILE_DIR = project\chaineddecos\CMakeFiles\ChainedDecosGame.dir\Unity
 
@@ -4239,7 +4239,7 @@ build project/chaineddecos/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx
 #############################################
 # Link the static library project\chaineddecos\libChainedDecosGame.a
 
-build project/chaineddecos/libChainedDecosGame.a: CXX_STATIC_LIBRARY_LINKER__ChainedDecosGame_Debug project/chaineddecos/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a servers/audio/libaudio.a servers/input/libinput.a servers/physics/dynamics/libphysics.a servers/rendering/librender.a
+build project/chaineddecos/libChainedDecosGame.a: CXX_STATIC_LIBRARY_LINKER__ChainedDecosGame_Debug project/chaineddecos/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a components/audio/libaudio.a components/input/libinput.a components/physics/dynamics/libphysics.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = project\chaineddecos\CMakeFiles\ChainedDecosGame.dir
@@ -4357,7 +4357,7 @@ build project/chaineddecos/Menu/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj: C
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = project\chaineddecos\Menu\CMakeFiles\menu.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/project/chained_decos/Menu" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/servers/input" -I"D:/gitnext/Chained Decos/servers/audio"
+  INCLUDES = -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/project/chained_decos/Menu" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/components/input" -I"D:/gitnext/Chained Decos/components/audio"
   OBJECT_DIR = project\chaineddecos\Menu\CMakeFiles\menu.dir
   OBJECT_FILE_DIR = project\chaineddecos\Menu\CMakeFiles\menu.dir\Unity
 
@@ -4369,7 +4369,7 @@ build project/chaineddecos/Menu/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj: C
 #############################################
 # Link the static library project\chaineddecos\Menu\libmenu.a
 
-build project/chaineddecos/Menu/libmenu.a: CXX_STATIC_LIBRARY_LINKER__menu_Debug project/chaineddecos/Menu/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a platform/libChainedDecosEngine.a scene/resources/color/libcolor.a servers/audio/libaudio.a servers/input/libinput.a servers/rendering/librender.a
+build project/chaineddecos/Menu/libmenu.a: CXX_STATIC_LIBRARY_LINKER__menu_Debug project/chaineddecos/Menu/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a components/audio/libaudio.a components/input/libinput.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a platform/libChainedDecosEngine.a scene/resources/color/libcolor.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = project\chaineddecos\Menu\CMakeFiles\menu.dir
@@ -4487,7 +4487,7 @@ build project/chaineddecos/Player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.ob
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = project\chaineddecos\Player\CMakeFiles\player.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/project/chaineddecos/Player" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/scene/3d/camera" -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src"
+  INCLUDES = -I"D:/gitnext/Chained Decos/project/chaineddecos/Player" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/scene/3d/camera" -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos/components/physics/dynamics/src"
   OBJECT_DIR = project\chaineddecos\Player\CMakeFiles\player.dir
   OBJECT_FILE_DIR = project\chaineddecos\Player\CMakeFiles\player.dir\Unity
 
@@ -4499,7 +4499,7 @@ build project/chaineddecos/Player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.ob
 #############################################
 # Link the static library project\chaineddecos\Player\libplayer.a
 
-build project/chaineddecos/Player/libplayer.a: CXX_STATIC_LIBRARY_LINKER__player_Debug project/chaineddecos/Player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a servers/physics/dynamics/libphysics.a servers/rendering/librender.a
+build project/chaineddecos/Player/libplayer.a: CXX_STATIC_LIBRARY_LINKER__player_Debug project/chaineddecos/Player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.obj || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a components/physics/dynamics/libphysics.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a
   CONFIG = Debug
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = project\chaineddecos\Player\CMakeFiles\player.dir
@@ -4654,7 +4654,7 @@ build tests/CMakeFiles/ChainedDecosIntegrationTests.dir/Unity/unity_0_cxx.cxx.ob
   DEFINES = -DGRAPHICS_API_OPENGL_33 -DGTEST_CREATE_SHARED_LIBRARY=1 -DGTEST_LINKED_AS_SHARED_LIBRARY=1 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = tests\CMakeFiles\ChainedDecosIntegrationTests.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++20 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/tests" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/project/chained_decos" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/project/chained_decos/Player" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/scene/3d/camera" -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/servers/input" -I"D:/gitnext/Chained Decos/servers/audio" -I"D:/gitnext/Chained Decos/project/chaineddecos/Player" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/project/chained_decos/Menu" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock"
+  INCLUDES = -I"D:/gitnext/Chained Decos/tests" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/project/chained_decos" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/project/chained_decos/Player" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/scene/3d/camera" -I"D:/gitnext/Chained Decos/scene/main" -I"D:/gitnext/Chained Decos/servers/physics/dynamics/src" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/components/input" -I"D:/gitnext/Chained Decos/components/audio" -I"D:/gitnext/Chained Decos/project/chaineddecos/Player" -I"D:/gitnext/Chained Decos/components/physics/dynamics/src" -I"D:/gitnext/Chained Decos/project/chained_decos/Menu" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googletest" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock/include" -isystem "D:/gitnext/Chained Decos/.deps/googletest-src/googlemock"
   OBJECT_DIR = tests\CMakeFiles\ChainedDecosIntegrationTests.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\ChainedDecosIntegrationTests.dir\Unity
 
@@ -4666,10 +4666,10 @@ build tests/CMakeFiles/ChainedDecosIntegrationTests.dir/Unity/unity_0_cxx.cxx.ob
 #############################################
 # Link the executable bin\tests\ChainedDecosIntegrationTests.exe
 
-build bin/tests/ChainedDecosIntegrationTests.exe: CXX_EXECUTABLE_LINKER__ChainedDecosIntegrationTests_Debug tests/CMakeFiles/ChainedDecosIntegrationTests.dir/Unity/unity_0_cxx.cxx.obj | lib/libgtest_main.a lib/libgmock_main.a project/chaineddecos/libChainedDecosGame.a lib/libgmock.a lib/libgtest.a project/chaineddecos/Player/libplayer.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a servers/physics/dynamics/libphysics.a project/chaineddecos/Menu/libmenu.a platform/libChainedDecosEngine.a servers/rendering/librender.a servers/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a servers/rendering/librender.a servers/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a core/libcore.a core/object/module/libmodule.a core/object/event/libevent.a core/ecs/libecs.a scene/resources/color/libcolor.a core/config/libconfig.a servers/input/libinput.a servers/audio/libaudio.a libimguilib.a .deps/raylib-build/raylib/libraylib.a || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a project/chaineddecos/libChainedDecosGame.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a servers/audio/libaudio.a servers/input/libinput.a servers/physics/dynamics/libphysics.a servers/rendering/librender.a
+build bin/tests/ChainedDecosIntegrationTests.exe: CXX_EXECUTABLE_LINKER__ChainedDecosIntegrationTests_Debug tests/CMakeFiles/ChainedDecosIntegrationTests.dir/Unity/unity_0_cxx.cxx.obj | lib/libgtest_main.a lib/libgmock_main.a project/chaineddecos/libChainedDecosGame.a lib/libgmock.a lib/libgtest.a project/chaineddecos/Player/libplayer.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a components/physics/dynamics/libphysics.a project/chaineddecos/Menu/libmenu.a platform/libChainedDecosEngine.a components/rendering/librender.a components/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a components/rendering/librender.a components/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a core/libcore.a core/object/module/libmodule.a core/object/event/libevent.a core/ecs/libecs.a scene/resources/color/libcolor.a core/config/libconfig.a components/input/libinput.a components/audio/libaudio.a libimguilib.a .deps/raylib-build/raylib/libraylib.a || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a components/audio/libaudio.a components/input/libinput.a components/physics/dynamics/libphysics.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a project/chaineddecos/libChainedDecosGame.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a
   CONFIG = Debug
   FLAGS = -g
-  LINK_LIBRARIES = lib/libgtest_main.a  lib/libgmock_main.a  project/chaineddecos/libChainedDecosGame.a  lib/libgmock.a  lib/libgtest.a  project/chaineddecos/Player/libplayer.a  scene/3d/camera/libcameracontroller.a  scene/main/libworld.a  servers/physics/dynamics/libphysics.a  project/chaineddecos/Menu/libmenu.a  platform/libChainedDecosEngine.a  servers/rendering/librender.a  servers/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  servers/rendering/librender.a  servers/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  core/libcore.a  core/object/module/libmodule.a  core/object/event/libevent.a  core/ecs/libecs.a  scene/resources/color/libcolor.a  core/config/libconfig.a  servers/input/libinput.a  servers/audio/libaudio.a  libimguilib.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_LIBRARIES = lib/libgtest_main.a  lib/libgmock_main.a  project/chaineddecos/libChainedDecosGame.a  lib/libgmock.a  lib/libgtest.a  project/chaineddecos/Player/libplayer.a  scene/3d/camera/libcameracontroller.a  scene/main/libworld.a  components/physics/dynamics/libphysics.a  project/chaineddecos/Menu/libmenu.a  platform/libChainedDecosEngine.a  components/rendering/librender.a  components/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  components/rendering/librender.a  components/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  core/libcore.a  core/object/module/libmodule.a  core/object/event/libevent.a  core/ecs/libecs.a  scene/resources/color/libcolor.a  core/config/libconfig.a  components/input/libinput.a  components/audio/libaudio.a  libimguilib.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = tests\CMakeFiles\ChainedDecosIntegrationTests.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -4811,7 +4811,7 @@ build tests/CMakeFiles/run_unit_tests | ${cmake_ninja_workdir}tests/CMakeFiles/r
 #############################################
 # Custom command for tests\CMakeFiles\run_integration_tests
 
-build tests/CMakeFiles/run_integration_tests | ${cmake_ninja_workdir}tests/CMakeFiles/run_integration_tests: CUSTOM_COMMAND bin/tests/ChainedDecosIntegrationTests.exe || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a bin/tests/ChainedDecosIntegrationTests.exe core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a project/chaineddecos/libChainedDecosGame.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a scene/resources/map/libmap.a scene/resources/model/libmodel.a servers/audio/libaudio.a servers/input/libinput.a servers/physics/collision/libcollision.a servers/physics/dynamics/libphysics.a servers/rendering/librender.a
+build tests/CMakeFiles/run_integration_tests | ${cmake_ninja_workdir}tests/CMakeFiles/run_integration_tests: CUSTOM_COMMAND bin/tests/ChainedDecosIntegrationTests.exe || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a bin/tests/ChainedDecosIntegrationTests.exe components/audio/libaudio.a components/input/libinput.a components/physics/collision/libcollision.a components/physics/dynamics/libphysics.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a project/chaineddecos/libChainedDecosGame.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a scene/resources/map/libmap.a scene/resources/model/libmodel.a
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\tests" && "D:\gitnext\Chained Decos\bin\tests\ChainedDecosIntegrationTests.exe""
   DESC = Running integration tests
 
@@ -4819,7 +4819,7 @@ build tests/CMakeFiles/run_integration_tests | ${cmake_ninja_workdir}tests/CMake
 #############################################
 # Custom command for tests\CMakeFiles\run_all_tests
 
-build tests/CMakeFiles/run_all_tests | ${cmake_ninja_workdir}tests/CMakeFiles/run_all_tests: CUSTOM_COMMAND bin/tests/ChainedDecosUnitTests.exe bin/tests/ChainedDecosIntegrationTests.exe || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a bin/tests/ChainedDecosIntegrationTests.exe bin/tests/ChainedDecosUnitTests.exe core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a project/chaineddecos/libChainedDecosGame.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a scene/resources/map/libmap.a scene/resources/model/libmodel.a servers/audio/libaudio.a servers/input/libinput.a servers/physics/collision/libcollision.a servers/physics/dynamics/libphysics.a servers/rendering/librender.a
+build tests/CMakeFiles/run_all_tests | ${cmake_ninja_workdir}tests/CMakeFiles/run_all_tests: CUSTOM_COMMAND bin/tests/ChainedDecosUnitTests.exe bin/tests/ChainedDecosIntegrationTests.exe || .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a bin/tests/ChainedDecosIntegrationTests.exe bin/tests/ChainedDecosUnitTests.exe components/audio/libaudio.a components/input/libinput.a components/physics/collision/libcollision.a components/physics/dynamics/libphysics.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a lib/libgmock.a lib/libgmock_main.a lib/libgtest.a lib/libgtest_main.a libimguilib.a platform/libChainedDecosEngine.a project/chaineddecos/Menu/libmenu.a project/chaineddecos/Player/libplayer.a project/chaineddecos/libChainedDecosGame.a scene/3d/camera/libcameracontroller.a scene/main/libworld.a scene/resources/color/libcolor.a scene/resources/map/libmap.a scene/resources/model/libmodel.a
   COMMAND = C:\WINDOWS\system32\cmd.exe /C "cd /D "D:\gitnext\Chained Decos\tests" && "D:\gitnext\Chained Decos\bin\tests\ChainedDecosUnitTests.exe" && "D:\gitnext\Chained Decos\bin\tests\ChainedDecosIntegrationTests.exe""
   DESC = Running all tests (unit and integration)
 
@@ -4842,7 +4842,7 @@ build editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_1_cxx.cxx.
   DEFINES = -DCHAINEDDECOSEDITOR_EXPORTS -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = editor\plugins\map_editor\CMakeFiles\map_editor.dir\Unity\unity_1_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/editor/plugins/map_editor" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/servers/input" -I"D:/gitnext/Chained Decos/servers/audio" -I"D:/gitnext/Chained Decos/.deps/nfd-src/src/include" -I"D:/gitnext/Chained Decos/include/nfd" -I"D:/gitnext/Chained Decos/scene/3d/camera"
+  INCLUDES = -I"D:/gitnext/Chained Decos/editor/plugins/map_editor" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/components/input" -I"D:/gitnext/Chained Decos/components/audio" -I"D:/gitnext/Chained Decos/.deps/nfd-src/src/include" -I"D:/gitnext/Chained Decos/include/nfd" -I"D:/gitnext/Chained Decos/scene/3d/camera"
   OBJECT_DIR = editor\plugins\map_editor\CMakeFiles\map_editor.dir
   OBJECT_FILE_DIR = editor\plugins\map_editor\CMakeFiles\map_editor.dir\Unity
 
@@ -4851,7 +4851,7 @@ build editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_0_cxx.cxx.
   DEFINES = -DCHAINEDDECOSEDITOR_EXPORTS -DGRAPHICS_API_OPENGL_33 -DNOMINMAX -DPLATFORM_DESKTOP -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_WIN32_WINNT=0x0601
   DEP_FILE = editor\plugins\map_editor\CMakeFiles\map_editor.dir\Unity\unity_0_cxx.cxx.obj.d
   FLAGS = -g -std=gnu++23 -fdiagnostics-color=always -O0 -g -w -Wno-error=implicit-function-declaration
-  INCLUDES = -I"D:/gitnext/Chained Decos/editor/plugins/map_editor" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/servers/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/servers/input" -I"D:/gitnext/Chained Decos/servers/audio" -I"D:/gitnext/Chained Decos/.deps/nfd-src/src/include" -I"D:/gitnext/Chained Decos/include/nfd" -I"D:/gitnext/Chained Decos/scene/3d/camera"
+  INCLUDES = -I"D:/gitnext/Chained Decos/editor/plugins/map_editor" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/src" -I"D:/gitnext/Chained Decos/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src" -I"D:/gitnext/Chained Decos/.deps/raylib-src/src/external/glfw/include" -I"D:/gitnext/Chained Decos/platform" -I"D:/gitnext/Chained Decos/project/chaineddecos" -I"D:/gitnext/Chained Decos/project/chaineddecos/Menu" -I"D:/gitnext/Chained Decos/core" -I"D:/gitnext/Chained Decos/.deps/nlohmann_json-src/include" -I"D:/gitnext/Chained Decos/.deps/entt-src/src" -I"D:/gitnext/Chained Decos/core/config" -I"D:/gitnext/Chained Decos/core/object/event" -I"D:/gitnext/Chained Decos/src/Engine" -I"D:/gitnext/Chained Decos/core/object/kernel" -I"D:/gitnext/Chained Decos/core/object/module" -I"D:/gitnext/Chained Decos/core/object/module/.." -I"D:/gitnext/Chained Decos/core/ecs" -I"D:/gitnext/Chained Decos/servers/rendering" -I"D:/gitnext/Chained Decos/include/rlImGui" -I"D:/gitnext/Chained Decos/components/physics/collision" -I"D:/gitnext/Chained Decos/scene/resources/model" -I"D:/gitnext/Chained Decos/scene/resources/map" -I"D:/gitnext/Chained Decos/scene/resources/color" -I"D:/gitnext/Chained Decos/components/input" -I"D:/gitnext/Chained Decos/components/audio" -I"D:/gitnext/Chained Decos/.deps/nfd-src/src/include" -I"D:/gitnext/Chained Decos/include/nfd" -I"D:/gitnext/Chained Decos/scene/3d/camera"
   OBJECT_DIR = editor\plugins\map_editor\CMakeFiles\map_editor.dir
   OBJECT_FILE_DIR = editor\plugins\map_editor\CMakeFiles\map_editor.dir\Unity
 
@@ -4863,10 +4863,10 @@ build editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_0_cxx.cxx.
 #############################################
 # Link the executable bin\map_editor.exe
 
-build bin/map_editor.exe: CXX_EXECUTABLE_LINKER__map_editor_Debug editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_1_cxx.cxx.obj editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_0_cxx.cxx.obj | .deps/raylib-build/raylib/libraylib.a platform/libChainedDecosEngine.a .deps/nfd-build/src/libnfd.a scene/3d/camera/libcameracontroller.a scene/resources/model/libmodel.a scene/resources/map/libmap.a servers/rendering/librender.a servers/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a servers/rendering/librender.a servers/physics/collision/libcollision.a scene/resources/color/libcolor.a core/libcore.a core/config/libconfig.a core/object/module/libmodule.a core/object/event/libevent.a core/ecs/libecs.a servers/input/libinput.a servers/audio/libaudio.a libimguilib.a .deps/raylib-build/raylib/libraylib.a || .deps/nfd-build/src/libnfd.a .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a platform/libChainedDecosEngine.a scene/3d/camera/libcameracontroller.a scene/resources/color/libcolor.a servers/audio/libaudio.a servers/input/libinput.a servers/rendering/librender.a
+build bin/map_editor.exe: CXX_EXECUTABLE_LINKER__map_editor_Debug editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_1_cxx.cxx.obj editor/plugins/map_editor/CMakeFiles/map_editor.dir/Unity/unity_0_cxx.cxx.obj | .deps/raylib-build/raylib/libraylib.a platform/libChainedDecosEngine.a .deps/nfd-build/src/libnfd.a scene/3d/camera/libcameracontroller.a scene/resources/model/libmodel.a scene/resources/map/libmap.a components/rendering/librender.a components/physics/collision/libcollision.a scene/resources/model/libmodel.a scene/resources/map/libmap.a components/rendering/librender.a components/physics/collision/libcollision.a scene/resources/color/libcolor.a core/libcore.a core/config/libconfig.a core/object/module/libmodule.a core/object/event/libevent.a core/ecs/libecs.a components/input/libinput.a components/audio/libaudio.a libimguilib.a .deps/raylib-build/raylib/libraylib.a || .deps/nfd-build/src/libnfd.a .deps/raylib-build/raylib/external/glfw/src/glfw .deps/raylib-build/raylib/libraylib.a components/audio/libaudio.a components/input/libinput.a components/rendering/librender.a core/config/libconfig.a core/ecs/libecs.a core/libcore.a core/object/event/libevent.a core/object/module/libmodule.a libimguilib.a platform/libChainedDecosEngine.a scene/3d/camera/libcameracontroller.a scene/resources/color/libcolor.a
   CONFIG = Debug
   FLAGS = -g
-  LINK_LIBRARIES = .deps/raylib-build/raylib/libraylib.a  platform/libChainedDecosEngine.a  .deps/nfd-build/src/libnfd.a  scene/3d/camera/libcameracontroller.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  servers/rendering/librender.a  servers/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  servers/rendering/librender.a  servers/physics/collision/libcollision.a  scene/resources/color/libcolor.a  core/libcore.a  core/config/libconfig.a  core/object/module/libmodule.a  core/object/event/libevent.a  core/ecs/libecs.a  servers/input/libinput.a  servers/audio/libaudio.a  libimguilib.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_LIBRARIES = .deps/raylib-build/raylib/libraylib.a  platform/libChainedDecosEngine.a  .deps/nfd-build/src/libnfd.a  scene/3d/camera/libcameracontroller.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  components/rendering/librender.a  components/physics/collision/libcollision.a  scene/resources/model/libmodel.a  scene/resources/map/libmap.a  components/rendering/librender.a  components/physics/collision/libcollision.a  scene/resources/color/libcolor.a  core/libcore.a  core/config/libconfig.a  core/object/module/libmodule.a  core/object/event/libevent.a  core/ecs/libecs.a  components/input/libinput.a  components/audio/libaudio.a  libimguilib.a  .deps/raylib-build/raylib/libraylib.a  -lopengl32  -lglu32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = editor\plugins\map_editor\CMakeFiles\map_editor.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -5208,11 +5208,11 @@ build ChainedDecosUnitTests.exe: phony bin/tests/ChainedDecosUnitTests.exe
 
 build ChainedDecos_debug.exe: phony bin/ChainedDecos_debug.exe
 
-build audio: phony servers/audio/libaudio.a
+build audio: phony components/audio/libaudio.a
 
 build cameracontroller: phony scene/3d/camera/libcameracontroller.a
 
-build collision: phony servers/physics/collision/libcollision.a
+build collision: phony components/physics/collision/libcollision.a
 
 build color: phony scene/resources/color/libcolor.a
 
@@ -5238,17 +5238,17 @@ build gui: phony scene/gui/libgui.a
 
 build imguilib: phony libimguilib.a
 
-build input: phony servers/input/libinput.a
+build input: phony components/input/libinput.a
 
 build libChainedDecosEngine.a: phony platform/libChainedDecosEngine.a
 
 build libChainedDecosGame.a: phony project/chaineddecos/libChainedDecosGame.a
 
-build libaudio.a: phony servers/audio/libaudio.a
+build libaudio.a: phony components/audio/libaudio.a
 
 build libcameracontroller.a: phony scene/3d/camera/libcameracontroller.a
 
-build libcollision.a: phony servers/physics/collision/libcollision.a
+build libcollision.a: phony components/physics/collision/libcollision.a
 
 build libcolor.a: phony scene/resources/color/libcolor.a
 
@@ -5270,7 +5270,7 @@ build libgtest_main.a: phony lib/libgtest_main.a
 
 build libgui.a: phony scene/gui/libgui.a
 
-build libinput.a: phony servers/input/libinput.a
+build libinput.a: phony components/input/libinput.a
 
 build libmap.a: phony scene/resources/map/libmap.a
 
@@ -5282,13 +5282,13 @@ build libmodule.a: phony core/object/module/libmodule.a
 
 build libnfd.a: phony .deps/nfd-build/src/libnfd.a
 
-build libphysics.a: phony servers/physics/dynamics/libphysics.a
+build libphysics.a: phony components/physics/dynamics/libphysics.a
 
 build libplayer.a: phony project/chaineddecos/Player/libplayer.a
 
 build libraylib.a: phony .deps/raylib-build/raylib/libraylib.a
 
-build librender.a: phony servers/rendering/librender.a
+build librender.a: phony components/rendering/librender.a
 
 build libworld.a: phony scene/main/libworld.a
 
@@ -5306,13 +5306,13 @@ build module: phony core/object/module/libmodule.a
 
 build nfd: phony .deps/nfd-build/src/libnfd.a
 
-build physics: phony servers/physics/dynamics/libphysics.a
+build physics: phony components/physics/dynamics/libphysics.a
 
 build player: phony project/chaineddecos/Player/libplayer.a
 
 build raylib: phony .deps/raylib-build/raylib/libraylib.a
 
-build render: phony servers/rendering/librender.a
+build render: phony components/rendering/librender.a
 
 build run_all_tests: phony tests/run_all_tests
 
@@ -5336,7 +5336,7 @@ build world: phony scene/main/libworld.a
 #############################################
 # Folder: D:/gitnext/Chained Decos
 
-build all: phony libimguilib.a bin/ChainedDecos_debug.exe .deps/raylib-build/all .deps/nlohmann_json-build/all .deps/googletest-build/all .deps/entt-build/all core/all servers/all scene/all platform/all project/chaineddecos/all tests/all editor/plugins/map_editor/all .deps/nfd-build/all
+build all: phony libimguilib.a bin/ChainedDecos_debug.exe .deps/raylib-build/all .deps/nlohmann_json-build/all .deps/googletest-build/all .deps/entt-build/all core/all components/all scene/all platform/all project/chaineddecos/all tests/all editor/plugins/map_editor/all .deps/nfd-build/all
 
 # =============================================================================
 
@@ -5414,6 +5414,55 @@ build .deps/raylib-build/raylib/external/glfw/all: phony .deps/raylib-build/rayl
 # Folder: D:/gitnext/Chained Decos/.deps/raylib-build/raylib/external/glfw/src
 
 build .deps/raylib-build/raylib/external/glfw/src/all: phony .deps/raylib-build/raylib/external/glfw/src/glfw
+
+# =============================================================================
+
+#############################################
+# Folder: D:/gitnext/Chained Decos/components
+
+build components/all: phony components/rendering/all components/physics/all components/audio/all components/input/all
+
+# =============================================================================
+
+#############################################
+# Folder: D:/gitnext/Chained Decos/components/audio
+
+build components/audio/all: phony components/audio/libaudio.a
+
+# =============================================================================
+
+#############################################
+# Folder: D:/gitnext/Chained Decos/components/input
+
+build components/input/all: phony components/input/libinput.a
+
+# =============================================================================
+
+#############################################
+# Folder: D:/gitnext/Chained Decos/components/physics
+
+build components/physics/all: phony components/physics/collision/all components/physics/dynamics/all
+
+# =============================================================================
+
+#############################################
+# Folder: D:/gitnext/Chained Decos/components/physics/collision
+
+build components/physics/collision/all: phony components/physics/collision/libcollision.a
+
+# =============================================================================
+
+#############################################
+# Folder: D:/gitnext/Chained Decos/components/physics/dynamics
+
+build components/physics/dynamics/all: phony components/physics/dynamics/libphysics.a
+
+# =============================================================================
+
+#############################################
+# Folder: D:/gitnext/Chained Decos/components/rendering
+
+build components/rendering/all: phony components/rendering/librender.a
 
 # =============================================================================
 
@@ -5558,55 +5607,6 @@ build scene/resources/model/all: phony scene/resources/model/libmodel.a
 # =============================================================================
 
 #############################################
-# Folder: D:/gitnext/Chained Decos/servers
-
-build servers/all: phony servers/rendering/all servers/physics/all servers/audio/all servers/input/all
-
-# =============================================================================
-
-#############################################
-# Folder: D:/gitnext/Chained Decos/servers/audio
-
-build servers/audio/all: phony servers/audio/libaudio.a
-
-# =============================================================================
-
-#############################################
-# Folder: D:/gitnext/Chained Decos/servers/input
-
-build servers/input/all: phony servers/input/libinput.a
-
-# =============================================================================
-
-#############################################
-# Folder: D:/gitnext/Chained Decos/servers/physics
-
-build servers/physics/all: phony servers/physics/collision/all servers/physics/dynamics/all
-
-# =============================================================================
-
-#############################################
-# Folder: D:/gitnext/Chained Decos/servers/physics/collision
-
-build servers/physics/collision/all: phony servers/physics/collision/libcollision.a
-
-# =============================================================================
-
-#############################################
-# Folder: D:/gitnext/Chained Decos/servers/physics/dynamics
-
-build servers/physics/dynamics/all: phony servers/physics/dynamics/libphysics.a
-
-# =============================================================================
-
-#############################################
-# Folder: D:/gitnext/Chained Decos/servers/rendering
-
-build servers/rendering/all: phony servers/rendering/librender.a
-
-# =============================================================================
-
-#############################################
 # Folder: D:/gitnext/Chained Decos/tests
 
 build tests/all: phony bin/tests/ChainedDecosUnitTests.exe bin/tests/ChainedDecosIntegrationTests.exe
@@ -5618,14 +5618,14 @@ build tests/all: phony bin/tests/ChainedDecosUnitTests.exe bin/tests/ChainedDeco
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja D$:/gitnext/Chained$ Decos/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/entt-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/config/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/object/event/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/object/kernel/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/object/module/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/ecs/cmake_install.cmake D$:/gitnext/Chained$ Decos/servers/cmake_install.cmake D$:/gitnext/Chained$ Decos/servers/rendering/cmake_install.cmake D$:/gitnext/Chained$ Decos/servers/physics/cmake_install.cmake D$:/gitnext/Chained$ Decos/servers/physics/collision/cmake_install.cmake D$:/gitnext/Chained$ Decos/servers/physics/dynamics/cmake_install.cmake D$:/gitnext/Chained$ Decos/servers/audio/cmake_install.cmake D$:/gitnext/Chained$ Decos/servers/input/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/main/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/resources/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/resources/model/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/resources/map/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/resources/color/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/3d/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/3d/camera/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/gui/cmake_install.cmake D$:/gitnext/Chained$ Decos/platform/cmake_install.cmake D$:/gitnext/Chained$ Decos/project/chaineddecos/cmake_install.cmake D$:/gitnext/Chained$ Decos/project/chaineddecos/Menu/cmake_install.cmake D$:/gitnext/Chained$ Decos/project/chaineddecos/Player/cmake_install.cmake D$:/gitnext/Chained$ Decos/tests/cmake_install.cmake D$:/gitnext/Chained$ Decos/editor/plugins/map_editor/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/nfd-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/nfd-build/src/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/CTestTestfile.cmake: RERUN_CMAKE | .deps/entt-src/CMakeLists.txt .deps/entt-src/cmake/in/EnTTConfig.cmake.in .deps/entt-src/cmake/in/entt.pc.in .deps/entt-src/cmake/modules/JoinPaths.cmake .deps/googletest-src/CMakeLists.txt .deps/googletest-src/googlemock/CMakeLists.txt .deps/googletest-src/googlemock/cmake/gmock.pc.in .deps/googletest-src/googlemock/cmake/gmock_main.pc.in .deps/googletest-src/googletest/CMakeLists.txt .deps/googletest-src/googletest/cmake/Config.cmake.in .deps/googletest-src/googletest/cmake/gtest.pc.in .deps/googletest-src/googletest/cmake/gtest_main.pc.in .deps/googletest-src/googletest/cmake/internal_utils.cmake .deps/nfd-src/CMakeLists.txt .deps/nfd-src/src/CMakeLists.txt .deps/nlohmann_json-src/CMakeLists.txt .deps/nlohmann_json-src/cmake/config.cmake.in .deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in .deps/nlohmann_json-src/cmake/pkg-config.pc.in .deps/raylib-src/CMakeLists.txt .deps/raylib-src/CMakeOptions.txt .deps/raylib-src/cmake/AddIfFlagCompiles.cmake .deps/raylib-src/cmake/CompileDefinitions.cmake .deps/raylib-src/cmake/CompilerFlags.cmake .deps/raylib-src/cmake/EnumOption.cmake .deps/raylib-src/cmake/GlfwImport.cmake .deps/raylib-src/cmake/InstallConfigurations.cmake .deps/raylib-src/cmake/JoinPaths.cmake .deps/raylib-src/cmake/LibraryConfigurations.cmake .deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake .deps/raylib-src/cmake/PackConfigurations.cmake .deps/raylib-src/cmake/ParseConfigHeader.cmake .deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake .deps/raylib-src/cmake/Uninstall.cmake .deps/raylib-src/cmake/raylib-config-version.cmake .deps/raylib-src/raylib.pc.in .deps/raylib-src/src/CMakeLists.txt .deps/raylib-src/src/external/glfw/CMakeLists.txt .deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in .deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in .deps/raylib-src/src/external/glfw/src/CMakeLists.txt C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDependentOption.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakePackageConfigHelpers.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPack.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPackComponent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckIncludeFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckLibraryExists.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject/shared_internal_commands.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent/CMakeLists.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindGit.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindOpenGL.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageHandleStandardArgs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageMessage.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython3.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindThreads.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/GNUInstallDirs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckFlagCommonConfig.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/WindowsPaths.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/WriteBasicConfigVersionFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/4.1.1/CMakeCCompiler.cmake CMakeFiles/4.1.1/CMakeCXXCompiler.cmake CMakeFiles/4.1.1/CMakeRCCompiler.cmake CMakeFiles/4.1.1/CMakeSystem.cmake CMakeLists.txt core/CMakeLists.txt core/config/CMakeLists.txt core/ecs/CMakeLists.txt core/object/event/CMakeLists.txt core/object/kernel/CMakeLists.txt core/object/module/CMakeLists.txt editor/plugins/map_editor/CMakeLists.txt platform/CMakeLists.txt project/chaineddecos/CMakeLists.txt project/chaineddecos/Menu/CMakeLists.txt project/chaineddecos/Player/CMakeLists.txt scene/3d/CMakeLists.txt scene/3d/camera/CMakeLists.txt scene/CMakeLists.txt scene/gui/CMakeLists.txt scene/main/CMakeLists.txt scene/resources/CMakeLists.txt scene/resources/color/CMakeLists.txt scene/resources/map/CMakeLists.txt scene/resources/model/CMakeLists.txt servers/CMakeLists.txt servers/audio/CMakeLists.txt servers/input/CMakeLists.txt servers/physics/CMakeLists.txt servers/physics/collision/CMakeLists.txt servers/physics/dynamics/CMakeLists.txt servers/rendering/CMakeLists.txt tests/CMakeLists.txt
+build build.ninja D$:/gitnext/Chained$ Decos/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/nlohmann_json-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/entt-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/config/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/object/event/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/object/kernel/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/object/module/cmake_install.cmake D$:/gitnext/Chained$ Decos/core/ecs/cmake_install.cmake D$:/gitnext/Chained$ Decos/components/cmake_install.cmake D$:/gitnext/Chained$ Decos/components/rendering/cmake_install.cmake D$:/gitnext/Chained$ Decos/components/physics/cmake_install.cmake D$:/gitnext/Chained$ Decos/components/physics/collision/cmake_install.cmake D$:/gitnext/Chained$ Decos/components/physics/dynamics/cmake_install.cmake D$:/gitnext/Chained$ Decos/components/audio/cmake_install.cmake D$:/gitnext/Chained$ Decos/components/input/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/main/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/resources/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/resources/model/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/resources/map/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/resources/color/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/3d/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/3d/camera/cmake_install.cmake D$:/gitnext/Chained$ Decos/scene/gui/cmake_install.cmake D$:/gitnext/Chained$ Decos/platform/cmake_install.cmake D$:/gitnext/Chained$ Decos/project/chaineddecos/cmake_install.cmake D$:/gitnext/Chained$ Decos/project/chaineddecos/Menu/cmake_install.cmake D$:/gitnext/Chained$ Decos/project/chaineddecos/Player/cmake_install.cmake D$:/gitnext/Chained$ Decos/tests/cmake_install.cmake D$:/gitnext/Chained$ Decos/editor/plugins/map_editor/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/nfd-build/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/nfd-build/src/cmake_install.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/raylib-build/raylib/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googlemock/CTestTestfile.cmake D$:/gitnext/Chained$ Decos/.deps/googletest-build/googletest/CTestTestfile.cmake: RERUN_CMAKE | .deps/entt-src/CMakeLists.txt .deps/entt-src/cmake/in/EnTTConfig.cmake.in .deps/entt-src/cmake/in/entt.pc.in .deps/entt-src/cmake/modules/JoinPaths.cmake .deps/googletest-src/CMakeLists.txt .deps/googletest-src/googlemock/CMakeLists.txt .deps/googletest-src/googlemock/cmake/gmock.pc.in .deps/googletest-src/googlemock/cmake/gmock_main.pc.in .deps/googletest-src/googletest/CMakeLists.txt .deps/googletest-src/googletest/cmake/Config.cmake.in .deps/googletest-src/googletest/cmake/gtest.pc.in .deps/googletest-src/googletest/cmake/gtest_main.pc.in .deps/googletest-src/googletest/cmake/internal_utils.cmake .deps/nfd-src/CMakeLists.txt .deps/nfd-src/src/CMakeLists.txt .deps/nlohmann_json-src/CMakeLists.txt .deps/nlohmann_json-src/cmake/config.cmake.in .deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in .deps/nlohmann_json-src/cmake/pkg-config.pc.in .deps/raylib-src/CMakeLists.txt .deps/raylib-src/CMakeOptions.txt .deps/raylib-src/cmake/AddIfFlagCompiles.cmake .deps/raylib-src/cmake/CompileDefinitions.cmake .deps/raylib-src/cmake/CompilerFlags.cmake .deps/raylib-src/cmake/EnumOption.cmake .deps/raylib-src/cmake/GlfwImport.cmake .deps/raylib-src/cmake/InstallConfigurations.cmake .deps/raylib-src/cmake/JoinPaths.cmake .deps/raylib-src/cmake/LibraryConfigurations.cmake .deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake .deps/raylib-src/cmake/PackConfigurations.cmake .deps/raylib-src/cmake/ParseConfigHeader.cmake .deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake .deps/raylib-src/cmake/Uninstall.cmake .deps/raylib-src/cmake/raylib-config-version.cmake .deps/raylib-src/raylib.pc.in .deps/raylib-src/src/CMakeLists.txt .deps/raylib-src/src/external/glfw/CMakeLists.txt .deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in .deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in .deps/raylib-src/src/external/glfw/src/CMakeLists.txt C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDependentOption.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakePackageConfigHelpers.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPack.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPackComponent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckIncludeFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckLibraryExists.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject/shared_internal_commands.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent/CMakeLists.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindGit.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindOpenGL.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageHandleStandardArgs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageMessage.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython3.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindThreads.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/GNUInstallDirs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckFlagCommonConfig.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/WindowsPaths.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/WriteBasicConfigVersionFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/4.1.1/CMakeCCompiler.cmake CMakeFiles/4.1.1/CMakeCXXCompiler.cmake CMakeFiles/4.1.1/CMakeRCCompiler.cmake CMakeFiles/4.1.1/CMakeSystem.cmake CMakeLists.txt components/CMakeLists.txt components/audio/CMakeLists.txt components/input/CMakeLists.txt components/physics/CMakeLists.txt components/physics/collision/CMakeLists.txt components/physics/dynamics/CMakeLists.txt components/rendering/CMakeLists.txt core/CMakeLists.txt core/config/CMakeLists.txt core/ecs/CMakeLists.txt core/object/event/CMakeLists.txt core/object/kernel/CMakeLists.txt core/object/module/CMakeLists.txt editor/plugins/map_editor/CMakeLists.txt platform/CMakeLists.txt project/chaineddecos/CMakeLists.txt project/chaineddecos/Menu/CMakeLists.txt project/chaineddecos/Player/CMakeLists.txt scene/3d/CMakeLists.txt scene/3d/camera/CMakeLists.txt scene/CMakeLists.txt scene/gui/CMakeLists.txt scene/main/CMakeLists.txt scene/resources/CMakeLists.txt scene/resources/color/CMakeLists.txt scene/resources/map/CMakeLists.txt scene/resources/model/CMakeLists.txt tests/CMakeLists.txt
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build .deps/entt-src/CMakeLists.txt .deps/entt-src/cmake/in/EnTTConfig.cmake.in .deps/entt-src/cmake/in/entt.pc.in .deps/entt-src/cmake/modules/JoinPaths.cmake .deps/googletest-src/CMakeLists.txt .deps/googletest-src/googlemock/CMakeLists.txt .deps/googletest-src/googlemock/cmake/gmock.pc.in .deps/googletest-src/googlemock/cmake/gmock_main.pc.in .deps/googletest-src/googletest/CMakeLists.txt .deps/googletest-src/googletest/cmake/Config.cmake.in .deps/googletest-src/googletest/cmake/gtest.pc.in .deps/googletest-src/googletest/cmake/gtest_main.pc.in .deps/googletest-src/googletest/cmake/internal_utils.cmake .deps/nfd-src/CMakeLists.txt .deps/nfd-src/src/CMakeLists.txt .deps/nlohmann_json-src/CMakeLists.txt .deps/nlohmann_json-src/cmake/config.cmake.in .deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in .deps/nlohmann_json-src/cmake/pkg-config.pc.in .deps/raylib-src/CMakeLists.txt .deps/raylib-src/CMakeOptions.txt .deps/raylib-src/cmake/AddIfFlagCompiles.cmake .deps/raylib-src/cmake/CompileDefinitions.cmake .deps/raylib-src/cmake/CompilerFlags.cmake .deps/raylib-src/cmake/EnumOption.cmake .deps/raylib-src/cmake/GlfwImport.cmake .deps/raylib-src/cmake/InstallConfigurations.cmake .deps/raylib-src/cmake/JoinPaths.cmake .deps/raylib-src/cmake/LibraryConfigurations.cmake .deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake .deps/raylib-src/cmake/PackConfigurations.cmake .deps/raylib-src/cmake/ParseConfigHeader.cmake .deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake .deps/raylib-src/cmake/Uninstall.cmake .deps/raylib-src/cmake/raylib-config-version.cmake .deps/raylib-src/raylib.pc.in .deps/raylib-src/src/CMakeLists.txt .deps/raylib-src/src/external/glfw/CMakeLists.txt .deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in .deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in .deps/raylib-src/src/external/glfw/src/CMakeLists.txt C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDependentOption.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakePackageConfigHelpers.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPack.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPackComponent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckIncludeFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckLibraryExists.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject/shared_internal_commands.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent/CMakeLists.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindGit.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindOpenGL.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageHandleStandardArgs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageMessage.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython3.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindThreads.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/GNUInstallDirs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckFlagCommonConfig.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/WindowsPaths.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/WriteBasicConfigVersionFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/4.1.1/CMakeCCompiler.cmake CMakeFiles/4.1.1/CMakeCXXCompiler.cmake CMakeFiles/4.1.1/CMakeRCCompiler.cmake CMakeFiles/4.1.1/CMakeSystem.cmake CMakeLists.txt core/CMakeLists.txt core/config/CMakeLists.txt core/ecs/CMakeLists.txt core/object/event/CMakeLists.txt core/object/kernel/CMakeLists.txt core/object/module/CMakeLists.txt editor/plugins/map_editor/CMakeLists.txt platform/CMakeLists.txt project/chaineddecos/CMakeLists.txt project/chaineddecos/Menu/CMakeLists.txt project/chaineddecos/Player/CMakeLists.txt scene/3d/CMakeLists.txt scene/3d/camera/CMakeLists.txt scene/CMakeLists.txt scene/gui/CMakeLists.txt scene/main/CMakeLists.txt scene/resources/CMakeLists.txt scene/resources/color/CMakeLists.txt scene/resources/map/CMakeLists.txt scene/resources/model/CMakeLists.txt servers/CMakeLists.txt servers/audio/CMakeLists.txt servers/input/CMakeLists.txt servers/physics/CMakeLists.txt servers/physics/collision/CMakeLists.txt servers/physics/dynamics/CMakeLists.txt servers/rendering/CMakeLists.txt tests/CMakeLists.txt: phony
+build .deps/entt-src/CMakeLists.txt .deps/entt-src/cmake/in/EnTTConfig.cmake.in .deps/entt-src/cmake/in/entt.pc.in .deps/entt-src/cmake/modules/JoinPaths.cmake .deps/googletest-src/CMakeLists.txt .deps/googletest-src/googlemock/CMakeLists.txt .deps/googletest-src/googlemock/cmake/gmock.pc.in .deps/googletest-src/googlemock/cmake/gmock_main.pc.in .deps/googletest-src/googletest/CMakeLists.txt .deps/googletest-src/googletest/cmake/Config.cmake.in .deps/googletest-src/googletest/cmake/gtest.pc.in .deps/googletest-src/googletest/cmake/gtest_main.pc.in .deps/googletest-src/googletest/cmake/internal_utils.cmake .deps/nfd-src/CMakeLists.txt .deps/nfd-src/src/CMakeLists.txt .deps/nlohmann_json-src/CMakeLists.txt .deps/nlohmann_json-src/cmake/config.cmake.in .deps/nlohmann_json-src/cmake/nlohmann_jsonConfigVersion.cmake.in .deps/nlohmann_json-src/cmake/pkg-config.pc.in .deps/raylib-src/CMakeLists.txt .deps/raylib-src/CMakeOptions.txt .deps/raylib-src/cmake/AddIfFlagCompiles.cmake .deps/raylib-src/cmake/CompileDefinitions.cmake .deps/raylib-src/cmake/CompilerFlags.cmake .deps/raylib-src/cmake/EnumOption.cmake .deps/raylib-src/cmake/GlfwImport.cmake .deps/raylib-src/cmake/InstallConfigurations.cmake .deps/raylib-src/cmake/JoinPaths.cmake .deps/raylib-src/cmake/LibraryConfigurations.cmake .deps/raylib-src/cmake/LibraryPathToLinkerFlags.cmake .deps/raylib-src/cmake/PackConfigurations.cmake .deps/raylib-src/cmake/ParseConfigHeader.cmake .deps/raylib-src/cmake/PopulateConfigVariablesLocally.cmake .deps/raylib-src/cmake/Uninstall.cmake .deps/raylib-src/cmake/raylib-config-version.cmake .deps/raylib-src/raylib.pc.in .deps/raylib-src/src/CMakeLists.txt .deps/raylib-src/src/external/glfw/CMakeLists.txt .deps/raylib-src/src/external/glfw/CMake/glfw3.pc.in .deps/raylib-src/src/external/glfw/CMake/glfw3Config.cmake.in .deps/raylib-src/src/external/glfw/src/CMakeLists.txt C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/BasicConfigVersion-SameMajorVersion.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeDependentOption.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakePackageConfigHelpers.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPack.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CPackComponent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckCSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckIncludeFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/CheckLibraryExists.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/ExternalProject/shared_internal_commands.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FetchContent/CMakeLists.cmake.in C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindGit.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindOpenGL.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageHandleStandardArgs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPackageMessage.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython3.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/FindThreads.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/GNUInstallDirs.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCXXLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckCompilerFlag.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckFlagCommonConfig.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Internal/CheckSourceCompiles.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/Platform/WindowsPaths.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Modules/WriteBasicConfigVersionFile.cmake C$:/Program$ Files/CMake/share/cmake-4.1/Templates/CPackConfig.cmake.in CMakeCache.txt CMakeFiles/4.1.1/CMakeCCompiler.cmake CMakeFiles/4.1.1/CMakeCXXCompiler.cmake CMakeFiles/4.1.1/CMakeRCCompiler.cmake CMakeFiles/4.1.1/CMakeSystem.cmake CMakeLists.txt components/CMakeLists.txt components/audio/CMakeLists.txt components/input/CMakeLists.txt components/physics/CMakeLists.txt components/physics/collision/CMakeLists.txt components/physics/dynamics/CMakeLists.txt components/rendering/CMakeLists.txt core/CMakeLists.txt core/config/CMakeLists.txt core/ecs/CMakeLists.txt core/object/event/CMakeLists.txt core/object/kernel/CMakeLists.txt core/object/module/CMakeLists.txt editor/plugins/map_editor/CMakeLists.txt platform/CMakeLists.txt project/chaineddecos/CMakeLists.txt project/chaineddecos/Menu/CMakeLists.txt project/chaineddecos/Player/CMakeLists.txt scene/3d/CMakeLists.txt scene/3d/camera/CMakeLists.txt scene/CMakeLists.txt scene/gui/CMakeLists.txt scene/main/CMakeLists.txt scene/resources/CMakeLists.txt scene/resources/color/CMakeLists.txt scene/resources/map/CMakeLists.txt scene/resources/model/CMakeLists.txt tests/CMakeLists.txt: phony
 
 
 #############################################

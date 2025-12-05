@@ -58,6 +58,9 @@ public:
 
     // Camera (detailed)
     virtual std::shared_ptr<CameraController> GetCameraController() const = 0;
+
+    // Bounding box
+    virtual BoundingBox GetPlayerBoundingBox() const = 0;
 };
 
 #endif // IPLAYER_H

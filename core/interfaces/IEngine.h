@@ -1,0 +1,25 @@
+#ifndef IENGINE_H
+#define IENGINE_H
+
+#include "ILevelManager.h"
+#include "IMenu.h"
+#include "IPlayer.h"
+
+
+class IModuleManager;
+
+// Engine interface for dependency injection
+class IEngine
+{
+public:
+    virtual ~IEngine() = default;
+
+    virtual IPlayer *GetPlayer() const = 0;
+    virtual ILevelManager *GetLevelManager() const = 0;
+    virtual IMenu *GetMenu() const = 0;
+
+    virtual void RequestExit() = 0;
+    virtual bool ShouldExit() const = 0;
+};
+
+#endif // IENGINE_H
