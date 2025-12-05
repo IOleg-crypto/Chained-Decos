@@ -13,7 +13,6 @@ using namespace MenuConstants;
 
 MapSelector::MapSelector()
 {
-    UpdatePagination();
     // Initialize placeholder thumbnail
     m_placeholderThumbnail = LoadTexture("../resources/map_previews/placeholder.jpg");
     if (m_placeholderThumbnail.id == 0)
@@ -23,6 +22,7 @@ MapSelector::MapSelector()
         m_placeholderThumbnail = LoadTextureFromImage(img);
         UnloadImage(img);
     }
+    // Note: UpdatePagination() will be called in InitializeMaps()
 }
 
 MapSelector::~MapSelector()
