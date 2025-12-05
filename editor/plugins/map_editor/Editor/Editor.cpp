@@ -29,7 +29,7 @@
 #include <imgui.h>
 #include <imgui/misc/cpp/imgui_stdlib.h>
 #include <iostream>
-#include <nfd/nfd.h>
+#include <nfd.h>
 #include <raylib.h>
 #include <rlImGui/rlImGui.h>
 
