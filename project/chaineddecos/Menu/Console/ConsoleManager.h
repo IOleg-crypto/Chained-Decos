@@ -1,7 +1,7 @@
 #ifndef CONSOLE_MANAGER_H
 #define CONSOLE_MANAGER_H
 
-#include "MenuConstants.h"
+#include "../MenuConstants.h"
 #include "core/interfaces/IEngine.h"
 #include "core/interfaces/IPlayer.h"
 #include <functional>
@@ -10,7 +10,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
 
 // Command callback function type
 using CommandCallback =
