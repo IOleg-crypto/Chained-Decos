@@ -29,16 +29,6 @@ option(ENABLE_SANITIZERS "Enable sanitizers for debugging" OFF)
 # Force static linking
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# Force FetchContent to use include/ directory
-set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/include" CACHE PATH "Deps cache" FORCE)
-
-if(FAST_CONFIG)
-    set(FETCHCONTENT_QUIET ON)
-    set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "" FORCE)
-endif()
-
-include(FetchContent)
-
 # Set build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
     if(ENABLE_OPTIMIZATIONS)
@@ -149,21 +139,12 @@ if(ENABLE_UNITY_BUILD)
     set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
 endif()
 
-# --- Fetch external dependencies ---
-set(RAYLIB_VERSION "5.5")
-set(NLOHMANN_JSON_VERSION "3.12.0")
+# --- Load dependencies from submodules ---
 
 # Raylib
-find_package(raylib ${RAYLIB_VERSION} CONFIG QUIET)
-
-if(NOT raylib_FOUND)
-    message(STATUS "Raylib ${RAYLIB_VERSION} not found, fetching...")
-    FetchContent_Declare(
-        raylib
-        URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.zip
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    )
-
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/raylib/CMakeLists.txt")
+    message(STATUS "Loading Raylib from submodule...")
+    
     # Raylib build configuration - static only
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
@@ -171,60 +152,32 @@ if(NOT raylib_FOUND)
 
     # Platform-specific raylib options
     if(UNIX AND NOT APPLE)
-        set(USE_WAYLAND OFF CACHE BOOL "" FORCE)  # Use X11 on Linux
-        set(PLATFORM Desktop CACHE STRING "" FORCE)  # Use Desktop platform (GLFW) for better compatibility
+        set(USE_WAYLAND OFF CACHE BOOL "" FORCE)
+        set(PLATFORM Desktop CACHE STRING "" FORCE)
         set(OPENGL_VERSION "3.3" CACHE STRING "" FORCE)
-        set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)  # Ensure X11 support in GLFW
-        # Try to use system GLFW if available (more stable mouse handling on Linux)
+        set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
         set(USE_EXTERNAL_GLFW IF_POSSIBLE CACHE STRING "" FORCE)
     endif()
 
-    FetchContent_MakeAvailable(raylib)
-
-    # Ensure raylib include directories are available for all targets
-    if(raylib_POPULATED)
-        message(STATUS "Raylib fetched successfully, setting up include directories...")
-        set(raylib_INCLUDE_DIRS "${raylib_SOURCE_DIR}/src")
-        message(STATUS "Raylib include dirs: ${raylib_INCLUDE_DIRS}")
-    endif()
+    add_subdirectory(include/raylib)
+    message(STATUS "✓ Raylib loaded from submodule")
+else()
+    message(FATAL_ERROR "Raylib submodule not found. Run: git submodule update --init --recursive")
 endif()
-
-# Ensure raylib is available even if found via find_package
-if(raylib_FOUND OR raylib_POPULATED)
-    message(STATUS "Raylib is available")
-    if(raylib_POPULATED)
-        # For FetchContent, ensure include directories are set
-        set_target_properties(raylib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${raylib_SOURCE_DIR}/src")
-    endif()
-endif()
-
-# Raylib uses miniaudio for audio backend, winmm is not needed
 
 # nlohmann_json
-find_package(nlohmann_json CONFIG QUIET)
-
-if(NOT nlohmann_json_FOUND)
-    message(STATUS "nlohmann_json not found, fetching...")
-    FetchContent_Declare(
-        nlohmann_json
-        URL https://github.com/nlohmann/json/archive/refs/tags/v${NLOHMANN_JSON_VERSION}.zip
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    )
-    FetchContent_MakeAvailable(nlohmann_json)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/json/CMakeLists.txt")
+    message(STATUS "Loading nlohmann_json from submodule...")
+    add_subdirectory(include/json)
+    message(STATUS "✓ nlohmann_json loaded from submodule")
+else()
+    message(FATAL_ERROR "nlohmann_json submodule not found. Run: git submodule update --init --recursive")
 endif()
 
 # GoogleTest (for unit tests)
 if(BUILD_TESTS)
-    find_package(GTest CONFIG QUIET)
-
-    if(NOT GTest_FOUND)
-        message(STATUS "GoogleTest not found, fetching...")
-        FetchContent_Declare(
-            googletest
-            URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-        )
-        # Use static CRT to match main project
+    if(EXISTS "${CMAKE_SOURCE_DIR}/include/googletest/CMakeLists.txt")
+        message(STATUS "Loading GoogleTest from submodule...")
         set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)
         
         if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -232,24 +185,22 @@ if(BUILD_TESTS)
         else()
             add_compile_definitions(NDEBUG)
         endif()
-        FetchContent_MakeAvailable(googletest)
+        
+        add_subdirectory(include/googletest)
+        message(STATUS "✓ GoogleTest loaded from submodule")
+    else()
+        message(WARNING "GoogleTest submodule not found. Tests will be disabled.")
     endif()
 endif()
 
-
-# EnTT (Entity Component System)
-set(ENTT_VERSION "3.13.2")
-find_package(EnTT CONFIG QUIET)
-
-if(NOT EnTT_FOUND)
-    message(STATUS "EnTT ${ENTT_VERSION} not found, fetching...")
-    FetchContent_Declare(
-        entt
-        GIT_REPOSITORY https://github.com/skypjack/entt.git
-        GIT_TAG v${ENTT_VERSION}
-    )
-    FetchContent_MakeAvailable(entt)
-    message(STATUS "EnTT fetched successfully")
+# EnTT (header-only library)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/entt/src")
+    message(STATUS "Loading EnTT from submodule...")
+    add_library(EnTT INTERFACE)
+    target_include_directories(EnTT INTERFACE ${CMAKE_SOURCE_DIR}/include/entt/src)
+    message(STATUS "✓ EnTT loaded from submodule (header-only)")
+else()
+    message(FATAL_ERROR "EnTT submodule not found. Run: git submodule update --init --recursive")
 endif()
 
 add_library(imguilib STATIC
