@@ -73,7 +73,9 @@ struct VideoSettings
     int fpsIndex = 1;
 };
 
-class Menu : public IMenu // ✅ Single inheritance only
+class Engine; // Forward declaration
+
+class Menu : public IMenu
 {
 public:
     Menu();
@@ -124,10 +126,7 @@ public:
     [[nodiscard]] ConsoleManager *GetConsoleManager() const;
 
     // Settings manager access
-    [[nodiscard]] SettingsManager *GetSettingsManager() const
-    {
-        return m_settingsManager.get();
-    }
+    [[nodiscard]] SettingsManager *GetSettingsManager() const;
 
     // Dependency Injection for camera
     void SetCameraController(ICameraSensitivityController *controller);
@@ -137,22 +136,10 @@ public:
     void HandlePendingActions();
 
     // IMenu Interface Implementation
-    bool IsOpen() const override
-    {
-        return m_state != MenuState::GameMode;
-    }
-    void Show() override
-    {
-        m_state = MenuState::Main;
-    }
-    void Hide() override
-    {
-        m_state = MenuState::GameMode;
-    }
-    bool ShouldStartGame() const override
-    {
-        return m_action == MenuAction::StartGame || m_action == MenuAction::ResumeGame;
-    }
+    bool IsOpen() const override;
+    void Show() override;
+    void Hide() override;
+    bool ShouldStartGame() const override;
 
     // IMenu interface implementations
     void Update() override;

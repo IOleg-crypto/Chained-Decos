@@ -300,6 +300,16 @@ Vector3 Player::GetPlayerSize() const
     return m_boundingBoxSize;
 }
 
+Vector3 Player::GetPosition() const
+{
+    return GetPlayerPosition();
+}
+
+void Player::SetPosition(const Vector3 &pos)
+{
+    SetPlayerPosition(pos);
+}
+
 // Apply jump impulse based on mass and direction
 void Player::ApplyJumpImpulse(float impulse)
 {

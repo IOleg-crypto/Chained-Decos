@@ -49,7 +49,6 @@ add_subdirectory(Player)
 
 target_link_libraries(ChainedDecosGame
     PUBLIC
-        ChainedDecosEngine
         player
         menu
         raylib

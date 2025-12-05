@@ -9,9 +9,12 @@ add_subdirectory(ecs)
 
 # Core library - базові системи
 add_library(core STATIC
-    # Math
-    math/Matrix/Matrix4x4.cpp
-    math/Vector/Vector3.cpp
+    # Engine
+    engine/Engine.cpp
+    engine/Engine.h
+    engine/EngineApplication.cpp
+    engine/EngineApplication.h
+    engine/IApplication.h
 )
 
 target_include_directories(core
@@ -30,4 +33,9 @@ target_link_libraries(core
         kernel
         module
         ecs
+        audio
+        input
+        render
+        collision
+        model
 )

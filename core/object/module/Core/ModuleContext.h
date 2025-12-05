@@ -4,11 +4,9 @@
 #include "core/object/event/Core/EventDispatcher.h"
 #include "core/object/kernel/Core/Kernel.h"
 #include <memory>
+#include <stdexcept>
 #include <typeindex>
 
-// Forward declarations
-class Kernel;
-class EventDispatcher;
 
 // ModuleContext - Provides controlled access to engine services for modules
 // This decouples modules from direct Kernel dependency and provides event system access
