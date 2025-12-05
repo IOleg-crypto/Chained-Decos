@@ -45,7 +45,13 @@ CMakeFiles/
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
-_deps\r\n.deps
+_deps
+.deps
+
+# FetchContent artifacts (old)
+include/*-src/
+include/*-subbuild/
+include/*-build/
 
 # Build directories
 build/
