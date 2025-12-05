@@ -21,6 +21,7 @@ target_include_directories(core
     PUBLIC
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/core
+        ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
 )
 
 target_link_libraries(core
