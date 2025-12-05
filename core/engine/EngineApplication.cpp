@@ -72,7 +72,7 @@ void EngineApplication::Initialize()
     // Step 3: Initialize all modules
     if (auto moduleManager = m_engine->GetModuleManager())
     {
-        moduleManager->InitializeAllModules();
+        moduleManager->InitializeAllModules(m_engine.get());
     }
 
     // Step 4: Start

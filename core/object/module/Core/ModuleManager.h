@@ -15,7 +15,7 @@ public:
 
     void RegisterModule(std::unique_ptr<IEngineModule> module);
     bool LoadModule(const std::string &moduleName);
-    bool InitializeAllModules();
+    bool InitializeAllModules(class Engine *engine);
     void ShutdownAllModules();
     void UpdateAllModules(float deltaTime);
     void RenderAllModules();
