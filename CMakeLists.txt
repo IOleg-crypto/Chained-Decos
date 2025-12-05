@@ -289,7 +289,6 @@ endif()
 add_subdirectory(core)
 add_subdirectory(components)
 add_subdirectory(scene)
-add_subdirectory(platform)
 add_subdirectory(project/chaineddecos)
 
 

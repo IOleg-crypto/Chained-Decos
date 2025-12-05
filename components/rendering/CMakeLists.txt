@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.20)
 add_library(render STATIC
     Core/RenderManager.cpp
     Shader/ShaderManager.cpp
-    Utils/RenderUtilities.cpp
     Utils/RenderUtils.cpp
     Helpers/ImGuiHelper.cpp
 )
