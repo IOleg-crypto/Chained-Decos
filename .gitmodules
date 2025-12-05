@@ -1,29 +1,46 @@
-[submodule "include/rlImGui"]
-	path = include/rlImGui
-	url = https://github.com/raylib-extras/rlImGui.git
-	branch = main
+# ==========================================
+# Git Submodules Configuration
+# ==========================================
 
+# --- UI Libraries ---
 [submodule "include/imgui"]
 	path = include/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = master
 
+[submodule "include/rlImGui"]
+	path = include/rlImGui
+	url = https://github.com/raylib-extras/rlImGui.git
+	branch = main
+
 [submodule "include/raygui"]
-    path = include/raygui
-    url = https://github.com/raysan5/raygui.git
-    branch = master
+	path = include/raygui
+	url = https://github.com/raysan5/raygui.git
+	branch = master
 
+# --- File Dialogs ---
 [submodule "include/nfd"]
-    path = include/nfd
-    url = https://github.com/btzy/nativefiledialog-extended.git
-    branch = master
+	path = include/nfd
+	url = https://github.com/btzy/nativefiledialog-extended.git
+	branch = master
 
-[submodule ".deps/nfd-src"]
-    path = .deps/nfd-src
-    url = https://github.com/btzy/nativefiledialog-extended.git
+# --- Core Dependencies (fetched via FetchContent if not present) ---
+[submodule ".deps/raylib-src"]
+	path = .deps/raylib-src
+	url = https://github.com/raysan5/raylib.git
+	branch = master
 
+[submodule ".deps/nlohmann_json-src"]
+	path = .deps/nlohmann_json-src
+	url = https://github.com/nlohmann/json.git
+	branch = develop
 
+[submodule ".deps/entt-src"]
+	path = .deps/entt-src
+	url = https://github.com/skypjack/entt.git
+	branch = master
 
-
-
-
+[submodule ".deps/googletest-src"]
+	path = .deps/googletest-src
+	url = https://github.com/google/googletest.git
+	branch = main

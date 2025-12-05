@@ -5,265 +5,47 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "src/**/*.cpp"
-      - "src/**/*.h"
-      - "include/**/*.h"
+      - "**/*.cpp"
+      - "**/*.h"
       - "CMakeLists.txt"
-      - ".github/workflows/build.yml"
+      - ".github/workflows/*.yml"
 
 env:
   CI: true
 
 jobs:
-  build:
-    name: Build (${{ matrix.os }}, ${{ matrix.compiler }}, ${{ matrix.build_type }})
-    runs-on: ${{ matrix.os }}
+  # ==========================================
+  # LINUX BUILD
+  # ==========================================
+  linux:
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      build_type: Release
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Ubuntu with GCC (Debug)
-          - os: ubuntu-22.04
-            compiler: gcc
-            version: 11
-            build_type: Debug
-            generator: "Unix Makefiles"
+  linux-debug:
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      build_type: Debug
 
-          # Ubuntu with GCC (Release)
-          - os: ubuntu-22.04
-            compiler: gcc
-            version: 11
-            build_type: Release
-            generator: "Unix Makefiles"
+  # ==========================================
+  # WINDOWS BUILD
+  # ==========================================
+  windows:
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      build_type: Release
 
-          # Ubuntu with Clang (Release)
-          - os: ubuntu-22.04
-            compiler: clang
-            version: 14
-            build_type: Release
-            generator: "Unix Makefiles"
+  windows-debug:
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      build_type: Debug
 
-          # Windows with MSVC (Debug)
-          - os: windows-2022
-            compiler: msvc
-            version: 2022
-            build_type: Debug
-            generator: "Ninja"
-
-          # Windows with MSVC (Release)
-          - os: windows-2022
-            compiler: msvc
-            version: 2022
-            build_type: Release
-            generator: "Ninja"
-
+  # ==========================================
+  # TESTS (after builds)
+  # ==========================================
+  tests:
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup ccache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ccache
-            ${{ runner.os == 'Windows' && 'C:/ccache' || '~/.ccache' }}
-          key: build-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ github.sha }}
-          restore-keys: |
-            build-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}-
-            build-${{ matrix.os }}-${{ matrix.compiler }}-
-            build-${{ matrix.os }}-
-
-      - name: Setup dependency cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            .deps
-            ~/.deps
-          key: deps-${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: |
-            deps-${{ matrix.os }}-${{ matrix.compiler }}-
-            deps-${{ matrix.os }}-
-
-      - name: Set up build environment
-        shell: bash
-        id: build-env
-        run: |
-          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-          echo "install-prefix=${{ github.workspace }}/install" >> "$GITHUB_OUTPUT"
-
-      # Linux setup
-      - name: Install dependencies (Ubuntu)
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build \
-            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-            libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-            pkg-config ccache libgtk-3-dev libdrm-dev libgbm-dev \
-            libxext-dev libxfixes-dev libxrender-dev libxcomposite-dev \
-            libxdamage-dev libxtst-dev libxss-dev libgconf-2-4
-
-      - name: Set up GCC (Ubuntu)
-        if: matrix.compiler == 'gcc' && startsWith(matrix.os, 'ubuntu')
-        run: |
-          echo "CC=gcc-${{ matrix.version }}" >> "$GITHUB_ENV"
-          echo "CXX=g++-${{ matrix.version }}" >> "$GITHUB_ENV"
-
-      - name: Set up Clang (Ubuntu)
-        if: matrix.compiler == 'clang' && startsWith(matrix.os, 'ubuntu')
-        run: |
-          echo "CC=clang-${{ matrix.version }}" >> "$GITHUB_ENV"
-          echo "CXX=clang++-${{ matrix.version }}" >> "$GITHUB_ENV"
-
-      # Windows setup
-      - name: Install dependencies (Windows)
-        if: matrix.os == 'windows-2022'
-        run: |
-          choco install cmake ninja ccache --no-progress
-
-      - name: Clear CMake cache
-        shell: bash
-        run: |
-          echo "🧹 Starting comprehensive cache cleanup..."
-
-          # Clear build directory completely
-          rm -rf "${{ steps.build-env.outputs.build-output-dir }}"
-          rm -rf ".deps"
-          rm -rf "${{ github.workspace }}/.deps"
-          rm -rf "${{ github.workspace }}/build"
-
-          # Clear any leftover CMake cache files in workspace
-          echo "📁 Searching for CMake cache files..."
-          find "${{ github.workspace }}" -name "CMakeCache.txt" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "CMakeFiles" -type d -exec rm -rf {} + -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "cmake_install.cmake" -delete -print 2>/dev/null || true
-          find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + -print 2>/dev/null || true
-
-          # Windows-specific cleanup (Visual Studio files)
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            echo "🪟 Performing Windows-specific cleanup..."
-            find "${{ github.workspace }}" -name "*.vcxproj" -delete -print 2>/dev/null || true
-            find "${{ github.workspace }}" -name "*.sln" -delete -print 2>/dev/null || true
-            find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + -print 2>/dev/null || true
-            find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + -print 2>/dev/null || true
-            find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + -print 2>/dev/null || true
-          fi
-
-          echo "✅ CMake cache cleared completely"
-
-      - name: Create build directory
-        run: |
-          mkdir -p "${{ steps.build-env.outputs.build-output-dir }}"
-          mkdir -p "${{ steps.build-env.outputs.install-prefix }}"
-
-      - name: Configure CMake
-        shell: bash
-        run: |
-          echo "🔧 Configuring CMake for ${{ matrix.os }} with ${{ matrix.compiler }} (${{ matrix.build_type }})"
-
-          # Determine optimization level based on build type
-          if [[ "${{ matrix.build_type }}" == "Debug" ]]; then
-            OPTIMIZATIONS=OFF
-            DEBUG_INFO=ON
-            WARNINGS=OFF
-          else
-            OPTIMIZATIONS=ON
-            DEBUG_INFO=OFF
-            WARNINGS=OFF
-          fi
-
-          cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
-            -G "${{ matrix.generator }}" \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.install-prefix }}" \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DBUILD_TESTS=ON \
-            -DBUILD_MAP_EDITOR=ON \
-            -DDISABLE_ALL_WARNINGS=ON \
-            -DENABLE_OPTIMIZATIONS=$OPTIMIZATIONS \
-            -DENABLE_DEBUG_INFO=$DEBUG_INFO \
-            -DENABLE_UNITY_BUILD=OFF \
-            -DENABLE_DEV_TOOLS=OFF \
-            -DFETCHCONTENT_QUIET=OFF \
-            -S "${{ github.workspace }}"
-
-      - name: Build project
-        shell: bash
-        run: |
-          # Determine parallel jobs based on platform
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            PARALLEL_JOBS=4
-          else
-            PARALLEL_JOBS=$(nproc 2>/dev/null || echo 4)
-          fi
-
-          echo "🏗️ Building all targets with $PARALLEL_JOBS parallel jobs..."
-
-          cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
-            --config ${{ matrix.build_type }} \
-            --target ChainedDecos ChainedDecosMapEditor ChainedDecosUnitTests ChainedDecosIntegrationTests \
-            --parallel "$PARALLEL_JOBS" \
-            --verbose
-
-      - name: Install project
-        shell: bash
-        run: |
-          cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
-            --config ${{ matrix.build_type }} \
-            --component Runtime
-
-      - name: Run tests
-        shell: bash
-        run: |
-          cd "${{ steps.build-env.outputs.build-output-dir }}"
-
-          echo "🧪 Running test suite..."
-
-          # Run unit tests
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            if [[ -f "bin/tests/ChainedDecosUnitTests.exe" ]]; then
-              echo "=== UNIT TESTS ==="
-              bin/tests/ChainedDecosUnitTests.exe || echo "⚠️ Unit tests failed"
-            fi
-
-            if [[ -f "bin/tests/ChainedDecosIntegrationTests.exe" ]]; then
-              echo "=== INTEGRATION TESTS ==="
-              bin/tests/ChainedDecosIntegrationTests.exe || echo "⚠️ Integration tests failed"
-            fi
-          else
-            if [[ -f "bin/tests/ChainedDecosUnitTests" ]]; then
-              echo "=== UNIT TESTS ==="
-              bin/tests/ChainedDecosUnitTests || echo "⚠️ Unit tests failed"
-            fi
-
-            if [[ -f "bin/tests/ChainedDecosIntegrationTests" ]]; then
-              echo "=== INTEGRATION TESTS ==="
-              bin/tests/ChainedDecosIntegrationTests || echo "⚠️ Integration tests failed"
-            fi
-          fi
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: build-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
-          path: |
-            ${{ steps.build-env.outputs.install-prefix }}/bin/
-            ${{ steps.build-env.outputs.install-prefix }}/lib/
-            ${{ steps.build-env.outputs.install-prefix }}/share/
-          retention-days: 7
-
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-artifacts-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
-          path: |
-            ${{ steps.build-env.outputs.build-output-dir }}/bin/tests/
-            ${{ steps.build-env.outputs.build-output-dir }}/Testing/
-          retention-days: 3
+      - name: All builds completed
+        run: echo "✅ All platform builds successful!"

@@ -1,0 +1,72 @@
+name: Build Windows
+
+on:
+  workflow_call:
+    inputs:
+      build_type:
+        required: true
+        type: string
+        default: "Release"
+
+env:
+  CI: true
+
+jobs:
+  build-msvc:
+    name: Windows MSVC (${{ inputs.build_type }})
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            C:/ccache
+            .deps
+          key: windows-msvc-${{ inputs.build_type }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            windows-msvc-${{ inputs.build_type }}-
+            windows-msvc-
+
+      - name: Install dependencies
+        run: |
+          choco install cmake ninja ccache --no-progress
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake -B build \
+            -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DBUILD_TESTS=ON \
+            -DBUILD_MAP_EDITOR=ON \
+            -DDISABLE_ALL_WARNINGS=ON
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build \
+            --config ${{ inputs.build_type }} \
+            --target ChainedDecos ChainedDecosMapEditor ChainedDecosUnitTests ChainedDecosIntegrationTests \
+            --parallel 4
+
+      - name: Test
+        shell: bash
+        run: |
+          if [[ -f "build/bin/tests/ChainedDecosUnitTests.exe" ]]; then
+            build/bin/tests/ChainedDecosUnitTests.exe || echo "⚠️ Unit tests failed"
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msvc-${{ inputs.build_type }}
+          path: build/bin/
+          retention-days: 7

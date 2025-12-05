@@ -124,3 +124,7 @@ IMenu *Engine::GetMenu() const
     auto service = GetService<Menu>();
     return service.get();
 }
+ModuleManager *Engine::GetModuleManager() const
+{
+    return m_moduleManager.get();
+}

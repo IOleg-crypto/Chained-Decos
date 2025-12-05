@@ -35,10 +35,7 @@ public:
     void Shutdown();
 
     // Accessors for explicit core systems
-    ModuleManager *GetModuleManager() const
-    {
-        return m_moduleManager.get();
-    }
+    ModuleManager *GetModuleManager() const;
 
     // Static Singleton Accessors
     RenderManager *GetRenderManager() const;
