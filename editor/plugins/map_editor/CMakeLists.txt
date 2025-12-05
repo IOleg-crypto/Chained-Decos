@@ -32,7 +32,7 @@ target_include_directories(map_editor PUBLIC
 
 target_link_libraries(map_editor PUBLIC 
     raylib
-    ChainedDecosEngine
+    core
     nfd
     nlohmann_json::nlohmann_json
     cameracontroller
