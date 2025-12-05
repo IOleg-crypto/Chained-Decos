@@ -18,6 +18,7 @@
 #include "components/input/Core/InputManager.h"
 #include "components/physics/collision/Interfaces/ICollisionManager.h"
 #include "components/rendering/Core/RenderManager.h"
+#include "core/interfaces/IEngine.h"
 #include "scene/main/Interfaces/IWorldManager.h"
 #include "scene/resources/model/Interfaces/IModelLoader.h"
 

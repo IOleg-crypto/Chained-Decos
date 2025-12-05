@@ -2,12 +2,13 @@
 #include "MenuConstants.h"
 #include "Settings/SettingsManager.h"
 
+#include "components/physics/collision/System/CollisionSystem.h"
 #include "core/engine/Engine.h"
 #include "rlImGui.h"
-#include "components/physics/collision/System/CollisionSystem.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <components/physics/collision/Structures/CollisionStructures.h>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -15,11 +16,11 @@
 #include <iostream>
 #include <memory>
 #include <raylib.h>
-#include <components/physics/collision/Structures/CollisionStructures.h>
 #include <set>
 #include <sstream>
 #include <string>
 #include <vector>
+
 
 Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
@@ -239,7 +240,6 @@ void Menu::SetupStyle()
     colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
     colors[ImGuiCol_HeaderActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.0f);
 }
-
 
 void Menu::RenderMenuState()
 {
@@ -1605,4 +1605,24 @@ void Menu::ApplyCameraSensitivity(float sensitivity)
     TraceLog(LOG_INFO,
              "Menu::ApplyCameraSensitivity() - Applied sensitivity %.2f (menu) -> %.2f (camera)",
              sensitivity, cameraSensitivity);
+}
+[[nodiscard]] SettingsManager *Menu::GetSettingsManager() const
+{
+    return m_settingsManager.get();
+}
+bool Menu::IsOpen() const
+{
+    return m_state != MenuState::GameMode;
+}
+void Menu::Show()
+{
+    m_state = MenuState::Main;
+}
+void Menu::Hide()
+{
+    m_state = MenuState::GameMode;
+}
+bool Menu::ShouldStartGame() const
+{
+    return m_action == MenuAction::StartGame || m_action == MenuAction::ResumeGame;
 }

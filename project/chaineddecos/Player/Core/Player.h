@@ -84,14 +84,8 @@ public:
     IGameRenderable *GetRenderable() const;
 
     // IPlayer Interface Implementation
-    Vector3 GetPosition() const override
-    {
-        return GetPlayerPosition();
-    }
-    void SetPosition(const Vector3 &pos) override
-    {
-        SetPlayerPosition(pos);
-    }
+    Vector3 GetPosition() const override;
+    void SetPosition(const Vector3 &pos) override;
     void Update(float deltaTime) override;
     Camera3D &GetCamera() override;
     void SetNoclip(bool enabled) override;
