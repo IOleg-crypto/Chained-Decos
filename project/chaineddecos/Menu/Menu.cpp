@@ -86,7 +86,7 @@ Menu::Menu()
 void Menu::Initialize(Engine *engine)
 {
     m_engine = engine;
-    m_mapSelector = std::make_unique<MapSelector>();
+
     HandleKeyboardNavigation();
 
     // Sync map selection
