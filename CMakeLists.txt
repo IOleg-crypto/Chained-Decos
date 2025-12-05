@@ -276,21 +276,15 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos")
 endif()
 
-
-FetchContent_Declare(
-        nfd
-        GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
-        GIT_TAG        v1.1.1
-)
-
-set(NFD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(nfd)
-
-# Copy NFD headers to include directory
-file(COPY ${nfd_SOURCE_DIR}/src/include/ DESTINATION ${CMAKE_SOURCE_DIR}/include/nfd)
-
-# Set up nfd include directories
-target_include_directories(nfd INTERFACE ${CMAKE_SOURCE_DIR}/include/nfd)
+# Native File Dialog (nfd)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/nfd/CMakeLists.txt")
+    message(STATUS "Loading nfd from submodule...")
+    set(NFD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(include/nfd)
+    message(STATUS "✓ nfd loaded from submodule")
+else()
+    message(FATAL_ERROR "nfd submodule not found. Run: git submodule update --init --recursive")
+endif()
 
 # Installation configuration
 install(TARGETS ChainedDecos
