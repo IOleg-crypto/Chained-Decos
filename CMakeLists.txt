@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+﻿cmake_minimum_required(VERSION 3.25)
 project(ChainedDecos VERSION 1.0.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -30,7 +30,7 @@ option(ENABLE_SANITIZERS "Enable sanitizers for debugging" OFF)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 if(FAST_CONFIG)
-    set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/.deps" CACHE PATH "Deps cache")
+    set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/include" CACHE PATH "Deps cache")
     set(FETCHCONTENT_QUIET ON)
     set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "" FORCE)
 endif()
