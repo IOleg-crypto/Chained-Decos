@@ -1,5 +1,5 @@
 #ifndef IENGINEMODULE_H
-#pragma once
+#define IENGINEMODULE_H
 
 #include "IModule.h"
 #include <string>
