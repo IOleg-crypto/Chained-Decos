@@ -1,8 +1,0 @@
-prefix=D:/gitnext/Chained Decos/build/install
-includedir=${prefix}/include
-
-Name: EnTT
-Description: Gaming meets modern C++
-Url: https://github.com/skypjack/entt
-Version: 3.13.2
-Cflags: -I${includedir}
