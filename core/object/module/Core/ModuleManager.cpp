@@ -6,7 +6,6 @@
 #include <raylib.h>
 #include <set>
 
-
 ModuleManager::ModuleManager() : m_initialized(false)
 {
 }
@@ -42,11 +41,17 @@ bool ModuleManager::LoadModule(const std::string &moduleName)
     return IsModuleLoaded(moduleName);
 }
 
-bool ModuleManager::InitializeAllModules()
+bool ModuleManager::InitializeAllModules(Engine *engine)
 {
     if (m_initialized)
     {
         return true;
+    }
+
+    if (!engine)
+    {
+        TraceLog(LOG_ERROR, "[ModuleManager] Cannot initialize modules with null engine");
+        return false;
     }
 
     auto sortedModules = SortModulesByDependencies();
@@ -67,7 +72,7 @@ bool ModuleManager::InitializeAllModules()
         }
 
         // First initialize the module (creates components)
-        if (!module->Initialize(&Engine::Instance()))
+        if (!module->Initialize(engine))
         {
             TraceLog(LOG_WARNING, "[ModuleManager] Failed to initialize module: %s",
                      moduleName.c_str());
@@ -75,7 +80,7 @@ bool ModuleManager::InitializeAllModules()
         }
 
         // Register services after initialization
-        module->RegisterServices(&Engine::Instance());
+        module->RegisterServices(engine);
 
         module->SetInitialized(true);
     }
