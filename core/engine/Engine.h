@@ -5,7 +5,6 @@
 #include "core/interfaces/ILevelManager.h"
 #include "core/interfaces/IMenu.h"
 #include "core/interfaces/IPlayer.h"
-#include "core/interfaces/IServiceProvider.h" // Service Provider interface
 #include <memory>
 
 #include <stdexcept>
@@ -13,7 +12,7 @@
 #include <typeindex>
 #include <unordered_map>
 
-// ✅ Core service includes (lightweight interfaces where possible)
+// Core service includes
 #include "components/audio/Core/AudioManager.h"
 #include "components/input/Core/InputManager.h"
 #include "components/physics/collision/Interfaces/ICollisionManager.h"
@@ -22,8 +21,8 @@
 #include "scene/main/Interfaces/IWorldManager.h"
 #include "scene/resources/model/Interfaces/IModelLoader.h"
 
-// Main Engine class - implements IServiceProvider and IEngine
-class Engine : public IServiceProvider, public IEngine
+// Main Engine class - implements IEngine only (single inheritance)
+class Engine : public IEngine
 {
 public:
     static Engine &Instance();
@@ -45,18 +44,18 @@ public:
     RenderManager *GetRenderManager() const;
     InputManager *GetInputManager() const;
 
-    // Direct access to game objects (replaces service wrappers)
-    IPlayer *GetPlayer() const;
-    ILevelManager *GetLevelManager() const;
-    IMenu *GetMenu() const;
+    // IEngine implementation - game objects access
+    IPlayer *GetPlayer() const override;
+    ILevelManager *GetLevelManager() const override;
+    IMenu *GetMenu() const override;
 
-    // IServiceProvider implementation (✅ ZERO forward declarations!)
-    InputManager *GetInputManager() override;
-    RenderManager *GetRenderManager() override;
-    AudioManager *GetAudioManager() override;
-    IModelLoader *GetModelLoader() override;
-    ICollisionManager *GetCollisionManager() override;
-    IWorldManager *GetWorldManager() override;
+    // Service accessors (moved from IServiceProvider - now non-virtual)
+    InputManager *GetInputManager();
+    RenderManager *GetRenderManager();
+    AudioManager *GetAudioManager();
+    IModelLoader *GetModelLoader();
+    ICollisionManager *GetCollisionManager();
+    IWorldManager *GetWorldManager();
 
     // Service Locator Pattern (Type-safe)
     template <typename T> void RegisterService(std::shared_ptr<T> service)
@@ -96,11 +95,11 @@ public:
     bool IsCollisionDebugVisible() const;
 
     // Application control
-    void RequestExit()
+    void RequestExit() override
     {
         m_shouldExit = true;
     }
-    bool ShouldExit() const
+    bool ShouldExit() const override
     {
         return m_shouldExit;
     }
