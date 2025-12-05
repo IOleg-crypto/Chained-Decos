@@ -10,7 +10,6 @@
 #include "object/module/Interfaces/IEngineModule.h"
 #include "object/module/Interfaces/IModule.h"
 
-
 // Core objects (in dependency order)
 #include "object/kernel/Core/Kernel.h"
 #include "object/module/Core/ModuleContext.h"
@@ -20,8 +19,5 @@
 #include "object/event/Core/Event.h"
 #include "object/event/Core/EventDispatcher.h"
 #include "object/event/Core/EventSystem.h"
-
-// Engine (currently in platform/windows, will be moved)
-#include "platform/windows/Core/Engine.h"
 
 #endif // CORE_H
