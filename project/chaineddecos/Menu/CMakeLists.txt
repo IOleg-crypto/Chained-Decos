@@ -17,6 +17,7 @@ target_include_directories(menu PUBLIC
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/rlImGui
     ${CMAKE_SOURCE_DIR}/include/imgui
+    ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
 )
 
 # Add PROJECT_ROOT_DIR definition for consistent path handling
