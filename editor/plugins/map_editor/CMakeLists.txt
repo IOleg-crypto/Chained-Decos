@@ -27,6 +27,7 @@ target_include_directories(map_editor PUBLIC
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/imgui
+    ${CMAKE_SOURCE_DIR}/include/nfd/src/include
 )
 
 target_link_libraries(map_editor PUBLIC 

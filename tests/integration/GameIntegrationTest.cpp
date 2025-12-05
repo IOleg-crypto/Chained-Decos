@@ -1,13 +1,14 @@
 #include <gtest/gtest.h>
 #include <memory>
 
+#include "components/physics/collision/Core/CollisionManager.h"
 #include "core/engine/Engine.h"
 #include "project/chaineddecos/GameApplication.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
-#include "components/physics/collision/Core/CollisionManager.h"
+
 
 class GameIntegrationTest : public ::testing::Test
 {
@@ -15,7 +16,7 @@ protected:
     void SetUp() override
     {
         // Create dependencies
-        player = std::make_shared<Player>();
+        player = std::make_shared<Player>(&AudioManager::Get());
         collisionManager = std::make_shared<CollisionManager>();
         models = std::make_shared<ModelLoader>();
         world = std::make_shared<WorldManager>();

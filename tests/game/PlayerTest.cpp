@@ -1,15 +1,17 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "project/chaineddecos/Player/Core/Player.h"
+#include "components/audio/Core/AudioManager.h"
 #include "components/physics/collision/Core/CollisionManager.h"
+#include "project/chaineddecos/Player/Core/Player.h"
+
 
 class PlayerTest : public ::testing::Test
 {
 protected:
     void SetUp() override
     {
-        player = std::make_unique<Player>();
+        player = std::make_unique<Player>(&AudioManager::Get());
         collisionManager = std::make_unique<CollisionManager>();
     }
 
