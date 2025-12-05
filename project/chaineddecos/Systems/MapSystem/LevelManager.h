@@ -3,23 +3,21 @@
 
 #include "../../../core/engine/EngineApplication.h"
 
+#include "../../../components/physics/collision/Core/CollisionManager.h"
+#include "../../../components/rendering/Core/RenderManager.h"
 #include "../../../core/object/module/Interfaces/IEngineModule.h"
 #include "../../../scene/main/Core/World.h"
 #include "../../../scene/resources/map/Core/MapLoader.h"
 #include "../../../scene/resources/model/Core/Model.h"
-#include "../../../components/physics/collision/Core/CollisionManager.h"
-#include "../../../components/rendering/Core/RenderManager.h"
+#include "../../Managers/MapCollisionInitializer.h"
 #include "core/interfaces/ILevelManager.h"
+#include "core/interfaces/IMenu.h"
+#include "core/interfaces/IPlayer.h"
 #include <memory>
 #include <raylib.h>
 #include <string>
 #include <vector>
 
-
-// Forward declarations to avoid circular dependencies
-class Player;
-class Menu;
-class MapCollisionInitializer;
 
 // Configuration for MapSystem
 struct MapSystemConfig
@@ -107,7 +105,7 @@ public: // Accessors & Setters
         return m_collisionInitializer.get();
     }
 
-    void SetPlayer(Player *player);
+    void SetPlayer(IPlayer *player);
 
 private: // Configuration & State
     MapSystemConfig m_config;
@@ -128,8 +126,8 @@ private: // Dependencies
     CollisionManager *m_collisionManager;
     ModelLoader *m_modelLoader;
     RenderManager *m_renderManager;
-    Player *m_player;
-    Menu *m_menu;
+    IPlayer *m_player;
+    IMenu *m_menu;
     Engine *m_engine;
 };
 
