@@ -12,19 +12,14 @@
 #include <scene/main/Core/World.h>
 #include <scene/resources/model/Core/Model.h>
 
-
-// Include component interfaces
 #include "../Collision/PlayerCollision.h"
 #include "../Components/PlayerModel.h"
+#include "../Components/PlayerRenderable.h"
 #include "../Interfaces/IPlayerInput.h"
 
 #include "../Interfaces/IPlayerMovement.h"
-#include "core/interfaces/IPlayer.h"
 #include "components/rendering/Interfaces/IGameRenderable.h"
-
-
-// Forward declaration to break circular dependency
-class PlayerRenderable;
+#include "core/interfaces/IPlayer.h"
 
 // Player: main player class that uses component classes
 class Player : public IPlayer

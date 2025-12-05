@@ -21,9 +21,8 @@
 #include "scene/main/Interfaces/IWorldManager.h"
 #include "scene/resources/model/Interfaces/IModelLoader.h"
 
-
-// Main Engine class - implements IServiceProvider
-class Engine : public IServiceProvider
+// Main Engine class - implements IServiceProvider and IEngine
+class Engine : public IServiceProvider, public IEngine
 {
 public:
     static Engine &Instance();
