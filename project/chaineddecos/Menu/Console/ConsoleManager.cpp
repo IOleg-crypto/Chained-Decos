@@ -32,7 +32,7 @@ IPlayer *ConsoleManager::GetPlayer() const
     return player;
 }
 
-Engine *ConsoleManager::GetEngine() const
+IEngine *ConsoleManager::GetEngine() const
 {
     return &Engine::Instance();
 }

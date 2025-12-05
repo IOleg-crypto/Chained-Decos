@@ -4,11 +4,11 @@
 #include "../Components/PlayerModel.h"
 #include "../Components/PlayerMovement.h"
 #include "../Components/PlayerRenderable.h"
+#include <components/rendering/Interfaces/IGameRenderable.h>
 #include <memory>
 #include <raylib.h>
 #include <scene/3d/camera/Core/CameraController.h>
 #include <scene/main/Core/World.h>
-#include <components/rendering/Interfaces/IGameRenderable.h>
 
 // Define player constants
 Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 0.0f, 0.0f}; // Safe spawn position above ground
@@ -26,7 +26,8 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
     m_input = std::make_unique<PlayerInput>(this);
     m_model = std::make_unique<PlayerModel>();
     m_collision = std::make_unique<PlayerCollision>(this);
-    m_renderable = std::make_unique<PlayerRenderable>(this);
+    m_renderable = std::make_unique<PlayerRenderable>();
+    m_renderable->SetPlayer(this);
 
     // Initialize physics - start ungrounded so gravity can act
     m_movement->GetPhysics().SetGroundLevel(false);
@@ -381,12 +382,13 @@ void Player::Update(CollisionManager &collisionManager)
 
 void Player::Update(float deltaTime)
 {
-    if (m_collisionManager) {
+    if (m_collisionManager)
+    {
         Update(*m_collisionManager);
     }
 }
 
-Camera3D& Player::GetCamera()
+Camera3D &Player::GetCamera()
 {
     return m_cameraController->GetCamera();
 }

@@ -93,7 +93,7 @@ void LevelManager::Update(float deltaTime)
         auto player = m_engine->GetPlayer();
         if (player)
         {
-            m_player = static_cast<Player*>(player);
+            m_player = static_cast<Player *>(player);
             m_collisionInitializer->SetPlayer(m_player);
             TraceLog(LOG_INFO, "[LevelManager] Player reference updated in collision initializer");
         }
@@ -166,12 +166,12 @@ bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &
     return false;
 }
 
-void LevelManager::SetPlayer(Player *player)
+void LevelManager::SetPlayer(IPlayer *player)
 {
-    m_player = static_cast<Player*>(player);
+    m_player = player;
     if (m_collisionInitializer)
     {
-        m_collisionInitializer->SetPlayer(player);
+        m_collisionInitializer->SetPlayer(dynamic_cast<Player *>(player));
     }
     TraceLog(LOG_INFO, "LevelManager::SetPlayer() - Player reference updated");
 }

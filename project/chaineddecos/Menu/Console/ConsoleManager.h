@@ -2,6 +2,8 @@
 #define CONSOLE_MANAGER_H
 
 #include "MenuConstants.h"
+#include "core/interfaces/IEngine.h"
+#include "core/interfaces/IPlayer.h"
 #include <functional>
 #include <imgui.h>
 #include <raylib.h>
@@ -9,9 +11,6 @@
 #include <unordered_map>
 #include <vector>
 
-// Forward declarations
-#include "core/interfaces/IPlayer.h"
-class Engine;
 
 // Command callback function type
 using CommandCallback =
@@ -103,7 +102,7 @@ public:
 
     // Helpers to get services through Dependency Injection
     IPlayer *GetPlayer() const;
-    Engine *GetEngine() const;
+    IEngine *GetEngine() const;
 
 private:
     // Initialize built-in commands
