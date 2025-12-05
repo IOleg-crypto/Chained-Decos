@@ -14,11 +14,9 @@
 Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 0.0f, 0.0f}; // Safe spawn position above ground
 const float Player::MODEL_Y_OFFSET = -1.f;
 
-Player::Player() : m_cameraController(std::make_shared<CameraController>())
+Player::Player(AudioManager *audioManager)
+    : m_audioManager(audioManager), m_cameraController(std::make_shared<CameraController>())
 {
-    // TODO: Get services from Kernel once service registration is complete (Task 14)
-    // For now, services will be set externally or remain null until properly initialized
-
     m_boundingBoxSize = {1.2f, 2.8f, 1.2f};
 
     // Create component objects
@@ -40,14 +38,9 @@ Player::Player() : m_cameraController(std::make_shared<CameraController>())
 
 Player::~Player() = default;
 
-void Player::SetAudioManager(std::shared_ptr<AudioManager> audioManager)
-{
-    m_audioManager = audioManager;
-}
-
 void Player::InitializeServices()
 {
-    TraceLog(LOG_INFO, "[Player] InitializeServices called (AudioManager will be set externally)");
+    TraceLog(LOG_INFO, "[Player] InitializeServices called");
 }
 
 // Main update function called every frame

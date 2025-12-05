@@ -30,8 +30,8 @@ public:
     static const float MODEL_Y_OFFSET;
     static const float MODEL_SCALE;
 
-    // Constructors and methods
-    Player();
+    // DI constructor - AudioManager injected
+    Player(AudioManager *audioManager);
     ~Player();
 
     // Initialize services from Kernel (call after Kernel services are registered)
@@ -91,9 +91,6 @@ public:
     void SetNoclip(bool enabled) override;
     bool IsNoclip() const override;
 
-    // Service injection
-    void SetAudioManager(std::shared_ptr<AudioManager> audioManager);
-
     void Update(CollisionManager &collisionManager);
 
 private:
@@ -113,8 +110,8 @@ private:
     bool m_isFallSoundPlaying = false;
     Vector3 m_boundingBoxSize{};
 
-    // Services from Kernel (cached)
-    std::shared_ptr<AudioManager> m_audioManager;
+    // Services - DI with raw pointers
+    AudioManager *m_audioManager;
     std::shared_ptr<CollisionManager> m_collisionManager;
 };
 
