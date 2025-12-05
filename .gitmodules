@@ -23,3 +23,10 @@
 	path = include/nfd
 	url = https://github.com/btzy/nativefiledialog-extended.git
 	branch = master
+
+# --- Entt ---
+[submodule "include/entt"]
+	path = include/entt
+	url = https://github.com/entt/entt.git
+	branch = master
+

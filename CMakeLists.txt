@@ -29,8 +29,10 @@ option(ENABLE_SANITIZERS "Enable sanitizers for debugging" OFF)
 # Force static linking
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
+# Force FetchContent to use include/ directory
+set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/include" CACHE PATH "Deps cache" FORCE)
+
 if(FAST_CONFIG)
-    set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/include" CACHE PATH "Deps cache")
     set(FETCHCONTENT_QUIET ON)
     set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "" FORCE)
 endif()
