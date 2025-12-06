@@ -1,15 +1,17 @@
 #include "EditorRenderer.h"
-#include "scene/resources/map/Renderer/MapRenderer.h"
 #include "components/rendering/Utils/RenderUtils.h"
+#include "scene/resources/map/Renderer/MapRenderer.h"
+#include <filesystem>
 #include <raylib.h>
 #include <raymath.h>
 
-EditorRenderer::EditorRenderer(IToolManager* toolManager, ICameraManager* cameraManager, IModelManager* modelManager)
+EditorRenderer::EditorRenderer(IToolManager *toolManager, ICameraManager *cameraManager,
+                               IModelManager *modelManager)
     : m_toolManager(toolManager), m_cameraManager(cameraManager), m_modelManager(modelManager)
 {
 }
 
-void EditorRenderer::RenderObject(const MapObject& obj, const MapObjectData& data, bool isSelected)
+void EditorRenderer::RenderObject(const MapObject &obj, const MapObjectData &data, bool isSelected)
 {
     // Handle spawn zone rendering separately
     if (data.type == MapObjectType::SPAWN_ZONE)
@@ -23,12 +25,28 @@ void EditorRenderer::RenderObject(const MapObject& obj, const MapObjectData& dat
     std::unordered_map<std::string, Model> loadedModels;
     if (m_modelManager && data.type == MapObjectType::MODEL && !data.modelName.empty())
     {
+        // Try exact match first
         auto modelOpt = m_modelManager->GetModelLoader().GetModelByName(data.modelName);
+
+        // If not found, try by stem (filename without extension/path)
+        // This matches how MapLoader stores models (by stem)
+        if (!modelOpt)
+        {
+            std::filesystem::path p(data.modelName);
+            std::string stem = p.stem().string();
+            modelOpt = m_modelManager->GetModelLoader().GetModelByName(stem);
+        }
+
         if (modelOpt)
         {
             // Deep copy the model for loadedModels map
             Model modelCopy = modelOpt->get();
             loadedModels[data.modelName] = modelCopy;
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "EditorRenderer: Failed to find model '%s' (or stem)",
+                     data.modelName.c_str());
         }
     }
 
@@ -59,12 +77,12 @@ void EditorRenderer::RenderObject(const MapObject& obj, const MapObjectData& dat
     }
 }
 
-void EditorRenderer::RenderGizmo(const MapObject& obj, const MapObjectData& data)
+void EditorRenderer::RenderGizmo(const MapObject &obj, const MapObjectData &data)
 {
     // Only show gizmo for MOVE and SCALE tools
     if (!m_toolManager || !m_cameraManager)
         return;
-    
+
     Tool activeTool = m_toolManager->GetActiveTool();
     if (activeTool != MOVE && activeTool != SCALE)
         return;
@@ -105,7 +123,8 @@ void EditorRenderer::RenderGizmo(const MapObject& obj, const MapObjectData& data
     DrawSphere(pos, arrowRadius * 1.5f, YELLOW);
 }
 
-void EditorRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3& position, float size, Color color, bool textureLoaded)
+void EditorRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &position,
+                                                float size, Color color, bool textureLoaded)
 {
     if (!textureLoaded)
     {
@@ -122,12 +141,12 @@ void EditorRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3
     DrawCubeWires(position, size, size, size, WHITE);
 }
 
-void EditorRenderer::RenderSelectionWireframe(const MapObjectData& data)
+void EditorRenderer::RenderSelectionWireframe(const MapObjectData &data)
 {
     // Draw selection indicator for primitives
     Color selectionColor = YELLOW;
     selectionColor.a = 100; // Semi-transparent
-    
+
     switch (data.type)
     {
     case MapObjectType::CUBE:
@@ -166,4 +185,3 @@ void EditorRenderer::RenderSelectionWireframe(const MapObjectData& data)
         break;
     }
 }
-

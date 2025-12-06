@@ -8,14 +8,12 @@
 class AudioManager
 {
 public:
-    // Static Singleton - як у Godot!
     static AudioManager &Get()
     {
         static AudioManager instance;
         return instance;
     }
 
-    // Заборонити копіювання
     AudioManager(const AudioManager &) = delete;
     AudioManager &operator=(const AudioManager &) = delete;
 
