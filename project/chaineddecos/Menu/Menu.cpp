@@ -25,7 +25,9 @@ Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
       m_selectedMapIndex(0), m_mapsPerPage(MenuConstants::MAPS_PER_PAGE), m_currentPage(0),
       m_totalPages(0), m_jsonMapsCount(0), m_showDemoWindow(false), m_showStyleEditor(false),
-      m_settingsManager(std::make_unique<SettingsManager>()), m_consoleManager(nullptr)
+      m_settingsManager(std::make_unique<SettingsManager>()),
+      m_consoleManager(std::make_unique<ConsoleManager>()),
+      m_mapSelector(std::make_unique<MapSelector>())
 {
     // Collect all resolutions in a set to automatically remove duplicates
     std::set<std::string> resolutionSet;
@@ -81,6 +83,12 @@ Menu::Menu()
 
     // Load configuration
     LoadConfiguration();
+
+    // Initialize maps
+    if (m_mapSelector)
+    {
+        m_mapSelector->InitializeMaps();
+    }
 }
 
 void Menu::Initialize(Engine *engine)
@@ -111,6 +119,9 @@ void Menu::Update()
         // Handle menu navigation
         HandleKeyboardNavigation();
     }
+
+    // Handle pending actions (settings, etc.)
+    HandlePendingActions();
 }
 
 void Menu::Render()
