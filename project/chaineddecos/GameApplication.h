@@ -1,17 +1,11 @@
 #ifndef GAME_APPLICATION_H
 #define GAME_APPLICATION_H
 
+#include "components/physics/collision/Core/CollisionManager.h"
 #include "core/config/Core/GameConfig.h"
-#include "core/ecs/Components.h"
-#include "core/ecs/ECSRegistry.h"
-#include "core/ecs/Systems.h"
 #include "core/engine/IApplication.h"
-#include "project/chaineddecos/Menu/Menu.h"
-#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
-#include "components/audio/Core/AudioManager.h"
-#include "components/physics/collision/Core/CollisionManager.h"
 #include <entt/entt.hpp>
 
 // =================================================
@@ -39,11 +33,15 @@ private:
     std::shared_ptr<WorldManager> m_world;
 
     // ECS Entities
+    // ECS Entities
     entt::entity m_playerEntity = entt::null;
+    Model m_playerModel = {0}; // Player model (generated at runtime)
 
     // Game state
     bool m_showMenu;
     bool m_isGameInitialized;
+    bool m_showDebugCollision = false;
+    bool m_showDebugStats = false;
 
     // Cursor state tracking to avoid calling DisableCursor/EnableCursor every frame
     bool m_cursorDisabled;
