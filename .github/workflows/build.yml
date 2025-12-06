@@ -7,7 +7,6 @@ on:
     paths:
       - "**/*.cpp"
       - "**/*.h"
-      - "CMakeLists.txt"
       - ".github/workflows/*.yml"
 
 env:
