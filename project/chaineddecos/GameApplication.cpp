@@ -8,6 +8,7 @@
 #include "components/rendering/Core/RenderManager.h"
 #include "core/config/Core/ConfigManager.h"
 #include "core/ecs/Examples.h"
+#include "core/ecs/Systems.h"
 #include "core/engine/EngineApplication.h"
 #include "core/object/module/Core/ModuleManager.h"
 #include "project/chaineddecos/Menu/Menu.h"
@@ -22,7 +23,8 @@
 #include <raylib.h>
 
 GameApplication::GameApplication(int argc, char *argv[])
-    : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false)
+    : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false),
+      m_showDebugCollision(false), m_showDebugStats(false)
 {
     // Parse command line arguments
     m_gameConfig = CommandLineHandler::ParseArguments(argc, argv);
@@ -127,8 +129,8 @@ void GameApplication::OnStart()
     if (AudioManager::Get().Initialize())
     {
         TraceLog(LOG_INFO, "[GameApplication] AudioManager initialized");
-        AudioManager::Get().LoadSound(
-            "player_fall", "D:\\gitnext\\Chained Decos\\resources\\audio\\wind-gust_fall.wav");
+        AudioManager::Get().LoadSound("player_fall",
+                                      PROJECT_ROOT_DIR "\\resources\\audio\\wind-gust_fall.wav");
     }
 
     InputManager::Get().Initialize();
@@ -156,8 +158,34 @@ void GameApplication::OnStart()
     // Initialize ECS
     REGISTRY.clear();
 
-    // Create Player Entity
-    m_playerEntity = ECSExamples::CreatePlayer(Vector3{0, 2, 0});
+    // Try to get player model from loader
+    Model *playerModelPtr = nullptr;
+    if (m_models)
+    {
+        // "player_low" is loaded by LevelManager/ModelLoader according to logs
+        auto modelOpt = m_models->GetModelByName("player_low");
+        if (modelOpt.has_value())
+        {
+            playerModelPtr = &modelOpt.value().get();
+        }
+    }
+
+    if (playerModelPtr)
+    {
+        TraceLog(LOG_INFO, "[GameApplication] Using existing model 'player_low'");
+        // We use the pointer directly, no need to copy into m_playerModel if we trust the loader
+        // keeps it alive. However, CreatePlayer takes a pointer. m_playerModel is a Model struct
+        // copy in my previous code. Let's just pass the pointer from loader to CreatePlayer.
+        m_playerEntity = ECSExamples::CreatePlayer(Vector3{0, 2, 0}, playerModelPtr);
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "[GameApplication] 'player_low' not found, using default cube.");
+        // Create player model (Cube) fallback
+        m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
+        m_playerEntity = ECSExamples::CreatePlayer(Vector3{0, 2, 0}, &m_playerModel);
+    }
+
     TraceLog(LOG_INFO, "[GameApplication] ECS Player entity created");
 
     // Initial state - show menu
@@ -224,7 +252,9 @@ void GameApplication::OnUpdate(float deltaTime)
         }
     }
 
-    if (InputManager::Get().IsKeyPressed(KEY_GRAVE) && menu)
+    // Only handle console toggle here if we are NOT in the menu.
+    // When in menu, Menu::HandleKeyboardNavigation handles it to avoid double-toggling.
+    if (!m_showMenu && InputManager::Get().IsKeyPressed(KEY_GRAVE) && menu)
     {
         menu->ToggleConsole();
     }
@@ -345,6 +375,19 @@ void GameApplication::OnRender()
             // Render ECS entities
             RenderSystem::Render();
 
+            // Render Models (ModelLoader)
+            if (m_models)
+                m_models->DrawAllModels();
+
+            // Render Map Geometry (LevelManager)
+            auto levelManager = Engine::Instance().GetService<LevelManager>();
+            if (levelManager)
+            {
+                levelManager->RenderEditorMap();
+
+                // levelManager->RenderSpawnZone(); (only map editor)
+            }
+
             // Render World (Legacy)
             if (m_world)
                 m_world->Render();
@@ -352,7 +395,6 @@ void GameApplication::OnRender()
             RenderManager::Get().EndMode3D();
         }
     }
-
     // Render console in game
     if (menu && menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
     {
@@ -361,6 +403,32 @@ void GameApplication::OnRender()
             rlImGuiBegin();
             menu->GetConsoleManager()->RenderConsole();
             rlImGuiEnd();
+        }
+    }
+
+    // Debug Collision
+    if (m_showDebugCollision && m_isGameInitialized)
+    {
+        RenderManager::Get().BeginMode3D(RenderManager::Get().GetCamera());
+        CollisionSystem::RenderDebug();
+        RenderManager::Get().EndMode3D();
+    }
+
+    // Debug Stats
+    if (m_showDebugStats)
+    {
+        DrawFPS(10, 10);
+
+        if (m_isGameInitialized)
+        {
+            // Draw player position for debugging
+            if (REGISTRY.valid(m_playerEntity))
+            {
+                auto &transform = REGISTRY.get<TransformComponent>(m_playerEntity);
+                DrawText(TextFormat("Pos: %.2f, %.2f, %.2f", transform.position.x,
+                                    transform.position.y, transform.position.z),
+                         10, 30, 20, GREEN);
+            }
         }
     }
 
@@ -373,6 +441,12 @@ void GameApplication::OnShutdown()
 
     // Clear ECS
     REGISTRY.clear();
+
+    // Unload player model
+    if (m_playerModel.meshes != 0)
+    {
+        UnloadModel(m_playerModel);
+    }
 
     // Shutdown Managers
     RenderManager::Get().Shutdown();
@@ -457,6 +531,23 @@ void GameApplication::InitInput()
                 EnableCursor(); // Show system cursor when opening menu
             }
         });
+
+    engine->GetInputManager()->RegisterAction(KEY_F2,
+                                              [this]
+                                              {
+                                                  m_showDebugCollision = !m_showDebugCollision;
+                                                  TraceLog(LOG_INFO, "Debug Collision: %s",
+                                                           m_showDebugCollision ? "ON" : "OFF");
+                                              });
+
+    engine->GetInputManager()->RegisterAction(KEY_F3,
+                                              [this]
+                                              {
+                                                  m_showDebugStats = !m_showDebugStats;
+                                                  TraceLog(LOG_INFO, "Debug Stats: %s",
+                                                           m_showDebugStats ? "ON" : "OFF");
+                                              });
+
     TraceLog(LOG_INFO, "[GameApplication] Game input bindings configured.");
 }
 

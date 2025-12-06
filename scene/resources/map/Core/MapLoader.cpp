@@ -6,7 +6,6 @@
 #include <raymath.h>
 #include <set>
 
-
 using json = nlohmann::json;
 
 // Helper function to resolve model paths
@@ -28,9 +27,9 @@ std::vector<std::string> ResolveModelPaths(const std::string &modelName)
         // Try in resources/ directory
         for (const auto &ext : extensions)
         {
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" +
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" +
                                     normalizedModelName + ext);
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" +
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/models/" +
                                     normalizedModelName + ext);
         }
 
@@ -170,7 +169,6 @@ GameMap::~GameMap()
 // ============================================================================
 // MapLoader Implementation
 // ============================================================================
-
 
 bool MapLoader::SaveMapToFile(const GameMap &map, const std::string &path)
 {
@@ -399,15 +397,14 @@ void MapLoader::LoadSkyboxForMap(GameMap &map)
         skybox->Init();
         map.SetSkyBox(skybox);
     }
-    
-    Skybox* skybox = map.GetSkyBox();
+
+    Skybox *skybox = map.GetSkyBox();
     if (skybox)
     {
         skybox->LoadMaterialTexture(absolutePath);
         TraceLog(LOG_INFO, "LoadSkyboxForMap() - Loaded skybox from %s", absolutePath.c_str());
     }
 }
-
 
 // ============================================================================
 // MapLoader Public Methods
@@ -452,18 +449,18 @@ GameMap MapLoader::LoadMap(const std::string &path)
         {
             auto &sky = meta["skyColor"];
             metadata.skyColor = Color{static_cast<unsigned char>(sky.value("r", 135)),
-                                            static_cast<unsigned char>(sky.value("g", 206)),
-                                            static_cast<unsigned char>(sky.value("b", 235)),
-                                            static_cast<unsigned char>(sky.value("a", 255))};
+                                      static_cast<unsigned char>(sky.value("g", 206)),
+                                      static_cast<unsigned char>(sky.value("b", 235)),
+                                      static_cast<unsigned char>(sky.value("a", 255))};
         }
 
         if (meta.contains("groundColor"))
         {
             auto &ground = meta["groundColor"];
             metadata.groundColor = Color{static_cast<unsigned char>(ground.value("r", 34)),
-                                               static_cast<unsigned char>(ground.value("g", 139)),
-                                               static_cast<unsigned char>(ground.value("b", 34)),
-                                               static_cast<unsigned char>(ground.value("a", 255))};
+                                         static_cast<unsigned char>(ground.value("g", 139)),
+                                         static_cast<unsigned char>(ground.value("b", 34)),
+                                         static_cast<unsigned char>(ground.value("a", 255))};
         }
 
         // Load positions
@@ -586,7 +583,8 @@ GameMap MapLoader::LoadMap(const std::string &path)
 
                 // Use helper function to resolve paths and load model
                 std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
-                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths,
+                                           map.GetMapModelsMutable());
             }
             // Handle LIGHT type objects that may actually be misclassified MODEL objects from map
             // editor
@@ -600,7 +598,8 @@ GameMap MapLoader::LoadMap(const std::string &path)
                 // Change type to MODEL and load the model
                 objectData.type = MapObjectType::MODEL;
                 std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
-                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths,
+                                           map.GetMapModelsMutable());
             }
             // Also handle LIGHT objects that might have been exported without modelName but should
             // be models
@@ -656,7 +655,7 @@ GameMap MapLoader::LoadMap(const std::string &path)
     {
         LoadSkyboxForMap(map);
     }
-    
+
     return map;
 }
 
@@ -872,12 +871,12 @@ std::vector<std::string> MapLoader::GetMapNamesFromDirectory(const std::string &
     return names;
 }
 
-Skybox* GameMap::GetSkyBox() const
+Skybox *GameMap::GetSkyBox() const
 {
     return m_skybox.get();
 }
 
-void GameMap::SetSkyBox(std::shared_ptr<Skybox>& skybox)
+void GameMap::SetSkyBox(std::shared_ptr<Skybox> &skybox)
 {
     m_skybox = skybox;
 }
