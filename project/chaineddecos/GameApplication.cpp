@@ -16,7 +16,6 @@
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
 
-
 #include "imgui.h"
 #include "rlImGui.h"
 #include <GLFW/glfw3.h>
@@ -135,7 +134,8 @@ void GameApplication::OnStart()
     InputManager::Get().Initialize();
 
     // Initialize RenderManager with config
-    RenderManager::Get().Initialize(m_gameConfig.width, m_gameConfig.height, "Chained Decos");
+    // RenderManager::Get().Initialize(m_gameConfig.width, m_gameConfig.height, "Chained Decos"); //
+    // Moved to EngineApplication
 
     // Setup ImGui style for menu (after ImGui is initialized by RenderManager)
     auto *engine = &Engine::Instance();
