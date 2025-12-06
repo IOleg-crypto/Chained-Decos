@@ -54,7 +54,7 @@ jobs:
         run: |
           cmake --build build \
             --config ${{ inputs.build_type }} \
-            --target ChainedDecos ChainedDecosMapEditor ChainedDecosUnitTests ChainedDecosIntegrationTests \
+            --target ChainedDecos map_editor ChainedDecosUnitTests ChainedDecosIntegrationTests \
             --parallel 4
 
       - name: Test
