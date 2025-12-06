@@ -69,6 +69,14 @@ void EngineApplication::Initialize()
     // Step 2: Register modules and services
     m_app->OnRegister();
 
+    // Step 2.5: Initialize Window (Must be done before modules initialize)
+    if (!m_engine->GetRenderManager()->Initialize(m_config.width, m_config.height,
+                                                  m_config.windowName.c_str()))
+    {
+        TraceLog(LOG_FATAL, "[EngineApplication] Failed to initialize RenderManager (Window)");
+        throw std::runtime_error("Failed to initialize RenderManager");
+    }
+
     // Step 3: Initialize all modules
     if (auto moduleManager = m_engine->GetModuleManager())
     {
