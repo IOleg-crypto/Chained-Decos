@@ -100,7 +100,7 @@ void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraContro
     uiConfig.fileManager = m_fileManager.get();
     uiConfig.toolManager = m_toolManager.get();
     uiConfig.modelManager = m_modelManager.get();
-    m_uiManager = std::make_unique<UIManager>(uiConfig);
+    m_uiManager = std::make_unique<EditorUIManager>(uiConfig);
 
     // Initialize renderer
     m_renderer = std::make_unique<EditorRenderer>(m_toolManager.get(), m_cameraManager.get(),
