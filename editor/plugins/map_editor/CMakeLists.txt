@@ -38,6 +38,7 @@ target_link_libraries(map_editor PUBLIC
     cameracontroller
     model
     map
+    ChainedDecosGame
 )
 
 target_compile_definitions(map_editor PRIVATE CHAINEDDECOSEDITOR_EXPORTS)
