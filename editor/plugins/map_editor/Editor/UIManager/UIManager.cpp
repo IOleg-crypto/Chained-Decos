@@ -26,7 +26,7 @@
 
 namespace fs = std::filesystem;
 
-UIManager::UIManager(const UIManagerConfig &config)
+EditorUIManager::EditorUIManager(const UIManagerConfig &config)
     : m_editor(config.editor), m_sceneManager(config.sceneManager),
       m_fileManager(config.fileManager), m_toolManager(config.toolManager),
       m_modelManager(config.modelManager), m_displayImGuiInterface(true),
@@ -38,12 +38,12 @@ UIManager::UIManager(const UIManagerConfig &config)
 {
 }
 
-UIManager::~UIManager()
+EditorUIManager::~EditorUIManager()
 {
     // SkyboxBrowser handles its own cleanup
 }
 
-void UIManager::Render()
+void EditorUIManager::Render()
 {
     // Note: rlImGuiBegin() is now called in Application::Run() for docking support
     // Render all ImGui panels in specific order
@@ -72,7 +72,7 @@ void UIManager::Render()
     // Note: rlImGuiEnd() is now called in Application::Run() for docking support
 }
 
-void UIManager::HandleInput()
+void EditorUIManager::HandleInput()
 {
     // Get ImGui IO for input handling
     const ImGuiIO &io = ImGui::GetIO();
@@ -84,30 +84,30 @@ void UIManager::HandleInput()
     }
 }
 
-void UIManager::ShowObjectPanel(bool show)
+void EditorUIManager::ShowObjectPanel(bool show)
 {
     m_displayObjectListPanel = show;
 }
 
-void UIManager::ShowPropertiesPanel(bool show)
+void EditorUIManager::ShowPropertiesPanel(bool show)
 {
     m_displayPropertiesPanel = show;
 }
 
-Tool UIManager::GetActiveTool() const
+Tool EditorUIManager::GetActiveTool() const
 {
     // Convert from IToolManager enum to local Tool enum
     // This assumes the enums are compatible
     return static_cast<Tool>(m_toolManager->GetActiveTool());
 }
 
-void UIManager::SetActiveTool(::Tool tool)
+void EditorUIManager::SetActiveTool(::Tool tool)
 {
     // Convert to IToolManager enum
     m_toolManager->SetActiveTool(tool);
 }
 
-ImVec2 UIManager::ClampWindowPosition(const ImVec2 &desiredPos, ImVec2 &windowSize)
+ImVec2 EditorUIManager::ClampWindowPosition(const ImVec2 &desiredPos, ImVec2 &windowSize)
 {
     const int screenWidth = GetScreenWidth();
     const int screenHeight = GetScreenHeight();
@@ -136,7 +136,7 @@ ImVec2 UIManager::ClampWindowPosition(const ImVec2 &desiredPos, ImVec2 &windowSi
     return ImVec2(clampedX, clampedY);
 }
 
-void UIManager::EnsureWindowInBounds()
+void EditorUIManager::EnsureWindowInBounds()
 {
     ImVec2 pos = ImGui::GetWindowPos();
     ImVec2 size = ImGui::GetWindowSize();
@@ -190,7 +190,7 @@ void UIManager::EnsureWindowInBounds()
     }
 }
 
-void UIManager::RenderImGuiToolbar()
+void EditorUIManager::RenderImGuiToolbar()
 {
     ImVec2 windowSize(700, 300);
     ImVec2 desiredPos(10, 10);
@@ -377,7 +377,7 @@ void UIManager::RenderImGuiToolbar()
     ImGui::End();
 }
 
-void UIManager::RenderImGuiObjectPanel()
+void EditorUIManager::RenderImGuiObjectPanel()
 {
     const int screenWidth = GetScreenWidth();
     ImVec2 windowSize(240, 400);
@@ -471,7 +471,7 @@ void UIManager::RenderImGuiObjectPanel()
     ImGui::End();
 }
 
-void UIManager::RenderImGuiPropertiesPanel()
+void EditorUIManager::RenderImGuiPropertiesPanel()
 {
     if (m_sceneManager->GetSelectedObject() == nullptr)
         return;
@@ -665,7 +665,7 @@ void UIManager::RenderImGuiPropertiesPanel()
     ImGui::End();
 }
 
-void UIManager::HandleKeyboardInput()
+void EditorUIManager::HandleKeyboardInput()
 {
     // Handle keyboard shortcuts for scene objects
     if (IsKeyPressed(KEY_DELETE) && m_sceneManager->GetSelectedObject() != nullptr)
@@ -691,7 +691,7 @@ void UIManager::HandleKeyboardInput()
     }
 }
 
-void UIManager::ProcessPendingObjectCreation()
+void EditorUIManager::ProcessPendingObjectCreation()
 {
     if (m_pendingObjectCreation && m_objectFactory)
     {
@@ -701,7 +701,7 @@ void UIManager::ProcessPendingObjectCreation()
     }
 }
 
-int UIManager::GetGridSize() const
+int EditorUIManager::GetGridSize() const
 {
     return m_gridSizes;
 }
