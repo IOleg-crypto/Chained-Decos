@@ -13,15 +13,7 @@ using namespace MenuConstants;
 
 MapSelector::MapSelector()
 {
-    // Initialize placeholder thumbnail
-    m_placeholderThumbnail = LoadTexture("../resources/map_previews/placeholder.jpg");
-    if (m_placeholderThumbnail.id == 0)
-    {
-        // Create a simple colored texture as placeholder
-        Image img = GenImageColor(128, 128, GRAY);
-        m_placeholderThumbnail = LoadTextureFromImage(img);
-        UnloadImage(img);
-    }
+
     // Note: UpdatePagination() will be called in InitializeMaps()
 }
 
@@ -110,6 +102,17 @@ void MapSelector::InitializeMaps()
     {
         TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Total maps available: %d (JSON: %d)",
                  m_availableMaps.size(), m_jsonMapsCount);
+    }
+
+    // Initialize placeholder thumbnail
+    m_placeholderThumbnail =
+        LoadTexture(PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg");
+    if (m_placeholderThumbnail.id == 0)
+    {
+        // Create a simple colored texture as placeholder
+        Image img = GenImageColor(128, 128, GRAY);
+        m_placeholderThumbnail = LoadTextureFromImage(img);
+        UnloadImage(img);
     }
 
     // Initialize pagination
