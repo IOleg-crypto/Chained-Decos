@@ -342,34 +342,46 @@ std::string ResolveSkyboxAbsolutePath(const std::string &texturePath)
         return "";
     }
 
+    // 1. Check if path is already absolute and exists
     std::filesystem::path input(texturePath);
-    std::error_code ec;
-
-    if (input.is_absolute())
+    if (input.is_absolute() && std::filesystem::exists(input))
     {
-        std::filesystem::path canonical = std::filesystem::weakly_canonical(input, ec);
-        if (!ec && std::filesystem::exists(canonical))
-        {
-            return canonical.string();
-        }
-        if (std::filesystem::exists(input))
-        {
-            return input.string();
-        }
+        return input.string();
+    }
+
+    // 2. Check relative to current working directory
+    if (std::filesystem::exists(input))
+    {
+        return std::filesystem::absolute(input).string();
     }
 
     std::filesystem::path projectRoot(PROJECT_ROOT_DIR);
+
+    // 3. Check relative to Project Root
     std::filesystem::path combined = projectRoot / input;
-    std::filesystem::path canonicalCombined = std::filesystem::weakly_canonical(combined, ec);
-    if (!ec && std::filesystem::exists(canonicalCombined))
-    {
-        return canonicalCombined.string();
-    }
     if (std::filesystem::exists(combined))
     {
         return combined.string();
     }
 
+    // 4. Check in resources folder if usage didn't specify it
+    if (texturePath.find("resources") == std::string::npos)
+    {
+        std::filesystem::path resourcesPath = projectRoot / "resources" / input;
+        if (std::filesystem::exists(resourcesPath))
+        {
+            return resourcesPath.string();
+        }
+
+        // 5. Try in skyboxes folder specifically
+        std::filesystem::path skyboxPath = projectRoot / "resources" / "skyboxes" / input;
+        if (std::filesystem::exists(skyboxPath))
+        {
+            return skyboxPath.string();
+        }
+    }
+
+    // Return original if nothing found (will fail later with clearer error)
     return (input.is_absolute() ? input : combined).string();
 }
 } // namespace
