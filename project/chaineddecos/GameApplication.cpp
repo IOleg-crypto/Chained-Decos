@@ -158,6 +158,22 @@ void GameApplication::OnStart()
     // Initialize ECS
     REGISTRY.clear();
 
+    // Explicitly load player model
+    if (m_models)
+    {
+        std::string playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
+        if (m_models->LoadSingleModel("player_low", playerModelPath))
+        {
+            TraceLog(LOG_INFO, "[GameApplication] Loaded player model: %s",
+                     playerModelPath.c_str());
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "[GameApplication] Failed to load player model: %s",
+                     playerModelPath.c_str());
+        }
+    }
+
     // Try to get player model from loader
     Model *playerModelPtr = nullptr;
     if (m_models)
@@ -167,6 +183,47 @@ void GameApplication::OnStart()
         if (modelOpt.has_value())
         {
             playerModelPtr = &modelOpt.value().get();
+        }
+    }
+
+    // Load and Apply Shader
+    {
+        std::string vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.vs";
+        std::string fsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.fs";
+
+        m_playerShader = LoadShader(vsPath.c_str(), fsPath.c_str());
+        m_shaderLoaded = (m_playerShader.id != 0);
+
+        if (m_shaderLoaded)
+        {
+            m_locFallSpeed = GetShaderLocation(m_playerShader, "fallSpeed");
+            m_locTime = GetShaderLocation(m_playerShader, "time");
+            m_locWindDir = GetShaderLocation(m_playerShader, "windDirection");
+
+            // Set default values
+            float defaultFallSpeed = 0.0f;
+            SetShaderValue(m_playerShader, m_locFallSpeed, &defaultFallSpeed, SHADER_UNIFORM_FLOAT);
+
+            Vector3 defaultWind = {1.0f, 0.0f, 0.5f};
+            SetShaderValue(m_playerShader, m_locWindDir, &defaultWind, SHADER_UNIFORM_VEC3);
+
+            // Assign shader to model
+            if (playerModelPtr)
+            {
+                playerModelPtr->materials[0].shader = m_playerShader;
+                TraceLog(LOG_INFO,
+                         "[GameApplication] Applied player_effect shader to player_low model");
+            }
+            else
+            {
+                m_playerModel.materials[0].shader = m_playerShader;
+                TraceLog(LOG_INFO,
+                         "[GameApplication] Applied player_effect shader to fallback model");
+            }
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "[GameApplication] Failed to load player_effect shader");
         }
     }
 
@@ -317,6 +374,21 @@ void GameApplication::OnUpdate(float deltaTime)
                 MovementSystem::Update(deltaTime);
                 CollisionSystem::Update();
                 LifetimeSystem::Update(deltaTime);
+
+                // Update Shader Uniforms
+                if (m_shaderLoaded && REGISTRY.valid(m_playerEntity))
+                {
+                    float time = (float)GetTime();
+                    SetShaderValue(m_playerShader, m_locTime, &time, SHADER_UNIFORM_FLOAT);
+
+                    auto &velocity = REGISTRY.get<VelocityComponent>(m_playerEntity);
+                    float fallSpeed = 0.0f;
+                    if (velocity.velocity.y < 0)
+                        fallSpeed = std::abs(velocity.velocity.y);
+
+                    SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed,
+                                   SHADER_UNIFORM_FLOAT);
+                }
             }
         }
         else
@@ -446,12 +518,19 @@ void GameApplication::OnShutdown()
     if (m_playerModel.meshes != 0)
     {
         UnloadModel(m_playerModel);
+        m_playerModel = {0}; // Prevent double-free
+    }
+
+    if (m_shaderLoaded)
+    {
+        UnloadShader(m_playerShader);
+        m_shaderLoaded = false;
     }
 
     // Shutdown Managers
     RenderManager::Get().Shutdown();
     InputManager::Get().Shutdown();
-    // AudioManager::Get().Shutdown(); // Optional, destructor handles it
+    AudioManager::Get().Shutdown(); // Optional, destructor handles it
 
     if (m_collisionManager && !m_collisionManager->GetColliders().empty())
     {

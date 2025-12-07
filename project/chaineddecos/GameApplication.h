@@ -56,6 +56,13 @@ private:
 
     // Game state management
     void SaveGameState();
+
+    // Shader support
+    Shader m_playerShader = {0};
+    int m_locFallSpeed = -1;
+    int m_locTime = -1;
+    int m_locWindDir = -1;
+    bool m_shaderLoaded = false;
 };
 
 #endif // GAME_APPLICATION_H
