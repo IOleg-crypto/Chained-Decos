@@ -130,7 +130,7 @@ void GameApplication::OnStart()
     {
         TraceLog(LOG_INFO, "[GameApplication] AudioManager initialized");
         AudioManager::Get().LoadSound("player_fall",
-                                      PROJECT_ROOT_DIR "\\resources\\audio\\wind-gust_fall.wav");
+                                      PROJECT_ROOT_DIR "\\resources\\audio\\fallingplayer.wav");
     }
 
     InputManager::Get().Initialize();
@@ -286,6 +286,9 @@ void GameApplication::OnUpdate(float deltaTime)
 {
     // Update Input
     InputManager::Get().Update(deltaTime);
+
+    // Update Audio looping
+    AudioManager::Get().UpdateLoopingSounds();
 
     // Get Menu through Engine (Legacy access)
     auto engine = &Engine::Instance();
