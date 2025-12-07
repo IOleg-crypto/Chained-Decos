@@ -79,8 +79,8 @@ static void HandleJump(VelocityComponent &velocity, PlayerComponent &player)
                 player.jumpsRemaining--;
             }
 
-            // Play jump sound (using existing file as placeholder)
-            AudioManager::Get().PlaySoundEffect("player_fall");
+            // Jump sound removed (was using incorrect player_fall)
+            // AudioManager::Get().PlaySoundEffect("jump"); // TODO: Add jump sound
         }
     }
 
@@ -90,31 +90,32 @@ static void HandleJump(VelocityComponent &velocity, PlayerComponent &player)
     }
 }
 
-static void HandleCamera(TransformComponent &transform)
+static void HandleCamera(TransformComponent &transform, PlayerComponent &player)
 {
     auto &input = InputManager::Get();
     auto &render = RenderManager::Get();
 
     Vector2 mouseDelta = input.GetMouseDelta();
 
-    // Update Camera Angles (stored in transform rotation for now, or separate component)
-    // Using transform.rotation to store camera look direction is common in simple setups,
-    // but for TPV, player model rotation vs camera rotation are different.
-    // However, let's stick to using transform.rotation as the "View Angle" source for consistency
-    // with previous code.
-
+    // Update Player Yaw (Model Rotation Y)
     transform.rotation.y -= mouseDelta.x * 0.1f;
-    transform.rotation.x -= mouseDelta.y * 0.1f;
 
-    // Clamp vertical rotation
-    if (transform.rotation.x > 89.0f)
-        transform.rotation.x = 89.0f;
-    if (transform.rotation.x < -89.0f)
-        transform.rotation.x = -89.0f;
+    // Update Camera Pitch (Separate from Model Rotation)
+    player.cameraPitch -= mouseDelta.y * 0.1f;
+
+    // Clamp vertical rotation (pitch)
+    if (player.cameraPitch > 89.0f)
+        player.cameraPitch = 89.0f;
+    if (player.cameraPitch < -89.0f)
+        player.cameraPitch = -89.0f;
+
+    // Ensure model does not pitch/roll
+    transform.rotation.x = 0.0f;
+    transform.rotation.z = 0.0f;
 
     // Third Person Camera Math
     float yawRad = transform.rotation.y * DEG2RAD;
-    float pitchRad = transform.rotation.x * DEG2RAD;
+    float pitchRad = player.cameraPitch * DEG2RAD;
 
     // Distance from player
     float distance = 5.0f;
@@ -124,18 +125,6 @@ static void HandleCamera(TransformComponent &transform)
     offset.x = sinf(yawRad) * cosf(pitchRad) * distance;
     offset.y = sinf(pitchRad) * distance;
     offset.z = cosf(yawRad) * cosf(pitchRad) * distance;
-
-    // Camera Position = PlayerPos - Offset (Behind player)
-    // We want the camera to look AT the player.
-    // Note: Standard TPV usually has camera rotate AROUND player.
-    // Pitch up = Camera goes down? transform.rotation.x is usually "Look Up/Down".
-    // If Pitch is Look Up (+), y increases?
-    // Let's use standard spherical coordinates.
-
-    // Recalculate for "Orbit" style:
-    // x = r * sin(theta) * cos(phi)
-    // y = r * sin(phi)
-    // z = r * cos(theta) * cos(phi)
 
     // Position camera BEHIND the focus point
     // We use the REVERSE of the view vector
@@ -157,6 +146,31 @@ static void HandleCamera(TransformComponent &transform)
     camera.target = focusPoint;
 }
 
+static void HandleAudio(PlayerComponent &player, const VelocityComponent &velocity)
+{
+    // Threshold for falling sound
+    const float FALL_THRESHOLD = -8.0f; // Falling speed threshold
+
+    bool isFallingFast = (velocity.velocity.y < FALL_THRESHOLD) && !player.isGrounded;
+
+    if (isFallingFast)
+    {
+        if (!player.isFallingSoundPlaying)
+        {
+            AudioManager::Get().PlayLoopingSoundEffect("player_fall", 1.0f);
+            player.isFallingSoundPlaying = true;
+        }
+    }
+    else
+    {
+        if (player.isFallingSoundPlaying)
+        {
+            AudioManager::Get().StopLoopingSoundEffect("player_fall");
+            player.isFallingSoundPlaying = false;
+        }
+    }
+}
+
 void Update(float deltaTime)
 {
     auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
@@ -165,7 +179,8 @@ void Update(float deltaTime)
     {
         HandleMovement(transform, velocity, player, deltaTime);
         HandleJump(velocity, player);
-        HandleCamera(transform);
+        HandleCamera(transform, player);
+        HandleAudio(player, velocity);
     }
 }
 
