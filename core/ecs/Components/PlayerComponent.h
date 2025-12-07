@@ -11,6 +11,8 @@ struct PlayerComponent
     bool isGrounded = false;
     bool canDoubleJump = false;
     int jumpsRemaining = 2;
+    bool isFallingSoundPlaying = false;
+    float cameraPitch = 0.0f;
 };
 
 #endif // PLAYER_COMPONENT_H
