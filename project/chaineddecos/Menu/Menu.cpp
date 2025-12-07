@@ -23,11 +23,10 @@
 
 Menu::Menu()
     : m_state(MenuState::Main), m_pendingAction(MenuAction::None), m_gameInProgress(false),
-      m_selectedMapIndex(0), m_mapsPerPage(MenuConstants::MAPS_PER_PAGE), m_currentPage(0),
-      m_totalPages(0), m_jsonMapsCount(0), m_showDemoWindow(false), m_showStyleEditor(false),
+      m_showDemoWindow(false), m_showStyleEditor(false),
       m_settingsManager(std::make_unique<SettingsManager>()),
       m_consoleManager(std::make_unique<ConsoleManager>()),
-      m_mapSelector(std::make_unique<MapSelector>())
+      m_mapSelector(std::make_unique<MapSelector>()), m_presenter(std::make_unique<MenuPresenter>())
 {
     // Collect all resolutions in a set to automatically remove duplicates
     std::set<std::string> resolutionSet;
@@ -58,28 +57,10 @@ Menu::Menu()
         }
     }
 
-    // Convert set to vector and sort by resolution size
-    m_resolutionOptions.assign(resolutionSet.begin(), resolutionSet.end());
-    std::sort(m_resolutionOptions.begin(), m_resolutionOptions.end(),
-              [](const std::string &a, const std::string &b)
-              {
-                  size_t xPosA = a.find('x'), xPosB = b.find('x');
-                  if (xPosA != std::string::npos && xPosB != std::string::npos)
-                  {
-                      int widthA = std::stoi(a.substr(0, xPosA));
-                      int heightA = std::stoi(a.substr(xPosA + 1));
-                      int widthB = std::stoi(b.substr(0, xPosB));
-                      int heightB = std::stoi(b.substr(xPosB + 1));
-                      return (widthA != widthB) ? widthA < widthB : heightA < heightB;
-                  }
-                  return a < b;
-              });
-
-    // Initialize options vectors
-
-    m_displayModeOptions = MenuConstants::DISPLAY_MODE_OPTIONS;
-    m_vsyncOptions = MenuConstants::VSYNC_OPTIONS;
-    m_fpsOptions = MenuConstants::FPS_OPTIONS;
+    // Initialize MenuSettingsController
+    m_settingsController = std::make_unique<MenuSettingsController>();
+    m_settingsController->Initialize(m_settingsManager.get(), m_cameraController);
+    m_settingsController->SetBackCallback([this]() { m_state = MenuState::Options; });
 
     // Load configuration
     LoadConfiguration();
@@ -96,12 +77,6 @@ void Menu::Initialize(Engine *engine)
     m_engine = engine;
 
     HandleKeyboardNavigation();
-
-    // Sync map selection
-    if (m_mapSelector)
-    {
-        m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
-    }
 
     // Handle pending actions
     HandlePendingActions();
@@ -269,13 +244,16 @@ void Menu::RenderMenuState()
         RenderOptionsMenu();
         break;
     case MenuState::Video:
-        RenderVideoSettings();
+        if (m_settingsController)
+            m_settingsController->RenderVideoSettings();
         break;
     case MenuState::Audio:
-        RenderAudioSettings();
+        if (m_settingsController)
+            m_settingsController->RenderAudioSettings();
         break;
     case MenuState::Controls:
-        RenderControlSettings();
+        if (m_settingsController)
+            m_settingsController->RenderControlSettings();
         break;
     case MenuState::Credits:
         RenderCreditsScreen();
@@ -478,300 +456,11 @@ void Menu::RenderOptionsMenu()
     RenderBackButton();
 }
 
-// Helper function to render option combo box with validation
-bool Menu::RenderVideoSettingCombo(const char *label, const char *id,
-                                   const std::vector<std::string> &options, int &currentIndex,
-                                   float labelWidth, float comboWidth, float startX)
-{
-    // Validate index to prevent out-of-bounds access
-    if (currentIndex < 0 || currentIndex >= static_cast<int>(options.size()))
-    {
-        currentIndex = 0; // Reset to first option if invalid
-    }
-
-    const char *currentValue = options[currentIndex].c_str();
-    bool changed = false;
-
-    // Set cursor to startX for consistent alignment
-    ImGui::SetCursorPosX(startX);
-
-    // Render label with fixed width
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "%s", label);
-
-    // Position dropdown at fixed offset from startX
-    ImGui::SameLine(startX + labelWidth + 20.0f); // 20px gap between label and dropdown
-    ImGui::SetNextItemWidth(comboWidth);
-
-    if (ImGui::BeginCombo(id, currentValue))
-    {
-        for (size_t i = 0; i < options.size(); ++i)
-        {
-            bool isSelected = (currentIndex == static_cast<int>(i));
-            if (ImGui::Selectable(options[i].c_str(), isSelected))
-            {
-                currentIndex = static_cast<int>(i);
-                changed = true;
-            }
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-
-    return changed;
-}
-
-// Check if video settings have unsaved changes
-bool Menu::HasUnsavedVideoChanges() const
-{
-    if (!m_settingsManager)
-        return false;
-
-    return m_videoSettings.resolutionIndex != m_settingsManager->GetResolutionIndex() ||
-           m_videoSettings.displayModeIndex != m_settingsManager->GetDisplayModeIndex() ||
-           m_videoSettings.vsyncIndex != m_settingsManager->GetVSyncIndex() ||
-           m_videoSettings.fpsIndex != m_settingsManager->GetFpsIndex();
-}
-
-void Menu::RenderVideoSettings()
-{
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float labelWidth = 180.0f; // Fixed width for labels to align dropdowns
-    const float comboWidth = 300.0f; // Increased width for dropdowns
-    const float startX =
-        centerX - (labelWidth + comboWidth + 30.0f) / 2.0f; // Center the settings group
-    const float spacing = 40.0f;                            // Reduced spacing between items
-    const float buttonSpacing = 140.0f;
-
-    // Title - centered
-    ImGui::SetCursorPos(ImVec2(centerX - 150.0f, MenuConstants::TOP_MARGIN - 50));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
-    ImGui::SetWindowFontScale(1.5f);
-    ImGui::Text("VIDEO SETTINGS");
-    ImGui::PopStyleColor();
-    ImGui::SetWindowFontScale(1.0f);
-
-    // Check for unsaved changes indicator - centered
-    bool hasUnsavedChanges = HasUnsavedVideoChanges();
-    if (hasUnsavedChanges)
-    {
-        ImGui::SetCursorPos(ImVec2(centerX - 100.0f, MenuConstants::TOP_MARGIN - 20));
-        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "* Unsaved changes");
-    }
-
-    // Settings - centered vertically
-    const float settingsStartY = MenuConstants::TOP_MARGIN + 80.0f;
-    ImGui::SetCursorPos(ImVec2(startX, settingsStartY));
-
-    // Resolution
-    RenderVideoSettingCombo("Resolution", "##resolution", m_resolutionOptions,
-                            m_videoSettings.resolutionIndex, labelWidth, comboWidth, startX);
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-
-    // Display Mode
-    RenderVideoSettingCombo("Display Mode", "##display_mode", m_displayModeOptions,
-                            m_videoSettings.displayModeIndex, labelWidth, comboWidth, startX);
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-
-    // VSync
-    RenderVideoSettingCombo("VSync", "##vsync", m_vsyncOptions, m_videoSettings.vsyncIndex,
-                            labelWidth, comboWidth, startX);
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-
-    // FPS Limit
-    RenderVideoSettingCombo("FPS Limit", "##fps", m_fpsOptions, m_videoSettings.fpsIndex,
-                            labelWidth, comboWidth, startX);
-
-    // Buttons section - positioned at bottom, centered horizontally
-    const float buttonY = windowSize.y - 80.0f;
-    const float buttonGroupWidth =
-        120.0f + buttonSpacing + 120.0f; // Apply width + spacing + Back width
-    const float buttonStartX = centerX - buttonGroupWidth / 2.0f;
-    ImGui::SetCursorPos(ImVec2(buttonStartX, buttonY));
-
-    // Apply button - enable only if there are unsaved changes
-    ImGui::BeginDisabled(!hasUnsavedChanges);
-    if (ImGui::Button("Apply", ImVec2(120, 40)) || (hasUnsavedChanges && IsKeyPressed(KEY_ENTER)))
-    {
-        // Validate all indices before applying
-        if (m_videoSettings.resolutionIndex >= 0 &&
-            m_videoSettings.resolutionIndex < static_cast<int>(m_resolutionOptions.size()) &&
-            m_videoSettings.displayModeIndex >= 0 &&
-            m_videoSettings.displayModeIndex < static_cast<int>(m_displayModeOptions.size()) &&
-            m_videoSettings.vsyncIndex >= 0 &&
-            m_videoSettings.vsyncIndex < static_cast<int>(m_vsyncOptions.size()) &&
-            m_videoSettings.fpsIndex >= 0 &&
-            m_videoSettings.fpsIndex < static_cast<int>(m_fpsOptions.size()))
-        {
-            m_pendingAction = MenuAction::ApplyVideoSettings;
-        }
-    }
-    ImGui::EndDisabled();
-
-    ImGui::SameLine(buttonStartX + buttonSpacing);
-    RenderBackButton();
-}
-
-void Menu::RenderAudioSettings()
-{
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float labelWidth = 180.0f;
-    const float sliderWidth = 300.0f;
-    const float startX = centerX - (labelWidth + sliderWidth + 30.0f) / 2.0f;
-    const float spacing = 30.0f;
-
-    // Title - centered
-    ImGui::SetCursorPos(ImVec2(centerX - 150.0f, MenuConstants::TOP_MARGIN - 50));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "AUDIO SETTINGS");
-    ImGui::SetWindowFontScale(1.0f);
-
-    // Settings - centered vertically
-    const float settingsStartY = MenuConstants::TOP_MARGIN + 60.0f;
-    ImGui::SetCursorPos(ImVec2(startX, settingsStartY));
-
-    // Master Volume Slider
-    ImGui::SetCursorPosX(startX);
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Master Volume");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(startX + labelWidth + 20.0f);
-    ImGui::SetNextItemWidth(sliderWidth);
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
-    ImGui::SliderFloat("##master_vol", &m_audioSettings.masterVolume, 0.0f, 1.0f, "%.0f%%");
-    ImGui::PopStyleColor();
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-
-    // Music Volume Slider
-    ImGui::SetCursorPosX(startX);
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Music Volume");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(startX + labelWidth + 20.0f);
-    ImGui::SetNextItemWidth(sliderWidth);
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
-    ImGui::SliderFloat("##music_vol", &m_audioSettings.musicVolume, 0.0f, 1.0f, "%.0f%%");
-    ImGui::PopStyleColor();
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-
-    // SFX Volume Slider
-    ImGui::SetCursorPosX(startX);
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "SFX Volume");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(startX + labelWidth + 20.0f);
-    ImGui::SetNextItemWidth(sliderWidth);
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.8f, 0.6f, 1.0f, 1.0f));
-    ImGui::SliderFloat("##sfx_vol", &m_audioSettings.sfxVolume, 0.0f, 1.0f, "%.0f%%");
-    ImGui::PopStyleColor();
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-
-    // Mute Toggle
-    ImGui::SetCursorPosX(startX);
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Mute Audio");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(startX + labelWidth + 20.0f);
-    ImGui::Checkbox("##mute", &m_audioSettings.muted);
-
-    // Apply and Back buttons - positioned at bottom, centered horizontally
-    const float buttonY = windowSize.y - 80.0f;
-    const float buttonGroupWidth = 120.0f + 140.0f + 120.0f; // Apply width + spacing + Back width
-    const float buttonStartX = centerX - buttonGroupWidth / 2.0f;
-    ImGui::SetCursorPos(ImVec2(buttonStartX, buttonY));
-    if (ImGui::Button("Apply", ImVec2(120, 40)) || IsKeyPressed(KEY_ENTER))
-    {
-        m_pendingAction = MenuAction::ApplyAudioSettings;
-    }
-
-    ImGui::SameLine(buttonStartX + 140.0f);
-    RenderBackButton();
-}
-
-void Menu::RenderControlSettings()
-{
-    const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float labelWidth = 180.0f;
-    const float sliderWidth = 300.0f;
-    const float startX = centerX - (labelWidth + sliderWidth + 30.0f) / 2.0f;
-    const float spacing = 30.0f;
-
-    // Title - centered
-    ImGui::SetCursorPos(ImVec2(centerX - 150.0f, MenuConstants::TOP_MARGIN - 50));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
-    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "CONTROL SETTINGS");
-    ImGui::SetWindowFontScale(1.0f);
-
-    // Settings - centered vertically
-    const float settingsStartY = MenuConstants::TOP_MARGIN + 60.0f;
-    ImGui::SetCursorPos(ImVec2(startX, settingsStartY));
-
-    // Mouse Sensitivity Slider
-    ImGui::SetCursorPosX(startX);
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Mouse Sensitivity");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(startX + labelWidth + 20.0f);
-    ImGui::SetNextItemWidth(sliderWidth);
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
-    ImGui::SliderFloat("##mouse_sens", &m_controlSettings.mouseSensitivity, 0.1f, 3.0f, "%.1fx");
-
-    ImGui::PopStyleColor();
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-
-    // Invert Y Axis Toggle
-    ImGui::SetCursorPosX(startX);
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Invert Y Axis");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(startX + labelWidth + 20.0f);
-    ImGui::Checkbox("##invert_y", &m_controlSettings.invertYAxis);
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + spacing);
-    ImGui::BeginDisabled();
-    // Controller Support Toggle
-    ImGui::SetCursorPosX(startX);
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::DESCRIPTION_FONT_SIZE) / 16.0f);
-    ImGui::TextColored(ImVec4(0.8f, 0.85f, 0.9f, 1.0f), "Controller Support");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::SameLine(startX + labelWidth + 20.0f);
-    ImGui::Checkbox("##controller", &m_controlSettings.controllerSupport);
-    ImGui::EndDisabled();
-
-    // Apply and Back buttons - positioned at bottom, centered horizontally
-    const float buttonY = windowSize.y - 80.0f;
-    const float buttonGroupWidth = 120.0f + 140.0f + 120.0f; // Apply width + spacing + Back width
-    const float buttonStartX = centerX - buttonGroupWidth / 2.0f;
-    ImGui::SetCursorPos(ImVec2(buttonStartX, buttonY));
-    if (ImGui::Button("Apply", ImVec2(120, 40)) || IsKeyPressed(KEY_ENTER))
-    {
-        m_pendingAction = MenuAction::ApplyControlSettings;
-    }
-
-    ImGui::SameLine(buttonStartX + 140.0f);
-    RenderBackButton();
-}
-
 void Menu::RenderMapSelection()
 {
     if (m_mapSelector)
     {
         m_mapSelector->RenderMapSelectionWindow();
-
-        // Sync selection after rendering
-        m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
 
         // Start Game button
         const ImVec2 windowSize = ImGui::GetWindowSize();
@@ -918,15 +607,10 @@ void Menu::HandlePendingActions()
         switch (m_pendingAction)
         {
         case MenuAction::ApplyVideoSettings:
-            SyncVideoSettingsToConfig();
-            m_pendingAction = MenuAction::None;
-            break;
         case MenuAction::ApplyAudioSettings:
-            SyncAudioSettingsToConfig();
-            m_pendingAction = MenuAction::None;
-            break;
         case MenuAction::ApplyControlSettings:
-            SyncControlSettingsToConfig();
+            if (m_settingsController)
+                m_settingsController->ApplyPendingSettings();
             m_pendingAction = MenuAction::None;
             break;
         default:
@@ -975,10 +659,7 @@ void Menu::HandleKeyboardNavigation()
         m_mapSelector->HandleKeyboardNavigation();
         if (IsKeyPressed(KEY_ENTER))
         {
-            m_pendingAction = MenuAction::StartGameWithMap;
         }
-        // Sync selection
-        m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
     }
 }
 
@@ -1042,177 +723,6 @@ void Menu::RenderSectionHeader(const char *title, const char *subtitle) const
 void Menu::RenderMenuHint(const char *text) const
 {
     ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), text);
-}
-
-void Menu::RenderMapCard(int /*index*/, const MapInfo &map, bool selected, float cardWidth) const
-{
-    if (selected)
-    {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.6f, 1.0f, 0.8f));
-    }
-
-    ImGui::Button(map.displayName.c_str(), ImVec2(cardWidth, 40));
-
-    if (selected)
-    {
-        ImGui::PopStyleColor();
-    }
-
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), map.description.c_str());
-}
-
-// Pagination methods
-void Menu::EnsurePagination()
-{
-    if (m_availableMaps.empty())
-    {
-        m_currentPage = 0;
-        return;
-    }
-
-    int totalPages = (static_cast<int>(m_availableMaps.size()) + m_mapsPerPage - 1) / m_mapsPerPage;
-    if (m_currentPage >= totalPages)
-        m_currentPage = std::max(0, totalPages - 1);
-}
-
-void Menu::GoToNextPage()
-{
-    if (m_currentPage < GetTotalPages() - 1)
-        m_currentPage++;
-}
-
-void Menu::GoToPreviousPage()
-{
-    if (m_currentPage > 0)
-        m_currentPage--;
-}
-
-int Menu::GetPageStartIndex() const
-{
-    return m_currentPage * m_mapsPerPage;
-}
-
-int Menu::GetPageEndIndex() const
-{
-    return std::min(GetPageStartIndex() + m_mapsPerPage, static_cast<int>(m_availableMaps.size()));
-}
-
-int Menu::GetTotalPages() const
-{
-    if (m_availableMaps.empty())
-        return 0;
-    return (static_cast<int>(m_availableMaps.size()) + m_mapsPerPage - 1) / m_mapsPerPage;
-}
-
-void Menu::RenderPaginationControls()
-{
-    int totalPages = GetTotalPages();
-    if (totalPages <= 1)
-        return;
-
-    ImGui::Dummy(ImVec2(0, 20));
-    ImGui::Text("Page %d of %d", m_currentPage + 1, totalPages);
-
-    if (m_currentPage > 0 && ImGui::Button("Previous Page"))
-    {
-        GoToPreviousPage();
-    }
-
-    ImGui::SameLine();
-
-    if (m_currentPage < totalPages - 1 && ImGui::Button("Next Page"))
-    {
-        GoToNextPage();
-    }
-}
-
-// Settings synchronization methods
-void Menu::SyncVideoSettingsToConfig() const
-{
-    if (m_settingsManager)
-    {
-        // Convert resolution index from m_resolutionOptions to MenuConstants::RESOLUTION_OPTIONS
-        // index
-        int standardIndex = 1; // Default to 1280x720
-        if (m_videoSettings.resolutionIndex >= 0 &&
-            m_videoSettings.resolutionIndex < static_cast<int>(m_resolutionOptions.size()))
-        {
-            std::string resolutionStr = m_resolutionOptions[m_videoSettings.resolutionIndex];
-            const auto &standardResolutions = MenuConstants::RESOLUTION_OPTIONS;
-
-            // Find matching resolution in standard options
-            for (size_t i = 0; i < standardResolutions.size(); ++i)
-            {
-                if (standardResolutions[i] == resolutionStr)
-                {
-                    standardIndex = static_cast<int>(i);
-                    break;
-                }
-            }
-            // If not found in standard options, try to find closest match or use default
-            if (standardIndex == 1 && resolutionStr != standardResolutions[1])
-            {
-                // Try to find by parsing resolution
-                size_t xPos = resolutionStr.find('x');
-                if (xPos != std::string::npos)
-                {
-                    int width = std::stoi(resolutionStr.substr(0, xPos));
-                    int height = std::stoi(resolutionStr.substr(xPos + 1));
-
-                    // Find closest match
-                    for (size_t i = 0; i < standardResolutions.size(); ++i)
-                    {
-                        size_t stdXPos = standardResolutions[i].find('x');
-                        if (stdXPos != std::string::npos)
-                        {
-                            int stdWidth = std::stoi(standardResolutions[i].substr(0, stdXPos));
-                            int stdHeight = std::stoi(standardResolutions[i].substr(stdXPos + 1));
-                            if (stdWidth == width && stdHeight == height)
-                            {
-                                standardIndex = static_cast<int>(i);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        m_settingsManager->SetResolutionIndex(standardIndex);
-        m_settingsManager->SetDisplayModeIndex(m_videoSettings.displayModeIndex);
-        m_settingsManager->SetVSyncIndex(m_videoSettings.vsyncIndex);
-        m_settingsManager->SetFpsIndex(m_videoSettings.fpsIndex);
-        m_settingsManager->ApplyVideoSettings();
-        m_settingsManager->SaveSettings();
-    }
-}
-
-void Menu::SyncAudioSettingsToConfig() const
-{
-    if (m_settingsManager)
-    {
-        m_settingsManager->SetMasterVolume(m_audioSettings.masterVolume);
-        m_settingsManager->SetMusicVolume(m_audioSettings.musicVolume);
-        m_settingsManager->SetSfxVolume(m_audioSettings.sfxVolume);
-        m_settingsManager->SetMuted(m_audioSettings.muted);
-        m_settingsManager->ApplyAudioSettings();
-        m_settingsManager->SaveSettings();
-    }
-}
-
-void Menu::SyncControlSettingsToConfig()
-{
-    if (m_settingsManager)
-    {
-        m_settingsManager->SetMouseSensitivity(m_controlSettings.mouseSensitivity);
-        m_settingsManager->SetInvertYAxis(m_controlSettings.invertYAxis);
-        m_settingsManager->SetControllerSupport(m_controlSettings.controllerSupport);
-        m_settingsManager->SaveSettings();
-
-        // Apply sensitivity to CameraController
-        ApplyCameraSensitivity(m_controlSettings.mouseSensitivity);
-    }
 }
 
 // State management
@@ -1288,12 +798,11 @@ void Menu::ShowConfirmExit()
 // Apply pending settings
 void Menu::ApplyPendingSettings()
 {
-    // Apply video settings
-    SyncVideoSettingsToConfig();
-    // Apply audio settings
-    SyncAudioSettingsToConfig();
-    // Apply control settings
-    SyncControlSettingsToConfig();
+    // Delegate to settings controller
+    if (m_settingsController)
+    {
+        m_settingsController->ApplyPendingSettings();
+    }
 
     // Save configuration
     SaveConfiguration();
@@ -1325,90 +834,11 @@ std::string Menu::GetSelectedMapName() const
 // Initialize maps
 void Menu::InitializeMaps()
 {
-    // Sync with MapSelector
-    m_availableMaps = m_mapSelector->GetAvailableMaps();
-    m_selectedMapIndex = m_mapSelector->GetSelectedMapIndex();
-    m_currentPage = m_mapSelector->GetCurrentPage();
-    m_totalPages = m_mapSelector->GetTotalPages();
-    m_jsonMapsCount = m_mapSelector->GetJsonMapsCount();
-}
-
-void Menu::ScanForJsonMaps()
-{
-    m_jsonMapsCount = 0;
-
-    // Scan for JSON maps in the resources/maps directory
-    std::string mapsPath = PROJECT_ROOT_DIR "resources/maps";
-
-    try
+    // Delegate to MapSelector
+    if (m_mapSelector)
     {
-        if (std::filesystem::exists(mapsPath) && std::filesystem::is_directory(mapsPath))
-        {
-            for (const auto &entry : std::filesystem::directory_iterator(mapsPath))
-            {
-                if (entry.is_regular_file() && entry.path().extension() == ".json")
-                {
-                    std::string filename = entry.path().stem().string();
-                    std::string filepath = entry.path().string();
-
-                    // Create MapInfo for this JSON file
-                    MapInfo jsonMap;
-                    jsonMap.name = filename;
-
-                    // Format display name from filename
-                    std::string displayName = filename;
-                    std::replace(displayName.begin(), displayName.end(), '_', ' ');
-                    bool capitalize = true;
-                    for (char &c : displayName)
-                    {
-                        if (capitalize && std::isalpha(c))
-                        {
-                            c = std::toupper(c);
-                            capitalize = false;
-                        }
-                        else if (std::isspace(c))
-                        {
-                            capitalize = true;
-                        }
-                        else
-                        {
-                            capitalize = false;
-                        }
-                    }
-                    jsonMap.displayName = displayName;
-
-                    // Generate description by analyzing the JSON file
-                    std::ifstream mapFile(filepath);
-                    std::string fileContent((std::istreambuf_iterator<char>(mapFile)),
-                                            std::istreambuf_iterator<char>());
-                    size_t objectCount = 0;
-                    size_t pos = 0;
-                    while ((pos = fileContent.find("{", pos)) != std::string::npos)
-                    {
-                        objectCount++;
-                        pos++;
-                    }
-                    jsonMap.description = "Map with " + std::to_string(objectCount) + " objects";
-                    jsonMap.previewImage = "";
-                    jsonMap.themeColor = SKYBLUE;
-                    jsonMap.isAvailable = true;
-                    jsonMap.isModelBased = false;
-
-                    m_availableMaps.push_back(jsonMap);
-                    m_jsonMapsCount++;
-                }
-            }
-        }
+        m_mapSelector->InitializeMaps();
     }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Error scanning for JSON maps: " << e.what() << std::endl;
-    }
-}
-
-void Menu::UpdatePagination()
-{
-    m_totalPages = GetTotalPages();
 }
 
 // Save configuration
@@ -1426,93 +856,8 @@ void Menu::LoadConfiguration()
     if (m_settingsManager)
     {
         m_settingsManager->LoadSettings();
-
-        // Load settings into local variables
-        m_audioSettings.masterVolume = m_settingsManager->GetMasterVolume();
-        m_audioSettings.musicVolume = m_settingsManager->GetMusicVolume();
-        m_audioSettings.sfxVolume = m_settingsManager->GetSfxVolume();
-        m_audioSettings.muted = m_settingsManager->IsMuted();
-
         // Apply initial audio settings to AudioManager
         m_settingsManager->ApplyAudioSettings();
-
-        m_controlSettings.mouseSensitivity = m_settingsManager->GetMouseSensitivity();
-        m_controlSettings.invertYAxis = m_settingsManager->GetInvertYAxis();
-        m_controlSettings.controllerSupport = m_settingsManager->GetControllerSupport();
-
-        // Apply sensitivity to CameraController
-        ApplyCameraSensitivity(m_controlSettings.mouseSensitivity);
-
-        // Convert resolution index from MenuConstants::RESOLUTION_OPTIONS to m_resolutionOptions
-        int standardIndex = m_settingsManager->GetResolutionIndex();
-        const auto &standardResolutions = MenuConstants::RESOLUTION_OPTIONS;
-
-        m_videoSettings.resolutionIndex = 0; // Default to first option
-        if (standardIndex >= 0 && standardIndex < static_cast<int>(standardResolutions.size()))
-        {
-            std::string resolutionStr = standardResolutions[standardIndex];
-
-            // Find matching resolution in m_resolutionOptions
-            for (size_t i = 0; i < m_resolutionOptions.size(); ++i)
-            {
-                if (m_resolutionOptions[i] == resolutionStr)
-                {
-                    m_videoSettings.resolutionIndex = static_cast<int>(i);
-                    break;
-                }
-            }
-            // If not found, try to find by parsing resolution
-            if (m_videoSettings.resolutionIndex == 0 && resolutionStr != m_resolutionOptions[0])
-            {
-                size_t xPos = resolutionStr.find('x');
-                if (xPos != std::string::npos)
-                {
-                    int width = std::stoi(resolutionStr.substr(0, xPos));
-                    int height = std::stoi(resolutionStr.substr(xPos + 1));
-
-                    for (size_t i = 0; i < m_resolutionOptions.size(); ++i)
-                    {
-                        size_t optXPos = m_resolutionOptions[i].find('x');
-                        if (optXPos != std::string::npos)
-                        {
-                            int optWidth = std::stoi(m_resolutionOptions[i].substr(0, optXPos));
-                            int optHeight = std::stoi(m_resolutionOptions[i].substr(optXPos + 1));
-                            if (optWidth == width && optHeight == height)
-                            {
-                                m_videoSettings.resolutionIndex = static_cast<int>(i);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        m_videoSettings.displayModeIndex = m_settingsManager->GetDisplayModeIndex();
-        m_videoSettings.vsyncIndex = m_settingsManager->GetVSyncIndex();
-        m_videoSettings.fpsIndex = m_settingsManager->GetFpsIndex();
-
-        // Validate indices to prevent out-of-bounds
-        if (m_videoSettings.resolutionIndex < 0 ||
-            m_videoSettings.resolutionIndex >= static_cast<int>(m_resolutionOptions.size()))
-        {
-            m_videoSettings.resolutionIndex = 0;
-        }
-        if (m_videoSettings.displayModeIndex < 0 ||
-            m_videoSettings.displayModeIndex >= static_cast<int>(m_displayModeOptions.size()))
-        {
-            m_videoSettings.displayModeIndex = 0;
-        }
-        if (m_videoSettings.vsyncIndex < 0 ||
-            m_videoSettings.vsyncIndex >= static_cast<int>(m_vsyncOptions.size()))
-        {
-            m_videoSettings.vsyncIndex = 0;
-        }
-        if (m_videoSettings.fpsIndex < 0 ||
-            m_videoSettings.fpsIndex >= static_cast<int>(m_fpsOptions.size()))
-        {
-            m_videoSettings.fpsIndex = 1; // Default to 60 FPS
-        }
     }
 }
 
@@ -1602,21 +947,6 @@ void Menu::SetCameraController(ICameraSensitivityController *controller)
     m_cameraController = controller;
 }
 
-void Menu::ApplyCameraSensitivity(float sensitivity)
-{
-    if (!m_cameraController)
-        return;
-
-    // Convert menu sensitivity (0.1-3.0) to camera sensitivity (0.01-0.3)
-    // Menu default is 1.0, CameraController default is 0.1
-    // So we scale: menuValue * 0.1 = cameraValue
-    float cameraSensitivity = sensitivity * 0.1f;
-    m_cameraController->SetMouseSensitivity(cameraSensitivity);
-
-    TraceLog(LOG_INFO,
-             "Menu::ApplyCameraSensitivity() - Applied sensitivity %.2f (menu) -> %.2f (camera)",
-             sensitivity, cameraSensitivity);
-}
 [[nodiscard]] SettingsManager *Menu::GetSettingsManager() const
 {
     return m_settingsManager.get();
