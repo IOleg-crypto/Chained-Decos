@@ -20,6 +20,7 @@
 #include "imgui.h"
 #include "rlImGui.h"
 #include <GLFW/glfw3.h>
+#include <fstream>
 #include <raylib.h>
 
 GameApplication::GameApplication(int argc, char *argv[])
@@ -227,23 +228,69 @@ void GameApplication::OnStart()
         }
     }
 
+    // Check for save file
+    Vector3 spawnPos = {0, 2, 0};
+    float savedTimer = 0.0f;
+    float savedMaxHeight = 0.0f;
+    bool hasSave = false;
+
+    std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
+    std::ifstream saveFile(savePath);
+    if (saveFile.is_open())
+    {
+        if (saveFile >> spawnPos.x >> spawnPos.y >> spawnPos.z >> savedTimer >> savedMaxHeight)
+        {
+            hasSave = true;
+            TraceLog(LOG_INFO, "[GameApplication] Found save file. Loading at: %.2f, %.2f, %.2f",
+                     spawnPos.x, spawnPos.y, spawnPos.z);
+
+            // Restore game state flags so "Resume" works
+            m_isGameInitialized = true;
+
+            auto *uiModule = Engine::Instance().GetModuleManager()->GetModule("UI");
+            if (uiModule)
+            {
+                auto *uiManager = dynamic_cast<UIManager *>(uiModule);
+                if (uiManager && uiManager->GetMenu())
+                {
+                    uiManager->GetMenu()->SetGameInProgress(true);
+                }
+            }
+        }
+        saveFile.close();
+    }
+
     if (playerModelPtr)
     {
         TraceLog(LOG_INFO, "[GameApplication] Using existing model 'player_low'");
-        // We use the pointer directly, no need to copy into m_playerModel if we trust the loader
-        // keeps it alive. However, CreatePlayer takes a pointer. m_playerModel is a Model struct
-        // copy in my previous code. Let's just pass the pointer from loader to CreatePlayer.
-        m_playerEntity = ECSExamples::CreatePlayer(Vector3{0, 2, 0}, playerModelPtr);
+        m_playerEntity = ECSExamples::CreatePlayer(spawnPos, playerModelPtr);
     }
     else
     {
         TraceLog(LOG_WARNING, "[GameApplication] 'player_low' not found, using default cube.");
-        // Create player model (Cube) fallback
         m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
-        m_playerEntity = ECSExamples::CreatePlayer(Vector3{0, 2, 0}, &m_playerModel);
+        m_playerEntity = ECSExamples::CreatePlayer(spawnPos, &m_playerModel);
+    }
+
+    // Apply saved stats
+    if (hasSave && REGISTRY.valid(m_playerEntity))
+    {
+        auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
+        player.runTimer = savedTimer;
+        player.maxHeight = savedMaxHeight;
     }
 
     TraceLog(LOG_INFO, "[GameApplication] ECS Player entity created");
+
+    // Apply visual offset to player render component
+    if (REGISTRY.valid(m_playerEntity) && REGISTRY.all_of<RenderComponent>(m_playerEntity))
+    {
+        auto &renderComp = REGISTRY.get<RenderComponent>(m_playerEntity);
+        // Player::MODEL_Y_OFFSET is -1.0f, which corrects the visual position relative to physics
+        renderComp.offset = {0.0f, Player::MODEL_Y_OFFSET, 0.0f};
+        TraceLog(LOG_INFO, "[GameApplication] Set player visual offset to (0, %.2f, 0)",
+                 Player::MODEL_Y_OFFSET);
+    }
 
     // Initial state - show menu
     m_showMenu = true;
@@ -468,6 +515,42 @@ void GameApplication::OnRender()
                 m_world->Render();
 
             RenderManager::Get().EndMode3D();
+
+            // Draw HUD (Chained Together Style)
+            if (REGISTRY.valid(m_playerEntity))
+            {
+                auto &playerComp = REGISTRY.get<PlayerComponent>(m_playerEntity);
+
+                int hours = (int)playerComp.runTimer / 3600;
+                int minutes = ((int)playerComp.runTimer % 3600) / 60;
+                int seconds = (int)playerComp.runTimer % 60;
+
+                int startX = 20;
+                int startY = 80;
+                int fontSize = 20;
+
+                // 1. Height Section
+                // Vertical Bar
+                DrawLineEx({(float)startX, (float)startY - 5}, {(float)startX, (float)startY + 25},
+                           2.0f, WHITE);
+
+                // Height Text "134m"
+                const char *heightText = TextFormat("%.0fm", playerComp.maxHeight);
+                DrawText(heightText, startX + 10, startY, fontSize, WHITE);
+
+                // 2. Timer Section
+                // Clock Icon (Circle + Hands)
+                int iconX = startX + MeasureText(heightText, fontSize) + 30; // Offset after height
+                int iconY = startY + 10;
+                int radius = 8;
+                DrawCircleLines(iconX, iconY, (float)radius, WHITE);
+                DrawLine(iconX, iconY, iconX, iconY - 6, WHITE); // 12 o'clock hand
+                DrawLine(iconX, iconY, iconX + 4, iconY, WHITE); // 3 o'clock hand
+
+                // Timer Text "0h 0m 36s"
+                const char *timerText = TextFormat("%dh %dm %ds", hours, minutes, seconds);
+                DrawText(timerText, iconX + 15, startY, fontSize, WHITE);
+            }
         }
     }
     // Render console in game
@@ -657,45 +740,30 @@ void GameApplication::HandleMenuActions()
 
 void GameApplication::SaveGameState()
 {
-    /*
-    if (!m_isGameInitialized)
+    if (!m_isGameInitialized || !REGISTRY.valid(m_playerEntity))
     {
-        return; // No state to save if game is not initialized
-    }
-
-    // Get PlayerController through Engine
-    // Get PlayerController through ModuleManager
-    auto *engine = &Engine::Instance();
-    if (!engine || !engine->GetModuleManager())
-        return;
-
-    auto *playerModule = engine->GetModuleManager()->GetModule("Player");
-    auto *playerController = dynamic_cast<PlayerController *>(playerModule);
-
-    if (!playerController)
-    {
-        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - PlayerController not available");
         return;
     }
 
-    // Get LevelManager through Engine
-    auto levelManager = engine->GetLevelManager();
-    if (!levelManager)
+    // Save to simple text file logic
+    auto &transform = REGISTRY.get<TransformComponent>(m_playerEntity);
+    auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
+
+    std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
+    std::ofstream saveFile(savePath);
+
+    if (saveFile.is_open())
     {
-        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - LevelManager not available");
-        return;
+        // Format: X Y Z RunTimer MaxHeight
+        saveFile << transform.position.x << " " << transform.position.y << " "
+                 << transform.position.z << " " << player.runTimer << " " << player.maxHeight;
+
+        saveFile.close();
+        TraceLog(LOG_INFO, "[GameApplication] Game Saved: Pos(%.2f, %.2f, %.2f) Time: %.2f",
+                 transform.position.x, transform.position.y, transform.position.z, player.runTimer);
     }
-
-    // Get current map path
-    std::string currentMapPath = levelManager->GetCurrentMapPath();
-
-    if (currentMapPath.empty())
+    else
     {
-        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - Current map path is empty");
-        return;
+        TraceLog(LOG_ERROR, "[GameApplication] Failed to open save file: %s", savePath.c_str());
     }
-
-    playerController->SavePlayerState(currentMapPath);
-    TraceLog(LOG_INFO, "[GameApplication] Game state saved (map: %s)", currentMapPath.c_str());
-    */
 }

@@ -17,23 +17,21 @@ static void HandleMovement(TransformComponent &transform, VelocityComponent &vel
                            PlayerComponent &player, float dt)
 {
     auto &input = InputManager::Get();
-    auto &render = RenderManager::Get();
-    Camera &camera = render.GetCamera();
+    // auto &render = RenderManager::Get();
+    // Camera &camera = render.GetCamera(); // Not needed for direction calc if we use stored Yaw
 
     Vector3 moveDir = {0, 0, 0};
 
-    // Input relative to camera
-    // We get the camera's forward and right vectors (projected on XZ plane)
-    Vector3 forward = Vector3Subtract(camera.target, camera.position);
-    forward.y = 0; // Flatten on XZ
+    // Calculate Forward/Right vectors based on Camera Yaw
+    // Forward is (sin(yaw), 0, cos(yaw))
+    float yawRad = player.cameraYaw * DEG2RAD;
+    Vector3 forward;
+    forward.x = sinf(yawRad);
+    forward.y = 0.0f;
+    forward.z = cosf(yawRad);
     forward = Vector3Normalize(forward);
 
-    // Reverting Cross Product based on user feedback.
-    // Ideally Up x Forward = Right. But user reports inversion.
-    // Switching to Forward x Up (which is mathematically "Left" in RHS).
-    // This implies D (Right Key) will move "Left" in World Space,
-    // which effectively aligns with "Screen Right" if the camera is
-    // oriented opposite to expectations or if X axis is inverted.
+    // Right vector (Forward x Up)
     Vector3 right = Vector3CrossProduct(forward, {0, 1, 0});
     right = Vector3Normalize(right);
 
@@ -52,11 +50,12 @@ static void HandleMovement(TransformComponent &transform, VelocityComponent &vel
     {
         moveDir = Vector3Scale(moveDir, 1.0f / length);
 
-        // Update player rotation to face movement direction
+        // Update player rotation to face movement direction ONLY when moving
         float targetAngle = atan2f(moveDir.x, moveDir.z) * RAD2DEG;
 
-        // Basic interpolation for rotation could go here, but for now snap or simple
-        // transform.rotation.y = targetAngle; // Optional: Rotate player model to face move dir
+        // Simple interpolation or direct set for responsiveness
+        // For now, direct set to ensure it works immediately
+        transform.rotation.y = targetAngle;
     }
 
     // Apply velocity
@@ -97,10 +96,10 @@ static void HandleCamera(TransformComponent &transform, PlayerComponent &player)
 
     Vector2 mouseDelta = input.GetMouseDelta();
 
-    // Update Player Yaw (Model Rotation Y)
-    transform.rotation.y -= mouseDelta.x * 0.1f;
+    // Update Camera Yaw (Independent of Player Model)
+    player.cameraYaw -= mouseDelta.x * 0.1f;
 
-    // Update Camera Pitch (Separate from Model Rotation)
+    // Update Camera Pitch
     player.cameraPitch -= mouseDelta.y * 0.1f;
 
     // Clamp vertical rotation (pitch)
@@ -109,16 +108,27 @@ static void HandleCamera(TransformComponent &transform, PlayerComponent &player)
     if (player.cameraPitch < -89.0f)
         player.cameraPitch = -89.0f;
 
-    // Ensure model does not pitch/roll
+    // Ensure model does not pitch/roll (safety)
     transform.rotation.x = 0.0f;
     transform.rotation.z = 0.0f;
 
-    // Third Person Camera Math
-    float yawRad = transform.rotation.y * DEG2RAD;
+    // Third Person Camera Math using cameraYaw
+    float yawRad = player.cameraYaw * DEG2RAD;
     float pitchRad = player.cameraPitch * DEG2RAD;
 
+    // Zoom Logic
+    float wheelMove = GetMouseWheelMove();
+    if (wheelMove != 0.0f)
+    {
+        player.cameraDistance -= wheelMove * 1.5f; // Adjust sensitivity as needed
+        if (player.cameraDistance < 2.0f)
+            player.cameraDistance = 2.0f;
+        if (player.cameraDistance > 15.0f)
+            player.cameraDistance = 15.0f;
+    }
+
     // Distance from player
-    float distance = 5.0f;
+    float distance = player.cameraDistance;
 
     // Calculate offset based on yaw/pitch
     Vector3 offset;
@@ -139,6 +149,12 @@ static void HandleCamera(TransformComponent &transform, PlayerComponent &player)
     Camera &camera = render.GetCamera();
 
     // Focus point is player + render offset (e.g. head/center)
+    // IMPORTANT: transform.position is physics position. Visual is offset by -1.0.
+    // If we want to look at the head (which is ~1.8m tall), and pivot is at feet (Visual-wise),
+    // Physics position is Center (0.9?).
+    // GameApp sets Visual Offset -1.0. This means Model Feet are at Phys-1.0.
+    // Phys Center is likely +0.4 above ground?
+    // Let's stick to transform.position + offset for now.
     Vector3 focusPoint = transform.position;
     focusPoint.y += 1.5f; // Look at center/head
 
@@ -171,15 +187,47 @@ static void HandleAudio(PlayerComponent &player, const VelocityComponent &veloci
     }
 }
 
+static void HandleRespawn(TransformComponent &transform, VelocityComponent &velocity,
+                          PlayerComponent &player)
+{
+    auto &input = InputManager::Get();
+    if (input.IsKeyPressed(KEY_F))
+    {
+        // Reset position to default spawn
+        transform.position = {0.0f, 2.0f, 0.0f};
+        velocity.velocity = {0.0f, 0.0f, 0.0f};
+        player.isGrounded = false;
+
+        // Reset stats
+        player.runTimer = 0.0f;
+        player.maxHeight = 0.0f;
+
+        // Stop any falling sound
+        if (player.isFallingSoundPlaying)
+        {
+            AudioManager::Get().StopLoopingSoundEffect("player_fall");
+            player.isFallingSoundPlaying = false;
+        }
+    }
+}
+
 void Update(float deltaTime)
 {
     auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
 
     for (auto [entity, transform, velocity, player] : view.each())
     {
+        // Update Stats
+        player.runTimer += deltaTime;
+        if (transform.position.y > player.maxHeight)
+        {
+            player.maxHeight = transform.position.y;
+        }
+
         HandleMovement(transform, velocity, player, deltaTime);
         HandleJump(velocity, player);
         HandleCamera(transform, player);
+        HandleRespawn(transform, velocity, player);
         HandleAudio(player, velocity);
     }
 }

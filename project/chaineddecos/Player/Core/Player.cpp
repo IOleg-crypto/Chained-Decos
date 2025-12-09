@@ -95,14 +95,29 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
             m_movement->SnapToGround(collisionManager);
 
             // Apply screen shake during fall (intensity based on fall speed)
+            // Apply screen shake during fall
             float fallSpeed = abs(m_movement->GetPhysics().GetVelocity().y);
-            if (fallSpeed > 5.0f) // Only shake if falling fast enough
+            float currentY = m_movement->GetPosition().y;
+            float shakeIntensity = 0.0f;
+
+            // 1. Speed-based shake
+            if (fallSpeed > 5.0f)
             {
-                // Normalize fall speed (0-60 range -> 0-1 range, then scale to shake intensity)
                 float normalizedFall = std::min(fallSpeed / 60.0f, 1.0f);
-                float shakeIntensity = normalizedFall * 0.15f; // Max 0.15 intensity
-                float shakeDuration = 0.3f;                    // Short continuous shake during fall
-                m_cameraController->AddScreenShake(shakeIntensity, shakeDuration);
+                shakeIntensity += normalizedFall * 0.15f;
+            }
+
+            // 2. Depth-based shake (falling out of map)
+            if (currentY < -10.0f) // Start adding extra shake after passing -10
+            {
+                // Ramp up to max intensity at -100
+                float depthRatio = std::min((fabsf(currentY) - 10.0f) / 90.0f, 1.0f);
+                shakeIntensity += depthRatio * 0.4f; // Add up to 0.4 extra intensity
+            }
+
+            if (shakeIntensity > 0.0f)
+            {
+                m_cameraController->AddScreenShake(shakeIntensity, 0.15f);
             }
         }
 
@@ -201,8 +216,31 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
         newPosition.z += vel.z * deltaTime;
         m_movement->SetPosition(newPosition);
         SetPlayerPosition(newPosition);
-        UpdatePlayerBox();
         UpdatePlayerCollision();
+    }
+
+    // Check if player has fallen out of bounds
+    if (m_movement->GetPosition().y < -100.0f)
+    {
+        TraceLog(LOG_WARNING, "[Player] Fell out of world bounds (y < -100), respawning...");
+
+        // Reset position to safe spawn
+        SetPlayerPosition(Player::DEFAULT_SPAWN_POSITION);
+
+        // Reset velocity
+        m_movement->GetPhysics().SetVelocity({0.0f, 0.0f, 0.0f});
+        m_movement->GetPhysics().SetGroundLevel(false);
+
+        // Stop fall sound if playing
+        if (m_audioManager && m_isFallSoundPlaying)
+        {
+            m_audioManager->StopLoopingSoundEffect("player_fall");
+            m_isFallSoundPlaying = false;
+        }
+
+        // Reset any camera shake or other effects if needed
+        m_cameraController->AddScreenShake(
+            0.0f, 0.0f); // effective stop if supported or just insignificant
     }
 }
 
