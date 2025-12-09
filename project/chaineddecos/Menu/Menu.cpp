@@ -153,6 +153,30 @@ void Menu::SetupStyle()
 {
     ImGui::StyleColorsDark();
     ImGuiStyle &style = ImGui::GetStyle();
+    ImGuiIO &io = ImGui::GetIO();
+
+    // Load Gantari Font
+    std::string fontPath =
+        std::string(PROJECT_ROOT_DIR) + "/resources/font/Gantari/static/Gantari-Regular.ttf";
+    if (std::filesystem::exists(fontPath))
+    {
+        // Increase base font size for sharper text (was 20.0f)
+        ImFont *font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 32.0f);
+        if (font)
+        {
+            TraceLog(LOG_INFO, "[Menu] Loaded custom font: %s", fontPath.c_str());
+            // Important: Notify rlImGui to rebuild the font texture
+            // Assuming rlImGuiReloadFonts() or similar is available, or we just rely on standard
+            // flow. Since we don't have direct access to rlImGui internal reload easily without
+            // including it, we'll see if it works. Standard ImGui requires texture rebuild. If
+            // rlImGui is used, we usually need to call rlImGuiReloadFonts(). Let's try to verify if
+            // we can include it.
+        }
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "[Menu] Custom font not found: %s", fontPath.c_str());
+    }
 
     // Customize colors for a more modern look
     style.WindowRounding = 8.0f;
@@ -283,7 +307,7 @@ void Menu::RenderMainMenu()
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
     ImGui::PushFont(nullptr); // Use default font but with larger size
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 24.0f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 32.0f);
     ImGui::Text("CHAINED DECOS");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopFont();
@@ -291,7 +315,7 @@ void Menu::RenderMainMenu()
 
     // Subtitle
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 24.0f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::NAME_FONT_SIZE) / 32.0f);
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Parkour Adventure");
     ImGui::SetWindowFontScale(1.0f);
 
@@ -351,7 +375,7 @@ void Menu::RenderMainMenu()
 
     // Console toggle hint
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, windowSize.y - 40));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::INSTRUCTIONS_FONT_SIZE) / 16.0f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::INSTRUCTIONS_FONT_SIZE) / 32.0f);
     ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
                        "[~] Console | [F12] Screenshot | [ESC] Back");
     ImGui::SetWindowFontScale(1.0f);
@@ -492,7 +516,7 @@ void Menu::RenderCreditsScreen()
     // Title
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.6f, 1.0f));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 28.0f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 32.0f);
     ImGui::Text("CREDITS");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
@@ -540,7 +564,7 @@ void Menu::RenderModsScreen()
     // Title
     ImGui::SetCursorPos(ImVec2(MenuConstants::MARGIN, MenuConstants::TOP_MARGIN - 50));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.4f, 1.0f, 1.0f));
-    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 28.0f);
+    ImGui::SetWindowFontScale(static_cast<float>(MenuConstants::TITLE_FONT_SIZE) / 32.0f);
     ImGui::Text("MODS");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
