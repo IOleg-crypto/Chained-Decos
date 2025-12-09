@@ -1,5 +1,5 @@
 #include "scene/resources/map/Skybox/Skybox.h"
-#include "core\config\Core\ConfigManager.h"
+#include "core/config/Core/ConfigManager.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>

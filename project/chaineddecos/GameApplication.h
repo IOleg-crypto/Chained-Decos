@@ -63,6 +63,10 @@ private:
     int m_locTime = -1;
     int m_locWindDir = -1;
     bool m_shaderLoaded = false;
+
+    // HUD Font
+    Font m_hudFont = {0};
+    bool m_fontLoaded = false;
 };
 
 #endif // GAME_APPLICATION_H
