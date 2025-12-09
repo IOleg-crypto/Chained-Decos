@@ -299,7 +299,7 @@ void Menu::RenderMainMenu()
     float startY = MenuConstants::TOP_MARGIN + 100;
     float currentY = startY;
 
-    if (m_addResumeButton)
+    if (m_gameInProgress)
     {
         // Start Game button
         ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));

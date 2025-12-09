@@ -13,6 +13,7 @@ struct RenderComponent
     int renderLayer = 0; // Для сортування (0 = default, higher = later)
     bool castShadows = true;
     bool receiveShadows = true;
+    Vector3 offset = {0.0f, 0.0f, 0.0f}; // Visual offset from transform position
 };
 
 #endif // RENDER_COMPONENT_H
