@@ -16,6 +16,7 @@
 #include "scene/main/Core/World.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
+#include "scene/resources/model/Utils/ModelAnalyzer.h"
 
 #include "imgui.h"
 #include "rlImGui.h"
@@ -232,20 +233,63 @@ void GameApplication::OnStart()
     Vector3 spawnPos = {0, 2, 0};
     float savedTimer = 0.0f;
     float savedMaxHeight = 0.0f;
+    std::string savedMapPath;
     bool hasSave = false;
+
+    // Load HUD Font
+    std::string fontPath =
+        std::string(PROJECT_ROOT_DIR) + "/resources/font/Gantari/static/Gantari-Bold.ttf";
+
+    // Load font with higher size for better quality scaling
+    m_hudFont = LoadFontEx(fontPath.c_str(), 96, 0, 0);
+
+    if (m_hudFont.baseSize > 0)
+    {
+        SetTextureFilter(m_hudFont.texture, TEXTURE_FILTER_BILINEAR);
+        m_fontLoaded = true;
+        TraceLog(LOG_INFO, "[GameApplication] Loaded HUD font: %s", fontPath.c_str());
+    }
+    else
+    {
+        TraceLog(LOG_ERROR, "[GameApplication] Failed to load HUD font: %s. Loading default.",
+                 fontPath.c_str());
+        m_fontLoaded = false;
+        m_hudFont = GetFontDefault();
+    }
 
     std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
     std::ifstream saveFile(savePath);
     if (saveFile.is_open())
     {
-        if (saveFile >> spawnPos.x >> spawnPos.y >> spawnPos.z >> savedTimer >> savedMaxHeight)
+        // Try reading: MapPath X Y Z Timer Height
+        if (saveFile >> savedMapPath >> spawnPos.x >> spawnPos.y >> spawnPos.z >> savedTimer >>
+            savedMaxHeight)
         {
             hasSave = true;
-            TraceLog(LOG_INFO, "[GameApplication] Found save file. Loading at: %.2f, %.2f, %.2f",
-                     spawnPos.x, spawnPos.y, spawnPos.z);
+            TraceLog(LOG_INFO, "[GameApplication] Found save file. Map: %s Pos: %.2f, %.2f, %.2f",
+                     savedMapPath.c_str(), spawnPos.x, spawnPos.y, spawnPos.z);
 
-            // Restore game state flags so "Resume" works
+            // Restore game state flags
             m_isGameInitialized = true;
+
+            // Load Map and Collisions
+            if (!savedMapPath.empty())
+            {
+                auto levelManager = Engine::Instance().GetService<LevelManager>();
+                auto models = m_models; // Already fetched
+
+                if (levelManager && models)
+                {
+                    levelManager->LoadMap(savedMapPath);
+
+                    // Required models for collision
+                    std::vector<std::string> requiredModels =
+                        ModelAnalyzer::GetModelsRequiredForMap(savedMapPath);
+                    models->LoadGameModelsSelective(requiredModels);
+                    levelManager->InitCollisionsWithModelsSafe(requiredModels);
+                    TraceLog(LOG_INFO, "[GameApplication] Restored map and collisions from save.");
+                }
+            }
 
             auto *uiModule = Engine::Instance().GetModuleManager()->GetModule("UI");
             if (uiModule)
@@ -525,31 +569,86 @@ void GameApplication::OnRender()
                 int minutes = ((int)playerComp.runTimer % 3600) / 60;
                 int seconds = (int)playerComp.runTimer % 60;
 
-                int startX = 20;
+                int startX = 40;
                 int startY = 80;
-                int fontSize = 20;
+                float fontSize = 32.0f;
+                float spacing = 2.0f; // Font spacing
+
+                Font *fontToUse = m_fontLoaded ? &m_hudFont : nullptr;
 
                 // 1. Height Section
                 // Vertical Bar
-                DrawLineEx({(float)startX, (float)startY - 5}, {(float)startX, (float)startY + 25},
-                           2.0f, WHITE);
+                DrawLineEx({(float)startX, (float)startY - 5}, {(float)startX, (float)startY + 45},
+                           4.0f, WHITE); // Thicker bar
 
                 // Height Text "134m"
                 const char *heightText = TextFormat("%.0fm", playerComp.maxHeight);
-                DrawText(heightText, startX + 10, startY, fontSize, WHITE);
+                float fontSizeHeight = 48.0f; // Larger font for height
+                Vector2 heightSize;
+
+                if (m_fontLoaded)
+                    heightSize = MeasureTextEx(m_hudFont, heightText, fontSizeHeight, spacing);
+                else
+                    heightSize = {(float)MeasureText(heightText, (int)fontSizeHeight),
+                                  fontSizeHeight};
+
+                // Draw Height Shadow
+                Vector2 heightPos = {(float)startX + 15, (float)startY};
+                Vector2 shadowOffset = {2.0f, 2.0f};
+
+                if (m_fontLoaded)
+                    DrawTextEx(m_hudFont, heightText,
+                               {heightPos.x + shadowOffset.x, heightPos.y + shadowOffset.y},
+                               fontSizeHeight, spacing, ColorAlpha(BLACK, 0.5f));
+                else
+                    DrawText(heightText, (int)(heightPos.x + shadowOffset.x),
+                             (int)(heightPos.y + shadowOffset.y), (int)fontSizeHeight, BLACK);
+
+                // Draw Height Text
+                if (m_fontLoaded)
+                    DrawTextEx(m_hudFont, heightText, heightPos, fontSizeHeight, spacing, WHITE);
+                else
+                    DrawText(heightText, (int)heightPos.x, (int)heightPos.y, (int)fontSizeHeight,
+                             WHITE);
 
                 // 2. Timer Section
-                // Clock Icon (Circle + Hands)
-                int iconX = startX + MeasureText(heightText, fontSize) + 30; // Offset after height
-                int iconY = startY + 10;
-                int radius = 8;
-                DrawCircleLines(iconX, iconY, (float)radius, WHITE);
-                DrawLine(iconX, iconY, iconX, iconY - 6, WHITE); // 12 o'clock hand
-                DrawLine(iconX, iconY, iconX + 4, iconY, WHITE); // 3 o'clock hand
+                // Clock Icon (Circle + Hands) - Adjusted position relative to height text
+                int iconX = (int)(heightPos.x + heightSize.x + 30);
+                int iconY = (int)(startY + 24); // Centered roughly with text
+                int radius = 12;
 
-                // Timer Text "0h 0m 36s"
-                const char *timerText = TextFormat("%dh %dm %ds", hours, minutes, seconds);
-                DrawText(timerText, iconX + 15, startY, fontSize, WHITE);
+                // Icon Shadow
+                DrawCircleLines(iconX + 2, iconY + 2, (float)radius, ColorAlpha(BLACK, 0.5f));
+
+                // Icon
+                DrawCircleLines(iconX, iconY, (float)radius, WHITE);
+                DrawLine(iconX, iconY, iconX, iconY - 9, WHITE); // 12 o'clock hand
+                DrawLine(iconX, iconY, iconX + 7, iconY, WHITE); // 3 o'clock hand
+
+                // Timer Text - Format "MM:SS" or "HH:MM:SS"
+                const char *timerText;
+                if (hours > 0)
+                    timerText = TextFormat("%02d:%02d:%02d", hours, minutes, seconds);
+                else
+                    timerText = TextFormat("%02d:%02d", minutes, seconds);
+
+                int timerX = iconX + 25;
+                float fontSizeTimer = 48.0f; // Match height font size
+
+                // Draw Timer Shadow
+                if (m_fontLoaded)
+                    DrawTextEx(m_hudFont, timerText,
+                               {(float)timerX + shadowOffset.x, (float)startY + shadowOffset.y},
+                               fontSizeTimer, spacing, ColorAlpha(BLACK, 0.5f));
+                else
+                    DrawText(timerText, timerX + 2, startY + 2, (int)fontSizeTimer, BLACK);
+
+                // Draw Timer Text
+                if (m_fontLoaded)
+                    DrawTextEx(m_hudFont, timerText, {(float)timerX, (float)startY}, fontSizeTimer,
+                               spacing, WHITE);
+                else
+                    DrawText(timerText, timerX, startY, (int)fontSizeTimer, WHITE);
             }
         }
     }
@@ -611,6 +710,12 @@ void GameApplication::OnShutdown()
     {
         UnloadShader(m_playerShader);
         m_shaderLoaded = false;
+    }
+
+    if (m_fontLoaded)
+    {
+        UnloadFont(m_hudFont);
+        m_fontLoaded = false;
     }
 
     // Shutdown Managers
@@ -749,18 +854,31 @@ void GameApplication::SaveGameState()
     auto &transform = REGISTRY.get<TransformComponent>(m_playerEntity);
     auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
 
+    // Get current map
+    std::string currentMap = "resources/maps/test_map.json"; // Default
+    auto levelManager = Engine::Instance().GetService<LevelManager>();
+    if (levelManager)
+    {
+        std::string mapPath = levelManager->GetCurrentMapPath();
+        if (!mapPath.empty())
+        {
+            currentMap = mapPath;
+        }
+    }
+
     std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
     std::ofstream saveFile(savePath);
 
     if (saveFile.is_open())
     {
-        // Format: X Y Z RunTimer MaxHeight
-        saveFile << transform.position.x << " " << transform.position.y << " "
+        // Format: MapPath X Y Z RunTimer MaxHeight
+        saveFile << currentMap << " " << transform.position.x << " " << transform.position.y << " "
                  << transform.position.z << " " << player.runTimer << " " << player.maxHeight;
 
         saveFile.close();
-        TraceLog(LOG_INFO, "[GameApplication] Game Saved: Pos(%.2f, %.2f, %.2f) Time: %.2f",
-                 transform.position.x, transform.position.y, transform.position.z, player.runTimer);
+        TraceLog(LOG_INFO, "[GameApplication] Game Saved: Map: %s Pos(%.2f, %.2f, %.2f)",
+                 currentMap.c_str(), transform.position.x, transform.position.y,
+                 transform.position.z);
     }
     else
     {
