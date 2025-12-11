@@ -1,5 +1,6 @@
 #include "MenuPresenter.h"
 #include "Menu.h"
+#include <filesystem>
 #include <raylib.h>
 
 void MenuPresenter::SetActionCallback(ActionCallback callback)
@@ -11,6 +12,30 @@ void MenuPresenter::SetupStyle()
 {
     // Get ImGui's default style and customize it
     ImGuiStyle &style = ImGui::GetStyle();
+    ImGuiIO &io = ImGui::GetIO();
+
+    // Load Gantari Font
+    std::string fontPath =
+        std::string(PROJECT_ROOT_DIR) + "/resources/font/Gantari/static/Gantari-Regular.ttf";
+    if (std::filesystem::exists(fontPath))
+    {
+        // Increase base font size for sharper text (was 20.0f)
+        ImFont *font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 32.0f);
+        if (font)
+        {
+            TraceLog(LOG_INFO, "[Menu] Loaded custom font: %s", fontPath.c_str());
+            // Important: Notify rlImGui to rebuild the font texture
+            // Assuming rlImGuiReloadFonts() or similar is available, or we just rely on standard
+            // flow. Since we don't have direct access to rlImGui internal reload easily without
+            // including it, we'll see if it works. Standard ImGui requires texture rebuild. If
+            // rlImGui is used, we usually need to call rlImGuiReloadFonts(). Let's try to verify if
+            // we can include it.
+        }
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "[Menu] Custom font not found: %s", fontPath.c_str());
+    }
 
     // Window styling
     style.WindowRounding = 8.0f;

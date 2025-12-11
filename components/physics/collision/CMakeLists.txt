@@ -22,7 +22,7 @@ target_include_directories(collision PUBLIC
     ${CMAKE_SOURCE_DIR}/src/Engine
 )
 
-target_link_libraries(collision PUBLIC raylib model)
+target_link_libraries(collision PUBLIC raylib model EnTT::EnTT)
 
 # Raylib is always available via submodule
 if(TARGET raylib)

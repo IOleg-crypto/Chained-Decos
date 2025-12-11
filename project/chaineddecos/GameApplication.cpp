@@ -571,19 +571,15 @@ void GameApplication::OnRender()
 
                 int startX = 40;
                 int startY = 80;
-                float fontSize = 32.0f;
+                // float fontSize = 32.0f; // Unused
                 float spacing = 2.0f; // Font spacing
 
                 Font *fontToUse = m_fontLoaded ? &m_hudFont : nullptr;
 
                 // 1. Height Section
-                // Vertical Bar
-                DrawLineEx({(float)startX, (float)startY - 5}, {(float)startX, (float)startY + 45},
-                           4.0f, WHITE); // Thicker bar
-
-                // Height Text "134m"
-                const char *heightText = TextFormat("%.0fm", playerComp.maxHeight);
-                float fontSizeHeight = 48.0f; // Larger font for height
+                // Height Text "height : 134m"
+                const char *heightText = TextFormat("height : %.0fm", playerComp.maxHeight);
+                float fontSizeHeight = 36.0f;
                 Vector2 heightSize;
 
                 if (m_fontLoaded)
@@ -593,7 +589,7 @@ void GameApplication::OnRender()
                                   fontSizeHeight};
 
                 // Draw Height Shadow
-                Vector2 heightPos = {(float)startX + 15, (float)startY};
+                Vector2 heightPos = {(float)startX, (float)startY};
                 Vector2 shadowOffset = {2.0f, 2.0f};
 
                 if (m_fontLoaded)
@@ -611,20 +607,12 @@ void GameApplication::OnRender()
                     DrawText(heightText, (int)heightPos.x, (int)heightPos.y, (int)fontSizeHeight,
                              WHITE);
 
-                // 2. Timer Section
-                // Clock Icon (Circle + Hands) - Adjusted position relative to height text
-                int iconX = (int)(heightPos.x + heightSize.x + 30);
-                int iconY = (int)(startY + 24); // Centered roughly with text
-                int radius = 12;
+                // Vertical separator bar
+                int barX = (int)(heightPos.x + heightSize.x + 10);
+                DrawLineEx({(float)barX, (float)startY}, {(float)barX, (float)startY + 30}, 3.0f,
+                           WHITE);
 
-                // Icon Shadow
-                DrawCircleLines(iconX + 2, iconY + 2, (float)radius, ColorAlpha(BLACK, 0.5f));
-
-                // Icon
-                DrawCircleLines(iconX, iconY, (float)radius, WHITE);
-                DrawLine(iconX, iconY, iconX, iconY - 9, WHITE); // 12 o'clock hand
-                DrawLine(iconX, iconY, iconX + 7, iconY, WHITE); // 3 o'clock hand
-
+                // 2. Timer Section with Clock Icon
                 // Timer Text - Format "MM:SS" or "HH:MM:SS"
                 const char *timerText;
                 if (hours > 0)
@@ -632,8 +620,24 @@ void GameApplication::OnRender()
                 else
                     timerText = TextFormat("%02d:%02d", minutes, seconds);
 
-                int timerX = iconX + 25;
-                float fontSizeTimer = 48.0f; // Match height font size
+                // Clock icon position
+                int iconX = (int)(heightPos.x + heightSize.x + 20);
+                int iconY = (int)(startY + 12); // Centered with text
+                int iconRadius = 10;
+
+                // Draw clock circle with shadow
+                DrawCircle(iconX + 1, iconY + 1, (float)iconRadius, ColorAlpha(BLACK, 0.3f));
+                DrawCircle(iconX, iconY, (float)iconRadius, WHITE);
+                DrawCircle(iconX, iconY, (float)iconRadius - 1, ColorAlpha(SKYBLUE, 0.2f));
+
+                // Clock hands
+                DrawLine(iconX, iconY, iconX, iconY - 6, BLACK); // Hour hand
+                DrawLine(iconX, iconY, iconX + 5, iconY, BLACK); // Minute hand
+                DrawCircle(iconX, iconY, 2.0f, BLACK);           // Center dot
+
+                // Timer text position
+                int timerX = iconX + iconRadius + 8;
+                float fontSizeTimer = 28.0f; // Slightly larger
 
                 // Draw Timer Shadow
                 if (m_fontLoaded)

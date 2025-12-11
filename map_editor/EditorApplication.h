@@ -1,8 +1,8 @@
 #ifndef EDITOR_APPLICATION_H
 #define EDITOR_APPLICATION_H
 
+#include "Editor/Editor.h"
 #include "core/engine/IApplication.h"
-#include "editor/plugins/map_editor/Editor/Editor.h"
 #include <memory>
 
 // Editor application - uses full engine + own modules

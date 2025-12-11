@@ -257,7 +257,7 @@ if(BUILD_TESTS)
 endif()
 
 if(BUILD_MAP_EDITOR)
-    add_subdirectory(editor/plugins/map_editor)
+    add_subdirectory(map_editor)
 endif()
 
 # Set the target properties

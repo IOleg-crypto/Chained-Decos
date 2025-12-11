@@ -6,7 +6,8 @@
 #include "core/engine/IApplication.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
-#include <entt/entt.hpp>
+#include <core/ecs/ECSRegistry.h>
+#include <core/ecs/Entity.h>
 
 // =================================================
 #include <memory>

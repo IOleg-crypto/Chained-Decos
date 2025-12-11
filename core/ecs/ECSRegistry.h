@@ -1,5 +1,5 @@
-#ifndef ECS_REGISTRY_H
-#define ECS_REGISTRY_H
+#ifndef ECS_REGISTRY_WRAPPER_H
+#define ECS_REGISTRY_WRAPPER_H
 
 #include <entt/entt.hpp>
 
@@ -34,4 +34,4 @@ public:
 // Зручний макрос
 #define REGISTRY ECSRegistry::Get()
 
-#endif // ECS_REGISTRY_H
+#endif // ECS_REGISTRY_WRAPPER_H

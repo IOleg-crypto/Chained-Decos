@@ -17,13 +17,11 @@ static void HandleMovement(TransformComponent &transform, VelocityComponent &vel
                            PlayerComponent &player, float dt)
 {
     auto &input = InputManager::Get();
-    // auto &render = RenderManager::Get();
-    // Camera &camera = render.GetCamera(); // Not needed for direction calc if we use stored Yaw
 
     Vector3 moveDir = {0, 0, 0};
 
     // Calculate Forward/Right vectors based on Camera Yaw
-    // Forward is (sin(yaw), 0, cos(yaw))
+    // Forward is where the camera is looking (horizontal plane)
     float yawRad = player.cameraYaw * DEG2RAD;
     Vector3 forward;
     forward.x = sinf(yawRad);
@@ -31,8 +29,8 @@ static void HandleMovement(TransformComponent &transform, VelocityComponent &vel
     forward.z = cosf(yawRad);
     forward = Vector3Normalize(forward);
 
-    // Right vector (Forward x Up)
-    Vector3 right = Vector3CrossProduct(forward, {0, 1, 0});
+    // Right vector (perpendicular to forward on horizontal plane)
+    Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
     right = Vector3Normalize(right);
 
     if (input.IsKeyDown(KEY_W))
@@ -52,9 +50,6 @@ static void HandleMovement(TransformComponent &transform, VelocityComponent &vel
 
         // Update player rotation to face movement direction ONLY when moving
         float targetAngle = atan2f(moveDir.x, moveDir.z) * RAD2DEG;
-
-        // Simple interpolation or direct set for responsiveness
-        // For now, direct set to ensure it works immediately
         transform.rotation.y = targetAngle;
     }
 
@@ -67,25 +62,10 @@ static void HandleJump(VelocityComponent &velocity, PlayerComponent &player)
 {
     auto &input = InputManager::Get();
 
-    if (input.IsKeyPressed(KEY_SPACE))
+    if (input.IsKeyPressed(KEY_SPACE) && player.isGrounded)
     {
-        if (player.isGrounded || player.jumpsRemaining > 0)
-        {
-            velocity.velocity.y = player.jumpForce;
-
-            if (!player.isGrounded)
-            {
-                player.jumpsRemaining--;
-            }
-
-            // Jump sound removed (was using incorrect player_fall)
-            // AudioManager::Get().PlaySoundEffect("jump"); // TODO: Add jump sound
-        }
-    }
-
-    if (player.isGrounded)
-    {
-        player.jumpsRemaining = player.canDoubleJump ? 1 : 0;
+        velocity.velocity.y = player.jumpForce;
+        player.isGrounded = false;
     }
 }
 
@@ -108,47 +88,20 @@ static void HandleCamera(TransformComponent &transform, PlayerComponent &player)
     if (player.cameraPitch < -89.0f)
         player.cameraPitch = -89.0f;
 
-    // Ensure model does not pitch/roll (safety)
-    transform.rotation.x = 0.0f;
-    transform.rotation.z = 0.0f;
-
-    // Third Person Camera Math using cameraYaw
+    // Calculate camera position using spherical coordinates
+    float distance = 5.0f; // Distance from player
     float yawRad = player.cameraYaw * DEG2RAD;
     float pitchRad = player.cameraPitch * DEG2RAD;
 
-    // Zoom Logic
-    float wheelMove = GetMouseWheelMove();
-    if (wheelMove != 0.0f)
-    {
-        player.cameraDistance -= wheelMove * 1.5f; // Adjust sensitivity as needed
-        if (player.cameraDistance < 2.0f)
-            player.cameraDistance = 2.0f;
-        if (player.cameraDistance > 15.0f)
-            player.cameraDistance = 15.0f;
-    }
+    // Calculate offset from player
+    Vector3 cameraOffset;
+    cameraOffset.x = distance * cosf(pitchRad) * sinf(yawRad);
+    cameraOffset.y = distance * sinf(pitchRad);
+    cameraOffset.z = distance * cosf(pitchRad) * cosf(yawRad);
 
-    // Distance from player
-    float distance = player.cameraDistance;
-
-    // Calculate offset based on yaw/pitch
-    Vector3 offset;
-    offset.x = sinf(yawRad) * cosf(pitchRad) * distance;
-    offset.y = sinf(pitchRad) * distance;
-    offset.z = cosf(yawRad) * cosf(pitchRad) * distance;
-
-    // Position camera BEHIND the focus point
-    // We use the REVERSE of the view vector
-    Vector3 forward;
-    forward.x = sinf(yawRad) * cosf(pitchRad);
-    forward.y = sinf(pitchRad);
-    forward.z = cosf(yawRad) * cosf(pitchRad);
-
-    Vector3 viewDir = Vector3Normalize(forward);
-    Vector3 cameraOffset = Vector3Scale(viewDir, -distance); // Behind
-
+    // Get camera reference
     Camera &camera = render.GetCamera();
 
-    // Focus point is player + render offset (e.g. head/center)
     // IMPORTANT: transform.position is physics position. Visual is offset by -1.0.
     // If we want to look at the head (which is ~1.8m tall), and pivot is at feet (Visual-wise),
     // Physics position is Center (0.9?).
@@ -160,31 +113,6 @@ static void HandleCamera(TransformComponent &transform, PlayerComponent &player)
 
     camera.position = Vector3Add(focusPoint, cameraOffset);
     camera.target = focusPoint;
-}
-
-static void HandleAudio(PlayerComponent &player, const VelocityComponent &velocity)
-{
-    // Threshold for falling sound
-    const float FALL_THRESHOLD = -8.0f; // Falling speed threshold
-
-    bool isFallingFast = (velocity.velocity.y < FALL_THRESHOLD) && !player.isGrounded;
-
-    if (isFallingFast)
-    {
-        if (!player.isFallingSoundPlaying)
-        {
-            AudioManager::Get().PlayLoopingSoundEffect("player_fall", 1.0f);
-            player.isFallingSoundPlaying = true;
-        }
-    }
-    else
-    {
-        if (player.isFallingSoundPlaying)
-        {
-            AudioManager::Get().StopLoopingSoundEffect("player_fall");
-            player.isFallingSoundPlaying = false;
-        }
-    }
 }
 
 static void HandleRespawn(TransformComponent &transform, VelocityComponent &velocity,
@@ -208,6 +136,32 @@ static void HandleRespawn(TransformComponent &transform, VelocityComponent &velo
             AudioManager::Get().StopLoopingSoundEffect("player_fall");
             player.isFallingSoundPlaying = false;
         }
+    }
+}
+
+static void HandleAudio(PlayerComponent &player, VelocityComponent &velocity)
+{
+    // Play falling sound when falling fast
+    const float fallSpeedThreshold = -5.0f; // Negative because falling down
+
+    if (velocity.velocity.y < fallSpeedThreshold && !player.isFallingSoundPlaying)
+    {
+        // Start falling sound
+        AudioManager::Get().PlayLoopingSoundEffect("player_fall", 1.0f);
+        player.isFallingSoundPlaying = true;
+    }
+    else if (velocity.velocity.y >= fallSpeedThreshold && player.isFallingSoundPlaying)
+    {
+        // Stop falling sound
+        AudioManager::Get().StopLoopingSoundEffect("player_fall");
+        player.isFallingSoundPlaying = false;
+    }
+
+    // Also stop sound when grounded
+    if (player.isGrounded && player.isFallingSoundPlaying)
+    {
+        AudioManager::Get().StopLoopingSoundEffect("player_fall");
+        player.isFallingSoundPlaying = false;
     }
 }
 
