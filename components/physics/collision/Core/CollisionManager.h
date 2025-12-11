@@ -7,6 +7,7 @@
 #include "scene/resources/model/Config/ModelConfig.h"
 #include <algorithm>
 #include <array>
+#include <core/ecs/Entity.h>
 #include <execution>
 #include <future>
 #include <memory>
@@ -60,7 +61,7 @@ public:
     void UpdateSpatialPartitioning();
 
     // Add a new collider to the manager
-    void AddCollider(Collision &&collider) override;
+    void AddCollider(std::shared_ptr<Collision> collider) override;
 
     // Remove all colliders
     void ClearColliders() override;
@@ -75,11 +76,23 @@ public:
     [[nodiscard]] bool CheckCollision(const Collision &playerCollision, Vector3 &response) const;
 
     // Get all colliders
-    [[nodiscard]] const std::vector<std::unique_ptr<Collision>> &GetColliders() const override;
+    [[nodiscard]] const std::vector<std::shared_ptr<Collision>> &GetColliders() const override;
 
     // Raycast down against precise colliders (BVH or triangle) to find ground beneath a point
     bool RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
                      Vector3 &hitPoint, Vector3 &hitNormal) const;
+
+    // Dynamic Entity Management (ECS Integration)
+    void AddEntityCollider(ECS::EntityID entity,
+                           const std::shared_ptr<Collision> &collider) override;
+    void RemoveEntityCollider(ECS::EntityID entity) override;
+    void UpdateEntityCollider(ECS::EntityID entity, const Vector3 &position) override;
+    [[nodiscard]] std::shared_ptr<Collision> GetEntityCollider(ECS::EntityID entity) const override;
+
+    // Check collision against all entities (excluding self)
+    [[nodiscard]] bool
+    CheckEntityCollision(ECS::EntityID selfEntity, const Collision &collider,
+                         std::vector<ECS::EntityID> &outCollidedEntities) const override;
 
     // Create collisions only for specific models
     void CreateAutoCollisionsFromModelsSelective(ModelLoader &models,
@@ -116,7 +129,7 @@ public:
     size_t GetPredictionCacheHash(const Collision &playerCollision) const;
 
 private:
-    std::vector<std::unique_ptr<Collision>> m_collisionObjects; // All collision objects
+    std::vector<std::shared_ptr<Collision>> m_collisionObjects; // All collision objects
 
     // Cache to prevent rebuilding precise collisions for same models
     std::unordered_map<std::string, std::shared_ptr<Collision>> m_collisionCache;
@@ -144,6 +157,15 @@ private:
     };
 
     std::unordered_map<GridKey, std::vector<size_t>, GridKeyHash> m_spatialGrid;
+
+    // Dynamic Entity Storage
+    std::unordered_map<ECS::EntityID, std::shared_ptr<Collision>> m_entityColliders;
+
+    // Spatial grid for dynamic entities (rebuilt frequently)
+    std::unordered_map<GridKey, std::vector<ECS::EntityID>, GridKeyHash> m_entitySpatialGrid;
+    float m_entityGridCellSize = 10.0f;
+
+    void UpdateEntitySpatialPartitioning();
 
     // Collision prediction cache for frequently checked objects
     struct PredictionCacheEntry

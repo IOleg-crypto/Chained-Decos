@@ -1,18 +1,13 @@
 #ifndef GAME_APPLICATION_H
 #define GAME_APPLICATION_H
 
+#include "components/physics/collision/Core/CollisionManager.h"
 #include "core/config/Core/GameConfig.h"
-#include "core/ecs/Components.h"
-#include "core/ecs/ECSRegistry.h"
-#include "core/ecs/Systems.h"
 #include "core/engine/IApplication.h"
-#include "project/chaineddecos/Menu/Menu.h"
-#include "project/chaineddecos/Player/Core/Player.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
-#include "components/audio/Core/AudioManager.h"
-#include "components/physics/collision/Core/CollisionManager.h"
-#include <entt/entt.hpp>
+#include <core/ecs/ECSRegistry.h>
+#include <core/ecs/Entity.h>
 
 // =================================================
 #include <memory>
@@ -39,11 +34,15 @@ private:
     std::shared_ptr<WorldManager> m_world;
 
     // ECS Entities
+    // ECS Entities
     entt::entity m_playerEntity = entt::null;
+    Model m_playerModel = {0}; // Player model (generated at runtime)
 
     // Game state
     bool m_showMenu;
     bool m_isGameInitialized;
+    bool m_showDebugCollision = false;
+    bool m_showDebugStats = false;
 
     // Cursor state tracking to avoid calling DisableCursor/EnableCursor every frame
     bool m_cursorDisabled;
@@ -58,6 +57,17 @@ private:
 
     // Game state management
     void SaveGameState();
+
+    // Shader support
+    Shader m_playerShader = {0};
+    int m_locFallSpeed = -1;
+    int m_locTime = -1;
+    int m_locWindDir = -1;
+    bool m_shaderLoaded = false;
+
+    // HUD Font
+    Font m_hudFont = {0};
+    bool m_fontLoaded = false;
 };
 
 #endif // GAME_APPLICATION_H

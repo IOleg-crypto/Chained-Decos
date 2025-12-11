@@ -6,7 +6,6 @@
 #include "core/config/Core/ConfigManager.h"
 #include <string>
 
-
 namespace MenuConstants
 {
 using namespace MenuConstants;
@@ -62,7 +61,9 @@ private:
     AudioManager *m_audioManager = nullptr;
 
     // Video settings indices
-    int m_currentResolutionIndex = 1;  // Default to 1280x720
+    // Video settings
+    int m_targetWidth = 1280;
+    int m_targetHeight = 720;
     int m_currentAspectRatioIndex = 0; // Default to 16:9
     int m_currentDisplayModeIndex = 0; // Default to Windowed
     int m_currentVSyncIndex = 1;       // Default to On
@@ -137,13 +138,14 @@ public:
     bool IsSlowMotionOnTrick() const;
 
     // Video settings
-    void SetResolutionIndex(int index);
+    void SetResolution(int width, int height);
+    void GetResolution(int &width, int &height) const;
     void SetAspectRatioIndex(int index);
     void SetDisplayModeIndex(int index);
     void SetVSyncIndex(int index);
     void SetFpsIndex(int index);
 
-    int GetResolutionIndex() const;
+    int GetResolutionIndex() const = delete; // Removed in favor of GetResolution(w, h)
     int GetAspectRatioIndex() const;
     int GetDisplayModeIndex() const;
     int GetVSyncIndex() const;
