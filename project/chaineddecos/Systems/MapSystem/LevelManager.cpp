@@ -650,7 +650,7 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
             collision.SetCollisionType(CollisionType::BVH_ONLY);
         }
 
-        m_collisionManager->AddCollider(std::move(collision));
+        m_collisionManager->AddCollider(std::make_shared<Collision>(std::move(collision)));
 
         TraceLog(LOG_INFO,
                  "LevelManager::LoadEditorMap() - Added collision for %s at (%.2f, %.2f, %.2f)",
