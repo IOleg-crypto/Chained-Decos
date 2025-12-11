@@ -393,7 +393,16 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
     else if (texturePath.empty())
     {
         // Clear skybox - use skyColor instead
+        if (m_skybox && m_skybox->IsLoaded())
+        {
+            // Unload the current skybox texture by reinitializing
+            m_skybox.reset();
+            m_skybox = std::make_unique<Skybox>();
+        }
         m_clearColor = m_activeMetadata.skyColor;
+        m_skyboxTexturePath.clear();
+        m_activeMetadata.skyboxTexture.clear();
+        TraceLog(LOG_INFO, "Editor::SetSkyboxTexture() - Cleared skybox, using skyColor");
     }
 
     if (updateFileManager && m_fileManager)

@@ -138,9 +138,12 @@ void CollisionManager::UpdateSpatialPartitioning()
              m_spatialGrid.size(), m_collisionObjects.size());
 }
 
-void CollisionManager::AddCollider(Collision &&collisionObject)
+void CollisionManager::AddCollider(std::shared_ptr<Collision> collisionObject)
 {
-    m_collisionObjects.push_back(std::make_unique<Collision>(std::move(collisionObject)));
+    if (!collisionObject)
+        return;
+
+    m_collisionObjects.push_back(collisionObject);
 
     if (m_collisionObjects.back()->GetCollisionType() == CollisionType::BVH_ONLY ||
         m_collisionObjects.back()->GetCollisionType() == CollisionType::TRIANGLE_PRECISE)
@@ -680,7 +683,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         fallbackCollision.Update(Vector3Add(center, position),
                                  Vector3Scale(Vector3Scale(size, 0.5f), scale));
 
-        AddCollider(std::move(fallbackCollision));
+        AddCollider(std::make_shared<Collision>(std::move(fallbackCollision)));
         return true;
     }
 
@@ -763,7 +766,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
 
     try
     {
-        AddCollider(std::move(instanceCollision));
+        AddCollider(std::make_shared<Collision>(std::move(instanceCollision)));
 
         bool success = GetColliders().size() > beforeCount;
         TraceLog(LOG_INFO, "%s created instance collision for '%s', collider count: %zu -> %zu",
@@ -786,7 +789,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     }
 }
 
-const std::vector<std::unique_ptr<Collision>> &CollisionManager::GetColliders() const
+const std::vector<std::shared_ptr<Collision>> &CollisionManager::GetColliders() const
 {
     return m_collisionObjects;
 }
@@ -795,6 +798,7 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
                                    float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const
 {
     bool anyHitDetected = false;
+
     float nearestHitDistance = maxRaycastDistance;
     Vector3 nearestHitPoint = {0};
     Vector3 nearestHitNormal = {0};
@@ -1302,9 +1306,135 @@ void CollisionManager::ManageCacheSize()
         size_t entriesToRemove = m_predictionCache.size() - MAX_PREDICTION_CACHE_SIZE;
         auto it = m_predictionCache.begin();
 
-        for (size_t i = 0; i < entriesToRemove && it != m_predictionCache.end(); ++i)
         {
             it = m_predictionCache.erase(it);
         }
     }
+}
+
+//
+// Dynamic Entity Management
+//
+
+void CollisionManager::AddEntityCollider(ECS::EntityID entity,
+                                         const std::shared_ptr<Collision> &collider)
+{
+    if (!collider)
+        return;
+    m_entityColliders[entity] = collider;
+    UpdateEntitySpatialPartitioning(); // Rebuild grid immediately or defer
+}
+
+void CollisionManager::RemoveEntityCollider(ECS::EntityID entity)
+{
+    m_entityColliders.erase(entity);
+    // Note: optimization - we might want to just remove it from grid instead of full rebuild
+}
+
+void CollisionManager::UpdateEntityCollider(ECS::EntityID entity, const Vector3 &position)
+{
+    auto it = m_entityColliders.find(entity);
+    if (it != m_entityColliders.end() && it->second)
+    {
+        Collision &col = *it->second;
+        Vector3 currentSize = col.GetSize();
+        // Force update position
+        col.Update(position, currentSize);
+    }
+}
+
+std::shared_ptr<Collision> CollisionManager::GetEntityCollider(ECS::EntityID entity) const
+{
+    auto it = m_entityColliders.find(entity);
+    if (it != m_entityColliders.end())
+        return it->second;
+    return nullptr;
+}
+
+void CollisionManager::UpdateEntitySpatialPartitioning()
+{
+    m_entitySpatialGrid.clear();
+    // Use smaller grid size for entities if needed, or same
+    float cellSize = m_entityGridCellSize;
+
+    for (const auto &[entity, collider] : m_entityColliders)
+    {
+        Vector3 min = collider->GetMin();
+        Vector3 max = collider->GetMax();
+
+        int minX = static_cast<int>(floorf(min.x / cellSize));
+        int maxX = static_cast<int>(floorf(max.x / cellSize));
+        int minZ = static_cast<int>(floorf(min.z / cellSize));
+        int maxZ = static_cast<int>(floorf(max.z / cellSize));
+
+        for (int x = minX; x <= maxX; ++x)
+        {
+            for (int z = minZ; z <= maxZ; ++z)
+            {
+                GridKey key = {x, z};
+                m_entitySpatialGrid[key].push_back(entity);
+            }
+        }
+    }
+}
+
+bool CollisionManager::CheckEntityCollision(ECS::EntityID selfEntity, const Collision &collider,
+                                            std::vector<ECS::EntityID> &outCollidedEntities) const
+{
+    bool collisionDetected = false;
+    Vector3 min = collider.GetMin();
+    Vector3 max = collider.GetMax();
+
+    int minX = static_cast<int>(floorf(min.x / m_entityGridCellSize));
+    int maxX = static_cast<int>(floorf(max.x / m_entityGridCellSize));
+    int minZ = static_cast<int>(floorf(min.z / m_entityGridCellSize));
+    int maxZ = static_cast<int>(floorf(max.z / m_entityGridCellSize));
+
+    // Keep track of checked entities to avoid duplicates
+    static thread_local std::vector<ECS::EntityID> checkedEntities; // Simple optimization
+    checkedEntities.clear();
+
+    for (int x = minX; x <= maxX; ++x)
+    {
+        for (int z = minZ; z <= maxZ; ++z)
+        {
+            GridKey key = {x, z};
+            auto it = m_entitySpatialGrid.find(key);
+            if (it == m_entitySpatialGrid.end())
+                continue;
+
+            for (ECS::EntityID otherEntity : it->second)
+            {
+                if (otherEntity == selfEntity)
+                    continue;
+
+                // Check if already processed
+                bool alreadyChecked = false;
+                for (auto checked : checkedEntities)
+                {
+                    if (checked == otherEntity)
+                    {
+                        alreadyChecked = true;
+                        break;
+                    }
+                }
+                if (alreadyChecked)
+                    continue;
+
+                checkedEntities.push_back(otherEntity);
+
+                auto colIt = m_entityColliders.find(otherEntity);
+                if (colIt != m_entityColliders.end() && colIt->second)
+                {
+                    if (collider.Intersects(*colIt->second))
+                    {
+                        outCollidedEntities.push_back(otherEntity);
+                        collisionDetected = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return collisionDetected;
 }

@@ -5,7 +5,6 @@
 #include <raylib.h>
 #include <raymath.h>
 
-
 namespace CollisionSystem
 {
 
@@ -68,6 +67,36 @@ void Update()
                 OnCollision(entityA, entityB, collisionA, collisionB);
             }
         }
+    }
+}
+
+void RenderDebug()
+{
+    auto view = REGISTRY.view<TransformComponent, CollisionComponent>();
+
+    for (auto [entity, transform, collision] : view.each())
+    {
+        // Calculate world bounds
+        BoundingBox bounds = collision.bounds;
+        bounds.min = Vector3Add(bounds.min, transform.position);
+        bounds.max = Vector3Add(bounds.max, transform.position);
+
+        // Draw wireframe
+        Color color = GREEN;
+        if (collision.hasCollision)
+        {
+            color = RED;
+        }
+        else if (collision.isTrigger)
+        {
+            color = YELLOW;
+        }
+        else if (collision.collisionLayer == 0) // Static layer convention
+        {
+            color = DARKGRAY;
+        }
+
+        DrawBoundingBox(bounds, color);
     }
 }
 

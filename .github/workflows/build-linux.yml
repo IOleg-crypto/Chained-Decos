@@ -81,7 +81,6 @@ jobs:
   build-clang:
     name: Linux Clang (${{ inputs.build_type }})
     runs-on: ubuntu-22.04
-    if: inputs.build_type == 'Release'
 
     steps:
       - name: Checkout

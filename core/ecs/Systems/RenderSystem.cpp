@@ -38,17 +38,21 @@ void Render()
             continue;
         }
 
-        // Застосувати transform до моделі
+        // Apply transform to model
         Matrix matScale = MatrixScale(transform.scale.x, transform.scale.y, transform.scale.z);
         Matrix matRotation = MatrixRotateXYZ(transform.rotation);
-        Matrix matTranslation =
-            MatrixTranslate(transform.position.x, transform.position.y, transform.position.z);
+        // Apply offset to translation matrix so it affects shader transform too
+        Vector3 finalPos = Vector3Add(transform.position, renderComp.offset);
+        Matrix matTranslation = MatrixTranslate(finalPos.x, finalPos.y, finalPos.z);
+
         renderComp.model->transform =
             MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
 
-        // Рендерити модель
-        DrawModel(*renderComp.model, transform.position,
-                  1.0f, // scale (вже в transform)
+        // Render model at the offset position
+        // Fix: Pass Vector3Zero() because the transform matrix already includes the translation
+        // (finalPos) Passing finalPos again leads to double translation
+        DrawModel(*renderComp.model, Vector3Zero(),
+                  1.0f, // scale (already in transform)
                   renderComp.tint);
     }
 }

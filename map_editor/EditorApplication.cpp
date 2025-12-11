@@ -1,9 +1,8 @@
 #include "EditorApplication.h"
 #include "Modules/EditorModule.h"
 #include "core/engine/Engine.h"
-#include "editor/plugins/map_editor/Editor/Editor.h"
+#include "map_editor/Editor/Editor.h"
 #include "scene/3d/camera/Core/CameraController.h"
-
 
 #include "scene/resources/model/Core/Model.h"
 

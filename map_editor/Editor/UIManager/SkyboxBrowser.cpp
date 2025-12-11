@@ -1,14 +1,14 @@
 #include "SkyboxBrowser.h"
 #include "../Editor.h"
 #include <filesystem>
+#include <imgui.h>
 #include <nfd.h>
 #include <raylib.h>
 #include <rlImGui.h>
-#include <imgui.h>
 
 namespace fs = std::filesystem;
 
-SkyboxBrowser::SkyboxBrowser(Editor* editor)
+SkyboxBrowser::SkyboxBrowser(Editor *editor)
     : m_editor(editor), m_skyboxesScanned(false), m_selectedSkyboxIndex(0),
       m_skyboxPlaceholderTexture({0}), m_skyboxPlaceholderInitialized(false)
 {
@@ -23,9 +23,9 @@ SkyboxBrowser::~SkyboxBrowser()
         m_skyboxPlaceholderTexture = {0};
         m_skyboxPlaceholderInitialized = false;
     }
-    
+
     // Cleanup preview textures
-    for (auto& skybox : m_availableSkyboxes)
+    for (auto &skybox : m_availableSkyboxes)
     {
         if (skybox.previewLoaded && skybox.previewTexture.id != 0)
         {
@@ -36,21 +36,22 @@ SkyboxBrowser::~SkyboxBrowser()
     }
 }
 
-void SkyboxBrowser::RenderPanel(bool& isOpen)
+void SkyboxBrowser::RenderPanel(bool &isOpen)
 {
     const int screenWidth = GetScreenWidth();
     const int screenHeight = GetScreenHeight();
 
     ImVec2 windowSize(440, 540);
     ImVec2 desiredPos(static_cast<float>(screenWidth) - 460, 80);
-    
+
     ImGui::SetNextWindowPos(desiredPos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
 
     // Lazily load placeholder texture on first open of the panel
     if (!m_skyboxPlaceholderInitialized)
     {
-        const std::string& currentSkyboxTexture = m_editor->GetFileManager()->GetCurrentMetadata().skyboxTexture;
+        const std::string &currentSkyboxTexture =
+            m_editor->GetFileManager()->GetCurrentMetadata().skyboxTexture;
 
         // If there's a skybox in metadata, load it
         if (!currentSkyboxTexture.empty())
@@ -80,7 +81,8 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
         // If no skybox in metadata or failed to load, use placeholder
         if (!m_skyboxPlaceholderInitialized)
         {
-            const char* placeholderPath = PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
+            const char *placeholderPath =
+                PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
             Image placeholderImg = LoadImage(placeholderPath);
             if (placeholderImg.data != nullptr)
             {
@@ -94,7 +96,8 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
     else
     {
         // Check if metadata skybox has changed
-        const std::string& currentSkyboxTexture = m_editor->GetFileManager()->GetCurrentMetadata().skyboxTexture;
+        const std::string &currentSkyboxTexture =
+            m_editor->GetFileManager()->GetCurrentMetadata().skyboxTexture;
         if (currentSkyboxTexture != m_lastLoadedMetadataSkybox)
         {
             // Unload current texture
@@ -133,7 +136,8 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
             else
             {
                 // Load placeholder
-                const char* placeholderPath = PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
+                const char *placeholderPath =
+                    PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
                 Image placeholderImg = LoadImage(placeholderPath);
                 if (placeholderImg.data != nullptr)
                 {
@@ -148,14 +152,16 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
 
     if (ImGui::Begin("Set Skybox", &isOpen, ImGuiWindowFlags_NoCollapse))
     {
-        ImGui::Text("Current skybox: %s", m_skyboxPlaceholderPath.empty() ? "No skybox loaded" : m_skyboxPlaceholderPath.c_str());
+        ImGui::Text("Current skybox: %s", m_skyboxPlaceholderPath.empty()
+                                              ? "No skybox loaded"
+                                              : m_skyboxPlaceholderPath.c_str());
         ImGui::Separator();
         ImGui::Spacing();
-        
+
         if (ImGui::Button("Load Skybox Image", ImVec2(200, 30)))
         {
             nfdfilteritem_t filterItem[1] = {{"Images", "png,jpg,jpeg,bmp,hdr,dds"}};
-            nfdchar_t* outPath = nullptr;
+            nfdchar_t *outPath = nullptr;
             nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
 
             if (result == NFD_OKAY)
@@ -194,13 +200,33 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
                 m_editor->SetSkyboxTexture(std::string());
             }
 
+            // Unload current texture
             if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0)
             {
                 UnloadTexture(m_skyboxPlaceholderTexture);
                 m_skyboxPlaceholderTexture = {0};
+            }
+
+            // Load placeholder image
+            const char *placeholderPath =
+                PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
+            Image placeholderImg = LoadImage(placeholderPath);
+            if (placeholderImg.data != nullptr)
+            {
+                m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
+                UnloadImage(placeholderImg);
+                m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
+                m_skyboxPlaceholderPath.clear();
+                m_lastLoadedMetadataSkybox.clear();
+                TraceLog(LOG_INFO, "SkyboxBrowser: Cleared skybox and loaded placeholder");
+            }
+            else
+            {
                 m_skyboxPlaceholderInitialized = false;
                 m_skyboxPlaceholderPath.clear();
-                m_lastLoadedMetadataSkybox.clear(); // Clear tracking variable
+                m_lastLoadedMetadataSkybox.clear();
+                TraceLog(LOG_WARNING,
+                         "SkyboxBrowser: Failed to load placeholder after clearing skybox");
             }
         }
 
@@ -230,12 +256,15 @@ void SkyboxBrowser::RenderPanel(bool& isOpen)
             {
                 // Apply texture (shaders are loaded automatically in SetSkyboxTexture)
                 m_editor->SetSkyboxTexture(m_skyboxPlaceholderPath);
-                if(m_editor->GetSkybox())
+                if (m_editor->GetSkybox())
                 {
-                    m_editor->GetSkybox()->LoadMaterialShader(PROJECT_ROOT_DIR "/resources/shaders/skybox.vs", PROJECT_ROOT_DIR "/resources/shaders/skybox.fs");
+                    m_editor->GetSkybox()->LoadMaterialShader(
+                        PROJECT_ROOT_DIR "/resources/shaders/skybox.vs",
+                        PROJECT_ROOT_DIR "/resources/shaders/skybox.fs");
                 }
-                
-                TraceLog(LOG_INFO, "Applied skybox to editor scene: %s", m_skyboxPlaceholderPath.c_str());
+
+                TraceLog(LOG_INFO, "Applied skybox to editor scene: %s",
+                         m_skyboxPlaceholderPath.c_str());
             }
         }
 
@@ -251,10 +280,9 @@ void SkyboxBrowser::ScanDirectory()
     m_skyboxesScanned = true;
 }
 
-void SkyboxBrowser::LoadPreview(SkyboxInfo& skybox)
+void SkyboxBrowser::LoadPreview(SkyboxInfo &skybox)
 {
     // Implementation for loading skybox preview
     // This can be extended later if needed
     skybox.previewLoaded = true;
 }
-

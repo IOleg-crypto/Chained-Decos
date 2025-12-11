@@ -3,6 +3,8 @@
 
 #include "Console/ConsoleManager.h"
 #include "MapSelector/MapSelector.h"
+#include "MenuPresenter.h"
+#include "Settings/MenuSettingsController.h"
 #include "Settings/SettingsManager.h"
 
 #include "core/interfaces/IMenu.h"
@@ -64,15 +66,6 @@ struct MenuItem
     bool enabled = true;
     std::string shortcut;
 };
-
-struct VideoSettings
-{
-    int resolutionIndex = 1;
-    int displayModeIndex = 0;
-    int vsyncIndex = 1;
-    int fpsIndex = 1;
-};
-
 class Engine; // Forward declaration
 
 class Menu : public IMenu
@@ -159,9 +152,6 @@ private:
     void RenderOptionsMenu();
     void RenderGameModeMenu();
     void RenderMapSelection();
-    void RenderAudioSettings();
-    void RenderVideoSettings();
-    void RenderControlSettings();
     void RenderCreditsScreen();
     void RenderModsScreen();
     void RenderConfirmExitDialog();
@@ -179,34 +169,6 @@ private:
     bool RenderBackButton(float width = 0.0f);
     void RenderSectionHeader(const char *title, const char *subtitle = nullptr) const;
     void RenderMenuHint(const char *text) const;
-    void RenderMapCard(int index, const MapInfo &map, bool selected, float cardWidth) const;
-
-    // Video settings helpers
-    bool RenderVideoSettingCombo(const char *label, const char *id,
-                                 const std::vector<std::string> &options, int &currentIndex,
-                                 float labelWidth, float comboWidth, float startX);
-    bool HasUnsavedVideoChanges() const;
-
-    // Pagination methods
-    void EnsurePagination();
-    void GoToNextPage();
-    void GoToPreviousPage();
-    [[nodiscard]] int GetPageStartIndex() const;
-    [[nodiscard]] int GetPageEndIndex() const;
-    [[nodiscard]] int GetTotalPages() const;
-    void RenderPaginationControls();
-
-    // Settings synchronization
-    void SyncVideoSettingsToConfig() const;
-    void SyncAudioSettingsToConfig() const;
-    void SyncControlSettingsToConfig();
-
-    // Apply camera sensitivity to CameraController (Dependency Injection)
-    void ApplyCameraSensitivity(float sensitivity);
-
-    // Map management
-    void ScanForJsonMaps();
-    void UpdatePagination();
 
     // Core state
     Engine *m_engine = nullptr;
@@ -221,19 +183,6 @@ private:
     MenuAction m_action = MenuAction::None;
     bool m_gameInProgress = false;
 
-    // Settings
-    VideoSettings m_videoSettings{};
-    AudioSettings m_audioSettings{};
-    ControlSettings m_controlSettings{};
-
-    // Map management
-    std::vector<MapInfo> m_availableMaps;
-    int m_selectedMapIndex = 0;
-    int m_mapsPerPage = 6;
-    int m_currentPage = 0;
-    int m_totalPages = 0;
-    int m_jsonMapsCount = 0;
-
     // Navigation state
     int m_selected = 0;
 
@@ -243,17 +192,17 @@ private:
     // Map selector
     std::unique_ptr<MapSelector> m_mapSelector;
 
+    // Settings controller
+    std::unique_ptr<MenuSettingsController> m_settingsController;
+
+    // Menu presenter
+    std::unique_ptr<MenuPresenter> m_presenter;
+
     // UI state
     bool m_showDemoWindow = false;
     bool m_showStyleEditor = false;
     bool m_addResumeButton = false;
     ImGuiStyle m_customStyle{};
-
-    // Options vectors
-    std::vector<std::string> m_resolutionOptions;
-    std::vector<std::string> m_displayModeOptions;
-    std::vector<std::string> m_vsyncOptions;
-    std::vector<std::string> m_fpsOptions;
 };
 
 #endif // MENU_H

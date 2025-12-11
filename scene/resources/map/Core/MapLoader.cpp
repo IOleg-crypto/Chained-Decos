@@ -6,7 +6,6 @@
 #include <raymath.h>
 #include <set>
 
-
 using json = nlohmann::json;
 
 // Helper function to resolve model paths
@@ -28,9 +27,9 @@ std::vector<std::string> ResolveModelPaths(const std::string &modelName)
         // Try in resources/ directory
         for (const auto &ext : extensions)
         {
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" +
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" +
                                     normalizedModelName + ext);
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" +
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/models/" +
                                     normalizedModelName + ext);
         }
 
@@ -170,7 +169,6 @@ GameMap::~GameMap()
 // ============================================================================
 // MapLoader Implementation
 // ============================================================================
-
 
 bool MapLoader::SaveMapToFile(const GameMap &map, const std::string &path)
 {
@@ -344,34 +342,46 @@ std::string ResolveSkyboxAbsolutePath(const std::string &texturePath)
         return "";
     }
 
+    // 1. Check if path is already absolute and exists
     std::filesystem::path input(texturePath);
-    std::error_code ec;
-
-    if (input.is_absolute())
+    if (input.is_absolute() && std::filesystem::exists(input))
     {
-        std::filesystem::path canonical = std::filesystem::weakly_canonical(input, ec);
-        if (!ec && std::filesystem::exists(canonical))
-        {
-            return canonical.string();
-        }
-        if (std::filesystem::exists(input))
-        {
-            return input.string();
-        }
+        return input.string();
+    }
+
+    // 2. Check relative to current working directory
+    if (std::filesystem::exists(input))
+    {
+        return std::filesystem::absolute(input).string();
     }
 
     std::filesystem::path projectRoot(PROJECT_ROOT_DIR);
+
+    // 3. Check relative to Project Root
     std::filesystem::path combined = projectRoot / input;
-    std::filesystem::path canonicalCombined = std::filesystem::weakly_canonical(combined, ec);
-    if (!ec && std::filesystem::exists(canonicalCombined))
-    {
-        return canonicalCombined.string();
-    }
     if (std::filesystem::exists(combined))
     {
         return combined.string();
     }
 
+    // 4. Check in resources folder if usage didn't specify it
+    if (texturePath.find("resources") == std::string::npos)
+    {
+        std::filesystem::path resourcesPath = projectRoot / "resources" / input;
+        if (std::filesystem::exists(resourcesPath))
+        {
+            return resourcesPath.string();
+        }
+
+        // 5. Try in skyboxes folder specifically
+        std::filesystem::path skyboxPath = projectRoot / "resources" / "skyboxes" / input;
+        if (std::filesystem::exists(skyboxPath))
+        {
+            return skyboxPath.string();
+        }
+    }
+
+    // Return original if nothing found (will fail later with clearer error)
     return (input.is_absolute() ? input : combined).string();
 }
 } // namespace
@@ -399,15 +409,14 @@ void MapLoader::LoadSkyboxForMap(GameMap &map)
         skybox->Init();
         map.SetSkyBox(skybox);
     }
-    
-    Skybox* skybox = map.GetSkyBox();
+
+    Skybox *skybox = map.GetSkyBox();
     if (skybox)
     {
         skybox->LoadMaterialTexture(absolutePath);
         TraceLog(LOG_INFO, "LoadSkyboxForMap() - Loaded skybox from %s", absolutePath.c_str());
     }
 }
-
 
 // ============================================================================
 // MapLoader Public Methods
@@ -452,18 +461,18 @@ GameMap MapLoader::LoadMap(const std::string &path)
         {
             auto &sky = meta["skyColor"];
             metadata.skyColor = Color{static_cast<unsigned char>(sky.value("r", 135)),
-                                            static_cast<unsigned char>(sky.value("g", 206)),
-                                            static_cast<unsigned char>(sky.value("b", 235)),
-                                            static_cast<unsigned char>(sky.value("a", 255))};
+                                      static_cast<unsigned char>(sky.value("g", 206)),
+                                      static_cast<unsigned char>(sky.value("b", 235)),
+                                      static_cast<unsigned char>(sky.value("a", 255))};
         }
 
         if (meta.contains("groundColor"))
         {
             auto &ground = meta["groundColor"];
             metadata.groundColor = Color{static_cast<unsigned char>(ground.value("r", 34)),
-                                               static_cast<unsigned char>(ground.value("g", 139)),
-                                               static_cast<unsigned char>(ground.value("b", 34)),
-                                               static_cast<unsigned char>(ground.value("a", 255))};
+                                         static_cast<unsigned char>(ground.value("g", 139)),
+                                         static_cast<unsigned char>(ground.value("b", 34)),
+                                         static_cast<unsigned char>(ground.value("a", 255))};
         }
 
         // Load positions
@@ -586,7 +595,8 @@ GameMap MapLoader::LoadMap(const std::string &path)
 
                 // Use helper function to resolve paths and load model
                 std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
-                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths,
+                                           map.GetMapModelsMutable());
             }
             // Handle LIGHT type objects that may actually be misclassified MODEL objects from map
             // editor
@@ -600,7 +610,8 @@ GameMap MapLoader::LoadMap(const std::string &path)
                 // Change type to MODEL and load the model
                 objectData.type = MapObjectType::MODEL;
                 std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
-                LoadModelWithErrorHandling(objectData.modelName, possiblePaths, map.GetMapModelsMutable());
+                LoadModelWithErrorHandling(objectData.modelName, possiblePaths,
+                                           map.GetMapModelsMutable());
             }
             // Also handle LIGHT objects that might have been exported without modelName but should
             // be models
@@ -656,7 +667,7 @@ GameMap MapLoader::LoadMap(const std::string &path)
     {
         LoadSkyboxForMap(map);
     }
-    
+
     return map;
 }
 
@@ -872,12 +883,12 @@ std::vector<std::string> MapLoader::GetMapNamesFromDirectory(const std::string &
     return names;
 }
 
-Skybox* GameMap::GetSkyBox() const
+Skybox *GameMap::GetSkyBox() const
 {
     return m_skybox.get();
 }
 
-void GameMap::SetSkyBox(std::shared_ptr<Skybox>& skybox)
+void GameMap::SetSkyBox(std::shared_ptr<Skybox> &skybox)
 {
     m_skybox = skybox;
 }

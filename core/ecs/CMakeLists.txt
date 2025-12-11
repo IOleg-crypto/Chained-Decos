@@ -29,6 +29,7 @@ add_library(ecs STATIC
 target_include_directories(ecs PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include/json/include
 )
 
 target_link_libraries(ecs PUBLIC

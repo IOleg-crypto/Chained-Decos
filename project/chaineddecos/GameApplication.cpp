@@ -8,6 +8,7 @@
 #include "components/rendering/Core/RenderManager.h"
 #include "core/config/Core/ConfigManager.h"
 #include "core/ecs/Examples.h"
+#include "core/ecs/Systems.h"
 #include "core/engine/EngineApplication.h"
 #include "core/object/module/Core/ModuleManager.h"
 #include "project/chaineddecos/Menu/Menu.h"
@@ -15,14 +16,17 @@
 #include "scene/main/Core/World.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
+#include "scene/resources/model/Utils/ModelAnalyzer.h"
 
 #include "imgui.h"
 #include "rlImGui.h"
 #include <GLFW/glfw3.h>
+#include <fstream>
 #include <raylib.h>
 
 GameApplication::GameApplication(int argc, char *argv[])
-    : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false)
+    : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false),
+      m_showDebugCollision(false), m_showDebugStats(false)
 {
     // Parse command line arguments
     m_gameConfig = CommandLineHandler::ParseArguments(argc, argv);
@@ -127,8 +131,8 @@ void GameApplication::OnStart()
     if (AudioManager::Get().Initialize())
     {
         TraceLog(LOG_INFO, "[GameApplication] AudioManager initialized");
-        AudioManager::Get().LoadSound(
-            "player_fall", "D:\\gitnext\\Chained Decos\\resources\\audio\\wind-gust_fall.wav");
+        AudioManager::Get().LoadSound("player_fall",
+                                      PROJECT_ROOT_DIR "\\resources\\audio\\fallingplayer.wav");
     }
 
     InputManager::Get().Initialize();
@@ -156,9 +160,181 @@ void GameApplication::OnStart()
     // Initialize ECS
     REGISTRY.clear();
 
-    // Create Player Entity
-    m_playerEntity = ECSExamples::CreatePlayer(Vector3{0, 2, 0});
+    // Explicitly load player model
+    if (m_models)
+    {
+        std::string playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
+        if (m_models->LoadSingleModel("player_low", playerModelPath))
+        {
+            TraceLog(LOG_INFO, "[GameApplication] Loaded player model: %s",
+                     playerModelPath.c_str());
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "[GameApplication] Failed to load player model: %s",
+                     playerModelPath.c_str());
+        }
+    }
+
+    // Try to get player model from loader
+    Model *playerModelPtr = nullptr;
+    if (m_models)
+    {
+        // "player_low" is loaded by LevelManager/ModelLoader according to logs
+        auto modelOpt = m_models->GetModelByName("player_low");
+        if (modelOpt.has_value())
+        {
+            playerModelPtr = &modelOpt.value().get();
+        }
+    }
+
+    // Load and Apply Shader
+    {
+        std::string vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.vs";
+        std::string fsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.fs";
+
+        m_playerShader = LoadShader(vsPath.c_str(), fsPath.c_str());
+        m_shaderLoaded = (m_playerShader.id != 0);
+
+        if (m_shaderLoaded)
+        {
+            m_locFallSpeed = GetShaderLocation(m_playerShader, "fallSpeed");
+            m_locTime = GetShaderLocation(m_playerShader, "time");
+            m_locWindDir = GetShaderLocation(m_playerShader, "windDirection");
+
+            // Set default values
+            float defaultFallSpeed = 0.0f;
+            SetShaderValue(m_playerShader, m_locFallSpeed, &defaultFallSpeed, SHADER_UNIFORM_FLOAT);
+
+            Vector3 defaultWind = {1.0f, 0.0f, 0.5f};
+            SetShaderValue(m_playerShader, m_locWindDir, &defaultWind, SHADER_UNIFORM_VEC3);
+
+            // Assign shader to model
+            if (playerModelPtr)
+            {
+                playerModelPtr->materials[0].shader = m_playerShader;
+                TraceLog(LOG_INFO,
+                         "[GameApplication] Applied player_effect shader to player_low model");
+            }
+            else
+            {
+                m_playerModel.materials[0].shader = m_playerShader;
+                TraceLog(LOG_INFO,
+                         "[GameApplication] Applied player_effect shader to fallback model");
+            }
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "[GameApplication] Failed to load player_effect shader");
+        }
+    }
+
+    // Check for save file
+    Vector3 spawnPos = {0, 2, 0};
+    float savedTimer = 0.0f;
+    float savedMaxHeight = 0.0f;
+    std::string savedMapPath;
+    bool hasSave = false;
+
+    // Load HUD Font
+    std::string fontPath =
+        std::string(PROJECT_ROOT_DIR) + "/resources/font/Gantari/static/Gantari-Bold.ttf";
+
+    // Load font with higher size for better quality scaling
+    m_hudFont = LoadFontEx(fontPath.c_str(), 96, 0, 0);
+
+    if (m_hudFont.baseSize > 0)
+    {
+        SetTextureFilter(m_hudFont.texture, TEXTURE_FILTER_BILINEAR);
+        m_fontLoaded = true;
+        TraceLog(LOG_INFO, "[GameApplication] Loaded HUD font: %s", fontPath.c_str());
+    }
+    else
+    {
+        TraceLog(LOG_ERROR, "[GameApplication] Failed to load HUD font: %s. Loading default.",
+                 fontPath.c_str());
+        m_fontLoaded = false;
+        m_hudFont = GetFontDefault();
+    }
+
+    std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
+    std::ifstream saveFile(savePath);
+    if (saveFile.is_open())
+    {
+        // Try reading: MapPath X Y Z Timer Height
+        if (saveFile >> savedMapPath >> spawnPos.x >> spawnPos.y >> spawnPos.z >> savedTimer >>
+            savedMaxHeight)
+        {
+            hasSave = true;
+            TraceLog(LOG_INFO, "[GameApplication] Found save file. Map: %s Pos: %.2f, %.2f, %.2f",
+                     savedMapPath.c_str(), spawnPos.x, spawnPos.y, spawnPos.z);
+
+            // Restore game state flags
+            m_isGameInitialized = true;
+
+            // Load Map and Collisions
+            if (!savedMapPath.empty())
+            {
+                auto levelManager = Engine::Instance().GetService<LevelManager>();
+                auto models = m_models; // Already fetched
+
+                if (levelManager && models)
+                {
+                    levelManager->LoadMap(savedMapPath);
+
+                    // Required models for collision
+                    std::vector<std::string> requiredModels =
+                        ModelAnalyzer::GetModelsRequiredForMap(savedMapPath);
+                    models->LoadGameModelsSelective(requiredModels);
+                    levelManager->InitCollisionsWithModelsSafe(requiredModels);
+                    TraceLog(LOG_INFO, "[GameApplication] Restored map and collisions from save.");
+                }
+            }
+
+            auto *uiModule = Engine::Instance().GetModuleManager()->GetModule("UI");
+            if (uiModule)
+            {
+                auto *uiManager = dynamic_cast<UIManager *>(uiModule);
+                if (uiManager && uiManager->GetMenu())
+                {
+                    uiManager->GetMenu()->SetGameInProgress(true);
+                }
+            }
+        }
+        saveFile.close();
+    }
+
+    if (playerModelPtr)
+    {
+        TraceLog(LOG_INFO, "[GameApplication] Using existing model 'player_low'");
+        m_playerEntity = ECSExamples::CreatePlayer(spawnPos, playerModelPtr);
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "[GameApplication] 'player_low' not found, using default cube.");
+        m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
+        m_playerEntity = ECSExamples::CreatePlayer(spawnPos, &m_playerModel);
+    }
+
+    // Apply saved stats
+    if (hasSave && REGISTRY.valid(m_playerEntity))
+    {
+        auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
+        player.runTimer = savedTimer;
+        player.maxHeight = savedMaxHeight;
+    }
+
     TraceLog(LOG_INFO, "[GameApplication] ECS Player entity created");
+
+    // Apply visual offset to player render component
+    if (REGISTRY.valid(m_playerEntity) && REGISTRY.all_of<RenderComponent>(m_playerEntity))
+    {
+        auto &renderComp = REGISTRY.get<RenderComponent>(m_playerEntity);
+        // Player::MODEL_Y_OFFSET is -1.0f, which corrects the visual position relative to physics
+        renderComp.offset = {0.0f, Player::MODEL_Y_OFFSET, 0.0f};
+        TraceLog(LOG_INFO, "[GameApplication] Set player visual offset to (0, %.2f, 0)",
+                 Player::MODEL_Y_OFFSET);
+    }
 
     // Initial state - show menu
     m_showMenu = true;
@@ -202,6 +378,9 @@ void GameApplication::OnUpdate(float deltaTime)
     // Update Input
     InputManager::Get().Update(deltaTime);
 
+    // Update Audio looping
+    AudioManager::Get().UpdateLoopingSounds();
+
     // Get Menu through Engine (Legacy access)
     auto engine = &Engine::Instance();
     if (!engine)
@@ -224,7 +403,9 @@ void GameApplication::OnUpdate(float deltaTime)
         }
     }
 
-    if (InputManager::Get().IsKeyPressed(KEY_GRAVE) && menu)
+    // Only handle console toggle here if we are NOT in the menu.
+    // When in menu, Menu::HandleKeyboardNavigation handles it to avoid double-toggling.
+    if (!m_showMenu && InputManager::Get().IsKeyPressed(KEY_GRAVE) && menu)
     {
         menu->ToggleConsole();
     }
@@ -287,6 +468,21 @@ void GameApplication::OnUpdate(float deltaTime)
                 MovementSystem::Update(deltaTime);
                 CollisionSystem::Update();
                 LifetimeSystem::Update(deltaTime);
+
+                // Update Shader Uniforms
+                if (m_shaderLoaded && REGISTRY.valid(m_playerEntity))
+                {
+                    float time = (float)GetTime();
+                    SetShaderValue(m_playerShader, m_locTime, &time, SHADER_UNIFORM_FLOAT);
+
+                    auto &velocity = REGISTRY.get<VelocityComponent>(m_playerEntity);
+                    float fallSpeed = 0.0f;
+                    if (velocity.velocity.y < 0)
+                        fallSpeed = std::abs(velocity.velocity.y);
+
+                    SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed,
+                                   SHADER_UNIFORM_FLOAT);
+                }
             }
         }
         else
@@ -345,14 +541,121 @@ void GameApplication::OnRender()
             // Render ECS entities
             RenderSystem::Render();
 
+            // Render Models (ModelLoader)
+            if (m_models)
+                m_models->DrawAllModels();
+
+            // Render Map Geometry (LevelManager)
+            auto levelManager = Engine::Instance().GetService<LevelManager>();
+            if (levelManager)
+            {
+                levelManager->RenderEditorMap();
+
+                // levelManager->RenderSpawnZone(); (only map editor)
+            }
+
             // Render World (Legacy)
             if (m_world)
                 m_world->Render();
 
             RenderManager::Get().EndMode3D();
+
+            // Draw HUD (Chained Together Style)
+            if (REGISTRY.valid(m_playerEntity))
+            {
+                auto &playerComp = REGISTRY.get<PlayerComponent>(m_playerEntity);
+
+                int hours = (int)playerComp.runTimer / 3600;
+                int minutes = ((int)playerComp.runTimer % 3600) / 60;
+                int seconds = (int)playerComp.runTimer % 60;
+
+                int startX = 40;
+                int startY = 80;
+                // float fontSize = 32.0f; // Unused
+                float spacing = 2.0f; // Font spacing
+
+                Font *fontToUse = m_fontLoaded ? &m_hudFont : nullptr;
+
+                // 1. Height Section
+                // Height Text "height : 134m"
+                const char *heightText = TextFormat("height : %.0fm", playerComp.maxHeight);
+                float fontSizeHeight = 36.0f;
+                Vector2 heightSize;
+
+                if (m_fontLoaded)
+                    heightSize = MeasureTextEx(m_hudFont, heightText, fontSizeHeight, spacing);
+                else
+                    heightSize = {(float)MeasureText(heightText, (int)fontSizeHeight),
+                                  fontSizeHeight};
+
+                // Draw Height Shadow
+                Vector2 heightPos = {(float)startX, (float)startY};
+                Vector2 shadowOffset = {2.0f, 2.0f};
+
+                if (m_fontLoaded)
+                    DrawTextEx(m_hudFont, heightText,
+                               {heightPos.x + shadowOffset.x, heightPos.y + shadowOffset.y},
+                               fontSizeHeight, spacing, ColorAlpha(BLACK, 0.5f));
+                else
+                    DrawText(heightText, (int)(heightPos.x + shadowOffset.x),
+                             (int)(heightPos.y + shadowOffset.y), (int)fontSizeHeight, BLACK);
+
+                // Draw Height Text
+                if (m_fontLoaded)
+                    DrawTextEx(m_hudFont, heightText, heightPos, fontSizeHeight, spacing, WHITE);
+                else
+                    DrawText(heightText, (int)heightPos.x, (int)heightPos.y, (int)fontSizeHeight,
+                             WHITE);
+
+                // Vertical separator bar
+                int barX = (int)(heightPos.x + heightSize.x + 10);
+                DrawLineEx({(float)barX, (float)startY}, {(float)barX, (float)startY + 30}, 3.0f,
+                           WHITE);
+
+                // 2. Timer Section with Clock Icon
+                // Timer Text - Format "MM:SS" or "HH:MM:SS"
+                const char *timerText;
+                if (hours > 0)
+                    timerText = TextFormat("%02d:%02d:%02d", hours, minutes, seconds);
+                else
+                    timerText = TextFormat("%02d:%02d", minutes, seconds);
+
+                // Clock icon position
+                int iconX = (int)(heightPos.x + heightSize.x + 20);
+                int iconY = (int)(startY + 12); // Centered with text
+                int iconRadius = 10;
+
+                // Draw clock circle with shadow
+                DrawCircle(iconX + 1, iconY + 1, (float)iconRadius, ColorAlpha(BLACK, 0.3f));
+                DrawCircle(iconX, iconY, (float)iconRadius, WHITE);
+                DrawCircle(iconX, iconY, (float)iconRadius - 1, ColorAlpha(SKYBLUE, 0.2f));
+
+                // Clock hands
+                DrawLine(iconX, iconY, iconX, iconY - 6, BLACK); // Hour hand
+                DrawLine(iconX, iconY, iconX + 5, iconY, BLACK); // Minute hand
+                DrawCircle(iconX, iconY, 2.0f, BLACK);           // Center dot
+
+                // Timer text position
+                int timerX = iconX + iconRadius + 8;
+                float fontSizeTimer = 28.0f; // Slightly larger
+
+                // Draw Timer Shadow
+                if (m_fontLoaded)
+                    DrawTextEx(m_hudFont, timerText,
+                               {(float)timerX + shadowOffset.x, (float)startY + shadowOffset.y},
+                               fontSizeTimer, spacing, ColorAlpha(BLACK, 0.5f));
+                else
+                    DrawText(timerText, timerX + 2, startY + 2, (int)fontSizeTimer, BLACK);
+
+                // Draw Timer Text
+                if (m_fontLoaded)
+                    DrawTextEx(m_hudFont, timerText, {(float)timerX, (float)startY}, fontSizeTimer,
+                               spacing, WHITE);
+                else
+                    DrawText(timerText, timerX, startY, (int)fontSizeTimer, WHITE);
+            }
         }
     }
-
     // Render console in game
     if (menu && menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
     {
@@ -361,6 +664,32 @@ void GameApplication::OnRender()
             rlImGuiBegin();
             menu->GetConsoleManager()->RenderConsole();
             rlImGuiEnd();
+        }
+    }
+
+    // Debug Collision
+    if (m_showDebugCollision && m_isGameInitialized)
+    {
+        RenderManager::Get().BeginMode3D(RenderManager::Get().GetCamera());
+        CollisionSystem::RenderDebug();
+        RenderManager::Get().EndMode3D();
+    }
+
+    // Debug Stats
+    if (m_showDebugStats)
+    {
+        DrawFPS(10, 10);
+
+        if (m_isGameInitialized)
+        {
+            // Draw player position for debugging
+            if (REGISTRY.valid(m_playerEntity))
+            {
+                auto &transform = REGISTRY.get<TransformComponent>(m_playerEntity);
+                DrawText(TextFormat("Pos: %.2f, %.2f, %.2f", transform.position.x,
+                                    transform.position.y, transform.position.z),
+                         10, 30, 20, GREEN);
+            }
         }
     }
 
@@ -374,10 +703,29 @@ void GameApplication::OnShutdown()
     // Clear ECS
     REGISTRY.clear();
 
+    // Unload player model
+    if (m_playerModel.meshes != 0)
+    {
+        UnloadModel(m_playerModel);
+        m_playerModel = {0}; // Prevent double-free
+    }
+
+    if (m_shaderLoaded)
+    {
+        UnloadShader(m_playerShader);
+        m_shaderLoaded = false;
+    }
+
+    if (m_fontLoaded)
+    {
+        UnloadFont(m_hudFont);
+        m_fontLoaded = false;
+    }
+
     // Shutdown Managers
     RenderManager::Get().Shutdown();
     InputManager::Get().Shutdown();
-    // AudioManager::Get().Shutdown(); // Optional, destructor handles it
+    AudioManager::Get().Shutdown(); // Optional, destructor handles it
 
     if (m_collisionManager && !m_collisionManager->GetColliders().empty())
     {
@@ -457,6 +805,23 @@ void GameApplication::InitInput()
                 EnableCursor(); // Show system cursor when opening menu
             }
         });
+
+    engine->GetInputManager()->RegisterAction(KEY_F2,
+                                              [this]
+                                              {
+                                                  m_showDebugCollision = !m_showDebugCollision;
+                                                  TraceLog(LOG_INFO, "Debug Collision: %s",
+                                                           m_showDebugCollision ? "ON" : "OFF");
+                                              });
+
+    engine->GetInputManager()->RegisterAction(KEY_F3,
+                                              [this]
+                                              {
+                                                  m_showDebugStats = !m_showDebugStats;
+                                                  TraceLog(LOG_INFO, "Debug Stats: %s",
+                                                           m_showDebugStats ? "ON" : "OFF");
+                                              });
+
     TraceLog(LOG_INFO, "[GameApplication] Game input bindings configured.");
 }
 
@@ -484,45 +849,43 @@ void GameApplication::HandleMenuActions()
 
 void GameApplication::SaveGameState()
 {
-    /*
-    if (!m_isGameInitialized)
+    if (!m_isGameInitialized || !REGISTRY.valid(m_playerEntity))
     {
-        return; // No state to save if game is not initialized
-    }
-
-    // Get PlayerController through Engine
-    // Get PlayerController through ModuleManager
-    auto *engine = &Engine::Instance();
-    if (!engine || !engine->GetModuleManager())
-        return;
-
-    auto *playerModule = engine->GetModuleManager()->GetModule("Player");
-    auto *playerController = dynamic_cast<PlayerController *>(playerModule);
-
-    if (!playerController)
-    {
-        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - PlayerController not available");
         return;
     }
 
-    // Get LevelManager through Engine
-    auto levelManager = engine->GetLevelManager();
-    if (!levelManager)
+    // Save to simple text file logic
+    auto &transform = REGISTRY.get<TransformComponent>(m_playerEntity);
+    auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
+
+    // Get current map
+    std::string currentMap = "resources/maps/test_map.json"; // Default
+    auto levelManager = Engine::Instance().GetService<LevelManager>();
+    if (levelManager)
     {
-        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - LevelManager not available");
-        return;
+        std::string mapPath = levelManager->GetCurrentMapPath();
+        if (!mapPath.empty())
+        {
+            currentMap = mapPath;
+        }
     }
 
-    // Get current map path
-    std::string currentMapPath = levelManager->GetCurrentMapPath();
+    std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
+    std::ofstream saveFile(savePath);
 
-    if (currentMapPath.empty())
+    if (saveFile.is_open())
     {
-        TraceLog(LOG_WARNING, "[GameApplication] SaveGameState() - Current map path is empty");
-        return;
-    }
+        // Format: MapPath X Y Z RunTimer MaxHeight
+        saveFile << currentMap << " " << transform.position.x << " " << transform.position.y << " "
+                 << transform.position.z << " " << player.runTimer << " " << player.maxHeight;
 
-    playerController->SavePlayerState(currentMapPath);
-    TraceLog(LOG_INFO, "[GameApplication] Game state saved (map: %s)", currentMapPath.c_str());
-    */
+        saveFile.close();
+        TraceLog(LOG_INFO, "[GameApplication] Game Saved: Map: %s Pos(%.2f, %.2f, %.2f)",
+                 currentMap.c_str(), transform.position.x, transform.position.y,
+                 transform.position.z);
+    }
+    else
+    {
+        TraceLog(LOG_ERROR, "[GameApplication] Failed to open save file: %s", savePath.c_str());
+    }
 }

@@ -2,8 +2,11 @@
 #define PHYSICS_COMPONENT_H
 
 #include <entt/entt.hpp>
+#include <memory>
 #include <raylib.h>
 
+// Forward declaration
+class Collision;
 
 struct PhysicsComponent
 {
@@ -33,6 +36,9 @@ struct CollisionComponent
     // Collision callbacks (можна розширити)
     bool hasCollision = false;
     entt::entity collidedWith = entt::null;
+
+    // Collider pointer for collision system
+    std::shared_ptr<Collision> collider = nullptr;
 };
 
 #endif // PHYSICS_COMPONENT_H
