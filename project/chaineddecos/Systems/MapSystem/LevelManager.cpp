@@ -433,6 +433,14 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         TraceLog(LOG_INFO,
                  "LevelManager::LoadEditorMap() - Successfully loaded JSON map with %zu objects",
                  m_gameMap->GetMapObjects().size());
+
+        // Load skybox if metadata contains skybox texture
+        if (!m_gameMap->GetMapMetaData().skyboxTexture.empty())
+        {
+            MapLoader mapLoader;
+            mapLoader.LoadSkyboxForMap(*m_gameMap);
+            TraceLog(LOG_INFO, "LevelManager::LoadEditorMap() - Loaded skybox from metadata");
+        }
     }
 
     TraceLog(LOG_INFO, "LevelManager::LoadEditorMap() - Map loaded, checking object count: %zu",
