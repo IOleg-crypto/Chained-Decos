@@ -46,6 +46,7 @@ EditorUIManager::~EditorUIManager()
 void EditorUIManager::Render()
 {
     // Note: rlImGuiBegin() is now called in Application::Run() for docking support
+
     // Render all ImGui panels in specific order
     RenderImGuiToolbar();
 
@@ -192,189 +193,143 @@ void EditorUIManager::EnsureWindowInBounds()
 
 void EditorUIManager::RenderImGuiToolbar()
 {
-    ImVec2 windowSize(700, 300);
-    ImVec2 desiredPos(10, 10);
-    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
-
-    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-
-    // Limit maximum window size to screen dimensions
-    ImGui::SetNextWindowSizeConstraints(
-        ImVec2(100, 100),
-        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())));
-
-    // Enable docking for toolbar window - allow it to be docked if needed
-    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize;
-
-    bool toolbarOpen = true;
-    if (ImGui::Begin("Toolbar##foo2", nullptr, windowFlags))
+    if (ImGui::BeginMainMenuBar())
     {
-        // Ensure window stays within screen bounds
-        EnsureWindowInBounds();
-        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
-        ImGui::Text("Map Editor Tools");
-        ImGui::PopFont();
-
-        ImGui::Separator();
-
-        const char *toolNames[] = {"Select",       "Move",      "Rotate",
-                                   "Scale",        "Add Cube",  "Add Sphere",
-                                   "Add Cylinder", "Add Model", "Add Spawn Zone"};
-
-        for (int i = 0; i < std::size(toolNames); i++)
+        if (ImGui::BeginMenu("File"))
         {
-            // Store current tool state before potential change
-            bool isCurrentTool = (GetActiveTool() == static_cast<Tool>(i));
-
-            // Highlight current tool
-            if (isCurrentTool)
+            if (ImGui::MenuItem("Save Map As..."))
             {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.6f, 0.9f, 1.0f));
-            }
-
-            if (ImGui::Button(toolNames[i]))
-            {
-                SetActiveTool(static_cast<Tool>(i));
-
-                if (GetActiveTool() == ADD_CUBE || GetActiveTool() == ADD_SPHERE ||
-                    GetActiveTool() == ADD_CYLINDER || GetActiveTool() == ADD_MODEL ||
-                    GetActiveTool() == ADD_SPAWN_ZONE)
+                // Use NFD to show save dialog
+                nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
+                nfdchar_t *outPath = nullptr;
+                nfdresult_t result = NFD_SaveDialog(&outPath, filterItem, 1, nullptr, "map.json");
+                if (result == NFD_OKAY)
                 {
-                    m_pendingObjectCreation = true;
+                    const auto &objects = m_sceneManager->GetObjects();
+                    if (m_fileManager->SaveMap(outPath, objects))
+                    {
+                        m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
+                    }
+                    NFD_FreePath(outPath);
                 }
             }
-
-            // Use stored state, not current m_currentTool
-            if (isCurrentTool)
+            if (ImGui::MenuItem("Load Map..."))
             {
-                ImGui::PopStyleColor();
+                // Use NFD to show open dialog
+                nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
+                nfdchar_t *outPath = nullptr;
+                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+                if (result == NFD_OKAY)
+                {
+                    std::vector<MapObject> loadedObjects;
+                    if (m_fileManager->LoadMap(outPath, loadedObjects))
+                    {
+                        while (!m_sceneManager->GetObjects().empty())
+                        {
+                            m_sceneManager->RemoveObject(
+                                static_cast<int>(m_sceneManager->GetObjects().size() - 1));
+                        }
+                        for (const auto &obj : loadedObjects)
+                        {
+                            m_sceneManager->AddObject(obj);
+                        }
+                        m_sceneManager->ClearSelection();
+                        m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
+                        if (m_editor)
+                        {
+                            m_editor->ApplyMetadata(m_fileManager->GetCurrentMetadata());
+                        }
+                    }
+                    NFD_FreePath(outPath);
+                }
             }
-
-            if (i < std::size(toolNames) - 1)
-                ImGui::SameLine();
-        }
-
-        if (ImGui::Button("Save Map As..."))
-        {
-            // Use NFD to show save dialog
-            nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
-            nfdchar_t *outPath = nullptr;
-            nfdresult_t result = NFD_SaveDialog(&outPath, filterItem, 1, nullptr, "map.json");
-            if (result == NFD_OKAY)
+            if (ImGui::MenuItem("Quick Save", nullptr, false,
+                                !m_fileManager->GetCurrentlyLoadedMapFilePath().empty()))
             {
                 const auto &objects = m_sceneManager->GetObjects();
-                if (m_fileManager->SaveMap(outPath, objects))
-                {
-                    m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
-                }
-                NFD_FreePath(outPath);
+                m_fileManager->SaveMap(m_fileManager->GetCurrentlyLoadedMapFilePath(), objects);
             }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Load Map..."))
-        {
-            // Use NFD to show open dialog
-            nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
-            nfdchar_t *outPath = nullptr;
-            nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
-            if (result == NFD_OKAY)
+            ImGui::Separator();
+            if (ImGui::MenuItem("Exit"))
             {
-                std::vector<MapObject> loadedObjects;
-                if (m_fileManager->LoadMap(outPath, loadedObjects))
+                // TODO: Exit application
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Tools"))
+        {
+            const char *toolNames[] = {"Select",       "Move",      "Rotate",
+                                       "Scale",        "Add Cube",  "Add Sphere",
+                                       "Add Cylinder", "Add Model", "Add Spawn Zone"};
+            for (int i = 0; i < std::size(toolNames); i++)
+            {
+                bool isSelected = (GetActiveTool() == static_cast<Tool>(i));
+                if (ImGui::MenuItem(toolNames[i], nullptr, isSelected))
                 {
-                    // Replace current objects in the scene manager
-                    // SceneManager API doesn't expose a clear; emulate by removing one by one
-                    while (!m_sceneManager->GetObjects().empty())
+                    SetActiveTool(static_cast<Tool>(i));
+                    if (GetActiveTool() == ADD_CUBE || GetActiveTool() == ADD_SPHERE ||
+                        GetActiveTool() == ADD_CYLINDER || GetActiveTool() == ADD_MODEL ||
+                        GetActiveTool() == ADD_SPAWN_ZONE)
                     {
-                        m_sceneManager->RemoveObject(
-                            static_cast<int>(m_sceneManager->GetObjects().size() - 1));
-                    }
-                    for (const auto &obj : loadedObjects)
-                    {
-                        m_sceneManager->AddObject(obj);
-                    }
-                    m_sceneManager->ClearSelection();
-                    m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
-                    if (m_editor)
-                    {
-                        m_editor->ApplyMetadata(m_fileManager->GetCurrentMetadata());
+                        m_pendingObjectCreation = true;
                     }
                 }
-                NFD_FreePath(outPath);
             }
+            ImGui::EndMenu();
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Quick Save") && !m_fileManager->GetCurrentlyLoadedMapFilePath().empty())
+
+        if (ImGui::BeginMenu("View"))
         {
-            // Quick save to currently loaded file
-            const auto &objects = m_sceneManager->GetObjects();
-            m_fileManager->SaveMap(m_fileManager->GetCurrentlyLoadedMapFilePath(), objects);
+            ImGui::MenuItem("Scene Hierarchy", nullptr, &m_displayObjectListPanel);
+            ImGui::MenuItem("Properties", nullptr, &m_displayPropertiesPanel);
+            ImGui::MenuItem("Skybox Settings", nullptr, &m_displaySkyboxPanel);
+            ImGui::EndMenu();
         }
 
-        // Show current file path
-        ImGui::Separator();
-        ImGui::Text("Current: %s", m_fileManager->GetCurrentlyLoadedMapFilePath().empty()
-                                       ? "No map loaded"
-                                       : m_fileManager->GetCurrentlyLoadedMapFilePath().c_str());
+        // Status info on the right
+        float width = ImGui::GetWindowWidth();
+        std::string mapName =
+            m_fileManager->GetCurrentlyLoadedMapFilePath().empty()
+                ? "Untitled"
+                : fs::path(m_fileManager->GetCurrentlyLoadedMapFilePath()).filename().string();
+        std::string infoText = "Map: " + mapName + " | Grid: " + std::to_string(m_gridSizes);
 
-        // Model selection dropdown (only show when adding models)
+        ImGui::SameLine(width - 300);
+        ImGui::Text("%s", infoText.c_str());
+
+        ImGui::EndMainMenuBar();
+
+        // Handle Model Selection if needed (as a popup or separate window)
+        // For now, if tool is Add Model, show a small window
         if (GetActiveTool() == ADD_MODEL)
         {
-            ImGui::Text("Select Model:");
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, 50),
+                                    ImGuiCond_Always, ImVec2(0.5f, 0.0f));
+            ImGui::Begin("Select Model", nullptr,
+                         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize);
+
             if (ImGui::BeginCombo("##ModelSelect", m_currentlySelectedModelName.c_str()))
             {
-                // Use model manager for available models
                 const auto &availableModels = m_modelManager->GetAvailableModels();
                 for (const auto &modelName : availableModels)
                 {
                     bool isSelected = (m_currentlySelectedModelName == modelName);
-
                     if (ImGui::Selectable(modelName.c_str(), isSelected))
                     {
                         m_currentlySelectedModelName = modelName;
                     }
-
                     if (isSelected)
-                    {
                         ImGui::SetItemDefaultFocus();
-                    }
                 }
                 ImGui::EndCombo();
             }
+            ImGui::End();
         }
 
-        ImGui::Separator();
-
-        ImGui::Checkbox("Show Object Panel", &m_displayObjectListPanel);
-        ImGui::SameLine();
-        ImGui::Checkbox("Show Properties", &m_displayPropertiesPanel);
-        ImGui::SameLine();
-        ImGui::Checkbox("Show Skybox Settings", &m_displaySkyboxPanel);
-        ImGui::SameLine();
-        if (ImGui::SliderInt("Increase/Decrease editor grid", &m_gridSizes, 900, 10000))
-        {
-            if (m_gridSizes < 900)
-            {
-                m_gridSizes = 900;
-            }
-            // Ensure grid size is within valid range
-            if (m_gridSizes > 10000)
-            {
-                m_gridSizes = 10000;
-            }
-        }
-
-        // Process pending object creation
-        ProcessPendingObjectCreation();
+        // Handle Grid resizing via shortcuts or menu
+        // (Grid slider logic moved to View menu or kept in a settings panel if needed)
     }
-
-    if (!toolbarOpen)
-    {
-        m_displayImGuiInterface = false;
-    }
-
-    ImGui::End();
 }
 
 void EditorUIManager::RenderImGuiObjectPanel()
@@ -392,12 +347,17 @@ void EditorUIManager::RenderImGuiObjectPanel()
         ImVec2(100, 100),
         ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())));
 
-    // Enable docking for object panel - allow docking to sides
+    // Fixed Left Panel Layout
+    float mainMenuBarHeight = 19.0f; // Approx height of main menu
+    ImGui::SetNextWindowPos(ImVec2(0, mainMenuBarHeight), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(300, static_cast<float>(GetScreenHeight()) - mainMenuBarHeight),
+                             ImGuiCond_Always);
+
     ImGuiWindowFlags windowFlags =
-        ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
 
     bool objectPanelOpen = true;
-    if (ImGui::Begin("Objects##foo1", &objectPanelOpen, windowFlags))
+    if (ImGui::Begin("Scene Hierarchy", &objectPanelOpen, windowFlags))
     {
         // Ensure window stays within screen bounds
         EnsureWindowInBounds();
@@ -477,26 +437,23 @@ void EditorUIManager::RenderImGuiPropertiesPanel()
         return;
 
     auto &obj = *m_sceneManager->GetSelectedObject();
-    const int screenHeight = GetScreenHeight();
 
-    ImVec2 windowSize(300, 400);
-    ImVec2 desiredPos(10, static_cast<float>(screenHeight - 400));
-    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
+    // Fixed Right Panel Layout
+    float mainMenuBarHeight = 19.0f;
+    float panelWidth = 300.0f;
+    ImGui::SetNextWindowPos(
+        ImVec2(static_cast<float>(GetScreenWidth()) - panelWidth, mainMenuBarHeight),
+        ImGuiCond_Always);
+    ImGui::SetNextWindowSize(
+        ImVec2(panelWidth, static_cast<float>(GetScreenHeight()) - mainMenuBarHeight),
+        ImGuiCond_Always);
 
-    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-
-    // Limit maximum window size to screen dimensions
-    ImGui::SetNextWindowSizeConstraints(
-        ImVec2(200, 200),
-        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())));
-
-    // Enable docking for properties panel
     ImGuiWindowFlags windowFlags =
-        ImGuiWindowFlags_None; // Remove AlwaysAutoResize for better docking
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+
     bool propertiesPanelOpen = true;
     std::string nameLabel;
-    if (ImGui::Begin("Properties##Panel", &propertiesPanelOpen, windowFlags))
+    if (ImGui::Begin("Properties", &propertiesPanelOpen, windowFlags))
     {
         // Ensure window stays within screen bounds
         EnsureWindowInBounds();
