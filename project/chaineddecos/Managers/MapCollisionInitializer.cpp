@@ -1,8 +1,9 @@
 #include "MapCollisionInitializer.h"
-#include "Player/Collision/PlayerCollision.h"
 
+#include "core/ecs/Components/PhysicsComponent.h"
+#include "core/ecs/Components/TransformComponent.h"
+#include "core/ecs/ECSRegistry.h"
 #include <raylib.h>
-
 
 MapCollisionInitializer::MapCollisionInitializer(CollisionManager *collisionManager,
                                                  ModelLoader *models, IPlayer *player)
@@ -224,6 +225,25 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
              "MapCollisionInitializer::InitializeCollisionsWithModelsSafe() - Collision system "
              "initialized with %zu colliders.",
              m_collisionManager->GetColliders().size());
+
+    // Sync collisions to ECS
+    for (const auto &collider : m_collisionManager->GetColliders())
+    {
+        // Simple check to avoid duplicating if entity already exists?
+        // Ideally we should clear old map entities first.
+        // But for now, let's just create them.
+        auto entity = REGISTRY.create();
+        REGISTRY.emplace<TransformComponent>(entity, collider->GetCenter(), Vector3{0, 0, 0},
+                                             Vector3{1, 1, 1});
+
+        auto &colComp = REGISTRY.emplace<CollisionComponent>(entity);
+        colComp.bounds = collider->GetBoundingBox();
+        colComp.collider = collider;
+        colComp.isTrigger = false;
+        colComp.collisionLayer = 1; // Default layer
+        colComp.collisionMask = ~0;
+        colComp.hasCollision = false;
+    }
 
     return true; // Always return true since we have at least basic collision
 }
