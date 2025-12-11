@@ -21,7 +21,6 @@ add_executable(map_editor
     main.cpp
 )
 
-
 target_include_directories(map_editor PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}

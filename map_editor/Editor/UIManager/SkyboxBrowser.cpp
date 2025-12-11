@@ -218,15 +218,12 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                 m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
                 m_skyboxPlaceholderPath.clear();
                 m_lastLoadedMetadataSkybox.clear();
-                TraceLog(LOG_INFO, "SkyboxBrowser: Cleared skybox and loaded placeholder");
             }
             else
             {
                 m_skyboxPlaceholderInitialized = false;
                 m_skyboxPlaceholderPath.clear();
                 m_lastLoadedMetadataSkybox.clear();
-                TraceLog(LOG_WARNING,
-                         "SkyboxBrowser: Failed to load placeholder after clearing skybox");
             }
         }
 
