@@ -5,7 +5,7 @@
 #include "UIManager.h"
 #include "ObjectFactory.h"
 #include "SkyboxBrowser.h"
-#include "editor/plugins/map_editor/Editor/Editor.h"
+#include "map_editor/Editor/Editor.h"
 
 #include "scene/resources/map/Core/MapLoader.h"
 #include <algorithm>

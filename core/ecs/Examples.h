@@ -5,14 +5,13 @@
 #include "ECSRegistry.h"
 #include <raylib.h>
 
-
 // Приклади створення різних типів entities
 
 namespace ECSExamples
 {
 
 // Створити гравця
-inline entt::entity CreatePlayer(Vector3 position)
+inline entt::entity CreatePlayer(Vector3 position, Model *model)
 {
     auto player = REGISTRY.create();
 
@@ -25,6 +24,18 @@ inline entt::entity CreatePlayer(Vector3 position)
 
     // Velocity
     REGISTRY.emplace<VelocityComponent>(player);
+
+    // Render
+    if (model)
+    {
+        REGISTRY.emplace<RenderComponent>(player,
+                                          "player", // modelName
+                                          model,    // model
+                                          GRAY,     // tint
+                                          true,     // visible
+                                          1         // renderLayer (higher than static)
+        );
+    }
 
     // Player-specific
     REGISTRY.emplace<PlayerComponent>(player,
@@ -43,8 +54,9 @@ inline entt::entity CreatePlayer(Vector3 position)
 
     // Collision
     CollisionComponent collision;
-    collision.bounds = BoundingBox{Vector3{-0.5f, -1.0f, -0.5f}, Vector3{0.5f, 1.0f, 0.5f}};
-    collision.collisionLayer = 1; // Player layer
+    collision.bounds =
+        BoundingBox{Vector3{-0.4f, -0.9f, -0.4f}, Vector3{0.4f, 0.9f, 0.4f}}; // 0.8w x 1.8h
+    collision.collisionLayer = 1;                                             // Player layer
     REGISTRY.emplace<CollisionComponent>(player, collision);
 
     // Name for debugging

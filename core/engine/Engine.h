@@ -98,7 +98,7 @@ public:
     }
     bool ShouldExit() const override
     {
-        return m_shouldExit;
+        return m_shouldExit || WindowShouldClose();
     }
 
 private:
