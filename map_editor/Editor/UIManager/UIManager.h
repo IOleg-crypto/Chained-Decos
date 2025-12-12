@@ -47,10 +47,22 @@ private:
     bool m_displayImGuiInterface;
     bool m_displayObjectListPanel;
     bool m_displayPropertiesPanel;
+    bool m_displayWelcomeScreen = true; // Default to true on startup
     bool m_pendingObjectCreation;
     bool m_displaySkyboxPanel;
     std::string m_currentlySelectedModelName;
     int m_gridSizes;
+
+    // Save Prompt State
+    enum class PendingAction
+    {
+        NONE,
+        NEW_PROJECT,
+        OPEN_PROJECT,
+        LOAD_MAP
+    };
+    PendingAction m_pendingAction = PendingAction::NONE;
+    bool m_showSavePrompt = false;
 
     // Parkour map dialog
     bool m_displayParkourMapDialog;
@@ -107,9 +119,11 @@ public:
 
 private:
     // Rendering methods
+    void RenderWelcomeScreen();
     void RenderImGuiToolbar();
     void RenderImGuiObjectPanel();
     void RenderImGuiPropertiesPanel();
+    void RenderSavePrompt(); // Popup for unsaved changes
 
     // Input handling
     void HandleKeyboardInput();

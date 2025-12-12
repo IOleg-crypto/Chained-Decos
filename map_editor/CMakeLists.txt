@@ -11,6 +11,10 @@ add_executable(map_editor
     Editor/ModelManager/ModelManager.cpp
     Editor/Object/MapObject.cpp
     Editor/Renderer/EditorRenderer.cpp
+    Editor/ECS/Component.cpp
+    Editor/ECS/GameObject.cpp
+    Editor/ECS/TransformComponent.cpp
+    Editor/ECS/MeshRendererComponent.cpp
     Editor/SceneManager/BoundingBoxCalculators.cpp
     Editor/SceneManager/SceneManager.cpp
     Editor/ToolManager/ToolManager.cpp
