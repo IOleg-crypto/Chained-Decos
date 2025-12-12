@@ -833,43 +833,19 @@ void GameApplication::HandleMenuActions(Engine &engine)
 
 void GameApplication::SaveGameState()
 {
+    // This function is called when opening the menu (pause)
+    // No need to save to file - just preserve game state in memory
+
     if (!m_isGameInitialized || !REGISTRY.valid(m_playerEntity))
     {
+        TraceLog(LOG_WARNING, "[GameApplication] Cannot preserve game state - game not initialized "
+                              "or player invalid");
         return;
     }
 
-    // Save to simple text file logic
-    auto &transform = REGISTRY.get<TransformComponent>(m_playerEntity);
-    auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
+    TraceLog(LOG_INFO, "[GameApplication] Game state preserved (menu opened)");
 
-    // Get current map
-    std::string currentMap = "resources/maps/test_map.json"; // Default
-    auto levelManager = Engine::Instance().GetService<LevelManager>();
-    if (levelManager)
-    {
-        std::string mapPath = levelManager->GetCurrentMapPath();
-        if (!mapPath.empty())
-        {
-            currentMap = mapPath;
-        }
-    }
-
-    std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
-    std::ofstream saveFile(savePath);
-
-    if (saveFile.is_open())
-    {
-        // Format: MapPath X Y Z RunTimer MaxHeight
-        saveFile << currentMap << " " << transform.position.x << " " << transform.position.y << " "
-                 << transform.position.z << " " << player.runTimer << " " << player.maxHeight;
-
-        saveFile.close();
-        TraceLog(LOG_INFO, "[GameApplication] Game Saved: Map: %s Pos(%.2f, %.2f, %.2f)",
-                 currentMap.c_str(), transform.position.x, transform.position.y,
-                 transform.position.z);
-    }
-    else
-    {
-        TraceLog(LOG_ERROR, "[GameApplication] Failed to open save file: %s", savePath.c_str());
-    }
+    // Game state is already in memory (ECS components, m_world, etc.)
+    // When menu closes, game continues from current state
+    // No file saving needed
 }
