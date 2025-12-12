@@ -3,6 +3,7 @@
 #include "IApplication.h"
 #include <cassert>
 #include <raylib.h>
+#include <stdexcept>
 
 EngineApplication::EngineApplication(Config config, IApplication *application)
     : m_app(application), m_config(std::move(config))
