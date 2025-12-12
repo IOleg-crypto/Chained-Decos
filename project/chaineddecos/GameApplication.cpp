@@ -656,12 +656,15 @@ void GameApplication::OnRender(Engine &engine)
     }
 
     // Debug Collision
+    // TODO: Pass Engine& to OnRender or create separate debug render method
+    /*
     if (m_showDebugCollision && m_isGameInitialized)
     {
         RenderManager::Get().BeginMode3D(RenderManager::Get().GetCamera());
         CollisionSystem::RenderDebug();
         RenderManager::Get().EndMode3D();
     }
+    */
 
     // Debug Stats
     if (m_showDebugStats)
@@ -716,6 +719,9 @@ void GameApplication::OnShutdown()
     if (m_collisionManager && !m_collisionManager->GetColliders().empty())
     {
         m_collisionManager->ClearColliders();
+
+        // TODO: Remove this legacy code - UIManager should handle its own cleanup
+        /*
         {
             auto *uiModule = Engine::Instance().GetModuleManager()->GetModule("UI");
             if (uiModule)
@@ -727,6 +733,7 @@ void GameApplication::OnShutdown()
                 }
             }
         }
+        */
     }
 
     TraceLog(LOG_INFO, "[GameApplication] Game resources cleaned up successfully");
@@ -739,83 +746,81 @@ void GameApplication::InitInput(Engine &engine)
     // Get Menu through UIController
     auto &moduleManager = engine.GetModuleManager();
     Menu *menu = nullptr;
-    if (moduleManager.GetModule("UI"))
+    auto *uiModule = moduleManager.GetModule("UI");
+    if (uiModule)
     {
-        auto *uiModule = moduleManager->GetModule("UI");
-        if (uiModule)
+        auto *uiManager = dynamic_cast<UIManager *>(uiModule);
+        if (uiManager)
         {
-            auto *uiManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiManager)
-            {
-                menu = uiManager->GetMenu();
-            }
+            menu = uiManager->GetMenu();
         }
     }
 
-    if (!menu)
+    // Register input actions
+    if (menu)
+    {
+        // Toggle menu with ESC
+        engine.GetInputManager().RegisterPressedAction(
+            KEY_ESCAPE,
+            [this, menu]()
+            {
+                if (!m_showMenu && m_isGameInitialized)
+                {
+                    SaveGameState();
+                    menu->ResetAction();
+                    menu->SetGameInProgress(true);
+                    m_showMenu = true;
+                    EnableCursor(); // Show system cursor when opening menu
+                }
+            });
+
+        // Toggle menu with F1
+        engine.GetInputManager().RegisterPressedAction(
+            KEY_F1,
+            [this, menu]()
+            {
+                if (!m_showMenu && m_isGameInitialized)
+                {
+                    SaveGameState();
+                    menu->SetGameInProgress(true);
+                    m_showMenu = true;
+                    EnableCursor(); // Show system cursor when opening menu
+                }
+            });
+
+        // Toggle debug collision with F2
+        engine.GetInputManager().RegisterPressedAction(
+            KEY_F2,
+            [this]()
+            {
+                m_showDebugCollision = !m_showDebugCollision;
+                TraceLog(LOG_INFO, "Debug Collision: %s", m_showDebugCollision ? "ON" : "OFF");
+            });
+
+        // Toggle debug stats with F3
+        engine.GetInputManager().RegisterPressedAction(
+            KEY_F3,
+            [this]()
+            {
+                m_showDebugStats = !m_showDebugStats;
+                TraceLog(LOG_INFO, "Debug Stats: %s", m_showDebugStats ? "ON" : "OFF");
+            });
+    }
+    else
     {
         TraceLog(LOG_WARNING, "[GameApplication] Menu not found, skipping input bindings");
         return;
     }
 
-    engine->GetInputManager()->RegisterAction(
-        KEY_F1,
-        [this, menu]
-        {
-            if (!m_showMenu && m_isGameInitialized)
-            {
-                SaveGameState();
-                menu->SetGameInProgress(true);
-                m_showMenu = true;
-                EnableCursor(); // Show system cursor when opening menu
-            }
-        });
-
-    engine->GetInputManager()->RegisterAction(
-        KEY_ESCAPE,
-        [this, menu]
-        {
-            if (!m_showMenu && m_isGameInitialized)
-            {
-                SaveGameState();
-                menu->ResetAction();
-                menu->SetGameInProgress(true);
-                m_showMenu = true;
-                EnableCursor(); // Show system cursor when opening menu
-            }
-        });
-
-    engine->GetInputManager()->RegisterAction(KEY_F2,
-                                              [this]
-                                              {
-                                                  m_showDebugCollision = !m_showDebugCollision;
-                                                  TraceLog(LOG_INFO, "Debug Collision: %s",
-                                                           m_showDebugCollision ? "ON" : "OFF");
-                                              });
-
-    engine->GetInputManager()->RegisterAction(KEY_F3,
-                                              [this]
-                                              {
-                                                  m_showDebugStats = !m_showDebugStats;
-                                                  TraceLog(LOG_INFO, "Debug Stats: %s",
-                                                           m_showDebugStats ? "ON" : "OFF");
-                                              });
-
     TraceLog(LOG_INFO, "[GameApplication] Game input bindings configured.");
 }
 
-void GameApplication::HandleMenuActions()
+void GameApplication::HandleMenuActions(Engine &engine)
 {
     // Get UIManager through ModuleManager
-    auto *engine = &Engine::Instance();
-    if (!engine)
-        return;
+    auto &moduleManager = engine.GetModuleManager();
 
-    auto moduleManager = engine->GetModuleManager();
-    if (!moduleManager)
-        return;
-
-    auto *uiModule = moduleManager->GetModule("UI");
+    auto *uiModule = moduleManager.GetModule("UI");
     if (!uiModule)
         return;
 
