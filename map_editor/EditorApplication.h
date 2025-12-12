@@ -12,22 +12,12 @@ public:
     EditorApplication();
     ~EditorApplication();
 
-    // 1. Configuration
+    // IApplication interface - all methods receive Engine&
     void OnConfigure(EngineConfig &config) override;
-
-    // 2. Registration
-    void OnRegister() override;
-
-    // 3. Start
-    void OnStart() override;
-
-    // Update
-    void OnUpdate(float deltaTime) override;
-
-    // Render
-    void OnRender() override;
-
-    // Shutdown
+    void OnRegister(Engine &engine) override;
+    void OnStart(Engine &engine) override;
+    void OnUpdate(float deltaTime, Engine &engine) override;
+    void OnRender(Engine &engine) override;
     void OnShutdown() override;
 
 private:

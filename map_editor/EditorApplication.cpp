@@ -29,22 +29,15 @@ void EditorApplication::OnConfigure(EngineConfig &config)
     config.height = 900;
 }
 
-void EditorApplication::OnRegister()
+void EditorApplication::OnRegister(Engine &engine)
 {
     TraceLog(LOG_INFO, "[EditorApplication] Registering modules...");
 
-    if (auto engine = GetEngine())
-    {
-        engine->RegisterModule(std::make_unique<EditorModule>());
-        TraceLog(LOG_INFO, "[EditorApplication] Editor modules registered.");
-    }
-    else
-    {
-        TraceLog(LOG_ERROR, "[EditorApplication] Engine not available!");
-    }
+    engine.RegisterModule(std::make_unique<EditorModule>());
+    TraceLog(LOG_INFO, "[EditorApplication] Editor modules registered.");
 }
 
-void EditorApplication::OnStart()
+void EditorApplication::OnStart(Engine &engine)
 {
     TraceLog(LOG_INFO, "[EditorApplication] Starting application...");
 
@@ -84,7 +77,7 @@ void EditorApplication::OnStart()
     TraceLog(LOG_INFO, "[EditorApplication] Application started.");
 }
 
-void EditorApplication::OnUpdate(float deltaTime)
+void EditorApplication::OnUpdate(float deltaTime, Engine &engine)
 {
     if (!m_editor)
         return;
@@ -100,15 +93,12 @@ void EditorApplication::OnUpdate(float deltaTime)
     {
         if (uiManager->ShouldExit())
         {
-            if (auto engine = GetEngine())
-            {
-                engine->RequestExit();
-            }
+            engine.RequestExit();
         }
     }
 }
 
-void EditorApplication::OnRender()
+void EditorApplication::OnRender(Engine &engine)
 {
     if (!m_editor)
         return;
