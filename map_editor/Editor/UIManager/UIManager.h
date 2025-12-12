@@ -50,8 +50,14 @@ private:
     bool m_displayWelcomeScreen = true; // Default to true on startup
     bool m_pendingObjectCreation;
     bool m_displaySkyboxPanel;
+    bool m_shouldExit = false; // Flag to signal application exit
     std::string m_currentlySelectedModelName;
     int m_gridSizes;
+
+    // Icons
+    Texture2D m_iconNewProject;
+    Texture2D m_iconOpenProject;
+    bool m_iconsLoaded = false;
 
     // Save Prompt State
     enum class PendingAction
@@ -115,6 +121,12 @@ public:
     void SetGridSize(int size)
     {
         m_gridSizes = size;
+    }
+
+    // Exit control
+    bool ShouldExit() const
+    {
+        return m_shouldExit;
     }
 
 private:

@@ -46,6 +46,11 @@ EditorUIManager::EditorUIManager(const UIManagerConfig &config)
 EditorUIManager::~EditorUIManager()
 {
     // SkyboxBrowser handles its own cleanup
+    if (m_iconsLoaded)
+    {
+        UnloadTexture(m_iconNewProject);
+        UnloadTexture(m_iconOpenProject);
+    }
 }
 
 void EditorUIManager::Render()
@@ -270,10 +275,26 @@ void EditorUIManager::RenderImGuiToolbar()
                 const auto &objects = m_sceneManager->GetObjects();
                 m_fileManager->SaveMap(m_fileManager->GetCurrentlyLoadedMapFilePath(), objects);
             }
+
+            // Back to Welcome Screen
+            if (ImGui::MenuItem("Back to Welcome Screen"))
+            {
+                if (m_sceneManager->IsSceneModified())
+                {
+                    m_showSavePrompt = true;
+                    m_pendingAction = PendingAction::NEW_PROJECT;
+                }
+                else
+                {
+                    m_sceneManager->ClearScene();
+                    m_displayWelcomeScreen = true;
+                }
+            }
+
             ImGui::Separator();
             if (ImGui::MenuItem("Exit"))
             {
-                // TODO: Exit application
+                m_shouldExit = true;
             }
             ImGui::EndMenu();
         }
@@ -719,93 +740,202 @@ int EditorUIManager::GetGridSize() const
 
 void EditorUIManager::RenderWelcomeScreen()
 {
-    // Full screen window
+    // Lazy load icons with path fallback
+    if (!m_iconsLoaded)
+    {
+
+        m_iconNewProject = LoadTexture(PROJECT_ROOT_DIR "/resources/map_editor/newproject.jpg");
+        m_iconOpenProject = LoadTexture(PROJECT_ROOT_DIR "/resources/map_editor/folder.png");
+
+        // Linear filter for better scaling
+        SetTextureFilter(m_iconNewProject, TEXTURE_FILTER_BILINEAR);
+        SetTextureFilter(m_iconOpenProject, TEXTURE_FILTER_BILINEAR);
+
+        m_iconsLoaded = true;
+    }
+
+    // Full screen window with gray background
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-                             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
+                             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
+                             ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+    // JetBrains Darcula-like background (approx #2B2B2B)
+    ImVec4 bgColor = ImVec4(0.169f, 0.169f, 0.169f, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, bgColor);
+
+    // Style adjustments for a cleaner look
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
     if (ImGui::Begin("Welcome Screen", nullptr, flags))
     {
-        // Center content
-        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetCursorPos(ImVec2(center.x - 200, center.y - 150));
+        // Center content area
+        ImVec2 viewportSize = ImGui::GetMainViewport()->Size;
+        float contentWidth = 700.0f;
+        float contentHeight = 500.0f;
 
-        if (ImGui::BeginChild("WelcomeContent", ImVec2(400, 300), true))
+        ImGui::SetCursorPos(ImVec2((viewportSize.x - contentWidth) * 0.5f,
+                                   (viewportSize.y - contentHeight) * 0.5f));
+
+        if (ImGui::BeginChild("WelcomeContent", ImVec2(contentWidth, contentHeight), false,
+                              ImGuiWindowFlags_NoBackground))
         {
-            ImGui::SetCursorPosY(20);
+            // Title
+            ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
+            ImGui::SetWindowFontScale(2.5f);
+            std::string title = "Chained Decos Editor";
+            float textWidth = ImGui::CalcTextSize(title.c_str()).x;
+            ImGui::SetCursorPosX((contentWidth - textWidth) * 0.5f);
 
-            // Header
-            ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // Assuming default font
-            float textWidth = ImGui::CalcTextSize("Chained Decos Editor").x;
-            ImGui::SetCursorPosX((400 - textWidth) * 0.5f);
-            ImGui::Text("Chained Decos Editor");
+            // Nice white title
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
+            ImGui::Text("%s", title.c_str());
+            ImGui::PopStyleColor();
+
+            ImGui::SetWindowFontScale(1.0f);
             ImGui::PopFont();
 
+            ImGui::Spacing();
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::Spacing();
+            ImGui::Spacing();
+
+            // Two columns for buttons
+            ImGui::Columns(2, "StartColumns", false);
+
+            float columnWidth = ImGui::GetColumnWidth();
+            float iconSize = 180.0f; // Size of the icon
+
+            // --- NEW PROJECT ---
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconSize) * 0.5f);
+
+            // Use Image + IsItemClicked for cleaner look (no button frame unless hovered logic
+            // added) But to make it feel responsive, we'll wrap in a group and handle hover
+            // manually or use InvisibleButton
+            ImGui::PushID("NewProj");
+
+            // Draw Icon
+            ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+            ImGui::Image((ImTextureID)(intptr_t)m_iconNewProject.id, ImVec2(iconSize, iconSize));
+
+            // Add a subtle hover effect?
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::GetWindowDrawList()->AddRect(
+                    ImVec2(cursorPos.x - 5, cursorPos.y - 5),
+                    ImVec2(cursorPos.x + iconSize + 5, cursorPos.y + iconSize + 5),
+                    IM_COL32(100, 149, 237, 100), // Cornflower blue hint
+                    5.0f, 0, 3.0f);
+            }
+
+            if (ImGui::IsItemClicked())
+            {
+                if (m_sceneManager->IsSceneModified())
+                {
+                    m_showSavePrompt = true;
+                    m_pendingAction = PendingAction::NEW_PROJECT;
+                }
+                else
+                {
+                    m_sceneManager->ClearScene();
+                    if (m_editor)
+                        m_editor->SetSkyboxTexture("");
+                    m_displayWelcomeScreen = false;
+                }
+            }
+            ImGui::PopID();
+
+            // Label
+            ImGui::Spacing();
+            std::string labelNew = "Create New Project";
+            float labelNewWidth = ImGui::CalcTextSize(labelNew.c_str()).x;
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - labelNewWidth) * 0.5f);
+            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", labelNew.c_str());
+
+            ImGui::NextColumn();
+
+            // --- OPEN PROJECT ---
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconSize) * 0.5f);
+
+            ImGui::PushID("OpenProj");
+            cursorPos = ImGui::GetCursorScreenPos();
+            ImGui::Image((ImTextureID)(intptr_t)m_iconOpenProject.id, ImVec2(iconSize, iconSize));
+
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::GetWindowDrawList()->AddRect(
+                    ImVec2(cursorPos.x - 5, cursorPos.y - 5),
+                    ImVec2(cursorPos.x + iconSize + 5, cursorPos.y + iconSize + 5),
+                    IM_COL32(100, 149, 237, 100), 5.0f, 0, 3.0f);
+            }
+
+            if (ImGui::IsItemClicked())
+            {
+                if (m_sceneManager->IsSceneModified())
+                {
+                    m_showSavePrompt = true;
+                    m_pendingAction = PendingAction::OPEN_PROJECT;
+                }
+                else
+                {
+                    nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
+                    nfdchar_t *outPath = nullptr;
+                    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+                    if (result == NFD_OKAY)
+                    {
+                        std::vector<MapObject> loadedObjects;
+                        if (m_fileManager->LoadMap(outPath, loadedObjects))
+                        {
+                            m_sceneManager->ClearScene();
+                            for (const auto &obj : loadedObjects)
+                                m_sceneManager->AddObject(obj);
+
+                            m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
+                            m_sceneManager->SetSceneModified(false);
+                            if (m_editor)
+                                m_editor->ApplyMetadata(m_fileManager->GetCurrentMetadata());
+
+                            m_displayWelcomeScreen = false;
+                        }
+                        NFD_FreePath(outPath);
+                    }
+                }
+            }
+            ImGui::PopID();
+
+            // Label
+            ImGui::Spacing();
+            std::string labelOpen = "Open Existing Project";
+            float labelOpenWidth = ImGui::CalcTextSize(labelOpen.c_str()).x;
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - labelOpenWidth) * 0.5f);
+            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", labelOpen.c_str());
+
+            ImGui::Columns(1);
+
+            ImGui::Spacing();
+            ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
             ImGui::Spacing();
 
-            // New Project
-            if (ImGui::Button("New Project", ImVec2(380, 50)))
+            // Exit Button
+            ImGui::SetCursorPosX((contentWidth - 120) * 0.5f);
+            // Make exit button slightly more visible/styled
+            if (ImGui::Button("Exit Editor", ImVec2(120, 35)))
             {
-                m_sceneManager->ClearScene();
-                // Reset camera if possible, or leave as is
-                if (m_editor)
-                {
-                    m_editor->SetSkyboxTexture(""); // Clear skybox
-                }
-                m_displayWelcomeScreen = false;
-            }
-
-            ImGui::Spacing();
-
-            // Open Project
-            if (ImGui::Button("Open Project", ImVec2(380, 50)))
-            {
-                nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
-                nfdchar_t *outPath = nullptr;
-                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
-                if (result == NFD_OKAY)
-                {
-                    std::vector<MapObject> loadedObjects;
-                    // Duplicating logic for safety and speed as Editor::LoadMap isn't fully
-                    // exposed/verified
-                    if (m_fileManager->LoadMap(outPath, loadedObjects))
-                    {
-                        m_sceneManager->ClearScene();
-                        for (const auto &obj : loadedObjects)
-                        {
-                            m_sceneManager->AddObject(obj);
-                        }
-                        m_fileManager->SetCurrentlyLoadedMapFilePath(outPath);
-                        if (m_editor)
-                        {
-                            m_editor->ApplyMetadata(m_fileManager->GetCurrentMetadata());
-                        }
-                        m_displayWelcomeScreen = false;
-                    }
-                    else
-                    {
-                        // Show error? For now just stay on welcome screen
-                    }
-                    NFD_FreePath(outPath);
-                }
-            }
-
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            if (ImGui::Button("Exit", ImVec2(380, 30)))
-            {
-                // Request exit logic would go here
+                TraceLog(LOG_INFO, "[UIManager] Exit button clicked, setting m_shouldExit = true");
+                m_shouldExit = true;
             }
 
             ImGui::EndChild();
         }
     }
     ImGui::End();
+    ImGui::PopStyleVar();   // Pop rounding
+    ImGui::PopStyleColor(); // Pop BG
 
     // Show Save Prompt if requested
     RenderSavePrompt();
