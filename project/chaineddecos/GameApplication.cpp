@@ -93,23 +93,22 @@ void GameApplication::OnConfigure(EngineConfig &config)
     config.enableAudio = true;
 }
 
-void GameApplication::OnRegister()
+void GameApplication::OnRegister(Engine &engine)
 {
     TraceLog(LOG_INFO, "[GameApplication] Registering services and modules...");
-
-    auto &engine = Engine::Instance();
 
     // 1. Initialize Core Services (Legacy - to be removed later)
     m_collisionManager = std::make_shared<CollisionManager>();
     m_models = std::make_shared<ModelLoader>();
     m_world = std::make_shared<WorldManager>();
 
-    // Register core services
-    engine.RegisterService<CollisionManager>(m_collisionManager);
-    engine.RegisterService<ModelLoader>(m_models);
-    engine.RegisterService<WorldManager>(m_world);
+    // Note: RegisterService no longer exists - services will be passed via DI
+    // TODO: Remove service locator pattern completely
+    // engine.RegisterService<CollisionManager>(m_collisionManager);
+    // engine.RegisterService<ModelLoader>(m_models);
+    // engine.RegisterService<WorldManager>(m_world);
 
-    TraceLog(LOG_INFO, "[GameApplication] Core engine services registered.");
+    TraceLog(LOG_INFO, "[GameApplication] Core engine services created.");
 
     // 2. Register Game Systems (Modules)
     // Legacy modules - keeping LevelManager and UIManager for now
@@ -123,29 +122,27 @@ void GameApplication::OnRegister()
     TraceLog(LOG_INFO, "[GameApplication] Game systems registered.");
 }
 
-void GameApplication::OnStart()
+void GameApplication::OnStart(Engine &engine)
 {
     TraceLog(LOG_INFO, "[GameApplication] Starting game...");
 
-    // Initialize Static Singletons
-    if (AudioManager::Get().Initialize())
+    // Initialize managers via engine
+    if (engine.GetAudioManager().Initialize())
     {
         TraceLog(LOG_INFO, "[GameApplication] AudioManager initialized");
-        AudioManager::Get().LoadSound("player_fall",
-                                      PROJECT_ROOT_DIR "\\resources\\audio\\fallingplayer.wav");
+        engine.GetAudioManager().LoadSound("player_fall", PROJECT_ROOT_DIR
+                                           "\\resources\\audio\\fallingplayer.wav");
     }
 
-    InputManager::Get().Initialize();
+    engine.GetInputManager().Initialize();
 
     // Initialize RenderManager with config
-    // RenderManager::Get().Initialize(m_gameConfig.width, m_gameConfig.height, "Chained Decos"); //
     // Moved to EngineApplication
 
     // Setup ImGui style for menu (after ImGui is initialized by RenderManager)
-    auto *engine = &Engine::Instance();
-    if (engine->GetModuleManager())
+    if (engine.GetModuleManager().GetModule("UI"))
     {
-        auto *uiModule = engine->GetModuleManager()->GetModule("UI");
+        auto *uiModule = engine.GetModuleManager().GetModule("UI");
         if (uiModule)
         {
             UIManager *uiManager = dynamic_cast<UIManager *>(uiModule);
@@ -373,39 +370,32 @@ void GameApplication::OnStart()
     TraceLog(LOG_INFO, "[GameApplication] Game application initialized with ECS.");
 }
 
-void GameApplication::OnUpdate(float deltaTime)
+void GameApplication::OnUpdate(float deltaTime, Engine &engine)
 {
     // Update Input
-    InputManager::Get().Update(deltaTime);
+    engine.GetInputManager().Update(deltaTime);
 
     // Update Audio looping
-    AudioManager::Get().UpdateLoopingSounds();
+    engine.GetAudioManager().UpdateLoopingSounds();
 
     // Get Menu through Engine (Legacy access)
-    auto engine = &Engine::Instance();
-    if (!engine)
-        return;
-
-    auto moduleManager = engine->GetModuleManager();
+    auto &moduleManager = engine.GetModuleManager();
     UIManager *uiManager = nullptr;
     Menu *menu = nullptr;
 
-    if (moduleManager)
+    auto *uiModule = moduleManager.GetModule("UI");
+    if (uiModule)
     {
-        auto *uiModule = moduleManager->GetModule("UI");
-        if (uiModule)
+        uiManager = dynamic_cast<UIManager *>(uiModule);
+        if (uiManager)
         {
-            uiManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiManager)
-            {
-                menu = uiManager->GetMenu();
-            }
+            menu = uiManager->GetMenu();
         }
     }
 
     // Only handle console toggle here if we are NOT in the menu.
     // When in menu, Menu::HandleKeyboardNavigation handles it to avoid double-toggling.
-    if (!m_showMenu && InputManager::Get().IsKeyPressed(KEY_GRAVE) && menu)
+    if (!m_showMenu && engine.GetInputManager().IsKeyPressed(KEY_GRAVE) && menu)
     {
         menu->ToggleConsole();
     }
@@ -424,7 +414,7 @@ void GameApplication::OnUpdate(float deltaTime)
             m_cursorDisabled = false;
         }
 
-        HandleMenuActions();
+        HandleMenuActions(engine);
     }
     else
     {
@@ -496,25 +486,20 @@ void GameApplication::OnUpdate(float deltaTime)
     }
 }
 
-void GameApplication::OnRender()
+void GameApplication::OnRender(Engine &engine)
 {
     // Frame is begun by EngineApplication::Render()
 
     // Get Menu
-    auto *engine = &Engine::Instance();
-    // auto moduleManager = engine->GetModuleManager();
     UIManager *uiManager = nullptr;
     Menu *menu = nullptr;
 
-    if (engine->GetModuleManager())
+    auto *uiModule = engine.GetModuleManager().GetModule("UI");
+    if (uiModule)
     {
-        auto *uiModule = engine->GetModuleManager()->GetModule("UI");
-        if (uiModule)
-        {
-            uiManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiManager)
-                menu = uiManager->GetMenu();
-        }
+        uiManager = dynamic_cast<UIManager *>(uiModule);
+        if (uiManager)
+            menu = uiManager->GetMenu();
     }
 
     if (m_showMenu && menu)
@@ -535,8 +520,8 @@ void GameApplication::OnRender()
         if (m_isGameInitialized)
         {
             // 3D Rendering
-            auto &camera = RenderManager::Get().GetCamera();
-            RenderManager::Get().BeginMode3D(camera);
+            auto &camera = engine.GetRenderManager().GetCamera();
+            engine.GetRenderManager().BeginMode3D(camera);
 
             // Render ECS entities
             RenderSystem::Render();
@@ -546,19 +531,22 @@ void GameApplication::OnRender()
                 m_models->DrawAllModels();
 
             // Render Map Geometry (LevelManager)
-            auto levelManager = Engine::Instance().GetService<LevelManager>();
+            // TODO: Remove service locator pattern - LevelManager needs DI
+            /*
+            auto levelManager = engine.GetService<LevelManager>();
             if (levelManager)
             {
                 levelManager->RenderEditorMap();
 
                 // levelManager->RenderSpawnZone(); (only map editor)
             }
+            */
 
             // Render World (Legacy)
             if (m_world)
                 m_world->Render();
 
-            RenderManager::Get().EndMode3D();
+            engine.GetRenderManager().EndMode3D();
 
             // Draw HUD (Chained Together Style)
             if (REGISTRY.valid(m_playerEntity))
@@ -722,10 +710,8 @@ void GameApplication::OnShutdown()
         m_fontLoaded = false;
     }
 
-    // Shutdown Managers
-    RenderManager::Get().Shutdown();
-    InputManager::Get().Shutdown();
-    AudioManager::Get().Shutdown(); // Optional, destructor handles it
+    // Managers are shut down by EngineApplication
+    // No need to call Shutdown() here
 
     if (m_collisionManager && !m_collisionManager->GetColliders().empty())
     {
@@ -746,21 +732,14 @@ void GameApplication::OnShutdown()
     TraceLog(LOG_INFO, "[GameApplication] Game resources cleaned up successfully");
 }
 
-void GameApplication::InitInput()
+void GameApplication::InitInput(Engine &engine)
 {
     TraceLog(LOG_INFO, "[GameApplication] Setting up game-specific input bindings...");
 
-    auto *engine = &Engine::Instance();
-    if (!engine)
-    {
-        TraceLog(LOG_WARNING, "[GameApplication] No engine provided, skipping input bindings");
-        return;
-    }
-
     // Get Menu through UIController
-    auto moduleManager = engine->GetModuleManager();
+    auto &moduleManager = engine.GetModuleManager();
     Menu *menu = nullptr;
-    if (moduleManager)
+    if (moduleManager.GetModule("UI"))
     {
         auto *uiModule = moduleManager->GetModule("UI");
         if (uiModule)

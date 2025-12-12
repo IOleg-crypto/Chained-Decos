@@ -8,9 +8,9 @@
 #include "scene/resources/model/Core/Model.h"
 #include <core/ecs/ECSRegistry.h>
 #include <core/ecs/Entity.h>
-
-// =================================================
 #include <memory>
+#include <raylib.h>
+
 
 // Game application - uses full engine + own modules
 class GameApplication : public IApplication
@@ -19,55 +19,50 @@ public:
     GameApplication(int argc, char *argv[]);
     ~GameApplication();
 
-    // Lifecycle methods
+    // IApplication interface - all methods receive Engine&
     void OnConfigure(EngineConfig &config) override;
-    void OnRegister() override;
-    void OnStart() override;
-    void OnUpdate(float deltaTime) override;
-    void OnRender() override;
+    void OnRegister(Engine &engine) override;
+    void OnStart(Engine &engine) override;
+    void OnUpdate(float deltaTime, Engine &engine) override;
+    void OnRender(Engine &engine) override;
     void OnShutdown() override;
 
 private:
-    // Basic engine components (created before system initialization)
+    // Basic engine components
     std::shared_ptr<CollisionManager> m_collisionManager;
     std::shared_ptr<ModelLoader> m_models;
     std::shared_ptr<WorldManager> m_world;
 
     // ECS Entities
-    // ECS Entities
-    entt::entity m_playerEntity = entt::null;
-    Model m_playerModel = {0}; // Player model (generated at runtime)
+    entt::entity m_playerEntity;
+    Model m_playerModel;
 
     // Game state
     bool m_showMenu;
     bool m_isGameInitialized;
-    bool m_showDebugCollision = false;
-    bool m_showDebugStats = false;
-
-    // Cursor state tracking to avoid calling DisableCursor/EnableCursor every frame
+    bool m_showDebugCollision;
+    bool m_showDebugStats;
     bool m_cursorDisabled;
 
-    // Command line configuration
+    // Configuration
     GameConfig m_gameConfig;
 
-    // Helper methods
-    void InitInput();
-    void HandleMenuActions();
-    void UpdatePlayerLogic();
-
-    // Game state management
-    void SaveGameState();
-
     // Shader support
-    Shader m_playerShader = {0};
-    int m_locFallSpeed = -1;
-    int m_locTime = -1;
-    int m_locWindDir = -1;
-    bool m_shaderLoaded = false;
+    Shader m_playerShader;
+    int m_locFallSpeed;
+    int m_locTime;
+    int m_locWindDir;
+    bool m_shaderLoaded;
 
     // HUD Font
-    Font m_hudFont = {0};
-    bool m_fontLoaded = false;
+    Font m_hudFont;
+    bool m_fontLoaded;
+
+    // Helper methods
+    void InitInput(Engine &engine);
+    void HandleMenuActions(Engine &engine);
+    void UpdatePlayerLogic(Engine &engine);
+    void SaveGameState();
 };
 
 #endif // GAME_APPLICATION_H

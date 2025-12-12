@@ -1,76 +1,33 @@
-#ifndef I_APPLICATION_H
-#define I_APPLICATION_H
+#ifndef IAPPLICATION_H
+#define IAPPLICATION_H
 
+#include "Engine.h"
 #include <string>
 
-class ModuleManager;
-class Engine;
-
-// Interface for all applications using the engine
-// Implement this interface to define your application's behavior
+// Application interface - all methods receive Engine reference
 class IApplication
 {
 public:
-    virtual ~IApplication() = default;
-
     struct EngineConfig
     {
-        std::string windowName = "Chained Decos Engine";
-        std::string title = "Chained Decos Engine";
         int width = 1280;
         int height = 720;
-        bool fullscreen = false;
-        bool vsync = true;
-        bool enableAudio = true;
+        std::string windowName = "Application";
     };
 
-    // 1. Configuration Phase
-    // Called before initialization. Use this to set window properties.
-    virtual void OnConfigure(EngineConfig &config)
-    {
-    }
+    virtual ~IApplication() = default;
 
-    // 2. Registration Phase
-    // Called after Engine creation but before module initialization.
-    // Use this to register your modules and services.
-    virtual void OnRegister()
-    {
-    }
+    // Configuration (called before Engine creation)
+    virtual void OnConfigure(EngineConfig &config) = 0;
 
-    // 3. Start Phase
-    // Called after full initialization. The engine is ready.
-    virtual void OnStart()
-    {
-    }
+    // Registration (called after Engine creation, before initialization)
+    virtual void OnRegister(Engine &engine) = 0;
 
-    // Update Loop
-    virtual void OnUpdate(float deltaTime)
-    {
-    }
-
-    // Render Loop
-    virtual void OnRender()
-    {
-    }
-
-    // Shutdown Phase
-    virtual void OnShutdown()
-    {
-    }
-
-    // Setters for core systems (called by EngineApplication)
-    virtual void SetEngine(Engine *engine)
-    {
-        m_engine = engine;
-    }
-
-    Engine *GetEngine() const
-    {
-        return m_engine;
-    }
-
-protected:
-    Engine *m_engine = nullptr;
+    // Lifecycle (all receive Engine reference)
+    virtual void OnStart(Engine &engine) = 0;
+    virtual void OnUpdate(float deltaTime, Engine &engine) = 0;
+    virtual void OnRender(Engine &engine) = 0;
+    virtual void OnShutdown() = 0;
 };
 
-#endif // I_APPLICATION_H
+#endif // IAPPLICATION_H
