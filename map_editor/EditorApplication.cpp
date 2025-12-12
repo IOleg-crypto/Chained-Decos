@@ -2,6 +2,7 @@
 #include "Modules/EditorModule.h"
 #include "core/engine/Engine.h"
 #include "map_editor/Editor/Editor.h"
+#include "map_editor/Editor/UIManager/UIManager.h"
 #include "scene/3d/camera/Core/CameraController.h"
 
 #include "scene/resources/model/Core/Model.h"
@@ -93,6 +94,18 @@ void EditorApplication::OnUpdate(float deltaTime)
 
     // Handle editor input
     m_editor->HandleInput();
+
+    // Check if UI requested exit
+    if (auto uiManager = dynamic_cast<EditorUIManager *>(m_editor->GetUIManager()))
+    {
+        if (uiManager->ShouldExit())
+        {
+            if (auto engine = GetEngine())
+            {
+                engine->RequestExit();
+            }
+        }
+    }
 }
 
 void EditorApplication::OnRender()
