@@ -3,56 +3,52 @@
 
 #include "Engine.h"
 #include "IApplication.h"
+#include "components/audio/Core/AudioManager.h"
+#include "components/input/Core/InputManager.h"
+#include "components/rendering/Core/RenderManager.h"
+#include "core/macros.h"
 #include <memory>
 #include <string>
 
-// Engine Runtime - Runs the application
-// Manages the lifecycle of the engine and delegates application logic to IApplication
 class EngineApplication
 {
+    DISABLE_COPY_AND_MOVE(EngineApplication)
+
 public:
     struct Config
     {
         int width = 1280;
         int height = 720;
-        std::string windowName = "Engine Application";
-        bool enableMSAA = true;
-        bool resizable = true;
+        std::string windowName = "Application";
     };
 
-    // Constructor now takes the application instance
-    EngineApplication(Config config, IApplication *application);
+    EngineApplication(Config config, IApplication *app);
     ~EngineApplication();
 
-    // Main run loop
     void Run();
-
-    // Accessors
-    // Public API for engine access
-    Engine *GetEngine() const
-    {
-        return m_engine.get();
-    }
-
-    // Configuration
-    Config &GetConfig()
-    {
-        return m_config;
-    }
-    const Config &GetConfig() const
-    {
-        return m_config;
-    }
 
 private:
     void Initialize();
+    void InitializeManagers();
+    void InitializeWindow();
+    void InitializeEngine();
+    void InitializeApplication();
     void Shutdown();
+
     void Update();
     void Render();
 
-    IApplication *m_app; // The application instance
     Config m_config;
-    std::shared_ptr<Engine> m_engine; // Engine is now shared/singleton managed
+    IApplication *m_app;
+
+    // Managers (owned) - created in correct order
+    std::unique_ptr<RenderManager> m_renderManager;
+    std::unique_ptr<InputManager> m_inputManager;
+    std::unique_ptr<AudioManager> m_audioManager;
+
+    // Engine (depends on managers)
+    std::unique_ptr<Engine> m_engine;
+
     bool m_initialized = false;
 };
 

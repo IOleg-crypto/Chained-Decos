@@ -3,8 +3,9 @@
 #include <raylib.h>
 #include <rlImGui.h>
 
-
 RenderManager::RenderManager()
+    : m_camera{0}, m_backgroundColor(SKYBLUE), m_font{}, m_showDebugInfo(false),
+      m_debugCollision(false), m_initialized(false), m_screenWidth(1280), m_screenHeight(720)
 {
     TraceLog(LOG_INFO, "RenderManager created");
 }
@@ -99,6 +100,21 @@ void RenderManager::EndMode3D()
     ::EndMode3D();
 }
 
+Camera &RenderManager::GetCamera()
+{
+    return m_camera;
+}
+
+const Camera &RenderManager::GetCamera() const
+{
+    return m_camera;
+}
+
+void RenderManager::SetCamera(const Camera &camera)
+{
+    m_camera = camera;
+}
+
 int RenderManager::GetScreenWidth() const
 {
     return m_screenWidth;
@@ -107,4 +123,49 @@ int RenderManager::GetScreenWidth() const
 int RenderManager::GetScreenHeight() const
 {
     return m_screenHeight;
+}
+
+void RenderManager::SetBackgroundColor(Color color)
+{
+    m_backgroundColor = color;
+}
+
+Color RenderManager::GetBackgroundColor() const
+{
+    return m_backgroundColor;
+}
+
+void RenderManager::ToggleDebugInfo()
+{
+    m_showDebugInfo = !m_showDebugInfo;
+}
+
+void RenderManager::SetDebugInfo(bool enabled)
+{
+    m_showDebugInfo = enabled;
+}
+
+bool RenderManager::IsDebugInfoVisible() const
+{
+    return m_showDebugInfo;
+}
+
+bool RenderManager::IsCollisionDebugVisible() const
+{
+    return m_debugCollision;
+}
+
+void RenderManager::SetCollisionDebugVisible(bool visible)
+{
+    m_debugCollision = visible;
+}
+
+Font RenderManager::GetFont() const
+{
+    return m_font;
+}
+
+void RenderManager::SetFont(Font font)
+{
+    m_font = font;
 }

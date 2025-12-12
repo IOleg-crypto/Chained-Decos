@@ -1,23 +1,24 @@
 #ifndef AUDIOMANAGER_H
 #define AUDIOMANAGER_H
 
+#include "core/macros.h"
+#include "core/object/Object.h"
 #include <raylib.h>
 #include <string>
 #include <unordered_map>
 
-class AudioManager
+// AudioManager - Regular class with DI
+class AudioManager : public Object
 {
+    REGISTER_CLASS(AudioManager, Object)
+    DISABLE_COPY_AND_MOVE(AudioManager)
+
 public:
-    static AudioManager &Get()
-    {
-        static AudioManager instance;
-        return instance;
-    }
+    // Constructor and Destructor
+    AudioManager();
+    ~AudioManager();
 
-    AudioManager(const AudioManager &) = delete;
-    AudioManager &operator=(const AudioManager &) = delete;
-
-    // Initialize audio system
+    // Lifecycle
     bool Initialize();
     void Shutdown();
     void Update(float deltaTime);
@@ -44,18 +45,9 @@ public:
     void SetMusicVolume(float volume);
     void SetSoundVolume(float volume);
 
-    float GetMasterVolume() const
-    {
-        return m_masterVolume;
-    }
-    float GetMusicVolume() const
-    {
-        return m_musicVolume;
-    }
-    float GetSoundVolume() const
-    {
-        return m_soundVolume;
-    }
+    float GetMasterVolume() const;
+    float GetMusicVolume() const;
+    float GetSoundVolume() const;
 
     // Cleanup
     void UnloadSound(const std::string &name);
@@ -63,20 +55,17 @@ public:
     void UnloadAll();
 
 private:
-    // Private constructor для Singleton
-    AudioManager();
-    ~AudioManager();
-
     std::unordered_map<std::string, Sound> m_sounds;
     std::unordered_map<std::string, Music> m_music;
     std::unordered_map<std::string, bool> m_loopingSounds;
-    Music m_currentMusic;
-    bool m_musicPlaying = false;
 
-    float m_masterVolume = 1.0f;
-    float m_musicVolume = 1.0f;
-    float m_soundVolume = 1.0f;
-    bool m_initialized = false;
+    Music m_currentMusic;
+    bool m_musicPlaying;
+
+    float m_masterVolume;
+    float m_musicVolume;
+    float m_soundVolume;
+    bool m_initialized;
 };
 
 #endif // AUDIOMANAGER_H

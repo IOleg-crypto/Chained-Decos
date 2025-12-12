@@ -1,9 +1,6 @@
 #include "EngineApplication.h"
 #include "Engine.h"
 #include "IApplication.h"
-
-#include "components/input/Core/InputManager.h"
-#include "components/rendering/Core/RenderManager.h"
 #include <cassert>
 #include <raylib.h>
 
@@ -11,13 +8,6 @@ EngineApplication::EngineApplication(Config config, IApplication *application)
     : m_app(application), m_config(std::move(config))
 {
     assert(m_app != nullptr && "Application instance cannot be null!");
-
-    // Create the Engine singleton
-    m_engine = std::make_shared<Engine>();
-    if (!m_engine->Initialize())
-    {
-        throw std::runtime_error("Failed to initialize Engine!");
-    }
 }
 
 EngineApplication::~EngineApplication()
@@ -53,7 +43,6 @@ void EngineApplication::Initialize()
     if (m_app)
     {
         IApplication::EngineConfig config;
-        // Set defaults from constructor config
         config.width = m_config.width;
         config.height = m_config.height;
         config.windowName = m_config.windowName;
@@ -66,30 +55,71 @@ void EngineApplication::Initialize()
         m_config.windowName = config.windowName;
     }
 
-    // Step 2: Register modules and services
-    m_app->OnRegister();
+    // Step 2: Create managers (no dependencies)
+    InitializeManagers();
 
-    // Step 2.5: Initialize Window (Must be done before modules initialize)
-    if (!m_engine->GetRenderManager()->Initialize(m_config.width, m_config.height,
-                                                  m_config.windowName.c_str()))
+    // Step 3: Create window (needs RenderManager)
+    InitializeWindow();
+
+    // Step 4: Create engine (needs managers)
+    InitializeEngine();
+
+    // Step 5: Initialize application (needs engine)
+    InitializeApplication();
+
+    TraceLog(LOG_INFO, "[EngineApplication] Application initialized successfully!");
+}
+
+void EngineApplication::InitializeManagers()
+{
+    TraceLog(LOG_INFO, "[EngineApplication] Creating managers...");
+
+    m_renderManager = std::make_unique<RenderManager>();
+    m_inputManager = std::make_unique<InputManager>();
+    m_audioManager = std::make_unique<AudioManager>();
+
+    TraceLog(LOG_INFO, "[EngineApplication] Managers created");
+}
+
+void EngineApplication::InitializeWindow()
+{
+    TraceLog(LOG_INFO, "[EngineApplication] Initializing window...");
+
+    if (!m_renderManager->Initialize(m_config.width, m_config.height, m_config.windowName.c_str()))
     {
         TraceLog(LOG_FATAL, "[EngineApplication] Failed to initialize RenderManager (Window)");
         throw std::runtime_error("Failed to initialize RenderManager");
     }
 
-    // Step 3: Initialize all modules
-    if (auto moduleManager = m_engine->GetModuleManager())
+    TraceLog(LOG_INFO, "[EngineApplication] Window initialized");
+}
+
+void EngineApplication::InitializeEngine()
+{
+    TraceLog(LOG_INFO, "[EngineApplication] Creating engine...");
+
+    // Constructor injection - pass references to managers!
+    m_engine = std::make_unique<Engine>(*m_renderManager, *m_inputManager, *m_audioManager);
+
+    if (!m_engine->Initialize())
     {
-        moduleManager->InitializeAllModules(m_engine.get());
+        throw std::runtime_error("Failed to initialize Engine");
     }
 
-    // Step 4: Start
+    TraceLog(LOG_INFO, "[EngineApplication] Engine created");
+}
+
+void EngineApplication::InitializeApplication()
+{
+    TraceLog(LOG_INFO, "[EngineApplication] Initializing application...");
+
     if (m_app)
     {
-        m_app->OnStart();
+        m_app->OnRegister(*m_engine);
+        m_app->OnStart(*m_engine);
     }
 
-    TraceLog(LOG_INFO, "[EngineApplication] Application initialized successfully!");
+    TraceLog(LOG_INFO, "[EngineApplication] Application initialized");
 }
 
 void EngineApplication::Update()
@@ -98,47 +128,35 @@ void EngineApplication::Update()
 
     if (m_engine)
     {
-        m_engine->Update(deltaTime); // Updates Kernel and Modules
-        m_engine->GetInputManager()->ProcessInput();
-    }
+        m_inputManager->Update(deltaTime);
+        m_engine->Update(deltaTime);
 
-    if (m_app)
-        m_app->OnUpdate(deltaTime);
+        if (m_app)
+        {
+            m_app->OnUpdate(deltaTime, *m_engine);
+        }
+    }
 }
 
 void EngineApplication::Render()
 {
-    if (m_engine)
+    m_renderManager->BeginFrame();
+
+    if (m_app)
     {
-        // Begin frame
-        m_engine->GetRenderManager()->BeginFrame();
-
-        // Render modules (systems)
-        if (auto moduleManager = m_engine->GetModuleManager())
-        {
-            moduleManager->RenderAllModules();
-        }
-
-        // Allow project to render its own
-        if (m_app)
-            m_app->OnRender();
-
-        // End frame
-        m_engine->GetRenderManager()->EndFrame();
+        m_app->OnRender(*m_engine);
     }
+
+    m_renderManager->EndFrame();
 }
 
 void EngineApplication::Shutdown()
 {
-    TraceLog(LOG_INFO, "[EngineApplication] Shutting down application...");
+    TraceLog(LOG_INFO, "[EngineApplication] Shutting down...");
 
     if (m_app)
-        m_app->OnShutdown();
-
-    // Shutdown in reverse order
-    if (auto moduleManager = m_engine->GetModuleManager())
     {
-        moduleManager->ShutdownAllModules();
+        m_app->OnShutdown();
     }
 
     if (m_engine)
@@ -146,5 +164,21 @@ void EngineApplication::Shutdown()
         m_engine->Shutdown();
     }
 
-    TraceLog(LOG_INFO, "[EngineApplication] Application shut down.");
+    if (m_renderManager)
+    {
+        m_renderManager->Shutdown();
+    }
+
+    if (m_inputManager)
+    {
+        m_inputManager->Shutdown();
+    }
+
+    if (m_audioManager)
+    {
+        m_audioManager->Shutdown();
+    }
+
+    m_initialized = false;
+    TraceLog(LOG_INFO, "[EngineApplication] Shutdown complete");
 }

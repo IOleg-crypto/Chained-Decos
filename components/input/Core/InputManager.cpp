@@ -1,6 +1,20 @@
 #include "InputManager.h"
 #include <raylib.h>
 
+InputManager::InputManager() : m_lastMousePosition{0, 0}, m_initialized(false)
+{
+    TraceLog(LOG_INFO, "InputManager created");
+}
+
+InputManager::~InputManager()
+{
+    if (m_initialized)
+    {
+        Shutdown();
+    }
+    TraceLog(LOG_INFO, "InputManager destroyed");
+}
+
 bool InputManager::Initialize()
 {
     TraceLog(LOG_INFO, "InputManager initialized");

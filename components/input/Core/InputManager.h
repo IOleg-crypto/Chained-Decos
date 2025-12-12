@@ -1,33 +1,31 @@
 #ifndef INPUTMANAGER_H
 #define INPUTMANAGER_H
 
+#include "core/macros.h"
+#include "core/object/Object.h"
 #include <cstdint>
 #include <functional>
 #include <raylib.h>
 #include <unordered_map>
 
-// InputManager - Static Singleton
+// InputManager - Regular class with DI
 // Enhanced input manager with support for different input types
-class InputManager
+class InputManager : public Object
 {
+    REGISTER_CLASS(InputManager, Object)
+    DISABLE_COPY_AND_MOVE(InputManager)
+
 public:
     enum class InputType : uint8_t
     {
-        PRESSED, // Single press
-        HELD,    // Continuous hold
-        RELEASED // Release
+        PRESSED,
+        HELD,
+        RELEASED
     };
 
-    // Static Singleton - як у Godot!
-    static InputManager &Get()
-    {
-        static InputManager instance;
-        return instance;
-    }
-
-    // Заборонити копіювання
-    InputManager(const InputManager &) = delete;
-    InputManager &operator=(const InputManager &) = delete;
+    // Constructor and Destructor
+    InputManager();
+    ~InputManager();
 
     // Lifecycle
     bool Initialize();
@@ -43,7 +41,6 @@ public:
 
     void UnregisterAction(int key, InputType type);
     void ClearActions();
-
     void ProcessInput() const;
 
     // Direct key queries
@@ -64,16 +61,12 @@ public:
     bool IsCursorDisabled() const;
 
 private:
-    // Private constructor для Singleton
-    InputManager() = default;
-    ~InputManager() = default;
-
     std::unordered_map<int, std::function<void()>> m_pressedActions;
     std::unordered_map<int, std::function<void()>> m_heldActions;
     std::unordered_map<int, std::function<void()>> m_releasedActions;
 
-    Vector2 m_lastMousePosition = {0, 0};
-    bool m_initialized = false;
+    Vector2 m_lastMousePosition;
+    bool m_initialized;
 };
 
 #endif // INPUTMANAGER_H
