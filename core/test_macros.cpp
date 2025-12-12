@@ -2,7 +2,6 @@
 #include "core/object/Object.h"
 #include <iostream>
 
-
 // Test class using macros
 class TestObject : public Object
 {
@@ -23,20 +22,20 @@ int main()
     TestObject obj;
 
     // Test type info
-    std::cout << "Class name: " << obj.GetClassName() << std::endl;
+    std::cout << "Class name: " << obj.GetClassName() << "\n";
 
     // Test name property
     obj.SetName("TestObject1");
-    std::cout << "Object name: " << obj.GetName() << std::endl;
+    std::cout << "Object name: " << obj.GetName() << "\n";
 
     // Test PROPERTY macro
     obj.SetHealth(100);
     obj.SetSpeed(5.5f);
 
-    std::cout << "Health: " << obj.GetHealth() << std::endl;
-    std::cout << "Speed: " << obj.GetSpeed() << std::endl;
+    std::cout << "Health: " << obj.GetHealth() << "\n";
+    std::cout << "Speed: " << obj.GetSpeed() << "\n";
 
-    std::cout << "\n✅ All macros working correctly!" << std::endl;
+    std::cout << "\n All macros working correctly!\n";
 
     return 0;
 }
