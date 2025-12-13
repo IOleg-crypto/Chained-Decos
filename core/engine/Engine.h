@@ -9,6 +9,10 @@
 #include "core/object/module/Core/ModuleManager.h"
 #include <memory>
 
+namespace gui
+{
+class GUIContext;
+}
 
 // Main Engine class with Pure Dependency Injection
 // No singletons, no Service Locator - all dependencies explicit
@@ -32,6 +36,8 @@ public:
     InputManager &GetInputManager();
     AudioManager &GetAudioManager();
     ModuleManager &GetModuleManager();
+    gui::GUIContext *GetGUIContext();             // Returns pointer (can be null)
+    void SetGUIContext(gui::GUIContext *context); // Set GUI context pointer
 
     // Module management
     void RegisterModule(std::unique_ptr<IEngineModule> module);
@@ -52,6 +58,7 @@ private:
 
     // Owned objects
     std::unique_ptr<ModuleManager> m_moduleManager;
+    gui::GUIContext *m_guiContext; // Pointer to GUI context (owned by EngineApplication)
 
     // State
     bool m_debugInfoVisible;

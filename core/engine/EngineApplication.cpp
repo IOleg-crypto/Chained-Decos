@@ -78,6 +78,7 @@ void EngineApplication::InitializeManagers()
     m_renderManager = std::make_unique<RenderManager>();
     m_inputManager = std::make_unique<InputManager>();
     m_audioManager = std::make_unique<AudioManager>();
+    m_guiContext = std::make_unique<gui::GUIContext>();
 
     TraceLog(LOG_INFO, "[EngineApplication] Managers created");
 }
@@ -101,6 +102,12 @@ void EngineApplication::InitializeEngine()
 
     // Constructor injection - pass references to managers!
     m_engine = std::make_unique<Engine>(*m_renderManager, *m_inputManager, *m_audioManager);
+
+    // Set GUI context pointer (Engine doesn't own it, just has access)
+    if (m_guiContext)
+    {
+        m_engine->SetGUIContext(m_guiContext.get());
+    }
 
     if (!m_engine->Initialize())
     {

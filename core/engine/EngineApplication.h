@@ -6,6 +6,7 @@
 #include "components/audio/Core/AudioManager.h"
 #include "components/input/Core/InputManager.h"
 #include "components/rendering/Core/RenderManager.h"
+#include "core/gui/GUIContext.h"
 #include "core/macros.h"
 #include <memory>
 #include <string>
@@ -45,6 +46,7 @@ private:
     std::unique_ptr<RenderManager> m_renderManager;
     std::unique_ptr<InputManager> m_inputManager;
     std::unique_ptr<AudioManager> m_audioManager;
+    std::unique_ptr<gui::GUIContext> m_guiContext;
 
     // Engine (depends on managers)
     std::unique_ptr<Engine> m_engine;

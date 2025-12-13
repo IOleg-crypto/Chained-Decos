@@ -3,7 +3,7 @@
 
 Engine::Engine(RenderManager &renderManager, InputManager &inputManager, AudioManager &audioManager)
     : m_renderManager(renderManager), m_inputManager(inputManager), m_audioManager(audioManager),
-      m_debugInfoVisible(false), m_shouldExit(false)
+      m_guiContext(nullptr), m_debugInfoVisible(false), m_shouldExit(false)
 {
     m_moduleManager = std::make_unique<ModuleManager>();
     TraceLog(LOG_INFO, "[Engine] Engine created with DI");
@@ -56,6 +56,16 @@ AudioManager &Engine::GetAudioManager()
 ModuleManager &Engine::GetModuleManager()
 {
     return *m_moduleManager;
+}
+
+gui::GUIContext *Engine::GetGUIContext()
+{
+    return m_guiContext;
+}
+
+void Engine::SetGUIContext(gui::GUIContext *context)
+{
+    m_guiContext = context;
 }
 
 void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)
