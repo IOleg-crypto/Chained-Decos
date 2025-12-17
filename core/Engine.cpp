@@ -98,7 +98,7 @@ void Engine::MainLoop(Application &app)
         // Update
         app.OnUpdate(delta_time);
 
-        // Render
+        // Render using engine
         BeginDrawing();
         ClearBackground(RAYWHITE);
         app.OnRender();
