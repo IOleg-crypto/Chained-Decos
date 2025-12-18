@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "IApplication.h"
 #include "LayerStack.h"
+#include "core/events/Event.h"
 #include <memory>
 #include <string>
 
@@ -31,6 +32,8 @@ public:
 
     void PushLayer(Layer *layer);
     void PushOverlay(Layer *overlay);
+
+    void OnEvent(Event &e);
 
     Engine *GetEngine() const
     {

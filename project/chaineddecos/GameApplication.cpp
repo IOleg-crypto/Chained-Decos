@@ -12,11 +12,6 @@
 #include "core/config/Core/ConfigManager.h"
 #include "core/ecs/Components.h"
 #include "core/ecs/Examples.h"
-#include "core/ecs/Systems/CollisionSystem.h"
-#include "core/ecs/Systems/LifetimeSystem.h"
-#include "core/ecs/Systems/MovementSystem.h"
-#include "core/ecs/Systems/PlayerSystem.h"
-#include "core/ecs/Systems/RenderSystem.h"
 #include "core/object/module/Core/ModuleManager.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
@@ -25,7 +20,6 @@
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
-
 
 #include "imgui.h"
 #include "rlImGui.h"
@@ -472,11 +466,7 @@ void GameApplication::OnUpdate(float deltaTime)
                     m_cursorDisabled = true;
                 }
 
-                // ECS Update Loop
-                PlayerSystem::Update(deltaTime);
-                MovementSystem::Update(deltaTime);
-                CollisionSystem::Update();
-                LifetimeSystem::Update(deltaTime);
+                // ECS Systems are now handled by GameLayer
 
                 // Update Shader Uniforms
                 if (m_shaderLoaded && REGISTRY.valid(m_playerEntity))
@@ -547,8 +537,8 @@ void GameApplication::OnRender()
             auto &camera = RenderManager::Get().GetCamera();
             RenderManager::Get().BeginMode3D(camera);
 
-            // Render ECS entities
-            RenderSystem::Render();
+            // Render ECS entities - Now handled by GameLayer
+            // RenderSystem::Render();
 
             // Render Models (ModelLoader)
             auto models = Engine::Instance().GetService<ModelLoader>();

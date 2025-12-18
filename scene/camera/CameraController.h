@@ -14,8 +14,8 @@ public:
     ~CameraController() = default;
 
     // Non-copyable
-    CameraController(const CameraController &) = delete;
-    CameraController &operator=(const CameraController &) = delete;
+    CameraController(const CameraController &other);
+    CameraController &operator=(const CameraController &other);
 
     // Core
     void Update();

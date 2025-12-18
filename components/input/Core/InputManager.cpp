@@ -1,5 +1,10 @@
 #include "InputManager.h"
+#include "core/events/KeyEvent.h"
+#include "core/events/MouseEvent.h"
 #include <raylib.h>
+
+
+using namespace ChainedDecos;
 
 bool InputManager::Initialize()
 {
@@ -78,7 +83,62 @@ void InputManager::ClearActions()
 
 void InputManager::ProcessInput() const
 {
-    // Process pressed actions
+    if (!m_EventCallback)
+        return;
+
+    // We can't easily iterate all keys in Raylib without a loop or knowing which ones were pressed.
+    // However, for typical engine architecture (The Cherno style), we usually get events from the
+    // windowing system (GLFW). Raylib is a bit higher level. Let's poll common keys or use a hybrid
+    // approach. Actually, Chained Decos uses Raylib's IsKeyPressed etc.
+
+    // For a cleaner approach, we might want to poll all keys from 32 to 348 (GLFW range) or
+    // similar.
+    for (int key = 32; key < 348; key++)
+    {
+        if (IsKeyPressed(key))
+        {
+            KeyPressedEvent e(key, 0);
+            m_EventCallback(e);
+        }
+        if (IsKeyReleased(key))
+        {
+            KeyReleasedEvent e(key);
+            m_EventCallback(e);
+        }
+    }
+
+    // Mouse events
+    Vector2 mousePos = GetMousePosition();
+    static Vector2 lastPos = mousePos;
+    if (mousePos.x != lastPos.x || mousePos.y != lastPos.y)
+    {
+        MouseMovedEvent e(mousePos.x, mousePos.y);
+        m_EventCallback(e);
+        lastPos = mousePos;
+    }
+
+    for (int button = 0; button < 3; button++)
+    {
+        if (IsMouseButtonPressed(button))
+        {
+            MouseButtonPressedEvent e(button);
+            m_EventCallback(e);
+        }
+        if (IsMouseButtonReleased(button))
+        {
+            MouseButtonReleasedEvent e(button);
+            m_EventCallback(e);
+        }
+    }
+
+    float wheel = GetMouseWheelMove();
+    if (wheel != 0)
+    {
+        MouseScrolledEvent e(0, wheel);
+        m_EventCallback(e);
+    }
+
+    // Process legacy actions
     for (const auto &[key, action] : m_pressedActions)
     {
         if (IsKeyPressed(key))
@@ -87,7 +147,6 @@ void InputManager::ProcessInput() const
         }
     }
 
-    // Process held actions
     for (const auto &[key, action] : m_heldActions)
     {
         if (IsKeyDown(key))
@@ -96,7 +155,6 @@ void InputManager::ProcessInput() const
         }
     }
 
-    // Process released actions
     for (const auto &[key, action] : m_releasedActions)
     {
         if (IsKeyReleased(key))
