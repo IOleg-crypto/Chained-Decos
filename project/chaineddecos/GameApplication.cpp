@@ -1,4 +1,6 @@
 #include "GameApplication.h"
+#include "GameLayer.h"
+#include "core/engine/EngineApplication.h"
 #include "core/services/CoreServices.h"
 #include "scene/main/Core/LevelManager.h"
 // #include "Systems/PlayerSystem/PlayerController.h"
@@ -8,6 +10,7 @@
 #include "components/physics/collision/Core/CollisionManager.h"
 #include "components/rendering/Core/RenderManager.h"
 #include "core/config/Core/ConfigManager.h"
+#include "core/ecs/Components.h"
 #include "core/ecs/Examples.h"
 #include "core/ecs/Systems/CollisionSystem.h"
 #include "core/ecs/Systems/LifetimeSystem.h"
@@ -22,6 +25,7 @@
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
+
 
 #include "imgui.h"
 #include "rlImGui.h"
@@ -294,6 +298,10 @@ void GameApplication::OnStart()
             }
         }
         saveFile.close();
+    } // Push GameLayer using the new Layer system (Cherno-inspired)
+    if (GetAppRunner())
+    {
+        GetAppRunner()->PushLayer(new GameLayer());
     }
 
     // Load mouse sensitivity from config

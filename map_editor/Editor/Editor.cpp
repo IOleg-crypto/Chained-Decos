@@ -1,56 +1,35 @@
-//
-//
-
 #include "Editor.h"
-#include "FileManager/MapObjectConverterEditor.h"
 #include "Renderer/EditorRenderer.h"
 #include "Utils/PathUtils.h"
-#include "scene/resources/map/Core/MapLoader.h" // Include the new comprehensive map loader
+#include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/map/MapFileManager/Json/JsonMapFileManager.h"
 
 // Subsystem implementations
-#include "CameraManager/CameraManager.h"
-#include "FileManager/FileManager.h"
-#include "SceneManager/SceneManager.h"
 #include "ToolManager/ToolManager.h"
 #include "UIManager/UIManager.h"
 
-// Model and rendering subsystems
-#include "ModelManager/ModelManager.h"
-#include "scene/resources/model/Core/Model.h"
-
 #include <algorithm>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
 #include <filesystem>
-#include <fstream>
 #include <imgui.h>
-#include <imgui/misc/cpp/imgui_stdlib.h>
-#include <iostream>
 #include <nfd.h>
 #include <raylib.h>
 #include <rlImGui/rlImGui.h>
 
 #include "components/rendering/Utils/RenderUtils.h"
 #include <raymath.h>
-#include <rlgl.h>
-#include <string>
 
 namespace fs = std::filesystem;
 
-Editor::Editor(std::shared_ptr<CameraController> cameraController,
-               std::shared_ptr<ModelLoader> modelLoader)
-    : m_gridSizes(900), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
-      m_skyboxTexturePath("")
+Editor::Editor(ChainedDecos::Ref<CameraController> cameraController,
+               ChainedDecos::Ref<ModelLoader> modelLoader)
+    : m_gridSize(50), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
+      m_cameraController(std::move(cameraController)), m_modelLoader(std::move(modelLoader))
 {
     // Initialize spawn texture (will be loaded after window initialization)
     m_spawnTexture = {0};
     m_clearColor = DARKGRAY;
-    m_activeMetadata = MapMetadata();
 
-    InitializeSubsystems(std::move(cameraController), std::move(modelLoader));
+    InitializeSubsystems();
 }
 
 Editor::~Editor()
@@ -68,55 +47,31 @@ Editor::~Editor()
     NFD_Quit();
 };
 
-std::shared_ptr<CameraController> Editor::GetCameraController() const
-{
-    if (!m_cameraManager)
-    {
-        TraceLog(LOG_WARNING, "Editor::GetCameraController() - CameraManager is null");
-        return nullptr;
-    }
-    return m_cameraManager->GetController();
-}
-
-void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraController,
-                                  std::shared_ptr<ModelLoader> modelLoader)
+void Editor::InitializeSubsystems()
 {
     // Initialize NFD once (before subsystems that use it)
     NFD_Init();
 
-    // Initialize subsystems in dependency order
-    m_cameraManager = std::make_unique<CameraManager>(cameraController);
-    m_sceneManager = std::make_unique<SceneManager>();
-    m_fileManager = std::make_unique<FileManager>();
+    // Initialize subsystems
     m_toolManager = std::make_unique<ToolManager>();
 
-    // Initialize remaining subsystems
-    m_modelManager = std::make_unique<ModelManager>(std::move(modelLoader));
-
-    // Create UIManager with config
+    // Create UIManager
     UIManagerConfig uiConfig;
     uiConfig.editor = this;
-    uiConfig.sceneManager = m_sceneManager.get();
-    uiConfig.fileManager = m_fileManager.get();
-    uiConfig.toolManager = m_toolManager.get();
-    uiConfig.modelManager = m_modelManager.get();
     m_uiManager = std::make_unique<EditorUIManager>(uiConfig);
 
-    // Initialize renderer
-    m_renderer = std::make_unique<EditorRenderer>(m_toolManager.get(), m_cameraManager.get(),
-                                                  m_modelManager.get());
+    m_renderer = std::make_unique<EditorRenderer>(this, m_toolManager.get());
 }
-
 void Editor::Update()
 {
-    // Update subsystems
-    if (m_cameraManager)
-        m_cameraManager->Update();
+    // Update camera controller
+    if (m_cameraController)
+        m_cameraController->Update();
 
     // Update camera in tool manager for gizmo calculations
-    if (m_toolManager && m_cameraManager)
+    if (m_toolManager && m_cameraController)
     {
-        m_toolManager->SetCamera(m_cameraManager->GetCamera());
+        m_toolManager->SetCamera(m_cameraController->GetCamera());
     }
 }
 
@@ -124,49 +79,60 @@ void Editor::Render()
 {
     if (m_skybox && m_skybox->IsLoaded())
     {
-        // Update gamma settings from config before rendering
         m_skybox->UpdateGammaFromConfig();
         m_skybox->DrawSkybox();
     }
 
-    if (m_sceneManager)
+    // Render all objects in the map
+    const auto &objects = m_gameMap.GetMapObjects();
+    for (const auto &obj : objects)
     {
-        const auto &objects = m_sceneManager->GetObjects();
-        for (const auto &obj : objects)
-        {
-            // Render each object based on its type
-            RenderObject(obj);
-        }
+        RenderObject(obj);
     }
 }
 
-void Editor::RenderObject(const MapObject &obj)
+void Editor::RenderObject(const MapObjectData &obj)
 {
     if (!m_renderer)
         return;
 
-    // Convert MapObject to MapObjectData using MapObjectConverterEditor
-    MapObjectData data = MapObjectConverterEditor::MapObjectToMapObjectData(obj);
+    bool isSelected = false;
+    if (m_selectedIndex >= 0 &&
+        m_selectedIndex < static_cast<int>(m_gameMap.GetMapObjects().size()))
+    {
+        isSelected = (&m_gameMap.GetMapObjects()[m_selectedIndex] == &obj);
+    }
 
     // Handle spawn zone rendering separately
-    if (data.type == MapObjectType::SPAWN_ZONE)
+    if (obj.type == MapObjectType::SPAWN_ZONE)
     {
-        // Render spawn zone with texture
         const float spawnSize = 2.0f;
-        Color spawnColor = obj.GetColor();
-        m_renderer->RenderSpawnZoneWithTexture(m_spawnTexture, data.position, spawnSize, spawnColor,
+        m_renderer->RenderSpawnZoneWithTexture(m_spawnTexture, obj.position, spawnSize, obj.color,
                                                m_spawnTextureLoaded);
 
-        // Additional editor-specific rendering: selection wireframe
-        if (obj.IsSelected())
+        if (isSelected)
         {
-            DrawCubeWires(data.position, spawnSize, spawnSize, spawnSize, YELLOW);
+            DrawCubeWires(obj.position, spawnSize, spawnSize, spawnSize, YELLOW);
         }
-        return; // Don't render spawn zone as regular object
+        return;
     }
 
     // Delegate rendering to EditorRenderer
-    m_renderer->RenderObject(obj, data, obj.IsSelected());
+    m_renderer->RenderObject(obj, isSelected);
+}
+
+int Editor::GetActiveTool() const
+{
+    return m_activeTool;
+}
+
+void Editor::SetActiveTool(int tool)
+{
+    m_activeTool = tool;
+    if (m_toolManager)
+    {
+        m_toolManager->SetActiveTool(static_cast<Tool>(tool));
+    }
 }
 
 void Editor::RenderImGui()
@@ -185,172 +151,122 @@ void Editor::HandleInput()
     }
 
     // Handle tool-specific input
-    if (m_toolManager && m_sceneManager && m_cameraManager)
+    if (m_toolManager && m_cameraController)
     {
         const ImGuiIO &io = ImGui::GetIO();
         if (!io.WantCaptureMouse)
         {
-            // Create ray from screen to world using camera
-            Ray ray = GetScreenToWorldRay(GetMousePosition(), m_cameraManager->GetCamera());
+            Ray ray = GetScreenToWorldRay(GetMousePosition(), m_cameraController->GetCamera());
 
-            // Handle mouse button press/release
             bool mousePressed = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
             bool mouseReleased = IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
             bool mouseDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
 
             if (mousePressed)
             {
-                m_toolManager->HandleToolInput(true, ray, *m_sceneManager);
+                m_toolManager->HandleToolInput(true, ray, *this);
             }
             else if (mouseReleased)
             {
-                m_toolManager->HandleToolInput(false, ray, *m_sceneManager);
+                m_toolManager->HandleToolInput(false, ray, *this);
             }
             else if (mouseDown)
             {
-                // Update tool during drag operations
-                m_toolManager->UpdateTool(ray, *m_sceneManager);
+                m_toolManager->UpdateTool(ray, *this);
             }
         }
     }
 }
 
-void Editor::AddObject(const MapObject &obj)
+void Editor::AddObject(const MapObjectData &obj)
 {
-    // Delegate to scene manager
-    if (m_sceneManager)
+    m_gameMap.GetMapObjectsMutable().push_back(obj);
+    m_isSceneModified = true;
+}
+
+void Editor::RemoveObject(int index)
+{
+    if (index >= 0 && index < static_cast<int>(m_gameMap.GetMapObjects().size()))
     {
-        m_sceneManager->AddObject(obj);
+        m_gameMap.GetMapObjectsMutable().erase(m_gameMap.GetMapObjectsMutable().begin() + index);
+        if (m_selectedIndex == index)
+            m_selectedIndex = -1;
+        else if (m_selectedIndex > index)
+            m_selectedIndex--;
+
+        m_isSceneModified = true;
     }
 }
 
-void Editor::RemoveObject(const int index)
+void Editor::SelectObject(int index)
 {
-    // Delegate to scene manager
-    if (m_sceneManager)
+    if (index >= -1 && index < static_cast<int>(m_gameMap.GetMapObjects().size()))
     {
-        m_sceneManager->RemoveObject(index);
-    }
-}
-
-void Editor::SelectObject(const int index)
-{
-    // Delegate to scene manager
-    if (m_sceneManager)
-    {
-        m_sceneManager->SelectObject(index);
+        m_selectedIndex = index;
     }
 }
 
 void Editor::ClearSelection()
 {
-    // Delegate to scene manager
-    if (m_sceneManager)
-    {
-        m_sceneManager->ClearSelection();
-    }
+    m_selectedIndex = -1;
+}
+
+void Editor::ClearScene()
+{
+    m_gameMap.GetMapObjectsMutable().clear();
+    m_selectedIndex = -1;
+    m_isSceneModified = true;
 }
 
 void Editor::SaveMap(const std::string &filename)
 {
-    // Delegate to file manager
-    if (m_fileManager && m_sceneManager)
+    MapLoader loader;
+    if (loader.SaveMap(m_gameMap, filename))
     {
-        const auto &objects = m_sceneManager->GetObjects();
-        if (m_fileManager->SaveMap(filename, objects))
-        {
-            std::cout << "Map saved successfully!" << std::endl;
-            m_fileManager->SetCurrentlyLoadedMapFilePath(filename);
-        }
-        else
-        {
-            std::cout << "Failed to save map!" << std::endl;
-        }
+        m_currentMapPath = filename;
+        m_isSceneModified = false;
+        TraceLog(LOG_INFO, "Map saved to %s", filename.c_str());
+    }
+    else
+    {
+        TraceLog(LOG_ERROR, "Failed to save map to %s", filename.c_str());
     }
 }
 
 void Editor::LoadMap(const std::string &filename)
 {
-    // Delegate to file manager
-    if (m_fileManager && m_sceneManager)
+    MapLoader loader;
+    m_gameMap = loader.LoadMap(filename);
+
+    // Check if map is valid (MapLoader::LoadMap returns an empty map on failure)
+    if (!m_gameMap.GetMapMetaData().name.empty() || !m_gameMap.GetMapObjects().empty())
     {
-        std::vector<MapObject> objects;
-        if (m_fileManager->LoadMap(filename, objects))
-        {
-            // Clear selection first
-            m_sceneManager->ClearSelection();
+        m_currentMapPath = filename;
+        m_selectedIndex = -1;
+        m_isSceneModified = false;
 
-            // Clear existing objects by removing them one by one (from back to front to avoid index
-            // issues) Note: This is a workaround until SceneManager has a ClearAll method
-            const auto &existingObjects = m_sceneManager->GetObjects();
-            for (int i = static_cast<int>(existingObjects.size()) - 1; i >= 0; --i)
-            {
-                m_sceneManager->RemoveObject(i);
-            }
-
-            // Add all loaded objects (including all types: CUBE, SPHERE, CYLINDER, PLANE, LIGHT,
-            // MODEL, SPAWN_ZONE)
-            for (const auto &obj : objects)
-            {
-                m_sceneManager->AddObject(obj);
-            }
-
-            std::cout << "Map loaded successfully with " << objects.size() << " objects!"
-                      << std::endl;
-            m_fileManager->SetCurrentlyLoadedMapFilePath(filename);
-
-            // Apply metadata (including skybox, skyColor, startPosition, endPosition, etc.) from
-            // loaded map
-            const MapMetadata &metadata = m_fileManager->GetCurrentMetadata();
-            ApplyMetadata(metadata);
-
-            // Ensure skybox is loaded if metadata contains skybox texture
-            // ApplyMetadata already calls SetSkyboxTexture, but we ensure it's applied
-            if (!metadata.skyboxTexture.empty())
-            {
-                SetSkyboxTexture(metadata.skyboxTexture, false);
-            }
-        }
-        else
-        {
-            std::cout << "Failed to load map!" << std::endl;
-        }
+        ApplyMetadata(m_gameMap.GetMapMetaData());
+        TraceLog(LOG_INFO, "Map loaded from %s", filename.c_str());
     }
-}
-
-int Editor::GetGridSize() const
-{
-    // Get grid size from UIManager if available, otherwise use default
-    if (m_uiManager)
+    else
     {
-        return m_uiManager->GetGridSize();
+        TraceLog(LOG_ERROR, "Failed to load map from %s", filename.c_str());
     }
-    return m_gridSizes;
 }
 
 void Editor::ApplyMetadata(const MapMetadata &metadata)
 {
-    m_activeMetadata = metadata;
+    m_gameMap.SetMapMetaData(metadata);
     m_clearColor = metadata.skyColor;
-    SetSkyboxTexture(metadata.skyboxTexture, false);
-
-    // Update FileManager metadata to keep them in sync
-    if (m_fileManager)
-    {
-        m_fileManager->SetCurrentMetadata(metadata);
-    }
+    SetSkyboxTexture(metadata.skyboxTexture);
 }
 
-void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileManager)
+void Editor::SetSkyboxTexture(const std::string &texturePath)
 {
-    // NFD returns absolute paths, so we can use the path directly
-    // For relative paths from JSON files, ResolveSkyboxAbsolutePath will handle them
-    if (texturePath == m_skyboxTexturePath && m_skybox && !texturePath.empty())
+    if (texturePath.empty())
     {
-        if (updateFileManager && m_fileManager)
-        {
-            m_fileManager->SetSkyboxTexture(m_skyboxTexturePath);
-        }
+        m_skybox.reset();
+        m_gameMap.GetMapMetaDataMutable().skyboxTexture.clear();
         return;
     }
 
@@ -359,121 +275,86 @@ void Editor::SetSkyboxTexture(const std::string &texturePath, bool updateFileMan
         m_skybox = std::make_unique<Skybox>();
     }
 
-    // Initialize skybox if not already initialized
-    // Init() automatically loads shaders, so shaders are ready before loading texture
     if (!m_skybox->IsInitialized())
     {
         m_skybox->Init();
     }
 
-    // Resolve absolute path (handles both absolute from NFD and relative from JSON)
     std::string absolutePath = PathUtils::ResolveSkyboxAbsolutePath(texturePath);
-
-    if (!texturePath.empty())
-    {
-        std::error_code fileErr;
-        if (!fs::exists(absolutePath, fileErr))
-        {
-            TraceLog(LOG_WARNING, "Editor::SetSkyboxTexture() - Skybox texture not found: %s",
-                     absolutePath.c_str());
-            absolutePath.clear();
-        }
-    }
-
-    // Store the original path (absolute from NFD or relative from JSON)
-    m_skyboxTexturePath = texturePath;
-    m_activeMetadata.skyboxTexture = m_skyboxTexturePath;
-
-    if (!absolutePath.empty())
-    {
-        m_skybox->LoadMaterialTexture(absolutePath);
-        TraceLog(LOG_INFO, "Editor::SetSkyboxTexture() - Loaded skybox from %s",
-                 absolutePath.c_str());
-    }
-    else if (texturePath.empty())
-    {
-        // Clear skybox - use skyColor instead
-        if (m_skybox && m_skybox->IsLoaded())
-        {
-            // Unload the current skybox texture by reinitializing
-            m_skybox.reset();
-            m_skybox = std::make_unique<Skybox>();
-        }
-        m_clearColor = m_activeMetadata.skyColor;
-        m_skyboxTexturePath.clear();
-        m_activeMetadata.skyboxTexture.clear();
-        TraceLog(LOG_INFO, "Editor::SetSkyboxTexture() - Cleared skybox, using skyColor");
-    }
-
-    if (updateFileManager && m_fileManager)
-    {
-        m_fileManager->SetSkyboxTexture(m_skyboxTexturePath);
-    }
+    m_skybox->LoadMaterialTexture(absolutePath);
+    m_gameMap.GetMapMetaDataMutable().skyboxTexture = texturePath;
+    TraceLog(LOG_INFO, "[Editor] Applied skybox texture: %s", texturePath.c_str());
 }
 
 std::string Editor::GetSkyboxAbsolutePath() const
 {
-    if (m_skyboxTexturePath.empty())
-    {
+    const std::string &path = m_gameMap.GetMapMetaData().skyboxTexture;
+    if (path.empty())
         return "";
-    }
-    return PathUtils::ResolveSkyboxAbsolutePath(m_skyboxTexturePath);
+    return PathUtils::ResolveSkyboxAbsolutePath(path);
 }
 
-// The Editor class has been successfully refactored to use the Facade pattern.
-// All major functionality has been delegated to subsystem managers.
-// Remaining old code in this file needs to be cleaned up in future iterations.
+MapObjectData *Editor::GetSelectedObject()
+{
+    if (m_selectedIndex >= 0 &&
+        m_selectedIndex < static_cast<int>(m_gameMap.GetMapObjects().size()))
+    {
+        return &m_gameMap.GetMapObjectsMutable()[m_selectedIndex];
+    }
+    return nullptr;
+}
 
 void Editor::LoadSpawnTexture()
 {
     if (m_spawnTextureLoaded)
-    {
-        return; // Already loaded
-    }
+        return;
 
-    // Load spawn texture (only after window is initialized)
     std::string texturePath =
         std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
     if (FileExists(texturePath.c_str()))
     {
-        m_spawnTexture = LoadTexture(texturePath.c_str());
-        if (m_spawnTexture.id != 0)
-        {
-            m_spawnTextureLoaded = true;
-            TraceLog(LOG_INFO, "Editor::LoadSpawnTexture() - Loaded spawn texture: %dx%d",
-                     m_spawnTexture.width, m_spawnTexture.height);
-        }
-        else
-        {
-            TraceLog(LOG_WARNING,
-                     "Editor::LoadSpawnTexture() - Failed to load spawn texture from: %s",
-                     texturePath.c_str());
-        }
-    }
-    else
-    {
-        TraceLog(LOG_WARNING, "Editor::LoadSpawnTexture() - Spawn texture not found at: %s",
-                 texturePath.c_str());
+        m_spawnTexture = ::LoadTexture(texturePath.c_str());
+        m_spawnTextureLoaded = (m_spawnTexture.id != 0);
     }
 }
 
 void Editor::PreloadModelsFromResources()
 {
-    if (!m_modelManager)
-        return;
+    std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
+    MapLoader loader;
+    auto modelInfos = loader.LoadModelsFromDirectory(resourcesDir);
 
-    try
+    for (const auto &info : modelInfos)
     {
-        MapLoader mapLoader;
-        std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
-        auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
-        for (const auto &modelInfo : models)
+        if (m_modelLoader)
         {
-            m_modelManager->LoadModel(modelInfo.name, modelInfo.path);
+            m_modelLoader->LoadSingleModel(info.name, info.path);
+        }
+        // Also add to GameMap's models so they are available for rendering
+        auto modelOpt = m_modelLoader->GetModelByName(info.name);
+        if (modelOpt)
+        {
+            m_gameMap.GetMapModelsMutable()[info.name] = modelOpt->get();
         }
     }
-    catch (const std::exception &e)
-    {
-        TraceLog(LOG_WARNING, "Editor: Failed to preload models from resources: %s", e.what());
-    }
+}
+
+void Editor::SetGridSize(int size)
+{
+    m_gridSize = size;
+}
+
+int Editor::GetGridSize() const
+{
+    return m_gridSize;
+}
+
+ChainedDecos::Ref<CameraController> Editor::GetCameraController() const
+{
+    return m_cameraController;
+}
+
+ChainedDecos::Ref<ModelLoader> Editor::GetModelLoader() const
+{
+    return m_modelLoader;
 }

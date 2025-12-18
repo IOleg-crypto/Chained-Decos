@@ -11,17 +11,13 @@
 #include <string>
 #include <vector>
 
-#include "ModelManager/IModelManager.h"
-#include "Object/MapObject.h"
+#include "core/engine/Base.h"
 #include "scene/3d/camera/Core/CameraController.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/map/Skybox/Skybox.h"
 #include "scene/resources/model/Core/Model.h"
 
 // Subsystem interfaces
-#include "CameraManager/ICameraManager.h"
-#include "FileManager/IFileManager.h"
-#include "SceneManager/ISceneManager.h"
 #include "ToolManager/IToolManager.h"
 #include "UIManager/IUIManager.h"
 
@@ -29,41 +25,43 @@
 #include "Renderer/EditorRenderer.h"
 #include "Utils/PathUtils.h"
 
-// Main editor class for the map editor - now acts as a facade
+// Main editor class for the map editor
 class Editor
 {
 private:
-    // Subsystem managers (facade pattern)
-    std::unique_ptr<ISceneManager> m_sceneManager;
+    // Subsystem managers
     std::unique_ptr<IUIManager> m_uiManager;
-    std::unique_ptr<IFileManager> m_fileManager;
     std::unique_ptr<IToolManager> m_toolManager;
-    std::unique_ptr<ICameraManager> m_cameraManager;
-    std::unique_ptr<IModelManager> m_modelManager;
+
+    // Engine resources and services
+    ChainedDecos::Ref<CameraController> m_cameraController;
+    ChainedDecos::Ref<ModelLoader> m_modelLoader;
     std::unique_ptr<Skybox> m_skybox;
+    GameMap m_gameMap; // The actual map data
+
+    // State
+    int m_gridSize = 50;
+    int m_activeTool = 0;
+    int m_selectedIndex = -1;
+    bool m_isSceneModified = false;
+    std::string m_currentMapPath;
 
     // Rendering helper
     std::unique_ptr<EditorRenderer> m_renderer;
 
-    // Legacy compatibility - minimal state kept for backward compatibility
-    int m_gridSizes;
-
-    // Spawn zone texture
+    // Legacy/State kept for editor logic
     Texture2D m_spawnTexture;
     bool m_spawnTextureLoaded;
-
-    std::string m_skyboxTexturePath;
     Color m_clearColor;
-    MapMetadata m_activeMetadata;
 
 public:
-    Editor(std::shared_ptr<CameraController> cameraController,
-           std::shared_ptr<ModelLoader> modelLoader);
+    Editor(ChainedDecos::Ref<CameraController> cameraController,
+           ChainedDecos::Ref<ModelLoader> modelLoader);
     ~Editor();
 
 public:
-    // Core editor functions (facade interface)
-    [[nodiscard]] std::shared_ptr<CameraController> GetCameraController() const;
+    // Core editor functions
+    [[nodiscard]] ChainedDecos::Ref<CameraController> GetCameraController() const;
     void Update();      // Update editor state
     void Render();      // Render 3D objects
     void RenderImGui(); // Render ImGui interface
@@ -71,24 +69,36 @@ public:
 
     // Assets
     void PreloadModelsFromResources();
-    void LoadSpawnTexture(); // Load spawn zone texture (must be called after window init)
+    void LoadSpawnTexture(); // Load spawn zone texture
 
-    // Object management functions (delegate to SceneManager)
-    void AddObject(const MapObject &obj); // Add new object to scene
-    void RemoveObject(int index);         // Remove object by index
-    void SelectObject(int index);         // Select object by index
-    void ClearSelection();                // Clear current selection
-public:
-    // File operations (delegate to FileManager)
-    void SaveMap(const std::string &filename); // Save map to file (editor format)
-    void LoadMap(const std::string &filename); // Load map from file (editor format)
-    int GetGridSize() const;                   // Get editor grid size
+    // Object management (Moved from SceneManager)
+    void AddObject(const MapObjectData &obj);
+    void RemoveObject(int index);
+    void SelectObject(int index);
+    void ClearSelection();
+    void ClearScene();
+
+    // File operations (Moved from FileManager/using MapLoader)
+    void SaveMap(const std::string &filename);
+    void LoadMap(const std::string &filename);
+
+    void SetGridSize(int size);
+    int GetGridSize() const;
+
+    // Tool Management
+    int GetActiveTool() const;
+    void SetActiveTool(int tool);
+
+    // service accessors
+    ChainedDecos::Ref<ModelLoader> GetModelLoader() const;
+
     // Skybox operations
     void ApplyMetadata(const MapMetadata &metadata);
-    void SetSkyboxTexture(const std::string &texturePath, bool updateFileManager = true);
+    void SetSkyboxTexture(const std::string &texturePath);
+
     const std::string &GetSkyboxTexture() const
     {
-        return m_skyboxTexturePath;
+        return m_gameMap.GetMapMetaData().skyboxTexture;
     }
     bool HasSkybox() const
     {
@@ -103,42 +113,45 @@ public:
         return m_clearColor;
     }
 
-    // Access to subsystems for advanced usage (optional - maintains some backward compatibility)
-    ISceneManager *GetSceneManager() const
+    // Accessors for UI/Tools
+    GameMap &GetGameMap()
     {
-        return m_sceneManager.get();
+        return m_gameMap;
     }
-    IFileManager *GetFileManager() const
+    int GetSelectedObjectIndex() const
     {
-        return m_fileManager.get();
+        return m_selectedIndex;
     }
+    MapObjectData *GetSelectedObject();
+
     IToolManager *GetToolManager() const
     {
         return m_toolManager.get();
-    }
-    ICameraManager *GetCameraManager() const
-    {
-        return m_cameraManager.get();
-    }
-    IModelManager *GetModelManager() const
-    {
-        return m_modelManager.get();
     }
     IUIManager *GetUIManager() const
     {
         return m_uiManager.get();
     }
 
-private:
-    // Helper methods for subsystem coordination
-    void InitializeSubsystems(std::shared_ptr<CameraController> cameraController,
-                              std::shared_ptr<ModelLoader> modelLoader);
+    bool IsSceneModified() const
+    {
+        return m_isSceneModified;
+    }
+    void SetSceneModified(bool modified)
+    {
+        m_isSceneModified = modified;
+    }
 
-    // Rendering helper - delegates to EditorRenderer
-    void RenderObject(const MapObject &obj);
+    const std::string &GetCurrentMapPath() const
+    {
+        return m_currentMapPath;
+    }
+
+private:
+    void InitializeSubsystems();
+    void RenderObject(const MapObjectData &obj);
 
 public:
-    // Public helper to get absolute skybox path
     std::string GetSkyboxAbsolutePath() const;
 };
 

@@ -1,8 +1,23 @@
 #include "SkyboxBrowser.h"
+#include "../../../include/nfd/src/include/nfd.h"
 #include "../Editor.h"
 #include <filesystem>
 #include <imgui.h>
-#include <nfd.h>
+#include <raylib.h>
+
+#ifdef LoadImage
+#undef LoadImage
+#endif
+#ifdef Rectangle
+#undef Rectangle
+#endif
+#ifdef CloseWindow
+#undef CloseWindow
+#endif
+#ifdef ShowCursor
+#undef ShowCursor
+#endif
+
 #include <raylib.h>
 #include <rlImGui.h>
 
@@ -51,7 +66,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
     if (!m_skyboxPlaceholderInitialized)
     {
         const std::string &currentSkyboxTexture =
-            m_editor->GetFileManager()->GetCurrentMetadata().skyboxTexture;
+            m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
 
         // If there's a skybox in metadata, load it
         if (!currentSkyboxTexture.empty())
@@ -97,7 +112,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
     {
         // Check if metadata skybox has changed
         const std::string &currentSkyboxTexture =
-            m_editor->GetFileManager()->GetCurrentMetadata().skyboxTexture;
+            m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
         if (currentSkyboxTexture != m_lastLoadedMetadataSkybox)
         {
             // Unload current texture

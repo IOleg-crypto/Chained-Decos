@@ -9,7 +9,7 @@
 class EditorApplication : public IApplication
 {
 public:
-    EditorApplication();
+    EditorApplication(int argc, char *argv[]);
     ~EditorApplication();
 
     // 1. Configuration

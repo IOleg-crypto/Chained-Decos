@@ -1,56 +1,40 @@
 #include "EditorRenderer.h"
-#include "components/rendering/Utils/RenderUtils.h"
-#include "scene/resources/map/Renderer/MapRenderer.h"
+#include "../../../components/rendering/Utils/RenderUtils.h"
+#include "../../../scene/resources/map/Renderer/MapRenderer.h"
+#include "../Editor.h"
+#include "../ToolManager/IToolManager.h"
 #include <filesystem>
 #include <raylib.h>
 #include <raymath.h>
+#include <unordered_map>
 
-EditorRenderer::EditorRenderer(IToolManager *toolManager, ICameraManager *cameraManager,
-                               IModelManager *modelManager)
-    : m_toolManager(toolManager), m_cameraManager(cameraManager), m_modelManager(modelManager)
+EditorRenderer::EditorRenderer(Editor *editor, IToolManager *toolManager)
+    : m_editor(editor), m_toolManager(toolManager)
 {
 }
 
-void EditorRenderer::RenderObject(const MapObject &obj, const MapObjectData &data, bool isSelected)
+void EditorRenderer::RenderObject(const MapObjectData &data, bool isSelected)
 {
     // Handle spawn zone rendering separately
     if (data.type == MapObjectType::SPAWN_ZONE)
     {
-        // Spawn zone rendering is handled by RenderSpawnZoneWithTexture
-        // This method should not be called for spawn zones
         return;
     }
 
-    // Get loaded models from ModelManager for MODEL type objects
+    // Get loaded models from Editor's ModelLoader
     std::unordered_map<std::string, Model> loadedModels;
-    if (m_modelManager && data.type == MapObjectType::MODEL && !data.modelName.empty())
+    if (m_editor && data.type == MapObjectType::MODEL && !data.modelName.empty())
     {
         // Try exact match first
-        auto modelOpt = m_modelManager->GetModelLoader().GetModelByName(data.modelName);
+        auto modelOpt = m_editor->GetGameMap().GetMapModels().find(data.modelName);
 
-        // If not found, try by stem (filename without extension/path)
-        // This matches how MapLoader stores models (by stem)
-        if (!modelOpt)
+        if (modelOpt != m_editor->GetGameMap().GetMapModels().end())
         {
-            std::filesystem::path p(data.modelName);
-            std::string stem = p.stem().string();
-            modelOpt = m_modelManager->GetModelLoader().GetModelByName(stem);
-        }
-
-        if (modelOpt)
-        {
-            // Deep copy the model for loadedModels map
-            Model modelCopy = modelOpt->get();
-            loadedModels[data.modelName] = modelCopy;
-        }
-        else
-        {
-            TraceLog(LOG_WARNING, "EditorRenderer: Failed to find model '%s' (or stem)",
-                     data.modelName.c_str());
+            loadedModels[data.modelName] = modelOpt->second;
         }
     }
 
-    Camera3D camera = m_cameraManager ? m_cameraManager->GetCamera() : Camera3D{};
+    Camera3D camera = m_editor ? m_editor->GetCameraController()->GetCamera() : Camera3D{};
     MapRenderer renderer;
     renderer.RenderMapObject(data, loadedModels, camera, true);
 
@@ -58,7 +42,7 @@ void EditorRenderer::RenderObject(const MapObject &obj, const MapObjectData &dat
     if (isSelected)
     {
         // Render gizmo for MOVE and SCALE tools
-        RenderGizmo(obj, data);
+        RenderGizmo(data);
 
         // Render selection wireframe
         if (data.type == MapObjectType::MODEL)
@@ -77,22 +61,22 @@ void EditorRenderer::RenderObject(const MapObject &obj, const MapObjectData &dat
     }
 }
 
-void EditorRenderer::RenderGizmo(const MapObject &obj, const MapObjectData &data)
+void EditorRenderer::RenderGizmo(const MapObjectData &data)
 {
     // Only show gizmo for MOVE and SCALE tools
-    if (!m_toolManager || !m_cameraManager)
+    if (!m_toolManager || !m_editor)
         return;
 
     Tool activeTool = m_toolManager->GetActiveTool();
     if (activeTool != MOVE && activeTool != SCALE)
         return;
 
-    Vector3 pos = obj.GetPosition();
+    Vector3 pos = data.position;
     float gizmoLength = 2.0f;
     float gizmoThickness = 0.1f;
 
     // Get camera to determine gizmo scale
-    Camera3D camera = m_cameraManager->GetCamera();
+    Camera3D camera = m_editor->GetCameraController()->GetCamera();
     Vector3 toCamera = Vector3Subtract(camera.position, pos);
     float distance = Vector3Length(toCamera);
     float scale = distance * 0.1f; // Scale gizmo based on distance from camera

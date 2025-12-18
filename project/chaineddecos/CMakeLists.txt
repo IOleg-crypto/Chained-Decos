@@ -1,6 +1,8 @@
 set(GAME_SOURCES
     GameApplication.cpp
     GameApplication.h
+    GameLayer.cpp
+    GameLayer.h
     Systems/UIController/UIManager.cpp
     Systems/UIController/UIManager.h
 )

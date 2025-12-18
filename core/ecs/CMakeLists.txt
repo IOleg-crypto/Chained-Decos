@@ -24,6 +24,8 @@ set(ECS_SOURCES
     Systems/CollisionSystem.cpp
     Systems/LifetimeSystem.h
     Systems/LifetimeSystem.cpp
+    Examples.h
+    Examples.cpp
 )
 
 add_library(ecs STATIC ${ECS_SOURCES})

@@ -14,6 +14,11 @@ set(CORE_SOURCES
     engine/EngineApplication.cpp
     engine/EngineApplication.h
     engine/IApplication.h
+    engine/Base.h
+    engine/Layer.cpp
+    engine/Layer.h
+    engine/LayerStack.cpp
+    engine/LayerStack.h
     services/CoreServices.cpp
     services/CoreServices.h
 )

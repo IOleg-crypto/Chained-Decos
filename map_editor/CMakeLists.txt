@@ -5,18 +5,7 @@ add_executable(map_editor
     EditorApplication.h
     Editor/Editor.cpp
     Editor/Editor.h
-    Editor/CameraManager/CameraManager.cpp
-    Editor/FileManager/FileManager.cpp
-    Editor/FileManager/MapObjectConverterEditor.cpp
-    Editor/ModelManager/ModelManager.cpp
-    Editor/Object/MapObject.cpp
     Editor/Renderer/EditorRenderer.cpp
-    Editor/ECS/Component.cpp
-    Editor/ECS/GameObject.cpp
-    Editor/ECS/TransformComponent.cpp
-    Editor/ECS/MeshRendererComponent.cpp
-    Editor/SceneManager/BoundingBoxCalculators.cpp
-    Editor/SceneManager/SceneManager.cpp
     Editor/ToolManager/ToolManager.cpp
     Editor/UIManager/ObjectFactory.cpp
     Editor/UIManager/SkyboxBrowser.cpp
@@ -31,6 +20,7 @@ target_include_directories(map_editor PUBLIC
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/imgui
+    ${CMAKE_SOURCE_DIR}/include/json/include
     ${CMAKE_SOURCE_DIR}/include/nfd/src/include
 )
 
