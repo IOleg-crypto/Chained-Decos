@@ -1,29 +1,27 @@
 #include "ToolManager.h"
-#include "../SceneManager/SceneManager.h"
-#include "../Object/MapObject.h"
+#include "../Editor.h"
 #include "components/physics/collision/Structures/CollisionStructures.h"
 #include "scene/3d/camera/Core/CameraController.h"
-#include <iostream>
-#include <cmath>
+#include "scene/resources/map/Core/MapData.h"
 #include <cfloat>
-
-// Cast ISceneManager to SceneManager for implementation
-#define SCENE_CAST(scene) dynamic_cast<SceneManager&>(scene)
+#include <cmath>
+#include <iostream>
+#include <raymath.h>
 
 ToolManager::ToolManager()
     : m_activeTool(SELECT), m_pendingObjectCreation(false), m_currentlySelectedModelName(""),
-      m_isTransforming(false), m_selectedAxis(GizmoAxis::NONE), m_transformStartPoint({0, 0, 0}), m_lastMouseRayPoint({0, 0, 0}),
-      m_transformStartPosition({0, 0, 0}), m_transformStartRotation({0, 0, 0}), m_transformStartScale({1, 1, 1}),
-      m_camera({})
+      m_isTransforming(false), m_selectedAxis(GizmoAxis::NONE), m_transformStartPoint({0, 0, 0}),
+      m_lastMouseRayPoint({0, 0, 0}), m_transformStartPosition({0, 0, 0}),
+      m_transformStartRotation({0, 0, 0}), m_transformStartScale({1, 1, 1}), m_camera({})
 {
 }
 
-void ToolManager::SetCamera(const Camera3D& camera)
+void ToolManager::SetCamera(const Camera3D &camera)
 {
     m_camera = camera;
 }
 
-float ToolManager::GetGizmoScale(const Vector3& position) const
+float ToolManager::GetGizmoScale(const Vector3 &position) const
 {
     Vector3 toCamera = Vector3Subtract(m_camera.position, position);
     float distance = Vector3Length(toCamera);
@@ -40,7 +38,8 @@ void ToolManager::SetActiveTool(Tool tool)
     m_activeTool = tool;
 
     // Set pending creation for object creation tools
-    if (tool == ADD_CUBE || tool == ADD_SPHERE || tool == ADD_CYLINDER || tool == ADD_MODEL || tool == ADD_SPAWN_ZONE)
+    if (tool == ADD_CUBE || tool == ADD_SPHERE || tool == ADD_CYLINDER || tool == ADD_MODEL ||
+        tool == ADD_SPAWN_ZONE)
     {
         m_pendingObjectCreation = true;
     }
@@ -51,51 +50,53 @@ Tool ToolManager::GetActiveTool() const
     return m_activeTool;
 }
 
-bool ToolManager::ExecutePendingAction(ISceneManager& scene)
+bool ToolManager::ExecutePendingAction(Editor &editor)
 {
     if (!m_pendingObjectCreation)
     {
         return false;
     }
 
-    CreateObjectForTool(m_activeTool, SCENE_CAST(scene));
+    CreateObjectForTool(m_activeTool, editor);
     m_pendingObjectCreation = false;
     m_activeTool = SELECT; // Reset to select tool after creation
 
     return true;
 }
 
-void ToolManager::SetSelectedModel(const std::string& modelName)
+void ToolManager::SetSelectedModel(const std::string &modelName)
 {
     m_currentlySelectedModelName = modelName;
 }
 
-const std::string& ToolManager::GetSelectedModel() const
+const std::string &ToolManager::GetSelectedModel() const
 {
     return m_currentlySelectedModelName;
 }
 
-void ToolManager::HandleToolInput(bool mousePressed, const Ray& ray, ISceneManager& scene)
+void ToolManager::HandleToolInput(bool mousePressed, const Ray &ray, Editor &editor)
 {
-    MapObject* selectedObj = SCENE_CAST(scene).GetSelectedObject();
-    
+    MapObjectData *selectedObj = editor.GetSelectedObject();
+
     if (mousePressed)
     {
         if (m_activeTool == SELECT)
         {
             // Select object
-            CollisionRay collisionRay(ray.position, ray.direction);
-            SCENE_CAST(scene).PickObject(collisionRay);
+            // CollisionRay collisionRay(ray.position, ray.direction);
+            // editor.PickObject(collisionRay); // Need to implement PickObject in Editor or use
+            // Renderer
         }
-        else if ((m_activeTool == MOVE || m_activeTool == ROTATE || m_activeTool == SCALE) && selectedObj != nullptr)
+        else if ((m_activeTool == MOVE || m_activeTool == ROTATE || m_activeTool == SCALE) &&
+                 selectedObj != nullptr)
         {
             // For MOVE and SCALE, check if clicking on a gizmo axis
             if (m_activeTool == MOVE || m_activeTool == SCALE)
             {
                 // Calculate gizmo scale based on camera distance
-                float scale = GetGizmoScale(selectedObj->GetPosition());
+                float scale = GetGizmoScale(selectedObj->position);
                 Vector3 gizmoScale = {scale, scale, scale};
-                m_selectedAxis = PickGizmoAxis(ray, selectedObj->GetPosition(), gizmoScale);
+                m_selectedAxis = PickGizmoAxis(ray, selectedObj->position, gizmoScale);
 
                 // If no axis was picked, use ground plane intersection
                 if (m_selectedAxis == GizmoAxis::NONE)
@@ -105,20 +106,20 @@ void ToolManager::HandleToolInput(bool mousePressed, const Ray& ray, ISceneManag
                 else
                 {
                     // Use object position as start point for axis-constrained transforms
-                    m_transformStartPoint = selectedObj->GetPosition();
+                    m_transformStartPoint = selectedObj->position;
                 }
             }
             else // ROTATE
             {
                 m_selectedAxis = GizmoAxis::NONE;
-                m_transformStartPoint = selectedObj->GetPosition();
+                m_transformStartPoint = selectedObj->position;
             }
 
             // Start transform operation
             m_isTransforming = true;
-            m_transformStartPosition = selectedObj->GetPosition();
-            m_transformStartRotation = selectedObj->GetRotation();
-            m_transformStartScale = selectedObj->GetScale();
+            m_transformStartPosition = selectedObj->position;
+            m_transformStartRotation = selectedObj->rotation;
+            m_transformStartScale = selectedObj->scale;
             m_lastMouseRayPoint = m_transformStartPoint;
         }
     }
@@ -129,20 +130,20 @@ void ToolManager::HandleToolInput(bool mousePressed, const Ray& ray, ISceneManag
     }
 }
 
-void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
+void ToolManager::UpdateTool(const Ray &ray, Editor &editor)
 {
     if (!m_isTransforming)
     {
         return;
     }
-    
-    MapObject* selectedObj = SCENE_CAST(scene).GetSelectedObject();
+
+    MapObjectData *selectedObj = editor.GetSelectedObject();
     if (selectedObj == nullptr)
     {
         EndTransform();
         return;
     }
-    
+
     switch (m_activeTool)
     {
     case MOVE:
@@ -151,21 +152,30 @@ void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
         {
             // Move along selected axis
             Vector3 newPoint = GetRayGroundIntersection(ray);
-            
+
             // Project delta onto the selected axis
             Vector3 delta = Vector3Subtract(newPoint, m_transformStartPoint);
             Vector3 axisDir = {0, 0, 0};
             switch (m_selectedAxis)
             {
-                case GizmoAxis::X: axisDir = {1, 0, 0}; break;
-                case GizmoAxis::Y: axisDir = {0, 1, 0}; break;
-                case GizmoAxis::Z: axisDir = {0, 0, 1}; break;
-                default: break;
+            case GizmoAxis::X:
+                axisDir = {1, 0, 0};
+                break;
+            case GizmoAxis::Y:
+                axisDir = {0, 1, 0};
+                break;
+            case GizmoAxis::Z:
+                axisDir = {0, 0, 1};
+                break;
+            default:
+                break;
             }
-            
+
             float projection = Vector3DotProduct(delta, axisDir);
-            Vector3 newPosition = Vector3Add(m_transformStartPosition, Vector3Scale(axisDir, projection));
-            selectedObj->SetPosition(newPosition);
+            Vector3 newPosition =
+                Vector3Add(m_transformStartPosition, Vector3Scale(axisDir, projection));
+            selectedObj->position = newPosition;
+            editor.SetSceneModified(true);
         }
         else
         {
@@ -173,7 +183,8 @@ void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
             Vector3 newPoint = GetRayGroundIntersection(ray);
             Vector3 delta = Vector3Subtract(newPoint, m_transformStartPoint);
             Vector3 newPosition = Vector3Add(m_transformStartPosition, delta);
-            selectedObj->SetPosition(newPosition);
+            selectedObj->position = newPosition;
+            editor.SetSceneModified(true);
         }
         break;
     }
@@ -184,9 +195,8 @@ void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
         // Apply filtering to prevent glitches on Linux/VM
         mouseDelta = CameraController::FilterMouseDelta(mouseDelta);
         float rotationSpeed = 0.01f; // Adjust sensitivity
-        Vector3 currentRotation = selectedObj->GetRotation();
-        currentRotation.y += mouseDelta.x * rotationSpeed;
-        selectedObj->SetRotation(currentRotation);
+        selectedObj->rotation.y += mouseDelta.x * rotationSpeed;
+        editor.SetSceneModified(true);
         break;
     }
     case SCALE:
@@ -195,56 +205,72 @@ void ToolManager::UpdateTool(const Ray& ray, ISceneManager& scene)
         {
             // Scale along selected axis
             Vector3 newPoint = GetRayGroundIntersection(ray);
-            
+
             // Calculate distance along the selected axis
             Vector3 axisDir = {0, 0, 0};
             switch (m_selectedAxis)
             {
-                case GizmoAxis::X: axisDir = {1, 0, 0}; break;
-                case GizmoAxis::Y: axisDir = {0, 1, 0}; break;
-                case GizmoAxis::Z: axisDir = {0, 0, 1}; break;
-                default: break;
+            case GizmoAxis::X:
+                axisDir = {1, 0, 0};
+                break;
+            case GizmoAxis::Y:
+                axisDir = {0, 1, 0};
+                break;
+            case GizmoAxis::Z:
+                axisDir = {0, 0, 1};
+                break;
+            default:
+                break;
             }
-            
-            float startDistance = Vector3DotProduct(Vector3Subtract(m_transformStartPoint, selectedObj->GetPosition()), axisDir);
-            float newDistance = Vector3DotProduct(Vector3Subtract(newPoint, selectedObj->GetPosition()), axisDir);
-            
+
+            float startDistance = Vector3DotProduct(
+                Vector3Subtract(m_transformStartPoint, selectedObj->position), axisDir);
+            float newDistance =
+                Vector3DotProduct(Vector3Subtract(newPoint, selectedObj->position), axisDir);
+
             if (fabs(startDistance) > 0.001f)
             {
                 float scaleFactor = newDistance / startDistance;
                 Vector3 newScale = Vector3Scale(m_transformStartScale, 1.0f);
-                
+
                 switch (m_selectedAxis)
                 {
-                    case GizmoAxis::X: newScale.x *= scaleFactor; break;
-                    case GizmoAxis::Y: newScale.y *= scaleFactor; break;
-                    case GizmoAxis::Z: newScale.z *= scaleFactor; break;
-                    default: break;
+                case GizmoAxis::X:
+                    newScale.x *= scaleFactor;
+                    break;
+                case GizmoAxis::Y:
+                    newScale.y *= scaleFactor;
+                    break;
+                case GizmoAxis::Z:
+                    newScale.z *= scaleFactor;
+                    break;
+                default:
+                    break;
                 }
-                
+
                 // Prevent negative scale
-                if (newScale.x > 0.01f && newScale.y > 0.01f && newScale.z > 0.01f)
-                {
-                    selectedObj->SetScale(newScale);
-                }
+                selectedObj->scale = newScale;
+                editor.SetSceneModified(true);
             }
         }
         else
         {
             // Scale object based on distance from start point (backward compatibility)
             Vector3 newPoint = GetRayGroundIntersection(ray);
-            float startDistance = Vector3Length(Vector3Subtract(m_transformStartPoint, selectedObj->GetPosition()));
-            float newDistance = Vector3Length(Vector3Subtract(newPoint, selectedObj->GetPosition()));
-            
+            float startDistance =
+                Vector3Length(Vector3Subtract(m_transformStartPoint, selectedObj->position));
+            float newDistance = Vector3Length(Vector3Subtract(newPoint, selectedObj->position));
+
             if (startDistance > 0.001f)
             {
                 float scaleFactor = newDistance / startDistance;
                 Vector3 newScale = Vector3Scale(m_transformStartScale, scaleFactor);
-                
+
                 // Prevent negative scale
                 if (newScale.x > 0.01f && newScale.y > 0.01f && newScale.z > 0.01f)
                 {
-                    selectedObj->SetScale(newScale);
+                    selectedObj->scale = newScale;
+                    editor.SetSceneModified(true);
                 }
             }
         }
@@ -263,7 +289,8 @@ void ToolManager::EndTransform()
     m_lastMouseRayPoint = {0, 0, 0};
 }
 
-Vector3 ToolManager::GetRayPlaneIntersection(const Ray& ray, const Vector3& planePoint, const Vector3& planeNormal)
+Vector3 ToolManager::GetRayPlaneIntersection(const Ray &ray, const Vector3 &planePoint,
+                                             const Vector3 &planeNormal)
 {
     float denom = Vector3DotProduct(planeNormal, ray.direction);
     if (fabs(denom) > 0.0001f)
@@ -275,21 +302,23 @@ Vector3 ToolManager::GetRayPlaneIntersection(const Ray& ray, const Vector3& plan
     return ray.position;
 }
 
-Vector3 ToolManager::GetRayGroundIntersection(const Ray& ray)
+Vector3 ToolManager::GetRayGroundIntersection(const Ray &ray)
 {
     Vector3 groundPoint = {0, 0, 0};
     Vector3 groundNormal = {0, 1, 0}; // Y-up
     return GetRayPlaneIntersection(ray, groundPoint, groundNormal);
 }
 
-Vector3 ToolManager::GetClosestPointOnRay(const Vector3& point, const Vector3& rayStart, const Vector3& rayDir)
+Vector3 ToolManager::GetClosestPointOnRay(const Vector3 &point, const Vector3 &rayStart,
+                                          const Vector3 &rayDir)
 {
     Vector3 toPoint = Vector3Subtract(point, rayStart);
     float t = Vector3DotProduct(toPoint, rayDir);
     return Vector3Add(rayStart, Vector3Scale(rayDir, t));
 }
 
-GizmoAxis ToolManager::PickGizmoAxis(const Ray& ray, const Vector3& objPos, const Vector3& gizmoScale)
+GizmoAxis ToolManager::PickGizmoAxis(const Ray &ray, const Vector3 &objPos,
+                                     const Vector3 &gizmoScale)
 {
     float gizmoLength = 2.0f;
     float arrowLength = gizmoLength * gizmoScale.x;
@@ -357,40 +386,42 @@ GizmoAxis ToolManager::PickGizmoAxis(const Ray& ray, const Vector3& objPos, cons
     return closestAxis;
 }
 
-void ToolManager::CreateObjectForTool(Tool tool, ISceneManager& scene)
+void ToolManager::CreateObjectForTool(Tool tool, Editor &editor)
 {
-    MapObject newObj;
-    std::string baseName = "New Object " + std::to_string(SCENE_CAST(scene).GetObjects().size());
+    MapObjectData newObj;
+    std::string baseName =
+        "New Object " + std::to_string(editor.GetGameMap().GetMapObjects().size());
 
     switch (tool)
     {
     case ADD_CUBE:
-        newObj.SetObjectType(0); // Cube
-        newObj.SetObjectName(baseName + " (Cube)");
+        newObj.type = MapObjectType::CUBE;
+        newObj.name = baseName + " (Cube)";
         break;
     case ADD_SPHERE:
-        newObj.SetObjectType(1); // Sphere
-        newObj.SetObjectName(baseName + " (Sphere)");
+        newObj.type = MapObjectType::SPHERE;
+        newObj.name = baseName + " (Sphere)";
         break;
     case ADD_CYLINDER:
-        newObj.SetObjectType(2); // Cylinder
-        newObj.SetObjectName(baseName + " (Cylinder)");
+        newObj.type = MapObjectType::CYLINDER;
+        newObj.name = baseName + " (Cylinder)";
         break;
     case ADD_MODEL:
-        newObj.SetObjectType(5); // Model
-        newObj.SetModelAssetName(m_currentlySelectedModelName);
-        newObj.SetObjectName(m_currentlySelectedModelName + " " + std::to_string(SCENE_CAST(scene).GetObjects().size()));
+        newObj.type = MapObjectType::MODEL;
+        newObj.modelName = m_currentlySelectedModelName;
+        newObj.name = m_currentlySelectedModelName + " " +
+                      std::to_string(editor.GetGameMap().GetMapObjects().size());
         break;
     case ADD_SPAWN_ZONE:
-        newObj.SetObjectType(6); // Spawn Zone
-        newObj.SetObjectName("Spawn Zone");
-        newObj.SetColor({255, 100, 100, 200}); // Semi-transparent red
+        newObj.type = MapObjectType::SPAWN_ZONE;
+        newObj.name = "Spawn Zone";
+        newObj.color = {255, 100, 100, 200}; // Semi-transparent red
         break;
     default:
         std::cout << "Warning: Attempted to create object with invalid tool" << std::endl;
         return;
     }
 
-    SCENE_CAST(scene).AddObject(newObj);
-    std::cout << "Created new object with tool: " << tool << std::endl;
+    editor.AddObject(newObj);
+    std::cout << "Created new object with tool: " << (int)tool << std::endl;
 }

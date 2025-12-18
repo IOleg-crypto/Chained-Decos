@@ -11,9 +11,9 @@
 //===============================================
 #include <imgui.h>
 #include <raylib.h>
-#include <rlImGui/rlImGui.h>
+#include <rlImGui.h>
 
-EditorApplication::EditorApplication()
+EditorApplication::EditorApplication(int argc, char *argv[])
 {
 }
 
@@ -54,11 +54,6 @@ void EditorApplication::OnStart()
 
     // Use engine-provided ModelLoader instead of creating a new one
     auto modelLoader = Engine::Instance().GetService<ModelLoader>();
-
-    // We need to pass a unique_ptr to Editor, but GetService returns shared_ptr
-    // Editor needs to be refactored to take shared_ptr, but for now we'll wrap it
-    // Actually, passing a raw pointer or similar might be needed if we can't change Editor easily.
-    // Let's see if we can change Editor constructor.
 
     m_editor = std::make_unique<Editor>(camera, modelLoader);
 

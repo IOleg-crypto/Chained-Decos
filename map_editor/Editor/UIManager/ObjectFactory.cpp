@@ -1,53 +1,52 @@
 #include "ObjectFactory.h"
-#include "../Object/MapObject.h"
-#include "../ToolManager/IToolManager.h"
-#include "../SceneManager/ISceneManager.h"
+#include "../Editor.h"
+#include "scene/resources/map/Core/MapData.h"
 
-ObjectFactory::ObjectFactory(ISceneManager* sceneManager, IToolManager* toolManager)
-    : m_sceneManager(sceneManager), m_toolManager(toolManager)
+ObjectFactory::ObjectFactory(Editor *editor) : m_editor(editor)
 {
 }
 
-void ObjectFactory::CreateObject(::Tool activeTool, const std::string& selectedModelName)
+void ObjectFactory::CreateObject(::Tool activeTool, const std::string &selectedModelName)
 {
-    MapObject newObj;
-    std::string baseName = "New Object " + std::to_string(m_sceneManager->GetObjects().size());
+    MapObjectData newObj;
+
+    // Set default properties
+    newObj.position = {0.0f, 0.0f, 0.0f};
+    newObj.scale = {1.0f, 1.0f, 1.0f};
+    newObj.rotation = {0.0f, 0.0f, 0.0f};
+    newObj.color = WHITE;
 
     switch (activeTool)
     {
-    case ADD_CUBE:
-        newObj.SetObjectType(0); // Cube
-        newObj.SetObjectName(baseName + " (Cube)");
+    case 1: // ADD_CUBE (mapping to simplified Tool enum)
+        newObj.type = MapObjectType::CUBE;
         break;
-    case ADD_SPHERE:
-        newObj.SetObjectType(1); // Sphere
-        newObj.SetObjectName(baseName + " (Sphere)");
+    case 2: // ADD_SPHERE
+        newObj.type = MapObjectType::SPHERE;
         break;
-    case ADD_CYLINDER:
-        newObj.SetObjectType(2); // Cylinder
-        newObj.SetObjectName(baseName + " (Cylinder)");
+    case 3: // ADD_CYLINDER
+        newObj.type = MapObjectType::CYLINDER;
         break;
-    case ADD_MODEL:
-        newObj.SetObjectType(5); // Model
-        newObj.SetModelAssetName(selectedModelName);
-        newObj.SetObjectName(selectedModelName + " " +
-                             std::to_string(m_sceneManager->GetObjects().size()));
+    case 5: // ADD_MODEL
+        newObj.type = MapObjectType::MODEL;
+        newObj.modelName = selectedModelName;
         break;
-    case ADD_SPAWN_ZONE:
-        newObj.SetObjectType(6); // Spawn Zone
-        newObj.SetObjectName("Spawn Zone");
-        newObj.SetColor({255, 100, 100, 200}); // Semi-transparent red
+    case 6: // ADD_SPAWN_ZONE
+        newObj.type = MapObjectType::SPAWN_ZONE;
+        newObj.color = {255, 100, 100, 200}; // Semi-transparent red
         break;
     default:
-        return; // Unknown tool, don't create object
+        // Try to match based on tool index
+        if (activeTool > 0 && activeTool < 7)
+        {
+            newObj.type = static_cast<MapObjectType>(activeTool - 1);
+        }
+        else
+        {
+            return; // Unknown tool, don't create object
+        }
+        break;
     }
 
-    // Set default position, scale, and other properties
-    newObj.SetPosition({0.0f, 0.0f, 0.0f});
-    newObj.SetScale({1.0f, 1.0f, 1.0f});
-    newObj.SetRotation({0.0f, 0.0f, 0.0f});
-    newObj.SetColor({255, 255, 255, 255}); // White color
-
-    m_sceneManager->AddObject(newObj);
+    m_editor->AddObject(newObj);
 }
-
