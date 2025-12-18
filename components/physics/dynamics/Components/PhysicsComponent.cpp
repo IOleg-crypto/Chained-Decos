@@ -6,9 +6,9 @@
 #include <raymath.h>
 #include <thread>
 
-LegacyPhysicsComponent::LegacyPhysicsComponent() = default;
+PhysicsComponent::PhysicsComponent() = default;
 
-void LegacyPhysicsComponent::Update(float deltaTime)
+void PhysicsComponent::Update(float deltaTime)
 {
     m_deltaTime = deltaTime;
     if (!m_isKinematic)
@@ -17,14 +17,14 @@ void LegacyPhysicsComponent::Update(float deltaTime)
     }
 }
 
-void LegacyPhysicsComponent::ApplyPhysics(float deltaTime)
+void PhysicsComponent::ApplyPhysics(float deltaTime)
 {
     ApplyGravity(deltaTime);
     ApplyDrag(deltaTime);
     IntegrateAccumulatedForces(deltaTime);
 }
 
-void LegacyPhysicsComponent::ApplyGravity(float deltaTime)
+void PhysicsComponent::ApplyGravity(float deltaTime)
 {
     if (!m_isGrounded)
     {
@@ -32,7 +32,7 @@ void LegacyPhysicsComponent::ApplyGravity(float deltaTime)
     }
 }
 
-void LegacyPhysicsComponent::ApplyDrag(float deltaTime)
+void PhysicsComponent::ApplyDrag(float deltaTime)
 {
     // Don't apply drag when grounded (you're not moving through air)
     if (!m_isGrounded)
@@ -42,7 +42,7 @@ void LegacyPhysicsComponent::ApplyDrag(float deltaTime)
     }
 }
 
-void LegacyPhysicsComponent::IntegrateAccumulatedForces(float deltaTime)
+void PhysicsComponent::IntegrateAccumulatedForces(float deltaTime)
 {
     // Apply forces to velocity
     Vector3 acceleration = Vector3Scale(m_accumulatedForces, deltaTime);
@@ -52,7 +52,7 @@ void LegacyPhysicsComponent::IntegrateAccumulatedForces(float deltaTime)
     m_accumulatedForces = {0.0f, 0.0f, 0.0f};
 }
 
-void LegacyPhysicsComponent::TryJump()
+void PhysicsComponent::TryJump()
 {
     if (m_isGrounded)
     {
@@ -62,14 +62,14 @@ void LegacyPhysicsComponent::TryJump()
     }
 }
 
-void LegacyPhysicsComponent::Land()
+void PhysicsComponent::Land()
 {
     m_velocity.y = 0.0f;
     m_isGrounded = true;
     m_isJumping = false;
 }
 
-void LegacyPhysicsComponent::HandleSurfaceInteraction(const SurfaceComponent *surface)
+void PhysicsComponent::HandleSurfaceInteraction(const SurfaceComponent *surface)
 {
     if (surface)
     {
@@ -90,95 +90,95 @@ void LegacyPhysicsComponent::HandleSurfaceInteraction(const SurfaceComponent *su
     }
 }
 
-bool LegacyPhysicsComponent::HasExtremeVelocity() const
+bool PhysicsComponent::HasExtremeVelocity() const
 {
     return Vector3Length(m_velocity) > MAX_SPEED;
 }
 
-bool LegacyPhysicsComponent::IsGrounded() const
+bool PhysicsComponent::IsGrounded() const
 {
     return m_isGrounded;
 }
-void LegacyPhysicsComponent::SetGroundLevel(bool isGrounded)
+void PhysicsComponent::SetGroundLevel(bool isGrounded)
 {
     m_isGrounded = isGrounded;
 }
-bool LegacyPhysicsComponent::IsKinematic() const
+bool PhysicsComponent::IsKinematic() const
 {
     return m_isKinematic;
 }
-void LegacyPhysicsComponent::SetKinematic(bool kinematic)
+void PhysicsComponent::SetKinematic(bool kinematic)
 {
     m_isKinematic = kinematic;
 }
-bool LegacyPhysicsComponent::IsJumping() const
+bool PhysicsComponent::IsJumping() const
 {
     return m_isJumping;
 }
-void LegacyPhysicsComponent::SetJumpState(bool jumping)
+void PhysicsComponent::SetJumpState(bool jumping)
 {
     m_isJumping = jumping;
 }
-Vector3 LegacyPhysicsComponent::GetVelocity() const
+Vector3 PhysicsComponent::GetVelocity() const
 {
     return m_velocity;
 }
-void LegacyPhysicsComponent::SetVelocity(const Vector3 &velocity)
+void PhysicsComponent::SetVelocity(const Vector3 &velocity)
 {
     m_velocity = velocity;
 }
-void LegacyPhysicsComponent::AddVelocity(const Vector3 &delta)
+void PhysicsComponent::AddVelocity(const Vector3 &delta)
 {
     m_velocity = Vector3Add(m_velocity, delta);
 }
-float LegacyPhysicsComponent::GetVelocityY() const
+float PhysicsComponent::GetVelocityY() const
 {
     return m_velocity.y;
 }
-void LegacyPhysicsComponent::SetVelocityY(float y)
+void PhysicsComponent::SetVelocityY(float y)
 {
     m_velocity.y = y;
 }
-void LegacyPhysicsComponent::CancelVerticalVelocity()
+void PhysicsComponent::CancelVerticalVelocity()
 {
     m_velocity.y = 0.0f;
 }
-float LegacyPhysicsComponent::GetGravity() const
+float PhysicsComponent::GetGravity() const
 {
     return m_gravity;
 }
-void LegacyPhysicsComponent::SetGravity(float gravity)
+void PhysicsComponent::SetGravity(float gravity)
 {
     m_gravity = gravity;
 }
-float LegacyPhysicsComponent::GetJumpStrength() const
+float PhysicsComponent::GetJumpStrength() const
 {
     return m_jumpStrength;
 }
-void LegacyPhysicsComponent::SetJumpStrength(float strength)
+void PhysicsComponent::SetJumpStrength(float strength)
 {
     m_jumpStrength = strength;
 }
-float LegacyPhysicsComponent::GetDrag() const
+float PhysicsComponent::GetDrag() const
 {
     return m_drag;
 }
-void LegacyPhysicsComponent::SetDrag(float drag)
+void PhysicsComponent::SetDrag(float drag)
 {
     m_drag = drag;
 }
-float LegacyPhysicsComponent::GetDeltaTime() const
+float PhysicsComponent::GetDeltaTime() const
 {
     return m_deltaTime;
 }
-void LegacyPhysicsComponent::SetInAir()
+void PhysicsComponent::SetInAir()
 {
     m_isGrounded = false;
 }
 
 // Static method for parallel physics updates
-void LegacyPhysicsComponent::UpdatePhysicsComponentsParallel(
-    std::vector<LegacyPhysicsComponent *> &physicsComponents, float deltaTime)
+void PhysicsComponent::UpdatePhysicsComponentsParallel(
+    std::vector<PhysicsComponent *> &physicsComponents, float deltaTime)
 {
     if (physicsComponents.empty())
     {
@@ -191,7 +191,7 @@ void LegacyPhysicsComponent::UpdatePhysicsComponentsParallel(
     if (numComponents < parallelThreshold)
     {
         // Fall back to sequential for small numbers of components
-        for (LegacyPhysicsComponent *component : physicsComponents)
+        for (PhysicsComponent *component : physicsComponents)
         {
             if (component)
             {
@@ -219,8 +219,7 @@ void LegacyPhysicsComponent::UpdatePhysicsComponentsParallel(
                                      {
                                          for (size_t j = startIdx; j < endIdx; ++j)
                                          {
-                                             LegacyPhysicsComponent *component =
-                                                 physicsComponents[j];
+                                             PhysicsComponent *component = physicsComponents[j];
                                              if (component && !component->IsKinematic())
                                              {
                                                  component->Update(deltaTime);

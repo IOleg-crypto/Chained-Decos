@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GAMECONFIG_H
+#define GAMECONFIG_H
 
 #include <string>
 
@@ -20,3 +21,5 @@ public:
     static GameConfig ParseArguments(int argc, char *argv[]);
     static void ShowConfig(const GameConfig &config);
 };
+
+#endif // GAMECONFIG_H

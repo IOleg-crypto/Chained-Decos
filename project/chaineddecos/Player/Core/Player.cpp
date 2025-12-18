@@ -386,12 +386,12 @@ BoundingBox Player::GetPlayerBoundingBox() const
     return m_collision->GetBoundingBox();
 }
 
-const LegacyPhysicsComponent &Player::GetPhysics() const
+const PhysicsComponent &Player::GetPhysics() const
 {
     return m_movement->GetPhysics();
 }
 
-LegacyPhysicsComponent &Player::GetPhysics()
+PhysicsComponent &Player::GetPhysics()
 {
     return m_movement->GetPhysics();
 }

@@ -5,10 +5,9 @@
 #include <string>
 #include <unordered_map>
 
-
 struct AudioComponent
 {
-    // Sound library для цього entity
+    // Sound library
     std::unordered_map<std::string, std::string> soundPaths; // name -> path
 
     // 3D audio settings

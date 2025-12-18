@@ -1,4 +1,4 @@
-add_library(menu STATIC
+set(MENU_SOURCES
     Menu.cpp
     Menu.h
     MenuPresenter.cpp
@@ -14,10 +14,12 @@ add_library(menu STATIC
     MenuConstants.h
 )
 
+add_library(menu STATIC ${MENU_SOURCES})
+
 target_include_directories(menu PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/project/chained_decos/Menu
+    ${CMAKE_SOURCE_DIR}/project/chaineddecos/Menu
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/rlImGui
     ${CMAKE_SOURCE_DIR}/include/imgui

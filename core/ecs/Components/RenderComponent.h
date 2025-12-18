@@ -10,7 +10,7 @@ struct RenderComponent
     Model *model = nullptr;
     Color tint = WHITE;
     bool visible = true;
-    int renderLayer = 0; // Для сортування (0 = default, higher = later)
+    int renderLayer = 0;
     bool castShadows = true;
     bool receiveShadows = true;
     Vector3 offset = {0.0f, 0.0f, 0.0f}; // Visual offset from transform position

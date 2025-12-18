@@ -7,15 +7,18 @@ add_subdirectory(object/kernel)
 add_subdirectory(object/module)
 add_subdirectory(ecs)
 
-# Core library - базові системи
-add_library(core STATIC
-    # Engine
+# Core library - base systems
+set(CORE_SOURCES
     engine/Engine.cpp
     engine/Engine.h
     engine/EngineApplication.cpp
     engine/EngineApplication.h
     engine/IApplication.h
+    services/CoreServices.cpp
+    services/CoreServices.h
 )
+
+add_library(core STATIC ${CORE_SOURCES})
 
 target_include_directories(core
     PUBLIC

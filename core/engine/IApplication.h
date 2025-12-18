@@ -4,7 +4,7 @@
 #include <string>
 
 class ModuleManager;
-class Engine;
+#include "Engine.h"
 
 // Interface for all applications using the engine
 // Implement this interface to define your application's behavior

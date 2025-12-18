@@ -3,12 +3,9 @@
 
 #include <string>
 
-/**
- * @brief Minimal Menu interface
- *
- * Essential API only - 10 methods (down from 40+)
- * Engine depends on this interface, not concrete Menu class.
- */
+// Minimal Menu interface
+// Essential API only - 10 methods (down from 40+)
+// Engine depends on this interface, not concrete Menu class.
 class IMenu
 {
 public:
