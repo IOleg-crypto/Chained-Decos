@@ -3,7 +3,6 @@
 #include "core/ecs/ECSRegistry.h"
 #include <vector>
 
-
 namespace LifetimeSystem
 {
 
@@ -23,7 +22,7 @@ void Update(float deltaTime)
         }
     }
 
-    // Знищити entities після ітерації
+    // Destroy entities after iteration
     for (auto entity : toDestroy)
     {
         REGISTRY.destroy(entity);

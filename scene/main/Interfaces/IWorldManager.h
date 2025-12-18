@@ -3,11 +3,6 @@
 
 #include <raylib.h>
 
-/**
- * @brief Interface for World Management
- *
- * Lightweight interface to avoid including heavy World.h with all dependencies
- */
 class IWorldManager
 {
 public:

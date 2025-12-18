@@ -1,13 +1,15 @@
-add_library(module STATIC
+set(MODULE_SOURCES
     Core/ModuleManager.h
     Core/ModuleManager.cpp
     Core/ModuleContext.h
     Interfaces/IEngineModule.h
 )
 
+add_library(module STATIC ${MODULE_SOURCES})
+
 target_include_directories(module PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
+    ${CMAKE_SOURCE_DIR}/core/object
     ${CMAKE_SOURCE_DIR}
 )
 

@@ -1,11 +1,10 @@
 #ifndef IPLAYERMOVEMENT_H
 #define IPLAYERMOVEMENT_H
 
-#include <raylib.h>
-#include <raymath.h>
 #include <components/physics/collision/Core/CollisionManager.h>
 #include <components/physics/dynamics/Components/PhysicsComponent.h>
-
+#include <raylib.h>
+#include <raymath.h>
 
 class IPlayerMovement
 {
@@ -35,8 +34,8 @@ public:
     virtual void SetSpeed(float speed) = 0;
 
     // Physics component access
-    virtual LegacyPhysicsComponent &GetPhysics() = 0;
-    virtual const LegacyPhysicsComponent &GetPhysics() const = 0;
+    virtual PhysicsComponent &GetPhysics() = 0;
+    virtual const PhysicsComponent &GetPhysics() const = 0;
 
     // Noclip functionality
     virtual void SetNoclip(bool enable) = 0;

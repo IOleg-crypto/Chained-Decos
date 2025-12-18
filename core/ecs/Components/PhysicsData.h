@@ -1,19 +1,19 @@
-#ifndef PHYSICS_COMPONENT_H
-#define PHYSICS_COMPONENT_H
+#ifndef PHYSICS_DATA_COMPONENT_H
+#define PHYSICS_DATA_COMPONENT_H
 
 #include <entt/entt.hpp>
 #include <memory>
 #include <raylib.h>
 
-// Forward declaration
 class Collision;
 
-struct PhysicsComponent
+// ECS version (Data-only struct)
+struct PhysicsData
 {
     float mass = 1.0f;
     float gravity = -9.8f;
     bool useGravity = true;
-    bool isKinematic = false; // Не реагує на фізику (контролюється вручну)
+    bool isKinematic = false; // Does not react to physics (controlled manually)
 
     // Friction and bounciness
     float friction = 0.5f;
@@ -29,11 +29,11 @@ struct PhysicsComponent
 struct CollisionComponent
 {
     BoundingBox bounds;
-    bool isTrigger = false; // Не блокує рух, тільки події
-    int collisionLayer = 0; // Шар об'єкта (0-31)
-    int collisionMask = ~0; // З якими шарами може зіткнутися (bitmask)
+    bool isTrigger = false; // Does not block movement, only events
+    int collisionLayer = 0; // Object layer (0-31)
+    int collisionMask = ~0; // Which layers it can collide with (bitmask)
 
-    // Collision callbacks (можна розширити)
+    // Collision callbacks (can be extended)
     bool hasCollision = false;
     entt::entity collidedWith = entt::null;
 
@@ -41,4 +41,4 @@ struct CollisionComponent
     std::shared_ptr<Collision> collider = nullptr;
 };
 
-#endif // PHYSICS_COMPONENT_H
+#endif // PHYSICS_DATA_COMPONENT_H

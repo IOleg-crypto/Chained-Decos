@@ -3,7 +3,7 @@
 
 #include <entt/entt.hpp>
 
-// Глобальний registry для всього проєкту
+// Global registry for the entire project
 class ECSRegistry
 {
     static entt::registry s_registry;
@@ -14,7 +14,7 @@ public:
         return s_registry;
     }
 
-    // Helper методи
+    // Helper methods
     static entt::entity CreateEntity()
     {
         return s_registry.create();
@@ -31,7 +31,7 @@ public:
     }
 };
 
-// Зручний макрос
+// Convenient macro
 #define REGISTRY ECSRegistry::Get()
 
 #endif // ECS_REGISTRY_WRAPPER_H

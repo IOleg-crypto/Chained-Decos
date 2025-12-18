@@ -58,7 +58,7 @@ private:
 
 public:
     Editor(std::shared_ptr<CameraController> cameraController,
-           std::unique_ptr<ModelLoader> modelLoader);
+           std::shared_ptr<ModelLoader> modelLoader);
     ~Editor();
 
 public:
@@ -132,7 +132,7 @@ public:
 private:
     // Helper methods for subsystem coordination
     void InitializeSubsystems(std::shared_ptr<CameraController> cameraController,
-                              std::unique_ptr<ModelLoader> modelLoader);
+                              std::shared_ptr<ModelLoader> modelLoader);
 
     // Rendering helper - delegates to EditorRenderer
     void RenderObject(const MapObject &obj);

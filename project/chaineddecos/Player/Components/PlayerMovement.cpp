@@ -46,11 +46,11 @@ void PlayerMovement::SetSpeed(float speed)
     m_walkSpeed = speed;
 }
 
-LegacyPhysicsComponent &PlayerMovement::GetPhysics()
+PhysicsComponent &PlayerMovement::GetPhysics()
 {
     return m_physics;
 }
-const LegacyPhysicsComponent &PlayerMovement::GetPhysics() const
+const PhysicsComponent &PlayerMovement::GetPhysics() const
 {
     return m_physics;
 }

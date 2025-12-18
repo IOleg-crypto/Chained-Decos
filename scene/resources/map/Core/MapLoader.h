@@ -48,7 +48,7 @@ public:
 
     void Cleanup();
 
-    // Skybox - оновлені методи
+    // Skybox - updated methods
     void SetSkyBox(std::shared_ptr<Skybox> &skybox);
     Skybox *GetSkyBox() const;
 
