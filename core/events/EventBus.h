@@ -7,17 +7,17 @@
 #include <unordered_map>
 #include <vector>
 
-// Event Bus - центральна система подій
-// Дозволяє сервісам спілкуватися без прямих залежностей
+// Event Bus - central event system
+// Allows services to communicate without direct dependencies
 class EventBus
 {
 public:
-    // Підписка на подію
+    // Subscribe to event
     template <typename EventType> int Subscribe(std::function<void(const EventType &)> handler)
     {
         const std::type_index typeId = std::type_index(typeid(EventType));
 
-        // Створюємо обгортку для type erasure
+        // Create wrapper for type erasure
         auto wrapper = [handler](const void *eventPtr)
         {
             const EventType *event = static_cast<const EventType *>(eventPtr);
@@ -30,7 +30,7 @@ public:
         return subscriptionId;
     }
 
-    // Відписка від події
+    // Unsubscribe from event
     void Unsubscribe(int subscriptionId)
     {
         for (auto &[typeId, handlers] : m_handlers)
@@ -42,7 +42,7 @@ public:
         }
     }
 
-    // Публікація події
+    // Publish event
     template <typename EventType> void Publish(const EventType &event)
     {
         const std::type_index typeId = std::type_index(typeid(EventType));
@@ -57,13 +57,13 @@ public:
         }
     }
 
-    // Очистити всі підписки
+    // Clear all subscriptions
     void Clear()
     {
         m_handlers.clear();
     }
 
-    // Singleton доступ
+    // Singleton access
     static EventBus &Instance()
     {
         static EventBus instance;

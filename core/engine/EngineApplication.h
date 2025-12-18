@@ -53,6 +53,7 @@ private:
     IApplication *m_app; // The application instance
     Config m_config;
     std::shared_ptr<Engine> m_engine; // Engine is now shared/singleton managed
+    std::vector<PhysicsComponent *> m_physicsComponents;
     bool m_initialized = false;
 };
 

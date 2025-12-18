@@ -1,6 +1,7 @@
 #include "EditorApplication.h"
 #include "Modules/EditorModule.h"
 #include "core/engine/Engine.h"
+#include "core/services/CoreServices.h"
 #include "map_editor/Editor/Editor.h"
 #include "map_editor/Editor/UIManager/UIManager.h"
 #include "scene/3d/camera/Core/CameraController.h"
@@ -31,17 +32,17 @@ void EditorApplication::OnConfigure(EngineConfig &config)
 
 void EditorApplication::OnRegister()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Registering modules...");
+    TraceLog(LOG_INFO, "[EditorApplication] Registering modules and core services...");
 
-    if (auto engine = GetEngine())
+    auto &engine = Engine::Instance();
+    CoreServices core;
+    if (!core.Initialize(1600, 900, "Chained Decos - Map Editor", false, true))
     {
-        engine->RegisterModule(std::make_unique<EditorModule>());
-        TraceLog(LOG_INFO, "[EditorApplication] Editor modules registered.");
+        TraceLog(LOG_ERROR, "[EditorApplication] Failed to initialize CoreServices");
     }
-    else
-    {
-        TraceLog(LOG_ERROR, "[EditorApplication] Engine not available!");
-    }
+
+    engine.RegisterModule(std::make_unique<EditorModule>());
+    TraceLog(LOG_INFO, "[EditorApplication] Editor modules registered.");
 }
 
 void EditorApplication::OnStart()
@@ -50,8 +51,16 @@ void EditorApplication::OnStart()
 
     // Initialize Editor components
     auto camera = std::make_shared<CameraController>();
-    auto modelLoader = std::make_unique<ModelLoader>();
-    m_editor = std::make_unique<Editor>(camera, std::move(modelLoader));
+
+    // Use engine-provided ModelLoader instead of creating a new one
+    auto modelLoader = Engine::Instance().GetService<ModelLoader>();
+
+    // We need to pass a unique_ptr to Editor, but GetService returns shared_ptr
+    // Editor needs to be refactored to take shared_ptr, but for now we'll wrap it
+    // Actually, passing a raw pointer or similar might be needed if we can't change Editor easily.
+    // Let's see if we can change Editor constructor.
+
+    m_editor = std::make_unique<Editor>(camera, modelLoader);
 
     TraceLog(LOG_INFO, "[EditorApplication] Editor components initialized.");
 

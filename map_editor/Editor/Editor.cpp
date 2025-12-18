@@ -41,7 +41,7 @@
 namespace fs = std::filesystem;
 
 Editor::Editor(std::shared_ptr<CameraController> cameraController,
-               std::unique_ptr<ModelLoader> modelLoader)
+               std::shared_ptr<ModelLoader> modelLoader)
     : m_gridSizes(900), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
       m_skyboxTexturePath("")
 {
@@ -79,7 +79,7 @@ std::shared_ptr<CameraController> Editor::GetCameraController() const
 }
 
 void Editor::InitializeSubsystems(std::shared_ptr<CameraController> cameraController,
-                                  std::unique_ptr<ModelLoader> modelLoader)
+                                  std::shared_ptr<ModelLoader> modelLoader)
 {
     // Initialize NFD once (before subsystems that use it)
     NFD_Init();

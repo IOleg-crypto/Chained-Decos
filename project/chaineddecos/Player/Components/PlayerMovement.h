@@ -1,14 +1,13 @@
 #ifndef PLAYER_MOVEMENT_H
 #define PLAYER_MOVEMENT_H
 
-#include "core/interfaces/IPlayer.h"
 #include "../Interfaces/IPlayerMovement.h"
+#include "core/interfaces/IPlayer.h"
+#include <components/physics/collision/Core/CollisionManager.h>
+#include <components/physics/dynamics/Components/PhysicsComponent.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <scene/main/Core/World.h>
-#include <components/physics/collision/Core/CollisionManager.h>
-#include <components/physics/dynamics/Components/PhysicsComponent.h>
-
 
 class PlayerMovement : public IPlayerMovement
 {
@@ -38,8 +37,8 @@ public:
     float GetSpeed() const override;
     void SetSpeed(float speed) override;
 
-    LegacyPhysicsComponent &GetPhysics() override;
-    const LegacyPhysicsComponent &GetPhysics() const override;
+    PhysicsComponent &GetPhysics() override;
+    const PhysicsComponent &GetPhysics() const override;
 
     // Noclip functionality
     void SetNoclip(bool enable) override;
@@ -54,7 +53,7 @@ private:
     float m_rotationY = 0.0f;
 
     float m_walkSpeed = 11.0f;
-    LegacyPhysicsComponent m_physics;
+    PhysicsComponent m_physics;
 
     const CollisionManager *m_lastCollisionManager = nullptr;
 

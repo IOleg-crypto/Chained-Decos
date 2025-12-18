@@ -1,4 +1,4 @@
-add_library(player STATIC
+set(PLAYER_SOURCES
     # Core
     Core/Player.cpp
     Core/Player.h
@@ -21,6 +21,8 @@ add_library(player STATIC
     Interfaces/IPlayerInput.h
     Interfaces/IPlayerMovement.h
 )
+
+add_library(player STATIC ${PLAYER_SOURCES})
 
 target_include_directories(player PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

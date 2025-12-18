@@ -1,14 +1,14 @@
 #include "UIManager.h"
-#include "../../../core/engine/Engine.h"
-#include "../../../core/engine/EngineApplication.h"
-#include "../../Menu/Console/ConsoleManager.h"
-#include "../../Menu/Menu.h"
-#include "../../Player/Core/Player.h"
-#include "../MapSystem/LevelManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
+#include "core/engine/Engine.h"
+#include "core/engine/EngineApplication.h"
+#include "project/chaineddecos/Menu/Console/ConsoleManager.h"
+#include "project/chaineddecos/Menu/Menu.h"
+#include "project/chaineddecos/Player/Core/Player.h"
+#include "scene/main/Core/LevelManager.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
-#include "components/physics/collision/Core/CollisionManager.h"
 #include <algorithm>
 #include <fstream>
 #include <raylib.h>
@@ -123,8 +123,8 @@ void UIManager::RegisterServices(Engine *engine)
     // Register our own components as services
     if (m_menu)
     {
-        // Menu is accessed via UIManager, no need to register separate service
-        TraceLog(LOG_INFO, "[UIManager] Menu initialized");
+        engine->RegisterService<IMenu>(std::shared_ptr<IMenu>(m_menu.get(), [](IMenu *) {}));
+        TraceLog(LOG_INFO, "[UIManager] Menu service registered");
     }
 }
 
@@ -197,7 +197,7 @@ void UIManager::HandleSinglePlayer(bool *showMenu, bool *isGameInitialized)
     */
 
     auto models = m_engine->GetService<ModelLoader>();
-    auto levelManager = static_cast<LevelManager*>(m_engine->GetLevelManager());
+    auto levelManager = static_cast<LevelManager *>(m_engine->GetLevelManager());
     auto collisionManager = m_engine->GetService<CollisionManager>();
 
     if (!models || !levelManager || !collisionManager) // || !playerController
@@ -261,7 +261,7 @@ void UIManager::EnsurePlayerSafePosition()
         return;
     }
 
-    auto player = static_cast<Player*>(m_engine->GetPlayer());
+    auto player = static_cast<Player *>(m_engine->GetPlayer());
     auto collisionManager = m_engine->GetService<CollisionManager>();
 
     if (!player || !collisionManager)
@@ -295,7 +295,7 @@ void UIManager::ReinitializeCollisionSystemForResume()
     }
 
     auto models = m_engine->GetService<ModelLoader>();
-    auto levelManager = static_cast<LevelManager*>(m_engine->GetLevelManager());
+    auto levelManager = static_cast<LevelManager *>(m_engine->GetLevelManager());
     auto collisionManager = m_engine->GetService<CollisionManager>();
 
     if (!levelManager || !collisionManager || !models)
@@ -374,7 +374,7 @@ void UIManager::HandleResumeGame(bool *showMenu, bool *isGameInitialized)
     */
 
     auto models = m_engine->GetService<ModelLoader>();
-    auto levelManager = static_cast<LevelManager*>(m_engine->GetLevelManager());
+    auto levelManager = static_cast<LevelManager *>(m_engine->GetLevelManager());
     auto collisionManager = m_engine->GetService<CollisionManager>();
 
     if (!models || !levelManager || !collisionManager) // || !playerController
@@ -550,7 +550,7 @@ bool UIManager::InitializeCollisionSystemWithModels(const std::vector<std::strin
         return false;
     }
 
-    auto levelManager = static_cast<LevelManager*>(m_engine->GetLevelManager());
+    auto levelManager = static_cast<LevelManager *>(m_engine->GetLevelManager());
     if (!levelManager)
     {
         TraceLog(LOG_ERROR,
@@ -579,7 +579,7 @@ void UIManager::RegisterPreloadedModels()
         return;
     }
 
-    auto levelManager = static_cast<LevelManager*>(m_engine->GetLevelManager());
+    auto levelManager = static_cast<LevelManager *>(m_engine->GetLevelManager());
     auto models = m_engine->GetService<ModelLoader>();
 
     if (!levelManager || !models)
@@ -699,7 +699,7 @@ void UIManager::CreateModelInstancesForMap()
         return;
     }
 
-    auto levelManager = static_cast<LevelManager*>(m_engine->GetLevelManager());
+    auto levelManager = static_cast<LevelManager *>(m_engine->GetLevelManager());
     auto models = m_engine->GetService<ModelLoader>();
 
     if (!levelManager || !models)
@@ -772,7 +772,7 @@ void UIManager::LoadMapObjects(const std::string &mapPath)
         throw std::runtime_error("Engine not available");
     }
 
-    auto levelManager = static_cast<LevelManager*>(m_engine->GetLevelManager());
+    auto levelManager = static_cast<LevelManager *>(m_engine->GetLevelManager());
     if (!levelManager)
     {
         TraceLog(LOG_ERROR, "[UIManager] LoadMapObjects() - LevelManager not available");
@@ -853,7 +853,7 @@ void UIManager::HandleStartGameWithMap(bool *showMenu, bool *isGameInitialized)
         return;
     }
 
-    auto levelManager = static_cast<LevelManager*>(m_engine->GetLevelManager());
+    auto levelManager = static_cast<LevelManager *>(m_engine->GetLevelManager());
     /*
     PlayerController *playerController = nullptr;
     if (m_engine->GetModuleManager())

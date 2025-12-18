@@ -1,18 +1,19 @@
 #include "ConfigManager.h"
-#include <fstream>
-#include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <fstream>
+#include <sstream>
 #include <unordered_map>
 
-bool ConfigManager::LoadFromFile(const std::string& filename)
+bool ConfigManager::LoadFromFile(const std::string &filename)
 {
     try
     {
         std::ifstream file(filename);
         if (!file.is_open())
         {
-            TraceLog(LOG_WARNING, "ConfigManager::LoadFromFile() - Could not open file: %s", filename.c_str());
+            TraceLog(LOG_WARNING, "ConfigManager::LoadFromFile() - Could not open file: %s",
+                     filename.c_str());
             return false;
         }
 
@@ -31,7 +32,9 @@ bool ConfigManager::LoadFromFile(const std::string& filename)
             size_t equalPos = line.find('=');
             if (equalPos == std::string::npos)
             {
-                TraceLog(LOG_WARNING, "ConfigManager::LoadFromFile() - Invalid format on line %d: %s", lineNumber, line.c_str());
+                TraceLog(LOG_WARNING,
+                         "ConfigManager::LoadFromFile() - Invalid format on line %d: %s",
+                         lineNumber, line.c_str());
                 continue;
             }
 
@@ -44,57 +47,57 @@ bool ConfigManager::LoadFromFile(const std::string& filename)
             if (!key.empty())
             {
                 m_settings[ToLower(key)] = value;
-                TraceLog(LOG_DEBUG, "ConfigManager::LoadFromFile() - Loaded setting: %s = %s", key.c_str(), value.c_str());
             }
         }
 
         file.close();
-        TraceLog(LOG_INFO, "ConfigManager::LoadFromFile() - Successfully loaded %zu settings from %s", m_settings.size(), filename.c_str());
 
         // Validate settings and set defaults for invalid values
         ValidateAndSetDefaults();
 
         return true;
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "ConfigManager::LoadFromFile() - Exception while loading %s: %s", filename.c_str(), e.what());
+        TraceLog(LOG_ERROR, "ConfigManager::LoadFromFile() - Exception while loading %s: %s",
+                 filename.c_str(), e.what());
         return false;
     }
 }
 
-bool ConfigManager::SaveToFile(const std::string& filename)
+bool ConfigManager::SaveToFile(const std::string &filename)
 {
     try
     {
         std::ofstream file(filename);
         if (!file.is_open())
         {
-            TraceLog(LOG_ERROR, "ConfigManager::SaveToFile() - Could not open file for writing: %s", filename.c_str());
+            TraceLog(LOG_ERROR, "ConfigManager::SaveToFile() - Could not open file for writing: %s",
+                     filename.c_str());
             return false;
         }
 
         file << "# Chained Decos Configuration File\n";
         file << "# Generated automatically - do not edit while game is running\n\n";
 
-        for (const auto& pair : m_settings)
+        for (const auto &pair : m_settings)
         {
             file << pair.first << " = " << pair.second << "\n";
         }
 
         file.close();
-        TraceLog(LOG_INFO, "ConfigManager::SaveToFile() - Successfully saved %zu settings to %s", m_settings.size(), filename.c_str());
         return true;
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "ConfigManager::SaveToFile() - Exception while saving %s: %s", filename.c_str(), e.what());
+        TraceLog(LOG_ERROR, "ConfigManager::SaveToFile() - Exception while saving %s: %s",
+                 filename.c_str(), e.what());
         return false;
     }
 }
 
 // Simplified helper methods for cleaner code
-int ConfigManager::GetInt(const std::string& key, int defaultValue) const
+int ConfigManager::GetInt(const std::string &key, int defaultValue) const
 {
     auto it = m_settings.find(ToLower(key));
     if (it != m_settings.end())
@@ -103,7 +106,7 @@ int ConfigManager::GetInt(const std::string& key, int defaultValue) const
         {
             return std::stoi(it->second);
         }
-        catch (const std::exception&)
+        catch (const std::exception &)
         {
             // Invalid integer value, return default
         }
@@ -111,7 +114,7 @@ int ConfigManager::GetInt(const std::string& key, int defaultValue) const
     return defaultValue;
 }
 
-float ConfigManager::GetFloat(const std::string& key, float defaultValue) const
+float ConfigManager::GetFloat(const std::string &key, float defaultValue) const
 {
     auto it = m_settings.find(ToLower(key));
     if (it != m_settings.end())
@@ -120,7 +123,7 @@ float ConfigManager::GetFloat(const std::string& key, float defaultValue) const
         {
             return std::stof(it->second);
         }
-        catch (const std::exception&)
+        catch (const std::exception &)
         {
             // Invalid float value, return default
         }
@@ -128,7 +131,7 @@ float ConfigManager::GetFloat(const std::string& key, float defaultValue) const
     return defaultValue;
 }
 
-bool ConfigManager::GetBool(const std::string& key, bool defaultValue) const
+bool ConfigManager::GetBool(const std::string &key, bool defaultValue) const
 {
     auto it = m_settings.find(ToLower(key));
     if (it != m_settings.end())
@@ -139,28 +142,28 @@ bool ConfigManager::GetBool(const std::string& key, bool defaultValue) const
     return defaultValue;
 }
 
-std::string ConfigManager::GetString(const std::string& key, const std::string& defaultValue) const
+std::string ConfigManager::GetString(const std::string &key, const std::string &defaultValue) const
 {
     auto it = m_settings.find(ToLower(key));
     return (it != m_settings.end()) ? it->second : defaultValue;
 }
 
-void ConfigManager::SetInt(const std::string& key, int value)
+void ConfigManager::SetInt(const std::string &key, int value)
 {
     m_settings[ToLower(key)] = std::to_string(value);
 }
 
-void ConfigManager::SetFloat(const std::string& key, float value)
+void ConfigManager::SetFloat(const std::string &key, float value)
 {
     m_settings[ToLower(key)] = std::to_string(value);
 }
 
-void ConfigManager::SetBool(const std::string& key, bool value)
+void ConfigManager::SetBool(const std::string &key, bool value)
 {
     m_settings[ToLower(key)] = value ? "true" : "false";
 }
 
-void ConfigManager::SetString(const std::string& key, const std::string& value)
+void ConfigManager::SetString(const std::string &key, const std::string &value)
 {
     m_settings[ToLower(key)] = value;
 }
@@ -171,7 +174,7 @@ void ConfigManager::SetResolution(int width, int height)
     SetInt("video_height", height);
 }
 
-void ConfigManager::GetResolution(int& width, int& height) const
+void ConfigManager::GetResolution(int &width, int &height) const
 {
     width = GetInt("video_width", 1280);
     height = GetInt("video_height", 720);
@@ -227,14 +230,14 @@ float ConfigManager::GetSFXVolume() const
     return GetFloat("audio_sfx", 0.8f);
 }
 
-void ConfigManager::SetMouseSensitivity(float sensitivity)
-{
-    SetFloat("controls_sensitivity", sensitivity);
-}
-
 float ConfigManager::GetMouseSensitivity() const
 {
     return GetFloat("controls_sensitivity", 1.0f);
+}
+
+void ConfigManager::SetMouseSensitivity(float sensitivity)
+{
+    SetFloat("controls_sensitivity", sensitivity);
 }
 
 void ConfigManager::SetInvertY(bool invert)
@@ -288,17 +291,6 @@ float ConfigManager::GetGrappleSensitivity() const
     return GetFloat("parkour_grapple_sensitivity", 1.0f);
 }
 
-// Gameplay settings
-void ConfigManager::SetDifficultyLevel(int level)
-{
-    SetInt("gameplay_difficulty", level);
-}
-
-int ConfigManager::GetDifficultyLevel() const
-{
-    return GetInt("gameplay_difficulty", 2); // Default to medium
-}
-
 void ConfigManager::SetTimerEnabled(bool enabled)
 {
     SetBool("gameplay_timer_enabled", enabled);
@@ -319,14 +311,24 @@ bool ConfigManager::AreCheckpointsEnabled() const
     return GetBool("gameplay_checkpoints_enabled", true);
 }
 
+bool ConfigManager::IsAutoSaveEnabled() const
+{
+    return GetBool("gameplay_autosave_enabled", true);
+}
+
 void ConfigManager::SetAutoSaveEnabled(bool enabled)
 {
     SetBool("gameplay_autosave_enabled", enabled);
 }
 
-bool ConfigManager::IsAutoSaveEnabled() const
+void ConfigManager::SetDifficultyLevel(int level)
 {
-    return GetBool("gameplay_autosave_enabled", true);
+    SetInt("gameplay_difficulty", level);
+}
+
+int ConfigManager::GetDifficultyLevel() const
+{
+    return GetInt("gameplay_difficulty", 1);
 }
 
 void ConfigManager::SetSpeedrunMode(bool enabled)
@@ -348,16 +350,6 @@ void ConfigManager::SetShadowQuality(int quality)
 int ConfigManager::GetShadowQuality() const
 {
     return GetInt("graphics_shadow_quality", 2); // Default to medium
-}
-
-void ConfigManager::SetParticleEffects(bool enabled)
-{
-    SetBool("graphics_particle_effects", enabled);
-}
-
-bool ConfigManager::AreParticleEffectsEnabled() const
-{
-    return GetBool("graphics_particle_effects", true);
 }
 
 void ConfigManager::SetAntiAliasing(int level)
@@ -411,7 +403,7 @@ float ConfigManager::GetSkyboxGammaValue() const
 }
 
 // Game progression settings
-void ConfigManager::SetCompletedLevels(const std::string& levels)
+void ConfigManager::SetCompletedLevels(const std::string &levels)
 {
     SetString("progression_completed_levels", levels);
 }
@@ -421,17 +413,7 @@ std::string ConfigManager::GetCompletedLevels() const
     return GetString("progression_completed_levels", "");
 }
 
-void ConfigManager::SetUnlockedMaps(const std::string& maps)
-{
-    SetString("progression_unlocked_maps", maps);
-}
-
-std::string ConfigManager::GetUnlockedMaps() const
-{
-    return GetString("progression_unlocked_maps", "Easy,Medium");
-}
-
-void ConfigManager::SetBestTimes(const std::string& times)
+void ConfigManager::SetBestTimes(const std::string &times)
 {
     SetString("progression_best_times", times);
 }
@@ -451,7 +433,16 @@ float ConfigManager::GetTotalPlayTime() const
     return GetFloat("progression_total_playtime", 0.0f);
 }
 
-// Advanced parkour settings
+bool ConfigManager::IsDoubleJumpEnabled() const
+{
+    return GetBool("parkour_doublejump_enabled", false);
+}
+
+void ConfigManager::SetDoubleJumpEnabled(bool enabled)
+{
+    SetBool("parkour_doublejump_enabled", enabled);
+}
+
 void ConfigManager::SetWallRunEnabled(bool enabled)
 {
     SetBool("parkour_wallrun_enabled", enabled);
@@ -460,16 +451,6 @@ void ConfigManager::SetWallRunEnabled(bool enabled)
 bool ConfigManager::IsWallRunEnabled() const
 {
     return GetBool("parkour_wallrun_enabled", true);
-}
-
-void ConfigManager::SetDoubleJumpEnabled(bool enabled)
-{
-    SetBool("parkour_doublejump_enabled", enabled);
-}
-
-bool ConfigManager::IsDoubleJumpEnabled() const
-{
-    return GetBool("parkour_doublejump_enabled", false);
 }
 
 void ConfigManager::SetSlideEnabled(bool enabled)
@@ -489,69 +470,73 @@ void ConfigManager::SetGrappleEnabled(bool enabled)
 
 bool ConfigManager::IsGrappleEnabled() const
 {
-    return GetBool("parkour_grapple_enabled", false);
+    return GetBool("parkour_grapple_enabled", true);
 }
 
 void ConfigManager::SetSlowMotionOnTrick(bool enabled)
 {
-    SetBool("parkour_slowmotion_trick", enabled);
+    SetBool("parkour_slowmotion_enabled", enabled);
 }
 
 bool ConfigManager::IsSlowMotionOnTrick() const
 {
-    return GetBool("parkour_slowmotion_trick", false);
+    return GetBool("parkour_slowmotion_enabled", true);
 }
 
 // Settings validation and default value management
 void ConfigManager::ValidateAndSetDefaults()
 {
     // Video settings validation
-    if (GetInt("video_width", 0) < 800) SetInt("video_width", 1280);
-    if (GetInt("video_height", 0) < 600) SetInt("video_height", 720);
-    if (GetFloat("audio_master", -1.0f) < 0.0f || GetFloat("audio_master", 2.0f) > 1.0f) SetFloat("audio_master", 1.0f);
-    if (GetFloat("audio_music", -1.0f) < 0.0f || GetFloat("audio_music", 2.0f) > 1.0f) SetFloat("audio_music", 0.7f);
-    if (GetFloat("audio_sfx", -1.0f) < 0.0f || GetFloat("audio_sfx", 2.0f) > 1.0f) SetFloat("audio_sfx", 0.8f);
+    if (GetInt("video_width", 0) < 800)
+        SetInt("video_width", 1280);
+    if (GetInt("video_height", 0) < 600)
+        SetInt("video_height", 720);
+    if (GetFloat("audio_master", -1.0f) < 0.0f || GetFloat("audio_master", 2.0f) > 1.0f)
+        SetFloat("audio_master", 1.0f);
+    if (GetFloat("audio_music", -1.0f) < 0.0f || GetFloat("audio_music", 2.0f) > 1.0f)
+        SetFloat("audio_music", 0.7f);
+    if (GetFloat("audio_sfx", -1.0f) < 0.0f || GetFloat("audio_sfx", 2.0f) > 1.0f)
+        SetFloat("audio_sfx", 0.8f);
 
     // Control settings validation
-    if (GetFloat("controls_sensitivity", 0.0f) < 0.1f || GetFloat("controls_sensitivity", 10.0f) > 5.0f) SetFloat("controls_sensitivity", 1.0f);
-
-    // Parkour control settings validation
-    if (GetFloat("parkour_wallrun_sensitivity", 0.0f) < 0.1f || GetFloat("parkour_wallrun_sensitivity", 10.0f) > 5.0f) SetFloat("parkour_wallrun_sensitivity", 1.0f);
-    if (GetFloat("parkour_jump_timing", 0.0f) < 0.1f || GetFloat("parkour_jump_timing", 10.0f) > 5.0f) SetFloat("parkour_jump_timing", 1.0f);
-    if (GetFloat("parkour_slide_control", 0.0f) < 0.1f || GetFloat("parkour_slide_control", 10.0f) > 5.0f) SetFloat("parkour_slide_control", 1.0f);
-    if (GetFloat("parkour_grapple_sensitivity", 0.0f) < 0.1f || GetFloat("parkour_grapple_sensitivity", 10.0f) > 5.0f) SetFloat("parkour_grapple_sensitivity", 1.0f);
-
-    // Gameplay settings validation
-    if (GetInt("gameplay_difficulty", 0) < 1 || GetInt("gameplay_difficulty", 4) > 3) SetInt("gameplay_difficulty", 2);
+    if (GetFloat("controls_sensitivity", 0.0f) < 0.1f ||
+        GetFloat("controls_sensitivity", 10.0f) > 5.0f)
+        SetFloat("controls_sensitivity", 1.0f);
 
     // Graphics settings validation
-    if (GetInt("graphics_shadow_quality", 0) < 1 || GetInt("graphics_shadow_quality", 4) > 3) SetInt("graphics_shadow_quality", 2);
-    if (GetInt("graphics_antialiasing", 0) < 1 || GetInt("graphics_antialiasing", 5) > 4) SetInt("graphics_antialiasing", 2);
-    if (GetInt("graphics_texture_quality", 0) < 1 || GetInt("graphics_texture_quality", 4) > 3) SetInt("graphics_texture_quality", 2);
-    if (GetFloat("graphics_render_distance", 0.0f) < 10.0f || GetFloat("graphics_render_distance", 1000.0f) > 500.0f) SetFloat("graphics_render_distance", 100.0f);
+    if (GetInt("graphics_shadow_quality", 0) < 1 || GetInt("graphics_shadow_quality", 4) > 3)
+        SetInt("graphics_shadow_quality", 2);
+    if (GetInt("graphics_antialiasing", 0) < 1 || GetInt("graphics_antialiasing", 5) > 4)
+        SetInt("graphics_antialiasing", 2);
+    if (GetInt("graphics_texture_quality", 0) < 1 || GetInt("graphics_texture_quality", 4) > 3)
+        SetInt("graphics_texture_quality", 2);
 }
 
-void ConfigManager::Trim(std::string& str) const
+void ConfigManager::Trim(std::string &str) const
 {
     size_t start = str.find_first_not_of(" \t\n\r");
     size_t end = str.find_last_not_of(" \t\n\r");
-    if (start != std::string::npos && end != std::string::npos) {
+    if (start != std::string::npos && end != std::string::npos)
+    {
         str = str.substr(start, end - start + 1);
-    } else {
+    }
+    else
+    {
         str.clear();
     }
 }
 
-std::string ConfigManager::ToLower(const std::string& str) const
+std::string ConfigManager::ToLower(const std::string &str) const
 {
     std::string result = str;
-    for (char& c : result) {
+    for (char &c : result)
+    {
         c = std::tolower(c);
     }
     return result;
 }
 
-bool ConfigManager::IsCommentOrEmpty(const std::string& line) const
+bool ConfigManager::IsCommentOrEmpty(const std::string &line) const
 {
     return line.empty() || line[0] == '#' || line[0] == ';' || line[0] == '/';
 }

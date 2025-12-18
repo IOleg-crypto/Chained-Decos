@@ -1,5 +1,6 @@
 #include "GameApplication.h"
-#include "Systems/MapSystem/LevelManager.h"
+#include "core/services/CoreServices.h"
+#include "scene/main/Core/LevelManager.h"
 // #include "Systems/PlayerSystem/PlayerController.h"
 // #include "Systems/RenderingSystem/RenderingSystem.h"
 #include "Systems/UIController/UIManager.h"
@@ -8,13 +9,17 @@
 #include "components/rendering/Core/RenderManager.h"
 #include "core/config/Core/ConfigManager.h"
 #include "core/ecs/Examples.h"
-#include "core/ecs/Systems.h"
-#include "core/engine/EngineApplication.h"
+#include "core/ecs/Systems/CollisionSystem.h"
+#include "core/ecs/Systems/LifetimeSystem.h"
+#include "core/ecs/Systems/MovementSystem.h"
+#include "core/ecs/Systems/PlayerSystem.h"
+#include "core/ecs/Systems/RenderSystem.h"
 #include "core/object/module/Core/ModuleManager.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
+#include "scene/main/Core/LevelManager.h"
+#include "scene/main/Core/MapCollisionInitializer.h"
 #include "scene/main/Core/World.h"
-#include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
 #include "scene/resources/model/Utils/ModelAnalyzer.h"
 
@@ -95,21 +100,15 @@ void GameApplication::OnConfigure(EngineConfig &config)
 
 void GameApplication::OnRegister()
 {
-    TraceLog(LOG_INFO, "[GameApplication] Registering services and modules...");
-
     auto &engine = Engine::Instance();
+    CoreServices core;
+    if (!core.Initialize(m_gameConfig.width, m_gameConfig.height, "Chained Decos",
+                         m_gameConfig.fullscreen, true))
+    {
+        TraceLog(LOG_ERROR, "[GameApplication] Failed to initialize CoreServices");
+    }
 
-    // 1. Initialize Core Services (Legacy - to be removed later)
-    m_collisionManager = std::make_shared<CollisionManager>();
-    m_models = std::make_shared<ModelLoader>();
-    m_world = std::make_shared<WorldManager>();
-
-    // Register core services
-    engine.RegisterService<CollisionManager>(m_collisionManager);
-    engine.RegisterService<ModelLoader>(m_models);
-    engine.RegisterService<WorldManager>(m_world);
-
-    TraceLog(LOG_INFO, "[GameApplication] Core engine services registered.");
+    TraceLog(LOG_INFO, "[GameApplication] Core engine services registered via CoreServices.");
 
     // 2. Register Game Systems (Modules)
     // Legacy modules - keeping LevelManager and UIManager for now
@@ -128,18 +127,10 @@ void GameApplication::OnStart()
     TraceLog(LOG_INFO, "[GameApplication] Starting game...");
 
     // Initialize Static Singletons
-    if (AudioManager::Get().Initialize())
-    {
-        TraceLog(LOG_INFO, "[GameApplication] AudioManager initialized");
-        AudioManager::Get().LoadSound("player_fall",
-                                      PROJECT_ROOT_DIR "\\resources\\audio\\fallingplayer.wav");
-    }
+    // Note: RenderManager/InputManager/AudioManager are already initialized by CoreServices
 
-    InputManager::Get().Initialize();
-
-    // Initialize RenderManager with config
-    // RenderManager::Get().Initialize(m_gameConfig.width, m_gameConfig.height, "Chained Decos"); //
-    // Moved to EngineApplication
+    AudioManager::Get().LoadSound("player_fall",
+                                  PROJECT_ROOT_DIR "\\resources\\audio\\fallingplayer.wav");
 
     // Setup ImGui style for menu (after ImGui is initialized by RenderManager)
     auto *engine = &Engine::Instance();
@@ -161,10 +152,11 @@ void GameApplication::OnStart()
     REGISTRY.clear();
 
     // Explicitly load player model
-    if (m_models)
+    auto models = Engine::Instance().GetService<ModelLoader>();
+    if (models)
     {
         std::string playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
-        if (m_models->LoadSingleModel("player_low", playerModelPath))
+        if (models->LoadSingleModel("player_low", playerModelPath))
         {
             TraceLog(LOG_INFO, "[GameApplication] Loaded player model: %s",
                      playerModelPath.c_str());
@@ -178,10 +170,10 @@ void GameApplication::OnStart()
 
     // Try to get player model from loader
     Model *playerModelPtr = nullptr;
-    if (m_models)
+    if (models)
     {
         // "player_low" is loaded by LevelManager/ModelLoader according to logs
-        auto modelOpt = m_models->GetModelByName("player_low");
+        auto modelOpt = models->GetModelByName("player_low");
         if (modelOpt.has_value())
         {
             playerModelPtr = &modelOpt.value().get();
@@ -275,8 +267,8 @@ void GameApplication::OnStart()
             // Load Map and Collisions
             if (!savedMapPath.empty())
             {
-                auto levelManager = Engine::Instance().GetService<LevelManager>();
-                auto models = m_models; // Already fetched
+                auto levelManager = Engine::Instance().GetService<ILevelManager>();
+                auto models = Engine::Instance().GetService<ModelLoader>();
 
                 if (levelManager && models)
                 {
@@ -304,16 +296,25 @@ void GameApplication::OnStart()
         saveFile.close();
     }
 
+    // Load mouse sensitivity from config
+    ConfigManager configManager;
+    configManager.LoadFromFile(std::string(PROJECT_ROOT_DIR) + "/game.cfg");
+    float sensitivity = configManager.GetMouseSensitivity();
+    if (sensitivity <= 0.0f)
+        sensitivity = 0.15f; // Default if not set
+
     if (playerModelPtr)
     {
         TraceLog(LOG_INFO, "[GameApplication] Using existing model 'player_low'");
-        m_playerEntity = ECSExamples::CreatePlayer(spawnPos, playerModelPtr);
+        m_playerEntity =
+            ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 8.0f, 12.0f, sensitivity);
     }
     else
     {
         TraceLog(LOG_WARNING, "[GameApplication] 'player_low' not found, using default cube.");
         m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
-        m_playerEntity = ECSExamples::CreatePlayer(spawnPos, &m_playerModel);
+        m_playerEntity =
+            ECSExamples::CreatePlayer(spawnPos, &m_playerModel, 8.0f, 12.0f, sensitivity);
     }
 
     // Apply saved stats
@@ -542,11 +543,12 @@ void GameApplication::OnRender()
             RenderSystem::Render();
 
             // Render Models (ModelLoader)
-            if (m_models)
-                m_models->DrawAllModels();
+            auto models = Engine::Instance().GetService<ModelLoader>();
+            if (models)
+                models->DrawAllModels();
 
             // Render Map Geometry (LevelManager)
-            auto levelManager = Engine::Instance().GetService<LevelManager>();
+            auto levelManager = Engine::Instance().GetService<ILevelManager>();
             if (levelManager)
             {
                 levelManager->RenderEditorMap();
@@ -555,8 +557,9 @@ void GameApplication::OnRender()
             }
 
             // Render World (Legacy)
-            if (m_world)
-                m_world->Render();
+            auto world = Engine::Instance().GetService<WorldManager>();
+            if (world)
+                world->Render();
 
             RenderManager::Get().EndMode3D();
 
@@ -727,9 +730,10 @@ void GameApplication::OnShutdown()
     InputManager::Get().Shutdown();
     AudioManager::Get().Shutdown(); // Optional, destructor handles it
 
-    if (m_collisionManager && !m_collisionManager->GetColliders().empty())
+    auto collisionManager = Engine::Instance().GetService<CollisionManager>();
+    if (collisionManager && !collisionManager->GetColliders().empty())
     {
-        m_collisionManager->ClearColliders();
+        collisionManager->ClearColliders();
         {
             auto *uiModule = Engine::Instance().GetModuleManager()->GetModule("UI");
             if (uiModule)
@@ -860,7 +864,7 @@ void GameApplication::SaveGameState()
 
     // Get current map
     std::string currentMap = "resources/maps/test_map.json"; // Default
-    auto levelManager = Engine::Instance().GetService<LevelManager>();
+    auto levelManager = Engine::Instance().GetService<ILevelManager>();
     if (levelManager)
     {
         std::string mapPath = levelManager->GetCurrentMapPath();

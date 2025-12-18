@@ -2,7 +2,6 @@
 #include <cstring>
 #include <raylib.h>
 
-
 GameConfig CommandLineHandler::ParseArguments(int argc, char *argv[])
 {
     GameConfig config;
@@ -24,11 +23,6 @@ GameConfig CommandLineHandler::ParseArguments(int argc, char *argv[])
         else if (strcmp(argv[i], "--developer") == 0 || strcmp(argv[i], "-dev") == 0)
         {
             config.developer = true;
-        }
-        else if (strcmp(argv[i], "--map") == 0 && i + 1 < argc)
-        {
-            config.mapPath = argv[++i];
-            config.skipMenu = true;
         }
     }
 

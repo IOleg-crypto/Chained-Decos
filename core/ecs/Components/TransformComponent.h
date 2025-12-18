@@ -10,7 +10,7 @@ struct TransformComponent
     Vector3 rotation = {0, 0, 0};
     Vector3 scale = {1, 1, 1};
 
-    // Helper методи
+    // Helper methods
     Matrix GetMatrix() const
     {
         Matrix matScale = MatrixScale(scale.x, scale.y, scale.z);

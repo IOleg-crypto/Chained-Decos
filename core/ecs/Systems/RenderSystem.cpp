@@ -15,7 +15,7 @@ void Render()
 {
     auto &render = RenderManager::Get();
 
-    // Сортувати по renderLayer для правильного порядку відображення
+    // Sort by renderLayer for correct display order
     auto view = REGISTRY.view<TransformComponent, RenderComponent>();
 
     std::vector<entt::entity> entities(view.begin(), view.end());
@@ -27,7 +27,7 @@ void Render()
                   return renderA.renderLayer < renderB.renderLayer;
               });
 
-    // Рендерити
+    // Render
     for (auto entity : entities)
     {
         auto &transform = view.get<TransformComponent>(entity);

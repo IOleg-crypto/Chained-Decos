@@ -1,5 +1,5 @@
-#ifndef LEGACY_PHYSICS_COMPONENT_H
-#define LEGACY_PHYSICS_COMPONENT_H
+#ifndef PHYSICS_COMPONENT_H
+#define PHYSICS_COMPONENT_H
 
 #include <raylib.h>
 #include <raymath.h>
@@ -10,18 +10,18 @@
 #include <thread>
 #include <vector>
 
-class LegacyPhysicsComponent
+class PhysicsComponent
 {
 public:
     // World physics constants
     static constexpr float WORLD_FLOOR_Y = -1.0f;
 
-    LegacyPhysicsComponent();
+    PhysicsComponent();
 
     void Update(float deltaTime);
 
     // Parallel update for multiple physics components
-    static void UpdatePhysicsComponentsParallel(std::vector<LegacyPhysicsComponent *> &components,
+    static void UpdatePhysicsComponentsParallel(std::vector<PhysicsComponent *> &components,
                                                 float deltaTime);
 
     // Physics state
@@ -85,10 +85,11 @@ private:
     float m_drag = 0.1f;
     static constexpr float MAX_SPEED = 300.0f;
 
+private:
     // Physics simulation
     void ApplyPhysics(float deltaTime);
     void ApplyGravity(float deltaTime);
     void ApplyDrag(float deltaTime);
     void IntegrateAccumulatedForces(float deltaTime);
 };
-#endif
+#endif // PHYSICS_COMPONENT_H

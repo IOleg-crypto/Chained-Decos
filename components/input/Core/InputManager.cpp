@@ -146,6 +146,11 @@ bool InputManager::IsMouseButtonReleased(int button) const
     return ::IsMouseButtonReleased(button);
 }
 
+float InputManager::GetMouseWheelMove() const
+{
+    return ::GetMouseWheelMove();
+}
+
 void InputManager::DisableCursor()
 {
     ::DisableCursor();

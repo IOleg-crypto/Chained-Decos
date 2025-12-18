@@ -1,6 +1,8 @@
 #ifndef CORE_ENGINE_H
 #define CORE_ENGINE_H
 
+#include "Engine.h"
+
 #include <string>
 
 namespace Core
@@ -22,9 +24,6 @@ struct EngineConfig
     bool enable_audio = true;
     bool enable_debug = false;
 };
-
-// Forward declaration
-class Application;
 
 class Engine
 {

@@ -1,5 +1,5 @@
 #include "CollisionSystem.h"
-#include "core/ecs/Components/PhysicsComponent.h"
+#include "core/ecs/Components/PhysicsData.h"
 #include "core/ecs/Components/TransformComponent.h"
 #include "core/ecs/ECSRegistry.h"
 #include <raylib.h>
@@ -11,33 +11,33 @@ namespace CollisionSystem
 static void OnCollision(entt::entity a, entt::entity b, CollisionComponent &collA,
                         CollisionComponent &collB)
 {
-    // Встановити стан зіткнення
+    // Set collision state
     collA.hasCollision = true;
     collA.collidedWith = b;
 
     collB.hasCollision = true;
     collB.collidedWith = a;
 
-    // Якщо це trigger - не блокувати рух
+    // If this is a trigger - do not block movement
     if (collA.isTrigger || collB.isTrigger)
     {
         return;
     }
 
-    // Тут можна додати розв'язання зіткнень (collision response)
-    // Наприклад, відштовхнути entities один від одного
+    // Collision response can be added here
+    // For example, push entities away from each other
 }
 
 void Update()
 {
     auto view = REGISTRY.view<TransformComponent, CollisionComponent>();
 
-    // Broad phase - швидка перевірка
-    // Narrow phase - точна перевірка
+    // Broad phase - fast check
+    // Narrow phase - precise check
 
-    for (auto [entityA, transformA, collisionA] : view.each())
+    for (auto &&[entityA, transformA, collisionA] : view.each())
     {
-        // Скинути стан зіткнення
+        // Reset collision state
         collisionA.hasCollision = false;
         collisionA.collidedWith = entt::null;
 
@@ -46,13 +46,13 @@ void Update()
             if (entityA == entityB)
                 continue;
 
-            // Перевірка collision mask
+            // Check collision mask
             if (!(collisionA.collisionMask & (1 << collisionB.collisionLayer)))
             {
                 continue;
             }
 
-            // Оновити bounds
+            // Update bounds
             BoundingBox boundsA = collisionA.bounds;
             boundsA.min = Vector3Add(boundsA.min, transformA.position);
             boundsA.max = Vector3Add(boundsA.max, transformA.position);
@@ -61,7 +61,7 @@ void Update()
             boundsB.min = Vector3Add(boundsB.min, transformB.position);
             boundsB.max = Vector3Add(boundsB.max, transformB.position);
 
-            // Перевірка зіткнення
+            // Check collision
             if (CheckCollisionBoxes(boundsA, boundsB))
             {
                 OnCollision(entityA, entityB, collisionA, collisionB);
@@ -74,7 +74,7 @@ void RenderDebug()
 {
     auto view = REGISTRY.view<TransformComponent, CollisionComponent>();
 
-    for (auto [entity, transform, collision] : view.each())
+    for (auto &&[entity, transform, collision] : view.each())
     {
         // Calculate world bounds
         BoundingBox bounds = collision.bounds;

@@ -1,11 +1,11 @@
 #include "MovementSystem.h"
 #include "components/physics/collision/Core/CollisionManager.h"
-#include "core/ecs/Components/PhysicsComponent.h"
+#include "core/ecs/Components/PhysicsData.h"
 #include "core/ecs/Components/PlayerComponent.h"
 #include "core/ecs/Components/TransformComponent.h"
 #include "core/ecs/Components/VelocityComponent.h"
 #include "core/ecs/ECSRegistry.h"
-#include "core/engine/EngineApplication.h"
+#include "core/engine/Engine.h"
 #include <raymath.h>
 
 namespace MovementSystem
@@ -13,9 +13,9 @@ namespace MovementSystem
 
 static void ApplyGravity(float dt)
 {
-    auto view = REGISTRY.view<VelocityComponent, PhysicsComponent, PlayerComponent>();
+    auto view = REGISTRY.view<VelocityComponent, PhysicsData, PlayerComponent>();
 
-    for (auto [entity, velocity, physics, player] : view.each())
+    for (auto &&[entity, velocity, physics, player] : view.each())
     {
         if (physics.useGravity && !physics.isKinematic)
         {
@@ -35,11 +35,11 @@ static void ApplyGravity(float dt)
 
 static void CheckCollisionsAndApply(float dt)
 {
-    auto view =
-        REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent, PhysicsComponent>();
+    auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent, PhysicsData,
+                              CollisionComponent>();
     auto collisionManager = Engine::Instance().GetService<CollisionManager>();
 
-    for (auto [entity, transform, velocity, player, physics] : view.each())
+    for (auto &&[entity, transform, velocity, player, physics, collision] : view.each())
     {
         // 1. Update Velocity
         velocity.velocity.x += velocity.acceleration.x * dt;
@@ -58,11 +58,16 @@ static void CheckCollisionsAndApply(float dt)
 
         if (collisionManager)
         {
-            // Simple Bounding Box for player
-            // Player size approx: Width 0.8f, Height 1.8f
-            // HalfSize = {0.4f, 0.9f, 0.4f}
-            Vector3 center = Vector3Add(proposedPos, {0.0f, 0.9f, 0.0f});
-            Vector3 halfSize = {0.4f, 0.9f, 0.4f};
+            // Use bounds from CollisionComponent
+            Vector3 center = proposedPos;
+            center.x += (collision.bounds.max.x + collision.bounds.min.x) * 0.5f;
+            center.y += (collision.bounds.max.y + collision.bounds.min.y) * 0.5f;
+            center.z += (collision.bounds.max.z + collision.bounds.min.z) * 0.5f;
+
+            Vector3 halfSize;
+            halfSize.x = (collision.bounds.max.x - collision.bounds.min.x) * 0.5f;
+            halfSize.y = (collision.bounds.max.y - collision.bounds.min.y) * 0.5f;
+            halfSize.z = (collision.bounds.max.z - collision.bounds.min.z) * 0.5f;
 
             Collision playerCol(center, halfSize);
             Vector3 response = {0};
@@ -143,7 +148,7 @@ static void ApplyDrag(float dt)
 {
     auto view = REGISTRY.view<VelocityComponent>();
 
-    for (auto [entity, velocity] : view.each())
+    for (auto &&[entity, velocity] : view.each())
     {
         float drag = 1.0f - (velocity.drag * dt);
         if (drag < 0)

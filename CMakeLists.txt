@@ -38,12 +38,8 @@ if(NOT CMAKE_BUILD_TYPE)
     endif()
 endif()
 
-# Set install prefix for CI/CD environments
-if(DEFINED ENV{CI})
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefix" FORCE)
-else()
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefix" FORCE)
-endif()
+# Set default install prefix
+set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefix" FORCE)
 
 # Compiler-specific settings
 if(MSVC)
@@ -118,14 +114,7 @@ if(WIN32)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
     add_compile_definitions(NOMINMAX)
-
-    # Ensure proper DLL loading on Windows
     add_compile_definitions(_WIN32_WINNT=0x0601)  # Windows 7+
-
-    # Avoid conflicts between raylib and Windows API - more targeted approach
-    # Exclude specific parts of Windows API that conflict with raylib
-    add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    add_compile_definitions(NOMINMAX)
 endif()
 
 
@@ -204,7 +193,7 @@ else()
     message(FATAL_ERROR "EnTT submodule not found. Run: git submodule update --init --recursive")
 endif()
 
-add_library(imguilib STATIC
+set(IMGUI_SOURCES
     include/rlImGui/rlImGui.cpp
     include/rlImGui/rlImGui.h
     include/rlImGui/imgui_impl_raylib.h
@@ -215,6 +204,9 @@ add_library(imguilib STATIC
     include/imgui/imgui_demo.cpp
     include/imgui/misc/cpp/imgui_stdlib.cpp
 )
+
+add_library(imguilib STATIC ${IMGUI_SOURCES})
+
 target_include_directories(imguilib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/include/rlImGui
@@ -247,10 +239,7 @@ add_subdirectory(project/chaineddecos)
 
 
 add_executable(ChainedDecos project/chaineddecos/main.cpp)
-target_link_libraries(ChainedDecos PRIVATE
-    ChainedDecosGame
-    imguilib
-)
+target_link_libraries(ChainedDecos PRIVATE ChainedDecosGame)
 
 if(BUILD_TESTS)
     add_subdirectory(tests ${CMAKE_CURRENT_BINARY_DIR}/tests)
@@ -296,26 +285,8 @@ install(FILES game.cfg
     DESTINATION share/ChainedDecos
 )
 
-# Package configuration
+# Package configuration (simplified)
 if(NOT FAST_CONFIG)
     set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
-    export(TARGETS ChainedDecos
-        NAMESPACE ChainedDecos::
-        FILE ChainedDecosConfig.cmake
-    )
-
-    # Generate package version file
-    include(CMakePackageConfigHelpers)
-    write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfigVersion.cmake"
-        VERSION 1.0.0
-        COMPATIBILITY AnyNewerVersion
-    )
-
-    install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfig.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfigVersion.cmake"
-        DESTINATION lib/cmake/ChainedDecos
-    )
 endif()
 

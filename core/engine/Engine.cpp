@@ -6,7 +6,6 @@
 #include "core/object/module/Core/ModuleManager.h"
 #include "project/chaineddecos/Menu/Menu.h"
 #include "project/chaineddecos/Player/Core/Player.h"
-#include "project/chaineddecos/Systems/MapSystem/LevelManager.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
 #include <memory>
@@ -115,7 +114,7 @@ IPlayer *Engine::GetPlayer() const
 
 ILevelManager *Engine::GetLevelManager() const
 {
-    auto service = GetService<LevelManager>();
+    auto service = GetService<ILevelManager>();
     return service.get();
 }
 

@@ -1,16 +1,10 @@
 #ifndef GAME_APPLICATION_H
 #define GAME_APPLICATION_H
 
-#include "components/physics/collision/Core/CollisionManager.h"
 #include "core/config/Core/GameConfig.h"
 #include "core/engine/IApplication.h"
-#include "scene/main/Core/World.h"
-#include "scene/resources/model/Core/Model.h"
 #include <core/ecs/ECSRegistry.h>
 #include <core/ecs/Entity.h>
-
-// =================================================
-#include <memory>
 
 // Game application - uses full engine + own modules
 class GameApplication : public IApplication
@@ -28,10 +22,7 @@ public:
     void OnShutdown() override;
 
 private:
-    // Basic engine components (created before system initialization)
-    std::shared_ptr<CollisionManager> m_collisionManager;
-    std::shared_ptr<ModelLoader> m_models;
-    std::shared_ptr<WorldManager> m_world;
+    // Managers are now accessed through Engine services
 
     // ECS Entities
     // ECS Entities

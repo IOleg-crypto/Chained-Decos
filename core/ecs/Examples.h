@@ -1,17 +1,20 @@
 #ifndef ECS_EXAMPLES_H
 #define ECS_EXAMPLES_H
 
-#include "Components.h"
+#include "Components.h" // Keep other components if they are not explicitly removed
+#include "Components/PhysicsData.h"
+#include "Components/PlayerComponent.h"
 #include "ECSRegistry.h"
 #include <raylib.h>
 
-// Приклади створення різних типів entities
+// Examples of creating different types of entities
 
 namespace ECSExamples
 {
 
-// Створити гравця
-inline entt::entity CreatePlayer(Vector3 position, Model *model)
+// Create player
+inline entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed = 8.0f,
+                                 float jumpForce = 12.0f, float mouseSensitivity = 0.15f)
 {
     auto player = REGISTRY.create();
 
@@ -39,24 +42,24 @@ inline entt::entity CreatePlayer(Vector3 position, Model *model)
 
     // Player-specific
     REGISTRY.emplace<PlayerComponent>(player,
-                                      5.0f,  // moveSpeed
-                                      10.0f, // jumpForce
-                                      0.1f   // mouseSensitivity
+                                      moveSpeed,       // moveSpeed
+                                      jumpForce,       // jumpForce
+                                      mouseSensitivity // mouseSensitivity
     );
 
     // Physics
-    REGISTRY.emplace<PhysicsComponent>(player,
-                                       1.0f,  // mass
-                                       -9.8f, // gravity
-                                       true,  // useGravity
-                                       false  // isKinematic
+    REGISTRY.emplace<PhysicsData>(player,
+                                  1.0f,  // mass
+                                  -9.8f, // gravity
+                                  true,  // useGravity
+                                  false  // isKinematic
     );
 
     // Collision
     CollisionComponent collision;
     collision.bounds =
-        BoundingBox{Vector3{-0.4f, -0.9f, -0.4f}, Vector3{0.4f, 0.9f, 0.4f}}; // 0.8w x 1.8h
-    collision.collisionLayer = 1;                                             // Player layer
+        BoundingBox{Vector3{-0.4f, 0.0f, -0.4f}, Vector3{0.4f, 1.8f, 0.4f}}; // 0.8w x 1.8h
+    collision.collisionLayer = 1;                                            // Player layer
     REGISTRY.emplace<CollisionComponent>(player, collision);
 
     // Name for debugging
@@ -65,7 +68,7 @@ inline entt::entity CreatePlayer(Vector3 position, Model *model)
     return player;
 }
 
-// Створити ворога
+// Create enemy
 inline entt::entity CreateEnemy(Vector3 position, Model *model)
 {
     auto enemy = REGISTRY.create();
@@ -83,7 +86,7 @@ inline entt::entity CreateEnemy(Vector3 position, Model *model)
     );
 
     // Physics
-    REGISTRY.emplace<PhysicsComponent>(enemy);
+    REGISTRY.emplace<PhysicsData>(enemy);
 
     // Collision
     CollisionComponent collision;
@@ -96,7 +99,7 @@ inline entt::entity CreateEnemy(Vector3 position, Model *model)
     return enemy;
 }
 
-// Створити кулю (bullet)
+// Create bullet
 inline entt::entity CreateBullet(Vector3 position, Vector3 direction, float speed)
 {
     auto bullet = REGISTRY.create();
@@ -107,13 +110,13 @@ inline entt::entity CreateBullet(Vector3 position, Vector3 direction, float spee
     velocity.velocity = Vector3Scale(direction, speed);
     REGISTRY.emplace<VelocityComponent>(bullet, velocity);
 
-    // Lifetime - знищити через 5 секунд
+    // Lifetime - destroy after 5 seconds
     REGISTRY.emplace<LifetimeComponent>(bullet, 5.0f);
 
     // Collision
     CollisionComponent collision;
     collision.bounds = BoundingBox{Vector3{-0.1f, -0.1f, -0.1f}, Vector3{0.1f, 0.1f, 0.1f}};
-    collision.isTrigger = true;   // Не блокує рух
+    collision.isTrigger = true;   // Does not block movement
     collision.collisionLayer = 3; // Bullet layer
     REGISTRY.emplace<CollisionComponent>(bullet, collision);
 
@@ -122,7 +125,7 @@ inline entt::entity CreateBullet(Vector3 position, Vector3 direction, float spee
     return bullet;
 }
 
-// Створити камеру
+// Create camera
 inline entt::entity CreateCamera(Vector3 position, Vector3 target)
 {
     auto cameraEntity = REGISTRY.create();
@@ -144,7 +147,7 @@ inline entt::entity CreateCamera(Vector3 position, Vector3 target)
     return cameraEntity;
 }
 
-// Створити статичний об'єкт (стіна, підлога)
+// Create static object (wall, floor)
 inline entt::entity CreateStaticObject(Vector3 position, Model *model, BoundingBox bounds)
 {
     auto obj = REGISTRY.create();
@@ -153,11 +156,11 @@ inline entt::entity CreateStaticObject(Vector3 position, Model *model, BoundingB
 
     REGISTRY.emplace<RenderComponent>(obj, "static", model, WHITE, true, 0);
 
-    // Kinematic physics - не рухається
-    PhysicsComponent physics;
+    // Kinematic physics - does not move
+    PhysicsData physics;
     physics.isKinematic = true;
     physics.useGravity = false;
-    REGISTRY.emplace<PhysicsComponent>(obj, physics);
+    REGISTRY.emplace<PhysicsData>(obj, physics);
 
     CollisionComponent collision;
     collision.bounds = bounds;

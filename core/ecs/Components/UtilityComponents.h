@@ -4,19 +4,19 @@
 #include <string>
 struct LifetimeComponent
 {
-    float lifetime = 5.0f; // Час життя в секундах
-    float timer = 0.0f;    // Поточний час
+    float lifetime = 5.0f; // Lifetime in seconds
+    float timer = 0.0f;    // Current time
     bool destroyOnTimeout = true;
 };
 
 struct TagComponent
 {
-    std::string tag; // Для пошуку entities по тегу
+    std::string tag; // For finding entities by tag
 };
 
 struct NameComponent
 {
-    std::string name; // Ім'я entity для дебагу
+    std::string name; // Entity name for debugging
 };
 
 #endif // LIFETIME_COMPONENT_H

@@ -1,48 +1,32 @@
-add_library(ChainedDecosGame STATIC
+set(GAME_SOURCES
     GameApplication.cpp
     GameApplication.h
-    Managers/MapCollisionInitializer.cpp
-    Managers/MapCollisionInitializer.h
-    # Systems (modular architecture)
-    # Systems/PlayerSystem/PlayerController.cpp
-    # Systems/PlayerSystem/PlayerController.h
-    Systems/MapSystem/LevelManager.cpp
-    Systems/MapSystem/LevelManager.h
     Systems/UIController/UIManager.cpp
     Systems/UIController/UIManager.h
-    # Systems/RenderingSystem/RenderingSystem.cpp
-    # Systems/RenderingSystem/RenderingSystem.h
 )
+
+add_library(ChainedDecosGame STATIC ${GAME_SOURCES})
 
 target_include_directories(ChainedDecosGame
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}
-        ${CMAKE_SOURCE_DIR}/project/chained_decos
+        ${CMAKE_SOURCE_DIR}/project/chaineddecos
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/project/chained_decos/Player
-        ${CMAKE_SOURCE_DIR}/servers/physics/collision
+        ${CMAKE_SOURCE_DIR}/project/chaineddecos/Player
+        ${CMAKE_SOURCE_DIR}/components/physics/collision
         ${CMAKE_SOURCE_DIR}/scene/resources/model
         ${CMAKE_SOURCE_DIR}/scene/resources/map
-        ${CMAKE_SOURCE_DIR}/servers/rendering
+        ${CMAKE_SOURCE_DIR}/components/rendering
         ${CMAKE_SOURCE_DIR}/include/imgui
         ${CMAKE_SOURCE_DIR}/include/rlImGui
         ${CMAKE_SOURCE_DIR}/core
         ${CMAKE_SOURCE_DIR}/scene/3d/camera
         ${CMAKE_SOURCE_DIR}/scene/main
-        ${CMAKE_SOURCE_DIR}/servers/physics/dynamics/src
+        ${CMAKE_SOURCE_DIR}/components/physics/dynamics/src
 )
 
-# Add PROJECT_ROOT_DIR definition for consistent path handling
-target_compile_definitions(ChainedDecosGame PRIVATE
-    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
-)
-
-# Use forward slashes for cross-platform compatibility
-file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
-target_compile_definitions(ChainedDecosGame PRIVATE
-    PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
-)
+# PROJECT_ROOT_DIR is defined globally in the root CMakeLists.txt
 
 add_subdirectory(Menu)
 add_subdirectory(Player)
@@ -51,6 +35,7 @@ target_link_libraries(ChainedDecosGame
     PUBLIC
         player
         menu
+        world
         raylib
         imguilib
         nlohmann_json

@@ -1,7 +1,9 @@
-add_library(input STATIC
+set(INPUT_SOURCES
     Core/InputManager.cpp
     Core/InputManager.h
 )
+
+add_library(input STATIC ${INPUT_SOURCES})
 
 target_include_directories(input PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

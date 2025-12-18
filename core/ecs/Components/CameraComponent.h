@@ -13,9 +13,8 @@ struct CameraComponent
     float farPlane = 1000.0f;
 
     // Camera control
-    bool isActive = false; // Тільки одна камера може бути активною
-    int priority = 0;      // Вища пріоритетність = активна камера
-
+    bool isActive = false;
+    int priority = 0;
     // Camera shake
     bool isShaking = false;
     float shakeIntensity = 0.0f;

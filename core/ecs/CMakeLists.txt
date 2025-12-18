@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 # ECS library
-add_library(ecs STATIC
+set(ECS_SOURCES
     ECSRegistry.cpp
     ECSRegistry.h
     Components.h
@@ -10,7 +10,7 @@ add_library(ecs STATIC
     Components/VelocityComponent.h
     Components/PlayerComponent.h
     Components/RenderComponent.h
-    Components/PhysicsComponent.h
+    Components/PhysicsData.h
     Components/AudioComponent.h
     Components/CameraComponent.h
     Components/UtilityComponents.h
@@ -25,6 +25,8 @@ add_library(ecs STATIC
     Systems/LifetimeSystem.h
     Systems/LifetimeSystem.cpp
 )
+
+add_library(ecs STATIC ${ECS_SOURCES})
 
 target_include_directories(ecs PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

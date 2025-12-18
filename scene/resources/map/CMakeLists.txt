@@ -1,4 +1,4 @@
-add_library(map STATIC
+set(MAP_SOURCES
     Core/MapLoader.cpp
     Core/MapLoader.h
     Core/MapData.h
@@ -14,6 +14,8 @@ add_library(map STATIC
     Skybox/Skybox.h
 )
 
+add_library(map STATIC ${MAP_SOURCES})
+
 target_include_directories(map
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21,16 +23,6 @@ target_include_directories(map
         ${CMAKE_SOURCE_DIR}/include
 )
 
-# Add PROJECT_ROOT_DIR definition for consistent path handling
-target_compile_definitions(map PRIVATE
-    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
-)
-
-# Use forward slashes for cross-platform compatibility
-file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
-target_compile_definitions(map PRIVATE
-    PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
-)
 
 target_link_libraries(map PUBLIC raylib nlohmann_json config render)
 

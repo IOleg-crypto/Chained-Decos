@@ -1,7 +1,7 @@
 #ifndef RENDER_SYSTEM_H
 #define RENDER_SYSTEM_H
 
-// RenderSystem - рендерить всі entities з RenderComponent
+// RenderSystem - renders all entities with RenderComponent
 namespace RenderSystem
 {
 void Render();

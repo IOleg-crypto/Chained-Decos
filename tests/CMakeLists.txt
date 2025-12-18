@@ -50,15 +50,11 @@ target_include_directories(ChainedDecosIntegrationTests
 # Test properties for unit tests
 set_target_properties(ChainedDecosUnitTests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
 )
 
 # Test properties for integration tests
 set_target_properties(ChainedDecosIntegrationTests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
 )
 
 # Ensure consistent CRT settings on Windows
@@ -89,14 +85,6 @@ if(WIN32)
         )
     endif()
 
-    # Force consistent debug levels for both test targets
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_compile_definitions(ChainedDecosUnitTests PRIVATE _DEBUG)
-        target_compile_definitions(ChainedDecosIntegrationTests PRIVATE _DEBUG)
-    else()
-        target_compile_definitions(ChainedDecosUnitTests PRIVATE NDEBUG)
-        target_compile_definitions(ChainedDecosIntegrationTests PRIVATE NDEBUG)
-    endif()
 
     # Add compile definitions for dynamic linking - unit tests
     target_compile_definitions(ChainedDecosUnitTests PRIVATE

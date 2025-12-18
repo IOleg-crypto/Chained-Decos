@@ -1,7 +1,7 @@
 #ifndef MOVEMENT_SYSTEM_H
 #define MOVEMENT_SYSTEM_H
 
-// MovementSystem - обробляє рух entities
+// MovementSystem - handles movement of entities
 namespace MovementSystem
 {
 void Update(float deltaTime);
