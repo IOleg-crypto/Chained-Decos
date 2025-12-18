@@ -8,12 +8,9 @@
 #include <raymath.h>
 #include <scene/3d/camera/Core/CameraController.h>
 
-/**
- * @brief Minimal Player interface
- *
- * Essential API only - 8 methods (down from 30+)
- * Engine depends on this interface, not concrete Player class.
- */
+// Minimal Player interface
+// Essential API only - 8 methods (down from 30+)
+// Engine depends on this interface, not concrete Player class.
 class IPlayer
 {
 public:
@@ -45,8 +42,8 @@ public:
     virtual void SetPlayerPosition(const Vector3 &pos) const = 0;
 
     // Physics
-    virtual LegacyPhysicsComponent &GetPhysics() = 0;
-    virtual const LegacyPhysicsComponent &GetPhysics() const = 0;
+    virtual PhysicsComponent &GetPhysics() = 0;
+    virtual const PhysicsComponent &GetPhysics() const = 0;
 
     // Movement
     virtual void ApplyJumpImpulse(float impulse) = 0;

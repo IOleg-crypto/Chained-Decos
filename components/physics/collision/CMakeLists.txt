@@ -1,4 +1,4 @@
-add_library(collision STATIC
+set(COLLISION_SOURCES
     Core/CollisionManager.cpp
     Core/CollisionManager.h
     Interfaces/ICollisionManager.h
@@ -10,6 +10,8 @@ add_library(collision STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Debug/CollisionDebugRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Debug/CollisionDebugRenderer.h
 )
+
+add_library(collision STATIC ${COLLISION_SOURCES})
 
 # Disable Unity build for this library to avoid duplicate definitions
 set_target_properties(collision PROPERTIES

@@ -18,7 +18,7 @@ public:
         RELEASED // Release
     };
 
-    // Static Singleton - як у Godot!
+    // Static Singleton
     static InputManager &Get()
     {
         static InputManager instance;
@@ -57,6 +57,7 @@ public:
     bool IsMouseButtonPressed(int button) const;
     bool IsMouseButtonDown(int button) const;
     bool IsMouseButtonReleased(int button) const;
+    float GetMouseWheelMove() const;
 
     // Cursor control
     void DisableCursor();

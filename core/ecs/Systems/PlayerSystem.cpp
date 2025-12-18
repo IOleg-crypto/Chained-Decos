@@ -13,6 +13,16 @@
 namespace PlayerSystem
 {
 
+static float LerpAngle(float start, float end, float t)
+{
+    float difference = end - start;
+    while (difference < -PI)
+        difference += 2.0f * PI;
+    while (difference > PI)
+        difference -= 2.0f * PI;
+    return start + difference * fmaxf(0.0f, fminf(1.0f, t));
+}
+
 static void HandleMovement(TransformComponent &transform, VelocityComponent &velocity,
                            PlayerComponent &player, float dt)
 {
@@ -24,13 +34,13 @@ static void HandleMovement(TransformComponent &transform, VelocityComponent &vel
     // Forward is where the camera is looking (horizontal plane)
     float yawRad = player.cameraYaw * DEG2RAD;
     Vector3 forward;
-    forward.x = sinf(yawRad);
+    forward.x = -sinf(yawRad);
     forward.y = 0.0f;
-    forward.z = cosf(yawRad);
+    forward.z = -cosf(yawRad);
     forward = Vector3Normalize(forward);
 
     // Right vector (perpendicular to forward on horizontal plane)
-    Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
+    Vector3 right = Vector3CrossProduct(forward, {0, 1, 0});
     right = Vector3Normalize(right);
 
     if (input.IsKeyDown(KEY_W))
@@ -49,13 +59,42 @@ static void HandleMovement(TransformComponent &transform, VelocityComponent &vel
         moveDir = Vector3Scale(moveDir, 1.0f / length);
 
         // Update player rotation to face movement direction ONLY when moving
-        float targetAngle = atan2f(moveDir.x, moveDir.z) * RAD2DEG;
-        transform.rotation.y = targetAngle;
+        float targetAngle = atan2f(moveDir.x, moveDir.z);
+        float rotationSpeed = 50.0f; // Adjust for smoothness
+        transform.rotation.y = LerpAngle(transform.rotation.y, targetAngle, rotationSpeed * dt);
     }
 
-    // Apply velocity
-    velocity.velocity.x = moveDir.x * player.moveSpeed;
-    velocity.velocity.z = moveDir.z * player.moveSpeed;
+    // Speed settings
+    float targetSpeed = player.moveSpeed;
+    if (input.IsKeyDown(KEY_LEFT_SHIFT) && player.isGrounded)
+    {
+        targetSpeed *= 1.8f; // Sprint multiplier
+    }
+
+    // Apply movement
+    if (player.isGrounded)
+    {
+        // Ground movement: direct control
+        velocity.velocity.x = moveDir.x * targetSpeed;
+        velocity.velocity.z = moveDir.z * targetSpeed;
+    }
+    else
+    {
+        // Air movement: limited control
+        float airControlFactor = 0.3f;
+        velocity.velocity.x += moveDir.x * targetSpeed * airControlFactor * dt;
+        velocity.velocity.z += moveDir.z * targetSpeed * airControlFactor * dt;
+
+        // Clamp horizontal velocity in air to targetSpeed
+        float horizSpeed = sqrtf(velocity.velocity.x * velocity.velocity.x +
+                                 velocity.velocity.z * velocity.velocity.z);
+        if (horizSpeed > targetSpeed)
+        {
+            float scale = targetSpeed / horizSpeed;
+            velocity.velocity.x *= scale;
+            velocity.velocity.z *= scale;
+        }
+    }
 }
 
 static void HandleJump(VelocityComponent &velocity, PlayerComponent &player)
@@ -76,28 +115,37 @@ static void HandleCamera(TransformComponent &transform, PlayerComponent &player)
 
     Vector2 mouseDelta = input.GetMouseDelta();
 
+    // Update Camera Zoom (Distance)
+    float wheel = input.GetMouseWheelMove();
+    player.cameraDistance -= wheel * 1.5f;
+
+    // Clamp zoom distance
+    if (player.cameraDistance < 2.0f)
+        player.cameraDistance = 2.0f;
+    if (player.cameraDistance > 20.0f)
+        player.cameraDistance = 20.0f;
+
     // Update Camera Yaw (Independent of Player Model)
-    player.cameraYaw -= mouseDelta.x * 0.1f;
+    player.cameraYaw -= mouseDelta.x * player.mouseSensitivity;
 
     // Update Camera Pitch
-    player.cameraPitch -= mouseDelta.y * 0.1f;
+    player.cameraPitch -= mouseDelta.y * player.mouseSensitivity;
 
     // Clamp vertical rotation (pitch)
-    if (player.cameraPitch > 89.0f)
-        player.cameraPitch = 89.0f;
-    if (player.cameraPitch < -89.0f)
-        player.cameraPitch = -89.0f;
+    if (player.cameraPitch > 85.0f)
+        player.cameraPitch = 85.0f;
+    if (player.cameraPitch < -85.0f)
+        player.cameraPitch = -85.0f;
 
     // Calculate camera position using spherical coordinates
-    float distance = 5.0f; // Distance from player
     float yawRad = player.cameraYaw * DEG2RAD;
     float pitchRad = player.cameraPitch * DEG2RAD;
 
     // Calculate offset from player
     Vector3 cameraOffset;
-    cameraOffset.x = distance * cosf(pitchRad) * sinf(yawRad);
-    cameraOffset.y = distance * sinf(pitchRad);
-    cameraOffset.z = distance * cosf(pitchRad) * cosf(yawRad);
+    cameraOffset.x = player.cameraDistance * cosf(pitchRad) * sinf(yawRad);
+    cameraOffset.y = player.cameraDistance * sinf(pitchRad);
+    cameraOffset.z = player.cameraDistance * cosf(pitchRad) * cosf(yawRad);
 
     // Get camera reference
     Camera &camera = render.GetCamera();

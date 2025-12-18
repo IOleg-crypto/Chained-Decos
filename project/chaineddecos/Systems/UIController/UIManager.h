@@ -1,7 +1,7 @@
 #ifndef UI_CONTROLLER_H
 #define UI_CONTROLLER_H
 
-#include "../../../core/engine/EngineApplication.h"
+#include "core/engine/EngineApplication.h"
 #include "core/object/module/Interfaces/IEngineModule.h"
 #include "project/chaineddecos/Menu/Console/ConsoleManager.h"
 #include "project/chaineddecos/Menu/Menu.h"

@@ -1,4 +1,4 @@
-add_library(model STATIC
+set(MODEL_SOURCES
         Core/Model.cpp
         Core/Model.h
         Core/ModelInstance.cpp
@@ -17,10 +17,7 @@ add_library(model STATIC
         Utils/ModelAnalyzer.h
 )
 
-# Add PROJECT_ROOT_DIR definition for consistent path handling
-target_compile_definitions(model PRIVATE
-    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
-)
+add_library(model STATIC ${MODEL_SOURCES})
 
 target_include_directories(model PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}

@@ -1,14 +1,15 @@
-add_library(physics STATIC
+set(DYNAMICS_SOURCES
     Components/PhysicsComponent.cpp
     Components/PhysicsComponent.h
     Components/SurfaceComponent.h
     Components/SurfaceComponent.cpp
 )
 
+add_library(physics STATIC ${DYNAMICS_SOURCES})
 target_include_directories(physics
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
 target_link_libraries(physics

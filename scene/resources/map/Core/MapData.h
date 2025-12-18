@@ -1,21 +1,22 @@
 #ifndef MAPDATA_H
 #define MAPDATA_H
 
-#include <string>
 #include <raylib.h>
+#include <string>
+
 
 // ============================================================================
 // Enumerations
 // ============================================================================
 
-enum class MapObjectType
+enum class MapObjectType : uint8_t
 {
-    CUBE       = 0,
-    SPHERE     = 1,
-    CYLINDER   = 2,
-    PLANE      = 3,
-    LIGHT      = 4,
-    MODEL      = 5,
+    CUBE = 0,
+    SPHERE = 1,
+    CYLINDER = 2,
+    PLANE = 3,
+    LIGHT = 4,
+    MODEL = 5,
     SPAWN_ZONE = 6
 };
 
