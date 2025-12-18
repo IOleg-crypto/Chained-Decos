@@ -134,4 +134,33 @@ Vector2 CameraController::GetFilteredMouseDelta()
     return delta;
 }
 
+CameraController::CameraController(const CameraController &other)
+    : m_mode(other.m_mode), m_yaw(other.m_yaw), m_pitch(other.m_pitch),
+      m_radius_fov(other.m_radius_fov), m_mouse_sensitivity(other.m_mouse_sensitivity),
+      m_smoothing(other.m_smoothing), m_base_y(other.m_base_y),
+      m_shake_intensity(other.m_shake_intensity), m_shake_duration(other.m_shake_duration),
+      m_shake_offset(other.m_shake_offset)
+{
+    m_camera = other.m_camera;
+}
+
+CameraController &CameraController::operator=(const CameraController &other)
+{
+    if (this != &other)
+    {
+        m_mode = other.m_mode;
+        m_yaw = other.m_yaw;
+        m_pitch = other.m_pitch;
+        m_radius_fov = other.m_radius_fov;
+        m_mouse_sensitivity = other.m_mouse_sensitivity;
+        m_smoothing = other.m_smoothing;
+        m_base_y = other.m_base_y;
+        m_shake_intensity = other.m_shake_intensity;
+        m_shake_duration = other.m_shake_duration;
+        m_shake_offset = other.m_shake_offset;
+        m_camera = other.m_camera;
+    }
+    return *this;
+}
+
 } // namespace Scene

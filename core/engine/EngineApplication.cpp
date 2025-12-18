@@ -59,6 +59,16 @@ void EngineApplication::PushOverlay(Layer *overlay)
     m_LayerStack.PushOverlay(overlay);
 }
 
+void EngineApplication::OnEvent(Event &e)
+{
+    for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
+    {
+        if (e.Handled)
+            break;
+        (*it)->OnEvent(e);
+    }
+}
+
 void EngineApplication::Initialize()
 {
     TraceLog(LOG_INFO, "[EngineApplication] Initializing application...");
@@ -100,6 +110,11 @@ void EngineApplication::Initialize()
     // Step 4: Start
     if (m_app)
     {
+        // Connect Input Events
+        if (m_engine->GetInputManager())
+        {
+            m_engine->GetInputManager()->SetEventCallback([this](Event &e) { this->OnEvent(e); });
+        }
         m_app->OnStart();
     }
 
@@ -171,4 +186,16 @@ void EngineApplication::Shutdown()
     TraceLog(LOG_INFO, "[EngineApplication] Application shut down.");
 }
 
+Engine *EngineApplication::GetEngine() const
+{
+    return m_engine.get();
+}
+EngineApplication::Config &EngineApplication::GetConfig()
+{
+    return m_config;
+}
+const EngineApplication::Config &EngineApplication::GetConfig() const
+{
+    return m_config;
+}
 } // namespace ChainedDecos

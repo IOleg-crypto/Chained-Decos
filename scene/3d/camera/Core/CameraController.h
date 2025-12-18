@@ -5,9 +5,10 @@
 #ifndef CAMERACONTROLLER_H
 #define CAMERACONTROLLER_H
 
+#include "../Interfaces/ICameraSensitivityController.h"
 #include <raylib.h>
 #include <raymath.h>
-#include "../Interfaces/ICameraSensitivityController.h"
+
 
 //
 // CameraController
@@ -17,10 +18,11 @@
 class CameraController : public ICameraSensitivityController
 {
 public:
-    CameraController();  // Initialize camera
+    CameraController(); // Initialize camera
     ~CameraController() = default;
 
-    CameraController(const CameraController &other) = delete;
+    CameraController(const CameraController &other);
+    CameraController &operator=(const CameraController &other);
     CameraController(CameraController &&other) = delete;
 
     // -------------------- Accessors --------------------
@@ -46,17 +48,17 @@ public:
     void UpdateMouseRotation(Camera &camera, const Vector3 &playerPosition);
 
     // -------------------- Screen Shake --------------------
-    
+
     // Add screen shake effect (intensity based on fall speed or impact)
     void AddScreenShake(float intensity, float duration = 0.5f);
-    
+
     // Update screen shake (call every frame)
     void UpdateScreenShake(float deltaTime);
 
     // -------------------- Settings --------------------
 
     // Set field of view (radius)
-    void SetFOV(float FOV); 
+    void SetFOV(float FOV);
     void SetMouseSensitivity(float sensitivity) override;
     void ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY);
 
@@ -69,29 +71,29 @@ public:
     [[nodiscard]] float GetMouseSensitivity() const override;
 
     // -------------------- Static Utilities --------------------
-    
+
     // Static utility function for filtering mouse delta (prevents glitches on Linux/VM)
     // Use this everywhere GetMouseDelta() is called to ensure consistent behavior
-    static Vector2 FilterMouseDelta(const Vector2& mouseDelta);
+    static Vector2 FilterMouseDelta(const Vector2 &mouseDelta);
 
 private:
-    Camera m_camera;                  // Raylib camera struct representing the 3D perspective
-    int m_cameraMode;                 // Current camera mode (First, Free, Third, Orbital)
-    float m_baseCameraY = 4.5f;      // Base camera height offset
-    float m_cameraYaw = 1.0f;        // Yaw angle for rotation
-    float m_cameraPitch = 0.0f;      // Pitch angle for rotation
+    Camera m_camera;                      // Raylib camera struct representing the 3D perspective
+    int m_cameraMode;                     // Current camera mode (First, Free, Third, Orbital)
+    float m_baseCameraY = 4.5f;           // Base camera height offset
+    float m_cameraYaw = 1.0f;             // Yaw angle for rotation
+    float m_cameraPitch = 0.0f;           // Pitch angle for rotation
     float m_cameraSmoothingFactor = 4.0f; // Smoothing speed for camera rotation
-    float m_radiusFOV = 8.0f;        // Radius or distance for field of view
+    float m_radiusFOV = 8.0f;             // Radius or distance for field of view
 
     float m_mouseSensitivity = 0.1f; // Mouse sensitivity
     // Smoothing for virtual machines
-    Vector2 m_smoothedMouseDelta = {0.0f, 0.0f}; // Smoothed mouse delta value
+    Vector2 m_smoothedMouseDelta = {0.0f, 0.0f};   // Smoothed mouse delta value
     static constexpr float MOUSE_DEAD_ZONE = 0.5f; // Dead zone - ignore very small movements
-    
+
     // Screen shake
-    float m_shakeIntensity = 0.0f;      // Current shake intensity
-    float m_shakeDuration = 0.0f;       // Remaining shake duration
-    float m_shakeTimer = 0.0f;          // Internal timer for shake animation
+    float m_shakeIntensity = 0.0f;              // Current shake intensity
+    float m_shakeDuration = 0.0f;               // Remaining shake duration
+    float m_shakeTimer = 0.0f;                  // Internal timer for shake animation
     Vector3 m_shakeOffset = {0.0f, 0.0f, 0.0f}; // Current shake offset applied to camera
 };
 

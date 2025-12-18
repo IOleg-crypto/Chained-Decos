@@ -1,5 +1,28 @@
 #include "GameLayer.h"
+#include "components/audio/Core/AudioManager.h"
+#include "components/input/Core/InputManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
+#include "components/rendering/Core/RenderManager.h"
+#include "core/ecs/Components/CollisionComponent.h"
+#include "core/ecs/Components/PhysicsData.h"
+#include "core/ecs/Components/PlayerComponent.h"
+#include "core/ecs/Components/RenderComponent.h"
+#include "core/ecs/Components/TransformComponent.h"
+#include "core/ecs/Components/UtilityComponents.h"
+#include "core/ecs/Components/VelocityComponent.h"
+#include "core/ecs/ECSRegistry.h"
+#include "core/engine/Engine.h"
+#include "core/events/Event.h"
+#include "core/events/KeyEvent.h"
+#include "core/events/MouseEvent.h"
+#include "scene/main/Core/World.h"
+#include "scene/resources/model/Core/Model.h"
+#include <algorithm>
 #include <raylib.h>
+#include <raymath.h>
+#include <vector>
+
+using namespace ChainedDecos;
 
 GameLayer::GameLayer() : Layer("GameLayer")
 {
@@ -17,10 +40,292 @@ void GameLayer::OnDetach()
 
 void GameLayer::OnUpdate(float deltaTime)
 {
-    // Game logic would go here
+    // 1. STATS & MOVEMENT (formerly PlayerSystem)
+    auto playerView = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
+    auto collisionManager = Engine::Instance().GetService<CollisionManager>();
+
+    for (auto [entity, transform, velocity, player] : playerView.each())
+    {
+        // Update Stats
+        player.runTimer += deltaTime;
+        if (transform.position.y > player.maxHeight)
+            player.maxHeight = transform.position.y;
+
+        // Handle Movement
+        Vector3 moveDir = {0, 0, 0};
+        float yawRad = player.cameraYaw * DEG2RAD;
+        Vector3 forward = Vector3Normalize({-sinf(yawRad), 0.0f, -cosf(yawRad)});
+        Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, {0, 1, 0}));
+
+        auto &input = InputManager::Get();
+        if (input.IsKeyDown(KEY_W))
+            moveDir = Vector3Add(moveDir, forward);
+        if (input.IsKeyDown(KEY_S))
+            moveDir = Vector3Subtract(moveDir, forward);
+        if (input.IsKeyDown(KEY_D))
+            moveDir = Vector3Add(moveDir, right);
+        if (input.IsKeyDown(KEY_A))
+            moveDir = Vector3Subtract(moveDir, right);
+
+        float moveLen = Vector3Length(moveDir);
+        if (moveLen > 0.0f)
+        {
+            moveDir = Vector3Scale(moveDir, 1.0f / moveLen);
+            float targetAngle = atan2f(moveDir.x, moveDir.z);
+
+            // Smoother rotation
+            float rotationSpeed = 10.0f;
+            transform.rotation.y = transform.rotation.y +
+                                   (targetAngle - transform.rotation.y) * rotationSpeed * deltaTime;
+        }
+
+        float targetSpeed = player.moveSpeed;
+        if (input.IsKeyDown(KEY_LEFT_SHIFT) && player.isGrounded)
+            targetSpeed *= 1.8f;
+
+        if (player.isGrounded)
+        {
+            velocity.velocity.x = moveDir.x * targetSpeed;
+            velocity.velocity.z = moveDir.z * targetSpeed;
+        }
+        else
+        {
+            float airControl = 0.3f;
+            velocity.velocity.x += moveDir.x * targetSpeed * airControl * deltaTime;
+            velocity.velocity.z += moveDir.z * targetSpeed * airControl * deltaTime;
+            float currentSpeed = sqrtf(velocity.velocity.x * velocity.velocity.x +
+                                       velocity.velocity.z * velocity.velocity.z);
+            if (currentSpeed > targetSpeed)
+            {
+                velocity.velocity.x *= targetSpeed / currentSpeed;
+                velocity.velocity.z *= targetSpeed / currentSpeed;
+            }
+        }
+
+        // Jump handled in update for quick response
+        if (input.IsKeyPressed(KEY_SPACE) && player.isGrounded)
+        {
+            velocity.velocity.y = player.jumpForce;
+            player.isGrounded = false;
+        }
+
+        // 2. PHYSICS (formerly MovementSystem)
+        if (REGISTRY.all_of<PhysicsData>(entity))
+        {
+            auto &physics = REGISTRY.get<PhysicsData>(entity);
+            if (physics.useGravity && !physics.isKinematic && !player.isGrounded)
+                velocity.acceleration.y = physics.gravity;
+            else
+                velocity.acceleration.y = 0;
+        }
+
+        velocity.velocity =
+            Vector3Add(velocity.velocity, Vector3Scale(velocity.acceleration, deltaTime));
+
+        Vector3 proposedPos =
+            Vector3Add(transform.position, Vector3Scale(velocity.velocity, deltaTime));
+
+        if (collisionManager && REGISTRY.all_of<CollisionComponent>(entity))
+        {
+            auto &collision = REGISTRY.get<CollisionComponent>(entity);
+            Vector3 center = proposedPos;
+            center.x += (collision.bounds.max.x + collision.bounds.min.x) * 0.5f;
+            center.y += (collision.bounds.max.y + collision.bounds.min.y) * 0.5f;
+            center.z += (collision.bounds.max.z + collision.bounds.min.z) * 0.5f;
+
+            Vector3 halfSize =
+                Vector3Scale(Vector3Subtract(collision.bounds.max, collision.bounds.min), 0.5f);
+            Collision playerCol(center, halfSize);
+            Vector3 response = {0};
+
+            if (collisionManager->CheckCollision(playerCol, response))
+            {
+                proposedPos = Vector3Add(proposedPos, response);
+                float resLen = Vector3Length(response);
+                if (resLen > 0.001f)
+                {
+                    Vector3 normal = Vector3Scale(response, 1.0f / resLen);
+                    float dot = Vector3DotProduct(velocity.velocity, normal);
+                    if (dot < 0)
+                        velocity.velocity =
+                            Vector3Subtract(velocity.velocity, Vector3Scale(normal, dot));
+                }
+            }
+
+            // Ground Check
+            Vector3 rayOrigin = proposedPos;
+            rayOrigin.y += 1.0f;
+            float hitDist = 0;
+            Vector3 hp, hn;
+            if (collisionManager->RaycastDown(rayOrigin, 1.2f, hitDist, hp, hn))
+            {
+                if (velocity.velocity.y <= 0 && (hitDist - 1.0f) <= 0.1f)
+                {
+                    player.isGrounded = true;
+                    proposedPos.y = hp.y;
+                    velocity.velocity.y = 0;
+                }
+                else
+                    player.isGrounded = false;
+            }
+            else
+                player.isGrounded = false;
+        }
+
+        transform.position = proposedPos;
+
+        // Drag
+        float dragFactor = 1.0f - (velocity.drag * deltaTime);
+        if (dragFactor < 0)
+            dragFactor = 0;
+        velocity.velocity.x *= dragFactor;
+        velocity.velocity.z *= dragFactor;
+
+        // Camera Update
+        Vector2 mouseDelta = input.GetMouseDelta();
+        player.cameraDistance -= input.GetMouseWheelMove() * 1.5f;
+        player.cameraDistance = Clamp(player.cameraDistance, 2.0f, 20.0f);
+        player.cameraYaw -= mouseDelta.x * player.mouseSensitivity;
+        player.cameraPitch =
+            Clamp(player.cameraPitch - mouseDelta.y * player.mouseSensitivity, -85.0f, 85.0f);
+
+        Camera &camera = RenderManager::Get().GetCamera();
+        float yawRadLocal = player.cameraYaw * DEG2RAD;
+        float pitchRadLocal = player.cameraPitch * DEG2RAD;
+        Vector3 camOffset = {player.cameraDistance * cosf(pitchRadLocal) * sinf(yawRadLocal),
+                             player.cameraDistance * sinf(pitchRadLocal),
+                             player.cameraDistance * cosf(pitchRadLocal) * cosf(yawRadLocal)};
+        camera.target = Vector3Add(transform.position, {0, 1.5f, 0});
+        camera.position = Vector3Add(camera.target, camOffset);
+
+        // Audio Update
+        const float fallThresh = -5.0f;
+        if (velocity.velocity.y < fallThresh && !player.isFallingSoundPlaying)
+        {
+            AudioManager::Get().PlayLoopingSoundEffect("player_fall", 1.0f);
+            player.isFallingSoundPlaying = true;
+        }
+        else if ((velocity.velocity.y >= fallThresh || player.isGrounded) &&
+                 player.isFallingSoundPlaying)
+        {
+            AudioManager::Get().StopLoopingSoundEffect("player_fall");
+            player.isFallingSoundPlaying = false;
+        }
+    }
+
+    // 3. LIFETIME (formerly LifetimeSystem)
+    auto lifetimeView = REGISTRY.view<LifetimeComponent>();
+    std::vector<entt::entity> toDestroy;
+    for (auto [entity, lifetime] : lifetimeView.each())
+    {
+        lifetime.timer += deltaTime;
+        if (lifetime.timer >= lifetime.lifetime && lifetime.destroyOnTimeout)
+            toDestroy.push_back(entity);
+    }
+    for (auto entity : toDestroy)
+        REGISTRY.destroy(entity);
+
+    // 4. ENTITY-ENTITY COLLISION (formerly CollisionSystem)
+    auto collView = REGISTRY.view<TransformComponent, CollisionComponent>();
+    for (auto [entityA, transformA, collisionA] : collView.each())
+    {
+        collisionA.hasCollision = false;
+        collisionA.collidedWith = entt::null;
+
+        for (auto [entityB, transformB, collisionB] : collView.each())
+        {
+            if (entityA == entityB)
+                continue;
+            if (!(collisionA.collisionMask & (1 << collisionB.collisionLayer)))
+                continue;
+
+            BoundingBox bA = collisionA.bounds;
+            bA.min = Vector3Add(bA.min, transformA.position);
+            bA.max = Vector3Add(bA.max, transformA.position);
+
+            BoundingBox bB = collisionB.bounds;
+            bB.min = Vector3Add(bB.min, transformB.position);
+            bB.max = Vector3Add(bB.max, transformB.position);
+
+            if (CheckCollisionBoxes(bA, bB))
+            {
+                collisionA.hasCollision = true;
+                collisionA.collidedWith = entityB;
+                collisionB.hasCollision = true;
+                collisionB.collidedWith = entityA;
+            }
+        }
+    }
 }
 
 void GameLayer::OnRender()
 {
-    // Game rendering would go here
+    // MOVED FROM RenderSystem::Render
+    auto view = REGISTRY.view<TransformComponent, RenderComponent>();
+    std::vector<entt::entity> entities(view.begin(), view.end());
+
+    std::sort(entities.begin(), entities.end(),
+              [&](entt::entity a, entt::entity b)
+              {
+                  return view.get<RenderComponent>(a).renderLayer <
+                         view.get<RenderComponent>(b).renderLayer;
+              });
+
+    for (auto entity : entities)
+    {
+        auto &transform = view.get<TransformComponent>(entity);
+        auto &renderComp = view.get<RenderComponent>(entity);
+
+        if (!renderComp.visible || !renderComp.model)
+            continue;
+
+        Matrix matS = MatrixScale(transform.scale.x, transform.scale.y, transform.scale.z);
+        Matrix matR = MatrixRotateXYZ(transform.rotation);
+        Matrix matT = MatrixTranslate(transform.position.x + renderComp.offset.x,
+                                      transform.position.y + renderComp.offset.y,
+                                      transform.position.z + renderComp.offset.z);
+
+        renderComp.model->transform = MatrixMultiply(MatrixMultiply(matS, matR), matT);
+        DrawModel(*renderComp.model, Vector3Zero(), 1.0f, renderComp.tint);
+    }
+
+    // DEBUG COLLISION RENDER
+    // TODO: Add flag check
+    auto collView = REGISTRY.view<TransformComponent, CollisionComponent>();
+    for (auto [entity, transform, collision] : collView.each())
+    {
+        BoundingBox b = collision.bounds;
+        b.min = Vector3Add(b.min, transform.position);
+        b.max = Vector3Add(b.max, transform.position);
+        Color c = collision.hasCollision ? RED : (collision.isTrigger ? YELLOW : GREEN);
+        DrawBoundingBox(b, c);
+    }
+}
+
+void GameLayer::OnEvent(Event &e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<KeyPressedEvent>(
+        [this](KeyPressedEvent &event)
+        {
+            if (event.GetKeyCode() == KEY_F) // Respawn
+            {
+                auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
+                for (auto [entity, transform, velocity, player] : view.each())
+                {
+                    transform.position = {0, 2, 0};
+                    velocity.velocity = {0, 0, 0};
+                    player.isGrounded = false;
+                    player.runTimer = 0;
+                    player.maxHeight = 0;
+                    if (player.isFallingSoundPlaying)
+                    {
+                        AudioManager::Get().StopLoopingSoundEffect("player_fall");
+                        player.isFallingSoundPlaying = false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        });
 }

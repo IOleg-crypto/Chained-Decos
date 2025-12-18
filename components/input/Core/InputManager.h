@@ -1,10 +1,17 @@
 #ifndef INPUTMANAGER_H
 #define INPUTMANAGER_H
 
+#include "core/events/Event.h"
 #include <cstdint>
 #include <functional>
 #include <raylib.h>
 #include <unordered_map>
+
+
+namespace ChainedDecos
+{
+class Event;
+}
 
 // InputManager - Static Singleton
 // Enhanced input manager with support for different input types
@@ -46,6 +53,12 @@ public:
 
     void ProcessInput() const;
 
+    using EventCallbackFn = std::function<void(ChainedDecos::Event &)>;
+    void SetEventCallback(const EventCallbackFn &callback)
+    {
+        m_EventCallback = callback;
+    }
+
     // Direct key queries
     bool IsKeyPressed(int key) const;
     bool IsKeyDown(int key) const;
@@ -74,6 +87,7 @@ private:
     std::unordered_map<int, std::function<void()>> m_releasedActions;
 
     Vector2 m_lastMousePosition = {0, 0};
+    EventCallbackFn m_EventCallback;
     bool m_initialized = false;
 };
 

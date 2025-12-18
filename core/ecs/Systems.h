@@ -1,13 +1,7 @@
 #ifndef ECS_SYSTEMS_H
 #define ECS_SYSTEMS_H
 
-// All ECS systems in one place
-// Usage: #include "core/ecs/Systems.h"
-
-#include "Systems/CollisionSystem.h"
-#include "Systems/LifetimeSystem.h"
-#include "Systems/MovementSystem.h"
-#include "Systems/PlayerSystem.h"
-#include "Systems/RenderSystem.h"
+// Legacy systems header - logic moved to GameLayer
+// This file is kept briefly for compatibility during transition
 
 #endif // ECS_SYSTEMS_H

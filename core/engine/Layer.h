@@ -1,6 +1,7 @@
 #ifndef LAYER_H
 #define LAYER_H
 
+#include "core/events/Event.h"
 #include <string>
 
 namespace ChainedDecos
@@ -24,12 +25,11 @@ public:
     virtual void OnRender()
     {
     }
-    virtual void OnEvent()
+    virtual void OnEvent(Event &event)
     {
-    } // In Hazel, this takes an Event&, for now we keep it empty or integrate with existing
-      // EventBus
+    }
 
-    inline const std::string &GetName() const
+    const std::string &GetName() const
     {
         return m_DebugName;
     }
