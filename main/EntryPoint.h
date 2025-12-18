@@ -2,7 +2,6 @@
 #define ENTRY_POINT_H
 
 #include "core/engine/EngineApplication.h"
-#include <memory>
 
 // Simple macro to create main() function for any application
 // Usage: ENGINE_MAIN(YourAppClass, "Your App Name")
@@ -10,9 +9,9 @@
     int main(int argc, char *argv[])                                                               \
     {                                                                                              \
         AppClass app(argc, argv);                                                                  \
-        EngineApplication::Config config;                                                          \
+        ChainedDecos::EngineApplication::Config config;                                            \
         config.windowName = AppName;                                                               \
-        EngineApplication engine(config, &app);                                                    \
+        ChainedDecos::EngineApplication engine(config, &app);                                      \
         engine.Run();                                                                              \
         return 0;                                                                                  \
     }

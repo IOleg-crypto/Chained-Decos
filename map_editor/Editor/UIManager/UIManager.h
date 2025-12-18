@@ -5,19 +5,18 @@
 #ifndef UIMANAGER_H
 #define UIMANAGER_H
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 
+
 #include "raylib.h"
 #include <imgui.h>
 
-#include "../FileManager/IFileManager.h"
-#include "../ModelManager/IModelManager.h"
-#include "../SceneManager/ISceneManager.h"
 #include "../ToolManager/IToolManager.h"
 #include "IUIManager.h"
-#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/map/Core/MapData.h"
 
 class Editor;
 
@@ -25,11 +24,7 @@ class Editor;
 struct UIManagerConfig
 {
     Editor *editor = nullptr;
-    ISceneManager *sceneManager = nullptr;
-    IFileManager *fileManager = nullptr;
-    IToolManager *toolManager = nullptr;
-    IModelManager *modelManager = nullptr;
-    int initialGridSize = 900;
+    int initialGridSize = 50;
 };
 
 // Concrete UI Manager implementation
@@ -38,10 +33,6 @@ class EditorUIManager : public IUIManager
 private:
     // Subsystem references
     Editor *m_editor;
-    ISceneManager *m_sceneManager;
-    IFileManager *m_fileManager;
-    IToolManager *m_toolManager;
-    IModelManager *m_modelManager;
 
     // UI state flags
     bool m_displayImGuiInterface;
@@ -52,7 +43,6 @@ private:
     bool m_displaySkyboxPanel;
     bool m_shouldExit = false; // Flag to signal application exit
     std::string m_currentlySelectedModelName;
-    int m_gridSizes;
 
     // Icons
     Texture2D m_iconNewProject;
@@ -60,7 +50,7 @@ private:
     bool m_iconsLoaded = false;
 
     // Save Prompt State
-    enum class PendingAction
+    enum class PendingAction : std::uint8_t
     {
         NONE,
         NEW_PROJECT,
@@ -118,10 +108,7 @@ public:
     {
         m_currentlySelectedModelName = name;
     }
-    void SetGridSize(int size)
-    {
-        m_gridSizes = size;
-    }
+    void SetGridSize(int size);
 
     // Exit control
     bool ShouldExit() const
@@ -142,6 +129,7 @@ private:
 
     // UI helper methods
     void ProcessPendingObjectCreation();
+    void ExecutePendingAction();
 
     // Object factory
     std::unique_ptr<class ObjectFactory> m_objectFactory;

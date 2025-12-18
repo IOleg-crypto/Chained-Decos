@@ -1,42 +1,37 @@
 #ifndef EDITOR_RENDERER_H
 #define EDITOR_RENDERER_H
 
-#include "../Object/MapObject.h"
-#include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/map/Core/MapData.h"
-#include "../ToolManager/IToolManager.h"
-#include "../CameraManager/ICameraManager.h"
-#include "../ModelManager/IModelManager.h"
 #include <raylib.h>
-#include <unordered_map>
-#include <string>
-#include "scene/resources/model/Core/Model.h"
+
+// Forward declarations
+class Editor;
+class IToolManager;
 
 // EditorRenderer - handles all rendering operations for the editor
 class EditorRenderer
 {
 public:
-    EditorRenderer(IToolManager* toolManager, ICameraManager* cameraManager, IModelManager* modelManager);
+    EditorRenderer(Editor *editor, IToolManager *toolManager);
     ~EditorRenderer() = default;
 
     // Render a map object with selection indicators and gizmos
-    void RenderObject(const MapObject& obj, const MapObjectData& data, bool isSelected);
+    void RenderObject(const MapObjectData &data, bool isSelected);
 
     // Render transformation gizmo for selected objects
-    void RenderGizmo(const MapObject& obj, const MapObjectData& data);
+    void RenderGizmo(const MapObjectData &data);
 
     // Render spawn zone with texture
-    void RenderSpawnZoneWithTexture(Texture2D texture, const Vector3& position, float size, Color color, bool textureLoaded);
+    void RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &position, float size,
+                                    Color color, bool textureLoaded);
 
 private:
     // Render selection wireframe for different object types
-    void RenderSelectionWireframe(const MapObjectData& data);
+    void RenderSelectionWireframe(const MapObjectData &data);
 
     // Helper references (not owned)
-    IToolManager* m_toolManager;
-    ICameraManager* m_cameraManager;
-    IModelManager* m_modelManager;
+    Editor *m_editor;
+    IToolManager *m_toolManager;
 };
 
 #endif // EDITOR_RENDERER_H
-
