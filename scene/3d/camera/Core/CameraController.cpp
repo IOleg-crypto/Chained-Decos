@@ -314,3 +314,35 @@ float CameraController::GetMouseSensitivity() const
 {
     return m_mouseSensitivity;
 }
+
+CameraController::CameraController(const CameraController &other)
+    : m_camera(other.m_camera), m_cameraMode(other.m_cameraMode),
+      m_baseCameraY(other.m_baseCameraY), m_cameraYaw(other.m_cameraYaw),
+      m_cameraPitch(other.m_cameraPitch), m_cameraSmoothingFactor(other.m_cameraSmoothingFactor),
+      m_radiusFOV(other.m_radiusFOV), m_mouseSensitivity(other.m_mouseSensitivity),
+      m_smoothedMouseDelta(other.m_smoothedMouseDelta), m_shakeIntensity(other.m_shakeIntensity),
+      m_shakeDuration(other.m_shakeDuration), m_shakeTimer(other.m_shakeTimer),
+      m_shakeOffset(other.m_shakeOffset)
+{
+}
+
+CameraController &CameraController::operator=(const CameraController &other)
+{
+    if (this != &other)
+    {
+        m_camera = other.m_camera;
+        m_cameraMode = other.m_cameraMode;
+        m_baseCameraY = other.m_baseCameraY;
+        m_cameraYaw = other.m_cameraYaw;
+        m_cameraPitch = other.m_cameraPitch;
+        m_cameraSmoothingFactor = other.m_cameraSmoothingFactor;
+        m_radiusFOV = other.m_radiusFOV;
+        m_mouseSensitivity = other.m_mouseSensitivity;
+        m_smoothedMouseDelta = other.m_smoothedMouseDelta;
+        m_shakeIntensity = other.m_shakeIntensity;
+        m_shakeDuration = other.m_shakeDuration;
+        m_shakeTimer = other.m_shakeTimer;
+        m_shakeOffset = other.m_shakeOffset;
+    }
+    return *this;
+}

@@ -4,11 +4,10 @@
 #include "components/physics/collision/Core/CollisionManager.h"
 #include "core/engine/Engine.h"
 #include "project/chaineddecos/GameApplication.h"
-#include "project/chaineddecos/Menu/Menu.h"
-#include "project/chaineddecos/Player/Core/Player.h"
+#include "project/chaineddecos/gamegui/Menu.h"
+#include "project/chaineddecos/player/Core/Player.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/model/Core/Model.h"
-
 
 class GameIntegrationTest : public ::testing::Test
 {
