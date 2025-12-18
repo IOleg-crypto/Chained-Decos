@@ -13,6 +13,7 @@ public:
     virtual void OnDetach() override;
     virtual void OnUpdate(float deltaTime) override;
     virtual void OnRender() override;
+    virtual void OnEvent(ChainedDecos::Event &event) override;
 };
 
 #endif // GAMELAYER_H

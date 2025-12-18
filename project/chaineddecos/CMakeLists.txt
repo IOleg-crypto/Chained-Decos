@@ -30,8 +30,9 @@ target_include_directories(ChainedDecosGame
 
 # PROJECT_ROOT_DIR is defined globally in the root CMakeLists.txt
 
-add_subdirectory(Menu)
-add_subdirectory(Player)
+add_subdirectory(gamegui)
+add_subdirectory(player)
+
 
 target_link_libraries(ChainedDecosGame
     PUBLIC

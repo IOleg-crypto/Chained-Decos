@@ -4,8 +4,8 @@
 #include "components/physics/collision/Core/CollisionManager.h"
 #include "components/rendering/Core/RenderManager.h"
 #include "core/object/module/Core/ModuleManager.h"
-#include "project/chaineddecos/Menu/Menu.h"
-#include "project/chaineddecos/Player/Core/Player.h"
+#include "project/chaineddecos/gamegui/Menu.h"
+#include "project/chaineddecos/player/Core/Player.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
 #include <memory>
