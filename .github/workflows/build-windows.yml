@@ -13,7 +13,7 @@ env:
 
 jobs:
   build-msvc:
-    name: Windows MSVC (${{ inputs.build_type }})
+    name: Windows (${{ inputs.build_type }})
     runs-on: windows-2022
 
     steps:

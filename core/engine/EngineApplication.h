@@ -1,13 +1,17 @@
 #ifndef ENGINE_APPLICATION_H
 #define ENGINE_APPLICATION_H
 
+#include "Base.h"
 #include "Engine.h"
 #include "IApplication.h"
+#include "LayerStack.h"
 #include <memory>
 #include <string>
 
+namespace ChainedDecos
+{
+
 // Engine Runtime - Runs the application
-// Manages the lifecycle of the engine and delegates application logic to IApplication
 class EngineApplication
 {
 public:
@@ -20,15 +24,14 @@ public:
         bool resizable = true;
     };
 
-    // Constructor now takes the application instance
     EngineApplication(Config config, IApplication *application);
     ~EngineApplication();
 
-    // Main run loop
     void Run();
 
-    // Accessors
-    // Public API for engine access
+    void PushLayer(Layer *layer);
+    void PushOverlay(Layer *overlay);
+
     Engine *GetEngine() const
     {
         return m_engine.get();
@@ -53,8 +56,10 @@ private:
     IApplication *m_app; // The application instance
     Config m_config;
     std::shared_ptr<Engine> m_engine; // Engine is now shared/singleton managed
-    std::vector<PhysicsComponent *> m_physicsComponents;
+    LayerStack m_LayerStack;
     bool m_initialized = false;
 };
+
+} // namespace ChainedDecos
 
 #endif // ENGINE_APPLICATION_H

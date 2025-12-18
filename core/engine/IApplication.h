@@ -6,6 +6,11 @@
 class ModuleManager;
 #include "Engine.h"
 
+namespace ChainedDecos
+{
+class EngineApplication;
+}
+
 // Interface for all applications using the engine
 // Implement this interface to define your application's behavior
 class IApplication
@@ -64,13 +69,24 @@ public:
         m_engine = engine;
     }
 
+    virtual void SetAppRunner(ChainedDecos::EngineApplication *appRunner)
+    {
+        m_appRunner = appRunner;
+    }
+
     Engine *GetEngine() const
     {
         return m_engine;
     }
 
+    ChainedDecos::EngineApplication *GetAppRunner() const
+    {
+        return m_appRunner;
+    }
+
 protected:
     Engine *m_engine = nullptr;
+    ChainedDecos::EngineApplication *m_appRunner = nullptr;
 };
 
 #endif // I_APPLICATION_H

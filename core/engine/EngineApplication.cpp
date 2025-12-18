@@ -7,6 +7,9 @@
 #include <cassert>
 #include <raylib.h>
 
+namespace ChainedDecos
+{
+
 EngineApplication::EngineApplication(Config config, IApplication *application)
     : m_app(application), m_config(std::move(config))
 {
@@ -14,6 +17,7 @@ EngineApplication::EngineApplication(Config config, IApplication *application)
 
     // Create the Engine singleton
     m_engine = std::make_shared<Engine>();
+    m_app->SetAppRunner(this);
     if (!m_engine->Initialize())
     {
         throw std::runtime_error("Failed to initialize Engine!");
@@ -43,6 +47,16 @@ void EngineApplication::Run()
     }
 
     Shutdown();
+}
+
+void EngineApplication::PushLayer(Layer *layer)
+{
+    m_LayerStack.PushLayer(layer);
+}
+
+void EngineApplication::PushOverlay(Layer *overlay)
+{
+    m_LayerStack.PushOverlay(overlay);
 }
 
 void EngineApplication::Initialize()
@@ -102,6 +116,10 @@ void EngineApplication::Update()
         m_engine->GetInputManager()->ProcessInput();
     }
 
+    // Update Layers (Bottom -> Top)
+    for (Layer *layer : m_LayerStack)
+        layer->OnUpdate(deltaTime);
+
     if (m_app)
         m_app->OnUpdate(deltaTime);
 }
@@ -118,6 +136,10 @@ void EngineApplication::Render()
         {
             moduleManager->RenderAllModules();
         }
+
+        // Render Layers (Bottom -> Top)
+        for (Layer *layer : m_LayerStack)
+            layer->OnRender();
 
         // Allow project to render its own
         if (m_app)
@@ -148,3 +170,5 @@ void EngineApplication::Shutdown()
 
     TraceLog(LOG_INFO, "[EngineApplication] Application shut down.");
 }
+
+} // namespace ChainedDecos
