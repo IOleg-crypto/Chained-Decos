@@ -10,7 +10,6 @@ void MenuPresenter::SetActionCallback(ActionCallback callback)
 
 void MenuPresenter::SetupStyle()
 {
-    // Get ImGui's default style and customize it
     ImGuiStyle &style = ImGui::GetStyle();
     ImGuiIO &io = ImGui::GetIO();
 
@@ -19,47 +18,43 @@ void MenuPresenter::SetupStyle()
         std::string(PROJECT_ROOT_DIR) + "/resources/font/Gantari/static/Gantari-Regular.ttf";
     if (std::filesystem::exists(fontPath))
     {
-        // Increase base font size for sharper text (was 20.0f)
-        ImFont *font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 32.0f);
-        if (font)
+        bool fontExists = false;
+        for (int i = 0; i < io.Fonts->Fonts.Size; i++)
         {
-            TraceLog(LOG_INFO, "[Menu] Loaded custom font: %s", fontPath.c_str());
-            // Important: Notify rlImGui to rebuild the font texture
-            // Assuming rlImGuiReloadFonts() or similar is available, or we just rely on standard
-            // flow. Since we don't have direct access to rlImGui internal reload easily without
-            // including it, we'll see if it works. Standard ImGui requires texture rebuild. If
-            // rlImGui is used, we usually need to call rlImGuiReloadFonts(). Let's try to verify if
-            // we can include it.
+            const char *name = io.Fonts->Fonts[i]->GetDebugName();
+            if (name && std::string(name).find("Gantari") != std::string::npos)
+            {
+                fontExists = true;
+                break;
+            }
+        }
+
+        if (!fontExists)
+        {
+            ImFont *font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 32.0f);
+            if (font)
+            {
+                TraceLog(LOG_INFO, "[MenuPresenter] Loaded custom font: %s", fontPath.c_str());
+            }
         }
     }
-    else
-    {
-        TraceLog(LOG_WARNING, "[Menu] Custom font not found: %s", fontPath.c_str());
-    }
 
-    // Window styling
+    // Modern dark theme
     style.WindowRounding = 8.0f;
-    style.WindowBorderSize = 1.0f;
-    style.WindowPadding = ImVec2(20, 20);
+    style.FrameRounding = 6.0f;
+    style.GrabRounding = 6.0f;
+    style.PopupRounding = 8.0f;
+    style.ScrollbarRounding = 8.0f;
+    style.WindowPadding = ImVec2(16.0f, 16.0f);
+    style.FramePadding = ImVec2(12.0f, 8.0f);
 
-    // Frame styling
-    style.FrameRounding = 4.0f;
-    style.FramePadding = ImVec2(10, 8);
-
-    // Button styling
-    style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
-
-    // Colors - Dark theme with purple accents
     ImVec4 *colors = style.Colors;
-    colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.15f, 0.95f);
-    colors[ImGuiCol_Border] = ImVec4(0.4f, 0.3f, 0.6f, 0.5f);
-    colors[ImGuiCol_Button] = ImVec4(0.3f, 0.2f, 0.5f, 0.8f);
-    colors[ImGuiCol_ButtonHovered] = ImVec4(0.4f, 0.3f, 0.6f, 0.9f);
-    colors[ImGuiCol_ButtonActive] = ImVec4(0.5f, 0.4f, 0.7f, 1.0f);
-    colors[ImGuiCol_Text] = ImVec4(0.9f, 0.9f, 0.95f, 1.0f);
-    colors[ImGuiCol_FrameBg] = ImVec4(0.15f, 0.15f, 0.2f, 0.8f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.2f, 0.2f, 0.3f, 0.9f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.25f, 0.25f, 0.35f, 1.0f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.98f);
+    colors[ImGuiCol_Button] = ImVec4(0.25f, 0.25f, 0.25f, 0.8f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(0.35f, 0.35f, 0.35f, 0.9f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.45f, 0.45f, 0.45f, 1.0f);
+    colors[ImGuiCol_Text] = ImVec4(0.95f, 0.95f, 0.95f, 1.0f);
+    colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
 
     m_customStyle = style;
 }
@@ -113,77 +108,88 @@ void MenuPresenter::RenderMainMenu(bool gameInProgress, bool addResumeButton)
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
     const float centerX = windowSize.x * 0.5f;
-    const float buttonWidth = 280.0f;
-    const float buttonHeight = 50.0f;
-    const float spacing = 15.0f;
+    const float buttonWidth = 360.0f;
+    const float buttonHeight = 60.0f;
+    const float spacing = 20.0f;
+
+    // Title section
+    ImGui::SetCursorPos(ImVec2(50, 50));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
+    ImGui::SetWindowFontScale(1.5f);
+    ImGui::Text("CHAINED DECOS");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PopStyleColor();
+
+    ImGui::SetCursorPos(ImVec2(50, 100));
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Parkour Adventure");
 
     float currentY = windowSize.y * 0.3f;
 
-    // Title
-    ImGui::SetCursorPos(ImVec2(centerX - 150.0f, currentY - 80.0f));
-    RenderSectionHeader("CHAINED DECOS", nullptr);
-
-    // Resume button (only if game in progress)
     if (gameInProgress && addResumeButton)
     {
-        ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, currentY));
+        ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
         RenderActionButton("Resume Game", MenuAction::ResumeGame,
                            ImVec2(buttonWidth, buttonHeight));
         currentY += buttonHeight + spacing;
     }
 
-    // Play button
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, currentY));
-    RenderActionButton("Play", MenuAction::StartGame, ImVec2(buttonWidth, buttonHeight));
+    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
+    RenderActionButton("Start Game", MenuAction::StartGame, ImVec2(buttonWidth, buttonHeight));
     currentY += buttonHeight + spacing;
 
-    // Options
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, currentY));
+    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
     RenderActionButton("Options", MenuAction::OpenOptions, ImVec2(buttonWidth, buttonHeight));
     currentY += buttonHeight + spacing;
 
-    // Credits
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, currentY));
+    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
     RenderActionButton("Credits", MenuAction::OpenCredits, ImVec2(buttonWidth, buttonHeight));
     currentY += buttonHeight + spacing;
 
-    // Exit
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, currentY));
-    RenderActionButton("Exit", MenuAction::ExitGame, ImVec2(buttonWidth, buttonHeight));
+    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
+    RenderActionButton("Exit Game", MenuAction::ExitGame, ImVec2(buttonWidth, buttonHeight));
+
+    // Footer hint
+    ImGui::SetCursorPos(ImVec2(50, windowSize.y - 40));
+    RenderMenuHint("[~] Console | [F12] Screenshot | [ESC] Back");
 }
 
 void MenuPresenter::RenderOptionsMenu()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
     const float centerX = windowSize.x * 0.5f;
-    const float buttonWidth = 280.0f;
-    const float buttonHeight = 50.0f;
-    const float spacing = 15.0f;
-
-    float currentY = windowSize.y * 0.25f;
+    const float centerY = windowSize.y * 0.5f;
+    const float buttonWidth = 360.0f;
+    const float buttonHeight = 60.0f;
+    const float spacing = 20.0f;
 
     // Title
-    ImGui::SetCursorPos(ImVec2(centerX - 100.0f, currentY - 60.0f));
-    RenderSectionHeader("OPTIONS", nullptr);
+    ImGui::SetCursorPos(ImVec2(50, 50));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.4f, 1.0f));
+    ImGui::SetWindowFontScale(1.5f);
+    ImGui::Text("OPTIONS");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PopStyleColor();
 
-    // Video
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, currentY));
-    RenderActionButton("Video", MenuAction::OpenVideoMode, ImVec2(buttonWidth, buttonHeight));
+    const int buttonCount = 3;
+    const float totalHeight = (buttonCount * buttonHeight) + ((buttonCount - 1) * spacing);
+    float currentY = centerY - totalHeight / 2.0f;
+
+    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
+    RenderActionButton("Video Settings", MenuAction::OpenVideoMode,
+                       ImVec2(buttonWidth, buttonHeight));
     currentY += buttonHeight + spacing;
 
-    // Audio
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, currentY));
-    RenderActionButton("Audio", MenuAction::OpenAudio, ImVec2(buttonWidth, buttonHeight));
+    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
+    RenderActionButton("Audio Settings", MenuAction::OpenAudio, ImVec2(buttonWidth, buttonHeight));
     currentY += buttonHeight + spacing;
 
-    // Controls
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, currentY));
-    RenderActionButton("Controls", MenuAction::OpenControls, ImVec2(buttonWidth, buttonHeight));
-    currentY += buttonHeight + spacing;
+    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
+    RenderActionButton("Control Settings", MenuAction::OpenControls,
+                       ImVec2(buttonWidth, buttonHeight));
 
-    // Back
-    ImGui::SetCursorPos(ImVec2(centerX - buttonWidth * 0.5f, windowSize.y - 80.0f));
-    RenderBackButton(buttonWidth);
+    // Back button
+    ImGui::SetCursorPos(ImVec2(80, windowSize.y - 60));
+    RenderBackButton();
 }
 
 void MenuPresenter::RenderGameModeMenu()
@@ -267,34 +273,43 @@ void MenuPresenter::RenderModsScreen()
 void MenuPresenter::RenderConfirmExitDialog()
 {
     const ImVec2 windowSize = ImGui::GetWindowSize();
-    const float centerX = windowSize.x * 0.5f;
-    const float centerY = windowSize.y * 0.5f;
 
-    // Dialog background
-    ImGui::SetCursorPos(ImVec2(centerX - 150.0f, centerY - 60.0f));
-    ImGui::BeginChild("ExitDialog", ImVec2(300, 120), true);
+    ImGui::SetNextWindowPos(ImVec2(windowSize.x / 2 - 200, windowSize.y / 2 - 150));
+    ImGui::SetNextWindowSize(ImVec2(400, 300));
 
-    ImGui::SetCursorPosX(60.0f);
-    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Exit to Desktop?");
+    ImGui::Begin("Exit Confirmation", nullptr,
+                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
-    ImGui::SetCursorPosY(50.0f);
-    ImGui::SetCursorPosX(30.0f);
+    ImGui::SetCursorPos(ImVec2(150, 40));
+    ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "EXIT GAME?");
 
-    if (ImGui::Button("Yes", ImVec2(100, 40)))
+    ImGui::SetCursorPos(ImVec2(80, 200));
+    if (ImGui::Button("YES", ImVec2(80, 40)))
     {
         if (m_actionCallback)
             m_actionCallback(MenuAction::ExitGame);
     }
 
-    ImGui::SameLine(140.0f);
-
-    if (ImGui::Button("No", ImVec2(100, 40)))
+    ImGui::SameLine();
+    ImGui::SetCursorPos(ImVec2(240, 200));
+    if (ImGui::Button("NO", ImVec2(80, 40)))
     {
         if (m_actionCallback)
             m_actionCallback(MenuAction::BackToMainMenu);
     }
 
-    ImGui::EndChild();
+    ImGui::SetCursorPos(ImVec2(120, 260));
+    ImGui::TextColored(ImVec4(0.7f, 0.8f, 0.9f, 1.0f), "Y/ENTER = Yes    N/ESC = No");
+
+    ImGui::End();
+}
+
+void MenuPresenter::RenderConsoleOverlay(ConsoleManager *consoleManager)
+{
+    if (consoleManager)
+    {
+        consoleManager->RenderConsole();
+    }
 }
 
 const char *MenuPresenter::GetStateTitle(MenuState state)
@@ -325,7 +340,3 @@ const char *MenuPresenter::GetStateTitle(MenuState state)
         return "Menu";
     }
 }
-
-
-
-
