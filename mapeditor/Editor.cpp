@@ -317,12 +317,24 @@ void Editor::SetSkybox(const std::string &name)
 
 void Editor::SetSkyboxTexture(const std::string &texturePath)
 {
+    // Avoid redundant loading if the texture is already set
+    if (m_gameMap.GetMapMetaData().skyboxTexture == texturePath && m_skybox && m_skybox->IsLoaded())
+    {
+        return;
+    }
+
     if (!texturePath.empty())
     {
         m_skybox->Init();
     }
     else
     {
+        // Handle unloading
+        if (m_skybox)
+        {
+            m_skybox->UnloadSkybox();
+        }
+        m_gameMap.GetMapMetaDataMutable().skyboxTexture = "";
         return;
     }
     m_skybox->LoadMaterialTexture(texturePath);
