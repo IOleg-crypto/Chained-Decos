@@ -729,6 +729,7 @@ void EditorUIManager::RenderWelcomeScreen()
                     if (result == NFD_OKAY)
                     {
                         m_editor->LoadMap(std::string(outPath));
+                        m_displayWelcomeScreen = false;
                         NFD_FreePathU8(outPath);
                     }
                 }
