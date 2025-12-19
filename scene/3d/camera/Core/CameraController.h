@@ -9,6 +9,10 @@
 #include <raylib.h>
 #include <raymath.h>
 
+namespace ChainedDecos
+{
+class Event;
+}
 
 //
 // CameraController
@@ -43,6 +47,9 @@ public:
 
     // Update camera rotation based on mouse input
     void UpdateCameraRotation();
+
+    // Event handling
+    void OnEvent(ChainedDecos::Event &e);
 
     // Update camera offset based on FOV and angles relative to player position
     void UpdateMouseRotation(Camera &camera, const Vector3 &playerPosition);
@@ -90,6 +97,11 @@ private:
     Vector2 m_smoothedMouseDelta = {0.0f, 0.0f};   // Smoothed mouse delta value
     static constexpr float MOUSE_DEAD_ZONE = 0.5f; // Dead zone - ignore very small movements
 
+    // Interaction state tracking (Event-driven)
+    bool m_isLMBDown = false;
+    int m_activeMovementKeys = 0; // Counter for pressed movement keys
+    float m_lastMouseWheelMove = 0.0f;
+
     // Screen shake
     float m_shakeIntensity = 0.0f;              // Current shake intensity
     float m_shakeDuration = 0.0f;               // Remaining shake duration
@@ -98,7 +110,3 @@ private:
 };
 
 #endif // CAMERACONTROLLER_H
-
-
-
-

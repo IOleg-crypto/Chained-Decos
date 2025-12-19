@@ -52,6 +52,7 @@ private:
     std::vector<SkyboxInfo> m_availableSkyboxes;
     bool m_skyboxesScanned;
     int m_selectedSkyboxIndex;
+    bool m_isSkyboxLoaded;
 
     // Placeholder texture for skybox panel
     Texture2D m_skyboxPlaceholderTexture;
@@ -63,7 +64,3 @@ private:
 };
 
 #endif // SKYBOX_BROWSER_H
-
-
-
-
