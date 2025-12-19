@@ -116,3 +116,7 @@ MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3 &positio
                                       const Vector3 &scale, const Color &color);
 
 #endif // MAPLOADER_H
+
+
+
+

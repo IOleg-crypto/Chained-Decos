@@ -1,5 +1,5 @@
 #include "scene/resources/map/Skybox/Skybox.h"
-#include "core/config/Core/ConfigManager.h"
+#include "core/config/ConfigManager.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -167,3 +167,7 @@ TEST_F(SkyboxTest, UpdateGammaFromConfigWithoutInit)
     skybox.Init();
     EXPECT_NO_THROW(skybox.UpdateGammaFromConfig());
 }
+
+
+
+

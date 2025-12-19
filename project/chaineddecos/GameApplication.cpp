@@ -1,20 +1,20 @@
 #include "GameApplication.h"
 #include "GameLayer.h"
-#include "core/engine/EngineApplication.h"
-#include "core/services/CoreServices.h"
+#include "core/application/EngineApplication.h"
 #include "scene/main/Core/LevelManager.h"
+
 // #include "Systems/PlayerSystem/PlayerController.h"
 // #include "Systems/RenderingSystem/RenderingSystem.h"
-#include "Systems/UIController/UIManager.h"
+
 #include "components/input/Core/InputManager.h"
 #include "components/physics/collision/Core/CollisionManager.h"
 #include "components/rendering/Core/RenderManager.h"
-#include "core/config/Core/ConfigManager.h"
-#include "core/ecs/Components.h"
+#include "core/config/ConfigManager.h"
 #include "core/ecs/Examples.h"
-#include "core/object/module/Core/ModuleManager.h"
-#include "project/chaineddecos/Menu/Menu.h"
+#include "core/ecs/components.h"
+#include "core/module/ModuleManager.h"
 #include "project/chaineddecos/Player/Core/Player.h"
+#include "project/chaineddecos/gamegui/Menu.h"
 #include "scene/main/Core/LevelManager.h"
 #include "scene/main/Core/MapCollisionInitializer.h"
 #include "scene/main/Core/World.h"
@@ -99,19 +99,9 @@ void GameApplication::OnConfigure(EngineConfig &config)
 void GameApplication::OnRegister()
 {
     auto &engine = Engine::Instance();
-    CoreServices core;
-    if (!core.Initialize(m_gameConfig.width, m_gameConfig.height, "Chained Decos",
-                         m_gameConfig.fullscreen, true))
-    {
-        TraceLog(LOG_ERROR, "[GameApplication] Failed to initialize CoreServices");
-    }
-
-    TraceLog(LOG_INFO, "[GameApplication] Core engine services registered via CoreServices.");
-
     // 2. Register Game Systems (Modules)
-    // Legacy modules - keeping LevelManager and UIManager for now
     engine.RegisterModule(std::make_unique<LevelManager>());
-    engine.RegisterModule(std::make_unique<UIManager>());
+    // UIManager removed - replaced by direct Menu management in GameApplication
 
     // PlayerController and RenderingSystem are replaced by ECS Systems
     // engine.RegisterModule(std::make_unique<PlayerController>());
@@ -130,21 +120,11 @@ void GameApplication::OnStart()
     AudioManager::Get().LoadSound("player_fall",
                                   PROJECT_ROOT_DIR "\\resources\\audio\\fallingplayer.wav");
 
-    // Setup ImGui style for menu (after ImGui is initialized by RenderManager)
-    auto *engine = &Engine::Instance();
-    if (engine->GetModuleManager())
-    {
-        auto *uiModule = engine->GetModuleManager()->GetModule("UI");
-        if (uiModule)
-        {
-            UIManager *uiManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiManager && uiManager->GetMenu())
-            {
-                uiManager->GetMenu()->SetupStyle();
-                TraceLog(LOG_INFO, "[GameApplication] ImGui style configured");
-            }
-        }
-    }
+    // Initialize Menu
+    m_menu = std::make_unique<Menu>();
+    m_menu->Initialize(&Engine::Instance());
+    m_menu->SetupStyle();
+    TraceLog(LOG_INFO, "[GameApplication] Menu initialized and style configured");
 
     // Initialize ECS
     REGISTRY.clear();
@@ -281,14 +261,10 @@ void GameApplication::OnStart()
                 }
             }
 
-            auto *uiModule = Engine::Instance().GetModuleManager()->GetModule("UI");
-            if (uiModule)
+            // GUI is now managed directly by GameApplication
+            if (m_menu)
             {
-                auto *uiManager = dynamic_cast<UIManager *>(uiModule);
-                if (uiManager && uiManager->GetMenu())
-                {
-                    uiManager->GetMenu()->SetGameInProgress(true);
-                }
+                m_menu->SetGameInProgress(true);
             }
         }
         saveFile.close();
@@ -389,22 +365,7 @@ void GameApplication::OnUpdate(float deltaTime)
     if (!engine)
         return;
 
-    auto moduleManager = engine->GetModuleManager();
-    UIManager *uiManager = nullptr;
-    Menu *menu = nullptr;
-
-    if (moduleManager)
-    {
-        auto *uiModule = moduleManager->GetModule("UI");
-        if (uiModule)
-        {
-            uiManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiManager)
-            {
-                menu = uiManager->GetMenu();
-            }
-        }
-    }
+    Menu *menu = m_menu.get();
 
     // Only handle console toggle here if we are NOT in the menu.
     // When in menu, Menu::HandleKeyboardNavigation handles it to avoid double-toggling.
@@ -502,19 +463,7 @@ void GameApplication::OnRender()
     // Get Menu
     auto *engine = &Engine::Instance();
     // auto moduleManager = engine->GetModuleManager();
-    UIManager *uiManager = nullptr;
-    Menu *menu = nullptr;
-
-    if (engine->GetModuleManager())
-    {
-        auto *uiModule = engine->GetModuleManager()->GetModule("UI");
-        if (uiModule)
-        {
-            uiManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiManager)
-                menu = uiManager->GetMenu();
-        }
-    }
+    Menu *menu = m_menu.get();
 
     if (m_showMenu && menu)
     {
@@ -668,14 +617,6 @@ void GameApplication::OnRender()
         }
     }
 
-    // Debug Collision
-    if (m_showDebugCollision && m_isGameInitialized)
-    {
-        RenderManager::Get().BeginMode3D(RenderManager::Get().GetCamera());
-        CollisionSystem::RenderDebug();
-        RenderManager::Get().EndMode3D();
-    }
-
     // Debug Stats
     if (m_showDebugStats)
     {
@@ -733,14 +674,9 @@ void GameApplication::OnShutdown()
     {
         collisionManager->ClearColliders();
         {
-            auto *uiModule = Engine::Instance().GetModuleManager()->GetModule("UI");
-            if (uiModule)
+            if (m_menu)
             {
-                auto *uiManager = dynamic_cast<UIManager *>(uiModule);
-                if (uiManager && uiManager->GetMenu())
-                {
-                    uiManager->GetMenu()->SetGameInProgress(false);
-                }
+                m_menu->SetGameInProgress(false);
             }
         }
     }
@@ -759,21 +695,13 @@ void GameApplication::InitInput()
         return;
     }
 
-    // Get Menu through UIController
-    auto moduleManager = engine->GetModuleManager();
-    Menu *menu = nullptr;
-    if (moduleManager)
+    if (!m_menu)
     {
-        auto *uiModule = moduleManager->GetModule("UI");
-        if (uiModule)
-        {
-            auto *uiManager = dynamic_cast<UIManager *>(uiModule);
-            if (uiManager)
-            {
-                menu = uiManager->GetMenu();
-            }
-        }
+        TraceLog(LOG_WARNING, "[GameApplication] Menu not found, skipping input bindings");
+        return;
     }
+
+    auto *menu = m_menu.get();
 
     if (!menu)
     {
@@ -829,23 +757,45 @@ void GameApplication::InitInput()
 
 void GameApplication::HandleMenuActions()
 {
-    // Get UIManager through ModuleManager
-    auto *engine = &Engine::Instance();
-    if (!engine)
+    if (!m_menu)
         return;
 
-    auto moduleManager = engine->GetModuleManager();
-    if (!moduleManager)
+    MenuAction action = m_menu->ConsumeAction();
+    if (action == MenuAction::None)
         return;
 
-    auto *uiModule = moduleManager->GetModule("UI");
-    if (!uiModule)
-        return;
-
-    auto *uiManager = dynamic_cast<UIManager *>(uiModule);
-    if (uiManager)
+    switch (action)
     {
-        uiManager->HandleMenuActions(&m_showMenu, &m_isGameInitialized);
+    case MenuAction::SinglePlayer:
+    case MenuAction::StartGameWithMap:
+    {
+        std::string mapName = m_menu->GetSelectedMapName();
+        auto levelManager = Engine::Instance().GetService<ILevelManager>();
+        if (levelManager && levelManager->LoadMap(mapName))
+        {
+            m_isGameInitialized = true;
+            m_showMenu = false;
+            m_menu->ResetAction();
+        }
+        break;
+    }
+    case MenuAction::ResumeGame:
+    {
+        // For now, resume just closes menu if initialized
+        if (m_isGameInitialized)
+        {
+            m_showMenu = false;
+            m_menu->ResetAction();
+        }
+        break;
+    }
+    case MenuAction::ExitGame:
+    {
+        Engine::Instance().RequestExit();
+        break;
+    }
+    default:
+        break;
     }
 }
 

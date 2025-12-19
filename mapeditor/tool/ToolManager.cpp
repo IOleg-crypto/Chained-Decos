@@ -420,3 +420,73 @@ void ToolManager::CreateObjectForTool(Tool tool, IEditor &editor)
     dynamic_cast<Editor &>(editor).CreateDefaultObject(type, m_currentlySelectedModelName);
     std::cout << "Created new object with tool: " << (int)tool << std::endl;
 }
+
+void ToolManager::RenderGizmos(IEditor &editor)
+{
+    MapObjectData *selectedObj = editor.GetSelectedObject();
+    if (!selectedObj)
+        return;
+
+    // Only render gizmos for transform tools
+    if (m_activeTool != MOVE && m_activeTool != ROTATE && m_activeTool != SCALE)
+        return;
+
+    // Calculate gizmo scale based on camera distance
+    float scale = GetGizmoScale(selectedObj->position);
+    Vector3 gizmoScale = {scale, scale, scale};
+
+    // Render based on active tool
+    if (m_activeTool == MOVE)
+    {
+        // Render Move Gizmo (Arrows)
+        DrawCube(selectedObj->position, 0.2f * scale, 0.2f * scale, 0.2f * scale, WHITE);
+
+        // X Axis (Red)
+        DrawLine3D(selectedObj->position,
+                   Vector3Add(selectedObj->position, Vector3Scale({1, 0, 0}, 2.0f * scale)), RED);
+        DrawCube(Vector3Add(selectedObj->position, Vector3Scale({1, 0, 0}, 2.0f * scale)),
+                 0.3f * scale, 0.3f * scale, 0.3f * scale, RED);
+
+        // Y Axis (Green)
+        DrawLine3D(selectedObj->position,
+                   Vector3Add(selectedObj->position, Vector3Scale({0, 1, 0}, 2.0f * scale)), GREEN);
+        DrawCube(Vector3Add(selectedObj->position, Vector3Scale({0, 1, 0}, 2.0f * scale)),
+                 0.3f * scale, 0.3f * scale, 0.3f * scale, GREEN);
+
+        // Z Axis (Blue)
+        DrawLine3D(selectedObj->position,
+                   Vector3Add(selectedObj->position, Vector3Scale({0, 0, 1}, 2.0f * scale)), BLUE);
+        DrawCube(Vector3Add(selectedObj->position, Vector3Scale({0, 0, 1}, 2.0f * scale)),
+                 0.3f * scale, 0.3f * scale, 0.3f * scale, BLUE);
+    }
+    else if (m_activeTool == SCALE)
+    {
+        // Render Scale Gizmo (Cubes)
+        DrawCube(selectedObj->position, 0.2f * scale, 0.2f * scale, 0.2f * scale, WHITE);
+
+        // X Axis (Red)
+        DrawLine3D(selectedObj->position,
+                   Vector3Add(selectedObj->position, Vector3Scale({1, 0, 0}, 2.0f * scale)), RED);
+        DrawCube(Vector3Add(selectedObj->position, Vector3Scale({1, 0, 0}, 2.0f * scale)),
+                 0.3f * scale, 0.3f * scale, 0.3f * scale, RED);
+
+        // Y Axis (Green)
+        DrawLine3D(selectedObj->position,
+                   Vector3Add(selectedObj->position, Vector3Scale({0, 1, 0}, 2.0f * scale)), GREEN);
+        DrawCube(Vector3Add(selectedObj->position, Vector3Scale({0, 1, 0}, 2.0f * scale)),
+                 0.3f * scale, 0.3f * scale, 0.3f * scale, GREEN);
+
+        // Z Axis (Blue)
+        DrawLine3D(selectedObj->position,
+                   Vector3Add(selectedObj->position, Vector3Scale({0, 0, 1}, 2.0f * scale)), BLUE);
+        DrawCube(Vector3Add(selectedObj->position, Vector3Scale({0, 0, 1}, 2.0f * scale)),
+                 0.3f * scale, 0.3f * scale, 0.3f * scale, BLUE);
+    }
+    else if (m_activeTool == ROTATE)
+    {
+        // Render Rotate Gizmo (Circles) - simplified
+        DrawCircle3D(selectedObj->position, 2.0f * scale, {1, 0, 0}, 90.0f, RED);
+        DrawCircle3D(selectedObj->position, 2.0f * scale, {0, 1, 0}, 90.0f, GREEN);
+        DrawCircle3D(selectedObj->position, 2.0f * scale, {0, 0, 1}, 90.0f, BLUE);
+    }
+}

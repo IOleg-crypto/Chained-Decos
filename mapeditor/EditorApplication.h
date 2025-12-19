@@ -2,7 +2,7 @@
 #define EDITOR_APPLICATION_H
 
 #include "Editor.h"
-#include "core/engine/IApplication.h"
+#include "core/application/IApplication.h"
 #include <memory>
 
 // Editor application - uses full engine + own modules
@@ -35,3 +35,7 @@ private:
 };
 
 #endif // EDITOR_APPLICATION_H
+
+
+
+

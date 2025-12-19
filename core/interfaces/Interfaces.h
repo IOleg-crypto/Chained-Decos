@@ -1,9 +1,13 @@
 #ifndef CORE_INTERFACES_H
 #define CORE_INTERFACES_H
 
-// Core interfaces - PascalCase file naming
-#include "IService.h"
-#include "ITransformable.h"
-#include "IUpdatable.h"
+// Core interfaces
+#include "ILevelManager.h"
+#include "IMenu.h"
+#include "IPlayer.h"
 
 #endif // CORE_INTERFACES_H
+
+
+
+
