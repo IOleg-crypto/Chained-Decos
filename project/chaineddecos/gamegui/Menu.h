@@ -7,6 +7,7 @@
 #include "Settings/MenuSettingsController.h"
 #include "Settings/SettingsManager.h"
 
+#include "core/Engine.h"
 #include "core/interfaces/IMenu.h"
 #include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
 #include <GLFW/glfw3.h>
@@ -18,6 +19,11 @@
 #include <raylib.h>
 #include <string>
 #include <vector>
+
+namespace ChainedDecos
+{
+using EventCallback = std::function<void(Event &)>;
+}
 
 enum class MenuAction : uint8_t
 {
@@ -66,7 +72,6 @@ struct MenuItem
     bool enabled = true;
     std::string shortcut;
 };
-class Engine; // Forward declaration
 
 class Menu : public IMenu
 {
@@ -112,6 +117,10 @@ public:
     void SetAction(MenuAction action);
     [[nodiscard]] MenuAction GetAction() const;
     void ResetAction();
+    void SetEventCallback(const ChainedDecos::EventCallback &callback)
+    {
+        m_eventCallback = callback;
+    }
 
     // Console functionality
     void ToggleConsole() override;
@@ -147,28 +156,8 @@ private:
     void EndFrame();
     void RenderMenuState();
 
-    // Menu screen renderers
-    void RenderMainMenu();
-    void RenderOptionsMenu();
-    void RenderGameModeMenu();
-    void RenderMapSelection();
-    void RenderCreditsScreen();
-    void RenderModsScreen();
-    void RenderConfirmExitDialog();
-
-    // Console functionality
-    void RenderConsoleOverlay();
-
     // Helper methods
     void HandleAction(MenuAction action);
-    static const char *GetStateTitle(MenuState state);
-
-    // ImGui UI components
-    bool RenderActionButton(const char *label, MenuAction action,
-                            const ImVec2 &size = ImVec2(0, 0));
-    bool RenderBackButton(float width = 0.0f);
-    void RenderSectionHeader(const char *title, const char *subtitle = nullptr) const;
-    void RenderMenuHint(const char *text) const;
 
     // Core state
     Engine *m_engine = nullptr;
@@ -199,14 +188,10 @@ private:
     std::unique_ptr<MenuPresenter> m_presenter;
 
     // UI state
-    bool m_showDemoWindow = false;
-    bool m_showStyleEditor = false;
     bool m_addResumeButton = false;
-    ImGuiStyle m_customStyle{};
+
+    // Event callback
+    ChainedDecos::EventCallback m_eventCallback;
 };
 
 #endif // MENU_H
-
-
-
-

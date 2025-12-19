@@ -6,7 +6,6 @@
 #include <imgui.h>
 #include <string>
 
-
 // Forward declarations
 enum class MenuAction : uint8_t;
 enum class MenuState : uint8_t;
@@ -38,6 +37,7 @@ public:
     void RenderCreditsScreen();
     void RenderModsScreen();
     void RenderConfirmExitDialog();
+    void RenderConsoleOverlay(class ConsoleManager *consoleManager);
 
     // Utility
     static const char *GetStateTitle(MenuState state);
@@ -48,7 +48,3 @@ private:
 };
 
 #endif // MENU_PRESENTER_H
-
-
-
-

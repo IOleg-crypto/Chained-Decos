@@ -10,8 +10,7 @@
 #include <string>
 #include <vector>
 
-// Forward declarations
-class Engine;
+#include "core/Engine.h"
 
 struct VideoSettings
 {
@@ -81,7 +80,3 @@ private:
 };
 
 #endif // MENU_SETTINGS_CONTROLLER_H
-
-
-
-
