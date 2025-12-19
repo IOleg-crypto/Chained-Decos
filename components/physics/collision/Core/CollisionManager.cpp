@@ -1438,7 +1438,3 @@ bool CollisionManager::CheckEntityCollision(ECS::EntityID selfEntity, const Coll
 
     return collisionDetected;
 }
-
-
-
-

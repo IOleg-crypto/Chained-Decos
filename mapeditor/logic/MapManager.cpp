@@ -14,7 +14,10 @@ void MapManager::SaveMap(const std::string &filename)
 void MapManager::LoadMap(const std::string &filename)
 {
     MapLoader loader;
-    m_gameMap = loader.LoadMap(filename);
+    auto map = loader.LoadMap(filename);
+
+    // Move the loaded map into our member
+    m_gameMap = std::move(map);
     m_currentMapPath = filename;
     m_isSceneModified = false;
     m_selectedIndex = -1;

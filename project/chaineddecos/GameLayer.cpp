@@ -3,6 +3,7 @@
 #include "components/input/Core/InputManager.h"
 #include "components/physics/collision/Core/CollisionManager.h"
 #include "components/rendering/Core/RenderManager.h"
+#include "core/Engine.h"
 #include "core/ecs/ECSRegistry.h"
 #include "core/ecs/components/PhysicsData.h"
 #include "core/ecs/components/PlayerComponent.h"
@@ -10,7 +11,6 @@
 #include "core/ecs/components/TransformComponent.h"
 #include "core/ecs/components/UtilityComponents.h"
 #include "core/ecs/components/VelocityComponent.h"
-#include "core/Engine.h"
 #include "core/events/Event.h"
 #include "core/events/KeyEvent.h"
 #include "core/events/MouseEvent.h"
@@ -20,6 +20,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
+
 
 using namespace ChainedDecos;
 
@@ -328,7 +329,3 @@ void GameLayer::OnEvent(Event &e)
             return false;
         });
 }
-
-
-
-

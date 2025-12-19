@@ -1,25 +1,25 @@
 set(PLAYER_SOURCES
     # Core
-    Core/Player.cpp
-    Core/Player.h
+    core/Player.cpp
+    core/Player.h
     
     # Components
-    Components/PlayerRenderable.cpp
-    Components/PlayerRenderable.h
-    Components/PlayerInput.cpp
-    Components/PlayerInput.h
-    Components/PlayerModel.h
-    Components/PlayerModel.cpp
-    Components/PlayerMovement.h
-    Components/PlayerMovement.cpp
+    components/PlayerRenderable.cpp
+    components/PlayerRenderable.h
+    components/PlayerInput.cpp
+    components/PlayerInput.h
+    components/PlayerModel.h
+    components/PlayerModel.cpp
+    components/PlayerMovement.h
+    components/PlayerMovement.cpp
     
     # Collision
-    Collision/PlayerCollision.cpp
-    Collision/PlayerCollision.h
+    collision/PlayerCollision.cpp
+    collision/PlayerCollision.h
     
     # Interfaces
-    Interfaces/IPlayerInput.h
-    Interfaces/IPlayerMovement.h
+    interfaces/IPlayerInput.h
+    interfaces/IPlayerMovement.h
 )
 
 add_library(player STATIC ${PLAYER_SOURCES})

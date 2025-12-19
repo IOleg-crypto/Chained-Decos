@@ -21,7 +21,7 @@ target_include_directories(ChainedDecosGame
         ${CMAKE_SOURCE_DIR}/include/imgui
         ${CMAKE_SOURCE_DIR}/include/rlImGui
         ${CMAKE_SOURCE_DIR}/core
-        ${CMAKE_SOURCE_DIR}/scene/3d/camera
+        ${CMAKE_SOURCE_DIR}/scene/camera/core
         ${CMAKE_SOURCE_DIR}/scene/main
         ${CMAKE_SOURCE_DIR}/components/physics/dynamics/src
 )

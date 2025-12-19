@@ -5,7 +5,7 @@
 #ifndef CAMERACONTROLLER_H
 #define CAMERACONTROLLER_H
 
-#include "../Interfaces/ICameraSensitivityController.h"
+#include "ICameraSensitivityController.h"
 #include <raylib.h>
 #include <raymath.h>
 

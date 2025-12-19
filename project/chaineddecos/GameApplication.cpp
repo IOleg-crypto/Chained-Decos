@@ -14,7 +14,6 @@
 #include "core/ecs/components.h"
 #include "core/module/ModuleManager.h"
 #include "project/chaineddecos/Player/Core/Player.h"
-#include "project/chaineddecos/events/MenuEvent.h"
 #include "project/chaineddecos/gamegui/Menu.h"
 #include "scene/main/Core/LevelManager.h"
 #include "scene/main/Core/MapCollisionInitializer.h"
@@ -27,6 +26,12 @@
 #include <GLFW/glfw3.h>
 #include <fstream>
 #include <raylib.h>
+
+using ChainedDecos::InputManager;
+using ChainedDecos::MenuEvent;
+using ChainedDecos::MenuEventType;
+// MenuEventCallback is inside Menu class
+using MenuEventCallback = Menu::MenuEventCallback;
 
 GameApplication::GameApplication(int argc, char *argv[])
     : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false),
@@ -124,12 +129,53 @@ void GameApplication::OnStart()
     // Initialize Menu
     m_menu = std::make_unique<Menu>();
     m_menu->Initialize(&Engine::Instance());
-
-    // Set up event callback to route menu actions to our OnEvent handler
-    m_menu->SetEventCallback([this](ChainedDecos::Event &e) { OnEvent(e); });
-
     m_menu->SetupStyle();
-    TraceLog(LOG_INFO, "[GameApplication] Menu initialized and style configured");
+
+    // Register Menu Events
+    m_menu->SetEventCallback(
+        [this](const ChainedDecos::MenuEvent &event)
+        {
+            switch (event.GetMenuEventType())
+            {
+            case ChainedDecos::MenuEventType::StartGame:
+            case ChainedDecos::MenuEventType::StartGameWithMap:
+            {
+                std::string mapName = event.GetMapName();
+                if (mapName.empty())
+                    mapName = m_menu->GetSelectedMapName();
+
+                auto levelManager = Engine::Instance().GetService<ILevelManager>();
+                if (levelManager && levelManager->LoadMap(mapName))
+                {
+                    m_isGameInitialized = true;
+                    m_showMenu = false;
+                }
+                break;
+            }
+            case ChainedDecos::MenuEventType::ResumeGame:
+            {
+                if (m_isGameInitialized)
+                {
+                    m_showMenu = false;
+                }
+                break;
+            }
+            case ChainedDecos::MenuEventType::ExitGame:
+            {
+                Engine::Instance().RequestExit();
+                break;
+            }
+            case ChainedDecos::MenuEventType::BackToMain:
+            {
+                // Internal menu state change handled by Menu class
+                break;
+            }
+            default:
+                break;
+            }
+        });
+
+    TraceLog(LOG_INFO, "[GameApplication] Menu initialized and events registered");
 
     // Initialize ECS
     REGISTRY.clear();
@@ -163,9 +209,6 @@ void GameApplication::OnStart()
         }
     }
 
-    // Initialize fallback player model (required for shader application if primary fails)
-    m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
-
     // Load and Apply Shader
     {
         std::string vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.vs";
@@ -187,19 +230,7 @@ void GameApplication::OnStart()
             Vector3 defaultWind = {1.0f, 0.0f, 0.5f};
             SetShaderValue(m_playerShader, m_locWindDir, &defaultWind, SHADER_UNIFORM_VEC3);
 
-            // Assign shader to model
-            if (playerModelPtr)
-            {
-                playerModelPtr->materials[0].shader = m_playerShader;
-                TraceLog(LOG_INFO,
-                         "[GameApplication] Applied player_effect shader to player_low model");
-            }
-            else
-            {
-                m_playerModel.materials[0].shader = m_playerShader;
-                TraceLog(LOG_INFO,
-                         "[GameApplication] Applied player_effect shader to fallback model");
-            }
+            // Assign shader to model logic moved to after model initialization/fallback
         }
         else
         {
@@ -298,6 +329,7 @@ void GameApplication::OnStart()
     else
     {
         TraceLog(LOG_WARNING, "[GameApplication] 'player_low' not found, using default cube.");
+        m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
         m_playerEntity =
             ECSExamples::CreatePlayer(spawnPos, &m_playerModel, 8.0f, 12.0f, sensitivity);
     }
@@ -308,6 +340,18 @@ void GameApplication::OnStart()
         auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
         player.runTimer = savedTimer;
         player.maxHeight = savedMaxHeight;
+    }
+
+    // Apply shader to final player model (either loaded or fallback)
+    if (m_shaderLoaded)
+    {
+        Model *finalModel = playerModelPtr ? playerModelPtr : &m_playerModel;
+        if (finalModel->materials != nullptr && finalModel->materialCount > 0)
+        {
+            finalModel->materials[0].shader = m_playerShader;
+            TraceLog(LOG_INFO,
+                     "[GameApplication] Applied player_effect shader to final player model");
+        }
     }
 
     TraceLog(LOG_INFO, "[GameApplication] ECS Player entity created");
@@ -395,10 +439,7 @@ void GameApplication::OnUpdate(float deltaTime)
             m_cursorDisabled = false;
         }
 
-        if (m_menu)
-        {
-            m_menu->Update();
-        }
+        // Menu actions are now handled via event callbacks registered in OnStart()
     }
     else
     {
@@ -739,8 +780,7 @@ void GameApplication::InitInput()
             if (!m_showMenu && m_isGameInitialized)
             {
                 SaveGameState();
-                menu->ResetAction();
-                menu->SetGameInProgress(true);
+                m_menu->SetGameInProgress(true);
                 m_showMenu = true;
                 EnableCursor(); // Show system cursor when opening menu
             }
@@ -765,45 +805,7 @@ void GameApplication::InitInput()
     TraceLog(LOG_INFO, "[GameApplication] Game input bindings configured.");
 }
 
-void GameApplication::OnEvent(ChainedDecos::Event &e)
-{
-    ChainedDecos::EventDispatcher dispatcher(e);
-    dispatcher.Dispatch<ChainedDecos::MenuEvent>(
-        [this](ChainedDecos::MenuEvent &event)
-        {
-            MenuAction action = event.GetAction();
-            switch (action)
-            {
-            case MenuAction::StartGameWithMap:
-            {
-                std::string mapName = m_menu->GetSelectedMapName();
-                auto levelManager = Engine::Instance().GetService<ILevelManager>();
-                if (levelManager && levelManager->LoadMap(mapName))
-                {
-                    m_isGameInitialized = true;
-                    m_showMenu = false;
-                }
-                return true;
-            }
-            case MenuAction::ResumeGame:
-            {
-                if (m_isGameInitialized)
-                {
-                    m_showMenu = false;
-                }
-                return true;
-            }
-            case MenuAction::ExitGame:
-            {
-                Engine::Instance().RequestExit();
-                return true;
-            }
-            default:
-                break;
-            }
-            return false;
-        });
-}
+// HandleMenuActions removed - replaced by event callbacks
 
 void GameApplication::SaveGameState()
 {

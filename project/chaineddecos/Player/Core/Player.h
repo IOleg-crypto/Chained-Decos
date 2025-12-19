@@ -8,7 +8,7 @@
 #include "components/audio/Core/AudioManager.h"
 #include <components/physics/collision/Core/CollisionManager.h>
 #include <components/physics/collision/System/CollisionSystem.h>
-#include <scene/3d/camera/Core/CameraController.h>
+#include <scene/camera/core/CameraController.h>
 #include <scene/main/Core/World.h>
 #include <scene/resources/model/Core/Model.h>
 
@@ -116,6 +116,3 @@ private:
 };
 
 #endif // PLAYER_H
-
-
-

@@ -16,7 +16,7 @@
 #include "mapeditor/IEditor.h"
 #include "mapeditor/mapgui/IUIManager.h"
 #include "mapeditor/tool/IToolManager.h"
-#include "scene/3d/camera/Core/CameraController.h"
+#include "scene/camera/core/CameraController.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/map/Skybox/Skybox.h"
 #include "scene/resources/model/Core/Model.h"
@@ -42,7 +42,7 @@ private:
 
     // State
     int m_gridSize = 50;
-    Tool m_activeTool = SELECT;
+    int m_activeTool = 0;
 
     // Rendering helper
     std::unique_ptr<EditorRenderer> m_renderer;

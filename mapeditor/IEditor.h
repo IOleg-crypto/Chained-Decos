@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "mapeditor/EditorTypes.h"
-#include <scene/3d/camera/Core/CameraController.h>
+#include <scene/camera/core/CameraController.h>
 #include <scene/resources/map/Core/MapLoader.h>
 #include <scene/resources/map/Skybox/Skybox.h>
 #include <scene/resources/model/Core/Model.h>

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef IMODULE_H
+#define IMODULE_H
 
 // Interface for modules
 class IModule
@@ -16,6 +17,4 @@ public:
     virtual const char *GetName() const = 0;
 };
 
-
-
-
+#endif // IMODULE_H

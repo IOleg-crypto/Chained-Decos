@@ -22,9 +22,8 @@ namespace fs = std::filesystem;
 
 Editor::Editor(ChainedDecos::Ref<CameraController> cameraController,
                ChainedDecos::Ref<IModelLoader> modelLoader)
-    : m_gridSize(999999), m_spawnTextureLoaded(false), m_activeTool(SELECT),
-      m_skybox(std::make_unique<Skybox>()), m_cameraController(std::move(cameraController)),
-      m_modelLoader(std::move(modelLoader))
+    : m_gridSize(50), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
+      m_cameraController(std::move(cameraController)), m_modelLoader(std::move(modelLoader))
 {
     // Initialize spawn texture (will be loaded after window initialization)
     m_spawnTexture = {0};
@@ -125,12 +124,12 @@ void Editor::RenderObject(const MapObjectData &obj)
 
 Tool Editor::GetActiveTool() const
 {
-    return m_activeTool;
+    return static_cast<Tool>(m_activeTool);
 }
 
 void Editor::SetActiveTool(Tool tool)
 {
-    m_activeTool = tool;
+    m_activeTool = static_cast<int>(tool);
     if (m_toolManager)
     {
         m_toolManager->SetActiveTool(tool);
@@ -246,14 +245,6 @@ void Editor::CreateDefaultObject(MapObjectType type, const std::string &modelNam
     newObj.scale = {1.0f, 1.0f, 1.0f};
     if (type != MapObjectType::SPAWN_ZONE)
         newObj.color = WHITE;
-
-    // Initialize remaining fields to avoid garbage values
-    newObj.radius =
-        (type == MapObjectType::SPHERE || type == MapObjectType::CYLINDER) ? 1.0f : 0.0f;
-    newObj.height = (type == MapObjectType::CYLINDER) ? 2.0f : 0.0f;
-    newObj.size = (type == MapObjectType::PLANE) ? Vector2{10.0f, 10.0f} : Vector2{0.0f, 0.0f};
-    newObj.isPlatform = true;
-    newObj.isObstacle = false;
 
     m_mapManager->AddObject(newObj);
 }

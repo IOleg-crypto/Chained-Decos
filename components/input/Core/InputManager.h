@@ -1,98 +1,72 @@
 #ifndef INPUTMANAGER_H
 #define INPUTMANAGER_H
 
-#include "core/events/Event.h"
-#include <cstdint>
+#include "../Interfaces/IInputManager.h"
+#include "raylib.h"
 #include <functional>
-#include <raylib.h>
-#include <unordered_map>
+#include <map>
 
 
 namespace ChainedDecos
 {
-class Event;
-}
 
-// InputManager - Static Singleton
-// Enhanced input manager with support for different input types
-class InputManager
+class InputManager : public IInputManager
 {
 public:
-    enum class InputType : uint8_t
-    {
-        PRESSED, // Single press
-        HELD,    // Continuous hold
-        RELEASED // Release
-    };
-
-    // Static Singleton
     static InputManager &Get()
     {
         static InputManager instance;
         return instance;
     }
 
-    // Заборонити копіювання
-    InputManager(const InputManager &) = delete;
-    InputManager &operator=(const InputManager &) = delete;
+    InputManager();
+    ~InputManager() override = default;
 
-    // Lifecycle
-    bool Initialize();
-    void Shutdown();
-    void Update(float deltaTime);
+    bool Initialize() override;
+    void Shutdown() override;
+    void Update(float deltaTime) override;
 
-    // Action registration
     void RegisterAction(int key, const std::function<void()> &action,
-                        InputType type = InputType::PRESSED);
-    void RegisterPressedAction(int key, const std::function<void()> &action);
-    void RegisterHeldAction(int key, const std::function<void()> &action);
-    void RegisterReleasedAction(int key, const std::function<void()> &action);
+                        InputType type = InputType::PRESSED) override;
+    void RegisterPressedAction(int key, const std::function<void()> &action) override;
+    void RegisterHeldAction(int key, const std::function<void()> &action) override;
+    void RegisterReleasedAction(int key, const std::function<void()> &action) override;
 
-    void UnregisterAction(int key, InputType type);
-    void ClearActions();
+    void UnregisterAction(int key, InputType type) override;
+    void ClearActions() override;
 
-    void ProcessInput() const;
+    void ProcessInput() const override;
 
-    using EventCallbackFn = std::function<void(ChainedDecos::Event &)>;
-    void SetEventCallback(const EventCallbackFn &callback)
+    bool IsKeyPressed(int key) const override;
+    bool IsKeyDown(int key) const override;
+    bool IsKeyReleased(int key) const override;
+
+    Vector2 GetMousePosition() const override;
+    Vector2 GetMouseDelta() const override;
+    bool IsMouseButtonPressed(int button) const override;
+    bool IsMouseButtonDown(int button) const override;
+    bool IsMouseButtonReleased(int button) const override;
+    float GetMouseWheelMove() const override;
+
+    void DisableCursor() override;
+    void EnableCursor() override;
+    bool IsCursorDisabled() const override;
+
+    void SetEventCallback(const EventCallbackFn &callback) override
     {
         m_EventCallback = callback;
     }
 
-    // Direct key queries
-    bool IsKeyPressed(int key) const;
-    bool IsKeyDown(int key) const;
-    bool IsKeyReleased(int key) const;
-
-    // Mouse
-    Vector2 GetMousePosition() const;
-    Vector2 GetMouseDelta() const;
-    bool IsMouseButtonPressed(int button) const;
-    bool IsMouseButtonDown(int button) const;
-    bool IsMouseButtonReleased(int button) const;
-    float GetMouseWheelMove() const;
-
-    // Cursor control
-    void DisableCursor();
-    void EnableCursor();
-    bool IsCursorDisabled() const;
-
 private:
-    // Private constructor для Singleton
-    InputManager() = default;
-    ~InputManager() = default;
-
-    std::unordered_map<int, std::function<void()>> m_pressedActions;
-    std::unordered_map<int, std::function<void()>> m_heldActions;
-    std::unordered_map<int, std::function<void()>> m_releasedActions;
-
+    bool m_initialized = false;
     Vector2 m_lastMousePosition = {0, 0};
     EventCallbackFn m_EventCallback;
-    bool m_initialized = false;
+
+    std::map<int, std::function<void()>> m_pressedActions;
+    std::map<int, std::function<void()>> m_heldActions;
+    std::map<int, std::function<void()>> m_releasedActions;
 };
 
+} // namespace ChainedDecos
+
 #endif // INPUTMANAGER_H
-
-
-
-

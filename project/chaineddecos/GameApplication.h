@@ -23,9 +23,6 @@ public:
     void OnRender() override;
     void OnShutdown() override;
 
-    // Event Handling
-    void OnEvent(ChainedDecos::Event &e) override;
-
 private:
     // Managers are now accessed through Engine services
 
@@ -48,7 +45,6 @@ private:
 
     // Helper methods
     void InitInput();
-    void HandleMenuActions();
     void UpdatePlayerLogic();
 
     // Game state management

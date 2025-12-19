@@ -1,8 +1,6 @@
 set(MENU_SOURCES
     Menu.cpp
     Menu.h
-    MenuPresenter.cpp
-    MenuPresenter.h
     Settings/SettingsManager.cpp
     Settings/SettingsManager.h
     Settings/MenuSettingsController.cpp
@@ -41,4 +39,5 @@ target_link_libraries(menu PUBLIC
     raylib
     imguilib
     nlohmann_json::nlohmann_json
+    cameracontroller
 )

@@ -100,8 +100,8 @@ void MapSelector::InitializeMaps()
     }
     else
     {
-        TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Total maps available: %d (JSON: %d)",
-                 m_availableMaps.size(), m_jsonMapsCount);
+        TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Total maps available: %d",
+                 m_availableMaps.size());
     }
 
     // Initialize placeholder thumbnail
@@ -582,29 +582,17 @@ void MapSelector::ScanForJsonMaps()
 
                     MapInfo mapInfo = {
                         mapPath, // Store the relative path
-                        fullDisplayName,
-                        description,
-                        "/resources/map_previews/custom_map.png",
-                        mapColor,
-                        true,
-                        false // isModelBased = false for JSON maps
+                        displayName, description, "/resources/map_previews/custom_map.png",
+                        mapColor,    true,
+                        false // isModelBased = false
                     };
 
                     AddMap(mapInfo);
                     m_jsonMapsCount++;
                     TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Added map: %s (%s)",
-                             fullDisplayName.c_str(), mapPath.c_str());
+                             displayName.c_str(), mapPath.c_str());
                 }
             }
-
-            if (filesInDirectory == 0)
-            {
-                TraceLog(LOG_DEBUG,
-                         "MapSelector::ScanForJsonMaps() - No files found in directory: %s",
-                         fullDir.c_str());
-            }
-            TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Directory %s contains %d files",
-                     fullDir.c_str(), filesInDirectory);
         }
 
         TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Scan completed, found %d maps total",
@@ -685,10 +673,7 @@ void MapSelector::RenderMapSelection() const
         int descriptionY = y + 40;
         DrawText(map.description.c_str(), x + 10, descriptionY, descFontSize, Fade(BLACK, 0.7f));
 
-        // Map type indicator
-        std::string typeText = map.isModelBased ? "Model-based" : "JSON Map";
-        Color typeColor = map.isModelBased ? BLUE : GREEN;
-        DrawText(typeText.c_str(), x + 10, y + MAP_BOX_HEIGHT - 30, 14, typeColor);
+        // Map type indicator (Removed or simplified)
 
         // Selection indicator
         if (isSelected)
@@ -716,78 +701,130 @@ void MapSelector::RenderMapSelection() const
 // ImGui-based map selection rendering
 void MapSelector::RenderMapSelectionImGui()
 {
-    ImGui::TextColored(ImVec4(0.8f, 0.6f, 1.0f, 1.0f), "MAP SELECTION");
+    ImGuiIO &io = ImGui::GetIO();
+    float screenWidth = io.DisplaySize.x;
+    float screenHeight = io.DisplaySize.y;
+
+    // Header: "Maps:"
+    ImGui::SetCursorPosY(40.0f);
+    ImGui::SetCursorPosX(40.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
+    ImGui::Text("Maps:");
+    ImGui::PopStyleColor();
+    ImGui::Spacing();
 
     const std::vector<MapInfo> &maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
     if (maps.empty())
     {
+        ImGui::SetCursorPosY(screenHeight * 0.5f);
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
     }
     else
     {
-        // Calculate which maps to show on current page
         int startIndex = GetStartMapIndex();
         int endIndex = GetEndMapIndex();
 
-        // Render maps for current page
-        for (int i = startIndex; i < endIndex; ++i)
+        // Map Grid Area
+        ImGui::SetCursorPosX(40.0f);
+        ImGui::SetCursorPosY(80.0f);
+
+        float footerHeight = 120.0f;
+        ImGui::BeginChild("MapGridArea", ImVec2(screenWidth - 80, screenHeight - 200), false,
+                          ImGuiWindowFlags_NoScrollbar);
+
+        float cardWidth =
+            (ImGui::GetContentRegionAvail().x - 60.0f) / 4.0f; // 4 columns with spacing
+        float cardHeight = 240.0f;
+        float spacing = 20.0f;
+
+        if (ImGui::BeginTable("MapsGrid", 4, ImGuiTableFlags_SizingFixedFit))
         {
-            const auto &map = maps[i];
-            bool isSelected = (i == m_selectedMap);
+            for (int i = 0; i < 4; i++)
+                ImGui::TableSetupColumn("Col", ImGuiTableColumnFlags_WidthFixed, cardWidth);
 
-            // Map button with styling
-            if (isSelected)
+            for (int i = startIndex; i < endIndex; ++i)
             {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.6f, 1.0f, 0.8f));
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-            }
+                const auto &map = maps[i];
+                bool isSelected = (i == m_selectedMap);
 
-            std::string buttonLabel = map.displayName + "##" + std::to_string(i);
-            if (ImGui::Button(buttonLabel.c_str(), ImVec2(300, 50)))
-            {
-                SelectMap(i);
-            }
+                ImGui::TableNextColumn();
+                ImGui::PushID(i);
 
-            if (isSelected)
-            {
+                // Card background and border
+                ImVec4 borderColor =
+                    isSelected ? ImVec4(1.0f, 1.0f, 0.0f, 0.8f) : ImVec4(0.2f, 0.25f, 0.35f, 0.5f);
+                ImGui::PushStyleColor(ImGuiCol_Border, borderColor);
+                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.12f, 0.16f, 0.22f, 0.8f));
+                ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
+                ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, isSelected ? 2.0f : 1.0f);
+
+                ImGui::BeginChild("MapCard", ImVec2(cardWidth, cardHeight), true,
+                                  ImGuiWindowFlags_NoScrollbar);
+
+                // Thumbnail area
+                ImGui::SetCursorPos(ImVec2(10, 10));
+                Texture2D thumb = GetThumbnailForMap(map.name);
+                float thumbW = cardWidth - 20;
+                float thumbH = 100;
+                ImGui::Image((ImTextureID)(uintptr_t)thumb.id, ImVec2(thumbW, thumbH));
+
+                // Text info
+                ImGui::SetCursorPosY(120);
+                ImGui::SetCursorPosX(10);
+                ImGui::Text("%s", map.displayName.c_str());
+
+                ImGui::SetCursorPosY(140);
+                ImGui::SetCursorPosX(10);
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+                ImGui::TextWrapped("%s", map.description.c_str());
+                ImGui::PopStyleColor();
+
+                ImGui::SetCursorPosY(170);
+                ImGui::SetCursorPosX(10);
+                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "JSON Map");
+
+                // Select button
+                ImGui::SetCursorPosY(cardHeight - 40);
+                ImGui::SetCursorPosX(10);
+                ImVec2 btnSize = ImVec2(cardWidth - 20, 30);
+
+                if (isSelected)
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.35f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                                          ImVec4(0.35f, 0.35f, 0.45f, 1.0f));
+                }
+                else
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.25f, 0.8f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                                          ImVec4(0.25f, 0.25f, 0.35f, 1.0f));
+                }
+
+                if (ImGui::Button("Select", btnSize))
+                {
+                    SelectMap(i);
+                }
                 ImGui::PopStyleColor(2);
+
+                ImGui::EndChild();
+                ImGui::PopStyleVar(2);
+                ImGui::PopStyleColor(2);
+                ImGui::PopID();
             }
-
-            // Map details
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), map.description.c_str());
-
-            // Map type indicator
-            ImGui::SameLine(500);
-            std::string typeText = map.isModelBased ? "Model-based" : "JSON Map";
-            ImVec4 typeColor =
-                map.isModelBased ? ImVec4(0.4f, 0.6f, 1.0f, 1.0f) : ImVec4(0.4f, 1.0f, 0.6f, 1.0f);
-            ImGui::TextColored(typeColor, typeText.c_str());
+            ImGui::EndTable();
         }
-
-        // Pagination controls
-        if (m_totalPages > 1)
-        {
-            ImGui::Separator();
-            ImGui::Text("Page %d of %d", m_currentPage + 1, m_totalPages);
-
-            ImGui::SameLine();
-            if (m_currentPage > 0 && ImGui::Button("Previous Page"))
-            {
-                PreviousPageNav();
-            }
-
-            ImGui::SameLine();
-            if (m_currentPage < m_totalPages - 1 && ImGui::Button("Next Page"))
-            {
-                NextPageNav();
-            }
-        }
+        ImGui::EndChild();
     }
 
-    ImGui::Separator();
-    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                       "Use Arrow Keys to navigate, ENTER to select, ESC for back");
+    // Navigation Text
+    ImGui::SetCursorPosY(screenHeight - 80.0f);
+    ImGui::SetCursorPosX(20.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+    ImGui::Text("Use Arrow Keys to navigate, ENTER to select, ESC for back");
+    ImGui::PopStyleColor();
+
+    // Footer Buttons (rendered in Menu::RenderMapSelection for event handling)
 }
 
 // Panel-style map selection interface (Half-Life style with large horizontal panels)
@@ -1062,6 +1099,3 @@ void MapSelector::RenderMapSelectionWindow()
     //     content fits");
     // }
 }
-
-
-
