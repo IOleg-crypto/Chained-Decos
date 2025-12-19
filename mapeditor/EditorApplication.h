@@ -30,12 +30,11 @@ public:
     // Shutdown
     void OnShutdown() override;
 
+    // Event handling
+    void OnEvent(ChainedDecos::Event &e) override;
+
 private:
     std::unique_ptr<Editor> m_editor;
 };
 
 #endif // EDITOR_APPLICATION_H
-
-
-
-

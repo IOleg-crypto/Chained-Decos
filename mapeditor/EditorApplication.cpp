@@ -7,9 +7,11 @@
 #include "scene/resources/model/Core/Model.h"
 
 //===============================================
+#include "core/events/Event.h"
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
+
 
 EditorApplication::EditorApplication(int argc, char *argv[])
 {
@@ -148,4 +150,12 @@ void EditorApplication::OnShutdown()
 {
     TraceLog(LOG_INFO, "[EditorApplication] Shutting down...");
     // Editor cleans up its own resources in destructor
+}
+
+void EditorApplication::OnEvent(ChainedDecos::Event &e)
+{
+    if (m_editor)
+    {
+        m_editor->OnEvent(e);
+    }
 }

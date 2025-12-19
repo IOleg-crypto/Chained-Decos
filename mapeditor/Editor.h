@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "core/events/Event.h"
 #include "core/utils/Base.h"
 #include "mapeditor/IEditor.h"
 #include "mapeditor/mapgui/IUIManager.h"
@@ -19,6 +20,7 @@
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/map/Skybox/Skybox.h"
 #include "scene/resources/model/Core/Model.h"
+
 
 // Rendering and utilities
 #include "mapeditor/render/EditorRenderer.h"
@@ -65,7 +67,10 @@ public:
     void RenderImGui(); // Render ImGui interface
     void HandleInput(); // Handle user input
 
-    // Assets
+    // Event handling
+    void OnEvent(ChainedDecos::Event &e);
+
+    // Grid settings
     void PreloadModelsFromResources();
     void LoadSpawnTexture(); // Load spawn zone texture
 

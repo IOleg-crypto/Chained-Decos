@@ -1,4 +1,5 @@
 #include "mapeditor/Editor.h"
+#include "core/events/Event.h"
 #include "mapeditor/render/EditorRenderer.h"
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/map/MapFileManager/Json/JsonMapFileManager.h"
@@ -461,4 +462,12 @@ bool Editor::IsSceneModified() const
 void Editor::SetSceneModified(bool modified)
 {
     m_isSceneModified = modified;
+}
+
+void Editor::OnEvent(ChainedDecos::Event &e)
+{
+    if (m_cameraController)
+    {
+        m_cameraController->OnEvent(e);
+    }
 }

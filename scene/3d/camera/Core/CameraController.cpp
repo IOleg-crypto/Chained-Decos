@@ -3,6 +3,9 @@
 
 #include "CameraController.h"
 
+#include "core/events/Event.h"
+#include "core/events/KeyEvent.h"
+#include "core/events/MouseEvent.h"
 #include <cmath>
 #include <imgui.h>
 #include <raylib.h>
@@ -88,17 +91,16 @@ void CameraController::Update()
     float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
     UpdateScreenShake(deltaTime);
 
-    // Only update camera if user is actively interacting with it
-    bool isLMBDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-    bool isAnyMovementKeyPressed = IsKeyDown(KEY_UP) || IsKeyDown(KEY_DOWN) ||
-                                   IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_RIGHT) ||
-                                   IsKeyDown(KEY_W) || IsKeyDown(KEY_A) || IsKeyDown(KEY_S) ||
-                                   IsKeyDown(KEY_D) || IsKeyDown(KEY_Q) || IsKeyDown(KEY_E);
-    bool isMouseWheelMoving = GetMouseWheelMove() != 0.0f;
+    // Only update camera if user is actively interacting with it (Event-driven)
+    bool isAnyMovementKeyPressed = m_activeMovementKeys > 0;
+    bool isMouseWheelMoving = m_lastMouseWheelMove != 0.0f;
 
-    if (isLMBDown || isAnyMovementKeyPressed || isMouseWheelMoving)
+    if (m_isLMBDown || isAnyMovementKeyPressed || isMouseWheelMoving)
     {
         UpdateCamera(&m_camera, m_cameraMode);
+
+        // Reset frame-based states
+        m_lastMouseWheelMove = 0.0f;
     }
 }
 
@@ -356,4 +358,64 @@ CameraController &CameraController::operator=(const CameraController &other)
         m_shakeOffset = other.m_shakeOffset;
     }
     return *this;
+}
+
+void CameraController::OnEvent(ChainedDecos::Event &e)
+{
+    ChainedDecos::EventDispatcher dispatcher(e);
+
+    // Track mouse button state
+    dispatcher.Dispatch<ChainedDecos::MouseButtonPressedEvent>(
+        [this](ChainedDecos::MouseButtonPressedEvent &event)
+        {
+            if (event.GetMouseButton() == MOUSE_LEFT_BUTTON)
+                m_isLMBDown = true;
+            return false;
+        });
+
+    dispatcher.Dispatch<ChainedDecos::MouseButtonReleasedEvent>(
+        [this](ChainedDecos::MouseButtonReleasedEvent &event)
+        {
+            if (event.GetMouseButton() == MOUSE_LEFT_BUTTON)
+                m_isLMBDown = false;
+            return false;
+        });
+
+    // Track movement keys
+    auto isMovementKey = [](int key)
+    {
+        return key == KEY_UP || key == KEY_DOWN || key == KEY_LEFT || key == KEY_RIGHT ||
+               key == KEY_W || key == KEY_A || key == KEY_S || key == KEY_D || key == KEY_Q ||
+               key == KEY_E;
+    };
+
+    dispatcher.Dispatch<ChainedDecos::KeyPressedEvent>(
+        [this, isMovementKey](ChainedDecos::KeyPressedEvent &event)
+        {
+            if (isMovementKey(event.GetKeyCode()) && event.GetRepeatCount() == 0)
+            {
+                m_activeMovementKeys++;
+            }
+            return false;
+        });
+
+    dispatcher.Dispatch<ChainedDecos::KeyReleasedEvent>(
+        [this, isMovementKey](ChainedDecos::KeyReleasedEvent &event)
+        {
+            if (isMovementKey(event.GetKeyCode()))
+            {
+                m_activeMovementKeys--;
+                if (m_activeMovementKeys < 0)
+                    m_activeMovementKeys = 0;
+            }
+            return false;
+        });
+
+    // Track scroll
+    dispatcher.Dispatch<ChainedDecos::MouseScrolledEvent>(
+        [this](ChainedDecos::MouseScrolledEvent &event)
+        {
+            m_lastMouseWheelMove = event.GetYOffset();
+            return false;
+        });
 }

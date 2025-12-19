@@ -67,6 +67,11 @@ void EngineApplication::OnEvent(Event &e)
             break;
         (*it)->OnEvent(e);
     }
+
+    if (!e.Handled && m_app)
+    {
+        m_app->OnEvent(e);
+    }
 }
 
 void EngineApplication::Initialize()
@@ -199,7 +204,3 @@ const EngineApplication::Config &EngineApplication::GetConfig() const
     return m_config;
 }
 } // namespace ChainedDecos
-
-
-
-
