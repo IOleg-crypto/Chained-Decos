@@ -57,3 +57,6 @@ private:
 };
 
 #endif // TOOLMANAGER_H
+
+
+

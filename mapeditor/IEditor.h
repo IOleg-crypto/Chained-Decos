@@ -1,7 +1,7 @@
 #ifndef IEDITOR_H
 #define IEDITOR_H
 
-#include <core/engine/Base.h>
+#include <core/utils/Base.h>
 #include <string>
 #include <vector>
 
@@ -42,7 +42,7 @@ public:
     virtual void CreateDefaultObject(MapObjectType type, const std::string &modelName = "") = 0;
 
     // Service Accessors
-    virtual ChainedDecos::Ref<ModelLoader> GetModelLoader() = 0;
+    virtual ChainedDecos::Ref<IModelLoader> GetModelLoader() = 0;
     virtual CameraController &GetCameraController() = 0;
 
     // Skybox Operations

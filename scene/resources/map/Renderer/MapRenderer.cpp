@@ -239,3 +239,7 @@ void MapRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &p
     // Draw wireframe for better visibility
     DrawCubeWires(position, size, size, size, WHITE);
 }
+
+
+
+

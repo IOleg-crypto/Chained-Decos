@@ -1,6 +1,5 @@
 #include "EditorApplication.h"
-#include "core/engine/Engine.h"
-#include "core/services/CoreServices.h"
+#include "core/Engine.h"
 #include "mapeditor/Editor.h"
 #include "mapeditor/mapgui/UIManager.h"
 #include "scene/3d/camera/Core/CameraController.h"
@@ -34,11 +33,7 @@ void EditorApplication::OnRegister()
     TraceLog(LOG_INFO, "[EditorApplication] Registering modules and core services...");
 
     auto &engine = Engine::Instance();
-    CoreServices core;
-    if (!core.Initialize(1600, 900, "Chained Decos - Map Editor", false, true))
-    {
-        TraceLog(LOG_ERROR, "[EditorApplication] Failed to initialize CoreServices");
-    }
+    // Engine handles core services automatically
 
     TraceLog(LOG_INFO, "[EditorApplication] Editor modules registered.");
 }
@@ -51,7 +46,7 @@ void EditorApplication::OnStart()
     auto camera = std::make_shared<CameraController>();
 
     // Use engine-provided ModelLoader instead of creating a new one
-    auto modelLoader = Engine::Instance().GetService<ModelLoader>();
+    auto modelLoader = Engine::Instance().GetModelLoader();
 
     m_editor = std::make_unique<Editor>(camera, modelLoader);
 
@@ -154,3 +149,7 @@ void EditorApplication::OnShutdown()
     TraceLog(LOG_INFO, "[EditorApplication] Shutting down...");
     // Editor cleans up its own resources in destructor
 }
+
+
+
+

@@ -9,3 +9,7 @@ Color ParseColorByName(const std::string &colorName);
 
 // Get all available color names
 const std::unordered_map<std::string, Color> &GetColorMap();
+
+
+
+

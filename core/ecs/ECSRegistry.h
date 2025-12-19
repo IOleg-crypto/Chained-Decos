@@ -35,3 +35,7 @@ public:
 #define REGISTRY ECSRegistry::Get()
 
 #endif // ECS_REGISTRY_WRAPPER_H
+
+
+
+

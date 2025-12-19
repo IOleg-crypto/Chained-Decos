@@ -49,3 +49,7 @@ public:
     // Save map to JSON file
     bool SaveMap(const std::string &filepath, const std::vector<JsonSerializableObject> &objects);
 };
+
+
+
+

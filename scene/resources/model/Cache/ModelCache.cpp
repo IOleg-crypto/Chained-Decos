@@ -495,3 +495,6 @@ void ModelCache::UpdateLoadingTask(const std::string& name, std::future<std::uni
     std::lock_guard<std::mutex> lock(m_loadingMutex);
     m_activeLoadingTasks[name] = std::move(future);
 }
+
+
+

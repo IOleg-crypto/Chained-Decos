@@ -67,3 +67,7 @@ void CollisionDebugRenderer::DrawCollisionSolid(const Vector3 &center, const Vec
     DrawCubeWires(center, size.x, size.y, size.z, color);
 }
 void CollisionDebugRenderer::SetWireframeMode(bool wireframe) { m_wireframe = wireframe; }
+
+
+
+

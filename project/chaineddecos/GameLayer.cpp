@@ -3,15 +3,14 @@
 #include "components/input/Core/InputManager.h"
 #include "components/physics/collision/Core/CollisionManager.h"
 #include "components/rendering/Core/RenderManager.h"
-#include "core/ecs/Components/CollisionComponent.h"
-#include "core/ecs/Components/PhysicsData.h"
-#include "core/ecs/Components/PlayerComponent.h"
-#include "core/ecs/Components/RenderComponent.h"
-#include "core/ecs/Components/TransformComponent.h"
-#include "core/ecs/Components/UtilityComponents.h"
-#include "core/ecs/Components/VelocityComponent.h"
 #include "core/ecs/ECSRegistry.h"
-#include "core/engine/Engine.h"
+#include "core/ecs/components/PhysicsData.h"
+#include "core/ecs/components/PlayerComponent.h"
+#include "core/ecs/components/RenderComponent.h"
+#include "core/ecs/components/TransformComponent.h"
+#include "core/ecs/components/UtilityComponents.h"
+#include "core/ecs/components/VelocityComponent.h"
+#include "core/Engine.h"
 #include "core/events/Event.h"
 #include "core/events/KeyEvent.h"
 #include "core/events/MouseEvent.h"
@@ -329,3 +328,7 @@ void GameLayer::OnEvent(Event &e)
             return false;
         });
 }
+
+
+
+

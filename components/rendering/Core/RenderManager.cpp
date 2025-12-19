@@ -108,3 +108,7 @@ int RenderManager::GetScreenHeight() const
 {
     return m_screenHeight;
 }
+
+
+
+

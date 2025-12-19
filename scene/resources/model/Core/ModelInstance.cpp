@@ -64,3 +64,6 @@ void ModelInstance::SetRotationDegrees(const Vector3 &rotationDeg)
 {
     m_rotationDeg = rotationDeg;
 }
+
+
+

@@ -605,3 +605,6 @@ float SettingsManager::GetSkyboxGammaValue() const
 {
     return m_config.GetSkyboxGammaValue();
 }
+
+
+

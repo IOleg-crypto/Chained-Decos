@@ -1,11 +1,10 @@
 #include "LevelManager.h"
-#include "core/engine/Engine.h"
+#include "core/Engine.h"
 #include "scene/main/Core/MapCollisionInitializer.h"
 #include "scene/resources/map/Core/MapService.h"
 #include "scene/resources/map/Renderer/MapRenderer.h"
+#include "scene/resources/model/Utils/ModelAnalyzer.h"
 #include <filesystem>
-#include <fstream>
-#include <set>
 
 LevelManager::LevelManager(const LevelManagerConfig &config)
     : m_config(config), m_gameMap(std::make_unique<GameMap>()), m_currentMapPath(""),
@@ -52,15 +51,10 @@ bool LevelManager::Initialize(Engine *engine)
 
     m_engine = engine;
 
-    // Get required dependencies from Engine (GetService returns shared_ptr)
-    auto worldMgr = engine->GetService<WorldManager>();
-    m_worldManager = worldMgr ? worldMgr.get() : nullptr;
-
-    auto collMgr = engine->GetService<CollisionManager>();
-    m_collisionManager = collMgr ? collMgr.get() : nullptr;
-
-    auto modelLdr = engine->GetService<ModelLoader>();
-    m_modelLoader = modelLdr ? modelLdr.get() : nullptr;
+    // Get required dependencies from Engine
+    m_worldManager = std::static_pointer_cast<WorldManager>(engine->GetWorldManager());
+    m_collisionManager = std::static_pointer_cast<CollisionManager>(engine->GetCollisionManager());
+    m_modelLoader = std::static_pointer_cast<ModelLoader>(engine->GetModelLoader());
 
     // RenderManager is accessed directly through Engine
     m_renderManager = engine->GetRenderManager();
@@ -74,15 +68,75 @@ bool LevelManager::Initialize(Engine *engine)
 
     // Create collision initializer with dependencies
     m_collisionInitializer =
-        std::make_unique<MapCollisionInitializer>(m_collisionManager, m_modelLoader);
+        std::make_unique<MapCollisionInitializer>(m_collisionManager, m_modelLoader, m_player);
 
     return true;
 }
 
 bool LevelManager::LoadMap(const std::string &path)
 {
-    LoadEditorMap(path);
-    return IsMapLoaded();
+    std::string mapPath = path;
+
+    // Convert map name to path if it's not already a path
+    if (path.find("/") == std::string::npos && path.find("\\") == std::string::npos)
+    {
+        mapPath = ConvertMapNameToPath(path);
+    }
+
+    TraceLog(LOG_INFO, "[LevelManager] Loading level: %s", mapPath.c_str());
+
+    try
+    {
+        // 1. Analyze map for required models
+        std::vector<std::string> requiredModels = ModelAnalyzer::GetModelsRequiredForMap(mapPath);
+        if (requiredModels.empty())
+        {
+            requiredModels.emplace_back("player_low"); // Always need player
+        }
+
+        // 2. Load required models selectively
+        if (m_modelLoader)
+        {
+            m_modelLoader->LoadGameModelsSelective(requiredModels);
+        }
+
+        // 3. Initialize collision system with models
+        if (!InitCollisionsWithModelsSafe(requiredModels))
+        {
+            TraceLog(LOG_ERROR, "[LevelManager] Failed to initialize collision system for map: %s",
+                     mapPath.c_str());
+            return false;
+        }
+
+        // 4. Load map objects and instances
+        LoadEditorMap(mapPath);
+
+        TraceLog(LOG_INFO, "[LevelManager] Level loaded successfully: %s", mapPath.c_str());
+        return true;
+    }
+    catch (const std::exception &e)
+    {
+        TraceLog(LOG_ERROR, "[LevelManager] Failed to load level %s: %s", mapPath.c_str(),
+                 e.what());
+        return false;
+    }
+}
+
+std::string LevelManager::ConvertMapNameToPath(const std::string &mapName)
+{
+    if (mapName.empty())
+        return "";
+
+    // If it's already an absolute path or has extension, return as is
+    if (std::filesystem::path(mapName).is_absolute() ||
+        std::filesystem::path(mapName).has_extension())
+    {
+        return mapName;
+    }
+
+    // Otherwise, assume it's in resources/maps/ and needs .json
+    std::string path = std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + mapName + ".json";
+    return path;
 }
 
 void LevelManager::UnloadMap()
@@ -164,7 +218,7 @@ bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &
     return false;
 }
 
-void LevelManager::SetPlayer(IPlayer *player)
+void LevelManager::SetPlayer(std::shared_ptr<IPlayer> player)
 {
     m_player = player;
     if (m_collisionInitializer)

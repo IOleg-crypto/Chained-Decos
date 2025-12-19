@@ -5,7 +5,6 @@
 #include <iostream>
 #include <string>
 
-
 namespace ChainedDecos
 {
 
@@ -102,10 +101,7 @@ private:
     Event &m_Event;
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Event &e)
-{
-    return os << e.ToString();
-}
+std::ostream &operator<<(std::ostream &os, const Event &e);
 
 } // namespace ChainedDecos
 

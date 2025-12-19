@@ -6,24 +6,14 @@ set(ECS_SOURCES
     ECSRegistry.h
     Components.h
     Systems.h
-    Components/TransformComponent.h
-    Components/VelocityComponent.h
-    Components/PlayerComponent.h
-    Components/RenderComponent.h
-    Components/PhysicsData.h
-    Components/AudioComponent.h
-    Components/CameraComponent.h
-    Components/UtilityComponents.h
-    Systems/MovementSystem.h
-    Systems/MovementSystem.cpp
-    Systems/PlayerSystem.h
-    Systems/PlayerSystem.cpp
-    Systems/RenderSystem.h
-    Systems/RenderSystem.cpp
-    Systems/CollisionSystem.h
-    Systems/CollisionSystem.cpp
-    Systems/LifetimeSystem.h
-    Systems/LifetimeSystem.cpp
+    components/TransformComponent.h
+    components/VelocityComponent.h
+    components/PlayerComponent.h
+    components/RenderComponent.h
+    components/PhysicsData.h
+    components/AudioComponent.h
+    components/CameraComponent.h
+    components/UtilityComponents.h
     Examples.h
     Examples.cpp
 )

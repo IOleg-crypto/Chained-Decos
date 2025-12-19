@@ -937,3 +937,6 @@ std::vector<MapObjectData> &GameMap::GetMapObjectsMutable()
 {
     return m_objects;
 }
+
+
+

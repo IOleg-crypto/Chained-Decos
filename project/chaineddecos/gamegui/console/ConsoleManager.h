@@ -52,14 +52,12 @@ public:
     // Constructor
     ConsoleManager();
 
+public:
     // Console state management
     void ToggleConsole();
     void OpenConsole();
     void CloseConsole();
-    bool IsConsoleOpen() const
-    {
-        return consoleOpen;
-    }
+    bool IsConsoleOpen() const;
 
     // Command execution
     void ExecuteCommand(const std::string &command);
@@ -71,14 +69,8 @@ public:
 
     // History management
     void AddToHistory(const std::string &command);
-    const std::vector<std::string> &GetHistory() const
-    {
-        return consoleHistory;
-    }
-    const std::vector<std::string> &GetOutput() const
-    {
-        return consoleOutput;
-    }
+    const std::vector<std::string> &GetHistory() const;
+    const std::vector<std::string> &GetOutput() const;
 
     // Clipboard operations
     void CopyToClipboard(const std::string &text);
@@ -88,9 +80,6 @@ public:
     // Command registration
     void RegisterCommand(const std::string &name, const std::string &description,
                          const std::string &usage, CommandCallback callback);
-    void RegisterCommandWithPrefix(const std::string &category, const std::string &name,
-                                   const std::string &description, const std::string &usage,
-                                   CommandCallback callback, bool alsoRegisterWithoutPrefix = true);
     void UnregisterCommand(const std::string &name);
 
     // Command lookup
@@ -100,7 +89,7 @@ public:
     std::vector<std::string> GetAvailableCategories() const;
 
     // Helpers to get services through Dependency Injection
-    IPlayer *GetPlayer() const;
+    IPlayer *GetPlayer();
     IEngine *GetEngine() const;
 
 private:

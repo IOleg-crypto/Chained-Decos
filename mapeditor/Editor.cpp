@@ -20,7 +20,7 @@
 namespace fs = std::filesystem;
 
 Editor::Editor(ChainedDecos::Ref<CameraController> cameraController,
-               ChainedDecos::Ref<ModelLoader> modelLoader)
+               ChainedDecos::Ref<IModelLoader> modelLoader)
     : m_gridSize(50), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
       m_cameraController(std::move(cameraController)), m_modelLoader(std::move(modelLoader))
 {
@@ -44,7 +44,7 @@ Editor::~Editor()
         m_skybox.reset();
     }
     NFD_Quit();
-};
+}
 
 void Editor::InitializeSubsystems()
 {
@@ -393,7 +393,24 @@ int Editor::GetGridSize() const
     return m_gridSize;
 }
 
-ChainedDecos::Ref<ModelLoader> Editor::GetModelLoader()
+ChainedDecos::Ref<IModelLoader> Editor::GetModelLoader()
 {
     return m_modelLoader;
+}
+
+int Editor::GetSelectedObjectIndex() const
+{
+    return m_selectedIndex;
+}
+
+GameMap &Editor::GetGameMap()
+{
+    return m_gameMap;
+}
+
+void Editor::SetSkyboxColor(Color color)
+{
+    m_clearColor = color;
+    m_gameMap.GetMapMetaDataMutable().skyColor = color;
+    TraceLog(LOG_INFO, "[Editor] Applied skybox color");
 }

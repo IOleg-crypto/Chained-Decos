@@ -1,8 +1,8 @@
 #ifndef KEY_EVENT_H
 #define KEY_EVENT_H
 
-#include "Event.h"
-#include <sstream>
+#include "core/events/Event.h"
+
 
 namespace ChainedDecos
 {
@@ -36,12 +36,7 @@ public:
         return m_RepeatCount;
     }
 
-    std::string ToString() const override
-    {
-        std::stringstream ss;
-        ss << "KeyPressedEvent: " << m_KeyCode << " (" << m_RepeatCount << " repeats)";
-        return ss.str();
-    }
+    std::string ToString() const override;
 
     EVENT_CLASS_TYPE(KeyPressed)
 private:
@@ -55,12 +50,7 @@ public:
     {
     }
 
-    std::string ToString() const override
-    {
-        std::stringstream ss;
-        ss << "KeyReleasedEvent: " << m_KeyCode;
-        return ss.str();
-    }
+    std::string ToString() const override;
 
     EVENT_CLASS_TYPE(KeyReleased)
 };
@@ -72,12 +62,7 @@ public:
     {
     }
 
-    std::string ToString() const override
-    {
-        std::stringstream ss;
-        ss << "KeyTypedEvent: " << m_KeyCode;
-        return ss.str();
-    }
+    std::string ToString() const override;
 
     EVENT_CLASS_TYPE(KeyTyped)
 };

@@ -274,3 +274,7 @@ JsonSerializableObject MapObjectDataToJsonSerializableObject(const MapObjectData
 // Note: MapObject conversions are implemented in MapEditor/Editor/FileManager/FileManager.cpp
 // because MapObject is an Editor-specific class and cannot be included in Engine code.
 // These functions will be moved to use the converter when MapObject is refactored.
+
+
+
+

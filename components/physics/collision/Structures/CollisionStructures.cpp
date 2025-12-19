@@ -165,3 +165,7 @@ const Vector3 &CollisionTriangle::V2() const
 {
     return m_v2;
 }
+
+
+
+

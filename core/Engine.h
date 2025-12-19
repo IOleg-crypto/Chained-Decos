@@ -1,58 +1,133 @@
-#ifndef CORE_ENGINE_H
-#define CORE_ENGINE_H
+#ifndef ENGINE_H
+#define ENGINE_H
 
-#include "Engine.h"
-
+#include <memory>
 #include <string>
+#include <vector>
 
-namespace Core
+// Forward declarations of core systems
+class RenderManager;
+class InputManager;
+class AudioManager;
+class IModelLoader;
+class ICollisionManager;
+class IWorldManager;
+class ILevelManager;
+class IPlayer;
+class IMenu;
+class ModuleManager;
+class IEngineModule;
+
+#include "core/interfaces/IEngine.h"
+
+namespace ChainedDecos
 {
+class Event;
+}
 
-struct WindowConfig
-{
-    std::string title = "Game";
-    int width = 1280;
-    int height = 720;
-    bool vsync = true;
-    bool fullscreen = false;
-    int target_fps = 60;
-};
-
-struct EngineConfig
-{
-    WindowConfig window;
-    bool enable_audio = true;
-    bool enable_debug = false;
-};
-
-class Engine
+class Engine : public IEngine
 {
 public:
+    static Engine &Instance();
+
     Engine();
     ~Engine();
 
-    // Non-copyable
-    Engine(const Engine &) = delete;
-    Engine &operator=(const Engine &) = delete;
+    bool Initialize();
+    void Update(float deltaTime);
+    void Shutdown();
 
-    // Run the application
-    int Run(Application &app);
+    // Core System Accessors
+    std::shared_ptr<RenderManager> GetRenderManager() const
+    {
+        return m_RenderManager;
+    }
+    std::shared_ptr<InputManager> GetInputManager() const
+    {
+        return m_InputManager;
+    }
+    std::shared_ptr<AudioManager> GetAudioManager() const
+    {
+        return m_AudioManager;
+    }
+    std::shared_ptr<IModelLoader> GetModelLoader() const
+    {
+        return m_ModelLoader;
+    }
+    std::shared_ptr<ICollisionManager> GetCollisionManager() const
+    {
+        return m_CollisionManager;
+    }
+    std::shared_ptr<IWorldManager> GetWorldManager() const
+    {
+        return m_WorldManager;
+    }
+    std::shared_ptr<ILevelManager> GetLevelManager() const override
+    {
+        return m_LevelManager;
+    }
+    std::shared_ptr<IPlayer> GetPlayer() const override
+    {
+        return m_Player;
+    }
+    std::shared_ptr<IMenu> GetMenu() const override
+    {
+        return m_Menu;
+    }
 
-    // Request exit
-    void RequestExit();
+    ModuleManager *GetModuleManager() const
+    {
+        return m_ModuleManager.get();
+    }
 
-    // Check if running
-    bool IsRunning() const;
+    // Service Locator (Shim for transition - to be removed)
+    template <typename T> std::shared_ptr<T> GetService() const
+    {
+        return nullptr;
+    }
+    template <typename T> void RegisterService(std::shared_ptr<T> service)
+    {
+    }
+
+    // Module registration
+    void RegisterModule(std::unique_ptr<IEngineModule> module);
+
+    // Debug
+    bool IsDebugInfoVisible() const
+    {
+        return m_debugInfoVisible;
+    }
+    void SetDebugInfoVisible(bool visible)
+    {
+        m_debugInfoVisible = visible;
+    }
+    bool IsCollisionDebugVisible() const;
+
+    // Application control
+    void RequestExit() override
+    {
+        m_shouldExit = true;
+    }
+    bool ShouldExit() const override;
 
 private:
-    bool Initialize(const EngineConfig &config);
-    void Shutdown();
-    void MainLoop(Application &app);
+    static Engine *s_instance;
 
-    bool m_running;
-    EngineConfig m_config;
+    std::unique_ptr<ModuleManager> m_ModuleManager;
+
+    // Explicit Core Services
+    std::shared_ptr<RenderManager> m_RenderManager;
+    std::shared_ptr<InputManager> m_InputManager;
+    std::shared_ptr<AudioManager> m_AudioManager;
+    std::shared_ptr<IModelLoader> m_ModelLoader;
+    std::shared_ptr<ICollisionManager> m_CollisionManager;
+    std::shared_ptr<IWorldManager> m_WorldManager;
+    std::shared_ptr<ILevelManager> m_LevelManager;
+    std::shared_ptr<IPlayer> m_Player;
+    std::shared_ptr<IMenu> m_Menu;
+
+    bool m_debugInfoVisible = false;
+    bool m_shouldExit = false;
 };
 
-} // namespace Core
-
-#endif // CORE_ENGINE_H
+#endif // ENGINE_H

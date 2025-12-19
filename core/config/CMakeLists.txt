@@ -1,11 +1,11 @@
 
 set(CONFIGMANAGER_SOURCE 
-    Core/ConfigManager.cpp
-    Core/ConfigManager.h
+    ConfigManager.cpp
+    ConfigManager.h
 )
 set(GAMECONFIG_SOURCE 
-    Core/GameConfig.cpp
-    Core/GameConfig.h
+    GameConfig.cpp
+    GameConfig.h
 )
 
 add_library(config STATIC

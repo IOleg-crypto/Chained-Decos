@@ -3,8 +3,6 @@ set(GAME_SOURCES
     GameApplication.h
     GameLayer.cpp
     GameLayer.h
-    Systems/UIController/UIManager.cpp
-    Systems/UIController/UIManager.h
 )
 
 add_library(ChainedDecosGame STATIC ${GAME_SOURCES})

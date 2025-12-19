@@ -1,6 +1,6 @@
 #include "ConsoleManager.h"
-#include "core/engine/Engine.h"
-#include "core/engine/EngineApplication.h"
+#include "core/Engine.h"
+#include "core/application/EngineApplication.h"
 #include "scene/main/Core/LevelManager.h"
 
 #include "project/chaineddecos/Player/Core/Player.h"
@@ -25,11 +25,11 @@ ConsoleManager::ConsoleManager()
              m_commands.size());
 }
 
-IPlayer *ConsoleManager::GetPlayer() const
+IPlayer *ConsoleManager::GetPlayer()
 {
     // Get Player through Engine -> PlayerService
     auto player = Engine::Instance().GetPlayer();
-    return player;
+    return player.get();
 }
 
 IEngine *ConsoleManager::GetEngine() const
@@ -123,32 +123,6 @@ void ConsoleManager::RegisterCommand(const std::string &name, const std::string 
     m_commands[nameLower] =
         CommandInfo(nameLower, nameLower, "", description, usage, std::move(callback));
     TraceLog(LOG_DEBUG, "Registered console command: %s", nameLower.c_str());
-}
-
-void ConsoleManager::RegisterCommandWithPrefix(const std::string &category, const std::string &name,
-                                               const std::string &description,
-                                               const std::string &usage, CommandCallback callback,
-                                               bool alsoRegisterWithoutPrefix)
-{
-    std::string catLower = category;
-    std::string nameLower = name;
-    std::transform(catLower.begin(), catLower.end(), catLower.begin(), ::tolower);
-    std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
-
-    // Source Engine style: use underscore instead of dot (e.g., "cl_speed")
-    std::string fullName = catLower + "_" + nameLower;
-
-    // Register with prefix (e.g., "cl_speed")
-    m_commands[fullName] = CommandInfo(nameLower, fullName, catLower, description, usage, callback);
-    TraceLog(LOG_DEBUG, "Registered console command with prefix: %s", fullName.c_str());
-
-    // Also register without prefix if requested (for backward compatibility)
-    if (alsoRegisterWithoutPrefix)
-    {
-        m_commands[nameLower] =
-            CommandInfo(nameLower, fullName, catLower, description, usage, callback);
-        TraceLog(LOG_DEBUG, "Registered console command without prefix: %s", nameLower.c_str());
-    }
 }
 
 const CommandInfo *ConsoleManager::FindCommand(const std::string &cmdName) const
@@ -344,83 +318,8 @@ void ConsoleManager::RegisterBuiltinCommands()
                                            std::string(!current ? "enabled" : "disabled"));
                     });
 
-    // Speed command (Source Engine style: cl_speed)
-    RegisterCommandWithPrefix(
-        "cl", "speed", "Set player movement speed", "cl_speed <value>",
-        [](const std::vector<std::string> &args, ConsoleManager *console)
-        {
-            if (args.empty())
-            {
-                console->AddOutput("Usage: cl_speed <value>");
-                return;
-            }
-            try
-            {
-                float speed = std::stof(args[0]);
-                IPlayer *player = console->GetPlayer();
-                if (!player)
-                {
-                    console->AddOutput("Error: Player instance not available.");
-                    return;
-                }
-                player->SetSpeed(speed);
-                console->AddOutput("Player speed set to " + std::to_string(speed));
-            }
-            catch (const std::exception &)
-            {
-                console->AddOutput("Error: Invalid speed value. Must be a number.");
-            }
-        });
-
-    // Setpos command (Source Engine style: cl_setpos)
-    RegisterCommandWithPrefix(
-        "cl", "setpos", "Set player position", "cl_setpos <x> <y> <z>",
-        [](const std::vector<std::string> &args, ConsoleManager *console)
-        {
-            if (args.size() != 3)
-            {
-                console->AddOutput("Usage: cl_setpos <x> <y> <z>");
-                return;
-            }
-            try
-            {
-                float x = std::stof(args[0]);
-                float y = std::stof(args[1]);
-                float z = std::stof(args[2]);
-                IPlayer *player = console->GetPlayer();
-                if (!player)
-                {
-                    console->AddOutput("Error: Player instance not available.");
-                    return;
-                }
-                player->SetPosition({x, y, z});
-                console->AddOutput("Player position set to: " + std::to_string(x) + ", " +
-                                   std::to_string(y) + ", " + std::to_string(z));
-            }
-            catch (const std::exception &)
-            {
-                console->AddOutput("Error: Invalid position values. Must be numbers.");
-            }
-        });
-
-    // Getpos command (Source Engine style: cl_getpos)
-    RegisterCommandWithPrefix("cl", "getpos", "Get player position", "cl_getpos",
-                              [](const std::vector<std::string> &args, ConsoleManager *console)
-                              {
-                                  IPlayer *player = console->GetPlayer();
-                                  if (!player)
-                                  {
-                                      console->AddOutput("Error: Player instance not available.");
-                                      return;
-                                  }
-                                  Vector3 pos = player->GetPosition();
-                                  console->AddOutput("Player position: " + std::to_string(pos.x) +
-                                                     " " + std::to_string(pos.y) + " " +
-                                                     std::to_string(pos.z));
-                              });
-
     // FPS command (Source Engine style: cl_showfps or just fps)
-    RegisterCommand("fps", "Show current FPS", "fps",
+    RegisterCommand("m_showfps", "Show current FPS", "m_showfps",
                     [](const std::vector<std::string> &args, ConsoleManager *console)
                     {
                         int fps = GetFPS();
@@ -434,12 +333,11 @@ void ConsoleManager::RegisterBuiltinCommands()
                     [](const std::vector<std::string> &args, ConsoleManager *console)
                     {
                         console->AddOutput("Quitting game...");
-                        // Engine *engine = console->GetEngine();
-                        // if (engine)
-                        // {
-                        //     engine->RequestExit(); // TODO: Add RequestExit to Engine
-                        // }
-                        // For now, use exit()
+                        auto engine = console->GetEngine();
+                        if (engine)
+                        {
+                            engine->RequestExit(); // TODO: Add RequestExit to Engine
+                        }
                         exit(0);
                     });
 }
@@ -619,4 +517,16 @@ void ConsoleManager::RenderConsole()
     ImGui::PopItemWidth();
 
     ImGui::End();
+}
+const std::vector<std::string> &ConsoleManager::GetOutput() const
+{
+    return consoleOutput;
+}
+const std::vector<std::string> &ConsoleManager::GetHistory() const
+{
+    return consoleHistory;
+}
+bool ConsoleManager::IsConsoleOpen() const
+{
+    return consoleOpen;
 }

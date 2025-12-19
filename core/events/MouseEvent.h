@@ -1,8 +1,8 @@
 #ifndef MOUSE_EVENT_H
 #define MOUSE_EVENT_H
 
-#include "Event.h"
-#include <sstream>
+#include "core/events/Event.h"
+
 
 namespace ChainedDecos
 {
@@ -23,12 +23,7 @@ public:
         return m_MouseY;
     }
 
-    std::string ToString() const override
-    {
-        std::stringstream ss;
-        ss << "MouseMovedEvent: " << m_MouseX << ", " << m_MouseY;
-        return ss.str();
-    }
+    std::string ToString() const override;
 
     EVENT_CLASS_TYPE(MouseMoved)
     EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
@@ -52,12 +47,7 @@ public:
         return m_YOffset;
     }
 
-    std::string ToString() const override
-    {
-        std::stringstream ss;
-        ss << "MouseScrolledEvent: " << GetXOffset() << ", " << GetYOffset();
-        return ss.str();
-    }
+    std::string ToString() const override;
 
     EVENT_CLASS_TYPE(MouseScrolled)
     EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
@@ -89,12 +79,7 @@ public:
     {
     }
 
-    std::string ToString() const override
-    {
-        std::stringstream ss;
-        ss << "MouseButtonPressedEvent: " << m_Button;
-        return ss.str();
-    }
+    std::string ToString() const override;
 
     EVENT_CLASS_TYPE(MouseButtonPressed)
 };
@@ -106,12 +91,7 @@ public:
     {
     }
 
-    std::string ToString() const override
-    {
-        std::stringstream ss;
-        ss << "MouseButtonReleasedEvent: " << m_Button;
-        return ss.str();
-    }
+    std::string ToString() const override;
 
     EVENT_CLASS_TYPE(MouseButtonReleased)
 };

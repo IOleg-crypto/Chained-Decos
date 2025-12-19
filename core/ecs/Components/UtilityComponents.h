@@ -20,3 +20,7 @@ struct NameComponent
 };
 
 #endif // LIFETIME_COMPONENT_H
+
+
+
+

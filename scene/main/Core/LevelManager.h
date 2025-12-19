@@ -3,10 +3,10 @@
 
 #include "components/physics/collision/Core/CollisionManager.h"
 #include "components/rendering/Core/RenderManager.h"
+#include "core/interfaces/IEngineModule.h"
 #include "core/interfaces/ILevelManager.h"
 #include "core/interfaces/IMenu.h"
 #include "core/interfaces/IPlayer.h"
-#include "core/object/module/Interfaces/IEngineModule.h"
 #include "scene/main/Core/MapCollisionInitializer.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/map/Core/MapLoader.h"
@@ -61,6 +61,7 @@ public:
 
     // Map Management
     void LoadEditorMap(const std::string &mapPath);
+    std::string ConvertMapNameToPath(const std::string &mapName);
     void RenderEditorMap() override;
     void RenderSpawnZone() const;
     void DumpMapDiagnostics() const;
@@ -82,7 +83,7 @@ public:
         return m_collisionInitializer.get();
     }
 
-    void SetPlayer(IPlayer *player);
+    void SetPlayer(std::shared_ptr<IPlayer> player);
 
 private:
     LevelManagerConfig m_config;
@@ -97,12 +98,12 @@ private:
     std::unique_ptr<MapCollisionInitializer> m_collisionInitializer;
 
     // Dependencies
-    WorldManager *m_worldManager = nullptr;
-    CollisionManager *m_collisionManager = nullptr;
-    ModelLoader *m_modelLoader = nullptr;
-    RenderManager *m_renderManager = nullptr;
-    IPlayer *m_player = nullptr;
-    IMenu *m_menu = nullptr;
+    std::shared_ptr<WorldManager> m_worldManager;
+    std::shared_ptr<CollisionManager> m_collisionManager;
+    std::shared_ptr<ModelLoader> m_modelLoader;
+    std::shared_ptr<RenderManager> m_renderManager;
+    std::shared_ptr<IPlayer> m_player;
+    std::shared_ptr<IMenu> m_menu;
     Engine *m_engine = nullptr;
 };
 

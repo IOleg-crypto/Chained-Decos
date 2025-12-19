@@ -1,10 +1,12 @@
 #ifndef GAME_APPLICATION_H
 #define GAME_APPLICATION_H
 
-#include "core/config/Core/GameConfig.h"
-#include "core/engine/IApplication.h"
+#include "core/application/IApplication.h"
+#include "core/config/GameConfig.h"
+#include "project/chaineddecos/gamegui/Menu.h"
 #include <core/ecs/ECSRegistry.h>
 #include <core/ecs/Entity.h>
+#include <memory>
 
 // Game application - uses full engine + own modules
 class GameApplication : public IApplication
@@ -59,6 +61,9 @@ private:
     // HUD Font
     Font m_hudFont = {0};
     bool m_fontLoaded = false;
+
+    // In-game menu
+    std::unique_ptr<Menu> m_menu;
 };
 
 #endif // GAME_APPLICATION_H

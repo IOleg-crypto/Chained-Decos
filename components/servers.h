@@ -6,7 +6,7 @@
 // Following Godot architecture principles
 
 // Must include core first (dependency)
-#include "core/core.h"
+#include "core/utils/core.h"
 
 // Rendering server
 #include "rendering/Commands/IRenderCommand.h"
@@ -32,3 +32,7 @@
 #include "physics/dynamics/Components/SurfaceComponent.h"
 
 #endif // SERVERS_H
+
+
+
+
