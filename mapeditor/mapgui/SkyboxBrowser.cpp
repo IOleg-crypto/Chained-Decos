@@ -122,7 +122,14 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
             // map) and we haven't manually loaded a different one in the browser
             const std::string &currentSkyboxTexture =
                 m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
-            if (currentSkyboxTexture != m_lastLoadedMetadataSkybox && m_isSkyboxLoaded)
+
+            // SYNC FIX: Allow sync if we are in placeholder state (empty path) OR if we were
+            // already synced
+            bool needsSync = (currentSkyboxTexture != m_lastLoadedMetadataSkybox) &&
+                             (m_isSkyboxLoaded || m_skyboxPlaceholderPath.empty() ||
+                              m_skyboxPlaceholderPath.find("placeholder.jpg") != std::string::npos);
+
+            if (needsSync)
             {
                 // Unload current texture
                 if (m_skyboxPlaceholderTexture.id != 0)
@@ -154,7 +161,14 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                             m_skyboxPlaceholderPath = fullPathProject;
                             m_lastLoadedMetadataSkybox = currentSkyboxTexture;
                             m_isSkyboxLoaded = true;
+                            TraceLog(LOG_INFO, "[SkyboxBrowser] Synced preview with scene: %s",
+                                     fullPathProject.c_str());
                         }
+                    }
+                    else
+                    {
+                        TraceLog(LOG_WARNING, "[SkyboxBrowser] Failed to sync preview: %s",
+                                 fullPathProject.c_str());
                     }
                 }
                 else
@@ -174,9 +188,14 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                 }
             }
         }
-        ImGui::Text("Current skybox: %s", m_skyboxPlaceholderPath.empty()
-                                              ? "No skybox loaded"
-                                              : m_skyboxPlaceholderPath.c_str());
+        ImGui::Text("Current skybox: %s",
+                    m_skyboxPlaceholderPath.empty()
+                        ? "None"
+                        : fs::path(m_skyboxPlaceholderPath).filename().string().c_str());
+        if (ImGui::IsItemHovered() && !m_skyboxPlaceholderPath.empty())
+        {
+            ImGui::SetTooltip("%s", m_skyboxPlaceholderPath.c_str());
+        }
         ImGui::Separator();
         ImGui::Spacing();
 
@@ -208,6 +227,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                         m_skyboxPlaceholderPath = outPath;
                         m_lastLoadedMetadataSkybox = ""; // User-loaded, not from metadata
                         m_isSkyboxLoaded = false;        // Not Applied yet
+                        TraceLog(LOG_INFO, "[SkyboxBrowser] Loaded local preview: %s", outPath);
                     }
                 }
                 NFD_FreePath(outPath);
@@ -243,12 +263,6 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                 m_lastLoadedMetadataSkybox.clear();
                 m_isSkyboxLoaded = false;
             }
-            else
-            {
-                m_skyboxPlaceholderInitialized = false;
-                m_skyboxPlaceholderPath.clear();
-                m_lastLoadedMetadataSkybox.clear();
-            }
         }
 
         ImGui::Spacing();
@@ -257,19 +271,25 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
 
         if (m_skyboxPlaceholderInitialized && m_skyboxPlaceholderTexture.id != 0)
         {
-            ImGui::Text("Preview:");
-            rlImGuiImageSize(&m_skyboxPlaceholderTexture, 64, 64);
+            ImGui::Text("Preview (128x128):");
+            rlImGuiImageSize(&m_skyboxPlaceholderTexture, 128, 128);
         }
         else
         {
             ImGui::Text("Preview:");
-            ImGui::Text("No preview available");
+            ImGui::TextDisabled("No skybox image to preview");
         }
 
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
 
+        // Load and apply skybox image
+        bool canApply = !m_skyboxPlaceholderPath.empty() &&
+                        m_skyboxPlaceholderPath.find("placeholder.jpg") == std::string::npos;
+
+        if (!canApply)
+            ImGui::BeginDisabled();
         if (ImGui::Button("Apply to Scene", ImVec2(200, 30)))
         {
             // Apply texture (shaders are loaded automatically in SetSkyboxTexture)
@@ -278,6 +298,14 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
 
             TraceLog(LOG_INFO, "Applied skybox to editor scene: %s",
                      m_skyboxPlaceholderPath.c_str());
+        }
+        if (!canApply)
+            ImGui::EndDisabled();
+
+        if (m_isSkyboxLoaded && canApply)
+        {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), " (Currently Active)");
         }
     }
     ImGui::End();
