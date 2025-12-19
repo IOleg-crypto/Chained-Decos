@@ -105,14 +105,22 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
             {
                 const char *placeholderPath =
                     PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
+                TraceLog(LOG_INFO, "[SkyboxBrowser] Loading fallback placeholder: %s",
+                         placeholderPath);
                 Image placeholderImg = LoadImage(placeholderPath);
                 if (placeholderImg.data != nullptr)
                 {
                     m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
                     UnloadImage(placeholderImg);
                     m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
-                    m_lastLoadedMetadataSkybox = ""; // No skybox loaded
+                    m_lastLoadedMetadataSkybox = currentSkyboxTexture; // Track even if placeholder
                     m_isSkyboxLoaded = false;
+                }
+                else
+                {
+                    // Fallback failed too, but we must stop the loop
+                    m_lastLoadedMetadataSkybox = currentSkyboxTexture;
+                    TraceLog(LOG_WARNING, "[SkyboxBrowser] Failed to load placeholder image!");
                 }
             }
         }
@@ -131,7 +139,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
 
             if (needsSync)
             {
-                // Unload current texture
+                // Unload current texture early
                 if (m_skyboxPlaceholderTexture.id != 0)
                 {
                     UnloadTexture(m_skyboxPlaceholderTexture);
@@ -139,6 +147,9 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                 }
                 m_skyboxPlaceholderInitialized = false;
                 m_skyboxPlaceholderPath.clear();
+
+                // ALWAYS record that we are processing this metadata to stop the loop
+                m_lastLoadedMetadataSkybox = currentSkyboxTexture;
 
                 // Reload with new skybox from metadata
                 if (!currentSkyboxTexture.empty())
@@ -159,7 +170,6 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                         {
                             m_skyboxPlaceholderInitialized = true;
                             m_skyboxPlaceholderPath = fullPathProject;
-                            m_lastLoadedMetadataSkybox = currentSkyboxTexture;
                             m_isSkyboxLoaded = true;
                             TraceLog(LOG_INFO, "[SkyboxBrowser] Synced preview with scene: %s",
                                      fullPathProject.c_str());
@@ -182,8 +192,12 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                         m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
                         UnloadImage(placeholderImg);
                         m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
-                        m_lastLoadedMetadataSkybox = "";
                         m_isSkyboxLoaded = false;
+                    }
+                    else
+                    {
+                        TraceLog(LOG_WARNING, "[SkyboxBrowser] Failed to load placeholder: %s",
+                                 placeholderPath);
                     }
                 }
             }
