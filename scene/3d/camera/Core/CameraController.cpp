@@ -76,10 +76,10 @@ void CameraController::Update()
         return;
     }
 
-    // Skip camera update if ImGui wants to capture mouse (menu is open)
-    // This prevents UpdateCamera from centering the cursor
+    // Skip camera update if ImGui wants to capture mouse or keyboard
+    // This prevents UpdateCamera from centering the cursor or moving while typing
     const ImGuiIO &io = ImGui::GetIO();
-    if (io.WantCaptureMouse)
+    if (io.WantCaptureMouse || io.WantCaptureKeyboard)
     {
         return;
     }
@@ -88,7 +88,7 @@ void CameraController::Update()
     float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
     UpdateScreenShake(deltaTime);
 
-    // UpdateCamera(&m_camera, m_cameraMode);
+    UpdateCamera(&m_camera, m_cameraMode);
 }
 
 void CameraController::UpdateCameraRotation()
@@ -346,7 +346,3 @@ CameraController &CameraController::operator=(const CameraController &other)
     }
     return *this;
 }
-
-
-
-

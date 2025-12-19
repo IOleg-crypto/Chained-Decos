@@ -49,6 +49,7 @@ void EditorApplication::OnStart()
     auto modelLoader = Engine::Instance().GetModelLoader();
 
     m_editor = std::make_unique<Editor>(camera, modelLoader);
+    camera->SetCameraMode(CAMERA_FREE);
 
     TraceLog(LOG_INFO, "[EditorApplication] Editor components initialized.");
 
@@ -120,7 +121,6 @@ void EditorApplication::OnRender()
     // Render 3D scene for Editor
     auto &cameraController = m_editor->GetCameraController();
     BeginMode3D(cameraController.GetCamera());
-    cameraController.SetCameraMode(CAMERA_FREE);
 
     // Render skybox and objects
     m_editor->Render();
@@ -149,7 +149,3 @@ void EditorApplication::OnShutdown()
     TraceLog(LOG_INFO, "[EditorApplication] Shutting down...");
     // Editor cleans up its own resources in destructor
 }
-
-
-
-
