@@ -757,6 +757,7 @@ void EditorUIManager::RenderWelcomeScreen()
             {
                 TraceLog(LOG_INFO, "[UIManager] Exit button clicked, setting m_shouldExit = true");
                 m_shouldExit = true;
+                std::exit(0);
             }
 
             ImGui::EndChild();

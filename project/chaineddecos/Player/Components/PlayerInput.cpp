@@ -167,3 +167,6 @@ std::pair<Vector3, Vector3> PlayerInput::GetCameraVectors() const
 
     return {forward, right};
 }
+
+
+

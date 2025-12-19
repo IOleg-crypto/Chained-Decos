@@ -132,3 +132,6 @@ TEST_F(CollisionManagerTest, MultipleCollidersWork) {
     bool collision2 = collisionManager->CheckCollision(collider4);
     EXPECT_FALSE(collision2); // Should not collide with any
 }
+
+
+

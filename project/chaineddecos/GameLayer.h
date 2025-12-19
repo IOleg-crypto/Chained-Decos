@@ -1,7 +1,7 @@
 #ifndef GAMELAYER_H
 #define GAMELAYER_H
 
-#include "core/engine/Layer.h"
+#include "core/layer/Layer.h"
 
 class GameLayer : public ChainedDecos::Layer
 {
@@ -17,3 +17,7 @@ public:
 };
 
 #endif // GAMELAYER_H
+
+
+
+

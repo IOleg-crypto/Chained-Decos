@@ -153,3 +153,6 @@ private:
 };
 
 #endif // UIMANAGER_H
+
+
+

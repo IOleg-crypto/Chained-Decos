@@ -1,5 +1,5 @@
 #include "Skybox.h"
-#include "core/config/Core/ConfigManager.h"
+#include "core/config/ConfigManager.h"
 #include "rlImGui/rlImGui.h"
 #include "rlgl.h"
 #include <filesystem>
@@ -232,3 +232,6 @@ void Skybox::UpdateGammaFromConfig()
     // SetGammaEnabled(IsSkyboxGammaEnabled());
     // SetGammaValue(GetSkyboxGammaValue());
 }
+
+
+

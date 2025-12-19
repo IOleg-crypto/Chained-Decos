@@ -26,3 +26,6 @@ public:
 };
 
 #endif // ITOOLMANAGER_H
+
+
+

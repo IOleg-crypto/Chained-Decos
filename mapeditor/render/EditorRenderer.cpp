@@ -169,3 +169,7 @@ void EditorRenderer::RenderSelectionWireframe(const MapObjectData &data)
         break;
     }
 }
+
+
+
+

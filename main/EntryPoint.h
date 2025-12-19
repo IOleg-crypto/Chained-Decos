@@ -1,7 +1,7 @@
 #ifndef ENTRY_POINT_H
 #define ENTRY_POINT_H
 
-#include "core/engine/EngineApplication.h"
+#include "core/application/EngineApplication.h"
 
 // Simple macro to create main() function for any application
 // Usage: ENGINE_MAIN(YourAppClass, "Your App Name")
@@ -17,3 +17,7 @@
     }
 
 #endif // ENTRY_POINT_H
+
+
+
+

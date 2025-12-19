@@ -12,3 +12,7 @@ const EntityID NULL_ENTITY = 0xFFFFFFFF;
 
 } // namespace ECS
 #endif // ENTITY_H
+
+
+
+

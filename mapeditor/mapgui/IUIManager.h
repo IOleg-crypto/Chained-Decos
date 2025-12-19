@@ -15,3 +15,6 @@ public:
 };
 
 #endif // IUIMANAGER_H
+
+
+
