@@ -88,7 +88,18 @@ void CameraController::Update()
     float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
     UpdateScreenShake(deltaTime);
 
-    UpdateCamera(&m_camera, m_cameraMode);
+    // Only update camera if user is actively interacting with it
+    bool isLMBDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+    bool isAnyMovementKeyPressed = IsKeyDown(KEY_UP) || IsKeyDown(KEY_DOWN) ||
+                                   IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_RIGHT) ||
+                                   IsKeyDown(KEY_W) || IsKeyDown(KEY_A) || IsKeyDown(KEY_S) ||
+                                   IsKeyDown(KEY_D) || IsKeyDown(KEY_Q) || IsKeyDown(KEY_E);
+    bool isMouseWheelMoving = GetMouseWheelMove() != 0.0f;
+
+    if (isLMBDown || isAnyMovementKeyPressed || isMouseWheelMoving)
+    {
+        UpdateCamera(&m_camera, m_cameraMode);
+    }
 }
 
 void CameraController::UpdateCameraRotation()
