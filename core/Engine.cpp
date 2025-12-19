@@ -1,109 +1,116 @@
 #include "Engine.h"
-#include "Application.h"
+#include "components/audio/Core/AudioManager.h"
+#include "components/input/Core/InputManager.h"
+#include "components/physics/collision/Core/CollisionManager.h"
+#include "components/rendering/Core/RenderManager.h"
+#include "core/module/ModuleManager.h"
+#include "project/chaineddecos/gamegui/Menu.h"
+#include "project/chaineddecos/player/Core/Player.h"
+#include "scene/main/Core/World.h"
+#include "scene/resources/model/Core/Model.h"
+#include <memory>
 #include <raylib.h>
+#include <stdexcept>
 
-namespace Core
-{
+Engine *Engine::s_instance = nullptr;
 
-Engine::Engine() : m_running(false)
+Engine &Engine::Instance()
 {
+    if (!s_instance)
+    {
+        throw std::runtime_error("Engine not initialized!");
+    }
+    return *s_instance;
+}
+
+Engine::Engine()
+{
+    s_instance = this;
+    m_ModuleManager = std::make_unique<ModuleManager>();
 }
 
 Engine::~Engine()
 {
     Shutdown();
+    s_instance = nullptr;
 }
 
-int Engine::Run(Application &app)
+bool Engine::Initialize()
 {
-    // Get configuration from application
-    app.OnConfigure(m_config);
+    TraceLog(LOG_INFO, "[Engine] Initializing Core Services...");
 
-    // Initialize engine
-    if (!Initialize(m_config))
-    {
-        return -1;
-    }
+    // 1. Rendering
+    m_RenderManager = std::shared_ptr<RenderManager>(&RenderManager::Get(), [](RenderManager *) {});
 
-    // Initialize application
-    app.SetEngine(this);
-    app.OnStart();
+    // 2. Input
+    m_InputManager = std::shared_ptr<InputManager>(&InputManager::Get(), [](InputManager *) {});
 
-    // Run main loop
-    m_running = true;
-    MainLoop(app);
+    // 3. Audio
+    m_AudioManager = std::shared_ptr<AudioManager>(&AudioManager::Get(), [](AudioManager *) {});
 
-    // Shutdown
-    app.OnShutdown();
-    Shutdown();
+    // 4. Physics
+    m_CollisionManager = std::shared_ptr<ICollisionManager>(new CollisionManager());
 
-    return 0;
-}
+    // 5. Resources
+    m_ModelLoader = std::shared_ptr<IModelLoader>(new ModelLoader());
 
-void Engine::RequestExit()
-{
-    m_running = false;
-}
+    // 6. World
+    m_WorldManager = std::shared_ptr<IWorldManager>(new WorldManager());
 
-bool Engine::IsRunning() const
-{
-    return m_running && !WindowShouldClose();
-}
-
-bool Engine::Initialize(const EngineConfig &config)
-{
-    // Initialize window
-    if (config.window.vsync)
-    {
-        SetConfigFlags(FLAG_VSYNC_HINT);
-    }
-
-    InitWindow(config.window.width, config.window.height, config.window.title.c_str());
-
-    if (!IsWindowReady())
-    {
-        return false;
-    }
-
-    SetTargetFPS(config.window.target_fps);
-
-    // Initialize audio if enabled
-    if (config.enable_audio)
-    {
-        InitAudioDevice();
-    }
-
+    TraceLog(LOG_INFO, "[Engine] Engine initialized successfully");
     return true;
+}
+
+void Engine::Update(float deltaTime)
+{
+    if (m_ModuleManager)
+    {
+        m_ModuleManager->UpdateAllModules(deltaTime);
+    }
 }
 
 void Engine::Shutdown()
 {
-    if (IsAudioDeviceReady())
-    {
-        CloseAudioDevice();
-    }
+    TraceLog(LOG_INFO, "[Engine] Shutting down Core Services...");
 
-    if (IsWindowReady())
-    {
-        CloseWindow();
-    }
+    if (m_ModuleManager)
+        m_ModuleManager->ShutdownAllModules();
+
+    m_WorldManager.reset();
+    m_ModelLoader.reset();
+    m_CollisionManager.reset();
+
+    if (m_AudioManager)
+        m_AudioManager->Shutdown();
+    m_AudioManager.reset();
+
+    if (m_InputManager)
+        m_InputManager->Shutdown();
+    m_InputManager.reset();
+
+    if (m_RenderManager)
+        m_RenderManager->Shutdown();
+    m_RenderManager.reset();
 }
 
-void Engine::MainLoop(Application &app)
+void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)
 {
-    while (IsRunning())
+    if (m_ModuleManager)
     {
-        float delta_time = GetFrameTime();
-
-        // Update
-        app.OnUpdate(delta_time);
-
-        // Render using engine
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-        app.OnRender();
-        EndDrawing();
+        m_ModuleManager->RegisterModule(std::move(module));
     }
 }
 
-} // namespace Core
+bool Engine::IsCollisionDebugVisible() const
+{
+    return RenderManager::Get().IsCollisionDebugVisible();
+}
+
+bool Engine::ShouldExit() const
+{
+    return m_shouldExit || WindowShouldClose();
+}
+
+
+
+

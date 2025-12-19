@@ -99,3 +99,7 @@ void PlayerRenderable::SetPlayer(IPlayer *player)
 {
     m_player = player;
 }
+
+
+
+

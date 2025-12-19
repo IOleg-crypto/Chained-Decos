@@ -3,3 +3,7 @@
 #include "main/EntryPoint.h"
 
 ENGINE_MAIN(EditorApplication, "Chained Decos Map Editor")
+
+
+
+

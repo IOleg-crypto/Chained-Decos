@@ -1,7 +1,8 @@
 #include "core/ecs/Examples.h"
-#include "core/ecs/Components.h"
 #include "core/ecs/ECSRegistry.h"
+#include "core/ecs/components.h"
 #include <raymath.h>
+
 
 namespace ECSExamples
 {
@@ -162,3 +163,7 @@ entt::entity CreateStaticObject(Vector3 position, Model *model, BoundingBox boun
 }
 
 } // namespace ECSExamples
+
+
+
+

@@ -34,3 +34,7 @@ enum Tool : std::uint8_t
 };
 
 #endif // EDITOR_TYPES_H
+
+
+
+

@@ -124,3 +124,6 @@ TEST_F(PlayerTest, PlayerHasCameraController)
     EXPECT_NE(cameraController, nullptr);
     EXPECT_NE(cameraController.get(), nullptr);
 }
+
+
+

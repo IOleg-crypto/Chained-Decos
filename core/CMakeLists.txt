@@ -1,26 +1,33 @@
 cmake_minimum_required(VERSION 3.20)
 
-# Add subdirectories
+# Add subdirectories for components that still have their own structure
 add_subdirectory(config)
-add_subdirectory(object/event)
-add_subdirectory(object/kernel)
-add_subdirectory(object/module)
 add_subdirectory(ecs)
 
-# Core library - base systems
+# Core library - base systems, events, and module management
 set(CORE_SOURCES
-    engine/Engine.cpp
-    engine/Engine.h
-    engine/EngineApplication.cpp
-    engine/EngineApplication.h
-    engine/IApplication.h
-    engine/Base.h
-    engine/Layer.cpp
-    engine/Layer.h
-    engine/LayerStack.cpp
-    engine/LayerStack.h
-    services/CoreServices.cpp
-    services/CoreServices.h
+    Engine.cpp
+    Engine.h
+    application/EngineApplication.cpp
+    application/EngineApplication.h
+    application/IApplication.h
+    layer/Layer.cpp
+    layer/Layer.h
+    layer/LayerStack.cpp
+    layer/LayerStack.h
+    module/ModuleManager.cpp
+    module/ModuleManager.h
+    events/Event.h
+    events/Event.cpp
+    events/KeyEvent.h
+    events/KeyEvent.cpp
+    events/MouseEvent.h
+    events/MouseEvent.cpp
+    events/ApplicationEvent.h
+    events/ApplicationEvent.cpp
+    utils/Base.h
+    utils/Types.h
+    utils/core.h
 )
 
 add_library(core STATIC ${CORE_SOURCES})
@@ -38,9 +45,6 @@ target_link_libraries(core
         raylib
         EnTT::EnTT
         config
-        event
-        kernel
-        module
         ecs
         audio
         input

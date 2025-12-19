@@ -5,9 +5,11 @@
 #include "core/ecs/ECSRegistry.h"
 #include <raylib.h>
 
-MapCollisionInitializer::MapCollisionInitializer(CollisionManager *collisionManager,
-                                                 ModelLoader *models, IPlayer *player)
-    : m_collisionManager(collisionManager), m_models(models), m_player(player)
+MapCollisionInitializer::MapCollisionInitializer(std::shared_ptr<CollisionManager> collisionManager,
+                                                 std::shared_ptr<ModelLoader> models,
+                                                 std::shared_ptr<IPlayer> player)
+    : m_collisionManager(std::move(collisionManager)), m_models(std::move(models)),
+      m_player(std::move(player))
 {
 }
 
@@ -93,7 +95,7 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
     return true;
 }
 
-void MapCollisionInitializer::SetPlayer(IPlayer *player)
+void MapCollisionInitializer::SetPlayer(std::shared_ptr<IPlayer> player)
 {
-    m_player = player;
+    m_player = std::move(player);
 }

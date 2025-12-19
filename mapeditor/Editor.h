@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "core/engine/Base.h"
+#include "core/utils/Base.h"
 #include "mapeditor/IEditor.h"
 #include "mapeditor/mapgui/IUIManager.h"
 #include "mapeditor/tool/IToolManager.h"
@@ -19,7 +19,6 @@
 #include "scene/resources/map/Core/MapLoader.h"
 #include "scene/resources/map/Skybox/Skybox.h"
 #include "scene/resources/model/Core/Model.h"
-
 
 // Rendering and utilities
 #include "mapeditor/render/EditorRenderer.h"
@@ -34,7 +33,7 @@ private:
 
     // Engine resources and services
     ChainedDecos::Ref<CameraController> m_cameraController;
-    ChainedDecos::Ref<ModelLoader> m_modelLoader;
+    ChainedDecos::Ref<IModelLoader> m_modelLoader;
     std::unique_ptr<Skybox> m_skybox;
     GameMap m_gameMap; // The actual map data
 
@@ -55,7 +54,7 @@ private:
 
 public:
     Editor(ChainedDecos::Ref<CameraController> cameraController,
-           ChainedDecos::Ref<ModelLoader> modelLoader);
+           ChainedDecos::Ref<IModelLoader> modelLoader);
     ~Editor();
 
 public:
@@ -91,7 +90,7 @@ public:
     void SetActiveTool(Tool tool) override;
 
     // service accessors
-    ChainedDecos::Ref<ModelLoader> GetModelLoader() override;
+    ChainedDecos::Ref<IModelLoader> GetModelLoader() override;
 
     // Skybox operations
     void ApplyMetadata(const MapMetadata &metadata);
