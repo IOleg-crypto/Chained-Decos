@@ -7,7 +7,7 @@
 #include <components/rendering/Interfaces/IGameRenderable.h>
 #include <memory>
 #include <raylib.h>
-#include <scene/3d/camera/Core/CameraController.h>
+#include <scene/camera/core/CameraController.h>
 #include <scene/main/Core/World.h>
 
 // Define player constants
@@ -448,7 +448,3 @@ void Player::InitializeCollision()
 {
     m_collision->InitializeCollision();
 }
-
-
-
-

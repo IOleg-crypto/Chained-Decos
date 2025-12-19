@@ -1,24 +1,24 @@
-#ifndef IMODEL_LOADER_H
-#define IMODEL_LOADER_H
+#ifndef IMODELLOADER_H
+#define IMODELLOADER_H
 
+#include "raylib.h"
+#include <functional>
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
-#include <raylib.h>
+
 
 class IModelLoader
 {
 public:
     virtual ~IModelLoader() = default;
-    
-    virtual bool LoadSingleModel(const std::string& name, const std::string& path, bool forceReload = false) = 0;
-    virtual std::optional<std::reference_wrapper<Model>> GetModelByName(const std::string& name) = 0;
-    virtual std::vector<std::string> GetAvailableModels() const = 0;
+
+    virtual bool LoadSingleModel(const std::string &name, const std::string &path,
+                                 bool preload = true) = 0;
     virtual void UnloadAllModels() = 0;
+    virtual std::vector<std::string> GetAvailableModels() const = 0;
+    virtual std::optional<std::reference_wrapper<Model>>
+    GetModelByName(const std::string &name) = 0;
 };
 
-#endif // IMODEL_LOADER_H
-
-
-
-
+#endif // IMODELLOADER_H

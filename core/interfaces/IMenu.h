@@ -21,10 +21,8 @@ public:
     virtual void Hide() = 0;
 
     // Game flow
-    virtual bool ShouldStartGame() const = 0;
     virtual std::string GetSelectedMapName() const = 0;
     virtual void SetGameInProgress(bool inProgress) = 0;
-    virtual void ResetAction() = 0;
 
     // Console
     virtual void ToggleConsole() = 0;
@@ -32,7 +30,3 @@ public:
 };
 
 #endif // IMENU_H
-
-
-
-

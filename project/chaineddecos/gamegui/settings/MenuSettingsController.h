@@ -3,14 +3,15 @@
 
 #include "../MenuConstants.h"
 #include "SettingsManager.h"
-#include "scene/3d/camera/Interfaces/ICameraSensitivityController.h"
+#include "scene/camera/core/ICameraSensitivityController.h"
 
 #include <functional>
 #include <imgui.h>
 #include <string>
 #include <vector>
 
-#include "core/Engine.h"
+// Forward declarations
+class Engine;
 
 struct VideoSettings
 {
