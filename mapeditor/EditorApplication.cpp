@@ -2,7 +2,7 @@
 #include "core/Engine.h"
 #include "mapeditor/Editor.h"
 #include "mapeditor/mapgui/UIManager.h"
-#include "scene/3d/camera/Core/CameraController.h"
+#include "scene/camera/core/CameraController.h"
 
 #include "scene/resources/model/Core/Model.h"
 
@@ -11,7 +11,6 @@
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
-
 
 EditorApplication::EditorApplication(int argc, char *argv[])
 {

@@ -28,7 +28,3 @@ public:
 };
 
 #endif // ICOLLISION_MANAGER_H
-
-
-
-

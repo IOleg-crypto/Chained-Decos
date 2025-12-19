@@ -25,7 +25,6 @@ private:
     Vector3 m_transformStartRotation;
     Vector3 m_transformStartScale;
 
-private:
     Camera3D m_camera;
 
 public:
@@ -42,6 +41,7 @@ public:
 
     void HandleToolInput(bool mousePressed, const Ray &ray, IEditor &editor) override;
     void UpdateTool(const Ray &ray, IEditor &editor) override;
+    void RenderGizmos(IEditor &editor) override;
 
 private:
     float GetGizmoScale(const Vector3 &position) const;
@@ -57,3 +57,6 @@ private:
 };
 
 #endif // TOOLMANAGER_H
+
+
+

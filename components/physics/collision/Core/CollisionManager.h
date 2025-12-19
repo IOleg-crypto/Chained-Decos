@@ -36,12 +36,6 @@ struct ModelCollisionTask
 // Supports adding, clearing, and checking collisions.
 // Uses AABB for fast checks and optional BVH for precise collisions.
 //
-//
-// CollisionManager
-// Manages all collision boxes in the game.
-// Supports adding, clearing, and checking collisions.
-// Uses AABB for fast checks and optional BVH for precise collisions.
-//
 class CollisionManager : public ICollisionManager
 {
 public:
@@ -189,7 +183,3 @@ private:
 };
 
 #endif // COLLISIONMANAGER_H
-
-
-
-
