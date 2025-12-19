@@ -7,23 +7,19 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Build configuration options
-option(FAST_CONFIG "Reduce CMake configure time" ON)
+# Build configuration options
 option(BUILD_TESTS "Build unit tests" ON)
 option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
-option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
-option(ENABLE_WARNINGS "Enable strict compiler warnings" OFF)
+option(ENABLE_WARNINGS "Enable strict compiler warnings" ON)
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
-option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" ON)
 option(ENABLE_UNITY_BUILD "Enable unity build for faster compilation" ON)
 
 # Platform-specific options
 option(ENABLE_OPENGL_DEBUG "Enable OpenGL debug context" OFF)
 option(ENABLE_AUDIO "Enable audio support" ON)
-option(ENABLE_MULTITHREADING "Enable multithreading support" ON)
 
 # Development options
-option(ENABLE_DEV_TOOLS "Enable development tools" OFF)
 option(ENABLE_DEBUG_INFO "Enable debug information" ON)
 option(ENABLE_SANITIZERS "Enable sanitizers for debugging" OFF)
 
@@ -32,11 +28,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 # Set build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
-    if(ENABLE_OPTIMIZATIONS)
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
-    else()
-        set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
-    endif()
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
 endif()
 
 # Set default install prefix
@@ -46,25 +38,18 @@ set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefi
 if(MSVC)
     # MSVC-specific settings
     add_compile_options(
-        $<$<CONFIG:Debug>:/Od>
-        $<$<CONFIG:Release>:/O2>
-        $<$<CONFIG:Release>:/DNDEBUG>
+        $<$<CONFIG:Debug>:/Od /MTd>
+        $<$<CONFIG:Release>:/O2 /MT /DNDEBUG>
+        /Zi /EHsc
     )
 
-    if(DISABLE_ALL_WARNINGS)
-        add_compile_options(/W0)
-    elseif(ENABLE_WARNINGS)
+    if(ENABLE_WARNINGS)
         add_compile_options(/W4 /permissive-)
-        if(ENABLE_DEBUG_INFO)
-            add_compile_options(/Zi)
+        if(WARNINGS_AS_ERRORS)
+            add_compile_options(/WX)
         endif()
-    endif()
-
-    # Use static CRT for static linking
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_compile_options(/MTd)  # MultiThreadedDebug (static)
     else()
-        add_compile_options(/MT)   # MultiThreaded (static)
+        add_compile_options(/W0)
     endif()
 
     if(ENABLE_SANITIZERS)
@@ -74,15 +59,11 @@ if(MSVC)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # GCC/Clang settings
     add_compile_options(
-        $<$<CONFIG:Debug>:-O0>
-        $<$<CONFIG:Debug>:-g>
-        $<$<CONFIG:Release>:-O3>
-        $<$<CONFIG:Release>:-DNDEBUG>
+        $<$<CONFIG:Debug>:-O0 -g>
+        $<$<CONFIG:Release>:-O3 -DNDEBUG>
     )
 
-    if(DISABLE_ALL_WARNINGS)
-        add_compile_options(-w -Wno-error=implicit-function-declaration)
-    elseif(ENABLE_WARNINGS)
+    if(ENABLE_WARNINGS)
         add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
         if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             add_compile_options(-Wmost -Wno-missing-braces -Wno-missing-field-initializers -Wno-attributes)
@@ -93,6 +74,8 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         if(WARNINGS_AS_ERRORS)
             add_compile_options(-Werror)
         endif()
+    else()
+        add_compile_options(-w)
     endif()
 
     if(ENABLE_DEBUG_INFO)
@@ -119,9 +102,7 @@ if(WIN32)
 endif()
 
 
-if(ENABLE_MULTITHREADING)
-    find_package(Threads REQUIRED)
-endif()
+find_package(Threads REQUIRED)
 
 # Unity build configuration
 if(ENABLE_UNITY_BUILD)
@@ -189,7 +170,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/entt/src")
     add_library(EnTT INTERFACE)
     target_include_directories(EnTT INTERFACE ${CMAKE_SOURCE_DIR}/include/entt/src)
     add_library(EnTT::EnTT ALIAS EnTT)
-    message(STATUS "✓ EnTT loaded from submodule (header-only)")
+    message(STATUS "EnTT loaded from submodule (header-only)")
 else()
     message(FATAL_ERROR "EnTT submodule not found. Run: git submodule update --init --recursive")
 endif()
