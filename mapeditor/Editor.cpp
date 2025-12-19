@@ -414,3 +414,39 @@ void Editor::SetSkyboxColor(Color color)
     m_gameMap.GetMapMetaDataMutable().skyColor = color;
     TraceLog(LOG_INFO, "[Editor] Applied skybox color");
 }
+const std::string &Editor::GetSkyboxTexture() const
+{
+    return m_gameMap.GetMapMetaData().skyboxTexture;
+}
+bool Editor::HasSkybox() const
+{
+    return static_cast<bool>(m_skybox);
+}
+Skybox *Editor::GetSkybox() const
+{
+    return m_skybox.get();
+}
+Color Editor::GetClearColor() const
+{
+    return m_clearColor;
+}
+IToolManager *Editor::GetToolManager() const
+{
+    return m_toolManager.get();
+}
+IUIManager *Editor::GetUIManager() const
+{
+    return m_uiManager.get();
+}
+const std::string &Editor::GetCurrentMapPath() const
+{
+    return m_currentMapPath;
+}
+bool Editor::IsSceneModified() const
+{
+    return m_isSceneModified;
+}
+void Editor::SetSceneModified(bool modified)
+{
+    m_isSceneModified = modified;
+}

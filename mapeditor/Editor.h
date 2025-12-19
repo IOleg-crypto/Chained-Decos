@@ -98,50 +98,23 @@ public:
     void SetSkyboxTexture(const std::string &texturePath) override;
     void SetSkyboxColor(Color color) override;
 
-    const std::string &GetSkyboxTexture() const
-    {
-        return m_gameMap.GetMapMetaData().skyboxTexture;
-    }
-    bool HasSkybox() const
-    {
-        return static_cast<bool>(m_skybox);
-    }
-    Skybox *GetSkybox() const override
-    {
-        return m_skybox.get();
-    }
-    Color GetClearColor() const
-    {
-        return m_clearColor;
-    }
+    const std::string &GetSkyboxTexture() const;
+    bool HasSkybox() const;
+    Skybox *GetSkybox() const override;
+    Color GetClearColor() const;
 
     // Accessors for UI/Tools
     GameMap &GetGameMap() override;
     int GetSelectedObjectIndex() const override;
     MapObjectData *GetSelectedObject() override;
 
-    IToolManager *GetToolManager() const
-    {
-        return m_toolManager.get();
-    }
-    IUIManager *GetUIManager() const
-    {
-        return m_uiManager.get();
-    }
+    IToolManager *GetToolManager() const;
+    IUIManager *GetUIManager() const;
 
-    const std::string &GetCurrentMapPath() const override
-    {
-        return m_currentMapPath;
-    }
+    const std::string &GetCurrentMapPath() const override;
 
-    bool IsSceneModified() const override
-    {
-        return m_isSceneModified;
-    }
-    void SetSceneModified(bool modified) override
-    {
-        m_isSceneModified = modified;
-    }
+    bool IsSceneModified() const override;
+    void SetSceneModified(bool modified) override;
 
 private:
     void InitializeSubsystems();
