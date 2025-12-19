@@ -204,7 +204,7 @@ void EditorUIManager::RenderImGuiToolbar()
                 // Use NFD to show save dialog
                 nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
                 nfdchar_t *outPath = nullptr;
-                nfdresult_t result = NFD_SaveDialog(&outPath, filterItem, 1, nullptr, "map.json");
+                nfdresult_t result = NFD_SaveDialogU8(&outPath, filterItem, 1, nullptr, "map.json");
                 if (result == NFD_OKAY)
                 {
                     m_editor->SaveMap(std::string(outPath));
@@ -223,7 +223,7 @@ void EditorUIManager::RenderImGuiToolbar()
                     // Use NFD to show open dialog
                     nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
                     nfdchar_t *outPath = nullptr;
-                    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+                    nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
                     if (result == NFD_OKAY)
                     {
                         m_editor->LoadMap(std::string(outPath));
@@ -556,7 +556,7 @@ void EditorUIManager::ExecutePendingAction()
         m_editor->ClearScene();
         if (m_editor)
             m_editor->SetSkyboxTexture("");
-        m_displayWelcomeScreen = false;
+        m_displayWelcomeScreen = true; // Fix: Use true to go back to welcome screen
     }
     else if (m_pendingAction == PendingAction::OPEN_PROJECT ||
              m_pendingAction == PendingAction::LOAD_MAP)
@@ -564,7 +564,7 @@ void EditorUIManager::ExecutePendingAction()
         // For Open/Load, show the dialog
         nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
         nfdchar_t *outPath = nullptr;
-        nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+        nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
         if (result == NFD_OKAY)
         {
             m_editor->LoadMap(std::string(outPath));
@@ -758,7 +758,6 @@ void EditorUIManager::RenderWelcomeScreen()
             {
                 TraceLog(LOG_INFO, "[UIManager] Exit button clicked, setting m_shouldExit = true");
                 m_shouldExit = true;
-                std::exit(0);
             }
 
             ImGui::EndChild();
@@ -799,7 +798,7 @@ void EditorUIManager::RenderSavePrompt()
                 // Need to ask for path if new map
                 nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
                 nfdchar_t *outPath = nullptr;
-                nfdresult_t result = NFD_SaveDialog(&outPath, filterItem, 1, nullptr, "map.json");
+                nfdresult_t result = NFD_SaveDialogU8(&outPath, filterItem, 1, nullptr, "map.json");
                 if (result == NFD_OKAY)
                 {
                     currentPath = std::string(outPath);

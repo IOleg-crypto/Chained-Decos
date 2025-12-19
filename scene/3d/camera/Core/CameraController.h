@@ -9,10 +9,7 @@
 #include <raylib.h>
 #include <raymath.h>
 
-namespace ChainedDecos
-{
-class Event;
-}
+#include "core/events/Event.h"
 
 //
 // CameraController

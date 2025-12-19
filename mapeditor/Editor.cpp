@@ -22,8 +22,9 @@ namespace fs = std::filesystem;
 
 Editor::Editor(ChainedDecos::Ref<CameraController> cameraController,
                ChainedDecos::Ref<IModelLoader> modelLoader)
-    : m_gridSize(50), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
-      m_cameraController(std::move(cameraController)), m_modelLoader(std::move(modelLoader))
+    : m_gridSize(999999), m_spawnTextureLoaded(false), m_activeTool(SELECT),
+      m_skybox(std::make_unique<Skybox>()), m_cameraController(std::move(cameraController)),
+      m_modelLoader(std::move(modelLoader))
 {
     // Initialize spawn texture (will be loaded after window initialization)
     m_spawnTexture = {0};
@@ -53,6 +54,7 @@ void Editor::InitializeSubsystems()
     NFD_Init();
 
     // Initialize subsystems
+    m_mapManager = std::make_unique<MapManager>();
     m_toolManager = std::make_unique<ToolManager>();
 
     // Create UIManager
@@ -89,7 +91,7 @@ void Editor::Render()
     }
 
     // Render all objects in the map
-    const auto &objects = m_gameMap.GetMapObjects();
+    const auto &objects = m_mapManager->GetGameMap().GetMapObjects();
     for (const auto &obj : objects)
     {
         RenderObject(obj);
@@ -101,12 +103,7 @@ void Editor::RenderObject(const MapObjectData &obj)
     if (!m_renderer)
         return;
 
-    bool isSelected = false;
-    if (m_selectedIndex >= 0 &&
-        m_selectedIndex < static_cast<int>(m_gameMap.GetMapObjects().size()))
-    {
-        isSelected = (&m_gameMap.GetMapObjects()[m_selectedIndex] == &obj);
-    }
+    bool isSelected = (m_mapManager->GetSelectedObject() == &obj);
 
     // Handle spawn zone rendering separately
     if (obj.type == MapObjectType::SPAWN_ZONE)
@@ -128,12 +125,12 @@ void Editor::RenderObject(const MapObjectData &obj)
 
 Tool Editor::GetActiveTool() const
 {
-    return static_cast<Tool>(m_activeTool);
+    return m_activeTool;
 }
 
 void Editor::SetActiveTool(Tool tool)
 {
-    m_activeTool = static_cast<int>(tool);
+    m_activeTool = tool;
     if (m_toolManager)
     {
         m_toolManager->SetActiveTool(tool);
@@ -185,47 +182,32 @@ void Editor::HandleInput()
 
 void Editor::AddObject(const MapObjectData &obj)
 {
-    m_gameMap.GetMapObjectsMutable().push_back(obj);
-    m_isSceneModified = true;
+    m_mapManager->AddObject(obj);
 }
 
 void Editor::RemoveObject(int index)
 {
-    if (index >= 0 && index < static_cast<int>(m_gameMap.GetMapObjects().size()))
-    {
-        m_gameMap.GetMapObjectsMutable().erase(m_gameMap.GetMapObjectsMutable().begin() + index);
-        if (m_selectedIndex == index)
-            m_selectedIndex = -1;
-        else if (m_selectedIndex > index)
-            m_selectedIndex--;
-
-        m_isSceneModified = true;
-    }
+    m_mapManager->RemoveObject(index);
 }
 
 void Editor::SelectObject(int index)
 {
-    if (index >= -1 && index < static_cast<int>(m_gameMap.GetMapObjects().size()))
-    {
-        m_selectedIndex = index;
-    }
+    m_mapManager->SelectObject(index);
 }
 
 void Editor::ClearSelection()
 {
-    m_selectedIndex = -1;
+    m_mapManager->ClearSelection();
 }
 
 void Editor::ClearScene()
 {
-    m_gameMap.GetMapObjectsMutable().clear();
-    m_selectedIndex = -1;
-    m_isSceneModified = true;
+    m_mapManager->ClearScene();
 }
 
 void Editor::ClearObjects()
 {
-    ClearScene();
+    m_mapManager->ClearObjects();
 }
 
 void Editor::CreateDefaultObject(MapObjectType type, const std::string &modelName)
@@ -258,55 +240,38 @@ void Editor::CreateDefaultObject(MapObjectType type, const std::string &modelNam
     }
 
     newObj.type = type;
-    newObj.name = typeStr + " " + std::to_string(m_gameMap.GetMapObjects().size());
+    newObj.name = typeStr + " " + std::to_string(m_mapManager->GetGameMap().GetMapObjects().size());
     newObj.position = {0.0f, 0.0f, 0.0f};
     newObj.rotation = {0.0f, 0.0f, 0.0f};
     newObj.scale = {1.0f, 1.0f, 1.0f};
     if (type != MapObjectType::SPAWN_ZONE)
         newObj.color = WHITE;
 
-    AddObject(newObj);
+    // Initialize remaining fields to avoid garbage values
+    newObj.radius =
+        (type == MapObjectType::SPHERE || type == MapObjectType::CYLINDER) ? 1.0f : 0.0f;
+    newObj.height = (type == MapObjectType::CYLINDER) ? 2.0f : 0.0f;
+    newObj.size = (type == MapObjectType::PLANE) ? Vector2{10.0f, 10.0f} : Vector2{0.0f, 0.0f};
+    newObj.isPlatform = true;
+    newObj.isObstacle = false;
+
+    m_mapManager->AddObject(newObj);
 }
 
 void Editor::SaveMap(const std::string &filename)
 {
-    MapLoader loader;
-    if (loader.SaveMap(m_gameMap, filename))
-    {
-        m_currentMapPath = filename;
-        m_isSceneModified = false;
-        TraceLog(LOG_INFO, "Map saved to %s", filename.c_str());
-    }
-    else
-    {
-        TraceLog(LOG_ERROR, "Failed to save map to %s", filename.c_str());
-    }
+    m_mapManager->SaveMap(filename);
 }
 
 void Editor::LoadMap(const std::string &filename)
 {
-    MapLoader loader;
-    m_gameMap = loader.LoadMap(filename);
-
-    // Check if map is valid (MapLoader::LoadMap returns an empty map on failure)
-    if (!m_gameMap.GetMapMetaData().name.empty() || !m_gameMap.GetMapObjects().empty())
-    {
-        m_currentMapPath = filename;
-        m_selectedIndex = -1;
-        m_isSceneModified = false;
-
-        ApplyMetadata(m_gameMap.GetMapMetaData());
-        TraceLog(LOG_INFO, "Map loaded from %s", filename.c_str());
-    }
-    else
-    {
-        TraceLog(LOG_ERROR, "Failed to load map from %s", filename.c_str());
-    }
+    m_mapManager->LoadMap(filename);
+    ApplyMetadata(m_mapManager->GetGameMap().GetMapMetaData());
 }
 
 void Editor::ApplyMetadata(const MapMetadata &metadata)
 {
-    m_gameMap.SetMapMetaData(metadata);
+    m_mapManager->GetGameMap().SetMapMetaData(metadata);
     m_clearColor = metadata.skyColor;
     SetSkyboxTexture(metadata.skyboxTexture);
 }
@@ -319,7 +284,8 @@ void Editor::SetSkybox(const std::string &name)
 void Editor::SetSkyboxTexture(const std::string &texturePath)
 {
     // Avoid redundant loading if the texture is already set
-    if (m_gameMap.GetMapMetaData().skyboxTexture == texturePath && m_skybox && m_skybox->IsLoaded())
+    if (m_mapManager->GetGameMap().GetMapMetaData().skyboxTexture == texturePath && m_skybox &&
+        m_skybox->IsLoaded())
     {
         return;
     }
@@ -335,17 +301,17 @@ void Editor::SetSkyboxTexture(const std::string &texturePath)
         {
             m_skybox->UnloadSkybox();
         }
-        m_gameMap.GetMapMetaDataMutable().skyboxTexture = "";
+        m_mapManager->GetGameMap().GetMapMetaDataMutable().skyboxTexture = "";
         return;
     }
     m_skybox->LoadMaterialTexture(texturePath);
-    m_gameMap.GetMapMetaDataMutable().skyboxTexture = texturePath;
+    m_mapManager->GetGameMap().GetMapMetaDataMutable().skyboxTexture = texturePath;
     TraceLog(LOG_INFO, "[Editor] Applied skybox texture: %s", texturePath.c_str());
 }
 
 std::string Editor::GetSkyboxAbsolutePath() const
 {
-    const std::string &path = m_gameMap.GetMapMetaData().skyboxTexture;
+    const std::string &path = m_mapManager->GetGameMap().GetMapMetaData().skyboxTexture;
     if (path.empty())
         return "";
     return path;
@@ -353,12 +319,7 @@ std::string Editor::GetSkyboxAbsolutePath() const
 
 MapObjectData *Editor::GetSelectedObject()
 {
-    if (m_selectedIndex >= 0 &&
-        m_selectedIndex < static_cast<int>(m_gameMap.GetMapObjects().size()))
-    {
-        return &m_gameMap.GetMapObjectsMutable()[m_selectedIndex];
-    }
-    return nullptr;
+    return m_mapManager->GetSelectedObject();
 }
 
 void Editor::LoadSpawnTexture()
@@ -391,7 +352,7 @@ void Editor::PreloadModelsFromResources()
         auto modelOpt = m_modelLoader->GetModelByName(info.name);
         if (modelOpt)
         {
-            m_gameMap.GetMapModelsMutable()[info.name] = modelOpt->get();
+            m_mapManager->GetGameMap().GetMapModelsMutable()[info.name] = modelOpt->get();
         }
     }
 }
@@ -413,23 +374,23 @@ ChainedDecos::Ref<IModelLoader> Editor::GetModelLoader()
 
 int Editor::GetSelectedObjectIndex() const
 {
-    return m_selectedIndex;
+    return m_mapManager->GetSelectedIndex();
 }
 
 GameMap &Editor::GetGameMap()
 {
-    return m_gameMap;
+    return m_mapManager->GetGameMap();
 }
 
 void Editor::SetSkyboxColor(Color color)
 {
     m_clearColor = color;
-    m_gameMap.GetMapMetaDataMutable().skyColor = color;
+    m_mapManager->GetGameMap().GetMapMetaDataMutable().skyColor = color;
     TraceLog(LOG_INFO, "[Editor] Applied skybox color");
 }
 const std::string &Editor::GetSkyboxTexture() const
 {
-    return m_gameMap.GetMapMetaData().skyboxTexture;
+    return m_mapManager->GetGameMap().GetMapMetaData().skyboxTexture;
 }
 bool Editor::HasSkybox() const
 {
@@ -453,15 +414,15 @@ IUIManager *Editor::GetUIManager() const
 }
 const std::string &Editor::GetCurrentMapPath() const
 {
-    return m_currentMapPath;
+    return m_mapManager->GetCurrentMapPath();
 }
 bool Editor::IsSceneModified() const
 {
-    return m_isSceneModified;
+    return m_mapManager->IsSceneModified();
 }
 void Editor::SetSceneModified(bool modified)
 {
-    m_isSceneModified = modified;
+    m_mapManager->SetSceneModified(modified);
 }
 
 void Editor::OnEvent(ChainedDecos::Event &e)

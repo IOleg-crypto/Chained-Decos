@@ -14,6 +14,7 @@
 #include "core/ecs/components.h"
 #include "core/module/ModuleManager.h"
 #include "project/chaineddecos/Player/Core/Player.h"
+#include "project/chaineddecos/events/MenuEvent.h"
 #include "project/chaineddecos/gamegui/Menu.h"
 #include "scene/main/Core/LevelManager.h"
 #include "scene/main/Core/MapCollisionInitializer.h"
@@ -123,6 +124,10 @@ void GameApplication::OnStart()
     // Initialize Menu
     m_menu = std::make_unique<Menu>();
     m_menu->Initialize(&Engine::Instance());
+
+    // Set up event callback to route menu actions to our OnEvent handler
+    m_menu->SetEventCallback([this](ChainedDecos::Event &e) { OnEvent(e); });
+
     m_menu->SetupStyle();
     TraceLog(LOG_INFO, "[GameApplication] Menu initialized and style configured");
 
@@ -157,6 +162,9 @@ void GameApplication::OnStart()
             playerModelPtr = &modelOpt.value().get();
         }
     }
+
+    // Initialize fallback player model (required for shader application if primary fails)
+    m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
 
     // Load and Apply Shader
     {
@@ -290,7 +298,6 @@ void GameApplication::OnStart()
     else
     {
         TraceLog(LOG_WARNING, "[GameApplication] 'player_low' not found, using default cube.");
-        m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
         m_playerEntity =
             ECSExamples::CreatePlayer(spawnPos, &m_playerModel, 8.0f, 12.0f, sensitivity);
     }
@@ -388,7 +395,10 @@ void GameApplication::OnUpdate(float deltaTime)
             m_cursorDisabled = false;
         }
 
-        HandleMenuActions();
+        if (m_menu)
+        {
+            m_menu->Update();
+        }
     }
     else
     {
@@ -755,48 +765,44 @@ void GameApplication::InitInput()
     TraceLog(LOG_INFO, "[GameApplication] Game input bindings configured.");
 }
 
-void GameApplication::HandleMenuActions()
+void GameApplication::OnEvent(ChainedDecos::Event &e)
 {
-    if (!m_menu)
-        return;
-
-    MenuAction action = m_menu->ConsumeAction();
-    if (action == MenuAction::None)
-        return;
-
-    switch (action)
-    {
-    case MenuAction::SinglePlayer:
-    case MenuAction::StartGameWithMap:
-    {
-        std::string mapName = m_menu->GetSelectedMapName();
-        auto levelManager = Engine::Instance().GetService<ILevelManager>();
-        if (levelManager && levelManager->LoadMap(mapName))
+    ChainedDecos::EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<ChainedDecos::MenuEvent>(
+        [this](ChainedDecos::MenuEvent &event)
         {
-            m_isGameInitialized = true;
-            m_showMenu = false;
-            m_menu->ResetAction();
-        }
-        break;
-    }
-    case MenuAction::ResumeGame:
-    {
-        // For now, resume just closes menu if initialized
-        if (m_isGameInitialized)
-        {
-            m_showMenu = false;
-            m_menu->ResetAction();
-        }
-        break;
-    }
-    case MenuAction::ExitGame:
-    {
-        Engine::Instance().RequestExit();
-        break;
-    }
-    default:
-        break;
-    }
+            MenuAction action = event.GetAction();
+            switch (action)
+            {
+            case MenuAction::StartGameWithMap:
+            {
+                std::string mapName = m_menu->GetSelectedMapName();
+                auto levelManager = Engine::Instance().GetService<ILevelManager>();
+                if (levelManager && levelManager->LoadMap(mapName))
+                {
+                    m_isGameInitialized = true;
+                    m_showMenu = false;
+                }
+                return true;
+            }
+            case MenuAction::ResumeGame:
+            {
+                if (m_isGameInitialized)
+                {
+                    m_showMenu = false;
+                }
+                return true;
+            }
+            case MenuAction::ExitGame:
+            {
+                Engine::Instance().RequestExit();
+                return true;
+            }
+            default:
+                break;
+            }
+            return false;
+        });
 }
 
 void GameApplication::SaveGameState()

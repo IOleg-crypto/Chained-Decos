@@ -22,10 +22,6 @@ public:
 
     virtual void HandleToolInput(bool mousePressed, const Ray &ray, IEditor &editor) = 0;
     virtual void UpdateTool(const Ray &ray, IEditor &editor) = 0;
-    virtual void RenderGizmos(IEditor &editor) = 0;
 };
 
 #endif // ITOOLMANAGER_H
-
-
-

@@ -25,7 +25,8 @@ enum class EventType : uint8_t
     MouseButtonPressed,
     MouseButtonReleased,
     MouseMoved,
-    MouseScrolled
+    MouseScrolled,
+    MenuAction
 };
 
 enum EventCategory : uint8_t

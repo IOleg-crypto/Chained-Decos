@@ -19,6 +19,11 @@ set(render_sources
     render/EditorRenderer.h
 )
 
+set(logic_sources
+    logic/MapManager.cpp
+    logic/MapManager.h
+)
+
 set(editor_sources
     EditorApplication.cpp
     EditorApplication.h
@@ -31,6 +36,7 @@ add_executable(map_editor
     ${render_sources}
     ${tool_sources}
     ${mapgui_sources}
+    ${logic_sources}
     ${mapeditor_entry_point}
 )
 target_include_directories(map_editor PUBLIC

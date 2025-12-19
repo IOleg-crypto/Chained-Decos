@@ -68,7 +68,7 @@ void EditorRenderer::RenderGizmo(const MapObjectData &data)
         return;
 
     Tool activeTool = m_toolManager->GetActiveTool();
-    if (activeTool != MOVE && activeTool != SCALE)
+    if (activeTool != MOVE && activeTool != SCALE && activeTool != ROTATE)
         return;
 
     Vector3 pos = data.position;
@@ -105,6 +105,15 @@ void EditorRenderer::RenderGizmo(const MapObjectData &data)
 
     // Draw center sphere
     DrawSphere(pos, arrowRadius * 1.5f, YELLOW);
+
+    // Draw Rotation Gizmo if ROTATE tool is active
+    if (activeTool == ROTATE)
+    {
+        // Render Rotate Gizmo (Circles)
+        DrawCircle3D(pos, arrowLength, {1, 0, 0}, 90.0f, RED);
+        DrawCircle3D(pos, arrowLength, {0, 1, 0}, 90.0f, GREEN);
+        DrawCircle3D(pos, arrowLength, {0, 0, 1}, 90.0f, BLUE);
+    }
 }
 
 void EditorRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &position,
@@ -169,7 +178,3 @@ void EditorRenderer::RenderSelectionWireframe(const MapObjectData &data)
         break;
     }
 }
-
-
-
-
