@@ -21,9 +21,10 @@
 #include "scene/resources/map/Skybox/Skybox.h"
 #include "scene/resources/model/Core/Model.h"
 
-
 // Rendering and utilities
 #include "mapeditor/render/EditorRenderer.h"
+
+#include "mapeditor/logic/MapManager.h"
 
 // Main editor class for the map editor
 class Editor : public IEditor
@@ -32,19 +33,16 @@ private:
     // Subsystem managers
     std::unique_ptr<IUIManager> m_uiManager;
     std::unique_ptr<IToolManager> m_toolManager;
+    std::unique_ptr<MapManager> m_mapManager;
 
     // Engine resources and services
     ChainedDecos::Ref<CameraController> m_cameraController;
     ChainedDecos::Ref<IModelLoader> m_modelLoader;
     std::unique_ptr<Skybox> m_skybox;
-    GameMap m_gameMap; // The actual map data
 
     // State
     int m_gridSize = 50;
-    int m_activeTool = 0;
-    int m_selectedIndex = -1;
-    bool m_isSceneModified = false;
-    std::string m_currentMapPath;
+    Tool m_activeTool = SELECT;
 
     // Rendering helper
     std::unique_ptr<EditorRenderer> m_renderer;
