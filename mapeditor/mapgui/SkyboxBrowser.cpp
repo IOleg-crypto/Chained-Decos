@@ -25,7 +25,8 @@ namespace fs = std::filesystem;
 
 SkyboxBrowser::SkyboxBrowser(IEditor *editor)
     : m_editor(editor), m_skyboxesScanned(false), m_selectedSkyboxIndex(0),
-      m_skyboxPlaceholderTexture({0}), m_skyboxPlaceholderInitialized(false)
+      m_skyboxPlaceholderTexture({0}), m_skyboxPlaceholderInitialized(false),
+      m_isSkyboxLoaded(false)
 {
 }
 
@@ -53,6 +54,9 @@ SkyboxBrowser::~SkyboxBrowser()
 
 void SkyboxBrowser::RenderPanel(bool &isOpen)
 {
+    if (!isOpen)
+        return;
+
     const int screenWidth = GetScreenWidth();
     const int screenHeight = GetScreenHeight();
 
@@ -62,69 +66,15 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
     ImGui::SetNextWindowPos(desiredPos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
 
-    // Lazily load placeholder texture on first open of the panel
-    if (!m_skyboxPlaceholderInitialized)
+    if (ImGui::Begin("Set Skybox", &isOpen, ImGuiWindowFlags_NoCollapse))
     {
-        const std::string &currentSkyboxTexture =
-            m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
-
-        // If there's a skybox in metadata, load it
-        if (!currentSkyboxTexture.empty())
-        {
-            std::string skyboxPath = currentSkyboxTexture;
-            // Ensure path starts with /
-            if (skyboxPath[0] != '/' && skyboxPath[0] != '\\')
-            {
-                skyboxPath = "/" + skyboxPath;
-            }
-            std::string fullPathProject = std::string(PROJECT_ROOT_DIR) + skyboxPath;
-
-            Image image = LoadImage(fullPathProject.c_str());
-            if (image.data != nullptr)
-            {
-                m_skyboxPlaceholderTexture = LoadTextureFromImage(image);
-                UnloadImage(image);
-                if (m_skyboxPlaceholderTexture.id != 0)
-                {
-                    m_skyboxPlaceholderInitialized = true;
-                    m_skyboxPlaceholderPath = fullPathProject;
-                    m_lastLoadedMetadataSkybox = currentSkyboxTexture;
-                }
-            }
-        }
-
-        // If no skybox in metadata or failed to load, use placeholder
+        // Lazily load placeholder texture on first open of the panel
         if (!m_skyboxPlaceholderInitialized)
         {
-            const char *placeholderPath =
-                PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
-            Image placeholderImg = LoadImage(placeholderPath);
-            if (placeholderImg.data != nullptr)
-            {
-                m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
-                UnloadImage(placeholderImg);
-                m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
-                m_lastLoadedMetadataSkybox = ""; // No skybox loaded
-            }
-        }
-    }
-    else
-    {
-        // Check if metadata skybox has changed
-        const std::string &currentSkyboxTexture =
-            m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
-        if (currentSkyboxTexture != m_lastLoadedMetadataSkybox)
-        {
-            // Unload current texture
-            if (m_skyboxPlaceholderTexture.id != 0)
-            {
-                UnloadTexture(m_skyboxPlaceholderTexture);
-                m_skyboxPlaceholderTexture = {0};
-            }
-            m_skyboxPlaceholderInitialized = false;
-            m_skyboxPlaceholderPath.clear();
+            const std::string &currentSkyboxTexture =
+                m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
 
-            // Reload with new skybox from metadata
+            // If there's a skybox in metadata, load it
             if (!currentSkyboxTexture.empty())
             {
                 std::string skyboxPath = currentSkyboxTexture;
@@ -145,12 +95,14 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                         m_skyboxPlaceholderInitialized = true;
                         m_skyboxPlaceholderPath = fullPathProject;
                         m_lastLoadedMetadataSkybox = currentSkyboxTexture;
+                        m_isSkyboxLoaded = true;
                     }
                 }
             }
-            else
+
+            // If no skybox in metadata or failed to load, use placeholder
+            if (!m_skyboxPlaceholderInitialized)
             {
-                // Load placeholder
                 const char *placeholderPath =
                     PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
                 Image placeholderImg = LoadImage(placeholderPath);
@@ -159,14 +111,69 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                     m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
                     UnloadImage(placeholderImg);
                     m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
-                    m_lastLoadedMetadataSkybox = "";
+                    m_lastLoadedMetadataSkybox = ""; // No skybox loaded
+                    m_isSkyboxLoaded = false;
                 }
             }
         }
-    }
+        else
+        {
+            // Check if metadata skybox has changed in the scene (e.g. via undo or loading another
+            // map) and we haven't manually loaded a different one in the browser
+            const std::string &currentSkyboxTexture =
+                m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
+            if (currentSkyboxTexture != m_lastLoadedMetadataSkybox && m_isSkyboxLoaded)
+            {
+                // Unload current texture
+                if (m_skyboxPlaceholderTexture.id != 0)
+                {
+                    UnloadTexture(m_skyboxPlaceholderTexture);
+                    m_skyboxPlaceholderTexture = {0};
+                }
+                m_skyboxPlaceholderInitialized = false;
+                m_skyboxPlaceholderPath.clear();
 
-    if (ImGui::Begin("Set Skybox", &isOpen, ImGuiWindowFlags_NoCollapse))
-    {
+                // Reload with new skybox from metadata
+                if (!currentSkyboxTexture.empty())
+                {
+                    std::string skyboxPath = currentSkyboxTexture;
+                    if (skyboxPath[0] != '/' && skyboxPath[0] != '\\')
+                    {
+                        skyboxPath = "/" + skyboxPath;
+                    }
+                    std::string fullPathProject = std::string(PROJECT_ROOT_DIR) + skyboxPath;
+
+                    Image image = LoadImage(fullPathProject.c_str());
+                    if (image.data != nullptr)
+                    {
+                        m_skyboxPlaceholderTexture = LoadTextureFromImage(image);
+                        UnloadImage(image);
+                        if (m_skyboxPlaceholderTexture.id != 0)
+                        {
+                            m_skyboxPlaceholderInitialized = true;
+                            m_skyboxPlaceholderPath = fullPathProject;
+                            m_lastLoadedMetadataSkybox = currentSkyboxTexture;
+                            m_isSkyboxLoaded = true;
+                        }
+                    }
+                }
+                else
+                {
+                    // Load placeholder
+                    const char *placeholderPath =
+                        PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
+                    Image placeholderImg = LoadImage(placeholderPath);
+                    if (placeholderImg.data != nullptr)
+                    {
+                        m_skyboxPlaceholderTexture = LoadTextureFromImage(placeholderImg);
+                        UnloadImage(placeholderImg);
+                        m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
+                        m_lastLoadedMetadataSkybox = "";
+                        m_isSkyboxLoaded = false;
+                    }
+                }
+            }
+        }
         ImGui::Text("Current skybox: %s", m_skyboxPlaceholderPath.empty()
                                               ? "No skybox loaded"
                                               : m_skyboxPlaceholderPath.c_str());
@@ -200,6 +207,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                         m_skyboxPlaceholderInitialized = true;
                         m_skyboxPlaceholderPath = outPath;
                         m_lastLoadedMetadataSkybox = ""; // User-loaded, not from metadata
+                        m_isSkyboxLoaded = false;        // Not Applied yet
                     }
                 }
                 NFD_FreePath(outPath);
@@ -233,6 +241,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                 m_skyboxPlaceholderInitialized = (m_skyboxPlaceholderTexture.id != 0);
                 m_skyboxPlaceholderPath.clear();
                 m_lastLoadedMetadataSkybox.clear();
+                m_isSkyboxLoaded = false;
             }
             else
             {
@@ -261,26 +270,15 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
         ImGui::Separator();
         ImGui::Spacing();
 
-        // Load and apply skybox image
-        if (m_skyboxPlaceholderInitialized && ImGui::Button("Apply to Scene", ImVec2(200, 30)))
+        if (ImGui::Button("Apply to Scene", ImVec2(200, 30)))
         {
-            if (m_editor)
-            {
-                // Apply texture (shaders are loaded automatically in SetSkyboxTexture)
-                m_editor->SetSkyboxTexture(m_skyboxPlaceholderPath);
-                if (m_editor->GetSkybox())
-                {
-                    m_editor->GetSkybox()->LoadMaterialShader(
-                        PROJECT_ROOT_DIR "/resources/shaders/skybox.vs",
-                        PROJECT_ROOT_DIR "/resources/shaders/skybox.fs");
-                }
+            // Apply texture (shaders are loaded automatically in SetSkyboxTexture)
+            m_editor->SetSkyboxTexture(m_skyboxPlaceholderPath);
+            m_isSkyboxLoaded = true;
 
-                TraceLog(LOG_INFO, "Applied skybox to editor scene: %s",
-                         m_skyboxPlaceholderPath.c_str());
-            }
+            TraceLog(LOG_INFO, "Applied skybox to editor scene: %s",
+                     m_skyboxPlaceholderPath.c_str());
         }
-
-        ImGui::Spacing();
     }
     ImGui::End();
 }
@@ -326,7 +324,3 @@ const std::vector<SkyboxBrowser::SkyboxInfo> &SkyboxBrowser::GetAvailableSkyboxe
 {
     return m_availableSkyboxes;
 }
-
-
-
-
