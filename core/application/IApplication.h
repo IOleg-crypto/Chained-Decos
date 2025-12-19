@@ -6,7 +6,6 @@
 #include "core/Engine.h"
 #include "core/module/ModuleManager.h"
 
-
 namespace ChainedDecos
 {
 class EngineApplication;
@@ -61,6 +60,11 @@ public:
 
     // Shutdown Phase
     virtual void OnShutdown()
+    {
+    }
+
+    // Event Handling
+    virtual void OnEvent(ChainedDecos::Event &e)
     {
     }
 
