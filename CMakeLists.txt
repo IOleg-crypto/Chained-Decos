@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.25)
-project(ChainedDecos VERSION 1.0.0 LANGUAGES CXX C)
+project(ChainedDecos LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -38,8 +38,8 @@ set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefi
 if(MSVC)
     # MSVC-specific settings
     add_compile_options(
-        $<$<CONFIG:Debug>:/Od /MTd>
-        $<$<CONFIG:Release>:/O2 /MT /DNDEBUG>
+        $<$<CONFIG:Debug>:/Od> $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:Release>:/O2> $<$<CONFIG:Release>:/MT> $<$<CONFIG:Release>:/DNDEBUG>
         /Zi /EHsc
     )
 
@@ -59,8 +59,8 @@ if(MSVC)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # GCC/Clang settings
     add_compile_options(
-        $<$<CONFIG:Debug>:-O0 -g>
-        $<$<CONFIG:Release>:-O3 -DNDEBUG>
+        $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
+        $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
     )
 
     if(ENABLE_WARNINGS)
