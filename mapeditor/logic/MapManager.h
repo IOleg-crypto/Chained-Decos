@@ -1,8 +1,9 @@
 #ifndef MAP_MANAGER_H
 #define MAP_MANAGER_H
 
-#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/map/Core/MapData.h"
 #include <string>
+#include <vector>
 
 class MapManager
 {

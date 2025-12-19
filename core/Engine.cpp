@@ -43,7 +43,8 @@ bool Engine::Initialize()
     m_RenderManager = std::shared_ptr<RenderManager>(&RenderManager::Get(), [](RenderManager *) {});
 
     // 2. Input
-    m_InputManager = std::shared_ptr<InputManager>(&InputManager::Get(), [](InputManager *) {});
+    m_InputManager = std::shared_ptr<ChainedDecos::InputManager>(
+        &ChainedDecos::InputManager::Get(), [](ChainedDecos::InputManager *) {});
 
     // 3. Audio
     m_AudioManager = std::shared_ptr<AudioManager>(&AudioManager::Get(), [](AudioManager *) {});
@@ -110,7 +111,51 @@ bool Engine::ShouldExit() const
 {
     return m_shouldExit || WindowShouldClose();
 }
-
-
-
-
+std::shared_ptr<RenderManager> Engine::GetRenderManager() const
+{
+    return m_RenderManager;
+}
+std::shared_ptr<AudioManager> Engine::GetAudioManager() const
+{
+    return m_AudioManager;
+}
+std::shared_ptr<IModelLoader> Engine::GetModelLoader() const
+{
+    return m_ModelLoader;
+}
+std::shared_ptr<ICollisionManager> Engine::GetCollisionManager() const
+{
+    return m_CollisionManager;
+}
+std::shared_ptr<IWorldManager> Engine::GetWorldManager() const
+{
+    return m_WorldManager;
+}
+std::shared_ptr<ILevelManager> Engine::GetLevelManager() const
+{
+    return m_LevelManager;
+}
+std::shared_ptr<IPlayer> Engine::GetPlayer() const
+{
+    return m_Player;
+}
+std::shared_ptr<IMenu> Engine::GetMenu() const
+{
+    return m_Menu;
+}
+ModuleManager *Engine::GetModuleManager() const
+{
+    return m_ModuleManager.get();
+}
+bool Engine::IsDebugInfoVisible() const
+{
+    return m_debugInfoVisible;
+}
+void Engine::SetDebugInfoVisible(bool visible)
+{
+    m_debugInfoVisible = visible;
+}
+void Engine::RequestExit()
+{
+    m_shouldExit = true;
+}

@@ -2,6 +2,12 @@
 #define IINPUTMANAGER_H
 
 #include <functional>
+#include <string>
+
+namespace ChainedDecos
+{
+class Event;
+}
 
 // Abstract interface for InputManager
 class IInputManager
@@ -39,10 +45,23 @@ public:
     virtual bool IsKeyPressed(int key) const = 0;
     virtual bool IsKeyDown(int key) const = 0;
     virtual bool IsKeyReleased(int key) const = 0;
+
+    // Mouse input queries
+    virtual struct Vector2 GetMousePosition() const = 0;
+    virtual struct Vector2 GetMouseDelta() const = 0;
+    virtual bool IsMouseButtonPressed(int button) const = 0;
+    virtual bool IsMouseButtonDown(int button) const = 0;
+    virtual bool IsMouseButtonReleased(int button) const = 0;
+    virtual float GetMouseWheelMove() const = 0;
+
+    // Cursor control
+    virtual void DisableCursor() = 0;
+    virtual void EnableCursor() = 0;
+    virtual bool IsCursorDisabled() const = 0;
+
+    // Event system integration
+    using EventCallbackFn = std::function<void(ChainedDecos::Event &)>;
+    virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
 };
 
 #endif // IINPUTMANAGER_H
-
-
-
-

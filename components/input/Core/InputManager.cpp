@@ -3,8 +3,9 @@
 #include "core/events/MouseEvent.h"
 #include <raylib.h>
 
-
 using namespace ChainedDecos;
+
+InputManager::InputManager() = default;
 
 bool InputManager::Initialize()
 {
@@ -223,7 +224,3 @@ bool InputManager::IsCursorDisabled() const
 {
     return ::IsCursorHidden();
 }
-
-
-
-
