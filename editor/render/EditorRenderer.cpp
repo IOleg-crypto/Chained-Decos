@@ -36,7 +36,29 @@ void EditorRenderer::RenderObject(const MapObjectData &data, bool isSelected)
 
     Camera3D camera = m_editor ? m_editor->GetCameraController().GetCamera() : Camera3D{};
     MapRenderer renderer;
-    renderer.RenderMapObject(data, loadedModels, camera, true);
+
+    if (m_editor && m_editor->IsInPlayMode())
+    {
+        TraceLog(LOG_INFO, "[EditorRenderer] Rendering object '%s' in Play Mode (type: %d)",
+                 data.name.c_str(), (int)data.type);
+        if (data.type == MapObjectType::MODEL)
+        {
+            auto it = loadedModels.find(data.modelName);
+            if (it == loadedModels.end())
+            {
+                TraceLog(LOG_WARNING, "[EditorRenderer] Model '%s' NOT FOUND for object '%s'",
+                         data.modelName.c_str(), data.name.c_str());
+            }
+            else
+            {
+                TraceLog(LOG_INFO, "[EditorRenderer] Model '%s' found, calling MapRenderer",
+                         data.modelName.c_str());
+            }
+        }
+    }
+
+    bool wireframe = m_editor ? m_editor->IsWireframeEnabled() : false;
+    renderer.RenderMapObject(data, loadedModels, camera, true, wireframe);
 
     // Additional editor-specific rendering: selection wireframe and gizmo
     if (isSelected)
@@ -108,21 +130,21 @@ void EditorRenderer::RenderGizmo(const MapObjectData &data)
 }
 
 void EditorRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &position,
-                                                float size, Color color, bool textureLoaded)
+                                                Vector3 scale, Color color, bool textureLoaded)
 {
     if (!textureLoaded)
     {
         // Fallback to simple cube if texture not loaded
-        DrawCube(position, size, size, size, color);
-        DrawCubeWires(position, size, size, size, WHITE);
+        DrawCube(position, scale.x, scale.y, scale.z, color);
+        DrawCubeWires(position, scale.x, scale.y, scale.z, WHITE);
         return;
     }
 
     // Use shared RenderUtils function to draw textured cube
-    RenderUtils::DrawCubeTexture(texture, position, size, size, size, color);
+    RenderUtils::DrawCubeTexture(texture, position, scale.x, scale.y, scale.z, color);
 
     // Draw wireframe for better visibility
-    DrawCubeWires(position, size, size, size, WHITE);
+    DrawCubeWires(position, scale.x, scale.y, scale.z, WHITE);
 }
 
 void EditorRenderer::RenderSelectionWireframe(const MapObjectData &data)
@@ -169,9 +191,3 @@ void EditorRenderer::RenderSelectionWireframe(const MapObjectData &data)
         break;
     }
 }
-
-
-
-
-
-

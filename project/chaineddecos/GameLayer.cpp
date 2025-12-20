@@ -14,12 +14,14 @@
 #include "core/events/Event.h"
 #include "core/events/KeyEvent.h"
 #include "core/events/MouseEvent.h"
+#include "editor/IEditor.h"
 #include "scene/main/core/World.h"
 #include "scene/resources/model/core/Model.h"
 #include <algorithm>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
+
 
 using namespace ChainedDecos;
 
@@ -30,6 +32,27 @@ GameLayer::GameLayer() : Layer("GameLayer")
 void GameLayer::OnAttach()
 {
     TraceLog(LOG_INFO, "GameLayer Attached");
+
+    // Load HUD Font
+#ifdef PROJECT_ROOT_DIR
+    std::string fontPath =
+        std::string(PROJECT_ROOT_DIR) + "/resources/font/gantari/static/gantari-Bold.ttf";
+    m_hudFont = LoadFontEx(fontPath.c_str(), 96, 0, 0);
+
+    if (m_hudFont.baseSize > 0)
+    {
+        SetTextureFilter(m_hudFont.texture, TEXTURE_FILTER_BILINEAR);
+        m_fontLoaded = true;
+        TraceLog(LOG_INFO, "[GameLayer] Loaded HUD font: %s", fontPath.c_str());
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "[GameLayer] Failed to load HUD font: %s", fontPath.c_str());
+        m_hudFont = GetFontDefault();
+    }
+#else
+    m_hudFont = GetFontDefault();
+#endif
 }
 
 void GameLayer::OnDetach()
@@ -262,6 +285,44 @@ void GameLayer::OnRender()
     RenderScene();
 }
 
+void GameLayer::RenderUI()
+{
+    auto view = REGISTRY.view<PlayerComponent>();
+    for (auto entity : view)
+    {
+        auto &playerComp = view.get<PlayerComponent>(entity);
+
+        int hours = (int)playerComp.runTimer / 3600;
+        int minutes = ((int)playerComp.runTimer % 3600) / 60;
+        int seconds = (int)playerComp.runTimer % 60;
+
+        // Position HUD in top-left of viewport
+        int startX = 20;
+        int startY = 20;
+        float spacing = 2.0f;
+
+        // 1. Height Section
+        const char *heightText = TextFormat("height : %.0fm", playerComp.maxHeight);
+        float fontSizeHeight = 24.0f;
+
+        if (m_fontLoaded)
+            DrawTextEx(m_hudFont, heightText, {(float)startX, (float)startY}, fontSizeHeight,
+                       spacing, WHITE);
+        else
+            DrawText(heightText, startX, startY, (int)fontSizeHeight, WHITE);
+
+        // 2. Timer Section
+        const char *timerText = TextFormat("timer : %02d:%02d:%02d", hours, minutes, seconds);
+        float fontSizeTimer = 22.0f;
+
+        if (m_fontLoaded)
+            DrawTextEx(m_hudFont, timerText, {(float)startX, (float)startY + 30}, fontSizeTimer,
+                       spacing, WHITE);
+        else
+            DrawText(timerText, startX, startY + 30, (int)fontSizeTimer, WHITE);
+    }
+}
+
 void GameLayer::RenderScene()
 {
     // MOVED FROM RenderSystem::Render
@@ -290,19 +351,35 @@ void GameLayer::RenderScene()
                                       transform.position.z + renderComp.offset.z);
 
         renderComp.model->transform = MatrixMultiply(MatrixMultiply(matS, matR), matT);
-        DrawModel(*renderComp.model, Vector3Zero(), 1.0f, renderComp.tint);
+
+        auto editor = Engine::Instance().GetService<IEditor>();
+        bool wireframe = (editor && editor->IsWireframeEnabled());
+
+        if (wireframe)
+            DrawModelWires(*renderComp.model, Vector3Zero(), 1.0f, renderComp.tint);
+        else
+            DrawModel(*renderComp.model, Vector3Zero(), 1.0f, renderComp.tint);
     }
 
     // DEBUG COLLISION RENDER
-    // TODO: Add flag check
-    auto collView = REGISTRY.view<TransformComponent, CollisionComponent>();
-    for (auto [entity, transform, collision] : collView.each())
+    auto editor = Engine::Instance().GetService<IEditor>();
+    if (editor && editor->IsCollisionDebugEnabled())
     {
-        BoundingBox b = collision.bounds;
-        b.min = Vector3Add(b.min, transform.position);
-        b.max = Vector3Add(b.max, transform.position);
-        Color c = collision.hasCollision ? RED : (collision.isTrigger ? YELLOW : GREEN);
-        // DrawBoundingBox(b, c); // Optional: Disable debug drawing in Play Mode for cleaner view
+        auto collisionManager = Engine::Instance().GetService<CollisionManager>();
+        if (collisionManager)
+        {
+            collisionManager->Render();
+        }
+
+        // Also draw player's collider from and his points
+        auto playerView = REGISTRY.view<TransformComponent, CollisionComponent, PlayerComponent>();
+        for (auto [entity, transform, collision, player] : playerView.each())
+        {
+            BoundingBox b = collision.bounds;
+            b.min = Vector3Add(b.min, transform.position);
+            b.max = Vector3Add(b.max, transform.position);
+            DrawBoundingBox(b, RED);
+        }
     }
 }
 
@@ -317,7 +394,7 @@ void GameLayer::OnEvent(Event &e)
                 auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
                 for (auto [entity, transform, velocity, player] : view.each())
                 {
-                    transform.position = {0, 2, 0};
+                    transform.position = player.spawnPosition;
                     velocity.velocity = {0, 0, 0};
                     player.isGrounded = false;
                     player.runTimer = 0;

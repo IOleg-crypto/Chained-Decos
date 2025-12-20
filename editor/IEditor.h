@@ -60,6 +60,13 @@ public:
     virtual void StartPlayMode() = 0;
     virtual void StopPlayMode() = 0;
     virtual bool IsInPlayMode() const = 0;
+    virtual void BuildGame() = 0;
+
+    // Debug Visualization
+    virtual bool IsWireframeEnabled() const = 0;
+    virtual void SetWireframeEnabled(bool enabled) = 0;
+    virtual bool IsCollisionDebugEnabled() const = 0;
+    virtual void SetCollisionDebugEnabled(bool enabled) = 0;
 };
 
 #endif // IEDITOR_H

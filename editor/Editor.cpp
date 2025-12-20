@@ -31,12 +31,14 @@
 #include "core/ecs/Examples.h"
 #include "core/ecs/components/PlayerComponent.h"
 #include "core/ecs/components/RenderComponent.h"
+#include <cstdlib>
+#include <thread>
 
 namespace fs = std::filesystem;
 
 Editor::Editor(ChainedDecos::Ref<CameraController> cameraController,
                ChainedDecos::Ref<IModelLoader> modelLoader)
-    // About m_gridsize i now it stupid
+    // About m_gridsize i know it stupid
     : m_gridSize(99999), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
       m_cameraController(std::move(cameraController)), m_modelLoader(std::move(modelLoader))
 {
@@ -122,10 +124,14 @@ void Editor::Update()
 
 void Editor::Render()
 {
+    // Use the appropriate camera based on current mode
+    Camera3D &activeCamera =
+        m_isInPlayMode ? RenderManager::Get().GetCamera() : m_cameraController->GetCamera();
+
     if (m_skybox && m_skybox->IsLoaded())
     {
         m_skybox->UpdateGammaFromConfig();
-        m_skybox->DrawSkybox(m_cameraController->GetCamera().position);
+        m_skybox->DrawSkybox(activeCamera.position);
     }
 
     // Render all objects in the map
@@ -134,8 +140,12 @@ void Editor::Render()
     {
         RenderObject(obj);
     }
-    // Draw grid - using user-defined size
-    DrawGrid(m_gridSize, 1.0f);
+
+    // Draw grid only in editor mode
+    if (!m_isInPlayMode)
+    {
+        DrawGrid(m_gridSize, 1.0f);
+    }
 }
 
 void Editor::RenderObject(const MapObjectData &obj)
@@ -148,13 +158,12 @@ void Editor::RenderObject(const MapObjectData &obj)
     // Handle spawn zone rendering separately
     if (obj.type == MapObjectType::SPAWN_ZONE)
     {
-        const float spawnSize = 2.0f;
-        m_renderer->RenderSpawnZoneWithTexture(m_spawnTexture, obj.position, spawnSize, obj.color,
+        m_renderer->RenderSpawnZoneWithTexture(m_spawnTexture, obj.position, obj.scale, obj.color,
                                                m_spawnTextureLoaded);
 
         if (isSelected)
         {
-            DrawCubeWires(obj.position, spawnSize, spawnSize, spawnSize, YELLOW);
+            DrawCubeWires(obj.position, obj.scale.x, obj.scale.y, obj.scale.z, YELLOW);
         }
         return;
     }
@@ -203,6 +212,10 @@ void Editor::HandleInput()
     // Handle tool-specific input
     if (m_toolManager && m_cameraController)
     {
+        // Skip editor tool interactions in Play Mode
+        if (m_isInPlayMode)
+            return;
+
         const ImGuiIO &io = ImGui::GetIO();
 
         bool viewportHovered = false;
@@ -506,6 +519,10 @@ void Editor::SetSceneModified(bool modified)
 
 void Editor::OnEvent(ChainedDecos::Event &e)
 {
+    // Skip editor event handling in Play Mode
+    if (m_isInPlayMode)
+        return;
+
     if (m_cameraController)
     {
         m_cameraController->OnEvent(e);
@@ -536,6 +553,34 @@ void Editor::StartPlayMode()
                 collision->SetCollisionType(CollisionType::AABB_ONLY);
                 collisionManager->AddCollider(collision);
             }
+            else if (obj.type == MapObjectType::SPHERE)
+            {
+                // Diameter is scale.x, Radius is diameter * 0.5
+                float radius = obj.scale.x * 0.5f;
+                Vector3 halfSize = {radius, radius, radius};
+                auto collision = std::make_shared<Collision>(obj.position, halfSize);
+                collision->SetCollisionType(CollisionType::AABB_ONLY);
+                collisionManager->AddCollider(collision);
+            }
+            else if (obj.type == MapObjectType::CYLINDER)
+            {
+                // Diameter is scale.x, Radius is diameter * 0.5
+                float radius = obj.scale.x * 0.5f;
+                float height = obj.scale.y;
+
+                Vector3 halfSize = {radius, height * 0.5f, radius};
+                auto collision = std::make_shared<Collision>(obj.position, halfSize);
+                collision->SetCollisionType(CollisionType::AABB_ONLY);
+                collisionManager->AddCollider(collision);
+            }
+            else if (obj.type == MapObjectType::PLANE)
+            {
+                // Plane size is scale.x by scale.z
+                Vector3 halfSize = {obj.scale.x * 0.5f, 0.05f, obj.scale.z * 0.5f};
+                auto collision = std::make_shared<Collision>(obj.position, halfSize);
+                collision->SetCollisionType(CollisionType::AABB_ONLY);
+                collisionManager->AddCollider(collision);
+            }
             else if (obj.type == MapObjectType::MODEL)
             {
                 if (!obj.modelName.empty())
@@ -549,8 +594,9 @@ void Editor::StartPlayMode()
                         Vector3 rot = {obj.rotation.x * DEG2RAD, obj.rotation.y * DEG2RAD,
                                        obj.rotation.z * DEG2RAD};
                         Matrix rotationMatrix = MatrixRotateXYZ(rot);
+                        // Correct order for world matrix: T * R * S
                         Matrix transform = MatrixMultiply(
-                            scaleMatrix, MatrixMultiply(rotationMatrix, translation));
+                            MatrixMultiply(translation, rotationMatrix), scaleMatrix);
 
                         auto collision = std::make_shared<Collision>();
                         collision->BuildFromModelWithType(const_cast<Model *>(&modelOpt->get()),
@@ -582,10 +628,31 @@ void Editor::StartPlayMode()
         }
     }
 
-    Vector3 spawnPos = m_mapManager->GetGameMap().GetMapMetaData().startPosition;
-    if (spawnPos.x == 0 && spawnPos.y == 0 && spawnPos.z == 0)
+    // Determine spawn position: prefer Spawn Zones over metadata startPosition
+    Vector3 spawnPos = {0, 0, 0};
+    bool spawnZoneFound = false;
+
+    const auto &mapObjects = m_mapManager->GetGameMap().GetMapObjects();
+    for (const auto &obj : mapObjects)
     {
-        spawnPos = {0, 2, 0}; // Fallback
+        if (obj.type == MapObjectType::SPAWN_ZONE)
+        {
+            spawnPos = obj.position;
+            spawnPos.y += 1.0f; // Offset upwards to avoid spawning into the floor
+            spawnZoneFound = true;
+            TraceLog(LOG_INFO, "[Editor] Player spawned at Spawn Zone '%s' at (%.2f, %.2f, %.2f)",
+                     obj.name.c_str(), spawnPos.x, spawnPos.y, spawnPos.z);
+            break;
+        }
+    }
+
+    if (!spawnZoneFound)
+    {
+        spawnPos = m_mapManager->GetGameMap().GetMapMetaData().startPosition;
+        if (spawnPos.x == 0 && spawnPos.y == 0 && spawnPos.z == 0)
+        {
+            spawnPos = {0, 2, 0}; // Fallback
+        }
     }
 
     Model *playerModelPtr = nullptr;
@@ -599,7 +666,7 @@ void Editor::StartPlayMode()
     REGISTRY.clear();
 
     auto playerEntity =
-        ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 8.0f, 12.0f, sensitivity);
+        ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 6.0f, 10.0f, sensitivity, spawnPos);
 
     // Apply visual offset and 3rd person camera defaults
     if (REGISTRY.valid(playerEntity))
@@ -608,6 +675,7 @@ void Editor::StartPlayMode()
         {
             auto &renderComp = REGISTRY.get<RenderComponent>(playerEntity);
             renderComp.offset = {0.0f, -1.0f, 0.0f};
+            renderComp.tint = WHITE; // Use WHITE tint to preserve model textures
         }
 
         if (REGISTRY.all_of<PlayerComponent>(playerEntity))
@@ -646,4 +714,36 @@ void Editor::StopPlayMode()
     }
 
     m_isInPlayMode = false;
+}
+
+bool Editor::IsInPlayMode() const
+{
+    return m_isInPlayMode;
+}
+
+void Editor::BuildGame()
+{
+    TraceLog(LOG_INFO, "[Editor] Saving map before build...");
+    SaveMap("");
+
+    TraceLog(LOG_INFO, "[Editor] Starting build process in background...");
+
+    // Using a thread to avoid freezing the editor UI during compilation
+    std::thread(
+        [this]()
+        {
+            // On Windows with MSVC/CMake, this will build the project
+            // We assume the editor is running from the build directory
+            int result = std::system("cmake --build .");
+
+            if (result == 0)
+            {
+                TraceLog(LOG_INFO, "[Editor] Build COMPLETED successfully.");
+            }
+            else
+            {
+                TraceLog(LOG_ERROR, "[Editor] Build FAILED with exit code: %d", result);
+            }
+        })
+        .detach();
 }

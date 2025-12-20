@@ -126,20 +126,39 @@ public:
     bool IsSceneModified() const override;
     void SetSceneModified(bool modified) override;
 
+    // Play Mode Management
+    void StartPlayMode() override;
+    void StopPlayMode() override;
+    bool IsInPlayMode() const override;
+
 private:
     void InitializeSubsystems();
     void RenderObject(const MapObjectData &obj);
 
-    // Play Mode state
-    bool m_isInPlayMode = false;
+    void BuildGame() override;
 
-public:
-    void StartPlayMode() override;
-    void StopPlayMode() override;
-    bool IsInPlayMode() const override
+    // Debug Visualization
+    bool IsWireframeEnabled() const override
     {
-        return m_isInPlayMode;
+        return m_drawWireframe;
     }
+    void SetWireframeEnabled(bool enabled) override
+    {
+        m_drawWireframe = enabled;
+    }
+    bool IsCollisionDebugEnabled() const override
+    {
+        return m_drawCollisions;
+    }
+    void SetCollisionDebugEnabled(bool enabled) override
+    {
+        m_drawCollisions = enabled;
+    }
+
+private:
+    bool m_drawWireframe = false;
+    bool m_drawCollisions = false;
+    bool m_isInPlayMode = false;
 
 public:
     std::string GetSkyboxAbsolutePath() const;

@@ -36,8 +36,8 @@ std::vector<std::string> ResolveModelPaths(const std::string &modelName)
         // Try with stem variations
         for (const auto &ext : extensions)
         {
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + ext);
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" + stem +
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + stem + ext);
+            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/models/" + stem +
                                     ext);
         }
 
@@ -58,13 +58,14 @@ std::vector<std::string> ResolveModelPaths(const std::string &modelName)
     else
     {
         // Extension provided, use as-is with multiple path variations
-        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + normalizedModelName);
-        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" +
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" +
+                                normalizedModelName);
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/models/" +
                                 normalizedModelName);
 
         // Try with stem variation
-        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/" + stem + extension);
-        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "resources/models/" + stem +
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + stem + extension);
+        possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/models/" + stem +
                                 extension);
 
         // Try absolute path if provided
@@ -287,10 +288,10 @@ MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3 &positio
     switch (type)
     {
     case MapObjectType::SPHERE:
-        obj.radius = obj.scale.x; // Use normalized scale.x as radius
+        obj.radius = obj.scale.x * 0.5f; // Use normalized scale.x as diameter
         break;
     case MapObjectType::CYLINDER:
-        obj.radius = obj.scale.x;
+        obj.radius = obj.scale.x * 0.5f;
         obj.height = obj.scale.y;
         break;
     case MapObjectType::PLANE:
@@ -937,8 +938,3 @@ std::vector<MapObjectData> &GameMap::GetMapObjectsMutable()
 {
     return m_objects;
 }
-
-
-
-
-

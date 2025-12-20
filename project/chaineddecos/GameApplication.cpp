@@ -117,8 +117,8 @@ void GameApplication::OnStart()
     // Initialize Static Singletons
     // Note: RenderManager/InputManager/AudioManager are already initialized by CoreServices
 
-    AudioManager::Get().LoadSound("player_fall",
-                                  PROJECT_ROOT_DIR "\\resources\\audio\\fallingplayer.wav");
+    AudioManager::Get().LoadSound("player_fall", std::string(PROJECT_ROOT_DIR) +
+                                                     "/resources/audio/wind-gust_fall.wav");
 
     // Initialize Menu
     m_menu = std::make_unique<Menu>();

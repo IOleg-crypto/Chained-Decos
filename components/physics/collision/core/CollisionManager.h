@@ -47,9 +47,7 @@ public:
     void Update(float deltaTime)
     {
     }
-    void Render()
-    {
-    }
+    void Render();
 
     // Update spatial partitioning for optimized collision queries
     void UpdateSpatialPartitioning();
@@ -183,5 +181,3 @@ private:
 };
 
 #endif // COLLISIONMANAGER_H
-
-

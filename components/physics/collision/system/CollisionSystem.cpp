@@ -5,12 +5,17 @@
 #include <cmath>
 #include <vector>
 
-
 #include "../structures/collisionStructures.h"
 #include <raylib.h>
 #include <raymath.h>
 
-Collision::Collision() { m_bounds = {{0, 0, 0}, {0, 0, 0}}; }
+#include <future>
+#include <mutex>
+
+Collision::Collision()
+{
+    m_bounds = {{0, 0, 0}, {0, 0, 0}};
+}
 Collision::Collision(const Vector3 &center, const Vector3 &halfSize)
 {
     m_bounds.min = Vector3Subtract(center, halfSize);
@@ -124,51 +129,95 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
     {
         Mesh &mesh = rayModel->meshes[meshIdx];
 
-        if (!mesh.vertices || !mesh.indices || mesh.triangleCount == 0)
+        if (!mesh.vertices || mesh.triangleCount == 0)
             continue;
 
         // Batch process triangles for this mesh
         const int triangleCount = mesh.triangleCount;
         const unsigned short *indices = mesh.indices;
 
-        for (int i = 0; i < triangleCount; ++i)
+        if (indices)
         {
-            const int idx = i * 3;
+            for (int i = 0; i < triangleCount; ++i)
+            {
+                const int idx = i * 3;
 
-            const int i0 = indices[idx + 0];
-            const int i1 = indices[idx + 1];
-            const int i2 = indices[idx + 2];
+                const int i0 = indices[idx + 0];
+                const int i1 = indices[idx + 1];
+                const int i2 = indices[idx + 2];
 
-            if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount)
-                continue;
+                if (i0 >= mesh.vertexCount || i1 >= mesh.vertexCount || i2 >= mesh.vertexCount)
+                    continue;
 
-            const float *v0Ptr = &mesh.vertices[i0 * 3];
-            const float *v1Ptr = &mesh.vertices[i1 * 3];
-            const float *v2Ptr = &mesh.vertices[i2 * 3];
+                const float *v0Ptr = &mesh.vertices[i0 * 3];
+                const float *v1Ptr = &mesh.vertices[i1 * 3];
+                const float *v2Ptr = &mesh.vertices[i2 * 3];
 
-            Vector3 v0 = {v0Ptr[0], v0Ptr[1], v0Ptr[2]};
-            Vector3 v1 = {v1Ptr[0], v1Ptr[1], v1Ptr[2]};
-            Vector3 v2 = {v2Ptr[0], v2Ptr[1], v2Ptr[2]};
+                Vector3 v0 = {v0Ptr[0], v0Ptr[1], v0Ptr[2]};
+                Vector3 v1 = {v1Ptr[0], v1Ptr[1], v1Ptr[2]};
+                Vector3 v2 = {v2Ptr[0], v2Ptr[1], v2Ptr[2]};
 
-            // Basic validation
-            if (!std::isfinite(v0.x) || !std::isfinite(v0.y) || !std::isfinite(v0.z) ||
-                !std::isfinite(v1.x) || !std::isfinite(v1.y) || !std::isfinite(v1.z) ||
-                !std::isfinite(v2.x) || !std::isfinite(v2.y) || !std::isfinite(v2.z))
-                continue;
+                // Basic validation
+                if (!std::isfinite(v0.x) || !std::isfinite(v0.y) || !std::isfinite(v0.z) ||
+                    !std::isfinite(v1.x) || !std::isfinite(v1.y) || !std::isfinite(v1.z) ||
+                    !std::isfinite(v2.x) || !std::isfinite(v2.y) || !std::isfinite(v2.z))
+                    continue;
 
-            // Check for degenerate triangles
-            Vector3 edge1 = Vector3Subtract(v1, v0);
-            Vector3 edge2 = Vector3Subtract(v2, v0);
-            if (Vector3LengthSqr(Vector3CrossProduct(edge1, edge2)) < 1e-12f)
-                continue;
+                // Check for degenerate triangles
+                Vector3 edge1 = Vector3Subtract(v1, v0);
+                Vector3 edge2 = Vector3Subtract(v2, v0);
+                if (Vector3LengthSqr(Vector3CrossProduct(edge1, edge2)) < 1e-12f)
+                    continue;
 
-            // Transform vertices to world coordinates (apply once)
-            v0 = Vector3Transform(v0, transform);
-            v1 = Vector3Transform(v1, transform);
-            v2 = Vector3Transform(v2, transform);
+                // Transform vertices to world coordinates (apply once)
+                v0 = Vector3Transform(v0, transform);
+                v1 = Vector3Transform(v1, transform);
+                v2 = Vector3Transform(v2, transform);
 
-            // Add triangle
-            m_triangles.emplace_back(v0, v1, v2);
+                // Add triangle
+                m_triangles.emplace_back(v0, v1, v2);
+            }
+        }
+        else
+        {
+            // Support for non-indexed meshes (sequential vertices)
+            for (int i = 0; i < triangleCount; ++i)
+            {
+                const int i0 = i * 3;
+                const int i1 = i * 3 + 1;
+                const int i2 = i * 3 + 2;
+
+                if (i2 >= mesh.vertexCount)
+                    continue;
+
+                const float *v0Ptr = &mesh.vertices[i0 * 3];
+                const float *v1Ptr = &mesh.vertices[i1 * 3];
+                const float *v2Ptr = &mesh.vertices[i2 * 3];
+
+                Vector3 v0 = {v0Ptr[0], v0Ptr[1], v0Ptr[2]};
+                Vector3 v1 = {v1Ptr[0], v1Ptr[1], v1Ptr[2]};
+                Vector3 v2 = {v2Ptr[0], v2Ptr[1], v2Ptr[2]};
+
+                // Basic validation
+                if (!std::isfinite(v0.x) || !std::isfinite(v0.y) || !std::isfinite(v0.z) ||
+                    !std::isfinite(v1.x) || !std::isfinite(v1.y) || !std::isfinite(v1.z) ||
+                    !std::isfinite(v2.x) || !std::isfinite(v2.y) || !std::isfinite(v2.z))
+                    continue;
+
+                // Check for degenerate triangles
+                Vector3 edge1 = Vector3Subtract(v1, v0);
+                Vector3 edge2 = Vector3Subtract(v2, v0);
+                if (Vector3LengthSqr(Vector3CrossProduct(edge1, edge2)) < 1e-12f)
+                    continue;
+
+                // Transform vertices to world coordinates
+                v0 = Vector3Transform(v0, transform);
+                v1 = Vector3Transform(v1, transform);
+                v2 = Vector3Transform(v2, transform);
+
+                // Add triangle
+                m_triangles.emplace_back(v0, v1, v2);
+            }
         }
     }
 
@@ -256,7 +305,10 @@ void Collision::UpdateAABBFromTriangles()
     m_bounds.max = maxP;
 }
 
-void Collision::AddTriangle(const CollisionTriangle &triangle) { m_triangles.push_back(triangle); }
+void Collision::AddTriangle(const CollisionTriangle &triangle)
+{
+    m_triangles.push_back(triangle);
+}
 
 void Collision::AddTriangles(const std::vector<CollisionTriangle> &triangles)
 {
@@ -273,9 +325,10 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
     // compute bounds
     if (tris.empty())
         return node;
+
     Vector3 minB = tris[0].V0();
     Vector3 maxB = minB;
-    for (auto &t : tris)
+    for (const auto &t : tris)
     {
         ExpandAABB(minB, maxB, t.V0());
         ExpandAABB(minB, maxB, t.V1());
@@ -298,37 +351,30 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
     else if (ext.z > ext.x && ext.z > ext.y)
         axis = 2;
 
-    // sort by centroid along axis (use faster sorting with safety checks)
+    // sort by centroid along axis
     std::sort(tris.begin(), tris.end(),
               [axis](const CollisionTriangle &a, const CollisionTriangle &b)
               {
-                  // Safely calculate centroids with finite value checks
                   Vector3 ca = Vector3Add(Vector3Add(a.V0(), a.V1()), a.V2());
                   Vector3 cb = Vector3Add(Vector3Add(b.V0(), b.V1()), b.V2());
 
                   float ca_val = 0.0f, cb_val = 0.0f;
-
                   switch (axis)
                   {
                   case 0:
-                      ca_val = ca.x / 3.0f;
-                      cb_val = cb.x / 3.0f;
+                      ca_val = ca.x;
+                      cb_val = cb.x;
                       break;
                   case 1:
-                      ca_val = ca.y / 3.0f;
-                      cb_val = cb.y / 3.0f;
+                      ca_val = ca.y;
+                      cb_val = cb.y;
                       break;
                   case 2:
-                      ca_val = ca.z / 3.0f;
-                      cb_val = cb.z / 3.0f;
-                      break;
-                  default:
-                      ca_val = ca.x / 3.0f;
-                      cb_val = cb.x / 3.0f;
+                      ca_val = ca.z;
+                      cb_val = cb.z;
                       break;
                   }
 
-                  // Handle NaN/inf values
                   if (!std::isfinite(ca_val))
                       ca_val = 0.0f;
                   if (!std::isfinite(cb_val))
@@ -338,11 +384,26 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
               });
 
     size_t mid = tris.size() / 2;
-    std::vector<CollisionTriangle> leftTris(tris.begin(), tris.begin() + mid);
-    std::vector<CollisionTriangle> rightTris(tris.begin() + mid, tris.end());
+    std::vector<CollisionTriangle> leftTris(std::make_move_iterator(tris.begin()),
+                                            std::make_move_iterator(tris.begin() + mid));
+    std::vector<CollisionTriangle> rightTris(std::make_move_iterator(tris.begin() + mid),
+                                             std::make_move_iterator(tris.end()));
 
-    node->left = BuildBVHNode(leftTris, depth + 1);
-    node->right = BuildBVHNode(rightTris, depth + 1);
+    // Parallelization strategy:
+    // For large triangle sets at shallow depths, build branches in parallel
+    if (depth < 3 && tris.size() > 5000)
+    {
+        auto futureLeft = std::async(std::launch::async, [this, &leftTris, depth]() mutable
+                                     { return BuildBVHNode(leftTris, depth + 1); });
+
+        node->right = BuildBVHNode(rightTris, depth + 1);
+        node->left = futureLeft.get();
+    }
+    else
+    {
+        node->left = BuildBVHNode(leftTris, depth + 1);
+        node->right = BuildBVHNode(rightTris, depth + 1);
+    }
 
     return node;
 }
@@ -469,7 +530,6 @@ bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
     return false;
 }
 
-// ----------------- BVH raycast traversal -----------------
 bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const Vector3 &dir,
                                float maxDistance, RayHit &outHit) const
 {
@@ -479,6 +539,7 @@ bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const
     Ray ray = {origin, dir};
     BoundingBox box = {node->min, node->max};
     RayCollision collision = GetRayCollisionBox(ray, box);
+
     if (!collision.hit || collision.distance > maxDistance)
         return false;
 
@@ -662,6 +723,218 @@ static bool BVHOverlapsAABB(const BVHNode *node, const Collision &aabbCollider)
            BVHOverlapsAABB(node->right.get(), aabbCollider);
 }
 
+// ----------------- Detailed Intersection (Narrow-phase with MTV) -----------------
+
+CollisionResult Collision::GetTriangleAABBIntersection(const CollisionTriangle &tri,
+                                                       const Vector3 &bmin, const Vector3 &bmax)
+{
+    CollisionResult result;
+    result.hit = false;
+
+    // Triangle AABB quick reject
+    Vector3 triMin = tri.V0();
+    Vector3 triMax = tri.V0();
+    ExpandAABB(triMin, triMax, tri.V1());
+    ExpandAABB(triMin, triMax, tri.V2());
+
+    if (triMax.x < bmin.x || triMin.x > bmax.x || triMax.y < bmin.y || triMin.y > bmax.y ||
+        triMax.z < bmin.z || triMin.z > bmax.z)
+        return result;
+
+    // Center and half extents
+    Vector3 boxCenter = {(bmin.x + bmax.x) * 0.5f, (bmin.y + bmax.y) * 0.5f,
+                         (bmin.z + bmax.z) * 0.5f};
+    Vector3 boxHalf = {(bmax.x - bmin.x) * 0.5f, (bmax.y - bmin.y) * 0.5f,
+                       (bmax.z - bmin.z) * 0.5f};
+
+    // Vertices relative to box center
+    Vector3 v[3] = {Vector3Subtract(tri.V0(), boxCenter), Vector3Subtract(tri.V1(), boxCenter),
+                    Vector3Subtract(tri.V2(), boxCenter)};
+
+    // Edges
+    Vector3 e[3] = {Vector3Subtract(v[1], v[0]), Vector3Subtract(v[2], v[1]),
+                    Vector3Subtract(v[0], v[2])};
+
+    // Normal
+    Vector3 triNormal = Vector3Normalize(Vector3CrossProduct(e[0], e[1]));
+
+    // Axes to test
+    Vector3 axes[13] = {{1, 0, 0},
+                        {0, 1, 0},
+                        {0, 0, 1}, // Box axes
+                        triNormal, // Triangle normal
+                        // Cross products
+                        Vector3CrossProduct({1, 0, 0}, e[0]),
+                        Vector3CrossProduct({1, 0, 0}, e[1]),
+                        Vector3CrossProduct({1, 0, 0}, e[2]),
+                        Vector3CrossProduct({0, 1, 0}, e[0]),
+                        Vector3CrossProduct({0, 1, 0}, e[1]),
+                        Vector3CrossProduct({0, 1, 0}, e[2]),
+                        Vector3CrossProduct({0, 0, 1}, e[0]),
+                        Vector3CrossProduct({0, 0, 1}, e[1]),
+                        Vector3CrossProduct({0, 0, 1}, e[2])};
+
+    float minOverlap = FLT_MAX;
+    Vector3 bestAxis = {0, 0, 0};
+
+    for (int i = 0; i < 13; ++i)
+    {
+        Vector3 axis = axes[i];
+        float lenSq = Vector3LengthSqr(axis);
+        if (lenSq < 1e-8f)
+            continue;
+        axis = Vector3Scale(axis, 1.0f / sqrtf(lenSq));
+
+        // Project box
+        float r = boxHalf.x * fabsf(axis.x) + boxHalf.y * fabsf(axis.y) + boxHalf.z * fabsf(axis.z);
+
+        // Project triangle
+        float p0 = Vector3DotProduct(v[0], axis);
+        float p1 = Vector3DotProduct(v[1], axis);
+        float p2 = Vector3DotProduct(v[2], axis);
+        float tMin = fminf(p0, fminf(p1, p2));
+        float tMax = fmaxf(p0, fmaxf(p1, p2));
+
+        // Check overlap
+        float overlap = fminf(r, tMax) - fmaxf(-r, tMin);
+        if (overlap < 0)
+            return result; // Separation found
+
+        if (overlap < minOverlap)
+        {
+            minOverlap = overlap;
+            bestAxis = axis;
+
+            // Ensure bestAxis points from triangle TO box center (push direction)
+            // Box center is (0,0,0) in relative space
+            // Triangle centroid is triAvg
+            Vector3 triAvg = Vector3Scale(Vector3Add(Vector3Add(v[0], v[1]), v[2]), 1.0f / 3.0f);
+
+            // If dot product is positive, bestAxis points BOX -> TRI
+            // We want it to point TRI -> BOX, so negate it.
+            if (Vector3DotProduct(bestAxis, triAvg) > 0)
+            {
+                bestAxis = Vector3Negate(bestAxis);
+            }
+        }
+    }
+
+    result.hit = true;
+    result.depth = minOverlap;
+    result.normal = bestAxis;
+    result.mtv = Vector3Scale(bestAxis, minOverlap);
+    return result;
+}
+
+CollisionResult Collision::CheckBVHOverlapDetailed(const BVHNode *node, const Collision &aabb) const
+{
+    CollisionResult result;
+    if (!node)
+        return result;
+
+    // Node AABB test
+    BoundingBox nodeBox = {node->min, node->max};
+    if (!CheckCollisionBoxes(nodeBox, aabb.GetBoundingBox()))
+        return result;
+
+    if (node->IsLeaf())
+    {
+        Vector3 bmin = aabb.GetMin();
+        Vector3 bmax = aabb.GetMax();
+
+        CollisionResult bestResult;
+        bestResult.hit = false;
+
+        for (const auto &tri : node->triangles)
+        {
+            CollisionResult triRes = GetTriangleAABBIntersection(tri, bmin, bmax);
+            if (triRes.hit)
+            {
+                if (!bestResult.hit || triRes.depth > bestResult.depth)
+                {
+                    bestResult = triRes;
+                }
+            }
+        }
+        return bestResult;
+    }
+
+    CollisionResult resL = CheckBVHOverlapDetailed(node->left.get(), aabb);
+    CollisionResult resR = CheckBVHOverlapDetailed(node->right.get(), aabb);
+
+    if (resL.hit && resR.hit)
+    {
+        return (resL.depth > resR.depth) ? resL : resR;
+    }
+    return resL.hit ? resL : resR;
+}
+
+CollisionResult Collision::CheckCollisionDetailed(const Collision &other) const
+{
+    CollisionResult result;
+    if (!IntersectsAABB(other))
+        return result;
+
+    if (m_bvhRoot && !other.m_bvhRoot)
+    {
+        // This is BVH, other is AABB
+        // CheckBVHOverlapDetailed returns displacement for 'other' (AABB)
+        // We need displacement for 'this' (BVH), so negate
+        CollisionResult res = CheckBVHOverlapDetailed(m_bvhRoot.get(), other);
+        if (res.hit)
+        {
+            res.mtv = Vector3Negate(res.mtv);
+            res.normal = Vector3Negate(res.normal);
+        }
+        return res;
+    }
+    else if (!m_bvhRoot && other.m_bvhRoot)
+    {
+        // This is AABB, other is BVH
+        // other.CheckBVHOverlapDetailed returns displacement for '*this' (AABB)
+        // This is exactly what we want, so do NOT negate
+        return other.CheckBVHOverlapDetailed(other.m_bvhRoot.get(), *this);
+    }
+
+    // Fallback or Both BVH (simplified for now: treat one as AABB)
+    if (m_bvhRoot)
+        return CheckBVHOverlapDetailed(m_bvhRoot.get(), other);
+
+    // Pure AABB-AABB MTV
+    Vector3 minA = GetMin(), maxA = GetMax();
+    Vector3 minB = other.GetMin(), maxB = other.GetMax();
+
+    float overlapX = fminf(maxA.x, maxB.x) - fmaxf(minA.x, minB.x);
+    float overlapY = fminf(maxA.y, maxB.y) - fmaxf(minA.y, minB.y);
+    float overlapZ = fminf(maxA.z, maxB.z) - fmaxf(minA.z, minB.z);
+
+    if (overlapX > 0 && overlapY > 0 && overlapZ > 0)
+    {
+        result.hit = true;
+        if (overlapX < overlapY && overlapX < overlapZ)
+        {
+            result.depth = overlapX;
+            result.normal =
+                (GetCenter().x < other.GetCenter().x) ? Vector3{-1, 0, 0} : Vector3{1, 0, 0};
+        }
+        else if (overlapY < overlapZ)
+        {
+            result.depth = overlapY;
+            result.normal =
+                (GetCenter().y < other.GetCenter().y) ? Vector3{0, -1, 0} : Vector3{0, 1, 0};
+        }
+        else
+        {
+            result.depth = overlapZ;
+            result.normal =
+                (GetCenter().z < other.GetCenter().z) ? Vector3{0, 0, -1} : Vector3{0, 0, 1};
+        }
+        result.mtv = Vector3Scale(result.normal, result.depth);
+    }
+
+    return result;
+}
+
 bool Collision::Intersects(const Collision &other) const
 {
     // Broad-phase AABB
@@ -699,25 +972,84 @@ bool Collision::Intersects(const Collision &other) const
 }
 
 // ======================================================================================================================
-void Collision::SetCollisionType(CollisionType type) { m_collisionType = type; }
-bool BVHNode::IsLeaf() const { return !left && !right; }
-Vector3 Collision::GetSize() const { return Vector3Subtract(m_bounds.max, m_bounds.min); }
+void Collision::SetCollisionType(CollisionType type)
+{
+    m_collisionType = type;
+}
+bool BVHNode::IsLeaf() const
+{
+    return !left && !right;
+}
+Vector3 Collision::GetSize() const
+{
+    return Vector3Subtract(m_bounds.max, m_bounds.min);
+}
 Vector3 Collision::GetCenter() const
 {
     return Vector3Scale(Vector3Add(m_bounds.min, m_bounds.max), 0.5f);
 }
-size_t Collision::GetTriangleCount() const { return m_triangles.size(); }
-bool Collision::HasTriangleData() const { return !m_triangles.empty(); }
+size_t Collision::GetTriangleCount() const
+{
+    return m_triangles.size();
+}
+bool Collision::HasTriangleData() const
+{
+    return !m_triangles.empty();
+}
 
-CollisionType Collision::GetCollisionType() const { return m_collisionType; }
-void Collision::InitializeBVH() { BuildBVHFromTriangles(); }
-const CollisionTriangle &Collision::GetTriangle(size_t idx) const { return m_triangles[idx]; }
-const std::vector<CollisionTriangle> &Collision::GetTriangles() const { return m_triangles; }
+CollisionType Collision::GetCollisionType() const
+{
+    return m_collisionType;
+}
+void Collision::InitializeBVH()
+{
+    BuildBVHFromTriangles();
+}
+const CollisionTriangle &Collision::GetTriangle(size_t idx) const
+{
+    return m_triangles[idx];
+}
+const std::vector<CollisionTriangle> &Collision::GetTriangles() const
+{
+    return m_triangles;
+}
+
+void Collision::DrawDebug(Color color, bool drawBVH) const
+{
+    DrawBoundingBox(m_bounds, color);
+
+    if (drawBVH && m_bvhRoot)
+    {
+        DrawDebugBVHNode(m_bvhRoot.get(), 0, false);
+    }
+}
+
+void Collision::DrawDebugBVHNode(const BVHNode *node, int depth, bool leafOnly) const
+{
+    if (!node)
+        return;
+
+    if (!leafOnly || node->IsLeaf())
+    {
+        Color nodeColor = leafOnly ? RED : (depth % 2 == 0 ? SKYBLUE : DARKBLUE);
+        DrawBoundingBox({node->min, node->max}, nodeColor);
+    }
+
+    if (node->left)
+        DrawDebugBVHNode(node->left.get(), depth + 1, leafOnly);
+    if (node->right)
+        DrawDebugBVHNode(node->right.get(), depth + 1, leafOnly);
+}
 
 // ======================================================================================================================
-
-
-
-
-
-
+bool Collision::RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
+                              float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const
+{
+    RayHit hit;
+    if (!RaycastBVH(origin, dir, maxDistance, hit))
+        return false;
+    hitDistance = hit.distance;
+    hitPoint = hit.position;
+    hitNormal = hit.normal;
+    return true;
+}
