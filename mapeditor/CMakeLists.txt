@@ -4,8 +4,8 @@ set(mapeditor_entry_point main.cpp)
 set(mapgui_sources
     mapgui/UIManager.cpp
     mapgui/UIManager.h
-    mapgui/SkyboxBrowser.cpp
-    mapgui/SkyboxBrowser.h
+    mapgui/skyboxBrowser.cpp
+    mapgui/skyboxBrowser.h
 )
 
 set(tool_sources
@@ -65,3 +65,5 @@ target_compile_definitions(map_editor PRIVATE CHAINEDDECOSEDITOR_EXPORTS)
 set_target_properties(map_editor PROPERTIES 
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
+
+

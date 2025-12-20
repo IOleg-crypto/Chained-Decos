@@ -28,6 +28,10 @@ set(CORE_SOURCES
     utils/Base.h
     utils/Types.h
     utils/core.h
+    gui/core/GuiElement.h
+    gui/core/GuiManager.h
+    gui/components/GuiButton.h
+    gui/components/GuiPanel.h
 )
 
 add_library(core STATIC ${CORE_SOURCES})
@@ -52,3 +56,5 @@ target_link_libraries(core
         collision
         model
 )
+
+

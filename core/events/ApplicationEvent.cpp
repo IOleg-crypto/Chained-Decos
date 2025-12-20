@@ -24,3 +24,5 @@ unsigned int WindowResizeEvent::GetHeight() const
     return m_Height;
 }
 } // namespace ChainedDecos
+
+

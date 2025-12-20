@@ -13,7 +13,7 @@ target_include_directories(ChainedDecosGame
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/project/chaineddecos
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/project/chaineddecos/Player
+        ${CMAKE_SOURCE_DIR}/project/chaineddecos/player
         ${CMAKE_SOURCE_DIR}/components/physics/collision
         ${CMAKE_SOURCE_DIR}/scene/resources/model
         ${CMAKE_SOURCE_DIR}/scene/resources/map
@@ -41,3 +41,5 @@ target_link_libraries(ChainedDecosGame
         imguilib
         nlohmann_json
 )
+
+

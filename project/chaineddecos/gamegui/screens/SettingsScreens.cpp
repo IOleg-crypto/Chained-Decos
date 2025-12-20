@@ -1,6 +1,6 @@
 #include "SettingsScreens.h"
 #include "../Menu.h"
-#include "../Settings/MenuSettingsController.h"
+#include "../settings/MenuSettingsController.h"
 #include <imgui.h>
 
 void VideoSettingsScreen::Render()
@@ -35,3 +35,4 @@ void ControlSettingsScreen::Render()
         settings->RenderControlSettings();
     }
 }
+

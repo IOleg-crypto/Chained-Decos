@@ -7,9 +7,9 @@
 
 #include "mapeditor/EditorTypes.h"
 #include <scene/camera/core/CameraController.h>
-#include <scene/resources/map/Core/MapLoader.h>
-#include <scene/resources/map/Skybox/Skybox.h>
-#include <scene/resources/model/Core/Model.h>
+#include <scene/resources/map/core/MapLoader.h>
+#include <scene/resources/map/skybox/skybox.h>
+#include <scene/resources/model/core/Model.h>
 
 class IEditor
 {
@@ -53,3 +53,5 @@ public:
 };
 
 #endif // IEDITOR_H
+
+

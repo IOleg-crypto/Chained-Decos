@@ -1,10 +1,10 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include "Console/ConsoleManager.h"
-#include "MapSelector/MapSelector.h"
-#include "Settings/MenuSettingsController.h"
-#include "Settings/SettingsManager.h"
+#include "console/consoleManager.h"
+#include "mapselector/mapselector.h"
+#include "settings/MenuSettingsController.h"
+#include "settings/settingsManager.h"
 #include "interfaces/IMenuScreen.h"
 
 #include "core/events/MenuEvent.h"
@@ -151,3 +151,5 @@ private:
 };
 
 #endif // MENU_H
+
+

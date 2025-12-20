@@ -1,12 +1,12 @@
 #include "GameLayer.h"
-#include "components/audio/Core/AudioManager.h"
-#include "components/input/Core/InputManager.h"
-#include "components/physics/collision/Core/CollisionManager.h"
-#include "components/rendering/Core/RenderManager.h"
+#include "components/audio/core/AudioManager.h"
+#include "components/input/core/InputManager.h"
+#include "components/physics/collision/core/collisionManager.h"
+#include "components/rendering/core/RenderManager.h"
 #include "core/Engine.h"
 #include "core/ecs/ECSRegistry.h"
 #include "core/ecs/components/PhysicsData.h"
-#include "core/ecs/components/PlayerComponent.h"
+#include "core/ecs/components/playerComponent.h"
 #include "core/ecs/components/RenderComponent.h"
 #include "core/ecs/components/TransformComponent.h"
 #include "core/ecs/components/UtilityComponents.h"
@@ -14,8 +14,8 @@
 #include "core/events/Event.h"
 #include "core/events/KeyEvent.h"
 #include "core/events/MouseEvent.h"
-#include "scene/main/Core/World.h"
-#include "scene/resources/model/Core/Model.h"
+#include "scene/main/core/World.h"
+#include "scene/resources/model/core/Model.h"
 #include <algorithm>
 #include <raylib.h>
 #include <raymath.h>
@@ -329,3 +329,5 @@ void GameLayer::OnEvent(Event &e)
             return false;
         });
 }
+
+

@@ -1,13 +1,14 @@
 #include "Engine.h"
-#include "components/audio/Core/AudioManager.h"
-#include "components/input/Core/InputManager.h"
-#include "components/physics/collision/Core/CollisionManager.h"
-#include "components/rendering/Core/RenderManager.h"
+#include "components/audio/core/AudioManager.h"
+#include "components/input/core/InputManager.h"
+#include "components/physics/collision/core/CollisionManager.h"
+#include "components/rendering/core/RenderManager.h"
+#include "core/gui/core/GuiManager.h"
 #include "core/module/ModuleManager.h"
 #include "project/chaineddecos/gamegui/Menu.h"
-#include "project/chaineddecos/player/Core/Player.h"
-#include "scene/main/Core/World.h"
-#include "scene/resources/model/Core/Model.h"
+#include "project/chaineddecos/player/core/Player.h"
+#include "scene/main/core/World.h"
+#include "scene/resources/model/core/Model.h"
 #include <memory>
 #include <raylib.h>
 #include <stdexcept>
@@ -65,6 +66,11 @@ bool Engine::Initialize()
     RegisterService<IWorldManager>(m_WorldManager);
 
     TraceLog(LOG_INFO, "[Engine] Engine initialized successfully");
+    // Initialize GUI
+    RegisterService<IGuiManager>(std::make_shared<ChainedDecos::GuiManager>());
+    if (auto gui = GetService<IGuiManager>())
+        gui->Initialize();
+
     return true;
 }
 
@@ -73,6 +79,11 @@ void Engine::Update(float deltaTime)
     if (m_ModuleManager)
     {
         m_ModuleManager->UpdateAllModules(deltaTime);
+    }
+
+    if (m_GuiManager)
+    {
+        m_GuiManager->Update(deltaTime);
     }
 }
 
@@ -129,6 +140,11 @@ std::shared_ptr<IModelLoader> Engine::GetModelLoader() const
 {
     return m_ModelLoader;
 }
+std::shared_ptr<IGuiManager> Engine::GetGuiManager() const
+{
+    return m_GuiManager;
+}
+
 std::shared_ptr<ICollisionManager> Engine::GetCollisionManager() const
 {
     return m_CollisionManager;

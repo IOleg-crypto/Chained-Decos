@@ -1,7 +1,7 @@
 #include "SkyboxBrowser.h"
 #include "mapeditor/IEditor.h"
 #include "nfd.h"
-#include "scene/resources/map/Skybox/Skybox.h"
+#include "scene/resources/map/skybox/skybox.h"
 #include <filesystem>
 #include <imgui.h>
 #include <raylib.h>
@@ -366,3 +366,5 @@ const std::vector<SkyboxBrowser::SkyboxInfo> &SkyboxBrowser::GetAvailableSkyboxe
 {
     return m_availableSkyboxes;
 }
+
+
