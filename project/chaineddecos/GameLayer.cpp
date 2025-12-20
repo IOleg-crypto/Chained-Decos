@@ -22,7 +22,6 @@
 #include <raymath.h>
 #include <vector>
 
-
 using namespace ChainedDecos;
 
 GameLayer::GameLayer() : Layer("GameLayer")
@@ -371,14 +370,23 @@ void GameLayer::RenderScene()
             collisionManager->Render();
         }
 
-        // Also draw player's collider from and his points
+        // Draw player character's ACTIVE collision volume
         auto playerView = REGISTRY.view<TransformComponent, CollisionComponent, PlayerComponent>();
         for (auto [entity, transform, collision, player] : playerView.each())
         {
+            // Bounding box from collision bounds + actual transform
+            // This is the SAME box used for physics resolution in OnUpdate
             BoundingBox b = collision.bounds;
             b.min = Vector3Add(b.min, transform.position);
             b.max = Vector3Add(b.max, transform.position);
             DrawBoundingBox(b, RED);
+
+            // Ground check ray visualization
+            Vector3 rayStart = transform.position;
+            rayStart.y += 1.0f;
+            Vector3 rayEnd = rayStart;
+            rayEnd.y -= 1.2f;
+            DrawLine3D(rayStart, rayEnd, YELLOW);
         }
     }
 }
