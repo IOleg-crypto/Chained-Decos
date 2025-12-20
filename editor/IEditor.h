@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "mapeditor/EditorTypes.h"
+#include "editor/EditorTypes.h"
 #include <scene/camera/core/CameraController.h>
 #include <scene/resources/map/core/MapLoader.h>
 #include <scene/resources/map/skybox/skybox.h>
@@ -40,6 +40,8 @@ public:
     virtual int GetGridSize() const = 0;
     virtual void SetGridSize(int size) = 0;
     virtual void CreateDefaultObject(MapObjectType type, const std::string &modelName = "") = 0;
+    virtual void LoadAndSpawnModel(const std::string &path) = 0;
+    virtual void ApplyMetadata(const MapMetadata &metadata) = 0;
 
     // Service Accessors
     virtual ChainedDecos::Ref<IModelLoader> GetModelLoader() = 0;
@@ -50,8 +52,14 @@ public:
     virtual void SetSkyboxTexture(const std::string &texturePath) = 0;
     virtual void SetSkyboxColor(Color color) = 0;
     virtual Skybox *GetSkybox() const = 0;
+    virtual Color GetClearColor() const = 0;
+    virtual class IUIManager *GetUIManager() const = 0;
+    virtual class EditorPanelManager *GetPanelManager() const = 0;
+
+    // Play Mode Management
+    virtual void StartPlayMode() = 0;
+    virtual void StopPlayMode() = 0;
+    virtual bool IsInPlayMode() const = 0;
 };
 
 #endif // IEDITOR_H
-
-

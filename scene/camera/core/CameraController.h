@@ -65,6 +65,10 @@ public:
     void SetFOV(float FOV);
     void SetMouseSensitivity(float sensitivity) override;
     void ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY);
+    void SetInputCaptureBypass(bool bypass)
+    {
+        m_inputCaptureBypass = bypass;
+    }
 
     // -------------------- Getters --------------------
 
@@ -98,6 +102,7 @@ private:
     bool m_isLMBDown = false;
     int m_activeMovementKeys = 0; // Counter for pressed movement keys
     float m_lastMouseWheelMove = 0.0f;
+    bool m_inputCaptureBypass = false; // Bypass ImGui input capture check
 
     // Screen shake
     float m_shakeIntensity = 0.0f;              // Current shake intensity
@@ -107,5 +112,3 @@ private:
 };
 
 #endif // CAMERACONTROLLER_H
-
-
