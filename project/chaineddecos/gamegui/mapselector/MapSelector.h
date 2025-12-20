@@ -95,8 +95,15 @@ public:
     }
 
     // Rendering
+    enum class InteractionResult : uint8_t
+    {
+        None,
+        LoadMap,
+        Back
+    };
+
     void RenderMapSelection() const;
-    void RenderMapSelectionImGui();
+    InteractionResult RenderMapSelectionImGui();
     void RenderMapSelectionWindow(); // New window-style interface
     void RenderMapSelectionPanels(); // Panel-style interface (Half-Life style)
 
