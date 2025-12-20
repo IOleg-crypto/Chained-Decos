@@ -3,12 +3,11 @@
 #include "core/ecs/components.h"
 #include <raymath.h>
 
-
 namespace ECSExamples
 {
 
 entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed, float jumpForce,
-                          float mouseSensitivity)
+                          float mouseSensitivity, Vector3 spawnPosition)
 {
     auto player = REGISTRY.create();
 
@@ -35,11 +34,12 @@ entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed, float
     }
 
     // Player-specific
-    REGISTRY.emplace<PlayerComponent>(player,
-                                      moveSpeed,       // moveSpeed
-                                      jumpForce,       // jumpForce
-                                      mouseSensitivity // mouseSensitivity
+    auto &pc = REGISTRY.emplace<PlayerComponent>(player,
+                                                 moveSpeed,       // moveSpeed
+                                                 jumpForce,       // jumpForce
+                                                 mouseSensitivity // mouseSensitivity
     );
+    pc.spawnPosition = spawnPosition;
 
     // Physics
     REGISTRY.emplace<PhysicsData>(player,
@@ -163,9 +163,3 @@ entt::entity CreateStaticObject(Vector3 position, Model *model, BoundingBox boun
 }
 
 } // namespace ECSExamples
-
-
-
-
-
-

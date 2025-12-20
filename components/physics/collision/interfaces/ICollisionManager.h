@@ -12,10 +12,13 @@ class ICollisionManager
 public:
     virtual ~ICollisionManager() = default;
 
-    virtual void AddCollider(std::shared_ptr<Collision> collider) = 0;
-    virtual void ClearColliders() = 0;
+    virtual void Shutdown() = 0;
+    virtual void Update(float deltaTime) = 0;
+    virtual void Render() = 0;
     virtual const std::vector<std::shared_ptr<Collision>> &GetColliders() const = 0;
     virtual bool CheckCollision(const Collision &playerCollision) const = 0;
+    virtual void AddCollider(std::shared_ptr<Collision> collider) = 0;
+    virtual void ClearColliders() = 0;
 
     // Dynamic Entity Management (ECS Integration)
     virtual void AddEntityCollider(ECS::EntityID entity,
@@ -28,5 +31,3 @@ public:
 };
 
 #endif // ICOLLISION_MANAGER_H
-
-

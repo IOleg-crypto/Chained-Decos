@@ -4,7 +4,6 @@
 #include <entt/entt.hpp>
 #include <raylib.h>
 
-
 // Examples of creating different types of entities
 
 namespace ECSExamples
@@ -12,7 +11,8 @@ namespace ECSExamples
 
 // Create player
 entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed = 8.0f,
-                          float jumpForce = 12.0f, float mouseSensitivity = 0.15f);
+                          float jumpForce = 12.0f, float mouseSensitivity = 0.15f,
+                          Vector3 spawnPosition = {0, 0, 0});
 
 // Create enemy
 entt::entity CreateEnemy(Vector3 position, Model *model);
@@ -29,7 +29,3 @@ entt::entity CreateStaticObject(Vector3 position, Model *model, BoundingBox boun
 } // namespace ECSExamples
 
 #endif // ECS_EXAMPLES_H
-
-
-
-
