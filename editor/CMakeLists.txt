@@ -1,6 +1,9 @@
 
-set(mapeditor_entry_point main.cpp)
+# ChainedEditor - Engine Editor for Chained Decos
 
+set(editor_entry_point main.cpp)
+
+# UI and legacy map editing components
 set(mapgui_sources
     mapgui/UIManager.cpp
     mapgui/UIManager.h
@@ -24,6 +27,25 @@ set(logic_sources
     logic/MapManager.h
 )
 
+# New panel-based UI system
+set(panels_sources
+    panels/IEditorPanel.h
+    panels/EditorPanelManager.cpp
+    panels/EditorPanelManager.h
+    panels/HierarchyPanel.cpp
+    panels/HierarchyPanel.h
+    panels/InspectorPanel.cpp
+    panels/InspectorPanel.h
+    panels/ViewportPanel.cpp
+    panels/ViewportPanel.h
+    panels/ConsolePanel.cpp
+    panels/ConsolePanel.h
+    panels/AssetBrowserPanel.cpp
+    panels/AssetBrowserPanel.h
+    panels/ToolbarPanel.cpp
+    panels/ToolbarPanel.h
+)
+
 set(editor_sources
     EditorApplication.cpp
     EditorApplication.h
@@ -31,15 +53,17 @@ set(editor_sources
     Editor.h
 )
 
-add_executable(map_editor
+add_executable(ChainedEditor
     ${editor_sources}
+    ${panels_sources}
     ${render_sources}
     ${tool_sources}
     ${mapgui_sources}
     ${logic_sources}
-    ${mapeditor_entry_point}
+    ${editor_entry_point}
 )
-target_include_directories(map_editor PUBLIC
+
+target_include_directories(ChainedEditor PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
@@ -49,7 +73,7 @@ target_include_directories(map_editor PUBLIC
     ${CMAKE_SOURCE_DIR}/include/nfd/src/include
 )
 
-target_link_libraries(map_editor PUBLIC 
+target_link_libraries(ChainedEditor PUBLIC 
     raylib
     core
     nfd
@@ -60,10 +84,8 @@ target_link_libraries(map_editor PUBLIC
     ChainedDecosGame
 )
 
-target_compile_definitions(map_editor PRIVATE CHAINEDDECOSEDITOR_EXPORTS)
+target_compile_definitions(ChainedEditor PRIVATE CHAINEDEDITOR_EXPORTS)
 
-set_target_properties(map_editor PROPERTIES 
+set_target_properties(ChainedEditor PROPERTIES 
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
-
-

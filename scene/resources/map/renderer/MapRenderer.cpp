@@ -32,7 +32,7 @@ void MapRenderer::RenderMap(const GameMap &map, Camera3D camera)
     {
         // Update gamma settings from config before rendering
         // skybox->UpdateGammaFromConfig();
-        skybox->DrawSkybox();
+        skybox->DrawSkybox(camera.position);
     }
 
     // Render all objects in the map
@@ -239,9 +239,3 @@ void MapRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &p
     // Draw wireframe for better visibility
     DrawCubeWires(position, size, size, size, WHITE);
 }
-
-
-
-
-
-
