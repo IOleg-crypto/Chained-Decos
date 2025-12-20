@@ -34,3 +34,5 @@ private:
 };
 
 #endif // MODULE_MANAGER_H
+
+

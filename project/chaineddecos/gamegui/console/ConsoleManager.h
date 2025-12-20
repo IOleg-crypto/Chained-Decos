@@ -104,3 +104,5 @@ private:
 };
 
 #endif // CONSOLE_MANAGER_H
+
+

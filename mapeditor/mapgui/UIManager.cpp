@@ -2,10 +2,10 @@
 #include "mapeditor/EditorTypes.h"
 #include "mapeditor/IEditor.h"
 #include "mapeditor/mapgui/IUIManager.h"
-#include "mapeditor/mapgui/SkyboxBrowser.h"
+#include "mapeditor/mapgui/skyboxBrowser.h"
 #include "nfd.h"
-#include "scene/resources/map/Core/MapData.h"
-#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/map/core/MapData.h"
+#include "scene/resources/map/core/MapLoader.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -857,3 +857,5 @@ void EditorUIManager::RenderSavePrompt()
         ImGui::EndPopup();
     }
 }
+
+

@@ -1,5 +1,5 @@
 #include "PlayerCollision.h"
-#include "../Core/Player.h"
+#include "../core/player.h"
 #include <cmath>
 
 PlayerCollision::PlayerCollision(IPlayer* player)
@@ -130,6 +130,8 @@ bool PlayerCollision::CheckCollisionWithBVH(const Collision& other, Vector3& out
     
     return hasCollision;
 }
+
+
 
 
 

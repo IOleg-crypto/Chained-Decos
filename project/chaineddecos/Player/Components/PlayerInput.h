@@ -2,7 +2,7 @@
 #ifndef PLAYER_INPUT_H
 #define PLAYER_INPUT_H
 
-#include "../Interfaces/IPlayerInput.h"
+#include "../interfaces/IPlayerInput.h"
 #include "core/interfaces/IPlayer.h"
 #include <iostream>
 #include <raylib.h>
@@ -28,6 +28,8 @@ private:
 };
 
 #endif // PLAYER_INPUT_H
+
+
 
 
 

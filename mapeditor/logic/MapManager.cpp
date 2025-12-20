@@ -1,6 +1,6 @@
 #include "mapeditor/logic/MapManager.h"
-#include "scene/resources/map/Core/MapLoader.h"
-#include "scene/resources/map/MapFileManager/Json/JsonMapFileManager.h"
+#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/map/mapfilemanager/json/jsonMapFileManager.h"
 #include <algorithm>
 
 void MapManager::SaveMap(const std::string &filename)
@@ -105,3 +105,5 @@ const std::string &MapManager::GetCurrentMapPath() const
 {
     return m_currentMapPath;
 }
+
+

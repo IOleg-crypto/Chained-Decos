@@ -8,7 +8,7 @@ set(ECS_SOURCES
     Systems.h
     components/TransformComponent.h
     components/VelocityComponent.h
-    components/PlayerComponent.h
+    components/playerComponent.h
     components/RenderComponent.h
     components/PhysicsData.h
     components/AudioComponent.h
@@ -32,3 +32,5 @@ target_link_libraries(ecs PUBLIC
 )
 
 set_target_properties(ecs PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+
