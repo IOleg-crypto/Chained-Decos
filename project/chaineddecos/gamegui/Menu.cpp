@@ -1,6 +1,6 @@
 #include "Menu.h"
 #include "MenuConstants.h"
-#include "Settings/SettingsManager.h"
+#include "settings/settingsManager.h"
 #include <filesystem>
 #include <imgui.h>
 #include <memory>
@@ -13,7 +13,7 @@
 #include "screens/MainMenuScreen.h"
 #include "screens/MapSelectionScreen.h"
 #include "screens/OptionsScreen.h"
-#include "screens/SettingsScreens.h"
+#include "screens/settingsScreens.h"
 
 Menu::Menu()
     : m_state(MenuState::Main), m_gameInProgress(false), m_showDemoWindow(false),
@@ -215,7 +215,7 @@ void Menu::SetupStyle()
 
     // Load Gantari Font
     std::string fontPath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/font/Gantari/static/Gantari-Regular.ttf";
+        std::string(PROJECT_ROOT_DIR) + "/resources/font/gantari/static/gantari-Regular.ttf";
     if (std::filesystem::exists(fontPath))
     {
         ImFont *font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 24.0f);
@@ -413,3 +413,5 @@ void Menu::HandlePendingActions()
 {
     // Implementation for handling delayed actions if any
 }
+
+

@@ -1,20 +1,20 @@
 set(MODEL_SOURCES
-        Core/Model.cpp
-        Core/Model.h
-        Core/ModelInstance.cpp
-        Core/ModelInstance.h
-        Interfaces/IModelLoader.h
-        Animation/Animation.cpp
-        Animation/Animation.h
-        Config/ModelConfig.h
-        Config/ModelConfig.cpp
-        Parser/JsonParser.cpp
-        Parser/JsonParser.h
-        Parser/JsonHelper.cpp
-        Cache/ModelCache.cpp
-        Cache/ModelCache.h
-        Utils/ModelAnalyzer.cpp
-        Utils/ModelAnalyzer.h
+        core/Model.cpp
+        core/Model.h
+        core/ModelInstance.cpp
+        core/ModelInstance.h
+        interfaces/IModelLoader.h
+        animation/animation.cpp
+        animation/animation.h
+        config/ModelConfig.h
+        config/ModelConfig.cpp
+        parser/jsonParser.cpp
+        parser/jsonParser.h
+        parser/jsonHelper.cpp
+        cache/ModelCache.cpp
+        cache/ModelCache.h
+        utils/ModelAnalyzer.cpp
+        utils/ModelAnalyzer.h
 )
 
 add_library(model STATIC ${MODEL_SOURCES})
@@ -34,3 +34,5 @@ target_link_libraries(model PUBLIC
 )
 
 set_target_properties(model PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+

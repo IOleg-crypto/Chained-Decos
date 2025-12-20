@@ -2,7 +2,7 @@
 #define PLAYER_RENDERABLE_H
 
 #include "core/interfaces/IPlayer.h"
-#include <components/rendering/Interfaces/IGameRenderable.h>
+#include <components/rendering/interfaces/IGameRenderable.h>
 
 class PlayerRenderable : public IGameRenderable
 {
@@ -41,6 +41,8 @@ private:
 };
 
 #endif // PLAYER_RENDERABLE_H
+
+
 
 
 

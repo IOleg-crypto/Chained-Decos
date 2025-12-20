@@ -4,7 +4,7 @@
 #include "mapeditor/mapgui/UIManager.h"
 #include "scene/camera/core/CameraController.h"
 
-#include "scene/resources/model/Core/Model.h"
+#include "scene/resources/model/core/Model.h"
 
 //===============================================
 #include "core/events/Event.h"
@@ -61,7 +61,7 @@ void EditorApplication::OnStart()
 
     // Set up custom font
     io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/Lato/Lato-Black.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/lato/lato-Black.ttf", 16.0f);
     // Don't build fonts here - will be built in RenderManager::BeginFrame()
 
     // Preload models after window initialization
@@ -158,3 +158,5 @@ void EditorApplication::OnEvent(ChainedDecos::Event &e)
         m_editor->OnEvent(e);
     }
 }
+
+

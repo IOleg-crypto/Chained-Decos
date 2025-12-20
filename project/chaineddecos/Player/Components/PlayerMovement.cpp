@@ -1,5 +1,5 @@
 #include "PlayerMovement.h"
-#include "../Core/Player.h"
+#include "../core/player.h"
 #include <cmath>
 #include <raylib.h>
 
@@ -484,6 +484,8 @@ Vector3 PlayerMovement::ValidateCollisionResponse(const Vector3 &response,
 
     return validatedResponse;
 }
+
+
 
 
 

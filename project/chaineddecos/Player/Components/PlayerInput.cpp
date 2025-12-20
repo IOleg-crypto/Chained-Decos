@@ -1,5 +1,5 @@
 #include "PlayerInput.h"
-#include "../Core/Player.h"
+#include "../core/player.h"
 #include <imgui.h>
 
 PlayerInput::PlayerInput(IPlayer *player) : m_player(player), m_walkSpeed(8.1f) {}
@@ -167,6 +167,8 @@ std::pair<Vector3, Vector3> PlayerInput::GetCameraVectors() const
 
     return {forward, right};
 }
+
+
 
 
 

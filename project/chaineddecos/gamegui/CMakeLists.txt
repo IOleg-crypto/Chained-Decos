@@ -1,14 +1,14 @@
 set(MENU_SOURCES
     Menu.cpp
     Menu.h
-    Settings/SettingsManager.cpp
-    Settings/SettingsManager.h
-    Settings/MenuSettingsController.cpp
-    Settings/MenuSettingsController.h
-    Console/ConsoleManager.cpp
-    Console/ConsoleManager.h
-    MapSelector/MapSelector.cpp
-    MapSelector/MapSelector.h
+    settings/settingsManager.cpp
+    settings/settingsManager.h
+    settings/MenuSettingsController.cpp
+    settings/MenuSettingsController.h
+    console/consoleManager.cpp
+    console/consoleManager.h
+    mapselector/mapselector.cpp
+    mapselector/mapselector.h
     MenuConstants.h
     screens/BaseMenuScreen.cpp
     screens/BaseMenuScreen.h
@@ -22,8 +22,8 @@ set(MENU_SOURCES
     screens/CreditsScreen.h
     screens/ConfirmExitScreen.cpp
     screens/ConfirmExitScreen.h
-    screens/SettingsScreens.cpp
-    screens/SettingsScreens.h
+    screens/settingsScreens.cpp
+    screens/settingsScreens.h
 )
 
 add_library(menu STATIC ${MENU_SOURCES})

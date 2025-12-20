@@ -16,9 +16,9 @@
 #include "mapeditor/Editor.h"
 #include "mapeditor/EditorTypes.h"
 #include "mapeditor/IEditor.h"
-#include "mapeditor/mapgui/SkyboxBrowser.h"
+#include "mapeditor/mapgui/skyboxBrowser.h"
 #include "mapeditor/tool/IToolManager.h"
-#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/map/core/MapLoader.h"
 
 
 // Configuration for UIManager
@@ -153,6 +153,8 @@ private:
 };
 
 #endif // UIMANAGER_H
+
+
 
 
 

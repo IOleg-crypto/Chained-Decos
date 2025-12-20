@@ -1,8 +1,8 @@
 #ifndef IPLAYER_H
 #define IPLAYER_H
 
-#include <components/physics/collision/System/CollisionSystem.h>
-#include <components/physics/dynamics/Components/PhysicsComponent.h>
+#include <components/physics/collision/system/collisionSystem.h>
+#include <components/physics/dynamics/components/PhysicsComponent.h>
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
@@ -32,7 +32,7 @@ public:
     // Camera
     virtual Camera3D &GetCamera() = 0;
 
-    // Debug/Cheat
+    // debug/Cheat
     virtual void SetNoclip(bool enabled) = 0;
     virtual bool IsNoclip() const = 0;
 
@@ -61,3 +61,5 @@ public:
 };
 
 #endif // IPLAYER_H
+
+

@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.25)
 project(ChainedDecos LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -272,4 +272,6 @@ install(FILES game.cfg
 if(NOT FAST_CONFIG)
     set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
 endif()
+
+
 

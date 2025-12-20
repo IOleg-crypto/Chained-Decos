@@ -1,7 +1,7 @@
 #ifndef EDITOR_RENDERER_H
 #define EDITOR_RENDERER_H
 
-#include "scene/resources/map/Core/MapData.h"
+#include "scene/resources/map/core/MapData.h"
 #include <raylib.h>
 
 #include "mapeditor/IEditor.h"
@@ -34,6 +34,8 @@ private:
 };
 
 #endif // EDITOR_RENDERER_H
+
+
 
 
 

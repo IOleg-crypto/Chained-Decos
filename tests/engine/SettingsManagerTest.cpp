@@ -1,4 +1,4 @@
-#include "project/chaineddecos/gamegui/Settings/SettingsManager.h"
+#include "project/chaineddecos/gamegui/settings/settingsManager.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -123,6 +123,7 @@ TEST_F(SettingsManagerTest, SkyboxGammaSettingsMultipleChanges)
     EXPECT_FALSE(settings.IsSkyboxGammaEnabled());
     EXPECT_FLOAT_EQ(settings.GetSkyboxGammaValue(), 2.8f);
 }
+
 
 
 
