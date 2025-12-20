@@ -13,20 +13,21 @@
 
 #include "core/events/Event.h"
 #include "core/utils/Base.h"
-#include "mapeditor/IEditor.h"
-#include "mapeditor/mapgui/IUIManager.h"
-#include "mapeditor/tool/IToolManager.h"
+#include "editor/IEditor.h"
+#include "editor/mapgui/IUIManager.h"
+#include "editor/tool/IToolManager.h"
 #include "scene/camera/core/CameraController.h"
 #include "scene/resources/map/core/MapLoader.h"
 #include "scene/resources/map/skybox/skybox.h"
 #include "scene/resources/model/core/Model.h"
 
 // Rendering and utilities
-#include "mapeditor/render/EditorRenderer.h"
+#include "editor/render/EditorRenderer.h"
 
-#include "mapeditor/logic/MapManager.h"
+#include "editor/logic/MapManager.h"
+#include "editor/panels/EditorPanelManager.h"
 
-// Main editor class for the map editor
+// Main editor class for ChainedEditor
 class Editor : public IEditor
 {
 private:
@@ -34,6 +35,7 @@ private:
     std::unique_ptr<IUIManager> m_uiManager;
     std::unique_ptr<IToolManager> m_toolManager;
     std::unique_ptr<MapManager> m_mapManager;
+    std::unique_ptr<EditorPanelManager> m_panelManager;
 
     // Engine resources and services
     ChainedDecos::Ref<CameraController> m_cameraController;
@@ -41,7 +43,7 @@ private:
     std::unique_ptr<Skybox> m_skybox;
 
     // State
-    int m_gridSize = 50;
+    int m_gridSize = 9999999;
     int m_activeTool = 0;
 
     // Rendering helper
@@ -79,7 +81,8 @@ public:
     void ClearSelection() override;
     void ClearObjects() override;
     void ClearScene(); // Keep legacy name if used elsewhere
-    void CreateDefaultObject(MapObjectType type, const std::string &modelName = "");
+    void CreateDefaultObject(MapObjectType type, const std::string &modelName = "") override;
+    void LoadAndSpawnModel(const std::string &path) override;
 
     // File operations (Moved from FileManager/using MapLoader)
     void SaveMap(const std::string &filename) override;
@@ -96,7 +99,7 @@ public:
     ChainedDecos::Ref<IModelLoader> GetModelLoader() override;
 
     // Skybox operations
-    void ApplyMetadata(const MapMetadata &metadata);
+    void ApplyMetadata(const MapMetadata &metadata) override;
     void SetSkybox(const std::string &name) override;
     void SetSkyboxTexture(const std::string &texturePath) override;
     void SetSkyboxColor(Color color) override;
@@ -104,7 +107,7 @@ public:
     const std::string &GetSkyboxTexture() const;
     bool HasSkybox() const;
     Skybox *GetSkybox() const override;
-    Color GetClearColor() const;
+    Color GetClearColor() const override;
 
     // Accessors for UI/Tools
     GameMap &GetGameMap() override;
@@ -112,7 +115,11 @@ public:
     MapObjectData *GetSelectedObject() override;
 
     IToolManager *GetToolManager() const;
-    IUIManager *GetUIManager() const;
+    IUIManager *GetUIManager() const override;
+    EditorPanelManager *GetPanelManager() const override
+    {
+        return m_panelManager.get();
+    }
 
     const std::string &GetCurrentMapPath() const override;
 
@@ -123,10 +130,19 @@ private:
     void InitializeSubsystems();
     void RenderObject(const MapObjectData &obj);
 
+    // Play Mode state
+    bool m_isInPlayMode = false;
+
+public:
+    void StartPlayMode() override;
+    void StopPlayMode() override;
+    bool IsInPlayMode() const override
+    {
+        return m_isInPlayMode;
+    }
+
 public:
     std::string GetSkyboxAbsolutePath() const;
 };
 
 #endif // EDITOR_H
-
-

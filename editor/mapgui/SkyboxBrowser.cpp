@@ -1,5 +1,5 @@
 #include "SkyboxBrowser.h"
-#include "mapeditor/IEditor.h"
+#include "editor/IEditor.h"
 #include "nfd.h"
 #include "scene/resources/map/skybox/skybox.h"
 #include <filesystem>

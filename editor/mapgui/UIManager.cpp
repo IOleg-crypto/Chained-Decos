@@ -1,8 +1,9 @@
-#include "mapeditor/mapgui/UIManager.h"
-#include "mapeditor/EditorTypes.h"
-#include "mapeditor/IEditor.h"
-#include "mapeditor/mapgui/IUIManager.h"
-#include "mapeditor/mapgui/skyboxBrowser.h"
+#include "editor/mapgui/UIManager.h"
+#include "editor/EditorTypes.h"
+#include "editor/IEditor.h"
+#include "editor/mapgui/IUIManager.h"
+#include "editor/mapgui/skyboxBrowser.h"
+#include "editor/panels/EditorPanelManager.h"
 #include "nfd.h"
 #include "scene/resources/map/core/MapData.h"
 #include "scene/resources/map/core/MapLoader.h"
@@ -25,10 +26,10 @@
 namespace fs = std::filesystem;
 
 EditorUIManager::EditorUIManager(const UIManagerConfig &config)
-    : m_editor(config.editor), m_displayImGuiInterface(true), m_displayObjectListPanel(true),
-      m_displayPropertiesPanel(true), m_pendingObjectCreation(false), m_displaySkyboxPanel(false),
-      m_displayParkourMapDialog(false), m_currentlySelectedParkourMapIndex(0),
-      m_displayWelcomeScreen(true), m_skyboxBrowser(std::make_unique<SkyboxBrowser>(config.editor))
+    : m_editor(config.editor), m_displayImGuiInterface(true), m_pendingObjectCreation(false),
+      m_displaySkyboxPanel(false), m_displayParkourMapDialog(false),
+      m_currentlySelectedParkourMapIndex(0), m_displayWelcomeScreen(true),
+      m_skyboxBrowser(std::make_unique<SkyboxBrowser>(config.editor))
 {
 }
 
@@ -55,16 +56,6 @@ void EditorUIManager::Render()
     // Render all ImGui panels in specific order
     RenderImGuiToolbar();
 
-    if (m_displayObjectListPanel)
-    {
-        RenderImGuiObjectPanel();
-    }
-
-    if (m_editor->GetSelectedObject() != nullptr)
-    {
-        RenderImGuiPropertiesPanel();
-    }
-
     // Render skybox panel (always call to handle cleanup even when closed)
     // Note: SkyboxBrowser handles its own Begin/End and can modify m_displaySkyboxPanel
     if (m_displaySkyboxPanel && m_skyboxBrowser)
@@ -89,14 +80,17 @@ void EditorUIManager::HandleInput()
     }
 }
 
+// Methods delegated to PanelManager
 void EditorUIManager::ShowObjectPanel(bool show)
 {
-    m_displayObjectListPanel = show;
+    if (m_editor->GetPanelManager())
+        m_editor->GetPanelManager()->SetPanelVisible("Hierarchy", show);
 }
 
 void EditorUIManager::ShowPropertiesPanel(bool show)
 {
-    m_displayPropertiesPanel = show;
+    if (m_editor->GetPanelManager())
+        m_editor->GetPanelManager()->SetPanelVisible("Inspector", show);
 }
 
 Tool EditorUIManager::GetActiveTool() const
@@ -248,6 +242,8 @@ void EditorUIManager::RenderImGuiToolbar()
                 else
                 {
                     m_editor->ClearScene();
+                    if (m_editor->GetPanelManager())
+                        m_editor->GetPanelManager()->SetAllPanelsVisible(false);
                     m_displayWelcomeScreen = true;
                 }
             }
@@ -279,15 +275,17 @@ void EditorUIManager::RenderImGuiToolbar()
                     }
                 }
             }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Skybox Settings", nullptr, m_displaySkyboxPanel))
+            {
+                m_displaySkyboxPanel = !m_displaySkyboxPanel;
+            }
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("View"))
+        if (m_editor->GetPanelManager())
         {
-            ImGui::MenuItem("Scene Hierarchy", nullptr, &m_displayObjectListPanel);
-            ImGui::MenuItem("Properties", nullptr, &m_displayPropertiesPanel);
-            ImGui::MenuItem("Skybox Settings", nullptr, &m_displaySkyboxPanel);
-            ImGui::EndMenu();
+            m_editor->GetPanelManager()->RenderViewMenu();
         }
 
         // Status info on the right
@@ -295,10 +293,16 @@ void EditorUIManager::RenderImGuiToolbar()
         std::string mapName = m_editor->GetGameMap().GetMapMetaData().name.empty()
                                   ? "Untitled"
                                   : m_editor->GetGameMap().GetMapMetaData().name;
-        std::string infoText =
-            "Map: " + mapName + " | Grid: " + std::to_string(m_editor->GetGridSize());
+        std::string skyboxName = m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
+        if (skyboxName.empty())
+            skyboxName = "None";
+        else
+            skyboxName = fs::path(skyboxName).filename().string();
 
-        ImGui::SameLine(width - 300);
+        std::string infoText = "Map: " + mapName + " | Skybox: " + skyboxName +
+                               " | Grid: " + std::to_string(m_editor->GetGridSize());
+
+        ImGui::SameLine(width - 450);
         ImGui::Text("%s", infoText.c_str());
 
         ImGui::EndMainMenuBar();
@@ -335,217 +339,20 @@ void EditorUIManager::RenderImGuiToolbar()
     }
 }
 
-void EditorUIManager::RenderImGuiObjectPanel()
-{
-    const int screenWidth = GetScreenWidth();
-    ImVec2 windowSize(240, 400);
-    ImVec2 desiredPos(static_cast<float>(screenWidth) - 250, 10);
-    ImVec2 clampedPos = ClampWindowPosition(desiredPos, windowSize);
-
-    ImGui::SetNextWindowPos(clampedPos, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-
-    // Limit maximum window size to screen dimensions
-    ImGui::SetNextWindowSizeConstraints(
-        ImVec2(100, 100),
-        ImVec2(static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())));
-
-    // Fixed Left Panel Layout
-    ImGui::SetNextWindowPos(ImVec2(0, MENU_BAR_HEIGHT), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(
-        ImVec2(PANEL_WIDTH, static_cast<float>(GetScreenHeight()) - MENU_BAR_HEIGHT),
-        ImGuiCond_Always);
-
-    ImGuiWindowFlags windowFlags =
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-
-    bool objectPanelOpen = true;
-    if (ImGui::Begin("Scene Hierarchy", &objectPanelOpen, windowFlags))
-    {
-        // Ensure window stays within screen bounds
-        EnsureWindowInBounds();
-        if (ImGui::Button("Add Object"))
-        {
-            m_editor->CreateDefaultObject(MapObjectType::CUBE);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Remove") && m_editor->GetSelectedObject() != nullptr)
-        {
-            // Remove selected object
-            m_editor->RemoveObject(m_editor->GetSelectedObjectIndex());
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Clear All"))
-        {
-            m_editor->ClearScene();
-        }
-
-        ImGui::Separator();
-
-        // List all objects
-        const auto &objects = m_editor->GetGameMap().GetMapObjects();
-        for (size_t i = 0; i < objects.size(); i++)
-        {
-            const auto &obj = objects[i];
-            std::string label = "Object " + std::to_string(i);
-            if (!obj.modelName.empty())
-                label = obj.modelName;
-
-            if (const bool isSelected = (static_cast<int>(i) == m_editor->GetSelectedObjectIndex());
-                ImGui::Selectable(label.c_str(), isSelected))
-            {
-                m_editor->SelectObject(static_cast<int>(i));
-            }
-
-            // Show object info on hover
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::BeginTooltip();
-                ImGui::Text("Position: %.1f, %.1f, %.1f", obj.position.x, obj.position.y,
-                            obj.position.z);
-                ImGui::Text("Type: %d", static_cast<int>(obj.type));
-                ImGui::EndTooltip();
-            }
-        }
-    }
-
-    // If window was closed, don't show it next frame
-    if (!objectPanelOpen)
-    {
-        m_displayObjectListPanel = false;
-    }
-
-    ImGui::End();
-}
-
-void EditorUIManager::RenderImGuiPropertiesPanel()
-{
-    // Fixed Right Panel Layout
-    ImGui::SetNextWindowPos(
-        ImVec2(static_cast<float>(GetScreenWidth()) - PANEL_WIDTH, MENU_BAR_HEIGHT),
-        ImGuiCond_Always);
-    ImGui::SetNextWindowSize(
-        ImVec2(PANEL_WIDTH, static_cast<float>(GetScreenHeight()) - MENU_BAR_HEIGHT),
-        ImGuiCond_Always);
-
-    ImGuiWindowFlags windowFlags =
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-
-    bool propertiesPanelOpen = true;
-    if (ImGui::Begin("Properties", &propertiesPanelOpen, windowFlags))
-    {
-        // Ensure window stays within screen bounds
-        EnsureWindowInBounds();
-
-        auto *selectedMapObj = m_editor->GetSelectedObject();
-
-        if (selectedMapObj != nullptr)
-        {
-            auto &obj = *selectedMapObj;
-
-            // Type
-            const char *types[] = {"Cube",    "Sphere", "Cylinder",  "Plane",
-                                   "Ellipse", "Model",  "Spawn Zone"};
-            int typeIndex = static_cast<int>(obj.type);
-            if (ImGui::Combo("Type", &typeIndex, types, IM_ARRAYSIZE(types)))
-            {
-                obj.type = static_cast<MapObjectType>(typeIndex);
-            }
-
-            ImGui::Separator();
-
-            // Transform
-            float pos[3] = {obj.position.x, obj.position.y, obj.position.z};
-            if (ImGui::DragFloat3("Position", pos, 0.1f))
-            {
-                obj.position = {pos[0], pos[1], pos[2]};
-                m_editor->SetSceneModified(true);
-            }
-
-            // Rotation
-            float rot[3] = {obj.rotation.x, obj.rotation.y, obj.rotation.z};
-            if (ImGui::DragFloat3("Rotation", rot, 0.1f))
-            {
-                obj.rotation = {rot[0], rot[1], rot[2]};
-                m_editor->SetSceneModified(true);
-            }
-
-            // Scale
-            float scl[3] = {obj.scale.x, obj.scale.y, obj.scale.z};
-            if (ImGui::DragFloat3("Scale", scl, 0.1f))
-            {
-                obj.scale = {scl[0], scl[1], scl[2]};
-                m_editor->SetSceneModified(true);
-            }
-
-            // Model Specific
-            if (obj.type == MapObjectType::MODEL)
-            {
-                ImGui::Text("Model Asset:");
-                if (ImGui::BeginCombo("##ModelSelect", obj.modelName.c_str()))
-                {
-                    const auto availableModels = m_editor->GetModelLoader()->GetAvailableModels();
-                    for (const auto &modelName : availableModels)
-                    {
-                        bool isSelected = (obj.modelName == modelName);
-                        if (ImGui::Selectable(modelName.c_str(), isSelected))
-                        {
-                            obj.modelName = modelName;
-                            m_editor->SetSceneModified(true);
-                        }
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-            }
-
-            // Color
-            float c[4] = {obj.color.r / 255.0f, obj.color.g / 255.0f, obj.color.b / 255.0f,
-                          obj.color.a / 255.0f};
-            if (ImGui::ColorEdit4("Color", c))
-            {
-                obj.color = {(unsigned char)(c[0] * 255), (unsigned char)(c[1] * 255),
-                             (unsigned char)(c[2] * 255), (unsigned char)(c[3] * 255)};
-                m_editor->SetSceneModified(true);
-            }
-        }
-        else
-        {
-            ImGui::TextDisabled("No object selected");
-        }
-    }
-    ImGui::End();
-
-    if (!propertiesPanelOpen)
-    {
-        m_displayPropertiesPanel = false;
-    }
-}
+// Obsolete panel methods removed. Panels are now managed by EditorPanelManager.
 
 void EditorUIManager::HandleKeyboardInput()
 {
-    // Handle keyboard shortcuts for scene objects
-    if (IsKeyPressed(KEY_DELETE) && m_editor->GetSelectedObject() != nullptr)
-    {
-        // Remove selected object
-        m_editor->RemoveObject(m_editor->GetSelectedObjectIndex());
-    }
-
-    if (IsKeyPressed(KEY_ESCAPE))
-    {
-        m_editor->ClearSelection();
-    }
-
-    // Toggle UI panels with different keys
     if (IsKeyPressed(KEY_TWO))
     {
-        m_displayObjectListPanel = !m_displayObjectListPanel;
+        if (m_editor->GetPanelManager())
+            m_editor->GetPanelManager()->TogglePanelVisibility("Hierarchy");
     }
 
     if (IsKeyPressed(KEY_F))
     {
-        m_displayPropertiesPanel = !m_displayPropertiesPanel;
+        if (m_editor->GetPanelManager())
+            m_editor->GetPanelManager()->TogglePanelVisibility("Inspector");
     }
 }
 
@@ -556,7 +363,17 @@ void EditorUIManager::ExecutePendingAction()
         m_editor->ClearScene();
         if (m_editor)
             m_editor->SetSkyboxTexture("");
-        m_displayWelcomeScreen = true; // Fix: Use true to go back to welcome screen
+        m_displayWelcomeScreen = false; // Start editing immediately
+
+        // Show core panels
+        if (auto pm = m_editor->GetPanelManager())
+        {
+            pm->SetPanelVisible("Toolbar", true);
+            pm->SetPanelVisible("Viewport", true);
+            pm->SetPanelVisible("Scene Hierarchy", true);
+            pm->SetPanelVisible("Inspector", true);
+            pm->ResetLayout();
+        }
     }
     else if (m_pendingAction == PendingAction::OPEN_PROJECT ||
              m_pendingAction == PendingAction::LOAD_MAP)
@@ -569,6 +386,16 @@ void EditorUIManager::ExecutePendingAction()
         {
             m_editor->LoadMap(std::string(outPath));
             m_displayWelcomeScreen = false;
+
+            // Show core panels
+            if (auto pm = m_editor->GetPanelManager())
+            {
+                pm->SetPanelVisible("Toolbar", true);
+                pm->SetPanelVisible("Viewport", true);
+                pm->SetPanelVisible("Scene Hierarchy", true);
+                pm->SetPanelVisible("Inspector", true);
+                pm->ResetLayout();
+            }
             NFD_FreePath(outPath);
         }
     }
@@ -685,6 +512,11 @@ void EditorUIManager::RenderWelcomeScreen()
                     m_editor->ClearScene();
                     if (m_editor)
                         m_editor->SetSkyboxTexture("");
+                    if (m_editor->GetPanelManager())
+                    {
+                        m_editor->GetPanelManager()->SetAllPanelsVisible(true);
+                        m_editor->GetPanelManager()->ResetLayout();
+                    }
                     m_displayWelcomeScreen = false;
                 }
             }
@@ -729,6 +561,11 @@ void EditorUIManager::RenderWelcomeScreen()
                     if (result == NFD_OKAY)
                     {
                         m_editor->LoadMap(std::string(outPath));
+                        if (m_editor->GetPanelManager())
+                        {
+                            m_editor->GetPanelManager()->SetAllPanelsVisible(true);
+                            m_editor->GetPanelManager()->ResetLayout();
+                        }
                         m_displayWelcomeScreen = false;
                         NFD_FreePathU8(outPath);
                     }
@@ -857,5 +694,3 @@ void EditorUIManager::RenderSavePrompt()
         ImGui::EndPopup();
     }
 }
-
-

@@ -1,11 +1,11 @@
 #ifndef ITOOLMANAGER_H
 #define ITOOLMANAGER_H
 
-#include "mapeditor/EditorTypes.h"
+#include "editor/EditorTypes.h"
 #include <raylib.h>
 #include <string>
 
-#include "mapeditor/IEditor.h"
+#include "editor/IEditor.h"
 
 class IToolManager
 {
