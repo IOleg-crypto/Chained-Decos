@@ -77,7 +77,7 @@ void MainMenuScreen::Render()
     currentY += buttonHeight + spacing;
 
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Exit Game", ChainedDecos::MenuEventType::ExitGame,
+    if (RenderActionButton("Exit Game", ChainedDecos::MenuEventType::None,
                            ImVec2(buttonWidth, buttonHeight)))
     {
         GetMenu()->ShowConfirmExit();
