@@ -555,23 +555,35 @@ void Editor::StartPlayMode()
             }
             else if (obj.type == MapObjectType::SPHERE)
             {
-                // Diameter is scale.x, Radius is diameter * 0.5
                 float radius = obj.scale.x * 0.5f;
-                Vector3 halfSize = {radius, radius, radius};
-                auto collision = std::make_shared<Collision>(obj.position, halfSize);
-                collision->SetCollisionType(CollisionType::AABB_ONLY);
+                // Generate a high-res mesh for precise collision
+                Mesh mesh = GenMeshSphere(radius, 12, 12);
+                Model model = LoadModelFromMesh(mesh);
+
+                auto collision = std::make_shared<Collision>();
+                collision->BuildFromModel(
+                    &model, MatrixTranslate(obj.position.x, obj.position.y, obj.position.z));
+                collision->SetCollisionType(CollisionType::BVH_ONLY);
                 collisionManager->AddCollider(collision);
+
+                UnloadModel(model); // Also unloads the mesh
             }
             else if (obj.type == MapObjectType::CYLINDER)
             {
-                // Diameter is scale.x, Radius is diameter * 0.5
                 float radius = obj.scale.x * 0.5f;
                 float height = obj.scale.y;
 
-                Vector3 halfSize = {radius, height * 0.5f, radius};
-                auto collision = std::make_shared<Collision>(obj.position, halfSize);
-                collision->SetCollisionType(CollisionType::AABB_ONLY);
+                // Generate a high-res mesh for precise collision
+                Mesh mesh = GenMeshCylinder(radius, height, 12);
+                Model model = LoadModelFromMesh(mesh);
+
+                auto collision = std::make_shared<Collision>();
+                collision->BuildFromModel(
+                    &model, MatrixTranslate(obj.position.x, obj.position.y, obj.position.z));
+                collision->SetCollisionType(CollisionType::BVH_ONLY);
                 collisionManager->AddCollider(collision);
+
+                UnloadModel(model); // Also unloads the mesh
             }
             else if (obj.type == MapObjectType::PLANE)
             {
@@ -674,8 +686,8 @@ void Editor::StartPlayMode()
         if (REGISTRY.all_of<RenderComponent>(playerEntity))
         {
             auto &renderComp = REGISTRY.get<RenderComponent>(playerEntity);
-            renderComp.offset = {0.0f, -1.0f, 0.0f};
-            renderComp.tint = WHITE; // Use WHITE tint to preserve model textures
+            renderComp.offset = {0.0f, 0.0f, 0.0f}; // Align model with transform (feet-based)
+            renderComp.tint = WHITE;                // Use WHITE tint to preserve model textures
         }
 
         if (REGISTRY.all_of<PlayerComponent>(playerEntity))
