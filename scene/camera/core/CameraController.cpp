@@ -82,7 +82,7 @@ void CameraController::Update()
     // Skip camera update if ImGui wants to capture mouse or keyboard
     // This prevents UpdateCamera from centering the cursor or moving while typing
     const ImGuiIO &io = ImGui::GetIO();
-    if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+    if (!m_inputCaptureBypass && (io.WantCaptureMouse || io.WantCaptureKeyboard))
     {
         return;
     }
@@ -108,7 +108,7 @@ void CameraController::UpdateCameraRotation()
 {
     // Don't update if ImGui captured the mouse
     const ImGuiIO &io = ImGui::GetIO();
-    if (io.WantCaptureMouse)
+    if (!m_inputCaptureBypass && io.WantCaptureMouse)
         return;
 
     Vector2 mouseDelta;
@@ -419,5 +419,3 @@ void CameraController::OnEvent(ChainedDecos::Event &e)
             return false;
         });
 }
-
-

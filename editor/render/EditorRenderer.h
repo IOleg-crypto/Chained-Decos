@@ -4,8 +4,8 @@
 #include "scene/resources/map/core/MapData.h"
 #include <raylib.h>
 
-#include "mapeditor/IEditor.h"
-#include "mapeditor/tool/IToolManager.h"
+#include "editor/IEditor.h"
+#include "editor/tool/IToolManager.h"
 
 // EditorRenderer - handles all rendering operations for the editor
 class EditorRenderer

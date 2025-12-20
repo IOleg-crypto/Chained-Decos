@@ -5,10 +5,6 @@
 #include <filesystem>
 #include <vector>
 
-#ifndef PROJECT_ROOT_DIR
-#define PROJECT_ROOT_DIR ""
-#endif
-
 Skybox::Skybox()
     : m_cube(), m_skyboxModel(), m_skyboxTexture(), m_initialized(false), m_gammaEnabled(false),
       m_gammaValue(2.2f), m_doGammaLoc(-1), m_fragGammaLoc(-1)
@@ -154,7 +150,7 @@ void Skybox::UnloadSkybox()
     m_skyboxModel = {0};
 }
 
-void Skybox::DrawSkybox()
+void Skybox::DrawSkybox(Vector3 position)
 {
     if (!m_initialized)
     {
@@ -190,7 +186,7 @@ void Skybox::DrawSkybox()
     // Scale should be large enough to be outside the far plane but not too large to cause precision
     // issues
     const float skyboxScale = 1000.0f;
-    DrawModel(m_skyboxModel, Vector3{0, 0, 0}, skyboxScale, WHITE);
+    DrawModel(m_skyboxModel, position, skyboxScale, WHITE);
 
     rlEnableDepthMask();
     rlEnableBackfaceCulling();
@@ -232,8 +228,3 @@ void Skybox::UpdateGammaFromConfig()
     // SetGammaEnabled(IsSkyboxGammaEnabled());
     // SetGammaValue(GetSkyboxGammaValue());
 }
-
-
-
-
-

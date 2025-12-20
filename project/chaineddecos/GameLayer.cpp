@@ -6,11 +6,11 @@
 #include "core/Engine.h"
 #include "core/ecs/ECSRegistry.h"
 #include "core/ecs/components/PhysicsData.h"
-#include "core/ecs/components/playerComponent.h"
 #include "core/ecs/components/RenderComponent.h"
 #include "core/ecs/components/TransformComponent.h"
 #include "core/ecs/components/UtilityComponents.h"
 #include "core/ecs/components/VelocityComponent.h"
+#include "core/ecs/components/playerComponent.h"
 #include "core/events/Event.h"
 #include "core/events/KeyEvent.h"
 #include "core/events/MouseEvent.h"
@@ -20,7 +20,6 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
-
 
 using namespace ChainedDecos;
 
@@ -260,6 +259,11 @@ void GameLayer::OnUpdate(float deltaTime)
 
 void GameLayer::OnRender()
 {
+    RenderScene();
+}
+
+void GameLayer::RenderScene()
+{
     // MOVED FROM RenderSystem::Render
     auto view = REGISTRY.view<TransformComponent, RenderComponent>();
     std::vector<entt::entity> entities(view.begin(), view.end());
@@ -298,7 +302,7 @@ void GameLayer::OnRender()
         b.min = Vector3Add(b.min, transform.position);
         b.max = Vector3Add(b.max, transform.position);
         Color c = collision.hasCollision ? RED : (collision.isTrigger ? YELLOW : GREEN);
-        DrawBoundingBox(b, c);
+        // DrawBoundingBox(b, c); // Optional: Disable debug drawing in Play Mode for cleaner view
     }
 }
 
@@ -329,5 +333,3 @@ void GameLayer::OnEvent(Event &e)
             return false;
         });
 }
-
-

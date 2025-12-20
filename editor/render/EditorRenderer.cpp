@@ -1,7 +1,7 @@
-#include "mapeditor/render/EditorRenderer.h"
+#include "editor/render/EditorRenderer.h"
 #include "components/rendering/utils/RenderUtils.h"
-#include "mapeditor/IEditor.h"
-#include "mapeditor/tool/IToolManager.h"
+#include "editor/IEditor.h"
+#include "editor/tool/IToolManager.h"
 #include "scene/resources/map/renderer/MapRenderer.h"
 #include <filesystem>
 #include <raylib.h>

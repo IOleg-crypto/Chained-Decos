@@ -1,9 +1,9 @@
 #ifndef TOOLMANAGER_H
 #define TOOLMANAGER_H
 
-#include "mapeditor/EditorTypes.h"
-#include "mapeditor/IEditor.h"
-#include "mapeditor/tool/IToolManager.h"
+#include "editor/EditorTypes.h"
+#include "editor/IEditor.h"
+#include "editor/tool/IToolManager.h"
 #include <cstdint>
 #include <raylib.h>
 #include <string>

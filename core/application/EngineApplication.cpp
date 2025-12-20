@@ -60,6 +60,16 @@ void EngineApplication::PushOverlay(Layer *overlay)
     m_LayerStack.PushOverlay(overlay);
 }
 
+void EngineApplication::PopLayer(Layer *layer)
+{
+    m_LayerStack.PopLayer(layer);
+}
+
+void EngineApplication::PopOverlay(Layer *overlay)
+{
+    m_LayerStack.PopOverlay(overlay);
+}
+
 void EngineApplication::OnEvent(Event &e)
 {
     for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
@@ -211,5 +221,3 @@ const EngineApplication::Config &EngineApplication::GetConfig() const
     return m_config;
 }
 } // namespace ChainedDecos
-
-

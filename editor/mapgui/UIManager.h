@@ -13,13 +13,12 @@
 #include "raylib.h"
 #include <imgui.h>
 
-#include "mapeditor/Editor.h"
-#include "mapeditor/EditorTypes.h"
-#include "mapeditor/IEditor.h"
-#include "mapeditor/mapgui/skyboxBrowser.h"
-#include "mapeditor/tool/IToolManager.h"
+#include "editor/Editor.h"
+#include "editor/EditorTypes.h"
+#include "editor/IEditor.h"
+#include "editor/mapgui/skyboxBrowser.h"
+#include "editor/tool/IToolManager.h"
 #include "scene/resources/map/core/MapLoader.h"
-
 
 // Configuration for UIManager
 struct UIManagerConfig
@@ -41,8 +40,6 @@ private:
 
     // UI state flags
     bool m_displayImGuiInterface;
-    bool m_displayObjectListPanel;
-    bool m_displayPropertiesPanel;
     bool m_displayWelcomeScreen = true; // Default to true on startup
     bool m_pendingObjectCreation;
     bool m_displaySkyboxPanel;
@@ -83,19 +80,19 @@ public:
     void ShowObjectPanel(bool show) override;
     void ShowPropertiesPanel(bool show) override;
     int GetGridSize() const override;
+    bool IsWelcomeScreenActive() const override
+    {
+        return m_displayWelcomeScreen;
+    }
+    void ToggleSkyboxBrowser() override
+    {
+        m_displaySkyboxPanel = !m_displaySkyboxPanel;
+    }
 
     // UI state accessors
     bool IsImGuiInterfaceDisplayed() const
     {
         return m_displayImGuiInterface;
-    }
-    bool IsObjectPanelDisplayed() const
-    {
-        return m_displayObjectListPanel;
-    }
-    bool IsPropertiesPanelDisplayed() const
-    {
-        return m_displayPropertiesPanel;
     }
     bool IsParkourMapDialogDisplayed() const
     {
@@ -125,8 +122,6 @@ private:
     // Rendering methods
     void RenderWelcomeScreen();
     void RenderImGuiToolbar();
-    void RenderImGuiObjectPanel();
-    void RenderImGuiPropertiesPanel();
     void RenderSavePrompt(); // Popup for unsaved changes
 
     // Input handling
@@ -153,8 +148,3 @@ private:
 };
 
 #endif // UIMANAGER_H
-
-
-
-
-

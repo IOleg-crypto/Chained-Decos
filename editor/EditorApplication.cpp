@@ -1,9 +1,14 @@
 #include "EditorApplication.h"
 #include "core/Engine.h"
-#include "mapeditor/Editor.h"
-#include "mapeditor/mapgui/UIManager.h"
+#include "core/application/EngineApplication.h"
+#include "editor/Editor.h"
+#include "editor/mapgui/UIManager.h"
+#include "editor/panels/EditorPanelManager.h"
+#include "editor/panels/ViewportPanel.h"
 #include "scene/camera/core/CameraController.h"
 
+#include "core/ecs/ECSRegistry.h"
+#include "project/chaineddecos/GameLayer.h"
 #include "scene/resources/model/core/Model.h"
 
 //===============================================
@@ -24,7 +29,7 @@ EditorApplication::~EditorApplication()
 void EditorApplication::OnConfigure(EngineConfig &config)
 {
     TraceLog(LOG_INFO, "[EditorApplication] Configuring application...");
-    config.windowName = "Chained Decos - Map Editor";
+    config.windowName = "ChainedEditor";
     config.width = 1600;
     config.height = 900;
 }
@@ -57,6 +62,7 @@ void EditorApplication::OnStart()
     // Configure ImGui for Editor (custom settings)
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
     // Set up custom font
@@ -88,8 +94,37 @@ void EditorApplication::OnUpdate(float deltaTime)
     if (!m_editor)
         return;
 
+    static bool wasInPlayMode = false;
+    static GameLayer *playLayer = nullptr;
+    bool inPlayMode = m_editor->IsInPlayMode();
+
+    if (inPlayMode != wasInPlayMode)
+    {
+        if (inPlayMode)
+        {
+            TraceLog(LOG_INFO, "[EditorApplication] Entering Play Mode: Injecting GameLayer");
+            if (GetAppRunner())
+            {
+                playLayer = new GameLayer();
+                GetAppRunner()->PushLayer(playLayer);
+            }
+        }
+        else
+        {
+            TraceLog(LOG_INFO, "[EditorApplication] Exiting Play Mode: Popping GameLayer");
+            if (GetAppRunner() && playLayer)
+            {
+                GetAppRunner()->PopLayer(playLayer);
+                playLayer = nullptr;
+            }
+        }
+        wasInPlayMode = inPlayMode;
+    }
+
     // Update editor state
     m_editor->Update();
+
+    // ... rest of OnUpdate
 
     // Handle editor input
     m_editor->HandleInput();
@@ -119,22 +154,60 @@ void EditorApplication::OnRender()
     // Clear background before 3D scene
     ClearBackground(m_editor->GetClearColor());
 
-    // Render 3D scene for Editor
-    auto &cameraController = m_editor->GetCameraController();
-    BeginMode3D(cameraController.GetCamera());
+    // Check if we have a viewport panel to render into
+    ViewportPanel *viewport = nullptr;
+    if (auto panelManager = m_editor->GetPanelManager())
+    {
+        viewport = panelManager->GetPanel<ViewportPanel>("Viewport");
+    }
 
-    // Render skybox and objects
-    m_editor->Render();
+    if (viewport && viewport->IsVisible())
+    {
+        viewport->BeginRendering();
 
-    // Draw grid after scene for orientation
-    DrawGrid(m_editor->GetGridSize(), 1.0f);
+        // Render 3D scene for Editor
+        if (m_editor->IsInPlayMode())
+        {
+            // Use Game Camera
+            BeginMode3D(RenderManager::Get().GetCamera());
+        }
+        else
+        {
+            // Use Editor Camera
+            auto &cameraController = m_editor->GetCameraController();
+            BeginMode3D(cameraController.GetCamera());
+        }
 
-    EndMode3D();
+        // Render skybox and objects
+        m_editor->Render();
+
+        // Draw grid after scene for orientation
+        DrawGrid(m_editor->GetGridSize(), 1.0f);
+
+        EndMode3D();
+
+        viewport->EndRendering();
+    }
+    else
+    {
+        // Fallback: rendering directly to backbuffer if no viewport panel
+        auto &cameraController = m_editor->GetCameraController();
+        BeginMode3D(cameraController.GetCamera());
+
+        m_editor->Render();
+
+        EndMode3D();
+    }
 
     // Begin ImGui frame for Editor UI
     // Note: rlImGuiBegin() must be called here, before rendering ImGui
     // rlImGuiEnd() will be called AFTER EndFrame() but before kernel->Render()
     rlImGuiBegin();
+
+    // Create dockspace over entire viewport
+    ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");
+    ImGui::DockSpaceOverViewport(dockspaceId, ImGui::GetMainViewport(),
+                                 ImGuiDockNodeFlags_PassthruCentralNode);
 
     // Render ImGui interface
     m_editor->RenderImGui();
@@ -158,5 +231,3 @@ void EditorApplication::OnEvent(ChainedDecos::Event &e)
         m_editor->OnEvent(e);
     }
 }
-
-

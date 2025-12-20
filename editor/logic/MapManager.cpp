@@ -1,4 +1,4 @@
-#include "mapeditor/logic/MapManager.h"
+#include "editor/logic/MapManager.h"
 #include "scene/resources/map/core/MapLoader.h"
 #include "scene/resources/map/mapfilemanager/json/jsonMapFileManager.h"
 #include <algorithm>

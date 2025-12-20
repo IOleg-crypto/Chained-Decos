@@ -12,9 +12,8 @@ public:
     virtual void ShowObjectPanel(bool show) = 0;
     virtual void ShowPropertiesPanel(bool show) = 0;
     virtual int GetGridSize() const = 0;
+    virtual bool IsWelcomeScreenActive() const = 0;
+    virtual void ToggleSkyboxBrowser() = 0;
 };
 
 #endif // IUIMANAGER_H
-
-
-

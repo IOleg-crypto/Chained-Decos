@@ -1,12 +1,18 @@
-#include "mapeditor/Editor.h"
+#include "editor/Editor.h"
 #include "core/events/Event.h"
-#include "mapeditor/render/EditorRenderer.h"
+#include "editor/render/EditorRenderer.h"
 #include "scene/resources/map/core/MapLoader.h"
 #include "scene/resources/map/mapfilemanager/json/jsonMapFileManager.h"
 
 // Subsystem implementations
-#include "mapeditor/mapgui/UIManager.h"
-#include "mapeditor/tool/ToolManager.h"
+#include "editor/mapgui/UIManager.h"
+#include "editor/panels/AssetBrowserPanel.h"
+#include "editor/panels/ConsolePanel.h"
+#include "editor/panels/HierarchyPanel.h"
+#include "editor/panels/InspectorPanel.h"
+#include "editor/panels/ToolbarPanel.h"
+#include "editor/panels/ViewportPanel.h"
+#include "editor/tool/ToolManager.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -18,11 +24,20 @@
 #include "components/rendering/utils/RenderUtils.h"
 #include <raymath.h>
 
+// ECS and Simulation
+#include "components/physics/collision/core/CollisionManager.h"
+#include "core/Engine.h"
+#include "core/ecs/ECSRegistry.h"
+#include "core/ecs/Examples.h"
+#include "core/ecs/components/PlayerComponent.h"
+#include "core/ecs/components/RenderComponent.h"
+
 namespace fs = std::filesystem;
 
 Editor::Editor(ChainedDecos::Ref<CameraController> cameraController,
                ChainedDecos::Ref<IModelLoader> modelLoader)
-    : m_gridSize(50), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
+    // About m_gridsize i now it stupid
+    : m_gridSize(99999), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
       m_cameraController(std::move(cameraController)), m_modelLoader(std::move(modelLoader))
 {
     // Initialize spawn texture (will be loaded after window initialization)
@@ -62,6 +77,15 @@ void Editor::InitializeSubsystems()
     m_uiManager = std::make_unique<EditorUIManager>(uiConfig);
 
     m_renderer = std::make_unique<EditorRenderer>(this, m_toolManager.get());
+
+    // Initialize new panel system
+    m_panelManager = std::make_unique<EditorPanelManager>(this);
+    m_panelManager->AddPanel<ToolbarPanel>(this)->SetVisible(false);
+    m_panelManager->AddPanel<HierarchyPanel>(this)->SetVisible(false);
+    m_panelManager->AddPanel<InspectorPanel>(this)->SetVisible(false);
+    m_panelManager->AddPanel<ViewportPanel>(this)->SetVisible(false);
+    m_panelManager->AddPanel<AssetBrowserPanel>(this)->SetVisible(false);
+    m_panelManager->AddPanel<ConsolePanel>(this)->SetVisible(false);
 }
 
 CameraController &Editor::GetCameraController()
@@ -70,6 +94,21 @@ CameraController &Editor::GetCameraController()
 }
 void Editor::Update()
 {
+    // Update camera controller bypass based on viewport focus/hover
+    if (m_cameraController && m_panelManager)
+    {
+        auto viewport = m_panelManager->GetPanel<ViewportPanel>("Viewport");
+        if (viewport)
+        {
+            // Allow camera to move if viewport is focused OR (hovered AND middle/right mouse button
+            // is down)
+            bool shouldBypass =
+                viewport->IsFocused() ||
+                (viewport->IsHovered() && (IsMouseButtonDown(1) || IsMouseButtonDown(2)));
+            m_cameraController->SetInputCaptureBypass(shouldBypass);
+        }
+    }
+
     // Update camera controller
     if (m_cameraController)
         m_cameraController->Update();
@@ -86,7 +125,7 @@ void Editor::Render()
     if (m_skybox && m_skybox->IsLoaded())
     {
         m_skybox->UpdateGammaFromConfig();
-        m_skybox->DrawSkybox();
+        m_skybox->DrawSkybox(m_cameraController->GetCamera().position);
     }
 
     // Render all objects in the map
@@ -95,6 +134,8 @@ void Editor::Render()
     {
         RenderObject(obj);
     }
+    // Draw grid - using user-defined size
+    DrawGrid(m_gridSize, 1.0f);
 }
 
 void Editor::RenderObject(const MapObjectData &obj)
@@ -138,9 +179,17 @@ void Editor::SetActiveTool(Tool tool)
 
 void Editor::RenderImGui()
 {
+    bool welcomeActive = false;
     if (m_uiManager)
     {
+        welcomeActive = m_uiManager->IsWelcomeScreenActive();
         m_uiManager->Render();
+    }
+
+    // Render new dockable panels
+    if (m_panelManager && !welcomeActive)
+    {
+        m_panelManager->Render();
     }
 }
 
@@ -155,7 +204,19 @@ void Editor::HandleInput()
     if (m_toolManager && m_cameraController)
     {
         const ImGuiIO &io = ImGui::GetIO();
-        if (!io.WantCaptureMouse)
+
+        bool viewportHovered = false;
+        if (m_panelManager)
+        {
+            auto viewport = m_panelManager->GetPanel<ViewportPanel>("Viewport");
+            if (viewport && viewport->IsHovered())
+            {
+                viewportHovered = true;
+            }
+        }
+
+        // Allow input if no ImGui capture OR if we are specifically hovering the viewport
+        if (!io.WantCaptureMouse || viewportHovered)
         {
             Ray ray = GetScreenToWorldRay(GetMousePosition(), m_cameraController->GetCamera());
 
@@ -247,6 +308,33 @@ void Editor::CreateDefaultObject(MapObjectType type, const std::string &modelNam
         newObj.color = WHITE;
 
     m_mapManager->AddObject(newObj);
+}
+
+void Editor::LoadAndSpawnModel(const std::string &path)
+{
+    namespace fs = std::filesystem;
+    fs::path p(path);
+    std::string modelName = p.stem().string();
+
+    if (m_modelLoader)
+    {
+        // 1. Ensure model is loaded in the global model loader
+        m_modelLoader->LoadSingleModel(modelName, path);
+
+        // 2. Add to GameMap's internal model registry so it can be rendered/saved
+        auto modelOpt = m_modelLoader->GetModelByName(modelName);
+        if (modelOpt)
+        {
+            m_mapManager->GetGameMap().GetMapModelsMutable()[modelName] = modelOpt->get();
+            TraceLog(LOG_INFO, "[Editor] Model '%s' registered for spawning", modelName.c_str());
+        }
+    }
+
+    // 3. Create the object in the scene
+    CreateDefaultObject(MapObjectType::MODEL, modelName);
+
+    // 4. Mark scene as modified
+    SetSceneModified(true);
 }
 
 void Editor::SaveMap(const std::string &filename)
@@ -424,4 +512,138 @@ void Editor::OnEvent(ChainedDecos::Event &e)
     }
 }
 
+void Editor::StartPlayMode()
+{
+    if (m_isInPlayMode)
+        return;
 
+    TraceLog(LOG_INFO, "[Editor] Starting Play Mode...");
+
+    // 1. Generate collisions for simulation
+    auto &engine = Engine::Instance();
+    auto collisionManager = engine.GetService<CollisionManager>();
+    if (collisionManager)
+    {
+        collisionManager->ClearColliders();
+
+        // Rebuild collisions from current map objects
+        for (const auto &obj : m_mapManager->GetGameMap().GetMapObjects())
+        {
+            if (obj.type == MapObjectType::CUBE)
+            {
+                Vector3 halfSize = Vector3Scale(obj.scale, 0.5f);
+                auto collision = std::make_shared<Collision>(obj.position, halfSize);
+                collision->SetCollisionType(CollisionType::AABB_ONLY);
+                collisionManager->AddCollider(collision);
+            }
+            else if (obj.type == MapObjectType::MODEL)
+            {
+                if (!obj.modelName.empty())
+                {
+                    auto modelOpt = m_modelLoader->GetModelByName(obj.modelName);
+                    if (modelOpt)
+                    {
+                        Matrix translation =
+                            MatrixTranslate(obj.position.x, obj.position.y, obj.position.z);
+                        Matrix scaleMatrix = MatrixScale(obj.scale.x, obj.scale.y, obj.scale.z);
+                        Vector3 rot = {obj.rotation.x * DEG2RAD, obj.rotation.y * DEG2RAD,
+                                       obj.rotation.z * DEG2RAD};
+                        Matrix rotationMatrix = MatrixRotateXYZ(rot);
+                        Matrix transform = MatrixMultiply(
+                            scaleMatrix, MatrixMultiply(rotationMatrix, translation));
+
+                        auto collision = std::make_shared<Collision>();
+                        collision->BuildFromModelWithType(const_cast<Model *>(&modelOpt->get()),
+                                                          CollisionType::BVH_ONLY, transform);
+                        collision->SetCollisionType(CollisionType::BVH_ONLY);
+                        collisionManager->AddCollider(collision);
+                    }
+                }
+            }
+        }
+        collisionManager->Initialize();
+    }
+
+    // 2. Spawn Player
+    auto &engineInstance = Engine::Instance();
+    auto models = engineInstance.GetService<IModelLoader>();
+    if (models)
+    {
+        if (!models->GetModelByName("player_low").has_value())
+        {
+            std::string playerModelPath =
+                std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
+            if (!models->LoadSingleModel("player_low", playerModelPath))
+            {
+                // Try .gltf as fallback
+                playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.gltf";
+                models->LoadSingleModel("player_low", playerModelPath);
+            }
+        }
+    }
+
+    Vector3 spawnPos = m_mapManager->GetGameMap().GetMapMetaData().startPosition;
+    if (spawnPos.x == 0 && spawnPos.y == 0 && spawnPos.z == 0)
+    {
+        spawnPos = {0, 2, 0}; // Fallback
+    }
+
+    Model *playerModelPtr = nullptr;
+    auto modelOpt = m_modelLoader->GetModelByName("player_low");
+    if (modelOpt.has_value())
+        playerModelPtr = &modelOpt.value().get();
+
+    float sensitivity = 0.15f;
+
+    // Clear registry before spawning to ensure fresh state
+    REGISTRY.clear();
+
+    auto playerEntity =
+        ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 8.0f, 12.0f, sensitivity);
+
+    // Apply visual offset and 3rd person camera defaults
+    if (REGISTRY.valid(playerEntity))
+    {
+        if (REGISTRY.all_of<RenderComponent>(playerEntity))
+        {
+            auto &renderComp = REGISTRY.get<RenderComponent>(playerEntity);
+            renderComp.offset = {0.0f, -1.0f, 0.0f};
+        }
+
+        if (REGISTRY.all_of<PlayerComponent>(playerEntity))
+        {
+            auto &player = REGISTRY.get<PlayerComponent>(playerEntity);
+            player.cameraPitch = 25.0f; // Standard 3rd person angle
+            player.cameraDistance = 6.0f;
+            player.cameraYaw = 0.0f;
+        }
+
+        // Initialize Camera in RenderManager
+        auto &camera = RenderManager::Get().GetCamera();
+        camera.fovy = 60.0f;
+        camera.projection = CAMERA_PERSPECTIVE;
+        camera.up = {0, 1, 0};
+    }
+
+    m_isInPlayMode = true;
+}
+
+void Editor::StopPlayMode()
+{
+    if (!m_isInPlayMode)
+        return;
+
+    TraceLog(LOG_INFO, "[Editor] Stopping Play Mode...");
+
+    // 1. Clear simulation entities
+    REGISTRY.clear();
+
+    // 2. Clear collisions
+    auto collisionManager = Engine::Instance().GetService<CollisionManager>();
+    if (collisionManager)
+    {
+        collisionManager->ClearColliders();
+    }
+
+    m_isInPlayMode = false;
+}

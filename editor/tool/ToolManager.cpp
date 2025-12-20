@@ -7,10 +7,10 @@
 #include <vector>
 
 #include "components/physics/collision/structures/collisionStructures.h"
-#include "mapeditor/Editor.h"
-#include "mapeditor/EditorTypes.h"
-#include "mapeditor/IEditor.h"
-#include "mapeditor/tool/ToolManager.h"
+#include "editor/Editor.h"
+#include "editor/EditorTypes.h"
+#include "editor/IEditor.h"
+#include "editor/tool/ToolManager.h"
 #include "scene/camera/core/CameraController.h"
 #include "scene/resources/map/core/MapData.h"
 

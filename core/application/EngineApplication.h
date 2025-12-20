@@ -9,7 +9,6 @@
 #include <memory>
 #include <string>
 
-
 namespace ChainedDecos
 {
 
@@ -33,6 +32,8 @@ public:
 
     void PushLayer(Layer *layer);
     void PushOverlay(Layer *overlay);
+    void PopLayer(Layer *layer);
+    void PopOverlay(Layer *overlay);
 
     void OnEvent(Event &e);
 
@@ -58,5 +59,3 @@ private:
 } // namespace ChainedDecos
 
 #endif // ENGINE_APPLICATION_H
-
-
