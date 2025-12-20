@@ -1,7 +1,7 @@
 #ifndef MAP_MANAGER_H
 #define MAP_MANAGER_H
 
-#include "scene/resources/map/Core/MapData.h"
+#include "scene/resources/map/core/MapData.h"
 #include <string>
 #include <vector>
 
@@ -39,3 +39,5 @@ private:
 };
 
 #endif // MAP_MANAGER_H
+
+

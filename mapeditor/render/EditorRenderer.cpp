@@ -1,8 +1,8 @@
 #include "mapeditor/render/EditorRenderer.h"
-#include "components/rendering/Utils/RenderUtils.h"
+#include "components/rendering/utils/RenderUtils.h"
 #include "mapeditor/IEditor.h"
 #include "mapeditor/tool/IToolManager.h"
-#include "scene/resources/map/Renderer/MapRenderer.h"
+#include "scene/resources/map/renderer/MapRenderer.h"
 #include <filesystem>
 #include <raylib.h>
 #include <raymath.h>
@@ -169,6 +169,8 @@ void EditorRenderer::RenderSelectionWireframe(const MapObjectData &data)
         break;
     }
 }
+
+
 
 
 

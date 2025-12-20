@@ -2,8 +2,8 @@
 #define SETTINGS_MANAGER_H
 
 #include "../MenuConstants.h"
-#include "components/audio/Core/AudioManager.h"
-#include "core/config/ConfigManager.h"
+#include "components/audio/core/AudioManager.h"
+#include "core/config/configManager.h"
 #include <string>
 
 namespace MenuConstants
@@ -189,6 +189,8 @@ private:
 };
 
 #endif // SETTINGS_MANAGER_H
+
+
 
 
 

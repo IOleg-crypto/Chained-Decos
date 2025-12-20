@@ -60,3 +60,5 @@ public:
 } // namespace ChainedDecos
 
 #endif // APPLICATION_EVENT_H
+
+

@@ -1,14 +1,14 @@
 #include "Player.h"
-#include "../Collision/PlayerCollision.h"
-#include "../Components/PlayerInput.h"
-#include "../Components/PlayerModel.h"
-#include "../Components/PlayerMovement.h"
-#include "../Components/PlayerRenderable.h"
-#include <components/rendering/Interfaces/IGameRenderable.h>
+#include "../collision/playerCollision.h"
+#include "../components/playerInput.h"
+#include "../components/playerModel.h"
+#include "../components/playerMovement.h"
+#include "../components/playerRenderable.h"
+#include <components/rendering/interfaces/IGameRenderable.h>
 #include <memory>
 #include <raylib.h>
 #include <scene/camera/core/CameraController.h>
-#include <scene/main/Core/World.h>
+#include <scene/main/core/World.h>
 
 // Define player constants
 Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 0.0f, 0.0f}; // Safe spawn position above ground
@@ -448,3 +448,5 @@ void Player::InitializeCollision()
 {
     m_collision->InitializeCollision();
 }
+
+

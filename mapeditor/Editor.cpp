@@ -1,8 +1,8 @@
 #include "mapeditor/Editor.h"
 #include "core/events/Event.h"
 #include "mapeditor/render/EditorRenderer.h"
-#include "scene/resources/map/Core/MapLoader.h"
-#include "scene/resources/map/MapFileManager/Json/JsonMapFileManager.h"
+#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/map/mapfilemanager/json/jsonMapFileManager.h"
 
 // Subsystem implementations
 #include "mapeditor/mapgui/UIManager.h"
@@ -15,7 +15,7 @@
 #include <raylib.h>
 #include <rlImGui/rlImGui.h>
 
-#include "components/rendering/Utils/RenderUtils.h"
+#include "components/rendering/utils/RenderUtils.h"
 #include <raymath.h>
 
 namespace fs = std::filesystem;
@@ -319,7 +319,7 @@ void Editor::LoadSpawnTexture()
         return;
 
     std::string texturePath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/boxes/PlayerSpawnTexture.png";
+        std::string(PROJECT_ROOT_DIR) + "/resources/boxes/playerSpawnTexture.png";
     if (FileExists(texturePath.c_str()))
     {
         m_spawnTexture = ::LoadTexture(texturePath.c_str());
@@ -423,3 +423,5 @@ void Editor::OnEvent(ChainedDecos::Event &e)
         m_cameraController->OnEvent(e);
     }
 }
+
+

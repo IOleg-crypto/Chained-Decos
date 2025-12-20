@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "components/physics/collision/Core/CollisionManager.h"
+#include "components/physics/collision/core/collisionManager.h"
 #include "core/Engine.h"
 #include "project/chaineddecos/GameApplication.h"
 #include "project/chaineddecos/gamegui/Menu.h"
-#include "project/chaineddecos/player/Core/Player.h"
-#include "scene/resources/map/Core/MapLoader.h"
-#include "scene/resources/model/Core/Model.h"
+#include "project/chaineddecos/player/core/player.h"
+#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/model/core/Model.h"
 
 class GameIntegrationTest : public ::testing::Test
 {
@@ -124,6 +124,8 @@ protected:
 //         EXPECT_TRUE(collisionManager->GetColliders().empty());
 //     });
 // }
+
+
 
 
 

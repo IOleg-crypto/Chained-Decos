@@ -6,24 +6,25 @@
 #include <vector>
 
 // Forward declarations of core systems
-#include "components/audio/Core/AudioManager.h"
-#include "components/audio/Interfaces/IAudioManager.h"
-#include "components/input/Core/InputManager.h"
-#include "components/input/Interfaces/IInputManager.h"
-#include "components/physics/collision/Interfaces/ICollisionManager.h"
-#include "components/rendering/Core/RenderManager.h"
+#include "components/audio/core/AudioManager.h"
+#include "components/audio/interfaces/IAudioManager.h"
+#include "components/input/core/InputManager.h"
+#include "components/input/interfaces/IInputManager.h"
+#include "components/physics/collision/interfaces/ICollisionManager.h"
+#include "components/rendering/core/RenderManager.h"
 #include "core/interfaces/IEngineModule.h"
+#include "core/interfaces/IGuiManager.h"
 #include "core/interfaces/ILevelManager.h"
 #include "core/interfaces/IMenu.h"
 #include "core/interfaces/IPlayer.h"
 #include "core/module/ModuleManager.h"
-#include "scene/main/Interfaces/IWorldManager.h"
-#include "scene/resources/model/Interfaces/IModelLoader.h"
+#include "scene/main/interfaces/IWorldManager.h"
+#include "scene/resources/model/interfaces/IModelLoader.h"
 
 // Concrete managers for service locator implementation
-#include "components/physics/collision/Core/CollisionManager.h"
-#include "scene/main/Core/World.h"
-#include "scene/resources/model/Core/Model.h"
+#include "components/physics/collision/core/collisionManager.h"
+#include "scene/main/core/World.h"
+#include "scene/resources/model/core/Model.h"
 
 #include "core/interfaces/IEngine.h"
 
@@ -57,6 +58,7 @@ public:
     std::shared_ptr<ILevelManager> GetLevelManager() const override;
     std::shared_ptr<IPlayer> GetPlayer() const override;
     std::shared_ptr<IMenu> GetMenu() const override;
+    std::shared_ptr<IGuiManager> GetGuiManager() const;
 
     ModuleManager *GetModuleManager() const;
 
@@ -91,6 +93,7 @@ private:
     std::shared_ptr<ILevelManager> m_LevelManager;
     std::shared_ptr<IPlayer> m_Player;
     std::shared_ptr<IMenu> m_Menu;
+    std::shared_ptr<IGuiManager> m_GuiManager;
 
     bool m_debugInfoVisible = false;
     bool m_shouldExit = false;
@@ -103,6 +106,8 @@ template <typename T> inline void Engine::RegisterService(std::shared_ptr<T> ser
         m_Player = service;
     else if constexpr (std::is_same_v<T, IMenu>)
         m_Menu = service;
+    else if constexpr (std::is_same_v<T, IGuiManager>)
+        m_GuiManager = service;
     else if constexpr (std::is_same_v<T, IModelLoader> || std::is_same_v<T, ModelLoader>)
         m_ModelLoader = std::static_pointer_cast<IModelLoader>(service);
     else if constexpr (std::is_same_v<T, ICollisionManager> || std::is_same_v<T, CollisionManager>)
@@ -119,6 +124,8 @@ template <typename T> inline std::shared_ptr<T> Engine::GetService() const
         return std::static_pointer_cast<T>(m_Player);
     else if constexpr (std::is_same_v<T, IMenu>)
         return std::static_pointer_cast<T>(m_Menu);
+    else if constexpr (std::is_same_v<T, IGuiManager>)
+        return std::static_pointer_cast<T>(m_GuiManager);
     else if constexpr (std::is_same_v<T, IModelLoader> || std::is_same_v<T, ModelLoader>)
         return std::static_pointer_cast<T>(m_ModelLoader);
     else if constexpr (std::is_same_v<T, ICollisionManager> || std::is_same_v<T, CollisionManager>)
@@ -135,3 +142,5 @@ template <typename T> inline std::shared_ptr<T> Engine::GetService() const
 }
 
 #endif // ENGINE_H
+
+

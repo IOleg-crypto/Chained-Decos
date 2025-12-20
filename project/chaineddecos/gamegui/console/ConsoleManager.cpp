@@ -1,9 +1,9 @@
 #include "ConsoleManager.h"
 #include "core/Engine.h"
 #include "core/application/EngineApplication.h"
-#include "scene/main/Core/LevelManager.h"
+#include "scene/main/core/LevelManager.h"
 
-#include "project/chaineddecos/Player/Core/Player.h"
+#include "project/chaineddecos/player/core/player.h"
 #include <algorithm>
 #include <cctype>
 #include <imgui.h>
@@ -530,3 +530,5 @@ bool ConsoleManager::IsConsoleOpen() const
 {
     return consoleOpen;
 }
+
+

@@ -1,6 +1,6 @@
 #include "MapSelector.h"
 #include "../MenuConstants.h"
-#include "scene/resources/map/Core/MapLoader.h"
+#include "scene/resources/map/core/MapLoader.h"
 #include <algorithm>
 #include <cctype> // For std::tolower
 #include <filesystem>
@@ -1186,3 +1186,5 @@ void MapSelector::RenderMapSelectionWindow()
     //     content fits");
     // }
 }
+
+

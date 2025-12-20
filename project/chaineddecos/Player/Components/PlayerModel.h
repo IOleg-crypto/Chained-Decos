@@ -2,7 +2,7 @@
 #ifndef PLAYER_MODEL_H
 #define PLAYER_MODEL_H
 
-#include <scene/resources/model/Core/Model.h>
+#include <scene/resources/model/core/Model.h>
 #include <raylib.h>
 
 // PlayerModel: handles the 3D model of the player
@@ -46,6 +46,8 @@ private:
 };
 
 #endif // PLAYER_MODEL_H
+
+
 
 
 

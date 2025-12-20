@@ -11,11 +11,11 @@
 #include <CameraController/CameraController.h>
 #include <Color/ColorParser.h>
 #include <Engine/Engine.h>
-#include <Input/Core/InputManager.h>
-#include <Map/Core/MapLoader.h>
+#include <Input/core/InputManager.h>
+#include <Map/core/MapLoader.h>
 #include <Menu/Menu.h>
 #include <Model/Model.h>
-#include <Player/Player.h>
+#include <player/player.h>
 
 using json = nlohmann::json;
 
@@ -794,6 +794,8 @@ TEST(StressTest, MultipleModelInstances)
 
     EXPECT_EQ(instances.size(), 100);
 }
+
+
 
 
 

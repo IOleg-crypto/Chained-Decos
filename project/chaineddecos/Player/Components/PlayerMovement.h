@@ -1,13 +1,13 @@
 #ifndef PLAYER_MOVEMENT_H
 #define PLAYER_MOVEMENT_H
 
-#include "../Interfaces/IPlayerMovement.h"
+#include "../interfaces/IPlayerMovement.h"
 #include "core/interfaces/IPlayer.h"
-#include <components/physics/collision/Core/CollisionManager.h>
-#include <components/physics/dynamics/Components/PhysicsComponent.h>
+#include <components/physics/collision/core/collisionManager.h>
+#include <components/physics/dynamics/components/PhysicsComponent.h>
 #include <raylib.h>
 #include <raymath.h>
-#include <scene/main/Core/World.h>
+#include <scene/main/core/World.h>
 
 class PlayerMovement : public IPlayerMovement
 {
@@ -73,6 +73,8 @@ private:
 };
 
 #endif // PLAYER_MOVEMENT_H
+
+
 
 
 

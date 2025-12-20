@@ -1,14 +1,14 @@
 set(COLLISION_SOURCES
-    Core/CollisionManager.cpp
-    Core/CollisionManager.h
-    Interfaces/ICollisionManager.h
-    System/CollisionSystem.cpp
-    System/CollisionSystem.h
-    Structures/CollisionStructures.cpp
-    Structures/CollisionStructures.h
-    Structures/CollisionComponent.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Debug/CollisionDebugRenderer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Debug/CollisionDebugRenderer.h
+    core/collisionManager.cpp
+    core/collisionManager.h
+    interfaces/ICollisionManager.h
+    system/collisionSystem.cpp
+    system/collisionSystem.h
+    structures/collisionStructures.cpp
+    structures/collisionStructures.h
+    structures/collisionComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/collisionDebugRenderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/collisionDebugRenderer.h
 )
 
 add_library(collision STATIC ${COLLISION_SOURCES})
@@ -33,3 +33,4 @@ if(TARGET raylib)
         target_include_directories(collision PUBLIC ${raylib_INCLUDE_DIRS})
     endif()
 endif()
+

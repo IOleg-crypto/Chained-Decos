@@ -3,13 +3,13 @@ cmake_minimum_required(VERSION 3.25)
 
 set(UNIT_TEST_SOURCES
     engine/PhysicsComponentTest.cpp
-    engine/CollisionSystemTest.cpp
+    engine/collisionSystemTest.cpp
 )
 
 set(INTEGRATION_TEST_SOURCES
-    game/PlayerTest.cpp
+    game/playerTest.cpp
     integration/GameIntegrationTest.cpp
-    integration/SkyboxTest.cpp
+    integration/skyboxTest.cpp
 )
 
 # Create unit test executable (no raylib dependencies)
@@ -132,4 +132,6 @@ add_custom_target(run_all_tests
     DEPENDS ChainedDecosUnitTests ChainedDecosIntegrationTests
     COMMENT "Running all tests (unit and integration)"
 )
+
+
 

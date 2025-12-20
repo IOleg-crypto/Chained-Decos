@@ -1,17 +1,17 @@
 set(MAP_SOURCES
-    Core/MapLoader.cpp
-    Core/MapLoader.h
-    Core/MapData.h
-    Core/MapService.cpp
-    Core/MapService.h
-    Converter/MapObjectConverter.cpp
-    Converter/MapObjectConverter.h
-    Interfaces/IMapFileOperations.h
-    Interfaces/IMapMetadataManager.h
-    Renderer/MapRenderer.cpp
-    Renderer/MapRenderer.h
-    Skybox/Skybox.cpp
-    Skybox/Skybox.h
+    core/MapLoader.cpp
+    core/MapLoader.h
+    core/MapData.h
+    core/MapService.cpp
+    core/MapService.h
+    converter/MapObjectConverter.cpp
+    converter/MapObjectConverter.h
+    interfaces/IMapFileOperations.h
+    interfaces/IMapMetadataManager.h
+    renderer/MapRenderer.cpp
+    renderer/MapRenderer.h
+    skybox/skybox.cpp
+    skybox/skybox.h
 )
 
 add_library(map STATIC ${MAP_SOURCES})
@@ -27,4 +27,6 @@ target_include_directories(map
 target_link_libraries(map PUBLIC raylib nlohmann_json config render)
 
 set_target_properties(map PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+
 

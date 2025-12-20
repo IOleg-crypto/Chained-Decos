@@ -95,3 +95,5 @@ protected:
 };
 
 #endif // I_APPLICATION_H
+
+

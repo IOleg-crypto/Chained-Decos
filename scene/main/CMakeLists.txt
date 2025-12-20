@@ -1,10 +1,10 @@
 set(WORLD_SOURCES
-    Core/World.cpp
-    Core/World.h
-    Core/LevelManager.cpp
-    Core/LevelManager.h
-    Core/MapCollisionInitializer.cpp
-    Core/MapCollisionInitializer.h
+    core/World.cpp
+    core/World.h
+    core/LevelManager.cpp
+    core/LevelManager.h
+    core/MapCollisionInitializer.cpp
+    core/MapCollisionInitializer.h
 )
 
 add_library(world STATIC ${WORLD_SOURCES})
@@ -33,3 +33,5 @@ target_compile_definitions(world PRIVATE
 )
 
 set_target_properties(world PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+

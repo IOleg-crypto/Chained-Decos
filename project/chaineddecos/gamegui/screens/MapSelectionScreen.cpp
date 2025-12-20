@@ -1,5 +1,5 @@
 #include "MapSelectionScreen.h"
-#include "../MapSelector/MapSelector.h"
+#include "../mapselector/mapselector.h"
 #include "../Menu.h"
 #include <imgui.h>
 #include <raylib.h>
@@ -52,3 +52,4 @@ void MapSelectionScreen::Render()
         }
     }
 }
+

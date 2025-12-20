@@ -38,3 +38,5 @@ private:
 };
 
 #endif // EDITOR_APPLICATION_H
+
+

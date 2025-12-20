@@ -1,9 +1,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "components/audio/Core/AudioManager.h"
-#include "components/physics/collision/Core/CollisionManager.h"
-#include "project/chaineddecos/Player/Core/Player.h"
+#include "components/audio/core/AudioManager.h"
+#include "components/physics/collision/core/collisionManager.h"
+#include "project/chaineddecos/player/core/player.h"
 
 
 class PlayerTest : public ::testing::Test
@@ -124,6 +124,8 @@ TEST_F(PlayerTest, PlayerHasCameraController)
     EXPECT_NE(cameraController, nullptr);
     EXPECT_NE(cameraController.get(), nullptr);
 }
+
+
 
 
 

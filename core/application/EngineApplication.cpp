@@ -2,8 +2,9 @@
 #include "Engine.h"
 #include "core/application/IApplication.h"
 
-#include "components/input/Core/InputManager.h"
-#include "components/rendering/Core/RenderManager.h"
+#include "components/input/core/InputManager.h"
+#include "components/rendering/core/RenderManager.h"
+#include "core/interfaces/IGuiManager.h"
 #include <cassert>
 #include <raylib.h>
 
@@ -165,6 +166,12 @@ void EngineApplication::Render()
         if (m_app)
             m_app->OnRender();
 
+        // Render Custom GUI (Above the game, but maybe below ImGUI dev tools)
+        if (auto gui = m_engine->GetGuiManager())
+        {
+            gui->Render();
+        }
+
         // End frame
         m_engine->GetRenderManager()->EndFrame();
     }
@@ -204,3 +211,5 @@ const EngineApplication::Config &EngineApplication::GetConfig() const
     return m_config;
 }
 } // namespace ChainedDecos
+
+

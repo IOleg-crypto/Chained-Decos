@@ -6,13 +6,13 @@
 #include <string>
 #include <vector>
 
-#include "components/physics/collision/Structures/CollisionStructures.h"
+#include "components/physics/collision/structures/collisionStructures.h"
 #include "mapeditor/Editor.h"
 #include "mapeditor/EditorTypes.h"
 #include "mapeditor/IEditor.h"
 #include "mapeditor/tool/ToolManager.h"
 #include "scene/camera/core/CameraController.h"
-#include "scene/resources/map/Core/MapData.h"
+#include "scene/resources/map/core/MapData.h"
 
 ToolManager::ToolManager()
     : m_activeTool(SELECT), m_pendingObjectCreation(false), m_currentlySelectedModelName(""),
@@ -490,3 +490,5 @@ void ToolManager::RenderGizmos(IEditor &editor)
         DrawCircle3D(selectedObj->position, 2.0f * scale, {0, 0, 1}, 90.0f, BLUE);
     }
 }
+
+

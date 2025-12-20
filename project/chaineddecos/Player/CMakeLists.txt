@@ -1,21 +1,21 @@
 set(PLAYER_SOURCES
     # Core
-    core/Player.cpp
-    core/Player.h
+    core/player.cpp
+    core/player.h
     
     # Components
-    components/PlayerRenderable.cpp
-    components/PlayerRenderable.h
-    components/PlayerInput.cpp
-    components/PlayerInput.h
-    components/PlayerModel.h
-    components/PlayerModel.cpp
-    components/PlayerMovement.h
-    components/PlayerMovement.cpp
+    components/playerRenderable.cpp
+    components/playerRenderable.h
+    components/playerInput.cpp
+    components/playerInput.h
+    components/playerModel.h
+    components/playerModel.cpp
+    components/playerMovement.h
+    components/playerMovement.cpp
     
     # Collision
-    collision/PlayerCollision.cpp
-    collision/PlayerCollision.h
+    collision/playerCollision.cpp
+    collision/playerCollision.h
     
     # Interfaces
     interfaces/IPlayerInput.h
@@ -39,3 +39,4 @@ target_link_libraries(player PUBLIC
     model
     world
 )
+

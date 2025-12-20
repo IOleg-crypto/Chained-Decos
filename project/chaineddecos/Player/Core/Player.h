@@ -5,20 +5,20 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include "components/audio/Core/AudioManager.h"
-#include <components/physics/collision/Core/CollisionManager.h>
-#include <components/physics/collision/System/CollisionSystem.h>
+#include "components/audio/core/AudioManager.h"
+#include <components/physics/collision/core/collisionManager.h>
+#include <components/physics/collision/system/collisionSystem.h>
 #include <scene/camera/core/CameraController.h>
-#include <scene/main/Core/World.h>
-#include <scene/resources/model/Core/Model.h>
+#include <scene/main/core/World.h>
+#include <scene/resources/model/core/Model.h>
 
-#include "../Collision/PlayerCollision.h"
-#include "../Components/PlayerModel.h"
-#include "../Components/PlayerRenderable.h"
-#include "../Interfaces/IPlayerInput.h"
+#include "../collision/playerCollision.h"
+#include "../components/playerModel.h"
+#include "../components/playerRenderable.h"
+#include "../interfaces/IPlayerInput.h"
 
-#include "../Interfaces/IPlayerMovement.h"
-#include "components/rendering/Interfaces/IGameRenderable.h"
+#include "../interfaces/IPlayerMovement.h"
+#include "components/rendering/interfaces/IGameRenderable.h"
 #include "core/interfaces/IPlayer.h"
 
 // Player: main player class that uses component classes
@@ -116,3 +116,5 @@ private:
 };
 
 #endif // PLAYER_H
+
+

@@ -1,6 +1,6 @@
 set(INPUT_SOURCES
-    Core/InputManager.cpp
-    Core/InputManager.h
+    core/InputManager.cpp
+    core/InputManager.h
 )
 
 add_library(input STATIC ${INPUT_SOURCES})
@@ -19,3 +19,4 @@ target_link_libraries(input PUBLIC
 target_compile_definitions(input PRIVATE CHAINEDDECOSENGINE_EXPORTS)
 
 set_target_properties(input PROPERTIES POSITION_INDEPENDENT_CODE ON)
+

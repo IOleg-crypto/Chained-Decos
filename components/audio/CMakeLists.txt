@@ -1,7 +1,7 @@
 set(AUDIO_SOURCES
-    Core/AudioManager.cpp
-    Core/AudioManager.h
-    Interfaces/IAudioManager.h
+    core/AudioManager.cpp
+    core/AudioManager.h
+    interfaces/IAudioManager.h
 )
 
 add_library(audio STATIC ${AUDIO_SOURCES})
@@ -15,3 +15,4 @@ target_include_directories(audio PUBLIC
 target_link_libraries(audio PUBLIC raylib)
 
 set_target_properties(audio PROPERTIES POSITION_INDEPENDENT_CODE ON)
+

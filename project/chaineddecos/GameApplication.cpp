@@ -1,25 +1,25 @@
 #include "GameApplication.h"
 #include "GameLayer.h"
 #include "core/application/EngineApplication.h"
-#include "scene/main/Core/LevelManager.h"
+#include "scene/main/core/LevelManager.h"
 
-// #include "Systems/PlayerSystem/PlayerController.h"
-// #include "Systems/RenderingSystem/RenderingSystem.h"
+// #include "systems/playersystem/playerController.h"
+// #include "systems/renderingsystem/RenderingSystem.h"
 
-#include "components/input/Core/InputManager.h"
-#include "components/physics/collision/Core/CollisionManager.h"
-#include "components/rendering/Core/RenderManager.h"
+#include "components/input/core/InputManager.h"
+#include "components/physics/collision/core/CollisionManager.h"
+#include "components/rendering/core/RenderManager.h"
 #include "core/config/ConfigManager.h"
 #include "core/ecs/Examples.h"
 #include "core/ecs/components.h"
+#include "core/gui/components/GuiButton.h"
 #include "core/module/ModuleManager.h"
-#include "project/chaineddecos/Player/Core/Player.h"
 #include "project/chaineddecos/gamegui/Menu.h"
-#include "scene/main/Core/LevelManager.h"
-#include "scene/main/Core/MapCollisionInitializer.h"
-#include "scene/main/Core/World.h"
-#include "scene/resources/model/Core/Model.h"
+#include "project/chaineddecos/player/core/Player.h"
+#include "scene/main/core/LevelManager.h"
+#include "scene/resources/model/core/Model.h"
 #include <raylib.h>
+#include <rlImGui.h>
 
 using ChainedDecos::InputManager;
 using ChainedDecos::MenuEvent;
@@ -237,7 +237,7 @@ void GameApplication::OnStart()
 
     // Load HUD Font
     std::string fontPath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/font/Gantari/static/Gantari-Bold.ttf";
+        std::string(PROJECT_ROOT_DIR) + "/resources/font/gantari/static/gantari-Bold.ttf";
 
     // Load font with higher size for better quality scaling
     m_hudFont = LoadFontEx(fontPath.c_str(), 96, 0, 0);

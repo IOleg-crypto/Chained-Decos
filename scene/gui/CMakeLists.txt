@@ -1,6 +1,6 @@
 add_library(gui STATIC
-    Helpers/CGUIHelpers.cpp
-    Helpers/CGUIHelpers.h
+    helpers/CGUIHelpers.cpp
+    helpers/CGUIHelpers.h
 )
 
 target_include_directories(gui PUBLIC
@@ -13,3 +13,5 @@ target_link_libraries(gui PUBLIC
 )
 
 set_target_properties(gui PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+
