@@ -20,6 +20,11 @@
 #include "scene/main/Interfaces/IWorldManager.h"
 #include "scene/resources/model/Interfaces/IModelLoader.h"
 
+// Concrete managers for service locator implementation
+#include "components/physics/collision/Core/CollisionManager.h"
+#include "scene/main/Core/World.h"
+#include "scene/resources/model/Core/Model.h"
+
 #include "core/interfaces/IEngine.h"
 
 namespace ChainedDecos
@@ -92,10 +97,40 @@ private:
 };
 template <typename T> inline void Engine::RegisterService(std::shared_ptr<T> service)
 {
+    if constexpr (std::is_same_v<T, ILevelManager>)
+        m_LevelManager = service;
+    else if constexpr (std::is_same_v<T, IPlayer>)
+        m_Player = service;
+    else if constexpr (std::is_same_v<T, IMenu>)
+        m_Menu = service;
+    else if constexpr (std::is_same_v<T, IModelLoader> || std::is_same_v<T, ModelLoader>)
+        m_ModelLoader = std::static_pointer_cast<IModelLoader>(service);
+    else if constexpr (std::is_same_v<T, ICollisionManager> || std::is_same_v<T, CollisionManager>)
+        m_CollisionManager = std::static_pointer_cast<ICollisionManager>(service);
+    else if constexpr (std::is_same_v<T, IWorldManager> || std::is_same_v<T, WorldManager>)
+        m_WorldManager = std::static_pointer_cast<IWorldManager>(service);
 }
 
 template <typename T> inline std::shared_ptr<T> Engine::GetService() const
 {
+    if constexpr (std::is_same_v<T, ILevelManager>)
+        return std::static_pointer_cast<T>(m_LevelManager);
+    else if constexpr (std::is_same_v<T, IPlayer>)
+        return std::static_pointer_cast<T>(m_Player);
+    else if constexpr (std::is_same_v<T, IMenu>)
+        return std::static_pointer_cast<T>(m_Menu);
+    else if constexpr (std::is_same_v<T, IModelLoader> || std::is_same_v<T, ModelLoader>)
+        return std::static_pointer_cast<T>(m_ModelLoader);
+    else if constexpr (std::is_same_v<T, ICollisionManager> || std::is_same_v<T, CollisionManager>)
+        return std::static_pointer_cast<T>(m_CollisionManager);
+    else if constexpr (std::is_same_v<T, IWorldManager> || std::is_same_v<T, WorldManager>)
+        return std::static_pointer_cast<T>(m_WorldManager);
+    else if constexpr (std::is_same_v<T, IInputManager> ||
+                       std::is_same_v<T, ChainedDecos::InputManager>)
+        return std::static_pointer_cast<T>(m_InputManager);
+    else if constexpr (std::is_same_v<T, IAudioManager> || std::is_same_v<T, AudioManager>)
+        return std::static_pointer_cast<T>(m_AudioManager);
+
     return nullptr;
 }
 

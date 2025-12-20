@@ -5,6 +5,7 @@
 #include "MapSelector/MapSelector.h"
 #include "Settings/MenuSettingsController.h"
 #include "Settings/SettingsManager.h"
+#include "interfaces/IMenuScreen.h"
 
 #include "core/events/MenuEvent.h"
 #include "core/interfaces/IMenu.h"
@@ -17,13 +18,13 @@
 #include <optional>
 #include <raylib.h>
 #include <string>
+#include <vector>
 
-// MenuAction enum removed - replaced by MenuEvent types
+#include "core/Engine.h"
 
 enum class MenuState : uint8_t
 {
     Main,
-    GameMode,
     Resume,
     MapSelection,
     Options,
@@ -33,9 +34,6 @@ enum class MenuState : uint8_t
     Credits,
     ConfirmExit
 };
-
-// MenuItem struct removed
-class Engine; // Forward declaration
 
 class Menu : public IMenu
 {
@@ -58,10 +56,10 @@ public:
     void SetResumeButtonOn(bool status);
     bool GetResumeButtonStatus() const;
 
-    // Navigation methods
+    // Screen management (State Pattern)
+    void SetScreen(std::unique_ptr<IMenuScreen> screen);
     void ShowMainMenu();
     void ShowOptionsMenu();
-    void ShowGameModeMenu();
     void ShowMapSelection();
     void ShowAudioMenu();
     void ShowVideoMenu();
@@ -78,11 +76,6 @@ public:
     [[nodiscard]] std::optional<MapInfo> GetSelectedMap() const;
     std::string GetSelectedMapName() const override;
     void InitializeMaps();
-
-    // Action management
-    // void SetAction(MenuAction action); // Removed as MenuAction enum is removed
-    // [[nodiscard]] MenuAction GetAction() const; // Removed as MenuAction enum is removed
-    // void ResetAction(); // Removed as MenuAction enum is removed
 
     // Console functionality
     void ToggleConsole() override;
@@ -104,66 +97,51 @@ public:
     void Show() override;
     void Hide() override;
 
-    // IMenu interface implementations
     void Update() override;
     void Render() override;
 
-    // Public for initialization
+    // Public for initialization and screens
     void SetupStyle();
 
-private:
-    // ImGui rendering methods
-    void BeginFrame();
-    void EndFrame();
-    void RenderMenuState();
-
-    // Menu screen renderers
-    void RenderMainMenu();
-    void RenderOptionsMenu();
-    void RenderGameModeMenu();
-    void RenderMapSelection();
-    void RenderCreditsScreen();
-    void RenderConfirmExitDialog();
-
-    // Console functionality
-    void RenderConsoleOverlay();
-
-    // Helper methods
-    void DispatchEvent(ChainedDecos::MenuEventType type, const std::string &data = "");
-    static const char *GetStateTitle(MenuState state);
-
-    // ImGui UI components
+    // UI Helpers (Called by screens)
     bool RenderActionButton(const char *label, ChainedDecos::MenuEventType eventType,
                             const ImVec2 &size = ImVec2(0, 0));
     bool RenderBackButton(float width = 0.0f);
     void RenderSectionHeader(const char *title, const char *subtitle = nullptr) const;
     void RenderMenuHint(const char *text) const;
 
+    // Internal getters for screens
+    MapSelector *GetMapSelector() const
+    {
+        return m_mapSelector.get();
+    }
+    MenuSettingsController *GetSettingsController() const
+    {
+        return m_settingsController.get();
+    }
+    void DispatchEvent(ChainedDecos::MenuEventType type, const std::string &data = "");
+
+private:
+    void RenderConsoleOverlay();
+
     // Core state
     Engine *m_engine = nullptr;
     std::unique_ptr<SettingsManager> m_settingsManager;
-
-    // Explicit dependency via interface (Dependency Injection)
     ICameraSensitivityController *m_cameraController = nullptr;
 
     // Menu state
     MenuState m_state = MenuState::Main;
+    std::unique_ptr<IMenuScreen> m_currentScreen;
     MenuEventCallback m_eventCallback;
     bool m_gameInProgress = false;
 
     // Navigation state
     int m_selected = 0;
 
-    // Console manager
+    // Managers
     std::unique_ptr<ConsoleManager> m_consoleManager;
-
-    // Map selector
     std::unique_ptr<MapSelector> m_mapSelector;
-
-    // Settings controller
     std::unique_ptr<MenuSettingsController> m_settingsController;
-
-    // Menu presenter removed
 
     // UI state
     bool m_showDemoWindow = false;

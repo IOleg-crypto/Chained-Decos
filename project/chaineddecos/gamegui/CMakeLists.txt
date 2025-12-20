@@ -10,6 +10,20 @@ set(MENU_SOURCES
     MapSelector/MapSelector.cpp
     MapSelector/MapSelector.h
     MenuConstants.h
+    screens/BaseMenuScreen.cpp
+    screens/BaseMenuScreen.h
+    screens/MainMenuScreen.cpp
+    screens/MainMenuScreen.h
+    screens/MapSelectionScreen.cpp
+    screens/MapSelectionScreen.h
+    screens/OptionsScreen.cpp
+    screens/OptionsScreen.h
+    screens/CreditsScreen.cpp
+    screens/CreditsScreen.h
+    screens/ConfirmExitScreen.cpp
+    screens/ConfirmExitScreen.h
+    screens/SettingsScreens.cpp
+    screens/SettingsScreens.h
 )
 
 add_library(menu STATIC ${MENU_SOURCES})

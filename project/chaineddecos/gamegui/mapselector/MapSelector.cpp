@@ -698,25 +698,78 @@ void MapSelector::RenderMapSelection() const
              Fade(WHITE, 0.7f));
 }
 
+// Helper to draw image maintaining aspect ratio within a box
+void DrawImageMaintainAspect(Texture2D texture, ImVec2 boxSize)
+{
+    if (texture.id == 0)
+        return;
+
+    float texWidth = (float)texture.width;
+    float texHeight = (float)texture.height;
+    float aspect = texWidth / texHeight;
+
+    float boxAspect = boxSize.x / boxSize.y;
+    ImVec2 renderSize;
+
+    if (aspect > boxAspect)
+    {
+        // Image is wider than box
+        renderSize.x = boxSize.x;
+        renderSize.y = boxSize.x / aspect;
+    }
+    else
+    {
+        // Image is taller than box
+        renderSize.y = boxSize.y;
+        renderSize.x = boxSize.y * aspect;
+    }
+
+    // Center the image in the box
+    ImVec2 cursor = ImGui::GetCursorPos();
+    ImGui::SetCursorPos(ImVec2(cursor.x + (boxSize.x - renderSize.x) * 0.5f,
+                               cursor.y + (boxSize.y - renderSize.y) * 0.5f));
+
+    ImGui::Image((ImTextureID)(uintptr_t)texture.id, renderSize);
+}
+
 // ImGui-based map selection rendering
-void MapSelector::RenderMapSelectionImGui()
+MapSelector::InteractionResult MapSelector::RenderMapSelectionImGui()
 {
     ImGuiIO &io = ImGui::GetIO();
     float screenWidth = io.DisplaySize.x;
     float screenHeight = io.DisplaySize.y;
+    InteractionResult result = InteractionResult::None;
 
-    // Header: "Maps:"
+    // Header: "NEW GAME"
     ImGui::SetCursorPosY(40.0f);
-    ImGui::SetCursorPosX(40.0f);
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
-    ImGui::Text("Maps:");
+    ImGui::SetCursorPosX(50.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    ImGui::SetWindowFontScale(2.5f);
+    ImGui::Text("NEW GAME");
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::PopStyleColor();
-    ImGui::Spacing();
+
+    ImGui::SetCursorPosX(50.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+    ImGui::Text("Available Maps");
+    ImGui::PopStyleColor();
+
+    // Separator line
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+    ImGui::SetCursorPosX(45.0f);
+    ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+    ImDrawList *drawListMain = ImGui::GetWindowDrawList();
+    float sepY = ImGui::GetCursorScreenPos().y;
+    drawListMain->AddLine(ImVec2(45, sepY), ImVec2(screenWidth - 45, sepY),
+                          ImColor(50, 50, 50, 255));
+    ImGui::Dummy(ImVec2(0, 10)); // Spacer
+    ImGui::PopStyleColor();
 
     const std::vector<MapInfo> &maps = m_filteredMaps.empty() ? m_availableMaps : m_filteredMaps;
     if (maps.empty())
     {
         ImGui::SetCursorPosY(screenHeight * 0.5f);
+        ImGui::SetCursorPosX(screenWidth * 0.5f - 100);
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No maps available");
     }
     else
@@ -725,21 +778,21 @@ void MapSelector::RenderMapSelectionImGui()
         int endIndex = GetEndMapIndex();
 
         // Map Grid Area
-        ImGui::SetCursorPosX(40.0f);
-        ImGui::SetCursorPosY(80.0f);
+        ImGui::SetCursorPosX(45.0f);
+        ImGui::SetCursorPosY(150.0f);
 
-        float footerHeight = 120.0f;
-        ImGui::BeginChild("MapGridArea", ImVec2(screenWidth - 80, screenHeight - 200), false,
+        float gridWidth = screenWidth - 90.0f;
+        float gridHeight = screenHeight - 280.0f; // More space for footer
+        ImGui::BeginChild("MapGridArea", ImVec2(gridWidth, gridHeight), false,
                           ImGuiWindowFlags_NoScrollbar);
 
-        float cardWidth =
-            (ImGui::GetContentRegionAvail().x - 60.0f) / 4.0f; // 4 columns with spacing
-        float cardHeight = 240.0f;
         float spacing = 20.0f;
+        float cardWidth = (gridWidth - (2.0f * spacing)) / 3.0f; // 3 columns
+        float cardHeight = cardWidth * 0.70f;                    // Wider landscape cards
 
-        if (ImGui::BeginTable("MapsGrid", 4, ImGuiTableFlags_SizingFixedFit))
+        if (ImGui::BeginTable("MapsGrid", 3, ImGuiTableFlags_SizingFixedFit))
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 3; i++)
                 ImGui::TableSetupColumn("Col", ImGuiTableColumnFlags_WidthFixed, cardWidth);
 
             for (int i = startIndex; i < endIndex; ++i)
@@ -751,65 +804,68 @@ void MapSelector::RenderMapSelectionImGui()
                 ImGui::PushID(i);
 
                 // Card background and border
-                ImVec4 borderColor =
-                    isSelected ? ImVec4(1.0f, 1.0f, 0.0f, 0.8f) : ImVec4(0.2f, 0.25f, 0.35f, 0.5f);
+                ImVec4 borderColor = isSelected ? ImVec4(0.95f, 0.65f, 0.05f, 1.0f)
+                                                : ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+
                 ImGui::PushStyleColor(ImGuiCol_Border, borderColor);
-                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.12f, 0.16f, 0.22f, 0.8f));
-                ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
+                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, isSelected ? 2.0f : 1.0f);
 
                 ImGui::BeginChild("MapCard", ImVec2(cardWidth, cardHeight), true,
+                                  ImGuiWindowFlags_NoScrollbar |
+                                      ImGuiWindowFlags_NoScrollWithMouse);
+
+                // Thumbnail area (top part)
+                float labelBarHeight = 55.0f;
+                float thumbAreaHeight = cardHeight - labelBarHeight;
+
+                ImGui::SetCursorPos(ImVec2(1, 1));
+                Texture2D thumb = GetThumbnailForMap(map.name);
+                DrawImageMaintainAspect(thumb, ImVec2(cardWidth - 2, thumbAreaHeight - 2));
+
+                // Bottom label bar
+                ImGui::SetCursorPos(ImVec2(0, thumbAreaHeight));
+                ImVec4 barColor =
+                    isSelected ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.04f, 0.04f, 0.04f, 1.0f);
+                ImVec4 textColor =
+                    isSelected ? ImVec4(0.0f, 0.0f, 0.0f, 1.0f) : ImVec4(0.85f, 0.85f, 0.85f, 1.0f);
+
+                ImGui::PushStyleColor(ImGuiCol_ChildBg, barColor);
+                ImGui::BeginChild("LabelBar", ImVec2(cardWidth, labelBarHeight), false,
                                   ImGuiWindowFlags_NoScrollbar);
 
-                // Thumbnail area
-                ImGui::SetCursorPos(ImVec2(10, 10));
-                Texture2D thumb = GetThumbnailForMap(map.name);
-                float thumbW = cardWidth - 20;
-                float thumbH = 100;
-                ImGui::Image((ImTextureID)(uintptr_t)thumb.id, ImVec2(thumbW, thumbH));
-
-                // Text info
-                ImGui::SetCursorPosY(120);
-                ImGui::SetCursorPosX(10);
+                // Name
+                ImGui::SetCursorPos(ImVec2(12, 12));
+                ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+                ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // Use default or main font
                 ImGui::Text("%s", map.displayName.c_str());
-
-                ImGui::SetCursorPosY(140);
-                ImGui::SetCursorPosX(10);
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-                ImGui::TextWrapped("%s", map.description.c_str());
+                ImGui::PopFont();
                 ImGui::PopStyleColor();
 
-                ImGui::SetCursorPosY(170);
-                ImGui::SetCursorPosX(10);
-                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "JSON Map");
+                // MAP Index
+                ImGui::SetCursorPos(ImVec2(12, 32));
+                ImVec4 indexColor =
+                    isSelected ? ImVec4(0.3f, 0.3f, 0.3f, 1.0f) : ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
+                ImGui::PushStyleColor(ImGuiCol_Text, indexColor);
+                ImGui::SetWindowFontScale(0.8f);
+                ImGui::Text("MAP %02d", i + 1);
+                ImGui::SetWindowFontScale(1.0f);
+                ImGui::PopStyleColor();
 
-                // Select button
-                ImGui::SetCursorPosY(cardHeight - 40);
-                ImGui::SetCursorPosX(10);
-                ImVec2 btnSize = ImVec2(cardWidth - 20, 30);
-
-                if (isSelected)
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.35f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                                          ImVec4(0.35f, 0.35f, 0.45f, 1.0f));
-                }
-                else
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.25f, 0.8f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                                          ImVec4(0.25f, 0.25f, 0.35f, 1.0f));
-                }
-
-                if (ImGui::Button("Select", btnSize))
-                {
-                    SelectMap(i);
-                }
-                ImGui::PopStyleColor(2);
+                ImGui::EndChild();
+                ImGui::PopStyleColor();
 
                 ImGui::EndChild();
                 ImGui::PopStyleVar(2);
                 ImGui::PopStyleColor(2);
+
+                // Clicking anywhere on the card selects it
+                if (ImGui::IsItemClicked())
+                {
+                    SelectMap(i);
+                }
+
                 ImGui::PopID();
             }
             ImGui::EndTable();
@@ -817,14 +873,45 @@ void MapSelector::RenderMapSelectionImGui()
         ImGui::EndChild();
     }
 
-    // Navigation Text
-    ImGui::SetCursorPosY(screenHeight - 80.0f);
-    ImGui::SetCursorPosX(20.0f);
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-    ImGui::Text("Use Arrow Keys to navigate, ENTER to select, ESC for back");
+    // Footer
+    float footerY = screenHeight - 140.0f;
+    ImGui::SetCursorPosY(footerY);
+    ImGui::SetCursorPosX(50.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+    ImGui::Text("Use Arrow Keys to navigate, ENTER to begin mission");
     ImGui::PopStyleColor();
 
-    // Footer Buttons (rendered in Menu::RenderMapSelection for event handling)
+    // BACK Link-style button
+    ImGui::SetCursorPosY(screenHeight - 85.0f);
+    ImGui::SetCursorPosX(50.0f);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.12f, 0.12f, 0.12f, 0.4f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 0.6f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+    if (ImGui::Button("< BACK", ImVec2(100, 40)))
+    {
+        result = InteractionResult::Back;
+    }
+    ImGui::PopStyleColor(4);
+
+    // LOAD MAP Button
+    float loadBtnWidth = 260.0f;
+    float loadBtnHeight = 55.0f;
+    ImGui::SetCursorPos(ImVec2((screenWidth - loadBtnWidth) * 0.5f, screenHeight - 95.0f));
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.16f, 0.19f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.22f, 0.22f, 0.25f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.28f, 0.28f, 0.31f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
+
+    if (ImGui::Button("LOAD MAP", ImVec2(loadBtnWidth, loadBtnHeight)))
+    {
+        result = InteractionResult::LoadMap;
+    }
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+
+    return result;
 }
 
 // Panel-style map selection interface (Half-Life style with large horizontal panels)

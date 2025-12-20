@@ -220,7 +220,8 @@ add_subdirectory(scene)
 add_subdirectory(project/chaineddecos)
 
 
-add_executable(ChainedDecos project/chaineddecos/main.cpp)
+set(APP_SOURCES project/chaineddecos/main.cpp)
+add_executable(ChainedDecos ${APP_SOURCES})
 target_link_libraries(ChainedDecos PRIVATE ChainedDecosGame)
 
 if(BUILD_TESTS)

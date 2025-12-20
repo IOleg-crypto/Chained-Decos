@@ -657,13 +657,15 @@ void GameApplication::OnRender()
             }
         }
     }
-    // Render console in game
+    // Render console in game - Now handled inside menu->Render() when showMenu is true
+    // If we want it while playing, we need a single rlImGuiBegin/End block per frame
     if (menu && menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
     {
         if (!m_showMenu)
         {
             rlImGuiBegin();
-            menu->GetConsoleManager()->RenderConsole();
+            menu->Render(); // Calling Render here instead of just Console so screens can handle it
+                            // if needed
             rlImGuiEnd();
         }
     }
