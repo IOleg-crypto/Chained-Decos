@@ -51,9 +51,9 @@ entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed, float
 
     // Collision
     CollisionComponent collision;
-    collision.bounds =
-        BoundingBox{Vector3{-0.4f, 0.0f, -0.4f}, Vector3{0.4f, 1.8f, 0.4f}}; // 0.8w x 1.8h
-    collision.collisionLayer = 1;                                            // Player layer
+    // BoundingBox: min at 0 (feet), max at 1.8 (head)
+    collision.bounds = BoundingBox{Vector3{-0.4f, 0.0f, -0.4f}, Vector3{0.4f, 9.8f, 0.4f}};
+    collision.collisionLayer = 1; // Player layer
     REGISTRY.emplace<CollisionComponent>(player, collision);
 
     // Name for debugging
