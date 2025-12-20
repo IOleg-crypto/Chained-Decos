@@ -48,7 +48,6 @@ private:
     void UpdatePlayerLogic();
 
     // Game state management
-    void SaveGameState();
 
     // Shader support
     Shader m_playerShader = {0};

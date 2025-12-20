@@ -19,12 +19,6 @@
 #include "scene/main/Core/MapCollisionInitializer.h"
 #include "scene/main/Core/World.h"
 #include "scene/resources/model/Core/Model.h"
-#include "scene/resources/model/Utils/ModelAnalyzer.h"
-
-#include "imgui.h"
-#include "rlImGui.h"
-#include <GLFW/glfw3.h>
-#include <fstream>
 #include <raylib.h>
 
 using ChainedDecos::InputManager;
@@ -238,12 +232,8 @@ void GameApplication::OnStart()
         }
     }
 
-    // Check for save file
+    // Initialize player state
     Vector3 spawnPos = {0, 2, 0};
-    float savedTimer = 0.0f;
-    float savedMaxHeight = 0.0f;
-    std::string savedMapPath;
-    bool hasSave = false;
 
     // Load HUD Font
     std::string fontPath =
@@ -265,49 +255,7 @@ void GameApplication::OnStart()
         m_fontLoaded = false;
         m_hudFont = GetFontDefault();
     }
-
-    std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
-    std::ifstream saveFile(savePath);
-    if (saveFile.is_open())
-    {
-        // Try reading: MapPath X Y Z Timer Height
-        if (saveFile >> savedMapPath >> spawnPos.x >> spawnPos.y >> spawnPos.z >> savedTimer >>
-            savedMaxHeight)
-        {
-            hasSave = true;
-            TraceLog(LOG_INFO, "[GameApplication] Found save file. Map: %s Pos: %.2f, %.2f, %.2f",
-                     savedMapPath.c_str(), spawnPos.x, spawnPos.y, spawnPos.z);
-
-            // Restore game state flags
-            m_isGameInitialized = true;
-
-            // Load Map and Collisions
-            if (!savedMapPath.empty())
-            {
-                auto levelManager = Engine::Instance().GetService<ILevelManager>();
-                auto models = Engine::Instance().GetService<ModelLoader>();
-
-                if (levelManager && models)
-                {
-                    levelManager->LoadMap(savedMapPath);
-
-                    // Required models for collision
-                    std::vector<std::string> requiredModels =
-                        ModelAnalyzer::GetModelsRequiredForMap(savedMapPath);
-                    models->LoadGameModelsSelective(requiredModels);
-                    levelManager->InitCollisionsWithModelsSafe(requiredModels);
-                    TraceLog(LOG_INFO, "[GameApplication] Restored map and collisions from save.");
-                }
-            }
-
-            // GUI is now managed directly by GameApplication
-            if (m_menu)
-            {
-                m_menu->SetGameInProgress(true);
-            }
-        }
-        saveFile.close();
-    } // Push GameLayer using the new Layer system (Cherno-inspired)
+    // Push GameLayer using the new Layer system (Cherno-inspired)
     if (GetAppRunner())
     {
         GetAppRunner()->PushLayer(new GameLayer());
@@ -332,14 +280,6 @@ void GameApplication::OnStart()
         m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
         m_playerEntity =
             ECSExamples::CreatePlayer(spawnPos, &m_playerModel, 8.0f, 12.0f, sensitivity);
-    }
-
-    // Apply saved stats
-    if (hasSave && REGISTRY.valid(m_playerEntity))
-    {
-        auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
-        player.runTimer = savedTimer;
-        player.maxHeight = savedMaxHeight;
     }
 
     // Apply shader to final player model (either loaded or fallback)
@@ -768,7 +708,6 @@ void GameApplication::InitInput()
         {
             if (!m_showMenu && m_isGameInitialized)
             {
-                SaveGameState();
                 menu->SetGameInProgress(true);
                 m_showMenu = true;
                 EnableCursor(); // Show system cursor when opening menu
@@ -781,7 +720,6 @@ void GameApplication::InitInput()
         {
             if (!m_showMenu && m_isGameInitialized)
             {
-                SaveGameState();
                 m_menu->SetGameInProgress(true);
                 m_showMenu = true;
                 EnableCursor(); // Show system cursor when opening menu
@@ -808,46 +746,3 @@ void GameApplication::InitInput()
 }
 
 // HandleMenuActions removed - replaced by event callbacks
-
-void GameApplication::SaveGameState()
-{
-    if (!m_isGameInitialized || !REGISTRY.valid(m_playerEntity))
-    {
-        return;
-    }
-
-    // Save to simple text file logic
-    auto &transform = REGISTRY.get<TransformComponent>(m_playerEntity);
-    auto &player = REGISTRY.get<PlayerComponent>(m_playerEntity);
-
-    // Get current map
-    std::string currentMap = "resources/maps/test_map.json"; // Default
-    auto levelManager = Engine::Instance().GetService<ILevelManager>();
-    if (levelManager)
-    {
-        std::string mapPath = levelManager->GetCurrentMapPath();
-        if (!mapPath.empty())
-        {
-            currentMap = mapPath;
-        }
-    }
-
-    std::string savePath = std::string(PROJECT_ROOT_DIR) + "/savegame.dat";
-    std::ofstream saveFile(savePath);
-
-    if (saveFile.is_open())
-    {
-        // Format: MapPath X Y Z RunTimer MaxHeight
-        saveFile << currentMap << " " << transform.position.x << " " << transform.position.y << " "
-                 << transform.position.z << " " << player.runTimer << " " << player.maxHeight;
-
-        saveFile.close();
-        TraceLog(LOG_INFO, "[GameApplication] Game Saved: Map: %s Pos(%.2f, %.2f, %.2f)",
-                 currentMap.c_str(), transform.position.x, transform.position.y,
-                 transform.position.z);
-    }
-    else
-    {
-        TraceLog(LOG_ERROR, "[GameApplication] Failed to open save file: %s", savePath.c_str());
-    }
-}
