@@ -1,6 +1,7 @@
 #ifndef MAPDATA_H
 #define MAPDATA_H
 
+#include <cstdint>
 #include <raylib.h>
 #include <string>
 
@@ -66,7 +67,3 @@ struct MapMetadata
 };
 
 #endif /* MAPDATA_H */
-
-
-
-

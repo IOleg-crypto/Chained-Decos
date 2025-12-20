@@ -21,7 +21,7 @@ public:
     void RenderGizmo(const MapObjectData &data);
 
     // Render spawn zone with texture
-    void RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &position, float size,
+    void RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &position, Vector3 scale,
                                     Color color, bool textureLoaded);
 
 private:
@@ -34,9 +34,3 @@ private:
 };
 
 #endif // EDITOR_RENDERER_H
-
-
-
-
-
-

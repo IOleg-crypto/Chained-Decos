@@ -6,7 +6,6 @@
 #include <functional>
 #include <map>
 
-
 namespace ChainedDecos
 {
 
@@ -27,12 +26,12 @@ public:
     void Update(float deltaTime) override;
 
     void RegisterAction(int key, const std::function<void()> &action,
-                        InputType type = InputType::PRESSED) override;
+                        IInputManager::InputType type = IInputManager::InputType::PRESSED) override;
     void RegisterPressedAction(int key, const std::function<void()> &action) override;
     void RegisterHeldAction(int key, const std::function<void()> &action) override;
     void RegisterReleasedAction(int key, const std::function<void()> &action) override;
 
-    void UnregisterAction(int key, InputType type) override;
+    void UnregisterAction(int key, IInputManager::InputType type) override;
     void ClearActions() override;
 
     void ProcessInput() const override;
@@ -70,5 +69,3 @@ private:
 } // namespace ChainedDecos
 
 #endif // INPUTMANAGER_H
-
-

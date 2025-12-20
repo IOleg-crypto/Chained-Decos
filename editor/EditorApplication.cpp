@@ -15,7 +15,11 @@
 #include "core/events/Event.h"
 #include <imgui.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <rlImGui.h>
+
+// Global/Static Play Mode State
+static GameLayer *s_playLayer = nullptr;
 
 EditorApplication::EditorApplication(int argc, char *argv[])
 {
@@ -95,7 +99,6 @@ void EditorApplication::OnUpdate(float deltaTime)
         return;
 
     static bool wasInPlayMode = false;
-    static GameLayer *playLayer = nullptr;
     bool inPlayMode = m_editor->IsInPlayMode();
 
     if (inPlayMode != wasInPlayMode)
@@ -105,20 +108,29 @@ void EditorApplication::OnUpdate(float deltaTime)
             TraceLog(LOG_INFO, "[EditorApplication] Entering Play Mode: Injecting GameLayer");
             if (GetAppRunner())
             {
-                playLayer = new GameLayer();
-                GetAppRunner()->PushLayer(playLayer);
+                s_playLayer = new GameLayer();
+                // GetAppRunner()->PushLayer(s_playLayer); // We manually render now
+                s_playLayer->OnAttach(); // Manually attach
             }
         }
         else
         {
             TraceLog(LOG_INFO, "[EditorApplication] Exiting Play Mode: Popping GameLayer");
-            if (GetAppRunner() && playLayer)
+            if (GetAppRunner() && s_playLayer)
             {
-                GetAppRunner()->PopLayer(playLayer);
-                playLayer = nullptr;
+                // GetAppRunner()->PopLayer(s_playLayer);
+                s_playLayer->OnDetach();
+                delete s_playLayer; // We own it now since we didn't push it
+                s_playLayer = nullptr;
             }
         }
         wasInPlayMode = inPlayMode;
+    }
+
+    // Update Game Layer if active
+    if (s_playLayer && inPlayMode)
+    {
+        s_playLayer->OnUpdate(deltaTime);
     }
 
     // Update editor state
@@ -165,25 +177,24 @@ void EditorApplication::OnRender()
     {
         viewport->BeginRendering();
 
-        // Render 3D scene for Editor
-        if (m_editor->IsInPlayMode())
+        // Use Game Camera in Play Mode, Editor Camera in Edit Mode
+        Camera3D camera = m_editor->IsInPlayMode() ? RenderManager::Get().GetCamera()
+                                                   : m_editor->GetCameraController().GetCamera();
+
+        BeginMode3D(camera);
         {
-            // Use Game Camera
-            BeginMode3D(RenderManager::Get().GetCamera());
+            // This renders the skybox and the map objects
+            m_editor->Render();
+
+            if (m_editor->IsInPlayMode())
+            {
+                // In Play Mode, additionally render active game entities (player)
+                if (s_playLayer)
+                {
+                    s_playLayer->RenderScene();
+                }
+            }
         }
-        else
-        {
-            // Use Editor Camera
-            auto &cameraController = m_editor->GetCameraController();
-            BeginMode3D(cameraController.GetCamera());
-        }
-
-        // Render skybox and objects
-        m_editor->Render();
-
-        // Draw grid after scene for orientation
-        DrawGrid(m_editor->GetGridSize(), 1.0f);
-
         EndMode3D();
 
         viewport->EndRendering();
@@ -197,6 +208,11 @@ void EditorApplication::OnRender()
         m_editor->Render();
 
         EndMode3D();
+
+        if (m_editor->IsInPlayMode() && s_playLayer)
+        {
+            s_playLayer->RenderUI();
+        }
     }
 
     // Begin ImGui frame for Editor UI
@@ -229,5 +245,10 @@ void EditorApplication::OnEvent(ChainedDecos::Event &e)
     if (m_editor)
     {
         m_editor->OnEvent(e);
+
+        if (m_editor->IsInPlayMode() && s_playLayer)
+        {
+            s_playLayer->OnEvent(e);
+        }
     }
 }

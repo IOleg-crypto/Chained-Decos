@@ -30,6 +30,14 @@ struct RayHit
     Vector3 normal{};
 };
 
+struct CollisionResult
+{
+    bool hit = false;
+    Vector3 mtv{}; // Minimum Translation Vector (push out vector)
+    Vector3 normal{};
+    float depth = 0.0f;
+};
+
 // ------------------ Collision class ------------------
 class Collision
 {
@@ -44,9 +52,18 @@ public:
 
 public:
     // AABB getters (using raylib BoundingBox)
-    Vector3 GetMin() const { return m_bounds.min; }
-    Vector3 GetMax() const { return m_bounds.max; }
-    BoundingBox GetBoundingBox() const { return m_bounds; }
+    Vector3 GetMin() const
+    {
+        return m_bounds.min;
+    }
+    Vector3 GetMax() const
+    {
+        return m_bounds.max;
+    }
+    BoundingBox GetBoundingBox() const
+    {
+        return m_bounds;
+    }
     Vector3 GetCenter() const;
     Vector3 GetSize() const;
 
@@ -59,8 +76,6 @@ public:
     void BuildFromModel(void *model, const Matrix &transform = MatrixIdentity());
     void BuildFromModelWithType(void *model, CollisionType type,
                                 const Matrix &transform = MatrixIdentity());
-
-
 
     // Collision type control
     CollisionType GetCollisionType() const;
@@ -86,23 +101,44 @@ public:
     // Intersection with another Collision (broad-phase AABB then BVH narrow-phase)
     bool Intersects(const Collision &other) const;
 
+    // Detailed intersection info (Narrow-phase with MTV)
+    CollisionResult CheckCollisionDetailed(const Collision &other) const;
+
+    // Debug visualization
+    void DrawDebug(Color color = GREEN, bool drawBVH = false) const;
+
+private:
+    // BVH traversal for detailed collision
+    CollisionResult CheckBVHOverlapDetailed(const BVHNode *node, const Collision &aabb) const;
+
+    // Helper for triangle-AABB SAT with MTV
+    static CollisionResult GetTriangleAABBIntersection(const CollisionTriangle &tri,
+                                                       const Vector3 &bmin, const Vector3 &bmax);
+
+    // Internal BVH helpers
+    std::unique_ptr<BVHNode> BuildBVHNode(std::vector<CollisionTriangle> &tris, int depth = 0);
+    bool RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const Vector3 &dir,
+                        float maxDistance, RayHit &outHit) const;
+    void DrawDebugBVHNode(const BVHNode *node, int depth, bool leafOnly) const;
+
+public:
     // Compatibility helpers expected by CollisionManager (legacy Octree paths)
-    bool IntersectsBVH(const Collision &other) const { return Intersects(other); }
-    bool IsUsingBVH() const { return m_bvhRoot != nullptr; }
-    bool IsUsingOctree() const { return IsUsingBVH(); }
-    bool RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
-                        float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const
+    bool IntersectsBVH(const Collision &other) const
     {
-        RayHit hit;
-        if (!RaycastBVH(origin, dir, maxDistance, hit)) return false;
-        hitDistance = hit.distance;
-        hitPoint = hit.position;
-        hitNormal = hit.normal;
-        return true;
+        return Intersects(other);
     }
+    bool IsUsingBVH() const
+    {
+        return m_bvhRoot != nullptr;
+    }
+    bool IsUsingOctree() const
+    {
+        return IsUsingBVH();
+    }
+    bool RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
+                       float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const;
 
     void UpdateAABBFromTriangles();
-
 
 private:
     // AABB using raylib BoundingBox directly
@@ -117,13 +153,7 @@ private:
     // Cached flags
     bool m_isBuilt = false;
 
-
 private:
-    // Helpers
-    std::unique_ptr<BVHNode> BuildBVHNode(std::vector<CollisionTriangle> &tris, int depth = 0);
-    bool RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const Vector3 &dir,
-                        float maxDistance, RayHit &outHit) const;
-
     // Triangle / AABB helpers
     static void ExpandAABB(Vector3 &minOut, Vector3 &maxOut, const Vector3 &p);
 
@@ -132,13 +162,6 @@ private:
                                       const CollisionTriangle &tri, RayHit &outHit);
 };
 
-
 // CollisionManager is defined in CollisionManager.h
 
 #endif // COLLISIONSYSTEM_H
-
-
-
-
-
-

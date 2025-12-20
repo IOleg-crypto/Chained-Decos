@@ -94,6 +94,17 @@ void ToolbarPanel::Render()
 
         RenderSeparator();
 
+        // Build Button
+        if (ImGui::Button("B", ImVec2(32, 28)))
+        {
+            if (m_editor)
+                m_editor->BuildGame();
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Build Project (Compile)");
+
+        RenderSeparator();
+
         // Play Mode Controls
         bool inPlayMode = m_editor && m_editor->IsInPlayMode();
         if (inPlayMode)
@@ -117,6 +128,37 @@ void ToolbarPanel::Render()
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(inPlayMode ? "Stop Simulation (Esc)" : "Start Simulation (Ctrl+P)");
 
+        RenderSeparator();
+
+        // Debug Toggles
+        if (m_editor)
+        {
+            bool wire = m_editor->IsWireframeEnabled();
+            if (wire)
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+            if (ImGui::Button("Wire", ImVec2(45, 28)))
+            {
+                m_editor->SetWireframeEnabled(!wire);
+            }
+            if (wire)
+                ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Toggle Wireframe Mode");
+
+            ImGui::SameLine();
+
+            bool coll = m_editor->IsCollisionDebugEnabled();
+            if (coll)
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
+            if (ImGui::Button("Coll", ImVec2(45, 28)))
+            {
+                m_editor->SetCollisionDebugEnabled(!coll);
+            }
+            if (coll)
+                ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Toggle Collision Bounds Debug");
+        }
         // // Grid size
         // ImGui::Text("Grid:");
         // ImGui::SameLine();

@@ -5,10 +5,30 @@
 
 void MapManager::SaveMap(const std::string &filename)
 {
+    std::string savePath = filename;
+    if (savePath.empty())
+    {
+        savePath = m_currentMapPath;
+    }
+
+    if (savePath.empty())
+    {
+        TraceLog(LOG_WARNING,
+                 "[MapManager] Cannot save map: No filename provided and no current map active.");
+        return;
+    }
+
     MapLoader loader;
-    loader.SaveMap(m_gameMap, filename);
-    m_currentMapPath = filename;
-    m_isSceneModified = false;
+    if (loader.SaveMap(m_gameMap, savePath))
+    {
+        m_currentMapPath = savePath;
+        m_isSceneModified = false;
+        TraceLog(LOG_INFO, "[MapManager] Saved map to: %s", savePath.c_str());
+    }
+    else
+    {
+        TraceLog(LOG_ERROR, "[MapManager] FAILED to save map to: %s", savePath.c_str());
+    }
 }
 
 void MapManager::LoadMap(const std::string &filename)
@@ -105,5 +125,3 @@ const std::string &MapManager::GetCurrentMapPath() const
 {
     return m_currentMapPath;
 }
-
-

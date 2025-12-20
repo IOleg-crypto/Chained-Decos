@@ -1,8 +1,10 @@
 #ifndef IINPUTMANAGER_H
 #define IINPUTMANAGER_H
 
+#include <cstdint>
 #include <functional>
 #include <string>
+
 
 namespace ChainedDecos
 {
