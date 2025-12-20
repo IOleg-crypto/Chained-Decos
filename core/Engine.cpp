@@ -41,22 +41,28 @@ bool Engine::Initialize()
 
     // 1. Rendering
     m_RenderManager = std::shared_ptr<RenderManager>(&RenderManager::Get(), [](RenderManager *) {});
+    RegisterService<RenderManager>(m_RenderManager);
 
     // 2. Input
     m_InputManager = std::shared_ptr<ChainedDecos::InputManager>(
         &ChainedDecos::InputManager::Get(), [](ChainedDecos::InputManager *) {});
+    RegisterService<ChainedDecos::InputManager>(m_InputManager);
 
     // 3. Audio
     m_AudioManager = std::shared_ptr<AudioManager>(&AudioManager::Get(), [](AudioManager *) {});
+    RegisterService<AudioManager>(m_AudioManager);
 
     // 4. Physics
     m_CollisionManager = std::shared_ptr<ICollisionManager>(new CollisionManager());
+    RegisterService<ICollisionManager>(m_CollisionManager);
 
     // 5. Resources
     m_ModelLoader = std::shared_ptr<IModelLoader>(new ModelLoader());
+    RegisterService<IModelLoader>(m_ModelLoader);
 
     // 6. World
     m_WorldManager = std::shared_ptr<IWorldManager>(new WorldManager());
+    RegisterService<IWorldManager>(m_WorldManager);
 
     TraceLog(LOG_INFO, "[Engine] Engine initialized successfully");
     return true;
