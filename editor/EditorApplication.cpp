@@ -8,7 +8,9 @@
 #include "scene/camera/core/CameraController.h"
 
 #include "core/ecs/ECSRegistry.h"
+#include "core/ecs/systems/UIRenderSystem.h"
 #include "project/chaineddecos/GameLayer.h"
+#include "scene/resources/font/FontService.h"
 #include "scene/resources/model/core/Model.h"
 
 //===============================================
@@ -79,6 +81,10 @@ void EditorApplication::OnStart()
     {
         m_editor->PreloadModelsFromResources();
         m_editor->LoadSpawnTexture();
+
+        // Load default fonts for UI
+        ChainedDecos::FontService::Get().LoadFont(
+            "Gantari", PROJECT_ROOT_DIR "/resources/font/gantari/Gantari-VariableFont_wght.ttf");
     }
 
     // Set window icon
@@ -163,8 +169,9 @@ void EditorApplication::OnRender()
     // BeginFrame() already called in Engine::Render() via RenderManager::BeginFrame()
     // EndFrame() will be called in Engine::Render() via RenderManager::EndFrame()
 
-    // Clear background before 3D scene
-    ClearBackground(m_editor->GetClearColor());
+    // Clear background with scene's background color
+    Color bgColor = m_editor->GetGameScene().GetMapMetaData().backgroundColor;
+    ClearBackground(bgColor);
 
     // Check if we have a viewport panel to render into
     ViewportPanel *viewport = nullptr;
@@ -197,6 +204,21 @@ void EditorApplication::OnRender()
         }
         EndMode3D();
 
+        // Render UI elements if in UI Design mode
+        if (m_editor->IsUIDesignMode())
+        {
+            int vpWidth = static_cast<int>(viewport->GetSize().x);
+            int vpHeight = static_cast<int>(viewport->GetSize().y);
+            ChainedDecos::UIRenderSystem::Render(vpWidth, vpHeight);
+        }
+        else if (m_editor->IsInPlayMode() && s_playLayer)
+        {
+            // Render Game Interface (both HUD and serialized UI)
+            int vpWidth = static_cast<int>(viewport->GetSize().x);
+            int vpHeight = static_cast<int>(viewport->GetSize().y);
+            s_playLayer->RenderUI((float)vpWidth, (float)vpHeight);
+        }
+
         viewport->EndRendering();
     }
     else
@@ -211,7 +233,7 @@ void EditorApplication::OnRender()
 
         if (m_editor->IsInPlayMode() && s_playLayer)
         {
-            s_playLayer->RenderUI();
+            s_playLayer->RenderUI((float)GetScreenWidth(), (float)GetScreenHeight());
         }
     }
 

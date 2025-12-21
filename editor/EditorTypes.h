@@ -3,6 +3,13 @@
 
 #include <cstdint>
 
+// Editor modes
+enum class EditorMode : std::uint8_t
+{
+    SCENE_3D = 0, // 3D scene editing (default)
+    UI_DESIGN = 1 // 2D UI design mode
+};
+
 // Gizmo axes for transformation tools
 enum class GizmoAxis : std::uint8_t
 {
@@ -34,7 +41,3 @@ enum Tool : std::uint8_t
 };
 
 #endif // EDITOR_TYPES_H
-
-
-
-
