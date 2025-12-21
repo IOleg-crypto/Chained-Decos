@@ -1,7 +1,5 @@
-#ifndef MAPLOADER_H
-#define MAPLOADER_H
-
-#pragma once
+#ifndef SCENELOADER_H
+#define SCENELOADER_H
 
 #include "MapData.h"
 #include <memory>
@@ -30,21 +28,21 @@ struct ModelInfo
 };
 
 // ============================================================================
-// GameMap Class
+// GameScene Class
 // ============================================================================
 
-class GameMap
+class GameScene
 {
 
 public:
-    GameMap() = default;
-    ~GameMap();
+    GameScene() = default;
+    ~GameScene();
 
     // Non-copyable, movable
-    GameMap(const GameMap &) = delete;
-    GameMap &operator=(const GameMap &) = delete;
-    GameMap(GameMap &&) noexcept = default;
-    GameMap &operator=(GameMap &&) noexcept = default;
+    GameScene(const GameScene &) = delete;
+    GameScene &operator=(const GameScene &) = delete;
+    GameScene(GameScene &&) noexcept = default;
+    GameScene &operator=(GameScene &&) noexcept = default;
 
     void Cleanup();
 
@@ -62,6 +60,11 @@ public:
     void AddMapObjects(const std::vector<MapObjectData> &mapObjects);
     std::vector<MapObjectData> &GetMapObjectsMutable();
 
+    // UI Elements
+    const std::vector<UIElementData> &GetUIElements() const;
+    void AddUIElements(const std::vector<UIElementData> &uiElements);
+    std::vector<UIElementData> &GetUIElementsMutable();
+
     // Metadata
     const MapMetadata &GetMapMetaData() const;
     void SetMapMetaData(const MapMetadata &mapData);
@@ -70,42 +73,43 @@ public:
 private:
     MapMetadata m_metadata;
     std::vector<MapObjectData> m_objects;
+    std::vector<UIElementData> m_uiElements;
     std::unordered_map<std::string, Model> m_loadedModels;
     std::shared_ptr<Skybox> m_skybox;
 };
 
 // ============================================================================
-// MapLoader Class
+// SceneLoader Class
 // ============================================================================
 
-class MapLoader
+class SceneLoader
 {
 public:
-    MapLoader() = default;
-    ~MapLoader() = default;
+    SceneLoader() = default;
+    ~SceneLoader() = default;
 
     // Non-copyable, movable
-    MapLoader(const MapLoader &) = delete;
-    MapLoader &operator=(const MapLoader &) = delete;
-    MapLoader(MapLoader &&) noexcept = default;
-    MapLoader &operator=(MapLoader &&) noexcept = default;
+    SceneLoader(const SceneLoader &) = delete;
+    SceneLoader &operator=(const SceneLoader &) = delete;
+    SceneLoader(SceneLoader &&) noexcept = default;
+    SceneLoader &operator=(SceneLoader &&) noexcept = default;
 
-    GameMap LoadMap(const std::string &path);
-    bool SaveMap(const GameMap &map, const std::string &path);
+    GameScene LoadScene(const std::string &path);
+    bool SaveScene(const GameScene &map, const std::string &path);
     std::vector<ModelInfo> LoadModelsFromDirectory(const std::string &directory);
     bool SaveModelConfig(const std::vector<ModelInfo> &models, const std::string &path);
 
-    // Load all maps from a directory
-    std::vector<GameMap> LoadAllMapsFromDirectory(const std::string &directory);
+    // Load all scenes from a directory
+    std::vector<GameScene> LoadAllScenesFromDirectory(const std::string &directory);
 
-    // Get map names from directory
-    std::vector<std::string> GetMapNamesFromDirectory(const std::string &directory);
+    // Get scene names from directory
+    std::vector<std::string> GetSceneNamesFromDirectory(const std::string &directory);
 
     // Skybox operations
-    void LoadSkyboxForMap(GameMap &map);
+    void LoadSkyboxForScene(GameScene &map);
 
 private:
-    bool SaveMapToFile(const GameMap &map, const std::string &path);
+    bool SaveSceneToFile(const GameScene &map, const std::string &path);
 };
 
 // ============================================================================
@@ -115,10 +119,4 @@ private:
 MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3 &position,
                                       const Vector3 &scale, const Color &color);
 
-#endif // MAPLOADER_H
-
-
-
-
-
-
+#endif // SCENELOADER_H

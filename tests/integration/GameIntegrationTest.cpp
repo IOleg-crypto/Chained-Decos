@@ -6,7 +6,7 @@
 #include "project/chaineddecos/GameApplication.h"
 #include "project/chaineddecos/gamegui/Menu.h"
 #include "project/chaineddecos/player/core/player.h"
-#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/model/core/Model.h"
 
 class GameIntegrationTest : public ::testing::Test
@@ -65,7 +65,7 @@ protected:
 ////    });
 ////
 ////    EXPECT_NO_THROW({
-////        game->GetGameMap().objects.clear();
+////        game->GetGameScene().objects.clear();
 ////    });
 ////}
 //
@@ -80,7 +80,7 @@ protected:
 //
 //     EXPECT_NO_THROW({
 //
-//         auto& gameMap = game->GetGameMap();
+//         auto& gameMap = game->GetGameScene();
 //         EXPECT_GE(gameMap.objects.size(), 0);
 //     });
 // }
@@ -124,9 +124,3 @@ protected:
 //         EXPECT_TRUE(collisionManager->GetColliders().empty());
 //     });
 // }
-
-
-
-
-
-

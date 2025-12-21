@@ -5,7 +5,7 @@
 #include <raylib.h>
 #include <raymath.h>
 
-void MapRenderer::RenderMap(const GameMap &map, Camera3D camera)
+void MapRenderer::RenderMap(const GameScene &map, Camera3D camera)
 {
     const MapMetadata &metadata = map.GetMapMetaData();
     Skybox *skybox = map.GetSkyBox();

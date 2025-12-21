@@ -139,7 +139,7 @@ void GameApplication::OnStart()
                     mapName = m_menu->GetSelectedMapName();
 
                 auto levelManager = Engine::Instance().GetService<ILevelManager>();
-                if (levelManager && levelManager->LoadMap(mapName))
+                if (levelManager && levelManager->LoadScene(mapName))
                 {
                     m_isGameInitialized = true;
                     m_showMenu = false;
@@ -306,12 +306,28 @@ void GameApplication::OnStart()
                  Player::MODEL_Y_OFFSET);
     }
 
-    // Initial state - show menu
-    m_showMenu = true;
+    // Initial state - show menu (unless skipMenu is set)
+    m_showMenu = !m_gameConfig.skipMenu;
+
+    // Load initial map if provided
+    if (!m_gameConfig.mapPath.empty())
+    {
+        auto levelManager = Engine::Instance().GetService<ILevelManager>();
+        if (levelManager && levelManager->LoadScene(m_gameConfig.mapPath))
+        {
+            m_isGameInitialized = true;
+            // If map is loaded from command line, we might want to skip menu
+            if (m_gameConfig.skipMenu)
+                m_showMenu = false;
+        }
+    }
 
     // Initialize cursor state
-    m_cursorDisabled = false;
-    EnableCursor();
+    m_cursorDisabled = !m_showMenu;
+    if (m_cursorDisabled)
+        DisableCursor();
+    else
+        EnableCursor();
 
     // Configure ImGui
     ImGuiIO &io = ImGui::GetIO();
@@ -321,8 +337,11 @@ void GameApplication::OnStart()
     // Initialize input
     InitInput();
 
-    // Game is not initialized until a map is selected
-    m_isGameInitialized = false;
+    // Game is initialized only if a map was loaded
+    if (!m_isGameInitialized)
+    {
+        m_isGameInitialized = false;
+    }
 
     // Set window icon
     Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecos.jpg");

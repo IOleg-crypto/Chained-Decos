@@ -3,12 +3,12 @@
 
 #include "components/physics/collision/core/collisionManager.h"
 #include "core/interfaces/IPlayer.h"
-#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/model/core/Model.h"
 #include <string>
 #include <vector>
 
-// Handles collision initialization for GameMap objects
+// Handles collision initialization for GameScene objects
 class MapCollisionInitializer
 {
 public:
@@ -17,10 +17,10 @@ public:
                             std::shared_ptr<IPlayer> player = nullptr);
     ~MapCollisionInitializer() = default;
 
-    void InitializeCollisions(const GameMap &gameMap);
-    void InitializeCollisionsWithModels(const GameMap &gameMap,
+    void InitializeCollisions(const GameScene &gameMap);
+    void InitializeCollisionsWithModels(const GameScene &gameMap,
                                         const std::vector<std::string> &requiredModels);
-    bool InitializeCollisionsWithModelsSafe(const GameMap &gameMap,
+    bool InitializeCollisionsWithModelsSafe(const GameScene &gameMap,
                                             const std::vector<std::string> &requiredModels);
 
     void SetPlayer(std::shared_ptr<IPlayer> player);
@@ -32,5 +32,3 @@ private:
 };
 
 #endif // MAP_COLLISION_INITIALIZER_H
-
-

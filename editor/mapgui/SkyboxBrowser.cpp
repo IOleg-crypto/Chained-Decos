@@ -72,7 +72,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
         if (!m_skyboxPlaceholderInitialized)
         {
             const std::string &currentSkyboxTexture =
-                m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
+                m_editor->GetGameScene().GetMapMetaData().skyboxTexture;
 
             // If there's a skybox in metadata, load it
             if (!currentSkyboxTexture.empty())
@@ -129,7 +129,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
             // Check if metadata skybox has changed in the scene (e.g. via undo or loading another
             // map) and we haven't manually loaded a different one in the browser
             const std::string &currentSkyboxTexture =
-                m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
+                m_editor->GetGameScene().GetMapMetaData().skyboxTexture;
 
             // SYNC FIX: Allow sync if we are in placeholder state (empty path) OR if we were
             // already synced
@@ -366,5 +366,3 @@ const std::vector<SkyboxBrowser::SkyboxInfo> &SkyboxBrowser::GetAvailableSkyboxe
 {
     return m_availableSkyboxes;
 }
-
-

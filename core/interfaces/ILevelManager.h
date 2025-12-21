@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-// Minimal LevelManager interface
-// Essential API only - 7 methods (down from 20+)
 // Engine depends on this interface, not concrete LevelManager class.
 class ILevelManager : public IEngineModule
 {
@@ -15,7 +13,7 @@ public:
     virtual ~ILevelManager() = default;
 
     // Map lifecycle
-    virtual bool LoadMap(const std::string &path) = 0;
+    virtual bool LoadScene(const std::string &path) = 0;
     virtual void UnloadMap() = 0;
     virtual bool IsMapLoaded() const = 0;
     virtual const std::string &GetCurrentMapPath() const = 0;
@@ -32,9 +30,3 @@ public:
 };
 
 #endif // ILEVEL_MANAGER_H
-
-
-
-
-
-

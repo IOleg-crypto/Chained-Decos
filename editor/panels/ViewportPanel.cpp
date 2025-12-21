@@ -3,8 +3,12 @@
 //
 
 #include "ViewportPanel.h"
+#include "core/ecs/ECSRegistry.h"
+#include "core/ecs/components/UIComponents.h"
+#include "core/ecs/systems/UIRenderSystem.h"
 #include "editor/IEditor.h"
 #include <imgui.h>
+#include <raymath.h>
 #include <rlgl.h>
 
 ViewportPanel::ViewportPanel(IEditor *editor) : m_editor(editor)
@@ -54,7 +58,9 @@ void ViewportPanel::BeginRendering()
         return;
 
     BeginTextureMode(m_renderTexture);
-    ClearBackground(m_editor ? m_editor->GetClearColor() : DARKGRAY);
+    // Use background color from scene metadata
+    Color bgColor = m_editor ? m_editor->GetGameScene().GetMapMetaData().backgroundColor : DARKGRAY;
+    ClearBackground(bgColor);
 }
 
 void ViewportPanel::EndRendering()
@@ -102,6 +108,64 @@ void ViewportPanel::Render()
                          ImVec2(0, 1), // UV0: top-left
                          ImVec2(1, 0)  // UV1: bottom-right (flipped)
             );
+
+            // UI Mode: Handle clicking to select elements and dragging
+            if (m_editor->IsUIDesignMode() && !m_editor->IsInPlayMode())
+            {
+                ImVec2 mousePos = ImGui::GetMousePos();
+                ImVec2 itemPos = ImGui::GetItemRectMin(); // Top-left of the viewport image
+                Vector2 localMousePos = {mousePos.x - itemPos.x, mousePos.y - itemPos.y};
+
+                if (m_isHovered && ImGui::IsMouseClicked(0))
+                {
+                    auto picked = ChainedDecos::UIRenderSystem::PickUIEntity(
+                        localMousePos, (int)m_viewportSize.x, (int)m_viewportSize.y);
+
+                    if (picked != entt::null)
+                    {
+                        auto &registry = ECSRegistry::Get();
+                        if (registry.all_of<ChainedDecos::UIElementIndex>(picked))
+                        {
+                            int index = registry.get<ChainedDecos::UIElementIndex>(picked).index;
+                            m_editor->SelectUIElement(index);
+
+                            // Start dragging
+                            m_isDraggingUI = true;
+                            auto &transform = registry.get<ChainedDecos::RectTransform>(picked);
+                            m_dragOffset = Vector2Subtract(transform.position, localMousePos);
+                        }
+                    }
+                    else
+                    {
+                        m_editor->SelectUIElement(-1);
+                    }
+                }
+
+                if (m_isDraggingUI)
+                {
+                    if (ImGui::IsMouseDown(0))
+                    {
+                        int selectedIdx = m_editor->GetSelectedUIElementIndex();
+                        if (selectedIdx != -1)
+                        {
+                            auto &uiElements = m_editor->GetGameScene().GetUIElementsMutable();
+                            if (selectedIdx < (int)uiElements.size())
+                            {
+                                Vector2 newPos = Vector2Add(localMousePos, m_dragOffset);
+                                uiElements[selectedIdx].position = newPos;
+                                m_editor->SetSceneModified(true);
+
+                                // Refresh ECS for immediate feedback
+                                m_editor->RefreshUIEntities();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        m_isDraggingUI = false;
+                    }
+                }
+            }
         }
         else
         {

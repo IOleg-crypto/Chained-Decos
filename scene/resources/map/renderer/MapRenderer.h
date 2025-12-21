@@ -2,7 +2,7 @@
 #define MAP_RENDERER_H
 
 #include "../core/MapData.h"
-#include "../core/MapLoader.h"
+#include "../core/SceneLoader.h"
 #include <raylib.h>
 #include <string>
 #include <unordered_map>
@@ -15,7 +15,7 @@ public:
     ~MapRenderer() = default;
 
     // Render entire map with skybox and all objects
-    void RenderMap(const GameMap &map, Camera3D camera);
+    void RenderMap(const GameScene &map, Camera3D camera);
 
     // Render single map object
     void RenderMapObject(const MapObjectData &object,

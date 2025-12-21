@@ -1,8 +1,7 @@
-#include "MapLoader.h"
+#include "SceneLoader.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <raymath.h>
 #include <set>
 
@@ -27,18 +26,33 @@ std::vector<std::string> ResolveModelPaths(const std::string &modelName)
         // Try in resources/ directory
         for (const auto &ext : extensions)
         {
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" +
-                                    normalizedModelName + ext);
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/models/" +
-                                    normalizedModelName + ext);
+            std::string p1 = std::string(PROJECT_ROOT_DIR);
+            p1 += "/resources/";
+            p1 += normalizedModelName;
+            p1 += ext;
+            possiblePaths.push_back(p1);
+
+            std::string p2 = std::string(PROJECT_ROOT_DIR);
+            p2 += "/resources/models/";
+            p2 += normalizedModelName;
+            p2 += ext;
+            possiblePaths.push_back(p2);
         }
 
         // Try with stem variations
         for (const auto &ext : extensions)
         {
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/" + stem + ext);
-            possiblePaths.push_back(std::string(PROJECT_ROOT_DIR) + "/resources/models/" + stem +
-                                    ext);
+            std::string p1 = std::string(PROJECT_ROOT_DIR);
+            p1 += "/resources/";
+            p1 += stem;
+            p1 += ext;
+            possiblePaths.push_back(p1);
+
+            std::string p2 = std::string(PROJECT_ROOT_DIR);
+            p2 += "/resources/models/";
+            p2 += stem;
+            p2 += ext;
+            possiblePaths.push_back(p2);
         }
 
         // Try absolute paths if modelName contains path separators
@@ -115,21 +129,22 @@ bool LoadModelWithErrorHandling(const std::string &modelName,
                 if (model.meshCount > 0)
                 {
                     loadedModels[cleanKey] = model;
-                    TraceLog(
-                        LOG_INFO,
-                        "MapLoader: Successfully loaded model %s (key: %s) from %s (meshCount: %d)",
-                        modelName.c_str(), cleanKey.c_str(), modelPath.c_str(), model.meshCount);
+                    TraceLog(LOG_INFO,
+                             "SceneLoader: Successfully loaded model %s (key: %s) from %s "
+                             "(meshCount: %d)",
+                             modelName.c_str(), cleanKey.c_str(), modelPath.c_str(),
+                             model.meshCount);
                     return true;
                 }
                 else
                 {
-                    TraceLog(LOG_WARNING, "MapLoader: Model loaded but has no meshes: %s",
+                    TraceLog(LOG_WARNING, "SceneLoader: Model loaded but has no meshes: %s",
                              modelPath.c_str());
                 }
             }
             else
             {
-                TraceLog(LOG_INFO, "MapLoader: Model %s (key: %s) already loaded",
+                TraceLog(LOG_INFO, "SceneLoader: Model %s (key: %s) already loaded",
                          modelName.c_str(), cleanKey.c_str());
                 return true;
             }
@@ -137,7 +152,7 @@ bool LoadModelWithErrorHandling(const std::string &modelName,
     }
 
     TraceLog(LOG_WARNING,
-             "MapLoader: Could not find model file for %s. Tried paths:", modelName.c_str());
+             "SceneLoader: Could not find model file for %s. Tried paths:", modelName.c_str());
     for (const auto &path : possiblePaths)
     {
         TraceLog(LOG_WARNING, "  - %s", path.c_str());
@@ -145,8 +160,8 @@ bool LoadModelWithErrorHandling(const std::string &modelName,
     return false;
 }
 
-// GameMap struct implementation
-void GameMap::Cleanup()
+// GameScene struct implementation
+void GameScene::Cleanup()
 {
     for (auto &pair : m_loadedModels)
     {
@@ -162,16 +177,16 @@ void GameMap::Cleanup()
     }
 }
 
-GameMap::~GameMap()
+GameScene::~GameScene()
 {
     Cleanup();
 }
 
 // ============================================================================
-// MapLoader Implementation
+// SceneLoader Implementation
 // ============================================================================
 
-bool MapLoader::SaveMapToFile(const GameMap &map, const std::string &path)
+bool SceneLoader::SaveSceneToFile(const GameScene &map, const std::string &path)
 {
     json j;
     const MapMetadata &metadata = map.GetMapMetaData();
@@ -184,6 +199,7 @@ bool MapLoader::SaveMapToFile(const GameMap &map, const std::string &path)
     metaJson["author"] = metadata.author;
     metaJson["version"] = metadata.version;
     metaJson["difficulty"] = metadata.difficulty;
+    metaJson["sceneType"] = static_cast<int>(metadata.sceneType);
 
     // Save colors - save skyColor if skybox is empty, otherwise save skyboxTexture
     if (metadata.skyboxTexture.empty())
@@ -254,6 +270,69 @@ bool MapLoader::SaveMapToFile(const GameMap &map, const std::string &path)
     }
 
     j["objects"] = objects;
+
+    // Save UI elements
+    json uiElements = json::array();
+    for (const auto &elem : map.GetUIElements())
+    {
+        json uiElem;
+        uiElem["name"] = elem.name;
+        uiElem["type"] = elem.type;
+
+        // RectTransform
+        uiElem["anchor"] = elem.anchor;
+        uiElem["position"] = {{"x", elem.position.x}, {"y", elem.position.y}};
+        uiElem["size"] = {{"x", elem.size.x}, {"y", elem.size.y}};
+        uiElem["pivot"] = {{"x", elem.pivot.x}, {"y", elem.pivot.y}};
+        uiElem["rotation"] = elem.rotation;
+
+        // Component-specific properties
+        if (!elem.text.empty())
+            uiElem["text"] = elem.text;
+        if (!elem.fontName.empty())
+            uiElem["fontName"] = elem.fontName;
+        if (elem.fontSize > 0)
+            uiElem["fontSize"] = elem.fontSize;
+        if (elem.spacing > 0)
+            uiElem["spacing"] = elem.spacing;
+        uiElem["textColor"] = {{"r", elem.textColor.r},
+                               {"g", elem.textColor.g},
+                               {"b", elem.textColor.b},
+                               {"a", elem.textColor.a}};
+
+        uiElem["normalColor"] = {{"r", elem.normalColor.r},
+                                 {"g", elem.normalColor.g},
+                                 {"b", elem.normalColor.b},
+                                 {"a", elem.normalColor.a}};
+        uiElem["hoverColor"] = {{"r", elem.hoverColor.r},
+                                {"g", elem.hoverColor.g},
+                                {"b", elem.hoverColor.b},
+                                {"a", elem.hoverColor.a}};
+        uiElem["pressedColor"] = {{"r", elem.pressedColor.r},
+                                  {"g", elem.pressedColor.g},
+                                  {"b", elem.pressedColor.b},
+                                  {"a", elem.pressedColor.a}};
+
+        if (!elem.eventId.empty())
+            uiElem["eventId"] = elem.eventId;
+
+        uiElem["borderRadius"] = elem.borderRadius;
+        uiElem["borderWidth"] = elem.borderWidth;
+        uiElem["borderColor"] = {{"r", elem.borderColor.r},
+                                 {"g", elem.borderColor.g},
+                                 {"b", elem.borderColor.b},
+                                 {"a", elem.borderColor.a}};
+
+        uiElem["tint"] = {
+            {"r", elem.tint.r}, {"g", elem.tint.g}, {"b", elem.tint.b}, {"a", elem.tint.a}};
+
+        if (!elem.texturePath.empty())
+            uiElem["texturePath"] = elem.texturePath;
+
+        uiElements.push_back(uiElem);
+    }
+
+    j["uiElements"] = uiElements;
 
     // Write to file
     std::ofstream file(path);
@@ -387,7 +466,7 @@ std::string ResolveSkyboxAbsolutePath(const std::string &texturePath)
 }
 } // namespace
 
-void MapLoader::LoadSkyboxForMap(GameMap &map)
+void SceneLoader::LoadSkyboxForScene(GameScene &map)
 {
     const MapMetadata &metadata = map.GetMapMetaData();
     if (metadata.skyboxTexture.empty())
@@ -398,7 +477,7 @@ void MapLoader::LoadSkyboxForMap(GameMap &map)
     std::string absolutePath = ResolveSkyboxAbsolutePath(metadata.skyboxTexture);
     if (absolutePath.empty() || !std::filesystem::exists(absolutePath))
     {
-        TraceLog(LOG_WARNING, "LoadSkyboxForMap() - Skybox texture not found: %s",
+        TraceLog(LOG_WARNING, "LoadSkyboxForScene() - Skybox texture not found: %s",
                  metadata.skyboxTexture.c_str());
         return;
     }
@@ -415,17 +494,17 @@ void MapLoader::LoadSkyboxForMap(GameMap &map)
     if (skybox)
     {
         skybox->LoadMaterialTexture(absolutePath);
-        TraceLog(LOG_INFO, "LoadSkyboxForMap() - Loaded skybox from %s", absolutePath.c_str());
+        TraceLog(LOG_INFO, "LoadSkyboxForScene() - Loaded skybox from %s", absolutePath.c_str());
     }
 }
 
 // ============================================================================
-// MapLoader Public Methods
+// SceneLoader Public Methods
 // ============================================================================
 
-GameMap MapLoader::LoadMap(const std::string &path)
+GameScene SceneLoader::LoadScene(const std::string &path)
 {
-    GameMap map;
+    GameScene map;
 
     std::ifstream file(path);
     if (!file.is_open())
@@ -456,6 +535,8 @@ GameMap MapLoader::LoadMap(const std::string &path)
         metadata.version = meta.value("version", "1.0");
 
         metadata.difficulty = meta.value("difficulty", 1.0f);
+        metadata.sceneType =
+            static_cast<SceneType>(meta.value("sceneType", static_cast<int>(SceneType::LEVEL_3D)));
 
         // Load colors
         if (meta.contains("skyColor"))
@@ -512,7 +593,7 @@ GameMap MapLoader::LoadMap(const std::string &path)
             // Basic properties
             objectData.name = obj.value("name", "object_" + std::to_string(objectIndex++));
             objectData.type = static_cast<MapObjectType>(obj.value("type", 0));
-            TraceLog(LOG_INFO, "MapLoader: Loading object %s, type %d", objectData.name.c_str(),
+            TraceLog(LOG_INFO, "SceneLoader: Loading object %s, type %d", objectData.name.c_str(),
                      static_cast<int>(objectData.type));
 
             // Position
@@ -591,7 +672,7 @@ GameMap MapLoader::LoadMap(const std::string &path)
             // Load model if it's a MODEL type object
             if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
             {
-                TraceLog(LOG_INFO, "MapLoader: Loading MODEL object %s with modelName %s",
+                TraceLog(LOG_INFO, "SceneLoader: Loading MODEL object %s with modelName %s",
                          objectData.name.c_str(), objectData.modelName.c_str());
 
                 // Use helper function to resolve paths and load model
@@ -604,7 +685,7 @@ GameMap MapLoader::LoadMap(const std::string &path)
             else if (objectData.type == MapObjectType::LIGHT && !objectData.modelName.empty())
             {
                 TraceLog(LOG_INFO,
-                         "MapLoader: LIGHT object %s has modelName %s - treating as MODEL (map "
+                         "SceneLoader: LIGHT object %s has modelName %s - treating as MODEL (map "
                          "editor export issue)",
                          objectData.name.c_str(), objectData.modelName.c_str());
 
@@ -638,7 +719,7 @@ GameMap MapLoader::LoadMap(const std::string &path)
                 if (shouldBeModel)
                 {
                     TraceLog(LOG_INFO,
-                             "MapLoader: LIGHT object %s appears to be a misclassified MODEL - "
+                             "SceneLoader: LIGHT object %s appears to be a misclassified MODEL - "
                              "converting",
                              objectData.name.c_str());
                     objectData.type = MapObjectType::MODEL;
@@ -663,21 +744,123 @@ GameMap MapLoader::LoadMap(const std::string &path)
 
     TraceLog(LOG_INFO, "Successfully loaded editor format map: %s with %d objects", path.c_str(),
              map.GetMapObjects().size());
+
+    // Load UI elements if present
+    if (j.contains("uiElements") && j["uiElements"].is_array())
+    {
+        for (const auto &uiElem : j["uiElements"])
+        {
+            UIElementData elemData;
+
+            elemData.name = uiElem.value("name", "Unnamed UI");
+            elemData.type = uiElem.value("type", "");
+
+            // RectTransform
+            elemData.anchor = uiElem.value("anchor", 0);
+            if (uiElem.contains("position"))
+            {
+                auto &pos = uiElem["position"];
+                elemData.position = Vector2{pos.value("x", 0.0f), pos.value("y", 0.0f)};
+            }
+            if (uiElem.contains("size"))
+            {
+                auto &sz = uiElem["size"];
+                elemData.size = Vector2{sz.value("x", 100.0f), sz.value("y", 40.0f)};
+            }
+            if (uiElem.contains("pivot"))
+            {
+                auto &piv = uiElem["pivot"];
+                elemData.pivot = Vector2{piv.value("x", 0.5f), piv.value("y", 0.5f)};
+            }
+            elemData.rotation = uiElem.value("rotation", 0.0f);
+
+            // Component-specific properties
+            elemData.text = uiElem.value("text", "");
+            elemData.fontName = uiElem.value("fontName", "");
+            elemData.fontSize = uiElem.value("fontSize", 20);
+            elemData.spacing = uiElem.value("spacing", 1.0f);
+
+            if (uiElem.contains("textColor"))
+            {
+                auto &col = uiElem["textColor"];
+                elemData.textColor = Color{static_cast<unsigned char>(col.value("r", 255)),
+                                           static_cast<unsigned char>(col.value("g", 255)),
+                                           static_cast<unsigned char>(col.value("b", 255)),
+                                           static_cast<unsigned char>(col.value("a", 255))};
+            }
+
+            if (uiElem.contains("normalColor"))
+            {
+                auto &col = uiElem["normalColor"];
+                elemData.normalColor = Color{static_cast<unsigned char>(col.value("r", 200)),
+                                             static_cast<unsigned char>(col.value("g", 200)),
+                                             static_cast<unsigned char>(col.value("b", 200)),
+                                             static_cast<unsigned char>(col.value("a", 255))};
+            }
+
+            if (uiElem.contains("hoverColor"))
+            {
+                auto &col = uiElem["hoverColor"];
+                elemData.hoverColor = Color{static_cast<unsigned char>(col.value("r", 220)),
+                                            static_cast<unsigned char>(col.value("g", 220)),
+                                            static_cast<unsigned char>(col.value("b", 220)),
+                                            static_cast<unsigned char>(col.value("a", 255))};
+            }
+
+            if (uiElem.contains("pressedColor"))
+            {
+                auto &col = uiElem["pressedColor"];
+                elemData.pressedColor = Color{static_cast<unsigned char>(col.value("r", 180)),
+                                              static_cast<unsigned char>(col.value("g", 180)),
+                                              static_cast<unsigned char>(col.value("b", 180)),
+                                              static_cast<unsigned char>(col.value("a", 255))};
+            }
+
+            elemData.eventId = uiElem.value("eventId", "");
+
+            elemData.borderRadius = uiElem.value("borderRadius", 0.0f);
+            elemData.borderWidth = uiElem.value("borderWidth", 0.0f);
+            if (uiElem.contains("borderColor"))
+            {
+                auto &col = uiElem["borderColor"];
+                elemData.borderColor = Color{static_cast<unsigned char>(col.value("r", 0)),
+                                             static_cast<unsigned char>(col.value("g", 0)),
+                                             static_cast<unsigned char>(col.value("b", 0)),
+                                             static_cast<unsigned char>(col.value("a", 255))};
+            }
+
+            if (uiElem.contains("tint"))
+            {
+                auto &col = uiElem["tint"];
+                elemData.tint = Color{static_cast<unsigned char>(col.value("r", 255)),
+                                      static_cast<unsigned char>(col.value("g", 255)),
+                                      static_cast<unsigned char>(col.value("b", 255)),
+                                      static_cast<unsigned char>(col.value("a", 255))};
+            }
+
+            elemData.texturePath = uiElem.value("texturePath", "");
+
+            map.GetUIElementsMutable().push_back(elemData);
+        }
+
+        TraceLog(LOG_INFO, "Loaded %d UI elements from map", map.GetUIElements().size());
+    }
+
     // Load skybox if texture path is specified
     if (!map.GetMapMetaData().skyboxTexture.empty())
     {
-        LoadSkyboxForMap(map);
+        LoadSkyboxForScene(map);
     }
 
     return map;
 }
 
-bool MapLoader::SaveMap(const GameMap &map, const std::string &path)
+bool SceneLoader::SaveScene(const GameScene &map, const std::string &path)
 {
-    return SaveMapToFile(map, path);
+    return SaveSceneToFile(map, path);
 }
 
-std::vector<ModelInfo> MapLoader::LoadModelsFromDirectory(const std::string &directory)
+std::vector<ModelInfo> SceneLoader::LoadModelsFromDirectory(const std::string &directory)
 {
     std::vector<ModelInfo> models;
     std::set<std::string> supportedExtensions = {".glb", ".gltf", ".obj", ".fbx", ".dae"};
@@ -748,7 +931,7 @@ std::vector<ModelInfo> MapLoader::LoadModelsFromDirectory(const std::string &dir
     return models;
 }
 
-bool MapLoader::SaveModelConfig(const std::vector<ModelInfo> &models, const std::string &path)
+bool SceneLoader::SaveModelConfig(const std::vector<ModelInfo> &models, const std::string &path)
 {
     json j = json::array();
 
@@ -788,10 +971,10 @@ bool MapLoader::SaveModelConfig(const std::vector<ModelInfo> &models, const std:
     return true;
 }
 
-std::vector<GameMap> MapLoader::LoadAllMapsFromDirectory(const std::string &directory)
+std::vector<GameScene> SceneLoader::LoadAllScenesFromDirectory(const std::string &directory)
 {
-    std::vector<GameMap> maps;
-    std::set<std::string> supportedExtensions = {".json"};
+    std::vector<GameScene> maps;
+    std::set<std::string> supportedExtensions = {".json", ".scene"};
 
     try
     {
@@ -820,7 +1003,7 @@ std::vector<GameMap> MapLoader::LoadAllMapsFromDirectory(const std::string &dire
             std::string mapPath = entry.path().string();
 
             // Load the map
-            GameMap map = LoadMap(mapPath);
+            GameScene map = LoadScene(mapPath);
             std::string mapName = map.GetMapMetaData().name;
             if (!map.GetMapObjects().empty() || !mapName.empty())
             {
@@ -839,10 +1022,10 @@ std::vector<GameMap> MapLoader::LoadAllMapsFromDirectory(const std::string &dire
     return maps;
 }
 
-std::vector<std::string> MapLoader::GetMapNamesFromDirectory(const std::string &directory)
+std::vector<std::string> SceneLoader::GetSceneNamesFromDirectory(const std::string &directory)
 {
     std::vector<std::string> names;
-    std::set<std::string> supportedExtensions = {".json"};
+    std::set<std::string> supportedExtensions = {".json", ".scene"};
 
     try
     {
@@ -884,57 +1067,73 @@ std::vector<std::string> MapLoader::GetMapNamesFromDirectory(const std::string &
     return names;
 }
 
-Skybox *GameMap::GetSkyBox() const
+Skybox *GameScene::GetSkyBox() const
 {
     return m_skybox.get();
 }
 
-void GameMap::SetSkyBox(std::shared_ptr<Skybox> &skybox)
+void GameScene::SetSkyBox(std::shared_ptr<Skybox> &skybox)
 {
     m_skybox = skybox;
 }
 
-const std::unordered_map<std::string, Model> &GameMap::GetMapModels() const
+const std::unordered_map<std::string, Model> &GameScene::GetMapModels() const
 {
     return m_loadedModels;
 }
 
-void GameMap::AddMapModels(const std::unordered_map<std::string, Model> &modelsMap)
+void GameScene::AddMapModels(const std::unordered_map<std::string, Model> &modelsMap)
 {
     m_loadedModels.insert(modelsMap.begin(), modelsMap.end());
 }
 
-const std::vector<MapObjectData> &GameMap::GetMapObjects() const
+const std::vector<MapObjectData> &GameScene::GetMapObjects() const
 {
     return m_objects;
 }
 
-void GameMap::AddMapObjects(const std::vector<MapObjectData> &mapObjects)
+void GameScene::AddMapObjects(const std::vector<MapObjectData> &mapObjects)
 {
     m_objects.insert(m_objects.end(), mapObjects.begin(), mapObjects.end());
 }
 
-const MapMetadata &GameMap::GetMapMetaData() const
+const MapMetadata &GameScene::GetMapMetaData() const
 {
     return m_metadata;
 }
 
-void GameMap::SetMapMetaData(const MapMetadata &mapData)
+void GameScene::SetMapMetaData(const MapMetadata &mapData)
 {
     m_metadata = mapData;
 }
 
-MapMetadata &GameMap::GetMapMetaDataMutable()
+MapMetadata &GameScene::GetMapMetaDataMutable()
 {
     return m_metadata;
 }
 
-std::unordered_map<std::string, Model> &GameMap::GetMapModelsMutable()
+std::unordered_map<std::string, Model> &GameScene::GetMapModelsMutable()
 {
     return m_loadedModels;
 }
 
-std::vector<MapObjectData> &GameMap::GetMapObjectsMutable()
+std::vector<MapObjectData> &GameScene::GetMapObjectsMutable()
 {
     return m_objects;
+}
+
+// UI Elements
+const std::vector<UIElementData> &GameScene::GetUIElements() const
+{
+    return m_uiElements;
+}
+
+void GameScene::AddUIElements(const std::vector<UIElementData> &uiElements)
+{
+    m_uiElements.insert(m_uiElements.end(), uiElements.begin(), uiElements.end());
+}
+
+std::vector<UIElementData> &GameScene::GetUIElementsMutable()
+{
+    return m_uiElements;
 }

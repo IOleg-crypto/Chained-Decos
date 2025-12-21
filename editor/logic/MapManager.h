@@ -1,7 +1,7 @@
 #ifndef MAP_MANAGER_H
 #define MAP_MANAGER_H
 
-#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/map/core/SceneLoader.h"
 #include <string>
 #include <vector>
 
@@ -12,8 +12,8 @@ public:
     ~MapManager() = default;
 
     // File operations
-    void SaveMap(const std::string &filename);
-    void LoadMap(const std::string &filename);
+    void SaveScene(const std::string &filename);
+    void LoadScene(const std::string &filename);
     void ClearScene();
 
     // Object management
@@ -24,7 +24,7 @@ public:
     void ClearObjects();
 
     // Accessors
-    GameMap &GetGameMap();
+    GameScene &GetGameScene();
     int GetSelectedIndex() const;
     MapObjectData *GetSelectedObject();
     bool IsSceneModified() const;
@@ -32,7 +32,7 @@ public:
     const std::string &GetCurrentMapPath() const;
 
 private:
-    GameMap m_gameMap;
+    GameScene m_gameScene;
     int m_selectedIndex = -1;
     bool m_isSceneModified = false;
     std::string m_currentMapPath;

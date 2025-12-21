@@ -112,7 +112,7 @@ public:
     bool UnloadModel(const std::string &name);
     void UnloadAllModels() override;
     bool ReloadModel(const std::string &name);
-    // Register a raylib::Model that was already loaded elsewhere (e.g. MapLoader)
+    // Register a raylib::Model that was already loaded elsewhere (e.g. SceneLoader)
     bool RegisterLoadedModel(const std::string &name, const ::Model &model);
 
     // Filtering and search
@@ -174,5 +174,3 @@ private:
 };
 
 #endif // MODEL_H
-
-

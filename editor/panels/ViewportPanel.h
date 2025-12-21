@@ -6,6 +6,7 @@
 #define VIEWPORTPANEL_H
 
 #include "IEditorPanel.h"
+#include <imgui.h>
 #include <raylib.h>
 
 class IEditor;
@@ -50,6 +51,10 @@ public:
     {
         return m_viewportSize;
     }
+    ImVec2 GetSize() const
+    {
+        return m_viewportSize;
+    }
 
     // Rendering helpers
     void BeginRendering();
@@ -69,6 +74,10 @@ private:
     ImVec2 m_viewportSize = {800, 600};
     RenderTexture2D m_renderTexture = {0};
     bool m_renderTextureValid = false;
+
+    // UI Dragging state
+    bool m_isDraggingUI = false;
+    Vector2 m_dragOffset = {0, 0};
 };
 
 #endif // VIEWPORTPANEL_H

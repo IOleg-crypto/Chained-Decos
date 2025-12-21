@@ -17,7 +17,7 @@ public:
     virtual void OnEvent(ChainedDecos::Event &event) override;
 
     void RenderScene();
-    void RenderUI();
+    void RenderUI(float width, float height);
 
 private:
     Font m_hudFont;

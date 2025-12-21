@@ -1,12 +1,12 @@
 set(MAP_SOURCES
-    core/MapLoader.cpp
-    core/MapLoader.h
+    core/SceneLoader.cpp
+    core/SceneLoader.h
     core/MapData.h
     core/MapService.cpp
     core/MapService.h
     converter/MapObjectConverter.cpp
     converter/MapObjectConverter.h
-    interfaces/IMapFileOperations.h
+    interfaces/ISceneFileOperations.h
     interfaces/IMapMetadataManager.h
     renderer/MapRenderer.cpp
     renderer/MapRenderer.h
@@ -21,6 +21,7 @@ target_include_directories(map
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/include/json/include
 )
 
 

@@ -17,8 +17,7 @@
 #include "editor/EditorTypes.h"
 #include "editor/IEditor.h"
 #include "editor/mapgui/skyboxBrowser.h"
-#include "editor/tool/IToolManager.h"
-#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/map/core/SceneLoader.h"
 
 // Configuration for UIManager
 struct UIManagerConfig
@@ -49,22 +48,24 @@ private:
     // Icons
     Texture2D m_iconNewProject;
     Texture2D m_iconOpenProject;
+    Texture2D m_iconSceneProject;
     bool m_iconsLoaded = false;
 
     // Save Prompt State
     enum class PendingAction : std::uint8_t
     {
         NONE,
-        NEW_PROJECT,
+        NEW_MAP,
+        NEW_UI_SCENE,
         OPEN_PROJECT,
-        LOAD_MAP
+        LOAD_SCENE
     };
     PendingAction m_pendingAction = PendingAction::NONE;
     bool m_showSavePrompt = false;
 
     // Parkour map dialog
     bool m_displayParkourMapDialog;
-    std::vector<GameMap> m_availableParkourMaps;
+    std::vector<GameScene> m_availableParkourMaps;
     int m_currentlySelectedParkourMapIndex;
 
     // Skybox browser

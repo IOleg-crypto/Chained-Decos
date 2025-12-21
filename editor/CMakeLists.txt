@@ -44,6 +44,8 @@ set(panels_sources
     panels/AssetBrowserPanel.h
     panels/ToolbarPanel.cpp
     panels/ToolbarPanel.h
+    panels/UIEditorPanel.cpp
+    panels/UIEditorPanel.h
 )
 
 set(editor_sources

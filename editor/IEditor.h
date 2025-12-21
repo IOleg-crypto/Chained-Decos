@@ -3,11 +3,10 @@
 
 #include <core/utils/Base.h>
 #include <string>
-#include <vector>
 
 #include "editor/EditorTypes.h"
 #include <scene/camera/core/CameraController.h>
-#include <scene/resources/map/core/MapLoader.h>
+#include <scene/resources/map/core/SceneLoader.h>
 #include <scene/resources/map/skybox/skybox.h>
 #include <scene/resources/model/core/Model.h>
 
@@ -26,13 +25,18 @@ public:
     virtual void ClearObjects() = 0;
     virtual void ClearScene() = 0;
 
+    // UI Selection
+    virtual void SelectUIElement(int index) = 0;
+    virtual int GetSelectedUIElementIndex() const = 0;
+    virtual void RefreshUIEntities() = 0;
+
     // Map and Scene State
     virtual bool IsSceneModified() const = 0;
     virtual void SetSceneModified(bool modified) = 0;
     virtual const std::string &GetCurrentMapPath() const = 0;
-    virtual void SaveMap(const std::string &path = "") = 0;
-    virtual void LoadMap(const std::string &path) = 0;
-    virtual GameMap &GetGameMap() = 0;
+    virtual void SaveScene(const std::string &path = "") = 0;
+    virtual void LoadScene(const std::string &path) = 0;
+    virtual GameScene &GetGameScene() = 0;
 
     // Tools and Grid
     virtual Tool GetActiveTool() const = 0;
@@ -61,12 +65,18 @@ public:
     virtual void StopPlayMode() = 0;
     virtual bool IsInPlayMode() const = 0;
     virtual void BuildGame() = 0;
+    virtual void RunGame() = 0;
 
     // Debug Visualization
     virtual bool IsWireframeEnabled() const = 0;
     virtual void SetWireframeEnabled(bool enabled) = 0;
     virtual bool IsCollisionDebugEnabled() const = 0;
     virtual void SetCollisionDebugEnabled(bool enabled) = 0;
+
+    // Editor Mode Management
+    virtual EditorMode GetEditorMode() const = 0;
+    virtual void SetEditorMode(EditorMode mode) = 0;
+    virtual bool IsUIDesignMode() const = 0;
 };
 
 #endif // IEDITOR_H

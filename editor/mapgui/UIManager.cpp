@@ -1,19 +1,13 @@
 #include "editor/mapgui/UIManager.h"
 #include "editor/EditorTypes.h"
 #include "editor/IEditor.h"
-#include "editor/mapgui/IUIManager.h"
 #include "editor/mapgui/skyboxBrowser.h"
 #include "editor/panels/EditorPanelManager.h"
 #include "nfd.h"
 #include "scene/resources/map/core/MapData.h"
-#include "scene/resources/map/core/MapLoader.h"
-#include <algorithm>
-#include <cstdio>
+#include "scene/resources/map/core/SceneLoader.h"
 #include <cstdlib>
-#include <cstring>
-#include <ctime>
 #include <filesystem>
-#include <fstream>
 #include <imgui.h>
 #include <imgui/misc/cpp/imgui_stdlib.h>
 
@@ -193,7 +187,34 @@ void EditorUIManager::RenderImGuiToolbar()
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("Save Map As..."))
+            if (ImGui::MenuItem("New Map", "Ctrl+N"))
+            {
+                if (m_editor->IsSceneModified())
+                {
+                    m_showSavePrompt = true;
+                    m_pendingAction = PendingAction::NEW_MAP;
+                }
+                else
+                {
+                    m_pendingAction = PendingAction::NEW_MAP;
+                    ExecutePendingAction();
+                }
+            }
+            if (ImGui::MenuItem("New UI Scene", "Ctrl+Shift+N"))
+            {
+                if (m_editor->IsSceneModified())
+                {
+                    m_showSavePrompt = true;
+                    m_pendingAction = PendingAction::NEW_UI_SCENE;
+                }
+                else
+                {
+                    m_pendingAction = PendingAction::NEW_UI_SCENE;
+                    ExecutePendingAction();
+                }
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Save Scene As..."))
             {
                 // Use NFD to show save dialog
                 nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
@@ -201,7 +222,7 @@ void EditorUIManager::RenderImGuiToolbar()
                 nfdresult_t result = NFD_SaveDialogU8(&outPath, filterItem, 1, nullptr, "map.json");
                 if (result == NFD_OKAY)
                 {
-                    m_editor->SaveMap(std::string(outPath));
+                    m_editor->SaveScene(std::string(outPath));
                     NFD_FreePath(outPath);
                 }
             }
@@ -210,7 +231,7 @@ void EditorUIManager::RenderImGuiToolbar()
                 if (m_editor->IsSceneModified())
                 {
                     m_showSavePrompt = true;
-                    m_pendingAction = PendingAction::LOAD_MAP;
+                    m_pendingAction = PendingAction::LOAD_SCENE;
                 }
                 else
                 {
@@ -220,15 +241,15 @@ void EditorUIManager::RenderImGuiToolbar()
                     nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
                     if (result == NFD_OKAY)
                     {
-                        m_editor->LoadMap(std::string(outPath));
+                        m_editor->LoadScene(std::string(outPath));
                         NFD_FreePath(outPath);
                     }
                 }
             }
             if (ImGui::MenuItem("Quick Save", nullptr, false,
-                                !m_editor->GetGameMap().GetMapMetaData().name.empty()))
+                                !m_editor->GetGameScene().GetMapMetaData().name.empty()))
             {
-                m_editor->SaveMap(m_editor->GetGameMap().GetMapMetaData().name + ".json");
+                m_editor->SaveScene(m_editor->GetGameScene().GetMapMetaData().name + ".json");
             }
 
             // Back to Welcome Screen
@@ -237,7 +258,7 @@ void EditorUIManager::RenderImGuiToolbar()
                 if (m_editor->IsSceneModified())
                 {
                     m_showSavePrompt = true;
-                    m_pendingAction = PendingAction::NEW_PROJECT;
+                    m_pendingAction = PendingAction::NEW_MAP; // Default to map when going back
                 }
                 else
                 {
@@ -261,8 +282,16 @@ void EditorUIManager::RenderImGuiToolbar()
             const char *toolNames[] = {"Select",       "Move",      "Rotate",
                                        "Scale",        "Add Cube",  "Add Sphere",
                                        "Add Cylinder", "Add Model", "Add Spawn Zone"};
+
+            bool isUIScene =
+                (m_editor->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
+
             for (int i = 0; i < std::size(toolNames); i++)
             {
+                // Skip 3D object tools in UI scenes
+                if (isUIScene && i > 1)
+                    continue;
+
                 bool isSelected = (GetActiveTool() == static_cast<Tool>(i));
                 if (ImGui::MenuItem(toolNames[i], nullptr, isSelected))
                 {
@@ -275,11 +304,6 @@ void EditorUIManager::RenderImGuiToolbar()
                     }
                 }
             }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Skybox Settings", nullptr, m_displaySkyboxPanel))
-            {
-                m_displaySkyboxPanel = !m_displaySkyboxPanel;
-            }
             ImGui::EndMenu();
         }
 
@@ -290,19 +314,27 @@ void EditorUIManager::RenderImGuiToolbar()
 
         // Status info on the right
         float width = ImGui::GetWindowWidth();
-        std::string mapName = m_editor->GetGameMap().GetMapMetaData().name.empty()
+        std::string mapName = m_editor->GetGameScene().GetMapMetaData().name.empty()
                                   ? "Untitled"
-                                  : m_editor->GetGameMap().GetMapMetaData().name;
-        std::string skyboxName = m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
+                                  : m_editor->GetGameScene().GetMapMetaData().name;
+        std::string skyboxName = m_editor->GetGameScene().GetMapMetaData().skyboxTexture;
         if (skyboxName.empty())
             skyboxName = "None";
         else
             skyboxName = fs::path(skyboxName).filename().string();
 
-        std::string infoText = "Map: " + mapName + " | Skybox: " + skyboxName +
-                               " | Grid: " + std::to_string(m_editor->GetGridSize());
+        bool isUIScene =
+            (m_editor->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
+        std::string sceneTypeStr = isUIScene ? "[UI Scene]" : "[3D Map]";
 
-        ImGui::SameLine(width - 450);
+        std::string infoText = sceneTypeStr + " Scene: " + mapName;
+        if (!isUIScene)
+        {
+            infoText +=
+                " | Skybox: " + skyboxName + " | Grid: " + std::to_string(m_editor->GetGridSize());
+        }
+
+        ImGui::SameLine(width - 500);
         ImGui::Text("%s", infoText.c_str());
 
         ImGui::EndMainMenuBar();
@@ -334,7 +366,6 @@ void EditorUIManager::RenderImGuiToolbar()
             ImGui::End();
         }
 
-        // Handle Grid resizing via shortcuts or menu
         // (Grid slider logic moved to View menu or kept in a settings panel if needed)
     }
 }
@@ -358,9 +389,13 @@ void EditorUIManager::HandleKeyboardInput()
 
 void EditorUIManager::ExecutePendingAction()
 {
-    if (m_pendingAction == PendingAction::NEW_PROJECT)
+    if (m_pendingAction == PendingAction::NEW_MAP || m_pendingAction == PendingAction::NEW_UI_SCENE)
     {
+        SceneType type =
+            (m_pendingAction == PendingAction::NEW_MAP) ? SceneType::LEVEL_3D : SceneType::UI_MENU;
         m_editor->ClearScene();
+        m_editor->GetGameScene().GetMapMetaDataMutable().sceneType = type;
+
         if (m_editor)
             m_editor->SetSkyboxTexture("");
         m_displayWelcomeScreen = false; // Start editing immediately
@@ -372,11 +407,24 @@ void EditorUIManager::ExecutePendingAction()
             pm->SetPanelVisible("Viewport", true);
             pm->SetPanelVisible("Scene Hierarchy", true);
             pm->SetPanelVisible("Inspector", true);
+
+            // Auto-switch panels based on scene type
+            if (type == SceneType::UI_MENU)
+            {
+                pm->SetPanelVisible("UI Editor", true);
+                m_editor->SetEditorMode(EditorMode::UI_DESIGN);
+                m_editor->RefreshUIEntities();
+            }
+            else
+            {
+                m_editor->SetEditorMode(EditorMode::SCENE_3D);
+            }
+
             pm->ResetLayout();
         }
     }
     else if (m_pendingAction == PendingAction::OPEN_PROJECT ||
-             m_pendingAction == PendingAction::LOAD_MAP)
+             m_pendingAction == PendingAction::LOAD_SCENE)
     {
         // For Open/Load, show the dialog
         nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
@@ -384,7 +432,7 @@ void EditorUIManager::ExecutePendingAction()
         nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
         if (result == NFD_OKAY)
         {
-            m_editor->LoadMap(std::string(outPath));
+            m_editor->LoadScene(std::string(outPath));
             m_displayWelcomeScreen = false;
 
             // Show core panels
@@ -415,10 +463,12 @@ void EditorUIManager::RenderWelcomeScreen()
 
         m_iconNewProject = LoadTexture(PROJECT_ROOT_DIR "/resources/map_editor/newproject.jpg");
         m_iconOpenProject = LoadTexture(PROJECT_ROOT_DIR "/resources/map_editor/folder.png");
+        m_iconSceneProject = LoadTexture(PROJECT_ROOT_DIR "/resources/map_editor/scene.png");
 
         // Linear filter for better scaling
         SetTextureFilter(m_iconNewProject, TEXTURE_FILTER_BILINEAR);
         SetTextureFilter(m_iconOpenProject, TEXTURE_FILTER_BILINEAR);
+        SetTextureFilter(m_iconSceneProject, TEXTURE_FILTER_BILINEAR);
 
         m_iconsLoaded = true;
     }
@@ -505,29 +555,51 @@ void EditorUIManager::RenderWelcomeScreen()
                 if (m_editor->IsSceneModified())
                 {
                     m_showSavePrompt = true;
-                    m_pendingAction = PendingAction::NEW_PROJECT;
+                    m_pendingAction = PendingAction::NEW_MAP;
                 }
                 else
                 {
-                    m_editor->ClearScene();
-                    if (m_editor)
-                        m_editor->SetSkyboxTexture("");
-                    if (m_editor->GetPanelManager())
-                    {
-                        m_editor->GetPanelManager()->SetAllPanelsVisible(true);
-                        m_editor->GetPanelManager()->ResetLayout();
-                    }
-                    m_displayWelcomeScreen = false;
+                    m_pendingAction = PendingAction::NEW_MAP;
+                    ExecutePendingAction();
                 }
             }
             ImGui::PopID();
 
             // Label
             ImGui::Spacing();
-            std::string labelNew = "Create New Project";
+            std::string labelNew = "Create New 3D Map";
             float labelNewWidth = ImGui::CalcTextSize(labelNew.c_str()).x;
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - labelNewWidth) * 0.5f);
             ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", labelNew.c_str());
+
+            ImGui::Spacing();
+            ImGui::PushID("NewUIProj");
+            // if (ImGui::Button("Create New UI Scene", ImVec2(columnWidth, 30)))
+            // {
+            //
+            // }
+            ImGui::Image((ImTextureID)(intptr_t)m_iconSceneProject.id, ImVec2(iconSize, iconSize));
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::GetWindowDrawList()->AddRect(
+                    ImVec2(cursorPos.x - 5, cursorPos.y - 5),
+                    ImVec2(cursorPos.x + iconSize + 5, cursorPos.y + iconSize + 5),
+                    IM_COL32(100, 149, 237, 100), 5.0f, 0, 3.0f);
+            }
+            if (ImGui::IsItemClicked())
+            {
+                if (m_editor->IsSceneModified())
+                {
+                    m_showSavePrompt = true;
+                    m_pendingAction = PendingAction::NEW_UI_SCENE;
+                }
+                else
+                {
+                    m_pendingAction = PendingAction::NEW_UI_SCENE;
+                    ExecutePendingAction();
+                }
+            }
+            ImGui::PopID();
 
             ImGui::NextColumn();
 
@@ -560,7 +632,7 @@ void EditorUIManager::RenderWelcomeScreen()
                     nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
                     if (result == NFD_OKAY)
                     {
-                        m_editor->LoadMap(std::string(outPath));
+                        m_editor->LoadScene(std::string(outPath));
                         if (m_editor->GetPanelManager())
                         {
                             m_editor->GetPanelManager()->SetAllPanelsVisible(true);
@@ -651,7 +723,7 @@ void EditorUIManager::RenderSavePrompt()
 
             if (!currentPath.empty())
             {
-                m_editor->SaveMap(currentPath);
+                m_editor->SaveScene(currentPath);
                 m_editor->SetSceneModified(false); // Changes saved
 
                 // Now proceed with pending action

@@ -14,6 +14,9 @@ set(ECS_SOURCES
     components/AudioComponent.h
     components/CameraComponent.h
     components/UtilityComponents.h
+    components/UIComponents.h
+    systems/UIRenderSystem.h
+    systems/UIRenderSystem.cpp
     Examples.h
     Examples.cpp
 )
@@ -29,6 +32,8 @@ target_include_directories(ecs PUBLIC
 target_link_libraries(ecs PUBLIC
     EnTT::EnTT
     raylib
+    font_resources
+    imguilib
 )
 
 set_target_properties(ecs PROPERTIES POSITION_INDEPENDENT_CODE ON)

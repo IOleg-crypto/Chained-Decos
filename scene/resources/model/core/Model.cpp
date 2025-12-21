@@ -8,11 +8,10 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
-#include <scene/resources/map/core/MapLoader.h>
+#include <scene/resources/map/core/SceneLoader.h>
 #include <scene/resources/model/parser/jsonParser.h>
 #include <string>
 #include <unordered_set>
-
 
 #include <scene/resources/color/ColorParser.h>
 
@@ -1058,7 +1057,7 @@ const ModelFileConfig *ModelLoader::GetModelConfig(const std::string &modelName)
     return nullptr;
 }
 
-// Register a Model that was already loaded by another system (MapLoader)
+// Register a Model that was already loaded by another system (SceneLoader)
 bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &model)
 {
     // If already present, skip
@@ -1213,7 +1212,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
     EnableLOD(true);
     SetSelectiveMode(false);
 
-    MapLoader mapLoader;
+    SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
     auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
@@ -1287,7 +1286,7 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
     EnableLOD(false);
     SetSelectiveMode(true);
 
-    MapLoader mapLoader;
+    SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
     auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
@@ -1374,7 +1373,7 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
     EnableLOD(false);
     SetSelectiveMode(true);
 
-    MapLoader mapLoader;
+    SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
     auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
@@ -1441,5 +1440,3 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
 
     return result;
 }
-
-

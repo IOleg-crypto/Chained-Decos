@@ -9,7 +9,6 @@
 #include <imgui.h>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "core/events/Event.h"
 #include "core/utils/Base.h"
@@ -17,15 +16,13 @@
 #include "editor/mapgui/IUIManager.h"
 #include "editor/tool/IToolManager.h"
 #include "scene/camera/core/CameraController.h"
-#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/map/skybox/skybox.h"
-#include "scene/resources/model/core/Model.h"
 
 // Rendering and utilities
-#include "editor/render/EditorRenderer.h"
-
 #include "editor/logic/MapManager.h"
 #include "editor/panels/EditorPanelManager.h"
+#include "editor/render/EditorRenderer.h"
 
 // Main editor class for ChainedEditor
 class Editor : public IEditor
@@ -84,9 +81,9 @@ public:
     void CreateDefaultObject(MapObjectType type, const std::string &modelName = "") override;
     void LoadAndSpawnModel(const std::string &path) override;
 
-    // File operations (Moved from FileManager/using MapLoader)
-    void SaveMap(const std::string &filename) override;
-    void LoadMap(const std::string &filename) override;
+    // File operations (Moved from FileManager/using SceneLoader)
+    void SaveScene(const std::string &filename) override;
+    void LoadScene(const std::string &filename) override;
 
     void SetGridSize(int size) override;
     int GetGridSize() const override;
@@ -110,9 +107,14 @@ public:
     Color GetClearColor() const override;
 
     // Accessors for UI/Tools
-    GameMap &GetGameMap() override;
+    GameScene &GetGameScene() override;
     int GetSelectedObjectIndex() const override;
     MapObjectData *GetSelectedObject() override;
+
+    // UI Selection
+    void SelectUIElement(int index) override;
+    int GetSelectedUIElementIndex() const override;
+    void RefreshUIEntities() override;
 
     IToolManager *GetToolManager() const;
     IUIManager *GetUIManager() const override;
@@ -131,11 +133,25 @@ public:
     void StopPlayMode() override;
     bool IsInPlayMode() const override;
 
+    // Editor Mode Management
+    EditorMode GetEditorMode() const
+    {
+        return m_editorMode;
+    }
+    void SetEditorMode(EditorMode mode);
+    bool IsUIDesignMode() const
+    {
+        return m_editorMode == EditorMode::UI_DESIGN ||
+               (m_mapManager &&
+                m_mapManager->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
+    }
+
 private:
     void InitializeSubsystems();
     void RenderObject(const MapObjectData &obj);
 
     void BuildGame() override;
+    void RunGame() override;
 
     // Debug Visualization
     bool IsWireframeEnabled() const override
@@ -159,6 +175,8 @@ private:
     bool m_drawWireframe = false;
     bool m_drawCollisions = false;
     bool m_isInPlayMode = false;
+    int m_selectedUIElementIndex = -1;
+    EditorMode m_editorMode = EditorMode::SCENE_3D;
 
 public:
     std::string GetSkyboxAbsolutePath() const;

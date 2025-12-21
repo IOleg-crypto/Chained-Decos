@@ -1,9 +1,7 @@
 #include "editor/logic/MapManager.h"
-#include "scene/resources/map/core/MapLoader.h"
-#include "scene/resources/map/mapfilemanager/json/jsonMapFileManager.h"
-#include <algorithm>
+#include "scene/resources/map/core/SceneLoader.h"
 
-void MapManager::SaveMap(const std::string &filename)
+void MapManager::SaveScene(const std::string &filename)
 {
     std::string savePath = filename;
     if (savePath.empty())
@@ -18,8 +16,8 @@ void MapManager::SaveMap(const std::string &filename)
         return;
     }
 
-    MapLoader loader;
-    if (loader.SaveMap(m_gameMap, savePath))
+    SceneLoader loader;
+    if (loader.SaveScene(m_gameScene, savePath))
     {
         m_currentMapPath = savePath;
         m_isSceneModified = false;
@@ -31,13 +29,13 @@ void MapManager::SaveMap(const std::string &filename)
     }
 }
 
-void MapManager::LoadMap(const std::string &filename)
+void MapManager::LoadScene(const std::string &filename)
 {
-    MapLoader loader;
-    auto map = loader.LoadMap(filename);
+    SceneLoader loader;
+    auto map = loader.LoadScene(filename);
 
     // Move the loaded map into our member
-    m_gameMap = std::move(map);
+    m_gameScene = std::move(map);
     m_currentMapPath = filename;
     m_isSceneModified = false;
     m_selectedIndex = -1;
@@ -45,7 +43,7 @@ void MapManager::LoadMap(const std::string &filename)
 
 void MapManager::ClearScene()
 {
-    m_gameMap = GameMap();
+    m_gameScene = GameScene();
     m_selectedIndex = -1;
     m_isSceneModified = false;
     m_currentMapPath = "";
@@ -53,14 +51,14 @@ void MapManager::ClearScene()
 
 void MapManager::AddObject(const MapObjectData &obj)
 {
-    m_gameMap.GetMapObjectsMutable().push_back(obj);
+    m_gameScene.GetMapObjectsMutable().push_back(obj);
     m_isSceneModified = true;
-    m_selectedIndex = static_cast<int>(m_gameMap.GetMapObjects().size()) - 1;
+    m_selectedIndex = static_cast<int>(m_gameScene.GetMapObjects().size()) - 1;
 }
 
 void MapManager::RemoveObject(int index)
 {
-    auto &objects = m_gameMap.GetMapObjectsMutable();
+    auto &objects = m_gameScene.GetMapObjectsMutable();
     if (index >= 0 && index < static_cast<int>(objects.size()))
     {
         objects.erase(objects.begin() + index);
@@ -74,7 +72,7 @@ void MapManager::RemoveObject(int index)
 
 void MapManager::SelectObject(int index)
 {
-    if (index >= 0 && index < static_cast<int>(m_gameMap.GetMapObjects().size()))
+    if (index >= 0 && index < static_cast<int>(m_gameScene.GetMapObjects().size()))
     {
         m_selectedIndex = index;
     }
@@ -91,7 +89,7 @@ void MapManager::ClearSelection()
 
 void MapManager::ClearObjects()
 {
-    m_gameMap.GetMapObjectsMutable().clear();
+    m_gameScene.GetMapObjectsMutable().clear();
     m_isSceneModified = true;
     m_selectedIndex = -1;
 }
@@ -99,15 +97,15 @@ void MapManager::ClearObjects()
 MapObjectData *MapManager::GetSelectedObject()
 {
     if (m_selectedIndex >= 0 &&
-        m_selectedIndex < static_cast<int>(m_gameMap.GetMapObjects().size()))
+        m_selectedIndex < static_cast<int>(m_gameScene.GetMapObjects().size()))
     {
-        return &m_gameMap.GetMapObjectsMutable()[m_selectedIndex];
+        return &m_gameScene.GetMapObjectsMutable()[m_selectedIndex];
     }
     return nullptr;
 }
-GameMap &MapManager::GetGameMap()
+GameScene &MapManager::GetGameScene()
 {
-    return m_gameMap;
+    return m_gameScene;
 }
 int MapManager::GetSelectedIndex() const
 {

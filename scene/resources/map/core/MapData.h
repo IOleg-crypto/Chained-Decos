@@ -5,7 +5,6 @@
 #include <raylib.h>
 #include <string>
 
-
 // ============================================================================
 // Enumerations
 // ============================================================================
@@ -19,6 +18,13 @@ enum class MapObjectType : uint8_t
     LIGHT = 4,
     MODEL = 5,
     SPAWN_ZONE = 6
+};
+
+enum class SceneType : uint8_t
+{
+    LEVEL_3D = 0, // Standard map with geometry
+    UI_MENU = 1,  // UI-focused scene (e.g. Main Menu)
+    EMPTY = 2     // Blank slate
 };
 
 // ============================================================================
@@ -45,6 +51,38 @@ struct MapObjectData
     bool isObstacle;
 };
 
+// UI Element Data for serialization
+struct UIElementData
+{
+    std::string name;
+    std::string type; // "button", "text", "image"
+
+    // RectTransform data
+    int anchor; // UIAnchor enum as int
+    Vector2 position;
+    Vector2 size;
+    Vector2 pivot;
+    float rotation;
+
+    // Component-specific properties (stored as key-value pairs)
+    std::string text;     // For UIText
+    std::string fontName; // For UIText
+    int fontSize;         // For UIText
+    float spacing;        // For UIText
+    Color textColor;      // For UIText
+
+    Color normalColor;   // For UIButton
+    Color hoverColor;    // For UIButton
+    Color pressedColor;  // For UIButton
+    float borderRadius;  // For UIButton and UIImage
+    float borderWidth;   // For UIButton and UIImage
+    Color borderColor;   // For UIButton and UIImage
+    std::string eventId; // For UIButton
+
+    Color tint;              // For UIImage
+    std::string texturePath; // For UIImage (future)
+};
+
 struct MapMetadata
 {
     std::string name;
@@ -64,6 +102,7 @@ struct MapMetadata
     Vector3 worldBounds;
     Color backgroundColor;
     std::string skyboxTexture;
+    SceneType sceneType;
 };
 
 #endif /* MAPDATA_H */
