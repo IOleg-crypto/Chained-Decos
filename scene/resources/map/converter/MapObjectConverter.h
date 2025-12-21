@@ -2,7 +2,7 @@
 #define MAPOBJECTCONVERTER_H
 
 #include "../core/MapData.h"
-#include "../mapfilemanager/json/jsonMapFileManager.h"
+#include "../mapfilemanager/json/JsonSceneFileManager.h"
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -21,9 +21,3 @@ float SanitizeFloat(float value, float fallback = 0.0f);
 } // namespace MapObjectConverter
 
 #endif // MAPOBJECTCONVERTER_H
-
-
-
-
-
-

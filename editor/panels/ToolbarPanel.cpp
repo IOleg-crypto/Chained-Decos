@@ -71,7 +71,7 @@ void ToolbarPanel::Render()
         if (ImGui::Button("Save", ImVec2(50, 28)))
         {
             if (m_editor)
-                m_editor->SaveMap("");
+                m_editor->SaveScene("");
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Save Scene (Ctrl+S)");
@@ -128,6 +128,16 @@ void ToolbarPanel::Render()
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(inPlayMode ? "Stop Simulation (Esc)" : "Start Simulation (Ctrl+P)");
 
+        ImGui::SameLine();
+
+        if (ImGui::Button("Run", ImVec2(50, 28)))
+        {
+            if (m_editor)
+                m_editor->RunGame();
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Run Standalone Game (Separate Window)");
+
         RenderSeparator();
 
         // Debug Toggles
@@ -158,6 +168,20 @@ void ToolbarPanel::Render()
                 ImGui::PopStyleColor();
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("Toggle Collision Bounds Debug");
+
+            ImGui::SameLine();
+
+            bool uiMode = m_editor->IsUIDesignMode();
+            if (uiMode)
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.5f, 0.3f, 1.0f));
+            if (ImGui::Button("UI", ImVec2(45, 28)))
+            {
+                m_editor->SetEditorMode(uiMode ? EditorMode::SCENE_3D : EditorMode::UI_DESIGN);
+            }
+            if (uiMode)
+                ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Toggle UI Design Mode");
         }
         // // Grid size
         // ImGui::Text("Grid:");

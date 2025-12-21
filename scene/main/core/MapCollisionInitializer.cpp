@@ -1,9 +1,10 @@
 #include "MapCollisionInitializer.h"
 
+#include "core/ecs/ECSRegistry.h"
 #include "core/ecs/components/PhysicsData.h"
 #include "core/ecs/components/TransformComponent.h"
-#include "core/ecs/ECSRegistry.h"
 #include <raylib.h>
+
 
 MapCollisionInitializer::MapCollisionInitializer(std::shared_ptr<CollisionManager> collisionManager,
                                                  std::shared_ptr<ModelLoader> models,
@@ -13,7 +14,7 @@ MapCollisionInitializer::MapCollisionInitializer(std::shared_ptr<CollisionManage
 {
 }
 
-void MapCollisionInitializer::InitializeCollisions(const GameMap &gameMap)
+void MapCollisionInitializer::InitializeCollisions(const GameScene &gameMap)
 {
     // Only clear existing colliders if no custom map is loaded
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
@@ -40,7 +41,7 @@ void MapCollisionInitializer::InitializeCollisions(const GameMap &gameMap)
 }
 
 void MapCollisionInitializer::InitializeCollisionsWithModels(
-    const GameMap &gameMap, const std::vector<std::string> &requiredModels)
+    const GameScene &gameMap, const std::vector<std::string> &requiredModels)
 {
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
     if (previousColliderCount > 0 && gameMap.GetMapObjects().empty())
@@ -59,7 +60,7 @@ void MapCollisionInitializer::InitializeCollisionsWithModels(
 }
 
 bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
-    const GameMap &gameMap, const std::vector<std::string> &requiredModels)
+    const GameScene &gameMap, const std::vector<std::string> &requiredModels)
 {
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
     if (previousColliderCount > 0 && gameMap.GetMapObjects().empty())
@@ -99,5 +100,3 @@ void MapCollisionInitializer::SetPlayer(std::shared_ptr<IPlayer> player)
 {
     m_player = std::move(player);
 }
-
-

@@ -9,7 +9,7 @@
 #include "core/interfaces/IPlayer.h"
 #include "scene/main/core/MapCollisionInitializer.h"
 #include "scene/main/core/World.h"
-#include "scene/resources/map/core/MapLoader.h"
+#include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/model/core/Model.h"
 #include <memory>
 #include <string>
@@ -31,7 +31,7 @@ public:
     ~LevelManager() override;
 
     // ILevelManager Implementation
-    bool LoadMap(const std::string &path) override;
+    bool LoadScene(const std::string &path) override;
     void UnloadMap() override;
     bool IsMapLoaded() const override;
     const std::string &GetCurrentMapPath() const override;
@@ -72,7 +72,7 @@ public:
     bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels) override;
 
     // Accessors
-    GameMap &GetGameMap();
+    GameScene &GetGameScene();
     Vector3 GetPlayerSpawnPosition() const;
     bool HasSpawnZone() const
     {
@@ -87,7 +87,7 @@ public:
 
 private:
     LevelManagerConfig m_config;
-    std::unique_ptr<GameMap> m_gameMap;
+    std::unique_ptr<GameScene> m_gameScene;
     std::string m_currentMapPath;
 
     BoundingBox m_playerSpawnZone;
@@ -108,5 +108,3 @@ private:
 };
 
 #endif // LEVELMANAGER_H
-
-

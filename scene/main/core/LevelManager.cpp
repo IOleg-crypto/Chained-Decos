@@ -7,7 +7,7 @@
 #include <filesystem>
 
 LevelManager::LevelManager(const LevelManagerConfig &config)
-    : m_config(config), m_gameMap(std::make_unique<GameMap>()), m_currentMapPath(""),
+    : m_config(config), m_gameScene(std::make_unique<GameScene>()), m_currentMapPath(""),
       m_playerSpawnZone({0}), m_spawnTexture({0}), m_hasSpawnZone(false),
       m_spawnTextureLoaded(false), m_collisionInitializer(nullptr), m_worldManager(nullptr),
       m_collisionManager(nullptr), m_modelLoader(nullptr), m_renderManager(nullptr),
@@ -22,8 +22,8 @@ LevelManager::~LevelManager()
 
 void LevelManager::Shutdown()
 {
-    if (m_gameMap)
-        m_gameMap->Cleanup();
+    if (m_gameScene)
+        m_gameScene->Cleanup();
     m_currentMapPath = "";
     m_hasSpawnZone = false;
     if (m_spawnTextureLoaded)
@@ -73,12 +73,12 @@ bool LevelManager::Initialize(Engine *engine)
     return true;
 }
 
-bool LevelManager::LoadMap(const std::string &path)
+bool LevelManager::LoadScene(const std::string &path)
 {
     std::string mapPath = path;
 
     // Convert map name to path if it's not already a path
-    if (path.find("/") == std::string::npos && path.find("\\") == std::string::npos)
+    if (path.find('/') == std::string::npos && path.find('\\') == std::string::npos)
     {
         mapPath = ConvertMapNameToPath(path);
     }
@@ -141,8 +141,8 @@ std::string LevelManager::ConvertMapNameToPath(const std::string &mapName)
 
 void LevelManager::UnloadMap()
 {
-    if (m_gameMap)
-        m_gameMap->Cleanup();
+    if (m_gameScene)
+        m_gameScene->Cleanup();
     m_currentMapPath = "";
     m_hasSpawnZone = false;
 }
@@ -196,7 +196,7 @@ void LevelManager::InitCollisions()
 {
     if (m_collisionInitializer)
     {
-        m_collisionInitializer->InitializeCollisions(*m_gameMap);
+        m_collisionInitializer->InitializeCollisions(*m_gameScene);
     }
 }
 
@@ -204,7 +204,7 @@ void LevelManager::InitCollisionsWithModels(const std::vector<std::string> &requ
 {
     if (m_collisionInitializer)
     {
-        m_collisionInitializer->InitializeCollisionsWithModels(*m_gameMap, requiredModels);
+        m_collisionInitializer->InitializeCollisionsWithModels(*m_gameScene, requiredModels);
     }
 }
 
@@ -212,7 +212,7 @@ bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &
 {
     if (m_collisionInitializer)
     {
-        return m_collisionInitializer->InitializeCollisionsWithModelsSafe(*m_gameMap,
+        return m_collisionInitializer->InitializeCollisionsWithModelsSafe(*m_gameScene,
                                                                           requiredModels);
     }
     return false;
@@ -220,16 +220,16 @@ bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &
 
 void LevelManager::SetPlayer(std::shared_ptr<IPlayer> player)
 {
-    m_player = player;
+    m_player = std::move(player);
     if (m_collisionInitializer)
     {
-        m_collisionInitializer->SetPlayer(player);
+        m_collisionInitializer->SetPlayer(m_player);
     }
 }
 
-GameMap &LevelManager::GetGameMap()
+GameScene &LevelManager::GetGameScene()
 {
-    return *m_gameMap;
+    return *m_gameScene;
 }
 
 const std::string &LevelManager::GetCurrentMapPath() const
@@ -264,14 +264,14 @@ void LevelManager::RenderEditorMap()
     MapRenderer renderer;
     Camera3D dummyCamera = {0};
 
-    for (const auto &object : m_gameMap->GetMapObjects())
+    for (const auto &object : m_gameScene->GetMapObjects())
     {
         if (object.type == MapObjectType::MODEL || object.type == MapObjectType::SPAWN_ZONE)
         {
             continue;
         }
 
-        renderer.RenderMapObject(object, m_gameMap->GetMapModels(), dummyCamera, false);
+        renderer.RenderMapObject(object, m_gameScene->GetMapModels(), dummyCamera, false);
     }
 }
 
@@ -329,12 +329,12 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
 
     m_modelLoader->ClearInstances();
 
-    for (const auto &pair : m_gameMap->GetMapModels())
+    for (const auto &pair : m_gameScene->GetMapModels())
     {
         m_modelLoader->UnloadModel(pair.first);
     }
 
-    m_gameMap->Cleanup();
+    m_gameScene->Cleanup();
     m_hasSpawnZone = false;
     m_playerSpawnZone = {0};
     m_collisionManager->ClearColliders();
@@ -343,7 +343,7 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
     if (extension == ".json" || extension == ".JSON")
     {
         MapService mapService;
-        if (!mapService.LoadMap(mapPath, *m_gameMap))
+        if (!mapService.LoadScene(mapPath, *m_gameScene))
         {
             TraceLog(LOG_ERROR, "LevelManager::LoadEditorMap() - MapService failed to load map: %s",
                      mapPath.c_str());
@@ -352,9 +352,9 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
 
         m_currentMapPath = mapPath;
 
-        if (!m_gameMap->GetMapModels().empty())
+        if (!m_gameScene->GetMapModels().empty())
         {
-            for (const auto &p : m_gameMap->GetMapModels())
+            for (const auto &p : m_gameScene->GetMapModels())
             {
                 if (p.second.meshCount > 0)
                 {
@@ -363,16 +363,16 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
             }
         }
 
-        if (!m_gameMap->GetMapMetaData().skyboxTexture.empty())
+        if (!m_gameScene->GetMapMetaData().skyboxTexture.empty())
         {
-            MapLoader mapLoader;
-            mapLoader.LoadSkyboxForMap(*m_gameMap);
+            SceneLoader mapLoader;
+            mapLoader.LoadSkyboxForScene(*m_gameScene);
         }
     }
 
-    for (size_t i = 0; i < m_gameMap->GetMapObjects().size(); ++i)
+    for (size_t i = 0; i < m_gameScene->GetMapObjects().size(); ++i)
     {
-        const auto &object = m_gameMap->GetMapObjects()[i];
+        const auto &object = m_gameScene->GetMapObjects()[i];
 
         if (!std::isfinite(object.position.x) || !std::isfinite(object.position.y) ||
             !std::isfinite(object.position.z))
@@ -435,12 +435,12 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         }
     }
 
-    if (m_gameMap->GetMapMetaData().startPosition.x != 0.0f ||
-        m_gameMap->GetMapMetaData().startPosition.y != 0.0f ||
-        m_gameMap->GetMapMetaData().startPosition.z != 0.0f)
+    if (m_gameScene->GetMapMetaData().startPosition.x != 0.0f ||
+        m_gameScene->GetMapMetaData().startPosition.y != 0.0f ||
+        m_gameScene->GetMapMetaData().startPosition.z != 0.0f)
     {
         const float spawnSize = 2.0f;
-        Vector3 spawnPos = m_gameMap->GetMapMetaData().startPosition;
+        Vector3 spawnPos = m_gameScene->GetMapMetaData().startPosition;
         m_playerSpawnZone.min = {spawnPos.x - spawnSize / 2, spawnPos.y - spawnSize / 2,
                                  spawnPos.z - spawnSize / 2};
         m_playerSpawnZone.max = {spawnPos.x + spawnSize / 2, spawnPos.y + spawnSize / 2,
@@ -452,7 +452,7 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
 
     // Create instances for all MODEL objects
     auto available = m_modelLoader->GetAvailableModels();
-    for (const auto &object : m_gameMap->GetMapObjects())
+    for (const auto &object : m_gameScene->GetMapObjects())
     {
         if (object.type == MapObjectType::MODEL && !object.modelName.empty())
         {
@@ -483,5 +483,3 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         }
     }
 }
-
-

@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-
 using json = nlohmann::json;
 
 // Serializable object for JSON
@@ -36,22 +35,16 @@ struct JsonSerializableObject
     static JsonSerializableObject FromJson(const json &j);
 };
 
-// JSON Map File Manager
-class JsonMapFileManager
+// JSON Scene File Manager
+class JsonSceneFileManager
 {
 public:
-    JsonMapFileManager() = default;
-    ~JsonMapFileManager() = default;
+    JsonSceneFileManager() = default;
+    ~JsonSceneFileManager() = default;
 
     // Load map from JSON file
-    bool LoadMap(const std::string &filepath, std::vector<JsonSerializableObject> &objects);
+    bool LoadScene(const std::string &filepath, std::vector<JsonSerializableObject> &objects);
 
     // Save map to JSON file
-    bool SaveMap(const std::string &filepath, const std::vector<JsonSerializableObject> &objects);
+    bool SaveScene(const std::string &filepath, const std::vector<JsonSerializableObject> &objects);
 };
-
-
-
-
-
-

@@ -11,9 +11,11 @@
 #include "core/ecs/components/UtilityComponents.h"
 #include "core/ecs/components/VelocityComponent.h"
 #include "core/ecs/components/playerComponent.h"
+#include "core/ecs/systems/UIRenderSystem.h"
 #include "core/events/Event.h"
 #include "core/events/KeyEvent.h"
 #include "core/events/MouseEvent.h"
+#include "core/events/UIEventRegistry.h"
 #include "editor/IEditor.h"
 #include "scene/main/core/World.h"
 #include "scene/resources/model/core/Model.h"
@@ -30,6 +32,29 @@ GameLayer::GameLayer() : Layer("GameLayer")
 
 void GameLayer::OnAttach()
 {
+    // Register UI Events
+    UIEventRegistry::Get().Register(
+        "start_game",
+        []()
+        {
+            TraceLog(LOG_INFO, "[GameLayer] Start Game Event Triggered!");
+            // Example logic: Reset player position
+            auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
+            for (auto [entity, transform, velocity, player] : view.each())
+            {
+                transform.position = player.spawnPosition;
+                velocity.velocity = {0, 0, 0};
+            }
+        });
+
+    UIEventRegistry::Get().Register("quit_game",
+                                    []()
+                                    {
+                                        TraceLog(LOG_INFO,
+                                                 "[GameLayer] Quit Game Event Triggered!");
+                                        Engine::Instance().RequestExit();
+                                    });
+
     TraceLog(LOG_INFO, "GameLayer Attached");
 
     // Load HUD Font
@@ -284,8 +309,11 @@ void GameLayer::OnRender()
     RenderScene();
 }
 
-void GameLayer::RenderUI()
+void GameLayer::RenderUI(float width, float height)
 {
+    // Render stored UI elements
+    UIRenderSystem::Render((int)width, (int)height);
+
     auto view = REGISTRY.view<PlayerComponent>();
     for (auto entity : view)
     {
