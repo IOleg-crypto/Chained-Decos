@@ -1,18 +1,13 @@
 #include "MapService.h"
-#include "MapLoader.h"
+#include "SceneLoader.h"
 
-bool MapService::LoadMap(const std::string& filename, GameMap& gameMap)
+bool MapService::LoadScene(const std::string &filename, GameScene &gameScene)
 {
-    gameMap = m_mapLoader.LoadMap(filename);
-    return !gameMap.GetMapObjects().empty();
+    gameScene = m_mapLoader.LoadScene(filename);
+    return !gameScene.GetMapObjects().empty();
 }
 
-bool MapService::SaveMap(const std::string& filename, const GameMap& gameMap)
+bool MapService::SaveScene(const std::string &filename, const GameScene &gameScene)
 {
-    return m_mapLoader.SaveMap(gameMap, filename);
+    return m_mapLoader.SaveScene(gameScene, filename);
 }
-
-
-
-
-

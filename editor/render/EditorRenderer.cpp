@@ -26,9 +26,9 @@ void EditorRenderer::RenderObject(const MapObjectData &data, bool isSelected)
     if (m_editor && data.type == MapObjectType::MODEL && !data.modelName.empty())
     {
         // Try exact match first
-        auto modelOpt = m_editor->GetGameMap().GetMapModels().find(data.modelName);
+        auto modelOpt = m_editor->GetGameScene().GetMapModels().find(data.modelName);
 
-        if (modelOpt != m_editor->GetGameMap().GetMapModels().end())
+        if (modelOpt != m_editor->GetGameScene().GetMapModels().end())
         {
             loadedModels[data.modelName] = modelOpt->second;
         }

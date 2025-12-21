@@ -5,11 +5,13 @@ This directory contains comprehensive tests for the Chained Decos engine.
 ## Test Structure
 
 ### 1. ColorParser Tests
+
 - **ParseValidColors**: Tests correct parsing of all supported colors
 - **ParseInvalidColors**: Tests handling of invalid color names
 - **ParseCaseSensitiveColors**: Tests case sensitivity
 
 ### 2. Player Tests
+
 - **Constructor**: Tests player creation
 - **SpeedOperations**: Tests setting and getting speed
 - **Movement**: Tests player movement in 3D space
@@ -21,6 +23,7 @@ This directory contains comprehensive tests for the Chained Decos engine.
 - **LoadModelPlayer**: Tests player model loading
 
 ### 3. Models Tests
+
 - **Constructor**: Tests model manager creation
 - **LoadModelsFromJson**: Tests loading models from JSON files
 - **DrawAllModels**: Tests rendering all models
@@ -28,6 +31,7 @@ This directory contains comprehensive tests for the Chained Decos engine.
 - **AddInstance**: Tests adding model instances
 
 ### 4. Engine Tests
+
 - **Constructor**: Tests engine creation (default and parameterized)
 - **Initialization**: Tests engine initialization
 - **InputInitialization**: Tests input system initialization
@@ -40,12 +44,14 @@ This directory contains comprehensive tests for the Chained Decos engine.
 - **DebugInfo**: Tests debug information display
 
 ### 5. InputManager Tests
+
 - **Constructor**: Tests input manager creation
 - **RegisterAction**: Tests action registration
 - **ProcessInput**: Tests input processing
 - **MultipleActions**: Tests multiple action handling
 
 ### 6. Menu Tests
+
 - **Constructor**: Tests menu creation
 - **GetAction**: Tests action retrieval
 - **ResetAction**: Tests action reset
@@ -53,14 +59,16 @@ This directory contains comprehensive tests for the Chained Decos engine.
 - **Render**: Tests menu rendering
 - **MenuActionEnum**: Tests menu action enum values
 
-### 7. MapLoader Tests
+### 7. SceneLoader Tests
+
 - **Constructor**: Tests map loader creation
 - **LoadMapNonExistent**: Tests loading non-existent maps
 - **LoadMapEmptyFile**: Tests loading empty files
-- **MapLoaderStruct**: Tests map loader structure
+- **SceneLoaderStruct**: Tests map loader structure
 - **LoadMapInvalidJson**: Tests invalid JSON handling
 
 ### 8. CameraController Tests
+
 - **Constructor**: Tests camera controller creation
 - **GetCamera**: Tests camera reference access
 - **GetCameraMode**: Tests camera mode retrieval
@@ -69,12 +77,14 @@ This directory contains comprehensive tests for the Chained Decos engine.
 - **CameraModeConsistency**: Tests mode setting/getting consistency
 
 ### 9. ModelInstance Tests
+
 - **ConstructorWithAllParameters**: Tests full constructor
 - **ConstructorWithColor**: Tests constructor with color
 - **ConstructorMinimal**: Tests minimal constructor
 - **GetProperties**: Tests all getter methods
 
 ### 10. Integration Tests
+
 - **EnginePlayerInteraction**: Tests engine-player interaction
 - **ColorParsingInContext**: Tests color parsing in context
 - **InputManagerMenuInteraction**: Tests input-manu interaction
@@ -82,11 +92,13 @@ This directory contains comprehensive tests for the Chained Decos engine.
 - **ModelInstanceModelsInteraction**: Tests model instance interaction
 
 ### 11. Performance Tests
+
 - **ColorParsingSpeed**: Tests color parsing performance
 - **InputManagerSpeed**: Tests input manager performance
 - **ModelInstanceCreation**: Tests model instance creation speed
 
 ### 12. Edge Case Tests
+
 - **EmptyColorName**: Tests empty color name handling
 - **VeryLongColorName**: Tests very long color names
 - **SpecialCharactersInColorName**: Tests special characters in color names
@@ -94,9 +106,10 @@ This directory contains comprehensive tests for the Chained Decos engine.
 - **MenuEdgeCases**: Tests menu edge cases
 - **CameraControllerEdgeCases**: Tests camera controller edge cases
 - **ModelInstanceEdgeCases**: Tests model instance edge cases
-- **MapLoaderEdgeCases**: Tests map loader edge cases
+- **SceneLoaderEdgeCases**: Tests map loader edge cases
 
 ### 13. Stress Tests
+
 - **MultipleInputManagers**: Tests multiple input managers
 - **MultipleMenus**: Tests multiple menus
 - **MultipleCameraControllers**: Tests multiple camera controllers
@@ -105,6 +118,7 @@ This directory contains comprehensive tests for the Chained Decos engine.
 ## Running Tests
 
 ### Compilation and Execution
+
 ```bash
 # From project root directory
 mkdir build
@@ -117,6 +131,7 @@ make
 ```
 
 ### Running Specific Tests
+
 ```bash
 # Run only ColorParser tests
 ./tests/unit_tests --gtest_filter="ColorParserTest*"
@@ -135,16 +150,19 @@ make
 ```
 
 ### Running with Verbose Output
+
 ```bash
 ./tests/unit_tests --gtest_verbose
 ```
 
 ### Running with XML Report
+
 ```bash
 ./tests/unit_tests --gtest_output=xml:test_results.xml
 ```
 
 ### Using CMake Test Framework
+
 ```bash
 # Run all tests via CMake
 ctest --verbose
@@ -158,6 +176,7 @@ ctest -R EngineTests --verbose
 ## Adding New Tests
 
 ### Test Structure
+
 ```cpp
 TEST(TestSuiteName, TestName) {
     // Arrange - prepare data
@@ -168,6 +187,7 @@ TEST(TestSuiteName, TestName) {
 ```
 
 ### Types of Assertions
+
 - `EXPECT_EQ(expected, actual)` - checks equality
 - `EXPECT_NE(expected, actual)` - checks inequality
 - `EXPECT_GT(val1, val2)` - checks that val1 > val2
@@ -180,6 +200,7 @@ TEST(TestSuiteName, TestName) {
 ## Test Configuration
 
 The `test_config.json` file contains test configuration:
+
 - Test models
 - Test colors
 - Test scenarios
@@ -187,13 +208,14 @@ The `test_config.json` file contains test configuration:
 ## Test Coverage
 
 Current tests cover:
+
 - ✅ ColorParser - full coverage
 - ✅ Player - core functions
 - ✅ Models - basic operations
 - ✅ Engine - all public methods
 - ✅ InputManager - constructor and methods
 - ✅ Menu - constructor and methods
-- ✅ MapLoader - constructor and methods
+- ✅ SceneLoader - constructor and methods
 - ✅ CameraController - constructor and methods
 - ✅ ModelInstance - all constructors and methods
 
@@ -214,26 +236,31 @@ Current tests cover:
 ## Test Categories
 
 ### Unit Tests
+
 - Test individual components in isolation
 - Fast execution
 - High reliability
 
 ### Integration Tests
+
 - Test component interactions
 - Verify system behavior
 - Catch integration issues
 
 ### Performance Tests
+
 - Measure execution time
 - Detect performance regressions
 - Ensure acceptable performance
 
 ### Edge Case Tests
+
 - Test boundary conditions
 - Test error handling
 - Test invalid inputs
 
 ### Stress Tests
+
 - Test with high load
 - Test memory usage
 - Test system stability
@@ -241,6 +268,7 @@ Current tests cover:
 ## Continuous Integration
 
 ### GitHub Actions Example
+
 ```yaml
 name: Tests
 on: [push, pull_request]
@@ -248,20 +276,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake g++ libasound2-dev
-    - name: Build and test
-      run: |
-        mkdir build && cd build
-        cmake ..
-        make
-        ctest --verbose
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libasound2-dev
+      - name: Build and test
+        run: |
+          mkdir build && cd build
+          cmake ..
+          make
+          ctest --verbose
 ```
 
 ### Local Development
+
 ```bash
 # Quick test run
 ./tests/unit_tests --gtest_filter="*Test*"
@@ -278,11 +307,13 @@ jobs:
 ### Common Issues
 
 1. **Compilation Errors**
+
    - Ensure all dependencies are installed
    - Check include paths
    - Verify CMake configuration
 
 2. **Runtime Errors**
+
    - Check if Raylib is properly initialized
    - Verify file paths for models/textures
    - Check memory allocation
@@ -305,4 +336,4 @@ jobs:
 2. Update existing tests when changing functionality
 3. Follow the established test naming conventions
 4. Document complex test scenarios
-5. Ensure tests are deterministic and reliable 
+5. Ensure tests are deterministic and reliable

@@ -33,7 +33,7 @@ void InspectorPanel::Render()
         ImGui::Separator();
 
         // Skybox preview/button
-        std::string skyboxName = m_editor->GetGameMap().GetMapMetaData().skyboxTexture;
+        std::string skyboxName = m_editor->GetGameScene().GetMapMetaData().skyboxTexture;
         if (skyboxName.empty())
             skyboxName = "None";
         ImGui::Text("Active Skybox: %s", skyboxName.c_str());
@@ -48,19 +48,30 @@ void InspectorPanel::Render()
 
         ImGui::Separator();
 
-        // Clear Color
-        Color clearColor = m_editor->GetClearColor();
-        float col[4] = {clearColor.r / 255.0f, clearColor.g / 255.0f, clearColor.b / 255.0f,
-                        clearColor.a / 255.0f};
-        if (ImGui::ColorEdit4("Clear Color", col))
+        // Scene Background Color
+        auto &metadata = m_editor->GetGameScene().GetMapMetaDataMutable();
+        float bgCol[4] = {metadata.backgroundColor.r / 255.0f, metadata.backgroundColor.g / 255.0f,
+                          metadata.backgroundColor.b / 255.0f, metadata.backgroundColor.a / 255.0f};
+        if (ImGui::ColorEdit4("Background Color", bgCol))
         {
-            Color newCol = {
-                static_cast<unsigned char>(col[0] * 255), static_cast<unsigned char>(col[1] * 255),
-                static_cast<unsigned char>(col[2] * 255), static_cast<unsigned char>(col[3] * 255)};
-            // Note: need an API to set this permanently in metadata
-            auto metadata = m_editor->GetGameMap().GetMapMetaData();
-            metadata.skyColor = newCol;
-            m_editor->ApplyMetadata(metadata);
+            metadata.backgroundColor = {static_cast<unsigned char>(bgCol[0] * 255),
+                                        static_cast<unsigned char>(bgCol[1] * 255),
+                                        static_cast<unsigned char>(bgCol[2] * 255),
+                                        static_cast<unsigned char>(bgCol[3] * 255)};
+            m_editor->SetSceneModified(true);
+        }
+
+        ImGui::Separator();
+
+        // Sky Color (for 3D scenes)
+        float skyCol[4] = {metadata.skyColor.r / 255.0f, metadata.skyColor.g / 255.0f,
+                           metadata.skyColor.b / 255.0f, metadata.skyColor.a / 255.0f};
+        if (ImGui::ColorEdit4("Sky Color", skyCol))
+        {
+            metadata.skyColor = {static_cast<unsigned char>(skyCol[0] * 255),
+                                 static_cast<unsigned char>(skyCol[1] * 255),
+                                 static_cast<unsigned char>(skyCol[2] * 255),
+                                 static_cast<unsigned char>(skyCol[3] * 255)};
             m_editor->SetSceneModified(true);
         }
 

@@ -1,4 +1,4 @@
-#include "JsonMapFileManager.h"
+#include "JsonSceneFileManager.h"
 #include <fstream>
 
 json JsonSerializableObject::ToJson() const
@@ -37,8 +37,8 @@ JsonSerializableObject JsonSerializableObject::FromJson(const json &j)
     return obj;
 }
 
-bool JsonMapFileManager::LoadMap(const std::string &filepath,
-                                 std::vector<JsonSerializableObject> &objects)
+bool JsonSceneFileManager::LoadScene(const std::string &filepath,
+                                     std::vector<JsonSerializableObject> &objects)
 {
     std::ifstream file(filepath);
     if (!file.is_open())
@@ -63,8 +63,8 @@ bool JsonMapFileManager::LoadMap(const std::string &filepath,
     }
 }
 
-bool JsonMapFileManager::SaveMap(const std::string &filepath,
-                                 const std::vector<JsonSerializableObject> &objects)
+bool JsonSceneFileManager::SaveScene(const std::string &filepath,
+                                     const std::vector<JsonSerializableObject> &objects)
 {
     std::ofstream file(filepath);
     if (!file.is_open())
@@ -88,7 +88,3 @@ bool JsonMapFileManager::SaveMap(const std::string &filepath,
         return false;
     }
 }
-
-
-
-

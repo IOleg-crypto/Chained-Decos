@@ -24,6 +24,14 @@ GameConfig CommandLineHandler::ParseArguments(int argc, char *argv[])
         {
             config.developer = true;
         }
+        else if (strcmp(argv[i], "--map") == 0 && i + 1 < argc)
+        {
+            config.mapPath = argv[++i];
+        }
+        else if (strcmp(argv[i], "--skip-menu") == 0)
+        {
+            config.skipMenu = true;
+        }
     }
 
     return config;
@@ -41,7 +49,3 @@ void CommandLineHandler::ShowConfig(const GameConfig &config)
     }
     TraceLog(LOG_INFO, "========================");
 }
-
-
-
-
