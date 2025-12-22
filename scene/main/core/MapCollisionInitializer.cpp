@@ -1,8 +1,8 @@
 #include "MapCollisionInitializer.h"
 
-#include "core/ecs/ECSRegistry.h"
-#include "core/ecs/components/PhysicsData.h"
-#include "core/ecs/components/TransformComponent.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components/PhysicsData.h"
+#include "scene/ecs/components/TransformComponent.h"
 #include <raylib.h>
 
 

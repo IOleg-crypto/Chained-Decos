@@ -28,11 +28,11 @@
 // ECS and Simulation
 #include "components/physics/collision/core/CollisionManager.h"
 #include "core/Engine.h"
-#include "core/ecs/ECSRegistry.h"
-#include "core/ecs/Examples.h"
-#include "core/ecs/components/PlayerComponent.h"
-#include "core/ecs/components/RenderComponent.h"
-#include "core/ecs/components/UIComponents.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/Examples.h"
+#include "scene/ecs/components/PlayerComponent.h"
+#include "scene/ecs/components/RenderComponent.h"
+#include "scene/ecs/components/UIComponents.h"
 #include <cstdlib>
 #include <thread>
 

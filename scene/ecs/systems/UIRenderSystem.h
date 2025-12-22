@@ -1,8 +1,8 @@
 #ifndef UI_RENDER_SYSTEM_H
 #define UI_RENDER_SYSTEM_H
 
-#include "core/ecs/ECSRegistry.h"
-#include "core/ecs/components/UIComponents.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components/UIComponents.h"
 #include <raylib.h>
 
 namespace ChainedDecos

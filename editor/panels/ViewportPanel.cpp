@@ -3,9 +3,9 @@
 //
 
 #include "ViewportPanel.h"
-#include "core/ecs/ECSRegistry.h"
-#include "core/ecs/components/UIComponents.h"
-#include "core/ecs/systems/UIRenderSystem.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components/UIComponents.h"
+#include "scene/ecs/systems/UIRenderSystem.h"
 #include "editor/IEditor.h"
 #include <imgui.h>
 #include <raymath.h>

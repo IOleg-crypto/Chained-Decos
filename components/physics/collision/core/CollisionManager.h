@@ -7,7 +7,7 @@
 #include "scene/resources/model/config/ModelConfig.h"
 #include <algorithm>
 #include <array>
-#include <core/ecs/Entity.h>
+#include <scene/ecs/Entity.h>
 #include <execution>
 #include <future>
 #include <memory>

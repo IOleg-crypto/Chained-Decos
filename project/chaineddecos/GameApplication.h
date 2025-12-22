@@ -4,8 +4,8 @@
 #include "core/application/IApplication.h"
 #include "core/config/GameConfig.h"
 #include "project/chaineddecos/gamegui/Menu.h"
-#include <core/ecs/ECSRegistry.h>
-#include <core/ecs/Entity.h>
+#include <scene/ecs/ECSRegistry.h>
+#include <scene/ecs/Entity.h>
 #include <memory>
 
 // Game application - uses full engine + own modules

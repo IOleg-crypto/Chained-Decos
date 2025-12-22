@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 # Add subdirectories for components that still have their own structure
 add_subdirectory(config)
-add_subdirectory(ecs)
+
 
 # Core library - base systems, events, and module management
 set(CORE_SOURCES
