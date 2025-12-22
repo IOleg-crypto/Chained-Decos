@@ -8,7 +8,7 @@
 #include "settings/settingsManager.h"
 
 
-#include "core/events/MenuEvent.h"
+#include "events/MenuEvent.h"
 #include "core/interfaces/IMenu.h"
 #include "scene/camera/core/ICameraSensitivityController.h"
 #include <GLFW/glfw3.h>

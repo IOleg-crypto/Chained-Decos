@@ -1,5 +1,5 @@
 #include "editor/Editor.h"
-#include "core/events/Event.h"
+#include "events/Event.h"
 #include "editor/render/EditorRenderer.h"
 #include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/map/mapfilemanager/json/JsonSceneFileManager.h"

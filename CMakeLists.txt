@@ -214,6 +214,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
 endif()
 
 # Add new modular structure
+add_subdirectory(events)
 add_subdirectory(core)
 add_subdirectory(components)
 add_subdirectory(scene)

@@ -1,7 +1,7 @@
 #ifndef EDITOR_EVENTS_H
 #define EDITOR_EVENTS_H
 
-#include "core/events/Event.h"
+#include "events/Event.h"
 #include <string>
 
 namespace ChainedDecos

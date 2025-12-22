@@ -1,4 +1,4 @@
-#include "core/events/ApplicationEvent.h"
+#include "events/ApplicationEvent.h"
 #include <sstream>
 
 namespace ChainedDecos
