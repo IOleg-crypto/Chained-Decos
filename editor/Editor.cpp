@@ -37,6 +37,7 @@
 #include <thread>
 
 namespace fs = std::filesystem;
+using namespace ChainedEngine;
 
 Editor::Editor(ChainedDecos::Ref<CameraController> cameraController,
                ChainedDecos::Ref<IModelLoader> modelLoader)
@@ -931,7 +932,12 @@ void Editor::RefreshUIEntities()
             button.borderRadius = elemData.borderRadius;
             button.borderWidth = elemData.borderWidth;
             button.borderColor = elemData.borderColor;
+            button.borderColor = elemData.borderColor;
             button.eventId = elemData.eventId;
+            // Action System
+            button.actionType = elemData.actionType;
+            button.actionTarget = elemData.actionTarget;
+
             registry.emplace<UIButton>(entity, button);
 
             if (!elemData.text.empty())

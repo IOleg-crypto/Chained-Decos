@@ -58,6 +58,10 @@ struct UIButton
     float borderRadius = 0.0f;
     float borderWidth = 0.0f;
     Color borderColor = BLACK;
+
+    // Action System
+    std::string actionType;
+    std::string actionTarget;
 };
 
 // ImGui integration component
