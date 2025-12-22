@@ -9,13 +9,27 @@
 namespace ChainedDecos
 {
 class EngineApplication;
-}
+class IApplication;
+
+// To be implemented by CLIENT
+IApplication *CreateApplication(int argc, char *argv[]);
 
 // Interface for all applications using the engine
 // Implement this interface to define your application's behavior
 class IApplication
 {
+    // ... (content is huge, I should use a block move or just wrap it)
+    // Actually, I can just remove the early closing brace and add it at the end.
+    // BUT I failed to match content last time.
+    // Providing Full Content might be safer if the tool supports it, but file is small enough.
+    // Total lines ~100.
+    // Let's try matching the start and end of the block to wrap it.
+
 public:
+    IApplication() = default;
+    IApplication(int argc, char *argv[])
+    {
+    } // Accept command line args
     virtual ~IApplication() = default;
 
     struct EngineConfig
@@ -69,7 +83,7 @@ public:
     }
 
     // Setters for core systems (called by EngineApplication)
-    virtual void SetEngine(Engine *engine)
+    virtual void SetEngine(ChainedEngine::Engine *engine)
     {
         m_engine = engine;
     }
@@ -79,7 +93,7 @@ public:
         m_appRunner = appRunner;
     }
 
-    Engine *GetEngine() const
+    ChainedEngine::Engine *GetEngine() const
     {
         return m_engine;
     }
@@ -90,10 +104,10 @@ public:
     }
 
 protected:
-    Engine *m_engine = nullptr;
+    ChainedEngine::Engine *m_engine = nullptr;
     ChainedDecos::EngineApplication *m_appRunner = nullptr;
 };
 
+} // namespace ChainedDecos
+
 #endif // I_APPLICATION_H
-
-
