@@ -1,4 +1,5 @@
 #include "InputManager.h"
+#include "core/Log.h"
 #include "events/KeyEvent.h"
 #include "events/MouseEvent.h"
 #include <raylib.h>
@@ -9,7 +10,7 @@ InputManager::InputManager() = default;
 
 bool InputManager::Initialize()
 {
-    TraceLog(LOG_INFO, "InputManager initialized");
+    CD_CORE_INFO("InputManager initialized");
     m_initialized = true;
     return true;
 }
@@ -18,7 +19,7 @@ void InputManager::Shutdown()
 {
     ClearActions();
     m_initialized = false;
-    TraceLog(LOG_INFO, "InputManager shutdown");
+    CD_CORE_INFO("InputManager shutdown");
 }
 
 void InputManager::Update(float deltaTime)
@@ -86,11 +87,6 @@ void InputManager::ProcessInput() const
 {
     if (!m_EventCallback)
         return;
-
-    // We can't easily iterate all keys in Raylib without a loop or knowing which ones were pressed.
-    // However, for typical engine architecture (The Cherno style), we usually get events from the
-    // windowing system (GLFW). Raylib is a bit higher level. Let's poll common keys or use a hybrid
-    // approach. Actually, Chained Decos uses Raylib's IsKeyPressed etc.
 
     // For a cleaner approach, we might want to poll all keys from 32 to 348 (GLFW range) or
     // similar.
@@ -224,5 +220,3 @@ bool InputManager::IsCursorDisabled() const
 {
     return ::IsCursorHidden();
 }
-
-

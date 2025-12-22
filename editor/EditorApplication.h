@@ -6,7 +6,6 @@
 #include <memory>
 
 // Editor application - uses full engine + own modules
-// Editor application - uses full engine + own modules
 class EditorApplication : public ChainedDecos::IApplication
 {
 public:

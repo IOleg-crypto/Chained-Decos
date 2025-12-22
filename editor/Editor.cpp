@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "editor/Editor.h"
 #include "events/Event.h"
 #include "editor/render/EditorRenderer.h"
@@ -58,7 +59,7 @@ Editor::~Editor()
     if (m_spawnTextureLoaded && m_spawnTexture.id != 0)
     {
         UnloadTexture(m_spawnTexture);
-        TraceLog(LOG_INFO, "Editor::~Editor() - Unloaded spawn texture");
+        CD_INFO("Editor::~Editor() - Unloaded spawn texture");
     }
     if (m_skybox)
     {
@@ -345,7 +346,7 @@ void Editor::LoadAndSpawnModel(const std::string &path)
         if (modelOpt)
         {
             m_mapManager->GetGameScene().GetMapModelsMutable()[modelName] = modelOpt->get();
-            TraceLog(LOG_INFO, "[Editor] Model '%s' registered for spawning", modelName.c_str());
+            CD_INFO("[Editor] Model '%s' registered for spawning", modelName.c_str());
         }
     }
 
@@ -405,7 +406,7 @@ void Editor::SetSkyboxTexture(const std::string &texturePath)
     }
     m_skybox->LoadMaterialTexture(texturePath);
     m_mapManager->GetGameScene().GetMapMetaDataMutable().skyboxTexture = texturePath;
-    TraceLog(LOG_INFO, "[Editor] Applied skybox texture: %s", texturePath.c_str());
+    CD_INFO("[Editor] Applied skybox texture: %s", texturePath.c_str());
 }
 
 std::string Editor::GetSkyboxAbsolutePath() const
@@ -485,7 +486,7 @@ void Editor::SetSkyboxColor(Color color)
 {
     m_clearColor = color;
     m_mapManager->GetGameScene().GetMapMetaDataMutable().skyColor = color;
-    TraceLog(LOG_INFO, "[Editor] Applied skybox color");
+    CD_INFO("[Editor] Applied skybox color");
 }
 const std::string &Editor::GetSkyboxTexture() const
 {
@@ -546,7 +547,7 @@ void Editor::StartPlayMode()
     if (m_isInPlayMode)
         return;
 
-    TraceLog(LOG_INFO, "[Editor] Starting Play Mode...");
+    CD_INFO("[Editor] Starting Play Mode...");
 
     // 1. Generate collisions for simulation
     auto &engine = Engine::Instance();
@@ -664,7 +665,7 @@ void Editor::StartPlayMode()
             spawnPos = obj.position;
             spawnPos.y += 1.0f; // Offset upwards to avoid spawning into the floor
             spawnZoneFound = true;
-            TraceLog(LOG_INFO, "[Editor] Player spawned at Spawn Zone '%s' at (%.2f, %.2f, %.2f)",
+            CD_INFO("[Editor] Player spawned at Spawn Zone '%s' at (%.2f, %.2f, %.2f)",
                      obj.name.c_str(), spawnPos.x, spawnPos.y, spawnPos.z);
             break;
         }
@@ -776,7 +777,7 @@ void Editor::StopPlayMode()
     if (!m_isInPlayMode)
         return;
 
-    TraceLog(LOG_INFO, "[Editor] Stopping Play Mode...");
+    CD_INFO("[Editor] Stopping Play Mode...");
 
     // 1. Clear simulation entities
     REGISTRY.clear();
@@ -801,10 +802,10 @@ bool Editor::IsInPlayMode() const
 
 void Editor::BuildGame()
 {
-    TraceLog(LOG_INFO, "[Editor] Saving map before build...");
+    CD_INFO("[Editor] Saving map before build...");
     SaveScene("");
 
-    TraceLog(LOG_INFO, "[Editor] Starting build process in background...");
+    CD_INFO("[Editor] Starting build process in background...");
 
     // Using a thread to avoid freezing the editor UI during compilation
     std::thread(
@@ -816,7 +817,7 @@ void Editor::BuildGame()
 
             if (result == 0)
             {
-                TraceLog(LOG_INFO, "[Editor] Build COMPLETED successfully.");
+                CD_INFO("[Editor] Build COMPLETED successfully.");
             }
         })
         .detach();
@@ -828,16 +829,15 @@ void Editor::RunGame()
     std::string scenePath = GetCurrentMapPath();
     if (scenePath.empty())
     {
-        TraceLog(LOG_WARNING,
-                 "[Editor] No scene to run. Please save the scene first (File > Save Scene).");
+        CD_WARN("[Editor] No scene to run. Please save the scene first (File > Save Scene).");
         return;
     }
 
     // Save current changes to the existing scene file
-    TraceLog(LOG_INFO, "[Editor] Saving scene before launching standalone game...");
+    CD_INFO("[Editor] Saving scene before launching standalone game...");
     SaveScene("");
 
-    TraceLog(LOG_INFO, "[Editor] Launching standalone game for scene: %s", scenePath.c_str());
+    CD_INFO("[Editor] Launching standalone game for scene: %s", scenePath.c_str());
 
     std::thread(
         [scenePath]()
@@ -855,17 +855,17 @@ void Editor::RunGame()
             cmd += scenePath;
             cmd += "\" --skip-menu";
 
-            TraceLog(LOG_INFO, "[Editor] Executing: %s", cmd.c_str());
+            CD_INFO("[Editor] Executing: %s", cmd.c_str());
 
             int result = std::system(cmd.c_str());
 
             if (result != 0)
             {
-                TraceLog(LOG_ERROR, "[Editor] Standalone game exited with error code: %d", result);
+                CD_ERROR("[Editor] Standalone game exited with error code: %d", result);
             }
             else
             {
-                TraceLog(LOG_INFO, "[Editor] Standalone game closed.");
+                CD_INFO("[Editor] Standalone game closed.");
             }
         })
         .detach();
@@ -982,3 +982,4 @@ void Editor::RefreshUIEntities()
         }
     }
 }
+

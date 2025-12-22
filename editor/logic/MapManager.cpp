@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "editor/logic/MapManager.h"
 #include "scene/resources/map/core/SceneLoader.h"
 
@@ -11,8 +12,7 @@ void MapManager::SaveScene(const std::string &filename)
 
     if (savePath.empty())
     {
-        TraceLog(LOG_WARNING,
-                 "[MapManager] Cannot save map: No filename provided and no current map active.");
+        CD_WARN("[MapManager] Cannot save map: No filename provided and no current map active.");
         return;
     }
 
@@ -21,11 +21,11 @@ void MapManager::SaveScene(const std::string &filename)
     {
         m_currentMapPath = savePath;
         m_isSceneModified = false;
-        TraceLog(LOG_INFO, "[MapManager] Saved map to: %s", savePath.c_str());
+        CD_INFO("[MapManager] Saved map to: %s", savePath.c_str());
     }
     else
     {
-        TraceLog(LOG_ERROR, "[MapManager] FAILED to save map to: %s", savePath.c_str());
+        CD_ERROR("[MapManager] FAILED to save map to: %s", savePath.c_str());
     }
 }
 
@@ -123,3 +123,4 @@ const std::string &MapManager::GetCurrentMapPath() const
 {
     return m_currentMapPath;
 }
+

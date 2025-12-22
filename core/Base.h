@@ -1,4 +1,5 @@
 #pragma once
+#include "core/Log.h"
 
 // Platform detection
 #if defined(_WIN32) || defined(_WIN64)

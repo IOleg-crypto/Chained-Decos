@@ -1,5 +1,6 @@
 #include "EditorApplication.h"
 #include "core/Engine.h"
+#include "core/Log.h"
 #include "core/application/EngineApplication.h"
 #include "editor/Editor.h"
 #include "editor/mapgui/UIManager.h"
@@ -7,11 +8,13 @@
 #include "editor/panels/ViewportPanel.h"
 #include "scene/camera/core/CameraController.h"
 
+
+#include "project/chaineddecos/GameLayer.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
-#include "project/chaineddecos/GameLayer.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/core/Model.h"
+
 
 //===============================================
 #include "events/Event.h"
@@ -19,6 +22,10 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlImGui.h>
+
+// Declare this as the main application entry point
+#include "core/application/EntryPoint.h"
+DECLARE_APPLICATION(EditorApplication)
 
 // Global/Static Play Mode State
 using namespace ChainedEngine;
@@ -30,12 +37,12 @@ EditorApplication::EditorApplication(int argc, char *argv[])
 
 EditorApplication::~EditorApplication()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Destructor called.");
+    CD_INFO("[EditorApplication] Destructor called.");
 }
 
 void EditorApplication::OnConfigure(EngineConfig &config)
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Configuring application...");
+    CD_INFO("[EditorApplication] Configuring application...");
     config.windowName = "ChainedEditor";
     config.width = 1600;
     config.height = 900;
@@ -43,17 +50,17 @@ void EditorApplication::OnConfigure(EngineConfig &config)
 
 void EditorApplication::OnRegister()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Registering modules and core services...");
+    CD_INFO("[EditorApplication] Registering modules and core services...");
 
     auto &engine = Engine::Instance();
     // Engine handles core services automatically
 
-    TraceLog(LOG_INFO, "[EditorApplication] Editor modules registered.");
+    CD_INFO("[EditorApplication] Editor modules registered.");
 }
 
 void EditorApplication::OnStart()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Starting application...");
+    CD_INFO("[EditorApplication] Starting application...");
 
     // Initialize Editor components
     auto camera = std::make_shared<CameraController>();
@@ -64,7 +71,7 @@ void EditorApplication::OnStart()
     m_editor = std::make_unique<Editor>(camera, modelLoader);
     camera->SetCameraMode(CAMERA_FREE);
 
-    TraceLog(LOG_INFO, "[EditorApplication] Editor components initialized.");
+    CD_INFO("[EditorApplication] Editor components initialized.");
 
     // Configure ImGui for Editor (custom settings)
     ImGuiIO &io = ImGui::GetIO();
@@ -97,7 +104,7 @@ void EditorApplication::OnStart()
         UnloadImage(icon);
     }
 
-    TraceLog(LOG_INFO, "[EditorApplication] Application started.");
+    CD_INFO("[EditorApplication] Application started.");
 }
 
 void EditorApplication::OnUpdate(float deltaTime)
@@ -112,7 +119,7 @@ void EditorApplication::OnUpdate(float deltaTime)
     {
         if (inPlayMode)
         {
-            TraceLog(LOG_INFO, "[EditorApplication] Entering Play Mode: Injecting GameLayer");
+            CD_INFO("[EditorApplication] Entering Play Mode: Injecting GameLayer");
             if (GetAppRunner())
             {
                 s_playLayer = new GameLayer();
@@ -122,7 +129,7 @@ void EditorApplication::OnUpdate(float deltaTime)
         }
         else
         {
-            TraceLog(LOG_INFO, "[EditorApplication] Exiting Play Mode: Popping GameLayer");
+            CD_INFO("[EditorApplication] Exiting Play Mode: Popping GameLayer");
             if (GetAppRunner() && s_playLayer)
             {
                 // GetAppRunner()->PopLayer(s_playLayer);
@@ -259,7 +266,7 @@ void EditorApplication::OnRender()
 
 void EditorApplication::OnShutdown()
 {
-    TraceLog(LOG_INFO, "[EditorApplication] Shutting down...");
+    CD_INFO("[EditorApplication] Shutting down...");
     // Editor cleans up its own resources in destructor
 }
 
@@ -275,7 +282,3 @@ void EditorApplication::OnEvent(ChainedDecos::Event &e)
         }
     }
 }
-
-// Declare this as the main application entry point
-#include "core/application/EntryPoint.h"
-DECLARE_APPLICATION(EditorApplication)

@@ -21,12 +21,12 @@
         }                                                                                          \
         catch (const std::exception &e)                                                            \
         {                                                                                          \
-            TraceLog(LOG_FATAL, "Unhandled exception: %s", e.what());                              \
+            CD_CORE_FATAL("Unhandled exception: %s", e.what());                              \
             return -1;                                                                             \
         }                                                                                          \
         catch (...)                                                                                \
         {                                                                                          \
-            TraceLog(LOG_FATAL, "Unknown exception occurred");                                     \
+            CD_CORE_FATAL("Unknown exception occurred");                                     \
             return -1;                                                                             \
         }                                                                                          \
     }
@@ -85,3 +85,5 @@ int main(int argc, char *argv[])
 #endif // ENGINE_MAIN_DEFINED
 
 #endif // ENTRY_POINT_H
+#include "core/Log.h"
+

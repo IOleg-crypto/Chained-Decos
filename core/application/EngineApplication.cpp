@@ -115,7 +115,7 @@ void EngineApplication::Initialize()
                                      m_config.fullscreen, m_config.vsync);
     if (!m_engine->Initialize(props))
     {
-        TraceLog(LOG_FATAL, "[EngineApplication] Failed to initialize Engine!");
+        CD_CORE_FATAL("[EngineApplication] Failed to initialize Engine!");
         throw std::runtime_error("Failed to initialize Engine");
     }
 
@@ -244,3 +244,4 @@ const EngineApplication::Config &EngineApplication::GetConfig() const
     return m_config;
 }
 } // namespace ChainedDecos
+

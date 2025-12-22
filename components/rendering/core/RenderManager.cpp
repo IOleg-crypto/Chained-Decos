@@ -1,11 +1,12 @@
 #include "RenderManager.h"
+#include "core/Log.h"
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
 
 RenderManager::RenderManager()
 {
-    TraceLog(LOG_INFO, "RenderManager created");
+    CD_CORE_INFO("RenderManager created");
 }
 
 RenderManager::~RenderManager()
@@ -13,14 +14,14 @@ RenderManager::~RenderManager()
     if (m_font.texture.id != 0 && m_font.texture.id != GetFontDefault().texture.id)
     {
         UnloadFont(m_font);
-        TraceLog(LOG_INFO, "Custom font unloaded");
+        CD_CORE_INFO("Custom font unloaded");
     }
-    TraceLog(LOG_INFO, "RenderManager destroyed");
+    CD_CORE_INFO("RenderManager destroyed");
 }
 
 bool RenderManager::Initialize(int width, int height, const char *title)
 {
-    TraceLog(LOG_INFO, "Initializing RenderManager...");
+    CD_CORE_INFO("Initializing RenderManager...");
 
     m_screenWidth = width;
     m_screenHeight = height;
@@ -38,13 +39,13 @@ bool RenderManager::Initialize(int width, int height, const char *title)
     m_camera.projection = CAMERA_PERSPECTIVE;
 
     m_initialized = true;
-    TraceLog(LOG_INFO, "RenderManager initialized successfully");
+    CD_CORE_INFO("RenderManager initialized successfully");
     return true;
 }
 
 void RenderManager::Shutdown()
 {
-    TraceLog(LOG_INFO, "Shutting down RenderManager...");
+    CD_CORE_INFO("Shutting down RenderManager...");
 
     if (m_font.texture.id != 0 && m_font.texture.id != GetFontDefault().texture.id)
     {
@@ -54,7 +55,7 @@ void RenderManager::Shutdown()
     // CloseWindow(); // MOVED TO CORE ENGINE
 
     m_initialized = false;
-    TraceLog(LOG_INFO, "RenderManager shutdown complete");
+    CD_CORE_INFO("RenderManager shutdown complete");
 }
 
 void RenderManager::Update(float deltaTime)

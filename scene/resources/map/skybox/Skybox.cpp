@@ -1,4 +1,5 @@
 #include "Skybox.h"
+#include "core/Log.h"
 #include "core/config/configManager.h"
 #include "rlImGui/rlImGui.h"
 #include "rlgl.h"
@@ -29,8 +30,7 @@ void Skybox::Init()
     std::string vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/skybox.vs";
     std::string fsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/skybox.fs";
 
-    TraceLog(LOG_INFO, "Skybox::Init() - Loading shaders from: %s, %s", vsPath.c_str(),
-             fsPath.c_str());
+    CD_CORE_INFO("Skybox::Init() - Loading shaders from: %s, %s", vsPath.c_str(), fsPath.c_str());
     LoadMaterialShader(vsPath, fsPath);
 }
 
@@ -38,23 +38,22 @@ void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fs
 {
     if (!m_initialized)
     {
-        TraceLog(LOG_WARNING, "Skybox::LoadMaterialShader() - Skybox not initialized");
+        CD_CORE_WARN("Skybox::LoadMaterialShader() - Skybox not initialized");
         return;
     }
-    TraceLog(LOG_INFO, "Skybox::LoadMaterialShader() - Loading shaders: VS=%s, FS=%s",
-             vsPath.c_str(), fsPath.c_str());
+    CD_CORE_INFO("Skybox::LoadMaterialShader() - Loading shaders: VS=%s, FS=%s", vsPath.c_str(),
+                 fsPath.c_str());
 
     if (!std::filesystem::exists(vsPath))
     {
-        TraceLog(LOG_WARNING, "Skybox::LoadMaterialShader() - Vertex shader not found: %s",
-                 vsPath.c_str());
+        CD_CORE_WARN("Skybox::LoadMaterialShader() - Vertex shader not found: %s", vsPath.c_str());
         return;
     }
 
     if (!std::filesystem::exists(fsPath))
     {
-        TraceLog(LOG_WARNING, "Skybox::LoadMaterialShader() - Fragment shader not found: %s",
-                 fsPath.c_str());
+        CD_CORE_WARN("Skybox::LoadMaterialShader() - Fragment shader not found: %s",
+                     fsPath.c_str());
         return;
     }
 
@@ -62,7 +61,7 @@ void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fs
     Shader shader = LoadShader(vsPath.c_str(), fsPath.c_str());
     if (shader.id == 0)
     {
-        TraceLog(LOG_ERROR, "Skybox::LoadMaterialShader() - Failed to load shaders");
+        CD_CORE_ERROR("Skybox::LoadMaterialShader() - Failed to load shaders");
         return;
     }
 
@@ -104,15 +103,14 @@ void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fs
         SetShaderValue(shader, vflippedLoc, vflippedValue, SHADER_UNIFORM_INT);
     }
 
-    TraceLog(LOG_INFO, "Skybox::LoadMaterialShader() - Shaders loaded successfully");
+    CD_CORE_INFO("Skybox::LoadMaterialShader() - Shaders loaded successfully");
 }
 
 void Skybox::LoadMaterialTexture(const std::string &texturePath)
 {
     if (!std::filesystem::exists(texturePath))
     {
-        TraceLog(LOG_WARNING, "Skybox::LoadMaterialTexture() - File not found: %s",
-                 texturePath.c_str());
+        CD_CORE_WARN("Skybox::LoadMaterialTexture() - File not found: %s", texturePath.c_str());
         return;
     }
 
@@ -120,8 +118,8 @@ void Skybox::LoadMaterialTexture(const std::string &texturePath)
     Image image = LoadImage(texturePath.c_str());
     if (image.data == nullptr)
     {
-        TraceLog(LOG_WARNING, "Skybox::LoadMaterialTexture() - Failed to load image: %s",
-                 texturePath.c_str());
+        CD_CORE_WARN("Skybox::LoadMaterialTexture() - Failed to load image: %s",
+                     texturePath.c_str());
         return;
     }
 
@@ -130,7 +128,7 @@ void Skybox::LoadMaterialTexture(const std::string &texturePath)
 
     if (m_skyboxTexture.id == 0)
     {
-        TraceLog(LOG_ERROR, "Skybox::LoadMaterialTexture() - Failed to create cubemap");
+        CD_CORE_ERROR("Skybox::LoadMaterialTexture() - Failed to create cubemap");
         return;
     }
 
@@ -154,13 +152,13 @@ void Skybox::DrawSkybox(Vector3 position)
 {
     if (!m_initialized)
     {
-        TraceLog(LOG_WARNING, "Skybox::DrawSkybox() - Skybox not initialized");
+        CD_CORE_WARN("Skybox::DrawSkybox() - Skybox not initialized");
         return;
     }
 
     if (!IsLoaded())
     {
-        TraceLog(LOG_WARNING, "Skybox::DrawSkybox() - Skybox texture not loaded");
+        CD_CORE_WARN("Skybox::DrawSkybox() - Skybox texture not loaded");
         return;
     }
 

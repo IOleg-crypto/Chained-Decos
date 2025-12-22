@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "GameLayer.h"
 #include "components/audio/core/AudioManager.h"
 #include "components/input/core/InputManager.h"
@@ -39,7 +40,7 @@ void GameLayer::OnAttach()
         "start_game",
         []()
         {
-            TraceLog(LOG_INFO, "[GameLayer] Start Game Event Triggered!");
+            CD_INFO("[GameLayer] Start Game Event Triggered!");
             // Example logic: Reset player position
             auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
             for (auto [entity, transform, velocity, player] : view.each())
@@ -52,12 +53,11 @@ void GameLayer::OnAttach()
     UIEventRegistry::Get().Register("quit_game",
                                     []()
                                     {
-                                        TraceLog(LOG_INFO,
-                                                 "[GameLayer] Quit Game Event Triggered!");
+                                        CD_INFO("[GameLayer] Quit Game Event Triggered!");
                                         Engine::Instance().RequestExit();
                                     });
 
-    TraceLog(LOG_INFO, "GameLayer Attached");
+    CD_INFO("GameLayer Attached");
 
     // Load HUD Font
 #ifdef PROJECT_ROOT_DIR
@@ -69,11 +69,11 @@ void GameLayer::OnAttach()
     {
         SetTextureFilter(m_hudFont.texture, TEXTURE_FILTER_BILINEAR);
         m_fontLoaded = true;
-        TraceLog(LOG_INFO, "[GameLayer] Loaded HUD font: %s", fontPath.c_str());
+        CD_INFO("[GameLayer] Loaded HUD font: %s", fontPath.c_str());
     }
     else
     {
-        TraceLog(LOG_WARNING, "[GameLayer] Failed to load HUD font: %s", fontPath.c_str());
+        CD_WARN("[GameLayer] Failed to load HUD font: %s", fontPath.c_str());
         m_hudFont = GetFontDefault();
     }
 #else
@@ -83,7 +83,7 @@ void GameLayer::OnAttach()
 
 void GameLayer::OnDetach()
 {
-    TraceLog(LOG_INFO, "GameLayer Detached");
+    CD_INFO("GameLayer Detached");
 }
 
 void GameLayer::OnUpdate(float deltaTime)
@@ -448,3 +448,4 @@ void GameLayer::OnEvent(Event &e)
             return false;
         });
 }
+

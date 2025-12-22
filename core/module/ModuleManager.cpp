@@ -1,10 +1,12 @@
 #include "core/module/ModuleManager.h"
 #include "Engine.h"
+#include "core/Log.h"
 #include "interfaces/IEngineModule.h"
 #include <algorithm>
 #include <functional>
 #include <raylib.h>
 #include <set>
+
 
 ModuleManager::ModuleManager() : m_initialized(false)
 {
@@ -50,7 +52,7 @@ bool ModuleManager::InitializeAllModules(ChainedEngine::Engine *engine)
 
     if (!engine)
     {
-        TraceLog(LOG_ERROR, "[ModuleManager] Cannot initialize modules with null engine");
+        CD_CORE_ERROR("[ModuleManager] Cannot initialize modules with null engine");
         return false;
     }
 
@@ -74,8 +76,7 @@ bool ModuleManager::InitializeAllModules(ChainedEngine::Engine *engine)
         // First initialize the module (creates components)
         if (!module->Initialize(engine))
         {
-            TraceLog(LOG_WARNING, "[ModuleManager] Failed to initialize module: %s",
-                     moduleName.c_str());
+            CD_CORE_WARN("[ModuleManager] Failed to initialize module: %s", moduleName.c_str());
             continue;
         }
 
@@ -183,9 +184,8 @@ std::vector<IEngineModule *> ModuleManager::SortModulesByDependencies() const
 
         if (visiting.count(name))
         {
-            TraceLog(LOG_WARNING,
-                     "[ModuleManager] Circular dependency detected involving module: %s",
-                     name.c_str());
+            CD_CORE_WARN("[ModuleManager] Circular dependency detected involving module: %s",
+                         name.c_str());
             return;
         }
 

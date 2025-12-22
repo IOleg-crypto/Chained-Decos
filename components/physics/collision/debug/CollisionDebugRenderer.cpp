@@ -1,4 +1,5 @@
 #include "CollisionDebugRenderer.h"
+#include "core/Log.h"
 #include <raylib.h>
 
 void CollisionDebugRenderer::RenderCollisionBox(const Collision &collision, Color color) const
@@ -20,22 +21,25 @@ void CollisionDebugRenderer::RenderCollisionTriangles(const Collision &collision
 {
     for (size_t i = 0; i < collision.GetTriangleCount(); ++i)
     {
-        const auto& tri = collision.GetTriangle(i);
+        const auto &tri = collision.GetTriangle(i);
         DrawLine3D(tri.V0(), tri.V1(), color);
         DrawLine3D(tri.V1(), tri.V2(), color);
         DrawLine3D(tri.V2(), tri.V0(), color);
     }
 }
 
-void CollisionDebugRenderer::RenderAllCollisions(const std::vector<std::unique_ptr<Collision>> &collisions) const
+void CollisionDebugRenderer::RenderAllCollisions(
+    const std::vector<std::unique_ptr<Collision>> &collisions) const
 {
-    TraceLog(LOG_DEBUG, "CollisionDebugRenderer::RenderAllCollisions() - Rendering %zu collision objects", collisions.size());
+    CD_CORE_TRACE("CollisionDebugRenderer::RenderAllCollisions() - Rendering %zu collision objects",
+                  collisions.size());
 
     for (size_t i = 0; i < collisions.size(); i++)
     {
         Color color = (i == 0) ? m_groundColor : m_obstacleColor;
-        TraceLog(LOG_DEBUG, "CollisionDebugRenderer::RenderAllCollisions() - Rendering collision %zu with color (%d,%d,%d,%d), triangles: %zu",
-                 i, color.r, color.g, color.b, color.a, collisions[i]->GetTriangleCount());
+        CD_CORE_TRACE("CollisionDebugRenderer::RenderAllCollisions() - Rendering collision %zu "
+                      "with color (%d,%d,%d,%d), triangles: %zu",
+                      i, color.r, color.g, color.b, color.a, collisions[i]->GetTriangleCount());
         RenderCollisionBox(*collisions[i].get(), color);
         RenderCollisionTriangles(*collisions[i], RED);
     }
@@ -66,8 +70,7 @@ void CollisionDebugRenderer::DrawCollisionSolid(const Vector3 &center, const Vec
     DrawCube(center, size.x, size.y, size.z, transparentColor);
     DrawCubeWires(center, size.x, size.y, size.z, color);
 }
-void CollisionDebugRenderer::SetWireframeMode(bool wireframe) { m_wireframe = wireframe; }
-
-
-
-
+void CollisionDebugRenderer::SetWireframeMode(bool wireframe)
+{
+    m_wireframe = wireframe;
+}

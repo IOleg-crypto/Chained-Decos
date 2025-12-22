@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "ConsoleManager.h"
 #include "core/Engine.h"
 #include "core/application/EngineApplication.h"
@@ -16,12 +17,12 @@
 
 ConsoleManager::ConsoleManager()
 {
-    TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - CONSOLE MANAGER INITIALIZED");
+    CD_INFO("ConsoleManager::ConsoleManager() - CONSOLE MANAGER INITIALIZED");
 
     // Register all built-in commands
     RegisterBuiltinCommands();
 
-    TraceLog(LOG_INFO, "ConsoleManager::ConsoleManager() - Registered %zu commands",
+    CD_INFO("ConsoleManager::ConsoleManager() - Registered %zu commands",
              m_commands.size());
 }
 
@@ -122,7 +123,7 @@ void ConsoleManager::RegisterCommand(const std::string &name, const std::string 
 
     m_commands[nameLower] =
         CommandInfo(nameLower, nameLower, "", description, usage, std::move(callback));
-    TraceLog(LOG_DEBUG, "Registered console command: %s", nameLower.c_str());
+    CD_TRACE("Registered console command: %s", nameLower.c_str());
 }
 
 const CommandInfo *ConsoleManager::FindCommand(const std::string &cmdName) const
@@ -530,3 +531,4 @@ bool ConsoleManager::IsConsoleOpen() const
 {
     return consoleOpen;
 }
+

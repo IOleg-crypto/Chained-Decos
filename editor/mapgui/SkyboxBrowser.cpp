@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "SkyboxBrowser.h"
 #include "editor/IEditor.h"
 #include "nfd.h"
@@ -105,7 +106,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
             {
                 const char *placeholderPath =
                     PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
-                TraceLog(LOG_INFO, "[SkyboxBrowser] Loading fallback placeholder: %s",
+                CD_INFO("[SkyboxBrowser] Loading fallback placeholder: %s",
                          placeholderPath);
                 Image placeholderImg = LoadImage(placeholderPath);
                 if (placeholderImg.data != nullptr)
@@ -120,7 +121,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                 {
                     // Fallback failed too, but we must stop the loop
                     m_lastLoadedMetadataSkybox = currentSkyboxTexture;
-                    TraceLog(LOG_WARNING, "[SkyboxBrowser] Failed to load placeholder image!");
+                    CD_WARN("[SkyboxBrowser] Failed to load placeholder image!");
                 }
             }
         }
@@ -171,13 +172,13 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                             m_skyboxPlaceholderInitialized = true;
                             m_skyboxPlaceholderPath = fullPathProject;
                             m_isSkyboxLoaded = true;
-                            TraceLog(LOG_INFO, "[SkyboxBrowser] Synced preview with scene: %s",
+                            CD_INFO("[SkyboxBrowser] Synced preview with scene: %s",
                                      fullPathProject.c_str());
                         }
                     }
                     else
                     {
-                        TraceLog(LOG_WARNING, "[SkyboxBrowser] Failed to sync preview: %s",
+                        CD_WARN("[SkyboxBrowser] Failed to sync preview: %s",
                                  fullPathProject.c_str());
                     }
                 }
@@ -196,7 +197,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                     }
                     else
                     {
-                        TraceLog(LOG_WARNING, "[SkyboxBrowser] Failed to load placeholder: %s",
+                        CD_WARN("[SkyboxBrowser] Failed to load placeholder: %s",
                                  placeholderPath);
                     }
                 }
@@ -241,7 +242,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                         m_skyboxPlaceholderPath = outPath;
                         m_lastLoadedMetadataSkybox = ""; // User-loaded, not from metadata
                         m_isSkyboxLoaded = false;        // Not Applied yet
-                        TraceLog(LOG_INFO, "[SkyboxBrowser] Loaded local preview: %s", outPath);
+                        CD_INFO("[SkyboxBrowser] Loaded local preview: %s", outPath);
                     }
                 }
                 NFD_FreePath(outPath);
@@ -310,7 +311,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
             m_editor->SetSkyboxTexture(m_skyboxPlaceholderPath);
             m_isSkyboxLoaded = true;
 
-            TraceLog(LOG_INFO, "Applied skybox to editor scene: %s",
+            CD_INFO("Applied skybox to editor scene: %s",
                      m_skyboxPlaceholderPath.c_str());
         }
         if (!canApply)
@@ -366,3 +367,4 @@ const std::vector<SkyboxBrowser::SkyboxInfo> &SkyboxBrowser::GetAvailableSkyboxe
 {
     return m_availableSkyboxes;
 }
+

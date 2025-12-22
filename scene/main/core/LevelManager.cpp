@@ -1,10 +1,12 @@
 #include "LevelManager.h"
 #include "core/Engine.h"
+#include "core/Log.h"
 #include "scene/main/core/MapCollisionInitializer.h"
 #include "scene/resources/map/core/MapService.h"
 #include "scene/resources/map/renderer/MapRenderer.h"
 #include "scene/resources/model/utils/ModelAnalyzer.h"
 #include <filesystem>
+
 
 LevelManager::LevelManager(const LevelManagerConfig &config)
     : m_config(config), m_gameScene(std::make_unique<GameScene>()), m_currentMapPath(""),
@@ -45,7 +47,7 @@ bool LevelManager::Initialize(ChainedEngine::Engine *engine)
 {
     if (!engine)
     {
-        TraceLog(LOG_ERROR, "[LevelManager] Engine is null");
+        CD_CORE_ERROR("[LevelManager] Engine is null");
         return false;
     }
 
@@ -62,7 +64,7 @@ bool LevelManager::Initialize(ChainedEngine::Engine *engine)
     // Validate required engine dependencies
     if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
     {
-        TraceLog(LOG_ERROR, "[LevelManager] Required engine services not found");
+        CD_CORE_ERROR("[LevelManager] Required engine services not found");
         return false;
     }
 
@@ -83,7 +85,7 @@ bool LevelManager::LoadScene(const std::string &path)
         mapPath = ConvertMapNameToPath(path);
     }
 
-    TraceLog(LOG_INFO, "[LevelManager] Loading level: %s", mapPath.c_str());
+    CD_CORE_INFO("[LevelManager] Loading level: %s", mapPath.c_str());
 
     try
     {
@@ -103,21 +105,20 @@ bool LevelManager::LoadScene(const std::string &path)
         // 3. Initialize collision system with models
         if (!InitCollisionsWithModelsSafe(requiredModels))
         {
-            TraceLog(LOG_ERROR, "[LevelManager] Failed to initialize collision system for map: %s",
-                     mapPath.c_str());
+            CD_CORE_ERROR("[LevelManager] Failed to initialize collision system for map: %s",
+                          mapPath.c_str());
             return false;
         }
 
         // 4. Load map objects and instances
         LoadEditorMap(mapPath);
 
-        TraceLog(LOG_INFO, "[LevelManager] Level loaded successfully: %s", mapPath.c_str());
+        CD_CORE_INFO("[LevelManager] Level loaded successfully: %s", mapPath.c_str());
         return true;
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "[LevelManager] Failed to load level %s: %s", mapPath.c_str(),
-                 e.what());
+        CD_CORE_ERROR("[LevelManager] Failed to load level %s: %s", mapPath.c_str(), e.what());
         return false;
     }
 }
@@ -322,8 +323,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
 
     if (!std::filesystem::exists(mapPath))
     {
-        TraceLog(LOG_ERROR, "LevelManager::LoadEditorMap() - Map file does not exist: %s",
-                 mapPath.c_str());
+        CD_CORE_ERROR("LevelManager::LoadEditorMap() - Map file does not exist: %s",
+                      mapPath.c_str());
         return;
     }
 
@@ -345,8 +346,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         MapService mapService;
         if (!mapService.LoadScene(mapPath, *m_gameScene))
         {
-            TraceLog(LOG_ERROR, "LevelManager::LoadEditorMap() - MapService failed to load map: %s",
-                     mapPath.c_str());
+            CD_CORE_ERROR("LevelManager::LoadEditorMap() - MapService failed to load map: %s",
+                          mapPath.c_str());
             return;
         }
 

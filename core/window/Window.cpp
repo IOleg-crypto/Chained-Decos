@@ -116,3 +116,5 @@ bool Window::ShouldClose() const
 }
 
 } // namespace ChainedEngine
+#include "core/Log.h"
+

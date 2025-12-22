@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "MapSelector.h"
 #include "../MenuConstants.h"
 #include "scene/resources/map/core/SceneLoader.h"
@@ -85,7 +86,7 @@ void MapSelector::InitializeMaps()
     // If no JSON maps or models found, add a fallback built-in map
     if (m_availableMaps.empty())
     {
-        TraceLog(LOG_WARNING, "MapSelector::InitializeMaps() - No JSON maps or models found, "
+        CD_WARN("MapSelector::InitializeMaps() - No JSON maps or models found, "
                               "adding fallback built-in map");
         MapInfo fallbackMap = {
             FALLBACK_MAP_NAME,
@@ -100,7 +101,7 @@ void MapSelector::InitializeMaps()
     }
     else
     {
-        TraceLog(LOG_INFO, "MapSelector::InitializeMaps() - Total maps available: %d",
+        CD_INFO("MapSelector::InitializeMaps() - Total maps available: %d",
                  m_availableMaps.size());
     }
 
@@ -118,8 +119,7 @@ void MapSelector::InitializeMaps()
     // Initialize pagination
     UpdatePagination();
     LoadThumbnails();
-    TraceLog(LOG_INFO,
-             "MapSelector::InitializeMaps() - Pagination initialized: %d pages for %d maps",
+    CD_INFO("MapSelector::InitializeMaps() - Pagination initialized: %d pages for %d maps",
              m_totalPages, m_availableMaps.size());
 }
 
@@ -478,31 +478,31 @@ void MapSelector::ScanForJsonMaps()
         namespace fs = std::filesystem;
         std::string rootDir = PROJECT_ROOT_DIR;
 
-        TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Scanning for JSON map files...");
-        TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Project root directory: %s",
+        CD_INFO("MapSelector::ScanForJsonMaps() - Scanning for JSON map files...");
+        CD_INFO("MapSelector::ScanForJsonMaps() - Project root directory: %s",
                  rootDir.c_str());
 
         for (const std::string &dir : MAP_SEARCH_DIRECTORIES)
         {
             std::string fullDir = rootDir + dir;
-            TraceLog(LOG_DEBUG, "MapSelector::ScanForJsonMaps() - Checking directory: %s",
+            CD_TRACE("MapSelector::ScanForJsonMaps() - Checking directory: %s",
                      fullDir.c_str());
 
             if (!fs::exists(fullDir))
             {
-                TraceLog(LOG_DEBUG, "MapSelector::ScanForJsonMaps() - Directory does not exist: %s",
+                CD_TRACE("MapSelector::ScanForJsonMaps() - Directory does not exist: %s",
                          fullDir.c_str());
                 continue;
             }
 
             if (!fs::is_directory(fullDir))
             {
-                TraceLog(LOG_DEBUG, "MapSelector::ScanForJsonMaps() - Path is not a directory: %s",
+                CD_TRACE("MapSelector::ScanForJsonMaps() - Path is not a directory: %s",
                          fullDir.c_str());
                 continue;
             }
 
-            TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Scanning directory: %s",
+            CD_INFO("MapSelector::ScanForJsonMaps() - Scanning directory: %s",
                      fullDir.c_str());
 
             int filesInDirectory = 0;
@@ -519,8 +519,7 @@ void MapSelector::ScanForJsonMaps()
 
                 bool isJson =
                     (extension == ".json" && filename != "game.cfg" && filename != "config.json");
-                TraceLog(LOG_DEBUG,
-                         "MapSelector::ScanForJsonMaps() - File: %s, Extension: %s, Is JSON: %s",
+                CD_TRACE("MapSelector::ScanForJsonMaps() - File: %s, Extension: %s, Is JSON: %s",
                          filename.c_str(), extension.c_str(), isJson ? "Yes" : "No");
 
                 // Look for .json files (excluding system files)
@@ -589,30 +588,28 @@ void MapSelector::ScanForJsonMaps()
 
                     AddMap(mapInfo);
                     m_jsonMapsCount++;
-                    TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Added map: %s (%s)",
+                    CD_INFO("MapSelector::ScanForJsonMaps() - Added map: %s (%s)",
                              displayName.c_str(), mapPath.c_str());
                 }
             }
         }
 
-        TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Scan completed, found %d maps total",
+        CD_INFO("MapSelector::ScanForJsonMaps() - Scan completed, found %d maps total",
                  m_availableMaps.size());
 
         // List all found maps for debugging
         for (size_t i = 0; i < m_availableMaps.size(); ++i)
         {
             const auto &map = m_availableMaps[i];
-            TraceLog(LOG_INFO, "MapSelector::ScanForJsonMaps() - Map %d: %s -> %s", i,
+            CD_INFO("MapSelector::ScanForJsonMaps() - Map %d: %s -> %s", i,
                      map.displayName.c_str(), map.name.c_str());
         }
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR,
-                 "MapSelector::ScanForJsonMaps() - Exception while scanning for JSON maps: %s",
+        CD_ERROR("MapSelector::ScanForJsonMaps() - Exception while scanning for JSON maps: %s",
                  e.what());
-        TraceLog(LOG_INFO,
-                 "MapSelector::ScanForJsonMaps() - Continuing with any maps found so far");
+        CD_INFO("MapSelector::ScanForJsonMaps() - Continuing with any maps found so far");
     }
 }
 
@@ -1171,7 +1168,7 @@ void MapSelector::RenderMapSelectionWindow()
     // Log final cursor position and scroll info
     ImVec2 cursorPos = ImGui::GetCursorPos();
     float currentScrollY = ImGui::GetScrollY();
-    // TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - Final cursor Y: %.0f, Current
+    // CD_INFO("MapSelector::RenderMapSelectionWindow() - Final cursor Y: %.0f, Current
     // scroll Y: %.0f", cursorPos.y, currentScrollY);
 
     ImGui::EndChild();
@@ -1179,10 +1176,11 @@ void MapSelector::RenderMapSelectionWindow()
     // // Log if scrolling is possible
     // float maxScrollY = ImGui::GetScrollMaxY();
     // if (maxScrollY > 0) {
-    //     TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - Scrolling is possible,
+    //     CD_INFO("MapSelector::RenderMapSelectionWindow() - Scrolling is possible,
     //     ScrollMaxY: %.0f", maxScrollY);
     // } else {
-    //     TraceLog(LOG_INFO, "MapSelector::RenderMapSelectionWindow() - No scrolling needed,
+    //     CD_INFO("MapSelector::RenderMapSelectionWindow() - No scrolling needed,
     //     content fits");
     // }
 }
+

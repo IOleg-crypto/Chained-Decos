@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "editor/render/EditorRenderer.h"
 #include "components/rendering/utils/RenderUtils.h"
 #include "editor/IEditor.h"
@@ -39,19 +40,19 @@ void EditorRenderer::RenderObject(const MapObjectData &data, bool isSelected)
 
     if (m_editor && m_editor->IsInPlayMode())
     {
-        TraceLog(LOG_INFO, "[EditorRenderer] Rendering object '%s' in Play Mode (type: %d)",
+        CD_INFO("[EditorRenderer] Rendering object '%s' in Play Mode (type: %d)",
                  data.name.c_str(), (int)data.type);
         if (data.type == MapObjectType::MODEL)
         {
             auto it = loadedModels.find(data.modelName);
             if (it == loadedModels.end())
             {
-                TraceLog(LOG_WARNING, "[EditorRenderer] Model '%s' NOT FOUND for object '%s'",
+                CD_WARN("[EditorRenderer] Model '%s' NOT FOUND for object '%s'",
                          data.modelName.c_str(), data.name.c_str());
             }
             else
             {
-                TraceLog(LOG_INFO, "[EditorRenderer] Model '%s' found, calling MapRenderer",
+                CD_INFO("[EditorRenderer] Model '%s' found, calling MapRenderer",
                          data.modelName.c_str());
             }
         }
@@ -191,3 +192,4 @@ void EditorRenderer::RenderSelectionWireframe(const MapObjectData &data)
         break;
     }
 }
+

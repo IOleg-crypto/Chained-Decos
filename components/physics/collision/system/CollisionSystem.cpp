@@ -1,4 +1,5 @@
 #include "CollisionSystem.h"
+#include "core/Log.h"
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
@@ -94,14 +95,14 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
     Model *rayModel = static_cast<Model *>(model);
     if (!rayModel)
     {
-        TraceLog(LOG_ERROR, "Collision::BuildFromModel() - Invalid model pointer");
+        CD_CORE_ERROR("Collision::BuildFromModel() - Invalid model pointer");
         return;
     }
 
     // Basic validation
     if (!rayModel || rayModel->meshCount <= 0)
     {
-        TraceLog(LOG_WARNING, "Collision::BuildFromModel() - Invalid model or no meshes");
+        CD_CORE_WARN("Collision::BuildFromModel() - Invalid model or no meshes");
         return;
     }
 
@@ -117,7 +118,7 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
 
     if (totalTriangles == 0)
     {
-        TraceLog(LOG_WARNING, "Collision::BuildFromModel() - No triangles found in model");
+        CD_CORE_WARN("Collision::BuildFromModel() - No triangles found in model");
         return;
     }
 
@@ -221,7 +222,7 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
         }
     }
 
-    TraceLog(LOG_INFO, "Collision triangles: %zu", m_triangles.size());
+    CD_CORE_INFO("Collision triangles: %zu", m_triangles.size());
 
     // Build AABB and BVH only if we have triangles
     if (!m_triangles.empty())
@@ -410,12 +411,11 @@ std::unique_ptr<BVHNode> Collision::BuildBVHNode(std::vector<CollisionTriangle> 
 
 void Collision::BuildBVHFromTriangles()
 {
-    TraceLog(LOG_DEBUG,
-             "Collision::BuildBVHFromTriangles() - Starting BVH build for collision object");
+    CD_CORE_TRACE("Collision::BuildBVHFromTriangles() - Starting BVH build for collision object");
 
     if (m_triangles.empty())
     {
-        TraceLog(LOG_DEBUG, "Collision::BuildBVHFromTriangles() - No triangles to build BVH");
+        CD_CORE_TRACE("Collision::BuildBVHFromTriangles() - No triangles to build BVH");
         m_bvhRoot.reset();
         return;
     }
@@ -432,13 +432,12 @@ void Collision::BuildBVHFromTriangles()
         }
     }
 
-    TraceLog(LOG_DEBUG,
-             "Collision::BuildBVHFromTriangles() - Found %zu valid triangles out of %zu total",
-             validTriangles, m_triangles.size());
+    CD_CORE_TRACE("Collision::BuildBVHFromTriangles() - Found %zu valid triangles out of %zu total",
+                  validTriangles, m_triangles.size());
 
     if (validTriangles == 0)
     {
-        TraceLog(LOG_ERROR, "Collision::BuildBVHFromTriangles() - No valid triangles found");
+        CD_CORE_ERROR("Collision::BuildBVHFromTriangles() - No valid triangles found");
         m_bvhRoot.reset();
         return;
     }
@@ -455,14 +454,13 @@ void Collision::BuildBVHFromTriangles()
     try
     {
         m_bvhRoot = BuildBVHNode(m_triangles, 0);
-        TraceLog(LOG_INFO,
-                 "Collision::BuildBVHFromTriangles() - Successfully built BVH with %zu triangles",
-                 validTriangles);
+        CD_CORE_INFO(
+            "Collision::BuildBVHFromTriangles() - Successfully built BVH with %zu triangles",
+            validTriangles);
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Collision::BuildBVHFromTriangles() - Failed to build BVH: %s",
-                 e.what());
+        CD_CORE_ERROR("Collision::BuildBVHFromTriangles() - Failed to build BVH: %s", e.what());
         m_bvhRoot.reset();
     }
 }
