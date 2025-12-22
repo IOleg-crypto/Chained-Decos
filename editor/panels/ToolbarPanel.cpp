@@ -109,8 +109,8 @@ void ToolbarPanel::Render()
         bool inPlayMode = m_editor && m_editor->IsInPlayMode();
         if (inPlayMode)
         {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
-            if (ImGui::Button("Stop", ImVec2(50, 28)))
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.25f, 0.25f, 1.0f));
+            if (ImGui::Button("Stop", ImVec2(60, 24)))
             {
                 m_editor->StopPlayMode();
             }
@@ -118,8 +118,8 @@ void ToolbarPanel::Render()
         }
         else
         {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
-            if (ImGui::Button("Play", ImVec2(50, 28)))
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.75f, 0.25f, 1.0f));
+            if (ImGui::Button("Play", ImVec2(60, 24)))
             {
                 m_editor->StartPlayMode();
             }

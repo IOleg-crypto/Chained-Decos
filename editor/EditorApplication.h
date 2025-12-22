@@ -26,6 +26,7 @@ public:
 
     // Render
     void OnRender() override;
+    void OnImGuiRender() override;
 
     // Shutdown
     void OnShutdown() override;

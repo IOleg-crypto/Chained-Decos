@@ -7,7 +7,6 @@
 #include <raylib.h>
 #include <set>
 
-
 ModuleManager::ModuleManager() : m_initialized(false)
 {
 }
@@ -43,7 +42,7 @@ bool ModuleManager::LoadModule(const std::string &moduleName)
     return IsModuleLoaded(moduleName);
 }
 
-bool ModuleManager::InitializeAllModules(ChainedEngine::Engine *engine)
+bool ModuleManager::InitializeAllModules(IEngine *engine)
 {
     if (m_initialized)
     {

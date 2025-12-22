@@ -77,6 +77,17 @@ public:
     virtual EditorMode GetEditorMode() const = 0;
     virtual void SetEditorMode(EditorMode mode) = 0;
     virtual bool IsUIDesignMode() const = 0;
+
+    // Project Management
+    virtual const std::string &GetProjectPath() const = 0;
+    virtual void SetProjectPath(const std::string &path) = 0;
+    virtual bool CreateNewProject(const std::string &path) = 0;
+    virtual void SaveProject() = 0;
+    virtual void LoadProject(const std::string &path) = 0;
+
+    // Recent Projects
+    virtual const std::vector<std::string> &GetRecentProjects() const = 0;
+    virtual void AddRecentProject(const std::string &path) = 0;
 };
 
 #endif // IEDITOR_H

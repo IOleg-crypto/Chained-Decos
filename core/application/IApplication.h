@@ -5,6 +5,7 @@
 
 #include "core/Engine.h"
 #include "core/module/ModuleManager.h"
+#include "events/Event.h"
 
 namespace ChainedDecos
 {
@@ -69,6 +70,11 @@ public:
 
     // Render Loop
     virtual void OnRender()
+    {
+    }
+
+    // ImGui Render Loop (called between ImGui Begin/End)
+    virtual void OnImGuiRender()
     {
     }
 
