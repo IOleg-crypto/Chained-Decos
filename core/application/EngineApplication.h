@@ -23,6 +23,8 @@ public:
         std::string windowName = "Engine Application";
         bool enableMSAA = true;
         bool resizable = true;
+        bool fullscreen = false;
+        bool vsync = true;
     };
 
     EngineApplication(Config config, IApplication *application);
@@ -37,7 +39,7 @@ public:
 
     void OnEvent(Event &e);
 
-    Engine *GetEngine() const;
+    ChainedEngine::Engine *GetEngine() const;
 
     // Configuration
     Config &GetConfig();
@@ -51,7 +53,7 @@ private:
 
     IApplication *m_app; // The application instance
     Config m_config;
-    std::shared_ptr<Engine> m_engine; // Engine is now shared/singleton managed
+    std::shared_ptr<ChainedEngine::Engine> m_engine; // Engine is now shared/singleton managed
     LayerStack m_LayerStack;
     bool m_initialized = false;
 };

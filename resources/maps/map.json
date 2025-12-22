@@ -16,6 +16,7 @@
             "r": 0
         },
         "name": "map",
+        "sceneType": 0,
         "skyboxTexture": "D:/gitnext/Chained Decos/resources/skyboxes/skybox.png",
         "startPosition": {
             "x": -0.800000011920929,
@@ -1942,5 +1943,6 @@
             },
             "type": 6
         }
-    ]
+    ],
+    "uiElements": []
 }

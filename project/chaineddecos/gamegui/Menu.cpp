@@ -42,7 +42,7 @@ Menu::Menu()
     ShowMainMenu();
 }
 
-void Menu::Initialize(Engine *engine)
+void Menu::Initialize(ChainedEngine::Engine *engine)
 {
     m_engine = engine;
 
@@ -413,5 +413,3 @@ void Menu::HandlePendingActions()
 {
     // Implementation for handling delayed actions if any
 }
-
-

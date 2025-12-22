@@ -9,7 +9,8 @@
 #include <memory>
 
 // Game application - uses full engine + own modules
-class GameApplication : public IApplication
+
+class GameApplication : public ChainedDecos::IApplication
 {
 public:
     GameApplication(int argc, char *argv[]);
@@ -61,9 +62,7 @@ private:
     bool m_fontLoaded = false;
 
     // In-game menu
-    std::unique_ptr<Menu> m_menu;
+    std::shared_ptr<Menu> m_menu;
 };
 
 #endif // GAME_APPLICATION_H
-
-

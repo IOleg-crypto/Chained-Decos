@@ -329,6 +329,12 @@ bool SceneLoader::SaveSceneToFile(const GameScene &map, const std::string &path)
         if (!elem.texturePath.empty())
             uiElem["texturePath"] = elem.texturePath;
 
+        // Action System
+        if (!elem.actionType.empty())
+            uiElem["actionType"] = elem.actionType;
+        if (!elem.actionTarget.empty())
+            uiElem["actionTarget"] = elem.actionTarget;
+
         uiElements.push_back(uiElem);
     }
 
@@ -839,6 +845,10 @@ GameScene SceneLoader::LoadScene(const std::string &path)
             }
 
             elemData.texturePath = uiElem.value("texturePath", "");
+
+            // Action System
+            elemData.actionType = uiElem.value("actionType", "None");
+            elemData.actionTarget = uiElem.value("actionTarget", "");
 
             map.GetUIElementsMutable().push_back(elemData);
         }

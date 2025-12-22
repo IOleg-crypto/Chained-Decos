@@ -6,7 +6,8 @@
 #include <memory>
 
 // Editor application - uses full engine + own modules
-class EditorApplication : public IApplication
+// Editor application - uses full engine + own modules
+class EditorApplication : public ChainedDecos::IApplication
 {
 public:
     EditorApplication(int argc, char *argv[]);
@@ -38,5 +39,3 @@ private:
 };
 
 #endif // EDITOR_APPLICATION_H
-
-

@@ -10,6 +10,15 @@ json JsonSerializableObject::ToJson() const
     j["rotation"] = {rotation.x, rotation.y, rotation.z};
     j["scale"] = scale;
     j["type"] = type;
+
+    // UI Element Specifics
+    if (type == 1) // UI_MENU - though this is MapObjectType not SceneType..
+    {
+        // Wait, JsonSerializableObject is for MapObjectData, not UIElementData.
+        // I need to check if UIElementData is serialized here or elsewhere.
+        // Looking at the code for JsonSceneFileManager, it seems it only handles `objects` array
+        // which are `JsonSerializableObject`. I need to find where UIElementData is serialized.
+    }
     return j;
 }
 

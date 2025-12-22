@@ -41,7 +41,7 @@ void LevelManager::Shutdown()
     m_engine = nullptr;
 }
 
-bool LevelManager::Initialize(Engine *engine)
+bool LevelManager::Initialize(ChainedEngine::Engine *engine)
 {
     if (!engine)
     {
@@ -157,7 +157,7 @@ void LevelManager::Update(float deltaTime)
     // Update Player reference if it became available
     if (!m_player && m_engine && m_collisionInitializer)
     {
-        auto player = m_engine->GetPlayer();
+        auto player = m_engine->GetService<IPlayer>();
         if (player)
         {
             m_player = player;
@@ -174,7 +174,7 @@ void LevelManager::Render()
     // Rendering is handled by RenderingSystem or MapRenderer
 }
 
-void LevelManager::RegisterServices(Engine *engine)
+void LevelManager::RegisterServices(ChainedEngine::Engine *engine)
 {
     if (!engine)
     {
