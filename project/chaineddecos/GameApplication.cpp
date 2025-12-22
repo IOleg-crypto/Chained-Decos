@@ -12,7 +12,7 @@
 #include "core/config/ConfigManager.h"
 #include "scene/ecs/Examples.h"
 #include "scene/ecs/components.h"
-#include "core/gui/components/GuiButton.h"
+#include "core/imgui/components/GuiButton.h"
 #include "core/module/ModuleManager.h"
 #include "project/chaineddecos/gamegui/Menu.h"
 #include "project/chaineddecos/player/core/Player.h"
