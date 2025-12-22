@@ -9,7 +9,7 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include "core/events/Event.h"
+#include "events/Event.h"
 
 //
 // CameraController

@@ -14,7 +14,7 @@
 #include "scene/resources/model/core/Model.h"
 
 //===============================================
-#include "core/events/Event.h"
+#include "events/Event.h"
 #include <imgui.h>
 #include <raylib.h>
 #include <raymath.h>

@@ -1,7 +1,7 @@
 #ifndef IMENU_SCREEN_H
 #define IMENU_SCREEN_H
 
-#include "core/events/MenuEvent.h"
+#include "events/MenuEvent.h"
 #include <string>
 
 #include "core/interfaces/IMenu.h"

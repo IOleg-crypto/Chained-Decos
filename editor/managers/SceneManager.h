@@ -1,7 +1,7 @@
 #ifndef SCENE_MANAGER_H
 #define SCENE_MANAGER_H
 
-#include "core/events/Event.h"
+#include "events/Event.h"
 #include "editor/core/EditorContext.h"
 #include <functional>
 #include <string>

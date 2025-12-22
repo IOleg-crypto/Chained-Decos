@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>
 
-#include "core/events/Event.h"
+#include "events/Event.h"
 #include "core/utils/Base.h"
 #include "editor/IEditor.h"
 #include "editor/mapgui/IUIManager.h"
