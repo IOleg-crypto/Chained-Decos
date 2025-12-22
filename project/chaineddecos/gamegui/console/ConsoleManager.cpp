@@ -28,13 +28,13 @@ ConsoleManager::ConsoleManager()
 IPlayer *ConsoleManager::GetPlayer()
 {
     // Get Player through Engine -> PlayerService
-    auto player = Engine::Instance().GetPlayer();
+    auto player = ChainedEngine::Engine::Instance().GetService<IPlayer>();
     return player.get();
 }
 
 IEngine *ConsoleManager::GetEngine() const
 {
-    return &Engine::Instance();
+    return &ChainedEngine::Engine::Instance();
 }
 
 void ConsoleManager::ToggleConsole()
@@ -530,5 +530,3 @@ bool ConsoleManager::IsConsoleOpen() const
 {
     return consoleOpen;
 }
-
-

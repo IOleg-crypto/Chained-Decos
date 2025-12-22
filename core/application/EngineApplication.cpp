@@ -1,6 +1,8 @@
 #include "core/application/EngineApplication.h"
 #include "Engine.h"
 #include "core/application/IApplication.h"
+#include "core/gui/ImGuiLayer.h"
+#include "core/window/Window.h"
 
 #include "components/input/core/InputManager.h"
 #include "components/rendering/core/RenderManager.h"
@@ -17,12 +19,9 @@ EngineApplication::EngineApplication(Config config, IApplication *application)
     assert(m_app != nullptr && "Application instance cannot be null!");
 
     // Create the Engine singleton
-    m_engine = std::make_shared<Engine>();
+    // Create the Engine singleton
+    m_engine = std::make_shared<ChainedEngine::Engine>();
     m_app->SetAppRunner(this);
-    if (!m_engine->Initialize())
-    {
-        throw std::runtime_error("Failed to initialize Engine!");
-    }
 }
 
 EngineApplication::~EngineApplication()
@@ -109,12 +108,13 @@ void EngineApplication::Initialize()
     // Step 2: Register modules and services
     m_app->OnRegister();
 
-    // Step 2.5: Initialize Window (Must be done before modules initialize)
-    if (!m_engine->GetRenderManager()->Initialize(m_config.width, m_config.height,
-                                                  m_config.windowName.c_str()))
+    // Step 2.5: Initialize Engine & Window (Must be done before modules initialize)
+    ChainedEngine::WindowProps props(m_config.windowName, m_config.width, m_config.height,
+                                     m_config.fullscreen, m_config.vsync);
+    if (!m_engine->Initialize(props))
     {
-        TraceLog(LOG_FATAL, "[EngineApplication] Failed to initialize RenderManager (Window)");
-        throw std::runtime_error("Failed to initialize RenderManager");
+        TraceLog(LOG_FATAL, "[EngineApplication] Failed to initialize Engine!");
+        throw std::runtime_error("Failed to initialize Engine");
     }
 
     // Step 3: Initialize all modules
@@ -131,6 +131,10 @@ void EngineApplication::Initialize()
         {
             m_engine->GetInputManager()->SetEventCallback([this](Event &e) { this->OnEvent(e); });
         }
+
+        // Push ImGuiLayer as overlay
+        PushOverlay(new ImGuiLayer());
+
         m_app->OnStart();
     }
 
@@ -176,11 +180,28 @@ void EngineApplication::Render()
         if (m_app)
             m_app->OnRender();
 
+        // Begin ImGui frame
+        ImGuiLayer *imguiLayer = nullptr;
+        for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
+        {
+            if ((*it)->GetName() == "ImGuiLayer")
+            {
+                imguiLayer = static_cast<ImGuiLayer *>(*it);
+                break;
+            }
+        }
+        if (imguiLayer)
+            imguiLayer->Begin();
+
         // Render Custom GUI (Above the game, but maybe below ImGUI dev tools)
         if (auto gui = m_engine->GetGuiManager())
         {
             gui->Render();
         }
+
+        // End ImGui frame
+        if (imguiLayer)
+            imguiLayer->End();
 
         // End frame
         m_engine->GetRenderManager()->EndFrame();
@@ -208,7 +229,7 @@ void EngineApplication::Shutdown()
     TraceLog(LOG_INFO, "[EngineApplication] Application shut down.");
 }
 
-Engine *EngineApplication::GetEngine() const
+ChainedEngine::Engine *EngineApplication::GetEngine() const
 {
     return m_engine.get();
 }

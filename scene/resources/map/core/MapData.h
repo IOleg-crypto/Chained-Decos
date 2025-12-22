@@ -81,6 +81,10 @@ struct UIElementData
 
     Color tint;              // For UIImage
     std::string texturePath; // For UIImage (future)
+
+    // Action System
+    std::string actionType;   // "None", "LoadScene", "Quit", "OpenURL"
+    std::string actionTarget; // Scene path or URL
 };
 
 struct MapMetadata

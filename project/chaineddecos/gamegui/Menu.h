@@ -2,10 +2,11 @@
 #define MENU_H
 
 #include "console/consoleManager.h"
+#include "interfaces/IMenuScreen.h"
 #include "mapselector/mapselector.h"
 #include "settings/MenuSettingsController.h"
 #include "settings/settingsManager.h"
-#include "interfaces/IMenuScreen.h"
+
 
 #include "core/events/MenuEvent.h"
 #include "core/interfaces/IMenu.h"
@@ -42,7 +43,7 @@ public:
     ~Menu() = default;
 
     // Core functionality
-    void Initialize(Engine *engine);
+    void Initialize(ChainedEngine::Engine *engine);
 
     // Event management
     using MenuEventCallback = std::function<void(const ChainedDecos::MenuEvent &)>;
@@ -125,7 +126,7 @@ private:
     void RenderConsoleOverlay();
 
     // Core state
-    Engine *m_engine = nullptr;
+    ChainedEngine::Engine *m_engine = nullptr;
     std::unique_ptr<SettingsManager> m_settingsManager;
     ICameraSensitivityController *m_cameraController = nullptr;
 
@@ -151,5 +152,3 @@ private:
 };
 
 #endif // MENU_H
-
-

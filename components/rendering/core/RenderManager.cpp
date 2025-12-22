@@ -3,7 +3,6 @@
 #include <raylib.h>
 #include <rlImGui.h>
 
-
 RenderManager::RenderManager()
 {
     TraceLog(LOG_INFO, "RenderManager created");
@@ -27,11 +26,9 @@ bool RenderManager::Initialize(int width, int height, const char *title)
     m_screenHeight = height;
 
     // Initialize window
-    InitWindow(width, height, title);
+    // Initialize window
+    // InitWindow(width, height, title); // MOVED TO CORE ENGINE
     SetTargetFPS(60);
-
-    // Initialize ImGui
-    rlImGuiSetup(true);
 
     // Setup default camera
     m_camera.position = Vector3{0.0f, 10.0f, 10.0f};
@@ -54,8 +51,7 @@ void RenderManager::Shutdown()
         UnloadFont(m_font);
     }
 
-    rlImGuiShutdown();
-    CloseWindow();
+    // CloseWindow(); // MOVED TO CORE ENGINE
 
     m_initialized = false;
     TraceLog(LOG_INFO, "RenderManager shutdown complete");
@@ -70,18 +66,6 @@ void RenderManager::BeginFrame()
 {
     BeginDrawing();
     ClearBackground(m_backgroundColor);
-
-    // Build ImGui fonts on first frame
-    static bool fontsBuilt = false;
-    if (!fontsBuilt)
-    {
-        ImGuiIO &io = ImGui::GetIO();
-        if (!io.Fonts->IsBuilt())
-        {
-            io.Fonts->Build();
-            fontsBuilt = true;
-        }
-    }
 }
 
 void RenderManager::EndFrame()
@@ -108,7 +92,3 @@ int RenderManager::GetScreenHeight() const
 {
     return m_screenHeight;
 }
-
-
-
-

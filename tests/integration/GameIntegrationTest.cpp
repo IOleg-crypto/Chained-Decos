@@ -38,7 +38,7 @@ protected:
         menu.reset();
     }
 
-    std::shared_ptr<Engine> engine;
+    std::shared_ptr<ChainedEngine::Engine> engine;
     std::shared_ptr<GameApplication> game;
     std::shared_ptr<CollisionManager> collisionManager;
     std::shared_ptr<Player> player;

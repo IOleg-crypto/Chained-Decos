@@ -104,9 +104,9 @@ endif()
 
 find_package(Threads REQUIRED)
 
-# Unity build configuration
+# Unity build configuration (DISABLED for cleaner builds)
 if(ENABLE_UNITY_BUILD)
-    set(CMAKE_UNITY_BUILD ON)
+    set(CMAKE_UNITY_BUILD OFF)
     set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
 endif()
 
@@ -219,11 +219,6 @@ add_subdirectory(components)
 add_subdirectory(scene)
 add_subdirectory(project/chaineddecos)
 
-
-set(APP_SOURCES project/chaineddecos/main.cpp)
-add_executable(ChainedDecos ${APP_SOURCES})
-target_link_libraries(ChainedDecos PRIVATE ChainedDecosGame)
-
 if(BUILD_TESTS)
     add_subdirectory(tests ${CMAKE_CURRENT_BINARY_DIR}/tests)
 endif()
@@ -232,22 +227,7 @@ if(BUILD_MAP_EDITOR)
     add_subdirectory(editor)
 endif()
 
-# Set the target properties
-set_target_properties(ChainedDecos PROPERTIES
-    CXX_STANDARD 23
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-)
 
-# Set output name based on build type
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos_debug")
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos")
-endif()
 
 # Native File Dialog (nfd)
 if(EXISTS "${CMAKE_SOURCE_DIR}/include/nfd/CMakeLists.txt")
@@ -257,12 +237,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/nfd/CMakeLists.txt")
     message(STATUS "nfd loaded from submodule")
 endif()
 
-# Installation configuration
-install(TARGETS ChainedDecos
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
+
 # Install configuration files
 install(FILES game.cfg
     DESTINATION share/ChainedDecos

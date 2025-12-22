@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <raylib.h>
 #include <raymath.h>
+
+using namespace ChainedEngine;
 #include <vector>
 
 using namespace ChainedDecos;

@@ -52,11 +52,11 @@ public:
         return "Central Map and Level Management";
     }
 
-    bool Initialize(Engine *engine) override;
+    bool Initialize(ChainedEngine::Engine *engine) override;
     void Shutdown() override;
     void Update(float deltaTime) override;
     void Render() override;
-    void RegisterServices(Engine *engine) override;
+    void RegisterServices(ChainedEngine::Engine *engine) override;
     std::vector<std::string> GetDependencies() const override;
 
     // Map Management
@@ -104,7 +104,7 @@ private:
     std::shared_ptr<RenderManager> m_renderManager;
     std::shared_ptr<IPlayer> m_player;
     std::shared_ptr<IMenu> m_menu;
-    Engine *m_engine = nullptr;
+    ChainedEngine::Engine *m_engine = nullptr;
 };
 
 #endif // LEVELMANAGER_H

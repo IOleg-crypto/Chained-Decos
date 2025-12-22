@@ -1,5 +1,7 @@
 #include "UIRenderSystem.h"
+#include "core/Engine.h"
 #include "core/events/UIEventRegistry.h"
+#include "scene/SceneManager.h"
 #include "scene/resources/font/FontService.h"
 #include <imgui.h>
 #include <raymath.h>
@@ -46,6 +48,20 @@ void UIRenderSystem::Render(int screenWidth, int screenHeight)
                         if (!button.eventId.empty())
                         {
                             UIEventRegistry::Get().Trigger(button.eventId);
+                        }
+
+                        // Execute Action
+                        if (button.actionType == "LoadScene" && !button.actionTarget.empty())
+                        {
+                            SceneManager::Get().LoadScene(button.actionTarget);
+                        }
+                        else if (button.actionType == "Quit")
+                        {
+                            ChainedEngine::Engine::Instance().RequestExit();
+                        }
+                        else if (button.actionType == "OpenURL" && !button.actionTarget.empty())
+                        {
+                            OpenURL(button.actionTarget.c_str());
                         }
                     }
                     button.isPressed = false;

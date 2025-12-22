@@ -21,6 +21,7 @@
 #include <rlImGui.h>
 
 // Global/Static Play Mode State
+using namespace ChainedEngine;
 static GameLayer *s_playLayer = nullptr;
 
 EditorApplication::EditorApplication(int argc, char *argv[])
@@ -274,3 +275,7 @@ void EditorApplication::OnEvent(ChainedDecos::Event &e)
         }
     }
 }
+
+// Declare this as the main application entry point
+#include "core/application/EntryPoint.h"
+DECLARE_APPLICATION(EditorApplication)

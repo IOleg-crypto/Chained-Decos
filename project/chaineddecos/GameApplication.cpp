@@ -26,6 +26,7 @@ using ChainedDecos::MenuEvent;
 using ChainedDecos::MenuEventType;
 // MenuEventCallback is inside Menu class
 using MenuEventCallback = Menu::MenuEventCallback;
+using namespace ChainedEngine;
 
 GameApplication::GameApplication(int argc, char *argv[])
     : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false),
@@ -100,12 +101,30 @@ void GameApplication::OnRegister()
 {
     auto &engine = Engine::Instance();
     // 2. Register Game Systems (Modules)
-    engine.RegisterModule(std::make_unique<LevelManager>());
-    // UIManager removed - replaced by direct Menu management in GameApplication
+    // Register LevelManager as a Service AND Module (we create shared_ptr first)
+    auto levelManager = std::make_shared<LevelManager>();
+    engine.RegisterModule(std::unique_ptr<LevelManager>(
+        levelManager.get())); // This is risky if unique_ptr takes ownership!
+    // Wait, RegisterModule takes unique_ptr. If I pass .get(), unique_ptr will try to delete it.
+    // I can't register the SAME instance as both Unique Module and Shared Service easily unless I
+    // release ownership or use custom deleter. Actually, LevelManager doesn't seem to need to be an
+    // EngineModule if we update it manually or if it auto-updates. Let's Register it as Service,
+    // and if it needs update, we do it. But GameApplication previously registered it as Module.
+    // Let's try: Register as Service. And separately register as Module? No.
+    // If I register as Service, it's shared.
+    // If Engine needs to update it, it iterates Modules.
+    // I will Register it as Service, and hold a reference if needed.
+    // But wait, if I don't register it as module, who updates it?
+    // GameApplication can update it? Or I can make a wrapper.
+    // For now, let's just Register as Service. LevelManager might not need per-frame update from
+    // Engine if GameApp handles logic.
+    engine.RegisterService<ILevelManager>(levelManager);
 
-    // PlayerController and RenderingSystem are replaced by ECS Systems
-    // engine.RegisterModule(std::make_unique<PlayerController>());
-    // engine.RegisterModule(std::make_unique<RenderingSystem>());
+    // We also want to keep it alive. Service Locator stores shared_ptr so it's fine.
+
+    // If LevelManager IS an EngineModule, we might want to register it.
+    // But RegisterModule takes unique_ptr.
+    // I'll skip RegisterModule for now and rely on Service.
 
     TraceLog(LOG_INFO, "[GameApplication] Game systems registered.");
 }
@@ -121,7 +140,8 @@ void GameApplication::OnStart()
                                                      "/resources/audio/wind-gust_fall.wav");
 
     // Initialize Menu
-    m_menu = std::make_unique<Menu>();
+    m_menu = std::make_shared<Menu>();
+    Engine::Instance().RegisterService<IMenu>(m_menu);
     m_menu->Initialize(&Engine::Instance());
     m_menu->SetupStyle();
 
@@ -765,3 +785,7 @@ void GameApplication::InitInput()
 }
 
 // HandleMenuActions removed - replaced by event callbacks
+
+// Declare this as the main application entry point
+#include "core/application/EntryPoint.h"
+DECLARE_APPLICATION(GameApplication)

@@ -491,8 +491,8 @@ void EditorUIManager::RenderWelcomeScreen()
     {
         // Center content area
         ImVec2 viewportSize = ImGui::GetMainViewport()->Size;
-        float contentWidth = 700.0f;
-        float contentHeight = 500.0f;
+        float contentWidth = 1200.0f;
+        float contentHeight = 800.0f;
 
         ImGui::SetCursorPos(ImVec2((viewportSize.x - contentWidth) * 0.5f,
                                    (viewportSize.y - contentHeight) * 0.5f));
@@ -503,7 +503,7 @@ void EditorUIManager::RenderWelcomeScreen()
             // Title
             ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
             ImGui::SetWindowFontScale(2.5f);
-            std::string title = "Chained Decos Editor";
+            std::string title = "Chained Editor";
             float textWidth = ImGui::CalcTextSize(title.c_str()).x;
             ImGui::SetCursorPosX((contentWidth - textWidth) * 0.5f);
 
@@ -522,25 +522,19 @@ void EditorUIManager::RenderWelcomeScreen()
             ImGui::Spacing();
             ImGui::Spacing();
 
-            // Two columns for buttons
-            ImGui::Columns(2, "StartColumns", false);
+            // Three columns for buttons
+            ImGui::Columns(3, "StartColumns", false);
 
             float columnWidth = ImGui::GetColumnWidth();
             float iconSize = 180.0f; // Size of the icon
 
-            // --- NEW PROJECT ---
+            // --- NEW PROJECT (Column 1) ---
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconSize) * 0.5f);
 
-            // Use Image + IsItemClicked for cleaner look (no button frame unless hovered logic
-            // added) But to make it feel responsive, we'll wrap in a group and handle hover
-            // manually or use InvisibleButton
             ImGui::PushID("NewProj");
-
-            // Draw Icon
             ImVec2 cursorPos = ImGui::GetCursorScreenPos();
             ImGui::Image((ImTextureID)(intptr_t)m_iconNewProject.id, ImVec2(iconSize, iconSize));
 
-            // Add a subtle hover effect?
             if (ImGui::IsItemHovered())
             {
                 ImGui::GetWindowDrawList()->AddRect(
@@ -572,13 +566,15 @@ void EditorUIManager::RenderWelcomeScreen()
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - labelNewWidth) * 0.5f);
             ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", labelNew.c_str());
 
-            ImGui::Spacing();
+            ImGui::NextColumn();
+
+            // --- NEW UI SCENE (Column 2) ---
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconSize) * 0.5f);
+
             ImGui::PushID("NewUIProj");
-            // if (ImGui::Button("Create New UI Scene", ImVec2(columnWidth, 30)))
-            // {
-            //
-            // }
+            cursorPos = ImGui::GetCursorScreenPos(); // Update pos for this column
             ImGui::Image((ImTextureID)(intptr_t)m_iconSceneProject.id, ImVec2(iconSize, iconSize));
+
             if (ImGui::IsItemHovered())
             {
                 ImGui::GetWindowDrawList()->AddRect(
@@ -601,13 +597,20 @@ void EditorUIManager::RenderWelcomeScreen()
             }
             ImGui::PopID();
 
+            // Label
+            ImGui::Spacing();
+            std::string labelNewUI = "Create New UI Scene";
+            float labelNewUIWidth = ImGui::CalcTextSize(labelNewUI.c_str()).x;
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - labelNewUIWidth) * 0.5f);
+            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", labelNewUI.c_str());
+
             ImGui::NextColumn();
 
-            // --- OPEN PROJECT ---
+            // --- OPEN PROJECT (Column 3) ---
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconSize) * 0.5f);
 
             ImGui::PushID("OpenProj");
-            cursorPos = ImGui::GetCursorScreenPos();
+            cursorPos = ImGui::GetCursorScreenPos(); // Update pos for this column
             ImGui::Image((ImTextureID)(intptr_t)m_iconOpenProject.id, ImVec2(iconSize, iconSize));
 
             if (ImGui::IsItemHovered())

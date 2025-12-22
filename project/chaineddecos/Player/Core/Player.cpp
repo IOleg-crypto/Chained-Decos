@@ -448,5 +448,3 @@ void Player::InitializeCollision()
 {
     m_collision->InitializeCollision();
 }
-
-

@@ -241,6 +241,45 @@ void UIEditorPanel::RenderPropertiesPanel()
             elem.eventId = eventBuf;
             changed = true;
         }
+
+        ImGui::Separator();
+        ImGui::Text("On Click Action:");
+
+        // Action Type
+        const char *actionTypes[] = {"None", "LoadScene", "Quit", "OpenURL"};
+        int currentAction = 0;
+        if (elem.actionType == "LoadScene")
+            currentAction = 1;
+        else if (elem.actionType == "Quit")
+            currentAction = 2;
+        else if (elem.actionType == "OpenURL")
+            currentAction = 3;
+
+        if (ImGui::Combo("Action Type", &currentAction, actionTypes, IM_ARRAYSIZE(actionTypes)))
+        {
+            if (currentAction == 0)
+                elem.actionType = "None";
+            else if (currentAction == 1)
+                elem.actionType = "LoadScene";
+            else if (currentAction == 2)
+                elem.actionType = "Quit";
+            else if (currentAction == 3)
+                elem.actionType = "OpenURL";
+            changed = true;
+        }
+
+        // Action Target (only if needed)
+        if (elem.actionType == "LoadScene" || elem.actionType == "OpenURL")
+        {
+            char targetBuf[256];
+            strncpy_s(targetBuf, elem.actionTarget.c_str(), sizeof(targetBuf) - 1);
+            if (ImGui::InputText(elem.actionType == "LoadScene" ? "Scene Path" : "URL", targetBuf,
+                                 sizeof(targetBuf)))
+            {
+                elem.actionTarget = targetBuf;
+                changed = true;
+            }
+        }
     }
     else if (elem.type == "text")
     {

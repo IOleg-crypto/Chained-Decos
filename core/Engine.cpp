@@ -5,13 +5,17 @@
 #include "components/rendering/core/RenderManager.h"
 #include "core/gui/core/GuiManager.h"
 #include "core/module/ModuleManager.h"
-#include "project/chaineddecos/gamegui/Menu.h"
-#include "project/chaineddecos/player/core/Player.h"
+#include "core/window/Window.h"
 #include "scene/main/core/World.h"
 #include "scene/resources/model/core/Model.h"
 #include <memory>
 #include <raylib.h>
 #include <stdexcept>
+
+namespace ChainedEngine
+{
+
+using namespace ChainedDecos;
 
 Engine *Engine::s_instance = nullptr;
 
@@ -36,12 +40,20 @@ Engine::~Engine()
     s_instance = nullptr;
 }
 
-bool Engine::Initialize()
+bool Engine::Initialize(const ChainedEngine::WindowProps &props)
 {
     TraceLog(LOG_INFO, "[Engine] Initializing Core Services...");
 
+    // 0. Window Creation
+    // WindowProps local copy if needed, or just use props to create window
+    m_Window = std::make_unique<ChainedEngine::Window>(props);
+
     // 1. Rendering
     m_RenderManager = std::shared_ptr<RenderManager>(&RenderManager::Get(), [](RenderManager *) {});
+    if (m_RenderManager)
+    {
+        m_RenderManager->Initialize(props.Width, props.Height, props.Title.c_str());
+    }
     RegisterService<RenderManager>(m_RenderManager);
 
     // 2. Input
@@ -67,9 +79,11 @@ bool Engine::Initialize()
 
     TraceLog(LOG_INFO, "[Engine] Engine initialized successfully");
     // Initialize GUI
-    RegisterService<IGuiManager>(std::make_shared<ChainedDecos::GuiManager>());
-    if (auto gui = GetService<IGuiManager>())
-        gui->Initialize();
+    m_GuiManager = std::make_shared<ChainedDecos::GuiManager>();
+    RegisterService<IGuiManager>(m_GuiManager);
+
+    if (m_GuiManager)
+        m_GuiManager->Initialize();
 
     return true;
 }
@@ -94,9 +108,12 @@ void Engine::Shutdown()
     if (m_ModuleManager)
         m_ModuleManager->ShutdownAllModules();
 
+    m_Services.clear();
+
     m_WorldManager.reset();
     m_ModelLoader.reset();
     m_CollisionManager.reset();
+    m_GuiManager.reset();
 
     if (m_AudioManager)
         m_AudioManager->Shutdown();
@@ -132,6 +149,12 @@ std::shared_ptr<RenderManager> Engine::GetRenderManager() const
 {
     return m_RenderManager;
 }
+
+// std::shared_ptr<IInputManager> Engine::GetInputManager() const
+// {
+//    return m_InputManager;
+// }
+
 std::shared_ptr<AudioManager> Engine::GetAudioManager() const
 {
     return m_AudioManager;
@@ -153,18 +176,7 @@ std::shared_ptr<IWorldManager> Engine::GetWorldManager() const
 {
     return m_WorldManager;
 }
-std::shared_ptr<ILevelManager> Engine::GetLevelManager() const
-{
-    return m_LevelManager;
-}
-std::shared_ptr<IPlayer> Engine::GetPlayer() const
-{
-    return m_Player;
-}
-std::shared_ptr<IMenu> Engine::GetMenu() const
-{
-    return m_Menu;
-}
+
 ModuleManager *Engine::GetModuleManager() const
 {
     return m_ModuleManager.get();
@@ -181,3 +193,5 @@ void Engine::RequestExit()
 {
     m_shouldExit = true;
 }
+
+} // namespace ChainedEngine

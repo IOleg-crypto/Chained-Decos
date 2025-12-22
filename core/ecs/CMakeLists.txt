@@ -34,6 +34,7 @@ target_link_libraries(ecs PUBLIC
     raylib
     font_resources
     imguilib
+    scene_manager
 )
 
 set_target_properties(ecs PROPERTIES POSITION_INDEPENDENT_CODE ON)

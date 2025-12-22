@@ -1,7 +1,7 @@
 
 # ChainedEditor - Engine Editor for Chained Decos
 
-set(editor_entry_point main.cpp)
+
 
 # UI and legacy map editing components
 set(mapgui_sources
@@ -62,7 +62,6 @@ add_executable(ChainedEditor
     ${tool_sources}
     ${mapgui_sources}
     ${logic_sources}
-    ${editor_entry_point}
 )
 
 target_include_directories(ChainedEditor PUBLIC

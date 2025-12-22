@@ -11,7 +11,6 @@
 #include <vector>
 
 // Forward declarations
-class Engine;
 
 struct VideoSettings
 {
@@ -81,5 +80,3 @@ private:
 };
 
 #endif // MENU_SETTINGS_CONTROLLER_H
-
-

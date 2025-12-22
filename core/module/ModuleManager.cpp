@@ -41,7 +41,7 @@ bool ModuleManager::LoadModule(const std::string &moduleName)
     return IsModuleLoaded(moduleName);
 }
 
-bool ModuleManager::InitializeAllModules(Engine *engine)
+bool ModuleManager::InitializeAllModules(ChainedEngine::Engine *engine)
 {
     if (m_initialized)
     {
@@ -230,6 +230,3 @@ bool ModuleManager::CheckDependencies(const std::string &moduleName,
     }
     return true;
 }
-
-
-

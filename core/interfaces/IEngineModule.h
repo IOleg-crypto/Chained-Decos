@@ -5,8 +5,10 @@
 #include <string>
 #include <vector>
 
-// Forward declaration
+namespace ChainedEngine
+{
 class Engine;
+}
 
 // Interface for engine modules with engine integration
 // Extends IModule with engine-specific functionality
@@ -48,8 +50,8 @@ public:
     }
 
     // Engine-specific methods with engine parameter
-    virtual bool Initialize(Engine *engine) = 0;
-    virtual void RegisterServices(Engine *engine)
+    virtual bool Initialize(ChainedEngine::Engine *engine) = 0;
+    virtual void RegisterServices(ChainedEngine::Engine *engine)
     {
     }
     virtual std::vector<std::string> GetDependencies() const
@@ -71,7 +73,3 @@ private:
 };
 
 #endif // IENGINEMODULE_H
-
-
-
-

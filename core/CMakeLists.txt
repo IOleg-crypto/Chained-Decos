@@ -11,6 +11,8 @@ set(CORE_SOURCES
     application/EngineApplication.cpp
     application/EngineApplication.h
     application/IApplication.h
+    window/Window.cpp
+    window/Window.h
     layer/Layer.cpp
     layer/Layer.h
     layer/LayerStack.cpp
@@ -30,6 +32,8 @@ set(CORE_SOURCES
     utils/core.h
     gui/core/GuiElement.h
     gui/core/GuiManager.h
+    gui/ImGuiLayer.h
+    gui/ImGuiLayer.cpp
     gui/components/GuiButton.h
     gui/components/GuiPanel.h
 )
@@ -55,6 +59,7 @@ target_link_libraries(core
         render
         collision
         model
+        imguilib
 )
 
 
