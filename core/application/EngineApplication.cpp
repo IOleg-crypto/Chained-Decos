@@ -1,8 +1,10 @@
 #include "core/application/EngineApplication.h"
 #include "Engine.h"
+#include "core/Log.h"
 #include "core/application/IApplication.h"
 #include "core/gui/ImGuiLayer.h"
 #include "core/window/Window.h"
+
 
 #include "components/input/core/InputManager.h"
 #include "components/rendering/core/RenderManager.h"
@@ -86,7 +88,7 @@ void EngineApplication::OnEvent(Event &e)
 
 void EngineApplication::Initialize()
 {
-    TraceLog(LOG_INFO, "[EngineApplication] Initializing application...");
+    CD_CORE_INFO("Initializing application...");
 
     // Step 1: Configuration
     if (m_app)
@@ -138,7 +140,7 @@ void EngineApplication::Initialize()
         m_app->OnStart();
     }
 
-    TraceLog(LOG_INFO, "[EngineApplication] Application initialized successfully!");
+    CD_CORE_INFO("Application initialized successfully!");
 }
 
 void EngineApplication::Update()
@@ -210,7 +212,7 @@ void EngineApplication::Render()
 
 void EngineApplication::Shutdown()
 {
-    TraceLog(LOG_INFO, "[EngineApplication] Shutting down application...");
+    CD_CORE_INFO("Shutting down application...");
 
     if (m_app)
         m_app->OnShutdown();
@@ -226,7 +228,7 @@ void EngineApplication::Shutdown()
         m_engine->Shutdown();
     }
 
-    TraceLog(LOG_INFO, "[EngineApplication] Application shut down.");
+    CD_CORE_INFO("Application shut down.");
 }
 
 ChainedEngine::Engine *EngineApplication::GetEngine() const
