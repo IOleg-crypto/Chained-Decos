@@ -3,6 +3,7 @@
 #include "components/input/core/InputManager.h"
 #include "components/physics/collision/core/CollisionManager.h"
 #include "components/rendering/core/RenderManager.h"
+#include "core/Log.h"
 #include "core/gui/core/GuiManager.h"
 #include "core/module/ModuleManager.h"
 #include "core/window/Window.h"
@@ -11,6 +12,7 @@
 #include <memory>
 #include <raylib.h>
 #include <stdexcept>
+
 
 namespace ChainedEngine
 {
@@ -42,7 +44,7 @@ Engine::~Engine()
 
 bool Engine::Initialize(const ChainedEngine::WindowProps &props)
 {
-    TraceLog(LOG_INFO, "[Engine] Initializing Core Services...");
+    CD_CORE_INFO("Initializing Core Services...");
 
     // 0. Window Creation
     // WindowProps local copy if needed, or just use props to create window
@@ -77,7 +79,7 @@ bool Engine::Initialize(const ChainedEngine::WindowProps &props)
     m_WorldManager = std::shared_ptr<IWorldManager>(new WorldManager());
     RegisterService<IWorldManager>(m_WorldManager);
 
-    TraceLog(LOG_INFO, "[Engine] Engine initialized successfully");
+    CD_CORE_INFO("Engine initialized successfully");
     // Initialize GUI
     m_GuiManager = std::make_shared<ChainedDecos::GuiManager>();
     RegisterService<IGuiManager>(m_GuiManager);
@@ -103,7 +105,7 @@ void Engine::Update(float deltaTime)
 
 void Engine::Shutdown()
 {
-    TraceLog(LOG_INFO, "[Engine] Shutting down Core Services...");
+    CD_CORE_INFO("Shutting down Core Services...");
 
     if (m_ModuleManager)
         m_ModuleManager->ShutdownAllModules();
