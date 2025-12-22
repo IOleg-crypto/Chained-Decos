@@ -2,7 +2,7 @@
 #include "Engine.h"
 #include "core/Log.h"
 #include "core/application/IApplication.h"
-#include "core/gui/ImGuiLayer.h"
+#include "core/imgui/ImGuiLayer.h"
 #include "core/window/Window.h"
 
 

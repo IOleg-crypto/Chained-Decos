@@ -22,12 +22,12 @@ set(CORE_SOURCES
     utils/Base.h
     utils/Types.h
     utils/core.h
-    gui/core/GuiElement.h
-    gui/core/GuiManager.h
-    gui/ImGuiLayer.h
-    gui/ImGuiLayer.cpp
-    gui/components/GuiButton.h
-    gui/components/GuiPanel.h
+    imgui/core/GuiElement.h
+    imgui/core/GuiManager.h
+    imgui/ImGuiLayer.h
+    imgui/ImGuiLayer.cpp
+    imgui/components/GuiButton.h
+    imgui/components/GuiPanel.h
 )
 
 add_library(core STATIC ${CORE_SOURCES})
