@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "Menu.h"
 #include "MenuConstants.h"
 #include "settings/settingsManager.h"
@@ -185,7 +186,7 @@ void Menu::HandleKeyboardNavigation()
 {
     if (IsKeyPressed(KEY_GRAVE))
     {
-        TraceLog(LOG_INFO, "Menu::HandleKeyboardNavigation() - Console toggle key pressed");
+        CD_INFO("Menu::HandleKeyboardNavigation() - Console toggle key pressed");
         ToggleConsole();
     }
 
@@ -221,7 +222,7 @@ void Menu::SetupStyle()
         ImFont *font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 24.0f);
         if (font)
         {
-            TraceLog(LOG_INFO, "[Menu] Loaded custom font: %s", fontPath.c_str());
+            CD_INFO("[Menu] Loaded custom font: %s", fontPath.c_str());
             io.FontDefault = font;
         }
     }
@@ -250,7 +251,7 @@ bool Menu::RenderActionButton(const char *label, ChainedDecos::MenuEventType eve
 
     if (clicked && eventType != ChainedDecos::MenuEventType::None)
     {
-        TraceLog(LOG_INFO, "Menu::RenderActionButton() - Button '%s' clicked, event: %d", label,
+        CD_INFO("Menu::RenderActionButton() - Button '%s' clicked, event: %d", label,
                  static_cast<int>(eventType));
         std::string data = "";
         if (eventType == ChainedDecos::MenuEventType::StartGameWithMap)
@@ -413,3 +414,4 @@ void Menu::HandlePendingActions()
 {
     // Implementation for handling delayed actions if any
 }
+

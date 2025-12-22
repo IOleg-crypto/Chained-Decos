@@ -1,4 +1,5 @@
 #include "SceneManager.h"
+#include "core/Log.h"
 #include <raylib.h>
 
 namespace ChainedDecos
@@ -12,7 +13,7 @@ SceneManager &SceneManager::Get()
 
 void SceneManager::LoadScene(const std::string &scenePath)
 {
-    TraceLog(LOG_INFO, "[SceneManager] Loading scene: %s", scenePath.c_str());
+    CD_CORE_INFO("[SceneManager] Loading scene: %s", scenePath.c_str());
 
     BeginTransition();
     LoadSceneInternal(scenePath);
@@ -20,7 +21,7 @@ void SceneManager::LoadScene(const std::string &scenePath)
 
 void SceneManager::LoadSceneAsync(const std::string &scenePath)
 {
-    TraceLog(LOG_INFO, "[SceneManager] Async loading scene: %s", scenePath.c_str());
+    CD_CORE_INFO("[SceneManager] Async loading scene: %s", scenePath.c_str());
 
     m_isLoadingAsync = true;
     m_nextScenePath = scenePath;
@@ -29,7 +30,7 @@ void SceneManager::LoadSceneAsync(const std::string &scenePath)
 
 void SceneManager::PushScene(const std::string &scenePath)
 {
-    TraceLog(LOG_INFO, "[SceneManager] Pushing scene: %s", scenePath.c_str());
+    CD_CORE_INFO("[SceneManager] Pushing scene: %s", scenePath.c_str());
 
     // Save current scene to stack
     m_sceneStack.push_back({std::move(m_currentScene), m_currentScenePath});
@@ -42,11 +43,11 @@ void SceneManager::PopScene()
 {
     if (m_sceneStack.empty())
     {
-        TraceLog(LOG_WARNING, "[SceneManager] Cannot pop scene: stack is empty");
+        CD_CORE_WARN("[SceneManager] Cannot pop scene: stack is empty");
         return;
     }
 
-    TraceLog(LOG_INFO, "[SceneManager] Popping scene");
+    CD_CORE_INFO("[SceneManager] Popping scene");
 
     // Restore previous scene from stack
     auto [scene, path] = std::move(m_sceneStack.back());
@@ -61,7 +62,7 @@ void SceneManager::PopScene()
 void SceneManager::ClearSceneStack()
 {
     m_sceneStack.clear();
-    TraceLog(LOG_INFO, "[SceneManager] Scene stack cleared");
+    CD_CORE_INFO("[SceneManager] Scene stack cleared");
 }
 
 GameScene *SceneManager::GetCurrentScene()
@@ -129,7 +130,7 @@ void SceneManager::LoadSceneInternal(const std::string &scenePath)
     m_currentScene = loader.LoadScene(scenePath);
     m_currentScenePath = scenePath;
 
-    TraceLog(LOG_INFO, "[SceneManager] Scene loaded: %s", scenePath.c_str());
+    CD_CORE_INFO("[SceneManager] Scene loaded: %s", scenePath.c_str());
 }
 
 } // namespace ChainedDecos

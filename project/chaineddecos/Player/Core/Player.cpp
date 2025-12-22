@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "Player.h"
 #include "../collision/playerCollision.h"
 #include "../components/playerInput.h"
@@ -40,7 +41,7 @@ Player::~Player() = default;
 
 void Player::InitializeServices()
 {
-    TraceLog(LOG_INFO, "[Player] InitializeServices called");
+    CD_INFO("[Player] InitializeServices called");
 }
 
 // Main update function called every frame
@@ -132,22 +133,22 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
         if (m_movement->GetPhysics().IsGrounded())
         {
             // Check if we just landed (was falling, now grounded)
-            TraceLog(LOG_DEBUG, "[Player] Grounded check: wasFalling=%d, lastFallSpeed=%.2f",
+            CD_TRACE("[Player] Grounded check: wasFalling=%d, lastFallSpeed=%.2f",
                      wasFalling, lastFallSpeed);
             if (wasFalling)
             {
-                TraceLog(LOG_INFO, "[Player] Landed with fall speed: %.2f", lastFallSpeed);
+                CD_INFO("[Player] Landed with fall speed: %.2f", lastFallSpeed);
                 // Stop the looping fall sound
                 if (m_audioManager && m_isFallSoundPlaying)
                 {
                     m_audioManager->StopLoopingSoundEffect("player_fall");
                     m_isFallSoundPlaying = false;
-                    TraceLog(LOG_INFO, "[Player] Stopped looping fall sound on landing");
+                    CD_INFO("[Player] Stopped looping fall sound on landing");
                 }
             }
             if (wasFalling)
             {
-                TraceLog(LOG_INFO, "[Player] Landing impact detected, playing fall sound");
+                CD_INFO("[Player] Landing impact detected, playing fall sound");
                 // Strong impact shake on landing
                 float normalizedFall = std::min(lastFallSpeed / 60.0f, 1.0f);
                 float impactIntensity = normalizedFall * 0.3f; // Max 0.3 intensity
@@ -155,13 +156,12 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
                 m_cameraController->AddScreenShake(impactIntensity, impactDuration);
                 if (m_audioManager)
                 {
-                    TraceLog(LOG_INFO,
-                             "[Player] AudioManager available, playing player_fall sound");
+                    CD_INFO("[Player] AudioManager available, playing player_fall sound");
                     m_audioManager->PlaySoundEffect("player_fall", 1.0f);
                 }
                 else
                 {
-                    TraceLog(LOG_WARNING, "[Player] AudioManager is null, cannot play fall sound");
+                    CD_WARN("[Player] AudioManager is null, cannot play fall sound");
                 }
             }
 
@@ -182,7 +182,7 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
             // Track falling state for landing impact
             wasFalling = true;
             lastFallSpeed = abs(m_movement->GetPhysics().GetVelocity().y);
-            TraceLog(LOG_DEBUG, "[Player] Falling: velocity.y=%.2f, lastFallSpeed=%.2f",
+            CD_TRACE("[Player] Falling: velocity.y=%.2f, lastFallSpeed=%.2f",
                      m_movement->GetPhysics().GetVelocity().y, lastFallSpeed);
 
             // Handle continuous fall sound
@@ -194,14 +194,14 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
                     m_audioManager->PlayLoopingSoundEffect("player_fall",
                                                            6.5f); // Lower volume for continuous
                     m_isFallSoundPlaying = true;
-                    TraceLog(LOG_INFO, "[Player] Started looping fall sound");
+                    CD_INFO("[Player] Started looping fall sound");
                 }
                 else if (m_isFallSoundPlaying && lastFallSpeed < 1.0f)
                 {
                     // Stop looping fall sound when fall speed is low
                     m_audioManager->StopLoopingSoundEffect("player_fall");
                     m_isFallSoundPlaying = false;
-                    TraceLog(LOG_INFO, "[Player] Stopped looping fall sound due to low fall speed");
+                    CD_INFO("[Player] Stopped looping fall sound due to low fall speed");
                 }
             }
         }
@@ -222,7 +222,7 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
     // Check if player has fallen out of bounds
     if (m_movement->GetPosition().y < -100.0f)
     {
-        TraceLog(LOG_WARNING, "[Player] Fell out of world bounds (y < -100), respawning...");
+        CD_WARN("[Player] Fell out of world bounds (y < -100), respawning...");
 
         // Reset position to safe spawn
         SetPlayerPosition(Player::DEFAULT_SPAWN_POSITION);
@@ -448,3 +448,4 @@ void Player::InitializeCollision()
 {
     m_collision->InitializeCollision();
 }
+

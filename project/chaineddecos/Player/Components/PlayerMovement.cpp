@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "PlayerMovement.h"
 #include "../core/player.h"
 #include <cmath>
@@ -81,8 +82,7 @@ void PlayerMovement::ApplyJumpImpulse(float impulse)
     m_physics.SetGroundLevel(false);
     m_player->GetPhysics().SetJumpState(true);
 
-    TraceLog(LOG_DEBUG,
-             "PlayerMovement::ApplyJumpImpulse() - Applied jump impulse: %.2f, velocity y: %.2f",
+    CD_TRACE("PlayerMovement::ApplyJumpImpulse() - Applied jump impulse: %.2f, velocity y: %.2f",
              impulse, vel.y);
 }
 
@@ -323,7 +323,7 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
         grounded = true;
         hitPoint = bestPoint;
         hitNormal = bestNormal;
-        TraceLog(LOG_DEBUG, "PlayerMovement::UpdateGrounded() - Grounded via bestGap: %.2f",
+        CD_TRACE("PlayerMovement::UpdateGrounded() - Grounded via bestGap: %.2f",
                  bestGap);
     }
 
@@ -343,8 +343,7 @@ void PlayerMovement::UpdateGrounded(const CollisionManager &collisionManager)
             grounded = true;
             hitPoint = bestPoint;
             hitNormal = bestNormal;
-            TraceLog(LOG_DEBUG,
-                     "PlayerMovement::UpdateGrounded() - Force grounded due to proximity with "
+            CD_TRACE("PlayerMovement::UpdateGrounded() - Force grounded due to proximity with "
                      "collision: bottom=%.2f, gap=%.2f",
                      bottom, bestGap);
         }
@@ -402,8 +401,7 @@ void PlayerMovement::SnapToGround(const CollisionManager &collisionManager)
             vel.y = 0.0f;
             m_physics.SetVelocity(vel);
             m_physics.SetGroundLevel(true);
-            TraceLog(LOG_DEBUG,
-                     "PlayerMovement::SnapToGround() - Snapped to ground: collision_box_y=%.2f, "
+            CD_TRACE("PlayerMovement::SnapToGround() - Snapped to ground: collision_box_y=%.2f, "
                      "visual_model_y=%.2f",
                      newPos.y, newPos.y + Player::MODEL_Y_OFFSET);
             return;
@@ -458,7 +456,7 @@ Vector3 PlayerMovement::ValidateCollisionResponse(const Vector3 &response,
     if (response.y < 0.0f && (currentPosition.y + response.y) < -5.0f)
     {
         validatedResponse.y = 0.0f;
-        TraceLog(LOG_WARNING, "PlayerMovement::ValidateCollisionResponse() - Prevented player from "
+        CD_WARN("PlayerMovement::ValidateCollisionResponse() - Prevented player from "
                               "going below ground");
     }
 
@@ -466,8 +464,7 @@ Vector3 PlayerMovement::ValidateCollisionResponse(const Vector3 &response,
     if (response.y > 0.0f && response.y > 2.0f)
     {
         validatedResponse.y = 2.0f;
-        TraceLog(LOG_WARNING,
-                 "PlayerMovement::ValidateCollisionResponse() - Clamped excessive upward response");
+        CD_WARN("PlayerMovement::ValidateCollisionResponse() - Clamped excessive upward response");
     }
 
     // Don't allow large horizontal responses that could cause teleportation
@@ -484,6 +481,7 @@ Vector3 PlayerMovement::ValidateCollisionResponse(const Vector3 &response,
 
     return validatedResponse;
 }
+
 
 
 

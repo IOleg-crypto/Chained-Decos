@@ -1,7 +1,9 @@
 #include "GameApplication.h"
 #include "GameLayer.h"
+#include "core/Log.h"
 #include "core/application/EngineApplication.h"
 #include "scene/main/core/LevelManager.h"
+
 
 // #include "systems/playersystem/playerController.h"
 // #include "systems/renderingsystem/RenderingSystem.h"
@@ -10,16 +12,21 @@
 #include "components/physics/collision/core/CollisionManager.h"
 #include "components/rendering/core/RenderManager.h"
 #include "core/config/ConfigManager.h"
-#include "scene/ecs/Examples.h"
-#include "scene/ecs/components.h"
 #include "core/imgui/components/GuiButton.h"
 #include "core/module/ModuleManager.h"
 #include "project/chaineddecos/gamegui/Menu.h"
 #include "project/chaineddecos/player/core/Player.h"
+#include "scene/ecs/Examples.h"
+#include "scene/ecs/components.h"
 #include "scene/main/core/LevelManager.h"
 #include "scene/resources/model/core/Model.h"
 #include <raylib.h>
 #include <rlImGui.h>
+
+
+// Declare this as the main application entry point
+#include "core/application/EntryPoint.h"
+DECLARE_APPLICATION(GameApplication)
 
 using ChainedDecos::InputManager;
 using ChainedDecos::MenuEvent;
@@ -38,12 +45,12 @@ GameApplication::GameApplication(int argc, char *argv[])
 
 GameApplication::~GameApplication()
 {
-    TraceLog(LOG_INFO, "GameApplication destructor called.");
+    CD_INFO("GameApplication destructor called.");
 }
 
 void GameApplication::OnConfigure(EngineConfig &config)
 {
-    TraceLog(LOG_INFO, "[GameApplication] Pre-initialization...");
+    CD_INFO("[GameApplication] Pre-initialization...");
     SetTraceLogLevel(LOG_INFO);
 
     // Load config from game.cfg BEFORE setting window size
@@ -54,12 +61,12 @@ void GameApplication::OnConfigure(EngineConfig &config)
     std::string configPath = std::string(PROJECT_ROOT_DIR) + "/game.cfg";
     if (configManager.LoadFromFile(configPath))
     {
-        TraceLog(LOG_INFO, "[GameApplication] Loaded config from %s", configPath.c_str());
+        CD_INFO("[GameApplication] Loaded config from %s", configPath.c_str());
         configLoaded = true;
     }
     else
     {
-        TraceLog(LOG_WARNING, "[GameApplication] Could not load game.cfg, using defaults");
+        CD_WARN("[GameApplication] Could not load game.cfg, using defaults");
     }
 
     // Get resolution from config (if not specified in command line)
@@ -71,7 +78,7 @@ void GameApplication::OnConfigure(EngineConfig &config)
     if ((width == 1280 && height == 720) && configLoaded)
     {
         configManager.GetResolution(width, height);
-        TraceLog(LOG_INFO, "[GameApplication] Using resolution from config: %dx%d", width, height);
+        CD_INFO("[GameApplication] Using resolution from config: %dx%d", width, height);
     }
 
     // Also check fullscreen from config
@@ -85,8 +92,8 @@ void GameApplication::OnConfigure(EngineConfig &config)
         CommandLineHandler::ShowConfig(m_gameConfig);
     }
 
-    TraceLog(LOG_INFO, "[GameApplication] Window config: %dx%d (fullscreen: %s)", width, height,
-             m_gameConfig.fullscreen ? "yes" : "no");
+    CD_INFO("[GameApplication] Window config: %dx%d (fullscreen: %s)", width, height,
+            m_gameConfig.fullscreen ? "yes" : "no");
 
     // Update EngineConfig
     config.width = width;
@@ -126,12 +133,12 @@ void GameApplication::OnRegister()
     // But RegisterModule takes unique_ptr.
     // I'll skip RegisterModule for now and rely on Service.
 
-    TraceLog(LOG_INFO, "[GameApplication] Game systems registered.");
+    CD_INFO("[GameApplication] Game systems registered.");
 }
 
 void GameApplication::OnStart()
 {
-    TraceLog(LOG_INFO, "[GameApplication] Starting game...");
+    CD_INFO("[GameApplication] Starting game...");
 
     // Initialize Static Singletons
     // Note: RenderManager/InputManager/AudioManager are already initialized by CoreServices
@@ -189,7 +196,7 @@ void GameApplication::OnStart()
             }
         });
 
-    TraceLog(LOG_INFO, "[GameApplication] Menu initialized and events registered");
+    CD_INFO("[GameApplication] Menu initialized and events registered");
 
     // Initialize ECS
     REGISTRY.clear();
@@ -201,13 +208,11 @@ void GameApplication::OnStart()
         std::string playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
         if (models->LoadSingleModel("player_low", playerModelPath))
         {
-            TraceLog(LOG_INFO, "[GameApplication] Loaded player model: %s",
-                     playerModelPath.c_str());
+            CD_INFO("[GameApplication] Loaded player model: %s", playerModelPath.c_str());
         }
         else
         {
-            TraceLog(LOG_WARNING, "[GameApplication] Failed to load player model: %s",
-                     playerModelPath.c_str());
+            CD_WARN("[GameApplication] Failed to load player model: %s", playerModelPath.c_str());
         }
     }
 
@@ -248,7 +253,7 @@ void GameApplication::OnStart()
         }
         else
         {
-            TraceLog(LOG_WARNING, "[GameApplication] Failed to load player_effect shader");
+            CD_WARN("[GameApplication] Failed to load player_effect shader");
         }
     }
 
@@ -266,11 +271,11 @@ void GameApplication::OnStart()
     {
         SetTextureFilter(m_hudFont.texture, TEXTURE_FILTER_BILINEAR);
         m_fontLoaded = true;
-        TraceLog(LOG_INFO, "[GameApplication] Loaded HUD font: %s", fontPath.c_str());
+        CD_INFO("[GameApplication] Loaded HUD font: %s", fontPath.c_str());
     }
     else
     {
-        TraceLog(LOG_ERROR, "[GameApplication] Failed to load HUD font: %s. Loading default.",
+        CD_ERROR("[GameApplication] Failed to load HUD font: %s. Loading default.",
                  fontPath.c_str());
         m_fontLoaded = false;
         m_hudFont = GetFontDefault();
@@ -290,13 +295,13 @@ void GameApplication::OnStart()
 
     if (playerModelPtr)
     {
-        TraceLog(LOG_INFO, "[GameApplication] Using existing model 'player_low'");
+        CD_INFO("[GameApplication] Using existing model 'player_low'");
         m_playerEntity =
             ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 8.0f, 12.0f, sensitivity);
     }
     else
     {
-        TraceLog(LOG_WARNING, "[GameApplication] 'player_low' not found, using default cube.");
+        CD_WARN("[GameApplication] 'player_low' not found, using default cube.");
         m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
         m_playerEntity =
             ECSExamples::CreatePlayer(spawnPos, &m_playerModel, 8.0f, 12.0f, sensitivity);
@@ -309,12 +314,11 @@ void GameApplication::OnStart()
         if (finalModel->materials != nullptr && finalModel->materialCount > 0)
         {
             finalModel->materials[0].shader = m_playerShader;
-            TraceLog(LOG_INFO,
-                     "[GameApplication] Applied player_effect shader to final player model");
+            CD_INFO("[GameApplication] Applied player_effect shader to final player model");
         }
     }
 
-    TraceLog(LOG_INFO, "[GameApplication] ECS Player entity created");
+    CD_INFO("[GameApplication] ECS Player entity created");
 
     // Apply visual offset to player render component
     if (REGISTRY.valid(m_playerEntity) && REGISTRY.all_of<RenderComponent>(m_playerEntity))
@@ -322,8 +326,8 @@ void GameApplication::OnStart()
         auto &renderComp = REGISTRY.get<RenderComponent>(m_playerEntity);
         // Player::MODEL_Y_OFFSET is -1.0f, which corrects the visual position relative to physics
         renderComp.offset = {0.0f, Player::MODEL_Y_OFFSET, 0.0f};
-        TraceLog(LOG_INFO, "[GameApplication] Set player visual offset to (0, %.2f, 0)",
-                 Player::MODEL_Y_OFFSET);
+        CD_INFO("[GameApplication] Set player visual offset to (0, %.2f, 0)",
+                Player::MODEL_Y_OFFSET);
     }
 
     // Initial state - show menu (unless skipMenu is set)
@@ -379,7 +383,7 @@ void GameApplication::OnStart()
     }
     */
 
-    TraceLog(LOG_INFO, "[GameApplication] Game application initialized with ECS.");
+    CD_INFO("[GameApplication] Game application initialized with ECS.");
 }
 
 void GameApplication::OnUpdate(float deltaTime)
@@ -672,7 +676,7 @@ void GameApplication::OnRender()
 
 void GameApplication::OnShutdown()
 {
-    TraceLog(LOG_INFO, "[GameApplication] Cleaning up game resources...");
+    CD_INFO("[GameApplication] Cleaning up game resources...");
 
     // Clear ECS
     REGISTRY.clear();
@@ -713,23 +717,23 @@ void GameApplication::OnShutdown()
         }
     }
 
-    TraceLog(LOG_INFO, "[GameApplication] Game resources cleaned up successfully");
+    CD_INFO("[GameApplication] Game resources cleaned up successfully");
 }
 
 void GameApplication::InitInput()
 {
-    TraceLog(LOG_INFO, "[GameApplication] Setting up game-specific input bindings...");
+    CD_INFO("[GameApplication] Setting up game-specific input bindings...");
 
     auto *engine = &Engine::Instance();
     if (!engine)
     {
-        TraceLog(LOG_WARNING, "[GameApplication] No engine provided, skipping input bindings");
+        CD_WARN("[GameApplication] No engine provided, skipping input bindings");
         return;
     }
 
     if (!m_menu)
     {
-        TraceLog(LOG_WARNING, "[GameApplication] Menu not found, skipping input bindings");
+        CD_WARN("[GameApplication] Menu not found, skipping input bindings");
         return;
     }
 
@@ -737,7 +741,7 @@ void GameApplication::InitInput()
 
     if (!menu)
     {
-        TraceLog(LOG_WARNING, "[GameApplication] Menu not found, skipping input bindings");
+        CD_WARN("[GameApplication] Menu not found, skipping input bindings");
         return;
     }
 
@@ -769,23 +773,19 @@ void GameApplication::InitInput()
                                               [this]
                                               {
                                                   m_showDebugCollision = !m_showDebugCollision;
-                                                  TraceLog(LOG_INFO, "Debug Collision: %s",
-                                                           m_showDebugCollision ? "ON" : "OFF");
+                                                  CD_INFO("Debug Collision: %s",
+                                                          m_showDebugCollision ? "ON" : "OFF");
                                               });
 
     engine->GetInputManager()->RegisterAction(KEY_F3,
                                               [this]
                                               {
                                                   m_showDebugStats = !m_showDebugStats;
-                                                  TraceLog(LOG_INFO, "Debug Stats: %s",
-                                                           m_showDebugStats ? "ON" : "OFF");
+                                                  CD_INFO("Debug Stats: %s",
+                                                          m_showDebugStats ? "ON" : "OFF");
                                               });
 
-    TraceLog(LOG_INFO, "[GameApplication] Game input bindings configured.");
+    CD_INFO("[GameApplication] Game input bindings configured.");
 }
 
 // HandleMenuActions removed - replaced by event callbacks
-
-// Declare this as the main application entry point
-#include "core/application/EntryPoint.h"
-DECLARE_APPLICATION(GameApplication)

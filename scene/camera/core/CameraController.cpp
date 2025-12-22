@@ -2,6 +2,7 @@
 // Created by I#Oleg
 
 #include "CameraController.h"
+#include "core/Log.h"
 
 #include "events/Event.h"
 #include "events/KeyEvent.h"
@@ -51,9 +52,8 @@ Vector2 CameraController::FilterMouseDelta(const Vector2 &mouseDelta)
         static int glitchCounter = 0;
         if (glitchCounter++ % 300 == 0) // Log every 5 seconds at 60 FPS
         {
-            TraceLog(LOG_WARNING,
-                     "CameraController: Mouse delta glitch detected (%.2f, %.2f) - ignored",
-                     mouseDelta.x, mouseDelta.y);
+            CD_CORE_WARN("CameraController: Mouse delta glitch detected (%.2f, %.2f) - ignored",
+                         mouseDelta.x, mouseDelta.y);
         }
         return {0.0f, 0.0f};
     }
@@ -138,9 +138,8 @@ void CameraController::UpdateCameraRotation()
         static int jumpCounter = 0;
         if (jumpCounter++ % 300 == 0)
         {
-            TraceLog(LOG_WARNING,
-                     "CameraController: Mouse position jump detected (%.2f, %.2f) - resetting",
-                     mouseDelta.x, mouseDelta.y);
+            CD_CORE_WARN("CameraController: Mouse position jump detected (%.2f, %.2f) - resetting",
+                         mouseDelta.x, mouseDelta.y);
         }
         lastMousePos = currentMousePos;
         return;
@@ -152,8 +151,8 @@ void CameraController::UpdateCameraRotation()
     static int logCounter = 0;
     if (logCounter++ % 180 == 0) // Log every 3 seconds at 60 FPS
     {
-        TraceLog(LOG_DEBUG, "CameraController: Manual mouseDelta=(%.2f, %.2f)", mouseDelta.x,
-                 mouseDelta.y);
+        CD_CORE_TRACE("CameraController: Manual mouseDelta=(%.2f, %.2f)", mouseDelta.x,
+                      mouseDelta.y);
     }
 
     // Apply centralized filtering to prevent glitches
@@ -163,8 +162,8 @@ void CameraController::UpdateCameraRotation()
     if (logCounter % 180 == 0 &&
         (filteredBefore.x != mouseDelta.x || filteredBefore.y != mouseDelta.y))
     {
-        TraceLog(LOG_DEBUG, "CameraController: Filtered mouseDelta=(%.2f, %.2f) from (%.2f, %.2f)",
-                 mouseDelta.x, mouseDelta.y, filteredBefore.x, filteredBefore.y);
+        CD_CORE_TRACE("CameraController: Filtered mouseDelta=(%.2f, %.2f) from (%.2f, %.2f)",
+                      mouseDelta.x, mouseDelta.y, filteredBefore.x, filteredBefore.y);
     }
 
     // Smooth movement smoothing using correct lerp coefficient
@@ -181,8 +180,8 @@ void CameraController::UpdateCameraRotation()
 
     if (logCounter % 180 == 0)
     {
-        TraceLog(LOG_DEBUG, "CameraController: yaw=%.4f, pitch=%.4f, smoothedDelta=(%.2f, %.2f)",
-                 m_cameraYaw, m_cameraPitch, m_smoothedMouseDelta.x, m_smoothedMouseDelta.y);
+        CD_CORE_TRACE("CameraController: yaw=%.4f, pitch=%.4f, smoothedDelta=(%.2f, %.2f)",
+                      m_cameraYaw, m_cameraPitch, m_smoothedMouseDelta.x, m_smoothedMouseDelta.y);
     }
 }
 

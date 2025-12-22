@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "editor/managers/ToolManager.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
@@ -34,7 +35,7 @@ void ToolManager::OnEvent(ChainedDecos::Event &event)
 void ToolManager::SelectTool(Tool tool)
 {
     m_context.SetActiveTool(tool);
-    TraceLog(LOG_INFO, "ToolManager: Selected tool %d", static_cast<int>(tool));
+    CD_INFO("ToolManager: Selected tool %d", static_cast<int>(tool));
 }
 
 Tool ToolManager::GetActiveTool() const
@@ -78,3 +79,4 @@ void ToolManager::UpdateGizmo()
     // Gizmo rendering logic will be here or in EditorLayer/GizmoRenderer
     // For now, this is a placeholder
 }
+

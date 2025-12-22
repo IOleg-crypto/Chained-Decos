@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "editor/EditorLayer.h"
 #include "editor/panels/HierarchyPanel.h"
 #include "editor/panels/InspectorPanel.h"
@@ -13,7 +14,7 @@ EditorLayer::~EditorLayer() = default;
 
 void EditorLayer::OnAttach()
 {
-    TraceLog(LOG_INFO, "EditorLayer: OnAttach");
+    CD_INFO("EditorLayer: OnAttach");
 
     // Initialize managers
     m_sceneManager = std::make_unique<SceneManager>(m_context);
@@ -28,7 +29,7 @@ void EditorLayer::OnAttach()
 
 void EditorLayer::OnDetach()
 {
-    TraceLog(LOG_INFO, "EditorLayer: OnDetach");
+    CD_INFO("EditorLayer: OnDetach");
     m_panels.clear();
     m_sceneManager.reset();
     m_toolManager.reset();
@@ -110,3 +111,4 @@ void EditorLayer::PropagateEventToPanels(ChainedDecos::Event &e)
         }
     }
 }
+
