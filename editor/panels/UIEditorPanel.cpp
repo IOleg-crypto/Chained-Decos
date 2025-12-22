@@ -3,7 +3,7 @@
 //
 
 #include "UIEditorPanel.h"
-#include "core/ecs/components/UIComponents.h"
+#include "scene/ecs/components/UIComponents.h"
 #include "editor/IEditor.h"
 #include <imgui.h>
 #include <raylib.h>

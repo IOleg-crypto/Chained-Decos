@@ -2,7 +2,7 @@
 #define ECS_COMPONENTS_H
 
 // All ECS components in one place
-// Usage: #include "core/ecs/components.h"
+// Usage: #include "scene/ecs/components.h"
 
 #include "components/AudioComponent.h"
 #include "components/CameraComponent.h"

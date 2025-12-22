@@ -7,8 +7,8 @@
 #include "editor/panels/ViewportPanel.h"
 #include "scene/camera/core/CameraController.h"
 
-#include "core/ecs/ECSRegistry.h"
-#include "core/ecs/systems/UIRenderSystem.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/systems/UIRenderSystem.h"
 #include "project/chaineddecos/GameLayer.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/core/Model.h"

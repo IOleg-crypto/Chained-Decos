@@ -1,6 +1,6 @@
-#include "core/ecs/Examples.h"
-#include "core/ecs/ECSRegistry.h"
-#include "core/ecs/components.h"
+#include "scene/ecs/Examples.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components.h"
 #include <raymath.h>
 
 namespace ECSExamples
