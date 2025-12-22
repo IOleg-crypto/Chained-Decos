@@ -1,5 +1,5 @@
 //
-// Created by Kilo Code
+// Created by I#Oleg
 //
 
 #ifndef UIMANAGER_H
@@ -16,8 +16,11 @@
 #include "editor/Editor.h"
 #include "editor/EditorTypes.h"
 #include "editor/IEditor.h"
-#include "editor/mapgui/skyboxBrowser.h"
-#include "scene/resources/map/core/SceneLoader.h"
+#include "editor/mapgui/SkyboxBrowser.h"
+
+struct GameScene;
+struct MapObjectData;
+class SkyboxBrowser;
 
 // Configuration for UIManager
 struct UIManagerConfig
@@ -57,6 +60,7 @@ private:
         NONE,
         NEW_MAP,
         NEW_UI_SCENE,
+        NEW_PROJECT,
         OPEN_PROJECT,
         LOAD_SCENE
     };
@@ -81,43 +85,22 @@ public:
     void ShowObjectPanel(bool show) override;
     void ShowPropertiesPanel(bool show) override;
     int GetGridSize() const override;
-    bool IsWelcomeScreenActive() const override
-    {
-        return m_displayWelcomeScreen;
-    }
-    void ToggleSkyboxBrowser() override
-    {
-        m_displaySkyboxPanel = !m_displaySkyboxPanel;
-    }
+    bool IsWelcomeScreenActive() const override;
+    void ToggleSkyboxBrowser() override;
 
     // UI state accessors
-    bool IsImGuiInterfaceDisplayed() const
-    {
-        return m_displayImGuiInterface;
-    }
-    bool IsParkourMapDialogDisplayed() const
-    {
-        return m_displayParkourMapDialog;
-    }
+    bool IsImGuiInterfaceDisplayed() const;
+    bool IsParkourMapDialogDisplayed() const;
 
     // Tool and model state
     Tool GetActiveTool() const;
     void SetActiveTool(Tool tool);
-    const std::string &GetSelectedModelName() const
-    {
-        return m_currentlySelectedModelName;
-    }
-    void SetSelectedModelName(const std::string &name)
-    {
-        m_currentlySelectedModelName = name;
-    }
+    const std::string &GetSelectedModelName() const;
+    void SetSelectedModelName(const std::string &name);
     void SetGridSize(int size);
 
     // Exit control
-    bool ShouldExit() const
-    {
-        return m_shouldExit;
-    }
+    bool ShouldExit() const;
 
 private:
     // Rendering methods
@@ -129,16 +112,7 @@ private:
     void HandleKeyboardInput();
 
     // UI helper methods
-    void ProcessPendingObjectCreation()
-    {
-        if (m_pendingObjectCreation)
-        {
-            dynamic_cast<Editor *>(m_editor)->CreateDefaultObject(
-                static_cast<MapObjectType>(GetActiveTool()), m_currentlySelectedModelName);
-            m_pendingObjectCreation = false;
-            SetActiveTool(SELECT);
-        }
-    }
+    void ProcessPendingObjectCreation();
     void ExecutePendingAction();
 
     // Window position helper (windowSize is passed by reference to allow clamping)

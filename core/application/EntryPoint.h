@@ -1,9 +1,11 @@
 #ifndef ENTRY_POINT_H
 #define ENTRY_POINT_H
 
+#include "core/Log.h"
 #include "core/application/EngineApplication.h"
 #include "raylib.h"
 #include <exception>
+
 
 // Main entry point macro for applications
 // Handles initialization, main loop, and cleanup with error handling
@@ -21,12 +23,12 @@
         }                                                                                          \
         catch (const std::exception &e)                                                            \
         {                                                                                          \
-            CD_CORE_FATAL("Unhandled exception: %s", e.what());                              \
+            CD_CORE_FATAL("Unhandled exception: %s", e.what());                                    \
             return -1;                                                                             \
         }                                                                                          \
         catch (...)                                                                                \
         {                                                                                          \
-            CD_CORE_FATAL("Unknown exception occurred");                                     \
+            CD_CORE_FATAL("Unknown exception occurred");                                           \
             return -1;                                                                             \
         }                                                                                          \
     }
@@ -85,5 +87,3 @@ int main(int argc, char *argv[])
 #endif // ENGINE_MAIN_DEFINED
 
 #endif // ENTRY_POINT_H
-#include "core/Log.h"
-

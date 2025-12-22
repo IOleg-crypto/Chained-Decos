@@ -7,7 +7,6 @@
 #include "scene/resources/model/utils/ModelAnalyzer.h"
 #include <filesystem>
 
-
 LevelManager::LevelManager(const LevelManagerConfig &config)
     : m_config(config), m_gameScene(std::make_unique<GameScene>()), m_currentMapPath(""),
       m_playerSpawnZone({0}), m_spawnTexture({0}), m_hasSpawnZone(false),
@@ -43,7 +42,7 @@ void LevelManager::Shutdown()
     m_engine = nullptr;
 }
 
-bool LevelManager::Initialize(ChainedEngine::Engine *engine)
+bool LevelManager::Initialize(IEngine *engine)
 {
     if (!engine)
     {
@@ -175,7 +174,7 @@ void LevelManager::Render()
     // Rendering is handled by RenderingSystem or MapRenderer
 }
 
-void LevelManager::RegisterServices(ChainedEngine::Engine *engine)
+void LevelManager::RegisterServices(IEngine *engine)
 {
     if (!engine)
     {

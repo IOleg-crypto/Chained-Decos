@@ -1,12 +1,13 @@
-#include "core/Log.h"
 #include "Menu.h"
 #include "MenuConstants.h"
+#include "core/Log.h"
 #include "settings/settingsManager.h"
 #include <filesystem>
 #include <imgui.h>
 #include <memory>
 #include <raylib.h>
 #include <string>
+
 
 // Concrete screens
 #include "screens/ConfirmExitScreen.h"
@@ -43,7 +44,7 @@ Menu::Menu()
     ShowMainMenu();
 }
 
-void Menu::Initialize(ChainedEngine::Engine *engine)
+void Menu::Initialize(IEngine *engine)
 {
     m_engine = engine;
 
@@ -252,7 +253,7 @@ bool Menu::RenderActionButton(const char *label, ChainedDecos::MenuEventType eve
     if (clicked && eventType != ChainedDecos::MenuEventType::None)
     {
         CD_INFO("Menu::RenderActionButton() - Button '%s' clicked, event: %d", label,
-                 static_cast<int>(eventType));
+                static_cast<int>(eventType));
         std::string data = "";
         if (eventType == ChainedDecos::MenuEventType::StartGameWithMap)
         {
@@ -414,4 +415,3 @@ void Menu::HandlePendingActions()
 {
     // Implementation for handling delayed actions if any
 }
-

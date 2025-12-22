@@ -111,29 +111,48 @@ void InspectorPanel::RenderTransform(MapObjectData *obj)
 {
     bool modified = false;
 
-    // Position
-    float pos[3] = {obj->position.x, obj->position.y, obj->position.z};
-    if (ImGui::DragFloat3("Position", pos, 0.1f))
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5, 5));
+
+    // Use columns or table for nicer layout
+    if (ImGui::BeginTable("TransformTable", 2, ImGuiTableFlags_SizingStretchProp))
     {
-        obj->position = {pos[0], pos[1], pos[2]};
-        modified = true;
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Position");
+        ImGui::TableSetColumnIndex(1);
+        float pos[3] = {obj->position.x, obj->position.y, obj->position.z};
+        if (ImGui::DragFloat3("##Position", pos, 0.1f))
+        {
+            obj->position = {pos[0], pos[1], pos[2]};
+            modified = true;
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Rotation");
+        ImGui::TableSetColumnIndex(1);
+        float rot[3] = {obj->rotation.x, obj->rotation.y, obj->rotation.z};
+        if (ImGui::DragFloat3("##Rotation", rot, 1.0f))
+        {
+            obj->rotation = {rot[0], rot[1], rot[2]};
+            modified = true;
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Scale");
+        ImGui::TableSetColumnIndex(1);
+        float scale[3] = {obj->scale.x, obj->scale.y, obj->scale.z};
+        if (ImGui::DragFloat3("##Scale", scale, 0.05f, 0.01f, 100.0f))
+        {
+            obj->scale = {scale[0], scale[1], scale[2]};
+            modified = true;
+        }
+
+        ImGui::EndTable();
     }
 
-    // Rotation
-    float rot[3] = {obj->rotation.x, obj->rotation.y, obj->rotation.z};
-    if (ImGui::DragFloat3("Rotation", rot, 1.0f))
-    {
-        obj->rotation = {rot[0], rot[1], rot[2]};
-        modified = true;
-    }
-
-    // Scale
-    float scale[3] = {obj->scale.x, obj->scale.y, obj->scale.z};
-    if (ImGui::DragFloat3("Scale", scale, 0.05f, 0.01f, 100.0f))
-    {
-        obj->scale = {scale[0], scale[1], scale[2]};
-        modified = true;
-    }
+    ImGui::PopStyleVar();
 
     if (modified)
     {
