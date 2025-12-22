@@ -1,8 +1,10 @@
 #include "ModelCache.h"
+#include "core/Log.h"
 #include <algorithm>
-#include <raylib.h>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <raylib.h>
+
 
 // CachedModelInfo struct implementation
 void CachedModelInfo::UpdateAccess()
@@ -13,7 +15,7 @@ void CachedModelInfo::UpdateAccess()
 }
 
 // ModelLoadingTask struct implementation
-bool ModelLoadingTask::operator<(const ModelLoadingTask& other) const
+bool ModelLoadingTask::operator<(const ModelLoadingTask &other) const
 {
     return priority < other.priority;
 }
@@ -25,7 +27,7 @@ ModelCache::~ModelCache()
     m_loadingCondition.notify_all();
 
     // Wait for threads to finish
-    for (auto& thread : m_loadingThreads)
+    for (auto &thread : m_loadingThreads)
     {
         if (thread.joinable())
         {
@@ -65,8 +67,7 @@ bool ModelCache::AddModel(const std::string &name, Model &&model)
 
     m_cache[name] = std::move(*info);
 
-    TraceLog(LOG_INFO, "Added model '%s' to cache (size: %zu KB)", name.c_str(),
-             info->memorySize / 1024);
+    CD_CORE_INFO("Added model '%s' to cache (size: %zu KB)", name.c_str(), info->memorySize / 1024);
 
     return true;
 }
@@ -82,7 +83,7 @@ bool ModelCache::RemoveModel(const std::string &name)
             UnloadModel(*it->second.model);
         }
         m_cache.erase(it);
-        TraceLog(LOG_INFO, "Removed model '%s' from cache", name.c_str());
+        CD_CORE_INFO("Removed model '%s' from cache", name.c_str());
         return true;
     }
     return false;
@@ -98,7 +99,7 @@ void ModelCache::Clear()
         }
     }
     m_cache.clear();
-    TraceLog(LOG_INFO, "Model cache cleared");
+    CD_CORE_INFO("Model cache cleared");
 }
 
 size_t ModelCache::GetTotalMemoryUsage() const
@@ -119,7 +120,8 @@ float ModelCache::GetHitRate() const
 
 // ==================== ASYNC LOADING METHODS ====================
 
-std::future<Model*> ModelCache::GetModelAsync(const std::string &name, const std::string &filePath, int priority)
+std::future<Model *> ModelCache::GetModelAsync(const std::string &name, const std::string &filePath,
+                                               int priority)
 {
     // Check if already cached
     auto it = m_cache.find(name);
@@ -127,7 +129,7 @@ std::future<Model*> ModelCache::GetModelAsync(const std::string &name, const std
     {
         it->second.UpdateAccess();
         m_hitCount++;
-        std::promise<Model*> promise;
+        std::promise<Model *> promise;
         promise.set_value(it->second.model.get());
         return promise.get_future();
     }
@@ -137,21 +139,24 @@ std::future<Model*> ModelCache::GetModelAsync(const std::string &name, const std
     if (loadingIt != m_activeLoadingTasks.end())
     {
         // Return existing future
-        std::promise<Model*> promise;
+        std::promise<Model *> promise;
         auto future = promise.get_future();
 
         // Chain the existing loading future
-        std::thread([existingFuture = std::move(loadingIt->second), promise = std::move(promise)]() mutable {
-            try
+        std::thread(
+            [existingFuture = std::move(loadingIt->second), promise = std::move(promise)]() mutable
             {
-                auto model = existingFuture.get();
-                promise.set_value(model.get());
-            }
-            catch (const std::exception& e)
-            {
-                promise.set_exception(std::current_exception());
-            }
-        }).detach();
+                try
+                {
+                    auto model = existingFuture.get();
+                    promise.set_value(model.get());
+                }
+                catch (const std::exception &e)
+                {
+                    promise.set_exception(std::current_exception());
+                }
+            })
+            .detach();
 
         return promise.get_future();
     }
@@ -193,39 +198,43 @@ std::future<Model*> ModelCache::GetModelAsync(const std::string &name, const std
     m_loadingCondition.notify_one();
 
     // Return future that resolves to Model*
-    std::promise<Model*> resultPromise;
+    std::promise<Model *> resultPromise;
     auto resultFuture = resultPromise.get_future();
 
-    std::thread([loadingFuture = std::move(loadingFuture), resultPromise = std::move(resultPromise), name, this]() mutable {
-        try
+    std::thread(
+        [loadingFuture = std::move(loadingFuture), resultPromise = std::move(resultPromise), name,
+         this]() mutable
         {
-            auto model = loadingFuture.get();
-            resultPromise.set_value(model.get());
+            try
+            {
+                auto model = loadingFuture.get();
+                resultPromise.set_value(model.get());
 
-            // Update cache with loaded model
-            std::lock_guard<std::mutex> lock(m_loadingMutex);
-            auto it = m_cache.find(name);
-            if (it != m_cache.end())
-            {
-                it->second.model = std::move(model);
-                it->second.isLoading = false;
-                it->second.memorySize = EstimateModelSize(*it->second.model);
-                it->second.UpdateAccess();
+                // Update cache with loaded model
+                std::lock_guard<std::mutex> lock(m_loadingMutex);
+                auto it = m_cache.find(name);
+                if (it != m_cache.end())
+                {
+                    it->second.model = std::move(model);
+                    it->second.isLoading = false;
+                    it->second.memorySize = EstimateModelSize(*it->second.model);
+                    it->second.UpdateAccess();
+                }
             }
-        }
-        catch (const std::exception& e)
-        {
-            std::lock_guard<std::mutex> lock(m_loadingMutex);
-            m_failedLoadCount++;
-            auto it = m_cache.find(name);
-            if (it != m_cache.end())
+            catch (const std::exception &e)
             {
-                it->second.isLoading = false;
+                std::lock_guard<std::mutex> lock(m_loadingMutex);
+                m_failedLoadCount++;
+                auto it = m_cache.find(name);
+                if (it != m_cache.end())
+                {
+                    it->second.isLoading = false;
+                }
+                m_activeLoadingTasks.erase(name);
+                resultPromise.set_exception(std::current_exception());
             }
-            m_activeLoadingTasks.erase(name);
-            resultPromise.set_exception(std::current_exception());
-        }
-    }).detach();
+        })
+        .detach();
 
     return resultFuture;
 }
@@ -248,11 +257,12 @@ void ModelCache::CancelLoading(const std::string &name)
     }
 }
 
-void ModelCache::PreloadModels(const std::vector<std::string>& modelNames, const std::vector<std::string>& filePaths)
+void ModelCache::PreloadModels(const std::vector<std::string> &modelNames,
+                               const std::vector<std::string> &filePaths)
 {
     if (modelNames.size() != filePaths.size())
     {
-        TraceLog(LOG_ERROR, "PreloadModels: modelNames and filePaths size mismatch");
+        CD_CORE_ERROR("PreloadModels: modelNames and filePaths size mismatch");
         return;
     }
 
@@ -262,14 +272,14 @@ void ModelCache::PreloadModels(const std::vector<std::string>& modelNames, const
         GetModelAsync(modelNames[i], filePaths[i], 10);
     }
 
-    TraceLog(LOG_INFO, "Started preloading %zu models", modelNames.size());
+    CD_CORE_INFO("Started preloading %zu models", modelNames.size());
 }
 
 void ModelCache::PreloadFrequentModels()
 {
     std::vector<std::pair<std::string, int>> usageStats;
 
-    for (const auto& [name, info] : m_cache)
+    for (const auto &[name, info] : m_cache)
     {
         if (!info.isFrequentlyUsed && info.model)
         {
@@ -279,14 +289,15 @@ void ModelCache::PreloadFrequentModels()
 
     // Sort by usage count (descending)
     std::sort(usageStats.begin(), usageStats.end(),
-              [](const auto& a, const auto& b) { return a.second > b.second; });
+              [](const auto &a, const auto &b) { return a.second > b.second; });
 
     // Preload top 5 most used models that aren't frequently used yet
     size_t preloadCount = std::min(size_t(5), usageStats.size());
     for (size_t i = 0; i < preloadCount; ++i)
     {
-        const auto& [name, count] = usageStats[i];
-        TraceLog(LOG_INFO, "Preloading frequently used model: %s (accessed %d times)", name.c_str(), count);
+        const auto &[name, count] = usageStats[i];
+        CD_CORE_INFO("Preloading frequently used model: %s (accessed %d times)", name.c_str(),
+                     count);
 
         // We don't have file paths here, so we'll need to get them from somewhere else
         // For now, just mark as frequently used
@@ -298,25 +309,25 @@ void ModelCache::PreloadFrequentModels()
     }
 }
 
-void ModelCache::PreloadNearbyModels(const std::vector<std::string>& nearbyModelNames)
+void ModelCache::PreloadNearbyModels(const std::vector<std::string> &nearbyModelNames)
 {
-    for (const auto& name : nearbyModelNames)
+    for (const auto &name : nearbyModelNames)
     {
         // Medium priority for nearby models
         GetModelAsync(name, "", 5);
     }
 
-    TraceLog(LOG_INFO, "Started preloading %zu nearby models", nearbyModelNames.size());
+    CD_CORE_INFO("Started preloading %zu nearby models", nearbyModelNames.size());
 }
 
 void ModelCache::PrintLoadingStats() const
 {
-    TraceLog(LOG_INFO, "=== Model Loading Statistics ===");
-    TraceLog(LOG_INFO, "Active loading tasks: %zu", m_activeTasks.load());
-    TraceLog(LOG_INFO, "Loading queue size: %zu", m_loadingQueue.size());
-    TraceLog(LOG_INFO, "Async loads requested: %d", m_asyncLoadCount);
-    TraceLog(LOG_INFO, "Failed loads: %d", m_failedLoadCount);
-    TraceLog(LOG_INFO, "Cache hit rate: %.1f%%", GetHitRate() * 100);
+    CD_CORE_INFO("=== Model Loading Statistics ===");
+    CD_CORE_INFO("Active loading tasks: %zu", m_activeTasks.load());
+    CD_CORE_INFO("Loading queue size: %zu", m_loadingQueue.size());
+    CD_CORE_INFO("Async loads requested: %d", m_asyncLoadCount);
+    CD_CORE_INFO("Failed loads: %d", m_failedLoadCount);
+    CD_CORE_INFO("Cache hit rate: %.1f%%", GetHitRate() * 100);
 }
 
 void ModelCache::CleanupUnusedModels(int maxAgeSeconds)
@@ -332,8 +343,8 @@ void ModelCache::CleanupUnusedModels(int maxAgeSeconds)
         // Don't delete frequently used models
         if (!it->second.isFrequentlyUsed && age > maxAge)
         {
-            TraceLog(LOG_INFO, "Evicting unused model '%s' (age: %d seconds)", it->first.c_str(),
-                     (int)std::chrono::duration_cast<std::chrono::seconds>(age).count());
+            CD_CORE_INFO("Evicting unused model '%s' (age: %d seconds)", it->first.c_str(),
+                         (int)std::chrono::duration_cast<std::chrono::seconds>(age).count());
 
             if (it->second.model)
             {
@@ -350,11 +361,11 @@ void ModelCache::CleanupUnusedModels(int maxAgeSeconds)
 
 void ModelCache::PrintCacheStats() const
 {
-    TraceLog(LOG_INFO, "=== Model Cache Statistics ===");
-    TraceLog(LOG_INFO, "Cache size: %zu/%zu models", m_cache.size(), m_maxCacheSize);
-    TraceLog(LOG_INFO, "Memory usage: %.2f MB", GetTotalMemoryUsage() / (1024.0f * 1024.0f));
-    TraceLog(LOG_INFO, "Hit rate: %.1f%% (%d hits, %d misses)", GetHitRate() * 100, m_hitCount,
-             m_missCount);
+    CD_CORE_INFO("=== Model Cache Statistics ===");
+    CD_CORE_INFO("Cache size: %zu/%zu models", m_cache.size(), m_maxCacheSize);
+    CD_CORE_INFO("Memory usage: %.2f MB", GetTotalMemoryUsage() / (1024.0f * 1024.0f));
+    CD_CORE_INFO("Hit rate: %.1f%% (%d hits, %d misses)", GetHitRate() * 100, m_hitCount,
+                 m_missCount);
 
     // Top 5 most frequently used models
     std::vector<std::pair<std::string, int>> usage;
@@ -366,11 +377,10 @@ void ModelCache::PrintCacheStats() const
     std::sort(usage.begin(), usage.end(),
               [](const auto &a, const auto &b) { return a.second > b.second; });
 
-    TraceLog(LOG_INFO, "Top models by usage:");
+    CD_CORE_INFO("Top models by usage:");
     for (int i = 0; i < std::min(5, (int)usage.size()); i++)
     {
-        TraceLog(LOG_INFO, "  %d. %s (%d accesses)", i + 1, usage[i].first.c_str(),
-                 usage[i].second);
+        CD_CORE_INFO("  %d. %s (%d accesses)", i + 1, usage[i].first.c_str(), usage[i].second);
     }
 }
 
@@ -403,14 +413,14 @@ void ModelCache::EvictLeastRecentlyUsed()
 
     if (oldest != m_cache.end())
     {
-        TraceLog(LOG_INFO, "Evicting LRU model: %s", oldest->first.c_str());
+        CD_CORE_INFO("Evicting LRU model: %s", oldest->first.c_str());
         RemoveModel(oldest->first);
     }
 }
 
 // ==================== PRIVATE ASYNC METHODS ====================
 
-std::unique_ptr<Model> ModelCache::LoadModelFromFile(const std::string& filePath)
+std::unique_ptr<Model> ModelCache::LoadModelFromFile(const std::string &filePath)
 {
     if (filePath.empty())
     {
@@ -433,7 +443,7 @@ std::unique_ptr<Model> ModelCache::LoadModelFromFile(const std::string& filePath
         throw std::runtime_error("Failed to load model: " + filePath);
     }
 
-    TraceLog(LOG_INFO, "Successfully loaded model from: %s", filePath.c_str());
+    CD_CORE_INFO("Successfully loaded model from: %s", filePath.c_str());
     return model;
 }
 
@@ -445,9 +455,8 @@ void ModelCache::ProcessLoadingQueue()
 
         {
             std::unique_lock<std::mutex> lock(m_loadingMutex);
-            m_loadingCondition.wait(lock, [this]() {
-                return !m_loadingQueue.empty() || m_stopLoadingThreads;
-            });
+            m_loadingCondition.wait(lock, [this]()
+                                    { return !m_loadingQueue.empty() || m_stopLoadingThreads; });
 
             if (m_stopLoadingThreads)
                 break;
@@ -462,7 +471,7 @@ void ModelCache::ProcessLoadingQueue()
             }
 
             // Get highest priority task
-            task = std::move(const_cast<ModelLoadingTask&>(m_loadingQueue.top()));
+            task = std::move(const_cast<ModelLoadingTask &>(m_loadingQueue.top()));
             m_loadingQueue.pop();
             m_activeTasks++;
         }
@@ -475,11 +484,11 @@ void ModelCache::ProcessLoadingQueue()
             // Set the promise value
             task.promise.set_value(std::move(model));
 
-            TraceLog(LOG_INFO, "Async loaded model: %s", task.modelName.c_str());
+            CD_CORE_INFO("Async loaded model: %s", task.modelName.c_str());
         }
-        catch (const std::exception& e)
+        catch (const std::exception &e)
         {
-            TraceLog(LOG_ERROR, "Failed to async load model %s: %s", task.modelName.c_str(), e.what());
+            CD_CORE_ERROR("Failed to async load model %s: %s", task.modelName.c_str(), e.what());
             task.promise.set_exception(std::current_exception());
         }
 
@@ -490,11 +499,9 @@ void ModelCache::ProcessLoadingQueue()
     }
 }
 
-void ModelCache::UpdateLoadingTask(const std::string& name, std::future<std::unique_ptr<Model>>&& future)
+void ModelCache::UpdateLoadingTask(const std::string &name,
+                                   std::future<std::unique_ptr<Model>> &&future)
 {
     std::lock_guard<std::mutex> lock(m_loadingMutex);
     m_activeLoadingTasks[name] = std::move(future);
 }
-
-
-

@@ -1,5 +1,6 @@
 
 #include "Model.h"
+#include "core/Log.h"
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -19,7 +20,7 @@ ModelLoader::ModelLoader() : m_cache(std::make_shared<ModelCache>())
 {
     // Initialize statistics
     m_stats = LoadingStats{};
-    TraceLog(LOG_INFO, "Models Manager initialized (instance: %p)", this);
+    CD_CORE_INFO("Models Manager initialized (instance: %p)", this);
 }
 
 ModelLoader::~ModelLoader()
@@ -39,13 +40,13 @@ ModelLoader::~ModelLoader()
     m_animations.clear();
     m_configs.clear();
 
-    TraceLog(LOG_INFO, "Enhanced Models Manager destroyed (instance: %p)", this);
+    CD_CORE_INFO("Enhanced Models Manager destroyed (instance: %p)", this);
 }
 
 std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std::string &path)
 {
     auto startTime = std::chrono::steady_clock::now();
-    TraceLog(LOG_INFO, "Loading enhanced models from: %s", path.c_str());
+    CD_CORE_INFO("Loading enhanced models from: %s", path.c_str());
 
     LoadResult result = {0, 0, 0, 0.0f};
 
@@ -55,7 +56,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
     std::ifstream file(path);
     if (!file.is_open())
     {
-        TraceLog(LOG_ERROR, "Failed to open model list JSON: %s", path.c_str());
+        CD_CORE_ERROR("Failed to open model list JSON: %s", path.c_str());
         return std::nullopt;
     }
 
@@ -66,7 +67,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "JSON parsing error: %s", e.what());
+        CD_CORE_ERROR("JSON parsing error: %s", e.what());
         return std::nullopt;
     }
 
@@ -77,7 +78,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
         // Use enhanced parsing
         if (!JsonParser::ValidateModelEntry(modelEntry))
         {
-            TraceLog(LOG_WARNING, "Invalid model entry, skipping");
+            CD_CORE_WARN("Invalid model entry, skipping");
             result.failedModels++;
             continue;
         }
@@ -86,7 +87,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
         auto modelConfigResult = JsonParser::ParseModelConfig(modelEntry);
         if (!modelConfigResult)
         {
-            TraceLog(LOG_ERROR, "Error processing model entry");
+            CD_CORE_ERROR("Error processing model entry");
             result.failedModels++;
             continue;
         }
@@ -112,7 +113,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
         if (ProcessModelConfigLegacy(config))
         {
             result.loadedModels++;
-            TraceLog(LOG_INFO, "Successfully loaded model: %s", config.name.c_str());
+            CD_CORE_INFO("Successfully loaded model: %s", config.name.c_str());
         }
         else
         {
@@ -125,12 +126,12 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
     result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
     // Print statistics
-    TraceLog(LOG_INFO, "Loading completed: %d/%d models loaded in %.2f seconds",
-             result.loadedModels, result.totalModels, result.loadingTime);
+    CD_CORE_INFO("Loading completed: %d/%d models loaded in %.2f seconds", result.loadedModels,
+                 result.totalModels, result.loadingTime);
 
     if (result.failedModels > 0)
     {
-        TraceLog(LOG_WARNING, "Failed to load %d models", result.failedModels);
+        CD_CORE_WARN("Failed to load %d models", result.failedModels);
     }
 
     return result;
@@ -141,8 +142,7 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
                                          const std::vector<std::string> &modelNames)
 {
     auto startTime = std::chrono::steady_clock::now();
-    TraceLog(LOG_INFO, "Loading selective models from: %s (models: %d)", path.c_str(),
-             modelNames.size());
+    CD_CORE_INFO("Loading selective models from: %s (models: %d)", path.c_str(), modelNames.size());
 
     LoadResult result = {0, 0, 0, 0.0f};
 
@@ -152,7 +152,7 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
     std::ifstream file(path);
     if (!file.is_open())
     {
-        TraceLog(LOG_ERROR, "Failed to open model list JSON: %s", path.c_str());
+        CD_CORE_ERROR("Failed to open model list JSON: %s", path.c_str());
         return std::nullopt;
     }
 
@@ -163,7 +163,7 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "JSON parsing error: %s", e.what());
+        CD_CORE_ERROR("JSON parsing error: %s", e.what());
         return std::nullopt;
     }
 
@@ -177,7 +177,7 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
         // Get model name from the entry
         if (!modelEntry.contains("name") || !modelEntry["name"].is_string())
         {
-            TraceLog(LOG_WARNING, "Model entry missing name field, skipping");
+            CD_CORE_WARN("Model entry missing name field, skipping");
             result.failedModels++;
             continue;
         }
@@ -187,14 +187,14 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
         // Check if this model is in our selective list
         if (modelSet.find(modelName) == modelSet.end())
         {
-            TraceLog(LOG_INFO, "Skipping model '%s' (not in selective list)", modelName.c_str());
+            CD_CORE_INFO("Skipping model '%s' (not in selective list)", modelName.c_str());
             continue;
         }
 
         // Use enhanced parsing
         if (!JsonParser::ValidateModelEntry(modelEntry))
         {
-            TraceLog(LOG_WARNING, "Invalid model entry for '%s', skipping", modelName.c_str());
+            CD_CORE_WARN("Invalid model entry for '%s', skipping", modelName.c_str());
             result.failedModels++;
             continue;
         }
@@ -203,7 +203,7 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
         auto modelConfigResult = JsonParser::ParseModelConfig(modelEntry);
         if (!modelConfigResult)
         {
-            TraceLog(LOG_ERROR, "Error processing model entry for '%s'", modelName.c_str());
+            CD_CORE_ERROR("Error processing model entry for '%s'", modelName.c_str());
             result.failedModels++;
             continue;
         }
@@ -229,7 +229,7 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
         if (ProcessModelConfigLegacy(config))
         {
             result.loadedModels++;
-            TraceLog(LOG_INFO, "Successfully loaded selective model: %s", config.name.c_str());
+            CD_CORE_INFO("Successfully loaded selective model: %s", config.name.c_str());
         }
         else
         {
@@ -242,12 +242,12 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
     result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
     // Print statistics
-    TraceLog(LOG_INFO, "Selective loading completed: %d/%d models loaded in %.2f seconds",
-             result.loadedModels, result.totalModels, result.loadingTime);
+    CD_CORE_INFO("Selective loading completed: %d/%d models loaded in %.2f seconds",
+                 result.loadedModels, result.totalModels, result.loadingTime);
 
     if (result.failedModels > 0)
     {
-        TraceLog(LOG_WARNING, "Failed to load %d selective models", result.failedModels);
+        CD_CORE_WARN("Failed to load %d selective models", result.failedModels);
     }
 
     return result;
@@ -263,12 +263,12 @@ bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
         return false;
     }
 
-    TraceLog(LOG_INFO, "Loading model '%s' from: %s", config.name.c_str(), modelPath.c_str());
+    CD_CORE_INFO("Loading model '%s' from: %s", config.name.c_str(), modelPath.c_str());
 
     Model loadedModel = LoadModel(modelPath.c_str());
     if (loadedModel.meshCount == 0)
     {
-        TraceLog(LOG_WARNING, "Failed to load model at path: %s", modelPath.c_str());
+        CD_CORE_WARN("Failed to load model at path: %s", modelPath.c_str());
         return false;
     }
 
@@ -307,8 +307,7 @@ bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
     if (config.name == "player")
     {
         shouldSpawnModel = true;
-        TraceLog(LOG_INFO,
-                 "ModelLoader::ProcessModelConfigLegacy() - Forcing spawn of player model");
+        CD_CORE_INFO("ModelLoader::ProcessModelConfigLegacy() - Forcing spawn of player model");
     }
 
     if (shouldSpawnModel)
@@ -352,17 +351,16 @@ void ModelLoader::DrawAllModels() const
         // Enhanced null/invalid model pointer validation
         if (modelPtr == nullptr)
         {
-            TraceLog(LOG_WARNING,
-                     "ModelLoader::DrawAllModels() - Null model pointer for instance: %s",
-                     instance.GetModelName().c_str());
+            CD_CORE_WARN("ModelLoader::DrawAllModels() - Null model pointer for instance: %s",
+                         instance.GetModelName().c_str());
             continue;
         }
 
         if (modelPtr->meshCount <= 0)
         {
-            TraceLog(LOG_WARNING,
-                     "ModelLoader::DrawAllModels() - Empty model (meshCount: %d) for instance: %s",
-                     modelPtr->meshCount, instance.GetModelName().c_str());
+            CD_CORE_WARN(
+                "ModelLoader::DrawAllModels() - Empty model (meshCount: %d) for instance: %s",
+                modelPtr->meshCount, instance.GetModelName().c_str());
             continue;
         }
 
@@ -370,22 +368,22 @@ void ModelLoader::DrawAllModels() const
         static bool loggedMaterialInfo = false;
         if (!loggedMaterialInfo && modelPtr->materialCount > 0)
         {
-            TraceLog(LOG_INFO,
-                     "ModelLoader::DrawAllModels() - Model '%s' has %d materials, %d meshes",
-                     instance.GetModelName().c_str(), modelPtr->materialCount, modelPtr->meshCount);
+            CD_CORE_INFO("ModelLoader::DrawAllModels() - Model '%s' has %d materials, %d meshes",
+                         instance.GetModelName().c_str(), modelPtr->materialCount,
+                         modelPtr->meshCount);
             for (int i = 0; i < modelPtr->materialCount && i < 3; i++)
             {
                 Texture2D tex = modelPtr->materials[i].maps[MATERIAL_MAP_ALBEDO].texture;
                 if (tex.id != 0)
                 {
-                    TraceLog(LOG_INFO, "  Material[%d]: has texture (id=%d, size=%dx%d)", i, tex.id,
-                             tex.width, tex.height);
+                    CD_CORE_INFO("  Material[%d]: has texture (id=%d, size=%dx%d)", i, tex.id,
+                                 tex.width, tex.height);
                 }
                 else
                 {
                     Color col = modelPtr->materials[i].maps[MATERIAL_MAP_ALBEDO].color;
-                    TraceLog(LOG_INFO, "  Material[%d]: no texture, color=(%d,%d,%d,%d)", i, col.r,
-                             col.g, col.b, col.a);
+                    CD_CORE_INFO("  Material[%d]: no texture, color=(%d,%d,%d,%d)", i, col.r, col.g,
+                                 col.b, col.a);
                 }
             }
             loggedMaterialInfo = true;
@@ -398,28 +396,28 @@ void ModelLoader::DrawAllModels() const
 
         if (!IsValidVector3(position))
         {
-            TraceLog(LOG_ERROR,
-                     "ModelLoader::DrawAllModels() - Invalid position (NaN/inf) for instance: %s "
-                     "(%.2f, %.2f, %.2f)",
-                     instance.GetModelName().c_str(), position.x, position.y, position.z);
+            CD_CORE_ERROR(
+                "ModelLoader::DrawAllModels() - Invalid position (NaN/inf) for instance: %s "
+                "(%.2f, %.2f, %.2f)",
+                instance.GetModelName().c_str(), position.x, position.y, position.z);
             continue;
         }
 
         if (!IsValidVector3(rotationDeg))
         {
-            TraceLog(LOG_ERROR,
-                     "ModelLoader::DrawAllModels() - Invalid rotation (NaN/inf) for instance: %s "
-                     "(%.2f, %.2f, %.2f)",
-                     instance.GetModelName().c_str(), rotationDeg.x, rotationDeg.y, rotationDeg.z);
+            CD_CORE_ERROR(
+                "ModelLoader::DrawAllModels() - Invalid rotation (NaN/inf) for instance: %s "
+                "(%.2f, %.2f, %.2f)",
+                instance.GetModelName().c_str(), rotationDeg.x, rotationDeg.y, rotationDeg.z);
             continue;
         }
 
         if (std::isnan(scale) || std::isinf(scale) || scale <= 0.0f)
         {
-            TraceLog(LOG_ERROR,
-                     "ModelLoader::DrawAllModels() - Invalid scale (NaN/inf/zero/negative) for "
-                     "instance: %s (%.2f)",
-                     instance.GetModelName().c_str(), scale);
+            CD_CORE_ERROR(
+                "ModelLoader::DrawAllModels() - Invalid scale (NaN/inf/zero/negative) for "
+                "instance: %s (%.2f)",
+                instance.GetModelName().c_str(), scale);
             continue;
         }
 
@@ -427,11 +425,11 @@ void ModelLoader::DrawAllModels() const
         Color drawColor = instance.GetColor();
         if (!IsValidColor(drawColor))
         {
-            TraceLog(LOG_ERROR,
-                     "ModelLoader::DrawAllModels() - Invalid color for instance: %s (r:%d g:%d "
-                     "b:%d a:%d), skipping draw to prevent access violation",
-                     instance.GetModelName().c_str(), drawColor.r, drawColor.g, drawColor.b,
-                     drawColor.a);
+            CD_CORE_ERROR(
+                "ModelLoader::DrawAllModels() - Invalid color for instance: %s (r:%d g:%d "
+                "b:%d a:%d), skipping draw to prevent access violation",
+                instance.GetModelName().c_str(), drawColor.r, drawColor.g, drawColor.b,
+                drawColor.a);
             continue;
         }
 
@@ -534,8 +532,7 @@ std::optional<std::reference_wrapper<Model>> ModelLoader::GetModelByName(const s
         }
     }
 
-    TraceLog(LOG_WARNING, "Model name '%s' not found (after normalization attempts).",
-             name.c_str());
+    CD_CORE_WARN("Model name '%s' not found (after normalization attempts).", name.c_str());
     return std::nullopt;
 }
 
@@ -545,8 +542,7 @@ void ModelLoader::AddInstance(const json &instanceJson, Model *modelPtr,
 {
     if (!modelPtr)
     {
-        TraceLog(LOG_WARNING, "AddInstance called with nullptr modelPtr for model '%s'",
-                 modelName.c_str());
+        CD_CORE_WARN("AddInstance called with nullptr modelPtr for model '%s'", modelName.c_str());
         return;
     }
 
@@ -624,7 +620,7 @@ bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanc
     }
     else
     {
-        TraceLog(LOG_WARNING, "Model '%s' not found for instance creation", modelName.c_str());
+        CD_CORE_WARN("Model '%s' not found for instance creation", modelName.c_str());
         return false;
     }
 
@@ -659,8 +655,8 @@ bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanc
     }
 
     m_stats.totalInstances++;
-    TraceLog(LOG_INFO, "Added enhanced instance for model '%s' at (%.2f, %.2f, %.2f)",
-             modelName.c_str(), config.position.x, config.position.y, config.position.z);
+    CD_CORE_INFO("Added enhanced instance for model '%s' at (%.2f, %.2f, %.2f)", modelName.c_str(),
+                 config.position.x, config.position.y, config.position.z);
 
     return true;
 }
@@ -694,8 +690,7 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
         std::ifstream file(fullPath);
         if (!file.is_open())
         {
-            TraceLog(LOG_ERROR, "Failed to open GLTF file for texture path fixing: %s",
-                     fullPath.c_str());
+            CD_CORE_ERROR("Failed to open GLTF file for texture path fixing: %s", fullPath.c_str());
             return false;
         }
         json j;
@@ -719,7 +714,7 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
         std::ofstream tempFile(tempPath);
         if (!tempFile.is_open())
         {
-            TraceLog(LOG_ERROR, "Failed to create temp file for GLTF: %s", tempPath.c_str());
+            CD_CORE_ERROR("Failed to create temp file for GLTF: %s", tempPath.c_str());
             return false;
         }
         tempFile << j.dump(4);
@@ -732,7 +727,7 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
         return false;
     }
 
-    TraceLog(LOG_INFO, "Loading single model '%s' from: %s", name.c_str(), fullPath.c_str());
+    CD_CORE_INFO("Loading single model '%s' from: %s", name.c_str(), fullPath.c_str());
 
     Model loadedModel = ::LoadModel(fullPath.c_str());
 
@@ -744,8 +739,8 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
 
     if (loadedModel.meshCount == 0)
     {
-        TraceLog(LOG_ERROR, "Failed to load model: %s (meshCount: %d)", fullPath.c_str(),
-                 loadedModel.meshCount);
+        CD_CORE_ERROR("Failed to load model: %s (meshCount: %d)", fullPath.c_str(),
+                      loadedModel.meshCount);
 
         // Try to load as different format or check if file is valid
         if (std::ifstream(fullPath).good())
@@ -756,14 +751,14 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
         }
         else
         {
-            TraceLog(LOG_ERROR, "Model file not accessible: %s", fullPath.c_str());
+            CD_CORE_ERROR("Model file not accessible: %s", fullPath.c_str());
         }
         return false;
     }
 
     // Debug: Log material and texture info after loading
-    TraceLog(LOG_INFO, "Loaded model '%s': meshCount=%d, materialCount=%d", name.c_str(),
-             loadedModel.meshCount, loadedModel.materialCount);
+    CD_CORE_INFO("Loaded model '%s': meshCount=%d, materialCount=%d", name.c_str(),
+                 loadedModel.meshCount, loadedModel.materialCount);
     if (loadedModel.materialCount > 0)
     {
         for (int i = 0; i < loadedModel.materialCount && i < 3; i++)
@@ -771,15 +766,14 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
             Texture2D tex = loadedModel.materials[i].maps[MATERIAL_MAP_ALBEDO].texture;
             if (tex.id != 0 && tex.id != rlGetTextureIdDefault())
             {
-                TraceLog(LOG_INFO, "  Material[%d]: has texture (id=%d, size=%dx%d)", i, tex.id,
-                         tex.width, tex.height);
+                CD_CORE_INFO("  Material[%d]: has texture (id=%d, size=%dx%d)", i, tex.id,
+                             tex.width, tex.height);
             }
             else
             {
                 Color col = loadedModel.materials[i].maps[MATERIAL_MAP_ALBEDO].color;
-                TraceLog(LOG_INFO,
-                         "  Material[%d]: no texture (using default), color=(%d,%d,%d,%d)", i,
-                         col.r, col.g, col.b, col.a);
+                CD_CORE_INFO("  Material[%d]: no texture (using default), color=(%d,%d,%d,%d)", i,
+                             col.r, col.g, col.b, col.a);
             }
         }
     }
@@ -795,7 +789,7 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
         m_animations[name] = std::move(newAnimation);
     }
 
-    TraceLog(LOG_INFO, "Successfully loaded single model: %s", name.c_str());
+    CD_CORE_INFO("Successfully loaded single model: %s", name.c_str());
     return true;
 }
 
@@ -804,7 +798,7 @@ bool ModelLoader::UnloadModel(const std::string &name)
     auto it = m_modelByName.find(name);
     if (it == m_modelByName.end())
     {
-        TraceLog(LOG_WARNING, "Cannot unload model '%s': not found", name.c_str());
+        CD_CORE_WARN("Cannot unload model '%s': not found", name.c_str());
         return false;
     }
 
@@ -826,7 +820,7 @@ bool ModelLoader::UnloadModel(const std::string &name)
     // Remove configuration
     m_configs.erase(name);
 
-    TraceLog(LOG_INFO, "Unloaded model: %s", name.c_str());
+    CD_CORE_INFO("Unloaded model: %s", name.c_str());
     return true;
 }
 
@@ -896,15 +890,15 @@ const LoadingStats &ModelLoader::GetLoadingStats() const
 
 void ModelLoader::PrintStatistics() const
 {
-    TraceLog(LOG_INFO, "=== Enhanced Model Manager Statistics ===");
-    TraceLog(LOG_INFO, "Total models processed: %d", m_stats.totalModels);
-    TraceLog(LOG_INFO, "Successfully loaded: %d", m_stats.loadedModels);
-    TraceLog(LOG_INFO, "Failed to load: %d", m_stats.failedModels);
-    TraceLog(LOG_INFO, "Total instances: %d", m_stats.totalInstances);
-    TraceLog(LOG_INFO, "Loading time: %.2f seconds", m_stats.loadingTime);
-    TraceLog(LOG_INFO, "Success rate: %.1f%%", m_stats.GetSuccessRate() * 100);
-    TraceLog(LOG_INFO, "Cache enabled: %s", m_cacheEnabled ? "Yes" : "No");
-    TraceLog(LOG_INFO, "LOD enabled: %s", m_lodEnabled ? "Yes" : "No");
+    CD_CORE_INFO("=== Enhanced Model Manager Statistics ===");
+    CD_CORE_INFO("Total models processed: %d", m_stats.totalModels);
+    CD_CORE_INFO("Successfully loaded: %d", m_stats.loadedModels);
+    CD_CORE_INFO("Failed to load: %d", m_stats.failedModels);
+    CD_CORE_INFO("Total instances: %d", m_stats.totalInstances);
+    CD_CORE_INFO("Loading time: %.2f seconds", m_stats.loadingTime);
+    CD_CORE_INFO("Success rate: %.1f%%", m_stats.GetSuccessRate() * 100);
+    CD_CORE_INFO("Cache enabled: %s", m_cacheEnabled ? "Yes" : "No");
+    CD_CORE_INFO("LOD enabled: %s", m_lodEnabled ? "Yes" : "No");
 }
 
 void ModelLoader::PrintCacheInfo() const
@@ -915,7 +909,7 @@ void ModelLoader::PrintCacheInfo() const
     }
     else
     {
-        TraceLog(LOG_INFO, "Cache is disabled or not available");
+        CD_CORE_INFO("Cache is disabled or not available");
     }
 }
 
@@ -929,7 +923,7 @@ void ModelLoader::SetMaxCacheSize(const size_t maxSize) const
     if (m_cache)
     {
         m_cache->SetMaxCacheSize(maxSize);
-        TraceLog(LOG_INFO, "Cache max size set to: %zu", maxSize);
+        CD_CORE_INFO("Cache max size set to: %zu", maxSize);
     }
 }
 
@@ -948,7 +942,7 @@ void ModelLoader::CleanupUnusedModels() const
     if (m_cache && m_cacheEnabled)
     {
         m_cache->CleanupUnusedModels();
-        TraceLog(LOG_INFO, "Cleaned up unused cached models");
+        CD_CORE_INFO("Cleaned up unused cached models");
     }
 }
 
@@ -957,7 +951,7 @@ void ModelLoader::OptimizeCache() const
     if (m_cache && m_cacheEnabled)
     {
         m_cache->CleanupUnusedModels(60); // More aggressive cleanup
-        TraceLog(LOG_INFO, "Cache optimized");
+        CD_CORE_INFO("Cache optimized");
     }
 }
 
@@ -966,7 +960,7 @@ void ModelLoader::ClearInstances()
     size_t count = m_instances.size();
     m_instances.clear();
     m_stats.totalInstances = 0;
-    TraceLog(LOG_INFO, "ModelLoader::ClearInstances() - Cleared %zu model instances", count);
+    CD_CORE_INFO("ModelLoader::ClearInstances() - Cleared %zu model instances", count);
 }
 
 // Validation helper functions for crash prevention
@@ -1002,14 +996,14 @@ bool ModelLoader::ValidateModelPath(const std::string &path) const
 {
     if (path.empty())
     {
-        TraceLog(LOG_ERROR, "Empty model path provided");
+        CD_CORE_ERROR("Empty model path provided");
         return false;
     }
 
     // Check if file exists
     if (const std::ifstream file(path); !file.good())
     {
-        TraceLog(LOG_ERROR, "Model file not found: %s", path.c_str());
+        CD_CORE_ERROR("Model file not found: %s", path.c_str());
         return false;
     }
 
@@ -1020,7 +1014,7 @@ bool ModelLoader::ValidateModelPath(const std::string &path) const
     std::vector<std::string> supportedExtensions = {".glb", ".gltf", ".obj", ".fbx", ".dae"};
     if (std::ranges::find(supportedExtensions, ext) == supportedExtensions.end())
     {
-        TraceLog(LOG_WARNING, "Potentially unsupported model format: %s", ext.c_str());
+        CD_CORE_WARN("Potentially unsupported model format: %s", ext.c_str());
     }
 
     return true;
@@ -1031,16 +1025,16 @@ bool ModelLoader::ReloadModel(const std::string &name)
     auto configIt = m_configs.find(name);
     if (configIt == m_configs.end())
     {
-        TraceLog(LOG_WARNING, "Cannot reload model '%s': configuration not found", name.c_str());
+        CD_CORE_WARN("Cannot reload model '%s': configuration not found", name.c_str());
         return false;
     }
 
-    TraceLog(LOG_INFO, "Reloading model: %s", name.c_str());
+    CD_CORE_INFO("Reloading model: %s", name.c_str());
 
     // First unload existing model
     if (!UnloadModel(name))
     {
-        TraceLog(LOG_WARNING, "Failed to unload model '%s' before reload", name.c_str());
+        CD_CORE_WARN("Failed to unload model '%s' before reload", name.c_str());
     }
 
     // Reload
@@ -1063,8 +1057,8 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
     // If already present, skip
     if (m_modelByName.find(name) != m_modelByName.end())
     {
-        TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Model '%s' already registered",
-                 name.c_str());
+        CD_CORE_INFO("ModelLoader::RegisterLoadedModel() - Model '%s' already registered",
+                     name.c_str());
         return true;
     }
 
@@ -1072,17 +1066,16 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
     Model *pModel = new Model(model);
     if (!pModel)
     {
-        TraceLog(LOG_ERROR, "ModelLoader::RegisterLoadedModel() - Allocation failed for model '%s'",
-                 name.c_str());
+        CD_CORE_ERROR("ModelLoader::RegisterLoadedModel() - Allocation failed for model '%s'",
+                      name.c_str());
         return false;
     }
 
     m_modelByName[name] = pModel;
     m_stats.loadedModels++;
-    TraceLog(LOG_INFO,
-             "ModelLoader::RegisterLoadedModel() - Registered model '%s' (meshCount=%d, "
-             "materialCount=%d)",
-             name.c_str(), pModel->meshCount, pModel->materialCount);
+    CD_CORE_INFO("ModelLoader::RegisterLoadedModel() - Registered model '%s' (meshCount=%d, "
+                 "materialCount=%d)",
+                 name.c_str(), pModel->meshCount, pModel->materialCount);
 
     // Debug: Log material and texture info after registration
     if (pModel->materialCount > 0)
@@ -1092,8 +1085,8 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
             Texture2D tex = pModel->materials[i].maps[MATERIAL_MAP_ALBEDO].texture;
             if (tex.id != 0 && tex.id != rlGetTextureIdDefault())
             {
-                TraceLog(LOG_INFO, "  Registered Material[%d]: has texture (id=%d, size=%dx%d)", i,
-                         tex.id, tex.width, tex.height);
+                CD_CORE_INFO("  Registered Material[%d]: has texture (id=%d, size=%dx%d)", i,
+                             tex.id, tex.width, tex.height);
             }
             else
             {
@@ -1107,8 +1100,8 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
     }
     else
     {
-        TraceLog(LOG_WARNING, "ModelLoader::RegisterLoadedModel() - Model '%s' has no materials!",
-                 name.c_str());
+        CD_CORE_WARN("ModelLoader::RegisterLoadedModel() - Model '%s' has no materials!",
+                     name.c_str());
     }
 
     // Also register common aliases to improve matching between editor exports and runtime keys.
@@ -1121,8 +1114,8 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
         if (!stem.empty() && stem != name && m_modelByName.find(stem) == m_modelByName.end())
         {
             m_modelByName[stem] = pModel;
-            TraceLog(LOG_INFO, "ModelLoader::RegisterLoadedModel() - Registered alias '%s' -> '%s'",
-                     stem.c_str(), name.c_str());
+            CD_CORE_INFO("ModelLoader::RegisterLoadedModel() - Registered alias '%s' -> '%s'",
+                         stem.c_str(), name.c_str());
         }
 
         // Register lowercase variants for robustness
@@ -1137,18 +1130,16 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
         if (lname != name && m_modelByName.find(lname) == m_modelByName.end())
         {
             m_modelByName[lname] = pModel;
-            TraceLog(LOG_INFO,
-                     "ModelLoader::RegisterLoadedModel() - Registered lowercase alias '%s'",
-                     lname.c_str());
+            CD_CORE_INFO("ModelLoader::RegisterLoadedModel() - Registered lowercase alias '%s'",
+                         lname.c_str());
         }
 
         std::string lstem = toLower(stem);
         if (!lstem.empty() && lstem != stem && m_modelByName.find(lstem) == m_modelByName.end())
         {
             m_modelByName[lstem] = pModel;
-            TraceLog(LOG_INFO,
-                     "ModelLoader::RegisterLoadedModel() - Registered lowercase alias '%s'",
-                     lstem.c_str());
+            CD_CORE_INFO("ModelLoader::RegisterLoadedModel() - Registered lowercase alias '%s'",
+                         lstem.c_str());
         }
     }
     catch (...)
@@ -1197,14 +1188,14 @@ void ModelLoader::UnloadAllModels()
     m_animations.clear();
     m_configs.clear();
 
-    TraceLog(LOG_INFO, "ModelLoader: All models unloaded");
+    CD_CORE_INFO("ModelLoader: All models unloaded");
 }
 
 // ==================== GAME MODEL LOADING METHODS ====================
 
 std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
 {
-    TraceLog(LOG_INFO, "[ModelLoader] Loading game models from resources directory...");
+    CD_CORE_INFO("[ModelLoader] Loading game models from resources directory...");
 
     // Configure for optimal game performance
     SetCacheEnabled(true);
@@ -1218,12 +1209,12 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
 
     if (models.empty())
     {
-        TraceLog(LOG_WARNING, "[ModelLoader] No models found in resources directory");
+        CD_CORE_WARN("[ModelLoader] No models found in resources directory");
         return std::nullopt;
     }
 
-    TraceLog(LOG_INFO, "[ModelLoader] Found %d models in resources directory",
-             static_cast<int>(models.size()));
+    CD_CORE_INFO("[ModelLoader] Found %d models in resources directory",
+                 static_cast<int>(models.size()));
 
     LoadResult result = {
         static_cast<int>(models.size()), // totalModels
@@ -1237,19 +1228,18 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
     // Load each model found in the directory
     for (const auto &modelInfo : models)
     {
-        TraceLog(LOG_INFO, "[ModelLoader] Loading model: %s from %s", modelInfo.name.c_str(),
-                 modelInfo.path.c_str());
+        CD_CORE_INFO("[ModelLoader] Loading model: %s from %s", modelInfo.name.c_str(),
+                     modelInfo.path.c_str());
 
         if (LoadSingleModel(modelInfo.name, modelInfo.path, true))
         {
             result.loadedModels++;
-            TraceLog(LOG_INFO, "[ModelLoader] Successfully loaded model: %s",
-                     modelInfo.name.c_str());
+            CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelInfo.name.c_str());
         }
         else
         {
             result.failedModels++;
-            TraceLog(LOG_WARNING, "[ModelLoader] Failed to load model: %s", modelInfo.name.c_str());
+            CD_CORE_WARN("[ModelLoader] Failed to load model: %s", modelInfo.name.c_str());
         }
     }
 
@@ -1257,8 +1247,8 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
     result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
     PrintStatistics();
-    TraceLog(LOG_INFO, "[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
-             result.totalModels, result.loadingTime);
+    CD_CORE_INFO("[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
+                 result.totalModels, result.loadingTime);
 
     // Validate that we have essential models
     auto availableModels = GetAvailableModels();
@@ -1267,8 +1257,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
 
     if (!hasPlayerModel)
     {
-        TraceLog(LOG_WARNING,
-                 "[ModelLoader] Player model not found, player may not render correctly");
+        CD_CORE_WARN("[ModelLoader] Player model not found, player may not render correctly");
     }
 
     return result;
@@ -1277,8 +1266,8 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
 std::optional<ModelLoader::LoadResult>
 ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
 {
-    TraceLog(LOG_INFO, "[ModelLoader] Loading selective models: %d models",
-             static_cast<int>(modelNames.size()));
+    CD_CORE_INFO("[ModelLoader] Loading selective models: %d models",
+                 static_cast<int>(modelNames.size()));
 
     // Configure for selective loading
     SetCacheEnabled(true);
@@ -1292,12 +1281,12 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
 
     if (allModels.empty())
     {
-        TraceLog(LOG_WARNING, "[ModelLoader] No models found in resources directory");
+        CD_CORE_WARN("[ModelLoader] No models found in resources directory");
         return std::nullopt;
     }
 
-    TraceLog(LOG_INFO, "[ModelLoader] Found %d models in resources directory",
-             static_cast<int>(allModels.size()));
+    CD_CORE_INFO("[ModelLoader] Found %d models in resources directory",
+                 static_cast<int>(allModels.size()));
 
     LoadResult result = {
         static_cast<int>(modelNames.size()), // totalModels (only count requested models)
@@ -1317,25 +1306,23 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
 
         if (it != allModels.end())
         {
-            TraceLog(LOG_INFO, "[ModelLoader] Loading required model: %s from %s",
-                     modelName.c_str(), it->path.c_str());
+            CD_CORE_INFO("[ModelLoader] Loading required model: %s from %s", modelName.c_str(),
+                         it->path.c_str());
 
             if (LoadSingleModel(modelName, it->path, true))
             {
                 result.loadedModels++;
-                TraceLog(LOG_INFO, "[ModelLoader] Successfully loaded model: %s",
-                         modelName.c_str());
+                CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelName.c_str());
             }
             else
             {
                 result.failedModels++;
-                TraceLog(LOG_WARNING, "[ModelLoader] Failed to load model: %s", modelName.c_str());
+                CD_CORE_WARN("[ModelLoader] Failed to load model: %s", modelName.c_str());
             }
         }
         else
         {
-            TraceLog(LOG_WARNING, "[ModelLoader] Model not found in resources: %s",
-                     modelName.c_str());
+            CD_CORE_WARN("[ModelLoader] Model not found in resources: %s", modelName.c_str());
             result.failedModels++;
         }
     }
@@ -1344,8 +1331,8 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
     result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
     PrintStatistics();
-    TraceLog(LOG_INFO, "[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
-             result.totalModels, result.loadingTime);
+    CD_CORE_INFO("[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
+                 result.totalModels, result.loadingTime);
 
     // Validate that we have essential models
     auto availableModels = GetAvailableModels();
@@ -1354,8 +1341,7 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
 
     if (!hasPlayerModel)
     {
-        TraceLog(LOG_WARNING,
-                 "[ModelLoader] Player model not found, player may not render correctly");
+        CD_CORE_WARN("[ModelLoader] Player model not found, player may not render correctly");
     }
 
     return result;
@@ -1364,8 +1350,8 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
 std::optional<ModelLoader::LoadResult>
 ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames)
 {
-    TraceLog(LOG_INFO, "[ModelLoader] Loading selective models (safe): %d models",
-             static_cast<int>(modelNames.size()));
+    CD_CORE_INFO("[ModelLoader] Loading selective models (safe): %d models",
+                 static_cast<int>(modelNames.size()));
 
     // Configure for selective loading
     SetCacheEnabled(true);
@@ -1379,12 +1365,12 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
 
     if (allModels.empty())
     {
-        TraceLog(LOG_WARNING, "[ModelLoader] No models found in resources directory");
+        CD_CORE_WARN("[ModelLoader] No models found in resources directory");
         return std::nullopt;
     }
 
-    TraceLog(LOG_INFO, "[ModelLoader] Found %d models in resources directory",
-             static_cast<int>(allModels.size()));
+    CD_CORE_INFO("[ModelLoader] Found %d models in resources directory",
+                 static_cast<int>(allModels.size()));
 
     LoadResult result = {
         static_cast<int>(modelNames.size()), // totalModels (only count requested models)
@@ -1402,20 +1388,18 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
     {
         if (modelNameSet.find(modelInfo.name) != modelNameSet.end())
         {
-            TraceLog(LOG_INFO, "[ModelLoader] Loading required model: %s from %s",
-                     modelInfo.name.c_str(), modelInfo.path.c_str());
+            CD_CORE_INFO("[ModelLoader] Loading required model: %s from %s", modelInfo.name.c_str(),
+                         modelInfo.path.c_str());
 
             if (LoadSingleModel(modelInfo.name, modelInfo.path, true))
             {
                 result.loadedModels++;
-                TraceLog(LOG_INFO, "[ModelLoader] Successfully loaded model: %s",
-                         modelInfo.name.c_str());
+                CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelInfo.name.c_str());
             }
             else
             {
                 result.failedModels++;
-                TraceLog(LOG_WARNING, "[ModelLoader] Failed to load model: %s",
-                         modelInfo.name.c_str());
+                CD_CORE_WARN("[ModelLoader] Failed to load model: %s", modelInfo.name.c_str());
             }
         }
     }
@@ -1424,8 +1408,8 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
     result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
     PrintStatistics();
-    TraceLog(LOG_INFO, "[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
-             result.totalModels, result.loadingTime);
+    CD_CORE_INFO("[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
+                 result.totalModels, result.loadingTime);
 
     // Validate that we have essential models
     auto availableModels = GetAvailableModels();
@@ -1434,8 +1418,7 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
 
     if (!hasPlayerModel)
     {
-        TraceLog(LOG_WARNING,
-                 "[ModelLoader] Player model not found, player may not render correctly");
+        CD_CORE_WARN("[ModelLoader] Player model not found, player may not render correctly");
     }
 
     return result;

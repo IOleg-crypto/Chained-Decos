@@ -1,4 +1,5 @@
 #include "ConfigManager.h"
+#include "core/Log.h"
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -12,8 +13,8 @@ bool ConfigManager::LoadFromFile(const std::string &filename)
         std::ifstream file(filename);
         if (!file.is_open())
         {
-            TraceLog(LOG_WARNING, "ConfigManager::LoadFromFile() - Could not open file: %s",
-                     filename.c_str());
+            CD_CORE_WARN("ConfigManager::LoadFromFile() - Could not open file: %s",
+                         filename.c_str());
             return false;
         }
 
@@ -32,9 +33,8 @@ bool ConfigManager::LoadFromFile(const std::string &filename)
             size_t equalPos = line.find('=');
             if (equalPos == std::string::npos)
             {
-                TraceLog(LOG_WARNING,
-                         "ConfigManager::LoadFromFile() - Invalid format on line %d: %s",
-                         lineNumber, line.c_str());
+                CD_CORE_WARN("ConfigManager::LoadFromFile() - Invalid format on line %d: %s",
+                             lineNumber, line.c_str());
                 continue;
             }
 
@@ -59,8 +59,8 @@ bool ConfigManager::LoadFromFile(const std::string &filename)
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "ConfigManager::LoadFromFile() - Exception while loading %s: %s",
-                 filename.c_str(), e.what());
+        CD_CORE_ERROR("ConfigManager::LoadFromFile() - Exception while loading %s: %s",
+                      filename.c_str(), e.what());
         return false;
     }
 }
@@ -72,8 +72,8 @@ bool ConfigManager::SaveToFile(const std::string &filename)
         std::ofstream file(filename);
         if (!file.is_open())
         {
-            TraceLog(LOG_ERROR, "ConfigManager::SaveToFile() - Could not open file for writing: %s",
-                     filename.c_str());
+            CD_CORE_ERROR("ConfigManager::SaveToFile() - Could not open file for writing: %s",
+                          filename.c_str());
             return false;
         }
 
@@ -90,8 +90,8 @@ bool ConfigManager::SaveToFile(const std::string &filename)
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "ConfigManager::SaveToFile() - Exception while saving %s: %s",
-                 filename.c_str(), e.what());
+        CD_CORE_ERROR("ConfigManager::SaveToFile() - Exception while saving %s: %s",
+                      filename.c_str(), e.what());
         return false;
     }
 }
@@ -540,6 +540,3 @@ bool ConfigManager::IsCommentOrEmpty(const std::string &line) const
 {
     return line.empty() || line[0] == '#' || line[0] == ';' || line[0] == '/';
 }
-
-
-

@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "editor/mapgui/UIManager.h"
 #include "editor/EditorTypes.h"
 #include "editor/IEditor.h"
@@ -668,7 +669,7 @@ void EditorUIManager::RenderWelcomeScreen()
             // Make exit button slightly more visible/styled
             if (ImGui::Button("Exit Editor", ImVec2(120, 35)))
             {
-                TraceLog(LOG_INFO, "[UIManager] Exit button clicked, setting m_shouldExit = true");
+                CD_INFO("[UIManager] Exit button clicked, setting m_shouldExit = true");
                 m_shouldExit = true;
                 std::exit(0);
             }
@@ -769,3 +770,4 @@ void EditorUIManager::RenderSavePrompt()
         ImGui::EndPopup();
     }
 }
+

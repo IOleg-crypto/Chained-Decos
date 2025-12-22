@@ -1,4 +1,5 @@
 #include "GameConfig.h"
+#include "core/Log.h"
 #include <cstring>
 #include <raylib.h>
 
@@ -39,13 +40,13 @@ GameConfig CommandLineHandler::ParseArguments(int argc, char *argv[])
 
 void CommandLineHandler::ShowConfig(const GameConfig &config)
 {
-    TraceLog(LOG_INFO, "=== Game Configuration ===");
-    TraceLog(LOG_INFO, "Resolution: %dx%d", config.width, config.height);
-    TraceLog(LOG_INFO, "Fullscreen: %s", config.fullscreen ? "Yes" : "No");
-    TraceLog(LOG_INFO, "Developer Mode: %s", config.developer ? "Yes" : "No");
+    CD_CORE_INFO("=== Game Configuration ===");
+    CD_CORE_INFO("Resolution: %dx%d", config.width, config.height);
+    CD_CORE_INFO("Fullscreen: %s", config.fullscreen ? "Yes" : "No");
+    CD_CORE_INFO("Developer Mode: %s", config.developer ? "Yes" : "No");
     if (!config.mapPath.empty())
     {
-        TraceLog(LOG_INFO, "Map: %s", config.mapPath.c_str());
+        CD_CORE_INFO("Map: %s", config.mapPath.c_str());
     }
-    TraceLog(LOG_INFO, "========================");
+    CD_CORE_INFO("========================");
 }

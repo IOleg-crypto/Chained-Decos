@@ -1,6 +1,7 @@
 //
 // Created by I#Oleg
 //
+#include "core/Log.h"
 #include <chrono>
 #include <gtest/gtest.h>
 #include <memory>
@@ -30,7 +31,7 @@ public:
 #else
         // Don't initialize any graphics context for tests
         // Tests should run without requiring window/graphics context
-        TraceLog(LOG_INFO, "Test environment: Skipping graphics initialization");
+        CD_INFO("Test environment: Skipping graphics initialization");
 #endif
     }
     void TearDown() override
@@ -794,3 +795,4 @@ TEST(StressTest, MultipleModelInstances)
 
     EXPECT_EQ(instances.size(), 100);
 }
+

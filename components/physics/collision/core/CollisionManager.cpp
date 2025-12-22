@@ -1,4 +1,5 @@
 #include "CollisionManager.h"
+#include "core/Log.h"
 #include <algorithm>
 #include <array>
 #include <cfloat>
@@ -18,7 +19,7 @@
 
 bool CollisionManager::Initialize()
 {
-    TraceLog(LOG_INFO, "CollisionManager::Initialize() - Starting collision system initialization");
+    CD_CORE_INFO("CollisionManager::Initialize() - Starting collision system initialization");
 
     // Batch BVH initialization for better performance
     std::vector<Collision *> bvhObjects;
@@ -34,10 +35,10 @@ bool CollisionManager::Initialize()
         }
     }
 
-    TraceLog(LOG_INFO,
-             "CollisionManager::Initialize() - Found %zu objects requiring BVH initialization out "
-             "of %zu total",
-             bvhObjects.size(), m_collisionObjects.size());
+    CD_CORE_INFO(
+        "CollisionManager::Initialize() - Found %zu objects requiring BVH initialization out "
+        "of %zu total",
+        bvhObjects.size(), m_collisionObjects.size());
 
     // Initialize BVH for collected objects in parallel if multiple
     if (bvhObjects.size() > 1)
@@ -48,18 +49,17 @@ bool CollisionManager::Initialize()
         {
             std::for_each(std::execution::par, bvhObjects.begin(), bvhObjects.end(),
                           [](Collision *obj) { obj->InitializeBVH(); });
-            TraceLog(LOG_INFO,
-                     "CollisionManager::Initialize() - BVH initialization completed "
-                     "using parallel execution for %zu objects",
-                     bvhObjects.size());
+            CD_CORE_INFO("CollisionManager::Initialize() - BVH initialization completed "
+                         "using parallel execution for %zu objects",
+                         bvhObjects.size());
         }
         catch (const std::exception &e)
         {
             // Fallback to sequential if parallel execution fails
-            TraceLog(LOG_WARNING,
-                     "CollisionManager::Initialize() - Parallel BVH initialization failed, falling "
-                     "back to sequential: %s",
-                     e.what());
+            CD_CORE_WARN(
+                "CollisionManager::Initialize() - Parallel BVH initialization failed, falling "
+                "back to sequential: %s",
+                e.what());
             for (Collision *obj : bvhObjects)
             {
                 obj->InitializeBVH();
@@ -67,8 +67,8 @@ bool CollisionManager::Initialize()
         }
 #else
         // Fallback for platforms without std::execution support
-        TraceLog(LOG_INFO, "CollisionManager::Initialize() - Using sequential BVH initialization "
-                           "(parallel execution not supported or enabled on this platform)");
+        CD_CORE_INFO("CollisionManager::Initialize() - Using sequential BVH initialization "
+                     "(parallel execution not supported or enabled on this platform)");
         for (Collision *obj : bvhObjects)
         {
             obj->InitializeBVH();
@@ -83,17 +83,16 @@ bool CollisionManager::Initialize()
         bvhObjects[0]->InitializeBVH();
     }
 
-    TraceLog(LOG_INFO,
-             "CollisionManager::Initialize() - Collision system initialized with %zu collision "
-             "objects (%zu with BVH)",
-             m_collisionObjects.size(), bvhObjects.size());
+    CD_CORE_INFO("CollisionManager::Initialize() - Collision system initialized with %zu collision "
+                 "objects (%zu with BVH)",
+                 m_collisionObjects.size(), bvhObjects.size());
     return true;
 }
 
 void CollisionManager::Shutdown()
 {
     ClearColliders();
-    TraceLog(LOG_INFO, "CollisionManager::Shutdown() - Collision system shutdown");
+    CD_CORE_INFO("CollisionManager::Shutdown() - Collision system shutdown");
 }
 
 // Spatial partitioning optimization
@@ -132,8 +131,8 @@ void CollisionManager::UpdateSpatialPartitioning()
         }
     }
 
-    TraceLog(LOG_DEBUG, "Updated spatial partitioning: %zu cells created for %zu objects",
-             m_spatialGrid.size(), m_collisionObjects.size());
+    CD_CORE_TRACE("Updated spatial partitioning: %zu cells created for %zu objects",
+                  m_spatialGrid.size(), m_collisionObjects.size());
 }
 
 void CollisionManager::Render()
@@ -164,7 +163,7 @@ void CollisionManager::AddCollider(std::shared_ptr<Collision> collisionObject)
         m_collisionObjects.back()->InitializeBVH();
     }
 
-    TraceLog(LOG_INFO, "Added collision object, total count: %zu", m_collisionObjects.size());
+    CD_CORE_INFO("Added collision object, total count: %zu", m_collisionObjects.size());
 
     // Update spatial partitioning more frequently for better performance
     if (m_collisionObjects.size() % 8 == 0) // Update every 8 objects for better accuracy
@@ -371,17 +370,16 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
     constexpr size_t MAX_COLLISION_INSTANCES = 1000;
     int collisionObjectsCreated = 0;
 
-    TraceLog(LOG_INFO,
-             "Starting selective automatic collision generation for %zu specified models...",
-             modelNames.size());
+    CD_CORE_INFO("Starting selective automatic collision generation for %zu specified models...",
+                 modelNames.size());
 
     // Prevent excessive collision creation that could cause memory issues
     if (modelNames.size() > MAX_COLLISION_INSTANCES)
     {
-        TraceLog(LOG_ERROR,
-                 "CollisionManager::CreateAutoCollisionsFromModelsSelective() - Too many models "
-                 "(%zu), limiting to %zu",
-                 modelNames.size(), MAX_COLLISION_INSTANCES);
+        CD_CORE_ERROR(
+            "CollisionManager::CreateAutoCollisionsFromModelsSelective() - Too many models "
+            "(%zu), limiting to %zu",
+            modelNames.size(), MAX_COLLISION_INSTANCES);
         return;
     }
 
@@ -390,8 +388,8 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
 
     // Get all available models
     auto availableModels = models.GetAvailableModels();
-    TraceLog(LOG_INFO, "Found %zu models available, filtering to %zu specified models",
-             availableModels.size(), modelNames.size());
+    CD_CORE_INFO("Found %zu models available, filtering to %zu specified models",
+                 availableModels.size(), modelNames.size());
 
     // Track processed models to avoid duplication
     std::set<std::string> processedModelNames;
@@ -404,9 +402,8 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
         // Skip models not in our selective list
         if (modelSet.find(modelName) == modelSet.end())
         {
-            TraceLog(LOG_DEBUG,
-                     "Skipping collision creation for model '%s' (not in selective list)",
-                     modelName.c_str());
+            CD_CORE_TRACE("Skipping collision creation for model '%s' (not in selective list)",
+                          modelName.c_str());
             continue;
         }
 
@@ -418,7 +415,7 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
         auto modelOpt = models.GetModelByName(modelName);
         if (!modelOpt)
         {
-            TraceLog(LOG_WARNING, "CollisionManager - Model not found: %s", modelName.c_str());
+            CD_CORE_WARN("CollisionManager - Model not found: %s", modelName.c_str());
             continue;
         }
 
@@ -444,8 +441,8 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
 
     if (numThreads == 0 || tasks.empty())
     {
-        TraceLog(LOG_WARNING,
-                 "No tasks to process or no threads available for parallel collision generation");
+        CD_CORE_WARN(
+            "No tasks to process or no threads available for parallel collision generation");
         return;
     }
 
@@ -474,7 +471,7 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
                 {
                     const auto &task = tasks[i];
 
-                    TraceLog(LOG_INFO, "Processing selective model: %s", task.modelName.c_str());
+                    CD_CORE_INFO("Processing selective model: %s", task.modelName.c_str());
 
                     if (task.instances.empty())
                     {
@@ -492,8 +489,8 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
                         // Create collisions for each instance (up to the limit)
                         size_t instanceLimit =
                             std::min(task.instances.size(), MAX_COLLISION_INSTANCES);
-                        TraceLog(LOG_INFO, "Processing %zu/%zu instances for selective model '%s'",
-                                 instanceLimit, task.instances.size(), task.modelName.c_str());
+                        CD_CORE_INFO("Processing %zu/%zu instances for selective model '%s'",
+                                     instanceLimit, task.instances.size(), task.modelName.c_str());
 
                         for (size_t j = 0; j < instanceLimit; j++)
                         {
@@ -510,11 +507,11 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
 
                         if (task.instances.size() > MAX_COLLISION_INSTANCES)
                         {
-                            TraceLog(LOG_WARNING,
-                                     "Limited collisions for selective model '%s' to %zu (of %zu "
-                                     "instances)",
-                                     task.modelName.c_str(), MAX_COLLISION_INSTANCES,
-                                     task.instances.size());
+                            CD_CORE_WARN(
+                                "Limited collisions for selective model '%s' to %zu (of %zu "
+                                "instances)",
+                                task.modelName.c_str(), MAX_COLLISION_INSTANCES,
+                                task.instances.size());
                         }
                     }
                 }
@@ -529,15 +526,15 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
         collisionObjectsCreated += future.get();
     }
 
-    TraceLog(LOG_INFO,
-             "Selective automatic collision generation complete. Created %d collision objects from "
-             "%zu specified models",
-             collisionObjectsCreated, modelNames.size());
+    CD_CORE_INFO(
+        "Selective automatic collision generation complete. Created %d collision objects from "
+        "%zu specified models",
+        collisionObjectsCreated, modelNames.size());
 
     // Final spatial partitioning update for optimal performance
     UpdateSpatialPartitioning();
 
-    TraceLog(LOG_INFO, "Spatial partitioning updated with %zu cells", m_spatialGrid.size());
+    CD_CORE_INFO("Spatial partitioning updated with %zu cells", m_spatialGrid.size());
 }
 
 // Helper function to create cache key
@@ -560,36 +557,35 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
                                                 Vector3 position, float scale,
                                                 const ModelLoader &models)
 {
-    TraceLog(LOG_INFO,
-             "Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
-             modelName.c_str(), position.x, position.y, position.z, scale);
+    CD_CORE_INFO("Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
+                 modelName.c_str(), position.x, position.y, position.z, scale);
 
     // Validate inputs
     if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z))
     {
-        TraceLog(LOG_ERROR, "Model '%s' has invalid position (%.2f, %.2f, %.2f)", modelName.c_str(),
-                 position.x, position.y, position.z);
+        CD_CORE_ERROR("Model '%s' has invalid position (%.2f, %.2f, %.2f)", modelName.c_str(),
+                      position.x, position.y, position.z);
         return false;
     }
 
     if (!std::isfinite(scale) || scale <= 0.0f || scale > 1000.0f)
     {
-        TraceLog(LOG_ERROR, "Model '%s' has invalid scale %.2f", modelName.c_str(), scale);
+        CD_CORE_ERROR("Model '%s' has invalid scale %.2f", modelName.c_str(), scale);
         return false;
     }
 
     // Validate model data before proceeding
     if (model.meshCount == 0)
     {
-        TraceLog(LOG_ERROR, "Model '%s' has no meshes, cannot create collision", modelName.c_str());
+        CD_CORE_ERROR("Model '%s' has no meshes, cannot create collision", modelName.c_str());
         return false;
     }
 
     // Check for excessive mesh count that could cause memory issues
     if (model.meshCount > 1000)
     {
-        TraceLog(LOG_ERROR, "Model '%s' has excessive mesh count (%d)", modelName.c_str(),
-                 model.meshCount);
+        CD_CORE_ERROR("Model '%s' has excessive mesh count (%d)", modelName.c_str(),
+                      model.meshCount);
         return false;
     }
 
@@ -607,8 +603,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
 
     if (!hasValidGeometry)
     {
-        TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback AABB collision",
-                 modelName.c_str());
+        CD_CORE_WARN("Model '%s' has no valid geometry, creating fallback AABB collision",
+                     modelName.c_str());
 
         // Create fallback AABB collision using model bounds
         BoundingBox modelBounds = GetModelBoundingBox(model);
@@ -652,7 +648,7 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
     if (cacheIt != m_collisionCache.end())
     {
         cachedCollision = cacheIt->second;
-        TraceLog(LOG_DEBUG, "Using cached collision for '%s'", cacheKey.c_str());
+        CD_CORE_TRACE("Using cached collision for '%s'", cacheKey.c_str());
     }
     else
     {
@@ -665,8 +661,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
              cachedCollision->GetSize().x > 1.0f || cachedCollision->GetSize().z > 1.0f))
         {
             m_collisionCache[cacheKey] = cachedCollision;
-            TraceLog(LOG_INFO, "Cached collision for '%s' (cache size: %zu)", cacheKey.c_str(),
-                     m_collisionCache.size());
+            CD_CORE_INFO("Cached collision for '%s' (cache size: %zu)", cacheKey.c_str(),
+                         m_collisionCache.size());
         }
     }
 
@@ -698,9 +694,8 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         instanceCollision = CreateSimpleAABBInstanceCollision(*cachedCollision, position, scale);
         if (usePreciseForInstance)
         {
-            TraceLog(LOG_WARNING,
-                     "Reached limit of %d precise collision objects for model '%s', using AABB",
-                     MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
+            CD_CORE_WARN("Reached limit of %d precise collision objects for model '%s', using AABB",
+                         MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
         }
     }
 
@@ -712,22 +707,21 @@ bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::s
         AddCollider(std::make_shared<Collision>(std::move(instanceCollision)));
 
         bool success = GetColliders().size() > beforeCount;
-        TraceLog(LOG_INFO, "%s created instance collision for '%s', collider count: %zu -> %zu",
-                 success ? "Successfully" : "FAILED to", modelName.c_str(), beforeCount,
-                 GetColliders().size());
+        CD_CORE_INFO("%s created instance collision for '%s', collider count: %zu -> %zu",
+                     success ? "Successfully" : "FAILED to", modelName.c_str(), beforeCount,
+                     GetColliders().size());
 
         return success;
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Failed to add collision for model '%s': %s", modelName.c_str(),
-                 e.what());
+        CD_CORE_ERROR("Failed to add collision for model '%s': %s", modelName.c_str(), e.what());
         return false;
     }
     catch (...)
     {
-        TraceLog(LOG_ERROR, "Unknown error occurred while adding collision for model '%s'",
-                 modelName.c_str());
+        CD_CORE_ERROR("Unknown error occurred while adding collision for model '%s'",
+                      modelName.c_str());
         return false;
     }
 }
@@ -891,8 +885,8 @@ bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &
 
         if (maxDim <= 0.0f || minDim <= 0.0f)
         {
-            TraceLog(LOG_WARNING, "Model '%s' has invalid dimensions, defaulting to AABB",
-                     modelName.c_str());
+            CD_CORE_WARN("Model '%s' has invalid dimensions, defaulting to AABB",
+                         modelName.c_str());
             return false; // Use AABB for invalid shapes
         }
 
@@ -924,9 +918,9 @@ bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &
         // If very few triangles and rectangular, definitely use AABB
         if (totalTriangles <= 12 && isRectangular)
         {
-            TraceLog(LOG_DEBUG,
-                     "Model '%s' detected as simple rectangular shape (%d triangles), using AABB",
-                     modelName.c_str(), totalTriangles);
+            CD_CORE_TRACE(
+                "Model '%s' detected as simple rectangular shape (%d triangles), using AABB",
+                modelName.c_str(), totalTriangles);
             return false; // Use AABB
         }
 
@@ -948,28 +942,26 @@ bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &
             bool hasIrregularGeometry = AnalyzeGeometryIrregularity(model);
             if (!hasIrregularGeometry && isRectangular)
             {
-                TraceLog(LOG_DEBUG, "Model '%s' medium complexity but regular geometry, using AABB",
-                         modelName.c_str());
+                CD_CORE_TRACE("Model '%s' medium complexity but regular geometry, using AABB",
+                              modelName.c_str());
                 return false; // Use AABB
             }
             else
             {
-                TraceLog(LOG_DEBUG,
-                         "Model '%s' medium complexity with irregular geometry, using BVH",
-                         modelName.c_str());
+                CD_CORE_TRACE("Model '%s' medium complexity with irregular geometry, using BVH",
+                              modelName.c_str());
                 return true; // Use BVH
             }
         }
 
         // Default fallback
-        TraceLog(LOG_DEBUG, "Model '%s' analysis inconclusive, defaulting to AABB",
-                 modelName.c_str());
+        CD_CORE_TRACE("Model '%s' analysis inconclusive, defaulting to AABB", modelName.c_str());
         return false; // Use AABB as safe default
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_WARNING, "Shape analysis failed for model '%s': %s, defaulting to AABB",
-                 modelName.c_str(), e.what());
+        CD_CORE_WARN("Shape analysis failed for model '%s': %s, defaulting to AABB",
+                     modelName.c_str(), e.what());
         return false; // Use AABB on analysis failure
     }
 }
@@ -1006,7 +998,7 @@ bool CollisionManager::AnalyzeGeometryIrregularity(const Model &model)
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_WARNING, "Geometry irregularity analysis failed: %s", e.what());
+        CD_CORE_WARN("Geometry irregularity analysis failed: %s", e.what());
         return true; // Assume irregular on failure to be safe
     }
 }
@@ -1024,8 +1016,8 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
         // Validate model data before proceeding
         if (model.meshCount == 0)
         {
-            TraceLog(LOG_ERROR, "Model '%s' has no meshes, creating fallback collision",
-                     modelName.c_str());
+            CD_CORE_ERROR("Model '%s' has no meshes, creating fallback collision",
+                          modelName.c_str());
             BoundingBox modelBounds = GetModelBoundingBox(model);
             Vector3 size = {modelBounds.max.x - modelBounds.min.x,
                             modelBounds.max.y - modelBounds.min.y,
@@ -1054,8 +1046,8 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
         if (!hasValidGeometry)
         {
             // Fallback AABB for models without geometry
-            TraceLog(LOG_WARNING, "Model '%s' has no valid geometry, creating fallback collision",
-                     modelName.c_str());
+            CD_CORE_WARN("Model '%s' has no valid geometry, creating fallback collision",
+                         modelName.c_str());
             BoundingBox modelBounds = GetModelBoundingBox(model);
             Vector3 size = {modelBounds.max.x - modelBounds.min.x,
                             modelBounds.max.y - modelBounds.min.y,
@@ -1105,8 +1097,8 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
             }
             catch (const std::exception &e)
             {
-                TraceLog(LOG_ERROR, "Failed to build collision from model '%s': %s",
-                         modelName.c_str(), e.what());
+                CD_CORE_ERROR("Failed to build collision from model '%s': %s", modelName.c_str(),
+                              e.what());
 
                 // Fallback to AABB collision
                 BoundingBox modelBounds = GetModelBoundingBox(model);
@@ -1124,8 +1116,8 @@ std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &mo
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Critical error creating collision for model '%s': %s",
-                 modelName.c_str(), e.what());
+        CD_CORE_ERROR("Critical error creating collision for model '%s': %s", modelName.c_str(),
+                      e.what());
 
         // Create emergency fallback collision
         collision = std::make_shared<Collision>(Vector3{0, 0, 0}, Vector3{1, 1, 1});
@@ -1154,8 +1146,8 @@ Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, V
 
     instanceCollision.SetCollisionType(CollisionType::BVH_ONLY);
 
-    TraceLog(LOG_INFO, "Built BVH collision for instance at (%.2f, %.2f, %.2f)", position.x,
-             position.y, position.z);
+    CD_CORE_INFO("Built BVH collision for instance at (%.2f, %.2f, %.2f)", position.x, position.y,
+                 position.z);
 
     return instanceCollision;
 }
@@ -1381,3 +1373,4 @@ bool CollisionManager::CheckEntityCollision(ECS::EntityID selfEntity, const Coll
 
     return collisionDetected;
 }
+#include "core/Log.h"

@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "PlayerInput.h"
 #include "../core/player.h"
 #include <imgui.h>
@@ -88,7 +89,7 @@ void PlayerInput::HandleJumpInput() const
         float jumpImpulse =
             m_player->GetPhysics().GetJumpStrength() * 1.2f; // Slightly stronger jump
         m_player->ApplyJumpImpulse(jumpImpulse);
-        TraceLog(LOG_DEBUG, "PlayerInput::HandleJumpInput() - Jump key pressed, impulse: %.2f",
+        CD_TRACE("PlayerInput::HandleJumpInput() - Jump key pressed, impulse: %.2f",
                  jumpImpulse);
     }
 }
@@ -167,6 +168,7 @@ std::pair<Vector3, Vector3> PlayerInput::GetCameraVectors() const
 
     return {forward, right};
 }
+
 
 
 

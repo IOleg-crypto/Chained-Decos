@@ -1,6 +1,7 @@
 #ifndef UI_EVENT_REGISTRY_H
 #define UI_EVENT_REGISTRY_H
 
+#include "core/Log.h"
 #include <functional>
 #include <raylib.h>
 #include <string>
@@ -32,11 +33,11 @@ public:
         {
             if (it->second)
                 it->second();
-            TraceLog(LOG_INFO, "[UIEventRegistry] Triggered event: %s", eventId.c_str());
+            CD_CORE_INFO("[UIEventRegistry] Triggered event: %s", eventId.c_str());
         }
         else
         {
-            TraceLog(LOG_WARNING, "[UIEventRegistry] Event not found: %s", eventId.c_str());
+            CD_CORE_WARN("[UIEventRegistry] Event not found: %s", eventId.c_str());
         }
     }
 
