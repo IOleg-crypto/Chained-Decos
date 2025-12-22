@@ -10,28 +10,37 @@
 #include <memory>
 #include <string>
 
-#include "events/Event.h"
 #include "core/utils/Base.h"
 #include "editor/IEditor.h"
 #include "editor/mapgui/IUIManager.h"
 #include "editor/tool/IToolManager.h"
+#include "events/Event.h"
 #include "scene/camera/core/CameraController.h"
 #include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/map/skybox/skybox.h"
 
 // Rendering and utilities
 #include "editor/logic/MapManager.h"
+#include "editor/logic/ProjectManager.h"
+#include "editor/logic/Scene.h"
 #include "editor/panels/EditorPanelManager.h"
 #include "editor/render/EditorRenderer.h"
+
+class IEngine;
 
 // Main editor class for ChainedEditor
 class Editor : public IEditor
 {
 private:
+    IEngine *m_engine = nullptr;
+    EditorSettings m_settings;
+
     // Subsystem managers
     std::unique_ptr<IUIManager> m_uiManager;
     std::unique_ptr<IToolManager> m_toolManager;
     std::unique_ptr<MapManager> m_mapManager;
+    std::unique_ptr<IProjectManager> m_projectManager;
+    std::unique_ptr<ChainedEngine::Scene> m_activeScene;
     std::unique_ptr<EditorPanelManager> m_panelManager;
 
     // Engine resources and services
@@ -52,7 +61,7 @@ private:
     Color m_clearColor;
 
 public:
-    Editor(ChainedDecos::Ref<CameraController> cameraController,
+    Editor(IEngine *engine, ChainedDecos::Ref<CameraController> cameraController,
            ChainedDecos::Ref<IModelLoader> modelLoader);
     ~Editor();
 
@@ -77,7 +86,7 @@ public:
     void SelectObject(int index) override;
     void ClearSelection() override;
     void ClearObjects() override;
-    void ClearScene(); // Keep legacy name if used elsewhere
+    void ClearScene() override; // Keep legacy name if used elsewhere
     void CreateDefaultObject(MapObjectType type, const std::string &modelName = "") override;
     void LoadAndSpawnModel(const std::string &path) override;
 
@@ -128,6 +137,18 @@ public:
     bool IsSceneModified() const override;
     void SetSceneModified(bool modified) override;
 
+    const std::string &GetProjectPath() const override
+    {
+        return m_projectManager->GetProjectPath();
+    }
+    void SetProjectPath(const std::string &path) override;
+    bool CreateNewProject(const std::string &path) override;
+    void SaveProject() override;
+    void LoadProject(const std::string &path) override;
+
+    const std::vector<std::string> &GetRecentProjects() const override;
+    void AddRecentProject(const std::string &path) override;
+
     // Play Mode Management
     void StartPlayMode() override;
     void StopPlayMode() override;
@@ -138,7 +159,7 @@ public:
     {
         return m_editorMode;
     }
-    void SetEditorMode(EditorMode mode);
+    void SetEditorMode(EditorMode mode) override;
     bool IsUIDesignMode() const
     {
         return m_editorMode == EditorMode::UI_DESIGN ||
@@ -153,6 +174,7 @@ private:
     void BuildGame() override;
     void RunGame() override;
 
+private:
     // Debug Visualization
     bool IsWireframeEnabled() const override
     {

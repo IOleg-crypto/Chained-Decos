@@ -5,7 +5,9 @@
 #include <string>
 #include <unordered_map>
 
-class AudioManager
+#include "interfaces/IAudioManager.h"
+
+class AudioManager : public IAudioManager
 {
 public:
     static AudioManager &Get()
@@ -63,7 +65,6 @@ public:
     void UnloadAll();
 
 private:
-    // Private constructor для Singleton
     AudioManager();
     ~AudioManager();
 

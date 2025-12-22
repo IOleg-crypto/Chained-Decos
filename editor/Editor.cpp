@@ -1,9 +1,9 @@
-#include "core/Log.h"
 #include "editor/Editor.h"
-#include "events/Event.h"
+#include "components/rendering/core/RenderManager.h"
+#include "core/Log.h"
 #include "editor/render/EditorRenderer.h"
+#include "events/Event.h"
 #include "scene/resources/map/core/SceneLoader.h"
-#include "scene/resources/map/mapfilemanager/json/JsonSceneFileManager.h"
 
 // Subsystem implementations
 #include "editor/mapgui/UIManager.h"
@@ -28,7 +28,7 @@
 
 // ECS and Simulation
 #include "components/physics/collision/core/CollisionManager.h"
-#include "core/Engine.h"
+#include "core/interfaces/IEngine.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/Examples.h"
 #include "scene/ecs/components/PlayerComponent.h"
@@ -37,18 +37,23 @@
 #include <cstdlib>
 #include <thread>
 
+#include "editor/utils/EditorStyles.h"
+
 namespace fs = std::filesystem;
 using namespace ChainedEngine;
 
-Editor::Editor(ChainedDecos::Ref<CameraController> cameraController,
+Editor::Editor(IEngine *engine, ChainedDecos::Ref<CameraController> cameraController,
                ChainedDecos::Ref<IModelLoader> modelLoader)
-    // About m_gridsize i know it stupid
-    : m_gridSize(99999), m_spawnTextureLoaded(false), m_skybox(std::make_unique<Skybox>()),
-      m_cameraController(std::move(cameraController)), m_modelLoader(std::move(modelLoader))
+    : m_engine(engine), m_gridSize(50), m_spawnTextureLoaded(false),
+      m_skybox(std::make_unique<Skybox>()), m_cameraController(std::move(cameraController)),
+      m_modelLoader(std::move(modelLoader))
 {
     // Initialize spawn texture (will be loaded after window initialization)
     m_spawnTexture = {0};
     m_clearColor = DARKGRAY;
+
+    // Apply professional theme
+    EditorStyles::ApplyDarkTheme();
 
     InitializeSubsystems();
 }
@@ -75,6 +80,8 @@ void Editor::InitializeSubsystems()
 
     // Initialize subsystems
     m_mapManager = std::make_unique<MapManager>();
+    m_projectManager = std::make_unique<ProjectManager>();
+    m_activeScene = std::make_unique<ChainedEngine::Scene>();
     m_toolManager = std::make_unique<ToolManager>();
 
     // Create UIManager
@@ -367,6 +374,27 @@ void Editor::LoadScene(const std::string &filename)
     m_mapManager->LoadScene(filename);
     ApplyMetadata(m_mapManager->GetGameScene().GetMapMetaData());
     RefreshUIEntities();
+
+    // Auto-switch mode based on scene type
+    SceneType type = m_mapManager->GetGameScene().GetMapMetaData().sceneType;
+    if (type == SceneType::UI_MENU)
+    {
+        SetEditorMode(EditorMode::UI_DESIGN);
+        if (m_panelManager)
+        {
+            m_panelManager->SetPanelVisible("UI Editor", true);
+        }
+        CD_INFO("[Editor] Switched to UI DESIGN mode for scene: %s", filename.c_str());
+    }
+    else
+    {
+        SetEditorMode(EditorMode::SCENE_3D);
+        if (m_panelManager)
+        {
+            m_panelManager->SetPanelVisible("UI Editor", false);
+        }
+        CD_INFO("[Editor] Switched to SCENE 3D mode for scene: %s", filename.c_str());
+    }
 }
 
 void Editor::ApplyMetadata(const MapMetadata &metadata)
@@ -517,10 +545,7 @@ IUIManager *Editor::GetUIManager() const
 {
     return m_uiManager.get();
 }
-const std::string &Editor::GetCurrentMapPath() const
-{
-    return m_mapManager->GetCurrentMapPath();
-}
+
 bool Editor::IsSceneModified() const
 {
     return m_mapManager->IsSceneModified();
@@ -550,8 +575,7 @@ void Editor::StartPlayMode()
     CD_INFO("[Editor] Starting Play Mode...");
 
     // 1. Generate collisions for simulation
-    auto &engine = Engine::Instance();
-    auto collisionManager = engine.GetService<CollisionManager>();
+    auto collisionManager = m_engine->GetService<CollisionManager>();
     if (collisionManager)
     {
         collisionManager->ClearColliders();
@@ -636,8 +660,7 @@ void Editor::StartPlayMode()
     }
 
     // 2. Spawn Player
-    auto &engineInstance = Engine::Instance();
-    auto models = engineInstance.GetService<IModelLoader>();
+    auto models = m_engine->GetService<IModelLoader>();
     if (models)
     {
         if (!models->GetModelByName("player_low").has_value())
@@ -666,7 +689,7 @@ void Editor::StartPlayMode()
             spawnPos.y += 1.0f; // Offset upwards to avoid spawning into the floor
             spawnZoneFound = true;
             CD_INFO("[Editor] Player spawned at Spawn Zone '%s' at (%.2f, %.2f, %.2f)",
-                     obj.name.c_str(), spawnPos.x, spawnPos.y, spawnPos.z);
+                    obj.name.c_str(), spawnPos.x, spawnPos.y, spawnPos.z);
             break;
         }
     }
@@ -783,7 +806,7 @@ void Editor::StopPlayMode()
     REGISTRY.clear();
 
     // 2. Clear collisions
-    auto collisionManager = Engine::Instance().GetService<CollisionManager>();
+    auto collisionManager = m_engine->GetService<CollisionManager>();
     if (collisionManager)
     {
         collisionManager->ClearColliders();
@@ -823,6 +846,76 @@ void Editor::BuildGame()
         .detach();
 }
 
+void Editor::SetProjectPath(const std::string &path)
+{
+    if (m_projectManager)
+    {
+        m_projectManager->SetProjectPath(path);
+    }
+
+    // Sync AssetBrowser root path
+    if (m_panelManager)
+    {
+        auto assetBrowser = m_panelManager->GetPanel<AssetBrowserPanel>("Asset Browser");
+        if (assetBrowser)
+        {
+            assetBrowser->SetRootPath(path);
+        }
+    }
+}
+
+bool Editor::CreateNewProject(const std::string &path)
+{
+    if (m_projectManager)
+    {
+        return m_projectManager->CreateNewProject(path);
+    }
+    return false;
+}
+
+void Editor::SaveProject()
+{
+    if (m_projectManager)
+    {
+        m_projectManager->SaveProject();
+    }
+}
+
+void Editor::LoadProject(const std::string &path)
+{
+    if (m_projectManager)
+    {
+        m_projectManager->LoadProject(path);
+
+        // After loading a project, we might want to load the last scene automatically
+        // This logic can stay here or be moved to ProjectManager if it knows about SceneManager
+        // For now, let's just delegate the core loading.
+    }
+}
+
+const std::vector<std::string> &Editor::GetRecentProjects() const
+{
+    if (m_projectManager)
+    {
+        return m_projectManager->GetRecentProjects();
+    }
+    static std::vector<std::string> empty;
+    return empty;
+}
+
+void Editor::AddRecentProject(const std::string &path)
+{
+    if (m_projectManager)
+    {
+        m_projectManager->AddRecentProject(path);
+    }
+}
+
+const std::string &Editor::GetCurrentMapPath() const
+{
+    return m_mapManager->GetCurrentMapPath();
+}
+
 void Editor::RunGame()
 {
     // Check if scene has been saved at least once
@@ -842,7 +935,7 @@ void Editor::RunGame()
     std::thread(
         [scenePath]()
         {
-    // Determine executable name based on platform
+// Determine executable name based on platform
 #ifdef _WIN32
             std::string exeName = "bin\\ChainedDecos_debug.exe";
 #else
@@ -982,4 +1075,3 @@ void Editor::RefreshUIEntities()
         }
     }
 }
-

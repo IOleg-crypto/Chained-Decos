@@ -5,7 +5,6 @@
 #include "core/imgui/ImGuiLayer.h"
 #include "core/window/Window.h"
 
-
 #include "components/input/core/InputManager.h"
 #include "components/rendering/core/RenderManager.h"
 #include "core/interfaces/IGuiManager.h"
@@ -192,18 +191,22 @@ void EngineApplication::Render()
                 break;
             }
         }
+
         if (imguiLayer)
+        {
             imguiLayer->Begin();
 
-        // Render Custom GUI (Above the game, but maybe below ImGUI dev tools)
-        if (auto gui = m_engine->GetGuiManager())
-        {
-            gui->Render();
-        }
+            if (m_app)
+                m_app->OnImGuiRender();
 
-        // End ImGui frame
-        if (imguiLayer)
+            // Render Custom GUI (Above the game, but maybe below ImGUI dev tools)
+            if (auto gui = m_engine->GetGuiManager())
+            {
+                gui->Render();
+            }
+
             imguiLayer->End();
+        }
 
         // End frame
         m_engine->GetRenderManager()->EndFrame();
@@ -244,4 +247,3 @@ const EngineApplication::Config &EngineApplication::GetConfig() const
     return m_config;
 }
 } // namespace ChainedDecos
-
