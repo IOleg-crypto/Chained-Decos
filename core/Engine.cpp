@@ -4,7 +4,7 @@
 #include "components/physics/collision/core/CollisionManager.h"
 #include "components/rendering/core/RenderManager.h"
 #include "core/Log.h"
-#include "core/gui/core/GuiManager.h"
+#include "core/imgui/core/GuiManager.h"
 #include "core/module/ModuleManager.h"
 #include "core/window/Window.h"
 #include "scene/main/core/World.h"
