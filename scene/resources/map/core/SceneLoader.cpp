@@ -1,4 +1,5 @@
 #include "SceneLoader.h"
+#include "core/Log.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -129,33 +130,31 @@ bool LoadModelWithErrorHandling(const std::string &modelName,
                 if (model.meshCount > 0)
                 {
                     loadedModels[cleanKey] = model;
-                    TraceLog(LOG_INFO,
-                             "SceneLoader: Successfully loaded model %s (key: %s) from %s "
-                             "(meshCount: %d)",
-                             modelName.c_str(), cleanKey.c_str(), modelPath.c_str(),
-                             model.meshCount);
+                    CD_CORE_INFO("SceneLoader: Successfully loaded model %s (key: %s) from %s "
+                                 "(meshCount: %d)",
+                                 modelName.c_str(), cleanKey.c_str(), modelPath.c_str(),
+                                 model.meshCount);
                     return true;
                 }
                 else
                 {
-                    TraceLog(LOG_WARNING, "SceneLoader: Model loaded but has no meshes: %s",
-                             modelPath.c_str());
+                    CD_CORE_WARN("SceneLoader: Model loaded but has no meshes: %s",
+                                 modelPath.c_str());
                 }
             }
             else
             {
-                TraceLog(LOG_INFO, "SceneLoader: Model %s (key: %s) already loaded",
-                         modelName.c_str(), cleanKey.c_str());
+                CD_CORE_INFO("SceneLoader: Model %s (key: %s) already loaded", modelName.c_str(),
+                             cleanKey.c_str());
                 return true;
             }
         }
     }
 
-    TraceLog(LOG_WARNING,
-             "SceneLoader: Could not find model file for %s. Tried paths:", modelName.c_str());
+    CD_CORE_WARN("SceneLoader: Could not find model file for %s. Tried paths:", modelName.c_str());
     for (const auto &path : possiblePaths)
     {
-        TraceLog(LOG_WARNING, "  - %s", path.c_str());
+        CD_CORE_WARN("  - %s", path.c_str());
     }
     return false;
 }
@@ -344,12 +343,12 @@ bool SceneLoader::SaveSceneToFile(const GameScene &map, const std::string &path)
     std::ofstream file(path);
     if (!file.is_open())
     {
-        TraceLog(LOG_ERROR, "Failed to create map file: %s", path.c_str());
+        CD_CORE_ERROR("Failed to create map file: %s", path.c_str());
         return false;
     }
 
     file << j.dump(4); // Pretty print with 4 spaces indentation
-    TraceLog(LOG_INFO, "Successfully saved map: %s", path.c_str());
+    CD_CORE_INFO("Successfully saved map: %s", path.c_str());
 
     return true;
 }
@@ -483,8 +482,8 @@ void SceneLoader::LoadSkyboxForScene(GameScene &map)
     std::string absolutePath = ResolveSkyboxAbsolutePath(metadata.skyboxTexture);
     if (absolutePath.empty() || !std::filesystem::exists(absolutePath))
     {
-        TraceLog(LOG_WARNING, "LoadSkyboxForScene() - Skybox texture not found: %s",
-                 metadata.skyboxTexture.c_str());
+        CD_CORE_WARN("LoadSkyboxForScene() - Skybox texture not found: %s",
+                     metadata.skyboxTexture.c_str());
         return;
     }
 
@@ -500,7 +499,7 @@ void SceneLoader::LoadSkyboxForScene(GameScene &map)
     if (skybox)
     {
         skybox->LoadMaterialTexture(absolutePath);
-        TraceLog(LOG_INFO, "LoadSkyboxForScene() - Loaded skybox from %s", absolutePath.c_str());
+        CD_CORE_INFO("LoadSkyboxForScene() - Loaded skybox from %s", absolutePath.c_str());
     }
 }
 
@@ -515,7 +514,7 @@ GameScene SceneLoader::LoadScene(const std::string &path)
     std::ifstream file(path);
     if (!file.is_open())
     {
-        TraceLog(LOG_ERROR, "Failed to open map file: %s", path.c_str());
+        CD_CORE_ERROR("Failed to open map file: %s", path.c_str());
         return map;
     }
     json j;
@@ -525,7 +524,7 @@ GameScene SceneLoader::LoadScene(const std::string &path)
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Failed to parse map JSON: %s", e.what());
+        CD_CORE_ERROR("Failed to parse map JSON: %s", e.what());
         return map;
     }
     // Load metadata
@@ -599,8 +598,8 @@ GameScene SceneLoader::LoadScene(const std::string &path)
             // Basic properties
             objectData.name = obj.value("name", "object_" + std::to_string(objectIndex++));
             objectData.type = static_cast<MapObjectType>(obj.value("type", 0));
-            TraceLog(LOG_INFO, "SceneLoader: Loading object %s, type %d", objectData.name.c_str(),
-                     static_cast<int>(objectData.type));
+            CD_CORE_INFO("SceneLoader: Loading object %s, type %d", objectData.name.c_str(),
+                         static_cast<int>(objectData.type));
 
             // Position
             if (obj.contains("position"))
@@ -678,8 +677,8 @@ GameScene SceneLoader::LoadScene(const std::string &path)
             // Load model if it's a MODEL type object
             if (objectData.type == MapObjectType::MODEL && !objectData.modelName.empty())
             {
-                TraceLog(LOG_INFO, "SceneLoader: Loading MODEL object %s with modelName %s",
-                         objectData.name.c_str(), objectData.modelName.c_str());
+                CD_CORE_INFO("SceneLoader: Loading MODEL object %s with modelName %s",
+                             objectData.name.c_str(), objectData.modelName.c_str());
 
                 // Use helper function to resolve paths and load model
                 std::vector<std::string> possiblePaths = ResolveModelPaths(objectData.modelName);
@@ -690,10 +689,10 @@ GameScene SceneLoader::LoadScene(const std::string &path)
             // editor
             else if (objectData.type == MapObjectType::LIGHT && !objectData.modelName.empty())
             {
-                TraceLog(LOG_INFO,
-                         "SceneLoader: LIGHT object %s has modelName %s - treating as MODEL (map "
-                         "editor export issue)",
-                         objectData.name.c_str(), objectData.modelName.c_str());
+                CD_CORE_INFO(
+                    "SceneLoader: LIGHT object %s has modelName %s - treating as MODEL (map "
+                    "editor export issue)",
+                    objectData.name.c_str(), objectData.modelName.c_str());
 
                 // Change type to MODEL and load the model
                 objectData.type = MapObjectType::MODEL;
@@ -724,10 +723,10 @@ GameScene SceneLoader::LoadScene(const std::string &path)
 
                 if (shouldBeModel)
                 {
-                    TraceLog(LOG_INFO,
-                             "SceneLoader: LIGHT object %s appears to be a misclassified MODEL - "
-                             "converting",
-                             objectData.name.c_str());
+                    CD_CORE_INFO(
+                        "SceneLoader: LIGHT object %s appears to be a misclassified MODEL - "
+                        "converting",
+                        objectData.name.c_str());
                     objectData.type = MapObjectType::MODEL;
                     // Try to infer model name from object name
                     if (objectData.modelName.empty())
@@ -748,8 +747,8 @@ GameScene SceneLoader::LoadScene(const std::string &path)
         }
     }
 
-    TraceLog(LOG_INFO, "Successfully loaded editor format map: %s with %d objects", path.c_str(),
-             map.GetMapObjects().size());
+    CD_CORE_INFO("Successfully loaded editor format map: %s with %d objects", path.c_str(),
+                 map.GetMapObjects().size());
 
     // Load UI elements if present
     if (j.contains("uiElements") && j["uiElements"].is_array())
@@ -853,7 +852,7 @@ GameScene SceneLoader::LoadScene(const std::string &path)
             map.GetUIElementsMutable().push_back(elemData);
         }
 
-        TraceLog(LOG_INFO, "Loaded %d UI elements from map", map.GetUIElements().size());
+        CD_CORE_INFO("Loaded %d UI elements from map", map.GetUIElements().size());
     }
 
     // Load skybox if texture path is specified
@@ -879,12 +878,11 @@ std::vector<ModelInfo> SceneLoader::LoadModelsFromDirectory(const std::string &d
     {
         if (!std::filesystem::exists(directory) || !std::filesystem::is_directory(directory))
         {
-            TraceLog(LOG_WARNING, "Directory does not exist or is not a directory: %s",
-                     directory.c_str());
+            CD_CORE_WARN("Directory does not exist or is not a directory: %s", directory.c_str());
             return models;
         }
 
-        TraceLog(LOG_INFO, "Scanning directory for models: %s", directory.c_str());
+        CD_CORE_INFO("Scanning directory for models: %s", directory.c_str());
 
         for (const auto &entry : std::filesystem::recursive_directory_iterator(directory))
         {
@@ -928,14 +926,14 @@ std::vector<ModelInfo> SceneLoader::LoadModelsFromDirectory(const std::string &d
 
             models.push_back(modelInfo);
 
-            TraceLog(LOG_INFO, "Found model: %s (%s)", modelInfo.name.c_str(), modelPath.c_str());
+            CD_CORE_INFO("Found model: %s (%s)", modelInfo.name.c_str(), modelPath.c_str());
         }
 
-        TraceLog(LOG_INFO, "Found %d models in directory: %s", models.size(), directory.c_str());
+        CD_CORE_INFO("Found %d models in directory: %s", models.size(), directory.c_str());
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Error scanning models directory: %s", e.what());
+        CD_CORE_ERROR("Error scanning models directory: %s", e.what());
     }
 
     return models;
@@ -971,12 +969,12 @@ bool SceneLoader::SaveModelConfig(const std::vector<ModelInfo> &models, const st
     std::ofstream file(path);
     if (!file.is_open())
     {
-        TraceLog(LOG_ERROR, "Failed to create model config file: %s", path.c_str());
+        CD_CORE_ERROR("Failed to create model config file: %s", path.c_str());
         return false;
     }
 
     file << j.dump(2);
-    TraceLog(LOG_INFO, "Successfully saved model config: %s", path.c_str());
+    CD_CORE_INFO("Successfully saved model config: %s", path.c_str());
 
     return true;
 }
@@ -990,12 +988,11 @@ std::vector<GameScene> SceneLoader::LoadAllScenesFromDirectory(const std::string
     {
         if (!std::filesystem::exists(directory) || !std::filesystem::is_directory(directory))
         {
-            TraceLog(LOG_WARNING, "Directory does not exist or is not a directory: %s",
-                     directory.c_str());
+            CD_CORE_WARN("Directory does not exist or is not a directory: %s", directory.c_str());
             return maps;
         }
 
-        TraceLog(LOG_INFO, "Scanning directory for maps: %s", directory.c_str());
+        CD_CORE_INFO("Scanning directory for maps: %s", directory.c_str());
 
         for (const auto &entry : std::filesystem::directory_iterator(directory))
         {
@@ -1018,15 +1015,15 @@ std::vector<GameScene> SceneLoader::LoadAllScenesFromDirectory(const std::string
             if (!map.GetMapObjects().empty() || !mapName.empty())
             {
                 maps.push_back(std::move(map));
-                TraceLog(LOG_INFO, "Loaded map: %s", mapName.c_str());
+                CD_CORE_INFO("Loaded map: %s", mapName.c_str());
             }
         }
 
-        TraceLog(LOG_INFO, "Found %d maps in directory: %s", maps.size(), directory.c_str());
+        CD_CORE_INFO("Found %d maps in directory: %s", maps.size(), directory.c_str());
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Error scanning maps directory: %s", e.what());
+        CD_CORE_ERROR("Error scanning maps directory: %s", e.what());
     }
 
     return maps;
@@ -1041,8 +1038,7 @@ std::vector<std::string> SceneLoader::GetSceneNamesFromDirectory(const std::stri
     {
         if (!std::filesystem::exists(directory) || !std::filesystem::is_directory(directory))
         {
-            TraceLog(LOG_WARNING, "Directory does not exist or is not a directory: %s",
-                     directory.c_str());
+            CD_CORE_WARN("Directory does not exist or is not a directory: %s", directory.c_str());
             return names;
         }
 
@@ -1071,7 +1067,7 @@ std::vector<std::string> SceneLoader::GetSceneNamesFromDirectory(const std::stri
     }
     catch (const std::exception &e)
     {
-        TraceLog(LOG_ERROR, "Error scanning maps directory: %s", e.what());
+        CD_CORE_ERROR("Error scanning maps directory: %s", e.what());
     }
 
     return names;

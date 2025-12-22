@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "editor/managers/SceneManager.h"
 #include "editor/events/EditorEvents.h"
 #include "raylib.h" // For TraceLog
@@ -21,12 +22,12 @@ void SceneManager::SetEventCallback(std::function<void(ChainedDecos::Event &)> c
 
 void SceneManager::LoadScene(const std::string &path)
 {
-    TraceLog(LOG_INFO, "SceneManager: Loading scene %s", path.c_str());
+    CD_INFO("SceneManager: Loading scene %s", path.c_str());
 
     // Check if file exists
     if (!std::filesystem::exists(path))
     {
-        TraceLog(LOG_ERROR, "SceneManager: Scene file not found: %s", path.c_str());
+        CD_ERROR("SceneManager: Scene file not found: %s", path.c_str());
         return;
     }
 
@@ -58,7 +59,7 @@ void SceneManager::LoadScene(const std::string &path)
 
         AddToRecentScenes(path);
 
-        TraceLog(LOG_INFO, "SceneManager: Scene loaded successfully");
+        CD_INFO("SceneManager: Scene loaded successfully");
 
         // Dispatch SceneLoaded event
         if (m_eventCallback)
@@ -79,11 +80,11 @@ void SceneManager::SaveScene(const std::string &path)
 
     if (savePath.empty())
     {
-        TraceLog(LOG_WARNING, "SceneManager: Cannot save scene, no path specified");
+        CD_WARN("SceneManager: Cannot save scene, no path specified");
         return;
     }
 
-    TraceLog(LOG_INFO, "SceneManager: Saving scene to %s", savePath.c_str());
+    CD_INFO("SceneManager: Saving scene to %s", savePath.c_str());
 
     GameScene &scene = m_context.GetCurrentScene();
     SceneLoader loader;
@@ -93,17 +94,17 @@ void SceneManager::SaveScene(const std::string &path)
         m_context.SetSceneModified(false);
         AddToRecentScenes(savePath);
 
-        TraceLog(LOG_INFO, "SceneManager: Scene saved successfully");
+        CD_INFO("SceneManager: Scene saved successfully");
     }
     else
     {
-        TraceLog(LOG_ERROR, "SceneManager: Failed to save scene");
+        CD_ERROR("SceneManager: Failed to save scene");
     }
 }
 
 void SceneManager::NewScene()
 {
-    TraceLog(LOG_INFO, "SceneManager: Creating new scene");
+    CD_INFO("SceneManager: Creating new scene");
 
     GameScene &scene = m_context.GetCurrentScene();
     scene.Cleanup(); // Clear existing data
@@ -166,3 +167,4 @@ void SceneManager::SaveRecentScenes()
 {
     // TODO: Save to config file
 }
+

@@ -1,3 +1,4 @@
+#include "core/Log.h"
 #include "SettingsManager.h"
 #include "MenuConstants.h"
 #include <algorithm>
@@ -16,8 +17,7 @@ void SettingsManager::LoadSettings()
     bool loaded = false;
     if (m_config.LoadFromFile("game.cfg"))
     {
-        TraceLog(LOG_INFO,
-                 "SettingsManager::LoadSettings() - Loaded game.cfg from current directory");
+        CD_INFO("SettingsManager::LoadSettings() - Loaded game.cfg from current directory");
         loaded = true;
     }
     else
@@ -120,18 +120,17 @@ void SettingsManager::SaveSettings()
     // Save to file (single canonical location: game.cfg)
     if (m_config.SaveToFile("game.cfg"))
     {
-        TraceLog(LOG_INFO, "SettingsManager::SaveSettings() - Settings saved to game.cfg");
+        CD_INFO("SettingsManager::SaveSettings() - Settings saved to game.cfg");
     }
     else
     {
-        TraceLog(LOG_WARNING,
-                 "SettingsManager::SaveSettings() - Failed to save settings to game.cfg");
+        CD_WARN("SettingsManager::SaveSettings() - Failed to save settings to game.cfg");
     }
 }
 
 void SettingsManager::ApplyVideoSettings()
 {
-    TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Applying video settings");
+    CD_INFO("SettingsManager::ApplyVideoSettings() - Applying video settings");
 
     // Apply resolution directly
     if (m_targetWidth > 0 && m_targetHeight > 0)
@@ -158,7 +157,7 @@ void SettingsManager::ApplyVideoSettings()
     // Handle fullscreen
     if (shouldBeFullscreen && !isCurrentlyFullscreen)
     {
-        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Enabling fullscreen mode");
+        CD_INFO("SettingsManager::ApplyVideoSettings() - Enabling fullscreen mode");
         // Clear borderless first if active
         if (isCurrentlyBorderless)
         {
@@ -168,7 +167,7 @@ void SettingsManager::ApplyVideoSettings()
     }
     else if (!shouldBeFullscreen && isCurrentlyFullscreen)
     {
-        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Disabling fullscreen mode");
+        CD_INFO("SettingsManager::ApplyVideoSettings() - Disabling fullscreen mode");
         ClearWindowState(FLAG_FULLSCREEN_MODE);
         // Apply borderless if needed
         if (shouldBeBorderless)
@@ -182,12 +181,12 @@ void SettingsManager::ApplyVideoSettings()
     {
         if (shouldBeBorderless && !isCurrentlyBorderless)
         {
-            TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Enabling borderless mode");
+            CD_INFO("SettingsManager::ApplyVideoSettings() - Enabling borderless mode");
             SetWindowState(FLAG_WINDOW_UNDECORATED);
         }
         else if (!shouldBeBorderless && isCurrentlyBorderless)
         {
-            TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Disabling borderless mode");
+            CD_INFO("SettingsManager::ApplyVideoSettings() - Disabling borderless mode");
             ClearWindowState(FLAG_WINDOW_UNDECORATED);
         }
     }
@@ -198,12 +197,12 @@ void SettingsManager::ApplyVideoSettings()
 
     if (shouldBeVSync && !isCurrentlyVSync)
     {
-        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Enabling VSync");
+        CD_INFO("SettingsManager::ApplyVideoSettings() - Enabling VSync");
         SetWindowState(FLAG_VSYNC_HINT);
     }
     else if (!shouldBeVSync && isCurrentlyVSync)
     {
-        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Disabling VSync");
+        CD_INFO("SettingsManager::ApplyVideoSettings() - Disabling VSync");
         ClearWindowState(FLAG_VSYNC_HINT);
     }
 
@@ -215,44 +214,42 @@ void SettingsManager::ApplyVideoSettings()
         int targetFps = (fps == "Unlimited") ? 0 : std::stoi(fps);
 
         // Set target FPS (raylib doesn't have GetTargetFPS, so we always set it)
-        TraceLog(LOG_INFO, "SettingsManager::ApplyVideoSettings() - Setting target FPS to: %s",
+        CD_INFO("SettingsManager::ApplyVideoSettings() - Setting target FPS to: %s",
                  fps.c_str());
         SetTargetFPS(targetFps);
     }
 
-    TraceLog(LOG_INFO,
-             "SettingsManager::ApplyVideoSettings() - Video settings applied successfully");
+    CD_INFO("SettingsManager::ApplyVideoSettings() - Video settings applied successfully");
 }
 
 void SettingsManager::ApplyAudioSettings()
 {
-    TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Applying audio settings");
+    CD_INFO("SettingsManager::ApplyAudioSettings() - Applying audio settings");
 
     if (m_audioManager)
     {
         // Apply master volume
         float effectiveMaster = m_audioSettings.muted ? 0.0f : m_audioSettings.masterVolume;
         m_audioManager->SetMasterVolume(effectiveMaster);
-        TraceLog(LOG_INFO,
-                 "SettingsManager::ApplyAudioSettings() - Master volume: %.2f (muted: %s)",
+        CD_INFO("SettingsManager::ApplyAudioSettings() - Master volume: %.2f (muted: %s)",
                  effectiveMaster, m_audioSettings.muted ? "true" : "false");
 
         // Apply music volume
         m_audioManager->SetMusicVolume(m_audioSettings.musicVolume);
-        TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Music volume: %.2f",
+        CD_INFO("SettingsManager::ApplyAudioSettings() - Music volume: %.2f",
                  m_audioSettings.musicVolume);
 
         // Apply SFX volume
         m_audioManager->SetSoundVolume(m_audioSettings.sfxVolume);
-        TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - SFX volume: %.2f",
+        CD_INFO("SettingsManager::ApplyAudioSettings() - SFX volume: %.2f",
                  m_audioSettings.sfxVolume);
 
-        TraceLog(LOG_INFO, "SettingsManager::ApplyAudioSettings() - Audio settings applied to "
+        CD_INFO("SettingsManager::ApplyAudioSettings() - Audio settings applied to "
                            "AudioManager successfully");
     }
     else
     {
-        TraceLog(LOG_WARNING, "SettingsManager::ApplyAudioSettings() - AudioManager not set, "
+        CD_WARN("SettingsManager::ApplyAudioSettings() - AudioManager not set, "
                               "cannot apply audio settings");
     }
 }
@@ -605,6 +602,7 @@ float SettingsManager::GetSkyboxGammaValue() const
 {
     return m_config.GetSkyboxGammaValue();
 }
+
 
 
 
