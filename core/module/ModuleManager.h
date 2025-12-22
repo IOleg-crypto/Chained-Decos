@@ -7,10 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ChainedEngine
-{
-class Engine;
-}
+#include "core/interfaces/IEngine.h"
 
 class ModuleManager
 {
@@ -20,7 +17,7 @@ public:
 
     void RegisterModule(std::unique_ptr<IEngineModule> module);
     bool LoadModule(const std::string &moduleName);
-    bool InitializeAllModules(ChainedEngine::Engine *engine);
+    bool InitializeAllModules(IEngine *engine);
     void ShutdownAllModules();
     void UpdateAllModules(float deltaTime);
     void RenderAllModules();

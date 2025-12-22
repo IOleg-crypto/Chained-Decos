@@ -7,9 +7,8 @@
 #include "settings/MenuSettingsController.h"
 #include "settings/settingsManager.h"
 
-
-#include "events/MenuEvent.h"
 #include "core/interfaces/IMenu.h"
+#include "events/MenuEvent.h"
 #include "scene/camera/core/ICameraSensitivityController.h"
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -43,7 +42,7 @@ public:
     ~Menu() = default;
 
     // Core functionality
-    void Initialize(ChainedEngine::Engine *engine);
+    void Initialize(IEngine *engine);
 
     // Event management
     using MenuEventCallback = std::function<void(const ChainedDecos::MenuEvent &)>;
@@ -126,7 +125,7 @@ private:
     void RenderConsoleOverlay();
 
     // Core state
-    ChainedEngine::Engine *m_engine = nullptr;
+    IEngine *m_engine = nullptr;
     std::unique_ptr<SettingsManager> m_settingsManager;
     ICameraSensitivityController *m_cameraController = nullptr;
 

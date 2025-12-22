@@ -1,5 +1,5 @@
-#include "core/Log.h"
 #include "editor/mapgui/UIManager.h"
+#include "core/Log.h"
 #include "editor/EditorTypes.h"
 #include "editor/IEditor.h"
 #include "editor/mapgui/skyboxBrowser.h"
@@ -424,16 +424,71 @@ void EditorUIManager::ExecutePendingAction()
             pm->ResetLayout();
         }
     }
-    else if (m_pendingAction == PendingAction::OPEN_PROJECT ||
-             m_pendingAction == PendingAction::LOAD_SCENE)
+    else if (m_pendingAction == PendingAction::NEW_PROJECT)
     {
-        // For Open/Load, show the dialog
-        nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
+        // Pick folder for new project
         nfdchar_t *outPath = nullptr;
-        nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
+        nfdresult_t result = NFD_PickFolderU8(&outPath, nullptr);
         if (result == NFD_OKAY)
         {
-            m_editor->LoadScene(std::string(outPath));
+            m_editor->CreateNewProject(std::string(outPath));
+            m_displayWelcomeScreen = false;
+
+            // Show core panels
+            if (auto pm = m_editor->GetPanelManager())
+            {
+                pm->SetPanelVisible("Toolbar", true);
+                pm->SetPanelVisible("Viewport", true);
+                pm->SetPanelVisible("Scene Hierarchy", true);
+                pm->SetPanelVisible("Inspector", true);
+                pm->SetPanelVisible("Asset Browser", true);
+                pm->ResetLayout();
+            }
+            NFD_FreePath(outPath);
+        }
+    }
+    else if (m_pendingAction == PendingAction::OPEN_PROJECT)
+    {
+        // Open Folder Dialog
+        nfdchar_t *outPath = nullptr;
+        nfdresult_t result = NFD_PickFolderU8(&outPath, nullptr);
+        if (result == NFD_OKAY)
+        {
+            std::string projectPath = std::string(outPath);
+            m_editor->SetProjectPath(projectPath);
+            m_displayWelcomeScreen = false;
+
+            // Show core panels
+            if (auto pm = m_editor->GetPanelManager())
+            {
+                pm->SetPanelVisible("Toolbar", true);
+                pm->SetPanelVisible("Viewport", true);
+                pm->SetPanelVisible("Scene Hierarchy", true);
+                pm->SetPanelVisible("Inspector", true);
+                pm->SetPanelVisible("Asset Browser", true);
+                pm->ResetLayout();
+            }
+            NFD_FreePath(outPath);
+            CD_INFO("[UIManager] Opened project at: %s", projectPath.c_str());
+        }
+    }
+    else if (m_pendingAction == PendingAction::LOAD_SCENE)
+    {
+        // For Load, show the file dialog
+        nfdfilteritem_t filterItem[2] = {{"JSON Scene", "json"}, {"Chained project", "chxproj"}};
+        nfdchar_t *outPath = nullptr;
+        nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 2, nullptr);
+        if (result == NFD_OKAY)
+        {
+            std::string path = std::string(outPath);
+            if (path.find(".chxproj") != std::string::npos)
+            {
+                m_editor->LoadProject(path);
+            }
+            else
+            {
+                m_editor->LoadScene(path);
+            }
             m_displayWelcomeScreen = false;
 
             // Show core panels
@@ -461,225 +516,232 @@ void EditorUIManager::RenderWelcomeScreen()
     // Lazy load icons with path fallback
     if (!m_iconsLoaded)
     {
-
         m_iconNewProject = LoadTexture(PROJECT_ROOT_DIR "/resources/map_editor/newproject.jpg");
         m_iconOpenProject = LoadTexture(PROJECT_ROOT_DIR "/resources/map_editor/folder.png");
         m_iconSceneProject = LoadTexture(PROJECT_ROOT_DIR "/resources/map_editor/scene.png");
 
-        // Linear filter for better scaling
         SetTextureFilter(m_iconNewProject, TEXTURE_FILTER_BILINEAR);
         SetTextureFilter(m_iconOpenProject, TEXTURE_FILTER_BILINEAR);
         SetTextureFilter(m_iconSceneProject, TEXTURE_FILTER_BILINEAR);
 
         m_iconsLoaded = true;
     }
-
-    // Full screen window with gray background
+    // Professional background
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
                              ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
                              ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-    // JetBrains Darcula-like background (approx #2B2B2B)
-    ImVec4 bgColor = ImVec4(0.169f, 0.169f, 0.169f, 1.0f);
+    ImVec4 bgColor = ImVec4(0.12f, 0.12f, 0.14f, 1.0f);
     ImGui::PushStyleColor(ImGuiCol_WindowBg, bgColor);
-
-    // Style adjustments for a cleaner look
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
     if (ImGui::Begin("Welcome Screen", nullptr, flags))
     {
-        // Center content area
-        ImVec2 viewportSize = ImGui::GetMainViewport()->Size;
-        float contentWidth = 1200.0f;
-        float contentHeight = 800.0f;
+        // --- SIDEBAR (Left) ---
+        float sidebarWidth = 220.0f;
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.16f, 0.16f, 0.18f, 1.0f));
+        ImGui::BeginChild("Sidebar", ImVec2(sidebarWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
 
-        ImGui::SetCursorPos(ImVec2((viewportSize.x - contentWidth) * 0.5f,
-                                   (viewportSize.y - contentHeight) * 0.5f));
+        ImGui::Spacing();
+        ImGui::Indent(15);
+        ImGui::SetWindowFontScale(1.2f);
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Chained Editor");
+        ImGui::SetWindowFontScale(0.8f);
+        ImGui::TextDisabled("v2025.12.22");
+        ImGui::Unindent(15);
 
-        if (ImGui::BeginChild("WelcomeContent", ImVec2(contentWidth, contentHeight), false,
-                              ImGuiWindowFlags_NoBackground))
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Sidebar Items
+        const char *sidebarItems[] = {"Projects", "Learning", "Plugins", "Settings"};
+        static int selectedSidebar = 0;
+        for (int i = 0; i < 4; i++)
         {
-            // Title
-            ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
-            ImGui::SetWindowFontScale(2.5f);
-            std::string title = "Chained Editor";
-            float textWidth = ImGui::CalcTextSize(title.c_str()).x;
-            ImGui::SetCursorPosX((contentWidth - textWidth) * 0.5f);
+            bool isSelected = (selectedSidebar == i);
+            if (isSelected)
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.6f, 1.0f, 1.0f));
 
-            // Nice white title
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
-            ImGui::Text("%s", title.c_str());
-            ImGui::PopStyleColor();
+            ImGui::SetCursorPosX(10);
+            if (ImGui::Selectable(sidebarItems[i], isSelected, ImGuiSelectableFlags_None,
+                                  ImVec2(sidebarWidth - 20, 35)))
+            {
+                selectedSidebar = i;
+            }
 
+            if (isSelected)
+                ImGui::PopStyleColor();
+        }
+
+        ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 50);
+        ImGui::Separator();
+        ImGui::Indent(15);
+        ImGui::TextDisabled("ChainedDecos Engine");
+        ImGui::Unindent(15);
+
+        ImGui::EndChild();
+        ImGui::PopStyleColor(); // ChildBg
+
+        ImGui::SameLine();
+
+        // --- MAIN AREA (Right) ---
+        ImVec2 mainAreaSize = ImGui::GetContentRegionAvail();
+        if (ImGui::BeginChild("MainArea", mainAreaSize, false, ImGuiWindowFlags_NoBackground))
+        {
+            // Title and Header
+            ImGui::SetCursorPosY(60);
+            ImGui::SetWindowFontScale(1.8f);
+            std::string welcomeTitle = "Welcome to Chained Editor";
+            float welcomeWidth = ImGui::CalcTextSize(welcomeTitle.c_str()).x;
+            ImGui::SetCursorPosX((mainAreaSize.x - welcomeWidth) * 0.5f);
+            ImGui::Text("%s", welcomeTitle.c_str());
             ImGui::SetWindowFontScale(1.0f);
-            ImGui::PopFont();
 
-            ImGui::Spacing();
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
-            ImGui::Spacing();
-            ImGui::Spacing();
+            ImGui::SetCursorPosY(100);
+            std::string subTitle = "Create a new project or open an existing one to get started.";
+            float subWidth = ImGui::CalcTextSize(subTitle.c_str()).x;
+            ImGui::SetCursorPosX((mainAreaSize.x - subWidth) * 0.5f);
+            ImGui::TextDisabled("%s", subTitle.c_str());
 
-            // Three columns for buttons
-            ImGui::Columns(3, "StartColumns", false);
+            // Action Buttons (Horizontal)
+            float iconBoxSize = 100.0f;
+            float buttonSpacing = 50.0f;
+            int numButtons = 3;
+            float totalW = (iconBoxSize * numButtons) + (buttonSpacing * (numButtons - 1));
+            float startX = (mainAreaSize.x - totalW) * 0.5f;
 
-            float columnWidth = ImGui::GetColumnWidth();
-            float iconSize = 180.0f; // Size of the icon
-
-            // --- NEW PROJECT (Column 1) ---
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconSize) * 0.5f);
-
-            ImGui::PushID("NewProj");
-            ImVec2 cursorPos = ImGui::GetCursorScreenPos();
-            ImGui::Image((ImTextureID)(intptr_t)m_iconNewProject.id, ImVec2(iconSize, iconSize));
-
-            if (ImGui::IsItemHovered())
+            float buttonsY = 220.0f;
+            auto renderBigButton =
+                [&](const char *id, Texture2D &icon, const char *label, PendingAction action)
             {
-                ImGui::GetWindowDrawList()->AddRect(
-                    ImVec2(cursorPos.x - 5, cursorPos.y - 5),
-                    ImVec2(cursorPos.x + iconSize + 5, cursorPos.y + iconSize + 5),
-                    IM_COL32(100, 149, 237, 100), // Cornflower blue hint
-                    5.0f, 0, 3.0f);
-            }
+                ImGui::SetCursorPos(ImVec2(startX, buttonsY));
+                ImVec2 p = ImGui::GetCursorScreenPos();
 
-            if (ImGui::IsItemClicked())
-            {
-                if (m_editor->IsSceneModified())
+                ImGui::PushID(id);
+                if (ImGui::InvisibleButton("##btn", ImVec2(iconBoxSize, iconBoxSize + 35)))
                 {
-                    m_showSavePrompt = true;
-                    m_pendingAction = PendingAction::NEW_MAP;
-                }
-                else
-                {
-                    m_pendingAction = PendingAction::NEW_MAP;
-                    ExecutePendingAction();
-                }
-            }
-            ImGui::PopID();
-
-            // Label
-            ImGui::Spacing();
-            std::string labelNew = "Create New 3D Map";
-            float labelNewWidth = ImGui::CalcTextSize(labelNew.c_str()).x;
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - labelNewWidth) * 0.5f);
-            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", labelNew.c_str());
-
-            ImGui::NextColumn();
-
-            // --- NEW UI SCENE (Column 2) ---
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconSize) * 0.5f);
-
-            ImGui::PushID("NewUIProj");
-            cursorPos = ImGui::GetCursorScreenPos(); // Update pos for this column
-            ImGui::Image((ImTextureID)(intptr_t)m_iconSceneProject.id, ImVec2(iconSize, iconSize));
-
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::GetWindowDrawList()->AddRect(
-                    ImVec2(cursorPos.x - 5, cursorPos.y - 5),
-                    ImVec2(cursorPos.x + iconSize + 5, cursorPos.y + iconSize + 5),
-                    IM_COL32(100, 149, 237, 100), 5.0f, 0, 3.0f);
-            }
-            if (ImGui::IsItemClicked())
-            {
-                if (m_editor->IsSceneModified())
-                {
-                    m_showSavePrompt = true;
-                    m_pendingAction = PendingAction::NEW_UI_SCENE;
-                }
-                else
-                {
-                    m_pendingAction = PendingAction::NEW_UI_SCENE;
-                    ExecutePendingAction();
-                }
-            }
-            ImGui::PopID();
-
-            // Label
-            ImGui::Spacing();
-            std::string labelNewUI = "Create New UI Scene";
-            float labelNewUIWidth = ImGui::CalcTextSize(labelNewUI.c_str()).x;
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - labelNewUIWidth) * 0.5f);
-            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", labelNewUI.c_str());
-
-            ImGui::NextColumn();
-
-            // --- OPEN PROJECT (Column 3) ---
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconSize) * 0.5f);
-
-            ImGui::PushID("OpenProj");
-            cursorPos = ImGui::GetCursorScreenPos(); // Update pos for this column
-            ImGui::Image((ImTextureID)(intptr_t)m_iconOpenProject.id, ImVec2(iconSize, iconSize));
-
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::GetWindowDrawList()->AddRect(
-                    ImVec2(cursorPos.x - 5, cursorPos.y - 5),
-                    ImVec2(cursorPos.x + iconSize + 5, cursorPos.y + iconSize + 5),
-                    IM_COL32(100, 149, 237, 100), 5.0f, 0, 3.0f);
-            }
-
-            if (ImGui::IsItemClicked())
-            {
-                if (m_editor->IsSceneModified())
-                {
-                    m_showSavePrompt = true;
-                    m_pendingAction = PendingAction::OPEN_PROJECT;
-                }
-                else
-                {
-                    nfdu8filteritem_t filterItem[1] = {{"JSON", "json"}};
-                    nfdu8char_t *outPath = nullptr;
-                    nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
-                    if (result == NFD_OKAY)
+                    if (m_editor->IsSceneModified())
                     {
-                        m_editor->LoadScene(std::string(outPath));
-                        if (m_editor->GetPanelManager())
-                        {
-                            m_editor->GetPanelManager()->SetAllPanelsVisible(true);
-                            m_editor->GetPanelManager()->ResetLayout();
-                        }
-                        m_displayWelcomeScreen = false;
-                        NFD_FreePathU8(outPath);
+                        m_showSavePrompt = true;
+                        m_pendingAction = action;
+                    }
+                    else
+                    {
+                        m_pendingAction = action;
+                        ExecutePendingAction();
                     }
                 }
-            }
-            ImGui::PopID();
 
-            // Label
-            ImGui::Spacing();
-            std::string labelOpen = "Open Existing Project";
-            float labelOpenWidth = ImGui::CalcTextSize(labelOpen.c_str()).x;
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - labelOpenWidth) * 0.5f);
-            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", labelOpen.c_str());
+                bool hovered = ImGui::IsItemHovered();
+                bool active = ImGui::IsItemActive();
 
-            ImGui::Columns(1);
+                ImDrawList *dl = ImGui::GetWindowDrawList();
 
-            ImGui::Spacing();
-            ImGui::Spacing();
+                // Button background hover state
+                if (hovered || active)
+                {
+                    dl->AddRectFilled(p, ImVec2(p.x + iconBoxSize, p.y + iconBoxSize),
+                                      IM_COL32(255, 255, 255, 10), 8.0f);
+                    dl->AddRect(p, ImVec2(p.x + iconBoxSize, p.y + iconBoxSize),
+                                IM_COL32(100, 149, 237, 120), 8.0f, 0, 2.0f);
+                }
+
+                // Draw Icon centered
+                float iconSize = 48.0f;
+                dl->AddImage((ImTextureID)(intptr_t)icon.id,
+                             ImVec2(p.x + (iconBoxSize - iconSize) * 0.5f,
+                                    p.y + (iconBoxSize - iconSize) * 0.5f),
+                             ImVec2(p.x + (iconBoxSize + iconSize) * 0.5f,
+                                    p.y + (iconBoxSize + iconSize) * 0.5f));
+
+                float labelW = ImGui::CalcTextSize(label).x;
+                dl->AddText(ImVec2(p.x + (iconBoxSize - labelW) * 0.5f, p.y + iconBoxSize + 10),
+                            hovered ? IM_COL32(255, 255, 255, 255) : IM_COL32(200, 200, 200, 255),
+                            label);
+
+                ImGui::PopID();
+                startX += iconBoxSize + buttonSpacing;
+            };
+
+            renderBigButton("NewProject", m_iconNewProject, "New Project",
+                            PendingAction::NEW_PROJECT);
+            renderBigButton("OpenProject", m_iconOpenProject, "Open Project",
+                            PendingAction::OPEN_PROJECT);
+            renderBigButton("OpenScene", m_iconSceneProject, "Open Scene",
+                            PendingAction::LOAD_SCENE);
+
+            // Recent Projects Section - Move down to avoid overlap
+            ImGui::SetCursorPosY(420);
+            ImGui::SetCursorPosX(60);
+            ImGui::TextColored(ImVec4(0.4f, 0.6f, 1.0f, 1.0f), "RECENT PROJECTS");
             ImGui::Separator();
-            ImGui::Spacing();
-            ImGui::Spacing();
 
-            // Exit Button
-            ImGui::SetCursorPosX((contentWidth - 120) * 0.5f);
-            // Make exit button slightly more visible/styled
-            if (ImGui::Button("Exit Editor", ImVec2(120, 35)))
+            ImGui::SetCursorPosX(60);
+            ImGui::BeginChild("RecentProjects", ImVec2(mainAreaSize.x - 120, 300), false);
+
+            const auto &recent = m_editor->GetRecentProjects();
+            if (recent.empty())
             {
-                CD_INFO("[UIManager] Exit button clicked, setting m_shouldExit = true");
+                ImGui::SetCursorPosY(20);
+                ImGui::SetCursorPosX(
+                    (mainAreaSize.x - 120 - ImGui::CalcTextSize("Go create something amazing!").x) *
+                    0.5f);
+                ImGui::TextDisabled("No recent projects found. Go create something amazing!");
+            }
+            else
+            {
+                for (const auto &path : recent)
+                {
+                    std::string projName = std::filesystem::path(path).stem().string();
+                    std::string projPath = std::filesystem::path(path).parent_path().string();
+
+                    ImGui::PushID(path.c_str());
+                    if (ImGui::Selectable("##proj", false, ImGuiSelectableFlags_AllowDoubleClick,
+                                          ImVec2(0, 45)))
+                    {
+                        if (ImGui::IsMouseDoubleClicked(0))
+                        {
+                            m_editor->LoadProject(path);
+                            m_displayWelcomeScreen = false;
+                        }
+                    }
+
+                    ImVec2 pMin = ImGui::GetItemRectMin();
+                    ImVec2 pMax = ImGui::GetItemRectMax();
+                    ImDrawList *dlist = ImGui::GetWindowDrawList();
+
+                    dlist->AddText(ImGui::GetFont(), 17.0f, ImVec2(pMin.x + 10, pMin.y + 6),
+                                   IM_COL32(255, 255, 255, 255), projName.c_str());
+                    dlist->AddText(ImGui::GetFont(), 13.0f, ImVec2(pMin.x + 10, pMin.y + 26),
+                                   IM_COL32(160, 160, 160, 255), projPath.c_str());
+
+                    ImGui::PopID();
+                    ImGui::Spacing();
+                }
+            }
+            ImGui::EndChild();
+
+            // Bottom bar / Exit
+            ImGui::SetCursorPosY(mainAreaSize.y - 50);
+            ImGui::Separator();
+            ImGui::SetCursorPosY(mainAreaSize.y - 35);
+            ImGui::SetCursorPosX(mainAreaSize.x - 120);
+            if (ImGui::Button("Exit Editor", ImVec2(100, 25)))
+            {
                 m_shouldExit = true;
                 std::exit(0);
             }
-
-            ImGui::EndChild();
         }
+        ImGui::EndChild();
+
+        ImGui::End();
     }
-    ImGui::End();
-    ImGui::PopStyleVar();   // Pop rounding
-    ImGui::PopStyleColor(); // Pop BG
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
 
     // Show Save Prompt if requested
     RenderSavePrompt();
@@ -771,3 +833,48 @@ void EditorUIManager::RenderSavePrompt()
     }
 }
 
+bool EditorUIManager::IsWelcomeScreenActive() const
+{
+    return m_displayWelcomeScreen;
+}
+
+void EditorUIManager::ToggleSkyboxBrowser()
+{
+    m_displaySkyboxPanel = !m_displaySkyboxPanel;
+}
+
+bool EditorUIManager::IsImGuiInterfaceDisplayed() const
+{
+    return m_displayImGuiInterface;
+}
+
+bool EditorUIManager::IsParkourMapDialogDisplayed() const
+{
+    return m_displayParkourMapDialog;
+}
+
+const std::string &EditorUIManager::GetSelectedModelName() const
+{
+    return m_currentlySelectedModelName;
+}
+
+void EditorUIManager::SetSelectedModelName(const std::string &name)
+{
+    m_currentlySelectedModelName = name;
+}
+
+bool EditorUIManager::ShouldExit() const
+{
+    return m_shouldExit;
+}
+
+void EditorUIManager::ProcessPendingObjectCreation()
+{
+    if (m_pendingObjectCreation)
+    {
+        dynamic_cast<Editor *>(m_editor)->CreateDefaultObject(
+            static_cast<MapObjectType>(GetActiveTool()), m_currentlySelectedModelName);
+        m_pendingObjectCreation = false;
+        SetActiveTool(SELECT);
+    }
+}

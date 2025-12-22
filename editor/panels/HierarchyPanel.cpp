@@ -75,11 +75,17 @@ void HierarchyPanel::Render()
     for (size_t i = 0; i < objects.size(); ++i)
     {
         const auto &obj = objects[i];
+        bool isSelected = (static_cast<int>(i) == selectedIndex);
 
-        // Create display name
-        std::string displayName = obj.name.empty() ? ("Object " + std::to_string(i)) : obj.name;
+        ImGui::PushID(static_cast<int>(i));
 
-        // Add type icon/prefix
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf |
+                                       ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                       ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (isSelected)
+            nodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+        // Icon and name based on type
         const char *typeIcon = "[?] ";
         switch (obj.type)
         {
@@ -95,22 +101,24 @@ void HierarchyPanel::Render()
         case MapObjectType::PLANE:
             typeIcon = "[P] ";
             break;
-        case MapObjectType::LIGHT:
-            typeIcon = "[L] ";
-            break;
         case MapObjectType::MODEL:
             typeIcon = "[M] ";
             break;
         case MapObjectType::SPAWN_ZONE:
             typeIcon = "[Z] ";
             break;
+        default:
+            break;
         }
 
-        bool isSelected = (static_cast<int>(i) == selectedIndex);
+        std::string label = std::string(typeIcon) + (obj.name.empty() ? "Object" : obj.name);
 
-        if (ImGui::Selectable((typeIcon + displayName).c_str(), isSelected))
+        if (ImGui::TreeNodeEx(label.c_str(), nodeFlags))
         {
-            m_editor->SelectObject(static_cast<int>(i));
+            if (ImGui::IsItemClicked())
+            {
+                m_editor->SelectObject(static_cast<int>(i));
+            }
         }
 
         // Context menu
@@ -122,6 +130,8 @@ void HierarchyPanel::Render()
             }
             ImGui::EndPopup();
         }
+
+        ImGui::PopID();
     }
 
     ImGui::Separator();

@@ -25,6 +25,12 @@ set(render_sources
 set(logic_sources
     logic/MapManager.cpp
     logic/MapManager.h
+    logic/ProjectManager.cpp
+    logic/ProjectManager.h
+    logic/ProjectData.h
+    logic/EditorSettings.h
+    logic/Scene.cpp
+    logic/Scene.h
 )
 
 # New panel-based UI system

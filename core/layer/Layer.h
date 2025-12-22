@@ -41,9 +41,3 @@ protected:
 } // namespace ChainedDecos
 
 #endif // LAYER_H
-
-
-
-
-
-

@@ -5,10 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace ChainedEngine
-{
-class Engine;
-}
+#include "IEngine.h"
 
 // Interface for engine modules with engine integration
 // Extends IModule with engine-specific functionality
@@ -50,8 +47,8 @@ public:
     }
 
     // Engine-specific methods with engine parameter
-    virtual bool Initialize(ChainedEngine::Engine *engine) = 0;
-    virtual void RegisterServices(ChainedEngine::Engine *engine)
+    virtual bool Initialize(IEngine *engine) = 0;
+    virtual void RegisterServices(IEngine *engine)
     {
     }
     virtual std::vector<std::string> GetDependencies() const

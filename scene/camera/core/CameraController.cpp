@@ -82,7 +82,16 @@ void CameraController::Update()
     // Skip camera update if ImGui wants to capture mouse or keyboard
     // This prevents UpdateCamera from centering the cursor or moving while typing
     const ImGuiIO &io = ImGui::GetIO();
-    if (!m_inputCaptureBypass && (io.WantCaptureMouse || io.WantCaptureKeyboard))
+
+    // If we are NOT in bypass mode (not in viewport), reset states to prevent "sticky" keys/buttons
+    if (!m_inputCaptureBypass)
+    {
+        m_isLMBDown = false;
+        m_activeMovementKeys = 0;
+        return;
+    }
+
+    if (io.WantCaptureMouse || io.WantCaptureKeyboard)
     {
         return;
     }
@@ -91,7 +100,14 @@ void CameraController::Update()
     float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
     UpdateScreenShake(deltaTime);
 
-    // Only update camera if user is actively interacting with it (Event-driven)
+    // Double check state using polling if in bypass mode to handle events lost during focus
+    // transitions
+    if (m_inputCaptureBypass)
+    {
+        m_isLMBDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+    }
+
+    // Only update camera if user is actively interacting with it (Event-driven or focus-driven)
     bool isAnyMovementKeyPressed = m_activeMovementKeys > 0;
     bool isMouseWheelMoving = m_lastMouseWheelMove != 0.0f;
 

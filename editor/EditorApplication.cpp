@@ -1,4 +1,5 @@
 #include "EditorApplication.h"
+#include "components/rendering/core/RenderManager.h"
 #include "core/Engine.h"
 #include "core/Log.h"
 #include "core/application/EngineApplication.h"
@@ -8,13 +9,11 @@
 #include "editor/panels/ViewportPanel.h"
 #include "scene/camera/core/CameraController.h"
 
-
 #include "project/chaineddecos/GameLayer.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/core/Model.h"
-
 
 //===============================================
 #include "events/Event.h"
@@ -68,7 +67,7 @@ void EditorApplication::OnStart()
     // Use engine-provided ModelLoader instead of creating a new one
     auto modelLoader = Engine::Instance().GetModelLoader();
 
-    m_editor = std::make_unique<Editor>(camera, modelLoader);
+    m_editor = std::make_unique<Editor>(&Engine::Instance(), camera, modelLoader);
     camera->SetCameraMode(CAMERA_FREE);
 
     CD_INFO("[EditorApplication] Editor components initialized.");
@@ -244,11 +243,12 @@ void EditorApplication::OnRender()
             s_playLayer->RenderUI((float)GetScreenWidth(), (float)GetScreenHeight());
         }
     }
+}
 
-    // Begin ImGui frame for Editor UI
-    // Note: rlImGuiBegin() must be called here, before rendering ImGui
-    // rlImGuiEnd() will be called AFTER EndFrame() but before kernel->Render()
-    rlImGuiBegin();
+void EditorApplication::OnImGuiRender()
+{
+    if (!m_editor)
+        return;
 
     // Create dockspace over entire viewport
     ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");
@@ -257,11 +257,6 @@ void EditorApplication::OnRender()
 
     // Render ImGui interface
     m_editor->RenderImGui();
-
-    // rlImGuiEnd() will be called after EndFrame() - but we need to call it here
-    // because kernel->Render() is called after EndFrame() and may conflict
-    // Actually, we should keep it here and let kernel->Render() handle its own ImGui if needed
-    rlImGuiEnd();
 }
 
 void EditorApplication::OnShutdown()
