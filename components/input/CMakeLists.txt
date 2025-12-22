@@ -14,6 +14,7 @@ target_include_directories(input PUBLIC
 
 target_link_libraries(input PUBLIC 
     raylib
+    events
 )
 
 target_compile_definitions(input PRIVATE CHAINEDDECOSENGINE_EXPORTS)

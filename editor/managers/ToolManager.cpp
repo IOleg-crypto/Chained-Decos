@@ -1,7 +1,7 @@
 #include "editor/managers/ToolManager.h"
-#include "core/events/Event.h"
-#include "core/events/KeyEvent.h"
-#include "core/events/MouseEvent.h"
+#include "events/Event.h"
+#include "events/KeyEvent.h"
+#include "events/MouseEvent.h"
 #include "editor/core/EditorContext.h"
 #include "editor/events/EditorEvents.h"
 

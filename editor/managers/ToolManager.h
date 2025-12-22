@@ -1,7 +1,7 @@
 #ifndef TOOL_MANAGER_H
 #define TOOL_MANAGER_H
 
-#include "core/events/Event.h"
+#include "events/Event.h"
 #include "editor/core/EditorContext.h"
 #include "raylib.h"
 

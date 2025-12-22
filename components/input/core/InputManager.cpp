@@ -1,6 +1,6 @@
 #include "InputManager.h"
-#include "core/events/KeyEvent.h"
-#include "core/events/MouseEvent.h"
+#include "events/KeyEvent.h"
+#include "events/MouseEvent.h"
 #include <raylib.h>
 
 using namespace ChainedDecos;

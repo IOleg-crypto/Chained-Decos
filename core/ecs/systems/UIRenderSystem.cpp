@@ -1,6 +1,6 @@
 #include "UIRenderSystem.h"
 #include "core/Engine.h"
-#include "core/events/UIEventRegistry.h"
+#include "events/UIEventRegistry.h"
 #include "scene/SceneManager.h"
 #include "scene/resources/font/FontService.h"
 #include <imgui.h>

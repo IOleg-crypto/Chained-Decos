@@ -1,7 +1,7 @@
 #ifndef LAYER_H
 #define LAYER_H
 
-#include "core/events/Event.h"
+#include "events/Event.h"
 #include <string>
 
 namespace ChainedDecos

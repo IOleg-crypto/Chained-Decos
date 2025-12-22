@@ -1,7 +1,7 @@
 #ifndef MOUSE_EVENT_H
 #define MOUSE_EVENT_H
 
-#include "core/events/Event.h"
+#include "events/Event.h"
 
 
 namespace ChainedDecos

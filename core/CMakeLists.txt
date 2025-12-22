@@ -19,14 +19,6 @@ set(CORE_SOURCES
     layer/LayerStack.h
     module/ModuleManager.cpp
     module/ModuleManager.h
-    events/Event.h
-    events/Event.cpp
-    events/KeyEvent.h
-    events/KeyEvent.cpp
-    events/MouseEvent.h
-    events/MouseEvent.cpp
-    events/ApplicationEvent.h
-    events/ApplicationEvent.cpp
     utils/Base.h
     utils/Types.h
     utils/core.h
@@ -60,6 +52,7 @@ target_link_libraries(core
         collision
         model
         imguilib
+        events
 )
 
 

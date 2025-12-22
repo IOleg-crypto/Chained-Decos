@@ -1,4 +1,4 @@
-#include "core/events/MouseEvent.h"
+#include "events/MouseEvent.h"
 #include <sstream>
 
 namespace ChainedDecos
