@@ -5,6 +5,7 @@ add_subdirectory(main)
 add_subdirectory(resources)
 add_subdirectory(gui)
 add_subdirectory(camera)
+add_subdirectory(ecs)
 
 # Scene Manager Library
 add_library(scene_manager STATIC SceneManager.cpp SceneManager.h)

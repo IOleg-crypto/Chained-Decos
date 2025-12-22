@@ -2,7 +2,7 @@
 #define ICOLLISION_MANAGER_H
 
 #include "components/physics/collision/system/collisionSystem.h"
-#include <core/ecs/Entity.h>
+#include <scene/ecs/Entity.h>
 #include <memory>
 #include <raylib.h>
 #include <vector>
