@@ -1,12 +1,16 @@
 #include "UIRenderSystem.h"
 #include "core/Engine.h"
+#include "core/scripting/ScriptManager.h"
 #include "events/UIEventRegistry.h"
 #include "scene/SceneManager.h"
+#include "scene/ecs/components/UtilityComponents.h"
 #include "scene/resources/font/FontService.h"
+
+using namespace CHEngine;
 #include <imgui.h>
 #include <raymath.h>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 void UIRenderSystem::Render(int screenWidth, int screenHeight)
 {
@@ -44,20 +48,33 @@ void UIRenderSystem::Render(int screenWidth, int screenHeight)
                 {
                     if (button.isPressed)
                     {
+                        // Trigger Lua callback if button name exists
+                        if (registry.all_of<NameComponent>(entity))
+                        {
+                            auto &nameComp = registry.get<NameComponent>(entity);
+                            auto scriptManager =
+                                CHEngine::Engine::Instance().GetService<CHEngine::ScriptManager>();
+                            if (scriptManager)
+                            {
+                                scriptManager->RunString("TriggerButtonCallback('" + nameComp.name +
+                                                         "')");
+                            }
+                        }
+
                         // Trigger Event
                         if (!button.eventId.empty())
                         {
-                            UIEventRegistry::Get().Trigger(button.eventId);
+                            Engine::Instance().GetUIEventRegistry().Trigger(button.eventId);
                         }
 
                         // Execute Action
                         if (button.actionType == "LoadScene" && !button.actionTarget.empty())
                         {
-                            SceneManager::Get().LoadScene(button.actionTarget);
+                            Engine::Instance().GetSceneManager().LoadScene(button.actionTarget);
                         }
                         else if (button.actionType == "Quit")
                         {
-                            ChainedEngine::Engine::Instance().RequestExit();
+                            CHEngine::Engine::Instance().RequestExit();
                         }
                         else if (button.actionType == "OpenURL" && !button.actionTarget.empty())
                         {
@@ -135,7 +152,7 @@ void UIRenderSystem::Render(int screenWidth, int screenHeight)
         if (registry.all_of<UIText>(entity))
         {
             auto &text = registry.get<UIText>(entity);
-            Font font = FontService::Get().GetFont(text.fontName);
+            Font font = Engine::Instance().GetFontService().GetFont(text.fontName);
             DrawTextEx(font, text.text.c_str(), screenPos, text.fontSize, text.spacing, text.color);
         }
 
@@ -160,7 +177,7 @@ void UIRenderSystem::Render(int screenWidth, int screenHeight)
                 {
                     if (!imgui.eventId.empty())
                     {
-                        UIEventRegistry::Get().Trigger(imgui.eventId);
+                        Engine::Instance().GetUIEventRegistry().Trigger(imgui.eventId);
                     }
                 }
 
@@ -260,4 +277,4 @@ void UIRenderSystem::DrawSelectionHighlight(entt::entity entity, int screenWidth
                    {handleSize, handleSize}, WHITE);
 }
 
-} // namespace ChainedDecos
+} // namespace CHEngine

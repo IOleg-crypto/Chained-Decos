@@ -6,18 +6,12 @@
 #include <functional>
 #include <map>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 class InputManager : public IInputManager
 {
 public:
-    static InputManager &Get()
-    {
-        static InputManager instance;
-        return instance;
-    }
-
     InputManager();
     ~InputManager() override = default;
 
@@ -66,6 +60,6 @@ private:
     std::map<int, std::function<void()>> m_releasedActions;
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // INPUTMANAGER_H

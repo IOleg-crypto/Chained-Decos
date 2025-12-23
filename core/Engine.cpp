@@ -6,17 +6,21 @@
 #include "core/Log.h"
 #include "core/imgui/core/GuiManager.h"
 #include "core/module/ModuleManager.h"
+#include "core/scripting/ScriptManager.h"
 #include "core/window/Window.h"
+#include "events/UIEventRegistry.h"
+#include "scene/SceneManager.h"
 #include "scene/main/core/World.h"
+#include "scene/resources/font/FontService.h"
 #include "scene/resources/model/core/Model.h"
 #include <memory>
 #include <raylib.h>
 #include <stdexcept>
 
-namespace ChainedEngine
+namespace CHEngine
 {
 
-using namespace ChainedDecos;
+using namespace CHEngine;
 
 Engine *Engine::s_instance = nullptr;
 
@@ -41,67 +45,68 @@ Engine::~Engine()
     s_instance = nullptr;
 }
 
-bool Engine::Initialize(const ChainedEngine::WindowProps &props)
+bool Engine::Initialize(const CHEngine::WindowProps &props)
 {
     CD_CORE_INFO("Initializing Core Services...");
 
     // 0. Window Creation
-    m_Window = std::make_unique<ChainedEngine::Window>(props);
+    m_Window = std::make_unique<CHEngine::Window>(props);
 
     // 1. Rendering
-    auto renderManager =
-        std::shared_ptr<RenderManager>(&RenderManager::Get(), [](RenderManager *) {});
-    if (renderManager)
+    m_RenderManager = std::unique_ptr<RenderManager>(new RenderManager());
+    if (m_RenderManager)
     {
-        renderManager->Initialize(props.Width, props.Height, props.Title.c_str());
+        m_RenderManager->Initialize(props.Width, props.Height, props.Title.c_str());
     }
-    RegisterService<RenderManager>(renderManager);
 
     // 2. Input
-    auto inputManager = std::shared_ptr<ChainedDecos::InputManager>(
-        &ChainedDecos::InputManager::Get(), [](ChainedDecos::InputManager *) {});
-    RegisterService<ChainedDecos::InputManager>(inputManager);
+    m_InputManager = std::make_unique<CHEngine::InputManager>();
+    if (m_InputManager)
+    {
+        m_InputManager->Initialize();
+    }
 
     // 3. Audio
-    auto audioManager = std::shared_ptr<AudioManager>(&AudioManager::Get(), [](AudioManager *) {});
-    RegisterService<IAudioManager>(audioManager);
+    m_AudioManager = std::unique_ptr<IAudioManager>(new AudioManager());
+    if (m_AudioManager)
+    {
+        m_AudioManager->Initialize();
+    }
 
     // 4. Physics
-    auto collisionManager = std::shared_ptr<ICollisionManager>(new CollisionManager());
-    RegisterService<ICollisionManager>(collisionManager);
+    m_CollisionManager = std::unique_ptr<ICollisionManager>(new CollisionManager());
+    if (m_CollisionManager)
+    {
+        m_CollisionManager->Initialize();
+    }
 
     // 5. Resources
-    auto modelLoader = std::shared_ptr<IModelLoader>(new ModelLoader());
-    RegisterService<IModelLoader>(modelLoader);
+    m_ModelLoader = std::unique_ptr<IModelLoader>(new ModelLoader());
 
     // 6. World
-    auto worldManager = std::shared_ptr<IWorldManager>(new WorldManager());
-    RegisterService<IWorldManager>(worldManager);
+    m_WorldManager = std::unique_ptr<IWorldManager>(new WorldManager());
+
+    // 7. Scripting
+    m_ScriptManager = std::make_unique<ScriptManager>();
+    if (m_ScriptManager)
+    {
+        m_ScriptManager->Initialize();
+    }
+
+    // 8. GUI
+    m_GuiManager = std::make_unique<CHEngine::GuiManager>();
+    if (m_GuiManager)
+    {
+        m_GuiManager->Initialize();
+    }
+
+    // 9. Scenes
+    m_SceneManager = std::make_unique<SceneManager>();
+    m_FontService = std::make_unique<FontService>();
+    m_UIEventRegistry = std::make_unique<UIEventRegistry>();
 
     CD_CORE_INFO("Engine initialized successfully");
-
-    // Initialize GUI
-    auto guiManager = std::make_shared<ChainedDecos::GuiManager>();
-    RegisterService<IGuiManager>(guiManager);
-
-    if (guiManager)
-        guiManager->Initialize();
-
     return true;
-}
-
-void Engine::Update(float deltaTime)
-{
-    if (m_ModuleManager)
-    {
-        m_ModuleManager->UpdateAllModules(deltaTime);
-    }
-
-    auto guiManager = GetService<IGuiManager>();
-    if (guiManager)
-    {
-        guiManager->Update(deltaTime);
-    }
 }
 
 void Engine::Shutdown()
@@ -111,17 +116,35 @@ void Engine::Shutdown()
     if (m_ModuleManager)
         m_ModuleManager->ShutdownAllModules();
 
-    auto audioManager = GetService<AudioManager>();
-    if (audioManager)
-        audioManager->Shutdown();
+    if (m_AudioManager)
+        m_AudioManager->Shutdown();
 
-    auto inputManager = GetService<ChainedDecos::InputManager>();
-    if (inputManager)
-        inputManager->Shutdown();
+    if (m_InputManager)
+        m_InputManager->Shutdown();
 
-    auto renderManager = GetService<RenderManager>();
-    if (renderManager)
-        renderManager->Shutdown();
+    if (m_RenderManager)
+        m_RenderManager->Shutdown();
+
+    if (m_ScriptManager)
+        m_ScriptManager->Shutdown();
+
+    if (m_GuiManager)
+        m_GuiManager->Shutdown();
+
+    if (m_FontService)
+        m_FontService->Shutdown();
+
+    m_UIEventRegistry.reset();
+    m_FontService.reset();
+    m_SceneManager.reset();
+    m_GuiManager.reset();
+    m_ScriptManager.reset();
+    m_WorldManager.reset();
+    m_ModelLoader.reset();
+    m_CollisionManager.reset();
+    m_AudioManager.reset();
+    m_InputManager.reset();
+    m_RenderManager.reset();
 
     ServiceRegistry::Clear();
 }
@@ -136,7 +159,7 @@ void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)
 
 bool Engine::IsCollisionDebugVisible() const
 {
-    return RenderManager::Get().IsCollisionDebugVisible();
+    return m_RenderManager ? m_RenderManager->IsCollisionDebugVisible() : false;
 }
 
 bool Engine::ShouldExit() const
@@ -144,39 +167,63 @@ bool Engine::ShouldExit() const
     return m_shouldExit || WindowShouldClose();
 }
 
-std::shared_ptr<RenderManager> Engine::GetRenderManager() const
+RenderManager &Engine::GetRenderManager() const
 {
-    return GetService<RenderManager>();
+    return *m_RenderManager;
 }
 
-std::shared_ptr<IInputManager> Engine::GetInputManager() const
+CHEngine::InputManager &Engine::GetInputManager() const
 {
-    return GetService<ChainedDecos::InputManager>();
+    return *m_InputManager;
 }
 
-std::shared_ptr<IAudioManager> Engine::GetAudioManager() const
+IAudioManager &Engine::GetAudioManager() const
 {
-    return GetService<IAudioManager>();
+    return *m_AudioManager;
 }
 
-std::shared_ptr<IModelLoader> Engine::GetModelLoader() const
+IModelLoader &Engine::GetModelLoader() const
 {
-    return GetService<IModelLoader>();
+    return *m_ModelLoader;
 }
 
-std::shared_ptr<IGuiManager> Engine::GetGuiManager() const
+CHEngine::GuiManager &Engine::GetGuiManager() const
 {
-    return GetService<IGuiManager>();
+    return *m_GuiManager;
 }
 
-std::shared_ptr<ICollisionManager> Engine::GetCollisionManager() const
+ICollisionManager &Engine::GetCollisionManager() const
 {
-    return GetService<ICollisionManager>();
+    return *m_CollisionManager;
 }
 
-std::shared_ptr<IWorldManager> Engine::GetWorldManager() const
+IWorldManager &Engine::GetWorldManager() const
 {
-    return GetService<IWorldManager>();
+    return *m_WorldManager;
+}
+
+ScriptManager &Engine::GetScriptManager() const
+{
+    return *m_ScriptManager;
+}
+CHEngine::SceneManager &Engine::GetSceneManager() const
+{
+    return *m_SceneManager;
+}
+
+CHEngine::FontService &Engine::GetFontService() const
+{
+    return *m_FontService;
+}
+
+CHEngine::UIEventRegistry &Engine::GetUIEventRegistry() const
+{
+    return *m_UIEventRegistry;
+}
+
+entt::registry &Engine::GetECSRegistry()
+{
+    return m_ECSRegistry;
 }
 
 ModuleManager *Engine::GetModuleManager() const
@@ -196,4 +243,8 @@ void Engine::RequestExit()
     m_shouldExit = true;
 }
 
-} // namespace ChainedEngine
+Window *Engine::GetWindow() const
+{
+    return m_Window.get();
+}
+} // namespace CHEngine

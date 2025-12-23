@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 template <typename T> using Scope = std::unique_ptr<T>;
@@ -18,7 +18,7 @@ template <typename T, typename... Args> constexpr Ref<T> CreateRef(Args &&...arg
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // BASE_H
 

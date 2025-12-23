@@ -4,7 +4,7 @@
 #include <entt/entt.hpp>
 #include <vector>
 
-namespace ChainedEngine
+namespace CHEngine
 {
 
 struct HierarchyComponent
@@ -18,6 +18,6 @@ struct NameComponent
     std::string name;
 };
 
-} // namespace ChainedEngine
+} // namespace CHEngine
 
 #endif // HIERARCHY_COMPONENT_H

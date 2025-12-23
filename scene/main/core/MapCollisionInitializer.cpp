@@ -5,6 +5,7 @@
 #include "scene/ecs/components/TransformComponent.h"
 #include <raylib.h>
 
+using namespace CHEngine;
 
 MapCollisionInitializer::MapCollisionInitializer(std::shared_ptr<CollisionManager> collisionManager,
                                                  std::shared_ptr<ModelLoader> models,
@@ -78,7 +79,7 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
     }
 
     // Sync collisions to ECS
-    for (const auto &collider : m_collisionManager->GetColliders())
+    for (auto &&collider : m_collisionManager->GetColliders())
     {
         auto entity = REGISTRY.create();
         REGISTRY.emplace<TransformComponent>(entity, collider->GetCenter(), Vector3{0, 0, 0},

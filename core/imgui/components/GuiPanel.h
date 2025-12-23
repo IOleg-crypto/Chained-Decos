@@ -3,7 +3,7 @@
 
 #include "../core/GuiElement.h"
 
-namespace ChainedDecos
+namespace CHEngine
 {
 class GuiPanel : public GuiElement
 {
@@ -36,7 +36,7 @@ private:
     Color m_borderColor;
     int m_borderWidth;
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // GUI_PANEL_H
 

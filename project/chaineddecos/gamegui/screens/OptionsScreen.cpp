@@ -31,7 +31,7 @@ void OptionsScreen::Render()
 
     // Video Settings button
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Video Settings", ChainedDecos::MenuEventType::OpenVideoSettings,
+    if (RenderActionButton("Video Settings", CHEngine::MenuEventType::OpenVideoSettings,
                            ImVec2(buttonWidth, buttonHeight)))
     {
         GetMenu()->ShowVideoMenu();
@@ -40,7 +40,7 @@ void OptionsScreen::Render()
 
     // Audio Settings button
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Audio Settings", ChainedDecos::MenuEventType::OpenAudioSettings,
+    if (RenderActionButton("Audio Settings", CHEngine::MenuEventType::OpenAudioSettings,
                            ImVec2(buttonWidth, buttonHeight)))
     {
         GetMenu()->ShowAudioMenu();
@@ -49,7 +49,7 @@ void OptionsScreen::Render()
 
     // Control Settings button
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Control Settings", ChainedDecos::MenuEventType::OpenControlSettings,
+    if (RenderActionButton("Control Settings", CHEngine::MenuEventType::OpenControlSettings,
                            ImVec2(buttonWidth, buttonHeight)))
     {
         GetMenu()->ShowControlsMenu();

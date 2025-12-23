@@ -7,7 +7,7 @@
 #include <string>
 
 
-namespace ChainedDecos
+namespace CHEngine
 {
 class GuiElement
 {
@@ -84,6 +84,6 @@ protected:
     bool m_enabled;
     bool m_focused;
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // GUI_ELEMENT_H

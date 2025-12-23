@@ -1,7 +1,7 @@
 #include "events/ApplicationEvent.h"
 #include <sstream>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 std::string WindowResizeEvent::ToString() const
@@ -23,6 +23,6 @@ unsigned int WindowResizeEvent::GetHeight() const
 {
     return m_Height;
 }
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 

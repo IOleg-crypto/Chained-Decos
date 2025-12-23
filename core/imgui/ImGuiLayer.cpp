@@ -4,7 +4,7 @@
 #include <rlImGui.h>
 
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer")
@@ -65,4 +65,4 @@ void ImGuiLayer::End()
     rlImGuiEnd();
 }
 
-} // namespace ChainedDecos
+} // namespace CHEngine

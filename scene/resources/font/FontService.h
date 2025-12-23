@@ -6,17 +6,13 @@
 #include <string>
 #include <unordered_map>
 
-
-namespace ChainedDecos
+namespace CHEngine
 {
 class FontService
 {
 public:
-    static FontService &Get()
-    {
-        static FontService instance;
-        return instance;
-    }
+    FontService() = default;
+    ~FontService() = default;
 
     // Load a font from file and cache it
     bool LoadFont(const std::string &name, const std::string &path);
@@ -28,11 +24,8 @@ public:
     void Shutdown();
 
 private:
-    FontService() = default;
-    ~FontService() = default;
-
     std::unordered_map<std::string, Font> m_fonts;
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // FONT_SERVICE_H

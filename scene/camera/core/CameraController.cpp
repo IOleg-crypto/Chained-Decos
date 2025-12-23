@@ -375,21 +375,21 @@ CameraController &CameraController::operator=(const CameraController &other)
     return *this;
 }
 
-void CameraController::OnEvent(ChainedDecos::Event &e)
+void CameraController::OnEvent(CHEngine::Event &e)
 {
-    ChainedDecos::EventDispatcher dispatcher(e);
+    CHEngine::EventDispatcher dispatcher(e);
 
     // Track mouse button state
-    dispatcher.Dispatch<ChainedDecos::MouseButtonPressedEvent>(
-        [this](ChainedDecos::MouseButtonPressedEvent &event)
+    dispatcher.Dispatch<CHEngine::MouseButtonPressedEvent>(
+        [this](CHEngine::MouseButtonPressedEvent &event)
         {
             if (event.GetMouseButton() == MOUSE_LEFT_BUTTON)
                 m_isLMBDown = true;
             return false;
         });
 
-    dispatcher.Dispatch<ChainedDecos::MouseButtonReleasedEvent>(
-        [this](ChainedDecos::MouseButtonReleasedEvent &event)
+    dispatcher.Dispatch<CHEngine::MouseButtonReleasedEvent>(
+        [this](CHEngine::MouseButtonReleasedEvent &event)
         {
             if (event.GetMouseButton() == MOUSE_LEFT_BUTTON)
                 m_isLMBDown = false;
@@ -404,8 +404,8 @@ void CameraController::OnEvent(ChainedDecos::Event &e)
                key == KEY_E;
     };
 
-    dispatcher.Dispatch<ChainedDecos::KeyPressedEvent>(
-        [this, isMovementKey](ChainedDecos::KeyPressedEvent &event)
+    dispatcher.Dispatch<CHEngine::KeyPressedEvent>(
+        [this, isMovementKey](CHEngine::KeyPressedEvent &event)
         {
             if (isMovementKey(event.GetKeyCode()) && event.GetRepeatCount() == 0)
             {
@@ -414,8 +414,8 @@ void CameraController::OnEvent(ChainedDecos::Event &e)
             return false;
         });
 
-    dispatcher.Dispatch<ChainedDecos::KeyReleasedEvent>(
-        [this, isMovementKey](ChainedDecos::KeyReleasedEvent &event)
+    dispatcher.Dispatch<CHEngine::KeyReleasedEvent>(
+        [this, isMovementKey](CHEngine::KeyReleasedEvent &event)
         {
             if (isMovementKey(event.GetKeyCode()))
             {
@@ -427,8 +427,8 @@ void CameraController::OnEvent(ChainedDecos::Event &e)
         });
 
     // Track scroll
-    dispatcher.Dispatch<ChainedDecos::MouseScrolledEvent>(
-        [this](ChainedDecos::MouseScrolledEvent &event)
+    dispatcher.Dispatch<CHEngine::MouseScrolledEvent>(
+        [this](CHEngine::MouseScrolledEvent &event)
         {
             m_lastMouseWheelMove = event.GetYOffset();
             return false;

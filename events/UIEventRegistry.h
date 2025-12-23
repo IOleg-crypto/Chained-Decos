@@ -7,19 +7,13 @@
 #include <string>
 #include <unordered_map>
 
-
-namespace ChainedDecos
+namespace CHEngine
 {
 class UIEventRegistry
 {
 public:
+    UIEventRegistry() = default;
     using EventCallback = std::function<void()>;
-
-    static UIEventRegistry &Get()
-    {
-        static UIEventRegistry instance;
-        return instance;
-    }
 
     void Register(const std::string &eventId, EventCallback callback)
     {
@@ -47,9 +41,8 @@ public:
     }
 
 private:
-    UIEventRegistry() = default;
     std::unordered_map<std::string, EventCallback> m_events;
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // UI_EVENT_REGISTRY_H

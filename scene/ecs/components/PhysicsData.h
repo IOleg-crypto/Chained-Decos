@@ -7,6 +7,9 @@
 
 class Collision;
 
+namespace CHEngine
+{
+
 // ECS version (Data-only struct)
 struct PhysicsData
 {
@@ -41,8 +44,6 @@ struct CollisionComponent
     std::shared_ptr<Collision> collider = nullptr;
 };
 
+} // namespace CHEngine
+
 #endif // PHYSICS_DATA_COMPONENT_H
-
-
-
-

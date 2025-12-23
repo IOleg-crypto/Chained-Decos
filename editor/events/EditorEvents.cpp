@@ -1,6 +1,6 @@
 #include "editor/events/EditorEvents.h"
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 ObjectSelectedEvent::ObjectSelectedEvent(int index) : m_objectIndex(index)
@@ -29,4 +29,4 @@ const std::string &SceneLoadedEvent::GetPath() const
 
 SceneModifiedEvent::SceneModifiedEvent() = default;
 
-} // namespace ChainedDecos
+} // namespace CHEngine

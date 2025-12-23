@@ -6,6 +6,8 @@
 
 // Examples of creating different types of entities
 
+namespace CHEngine
+{
 namespace ECSExamples
 {
 
@@ -27,5 +29,6 @@ entt::entity CreateCamera(Vector3 position, Vector3 target);
 entt::entity CreateStaticObject(Vector3 position, Model *model, BoundingBox bounds);
 
 } // namespace ECSExamples
+} // namespace CHEngine
 
 #endif // ECS_EXAMPLES_H
