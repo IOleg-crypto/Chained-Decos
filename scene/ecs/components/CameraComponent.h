@@ -3,9 +3,11 @@
 
 #include <raylib.h>
 
+namespace CHEngine
+{
 struct CameraComponent
 {
-    Camera camera;
+    ::Camera camera; // Explicit Raylib Camera
 
     // Camera settings
     float fov = 60.0f;
@@ -21,9 +23,6 @@ struct CameraComponent
     float shakeDuration = 0.0f;
     float shakeTimer = 0.0f;
 };
+} // namespace CHEngine
 
 #endif // CAMERA_COMPONENT_H
-
-
-
-

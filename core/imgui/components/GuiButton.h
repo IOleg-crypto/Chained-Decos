@@ -3,7 +3,7 @@
 
 #include "../core/GuiElement.h"
 
-namespace ChainedDecos
+namespace CHEngine
 {
 class GuiButton : public GuiElement
 {
@@ -76,7 +76,7 @@ private:
     bool m_isPressed;
     std::function<void()> m_callback;
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // GUI_BUTTON_H
 

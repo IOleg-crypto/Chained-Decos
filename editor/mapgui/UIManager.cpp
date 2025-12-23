@@ -78,25 +78,23 @@ void EditorUIManager::HandleInput()
 // Methods delegated to PanelManager
 void EditorUIManager::ShowObjectPanel(bool show)
 {
-    if (m_editor->GetPanelManager())
-        m_editor->GetPanelManager()->SetPanelVisible("Hierarchy", show);
+    m_editor->GetPanelManager().SetPanelVisible("Hierarchy", show);
 }
 
 void EditorUIManager::ShowPropertiesPanel(bool show)
 {
-    if (m_editor->GetPanelManager())
-        m_editor->GetPanelManager()->SetPanelVisible("Inspector", show);
+    m_editor->GetPanelManager().SetPanelVisible("Inspector", show);
 }
 
 Tool EditorUIManager::GetActiveTool() const
 {
     // Convert from IToolManager enum to local Tool enum
-    return static_cast<Tool>(m_editor->GetActiveTool());
+    return static_cast<Tool>(m_editor->GetState().GetActiveTool());
 }
 
 void EditorUIManager::SetActiveTool(::Tool tool)
 {
-    m_editor->SetActiveTool(static_cast<Tool>(tool));
+    m_editor->GetState().SetActiveTool(static_cast<Tool>(tool));
 }
 
 ImVec2 EditorUIManager::ClampWindowPosition(const ImVec2 &desiredPos, ImVec2 &windowSize)
@@ -190,7 +188,7 @@ void EditorUIManager::RenderImGuiToolbar()
         {
             if (ImGui::MenuItem("New Map", "Ctrl+N"))
             {
-                if (m_editor->IsSceneModified())
+                if (m_editor->GetSceneManager().IsSceneModified())
                 {
                     m_showSavePrompt = true;
                     m_pendingAction = PendingAction::NEW_MAP;
@@ -203,7 +201,7 @@ void EditorUIManager::RenderImGuiToolbar()
             }
             if (ImGui::MenuItem("New UI Scene", "Ctrl+Shift+N"))
             {
-                if (m_editor->IsSceneModified())
+                if (m_editor->GetSceneManager().IsSceneModified())
                 {
                     m_showSavePrompt = true;
                     m_pendingAction = PendingAction::NEW_UI_SCENE;
@@ -223,49 +221,31 @@ void EditorUIManager::RenderImGuiToolbar()
                 nfdresult_t result = NFD_SaveDialogU8(&outPath, filterItem, 1, nullptr, "map.json");
                 if (result == NFD_OKAY)
                 {
-                    m_editor->SaveScene(std::string(outPath));
+                    m_editor->GetSceneManager().SaveScene(std::string(outPath));
                     NFD_FreePath(outPath);
                 }
             }
-            if (ImGui::MenuItem("Load Map..."))
+            if (ImGui::MenuItem(
+                    "Quick Save", "Ctrl+S", false,
+                    !m_editor->GetSceneManager().GetGameScene().GetMapMetaData().name.empty()))
             {
-                if (m_editor->IsSceneModified())
-                {
-                    m_showSavePrompt = true;
-                    m_pendingAction = PendingAction::LOAD_SCENE;
-                }
-                else
-                {
-                    // Use NFD to show open dialog
-                    nfdfilteritem_t filterItem[1] = {{"JSON", "json"}};
-                    nfdchar_t *outPath = nullptr;
-                    nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
-                    if (result == NFD_OKAY)
-                    {
-                        m_editor->LoadScene(std::string(outPath));
-                        NFD_FreePath(outPath);
-                    }
-                }
-            }
-            if (ImGui::MenuItem("Quick Save", nullptr, false,
-                                !m_editor->GetGameScene().GetMapMetaData().name.empty()))
-            {
-                m_editor->SaveScene(m_editor->GetGameScene().GetMapMetaData().name + ".json");
+                m_editor->GetSceneManager().SaveScene(
+                    m_editor->GetSceneManager().GetGameScene().GetMapMetaData().name + ".json");
+                m_editor->GetProjectManager().SaveProject();
             }
 
             // Back to Welcome Screen
             if (ImGui::MenuItem("Back to Welcome Screen"))
             {
-                if (m_editor->IsSceneModified())
+                if (m_editor->GetSceneManager().IsSceneModified())
                 {
                     m_showSavePrompt = true;
                     m_pendingAction = PendingAction::NEW_MAP; // Default to map when going back
                 }
                 else
                 {
-                    m_editor->ClearScene();
-                    if (m_editor->GetPanelManager())
-                        m_editor->GetPanelManager()->SetAllPanelsVisible(false);
+                    m_editor->GetSceneManager().ClearScene();
+                    m_editor->GetPanelManager().SetAllPanelsVisible(false);
                     m_displayWelcomeScreen = true;
                 }
             }
@@ -285,7 +265,8 @@ void EditorUIManager::RenderImGuiToolbar()
                                        "Add Cylinder", "Add Model", "Add Spawn Zone"};
 
             bool isUIScene =
-                (m_editor->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
+                (m_editor->GetSceneManager().GetGameScene().GetMapMetaData().sceneType ==
+                 SceneType::UI_MENU);
 
             for (int i = 0; i < std::size(toolNames); i++)
             {
@@ -308,31 +289,30 @@ void EditorUIManager::RenderImGuiToolbar()
             ImGui::EndMenu();
         }
 
-        if (m_editor->GetPanelManager())
-        {
-            m_editor->GetPanelManager()->RenderViewMenu();
-        }
+        m_editor->GetPanelManager().RenderViewMenu();
 
         // Status info on the right
         float width = ImGui::GetWindowWidth();
-        std::string mapName = m_editor->GetGameScene().GetMapMetaData().name.empty()
-                                  ? "Untitled"
-                                  : m_editor->GetGameScene().GetMapMetaData().name;
-        std::string skyboxName = m_editor->GetGameScene().GetMapMetaData().skyboxTexture;
+        std::string mapName =
+            m_editor->GetSceneManager().GetGameScene().GetMapMetaData().name.empty()
+                ? "Untitled"
+                : m_editor->GetSceneManager().GetGameScene().GetMapMetaData().name;
+        std::string skyboxName =
+            m_editor->GetSceneManager().GetGameScene().GetMapMetaData().skyboxTexture;
         if (skyboxName.empty())
             skyboxName = "None";
         else
             skyboxName = fs::path(skyboxName).filename().string();
 
-        bool isUIScene =
-            (m_editor->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
+        bool isUIScene = (m_editor->GetSceneManager().GetGameScene().GetMapMetaData().sceneType ==
+                          SceneType::UI_MENU);
         std::string sceneTypeStr = isUIScene ? "[UI Scene]" : "[3D Map]";
 
         std::string infoText = sceneTypeStr + " Scene: " + mapName;
         if (!isUIScene)
         {
-            infoText +=
-                " | Skybox: " + skyboxName + " | Grid: " + std::to_string(m_editor->GetGridSize());
+            infoText += " | Skybox: " + skyboxName +
+                        " | Grid: " + std::to_string(m_editor->GetState().GetGridSize());
         }
 
         ImGui::SameLine(width - 500);
@@ -377,14 +357,12 @@ void EditorUIManager::HandleKeyboardInput()
 {
     if (IsKeyPressed(KEY_TWO))
     {
-        if (m_editor->GetPanelManager())
-            m_editor->GetPanelManager()->TogglePanelVisibility("Hierarchy");
+        m_editor->GetPanelManager().TogglePanelVisibility("Hierarchy");
     }
 
     if (IsKeyPressed(KEY_F))
     {
-        if (m_editor->GetPanelManager())
-            m_editor->GetPanelManager()->TogglePanelVisibility("Inspector");
+        m_editor->GetPanelManager().TogglePanelVisibility("Inspector");
     }
 }
 
@@ -394,35 +372,33 @@ void EditorUIManager::ExecutePendingAction()
     {
         SceneType type =
             (m_pendingAction == PendingAction::NEW_MAP) ? SceneType::LEVEL_3D : SceneType::UI_MENU;
-        m_editor->ClearScene();
-        m_editor->GetGameScene().GetMapMetaDataMutable().sceneType = type;
+        m_editor->GetSceneManager().ClearScene();
+        m_editor->GetSceneManager().GetGameScene().GetMapMetaDataMutable().sceneType = type;
 
         if (m_editor)
-            m_editor->SetSkyboxTexture("");
+            m_editor->GetSceneManager().SetSkyboxTexture("");
         m_displayWelcomeScreen = false; // Start editing immediately
 
         // Show core panels
-        if (auto pm = m_editor->GetPanelManager())
+        auto &pm = m_editor->GetPanelManager();
+        pm.SetPanelVisible("Toolbar", true);
+        pm.SetPanelVisible("Viewport", true);
+        pm.SetPanelVisible("Scene Hierarchy", true);
+        pm.SetPanelVisible("Inspector", true);
+
+        // Auto-switch panels based on scene type
+        if (type == SceneType::UI_MENU)
         {
-            pm->SetPanelVisible("Toolbar", true);
-            pm->SetPanelVisible("Viewport", true);
-            pm->SetPanelVisible("Scene Hierarchy", true);
-            pm->SetPanelVisible("Inspector", true);
-
-            // Auto-switch panels based on scene type
-            if (type == SceneType::UI_MENU)
-            {
-                pm->SetPanelVisible("UI Editor", true);
-                m_editor->SetEditorMode(EditorMode::UI_DESIGN);
-                m_editor->RefreshUIEntities();
-            }
-            else
-            {
-                m_editor->SetEditorMode(EditorMode::SCENE_3D);
-            }
-
-            pm->ResetLayout();
+            pm.SetPanelVisible("UI Editor", true);
+            m_editor->GetState().SetEditorMode(EditorMode::UI_DESIGN);
+            m_editor->GetSelectionManager().RefreshUIEntities();
         }
+        else
+        {
+            m_editor->GetState().SetEditorMode(EditorMode::SCENE_3D);
+        }
+
+        pm.ResetLayout();
     }
     else if (m_pendingAction == PendingAction::NEW_PROJECT)
     {
@@ -431,43 +407,44 @@ void EditorUIManager::ExecutePendingAction()
         nfdresult_t result = NFD_PickFolderU8(&outPath, nullptr);
         if (result == NFD_OKAY)
         {
-            m_editor->CreateNewProject(std::string(outPath));
+            m_editor->GetProjectManager().CreateNewProject(std::string(outPath));
             m_displayWelcomeScreen = false;
 
             // Show core panels
-            if (auto pm = m_editor->GetPanelManager())
-            {
-                pm->SetPanelVisible("Toolbar", true);
-                pm->SetPanelVisible("Viewport", true);
-                pm->SetPanelVisible("Scene Hierarchy", true);
-                pm->SetPanelVisible("Inspector", true);
-                pm->SetPanelVisible("Asset Browser", true);
-                pm->ResetLayout();
-            }
+            auto &pm = m_editor->GetPanelManager();
+            pm.SetPanelVisible("Toolbar", true);
+            pm.SetPanelVisible("Viewport", true);
+            pm.SetPanelVisible("Scene Hierarchy", true);
+            pm.SetPanelVisible("Inspector", true);
+            pm.SetPanelVisible("Asset Browser", true);
+            pm.ResetLayout();
             NFD_FreePath(outPath);
         }
     }
     else if (m_pendingAction == PendingAction::OPEN_PROJECT)
     {
-        // Open Folder Dialog
+        // Open File Dialog for .chxproj file
         nfdchar_t *outPath = nullptr;
-        nfdresult_t result = NFD_PickFolderU8(&outPath, nullptr);
+        nfdfilteritem_t filterItem[1] = {{"Chained Project", "chxproj"}};
+        nfdresult_t result = NFD_OpenDialogU8(&outPath, filterItem, 1, nullptr);
         if (result == NFD_OKAY)
         {
-            std::string projectPath = std::string(outPath);
-            m_editor->SetProjectPath(projectPath);
+            std::string projectFilePath = std::string(outPath);
+            // Extract project directory from file path
+            std::filesystem::path filePath(projectFilePath);
+            std::string projectPath = filePath.parent_path().string();
+
+            m_editor->GetProjectManager().SetProjectPath(projectPath);
             m_displayWelcomeScreen = false;
 
             // Show core panels
-            if (auto pm = m_editor->GetPanelManager())
-            {
-                pm->SetPanelVisible("Toolbar", true);
-                pm->SetPanelVisible("Viewport", true);
-                pm->SetPanelVisible("Scene Hierarchy", true);
-                pm->SetPanelVisible("Inspector", true);
-                pm->SetPanelVisible("Asset Browser", true);
-                pm->ResetLayout();
-            }
+            auto &pm = m_editor->GetPanelManager();
+            pm.SetPanelVisible("Toolbar", true);
+            pm.SetPanelVisible("Viewport", true);
+            pm.SetPanelVisible("Scene Hierarchy", true);
+            pm.SetPanelVisible("Inspector", true);
+            pm.SetPanelVisible("Asset Browser", true);
+            pm.ResetLayout();
             NFD_FreePath(outPath);
             CD_INFO("[UIManager] Opened project at: %s", projectPath.c_str());
         }
@@ -483,23 +460,21 @@ void EditorUIManager::ExecutePendingAction()
             std::string path = std::string(outPath);
             if (path.find(".chxproj") != std::string::npos)
             {
-                m_editor->LoadProject(path);
+                m_editor->GetProjectManager().LoadProject(path);
             }
             else
             {
-                m_editor->LoadScene(path);
+                m_editor->GetSceneManager().LoadScene(path);
             }
             m_displayWelcomeScreen = false;
 
             // Show core panels
-            if (auto pm = m_editor->GetPanelManager())
-            {
-                pm->SetPanelVisible("Toolbar", true);
-                pm->SetPanelVisible("Viewport", true);
-                pm->SetPanelVisible("Scene Hierarchy", true);
-                pm->SetPanelVisible("Inspector", true);
-                pm->ResetLayout();
-            }
+            auto &pm = m_editor->GetPanelManager();
+            pm.SetPanelVisible("Toolbar", true);
+            pm.SetPanelVisible("Viewport", true);
+            pm.SetPanelVisible("Scene Hierarchy", true);
+            pm.SetPanelVisible("Inspector", true);
+            pm.ResetLayout();
             NFD_FreePath(outPath);
         }
     }
@@ -508,7 +483,7 @@ void EditorUIManager::ExecutePendingAction()
 
 int EditorUIManager::GetGridSize() const
 {
-    return m_editor ? m_editor->GetGridSize() : 50;
+    return m_editor ? m_editor->GetState().GetGridSize() : 50;
 }
 
 void EditorUIManager::RenderWelcomeScreen()
@@ -580,7 +555,7 @@ void EditorUIManager::RenderWelcomeScreen()
         ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 50);
         ImGui::Separator();
         ImGui::Indent(15);
-        ImGui::TextDisabled("ChainedDecos Engine");
+        ImGui::TextDisabled("CHEngine Engine");
         ImGui::Unindent(15);
 
         ImGui::EndChild();
@@ -609,8 +584,8 @@ void EditorUIManager::RenderWelcomeScreen()
 
             // Action Buttons (Horizontal)
             float iconBoxSize = 100.0f;
-            float buttonSpacing = 50.0f;
-            int numButtons = 3;
+            float buttonSpacing = 80.0f;
+            int numButtons = 2;
             float totalW = (iconBoxSize * numButtons) + (buttonSpacing * (numButtons - 1));
             float startX = (mainAreaSize.x - totalW) * 0.5f;
 
@@ -624,7 +599,7 @@ void EditorUIManager::RenderWelcomeScreen()
                 ImGui::PushID(id);
                 if (ImGui::InvisibleButton("##btn", ImVec2(iconBoxSize, iconBoxSize + 35)))
                 {
-                    if (m_editor->IsSceneModified())
+                    if (m_editor->GetSceneManager().IsSceneModified())
                     {
                         m_showSavePrompt = true;
                         m_pendingAction = action;
@@ -671,8 +646,6 @@ void EditorUIManager::RenderWelcomeScreen()
                             PendingAction::NEW_PROJECT);
             renderBigButton("OpenProject", m_iconOpenProject, "Open Project",
                             PendingAction::OPEN_PROJECT);
-            renderBigButton("OpenScene", m_iconSceneProject, "Open Scene",
-                            PendingAction::LOAD_SCENE);
 
             // Recent Projects Section - Move down to avoid overlap
             ImGui::SetCursorPosY(420);
@@ -683,7 +656,7 @@ void EditorUIManager::RenderWelcomeScreen()
             ImGui::SetCursorPosX(60);
             ImGui::BeginChild("RecentProjects", ImVec2(mainAreaSize.x - 120, 300), false);
 
-            const auto &recent = m_editor->GetRecentProjects();
+            const auto &recent = m_editor->GetProjectManager().GetRecentProjects();
             if (recent.empty())
             {
                 ImGui::SetCursorPosY(20);
@@ -705,7 +678,7 @@ void EditorUIManager::RenderWelcomeScreen()
                     {
                         if (ImGui::IsMouseDoubleClicked(0))
                         {
-                            m_editor->LoadProject(path);
+                            m_editor->GetProjectManager().LoadProject(path);
                             m_displayWelcomeScreen = false;
                         }
                     }
@@ -768,7 +741,7 @@ void EditorUIManager::RenderSavePrompt()
         if (ImGui::Button("Save", ImVec2(120, 0)))
         {
             // Trigger Save Logic
-            std::string currentPath = m_editor->GetCurrentMapPath();
+            std::string currentPath = m_editor->GetSceneManager().GetCurrentMapPath();
             if (currentPath.empty())
             {
                 // Need to ask for path if new map
@@ -789,8 +762,8 @@ void EditorUIManager::RenderSavePrompt()
 
             if (!currentPath.empty())
             {
-                m_editor->SaveScene(currentPath);
-                m_editor->SetSceneModified(false); // Changes saved
+                m_editor->GetSceneManager().SaveScene(currentPath);
+                m_editor->GetSceneManager().SetSceneModified(false); // Changes saved
 
                 // Now proceed with pending action
                 ImGui::CloseCurrentPopup();
@@ -814,7 +787,7 @@ void EditorUIManager::RenderSavePrompt()
         {
             ImGui::CloseCurrentPopup();
             m_showSavePrompt = false;
-            m_editor->SetSceneModified(false); // Discard changes
+            m_editor->GetSceneManager().SetSceneModified(false); // Discard changes
 
             ExecutePendingAction();
         }
@@ -872,8 +845,8 @@ void EditorUIManager::ProcessPendingObjectCreation()
 {
     if (m_pendingObjectCreation)
     {
-        dynamic_cast<Editor *>(m_editor)->CreateDefaultObject(
-            static_cast<MapObjectType>(GetActiveTool()), m_currentlySelectedModelName);
+        m_editor->GetSceneManager().CreateDefaultObject(static_cast<MapObjectType>(GetActiveTool()),
+                                                        m_currentlySelectedModelName);
         m_pendingObjectCreation = false;
         SetActiveTool(SELECT);
     }

@@ -45,7 +45,7 @@ public:
     void Initialize(IEngine *engine);
 
     // Event management
-    using MenuEventCallback = std::function<void(const ChainedDecos::MenuEvent &)>;
+    using MenuEventCallback = std::function<void(const CHEngine::MenuEvent &)>;
     void SetEventCallback(const MenuEventCallback &callback);
 
     // State management
@@ -104,7 +104,7 @@ public:
     void SetupStyle();
 
     // UI Helpers (Called by screens)
-    bool RenderActionButton(const char *label, ChainedDecos::MenuEventType eventType,
+    bool RenderActionButton(const char *label, CHEngine::MenuEventType eventType,
                             const ImVec2 &size = ImVec2(0, 0));
     bool RenderBackButton(float width = 0.0f);
     void RenderSectionHeader(const char *title, const char *subtitle = nullptr) const;
@@ -119,7 +119,7 @@ public:
     {
         return m_settingsController.get();
     }
-    void DispatchEvent(ChainedDecos::MenuEventType type, const std::string &data = "");
+    void DispatchEvent(CHEngine::MenuEventType type, const std::string &data = "");
 
 private:
     void RenderConsoleOverlay();

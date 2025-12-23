@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 class GuiElement;
 }
@@ -19,8 +19,8 @@ public:
     virtual void Render() = 0;
     virtual void Shutdown() = 0;
 
-    virtual void AddElement(std::shared_ptr<ChainedDecos::GuiElement> element) = 0;
-    virtual void RemoveElement(std::shared_ptr<ChainedDecos::GuiElement> element) = 0;
+    virtual void AddElement(std::shared_ptr<CHEngine::GuiElement> element) = 0;
+    virtual void RemoveElement(std::shared_ptr<CHEngine::GuiElement> element) = 0;
     virtual void Clear() = 0;
 
     virtual bool IsVisible() const = 0;

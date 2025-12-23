@@ -4,7 +4,7 @@
 #include "events/Event.h"
 
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 class MouseMovedEvent : public Event
@@ -96,7 +96,7 @@ public:
     EVENT_CLASS_TYPE(MouseButtonReleased)
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // MOUSE_EVENT_H
 

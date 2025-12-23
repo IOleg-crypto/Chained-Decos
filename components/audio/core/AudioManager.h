@@ -10,14 +10,8 @@
 class AudioManager : public IAudioManager
 {
 public:
-    static AudioManager &Get()
-    {
-        static AudioManager instance;
-        return instance;
-    }
-
-    AudioManager(const AudioManager &) = delete;
-    AudioManager &operator=(const AudioManager &) = delete;
+    AudioManager();
+    ~AudioManager();
 
     // Initialize audio system
     bool Initialize();
@@ -25,13 +19,14 @@ public:
     void Update(float deltaTime);
 
     // Load audio files
-    bool LoadSound(const std::string &name, const std::string &filePath);
+    bool LoadSound(const std::string &name, const std::string &filePath) override;
     bool LoadMusic(const std::string &name, const std::string &filePath);
 
     // Play audio
-    void PlaySoundEffect(const std::string &name, float volume = 5.0f, float pitch = 1.0f);
-    void PlayLoopingSoundEffect(const std::string &name, float volume = 1.0f, float pitch = 1.0f);
-    void StopLoopingSoundEffect(const std::string &name);
+    void PlaySoundEffect(const std::string &name, float volume = 5.0f, float pitch = 1.0f) override;
+    void PlayLoopingSoundEffect(const std::string &name, float volume = 1.0f,
+                                float pitch = 1.0f) override;
+    void StopLoopingSoundEffect(const std::string &name) override;
     void UpdateLoopingSounds();
     void PlayMusic(const std::string &name, float volume = 1.0f);
     void StopMusic();
@@ -65,9 +60,6 @@ public:
     void UnloadAll();
 
 private:
-    AudioManager();
-    ~AudioManager();
-
     std::unordered_map<std::string, Sound> m_sounds;
     std::unordered_map<std::string, Music> m_music;
     std::unordered_map<std::string, bool> m_loopingSounds;

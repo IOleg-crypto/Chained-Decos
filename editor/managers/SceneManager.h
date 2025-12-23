@@ -16,7 +16,7 @@ public:
     ~SceneManager();
 
     // Set callback for event propagation
-    void SetEventCallback(std::function<void(ChainedDecos::Event &)> callback);
+    void SetEventCallback(std::function<void(CHEngine::Event &)> callback);
 
     // Scene operations
     void LoadScene(const std::string &path);
@@ -32,7 +32,7 @@ public:
 private:
     EditorContext &m_context;
     std::vector<std::string> m_recentScenes;
-    std::function<void(ChainedDecos::Event &)> m_eventCallback;
+    std::function<void(CHEngine::Event &)> m_eventCallback;
 
     void AddToRecentScenes(const std::string &path);
     void LoadRecentScenes();

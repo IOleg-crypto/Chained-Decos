@@ -7,7 +7,7 @@
 #include <vector>
 
 
-namespace ChainedDecos
+namespace CHEngine
 {
 class GuiManager : public IGuiManager
 {
@@ -87,7 +87,7 @@ private:
     std::vector<std::shared_ptr<GuiElement>> m_elements;
     bool m_visible;
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // GUI_MANAGER_H
 

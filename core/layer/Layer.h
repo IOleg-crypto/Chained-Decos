@@ -4,7 +4,7 @@
 #include "events/Event.h"
 #include <string>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 class Layer
@@ -38,6 +38,6 @@ protected:
     std::string m_DebugName;
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // LAYER_H

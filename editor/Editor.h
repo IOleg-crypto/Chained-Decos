@@ -1,7 +1,3 @@
-//
-// Created by I#Oleg.
-//
-
 #ifndef EDITOR_H
 #define EDITOR_H
 
@@ -13,16 +9,16 @@
 #include "core/utils/Base.h"
 #include "editor/IEditor.h"
 #include "editor/mapgui/IUIManager.h"
-#include "editor/tool/IToolManager.h"
 #include "events/Event.h"
 #include "scene/camera/core/CameraController.h"
 #include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/map/skybox/skybox.h"
 
 // Rendering and utilities
-#include "editor/logic/MapManager.h"
+#include "editor/logic/EditorState.h"
 #include "editor/logic/ProjectManager.h"
-#include "editor/logic/Scene.h"
+#include "editor/logic/SceneManager.h"
+#include "editor/logic/SelectionManager.h"
 #include "editor/panels/EditorPanelManager.h"
 #include "editor/render/EditorRenderer.h"
 
@@ -33,175 +29,58 @@ class Editor : public IEditor
 {
 private:
     IEngine *m_engine = nullptr;
-    EditorSettings m_settings;
 
     // Subsystem managers
     std::unique_ptr<IUIManager> m_uiManager;
-    std::unique_ptr<IToolManager> m_toolManager;
-    std::unique_ptr<MapManager> m_mapManager;
-    std::unique_ptr<IProjectManager> m_projectManager;
-    std::unique_ptr<ChainedEngine::Scene> m_activeScene;
+    std::unique_ptr<ProjectManager> m_projectManager;
+    std::unique_ptr<SceneManager> m_sceneManager;
+    std::unique_ptr<SelectionManager> m_selectionManager;
+    std::unique_ptr<EditorState> m_editorState;
     std::unique_ptr<EditorPanelManager> m_panelManager;
 
     // Engine resources and services
-    ChainedDecos::Ref<CameraController> m_cameraController;
-    ChainedDecos::Ref<IModelLoader> m_modelLoader;
-    std::unique_ptr<Skybox> m_skybox;
-
-    // State
-    int m_gridSize = 9999999;
-    int m_activeTool = 0;
+    CHEngine::Ref<CameraController> m_cameraController;
+    CHEngine::Ref<IModelLoader> m_modelLoader;
 
     // Rendering helper
     std::unique_ptr<EditorRenderer> m_renderer;
 
-    // Legacy/State kept for editor logic
-    Texture2D m_spawnTexture;
-    bool m_spawnTextureLoaded;
-    Color m_clearColor;
-
 public:
-    Editor(IEngine *engine, ChainedDecos::Ref<CameraController> cameraController,
-           ChainedDecos::Ref<IModelLoader> modelLoader);
+    Editor(IEngine *engine);
     ~Editor();
 
-public:
-    // Core editor functions
+    // IEditor implementation
+    IProjectManager &GetProjectManager() override;
+    ISceneManager &GetSceneManager() override;
+    ISelectionManager &GetSelectionManager() override;
+    IEditorState &GetState() override;
+    IUIManager &GetUIManager() override;
+    EditorPanelManager &GetPanelManager() override;
+
     CameraController &GetCameraController() override;
-    void Update();      // Update editor state
-    void Render();      // Render 3D objects
-    void RenderImGui(); // Render ImGui interface
-    void HandleInput(); // Handle user input
+    CHEngine::Ref<IModelLoader> GetModelLoader() override;
 
-    // Event handling
-    void OnEvent(ChainedDecos::Event &e);
+    void Update() override;
+    void Render() override;
+    void RenderImGui();
+    void HandleInput();
+    void OnEvent(CHEngine::Event &e);
 
-    // Grid settings
-    void PreloadModelsFromResources();
-    void LoadSpawnTexture(); // Load spawn zone texture
-
-    // Object management (Moved from SceneManager)
-    void AddObject(const MapObjectData &obj) override;
-    void RemoveObject(int index) override;
-    void SelectObject(int index) override;
-    void ClearSelection() override;
-    void ClearObjects() override;
-    void ClearScene() override; // Keep legacy name if used elsewhere
-    void CreateDefaultObject(MapObjectType type, const std::string &modelName = "") override;
-    void LoadAndSpawnModel(const std::string &path) override;
-
-    // File operations (Moved from FileManager/using SceneLoader)
-    void SaveScene(const std::string &filename) override;
-    void LoadScene(const std::string &filename) override;
-
-    void SetGridSize(int size) override;
-    int GetGridSize() const override;
-
-    // Tool Management
-    Tool GetActiveTool() const override;
-    void SetActiveTool(Tool tool) override;
-
-    // service accessors
-    ChainedDecos::Ref<IModelLoader> GetModelLoader() override;
-
-    // Skybox operations
-    void ApplyMetadata(const MapMetadata &metadata) override;
-    void SetSkybox(const std::string &name) override;
-    void SetSkyboxTexture(const std::string &texturePath) override;
-    void SetSkyboxColor(Color color) override;
-
-    const std::string &GetSkyboxTexture() const;
-    bool HasSkybox() const;
-    Skybox *GetSkybox() const override;
-    Color GetClearColor() const override;
-
-    // Accessors for UI/Tools
-    GameScene &GetGameScene() override;
-    int GetSelectedObjectIndex() const override;
-    MapObjectData *GetSelectedObject() override;
-
-    // UI Selection
-    void SelectUIElement(int index) override;
-    int GetSelectedUIElementIndex() const override;
-    void RefreshUIEntities() override;
-
-    IToolManager *GetToolManager() const;
-    IUIManager *GetUIManager() const override;
-    EditorPanelManager *GetPanelManager() const override
-    {
-        return m_panelManager.get();
-    }
-
-    const std::string &GetCurrentMapPath() const override;
-
-    bool IsSceneModified() const override;
-    void SetSceneModified(bool modified) override;
-
-    const std::string &GetProjectPath() const override
-    {
-        return m_projectManager->GetProjectPath();
-    }
-    void SetProjectPath(const std::string &path) override;
-    bool CreateNewProject(const std::string &path) override;
-    void SaveProject() override;
-    void LoadProject(const std::string &path) override;
-
-    const std::vector<std::string> &GetRecentProjects() const override;
-    void AddRecentProject(const std::string &path) override;
-
-    // Play Mode Management
     void StartPlayMode() override;
     void StopPlayMode() override;
     bool IsInPlayMode() const override;
-
-    // Editor Mode Management
-    EditorMode GetEditorMode() const
-    {
-        return m_editorMode;
-    }
-    void SetEditorMode(EditorMode mode) override;
-    bool IsUIDesignMode() const
-    {
-        return m_editorMode == EditorMode::UI_DESIGN ||
-               (m_mapManager &&
-                m_mapManager->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
-    }
-
-private:
-    void InitializeSubsystems();
-    void RenderObject(const MapObjectData &obj);
-
     void BuildGame() override;
     void RunGame() override;
 
-private:
-    // Debug Visualization
-    bool IsWireframeEnabled() const override
-    {
-        return m_drawWireframe;
-    }
-    void SetWireframeEnabled(bool enabled) override
-    {
-        m_drawWireframe = enabled;
-    }
-    bool IsCollisionDebugEnabled() const override
-    {
-        return m_drawCollisions;
-    }
-    void SetCollisionDebugEnabled(bool enabled) override
-    {
-        m_drawCollisions = enabled;
-    }
-
-private:
-    bool m_drawWireframe = false;
-    bool m_drawCollisions = false;
-    bool m_isInPlayMode = false;
-    int m_selectedUIElementIndex = -1;
-    EditorMode m_editorMode = EditorMode::SCENE_3D;
-
-public:
+    // Internal initialization and resources
+    void PreloadModelsFromResources();
+    void LoadSpawnTexture();
+    void RenderObject(const MapObjectData &obj);
     std::string GetSkyboxAbsolutePath() const;
+
+private:
+    void InitializeSubsystems();
+    bool m_isInPlayMode = false;
 };
 
 #endif // EDITOR_H

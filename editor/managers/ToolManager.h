@@ -15,7 +15,7 @@ public:
     void Update(float deltaTime);
     void HandleInput();
     void OnUpdate();
-    void OnEvent(ChainedDecos::Event &event);
+    void OnEvent(CHEngine::Event &event);
 
     void SelectTool(Tool tool);
     Tool GetActiveTool() const;
@@ -24,7 +24,7 @@ private:
     EditorContext &m_context;
 
     // Tool helpers
-    void HandleShortcuts(ChainedDecos::Event &event);
+    void HandleShortcuts(CHEngine::Event &event);
     void UpdateGizmo();
 };
 

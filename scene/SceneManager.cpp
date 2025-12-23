@@ -2,14 +2,8 @@
 #include "core/Log.h"
 #include <raylib.h>
 
-namespace ChainedDecos
+namespace CHEngine
 {
-
-SceneManager &SceneManager::Get()
-{
-    static SceneManager instance;
-    return instance;
-}
 
 void SceneManager::LoadScene(const std::string &scenePath)
 {
@@ -133,4 +127,4 @@ void SceneManager::LoadSceneInternal(const std::string &scenePath)
     CD_CORE_INFO("[SceneManager] Scene loaded: %s", scenePath.c_str());
 }
 
-} // namespace ChainedDecos
+} // namespace CHEngine

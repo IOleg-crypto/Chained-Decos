@@ -243,19 +243,19 @@ void Menu::SetupStyle()
     style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.4f, 0.4f, 0.6f, 1.0f);
 }
 
-bool Menu::RenderActionButton(const char *label, ChainedDecos::MenuEventType eventType,
+bool Menu::RenderActionButton(const char *label, CHEngine::MenuEventType eventType,
                               const ImVec2 &size)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.0f);
     bool clicked = ImGui::Button(label, size);
     ImGui::PopStyleVar();
 
-    if (clicked && eventType != ChainedDecos::MenuEventType::None)
+    if (clicked && eventType != CHEngine::MenuEventType::None)
     {
         CD_INFO("Menu::RenderActionButton() - Button '%s' clicked, event: %d", label,
                 static_cast<int>(eventType));
         std::string data = "";
-        if (eventType == ChainedDecos::MenuEventType::StartGameWithMap)
+        if (eventType == CHEngine::MenuEventType::StartGameWithMap)
         {
             data = GetSelectedMapName();
         }
@@ -316,7 +316,7 @@ void Menu::SetState(MenuState state)
     m_state = state;
 }
 
-void Menu::DispatchEvent(ChainedDecos::MenuEventType type, const std::string &data)
+void Menu::DispatchEvent(CHEngine::MenuEventType type, const std::string &data)
 {
     if (m_eventCallback)
     {
