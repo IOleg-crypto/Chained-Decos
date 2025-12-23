@@ -31,7 +31,7 @@ add_library(menu STATIC ${MENU_SOURCES})
 target_include_directories(menu PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/project/chaineddecos/gamegui
+    ${CMAKE_SOURCE_DIR}/project/ChainedDecos/gamegui
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/rlImGui
     ${CMAKE_SOURCE_DIR}/include/imgui

@@ -9,7 +9,7 @@
 #include "editor/panels/ViewportPanel.h"
 #include "scene/camera/core/CameraController.h"
 
-#include "project/chaineddecos/GameLayer.h"
+#include "project/CHEngine/GameLayer.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
 #include "scene/resources/font/FontService.h"
@@ -27,7 +27,7 @@
 DECLARE_APPLICATION(EditorApplication)
 
 // Global/Static Play Mode State
-using namespace ChainedEngine;
+using namespace CHEngine;
 static GameLayer *s_playLayer = nullptr;
 
 EditorApplication::EditorApplication(int argc, char *argv[])
@@ -67,8 +67,13 @@ void EditorApplication::OnStart()
     // Use engine-provided ModelLoader instead of creating a new one
     auto modelLoader = Engine::Instance().GetModelLoader();
 
-    m_editor = std::make_unique<Editor>(&Engine::Instance(), camera, modelLoader);
-    camera->SetCameraMode(CAMERA_FREE);
+    m_editor = std::make_unique<Editor>(&Engine::Instance());
+
+    // Register editor as a service for GameLayer to access
+    std::shared_ptr<IEditor> editorService(m_editor.get(), [](IEditor *) {});
+    Engine::Instance().RegisterService<IEditor>(editorService);
+
+    m_editor->GetCameraController().SetCameraMode(CAMERA_FREE);
 
     CD_INFO("[EditorApplication] Editor components initialized.");
 
@@ -90,12 +95,12 @@ void EditorApplication::OnStart()
         m_editor->LoadSpawnTexture();
 
         // Load default fonts for UI
-        ChainedDecos::FontService::Get().LoadFont(
+        Engine::Instance().GetFontService().LoadFont(
             "Gantari", PROJECT_ROOT_DIR "/resources/font/gantari/Gantari-VariableFont_wght.ttf");
     }
 
     // Set window icon
-    Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.jpg");
+    Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/CHEngineMapEditor.jpg");
     if (icon.data != nullptr)
     {
         ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
@@ -155,7 +160,7 @@ void EditorApplication::OnUpdate(float deltaTime)
     m_editor->HandleInput();
 
     // Check if UI requested exit
-    if (auto uiManager = dynamic_cast<EditorUIManager *>(m_editor->GetUIManager()))
+    if (auto uiManager = dynamic_cast<EditorUIManager *>(&m_editor->GetUIManager()))
     {
         if (uiManager->ShouldExit())
         {
@@ -177,15 +182,13 @@ void EditorApplication::OnRender()
     // EndFrame() will be called in Engine::Render() via RenderManager::EndFrame()
 
     // Clear background with scene's background color
-    Color bgColor = m_editor->GetGameScene().GetMapMetaData().backgroundColor;
+    Color bgColor = m_editor->GetSceneManager().GetGameScene().GetMapMetaData().backgroundColor;
     ClearBackground(bgColor);
 
     // Check if we have a viewport panel to render into
     ViewportPanel *viewport = nullptr;
-    if (auto panelManager = m_editor->GetPanelManager())
-    {
-        viewport = panelManager->GetPanel<ViewportPanel>("Viewport");
-    }
+    auto &panelManager = m_editor->GetPanelManager();
+    viewport = panelManager.GetPanel<ViewportPanel>("Viewport");
 
     if (viewport && viewport->IsVisible())
     {
@@ -212,11 +215,11 @@ void EditorApplication::OnRender()
         EndMode3D();
 
         // Render UI elements if in UI Design mode
-        if (m_editor->IsUIDesignMode())
+        if (m_editor->GetState().IsUIDesignMode())
         {
             int vpWidth = static_cast<int>(viewport->GetSize().x);
             int vpHeight = static_cast<int>(viewport->GetSize().y);
-            ChainedDecos::UIRenderSystem::Render(vpWidth, vpHeight);
+            CHEngine::UIRenderSystem::Render(vpWidth, vpHeight);
         }
         else if (m_editor->IsInPlayMode() && s_playLayer)
         {
@@ -265,7 +268,7 @@ void EditorApplication::OnShutdown()
     // Editor cleans up its own resources in destructor
 }
 
-void EditorApplication::OnEvent(ChainedDecos::Event &e)
+void EditorApplication::OnEvent(CHEngine::Event &e)
 {
     if (m_editor)
     {

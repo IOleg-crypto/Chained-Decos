@@ -27,7 +27,7 @@ void ToolManager::OnUpdate()
     UpdateGizmo();
 }
 
-void ToolManager::OnEvent(ChainedDecos::Event &event)
+void ToolManager::OnEvent(CHEngine::Event &event)
 {
     HandleShortcuts(event);
 }
@@ -43,11 +43,11 @@ Tool ToolManager::GetActiveTool() const
     return m_context.GetActiveTool();
 }
 
-void ToolManager::HandleShortcuts(ChainedDecos::Event &event)
+void ToolManager::HandleShortcuts(CHEngine::Event &event)
 {
-    if (event.GetEventType() == ChainedDecos::EventType::KeyPressed)
+    if (event.GetEventType() == CHEngine::EventType::KeyPressed)
     {
-        ChainedDecos::KeyPressedEvent &e = (ChainedDecos::KeyPressedEvent &)event;
+        CHEngine::KeyPressedEvent &e = (CHEngine::KeyPressedEvent &)event;
 
         // Only handle shortcuts if not editing text (TODO: Check if ImGui wants input)
         // For now, simpler check

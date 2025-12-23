@@ -56,30 +56,31 @@ struct UIElementData
 {
     std::string name;
     std::string type; // "button", "text", "image"
+    bool isActive = true;
 
     // RectTransform data
-    int anchor; // UIAnchor enum as int
-    Vector2 position;
-    Vector2 size;
-    Vector2 pivot;
-    float rotation;
+    int anchor = 0; // UIAnchor enum as int
+    Vector2 position = {0, 0};
+    Vector2 size = {100, 100};
+    Vector2 pivot = {0.5f, 0.5f};
+    float rotation = 0.0f;
 
     // Component-specific properties (stored as key-value pairs)
-    std::string text;     // For UIText
-    std::string fontName; // For UIText
-    int fontSize;         // For UIText
-    float spacing;        // For UIText
-    Color textColor;      // For UIText
+    std::string text;        // For UIText
+    std::string fontName;    // For UIText
+    int fontSize = 20;       // For UIText
+    float spacing = 1.0f;    // For UIText
+    Color textColor = WHITE; // For UIText
 
-    Color normalColor;   // For UIButton
-    Color hoverColor;    // For UIButton
-    Color pressedColor;  // For UIButton
-    float borderRadius;  // For UIButton and UIImage
-    float borderWidth;   // For UIButton and UIImage
-    Color borderColor;   // For UIButton and UIImage
-    std::string eventId; // For UIButton
+    Color normalColor = GRAY;      // For UIButton
+    Color hoverColor = LIGHTGRAY;  // For UIButton
+    Color pressedColor = DARKGRAY; // For UIButton
+    float borderRadius = 0.0f;     // For UIButton and UIImage
+    float borderWidth = 0.0f;      // For UIButton and UIImage
+    Color borderColor = BLACK;     // For UIButton and UIImage
+    std::string eventId;           // For UIButton
 
-    Color tint;              // For UIImage
+    Color tint = WHITE;      // For UIImage
     std::string texturePath; // For UIImage (future)
 
     // Action System

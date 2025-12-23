@@ -15,7 +15,7 @@ SceneManager::~SceneManager()
     SaveRecentScenes();
 }
 
-void SceneManager::SetEventCallback(std::function<void(ChainedDecos::Event &)> callback)
+void SceneManager::SetEventCallback(std::function<void(CHEngine::Event &)> callback)
 {
     m_eventCallback = callback;
 }
@@ -64,7 +64,7 @@ void SceneManager::LoadScene(const std::string &path)
         // Dispatch SceneLoaded event
         if (m_eventCallback)
         {
-            ChainedDecos::SceneLoadedEvent e(path);
+            CHEngine::SceneLoadedEvent e(path);
             m_eventCallback(e);
         }
     }
@@ -123,7 +123,7 @@ void SceneManager::NewScene()
     // Dispatch SceneLoaded event (empty path for new scene)
     if (m_eventCallback)
     {
-        ChainedDecos::SceneLoadedEvent e("");
+        CHEngine::SceneLoadedEvent e("");
         m_eventCallback(e);
     }
 }

@@ -35,7 +35,7 @@ void EditorLayer::OnDetach()
     m_toolManager.reset();
 }
 
-void EditorLayer::OnEvent(ChainedDecos::Event &event)
+void EditorLayer::OnEvent(CHEngine::Event &event)
 {
     // Pass event to tool manager (shortcuts, gizmos)
     if (m_toolManager)
@@ -98,7 +98,7 @@ void EditorLayer::InitializePanels()
     m_panels.push_back(std::make_unique<ViewportPanel>(m_context));
 }
 
-void EditorLayer::PropagateEventToPanels(ChainedDecos::Event &e)
+void EditorLayer::PropagateEventToPanels(CHEngine::Event &e)
 {
     for (auto &panel : m_panels)
     {

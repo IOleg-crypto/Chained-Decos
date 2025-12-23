@@ -9,16 +9,9 @@
 class RenderManager
 {
 public:
-    // Static Singleton
-    static RenderManager &Get()
-    {
-        static RenderManager instance;
-        return instance;
-    }
-
-    // Disable copying
-    RenderManager(const RenderManager &) = delete;
-    RenderManager &operator=(const RenderManager &) = delete;
+    // Initialization
+    RenderManager();
+    ~RenderManager();
 
     // Initialization
     bool Initialize(int width, int height, const char *title);
@@ -92,10 +85,6 @@ public:
     }
 
 private:
-    // Private constructor for Singleton
-    RenderManager();
-    ~RenderManager();
-
     Camera m_camera = {0};
     Color m_backgroundColor = SKYBLUE;
     Font m_font{};

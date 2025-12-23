@@ -28,6 +28,8 @@ set(CORE_SOURCES
     imgui/ImGuiLayer.cpp
     imgui/components/GuiButton.h
     imgui/components/GuiPanel.h
+    scripting/ScriptManager.cpp
+    scripting/ScriptManager.h
 )
 
 add_library(core STATIC ${CORE_SOURCES})
@@ -37,6 +39,7 @@ target_include_directories(core
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/core
         ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
+        ${lua_SOURCE_DIR}/src
 )
 
 target_link_libraries(core
@@ -53,6 +56,15 @@ target_link_libraries(core
         model
         imguilib
         events
+        liblua
+        sol2::sol2
+)
+
+target_compile_definitions(core
+    PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        SOL_ALL_SAFETIES_ON=1
+        SOL_USE_CXX17_OPTIONAL=0
 )
 
 

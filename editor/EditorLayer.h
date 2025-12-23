@@ -11,7 +11,7 @@
 
 // EditorLayer - Main editor layer integrating all editor subsystems
 // Manages panels, tools, and scene operations
-class EditorLayer : public ChainedDecos::Layer
+class EditorLayer : public CHEngine::Layer
 {
 public:
     explicit EditorLayer(entt::registry &registry);
@@ -20,7 +20,7 @@ public:
     // Layer interface
     void OnAttach() override;
     void OnDetach() override;
-    void OnEvent(ChainedDecos::Event &event) override;
+    void OnEvent(CHEngine::Event &event) override;
     void OnUpdate(float deltaTime) override;
     void OnRender() override;
 
@@ -36,7 +36,7 @@ private:
 
     // Internal methods
     void InitializePanels();
-    void PropagateEventToPanels(ChainedDecos::Event &e);
+    void PropagateEventToPanels(CHEngine::Event &e);
 };
 
 #endif // EDITOR_LAYER_H

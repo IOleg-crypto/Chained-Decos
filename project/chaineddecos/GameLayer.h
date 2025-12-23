@@ -2,9 +2,10 @@
 #define GAMELAYER_H
 
 #include "core/layer/Layer.h"
+
 #include <raylib.h>
 
-class GameLayer : public ChainedDecos::Layer
+class GameLayer : public CHEngine::Layer
 {
 public:
     GameLayer();
@@ -14,7 +15,7 @@ public:
     virtual void OnDetach() override;
     virtual void OnUpdate(float deltaTime) override;
     virtual void OnRender() override;
-    virtual void OnEvent(ChainedDecos::Event &event) override;
+    virtual void OnEvent(CHEngine::Event &event) override;
 
     void RenderScene();
     void RenderUI(float width, float height);
@@ -22,6 +23,12 @@ public:
 private:
     Font m_hudFont;
     bool m_fontLoaded = false;
+
+    // Player Shader
+    Shader m_playerShader = {0};
+    int m_locFallSpeed = -1;
+    int m_locTime = -1;
+    bool m_shaderLoaded = false;
 };
 
 #endif // GAMELAYER_H

@@ -46,7 +46,7 @@ public:
     void UpdateCameraRotation();
 
     // Event handling
-    void OnEvent(ChainedDecos::Event &e);
+    void OnEvent(CHEngine::Event &e);
 
     // Update camera offset based on FOV and angles relative to player position
     void UpdateMouseRotation(Camera &camera, const Vector3 &playerPosition);

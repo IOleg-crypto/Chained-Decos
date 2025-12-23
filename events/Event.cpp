@@ -1,6 +1,6 @@
 #include "events/Event.h"
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 std::ostream &operator<<(std::ostream &os, const Event &e)
@@ -8,6 +8,6 @@ std::ostream &operator<<(std::ostream &os, const Event &e)
     return os << e.ToString();
 }
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 

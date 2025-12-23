@@ -4,7 +4,7 @@
 #include "Event.h"
 #include <string>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 enum class MenuEventType : uint8_t
@@ -54,6 +54,6 @@ private:
     std::string m_MapName;
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // MENU_EVENT_H

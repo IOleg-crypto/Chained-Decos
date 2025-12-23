@@ -3,6 +3,8 @@
 
 #include <raylib.h>
 
+namespace CHEngine
+{
 struct PlayerComponent
 {
     float moveSpeed = 5.0f;
@@ -26,5 +28,6 @@ struct PlayerComponent
     Vector3 spawnPosition = {0, 0, 0};
     Vector3 spawnRotation = {0, 0, 0};
 };
+} // namespace CHEngine
 
 #endif // PLAYER_COMPONENT_H

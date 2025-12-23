@@ -148,13 +148,13 @@ void AssetBrowserPanel::HandleAssetDoubleClick(const AssetItem &asset)
         // Handle file opening based on extension
         if (asset.extension == ".json" && m_editor)
         {
-            m_editor->LoadScene(asset.path);
+            m_editor->GetSceneManager().LoadScene(asset.path);
         }
         else if ((asset.extension == ".obj" || asset.extension == ".gltf" ||
                   asset.extension == ".glb") &&
                  m_editor)
         {
-            m_editor->LoadAndSpawnModel(asset.path);
+            m_editor->GetSceneManager().LoadAndSpawnModel(asset.path);
         }
     }
 }

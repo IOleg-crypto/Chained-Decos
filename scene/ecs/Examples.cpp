@@ -1,8 +1,19 @@
 #include "scene/ecs/Examples.h"
 #include "scene/ecs/ECSRegistry.h"
-#include "scene/ecs/components.h"
+#include "scene/ecs/components/AudioComponent.h"
+#include "scene/ecs/components/PhysicsData.h"
+#include "scene/ecs/components/RenderComponent.h"
+#include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/UtilityComponents.h"
+#include "scene/ecs/components/VelocityComponent.h"
+#include "scene/ecs/components/playerComponent.h"
 #include <raymath.h>
 
+
+using namespace CHEngine;
+
+namespace CHEngine
+{
 namespace ECSExamples
 {
 
@@ -163,3 +174,4 @@ entt::entity CreateStaticObject(Vector3 position, Model *model, BoundingBox boun
 }
 
 } // namespace ECSExamples
+} // namespace CHEngine

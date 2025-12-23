@@ -15,9 +15,9 @@
         try                                                                                        \
         {                                                                                          \
             AppClass app(argc, argv);                                                              \
-            ChainedDecos::EngineApplication::Config config;                                        \
+            CHEngine::EngineApplication::Config config;                                        \
             config.windowName = AppName;                                                           \
-            ChainedDecos::EngineApplication engine(config, &app);                                  \
+            CHEngine::EngineApplication engine(config, &app);                                  \
             engine.Run();                                                                          \
             return 0;                                                                              \
         }                                                                                          \
@@ -36,14 +36,14 @@
 // Macro to declare application entry point in derived class
 // Usage: Add DECLARE_APPLICATION(YourAppClass) at the end of your .cpp file
 #define DECLARE_APPLICATION(AppClass)                                                              \
-    ChainedDecos::IApplication *ChainedDecos::CreateApplication(int argc, char *argv[])            \
+    CHEngine::IApplication *CHEngine::CreateApplication(int argc, char *argv[])            \
     {                                                                                              \
         return new AppClass(argc, argv);                                                           \
     }
 
 // Alternative: CreateApplication pattern for manual control
 // Defined by the client application
-extern ChainedDecos::IApplication *ChainedDecos::CreateApplication(int argc, char *argv[]);
+extern CHEngine::IApplication *CHEngine::CreateApplication(int argc, char *argv[]);
 
 // Manual main entry point (used when not using ENGINE_MAIN macro)
 #ifndef ENGINE_MAIN_DEFINED
@@ -51,14 +51,14 @@ extern ChainedDecos::IApplication *ChainedDecos::CreateApplication(int argc, cha
 inline int EngineMain(int argc, char *argv[])
 {
     // Create the client application
-    ChainedDecos::IApplication *app = ChainedDecos::CreateApplication(argc, argv);
+    CHEngine::IApplication *app = CHEngine::CreateApplication(argc, argv);
 
     // Initial config from application
-    ChainedDecos::IApplication::EngineConfig appConfig;
+    CHEngine::IApplication::EngineConfig appConfig;
     app->OnConfigure(appConfig);
 
     // Create Engine Runtime Config
-    ChainedDecos::EngineApplication::Config engineConfig;
+    CHEngine::EngineApplication::Config engineConfig;
     engineConfig.windowName = appConfig.windowName;
     engineConfig.width = appConfig.width;
     engineConfig.height = appConfig.height;
@@ -66,7 +66,7 @@ inline int EngineMain(int argc, char *argv[])
     engineConfig.vsync = appConfig.vsync;
 
     // Create Engine Application Wrapper
-    ChainedDecos::EngineApplication engineApp(engineConfig, app);
+    CHEngine::EngineApplication engineApp(engineConfig, app);
 
     // Run the engine
     engineApp.Run();

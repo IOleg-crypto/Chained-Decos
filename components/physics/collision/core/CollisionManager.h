@@ -7,15 +7,16 @@
 #include "scene/resources/model/config/ModelConfig.h"
 #include <algorithm>
 #include <array>
-#include <scene/ecs/Entity.h>
 #include <execution>
 #include <future>
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
+#include <scene/ecs/Entity.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
 
 // Include ModelLoader header
 #include "scene/resources/model/core/Model.h"
@@ -65,14 +66,15 @@ public:
     [[nodiscard]] bool CheckCollisionSpatial(const Collision &playerCollision) const;
 
     // Check collision and provide collision response vector
-    [[nodiscard]] bool CheckCollision(const Collision &playerCollision, Vector3 &response) const;
+    [[nodiscard]] bool CheckCollision(const Collision &playerCollision,
+                                      Vector3 &response) const override;
 
     // Get all colliders
     [[nodiscard]] const std::vector<std::shared_ptr<Collision>> &GetColliders() const override;
 
     // Raycast down against precise colliders (BVH or triangle) to find ground beneath a point
     bool RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
-                     Vector3 &hitPoint, Vector3 &hitNormal) const;
+                     Vector3 &hitPoint, Vector3 &hitNormal) const override;
 
     // Dynamic Entity Management (ECS Integration)
     void AddEntityCollider(ECS::EntityID entity,

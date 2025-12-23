@@ -31,7 +31,7 @@ public:
     void Render() override;
     const char *GetName() const override
     {
-        return "AssetBrowser";
+        return "Asset Browser";
     }
     const char *GetDisplayName() const override
     {

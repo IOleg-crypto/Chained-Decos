@@ -7,7 +7,7 @@
 #include "core/module/ModuleManager.h"
 #include "events/Event.h"
 
-namespace ChainedDecos
+namespace CHEngine
 {
 class EngineApplication;
 class IApplication;
@@ -84,36 +84,36 @@ public:
     }
 
     // Event Handling
-    virtual void OnEvent(ChainedDecos::Event &e)
+    virtual void OnEvent(CHEngine::Event &e)
     {
     }
 
     // Setters for core systems (called by EngineApplication)
-    virtual void SetEngine(ChainedEngine::Engine *engine)
+    virtual void SetEngine(CHEngine::Engine *engine)
     {
         m_engine = engine;
     }
 
-    virtual void SetAppRunner(ChainedDecos::EngineApplication *appRunner)
+    virtual void SetAppRunner(CHEngine::EngineApplication *appRunner)
     {
         m_appRunner = appRunner;
     }
 
-    ChainedEngine::Engine *GetEngine() const
+    CHEngine::Engine *GetEngine() const
     {
         return m_engine;
     }
 
-    ChainedDecos::EngineApplication *GetAppRunner() const
+    CHEngine::EngineApplication *GetAppRunner() const
     {
         return m_appRunner;
     }
 
 protected:
-    ChainedEngine::Engine *m_engine = nullptr;
-    ChainedDecos::EngineApplication *m_appRunner = nullptr;
+    CHEngine::Engine *m_engine = nullptr;
+    CHEngine::EngineApplication *m_appRunner = nullptr;
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // I_APPLICATION_H

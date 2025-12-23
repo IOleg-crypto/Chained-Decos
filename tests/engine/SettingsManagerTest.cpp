@@ -1,4 +1,4 @@
-#include "project/chaineddecos/gamegui/settings/settingsManager.h"
+#include "project/CHEngine/gamegui/settings/settingsManager.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>

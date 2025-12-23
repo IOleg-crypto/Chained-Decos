@@ -1,7 +1,7 @@
 #include "BaseMenuScreen.h"
 #include "../Menu.h"
 
-bool BaseMenuScreen::RenderActionButton(const char *label, ChainedDecos::MenuEventType eventType,
+bool BaseMenuScreen::RenderActionButton(const char *label, CHEngine::MenuEventType eventType,
                                         const ImVec2 &size)
 {
     if (m_menu)

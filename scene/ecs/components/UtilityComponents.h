@@ -2,6 +2,8 @@
 #define LIFETIME_COMPONENT_H
 
 #include <string>
+namespace CHEngine
+{
 struct LifetimeComponent
 {
     float lifetime = 5.0f; // Lifetime in seconds
@@ -18,9 +20,6 @@ struct NameComponent
 {
     std::string name; // Entity name for debugging
 };
+} // namespace CHEngine
 
 #endif // LIFETIME_COMPONENT_H
-
-
-
-

@@ -3,7 +3,7 @@
 
 #include "events/Event.h"
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 class WindowResizeEvent : public Event
@@ -57,7 +57,7 @@ public:
     EVENT_CLASS_TYPE(AppRender)
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // APPLICATION_EVENT_H
 

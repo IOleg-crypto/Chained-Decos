@@ -4,7 +4,7 @@
 #include "events/MouseEvent.h"
 #include <raylib.h>
 
-using namespace ChainedDecos;
+using namespace CHEngine;
 
 InputManager::InputManager() = default;
 

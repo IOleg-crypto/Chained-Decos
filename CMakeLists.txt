@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
-project(ChainedDecos LANGUAGES CXX C)
+project(CHEngine LANGUAGES CXX C)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -101,6 +101,8 @@ if(WIN32)
     add_compile_definitions(_WIN32_WINNT=0x0601)  # Windows 7+
 endif()
 
+
+include(FetchContent)
 
 find_package(Threads REQUIRED)
 
@@ -218,7 +220,7 @@ add_subdirectory(events)
 add_subdirectory(core)
 add_subdirectory(components)
 add_subdirectory(scene)
-add_subdirectory(project/chaineddecos)
+add_subdirectory(project/ChainedDecos)
 
 if(BUILD_TESTS)
     add_subdirectory(tests ${CMAKE_CURRENT_BINARY_DIR}/tests)
@@ -238,10 +240,29 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/nfd/CMakeLists.txt")
     message(STATUS "nfd loaded from submodule")
 endif()
 
+# Lua & sol2 integration
+message(STATUS "Fetching Lua and sol2...")
+
+FetchContent_Declare(
+    lua
+    GIT_REPOSITORY https://github.com/marovira/lua.git
+    GIT_TAG master
+)
+
+FetchContent_Declare(
+    sol2
+    GIT_REPOSITORY https://github.com/ThePhD/sol2.git
+    GIT_TAG develop
+)
+
+FetchContent_MakeAvailable(lua sol2)
+
+# Lua and sol2 are now linked in core/CMakeLists.txt
+
 
 # Install configuration files
 install(FILES game.cfg
-    DESTINATION share/ChainedDecos
+    DESTINATION share/CHEngine
 )
 
 # Package configuration (simplified)

@@ -17,6 +17,8 @@ set(ECS_SOURCES
     components/UIComponents.h
     systems/UIRenderSystem.h
     systems/UIRenderSystem.cpp
+    systems/ScriptSystem.h
+    systems/ScriptSystem.cpp
     Examples.h
     Examples.cpp
 )

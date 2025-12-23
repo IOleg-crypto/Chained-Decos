@@ -3,7 +3,7 @@
 
 #include <raylib.h>
 
-namespace ChainedEngine
+namespace CHEngine
 {
 
 class Input
@@ -57,6 +57,6 @@ public:
     }
 };
 
-} // namespace ChainedEngine
+} // namespace CHEngine
 
 #endif // INPUT_H

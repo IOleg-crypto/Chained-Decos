@@ -1,0 +1,35 @@
+{
+    "metadata": {
+        "author": "",
+        "description": "",
+        "difficulty": 0.0,
+        "displayName": "",
+        "endPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "groundColor": {
+            "a": 0,
+            "b": 0,
+            "g": 0,
+            "r": 0
+        },
+        "name": "MainScene",
+        "sceneType": 0,
+        "skyColor": {
+            "a": 0,
+            "b": 0,
+            "g": 0,
+            "r": 0
+        },
+        "startPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "version": ""
+    },
+    "objects": [],
+    "uiElements": []
+}

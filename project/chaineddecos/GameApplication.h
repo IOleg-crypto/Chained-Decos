@@ -3,14 +3,14 @@
 
 #include "core/application/IApplication.h"
 #include "core/config/GameConfig.h"
-#include "project/chaineddecos/gamegui/Menu.h"
+#include "project/CHEngine/gamegui/Menu.h"
+#include <memory>
 #include <scene/ecs/ECSRegistry.h>
 #include <scene/ecs/Entity.h>
-#include <memory>
 
 // Game application - uses full engine + own modules
 
-class GameApplication : public ChainedDecos::IApplication
+class GameApplication : public CHEngine::IApplication
 {
 public:
     GameApplication(int argc, char *argv[]);
@@ -30,14 +30,12 @@ private:
     // ECS Entities
     // ECS Entities
     entt::entity m_playerEntity = entt::null;
-    Model m_playerModel = {0}; // Player model (generated at runtime)
 
     // Game state
     bool m_showMenu;
     bool m_isGameInitialized;
     bool m_showDebugCollision = false;
     bool m_showDebugStats = false;
-
     // Cursor state tracking to avoid calling DisableCursor/EnableCursor every frame
     bool m_cursorDisabled;
 
@@ -47,19 +45,6 @@ private:
     // Helper methods
     void InitInput();
     void UpdatePlayerLogic();
-
-    // Game state management
-
-    // Shader support
-    Shader m_playerShader = {0};
-    int m_locFallSpeed = -1;
-    int m_locTime = -1;
-    int m_locWindDir = -1;
-    bool m_shaderLoaded = false;
-
-    // HUD Font
-    Font m_hudFont = {0};
-    bool m_fontLoaded = false;
 
     // In-game menu
     std::shared_ptr<Menu> m_menu;

@@ -1,6 +1,6 @@
 #include "core/layer/LayerStack.h"
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 LayerStack::~LayerStack()
@@ -46,7 +46,7 @@ void LayerStack::PopOverlay(Layer *overlay)
     }
 }
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 
 

@@ -26,30 +26,28 @@ void InspectorPanel::Render()
         return;
     }
 
-    MapObjectData *selected = m_editor->GetSelectedObject();
+    MapObjectData *selected = m_editor->GetSelectionManager().GetSelectedObject();
     if (!selected)
     {
         ImGui::Text("Global Settings");
         ImGui::Separator();
 
         // Skybox preview/button
-        std::string skyboxName = m_editor->GetGameScene().GetMapMetaData().skyboxTexture;
+        std::string skyboxName =
+            m_editor->GetSceneManager().GetGameScene().GetMapMetaData().skyboxTexture;
         if (skyboxName.empty())
             skyboxName = "None";
         ImGui::Text("Active Skybox: %s", skyboxName.c_str());
 
         if (ImGui::Button("Change Skybox..."))
         {
-            if (auto ui = m_editor->GetUIManager())
-            {
-                ui->ToggleSkyboxBrowser();
-            }
+            m_editor->GetUIManager().ToggleSkyboxBrowser();
         }
 
         ImGui::Separator();
 
         // Scene Background Color
-        auto &metadata = m_editor->GetGameScene().GetMapMetaDataMutable();
+        auto &metadata = m_editor->GetSceneManager().GetGameScene().GetMapMetaDataMutable();
         float bgCol[4] = {metadata.backgroundColor.r / 255.0f, metadata.backgroundColor.g / 255.0f,
                           metadata.backgroundColor.b / 255.0f, metadata.backgroundColor.a / 255.0f};
         if (ImGui::ColorEdit4("Background Color", bgCol))
@@ -58,7 +56,7 @@ void InspectorPanel::Render()
                                         static_cast<unsigned char>(bgCol[1] * 255),
                                         static_cast<unsigned char>(bgCol[2] * 255),
                                         static_cast<unsigned char>(bgCol[3] * 255)};
-            m_editor->SetSceneModified(true);
+            m_editor->GetSceneManager().SetSceneModified(true);
         }
 
         ImGui::Separator();
@@ -72,7 +70,7 @@ void InspectorPanel::Render()
                                  static_cast<unsigned char>(skyCol[1] * 255),
                                  static_cast<unsigned char>(skyCol[2] * 255),
                                  static_cast<unsigned char>(skyCol[3] * 255)};
-            m_editor->SetSceneModified(true);
+            m_editor->GetSceneManager().SetSceneModified(true);
         }
 
         ImGui::End();
@@ -87,7 +85,7 @@ void InspectorPanel::Render()
     if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer)))
     {
         selected->name = nameBuffer;
-        m_editor->SetSceneModified(true);
+        m_editor->GetSceneManager().SetSceneModified(true);
     }
 
     ImGui::Separator();
@@ -156,7 +154,7 @@ void InspectorPanel::RenderTransform(MapObjectData *obj)
 
     if (modified)
     {
-        m_editor->SetSceneModified(true);
+        m_editor->GetSceneManager().SetSceneModified(true);
     }
 }
 
@@ -182,7 +180,7 @@ void InspectorPanel::RenderObjectProperties(MapObjectData *obj)
     {
         if (ImGui::DragFloat("Radius", &obj->radius, 0.1f, 0.1f, 100.0f))
         {
-            m_editor->SetSceneModified(true);
+            m_editor->GetSceneManager().SetSceneModified(true);
         }
     }
 
@@ -191,18 +189,18 @@ void InspectorPanel::RenderObjectProperties(MapObjectData *obj)
     {
         if (ImGui::DragFloat("Height", &obj->height, 0.1f, 0.1f, 100.0f))
         {
-            m_editor->SetSceneModified(true);
+            m_editor->GetSceneManager().SetSceneModified(true);
         }
     }
 
     // Platform/Obstacle checkboxes
     if (ImGui::Checkbox("Is Platform", &obj->isPlatform))
     {
-        m_editor->SetSceneModified(true);
+        m_editor->GetSceneManager().SetSceneModified(true);
     }
     if (ImGui::Checkbox("Is Obstacle", &obj->isObstacle))
     {
-        m_editor->SetSceneModified(true);
+        m_editor->GetSceneManager().SetSceneModified(true);
     }
 
     // Color picker
@@ -214,6 +212,6 @@ void InspectorPanel::RenderObjectProperties(MapObjectData *obj)
         obj->color.g = static_cast<unsigned char>(color[1] * 255);
         obj->color.b = static_cast<unsigned char>(color[2] * 255);
         obj->color.a = static_cast<unsigned char>(color[3] * 255);
-        m_editor->SetSceneModified(true);
+        m_editor->GetSceneManager().SetSceneModified(true);
     }
 }

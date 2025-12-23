@@ -10,84 +10,36 @@
 #include <scene/resources/map/skybox/skybox.h>
 #include <scene/resources/model/core/Model.h>
 
+#include "editor/logic/IEditorState.h"
+#include "editor/logic/ISceneManager.h"
+#include "editor/logic/ISelectionManager.h"
+#include "editor/logic/ProjectManager.h"
+
 class IEditor
 {
 public:
     virtual ~IEditor() = default;
 
-    // Object Management
-    virtual MapObjectData *GetSelectedObject() = 0;
-    virtual int GetSelectedObjectIndex() const = 0;
-    virtual void AddObject(const MapObjectData &obj) = 0;
-    virtual void RemoveObject(int index) = 0;
-    virtual void SelectObject(int index) = 0;
-    virtual void ClearSelection() = 0;
-    virtual void ClearObjects() = 0;
-    virtual void ClearScene() = 0;
-
-    // UI Selection
-    virtual void SelectUIElement(int index) = 0;
-    virtual int GetSelectedUIElementIndex() const = 0;
-    virtual void RefreshUIEntities() = 0;
-
-    // Map and Scene State
-    virtual bool IsSceneModified() const = 0;
-    virtual void SetSceneModified(bool modified) = 0;
-    virtual const std::string &GetCurrentMapPath() const = 0;
-    virtual void SaveScene(const std::string &path = "") = 0;
-    virtual void LoadScene(const std::string &path) = 0;
-    virtual GameScene &GetGameScene() = 0;
-
-    // Tools and Grid
-    virtual Tool GetActiveTool() const = 0;
-    virtual void SetActiveTool(Tool tool) = 0;
-    virtual int GetGridSize() const = 0;
-    virtual void SetGridSize(int size) = 0;
-    virtual void CreateDefaultObject(MapObjectType type, const std::string &modelName = "") = 0;
-    virtual void LoadAndSpawnModel(const std::string &path) = 0;
-    virtual void ApplyMetadata(const MapMetadata &metadata) = 0;
+    // Sub-manager Accessors
+    virtual IProjectManager &GetProjectManager() = 0;
+    virtual ISceneManager &GetSceneManager() = 0;
+    virtual ISelectionManager &GetSelectionManager() = 0;
+    virtual IEditorState &GetState() = 0;
+    virtual class IUIManager &GetUIManager() = 0;
+    virtual class EditorPanelManager &GetPanelManager() = 0;
 
     // Service Accessors
-    virtual ChainedDecos::Ref<IModelLoader> GetModelLoader() = 0;
+    virtual CHEngine::Ref<IModelLoader> GetModelLoader() = 0;
     virtual CameraController &GetCameraController() = 0;
 
-    // Skybox Operations
-    virtual void SetSkybox(const std::string &name) = 0;
-    virtual void SetSkyboxTexture(const std::string &texturePath) = 0;
-    virtual void SetSkyboxColor(Color color) = 0;
-    virtual Skybox *GetSkybox() const = 0;
-    virtual Color GetClearColor() const = 0;
-    virtual class IUIManager *GetUIManager() const = 0;
-    virtual class EditorPanelManager *GetPanelManager() const = 0;
-
-    // Play Mode Management
+    // High-level Actions & Lifecycle
+    virtual void Update() = 0;
+    virtual void Render() = 0;
     virtual void StartPlayMode() = 0;
     virtual void StopPlayMode() = 0;
     virtual bool IsInPlayMode() const = 0;
     virtual void BuildGame() = 0;
     virtual void RunGame() = 0;
-
-    // Debug Visualization
-    virtual bool IsWireframeEnabled() const = 0;
-    virtual void SetWireframeEnabled(bool enabled) = 0;
-    virtual bool IsCollisionDebugEnabled() const = 0;
-    virtual void SetCollisionDebugEnabled(bool enabled) = 0;
-
-    // Editor Mode Management
-    virtual EditorMode GetEditorMode() const = 0;
-    virtual void SetEditorMode(EditorMode mode) = 0;
-    virtual bool IsUIDesignMode() const = 0;
-
-    // Project Management
-    virtual const std::string &GetProjectPath() const = 0;
-    virtual void SetProjectPath(const std::string &path) = 0;
-    virtual bool CreateNewProject(const std::string &path) = 0;
-    virtual void SaveProject() = 0;
-    virtual void LoadProject(const std::string &path) = 0;
-
-    // Recent Projects
-    virtual const std::vector<std::string> &GetRecentProjects() const = 0;
-    virtual void AddRecentProject(const std::string &path) = 0;
 };
 
 #endif // IEDITOR_H

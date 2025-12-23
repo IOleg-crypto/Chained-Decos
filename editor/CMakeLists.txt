@@ -31,6 +31,15 @@ set(logic_sources
     logic/EditorSettings.h
     logic/Scene.cpp
     logic/Scene.h
+    logic/ISceneManager.h
+    logic/SceneManager.cpp
+    logic/SceneManager.h
+    logic/ISelectionManager.h
+    logic/SelectionManager.cpp
+    logic/SelectionManager.h
+    logic/IEditorState.h
+    logic/EditorState.cpp
+    logic/EditorState.h
 )
 
 # New panel-based UI system

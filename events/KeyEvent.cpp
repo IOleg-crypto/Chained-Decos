@@ -1,7 +1,7 @@
 #include "events/KeyEvent.h"
 #include <sstream>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 std::string KeyPressedEvent::ToString() const
@@ -25,6 +25,6 @@ std::string KeyTypedEvent::ToString() const
     return ss.str();
 }
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 

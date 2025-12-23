@@ -5,8 +5,7 @@
 #include <string>
 #include <vector>
 
-
-namespace ChainedDecos
+namespace CHEngine
 {
 
 /**
@@ -16,7 +15,8 @@ namespace ChainedDecos
 class SceneManager
 {
 public:
-    static SceneManager &Get();
+    SceneManager() = default;
+    ~SceneManager() = default;
 
     // Scene loading
     void LoadScene(const std::string &scenePath);
@@ -40,9 +40,6 @@ public:
     void Update(float deltaTime);
 
 private:
-    SceneManager() = default;
-    ~SceneManager() = default;
-
     // Non-copyable
     SceneManager(const SceneManager &) = delete;
     SceneManager &operator=(const SceneManager &) = delete;
@@ -67,4 +64,4 @@ private:
     void LoadSceneInternal(const std::string &scenePath);
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine

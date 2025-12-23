@@ -1,7 +1,7 @@
 #include "events/MouseEvent.h"
 #include <sstream>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 std::string MouseMovedEvent::ToString() const
@@ -32,6 +32,6 @@ std::string MouseButtonReleasedEvent::ToString() const
     return ss.str();
 }
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 

@@ -43,7 +43,7 @@ void MainMenuScreen::Render()
     if (GetMenu()->IsGameInProgress())
     {
         ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-        if (RenderActionButton("Resume Game", ChainedDecos::MenuEventType::ResumeGame,
+        if (RenderActionButton("Resume Game", CHEngine::MenuEventType::ResumeGame,
                                ImVec2(buttonWidth, buttonHeight)))
         {
             // Navigation handled by Menu state via event or direct set
@@ -53,7 +53,7 @@ void MainMenuScreen::Render()
     }
 
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Start Game", ChainedDecos::MenuEventType::None,
+    if (RenderActionButton("Start Game", CHEngine::MenuEventType::None,
                            ImVec2(buttonWidth, buttonHeight)))
     {
         GetMenu()->ShowMapSelection();
@@ -61,7 +61,7 @@ void MainMenuScreen::Render()
     currentY += buttonHeight + spacing;
 
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Options", ChainedDecos::MenuEventType::OpenOptions,
+    if (RenderActionButton("Options", CHEngine::MenuEventType::OpenOptions,
                            ImVec2(buttonWidth, buttonHeight)))
     {
         GetMenu()->ShowOptionsMenu();
@@ -69,7 +69,7 @@ void MainMenuScreen::Render()
     currentY += buttonHeight + spacing;
 
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Credits", ChainedDecos::MenuEventType::OpenCredits,
+    if (RenderActionButton("Credits", CHEngine::MenuEventType::OpenCredits,
                            ImVec2(buttonWidth, buttonHeight)))
     {
         GetMenu()->ShowCredits();
@@ -77,7 +77,7 @@ void MainMenuScreen::Render()
     currentY += buttonHeight + spacing;
 
     ImGui::SetCursorPos(ImVec2(centerX - buttonWidth / 2, currentY));
-    if (RenderActionButton("Exit Game", ChainedDecos::MenuEventType::None,
+    if (RenderActionButton("Exit Game", CHEngine::MenuEventType::None,
                            ImVec2(buttonWidth, buttonHeight)))
     {
         GetMenu()->ShowConfirmExit();

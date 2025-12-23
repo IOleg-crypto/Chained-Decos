@@ -11,7 +11,7 @@
 #include <cassert>
 #include <raylib.h>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 EngineApplication::EngineApplication(Config config, IApplication *application)
@@ -21,7 +21,7 @@ EngineApplication::EngineApplication(Config config, IApplication *application)
 
     // Create the Engine singleton
     // Create the Engine singleton
-    m_engine = std::make_shared<ChainedEngine::Engine>();
+    m_engine = std::make_shared<CHEngine::Engine>();
     m_app->SetAppRunner(this);
 }
 
@@ -110,7 +110,7 @@ void EngineApplication::Initialize()
     m_app->OnRegister();
 
     // Step 2.5: Initialize Engine & Window (Must be done before modules initialize)
-    ChainedEngine::WindowProps props(m_config.windowName, m_config.width, m_config.height,
+    CHEngine::WindowProps props(m_config.windowName, m_config.width, m_config.height,
                                      m_config.fullscreen, m_config.vsync);
     if (!m_engine->Initialize(props))
     {
@@ -234,7 +234,7 @@ void EngineApplication::Shutdown()
     CD_CORE_INFO("Application shut down.");
 }
 
-ChainedEngine::Engine *EngineApplication::GetEngine() const
+CHEngine::Engine *EngineApplication::GetEngine() const
 {
     return m_engine.get();
 }
@@ -246,4 +246,4 @@ const EngineApplication::Config &EngineApplication::GetConfig() const
 {
     return m_config;
 }
-} // namespace ChainedDecos
+} // namespace CHEngine

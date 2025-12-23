@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 class LayerStack
@@ -58,7 +58,7 @@ private:
     unsigned int m_LayerInsertIndex = 0;
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // LAYERSTACK_H
 

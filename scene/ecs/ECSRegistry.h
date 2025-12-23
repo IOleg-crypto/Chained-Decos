@@ -4,30 +4,31 @@
 #include <entt/entt.hpp>
 
 // Global registry for the entire project
+#include "core/Engine.h"
+
+// Global registry wrapper that uses the Engine's registry
 class ECSRegistry
 {
-    static entt::registry s_registry;
-
 public:
     static entt::registry &Get()
     {
-        return s_registry;
+        return CHEngine::Engine::Instance().GetECSRegistry();
     }
 
     // Helper methods
     static entt::entity CreateEntity()
     {
-        return s_registry.create();
+        return Get().create();
     }
 
     static void DestroyEntity(entt::entity entity)
     {
-        s_registry.destroy(entity);
+        Get().destroy(entity);
     }
 
     static void Clear()
     {
-        s_registry.clear();
+        Get().clear();
     }
 };
 
@@ -35,7 +36,3 @@ public:
 #define REGISTRY ECSRegistry::Get()
 
 #endif // ECS_REGISTRY_WRAPPER_H
-
-
-
-

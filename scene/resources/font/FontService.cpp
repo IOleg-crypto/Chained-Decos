@@ -1,7 +1,7 @@
 #include "FontService.h"
 #include <iostream>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 bool FontService::LoadFont(const std::string &name, const std::string &path)
 {
@@ -37,4 +37,4 @@ void FontService::Shutdown()
     }
     m_fonts.clear();
 }
-} // namespace ChainedDecos
+} // namespace CHEngine

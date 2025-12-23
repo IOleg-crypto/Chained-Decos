@@ -13,7 +13,7 @@ ToolbarPanel::ToolbarPanel(IEditor *editor) : m_editor(editor)
 
 void ToolbarPanel::RenderToolButton(const char *label, Tool tool, const char *tooltip)
 {
-    bool isActive = (m_editor && m_editor->GetActiveTool() == tool);
+    bool isActive = (m_editor && m_editor->GetState().GetActiveTool() == tool);
 
     if (isActive)
     {
@@ -24,7 +24,7 @@ void ToolbarPanel::RenderToolButton(const char *label, Tool tool, const char *to
     {
         if (m_editor)
         {
-            m_editor->SetActiveTool(tool);
+            m_editor->GetState().SetActiveTool(tool);
         }
     }
 
@@ -61,7 +61,7 @@ void ToolbarPanel::Render()
         if (ImGui::Button("New", ImVec2(50, 28)))
         {
             if (m_editor)
-                m_editor->ClearScene();
+                m_editor->GetSceneManager().ClearScene();
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("New Scene (Ctrl+N)");
@@ -71,7 +71,7 @@ void ToolbarPanel::Render()
         if (ImGui::Button("Save", ImVec2(50, 28)))
         {
             if (m_editor)
-                m_editor->SaveScene("");
+                m_editor->GetSceneManager().SaveScene("");
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Save Scene (Ctrl+S)");
@@ -143,12 +143,12 @@ void ToolbarPanel::Render()
         // Debug Toggles
         if (m_editor)
         {
-            bool wire = m_editor->IsWireframeEnabled();
+            bool wire = m_editor->GetState().IsWireframeEnabled();
             if (wire)
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
             if (ImGui::Button("Wire", ImVec2(45, 28)))
             {
-                m_editor->SetWireframeEnabled(!wire);
+                m_editor->GetState().SetWireframeEnabled(!wire);
             }
             if (wire)
                 ImGui::PopStyleColor();
@@ -157,12 +157,12 @@ void ToolbarPanel::Render()
 
             ImGui::SameLine();
 
-            bool coll = m_editor->IsCollisionDebugEnabled();
+            bool coll = m_editor->GetState().IsCollisionDebugEnabled();
             if (coll)
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
             if (ImGui::Button("Coll", ImVec2(45, 28)))
             {
-                m_editor->SetCollisionDebugEnabled(!coll);
+                m_editor->GetState().SetCollisionDebugEnabled(!coll);
             }
             if (coll)
                 ImGui::PopStyleColor();
@@ -171,12 +171,13 @@ void ToolbarPanel::Render()
 
             ImGui::SameLine();
 
-            bool uiMode = m_editor->IsUIDesignMode();
+            bool uiMode = m_editor->GetState().IsUIDesignMode();
             if (uiMode)
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.5f, 0.3f, 1.0f));
             if (ImGui::Button("UI", ImVec2(45, 28)))
             {
-                m_editor->SetEditorMode(uiMode ? EditorMode::SCENE_3D : EditorMode::UI_DESIGN);
+                m_editor->GetState().SetEditorMode(uiMode ? EditorMode::SCENE_3D
+                                                          : EditorMode::UI_DESIGN);
             }
             if (uiMode)
                 ImGui::PopStyleColor();

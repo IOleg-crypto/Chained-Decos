@@ -1,4 +1,4 @@
-# Chained Decos
+# CHEngine\Chained Decos
 
 [![C++](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Build Status](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/build.yml)](https://github.com/IOleg-crypto/Chained-Decos/actions) [![English](https://img.shields.io/badge/lang-English-blue?logo=github)](README.md)
 

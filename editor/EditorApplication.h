@@ -6,7 +6,7 @@
 #include <memory>
 
 // Editor application - uses full engine + own modules
-class EditorApplication : public ChainedDecos::IApplication
+class EditorApplication : public CHEngine::IApplication
 {
 public:
     EditorApplication(int argc, char *argv[]);
@@ -32,7 +32,7 @@ public:
     void OnShutdown() override;
 
     // Event handling
-    void OnEvent(ChainedDecos::Event &e) override;
+    void OnEvent(CHEngine::Event &e) override;
 
 private:
     std::unique_ptr<Editor> m_editor;

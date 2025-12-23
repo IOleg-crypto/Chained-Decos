@@ -1,6 +1,6 @@
 #include "Scene.h"
 
-namespace ChainedEngine
+namespace CHEngine
 {
 
 Scene::Scene() : m_name("Untitled Scene")
@@ -23,4 +23,4 @@ void Scene::FromJson(const nlohmann::json &j)
     m_name = j.value("name", "Untitled Scene");
 }
 
-} // namespace ChainedEngine
+} // namespace CHEngine

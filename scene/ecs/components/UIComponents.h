@@ -1,12 +1,14 @@
 #ifndef UI_COMPONENTS_H
 #define UI_COMPONENTS_H
 
+#include <cstdint>
 #include <raylib.h>
 #include <string>
 
-namespace ChainedDecos
+
+namespace CHEngine
 {
-enum class UIAnchor
+enum class UIAnchor : std::uint8_t
 {
     TopLeft,
     TopCenter,
@@ -31,6 +33,7 @@ struct RectTransform
 struct UIImage
 {
     std::string textureName; // Name for resource lookup
+    std::string texturePath; // Path for loading
     Color tint = WHITE;
     float borderRadius = 0.0f;
     float borderWidth = 0.0f;
@@ -78,6 +81,6 @@ struct UIElementIndex
 {
     int index;
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // UI_COMPONENTS_H

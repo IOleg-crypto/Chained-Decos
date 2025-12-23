@@ -1,11 +1,12 @@
-#include "core/Log.h"
 #include "SkyboxBrowser.h"
+#include "core/Log.h"
 #include "editor/IEditor.h"
 #include "nfd.h"
 #include "scene/resources/map/skybox/skybox.h"
 #include <filesystem>
 #include <imgui.h>
 #include <raylib.h>
+
 
 #ifdef LoadImage
 #undef LoadImage
@@ -73,7 +74,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
         if (!m_skyboxPlaceholderInitialized)
         {
             const std::string &currentSkyboxTexture =
-                m_editor->GetGameScene().GetMapMetaData().skyboxTexture;
+                m_editor->GetSceneManager().GetGameScene().GetMapMetaData().skyboxTexture;
 
             // If there's a skybox in metadata, load it
             if (!currentSkyboxTexture.empty())
@@ -106,8 +107,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
             {
                 const char *placeholderPath =
                     PROJECT_ROOT_DIR "/resources/map_previews/placeholder.jpg";
-                CD_INFO("[SkyboxBrowser] Loading fallback placeholder: %s",
-                         placeholderPath);
+                CD_INFO("[SkyboxBrowser] Loading fallback placeholder: %s", placeholderPath);
                 Image placeholderImg = LoadImage(placeholderPath);
                 if (placeholderImg.data != nullptr)
                 {
@@ -130,7 +130,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
             // Check if metadata skybox has changed in the scene (e.g. via undo or loading another
             // map) and we haven't manually loaded a different one in the browser
             const std::string &currentSkyboxTexture =
-                m_editor->GetGameScene().GetMapMetaData().skyboxTexture;
+                m_editor->GetSceneManager().GetGameScene().GetMapMetaData().skyboxTexture;
 
             // SYNC FIX: Allow sync if we are in placeholder state (empty path) OR if we were
             // already synced
@@ -173,13 +173,13 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                             m_skyboxPlaceholderPath = fullPathProject;
                             m_isSkyboxLoaded = true;
                             CD_INFO("[SkyboxBrowser] Synced preview with scene: %s",
-                                     fullPathProject.c_str());
+                                    fullPathProject.c_str());
                         }
                     }
                     else
                     {
                         CD_WARN("[SkyboxBrowser] Failed to sync preview: %s",
-                                 fullPathProject.c_str());
+                                fullPathProject.c_str());
                     }
                 }
                 else
@@ -197,8 +197,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
                     }
                     else
                     {
-                        CD_WARN("[SkyboxBrowser] Failed to load placeholder: %s",
-                                 placeholderPath);
+                        CD_WARN("[SkyboxBrowser] Failed to load placeholder: %s", placeholderPath);
                     }
                 }
             }
@@ -255,7 +254,7 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
             // Clear editor skybox via Editor API
             if (m_editor)
             {
-                m_editor->SetSkyboxTexture(std::string());
+                m_editor->GetSceneManager().SetSkyboxTexture(std::string());
             }
 
             // Unload current texture
@@ -308,11 +307,10 @@ void SkyboxBrowser::RenderPanel(bool &isOpen)
         if (ImGui::Button("Apply to Scene", ImVec2(200, 30)))
         {
             // Apply texture (shaders are loaded automatically in SetSkyboxTexture)
-            m_editor->SetSkyboxTexture(m_skyboxPlaceholderPath);
+            m_editor->GetSceneManager().SetSkyboxTexture(m_skyboxPlaceholderPath);
             m_isSkyboxLoaded = true;
 
-            CD_INFO("Applied skybox to editor scene: %s",
-                     m_skyboxPlaceholderPath.c_str());
+            CD_INFO("Applied skybox to editor scene: %s", m_skyboxPlaceholderPath.c_str());
         }
         if (!canApply)
             ImGui::EndDisabled();
@@ -367,4 +365,3 @@ const std::vector<SkyboxBrowser::SkyboxInfo> &SkyboxBrowser::GetAvailableSkyboxe
 {
     return m_availableSkyboxes;
 }
-

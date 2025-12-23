@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+namespace CHEngine
+{
 struct AudioComponent
 {
     // Sound library
@@ -21,9 +23,6 @@ struct AudioComponent
     bool isPlaying = false;
     bool loop = false;
 };
+} // namespace CHEngine
 
 #endif // AUDIO_COMPONENT_H
-
-
-
-

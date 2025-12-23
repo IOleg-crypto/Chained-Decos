@@ -1,6 +1,6 @@
-#include "core/Log.h"
 #include "editor/render/EditorRenderer.h"
 #include "components/rendering/utils/RenderUtils.h"
+#include "core/Log.h"
 #include "editor/IEditor.h"
 #include "editor/tool/IToolManager.h"
 #include "scene/resources/map/renderer/MapRenderer.h"
@@ -8,6 +8,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <unordered_map>
+
 
 EditorRenderer::EditorRenderer(IEditor *editor, IToolManager *toolManager)
     : m_editor(editor), m_toolManager(toolManager)
@@ -27,9 +28,10 @@ void EditorRenderer::RenderObject(const MapObjectData &data, bool isSelected)
     if (m_editor && data.type == MapObjectType::MODEL && !data.modelName.empty())
     {
         // Try exact match first
-        auto modelOpt = m_editor->GetGameScene().GetMapModels().find(data.modelName);
+        auto modelOpt =
+            m_editor->GetSceneManager().GetGameScene().GetMapModels().find(data.modelName);
 
-        if (modelOpt != m_editor->GetGameScene().GetMapModels().end())
+        if (modelOpt != m_editor->GetSceneManager().GetGameScene().GetMapModels().end())
         {
             loadedModels[data.modelName] = modelOpt->second;
         }
@@ -40,25 +42,25 @@ void EditorRenderer::RenderObject(const MapObjectData &data, bool isSelected)
 
     if (m_editor && m_editor->IsInPlayMode())
     {
-        CD_INFO("[EditorRenderer] Rendering object '%s' in Play Mode (type: %d)",
-                 data.name.c_str(), (int)data.type);
+        CD_INFO("[EditorRenderer] Rendering object '%s' in Play Mode (type: %d)", data.name.c_str(),
+                (int)data.type);
         if (data.type == MapObjectType::MODEL)
         {
             auto it = loadedModels.find(data.modelName);
             if (it == loadedModels.end())
             {
                 CD_WARN("[EditorRenderer] Model '%s' NOT FOUND for object '%s'",
-                         data.modelName.c_str(), data.name.c_str());
+                        data.modelName.c_str(), data.name.c_str());
             }
             else
             {
                 CD_INFO("[EditorRenderer] Model '%s' found, calling MapRenderer",
-                         data.modelName.c_str());
+                        data.modelName.c_str());
             }
         }
     }
 
-    bool wireframe = m_editor ? m_editor->IsWireframeEnabled() : false;
+    bool wireframe = m_editor ? m_editor->GetState().IsWireframeEnabled() : false;
     renderer.RenderMapObject(data, loadedModels, camera, true, wireframe);
 
     // Additional editor-specific rendering: selection wireframe and gizmo
@@ -192,4 +194,3 @@ void EditorRenderer::RenderSelectionWireframe(const MapObjectData &data)
         break;
     }
 }
-

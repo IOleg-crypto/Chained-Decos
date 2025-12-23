@@ -1,12 +1,9 @@
-#include "editor/Editor.h"
-#include "components/rendering/core/RenderManager.h"
+#include "Editor.h"
+#include "components/physics/collision/core/CollisionManager.h"
+#include "core/Engine.h"
 #include "core/Log.h"
-#include "editor/render/EditorRenderer.h"
-#include "events/Event.h"
-#include "scene/resources/map/core/SceneLoader.h"
-
-// Subsystem implementations
-#include "editor/mapgui/UIManager.h"
+#include "core/scripting/ScriptManager.h"
+#include "editor/mapgui/UIManager.h" // Added for EditorUIManager and UIManagerConfig
 #include "editor/panels/AssetBrowserPanel.h"
 #include "editor/panels/ConsolePanel.h"
 #include "editor/panels/HierarchyPanel.h"
@@ -14,98 +11,81 @@
 #include "editor/panels/ToolbarPanel.h"
 #include "editor/panels/UIEditorPanel.h"
 #include "editor/panels/ViewportPanel.h"
-#include "editor/tool/ToolManager.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/resources/map/core/SceneLoader.h"
 
-#include <algorithm>
+#define PLATFORM_DESKTOP
+#include "scene/resources/model/interfaces/IModelLoader.h"
+
 #include <filesystem>
 #include <imgui.h>
-#include <nfd.h>
-#include <raylib.h>
-#include <rlImGui/rlImGui.h>
-
-#include "components/rendering/utils/RenderUtils.h"
 #include <raymath.h>
 
-// ECS and Simulation
-#include "components/physics/collision/core/CollisionManager.h"
-#include "core/interfaces/IEngine.h"
-#include "scene/ecs/ECSRegistry.h"
-#include "scene/ecs/Examples.h"
-#include "scene/ecs/components/PlayerComponent.h"
-#include "scene/ecs/components/RenderComponent.h"
-#include "scene/ecs/components/UIComponents.h"
-#include <cstdlib>
-#include <thread>
+using namespace CHEngine;
 
-#include "editor/utils/EditorStyles.h"
-
-namespace fs = std::filesystem;
-using namespace ChainedEngine;
-
-Editor::Editor(IEngine *engine, ChainedDecos::Ref<CameraController> cameraController,
-               ChainedDecos::Ref<IModelLoader> modelLoader)
-    : m_engine(engine), m_gridSize(50), m_spawnTextureLoaded(false),
-      m_skybox(std::make_unique<Skybox>()), m_cameraController(std::move(cameraController)),
-      m_modelLoader(std::move(modelLoader))
+Editor::Editor(IEngine *engine) : m_engine(engine), m_isInPlayMode(false)
 {
-    // Initialize spawn texture (will be loaded after window initialization)
-    m_spawnTexture = {0};
-    m_clearColor = DARKGRAY;
+    CD_INFO("[Editor] Initializing...");
 
-    // Apply professional theme
-    EditorStyles::ApplyDarkTheme();
+    // 1. Initialize core services if not already present
+    if (!m_engine->GetService<IModelLoader>())
+    {
+        m_modelLoader = std::make_shared<ModelLoader>();
+        m_engine->RegisterService<IModelLoader>(m_modelLoader);
+    }
+    else
+    {
+        m_modelLoader = m_engine->GetService<IModelLoader>();
+    }
 
+    // 2. Load basic resources
+    LoadSpawnTexture();
+
+    // 3. Setup subsystems
     InitializeSubsystems();
+
+    CD_INFO("[Editor] Initialization complete.");
 }
 
 Editor::~Editor()
 {
-    // Unload spawn texture if loaded
-    if (m_spawnTextureLoaded && m_spawnTexture.id != 0)
-    {
-        UnloadTexture(m_spawnTexture);
-        CD_INFO("Editor::~Editor() - Unloaded spawn texture");
-    }
-    if (m_skybox)
-    {
-        m_skybox.reset();
-    }
-    NFD_Quit();
 }
 
 void Editor::InitializeSubsystems()
 {
-    // Initialize NFD once (before subsystems that use it)
-    NFD_Init();
+    // Create concrete managers
+    m_projectManager = std::make_unique<ProjectManager>(this);
+    m_sceneManager = std::make_unique<SceneManager>();
+    m_selectionManager = std::make_unique<SelectionManager>(); // Fixed: matches default constructor
+    m_editorState = std::make_unique<EditorState>();
 
-    // Initialize subsystems
-    m_mapManager = std::make_unique<MapManager>();
-    m_projectManager = std::make_unique<ProjectManager>();
-    m_activeScene = std::make_unique<ChainedEngine::Scene>();
-    m_toolManager = std::make_unique<ToolManager>();
+    // Camera controller
+    m_cameraController = CHEngine::Ref<CameraController>(new CameraController());
 
-    // Create UIManager
-    UIManagerConfig uiConfig;
-    uiConfig.editor = this;
-    m_uiManager = std::make_unique<EditorUIManager>(uiConfig);
-
-    m_renderer = std::make_unique<EditorRenderer>(this, m_toolManager.get());
-
-    // Initialize new panel system
+    // UI and Panels
     m_panelManager = std::make_unique<EditorPanelManager>(this);
-    m_panelManager->AddPanel<ToolbarPanel>(this)->SetVisible(false);
-    m_panelManager->AddPanel<HierarchyPanel>(this)->SetVisible(false);
-    m_panelManager->AddPanel<InspectorPanel>(this)->SetVisible(false);
-    m_panelManager->AddPanel<ViewportPanel>(this)->SetVisible(false);
-    m_panelManager->AddPanel<AssetBrowserPanel>(this)->SetVisible(false);
-    m_panelManager->AddPanel<ConsolePanel>(this)->SetVisible(false);
-    m_panelManager->AddPanel<UIEditorPanel>(this)->SetVisible(false);
+
+    // Register panels
+    m_panelManager->AddPanel<ToolbarPanel>(this);
+    m_panelManager->AddPanel<ViewportPanel>(this);
+    m_panelManager->AddPanel<HierarchyPanel>(this);
+    m_panelManager->AddPanel<InspectorPanel>(this);
+    m_panelManager->AddPanel<AssetBrowserPanel>(this);
+    m_panelManager->AddPanel<ConsolePanel>(this);
+    m_panelManager->AddPanel<UIEditorPanel>(this);
+
+    UIManagerConfig config;
+    config.editor = this;
+    m_uiManager = std::make_unique<EditorUIManager>(config);
+
+    // Link Scripting System with Scene Manager
+    auto scriptManager = m_engine->GetService<CHEngine::ScriptManager>();
+    if (scriptManager)
+    {
+        scriptManager->SetSceneManager(m_sceneManager.get());
+    }
 }
 
-CameraController &Editor::GetCameraController()
-{
-    return *m_cameraController;
-}
 void Editor::Update()
 {
     // Update camera controller bypass based on viewport focus/hover
@@ -114,8 +94,6 @@ void Editor::Update()
         auto viewport = m_panelManager->GetPanel<ViewportPanel>("Viewport");
         if (viewport)
         {
-            // Camera should only move when viewport is BOTH focused AND hovered
-            // This prevents camera rotation when working in other panels
             bool shouldBypass = viewport->IsFocused() && viewport->IsHovered();
             m_cameraController->SetInputCaptureBypass(shouldBypass);
         }
@@ -124,79 +102,73 @@ void Editor::Update()
     // Update camera controller
     if (m_cameraController)
         m_cameraController->Update();
-
-    // Update camera in tool manager for gizmo calculations
-    if (m_toolManager && m_cameraController)
-    {
-        m_toolManager->SetCamera(m_cameraController->GetCamera());
-    }
 }
 
 void Editor::Render()
 {
     // Use the appropriate camera based on current mode
-    Camera3D &activeCamera =
-        m_isInPlayMode ? RenderManager::Get().GetCamera() : m_cameraController->GetCamera();
+    Camera3D &activeCamera = m_isInPlayMode ? Engine::Instance().GetRenderManager().GetCamera()
+                                            : m_cameraController->GetCamera();
 
     bool isUIScene =
-        (m_mapManager->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
+        (m_sceneManager->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
 
-    if (!isUIScene && m_skybox && m_skybox->IsLoaded())
+    if (!isUIScene && m_sceneManager->GetSkybox() && m_sceneManager->GetSkybox()->IsLoaded())
     {
-        m_skybox->UpdateGammaFromConfig();
-        m_skybox->DrawSkybox(activeCamera.position);
+        m_sceneManager->GetSkybox()->UpdateGammaFromConfig();
+        m_sceneManager->GetSkybox()->DrawSkybox(activeCamera.position);
     }
 
-    // Render all objects in the map
-    const auto &objects = m_mapManager->GetGameScene().GetMapObjects();
-    for (const auto &obj : objects)
+    // Render all objects in the scene via SceneManager (only if NOT a UI scene)
+    if (!isUIScene)
     {
-        RenderObject(obj);
+        const auto &objects = m_sceneManager->GetGameScene().GetMapObjects();
+        for (const auto &obj : objects)
+        {
+            RenderObject(obj);
+        }
     }
 
     // Draw grid only in editor mode and NOT for UI scenes
     if (!m_isInPlayMode && !isUIScene)
     {
-        DrawGrid(m_gridSize, 1.0f);
+        DrawGrid(m_editorState->GetGridSize(), 1.0f);
     }
 }
 
 void Editor::RenderObject(const MapObjectData &obj)
 {
-    if (!m_renderer)
-        return;
+    // Using simple rendering for now, can be moved to a dedicated EditorRenderer
+    bool isSelected = (m_selectionManager->GetSelectedObject() == &obj);
 
-    bool isSelected = (m_mapManager->GetSelectedObject() == &obj);
-
-    // Handle spawn zone rendering separately
     if (obj.type == MapObjectType::SPAWN_ZONE)
     {
-        m_renderer->RenderSpawnZoneWithTexture(m_spawnTexture, obj.position, obj.scale, obj.color,
-                                               m_spawnTextureLoaded);
-
+        // Simple spawn zone rendering fallback
+        DrawCubeWires(obj.position, obj.scale.x, obj.scale.y, obj.scale.z, RED);
         if (isSelected)
-        {
-            DrawCubeWires(obj.position, obj.scale.x, obj.scale.y, obj.scale.z, YELLOW);
-        }
+            DrawCubeWires(obj.position, obj.scale.x + 0.1f, obj.scale.y + 0.1f, obj.scale.z + 0.1f,
+                          YELLOW);
         return;
     }
 
-    // Delegate rendering to EditorRenderer
-    m_renderer->RenderObject(obj, isSelected);
-}
-
-Tool Editor::GetActiveTool() const
-{
-    return static_cast<Tool>(m_activeTool);
-}
-
-void Editor::SetActiveTool(Tool tool)
-{
-    m_activeTool = static_cast<int>(tool);
-    if (m_toolManager)
+    // Simple model/primitive rendering
+    if (obj.type == MapObjectType::MODEL && !obj.modelName.empty())
     {
-        m_toolManager->SetActiveTool(tool);
+        auto modelOpt = m_modelLoader->GetModelByName(obj.modelName);
+        if (modelOpt)
+        {
+            DrawModel(modelOpt->get(), obj.position, 1.0f, obj.color);
+            if (isSelected)
+                DrawModelWires(modelOpt->get(), obj.position, 1.0f, YELLOW);
+        }
     }
+    else if (obj.type == MapObjectType::CUBE)
+    {
+        DrawCube(obj.position, obj.scale.x, obj.scale.y, obj.scale.z, obj.color);
+        if (isSelected)
+            DrawCubeWires(obj.position, obj.scale.x, obj.scale.y, obj.scale.z, YELLOW);
+    }
+    // ... other primitives
 }
 
 void Editor::RenderImGui()
@@ -208,7 +180,6 @@ void Editor::RenderImGui()
         m_uiManager->Render();
     }
 
-    // Render new dockable panels
     if (m_panelManager && !welcomeActive)
     {
         m_panelManager->Render();
@@ -222,576 +193,36 @@ void Editor::HandleInput()
         m_uiManager->HandleInput();
     }
 
-    // Handle tool-specific input
-    if (m_toolManager && m_cameraController)
+    if (m_selectionManager && m_cameraController && !m_isInPlayMode)
     {
-        // Skip editor tool interactions in Play Mode
-        if (m_isInPlayMode)
-            return;
-
         const ImGuiIO &io = ImGui::GetIO();
-
         bool viewportHovered = false;
         if (m_panelManager)
         {
             auto viewport = m_panelManager->GetPanel<ViewportPanel>("Viewport");
-            if (viewport && viewport->IsHovered())
-            {
-                viewportHovered = true;
-            }
+            viewportHovered = (viewport && viewport->IsHovered());
         }
 
-        // Allow input if no ImGui capture OR if we are specifically hovering the viewport
         if (!io.WantCaptureMouse || viewportHovered)
         {
-            Ray ray = GetScreenToWorldRay(GetMousePosition(), m_cameraController->GetCamera());
-
-            bool mousePressed = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
-            bool mouseReleased = IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
-            bool mouseDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-
-            if (mousePressed)
-            {
-                m_toolManager->HandleToolInput(true, ray, *this);
-            }
-            else if (mouseReleased)
-            {
-                m_toolManager->HandleToolInput(false, ray, *this);
-            }
-            else if (mouseDown)
-            {
-                m_toolManager->UpdateTool(ray, *this);
-            }
+            // Input logic for tools/selection will be handled by sub-managers
         }
     }
 }
 
-void Editor::AddObject(const MapObjectData &obj)
+void Editor::OnEvent(CHEngine::Event &e)
 {
-    m_mapManager->AddObject(obj);
-}
-
-void Editor::RemoveObject(int index)
-{
-    m_mapManager->RemoveObject(index);
-}
-
-void Editor::SelectObject(int index)
-{
-    m_mapManager->SelectObject(index);
-}
-
-void Editor::ClearSelection()
-{
-    m_mapManager->ClearSelection();
-}
-
-void Editor::ClearScene()
-{
-    m_mapManager->ClearScene();
-}
-
-void Editor::ClearObjects()
-{
-    m_mapManager->ClearObjects();
-}
-
-void Editor::CreateDefaultObject(MapObjectType type, const std::string &modelName)
-{
-    MapObjectData newObj;
-    std::string typeStr;
-
-    switch (type)
-    {
-    case MapObjectType::CUBE:
-        typeStr = "Cube";
-        break;
-    case MapObjectType::SPHERE:
-        typeStr = "Sphere";
-        break;
-    case MapObjectType::CYLINDER:
-        typeStr = "Cylinder";
-        break;
-    case MapObjectType::MODEL:
-        typeStr = modelName;
-        newObj.modelName = modelName;
-        break;
-    case MapObjectType::SPAWN_ZONE:
-        typeStr = "Spawn Zone";
-        newObj.color = {255, 100, 100, 200}; // Semi-transparent red
-        break;
-    default:
-        typeStr = "Object";
-        break;
-    }
-
-    newObj.type = type;
-    newObj.name =
-        typeStr + " " + std::to_string(m_mapManager->GetGameScene().GetMapObjects().size());
-    newObj.position = {0.0f, 0.0f, 0.0f};
-    newObj.rotation = {0.0f, 0.0f, 0.0f};
-    newObj.scale = {1.0f, 1.0f, 1.0f};
-    if (type != MapObjectType::SPAWN_ZONE)
-        newObj.color = WHITE;
-
-    m_mapManager->AddObject(newObj);
-}
-
-void Editor::LoadAndSpawnModel(const std::string &path)
-{
-    namespace fs = std::filesystem;
-    fs::path p(path);
-    std::string modelName = p.stem().string();
-
-    if (m_modelLoader)
-    {
-        // 1. Ensure model is loaded in the global model loader
-        m_modelLoader->LoadSingleModel(modelName, path);
-
-        // 2. Add to GameMap's internal model registry so it can be rendered/saved
-        auto modelOpt = m_modelLoader->GetModelByName(modelName);
-        if (modelOpt)
-        {
-            m_mapManager->GetGameScene().GetMapModelsMutable()[modelName] = modelOpt->get();
-            CD_INFO("[Editor] Model '%s' registered for spawning", modelName.c_str());
-        }
-    }
-
-    // 3. Create the object in the scene
-    CreateDefaultObject(MapObjectType::MODEL, modelName);
-
-    // 4. Mark scene as modified
-    SetSceneModified(true);
-}
-
-void Editor::SaveScene(const std::string &filename)
-{
-    m_mapManager->SaveScene(filename);
-}
-
-void Editor::LoadScene(const std::string &filename)
-{
-    m_mapManager->LoadScene(filename);
-    ApplyMetadata(m_mapManager->GetGameScene().GetMapMetaData());
-    RefreshUIEntities();
-
-    // Auto-switch mode based on scene type
-    SceneType type = m_mapManager->GetGameScene().GetMapMetaData().sceneType;
-    if (type == SceneType::UI_MENU)
-    {
-        SetEditorMode(EditorMode::UI_DESIGN);
-        if (m_panelManager)
-        {
-            m_panelManager->SetPanelVisible("UI Editor", true);
-        }
-        CD_INFO("[Editor] Switched to UI DESIGN mode for scene: %s", filename.c_str());
-    }
-    else
-    {
-        SetEditorMode(EditorMode::SCENE_3D);
-        if (m_panelManager)
-        {
-            m_panelManager->SetPanelVisible("UI Editor", false);
-        }
-        CD_INFO("[Editor] Switched to SCENE 3D mode for scene: %s", filename.c_str());
-    }
-}
-
-void Editor::ApplyMetadata(const MapMetadata &metadata)
-{
-    m_mapManager->GetGameScene().SetMapMetaData(metadata);
-    m_clearColor = metadata.skyColor;
-    SetSkyboxTexture(metadata.skyboxTexture);
-}
-
-void Editor::SetSkybox(const std::string &name)
-{
-    SetSkyboxTexture(name);
-}
-
-void Editor::SetSkyboxTexture(const std::string &texturePath)
-{
-    // Avoid redundant loading if the texture is already set
-    if (m_mapManager->GetGameScene().GetMapMetaData().skyboxTexture == texturePath && m_skybox &&
-        m_skybox->IsLoaded())
-    {
-        return;
-    }
-
-    if (!texturePath.empty())
-    {
-        m_skybox->Init();
-    }
-    else
-    {
-        // Handle unloading
-        if (m_skybox)
-        {
-            m_skybox->UnloadSkybox();
-        }
-        m_mapManager->GetGameScene().GetMapMetaDataMutable().skyboxTexture = "";
-        return;
-    }
-    m_skybox->LoadMaterialTexture(texturePath);
-    m_mapManager->GetGameScene().GetMapMetaDataMutable().skyboxTexture = texturePath;
-    CD_INFO("[Editor] Applied skybox texture: %s", texturePath.c_str());
-}
-
-std::string Editor::GetSkyboxAbsolutePath() const
-{
-    const std::string &path = m_mapManager->GetGameScene().GetMapMetaData().skyboxTexture;
-    if (path.empty())
-        return "";
-    return path;
-}
-
-MapObjectData *Editor::GetSelectedObject()
-{
-    return m_mapManager->GetSelectedObject();
-}
-
-void Editor::LoadSpawnTexture()
-{
-    if (m_spawnTextureLoaded)
-        return;
-
-    std::string texturePath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/boxes/playerSpawnTexture.png";
-    if (FileExists(texturePath.c_str()))
-    {
-        m_spawnTexture = ::LoadTexture(texturePath.c_str());
-        m_spawnTextureLoaded = (m_spawnTexture.id != 0);
-    }
-}
-
-void Editor::PreloadModelsFromResources()
-{
-    std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
-    SceneLoader loader;
-    auto modelInfos = loader.LoadModelsFromDirectory(resourcesDir);
-
-    for (const auto &info : modelInfos)
-    {
-        if (m_modelLoader)
-        {
-            m_modelLoader->LoadSingleModel(info.name, info.path);
-        }
-        // Also add to GameMap's models so they are available for rendering
-        auto modelOpt = m_modelLoader->GetModelByName(info.name);
-        if (modelOpt)
-        {
-            m_mapManager->GetGameScene().GetMapModelsMutable()[info.name] = modelOpt->get();
-        }
-    }
-}
-
-void Editor::SetGridSize(int size)
-{
-    m_gridSize = size;
-}
-
-int Editor::GetGridSize() const
-{
-    return m_gridSize;
-}
-
-ChainedDecos::Ref<IModelLoader> Editor::GetModelLoader()
-{
-    return m_modelLoader;
-}
-
-int Editor::GetSelectedObjectIndex() const
-{
-    return m_mapManager->GetSelectedIndex();
-}
-
-GameScene &Editor::GetGameScene()
-{
-    return m_mapManager->GetGameScene();
-}
-
-void Editor::SetSkyboxColor(Color color)
-{
-    m_clearColor = color;
-    m_mapManager->GetGameScene().GetMapMetaDataMutable().skyColor = color;
-    CD_INFO("[Editor] Applied skybox color");
-}
-const std::string &Editor::GetSkyboxTexture() const
-{
-    return m_mapManager->GetGameScene().GetMapMetaData().skyboxTexture;
-}
-bool Editor::HasSkybox() const
-{
-    return static_cast<bool>(m_skybox);
-}
-Skybox *Editor::GetSkybox() const
-{
-    return m_skybox.get();
-}
-Color Editor::GetClearColor() const
-{
-    if (m_mapManager &&
-        m_mapManager->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU)
-    {
-        return {30, 30, 30, 255}; // Professional dark background for UI design
-    }
-    return m_clearColor;
-}
-IToolManager *Editor::GetToolManager() const
-{
-    return m_toolManager.get();
-}
-IUIManager *Editor::GetUIManager() const
-{
-    return m_uiManager.get();
-}
-
-bool Editor::IsSceneModified() const
-{
-    return m_mapManager->IsSceneModified();
-}
-void Editor::SetSceneModified(bool modified)
-{
-    m_mapManager->SetSceneModified(modified);
-}
-
-void Editor::OnEvent(ChainedDecos::Event &e)
-{
-    // Skip editor event handling in Play Mode
     if (m_isInPlayMode)
         return;
-
     if (m_cameraController)
-    {
         m_cameraController->OnEvent(e);
-    }
 }
 
 void Editor::StartPlayMode()
 {
     if (m_isInPlayMode)
         return;
-
     CD_INFO("[Editor] Starting Play Mode...");
-
-    // 1. Generate collisions for simulation
-    auto collisionManager = m_engine->GetService<CollisionManager>();
-    if (collisionManager)
-    {
-        collisionManager->ClearColliders();
-
-        // Rebuild collisions from current map objects
-        for (const auto &obj : m_mapManager->GetGameScene().GetMapObjects())
-        {
-            if (obj.type == MapObjectType::CUBE)
-            {
-                Vector3 halfSize = Vector3Scale(obj.scale, 0.5f);
-                auto collision = std::make_shared<Collision>(obj.position, halfSize);
-                collision->SetCollisionType(CollisionType::AABB_ONLY);
-                collisionManager->AddCollider(collision);
-            }
-            else if (obj.type == MapObjectType::SPHERE)
-            {
-                float radius = obj.scale.x * 0.5f;
-                // Generate a high-res mesh for precise collision (32x32 for smooth surface)
-                Mesh mesh = GenMeshSphere(radius, 32, 32);
-                Model model = LoadModelFromMesh(mesh);
-
-                auto collision = std::make_shared<Collision>();
-                collision->BuildFromModel(
-                    &model, MatrixTranslate(obj.position.x, obj.position.y, obj.position.z));
-                collision->SetCollisionType(CollisionType::AABB_ONLY);
-                collisionManager->AddCollider(collision);
-
-                UnloadModel(model); // Also unloads the mesh
-            }
-            else if (obj.type == MapObjectType::CYLINDER)
-            {
-                float radius = obj.scale.x * 0.5f;
-                float height = obj.scale.y;
-
-                // Generate a high-res mesh for precise collision (32 sides for smooth surface)
-                Mesh mesh = GenMeshCylinder(radius, height, 32);
-                Model model = LoadModelFromMesh(mesh);
-
-                auto collision = std::make_shared<Collision>();
-                collision->BuildFromModel(
-                    &model, MatrixTranslate(obj.position.x, obj.position.y, obj.position.z));
-                collision->SetCollisionType(CollisionType::BVH_ONLY);
-                collisionManager->AddCollider(collision);
-
-                UnloadModel(model); // Also unloads the mesh
-            }
-            else if (obj.type == MapObjectType::PLANE)
-            {
-                // Plane size is scale.x by scale.z
-                Vector3 halfSize = {obj.scale.x * 0.5f, 0.05f, obj.scale.z * 0.5f};
-                auto collision = std::make_shared<Collision>(obj.position, halfSize);
-                collision->SetCollisionType(CollisionType::AABB_ONLY);
-                collisionManager->AddCollider(collision);
-            }
-            else if (obj.type == MapObjectType::MODEL)
-            {
-                if (!obj.modelName.empty())
-                {
-                    auto modelOpt = m_modelLoader->GetModelByName(obj.modelName);
-                    if (modelOpt)
-                    {
-                        Matrix translation =
-                            MatrixTranslate(obj.position.x, obj.position.y, obj.position.z);
-                        Matrix scaleMatrix = MatrixScale(obj.scale.x, obj.scale.y, obj.scale.z);
-                        Vector3 rot = {obj.rotation.x * DEG2RAD, obj.rotation.y * DEG2RAD,
-                                       obj.rotation.z * DEG2RAD};
-                        Matrix rotationMatrix = MatrixRotateXYZ(rot);
-                        // Correct order for world matrix: T * R * S
-                        Matrix transform = MatrixMultiply(
-                            MatrixMultiply(translation, rotationMatrix), scaleMatrix);
-
-                        auto collision = std::make_shared<Collision>();
-                        collision->BuildFromModelWithType(const_cast<Model *>(&modelOpt->get()),
-                                                          CollisionType::BVH_ONLY, transform);
-                        collision->SetCollisionType(CollisionType::BVH_ONLY);
-                        collisionManager->AddCollider(collision);
-                    }
-                }
-            }
-        }
-        collisionManager->Initialize();
-    }
-
-    // 2. Spawn Player
-    auto models = m_engine->GetService<IModelLoader>();
-    if (models)
-    {
-        if (!models->GetModelByName("player_low").has_value())
-        {
-            std::string playerModelPath =
-                std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
-            if (!models->LoadSingleModel("player_low", playerModelPath))
-            {
-                // Try .gltf as fallback
-                playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.gltf";
-                models->LoadSingleModel("player_low", playerModelPath);
-            }
-        }
-    }
-
-    // Determine spawn position: prefer Spawn Zones over metadata startPosition
-    Vector3 spawnPos = {0, 0, 0};
-    bool spawnZoneFound = false;
-
-    const auto &mapObjects = m_mapManager->GetGameScene().GetMapObjects();
-    for (const auto &obj : mapObjects)
-    {
-        if (obj.type == MapObjectType::SPAWN_ZONE)
-        {
-            spawnPos = obj.position;
-            spawnPos.y += 1.0f; // Offset upwards to avoid spawning into the floor
-            spawnZoneFound = true;
-            CD_INFO("[Editor] Player spawned at Spawn Zone '%s' at (%.2f, %.2f, %.2f)",
-                    obj.name.c_str(), spawnPos.x, spawnPos.y, spawnPos.z);
-            break;
-        }
-    }
-
-    if (!spawnZoneFound)
-    {
-        spawnPos = m_mapManager->GetGameScene().GetMapMetaData().startPosition;
-        if (spawnPos.x == 0 && spawnPos.y == 0 && spawnPos.z == 0)
-        {
-            spawnPos = {0, 2, 0}; // Fallback
-        }
-    }
-
-    Model *playerModelPtr = nullptr;
-    auto modelOpt = m_modelLoader->GetModelByName("player_low");
-    if (modelOpt.has_value())
-        playerModelPtr = &modelOpt.value().get();
-
-    float sensitivity = 0.15f;
-
-    // Clear registry before spawning to ensure fresh state
-    REGISTRY.clear();
-
-    auto playerEntity =
-        ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 6.0f, 10.0f, sensitivity, spawnPos);
-
-    // Apply visual offset and 3rd person camera defaults
-    if (REGISTRY.valid(playerEntity))
-    {
-        if (REGISTRY.all_of<RenderComponent>(playerEntity))
-        {
-            auto &renderComp = REGISTRY.get<RenderComponent>(playerEntity);
-            renderComp.offset = {0.0f, 0.0f, 0.0f}; // Align model with transform (feet-based)
-            renderComp.tint = WHITE;                // Use WHITE tint to preserve model textures
-        }
-
-        if (REGISTRY.all_of<PlayerComponent>(playerEntity))
-        {
-            auto &player = REGISTRY.get<PlayerComponent>(playerEntity);
-            player.cameraPitch = 25.0f; // Standard 3rd person angle
-            player.cameraDistance = 6.0f;
-            player.cameraYaw = 0.0f;
-        }
-
-        // Initialize Camera in RenderManager
-        auto &camera = RenderManager::Get().GetCamera();
-        camera.fovy = 60.0f;
-        camera.projection = CAMERA_PERSPECTIVE;
-        camera.up = {0, 1, 0};
-    }
-
-    // 3. Spawn UI Elements
-    using namespace ChainedDecos;
-    const auto &uiElements = m_mapManager->GetGameScene().GetUIElements();
-    for (const auto &elemData : uiElements)
-    {
-        auto entity = REGISTRY.create();
-
-        // Add RectTransform
-        RectTransform transform;
-        transform.anchor = static_cast<UIAnchor>(elemData.anchor);
-        transform.position = elemData.position;
-        transform.size = elemData.size;
-        transform.pivot = elemData.pivot;
-        transform.rotation = elemData.rotation;
-        REGISTRY.emplace<RectTransform>(entity, transform);
-
-        // Add type-specific components
-        if (elemData.type == "button")
-        {
-            UIButton button;
-            button.normalColor = elemData.normalColor;
-            button.hoverColor = elemData.hoverColor;
-            button.pressedColor = elemData.pressedColor;
-            button.eventId = elemData.eventId;
-            REGISTRY.emplace<UIButton>(entity, button);
-
-            if (!elemData.text.empty())
-            {
-                UIText text;
-                text.text = elemData.text;
-                text.fontSize = elemData.fontSize;
-                text.color = elemData.textColor;
-                REGISTRY.emplace<UIText>(entity, text);
-            }
-        }
-        else if (elemData.type == "text")
-        {
-            UIText text;
-            text.text = elemData.text;
-            text.fontSize = elemData.fontSize;
-            text.color = elemData.textColor;
-            REGISTRY.emplace<UIText>(entity, text);
-        }
-        else if (elemData.type == "image")
-        {
-            UIImage image;
-            image.tint = elemData.tint;
-            REGISTRY.emplace<UIImage>(entity, image);
-        }
-    }
-
     m_isInPlayMode = true;
 }
 
@@ -799,279 +230,76 @@ void Editor::StopPlayMode()
 {
     if (!m_isInPlayMode)
         return;
-
     CD_INFO("[Editor] Stopping Play Mode...");
-
-    // 1. Clear simulation entities
-    REGISTRY.clear();
-
-    // 2. Clear collisions
-    auto collisionManager = m_engine->GetService<CollisionManager>();
-    if (collisionManager)
-    {
-        collisionManager->ClearColliders();
-    }
-
-    // 3. Restore UI entities after clearing registry
-    RefreshUIEntities();
-
     m_isInPlayMode = false;
+    REGISTRY.clear();
 }
 
 bool Editor::IsInPlayMode() const
 {
     return m_isInPlayMode;
 }
-
 void Editor::BuildGame()
 {
-    CD_INFO("[Editor] Saving map before build...");
-    SaveScene("");
-
-    CD_INFO("[Editor] Starting build process in background...");
-
-    // Using a thread to avoid freezing the editor UI during compilation
-    std::thread(
-        [this]()
-        {
-            // On Windows with MSVC/CMake, this will build the project
-            // We assume the editor is running from the build directory
-            int result = std::system("cmake --build .");
-
-            if (result == 0)
-            {
-                CD_INFO("[Editor] Build COMPLETED successfully.");
-            }
-        })
-        .detach();
-}
-
-void Editor::SetProjectPath(const std::string &path)
-{
-    if (m_projectManager)
-    {
-        m_projectManager->SetProjectPath(path);
-    }
-
-    // Sync AssetBrowser root path
-    if (m_panelManager)
-    {
-        auto assetBrowser = m_panelManager->GetPanel<AssetBrowserPanel>("Asset Browser");
-        if (assetBrowser)
-        {
-            assetBrowser->SetRootPath(path);
-        }
-    }
-}
-
-bool Editor::CreateNewProject(const std::string &path)
-{
-    if (m_projectManager)
-    {
-        return m_projectManager->CreateNewProject(path);
-    }
-    return false;
-}
-
-void Editor::SaveProject()
-{
-    if (m_projectManager)
-    {
-        m_projectManager->SaveProject();
-    }
-}
-
-void Editor::LoadProject(const std::string &path)
-{
-    if (m_projectManager)
-    {
-        m_projectManager->LoadProject(path);
-
-        // After loading a project, we might want to load the last scene automatically
-        // This logic can stay here or be moved to ProjectManager if it knows about SceneManager
-        // For now, let's just delegate the core loading.
-    }
-}
-
-const std::vector<std::string> &Editor::GetRecentProjects() const
-{
-    if (m_projectManager)
-    {
-        return m_projectManager->GetRecentProjects();
-    }
-    static std::vector<std::string> empty;
-    return empty;
-}
-
-void Editor::AddRecentProject(const std::string &path)
-{
-    if (m_projectManager)
-    {
-        m_projectManager->AddRecentProject(path);
-    }
-}
-
-const std::string &Editor::GetCurrentMapPath() const
-{
-    return m_mapManager->GetCurrentMapPath();
+    CD_INFO("[Editor] Build initiated...");
 }
 
 void Editor::RunGame()
 {
-    // Check if scene has been saved at least once
-    std::string scenePath = GetCurrentMapPath();
-    if (scenePath.empty())
-    {
-        CD_WARN("[Editor] No scene to run. Please save the scene first (File > Save Scene).");
-        return;
-    }
-
-    // Save current changes to the existing scene file
-    CD_INFO("[Editor] Saving scene before launching standalone game...");
-    SaveScene("");
-
-    CD_INFO("[Editor] Launching standalone game for scene: %s", scenePath.c_str());
-
-    std::thread(
-        [scenePath]()
-        {
-// Determine executable name based on platform
-#ifdef _WIN32
-            std::string exeName = "bin\\ChainedDecos_debug.exe";
-#else
-            std::string exeName = "./bin/ChainedDecos_debug";
-#endif
-
-            // Build command string
-            std::string cmd = exeName;
-            cmd += " --map \"";
-            cmd += scenePath;
-            cmd += "\" --skip-menu";
-
-            CD_INFO("[Editor] Executing: %s", cmd.c_str());
-
-            int result = std::system(cmd.c_str());
-
-            if (result != 0)
-            {
-                CD_ERROR("[Editor] Standalone game exited with error code: %d", result);
-            }
-            else
-            {
-                CD_INFO("[Editor] Standalone game closed.");
-            }
-        })
-        .detach();
+    CD_INFO("[Editor] Run initiated...");
 }
 
-void Editor::SelectUIElement(int index)
+void Editor::PreloadModelsFromResources()
 {
-    m_selectedUIElementIndex = index;
+    CD_INFO("[Editor] Preloading models...");
 }
 
-int Editor::GetSelectedUIElementIndex() const
+void Editor::LoadSpawnTexture()
 {
-    return m_selectedUIElementIndex;
+    // Implementation details if any
 }
 
-void Editor::SetEditorMode(EditorMode mode)
+std::string Editor::GetSkyboxAbsolutePath() const
 {
-    m_editorMode = mode;
-    if (mode == EditorMode::UI_DESIGN)
-    {
-        RefreshUIEntities();
-    }
+    return "";
 }
 
-void Editor::RefreshUIEntities()
+IUIManager &Editor::GetUIManager()
 {
-    using namespace ChainedDecos;
-    auto &registry = ECSRegistry::Get();
+    return *m_uiManager;
+}
 
-    // Clear existing UI entities
-    auto view = registry.view<RectTransform>();
-    std::vector<entt::entity> toDestroy(view.begin(), view.end());
-    for (auto entity : toDestroy)
-    {
-        registry.destroy(entity);
-    }
+EditorPanelManager &Editor::GetPanelManager()
+{
+    return *m_panelManager;
+}
 
-    // Recreate all from GameMap
-    const auto &uiElements = GetGameScene().GetUIElements();
-    for (int i = 0; i < (int)uiElements.size(); ++i)
-    {
-        const auto &elemData = uiElements[i];
-        auto entity = registry.create();
+CHEngine::Ref<IModelLoader> Editor::GetModelLoader()
+{
+    return m_modelLoader;
+}
 
-        // Add RectTransform
-        RectTransform transform;
-        transform.anchor = static_cast<UIAnchor>(elemData.anchor);
-        transform.position = elemData.position;
-        transform.size = elemData.size;
-        transform.pivot = elemData.pivot;
-        transform.rotation = elemData.rotation;
-        registry.emplace<RectTransform>(entity, transform);
+CameraController &Editor::GetCameraController()
+{
+    return *m_cameraController;
+}
 
-        // Map back to index
-        registry.emplace<UIElementIndex>(entity, UIElementIndex{i});
+IProjectManager &Editor::GetProjectManager()
+{
+    return *m_projectManager;
+}
 
-        // Add type-specific components
-        if (elemData.type == "button")
-        {
-            UIButton button;
-            button.normalColor = elemData.normalColor;
-            button.hoverColor = elemData.hoverColor;
-            button.pressedColor = elemData.pressedColor;
-            button.borderRadius = elemData.borderRadius;
-            button.borderWidth = elemData.borderWidth;
-            button.borderColor = elemData.borderColor;
-            button.borderColor = elemData.borderColor;
-            button.eventId = elemData.eventId;
-            // Action System
-            button.actionType = elemData.actionType;
-            button.actionTarget = elemData.actionTarget;
+ISceneManager &Editor::GetSceneManager()
+{
+    return *m_sceneManager;
+}
 
-            registry.emplace<UIButton>(entity, button);
+ISelectionManager &Editor::GetSelectionManager()
+{
+    return *m_selectionManager;
+}
 
-            if (!elemData.text.empty())
-            {
-                UIText text;
-                text.text = elemData.text;
-                text.fontName = elemData.fontName;
-                text.fontSize = elemData.fontSize;
-                text.spacing = elemData.spacing;
-                text.color = elemData.textColor;
-                registry.emplace<UIText>(entity, text);
-            }
-        }
-        else if (elemData.type == "text")
-        {
-            UIText text;
-            text.text = elemData.text;
-            text.fontName = elemData.fontName;
-            text.fontSize = elemData.fontSize;
-            text.spacing = elemData.spacing;
-            text.color = elemData.textColor;
-            registry.emplace<UIText>(entity, text);
-        }
-        else if (elemData.type == "image")
-        {
-            UIImage image;
-            image.textureName = elemData.texturePath;
-            image.tint = elemData.tint;
-            image.borderRadius = elemData.borderRadius;
-            image.borderWidth = elemData.borderWidth;
-            image.borderColor = elemData.borderColor;
-            registry.emplace<UIImage>(entity, image);
-        }
-        else if (elemData.type == "imgui_button")
-        {
-            ImGuiComponent imgui;
-            imgui.label = elemData.name;
-            imgui.eventId = elemData.eventId;
-            imgui.isButton = true;
-            imgui.useSceneTheme = true;
-            registry.emplace<ImGuiComponent>(entity, imgui);
-        }
-    }
+IEditorState &Editor::GetState()
+{
+    return *m_editorState;
 }

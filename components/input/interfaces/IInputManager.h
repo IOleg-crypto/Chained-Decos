@@ -6,7 +6,7 @@
 #include <string>
 
 
-namespace ChainedDecos
+namespace CHEngine
 {
 class Event;
 }
@@ -62,7 +62,7 @@ public:
     virtual bool IsCursorDisabled() const = 0;
 
     // Event system integration
-    using EventCallbackFn = std::function<void(ChainedDecos::Event &)>;
+    using EventCallbackFn = std::function<void(CHEngine::Event &)>;
     virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
 };
 

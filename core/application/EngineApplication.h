@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 // Engine Runtime - Runs the application
@@ -39,7 +39,7 @@ public:
 
     void OnEvent(Event &e);
 
-    ChainedEngine::Engine *GetEngine() const;
+    CHEngine::Engine *GetEngine() const;
 
     // Configuration
     Config &GetConfig();
@@ -53,11 +53,11 @@ private:
 
     IApplication *m_app; // The application instance
     Config m_config;
-    std::shared_ptr<ChainedEngine::Engine> m_engine; // Engine is now shared/singleton managed
+    std::shared_ptr<CHEngine::Engine> m_engine; // Engine is now shared/singleton managed
     LayerStack m_LayerStack;
     bool m_initialized = false;
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // ENGINE_APPLICATION_H

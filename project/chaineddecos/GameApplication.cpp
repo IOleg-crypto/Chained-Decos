@@ -2,38 +2,32 @@
 #include "GameLayer.h"
 #include "core/Log.h"
 #include "core/application/EngineApplication.h"
+#include "logic/GameInitializer.h"
 #include "scene/main/core/LevelManager.h"
 
-
-// #include "systems/playersystem/playerController.h"
-// #include "systems/renderingsystem/RenderingSystem.h"
+using namespace CHEngine;
 
 #include "components/input/core/InputManager.h"
 #include "components/physics/collision/core/CollisionManager.h"
 #include "components/rendering/core/RenderManager.h"
 #include "core/config/ConfigManager.h"
-#include "core/imgui/components/GuiButton.h"
-#include "core/module/ModuleManager.h"
-#include "project/chaineddecos/gamegui/Menu.h"
-#include "project/chaineddecos/player/core/Player.h"
-#include "scene/ecs/Examples.h"
-#include "scene/ecs/components.h"
+#include "project/CHEngine/gamegui/Menu.h"
+#include "project/CHEngine/player/core/Player.h"
+#include "scene/ecs/components/RenderComponent.h"
+#include "scene/ecs/components/TransformComponent.h"
 #include "scene/main/core/LevelManager.h"
+
 #include "scene/resources/model/core/Model.h"
 #include <raylib.h>
 #include <rlImGui.h>
 
-
-// Declare this as the main application entry point
-#include "core/application/EntryPoint.h"
-DECLARE_APPLICATION(GameApplication)
-
-using ChainedDecos::InputManager;
-using ChainedDecos::MenuEvent;
-using ChainedDecos::MenuEventType;
+using CHEngine::GameInitializer;
+using CHEngine::InputManager;
+using CHEngine::MenuEvent;
+using CHEngine::MenuEventType;
 // MenuEventCallback is inside Menu class
 using MenuEventCallback = Menu::MenuEventCallback;
-using namespace ChainedEngine;
+using namespace CHEngine;
 
 GameApplication::GameApplication(int argc, char *argv[])
     : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false),
@@ -110,28 +104,7 @@ void GameApplication::OnRegister()
     // 2. Register Game Systems (Modules)
     // Register LevelManager as a Service AND Module (we create shared_ptr first)
     auto levelManager = std::make_shared<LevelManager>();
-    engine.RegisterModule(std::unique_ptr<LevelManager>(
-        levelManager.get())); // This is risky if unique_ptr takes ownership!
-    // Wait, RegisterModule takes unique_ptr. If I pass .get(), unique_ptr will try to delete it.
-    // I can't register the SAME instance as both Unique Module and Shared Service easily unless I
-    // release ownership or use custom deleter. Actually, LevelManager doesn't seem to need to be an
-    // EngineModule if we update it manually or if it auto-updates. Let's Register it as Service,
-    // and if it needs update, we do it. But GameApplication previously registered it as Module.
-    // Let's try: Register as Service. And separately register as Module? No.
-    // If I register as Service, it's shared.
-    // If Engine needs to update it, it iterates Modules.
-    // I will Register it as Service, and hold a reference if needed.
-    // But wait, if I don't register it as module, who updates it?
-    // GameApplication can update it? Or I can make a wrapper.
-    // For now, let's just Register as Service. LevelManager might not need per-frame update from
-    // Engine if GameApp handles logic.
     engine.RegisterService<ILevelManager>(levelManager);
-
-    // We also want to keep it alive. Service Locator stores shared_ptr so it's fine.
-
-    // If LevelManager IS an EngineModule, we might want to register it.
-    // But RegisterModule takes unique_ptr.
-    // I'll skip RegisterModule for now and rely on Service.
 
     CD_INFO("[GameApplication] Game systems registered.");
 }
@@ -143,8 +116,8 @@ void GameApplication::OnStart()
     // Initialize Static Singletons
     // Note: RenderManager/InputManager/AudioManager are already initialized by CoreServices
 
-    AudioManager::Get().LoadSound("player_fall", std::string(PROJECT_ROOT_DIR) +
-                                                     "/resources/audio/wind-gust_fall.wav");
+    Engine::Instance().GetAudioManager().LoadSound(
+        "player_fall", std::string(PROJECT_ROOT_DIR) + "/resources/audio/wind-gust_fall.wav");
 
     // Initialize Menu
     m_menu = std::make_shared<Menu>();
@@ -154,12 +127,12 @@ void GameApplication::OnStart()
 
     // Register Menu Events
     m_menu->SetEventCallback(
-        [this](const ChainedDecos::MenuEvent &event)
+        [this](const CHEngine::MenuEvent &event)
         {
             switch (event.GetMenuEventType())
             {
-            case ChainedDecos::MenuEventType::StartGame:
-            case ChainedDecos::MenuEventType::StartGameWithMap:
+            case CHEngine::MenuEventType::StartGame:
+            case CHEngine::MenuEventType::StartGameWithMap:
             {
                 std::string mapName = event.GetMapName();
                 if (mapName.empty())
@@ -173,7 +146,7 @@ void GameApplication::OnStart()
                 }
                 break;
             }
-            case ChainedDecos::MenuEventType::ResumeGame:
+            case CHEngine::MenuEventType::ResumeGame:
             {
                 if (m_isGameInitialized)
                 {
@@ -181,12 +154,12 @@ void GameApplication::OnStart()
                 }
                 break;
             }
-            case ChainedDecos::MenuEventType::ExitGame:
+            case CHEngine::MenuEventType::ExitGame:
             {
                 Engine::Instance().RequestExit();
                 break;
             }
-            case ChainedDecos::MenuEventType::BackToMain:
+            case CHEngine::MenuEventType::BackToMain:
             {
                 // Internal menu state change handled by Menu class
                 break;
@@ -201,90 +174,8 @@ void GameApplication::OnStart()
     // Initialize ECS
     REGISTRY.clear();
 
-    // Explicitly load player model
-    auto models = Engine::Instance().GetService<ModelLoader>();
-    if (models)
-    {
-        std::string playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
-        if (models->LoadSingleModel("player_low", playerModelPath))
-        {
-            CD_INFO("[GameApplication] Loaded player model: %s", playerModelPath.c_str());
-        }
-        else
-        {
-            CD_WARN("[GameApplication] Failed to load player model: %s", playerModelPath.c_str());
-        }
-    }
-
-    // Try to get player model from loader
-    Model *playerModelPtr = nullptr;
-    if (models)
-    {
-        // "player_low" is loaded by LevelManager/ModelLoader according to logs
-        auto modelOpt = models->GetModelByName("player_low");
-        if (modelOpt.has_value())
-        {
-            playerModelPtr = &modelOpt.value().get();
-        }
-    }
-
-    // Load and Apply Shader
-    {
-        std::string vsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.vs";
-        std::string fsPath = std::string(PROJECT_ROOT_DIR) + "/resources/shaders/player_effect.fs";
-
-        m_playerShader = LoadShader(vsPath.c_str(), fsPath.c_str());
-        m_shaderLoaded = (m_playerShader.id != 0);
-
-        if (m_shaderLoaded)
-        {
-            m_locFallSpeed = GetShaderLocation(m_playerShader, "fallSpeed");
-            m_locTime = GetShaderLocation(m_playerShader, "time");
-            m_locWindDir = GetShaderLocation(m_playerShader, "windDirection");
-
-            // Set default values
-            float defaultFallSpeed = 0.0f;
-            SetShaderValue(m_playerShader, m_locFallSpeed, &defaultFallSpeed, SHADER_UNIFORM_FLOAT);
-
-            Vector3 defaultWind = {1.0f, 0.0f, 0.5f};
-            SetShaderValue(m_playerShader, m_locWindDir, &defaultWind, SHADER_UNIFORM_VEC3);
-
-            // Assign shader to model logic moved to after model initialization/fallback
-        }
-        else
-        {
-            CD_WARN("[GameApplication] Failed to load player_effect shader");
-        }
-    }
-
-    // Initialize player state
+    // Initial player state
     Vector3 spawnPos = {0, 2, 0};
-
-    // Load HUD Font
-    std::string fontPath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/font/gantari/static/gantari-Bold.ttf";
-
-    // Load font with higher size for better quality scaling
-    m_hudFont = LoadFontEx(fontPath.c_str(), 96, 0, 0);
-
-    if (m_hudFont.baseSize > 0)
-    {
-        SetTextureFilter(m_hudFont.texture, TEXTURE_FILTER_BILINEAR);
-        m_fontLoaded = true;
-        CD_INFO("[GameApplication] Loaded HUD font: %s", fontPath.c_str());
-    }
-    else
-    {
-        CD_ERROR("[GameApplication] Failed to load HUD font: %s. Loading default.",
-                 fontPath.c_str());
-        m_fontLoaded = false;
-        m_hudFont = GetFontDefault();
-    }
-    // Push GameLayer using the new Layer system (Cherno-inspired)
-    if (GetAppRunner())
-    {
-        GetAppRunner()->PushLayer(new GameLayer());
-    }
 
     // Load mouse sensitivity from config
     ConfigManager configManager;
@@ -293,29 +184,13 @@ void GameApplication::OnStart()
     if (sensitivity <= 0.0f)
         sensitivity = 0.15f; // Default if not set
 
-    if (playerModelPtr)
-    {
-        CD_INFO("[GameApplication] Using existing model 'player_low'");
-        m_playerEntity =
-            ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 8.0f, 12.0f, sensitivity);
-    }
-    else
-    {
-        CD_WARN("[GameApplication] 'player_low' not found, using default cube.");
-        m_playerModel = LoadModelFromMesh(GenMeshCube(0.8f, 1.8f, 0.8f));
-        m_playerEntity =
-            ECSExamples::CreatePlayer(spawnPos, &m_playerModel, 8.0f, 12.0f, sensitivity);
-    }
+    // Initialize player via Initializer
+    m_playerEntity = GameInitializer::InitializePlayer(spawnPos, sensitivity);
 
-    // Apply shader to final player model (either loaded or fallback)
-    if (m_shaderLoaded)
+    // Push GameLayer using the new Layer system
+    if (GetAppRunner())
     {
-        Model *finalModel = playerModelPtr ? playerModelPtr : &m_playerModel;
-        if (finalModel->materials != nullptr && finalModel->materialCount > 0)
-        {
-            finalModel->materials[0].shader = m_playerShader;
-            CD_INFO("[GameApplication] Applied player_effect shader to final player model");
-        }
+        GetAppRunner()->PushLayer(new GameLayer());
     }
 
     CD_INFO("[GameApplication] ECS Player entity created");
@@ -368,20 +243,10 @@ void GameApplication::OnStart()
     }
 
     // Set window icon
-    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecos.jpg");
+    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/CHEngine.jpg");
     ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     SetWindowIcon(m_icon);
     UnloadImage(m_icon);
-
-    // Apply fullscreen
-    /*
-    if (m_gameConfig.fullscreen && !IsWindowFullscreen())
-    {
-        int monitor = GetCurrentMonitor();
-        SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
-        SetWindowState(FLAG_FULLSCREEN_MODE);
-    }
-    */
 
     CD_INFO("[GameApplication] Game application initialized with ECS.");
 }
@@ -389,10 +254,10 @@ void GameApplication::OnStart()
 void GameApplication::OnUpdate(float deltaTime)
 {
     // Update Input
-    InputManager::Get().Update(deltaTime);
+    Engine::Instance().GetInputManager().Update(deltaTime);
 
     // Update Audio looping
-    AudioManager::Get().UpdateLoopingSounds();
+    Engine::Instance().GetAudioManager().UpdateLoopingSounds();
 
     // Get Menu through Engine (Legacy access)
     auto engine = &Engine::Instance();
@@ -403,7 +268,7 @@ void GameApplication::OnUpdate(float deltaTime)
 
     // Only handle console toggle here if we are NOT in the menu.
     // When in menu, Menu::HandleKeyboardNavigation handles it to avoid double-toggling.
-    if (!m_showMenu && InputManager::Get().IsKeyPressed(KEY_GRAVE) && menu)
+    if (!m_showMenu && Engine::Instance().GetInputManager().IsKeyPressed(KEY_GRAVE) && menu)
     {
         menu->ToggleConsole();
     }
@@ -462,21 +327,6 @@ void GameApplication::OnUpdate(float deltaTime)
                 }
 
                 // ECS Systems are now handled by GameLayer
-
-                // Update Shader Uniforms
-                if (m_shaderLoaded && REGISTRY.valid(m_playerEntity))
-                {
-                    float time = (float)GetTime();
-                    SetShaderValue(m_playerShader, m_locTime, &time, SHADER_UNIFORM_FLOAT);
-
-                    auto &velocity = REGISTRY.get<VelocityComponent>(m_playerEntity);
-                    float fallSpeed = 0.0f;
-                    if (velocity.velocity.y < 0)
-                        fallSpeed = std::abs(velocity.velocity.y);
-
-                    SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed,
-                                   SHADER_UNIFORM_FLOAT);
-                }
             }
         }
         else
@@ -496,7 +346,6 @@ void GameApplication::OnRender()
 
     // Get Menu
     auto *engine = &Engine::Instance();
-    // auto moduleManager = engine->GetModuleManager();
     Menu *menu = m_menu.get();
 
     if (m_showMenu && menu)
@@ -516,128 +365,25 @@ void GameApplication::OnRender()
     {
         if (m_isGameInitialized)
         {
-            // 3D Rendering
-            auto &camera = RenderManager::Get().GetCamera();
-            RenderManager::Get().BeginMode3D(camera);
+            // 3D Rendering (this part is fine for now, though could be moved to GameLayer)
+            auto &camera = Engine::Instance().GetRenderManager().GetCamera();
+            Engine::Instance().GetRenderManager().BeginMode3D(camera);
 
-            // Render ECS entities - Now handled by GameLayer
-            // RenderSystem::Render();
-
-            // Render Models (ModelLoader)
             auto models = Engine::Instance().GetService<ModelLoader>();
             if (models)
                 models->DrawAllModels();
 
-            // Render Map Geometry (LevelManager)
             auto levelManager = Engine::Instance().GetService<ILevelManager>();
             if (levelManager)
-            {
                 levelManager->RenderEditorMap();
 
-                // levelManager->RenderSpawnZone(); (only map editor)
-            }
-
-            // Render World (Legacy)
             auto world = Engine::Instance().GetService<WorldManager>();
             if (world)
                 world->Render();
 
-            RenderManager::Get().EndMode3D();
+            Engine::Instance().GetRenderManager().EndMode3D();
 
-            // Draw HUD (Chained Together Style)
-            if (REGISTRY.valid(m_playerEntity))
-            {
-                auto &playerComp = REGISTRY.get<PlayerComponent>(m_playerEntity);
-
-                int hours = (int)playerComp.runTimer / 3600;
-                int minutes = ((int)playerComp.runTimer % 3600) / 60;
-                int seconds = (int)playerComp.runTimer % 60;
-
-                int startX = 40;
-                int startY = 80;
-                // float fontSize = 32.0f; // Unused
-                float spacing = 2.0f; // Font spacing
-
-                Font *fontToUse = m_fontLoaded ? &m_hudFont : nullptr;
-
-                // 1. Height Section
-                // Height Text "height : 134m"
-                const char *heightText = TextFormat("height : %.0fm", playerComp.maxHeight);
-                float fontSizeHeight = 36.0f;
-                Vector2 heightSize;
-
-                if (m_fontLoaded)
-                    heightSize = MeasureTextEx(m_hudFont, heightText, fontSizeHeight, spacing);
-                else
-                    heightSize = {(float)MeasureText(heightText, (int)fontSizeHeight),
-                                  fontSizeHeight};
-
-                // Draw Height Shadow
-                Vector2 heightPos = {(float)startX, (float)startY};
-                Vector2 shadowOffset = {2.0f, 2.0f};
-
-                if (m_fontLoaded)
-                    DrawTextEx(m_hudFont, heightText,
-                               {heightPos.x + shadowOffset.x, heightPos.y + shadowOffset.y},
-                               fontSizeHeight, spacing, ColorAlpha(BLACK, 0.5f));
-                else
-                    DrawText(heightText, (int)(heightPos.x + shadowOffset.x),
-                             (int)(heightPos.y + shadowOffset.y), (int)fontSizeHeight, BLACK);
-
-                // Draw Height Text
-                if (m_fontLoaded)
-                    DrawTextEx(m_hudFont, heightText, heightPos, fontSizeHeight, spacing, WHITE);
-                else
-                    DrawText(heightText, (int)heightPos.x, (int)heightPos.y, (int)fontSizeHeight,
-                             WHITE);
-
-                // Vertical separator bar
-                int barX = (int)(heightPos.x + heightSize.x + 10);
-                DrawLineEx({(float)barX, (float)startY}, {(float)barX, (float)startY + 30}, 3.0f,
-                           WHITE);
-
-                // 2. Timer Section with Clock Icon
-                // Timer Text - Format "MM:SS" or "HH:MM:SS"
-                const char *timerText;
-                if (hours > 0)
-                    timerText = TextFormat("%02d:%02d:%02d", hours, minutes, seconds);
-                else
-                    timerText = TextFormat("%02d:%02d", minutes, seconds);
-
-                // Clock icon position
-                int iconX = (int)(heightPos.x + heightSize.x + 20);
-                int iconY = (int)(startY + 12); // Centered with text
-                int iconRadius = 10;
-
-                // Draw clock circle with shadow
-                DrawCircle(iconX + 1, iconY + 1, (float)iconRadius, ColorAlpha(BLACK, 0.3f));
-                DrawCircle(iconX, iconY, (float)iconRadius, WHITE);
-                DrawCircle(iconX, iconY, (float)iconRadius - 1, ColorAlpha(SKYBLUE, 0.2f));
-
-                // Clock hands
-                DrawLine(iconX, iconY, iconX, iconY - 6, BLACK); // Hour hand
-                DrawLine(iconX, iconY, iconX + 5, iconY, BLACK); // Minute hand
-                DrawCircle(iconX, iconY, 2.0f, BLACK);           // Center dot
-
-                // Timer text position
-                int timerX = iconX + iconRadius + 8;
-                float fontSizeTimer = 28.0f; // Slightly larger
-
-                // Draw Timer Shadow
-                if (m_fontLoaded)
-                    DrawTextEx(m_hudFont, timerText,
-                               {(float)timerX + shadowOffset.x, (float)startY + shadowOffset.y},
-                               fontSizeTimer, spacing, ColorAlpha(BLACK, 0.5f));
-                else
-                    DrawText(timerText, timerX + 2, startY + 2, (int)fontSizeTimer, BLACK);
-
-                // Draw Timer Text
-                if (m_fontLoaded)
-                    DrawTextEx(m_hudFont, timerText, {(float)timerX, (float)startY}, fontSizeTimer,
-                               spacing, WHITE);
-                else
-                    DrawText(timerText, timerX, startY, (int)fontSizeTimer, WHITE);
-            }
+            // HUD is now rendered by GameLayer::RenderUI
         }
     }
     // Render console in game - Now handled inside menu->Render() when showMenu is true
@@ -681,29 +427,10 @@ void GameApplication::OnShutdown()
     // Clear ECS
     REGISTRY.clear();
 
-    // Unload player model
-    if (m_playerModel.meshes != 0)
-    {
-        UnloadModel(m_playerModel);
-        m_playerModel = {0}; // Prevent double-free
-    }
-
-    if (m_shaderLoaded)
-    {
-        UnloadShader(m_playerShader);
-        m_shaderLoaded = false;
-    }
-
-    if (m_fontLoaded)
-    {
-        UnloadFont(m_hudFont);
-        m_fontLoaded = false;
-    }
-
     // Shutdown Managers
-    RenderManager::Get().Shutdown();
-    InputManager::Get().Shutdown();
-    AudioManager::Get().Shutdown(); // Optional, destructor handles it
+    Engine::Instance().GetRenderManager().Shutdown();
+    Engine::Instance().GetInputManager().Shutdown();
+    Engine::Instance().GetAudioManager().Shutdown(); // Optional, destructor handles it
 
     auto collisionManager = Engine::Instance().GetService<CollisionManager>();
     if (collisionManager && !collisionManager->GetColliders().empty())
@@ -724,19 +451,7 @@ void GameApplication::InitInput()
 {
     CD_INFO("[GameApplication] Setting up game-specific input bindings...");
 
-    auto *engine = &Engine::Instance();
-    if (!engine)
-    {
-        CD_WARN("[GameApplication] No engine provided, skipping input bindings");
-        return;
-    }
-
-    if (!m_menu)
-    {
-        CD_WARN("[GameApplication] Menu not found, skipping input bindings");
-        return;
-    }
-
+    auto &engine = Engine::Instance();
     auto *menu = m_menu.get();
 
     if (!menu)
@@ -745,7 +460,7 @@ void GameApplication::InitInput()
         return;
     }
 
-    engine->GetInputManager()->RegisterAction(
+    engine.GetInputManager().RegisterAction(
         KEY_F1,
         [this, menu]
         {
@@ -757,7 +472,7 @@ void GameApplication::InitInput()
             }
         });
 
-    engine->GetInputManager()->RegisterAction(
+    engine.GetInputManager().RegisterAction(
         KEY_ESCAPE,
         [this, menu]
         {
@@ -769,23 +484,21 @@ void GameApplication::InitInput()
             }
         });
 
-    engine->GetInputManager()->RegisterAction(KEY_F2,
-                                              [this]
-                                              {
-                                                  m_showDebugCollision = !m_showDebugCollision;
-                                                  CD_INFO("Debug Collision: %s",
-                                                          m_showDebugCollision ? "ON" : "OFF");
-                                              });
+    engine.GetInputManager().RegisterAction(KEY_F2,
+                                            [this]
+                                            {
+                                                m_showDebugCollision = !m_showDebugCollision;
+                                                CD_INFO("Debug Collision: %s",
+                                                        m_showDebugCollision ? "ON" : "OFF");
+                                            });
 
-    engine->GetInputManager()->RegisterAction(KEY_F3,
-                                              [this]
-                                              {
-                                                  m_showDebugStats = !m_showDebugStats;
-                                                  CD_INFO("Debug Stats: %s",
-                                                          m_showDebugStats ? "ON" : "OFF");
-                                              });
+    engine.GetInputManager().RegisterAction(KEY_F3,
+                                            [this]
+                                            {
+                                                m_showDebugStats = !m_showDebugStats;
+                                                CD_INFO("Debug Stats: %s",
+                                                        m_showDebugStats ? "ON" : "OFF");
+                                            });
 
     CD_INFO("[GameApplication] Game input bindings configured.");
 }
-
-// HandleMenuActions removed - replaced by event callbacks
