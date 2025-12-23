@@ -23,7 +23,7 @@ protected:
     IMenu *m_menu = nullptr;
 
     // Common UI helpers
-    bool RenderActionButton(const char *label, ChainedDecos::MenuEventType eventType,
+    bool RenderActionButton(const char *label, CHEngine::MenuEventType eventType,
                             const ImVec2 &size = ImVec2(0, 0));
     bool RenderBackButton(float width = 0.0f);
     void RenderSectionHeader(const char *title, const char *subtitle = nullptr) const;

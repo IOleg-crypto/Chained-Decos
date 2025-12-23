@@ -4,6 +4,8 @@
 #include <raylib.h>
 #include <raymath.h>
 
+namespace CHEngine
+{
 struct TransformComponent
 {
     Vector3 position = {0, 0, 0};
@@ -19,9 +21,6 @@ struct TransformComponent
         return MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
     }
 };
+} // namespace CHEngine
 
 #endif // TRANSFORM_COMPONENT_H
-
-
-
-

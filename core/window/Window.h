@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace ChainedEngine
+namespace CHEngine
 {
 
 struct WindowProps
@@ -56,4 +56,4 @@ private:
     WindowData m_Data;
 };
 
-} // namespace ChainedEngine
+} // namespace CHEngine

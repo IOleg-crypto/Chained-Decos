@@ -13,7 +13,7 @@ void MapSelectionScreen::Update()
         mapSelector->HandleKeyboardNavigation();
         if (IsKeyPressed(KEY_ENTER))
         {
-            GetMenu()->DispatchEvent(ChainedDecos::MenuEventType::StartGameWithMap,
+            GetMenu()->DispatchEvent(CHEngine::MenuEventType::StartGameWithMap,
                                      GetMenu()->GetSelectedMapName());
         }
     }
@@ -31,7 +31,7 @@ void MapSelectionScreen::Render()
 
         if (result == MapSelector::InteractionResult::LoadMap)
         {
-            GetMenu()->DispatchEvent(ChainedDecos::MenuEventType::StartGameWithMap,
+            GetMenu()->DispatchEvent(CHEngine::MenuEventType::StartGameWithMap,
                                      GetMenu()->GetSelectedMapName());
         }
         else if (result == MapSelector::InteractionResult::Back)

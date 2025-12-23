@@ -2,7 +2,7 @@
 #include <iostream>
 #include <raylib.h>
 
-namespace ChainedEngine
+namespace CHEngine
 {
 
 Window::Window(const WindowProps &props)
@@ -115,6 +115,6 @@ bool Window::ShouldClose() const
     return WindowShouldClose();
 }
 
-} // namespace ChainedEngine
+} // namespace CHEngine
 #include "core/Log.h"
 

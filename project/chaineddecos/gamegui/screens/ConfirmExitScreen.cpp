@@ -34,7 +34,7 @@ void ConfirmExitScreen::Render()
     ImGui::SetCursorPos(ImVec2(20, 130));
     if (ImGui::Button("YES, QUIT", ImVec2(buttonWidth, buttonHeight)))
     {
-        GetMenu()->DispatchEvent(ChainedDecos::MenuEventType::ExitGame);
+        GetMenu()->DispatchEvent(CHEngine::MenuEventType::ExitGame);
     }
 
     ImGui::SetCursorPos(ImVec2(160, 130));

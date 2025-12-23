@@ -1,33 +1,27 @@
-#include "core/Log.h"
 #include "GameLayer.h"
-#include "components/audio/core/AudioManager.h"
+#include "components/audio/interfaces/IAudioManager.h"
 #include "components/input/core/InputManager.h"
-#include "components/physics/collision/core/collisionManager.h"
 #include "components/rendering/core/RenderManager.h"
 #include "core/Engine.h"
-#include "scene/ecs/ECSRegistry.h"
-#include "scene/ecs/components/PhysicsData.h"
+#include "core/Log.h"
+
+#include "events/Event.h"
+#include "events/KeyEvent.h"
+#include "events/UIEventRegistry.h"
+#include "logic/GameInitializer.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
 #include "scene/ecs/components/playerComponent.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
-#include "events/Event.h"
-#include "events/KeyEvent.h"
-#include "events/MouseEvent.h"
-#include "events/UIEventRegistry.h"
-#include "editor/IEditor.h"
-#include "scene/main/core/World.h"
-#include "scene/resources/model/core/Model.h"
 #include <algorithm>
 #include <raylib.h>
 #include <raymath.h>
-
-using namespace ChainedEngine;
 #include <vector>
 
-using namespace ChainedDecos;
+
+using namespace CHEngine;
 
 GameLayer::GameLayer() : Layer("GameLayer")
 {
@@ -36,7 +30,7 @@ GameLayer::GameLayer() : Layer("GameLayer")
 void GameLayer::OnAttach()
 {
     // Register UI Events
-    UIEventRegistry::Get().Register(
+    Engine::Instance().GetUIEventRegistry().Register(
         "start_game",
         []()
         {
@@ -50,62 +44,85 @@ void GameLayer::OnAttach()
             }
         });
 
-    UIEventRegistry::Get().Register("quit_game",
-                                    []()
-                                    {
-                                        CD_INFO("[GameLayer] Quit Game Event Triggered!");
-                                        Engine::Instance().RequestExit();
-                                    });
+    Engine::Instance().GetUIEventRegistry().Register(
+        "quit_game",
+        []()
+        {
+            CD_INFO("[GameLayer] Quit Game Event Triggered!");
+            Engine::Instance().RequestExit();
+        });
 
     CD_INFO("GameLayer Attached");
 
-    // Load HUD Font
-#ifdef PROJECT_ROOT_DIR
-    std::string fontPath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/font/gantari/static/gantari-Bold.ttf";
-    m_hudFont = LoadFontEx(fontPath.c_str(), 96, 0, 0);
+    // Load HUD Font via Initializer
+    m_hudFont = GameInitializer::LoadHUDFont(m_fontLoaded);
 
-    if (m_hudFont.baseSize > 0)
-    {
-        SetTextureFilter(m_hudFont.texture, TEXTURE_FILTER_BILINEAR);
-        m_fontLoaded = true;
-        CD_INFO("[GameLayer] Loaded HUD font: %s", fontPath.c_str());
-    }
-    else
-    {
-        CD_WARN("[GameLayer] Failed to load HUD font: %s", fontPath.c_str());
-        m_hudFont = GetFontDefault();
-    }
-#else
-    m_hudFont = GetFontDefault();
-#endif
+    // Load Player Shader via Initializer
+    int locWindDir;
+    m_playerShader = GameInitializer::LoadPlayerShader(m_locFallSpeed, m_locTime, locWindDir);
+    m_shaderLoaded = (m_playerShader.id != 0);
 }
 
 void GameLayer::OnDetach()
 {
+    if (m_shaderLoaded)
+    {
+        UnloadShader(m_playerShader);
+        m_shaderLoaded = false;
+    }
+
+    if (m_fontLoaded)
+    {
+        UnloadFont(m_hudFont);
+        m_fontLoaded = false;
+    }
+
     CD_INFO("GameLayer Detached");
 }
 
 void GameLayer::OnUpdate(float deltaTime)
 {
-    // 1. STATS & MOVEMENT (formerly PlayerSystem)
+    // Update Player Shader Uniforms
+    if (m_shaderLoaded)
+    {
+        float time = (float)GetTime();
+        SetShaderValue(m_playerShader, m_locTime, &time, SHADER_UNIFORM_FLOAT);
+
+        auto playerView = REGISTRY.view<PlayerComponent, VelocityComponent>();
+        for (auto &&[entity, player, velocity] : playerView.each())
+        {
+            float fallSpeed = (velocity.velocity.y < 0) ? std::abs(velocity.velocity.y) : 0.0f;
+            SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed, SHADER_UNIFORM_FLOAT);
+        }
+    }
+
+    // 1. UPDATE PLAYER LOGIC (Previously PlayerSystem::Update)
     auto playerView = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
-    auto collisionManager = Engine::Instance().GetService<CollisionManager>();
+    auto &collisionManager = Engine::Instance().GetCollisionManager();
+    auto &input = Engine::Instance().GetInputManager();
+    auto &audioManager = Engine::Instance().GetAudioManager();
 
     for (auto [entity, transform, velocity, player] : playerView.each())
     {
+
         // Update Stats
         player.runTimer += deltaTime;
         if (transform.position.y > player.maxHeight)
             player.maxHeight = transform.position.y;
 
         // Handle Movement
+        Vector2 mouseDelta = input.GetMouseDelta();
+        player.cameraDistance -= input.GetMouseWheelMove() * 1.5f;
+        player.cameraDistance = Clamp(player.cameraDistance, 2.0f, 20.0f);
+        player.cameraYaw -= mouseDelta.x * player.mouseSensitivity;
+        player.cameraPitch =
+            Clamp(player.cameraPitch - mouseDelta.y * player.mouseSensitivity, -85.0f, 85.0f);
+
         Vector3 moveDir = {0, 0, 0};
         float yawRad = player.cameraYaw * DEG2RAD;
         Vector3 forward = Vector3Normalize({-sinf(yawRad), 0.0f, -cosf(yawRad)});
         Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, {0, 1, 0}));
 
-        auto &input = InputManager::Get();
         if (input.IsKeyDown(KEY_W))
             moveDir = Vector3Add(moveDir, forward);
         if (input.IsKeyDown(KEY_S))
@@ -150,14 +167,14 @@ void GameLayer::OnUpdate(float deltaTime)
             }
         }
 
-        // Jump handled in update for quick response
+        // Jump
         if (input.IsKeyPressed(KEY_SPACE) && player.isGrounded)
         {
             velocity.velocity.y = player.jumpForce;
             player.isGrounded = false;
         }
 
-        // 2. PHYSICS (formerly MovementSystem)
+        // Physics Integration
         if (REGISTRY.all_of<PhysicsData>(entity))
         {
             auto &physics = REGISTRY.get<PhysicsData>(entity);
@@ -169,11 +186,11 @@ void GameLayer::OnUpdate(float deltaTime)
 
         velocity.velocity =
             Vector3Add(velocity.velocity, Vector3Scale(velocity.acceleration, deltaTime));
-
         Vector3 proposedPos =
             Vector3Add(transform.position, Vector3Scale(velocity.velocity, deltaTime));
 
-        if (collisionManager && REGISTRY.all_of<CollisionComponent>(entity))
+        // World Collision
+        if (REGISTRY.all_of<CollisionComponent>(entity))
         {
             auto &collision = REGISTRY.get<CollisionComponent>(entity);
             Vector3 center = proposedPos;
@@ -186,7 +203,7 @@ void GameLayer::OnUpdate(float deltaTime)
             Collision playerCol(center, halfSize);
             Vector3 response = {0};
 
-            if (collisionManager->CheckCollision(playerCol, response))
+            if (collisionManager.CheckCollision(playerCol, response))
             {
                 proposedPos = Vector3Add(proposedPos, response);
                 float resLen = Vector3Length(response);
@@ -205,7 +222,7 @@ void GameLayer::OnUpdate(float deltaTime)
             rayOrigin.y += 1.0f;
             float hitDist = 0;
             Vector3 hp, hn;
-            if (collisionManager->RaycastDown(rayOrigin, 1.2f, hitDist, hp, hn))
+            if (collisionManager.RaycastDown(rayOrigin, 1.2f, hitDist, hp, hn))
             {
                 if (velocity.velocity.y <= 0 && (hitDist - 1.0f) <= 0.1f)
                 {
@@ -229,58 +246,41 @@ void GameLayer::OnUpdate(float deltaTime)
         velocity.velocity.x *= dragFactor;
         velocity.velocity.z *= dragFactor;
 
-        // Camera Update
-        Vector2 mouseDelta = input.GetMouseDelta();
-        player.cameraDistance -= input.GetMouseWheelMove() * 1.5f;
-        player.cameraDistance = Clamp(player.cameraDistance, 2.0f, 20.0f);
-        player.cameraYaw -= mouseDelta.x * player.mouseSensitivity;
-        player.cameraPitch =
-            Clamp(player.cameraPitch - mouseDelta.y * player.mouseSensitivity, -85.0f, 85.0f);
-
-        Camera &camera = RenderManager::Get().GetCamera();
-        float yawRadLocal = player.cameraYaw * DEG2RAD;
-        float pitchRadLocal = player.cameraPitch * DEG2RAD;
-        Vector3 camOffset = {player.cameraDistance * cosf(pitchRadLocal) * sinf(yawRadLocal),
-                             player.cameraDistance * sinf(pitchRadLocal),
-                             player.cameraDistance * cosf(pitchRadLocal) * cosf(yawRadLocal)};
-        camera.target = Vector3Add(transform.position, {0, 1.5f, 0});
-        camera.position = Vector3Add(camera.target, camOffset);
-
         // Audio Update
         const float fallThresh = -5.0f;
         if (velocity.velocity.y < fallThresh && !player.isFallingSoundPlaying)
         {
-            AudioManager::Get().PlayLoopingSoundEffect("player_fall", 1.0f);
+            audioManager.PlayLoopingSoundEffect("player_fall", 1.0f);
             player.isFallingSoundPlaying = true;
         }
         else if ((velocity.velocity.y >= fallThresh || player.isGrounded) &&
                  player.isFallingSoundPlaying)
         {
-            AudioManager::Get().StopLoopingSoundEffect("player_fall");
+            audioManager.StopLoopingSoundEffect("player_fall");
             player.isFallingSoundPlaying = false;
         }
+
+        // Camera Update
+        ::Camera &camera = Engine::Instance().GetRenderManager().GetCamera();
+        float yawRadLocal = player.cameraYaw * DEG2RAD;
+        float pitchRadLocal = player.cameraPitch * DEG2RAD;
+
+        Vector3 camOffset = {player.cameraDistance * cosf(pitchRadLocal) * sinf(yawRadLocal),
+                             player.cameraDistance * sinf(pitchRadLocal),
+                             player.cameraDistance * cosf(pitchRadLocal) * cosf(yawRadLocal)};
+
+        camera.target = Vector3Add(transform.position, {0, 1.5f, 0});
+        camera.position = Vector3Add(camera.target, camOffset);
     }
 
-    // 3. LIFETIME (formerly LifetimeSystem)
-    auto lifetimeView = REGISTRY.view<LifetimeComponent>();
-    std::vector<entt::entity> toDestroy;
-    for (auto [entity, lifetime] : lifetimeView.each())
-    {
-        lifetime.timer += deltaTime;
-        if (lifetime.timer >= lifetime.lifetime && lifetime.destroyOnTimeout)
-            toDestroy.push_back(entity);
-    }
-    for (auto entity : toDestroy)
-        REGISTRY.destroy(entity);
-
-    // 4. ENTITY-ENTITY COLLISION (formerly CollisionSystem)
+    // 2. UPDATE ENTITY COLLISIONS (Previously EntityCollisionSystem::Update)
     auto collView = REGISTRY.view<TransformComponent, CollisionComponent>();
-    for (auto [entityA, transformA, collisionA] : collView.each())
+    for (auto &&[entityA, transformA, collisionA] : collView.each())
     {
         collisionA.hasCollision = false;
         collisionA.collidedWith = entt::null;
 
-        for (auto [entityB, transformB, collisionB] : collView.each())
+        for (auto &&[entityB, transformB, collisionB] : collView.each())
         {
             if (entityA == entityB)
                 continue;
@@ -304,6 +304,20 @@ void GameLayer::OnUpdate(float deltaTime)
             }
         }
     }
+
+    // 3. UPDATE LIFETIME (Previously LifetimeSystem::Update)
+    auto lifetimeView = REGISTRY.view<LifetimeComponent>();
+    std::vector<entt::entity> toDestroy;
+
+    for (auto &&[entity, lifetime] : lifetimeView.each())
+    {
+        lifetime.timer += deltaTime;
+        if (lifetime.timer >= lifetime.lifetime && lifetime.destroyOnTimeout)
+            toDestroy.push_back(entity);
+    }
+
+    for (auto entity : toDestroy)
+        REGISTRY.destroy(entity);
 }
 
 void GameLayer::OnRender()
@@ -316,7 +330,9 @@ void GameLayer::RenderUI(float width, float height)
     // Render stored UI elements
     UIRenderSystem::Render((int)width, (int)height);
 
+    // 4. HUD SYSTEM LOGIC (Previously HUDSystem::Render)
     auto view = REGISTRY.view<PlayerComponent>();
+
     for (auto entity : view)
     {
         auto &playerComp = view.get<PlayerComponent>(entity);
@@ -325,39 +341,92 @@ void GameLayer::RenderUI(float width, float height)
         int minutes = ((int)playerComp.runTimer % 3600) / 60;
         int seconds = (int)playerComp.runTimer % 60;
 
-        // Position HUD in top-left of viewport
-        int startX = 20;
-        int startY = 20;
+        int startX = 40;
+        int startY = 80;
         float spacing = 2.0f;
 
         // 1. Height Section
         const char *heightText = TextFormat("height : %.0fm", playerComp.maxHeight);
-        float fontSizeHeight = 24.0f;
+        float fontSizeHeight = 36.0f;
+        Vector2 heightSize;
 
         if (m_fontLoaded)
-            DrawTextEx(m_hudFont, heightText, {(float)startX, (float)startY}, fontSizeHeight,
-                       spacing, WHITE);
+            heightSize = MeasureTextEx(m_hudFont, heightText, fontSizeHeight, spacing);
         else
-            DrawText(heightText, startX, startY, (int)fontSizeHeight, WHITE);
+            heightSize = {(float)MeasureText(heightText, (int)fontSizeHeight), fontSizeHeight};
 
-        // 2. Timer Section
-        const char *timerText = TextFormat("timer : %02d:%02d:%02d", hours, minutes, seconds);
-        float fontSizeTimer = 22.0f;
+        // Draw Height Shadow
+        Vector2 heightPos = {(float)startX, (float)startY};
+        Vector2 shadowOffset = {2.0f, 2.0f};
 
         if (m_fontLoaded)
-            DrawTextEx(m_hudFont, timerText, {(float)startX, (float)startY + 30}, fontSizeTimer,
-                       spacing, WHITE);
+            DrawTextEx(m_hudFont, heightText,
+                       {heightPos.x + shadowOffset.x, heightPos.y + shadowOffset.y}, fontSizeHeight,
+                       spacing, ColorAlpha(BLACK, 0.5f));
         else
-            DrawText(timerText, startX, startY + 30, (int)fontSizeTimer, WHITE);
+            DrawText(heightText, (int)(heightPos.x + shadowOffset.x),
+                     (int)(heightPos.y + shadowOffset.y), (int)fontSizeHeight, BLACK);
+
+        // Draw Height Text
+        if (m_fontLoaded)
+            DrawTextEx(m_hudFont, heightText, heightPos, fontSizeHeight, spacing, WHITE);
+        else
+            DrawText(heightText, (int)heightPos.x, (int)heightPos.y, (int)fontSizeHeight, WHITE);
+
+        // Vertical separator bar
+        int barX = (int)(heightPos.x + heightSize.x + 10);
+        DrawLineEx({(float)barX, (float)startY}, {(float)barX, (float)startY + 30}, 3.0f, WHITE);
+
+        // 2. Timer Section with Clock Icon
+        const char *timerText;
+        if (hours > 0)
+            timerText = TextFormat("%02d:%02d:%02d", hours, minutes, seconds);
+        else
+            timerText = TextFormat("%02d:%02d", minutes, seconds);
+
+        // Clock icon position
+        int iconX = (int)(heightPos.x + heightSize.x + 20);
+        int iconY = (int)(startY + 12);
+        int iconRadius = 10;
+
+        // Draw clock circle with shadow
+        DrawCircle(iconX + 1, iconY + 1, (float)iconRadius, ColorAlpha(BLACK, 0.3f));
+        DrawCircle(iconX, iconY, (float)iconRadius, WHITE);
+        DrawCircle(iconX, iconY, (float)iconRadius - 1, ColorAlpha(SKYBLUE, 0.2f));
+
+        // Clock hands
+        DrawLine(iconX, iconY, iconX, iconY - 6, BLACK); // Hour hand
+        DrawLine(iconX, iconY, iconX + 5, iconY, BLACK); // Minute hand
+        DrawCircle(iconX, iconY, 2.0f, BLACK);           // Center dot
+
+        // Timer text position
+        int timerX = iconX + iconRadius + 8;
+        float fontSizeTimer = 28.0f;
+
+        // Draw Timer Shadow
+        if (m_fontLoaded)
+            DrawTextEx(m_hudFont, timerText,
+                       {(float)timerX + shadowOffset.x, (float)startY + shadowOffset.y},
+                       fontSizeTimer, spacing, ColorAlpha(BLACK, 0.5f));
+        else
+            DrawText(timerText, timerX + 2, startY + 2, (int)fontSizeTimer, BLACK);
+
+        // Draw Timer Text
+        if (m_fontLoaded)
+            DrawTextEx(m_hudFont, timerText, {(float)timerX, (float)startY}, fontSizeTimer, spacing,
+                       WHITE);
+        else
+            DrawText(timerText, timerX, startY, (int)fontSizeTimer, WHITE);
     }
 }
 
 void GameLayer::RenderScene()
 {
-    // MOVED FROM RenderSystem::Render
+    // RENDER SYSTEM LOGIC (Previously RenderSystem::Render)
     auto view = REGISTRY.view<TransformComponent, RenderComponent>();
     std::vector<entt::entity> entities(view.begin(), view.end());
 
+    // Sort by render layer
     std::sort(entities.begin(), entities.end(),
               [&](entt::entity a, entt::entity b)
               {
@@ -367,51 +436,37 @@ void GameLayer::RenderScene()
 
     for (auto entity : entities)
     {
-        auto &transform = view.get<TransformComponent>(entity);
-        auto &renderComp = view.get<RenderComponent>(entity);
+        auto &t = view.get<TransformComponent>(entity);
+        auto &r = view.get<RenderComponent>(entity);
 
-        if (!renderComp.visible || !renderComp.model)
+        if (!r.visible || !r.model)
             continue;
 
-        Matrix matS = MatrixScale(transform.scale.x, transform.scale.y, transform.scale.z);
-        Matrix matR = MatrixRotateXYZ(transform.rotation);
-        Matrix matT = MatrixTranslate(transform.position.x + renderComp.offset.x,
-                                      transform.position.y + renderComp.offset.y,
-                                      transform.position.z + renderComp.offset.z);
+        Matrix matS = MatrixScale(t.scale.x, t.scale.y, t.scale.z);
+        Matrix matR = MatrixRotateXYZ(t.rotation);
+        Matrix matT = MatrixTranslate(t.position.x + r.offset.x, t.position.y + r.offset.y,
+                                      t.position.z + r.offset.z);
 
-        renderComp.model->transform = MatrixMultiply(MatrixMultiply(matS, matR), matT);
+        r.model->transform = MatrixMultiply(MatrixMultiply(matS, matR), matT);
 
-        auto editor = Engine::Instance().GetService<IEditor>();
-        bool wireframe = (editor && editor->IsWireframeEnabled());
-
-        if (wireframe)
-            DrawModelWires(*renderComp.model, Vector3Zero(), 1.0f, renderComp.tint);
-        else
-            DrawModel(*renderComp.model, Vector3Zero(), 1.0f, renderComp.tint);
+        // Check if editor is available for wireframe (Optional)
+        // For now, simple render
+        DrawModel(*r.model, Vector3Zero(), 1.0f, r.tint);
     }
 
     // DEBUG COLLISION RENDER
-    auto editor = Engine::Instance().GetService<IEditor>();
-    if (editor && editor->IsCollisionDebugEnabled())
+    if (Engine::Instance().IsCollisionDebugVisible())
     {
-        auto collisionManager = Engine::Instance().GetService<CollisionManager>();
-        if (collisionManager)
-        {
-            collisionManager->Render();
-        }
+        Engine::Instance().GetCollisionManager().Render();
 
-        // Draw player character's ACTIVE collision volume
         auto playerView = REGISTRY.view<TransformComponent, CollisionComponent, PlayerComponent>();
-        for (auto [entity, transform, collision, player] : playerView.each())
+        for (auto &&[entity, transform, collision, player] : playerView.each())
         {
-            // Bounding box from collision bounds + actual transform
-            // This is the SAME box used for physics resolution in OnUpdate
             BoundingBox b = collision.bounds;
             b.min = Vector3Add(b.min, transform.position);
             b.max = Vector3Add(b.max, transform.position);
             DrawBoundingBox(b, RED);
 
-            // Ground check ray visualization
             Vector3 rayStart = transform.position;
             rayStart.y += 1.0f;
             Vector3 rayEnd = rayStart;
@@ -430,7 +485,7 @@ void GameLayer::OnEvent(Event &e)
             if (event.GetKeyCode() == KEY_F) // Respawn
             {
                 auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
-                for (auto [entity, transform, velocity, player] : view.each())
+                for (auto &&[entity, transform, velocity, player] : view.each())
                 {
                     transform.position = player.spawnPosition;
                     velocity.velocity = {0, 0, 0};
@@ -439,7 +494,7 @@ void GameLayer::OnEvent(Event &e)
                     player.maxHeight = 0;
                     if (player.isFallingSoundPlaying)
                     {
-                        AudioManager::Get().StopLoopingSoundEffect("player_fall");
+                        Engine::Instance().GetAudioManager().StopLoopingSoundEffect("player_fall");
                         player.isFallingSoundPlaying = false;
                     }
                 }
@@ -448,4 +503,3 @@ void GameLayer::OnEvent(Event &e)
             return false;
         });
 }
-

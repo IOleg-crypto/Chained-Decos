@@ -28,11 +28,23 @@ private:
     void RenderUIElementsList();
     void RenderAddButtons();
     void RenderPropertiesPanel();
+    void RenderSceneSettings();
+
+    // Inspector Helpers (Unity-style decomposition)
+    void DrawPropertyLabel(const char *label);
+    void RenderRectTransform(UIElementData &elem, bool &changed);
+    void RenderTextComponent(UIElementData &elem, bool &changed);
+    void RenderButtonComponent(UIElementData &elem, bool &changed);
+    void RenderImageComponent(UIElementData &elem, bool &changed);
+    void RenderActionSystem(UIElementData &elem, bool &changed);
 
     void AddButton();
     void AddText();
     void AddImage();
     void AddImGuiButton();
+    void AddImGuiText();
+    void AddImGuiInput();
+    void AddImGuiCheckbox();
     void DeleteSelectedElement();
 
     void CreateEntityFromUIElement(const UIElementData &elemData);

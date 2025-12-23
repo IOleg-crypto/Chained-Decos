@@ -4,6 +4,8 @@
 #include <raylib.h>
 #include <string>
 
+namespace CHEngine
+{
 struct RenderComponent
 {
     std::string modelName;
@@ -15,9 +17,6 @@ struct RenderComponent
     bool receiveShadows = true;
     Vector3 offset = {0.0f, 0.0f, 0.0f}; // Visual offset from transform position
 };
+} // namespace CHEngine
 
 #endif // RENDER_COMPONENT_H
-
-
-
-

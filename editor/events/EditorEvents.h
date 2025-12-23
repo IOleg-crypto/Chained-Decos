@@ -4,7 +4,7 @@
 #include "events/Event.h"
 #include <string>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 // Event fired when an object is selected in the editor
@@ -59,6 +59,6 @@ public:
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // EDITOR_EVENTS_H

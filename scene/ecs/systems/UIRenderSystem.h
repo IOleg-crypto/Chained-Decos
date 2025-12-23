@@ -5,7 +5,7 @@
 #include "scene/ecs/components/UIComponents.h"
 #include <raylib.h>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 class UIRenderSystem
 {
@@ -21,6 +21,6 @@ private:
                                            int screenHeight);
     static Vector2 GetAnchorPosition(UIAnchor anchor, int screenWidth, int screenHeight);
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // UI_RENDER_SYSTEM_H

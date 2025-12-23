@@ -3,9 +3,9 @@
 
 #include "components/physics/collision/core/collisionManager.h"
 #include "core/Engine.h"
-#include "project/chaineddecos/GameApplication.h"
-#include "project/chaineddecos/gamegui/Menu.h"
-#include "project/chaineddecos/player/core/player.h"
+#include "project/CHEngine/GameApplication.h"
+#include "project/CHEngine/gamegui/Menu.h"
+#include "project/CHEngine/player/core/player.h"
 #include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/model/core/Model.h"
 
@@ -15,7 +15,7 @@ protected:
     void SetUp() override
     {
         // Create dependencies
-        player = std::make_shared<Player>(&AudioManager::Get());
+        player = std::make_shared<Player>(&Engine::Instance().GetAudioManager());
         collisionManager = std::make_shared<CollisionManager>();
         models = std::make_shared<ModelLoader>();
         world = std::make_shared<WorldManager>();
@@ -38,7 +38,7 @@ protected:
         menu.reset();
     }
 
-    std::shared_ptr<ChainedEngine::Engine> engine;
+    std::shared_ptr<CHEngine::Engine> engine;
     std::shared_ptr<GameApplication> game;
     std::shared_ptr<CollisionManager> collisionManager;
     std::shared_ptr<Player> player;

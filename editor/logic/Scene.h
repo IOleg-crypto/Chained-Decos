@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace ChainedEngine
+namespace CHEngine
 {
 
 class Scene
@@ -43,6 +43,6 @@ private:
     std::string m_name;
 };
 
-} // namespace ChainedEngine
+} // namespace CHEngine
 
 #endif // SCENE_H

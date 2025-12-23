@@ -3,7 +3,7 @@
 
 #include "core/layer/Layer.h"
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 /**
@@ -27,6 +27,6 @@ private:
     float m_Time = 0.0f;
 };
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // IMGUI_LAYER_H

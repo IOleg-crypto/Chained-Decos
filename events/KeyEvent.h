@@ -4,7 +4,7 @@
 #include "events/Event.h"
 
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 class KeyEvent : public Event
@@ -66,7 +66,7 @@ public:
 
     EVENT_CLASS_TYPE(KeyTyped)
 };
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // KEY_EVENT_H
 

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-namespace ChainedDecos
+namespace CHEngine
 {
 
 enum class EventType : uint8_t
@@ -107,6 +107,6 @@ private:
 
 std::ostream &operator<<(std::ostream &os, const Event &e);
 
-} // namespace ChainedDecos
+} // namespace CHEngine
 
 #endif // EVENT_H

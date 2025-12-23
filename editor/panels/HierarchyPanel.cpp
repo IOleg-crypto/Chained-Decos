@@ -25,7 +25,7 @@ void HierarchyPanel::Render()
     }
 
     // Get objects from game scene
-    auto &gameScene = m_editor->GetGameScene();
+    auto &gameScene = m_editor->GetSceneManager().GetGameScene();
     auto &objects = gameScene.GetMapObjectsMutable();
 
     // Header with object count
@@ -42,27 +42,27 @@ void HierarchyPanel::Render()
     {
         if (ImGui::MenuItem("Cube"))
         {
-            m_editor->CreateDefaultObject(MapObjectType::CUBE);
+            m_editor->GetSceneManager().CreateDefaultObject(MapObjectType::CUBE);
         }
         if (ImGui::MenuItem("Sphere"))
         {
-            m_editor->CreateDefaultObject(MapObjectType::SPHERE);
+            m_editor->GetSceneManager().CreateDefaultObject(MapObjectType::SPHERE);
         }
         if (ImGui::MenuItem("Cylinder"))
         {
-            m_editor->CreateDefaultObject(MapObjectType::CYLINDER);
+            m_editor->GetSceneManager().CreateDefaultObject(MapObjectType::CYLINDER);
         }
         if (ImGui::MenuItem("Plane"))
         {
-            m_editor->CreateDefaultObject(MapObjectType::PLANE);
+            m_editor->GetSceneManager().CreateDefaultObject(MapObjectType::PLANE);
         }
         if (ImGui::MenuItem("Model"))
         {
-            m_editor->CreateDefaultObject(MapObjectType::MODEL);
+            m_editor->GetSceneManager().CreateDefaultObject(MapObjectType::MODEL);
         }
         if (ImGui::MenuItem("Spawn Zone"))
         {
-            m_editor->CreateDefaultObject(MapObjectType::SPAWN_ZONE);
+            m_editor->GetSceneManager().CreateDefaultObject(MapObjectType::SPAWN_ZONE);
         }
         ImGui::EndPopup();
     }
@@ -70,7 +70,7 @@ void HierarchyPanel::Render()
     ImGui::Separator();
 
     // Object list
-    int selectedIndex = m_editor->GetSelectedObjectIndex();
+    int selectedIndex = m_editor->GetSelectionManager().GetSelectedObjectIndex();
 
     for (size_t i = 0; i < objects.size(); ++i)
     {
@@ -117,7 +117,7 @@ void HierarchyPanel::Render()
         {
             if (ImGui::IsItemClicked())
             {
-                m_editor->SelectObject(static_cast<int>(i));
+                m_editor->GetSelectionManager().SelectObject(static_cast<int>(i));
             }
         }
 
@@ -126,7 +126,7 @@ void HierarchyPanel::Render()
         {
             if (ImGui::MenuItem("Delete"))
             {
-                m_editor->RemoveObject(static_cast<int>(i));
+                m_editor->GetSceneManager().RemoveObject(static_cast<int>(i));
             }
             ImGui::EndPopup();
         }
@@ -137,7 +137,7 @@ void HierarchyPanel::Render()
     ImGui::Separator();
     ImGui::Text("UI Elements (%zu):", gameScene.GetUIElements().size());
 
-    int selectedUIIndex = m_editor->GetSelectedUIElementIndex();
+    int selectedUIIndex = m_editor->GetSelectionManager().GetSelectedUIElementIndex();
     const auto &uiElements = gameScene.GetUIElements();
 
     for (size_t i = 0; i < uiElements.size(); ++i)
@@ -157,12 +157,12 @@ void HierarchyPanel::Render()
 
         if (ImGui::Selectable((typeIcon + displayName).c_str(), isSelected))
         {
-            m_editor->SelectUIElement(static_cast<int>(i));
+            m_editor->GetSelectionManager().SelectUIElement(static_cast<int>(i));
             // Deselect 3D object when selecting UI
-            m_editor->SelectObject(-1);
+            m_editor->GetSelectionManager().SelectObject(-1);
         }
 
-        if (isSelected && m_editor->IsUIDesignMode())
+        if (isSelected && m_editor->GetState().IsUIDesignMode())
         {
             // Visual hint in hierarchy that we're in UI mode
             ImGui::SameLine();

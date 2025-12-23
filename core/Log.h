@@ -3,25 +3,25 @@
 #include <raylib.h>
 #include <string>
 
-namespace ChainedEngine
+namespace CHEngine
 {
 
 // Forward declare Log class to use in macros
 class Log;
 
 // Core logging (for engine internals)
-#define CD_CORE_TRACE(...) ::ChainedEngine::Log::CoreTrace(__VA_ARGS__)
-#define CD_CORE_INFO(...) ::ChainedEngine::Log::CoreInfo(__VA_ARGS__)
-#define CD_CORE_WARN(...) ::ChainedEngine::Log::CoreWarn(__VA_ARGS__)
-#define CD_CORE_ERROR(...) ::ChainedEngine::Log::CoreError(__VA_ARGS__)
-#define CD_CORE_FATAL(...) ::ChainedEngine::Log::CoreFatal(__VA_ARGS__)
+#define CD_CORE_TRACE(...) ::CHEngine::Log::CoreTrace(__VA_ARGS__)
+#define CD_CORE_INFO(...) ::CHEngine::Log::CoreInfo(__VA_ARGS__)
+#define CD_CORE_WARN(...) ::CHEngine::Log::CoreWarn(__VA_ARGS__)
+#define CD_CORE_ERROR(...) ::CHEngine::Log::CoreError(__VA_ARGS__)
+#define CD_CORE_FATAL(...) ::CHEngine::Log::CoreFatal(__VA_ARGS__)
 
 // Client logging (for game/editor code)
-#define CD_TRACE(...) ::ChainedEngine::Log::ClientTrace(__VA_ARGS__)
-#define CD_INFO(...) ::ChainedEngine::Log::ClientInfo(__VA_ARGS__)
-#define CD_WARN(...) ::ChainedEngine::Log::ClientWarn(__VA_ARGS__)
-#define CD_ERROR(...) ::ChainedEngine::Log::ClientError(__VA_ARGS__)
-#define CD_FATAL(...) ::ChainedEngine::Log::ClientFatal(__VA_ARGS__)
+#define CD_TRACE(...) ::CHEngine::Log::ClientTrace(__VA_ARGS__)
+#define CD_INFO(...) ::CHEngine::Log::ClientInfo(__VA_ARGS__)
+#define CD_WARN(...) ::CHEngine::Log::ClientWarn(__VA_ARGS__)
+#define CD_ERROR(...) ::CHEngine::Log::ClientError(__VA_ARGS__)
+#define CD_FATAL(...) ::CHEngine::Log::ClientFatal(__VA_ARGS__)
 
 class Log
 {
@@ -79,4 +79,4 @@ public:
     }
 };
 
-} // namespace ChainedEngine
+} // namespace CHEngine

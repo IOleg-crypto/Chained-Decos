@@ -4,7 +4,7 @@
 #include "core/application/EngineApplication.h"
 #include "scene/main/core/LevelManager.h"
 
-#include "project/chaineddecos/player/core/player.h"
+#include "project/CHEngine/player/core/player.h"
 #include <algorithm>
 #include <cctype>
 #include <imgui.h>
@@ -29,13 +29,13 @@ ConsoleManager::ConsoleManager()
 IPlayer *ConsoleManager::GetPlayer()
 {
     // Get Player through Engine -> PlayerService
-    auto player = ChainedEngine::Engine::Instance().GetService<IPlayer>();
+    auto player = CHEngine::Engine::Instance().GetService<IPlayer>();
     return player.get();
 }
 
 IEngine *ConsoleManager::GetEngine() const
 {
-    return &ChainedEngine::Engine::Instance();
+    return &CHEngine::Engine::Instance();
 }
 
 void ConsoleManager::ToggleConsole()

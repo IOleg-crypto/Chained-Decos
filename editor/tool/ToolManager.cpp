@@ -82,7 +82,7 @@ const std::string &ToolManager::GetSelectedModel() const
 
 void ToolManager::HandleToolInput(bool mousePressed, const Ray &ray, IEditor &editor)
 {
-    MapObjectData *selectedObj = editor.GetSelectedObject();
+    MapObjectData *selectedObj = editor.GetSelectionManager().GetSelectedObject();
 
     if (mousePressed)
     {
@@ -143,7 +143,7 @@ void ToolManager::UpdateTool(const Ray &ray, IEditor &editor)
         return;
     }
 
-    MapObjectData *selectedObj = editor.GetSelectedObject();
+    MapObjectData *selectedObj = editor.GetSelectionManager().GetSelectedObject();
     if (selectedObj == nullptr)
     {
         EndTransform();
@@ -181,7 +181,7 @@ void ToolManager::UpdateTool(const Ray &ray, IEditor &editor)
             Vector3 newPosition =
                 Vector3Add(m_transformStartPosition, Vector3Scale(axisDir, projection));
             selectedObj->position = newPosition;
-            editor.SetSceneModified(true);
+            editor.GetSceneManager().SetSceneModified(true);
         }
         else
         {
@@ -190,7 +190,7 @@ void ToolManager::UpdateTool(const Ray &ray, IEditor &editor)
             Vector3 delta = Vector3Subtract(newPoint, m_transformStartPoint);
             Vector3 newPosition = Vector3Add(m_transformStartPosition, delta);
             selectedObj->position = newPosition;
-            editor.SetSceneModified(true);
+            editor.GetSceneManager().SetSceneModified(true);
         }
         break;
     }
@@ -202,7 +202,7 @@ void ToolManager::UpdateTool(const Ray &ray, IEditor &editor)
         mouseDelta = CameraController::FilterMouseDelta(mouseDelta);
         float rotationSpeed = 0.01f; // Adjust sensitivity
         selectedObj->rotation.y += mouseDelta.x * rotationSpeed;
-        editor.SetSceneModified(true);
+        editor.GetSceneManager().SetSceneModified(true);
         break;
     }
     case SCALE:
@@ -256,7 +256,7 @@ void ToolManager::UpdateTool(const Ray &ray, IEditor &editor)
 
                 // Prevent negative scale
                 selectedObj->scale = newScale;
-                editor.SetSceneModified(true);
+                editor.GetSceneManager().SetSceneModified(true);
             }
         }
         else
@@ -276,7 +276,7 @@ void ToolManager::UpdateTool(const Ray &ray, IEditor &editor)
                 if (newScale.x > 0.01f && newScale.y > 0.01f && newScale.z > 0.01f)
                 {
                     selectedObj->scale = newScale;
-                    editor.SetSceneModified(true);
+                    editor.GetSceneManager().SetSceneModified(true);
                 }
             }
         }
@@ -417,13 +417,13 @@ void ToolManager::CreateObjectForTool(Tool tool, IEditor &editor)
         return;
     }
 
-    dynamic_cast<Editor &>(editor).CreateDefaultObject(type, m_currentlySelectedModelName);
+    editor.GetSceneManager().CreateDefaultObject(type, m_currentlySelectedModelName);
     std::cout << "Created new object with tool: " << (int)tool << std::endl;
 }
 
 void ToolManager::RenderGizmos(IEditor &editor)
 {
-    MapObjectData *selectedObj = editor.GetSelectedObject();
+    MapObjectData *selectedObj = editor.GetSelectionManager().GetSelectedObject();
     if (!selectedObj)
         return;
 
@@ -490,5 +490,3 @@ void ToolManager::RenderGizmos(IEditor &editor)
         DrawCircle3D(selectedObj->position, 2.0f * scale, {0, 0, 1}, 90.0f, BLUE);
     }
 }
-
-

@@ -3,15 +3,14 @@
 
 #include "components/audio/core/AudioManager.h"
 #include "components/physics/collision/core/collisionManager.h"
-#include "project/chaineddecos/player/core/player.h"
-
+#include "project/CHEngine/player/core/player.h"
 
 class PlayerTest : public ::testing::Test
 {
 protected:
     void SetUp() override
     {
-        player = std::make_unique<Player>(&AudioManager::Get());
+        player = std::make_unique<Player>(&Engine::Instance().GetAudioManager());
         collisionManager = std::make_unique<CollisionManager>();
     }
 
@@ -124,8 +123,3 @@ TEST_F(PlayerTest, PlayerHasCameraController)
     EXPECT_NE(cameraController, nullptr);
     EXPECT_NE(cameraController.get(), nullptr);
 }
-
-
-
-
-
