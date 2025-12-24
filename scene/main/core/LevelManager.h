@@ -65,6 +65,9 @@ public:
     void LoadEditorMap(const std::string &mapPath);
     std::string ConvertMapNameToPath(const std::string &mapName);
     void RenderEditorMap() override;
+    void RefreshMapEntities() override;
+    void RefreshUIEntities() override;
+    void SyncEntitiesToMap() override;
     void RenderSpawnZone() const;
     void DumpMapDiagnostics() const;
 

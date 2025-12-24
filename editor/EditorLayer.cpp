@@ -98,13 +98,22 @@ void EditorLayer::OnRender()
 void EditorLayer::OnImGuiRender()
 {
     UI_DrawDockspace();
-    m_ToolbarPanel->OnImGuiRender(this);
+    m_ToolbarPanel->OnImGuiRender(
+        m_SceneState, m_ActiveTool, [this]() { OnScenePlay(); }, [this]() { OnSceneStop(); },
+        [this]() { NewScene(); }, [this]() { SaveScene(); }, [this](Tool t) { SetActiveTool(t); });
 
     // Panels
-    m_HierarchyPanel->OnImGuiRender(this);
-    m_InspectorPanel->OnImGuiRender(GetSelectedObject());
+    m_HierarchyPanel->OnImGuiRender(
+        m_SelectionType, m_SelectedObjectIndex,
+        [this](SelectionType type, int i) { SetSelectedObjectIndex(i, type); },
+        [this]() { AddModel(); }, [this](const std::string &type) { AddUIElement(type); });
+    if (m_SelectionType == SelectionType::UI_ELEMENT)
+        m_InspectorPanel->OnImGuiRender(GetSelectedUIElement());
+    else
+        m_InspectorPanel->OnImGuiRender(GetSelectedObject());
     if (m_ViewportPanel)
-        m_ViewportPanel->OnImGuiRender(m_ActiveScene, m_CameraController, this);
+        m_ViewportPanel->OnImGuiRender(m_ActiveScene, m_CameraController, m_SelectedObjectIndex,
+                                       m_ActiveTool, [this](int i) { SetSelectedObjectIndex(i); });
     m_AssetBrowserPanel->OnImGuiRender();
     m_ConsolePanel->OnImGuiRender();
 }
@@ -277,7 +286,8 @@ void EditorLayer::OnSceneStop()
 
 MapObjectData *EditorLayer::GetSelectedObject()
 {
-    if (m_SelectedObjectIndex < 0 || !m_ActiveScene)
+    if (m_SelectionType != SelectionType::WORLD_OBJECT || m_SelectedObjectIndex < 0 ||
+        !m_ActiveScene)
         return nullptr;
 
     auto &objects = m_ActiveScene->GetMapObjectsMutable();
@@ -285,6 +295,18 @@ MapObjectData *EditorLayer::GetSelectedObject()
         return nullptr;
 
     return &objects[m_SelectedObjectIndex];
+}
+
+UIElementData *EditorLayer::GetSelectedUIElement()
+{
+    if (m_SelectionType != SelectionType::UI_ELEMENT || m_SelectedObjectIndex < 0 || !m_ActiveScene)
+        return nullptr;
+
+    auto &elements = m_ActiveScene->GetUIElementsMutable();
+    if (m_SelectedObjectIndex >= (int)elements.size())
+        return nullptr;
+
+    return &elements[m_SelectedObjectIndex];
 }
 
 void EditorLayer::UI_DrawToolbar()
@@ -343,5 +365,76 @@ void EditorLayer::SaveSceneAs()
         loader.SaveScene(*m_EditorScene, m_ScenePath);
         NFD_FreePath(outPath);
     }
+}
+void EditorLayer::AddModel()
+{
+    nfdchar_t *outPath = nullptr;
+    nfdfilteritem_t filterItem[2] = {{"3D Models", "obj,glb,gltf"}, {"All Files", "*"}};
+    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 2, nullptr);
+
+    if (result == NFD_OKAY)
+    {
+        std::filesystem::path fullPath(outPath);
+        std::string filename = fullPath.filename().string();
+
+        // 1. Ensure model is in scene's cache
+        auto &models = m_ActiveScene->GetMapModelsMutable();
+        if (models.find(filename) == models.end())
+        {
+            Model model = LoadModel(outPath);
+            if (model.meshCount > 0)
+            {
+                models[filename] = model;
+                CD_INFO("Loaded model: %s", filename.c_str());
+            }
+            else
+            {
+                CD_ERROR("Failed to load model: %s", outPath);
+            }
+        }
+
+        // 2. Create MapObjectData
+        MapObjectData obj;
+        obj.name = filename;
+        obj.type = MapObjectType::MODEL;
+        obj.modelName = filename;
+        obj.position = {0, 0, 0};
+        obj.scale = {1, 1, 1};
+        obj.color = WHITE;
+
+        auto &objects = m_ActiveScene->GetMapObjectsMutable();
+        objects.push_back(obj);
+        m_SelectionType = SelectionType::WORLD_OBJECT;
+        m_SelectedObjectIndex = (int)objects.size() - 1;
+
+        NFD_FreePath(outPath);
+    }
+}
+
+void EditorLayer::AddUIElement(const std::string &type)
+{
+    if (!m_ActiveScene)
+        return;
+
+    UIElementData el;
+    el.name = "New " + type;
+    el.type = type;
+    el.position = {100, 100};
+    el.size = {120, 50};
+
+    if (type == "text")
+    {
+        el.text = "New Text";
+        el.fontSize = 20;
+    }
+    else if (type == "button")
+    {
+        el.text = "Button";
+    }
+
+    auto &elements = m_ActiveScene->GetUIElementsMutable();
+    elements.push_back(el);
+    m_SelectionType = SelectionType::UI_ELEMENT;
+    m_SelectedObjectIndex = (int)elements.size() - 1;
 }
 } // namespace CHEngine

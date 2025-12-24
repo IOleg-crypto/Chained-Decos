@@ -36,7 +36,8 @@ ViewportPanel::~ViewportPanel()
 
 void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                                   const std::shared_ptr<CameraController> &cameraController,
-                                  EditorLayer *layer)
+                                  int selectedObjectIndex, Tool currentTool,
+                                  std::function<void(int)> onSelect)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
@@ -127,16 +128,14 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                 }
 
                 if (hitIndex != -1)
-                    layer->SetSelectedObjectIndex(hitIndex);
+                    onSelect(hitIndex);
             }
 
             // 4. Draw Gizmo for selected object
-            int selectedObjectIndex = layer->GetSelectedObjectIndex();
             if (selectedObjectIndex >= 0 &&
                 selectedObjectIndex < (int)scene->GetMapObjects().size())
             {
                 auto &obj = scene->GetMapObjectsMutable()[selectedObjectIndex];
-                Tool currentTool = layer->GetActiveTool();
                 Ray ray = pickingRay;
 
                 // 2. Handle Dragging
@@ -331,7 +330,7 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                 selectedObjectIndex < (int)scene->GetMapObjects().size())
             {
                 auto &obj = scene->GetMapObjects()[selectedObjectIndex];
-                if (layer->GetActiveTool() != Tool::SELECT)
+                if (currentTool != Tool::SELECT)
                 {
                     float gizmoSize = 2.0f;
                     auto drawLabel = [&](Vector3 dir, const char *label, Color color)

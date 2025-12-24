@@ -1,7 +1,7 @@
 #ifndef SELECTION_MANAGER_H
 #define SELECTION_MANAGER_H
 
-#include "ISelectionManager.h"
+#include "scene/resources/map/core/SceneLoader.h"
 #include <vector>
 
 namespace CHEngine
@@ -9,38 +9,38 @@ namespace CHEngine
 class Scene;
 }
 
-class SelectionManager : public ISelectionManager
+class SelectionManager
 {
 public:
     SelectionManager() = default;
-    ~SelectionManager() override = default;
+    ~SelectionManager() = default;
 
     // 3D Object Selection
-    MapObjectData *GetSelectedObject() override;
-    int GetSelectedObjectIndex() const override
+    MapObjectData *GetSelectedObject();
+    int GetSelectedObjectIndex() const
     {
         return m_selectedObjectIndex;
     }
-    void SelectObject(int index) override
+    void SelectObject(int index)
     {
         m_selectedObjectIndex = index;
     }
-    void ClearSelection() override
+    void ClearSelection()
     {
         m_selectedObjectIndex = -1;
         m_selectedUIElementIndex = -1;
     }
 
     // UI Selection
-    void SelectUIElement(int index) override
+    void SelectUIElement(int index)
     {
         m_selectedUIElementIndex = index;
     }
-    int GetSelectedUIElementIndex() const override
+    int GetSelectedUIElementIndex() const
     {
         return m_selectedUIElementIndex;
     }
-    void RefreshUIEntities() override; // May need external context later
+    void RefreshUIEntities(); // May need external context later
 
 private:
     int m_selectedObjectIndex = -1;

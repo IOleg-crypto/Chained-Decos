@@ -106,6 +106,116 @@ void InspectorPanel::DrawComponents(MapObjectData *entity)
     }
 }
 
+void InspectorPanel::OnImGuiRender(UIElementData *selectedElement)
+{
+    ImGui::Begin("Inspector");
+
+    if (selectedElement)
+    {
+        DrawUIComponents(selectedElement);
+    }
+    else
+    {
+        ImGui::Text("No element selected");
+    }
+
+    ImGui::End();
+}
+
+void InspectorPanel::DrawUIComponents(UIElementData *element)
+{
+    // Name
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+    strncpy(buffer, element->name.c_str(), sizeof(buffer));
+    if (ImGui::InputText("##Name", buffer, sizeof(buffer)))
+    {
+        element->name = std::string(buffer);
+    }
+
+    ImGui::Separator();
+
+    // Transform (RectTransform)
+    if (ImGui::CollapsingHeader("Rect Transform", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        float pos[2] = {element->position.x, element->position.y};
+        if (ImGui::DragFloat2("Position", pos))
+        {
+            element->position = {pos[0], pos[1]};
+        }
+
+        float size[2] = {element->size.x, element->size.y};
+        if (ImGui::DragFloat2("Size", size))
+        {
+            element->size = {size[0], size[1]};
+        }
+
+        ImGui::DragInt("Anchor", &element->anchor, 0.1f, 0, 8);
+    }
+
+    // Type Specific
+    if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if (element->type == "text" || element->type == "button")
+        {
+            char textBuffer[256];
+            memset(textBuffer, 0, sizeof(textBuffer));
+            strncpy(textBuffer, element->text.c_str(), sizeof(textBuffer));
+            if (ImGui::InputTextMultiline("Text", textBuffer, sizeof(textBuffer)))
+            {
+                element->text = std::string(textBuffer);
+            }
+
+            ImGui::DragInt("Font Size", &element->fontSize, 1, 1, 100);
+
+            float color[4] = {element->textColor.r / 255.0f, element->textColor.g / 255.0f,
+                              element->textColor.b / 255.0f, element->textColor.a / 255.0f};
+            if (ImGui::ColorEdit4("Text Color", color))
+            {
+                element->textColor.r = (unsigned char)(color[0] * 255.0f);
+                element->textColor.g = (unsigned char)(color[1] * 255.0f);
+                element->textColor.b = (unsigned char)(color[2] * 255.0f);
+                element->textColor.a = (unsigned char)(color[3] * 255.0f);
+            }
+        }
+
+        if (element->type == "button")
+        {
+            ImGui::Text("Button Colors");
+            // Normal
+            float nColor[4] = {element->normalColor.r / 255.0f, element->normalColor.g / 255.0f,
+                               element->normalColor.b / 255.0f, element->normalColor.a / 255.0f};
+            if (ImGui::ColorEdit4("Normal", nColor))
+            {
+                element->normalColor.r = (unsigned char)(nColor[0] * 255.0f);
+                element->normalColor.g = (unsigned char)(nColor[1] * 255.0f);
+                element->normalColor.b = (unsigned char)(nColor[2] * 255.0f);
+                element->normalColor.a = (unsigned char)(nColor[3] * 255.0f);
+            }
+            // Hover
+            float hColor[4] = {element->hoverColor.r / 255.0f, element->hoverColor.g / 255.0f,
+                               element->hoverColor.b / 255.0f, element->hoverColor.a / 255.0f};
+            if (ImGui::ColorEdit4("Hover", hColor))
+            {
+                element->hoverColor.r = (unsigned char)(hColor[0] * 255.0f);
+                element->hoverColor.g = (unsigned char)(hColor[1] * 255.0f);
+                element->hoverColor.b = (unsigned char)(hColor[2] * 255.0f);
+                element->hoverColor.a = (unsigned char)(hColor[3] * 255.0f);
+            }
+            // Pressed
+            float pColor[4] = {element->pressedColor.r / 255.0f, element->pressedColor.g / 255.0f,
+                               element->pressedColor.b / 255.0f, element->pressedColor.a / 255.0f};
+            if (ImGui::ColorEdit4("Pressed", pColor))
+            {
+                element->pressedColor.r = (unsigned char)(pColor[0] * 255.0f);
+                element->pressedColor.g = (unsigned char)(pColor[1] * 255.0f);
+                element->pressedColor.b = (unsigned char)(pColor[2] * 255.0f);
+                element->pressedColor.a = (unsigned char)(pColor[3] * 255.0f);
+            }
+        }
+    }
+}
+
 void InspectorPanel::DrawVec3Control(const std::string &label, Vector3 &values, float resetValue,
                                      float columnWidth)
 {
