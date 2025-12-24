@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(CHEngine LANGUAGES CXX C)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Build configuration options
 # Build configuration options
 option(BUILD_TESTS "Build unit tests" ON)
-option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
+option(BUILD_EDITOR_ENGINE "Build Editor tools" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
 option(ENABLE_WARNINGS "Enable strict compiler warnings" ON)
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
@@ -226,7 +226,7 @@ if(BUILD_TESTS)
     add_subdirectory(tests ${CMAKE_CURRENT_BINARY_DIR}/tests)
 endif()
 
-if(BUILD_MAP_EDITOR)
+if(BUILD_EDITOR_ENGINE)
     add_subdirectory(editor)
 endif()
 

@@ -3,12 +3,15 @@
 
 #include "core/application/IApplication.h"
 #include "core/config/GameConfig.h"
-#include "project/CHEngine/gamegui/Menu.h"
+#include "project/ChainedDecos/gamegui/Menu.h"
 #include <memory>
 #include <scene/ecs/ECSRegistry.h>
 #include <scene/ecs/Entity.h>
 
 // Game application - uses full engine + own modules
+
+namespace CHD
+{
 
 class GameApplication : public CHEngine::IApplication
 {
@@ -49,5 +52,7 @@ private:
     // In-game menu
     std::shared_ptr<Menu> m_menu;
 };
+
+} // namespace CHD
 
 #endif // GAME_APPLICATION_H

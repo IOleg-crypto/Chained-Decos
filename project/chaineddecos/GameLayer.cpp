@@ -5,13 +5,15 @@
 #include "core/Engine.h"
 #include "core/Log.h"
 
+#include "components/physics/collision/structures/CollisionComponent.h"
+#include "components/physics/collision/structures/CollisionComponent.h" // Moved here
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/UIEventRegistry.h"
 #include "logic/GameInitializer.h"
+#include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
-#include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
 #include "scene/ecs/components/playerComponent.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
@@ -20,8 +22,10 @@
 #include <raymath.h>
 #include <vector>
 
-
 using namespace CHEngine;
+
+namespace CHD
+{
 
 GameLayer::GameLayer() : Layer("GameLayer")
 {
@@ -55,11 +59,11 @@ void GameLayer::OnAttach()
     CD_INFO("GameLayer Attached");
 
     // Load HUD Font via Initializer
-    m_hudFont = GameInitializer::LoadHUDFont(m_fontLoaded);
+    m_hudFont = CHD::GameInitializer::LoadHUDFont(m_fontLoaded);
 
     // Load Player Shader via Initializer
     int locWindDir;
-    m_playerShader = GameInitializer::LoadPlayerShader(m_locFallSpeed, m_locTime, locWindDir);
+    m_playerShader = CHD::GameInitializer::LoadPlayerShader(m_locFallSpeed, m_locTime, locWindDir);
     m_shaderLoaded = (m_playerShader.id != 0);
 }
 
@@ -503,3 +507,5 @@ void GameLayer::OnEvent(Event &e)
             return false;
         });
 }
+
+} // namespace CHD

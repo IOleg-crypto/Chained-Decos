@@ -11,23 +11,24 @@ using namespace CHEngine;
 #include "components/physics/collision/core/CollisionManager.h"
 #include "components/rendering/core/RenderManager.h"
 #include "core/config/ConfigManager.h"
-#include "project/CHEngine/gamegui/Menu.h"
-#include "project/CHEngine/player/core/Player.h"
+#include "project/ChainedDecos/gamegui/Menu.h"
+#include "project/ChainedDecos/player/core/Player.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
-#include "scene/main/core/LevelManager.h"
 
 #include "scene/resources/model/core/Model.h"
 #include <raylib.h>
 #include <rlImGui.h>
 
-using CHEngine::GameInitializer;
 using CHEngine::InputManager;
 using CHEngine::MenuEvent;
 using CHEngine::MenuEventType;
-// MenuEventCallback is inside Menu class
-using MenuEventCallback = Menu::MenuEventCallback;
 using namespace CHEngine;
+
+namespace CHD
+{
+
+using MenuEventCallback = Menu::MenuEventCallback;
 
 GameApplication::GameApplication(int argc, char *argv[])
     : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false),
@@ -185,12 +186,12 @@ void GameApplication::OnStart()
         sensitivity = 0.15f; // Default if not set
 
     // Initialize player via Initializer
-    m_playerEntity = GameInitializer::InitializePlayer(spawnPos, sensitivity);
+    m_playerEntity = CHD::GameInitializer::InitializePlayer(spawnPos, sensitivity);
 
     // Push GameLayer using the new Layer system
     if (GetAppRunner())
     {
-        GetAppRunner()->PushLayer(new GameLayer());
+        GetAppRunner()->PushLayer(new CHD::GameLayer());
     }
 
     CD_INFO("[GameApplication] ECS Player entity created");
@@ -502,3 +503,5 @@ void GameApplication::InitInput()
 
     CD_INFO("[GameApplication] Game input bindings configured.");
 }
+
+} // namespace CHD
