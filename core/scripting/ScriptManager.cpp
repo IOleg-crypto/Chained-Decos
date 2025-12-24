@@ -3,7 +3,6 @@
 #include "core/Engine.h"
 #include "core/Log.h"
 #include "core/interfaces/ILevelManager.h"
-#include "editor/logic/ISceneManager.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/UIEventRegistry.h"
@@ -161,10 +160,9 @@ void ScriptManager::BindEngineAPI()
     BindUIAPI();
 }
 
-void ScriptManager::SetSceneManager(ISceneManager *sceneManager)
+void ScriptManager::SetSceneManager(void *unused)
 {
-    m_sceneManager = sceneManager;
-    CD_CORE_INFO("ScriptManager: Scene Manager set.");
+    // Deprecated for now, ScriptManager should use Engine services directly
 }
 
 void ScriptManager::RegisterButtonCallback(const std::string &buttonName, sol::function callback)
@@ -206,11 +204,10 @@ void ScriptManager::BindSceneAPI()
             }
 
             // Sync ECS with new scene data
-            auto sceneManager = Engine::Instance().GetService<ISceneManager>();
-            if (sceneManager)
+            if (levelManager)
             {
-                sceneManager->RefreshMapEntities();
-                sceneManager->RefreshUIEntities();
+                levelManager->RefreshMapEntities();
+                levelManager->RefreshUIEntities();
                 CD_INFO("[Lua] Scene ECS entities refreshed.");
             }
         });

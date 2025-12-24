@@ -18,13 +18,24 @@ enum class SceneState : std::uint8_t
     Pause = 2
 };
 
+// Selection categories
+enum class SelectionType : std::uint8_t
+{
+    NONE = 0,
+    WORLD_OBJECT = 1,
+    UI_ELEMENT = 2
+};
+
 // Gizmo axes for transformation tools
 enum class GizmoAxis : std::uint8_t
 {
     NONE,
     X,
     Y,
-    Z
+    Z,
+    XY,
+    XZ,
+    YZ
 };
 
 // Available editor tools
