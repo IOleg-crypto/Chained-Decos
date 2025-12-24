@@ -1,10 +1,11 @@
-#include "core/Log.h"
 #include "ConsoleManager.h"
 #include "core/Engine.h"
+#include "core/Log.h"
 #include "core/application/EngineApplication.h"
 #include "scene/main/core/LevelManager.h"
 
-#include "project/CHEngine/player/core/player.h"
+
+#include "project/ChainedDecos/player/core/Player.h"
 #include <algorithm>
 #include <cctype>
 #include <imgui.h>
@@ -22,8 +23,7 @@ ConsoleManager::ConsoleManager()
     // Register all built-in commands
     RegisterBuiltinCommands();
 
-    CD_INFO("ConsoleManager::ConsoleManager() - Registered %zu commands",
-             m_commands.size());
+    CD_INFO("ConsoleManager::ConsoleManager() - Registered %zu commands", m_commands.size());
 }
 
 IPlayer *ConsoleManager::GetPlayer()
@@ -531,4 +531,3 @@ bool ConsoleManager::IsConsoleOpen() const
 {
     return consoleOpen;
 }
-

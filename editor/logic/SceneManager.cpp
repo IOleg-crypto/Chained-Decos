@@ -118,7 +118,7 @@ void SceneManager::RefreshUIEntities()
 
         // Always add Index and Transform
         registry.emplace<CHEngine::UIElementIndex>(entity, i);
-        registry.emplace<NameComponent>(entity, data.name);
+        registry.emplace<CHEngine::NameComponent>(entity, data.name);
 
         CHEngine::RectTransform transform;
         transform.position = data.position;

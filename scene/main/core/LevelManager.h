@@ -98,10 +98,10 @@ private:
     std::unique_ptr<MapCollisionInitializer> m_collisionInitializer;
 
     // Dependencies
-    std::shared_ptr<WorldManager> m_worldManager;
-    std::shared_ptr<CollisionManager> m_collisionManager;
-    std::shared_ptr<ModelLoader> m_modelLoader;
-    std::shared_ptr<RenderManager> m_renderManager;
+    WorldManager *m_worldManager;
+    CollisionManager *m_collisionManager;
+    ModelLoader *m_modelLoader;
+    RenderManager *m_renderManager;
     std::shared_ptr<IPlayer> m_player;
     std::shared_ptr<IMenu> m_menu;
     IEngine *m_engine = nullptr;

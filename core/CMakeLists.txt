@@ -30,6 +30,18 @@ set(CORE_SOURCES
     imgui/components/GuiPanel.h
     scripting/ScriptManager.cpp
     scripting/ScriptManager.h
+    scripting/ScriptEngine.cpp
+    scripting/ScriptEngine.h
+    input/Input.h
+    input/Input.cpp
+    renderer/Renderer.cpp
+    renderer/Renderer.h
+    assets/AssetManager.cpp
+    assets/AssetManager.h
+    physics/Physics.cpp
+    physics/Physics.h
+    audio/Audio.cpp
+    audio/Audio.h
 )
 
 add_library(core STATIC ${CORE_SOURCES})
