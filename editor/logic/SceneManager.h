@@ -1,62 +1,62 @@
 #ifndef SCENE_MANAGER_IMPL_H
 #define SCENE_MANAGER_IMPL_H
 
-#include "ISceneManager.h"
 #include "MapManager.h"
 #include "Scene.h"
 #include <memory>
+#include <string>
 
-class SceneManager : public ISceneManager
+class SceneManager
 {
 public:
     SceneManager();
-    ~SceneManager() override = default;
+    ~SceneManager() = default;
 
     // Scene Lifecycle
-    void ClearScene() override;
-    void SaveScene(const std::string &path = "") override;
-    void LoadScene(const std::string &path) override;
-    CHEngine::Scene *GetActiveScene() override
+    void ClearScene();
+    void SaveScene(const std::string &path = "");
+    void LoadScene(const std::string &path);
+    CHEngine::Scene *GetActiveScene()
     {
         return m_activeScene.get();
     }
-    GameScene &GetGameScene() override;
-    void RemoveObject(int index) override;
-    void RefreshUIEntities() override;
-    void RefreshMapEntities() override;
-    void SyncEntitiesToMap() override;
+    GameScene &GetGameScene();
+    void RemoveObject(int index);
+    void RefreshUIEntities();
+    void RefreshMapEntities();
+    void SyncEntitiesToMap();
 
     // Scene State
-    bool IsSceneModified() const override
+    bool IsSceneModified() const
     {
         return m_modified;
     }
-    void SetSceneModified(bool modified) override
+    void SetSceneModified(bool modified)
     {
         m_modified = modified;
     }
-    const std::string &GetCurrentMapPath() const override
+    const std::string &GetCurrentMapPath() const
     {
         return m_currentMapPath;
     }
 
     // Environment/Metadata
-    void SetSkybox(const std::string &name) override;
-    void SetSkyboxTexture(const std::string &texturePath) override;
-    void SetSkyboxColor(Color color) override;
-    Skybox *GetSkybox() const override
+    void SetSkybox(const std::string &name);
+    void SetSkyboxTexture(const std::string &texturePath);
+    void SetSkyboxColor(Color color);
+    Skybox *GetSkybox() const
     {
         return m_skybox.get();
     }
-    Color GetClearColor() const override
+    Color GetClearColor() const
     {
         return m_clearColor;
     }
-    void ApplyMetadata(const MapMetadata &metadata) override;
+    void ApplyMetadata(const MapMetadata &metadata);
 
     // Spawning/Entities (High level)
-    void CreateDefaultObject(MapObjectType type, const std::string &modelName = "") override;
-    void LoadAndSpawnModel(const std::string &path) override;
+    void CreateDefaultObject(MapObjectType type, const std::string &modelName = "");
+    void LoadAndSpawnModel(const std::string &path);
 
 private:
     std::unique_ptr<CHEngine::Scene> m_activeScene;

@@ -5,8 +5,6 @@
 #include <string>
 #include <unordered_map>
 
-class ISceneManager;
-
 namespace CHEngine
 {
 
@@ -35,8 +33,8 @@ public:
     void InitializeScripts();
     void UpdateScripts(float deltaTime);
 
-    // Set scene manager for scene switching API
-    void SetSceneManager(::ISceneManager *sceneManager);
+    // Deprecated for now, ScriptManager should use Engine services directly
+    void SetSceneManager(void *unused);
 
     // Register UI button callback
     void RegisterButtonCallback(const std::string &buttonName, sol::function callback);
@@ -54,7 +52,6 @@ private:
 private:
     sol::state m_lua;
     bool m_initialized = false;
-    ::ISceneManager *m_sceneManager = nullptr;
     std::unordered_map<std::string, sol::function> m_buttonCallbacks;
 };
 
