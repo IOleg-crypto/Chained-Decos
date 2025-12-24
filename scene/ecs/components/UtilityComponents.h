@@ -20,6 +20,11 @@ struct NameComponent
 {
     std::string name; // Entity name for debugging
 };
+
+struct MapObjectIndex
+{
+    int index; // Index in GameScene.GetMapObjects()
+};
 } // namespace CHEngine
 
 #endif // LIFETIME_COMPONENT_H

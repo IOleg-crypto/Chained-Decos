@@ -9,7 +9,6 @@
 #include <fstream>
 #include <iostream>
 
-
 namespace fs = std::filesystem;
 
 ProjectManager::ProjectManager(IEditor *editor) : m_editor(editor)
@@ -71,20 +70,21 @@ bool ProjectManager::CreateNewProject(const std::string &path)
                 updateFile.close();
             }
 
-            // Update Asset Browser root to project directory
+            /* MOVED TO EditorLayer
             auto assetBrowser =
                 m_editor->GetPanelManager().GetPanel<AssetBrowserPanel>("AssetBrowser");
             if (assetBrowser)
             {
                 assetBrowser->SetRootPath(path);
             }
+            */
 
             return true;
         }
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Error creating project: " << e.what() << std::endl;
+        std::cerr << "Error creating project: " << e.what() << "\n";
     }
 
     return false;
@@ -106,6 +106,26 @@ void ProjectManager::SaveProject()
         data.gridSize = m_editor->GetState().GetGridSize();
         data.drawWireframe = m_editor->GetState().IsWireframeEnabled();
         data.drawCollisions = m_editor->GetState().IsCollisionDebugEnabled();
+
+        // Discover scenes (simple auto-discovery for now)
+        fs::path projectRoot = fs::path(m_projectPath).parent_path();
+        fs::path scenesDir = projectRoot / "Scenes";
+        data.scenes.clear();
+        if (fs::exists(scenesDir))
+        {
+            for (const auto &entry : fs::directory_iterator(scenesDir))
+            {
+                if (entry.path().extension() == ".json")
+                {
+                    data.scenes.push_back(entry.path().filename().string());
+                }
+            }
+        }
+
+        if (data.startScene.empty() && !data.scenes.empty())
+        {
+            data.startScene = data.scenes[0];
+        }
     }
 
     std::ofstream file(m_projectPath);
@@ -114,6 +134,42 @@ void ProjectManager::SaveProject()
         file << data.ToJson().dump(4);
         file.close();
         CD_INFO("[ProjectManager] Project saved: %s", m_projectPath.c_str());
+
+        // Automatically export manifest on save
+        ExportBuildManifest();
+    }
+}
+
+void ProjectManager::ExportBuildManifest()
+{
+    if (m_projectPath.empty())
+        return;
+
+    fs::path projectRoot = fs::path(m_projectPath).parent_path();
+    std::ifstream projectFile(m_projectPath);
+    if (!projectFile.is_open())
+        return;
+
+    json j;
+    projectFile >> j;
+    ProjectData data = ProjectData::FromJson(j);
+
+    json manifest;
+    manifest["projectName"] = data.name;
+    manifest["startScene"] = data.startScene;
+    manifest["scenes"] = data.scenes;
+
+    // Build absolute paths for runtime (relative to manifest location)
+    // Or just keep them relative to project root.
+    // Usually the manifest is at the root of the "build/assets" folder.
+
+    std::ofstream manifestFile(projectRoot / "build.manifest");
+    if (manifestFile.is_open())
+    {
+        manifestFile << manifest.dump(4);
+        manifestFile.close();
+        CD_INFO("[ProjectManager] Build manifest exported to %s",
+                (projectRoot / "build.manifest").string().c_str());
     }
 }
 
@@ -146,12 +202,13 @@ void ProjectManager::LoadProject(const std::string &path)
             m_editor->GetSceneManager().ClearScene();
         }
 
-        // Update Asset Browser root to project directory
+        /* MOVED TO EditorLayer
         auto assetBrowser = m_editor->GetPanelManager().GetPanel<AssetBrowserPanel>("AssetBrowser");
         if (assetBrowser)
         {
             assetBrowser->SetRootPath(fs::path(path).parent_path().string());
         }
+        */
     }
 }
 

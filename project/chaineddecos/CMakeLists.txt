@@ -53,6 +53,7 @@ target_link_libraries(ChainedDecosGame
         input
         events
         font_resources
+        texture_resources
 )
 
 # Standalone Runtime Executable

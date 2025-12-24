@@ -1,86 +1,561 @@
 # ninja log v7
-60	1722	7879371332553697	include/raylib/raylib/CMakeFiles/raylib.dir/utils.c.obj	abb775e438464fb9
-92	2581	7879371332887556	CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj	df646a354ea9eee5
-50	2608	7879371332457178	include/raylib/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	7ebe4ac42d34a741
+242	3735	7882701462654201	include/raylib/raylib/CMakeFiles/raylib.dir/utils.c.obj	abb775e438464fb9
+12588	14429	7882701586079759	CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj	df646a354ea9eee5
+223	6358	7882701462464846	include/raylib/raylib/CMakeFiles/raylib.dir/rshapes.c.obj	7ebe4ac42d34a741
 1723	4095	7879371349193076	components/audio/CMakeFiles/audio.dir/Unity/unity_0_cxx.cxx.obj	7f93e4d873b1a837
 2608	4178	7879371358043636	scene/resources/color/CMakeFiles/color.dir/Unity/unity_0_cxx.cxx.obj	cc404e9d0ba89529
-70	5050	7879371332661532	CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj	fb1456ae4dc544e1
-53	6746	7879371332490147	include/raylib/raylib/CMakeFiles/raylib.dir/rtext.c.obj	cd3ccb9cf2cb5469
+11162	18469	7882701571842395	CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj	fb1456ae4dc544e1
+230	13280	7882701462528398	include/raylib/raylib/CMakeFiles/raylib.dir/rtext.c.obj	cd3ccb9cf2cb5469
 64	7556	7879371332600744	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_1_c.c.obj	faffa326a1acdabb
 96	7899	7879371332922499	core/config/CMakeFiles/config.dir/Unity/unity_0_cxx.cxx.obj	e8a90dd0b588ed5e
 67	8253	7879371332628304	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/Unity/unity_0_c.c.obj	3fb2ef4e0fceb037
-85	9139	7879371332806791	CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj	ec0847a67b942d60
-89	11333	7879371332850335	CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj	30ffd79eefef8846
-45	12697	7879371332404110	include/raylib/raylib/CMakeFiles/raylib.dir/rcore.c.obj	9c440352b8655f10
-78	13299	7879371332737599	CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj	5f0ec192a3522d6b
-81	15546	7879371332766787	CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj	433225c27bef687
-100	16298	7879371332955479	core/ecs/CMakeFiles/ecs.dir/Unity/unity_0_cxx.cxx.obj	8190f352cc80de96
-47	19527	7879371332436394	include/raylib/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	3a01c7edbcde4c56
-57	21290	7879371332526948	include/raylib/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	f64851c0d5d1f0a6
-74	24570	7879371332692066	CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj	605413c1f50d5a0d
-4178	26955	7879371373698462	scene/resources/model/CMakeFiles/model.dir/Unity/unity_0_cxx.cxx.obj	f1f0026b7026f99e
-40	33149	7879371332362645	include/raylib/raylib/CMakeFiles/raylib.dir/raudio.c.obj	2cb7ab76eb0b1699
-44	745	7879372677413293	include/raylib/raylib/libraylib.a	dd87691f7a2ca80f
-746	1412	7879372684405498	libimguilib.a	f244eaf1a71bfc49
-1412	1869	7879372691094586	core/config/libconfig.a	7e8e551f20d308f7
-73	1914	7879372677709712	components/physics/collision/CMakeFiles/collision.dir/debug/collisionDebugRenderer.cpp.obj	101e83785f0858c8
-70	2028	7879372677671924	components/physics/collision/CMakeFiles/collision.dir/structures/collisionStructures.cpp.obj	dc5dd17d168402a4
-2028	2422	7879372697253411	scene/resources/color/libcolor.a	f7057727bf662fc5
-1914	2422	7879372696096602	components/audio/libaudio.a	e37fc66c1af7821a
-1869	2579	7879372695630106	core/ecs/libecs.a	3b8a0485a81fba09
+12351	24060	7882701583700539	CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj	ec0847a67b942d60
+12441	30746	7882701584604168	CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj	30ffd79eefef8846
+211	25658	7882701462338295	include/raylib/raylib/CMakeFiles/raylib.dir/rcore.c.obj	9c440352b8655f10
+11959	34935	7882701579823717	CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj	5f0ec192a3522d6b
+11966	42312	7882701579835328	CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj	433225c27bef687
+217	58959	7882701462402407	include/raylib/raylib/CMakeFiles/raylib.dir/rmodels.c.obj	3a01c7edbcde4c56
+237	72628	7882701462591843	include/raylib/raylib/CMakeFiles/raylib.dir/rtextures.c.obj	f64851c0d5d1f0a6
+11934	84401	7882701579537054	CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj	605413c1f50d5a0d
+59	23165	7879372677562629	scene/resources/model/CMakeFiles/model.dir/Unity/unity_0_cxx.cxx.obj	f1f0026b7026f99e
+204	93338	7882701462275570	include/raylib/raylib/CMakeFiles/raylib.dir/raudio.c.obj	2cb7ab76eb0b1699
+234	2215	7882702551487108	include/raylib/raylib/libraylib.a	bc82271b92bf1c4
+3228	4481	7882702581434332	libimguilib.a	f244eaf1a71bfc49
+4481	5463	7882702593969870	core/config/libconfig.a	fb645aee4732e4f8
+7342	12207	7882792077651431	components/physics/collision/CMakeFiles/collision.dir/debug/collisionDebugRenderer.cpp.obj	c4a017a15f355178
+4035	8873	7882792044587059	components/physics/collision/CMakeFiles/collision.dir/structures/collisionStructures.cpp.obj	e0ce3f97500ae95b
+6900	7742	7882702618136361	scene/resources/color/libcolor.a	442b858fe4b94b80
+5463	6141	7882702603789835	components/audio/libaudio.a	75973d1a8b831f94
 97	2981	7879372677941985	scene/camera/CMakeFiles/cameracontroller.dir/Unity/unity_0_cxx.cxx.obj	f0bfd11dc1a9a67e
 123	4245	7879372678193801	include/nfd/src/CMakeFiles/nfd.dir/Unity/unity_0_cxx.cxx.obj	2511ec75cd6d4fa5
 86	4581	7879372677826583	components/physics/dynamics/CMakeFiles/physics.dir/Unity/unity_0_cxx.cxx.obj	bb5e116959ac7af
 78	4846	7879372677744401	components/rendering/CMakeFiles/render.dir/Unity/unity_0_cxx.cxx.obj	6eb2b18e2b8ec53c
-67	7224	7879372677638892	components/physics/collision/CMakeFiles/collision.dir/system/collisionSystem.cpp.obj	c0f85bdbce4188db
-110	8583	7879372678078379	project/chaineddecos/player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.obj	bb33b66027c2237a
-62	11899	7879372677588714	components/physics/collision/CMakeFiles/collision.dir/core/collisionManager.cpp.obj	3266f6561d27d89d
-82	12256	7879372677792089	core/CMakeFiles/core.dir/Unity/unity_0_cxx.cxx.obj	f96cf1ace3b75cb6
-90	14335	7879372677864343	scene/main/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj	b49e4b125ddd6e61
-105	15942	7879372678020105	project/chaineddecos/gamegui/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj	fae32763e477546f
-115	17504	7879372678129769	project/chaineddecos/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx.obj	4c5e654902666196
-55	19036	7879372677520249	scene/resources/map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj	17046b0dbd916002
-130	19115	7879372678264982	editor/CMakeFiles/ChainedEditor.dir/Unity/unity_0_cxx.cxx.obj	9209fc62159d7fd5
-59	23165	7879372677562629	scene/resources/model/CMakeFiles/model.dir/Unity/unity_0_cxx.cxx.obj	f1f0026b7026f99e
-38	141	7879373261155799	components/physics/dynamics/libphysics.a	554ca41b08ae3673
-63	144	7879373261397731	include/nfd/src/libnfd.a	6903e973e9dc96f5
-30	1614	7879373261075699	components/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj	f29eabc022d6d785
-1615	1707	7879373276917139	components/input/libinput.a	1b39d7c60845d90a
-1707	1829	7879373277842373	scene/resources/map/libmap.a	9a529da40c514fd
-1829	1961	7879373279062504	scene/resources/model/libmodel.a	306c464b37afa2f2
-1961	2093	7879373280380603	components/physics/collision/libcollision.a	2ceb64a0837d7498
-2093	2195	7879373281690772	components/rendering/librender.a	6d8732227f22ec17
-35	6805	7879373261114953	core/CMakeFiles/core.dir/Unity/unity_0_cxx.cxx.obj	f96cf1ace3b75cb6
-6805	6921	7879373328816138	core/libcore.a	6e3c865e547c715b
-6921	7006	7879373329971689	scene/camera/libcameracontroller.a	d3703c2fdd869ee0
-45	8263	7879373261212436	scene/main/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj	b49e4b125ddd6e61
-8263	8359	7879373343394365	scene/main/libworld.a	c70df8157fa59f8c
-8359	8437	7879373344361280	project/chaineddecos/player/libplayer.a	721c919eee963996
-51	9532	7879373261279892	project/chaineddecos/gamegui/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj	fae32763e477546f
-9532	9613	7879373356084015	project/chaineddecos/gamegui/libmenu.a	7acd5a57b092a236
-55	11112	7879373261318327	project/chaineddecos/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx.obj	4c5e654902666196
-11112	11193	7879373371889790	project/chaineddecos/libChainedDecosGame.a	f2d4eaedce205514
-58	12912	7879373261353266	editor/CMakeFiles/ChainedEditor.dir/Unity/unity_0_cxx.cxx.obj	9209fc62159d7fd5
-12913	14536	7879373389896918	bin/ChainedEditor.exe	352174319006b603
-28	10818	7879378613931558	editor/CMakeFiles/ChainedEditor.dir/Unity/unity_0_cxx.cxx.obj	9209fc62159d7fd5
-10818	11399	7879378721844006	bin/ChainedEditor.exe	352174319006b603
-53	2246	7879428478681794	components/physics/collision/CMakeFiles/collision.dir/debug/collisionDebugRenderer.cpp.obj	101e83785f0858c8
-50	8574	7879428478647781	components/physics/collision/CMakeFiles/collision.dir/system/collisionSystem.cpp.obj	c0f85bdbce4188db
+2042	19109	7882792024660701	components/physics/collision/CMakeFiles/collision.dir/system/collisionSystem.cpp.obj	2856f281eb406eba
 70	8657	7879428478857333	project/chaineddecos/player/CMakeFiles/player.dir/Unity/unity_0_cxx.cxx.obj	bb33b66027c2237a
-46	11330	7879428478613388	components/physics/collision/CMakeFiles/collision.dir/core/collisionManager.cpp.obj	3266f6561d27d89d
+1989	30233	7882792024126941	components/physics/collision/CMakeFiles/collision.dir/core/collisionManager.cpp.obj	4c584fa1eae19406
 57	12208	7879428478710522	core/CMakeFiles/core.dir/Unity/unity_0_cxx.cxx.obj	f96cf1ace3b75cb6
 61	14506	7879428478756624	scene/main/CMakeFiles/world.dir/Unity/unity_0_cxx.cxx.obj	b49e4b125ddd6e61
-37	16089	7879428478527103	core/ecs/CMakeFiles/ecs.dir/Unity/unity_0_cxx.cxx.obj	8190f352cc80de96
 67	16415	7879428478820091	project/chaineddecos/gamegui/CMakeFiles/menu.dir/Unity/unity_0_cxx.cxx.obj	fae32763e477546f
-16089	16690	7879428639041714	core/ecs/libecs.a	3b8a0485a81fba09
 75	18372	7879428478900573	project/chaineddecos/CMakeFiles/ChainedDecosGame.dir/Unity/unity_0_cxx.cxx.obj	4c5e654902666196
 43	20361	7879428478584511	scene/resources/map/CMakeFiles/map.dir/Unity/unity_0_cxx.cxx.obj	17046b0dbd916002
-20361	20479	7879428681754912	scene/resources/map/libmap.a	9a529da40c514fd
 79	20563	7879428478941598	editor/CMakeFiles/ChainedEditor.dir/Unity/unity_0_cxx.cxx.obj	9209fc62159d7fd5
-20479	20598	7879428682938402	components/physics/collision/libcollision.a	2ceb64a0837d7498
-20598	20696	7879428684129712	core/libcore.a	6e3c865e547c715b
-20696	20807	7879428685109055	scene/main/libworld.a	c70df8157fa59f8c
-20702	20834	7879428685172989	project/chaineddecos/gamegui/libmenu.a	7acd5a57b092a236
+9918	11620	7882702648341601	components/physics/dynamics/libphysics.a	5dd41fcc53cd211a
+76081	76458	7882792765055768	include/nfd/src/libnfd.a	3c4b37dbefd16831
+30	1614	7879373261075699	components/input/CMakeFiles/input.dir/Unity/unity_0_cxx.cxx.obj	f29eabc022d6d785
+6141	6900	7882702610569760	components/input/libinput.a	2a31304edbc766d1
+56267	62599	7882792566925303	scene/resources/map/libmap.a	e160fb1bab6b68e7
+62599	64097	7882792630237444	scene/resources/model/libmodel.a	8a7d09190f663e56
+68292	69851	7882792687165986	components/physics/collision/libcollision.a	2ceb64a0837d7498
+69851	70592	7882792702762870	components/rendering/librender.a	fb48ccd1401ace76
+70592	71275	7882792710156325	core/libcore.a	b0bd2e1da1e054a5
+71275	71974	7882792716994381	scene/camera/libcameracontroller.a	81a154f82b020e7b
+64097	66259	7882792645215503	scene/main/libworld.a	8536eeeb24f5cb02
 20807	20909	7879428686221214	project/chaineddecos/player/libplayer.a	721c919eee963996
+20702	20834	7879428685172989	project/chaineddecos/gamegui/libmenu.a	7acd5a57b092a236
 20909	21021	7879428687241416	project/chaineddecos/libChainedDecosGame.a	f2d4eaedce205514
-21021	22022	7879428688365554	bin/ChainedEditor.exe	352174319006b603
+87932	88531	7882792883567733	bin/ChainedEditor.exe	b64847a604ff3dc2
+125	7090	7882794382128535	build.ninja	e616189e2c9ca871
+125	7090	7882794381105633	D:/gitnext/Chained Decos/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381105633	D:/gitnext/Chained Decos/include/raylib/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381181964	D:/gitnext/Chained Decos/include/raylib/raylib/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381198679	D:/gitnext/Chained Decos/include/raylib/raylib/external/glfw/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381212733	D:/gitnext/Chained Decos/include/raylib/raylib/external/glfw/src/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381218828	D:/gitnext/Chained Decos/include/json/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381232452	D:/gitnext/Chained Decos/include/googletest/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381266958	D:/gitnext/Chained Decos/include/googletest/googlemock/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381328616	D:/gitnext/Chained Decos/include/googletest/googletest/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381382403	D:/gitnext/Chained Decos/core/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381405023	D:/gitnext/Chained Decos/core/config/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381412615	D:/gitnext/Chained Decos/components/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381434135	D:/gitnext/Chained Decos/components/rendering/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381439895	D:/gitnext/Chained Decos/components/physics/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381463146	D:/gitnext/Chained Decos/components/physics/collision/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381469081	D:/gitnext/Chained Decos/components/physics/dynamics/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381493015	D:/gitnext/Chained Decos/components/audio/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381509430	D:/gitnext/Chained Decos/components/input/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381533220	D:/gitnext/Chained Decos/scene/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381546112	D:/gitnext/Chained Decos/scene/main/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381565723	D:/gitnext/Chained Decos/scene/resources/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381591244	D:/gitnext/Chained Decos/scene/resources/model/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381603117	D:/gitnext/Chained Decos/scene/resources/map/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381620047	D:/gitnext/Chained Decos/scene/resources/color/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381678943	D:/gitnext/Chained Decos/scene/gui/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381693278	D:/gitnext/Chained Decos/scene/camera/cmake_install.cmake	e616189e2c9ca871
+116	24584	7882701440676227	D:/gitnext/Chained Decos/project/chaineddecos/cmake_install.cmake	e616189e2c9ca871
+116	24584	7882701440676227	D:/gitnext/Chained Decos/project/chaineddecos/gamegui/cmake_install.cmake	e616189e2c9ca871
+116	24584	7882701440676227	D:/gitnext/Chained Decos/project/chaineddecos/player/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381850099	D:/gitnext/Chained Decos/tests/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381890038	D:/gitnext/Chained Decos/editor/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381896773	D:/gitnext/Chained Decos/include/nfd/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381910133	D:/gitnext/Chained Decos/include/nfd/src/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381122874	D:/gitnext/Chained Decos/include/raylib/CTestTestfile.cmake	e616189e2c9ca871
+125	7090	7882794381181964	D:/gitnext/Chained Decos/include/raylib/raylib/CTestTestfile.cmake	e616189e2c9ca871
+125	7090	7882794381232452	D:/gitnext/Chained Decos/include/googletest/CTestTestfile.cmake	e616189e2c9ca871
+125	7090	7882794381266958	D:/gitnext/Chained Decos/include/googletest/googlemock/CTestTestfile.cmake	e616189e2c9ca871
+125	7090	7882794381335020	D:/gitnext/Chained Decos/include/googletest/googletest/CTestTestfile.cmake	e616189e2c9ca871
+43	120	7882794336289520	D:/gitnext/Chained Decos/CMakeFiles/cmake.verify_globs	927d9a42d3fbff70
+314	9588	7882701463363481	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj	78ed35b926992665
+274	9599	7882701462963172	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj	6756d0e2d79e6632
+308	9609	7882701463303532	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj	e30a03b62392e9d8
+280	9853	7882701462996222	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj	b9c3425b2bef86b
+6358	9877	7882701523809161	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	9620294bd1b45248
+302	9887	7882701463245043	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj	8e9eaf3de596a301
+254	10128	7882701462773250	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	61760d50447a423e
+247	10166	7882701462703933	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	da9fecc4a01264f7
+3736	10210	7882701497531084	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj	639fc8163491d3ff
+287	10297	7882701463061060	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	db64c5bd53f4924e
+267	10330	7882701462895449	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	a8d9290c0551db9b
+296	10491	7882701463185893	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj	b7385b1b1fdd67ee
+260	11162	7882701462830998	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.obj	800b3235c562944c
+9588	11934	7882701556077127	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	bcf8f88744a9cc8a
+9610	11959	7882701556279249	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj	6123593b996558f5
+9599	11966	7882701556204425	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj	411b2c3c642be1ad
+9854	12351	7882701558716154	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj	4999ac52d38a5888
+9888	12441	7882701559108488	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj	871a47a406a98bb4
+9877	12588	7882701558981955	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	dd14377e07b01994
+10166	12932	7882701561883729	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	fd02251ecbc9b7ce
+10128	13956	7882701561480986	include/raylib/raylib/external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	a0c483d7146a8bf8
+13280	14796	7882701593021574	core/config/CMakeFiles/config.dir/GameConfig.cpp.obj	dcce9f869edeb241
+10210	16955	7882701562331890	events/CMakeFiles/events.dir/Event.cpp.obj	201710581ef84ddf
+10492	17280	7882701565120054	events/CMakeFiles/events.dir/ApplicationEvent.cpp.obj	d301a36ed7ce2477
+14796	17347	7882701608187207	scene/resources/color/CMakeFiles/color.dir/ColorParser.cpp.obj	d98f880061751f3e
+10297	17617	7882701563137891	events/CMakeFiles/events.dir/KeyEvent.cpp.obj	22013d0207ddf72e
+10330	17755	7882701563485346	events/CMakeFiles/events.dir/MouseEvent.cpp.obj	df890b92957f0b1d
+17756	18624	7882701637773805	_deps/lua-build/src/CMakeFiles/liblua.dir/lbaselib.c.obj	553fd31b29b91233
+18624	19103	7882701646446735	_deps/lua-build/src/CMakeFiles/liblua.dir/lcorolib.c.obj	4f06bfda3154cb25
+17617	19240	7882701636405892	_deps/lua-build/src/CMakeFiles/liblua.dir/lauxlib.c.obj	bd67d4d3eb8e537e
+19103	19369	7882701651240907	_deps/lua-build/src/CMakeFiles/liblua.dir/lctype.c.obj	81a2799cb999be02
+14429	19886	7882701604493920	components/input/CMakeFiles/input.dir/core/InputManager.cpp.obj	d1e73580c156a7f5
+17348	20013	7882701633627656	_deps/lua-build/src/CMakeFiles/liblua.dir/lapi.c.obj	a1d5c79bbb6913ce
+19241	20031	7882701652571435	_deps/lua-build/src/CMakeFiles/liblua.dir/ldblib.c.obj	fc127bb9e082a845
+13956	20404	7882701599734819	components/audio/CMakeFiles/audio.dir/core/AudioManager.cpp.obj	c6427d84b4d4fac5
+20031	20628	7882701660496335	_deps/lua-build/src/CMakeFiles/liblua.dir/lfunc.c.obj	43c521122f675e4a
+20629	20938	7882701666495035	_deps/lua-build/src/CMakeFiles/liblua.dir/linit.c.obj	af1df58e1483f3bb
+20013	21216	7882701660320021	_deps/lua-build/src/CMakeFiles/liblua.dir/ldump.c.obj	40dba57f3007dc0c
+17280	21264	7882701633013741	scene/resources/texture/CMakeFiles/texture_resources.dir/TextureService.cpp.obj	1ec7fdeec0e6b025
+19369	21497	7882701653871472	_deps/lua-build/src/CMakeFiles/liblua.dir/ldebug.c.obj	be7102b3c8d9a256
+16955	21683	7882701629759752	scene/resources/font/CMakeFiles/font_resources.dir/FontService.cpp.obj	d039d6eb2274257d
+18469	21811	7882701644863335	_deps/lua-build/src/CMakeFiles/liblua.dir/lcode.c.obj	9515831986a0eb63
+19886	21944	7882701659086595	_deps/lua-build/src/CMakeFiles/liblua.dir/ldo.c.obj	5692f8a2d07f1ecd
+21497	21980	7882701675166216	_deps/lua-build/src/CMakeFiles/liblua.dir/lmem.c.obj	1b09a14c16a4cec1
+20939	22204	7882701669613422	_deps/lua-build/src/CMakeFiles/liblua.dir/liolib.c.obj	873c9bf4310fd2d5
+21265	22251	7882701672867811	_deps/lua-build/src/CMakeFiles/liblua.dir/lmathlib.c.obj	77cf66d522c555ae
+21944	22296	7882701679666437	_deps/lua-build/src/CMakeFiles/liblua.dir/lopcodes.c.obj	394dbb3419759a52
+21980	22613	7882701679984764	_deps/lua-build/src/CMakeFiles/liblua.dir/loslib.c.obj	71df0f625b3244d8
+21217	22733	7882701672331096	_deps/lua-build/src/CMakeFiles/liblua.dir/llex.c.obj	dfadb4d1b37bfcbb
+12932	22786	7882701589518736	core/config/CMakeFiles/config.dir/ConfigManager.cpp.obj	5aa30b992991591d
+20404	22947	7882701664249199	_deps/lua-build/src/CMakeFiles/liblua.dir/lgc.c.obj	e6fcf9bd83d8ae76
+22251	23029	7882701682675283	_deps/lua-build/src/CMakeFiles/liblua.dir/lstate.c.obj	a6c46da6ff80fa8a
+21811	23066	7882701678324539	_deps/lua-build/src/CMakeFiles/liblua.dir/lobject.c.obj	67d3438385aba4e6
+22296	23128	7882701683186523	_deps/lua-build/src/CMakeFiles/liblua.dir/lstring.c.obj	23a02e274890cd4e
+22786	23537	7882701688067980	_deps/lua-build/src/CMakeFiles/liblua.dir/ltablib.c.obj	930da3ae69ec9d6b
+22947	23696	7882701689641860	_deps/lua-build/src/CMakeFiles/liblua.dir/ltm.c.obj	f64aa12cc7d3ec7
+23066	23802	7882701690818339	_deps/lua-build/src/CMakeFiles/liblua.dir/lutf8lib.c.obj	2404caec9e981433
+23537	23842	7882701695581915	_deps/lua-build/src/CMakeFiles/liblua.dir/lzio.c.obj	d1ffc9eb499702a1
+23030	23905	7882701690485394	_deps/lua-build/src/CMakeFiles/liblua.dir/lundump.c.obj	c392c927b884d0b1
+22734	24032	7882701687564558	_deps/lua-build/src/CMakeFiles/liblua.dir/ltable.c.obj	fe55a6176ffa19d4
+21683	24135	7882701677016961	_deps/lua-build/src/CMakeFiles/liblua.dir/loadlib.c.obj	413f91274fe71ecf
+22204	24917	7882701682268678	_deps/lua-build/src/CMakeFiles/liblua.dir/lparser.c.obj	e40092df61861dda
+22613	25549	7882701686303301	_deps/lua-build/src/CMakeFiles/liblua.dir/lstrlib.c.obj	a98cba0cc249c0ce
+144	2042	7882792005678243	scene/resources/model/CMakeFiles/model.dir/core/ModelInstance.cpp.obj	53c05b2cfe259231
+150	1989	7882792005742127	scene/resources/model/CMakeFiles/model.dir/animation/animation.cpp.obj	c7c7b7c0c92dc0b3
+23128	27861	7882701691461883	_deps/lua-build/src/CMakeFiles/liblua.dir/lvm.c.obj	9c44d9709bba7292
+153	1668	7882792005782288	scene/resources/model/CMakeFiles/model.dir/config/ModelConfig.cpp.obj	7c656f21c1b434f8
+27861	29100	7882701738794619	_deps/lua-build/src/libliblua.a	61d7c4e830d0fdbf
+136	7342	7882792005604333	scene/resources/map/CMakeFiles/map.dir/skybox/skybox.cpp.obj	d250df578a6e921c
+123	10825	7882792005483201	scene/resources/map/CMakeFiles/map.dir/core/MapService.cpp.obj	8f33217975642c62
+131	12097	7882792005565291	scene/resources/map/CMakeFiles/map.dir/renderer/MapRenderer.cpp.obj	f92d3ad37a3dcb4d
+127	11878	7882792005518265	scene/resources/map/CMakeFiles/map.dir/converter/MapObjectConverter.cpp.obj	d09bb800da0b3a3e
+161	8671	7882792005861223	scene/resources/model/CMakeFiles/model.dir/parser/jsonHelper.cpp.obj	eca8b34ad96c8bb0
+8672	11972	7882792090958936	components/rendering/CMakeFiles/render.dir/core/RenderManager.cpp.obj	57756bec0be5d6f9
+10825	11639	7882792112495730	components/rendering/CMakeFiles/render.dir/utils/RenderUtils.cpp.obj	dc7b8145a296bbb5
+157	17253	7882792005824767	scene/resources/model/CMakeFiles/model.dir/parser/jsonParser.cpp.obj	f87557e3dd23e2c5
+11639	14388	7882792120638353	components/rendering/CMakeFiles/render.dir/helpers/ImGuiHelper.cpp.obj	98a35b233dfefb47
+1669	16079	7882792020926410	scene/CMakeFiles/scene_manager.dir/SceneManager.cpp.obj	f77078c94c7c3a0d
+8873	18298	7882792092957626	components/rendering/CMakeFiles/render.dir/shader/shaderManager.cpp.obj	23865b2d0210ba24
+116	27189	7882792005407707	scene/ecs/CMakeFiles/ecs.dir/systems/ScriptSystem.cpp.obj	dc9ad73407f919e9
+12207	17091	7882792126301025	core/CMakeFiles/core.dir/layer/Layer.cpp.obj	16574a8ac1da0951
+12097	17215	7882792125209229	core/CMakeFiles/core.dir/window/Window.cpp.obj	5384b215e7b44f5d
+14388	19295	7882792148117164	core/CMakeFiles/core.dir/layer/LayerStack.cpp.obj	9f49e13d8896c313
+17091	21698	7882792175161759	core/CMakeFiles/core.dir/imgui/ImGuiLayer.cpp.obj	6fa24338570d6bc9
+166	26532	7882792005904919	scene/resources/model/CMakeFiles/model.dir/cache/ModelCache.cpp.obj	3cea1a548226477d
+171	28426	7882792005957182	scene/resources/model/CMakeFiles/model.dir/utils/ModelAnalyzer.cpp.obj	c11d0bcf78e0f272
+111	37562	7882792005356891	scene/ecs/CMakeFiles/ecs.dir/systems/UIRenderSystem.cpp.obj	b1a100d3d8ca46e6
+11972	30095	7882792123963460	core/CMakeFiles/core.dir/application/EngineApplication.cpp.obj	b583607377c758c0
+68567	71064	7882702145850918	components/physics/dynamics/CMakeFiles/physics.dir/components/SurfaceComponent.cpp.obj	69e673069aa15dd5
+175	4035	7882792005999022	scene/main/CMakeFiles/world.dir/core/World.cpp.obj	9e69c877d2782e41
+19109	35259	7882792195334419	core/CMakeFiles/core.dir/renderer/Renderer.cpp.obj	c8ec849480730ecb
+66312	74642	7882702123351476	components/physics/dynamics/CMakeFiles/physics.dir/components/PhysicsComponent.cpp.obj	99c42e952ae46cb7
+17253	34417	7882792176764600	core/CMakeFiles/core.dir/scripting/ScriptEngine.cpp.obj	94ca22f5975fd9cd
+18298	35458	7882792187235641	core/CMakeFiles/core.dir/input/Input.cpp.obj	96722dcb524bf551
+19296	36065	7882792197197480	core/CMakeFiles/core.dir/assets/AssetManager.cpp.obj	9505f7a9d3c76f6
+16079	36958	7882792165005974	core/CMakeFiles/core.dir/module/ModuleManager.cpp.obj	eb182572936bdd77
+21699	37317	7882792221214358	core/CMakeFiles/core.dir/physics/Physics.cpp.obj	d7e1bb106bf45254
+26532	41592	7882792269573597	core/CMakeFiles/core.dir/audio/Audio.cpp.obj	e13d654059a02a65
+28427	34279	7882792288512946	scene/camera/CMakeFiles/cameracontroller.dir/core/CameraController.cpp.obj	8bbed9988deb482b
+11878	41814	7882792122988365	core/CMakeFiles/core.dir/Engine.cpp.obj	caad355680fe2a4
+140	46766	7882792005655815	scene/resources/model/CMakeFiles/model.dir/core/Model.cpp.obj	d960d9200e7bd52b
+30233	37221	7882792306570956	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/settings/settingsManager.cpp.obj	7e55d22c2e7b45d2
+34279	42953	7882792347032978	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/settings/MenuSettingsController.cpp.obj	c078c64eeaad8e7e
+119	56267	7882792005446149	scene/resources/map/CMakeFiles/map.dir/core/SceneLoader.cpp.obj	74b2252d5f7b40d3
+74272	87214	7882702202939092	include/googletest/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.obj	affb0adb9435a59b
+30095	52337	7882792305206583	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/Menu.cpp.obj	50655f162f859840
+189	45411	7882792006130305	scene/main/CMakeFiles/world.dir/core/MapCollisionInitializer.cpp.obj	34db399b27c8edea
+183	39451	7882792006068916	scene/main/CMakeFiles/world.dir/core/LevelManager.cpp.obj	3aab507f9a556ed8
+34417	64024	7882792348416446	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/console/consoleManager.cpp.obj	522897d671424424
+2215	3228	7882702571306237	lib/libevents.a	2f79e156e1a3d0f0
+7742	8659	7882702626551413	scene/resources/font/libfont_resources.a	6ef67b4ee55997cc
+352	9917	7882702552627598	include/googletest/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.obj	e2551ad06fa3febf
+8659	10106	7882702635724539	scene/resources/texture/libtexture_resources.a	f69f1502d6022004
+37562	39150	7882792379872664	scene/ecs/libecs.a	607a53888b648440
+41815	54054	7882792422397323	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerRenderable.cpp.obj	2c5e3d392c553585
+45411	55782	7882792458361153	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerModel.cpp.obj	3f6043a70cd0577d
+66260	68292	7882792666841163	scene/libscene_manager.a	67bf26b74db1c932
+46766	61700	7882792471912833	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerMovement.cpp.obj	f9b2dd3ade7550dc
+42953	54959	7882792433769621	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerInput.cpp.obj	2a4cc3e0838a8c8a
+52337	61736	7882792527618060	project/ChainedDecos/player/CMakeFiles/player.dir/collision/playerCollision.cpp.obj	a9750d7e8f0ab60a
+41592	55604	7882792420168462	project/ChainedDecos/player/CMakeFiles/player.dir/core/player.cpp.obj	1aeb783afcded7d
+27189	82050	7882792276133827	include/googletest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.obj	2f127b9bbb7a5b14
+54918	61654	7882792553429618	scene/gui/CMakeFiles/gui.dir/helpers/CGUIHelpers.cpp.obj	ef085724549181db
+53720	61572	7882792541443394	include/googletest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.obj	4946d695e30b39d
+37317	55148	7882792377417180	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/CreditsScreen.cpp.obj	17a5cb6cc471338f
+35459	53720	7882792358838749	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/BaseMenuScreen.cpp.obj	215ba4e96ee3ee1c
+39150	61949	7882792395737006	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/ConfirmExitScreen.cpp.obj	7ae80ea4c3d82213
+37222	54812	7882792376467186	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/OptionsScreen.cpp.obj	1a3f302f4c02e0c6
+36065	54060	7882792364902091	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/MainMenuScreen.cpp.obj	6971e9750c9d3f7f
+39451	61836	7882792398763685	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/settingsScreens.cpp.obj	ff7c64f18b5d45c2
+36958	54917	7882792373825681	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/MapSelectionScreen.cpp.obj	4cfc7fdd9b1e0d12
+54812	61694	7882792552369544	include/nfd/src/CMakeFiles/nfd.dir/nfd_win.cpp.obj	2e5b06597ec471c0
+35259	55110	7882792356843357	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/mapselector/mapselector.cpp.obj	8e57d3f620794118
+55148	62161	7882792555727115	tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/PhysicsComponentTest.cpp.obj	10ddd1b1f8f5e6e6
+61737	68365	7882792621615103	editor/CMakeFiles/ChainedEditor.dir/panels/EditorPanelManager.cpp.obj	c8498db332fe03bd
+55604	62908	7882792560281517	tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/collisionSystemTest.cpp.obj	878c5ef264e4c024
+62908	69409	7882792633332925	editor/CMakeFiles/ChainedEditor.dir/panels/ConsolePanel.cpp.obj	fc903576cc33fab9
+61950	64835	7882792623744883	editor/CMakeFiles/ChainedEditor.dir/panels/InspectorPanel.cpp.obj	e4958c1cdde88d37
+61836	70351	7882792622603978	editor/CMakeFiles/ChainedEditor.dir/panels/HierarchyPanel.cpp.obj	e9fff2adf99546ae
+61654	72757	7882792620791602	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/integration/skyboxTest.cpp.obj	8e0c3331d4d59955
+54959	68370	7882792553836237	project/ChainedDecos/CMakeFiles/ChainedDecos.dir/RuntimeMain.cpp.obj	8fba959b6b5a7cf0
+61695	73630	7882792621195325	editor/CMakeFiles/ChainedEditor.dir/EditorApplication.cpp.obj	34065aebe9ebde8e
+61572	76500	7882792619971655	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/integration/GameIntegrationTest.cpp.obj	472fba0a19cd0816
+64835	73341	7882792652599489	editor/CMakeFiles/ChainedEditor.dir/panels/ToolbarPanel.cpp.obj	f929cfb3d0bd3c3f
+55362	80909	7882790627235021	editor/CMakeFiles/ChainedEditor.dir/Editor.cpp.obj	d66694b35c87d59b
+68365	75895	7882792687891138	editor/CMakeFiles/ChainedEditor.dir/render/EditorRenderer.cpp.obj	f01a6e607197a856
+70670	76861	7882792710949202	editor/CMakeFiles/ChainedEditor.dir/logic/MapManager.cpp.obj	99b6098fcd84fdf4
+68370	75579	7882792687950352	editor/CMakeFiles/ChainedEditor.dir/tool/ToolManager.cpp.obj	72c759be49829adf
+75895	76265	7882792763204467	editor/CMakeFiles/ChainedEditor.dir/logic/EditorState.cpp.obj	bd23b300d4a18c4
+65106	77566	7882792655315005	editor/CMakeFiles/ChainedEditor.dir/panels/UIEditorPanel.cpp.obj	9b9fe4687d1b134f
+75579	76432	7882792760041910	editor/CMakeFiles/ChainedEditor.dir/logic/SelectionManager.cpp.obj	1207f3a91c6d979
+70351	78116	7882792707763324	editor/CMakeFiles/ChainedEditor.dir/mapgui/skyboxBrowser.cpp.obj	1e042ceb0ea04aa8
+76176	76478	7882792766000536	scene/gui/libgui.a	d347f7abeea2ac3e
+64024	73449	7882792644491153	editor/CMakeFiles/ChainedEditor.dir/panels/AssetBrowserPanel.cpp.obj	f41a219103563c6b
+55110	77495	7882792555355830	project/ChainedDecos/CMakeFiles/ChainedDecos.dir/GameApplication.cpp.obj	ca4550b7813fe4e0
+55782	76176	7882792562065379	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/game/playerTest.cpp.obj	fe6b22259f5ee74a
+62161	70670	7882792625864824	editor/CMakeFiles/ChainedEditor.dir/panels/ViewportPanel.cpp.obj	b08735d2e5f3ed37
+69409	78683	7882792698327649	editor/CMakeFiles/ChainedEditor.dir/mapgui/UIManager.cpp.obj	6b465bd325e6a9fc
+54060	78132	7882792544844633	project/ChainedDecos/CMakeFiles/ChainedDecosGame.dir/logic/GameInitializer.cpp.obj	1d9dd2e15defde2f
+17215	65106	7882792176402858	core/CMakeFiles/core.dir/scripting/ScriptManager.cpp.obj	7e93978e83128ab6
+54054	79041	7882792544790026	project/ChainedDecos/CMakeFiles/ChainedDecosGame.dir/GameLayer.cpp.obj	aeb4fdf26d59576a
+72757	73880	7882792731823990	project/ChainedDecos/player/libplayer.a	b64e11b7a9ca5cdb
+71974	73096	7882792723989603	project/ChainedDecos/gamegui/libmenu.a	7f39555d373c499c
+79041	79217	7882792794664859	project/ChainedDecos/libChainedDecosGame.a	b1ceba9e68a82202
+73341	80656	7882792737654349	editor/CMakeFiles/ChainedEditor.dir/logic/ProjectData.cpp.obj	daddaa258a679cf0
+73630	79936	7882792740541797	editor/CMakeFiles/ChainedEditor.dir/logic/Scene.cpp.obj	e3df799b493249ea
+73449	83977	7882792738738236	editor/CMakeFiles/ChainedEditor.dir/logic/EditorSettings.cpp.obj	a0463e9288589240
+73096	84891	7882792735208909	editor/CMakeFiles/ChainedEditor.dir/logic/ProjectManager.cpp.obj	6b173af2d5a9827a
+73880	87932	7882792743046921	editor/CMakeFiles/ChainedEditor.dir/logic/SceneManager.cpp.obj	70ee9d4954bc6b03
+125	7090	7882794381351099	D:/gitnext/Chained Decos/events/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381646295	D:/gitnext/Chained Decos/scene/resources/font/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381657855	D:/gitnext/Chained Decos/scene/resources/texture/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381723823	D:/gitnext/Chained Decos/scene/ecs/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381766936	D:/gitnext/Chained Decos/project/ChainedDecos/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381793566	D:/gitnext/Chained Decos/project/ChainedDecos/gamegui/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381817918	D:/gitnext/Chained Decos/project/ChainedDecos/player/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381914225	D:/gitnext/Chained Decos/_deps/lua-build/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381945392	D:/gitnext/Chained Decos/_deps/lua-build/src/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381981582	D:/gitnext/Chained Decos/_deps/sol2-build/cmake_install.cmake	e616189e2c9ca871
+125	7090	7882794381981582	D:/gitnext/Chained Decos/_deps/sol2-build/CTestTestfile.cmake	e616189e2c9ca871
+79217	80309	7882792796406779	bin/ChainedDecos.exe	cc8502a4a2ea59e4
+82050	82175	7882792824752784	lib/libgtest.a	c942fb504e3075b9
+82175	82260	7882792825998767	lib/libgtest_main.a	d175a6dee94994cb
+154743	155091	7882706404442230	lib/libgmock.a	583a70d529ba03f1
+155091	155498	7882706407904069	lib/libgmock_main.a	7f134e3f18005adb
+82260	82513	7882792826854789	bin/tests/ChainedDecosUnitTests.exe	6000312f76972d87
+82267	82881	7882792826918680	bin/tests/ChainedDecosIntegrationTests.exe	d6da74dfef11ecc4
+61700	76081	7882792621250225	editor/CMakeFiles/ChainedEditor.dir/EditorLayer.cpp.obj	a10ecbdab3954ed1
+121	5035	7882794382128535	build.ninja	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/raylib/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/raylib/raylib/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/raylib/raylib/external/glfw/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/raylib/raylib/external/glfw/src/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/json/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/googletest/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/googletest/googlemock/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/googletest/googletest/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/events/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/core/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/core/config/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/components/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/components/rendering/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/components/physics/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/components/physics/collision/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/components/physics/dynamics/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/components/audio/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/components/input/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/main/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/resources/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/resources/model/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/resources/map/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/resources/color/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/resources/font/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/resources/texture/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/gui/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/camera/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/scene/ecs/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/project/ChainedDecos/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/project/ChainedDecos/gamegui/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/project/ChainedDecos/player/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/tests/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/editor/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/nfd/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/nfd/src/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/_deps/lua-build/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/_deps/lua-build/src/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/_deps/sol2-build/cmake_install.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/raylib/CTestTestfile.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/raylib/raylib/CTestTestfile.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/googletest/CTestTestfile.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/googletest/googlemock/CTestTestfile.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/include/googletest/googletest/CTestTestfile.cmake	e616189e2c9ca871
+121	5035	7882794382128535	D:/gitnext/Chained Decos/_deps/sol2-build/CTestTestfile.cmake	e616189e2c9ca871
+41	57	7882794386639998	D:/gitnext/Chained Decos/CMakeFiles/cmake.verify_globs	927d9a42d3fbff70
+110	1571	7882794387327777	scene/resources/model/CMakeFiles/model.dir/config/ModelConfig.cpp.obj	7c656f21c1b434f8
+107	1805	7882794387298992	scene/resources/model/CMakeFiles/model.dir/animation/animation.cpp.obj	c7c7b7c0c92dc0b3
+104	1827	7882794387266586	scene/resources/model/CMakeFiles/model.dir/core/ModelInstance.cpp.obj	53c05b2cfe259231
+123	2509	7882794387455025	scene/main/CMakeFiles/world.dir/core/World.cpp.obj	9e69c877d2782e41
+98	4962	7882794387205780	scene/resources/map/CMakeFiles/map.dir/skybox/skybox.cpp.obj	d250df578a6e921c
+2509	6130	7882794411290703	components/physics/collision/CMakeFiles/collision.dir/structures/collisionStructures.cpp.obj	e0ce3f97500ae95b
+115	6242	7882794387381321	scene/resources/model/CMakeFiles/model.dir/parser/jsonHelper.cpp.obj	eca8b34ad96c8bb0
+89	7152	7882794387123853	scene/resources/map/CMakeFiles/map.dir/core/MapService.cpp.obj	8f33217975642c62
+7152	7519	7882794457712365	components/rendering/CMakeFiles/render.dir/utils/RenderUtils.cpp.obj	dc7b8145a296bbb5
+4962	7741	7882794435855726	components/physics/collision/CMakeFiles/collision.dir/debug/collisionDebugRenderer.cpp.obj	c4a017a15f355178
+6130	7778	7882794447492562	components/rendering/CMakeFiles/render.dir/core/RenderManager.cpp.obj	57756bec0be5d6f9
+92	7959	7882794387141545	scene/resources/map/CMakeFiles/map.dir/converter/MapObjectConverter.cpp.obj	d09bb800da0b3a3e
+95	8097	7882794387179613	scene/resources/map/CMakeFiles/map.dir/renderer/MapRenderer.cpp.obj	f92d3ad37a3dcb4d
+7519	9171	7882794461405812	components/rendering/CMakeFiles/render.dir/helpers/ImGuiHelper.cpp.obj	98a35b233dfefb47
+1572	10892	7882794401873271	scene/CMakeFiles/scene_manager.dir/SceneManager.cpp.obj	f77078c94c7c3a0d
+8097	10897	7882794467181965	core/CMakeFiles/core.dir/layer/Layer.cpp.obj	16574a8ac1da0951
+7959	10974	7882794465784999	core/CMakeFiles/core.dir/window/Window.cpp.obj	5384b215e7b44f5d
+113	11127	7882794387358821	scene/resources/model/CMakeFiles/model.dir/parser/jsonParser.cpp.obj	f87557e3dd23e2c5
+6242	11558	7882794448624602	components/rendering/CMakeFiles/render.dir/shader/shaderManager.cpp.obj	23865b2d0210ba24
+9171	12206	7882794477943242	core/CMakeFiles/core.dir/layer/LayerStack.cpp.obj	9f49e13d8896c313
+1827	12626	7882794404436087	components/physics/collision/CMakeFiles/collision.dir/system/collisionSystem.cpp.obj	2856f281eb406eba
+10897	13482	7882794495159628	core/CMakeFiles/core.dir/imgui/ImGuiLayer.cpp.obj	6fa24338570d6bc9
+84	17484	7882794387070163	scene/ecs/CMakeFiles/ecs.dir/systems/ScriptSystem.cpp.obj	dc9ad73407f919e9
+118	17920	7882794387407254	scene/resources/model/CMakeFiles/model.dir/cache/ModelCache.cpp.obj	3cea1a548226477d
+7779	18841	7882794464015325	core/CMakeFiles/core.dir/application/EngineApplication.cpp.obj	b583607377c758c0
+120	19167	7882794387425775	scene/resources/model/CMakeFiles/model.dir/utils/ModelAnalyzer.cpp.obj	c11d0bcf78e0f272
+130	20105	7882794387528177	scene/main/CMakeFiles/world.dir/core/MapCollisionInitializer.cpp.obj	34db399b27c8edea
+1805	21987	7882794404261174	components/physics/collision/CMakeFiles/collision.dir/core/collisionManager.cpp.obj	4c584fa1eae19406
+11127	23681	7882794497493931	core/CMakeFiles/core.dir/scripting/ScriptEngine.cpp.obj	94ca22f5975fd9cd
+11558	23802	7882794501805577	core/CMakeFiles/core.dir/input/Input.cpp.obj	96722dcb524bf551
+12206	25139	7882794508221684	core/CMakeFiles/core.dir/renderer/Renderer.cpp.obj	c8ec849480730ecb
+18841	25145	7882794574620847	scene/camera/CMakeFiles/cameracontroller.dir/core/CameraController.cpp.obj	8bbed9988deb482b
+82	26000	7882794387048611	scene/ecs/CMakeFiles/ecs.dir/systems/UIRenderSystem.cpp.obj	b1a100d3d8ca46e6
+12626	26758	7882794512447475	core/CMakeFiles/core.dir/assets/AssetManager.cpp.obj	9505f7a9d3c76f6
+26000	27557	7882794646224917	scene/ecs/libecs.a	607a53888b648440
+10893	27565	7882794495119118	core/CMakeFiles/core.dir/module/ModuleManager.cpp.obj	eb182572936bdd77
+13482	28663	7882794521036901	core/CMakeFiles/core.dir/physics/Physics.cpp.obj	d7e1bb106bf45254
+126	30186	7882794387495686	scene/main/CMakeFiles/world.dir/core/LevelManager.cpp.obj	3aab507f9a556ed8
+20105	30613	7882794587239867	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/settings/settingsManager.cpp.obj	7e55d22c2e7b45d2
+21987	34024	7882794606090477	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/settings/MenuSettingsController.cpp.obj	c078c64eeaad8e7e
+17484	34533	7882794561008733	core/CMakeFiles/core.dir/audio/Audio.cpp.obj	e13d654059a02a65
+7741	35055	7882794463633826	core/CMakeFiles/core.dir/Engine.cpp.obj	caad355680fe2a4
+101	39261	7882794387238181	scene/resources/model/CMakeFiles/model.dir/core/Model.cpp.obj	d960d9200e7bd52b
+34024	39352	7882794726449589	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerRenderable.cpp.obj	2c5e3d392c553585
+30613	39636	7882794692358045	project/ChainedDecos/player/CMakeFiles/player.dir/core/player.cpp.obj	1aeb783afcded7d
+19167	39951	7882794577871781	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/Menu.cpp.obj	50655f162f859840
+25139	39982	7882794637607456	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/BaseMenuScreen.cpp.obj	215ba4e96ee3ee1c
+25145	40416	7882794637681343	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/MainMenuScreen.cpp.obj	6971e9750c9d3f7f
+27565	40772	7882794661879511	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/CreditsScreen.cpp.obj	17a5cb6cc471338f
+26758	40788	7882794653785520	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/MapSelectionScreen.cpp.obj	4cfc7fdd9b1e0d12
+35055	40923	7882794736784113	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerModel.cpp.obj	3f6043a70cd0577d
+34533	41099	7882794731560972	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerInput.cpp.obj	2a4cc3e0838a8c8a
+23802	41138	7882794624254725	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/mapselector/mapselector.cpp.obj	8e57d3f620794118
+27557	41366	7882794661797966	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/OptionsScreen.cpp.obj	1a3f302f4c02e0c6
+28663	41372	7882794672851631	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/ConfirmExitScreen.cpp.obj	7ae80ea4c3d82213
+30186	41574	7882794688089074	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/settingsScreens.cpp.obj	ff7c64f18b5d45c2
+40773	42047	7882794793951797	scene/gui/CMakeFiles/gui.dir/helpers/CGUIHelpers.cpp.obj	ef085724549181db
+39636	42816	7882794782577214	include/googletest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.obj	4946d695e30b39d
+87	43063	7882794387101201	scene/resources/map/CMakeFiles/map.dir/core/SceneLoader.cpp.obj	74b2252d5f7b40d3
+40416	43715	7882794790387752	include/nfd/src/CMakeFiles/nfd.dir/nfd_win.cpp.obj	2e5b06597ec471c0
+43064	43778	7882794816862718	scene/resources/map/libmap.a	e160fb1bab6b68e7
+43778	44544	7882794823992975	scene/resources/model/libmodel.a	8a7d09190f663e56
+44544	45070	7882794831655581	scene/main/libworld.a	8536eeeb24f5cb02
+39261	45228	7882794778827141	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerMovement.cpp.obj	f9b2dd3ade7550dc
+39352	45436	7882794779733561	project/ChainedDecos/player/CMakeFiles/player.dir/collision/playerCollision.cpp.obj	a9750d7e8f0ab60a
+45070	45616	7882794836911667	scene/libscene_manager.a	67bf26b74db1c932
+10974	45754	7882794495965160	core/CMakeFiles/core.dir/scripting/ScriptManager.cpp.obj	7e93978e83128ab6
+45616	46157	7882794842388334	components/physics/collision/libcollision.a	2ceb64a0837d7498
+46157	46679	7882794847791642	components/rendering/librender.a	fb48ccd1401ace76
+41099	46709	7882794797205676	tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/PhysicsComponentTest.cpp.obj	10ddd1b1f8f5e6e6
+41138	46782	7882794797605668	tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/collisionSystemTest.cpp.obj	878c5ef264e4c024
+45436	46995	7882794840573413	editor/CMakeFiles/ChainedEditor.dir/panels/InspectorPanel.cpp.obj	e4958c1cdde88d37
+43715	47098	7882794823378160	editor/CMakeFiles/ChainedEditor.dir/panels/EditorPanelManager.cpp.obj	c8498db332fe03bd
+46679	47244	7882794853017555	core/libcore.a	b0bd2e1da1e054a5
+23681	47494	7882794623042287	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/console/consoleManager.cpp.obj	522897d671424424
+47244	47659	7882794858665749	scene/camera/libcameracontroller.a	81a154f82b020e7b
+47659	48144	7882794862814348	project/ChainedDecos/gamegui/libmenu.a	7f39555d373c499c
+48144	48721	7882794867658483	project/ChainedDecos/player/libplayer.a	b64e11b7a9ca5cdb
+41574	48933	7882794801953344	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/integration/skyboxTest.cpp.obj	8e0c3331d4d59955
+46709	49331	7882794853308319	editor/CMakeFiles/ChainedEditor.dir/panels/ConsolePanel.cpp.obj	fc903576cc33fab9
+42047	50084	7882794806686460	editor/CMakeFiles/ChainedEditor.dir/EditorApplication.cpp.obj	34065aebe9ebde8e
+45228	50210	7882794838496808	editor/CMakeFiles/ChainedEditor.dir/panels/HierarchyPanel.cpp.obj	e9fff2adf99546ae
+40788	50342	7882794794102038	project/ChainedDecos/CMakeFiles/ChainedDecos.dir/RuntimeMain.cpp.obj	8fba959b6b5a7cf0
+45755	50477	7882794843760380	editor/CMakeFiles/ChainedEditor.dir/panels/ViewportPanel.cpp.obj	b08735d2e5f3ed37
+41372	51204	7882794799933762	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/integration/GameIntegrationTest.cpp.obj	472fba0a19cd0816
+42816	52374	7882794814368219	editor/CMakeFiles/ChainedEditor.dir/EditorLayer.cpp.obj	a10ecbdab3954ed1
+46995	52717	7882794856186149	editor/CMakeFiles/ChainedEditor.dir/panels/ToolbarPanel.cpp.obj	f929cfb3d0bd3c3f
+52717	53086	7882794913384184	editor/CMakeFiles/ChainedEditor.dir/logic/EditorState.cpp.obj	bd23b300d4a18c4
+47494	53181	7882794861157370	editor/CMakeFiles/ChainedEditor.dir/render/EditorRenderer.cpp.obj	f01a6e607197a856
+52374	53422	7882794909967945	editor/CMakeFiles/ChainedEditor.dir/logic/SelectionManager.cpp.obj	1207f3a91c6d979
+53086	53606	7882794917092572	include/nfd/src/libnfd.a	3c4b37dbefd16831
+53181	53629	7882794918038319	scene/gui/libgui.a	d347f7abeea2ac3e
+46782	53630	7882794854039253	editor/CMakeFiles/ChainedEditor.dir/panels/AssetBrowserPanel.cpp.obj	f41a219103563c6b
+48721	56008	7882794873440876	editor/CMakeFiles/ChainedEditor.dir/tool/ToolManager.cpp.obj	72c759be49829adf
+49331	56359	7882794879521367	editor/CMakeFiles/ChainedEditor.dir/logic/MapManager.cpp.obj	99b6098fcd84fdf4
+41366	58804	7882794799878743	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/game/playerTest.cpp.obj	fe6b22259f5ee74a
+48933	58901	7882794875557992	editor/CMakeFiles/ChainedEditor.dir/mapgui/skyboxBrowser.cpp.obj	1e042ceb0ea04aa8
+47098	59137	7882794857199172	editor/CMakeFiles/ChainedEditor.dir/panels/UIEditorPanel.cpp.obj	9b9fe4687d1b134f
+40923	59504	7882794795451591	project/ChainedDecos/CMakeFiles/ChainedDecos.dir/GameApplication.cpp.obj	ca4550b7813fe4e0
+50210	60285	7882794888319931	editor/CMakeFiles/ChainedEditor.dir/logic/ProjectData.cpp.obj	daddaa258a679cf0
+50477	60342	7882794890984648	editor/CMakeFiles/ChainedEditor.dir/logic/Scene.cpp.obj	e3df799b493249ea
+39982	60786	7882794786027194	project/ChainedDecos/CMakeFiles/ChainedDecosGame.dir/logic/GameInitializer.cpp.obj	1d9dd2e15defde2f
+39951	62620	7882794785725635	project/ChainedDecos/CMakeFiles/ChainedDecosGame.dir/GameLayer.cpp.obj	aeb4fdf26d59576a
+62620	62801	7882795012431925	project/ChainedDecos/libChainedDecosGame.a	b1ceba9e68a82202
+62801	64083	7882795014236086	bin/ChainedDecos.exe	cc8502a4a2ea59e4
+50343	67002	7882794889650044	editor/CMakeFiles/ChainedEditor.dir/logic/EditorSettings.cpp.obj	a0463e9288589240
+50084	67295	7882794887072717	editor/CMakeFiles/ChainedEditor.dir/logic/ProjectManager.cpp.obj	6b173af2d5a9827a
+17920	67364	7882794565425472	include/googletest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.obj	2f127b9bbb7a5b14
+67365	67530	7882795059877433	lib/libgtest.a	c942fb504e3075b9
+67530	67630	7882795061527248	lib/libgtest_main.a	d175a6dee94994cb
+67631	67915	7882795062540105	bin/tests/ChainedDecosUnitTests.exe	6000312f76972d87
+67637	68492	7882795062602455	bin/tests/ChainedDecosIntegrationTests.exe	d6da74dfef11ecc4
+51204	74662	7882794898256488	editor/CMakeFiles/ChainedEditor.dir/logic/SceneManager.cpp.obj	70ee9d4954bc6b03
+74662	75618	7882795132850999	bin/ChainedEditor.exe	bed012df37862775
+28	57	7882798188391235	D:/gitnext/Chained Decos/CMakeFiles/cmake.verify_globs	927d9a42d3fbff70
+130	1547	7882798189401405	scene/resources/model/CMakeFiles/model.dir/core/ModelInstance.cpp.obj	53c05b2cfe259231
+137	1647	7882798189446960	scene/resources/model/CMakeFiles/model.dir/config/ModelConfig.cpp.obj	7c656f21c1b434f8
+133	2168	7882798189431670	scene/resources/model/CMakeFiles/model.dir/animation/animation.cpp.obj	c7c7b7c0c92dc0b3
+163	3533	7882798189743226	scene/main/CMakeFiles/world.dir/core/World.cpp.obj	9e69c877d2782e41
+123	5702	7882798189340296	scene/resources/map/CMakeFiles/map.dir/skybox/skybox.cpp.obj	d250df578a6e921c
+144	8023	7882798189551411	scene/resources/model/CMakeFiles/model.dir/parser/jsonHelper.cpp.obj	eca8b34ad96c8bb0
+3533	8190	7882798223427963	components/physics/collision/CMakeFiles/collision.dir/structures/collisionStructures.cpp.obj	e0ce3f97500ae95b
+114	8696	7882798189254177	scene/resources/map/CMakeFiles/map.dir/core/MapService.cpp.obj	8f33217975642c62
+120	9817	7882798189313170	scene/resources/map/CMakeFiles/map.dir/renderer/MapRenderer.cpp.obj	f92d3ad37a3dcb4d
+8696	9924	7882798275064539	components/rendering/CMakeFiles/render.dir/utils/RenderUtils.cpp.obj	dc7b8145a296bbb5
+5702	10380	7882798245128731	components/physics/collision/CMakeFiles/collision.dir/debug/collisionDebugRenderer.cpp.obj	c4a017a15f355178
+117	10724	7882798189285601	scene/resources/map/CMakeFiles/map.dir/converter/MapObjectConverter.cpp.obj	d09bb800da0b3a3e
+8024	11148	7882798268331145	components/rendering/CMakeFiles/render.dir/core/RenderManager.cpp.obj	57756bec0be5d6f9
+9818	12815	7882798286282833	components/rendering/CMakeFiles/render.dir/helpers/ImGuiHelper.cpp.obj	98a35b233dfefb47
+140	14366	7882798189446960	scene/resources/model/CMakeFiles/model.dir/parser/jsonParser.cpp.obj	f87557e3dd23e2c5
+1548	15309	7882798203579793	scene/CMakeFiles/scene_manager.dir/SceneManager.cpp.obj	f77078c94c7c3a0d
+10724	15782	7882798295337424	core/CMakeFiles/core.dir/window/Window.cpp.obj	5384b215e7b44f5d
+11148	16894	7882798299547844	core/CMakeFiles/core.dir/layer/Layer.cpp.obj	16574a8ac1da0951
+8191	17232	7882798270005797	components/rendering/CMakeFiles/render.dir/shader/shaderManager.cpp.obj	23865b2d0210ba24
+12815	17617	7882798316254778	core/CMakeFiles/core.dir/layer/LayerStack.cpp.obj	9f49e13d8896c313
+2168	18061	7882798209785298	components/physics/collision/CMakeFiles/collision.dir/system/collisionSystem.cpp.obj	2856f281eb406eba
+15309	18627	7882798341192880	core/CMakeFiles/core.dir/imgui/ImGuiLayer.cpp.obj	6fa24338570d6bc9
+150	19705	7882798189611478	scene/resources/model/CMakeFiles/model.dir/cache/ModelCache.cpp.obj	3cea1a548226477d
+108	21937	7882798189178422	scene/ecs/CMakeFiles/ecs.dir/systems/ScriptSystem.cpp.obj	dc9ad73407f919e9
+155	22625	7882798189653072	scene/resources/model/CMakeFiles/model.dir/utils/ModelAnalyzer.cpp.obj	c11d0bcf78e0f272
+1647	23863	7882798204534275	components/physics/collision/CMakeFiles/collision.dir/core/collisionManager.cpp.obj	4c584fa1eae19406
+10380	24796	7882798291906794	core/CMakeFiles/core.dir/application/EngineApplication.cpp.obj	b583607377c758c0
+22625	25561	7882798414354992	scene/camera/CMakeFiles/cameracontroller.dir/core/CameraController.cpp.obj	8bbed9988deb482b
+192	25726	7882798190013944	scene/main/CMakeFiles/world.dir/core/MapCollisionInitializer.cpp.obj	34db399b27c8edea
+17232	25732	7882798360424347	core/CMakeFiles/core.dir/input/Input.cpp.obj	96722dcb524bf551
+16894	26082	7882798357034825	core/CMakeFiles/core.dir/scripting/ScriptEngine.cpp.obj	94ca22f5975fd9cd
+17617	26420	7882798364273005	core/CMakeFiles/core.dir/renderer/Renderer.cpp.obj	c8ec849480730ecb
+18061	26831	7882798368717819	core/CMakeFiles/core.dir/assets/AssetManager.cpp.obj	9505f7a9d3c76f6
+14366	27000	7882798331765295	core/CMakeFiles/core.dir/module/ModuleManager.cpp.obj	eb182572936bdd77
+18627	27729	7882798374373180	core/CMakeFiles/core.dir/physics/Physics.cpp.obj	d7e1bb106bf45254
+19705	28232	7882798385143191	core/CMakeFiles/core.dir/audio/Audio.cpp.obj	e13d654059a02a65
+24796	28478	7882798436038661	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/settings/settingsManager.cpp.obj	7e55d22c2e7b45d2
+103	29774	7882798189142487	scene/ecs/CMakeFiles/ecs.dir/systems/UIRenderSystem.cpp.obj	b1a100d3d8ca46e6
+25561	31375	7882798443673751	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/settings/MenuSettingsController.cpp.obj	c078c64eeaad8e7e
+29774	31926	7882798485848540	scene/ecs/libecs.a	607a53888b648440
+184	33349	7882798189949508	scene/main/CMakeFiles/world.dir/core/LevelManager.cpp.obj	3aab507f9a556ed8
+9924	33759	7882798287355167	core/CMakeFiles/core.dir/Engine.cpp.obj	caad355680fe2a4
+127	35340	7882798189373544	scene/resources/model/CMakeFiles/model.dir/core/Model.cpp.obj	d960d9200e7bd52b
+26082	40953	7882798448883941	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/BaseMenuScreen.cpp.obj	215ba4e96ee3ee1c
+26420	41548	7882798452291599	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/MainMenuScreen.cpp.obj	6971e9750c9d3f7f
+23864	42626	7882798426734339	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/Menu.cpp.obj	50655f162f859840
+26831	42937	7882798456372359	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/MapSelectionScreen.cpp.obj	4cfc7fdd9b1e0d12
+27000	43214	7882798458095882	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/OptionsScreen.cpp.obj	1a3f302f4c02e0c6
+25733	43727	7882798445437957	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/mapselector/mapselector.cpp.obj	8e57d3f620794118
+111	44118	7882798189216459	scene/resources/map/CMakeFiles/map.dir/core/SceneLoader.cpp.obj	74b2252d5f7b40d3
+27729	44434	7882798465331654	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/CreditsScreen.cpp.obj	17a5cb6cc471338f
+31926	44786	7882798507352781	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerRenderable.cpp.obj	2c5e3d392c553585
+33759	45310	7882798525702396	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerModel.cpp.obj	3f6043a70cd0577d
+44118	45927	7882798629294926	scene/resources/map/libmap.a	e160fb1bab6b68e7
+31375	46152	7882798501844766	project/ChainedDecos/player/CMakeFiles/player.dir/core/player.cpp.obj	1aeb783afcded7d
+28478	46541	7882798472843467	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/settingsScreens.cpp.obj	ff7c64f18b5d45c2
+33349	46720	7882798521599817	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerInput.cpp.obj	2a4cc3e0838a8c8a
+43727	46787	7882798625367377	scene/gui/CMakeFiles/gui.dir/helpers/CGUIHelpers.cpp.obj	ef085724549181db
+28232	46808	7882798470367145	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/screens/ConfirmExitScreen.cpp.obj	7ae80ea4c3d82213
+45928	47120	7882798647385687	scene/resources/model/libmodel.a	8a7d09190f663e56
+47121	47462	7882798659319829	scene/main/libworld.a	8536eeeb24f5cb02
+35340	47554	7882798541501345	project/ChainedDecos/player/CMakeFiles/player.dir/components/playerMovement.cpp.obj	f9b2dd3ade7550dc
+41548	47596	7882798603583143	include/googletest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.obj	4946d695e30b39d
+47462	47794	7882798662723872	scene/libscene_manager.a	67bf26b74db1c932
+47794	48215	7882798666047652	components/physics/collision/libcollision.a	2ceb64a0837d7498
+43215	48504	7882798620232823	include/nfd/src/CMakeFiles/nfd.dir/nfd_win.cpp.obj	2e5b06597ec471c0
+48215	48715	7882798670255547	components/rendering/librender.a	fb48ccd1401ace76
+15782	49570	7882798345925902	core/CMakeFiles/core.dir/scripting/ScriptManager.cpp.obj	7e93978e83128ab6
+40953	50128	7882798597635211	project/ChainedDecos/player/CMakeFiles/player.dir/collision/playerCollision.cpp.obj	a9750d7e8f0ab60a
+49570	50944	7882798683806964	core/libcore.a	b0bd2e1da1e054a5
+46152	51005	7882798649636160	tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/collisionSystemTest.cpp.obj	878c5ef264e4c024
+48715	51153	7882798675258770	editor/CMakeFiles/ChainedEditor.dir/panels/InspectorPanel.cpp.obj	e4958c1cdde88d37
+47596	51412	7882798664061589	editor/CMakeFiles/ChainedEditor.dir/panels/EditorPanelManager.cpp.obj	c8498db332fe03bd
+50944	51472	7882798697549924	scene/camera/libcameracontroller.a	81a154f82b020e7b
+51472	52071	7882798702827960	project/ChainedDecos/player/libplayer.a	b64e11b7a9ca5cdb
+45310	52348	7882798641191508	tests/CMakeFiles/ChainedDecosUnitTests.dir/engine/PhysicsComponentTest.cpp.obj	10ddd1b1f8f5e6e6
+25726	52482	7882798445350370	project/ChainedDecos/gamegui/CMakeFiles/menu.dir/console/consoleManager.cpp.obj	522897d671424424
+52482	53332	7882798712926212	project/ChainedDecos/gamegui/libmenu.a	7f39555d373c499c
+48504	53448	7882798673131420	editor/CMakeFiles/ChainedEditor.dir/panels/HierarchyPanel.cpp.obj	e9fff2adf99546ae
+51006	54128	7882798698147303	editor/CMakeFiles/ChainedEditor.dir/panels/ConsolePanel.cpp.obj	fc903576cc33fab9
+50128	54326	7882798689384944	editor/CMakeFiles/ChainedEditor.dir/panels/ViewportPanel.cpp.obj	b08735d2e5f3ed37
+46788	54590	7882798655977991	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/integration/skyboxTest.cpp.obj	8e0c3331d4d59955
+46808	54828	7882798656175137	editor/CMakeFiles/ChainedEditor.dir/EditorApplication.cpp.obj	34065aebe9ebde8e
+44434	55008	7882798632451847	project/ChainedDecos/CMakeFiles/ChainedDecos.dir/RuntimeMain.cpp.obj	8fba959b6b5a7cf0
+46720	58324	7882798655290477	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/integration/GameIntegrationTest.cpp.obj	472fba0a19cd0816
+47554	59017	7882798663642275	editor/CMakeFiles/ChainedEditor.dir/EditorLayer.cpp.obj	a10ecbdab3954ed1
+51412	59047	7882798702202605	editor/CMakeFiles/ChainedEditor.dir/panels/ToolbarPanel.cpp.obj	f929cfb3d0bd3c3f
+51153	59288	7882798699637003	editor/CMakeFiles/ChainedEditor.dir/panels/AssetBrowserPanel.cpp.obj	f41a219103563c6b
+59047	59360	7882798778571456	editor/CMakeFiles/ChainedEditor.dir/logic/EditorState.cpp.obj	bd23b300d4a18c4
+52348	59425	7882798711578048	editor/CMakeFiles/ChainedEditor.dir/render/EditorRenderer.cpp.obj	f01a6e607197a856
+59288	59592	7882798780986284	include/nfd/src/libnfd.a	3c4b37dbefd16831
+59360	59608	7882798781704991	scene/gui/libgui.a	d347f7abeea2ac3e
+59017	59940	7882798778276852	editor/CMakeFiles/ChainedEditor.dir/logic/SelectionManager.cpp.obj	1207f3a91c6d979
+53332	60367	7882798721420379	editor/CMakeFiles/ChainedEditor.dir/tool/ToolManager.cpp.obj	72c759be49829adf
+54128	60613	7882798729390990	editor/CMakeFiles/ChainedEditor.dir/logic/MapManager.cpp.obj	99b6098fcd84fdf4
+53448	61591	7882798722587561	editor/CMakeFiles/ChainedEditor.dir/mapgui/skyboxBrowser.cpp.obj	1e042ceb0ea04aa8
+46541	61996	7882798653517081	tests/CMakeFiles/ChainedDecosIntegrationTests.dir/game/playerTest.cpp.obj	fe6b22259f5ee74a
+52071	62371	7882798708806109	editor/CMakeFiles/ChainedEditor.dir/panels/UIEditorPanel.cpp.obj	9b9fe4687d1b134f
+55009	62542	7882798738190756	editor/CMakeFiles/ChainedEditor.dir/logic/Scene.cpp.obj	e3df799b493249ea
+54591	62742	7882798734015678	editor/CMakeFiles/ChainedEditor.dir/logic/ProjectData.cpp.obj	daddaa258a679cf0
+44786	63118	7882798635962124	project/ChainedDecos/CMakeFiles/ChainedDecos.dir/GameApplication.cpp.obj	ca4550b7813fe4e0
+42937	64008	7882798617467674	project/ChainedDecos/CMakeFiles/ChainedDecosGame.dir/logic/GameInitializer.cpp.obj	1d9dd2e15defde2f
+42626	64370	7882798614363695	project/ChainedDecos/CMakeFiles/ChainedDecosGame.dir/GameLayer.cpp.obj	aeb4fdf26d59576a
+64370	64496	7882798831814434	project/ChainedDecos/libChainedDecosGame.a	b1ceba9e68a82202
+64497	65472	7882798833071223	bin/ChainedDecos.exe	cc8502a4a2ea59e4
+54828	66390	7882798736387085	editor/CMakeFiles/ChainedEditor.dir/logic/EditorSettings.cpp.obj	a0463e9288589240
+54326	66712	7882798731367856	editor/CMakeFiles/ChainedEditor.dir/logic/ProjectManager.cpp.obj	6b173af2d5a9827a
+21938	66817	7882798407452914	include/googletest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.obj	2f127b9bbb7a5b14
+66817	66913	7882798856276015	lib/libgtest.a	c942fb504e3075b9
+66913	66967	7882798857238169	lib/libgtest_main.a	d175a6dee94994cb
+66967	67133	7882798857787519	bin/tests/ChainedDecosUnitTests.exe	6000312f76972d87
+66972	67432	7882798857831624	bin/tests/ChainedDecosIntegrationTests.exe	d6da74dfef11ecc4
+58325	71027	7882798771361415	editor/CMakeFiles/ChainedEditor.dir/logic/SceneManager.cpp.obj	70ee9d4954bc6b03
+71027	71531	7882798898375172	bin/ChainedEditor.exe	bed012df37862775
