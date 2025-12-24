@@ -75,15 +75,12 @@ void CameraController::Update()
 {
     // Skip camera update if no window is available (for testing)
     if (!IsWindowReady())
-    {
         return;
-    }
 
-    // Skip camera update if ImGui wants to capture mouse or keyboard
-    // This prevents UpdateCamera from centering the cursor or moving while typing
     const ImGuiIO &io = ImGui::GetIO();
+    float deltaTime = GetFrameTime();
 
-    // If we are NOT in bypass mode (not in viewport), reset states to prevent "sticky" keys/buttons
+    // If we are NOT in bypass mode (not in viewport), reset states
     if (!m_inputCaptureBypass)
     {
         m_isLMBDown = false;
@@ -92,29 +89,12 @@ void CameraController::Update()
         return;
     }
 
-    // If we are NOT in bypass mode (not in viewport), respect ImGui capture
-    if (!m_inputCaptureBypass && (io.WantCaptureMouse || io.WantCaptureKeyboard))
-    {
-        return;
-    }
+    // Update state using ImGui polling for reliability
+    m_isLMBDown = ImGui::IsMouseDown(0);
+    m_isRMBDown = ImGui::IsMouseDown(1);
 
     // Update screen shake
-    float deltaTime = IsWindowReady() ? GetFrameTime() : (1.0f / 60.0f);
     UpdateScreenShake(deltaTime);
-
-    // Double check state using polling if in bypass mode to handle events lost during focus
-    // transitions
-    // Double check state using ImGui polling for reliability when rlImGui is active
-    if (m_inputCaptureBypass)
-    {
-        // In the editor, LMB is for selection/gizmos, not camera movement.
-        m_isLMBDown = ImGui::IsMouseDown(0);
-        m_isRMBDown = ImGui::IsMouseDown(1);
-    }
-
-    // Only update camera if user is actively interacting with it
-    bool isAnyMovementKeyPressed = m_isRMBDown && (m_activeMovementKeys > 0);
-    bool isMouseWheelMoving = m_lastMouseWheelMove != 0.0f;
 
     // Handle Cursor state for Fly Mode (RMB)
     if (m_cameraMode == CAMERA_FREE && m_isRMBDown)
@@ -128,59 +108,53 @@ void CameraController::Update()
             EnableCursor();
     }
 
-    if (m_isRMBDown || isAnyMovementKeyPressed || isMouseWheelMoving)
+    if (m_cameraMode == CAMERA_FREE && m_isRMBDown)
     {
-        if (m_cameraMode == CAMERA_FREE && m_isRMBDown)
-        {
-            // Professional Fly Camera Logic
-            float speed = 5.0f * deltaTime;
-            if (IsKeyDown(KEY_LEFT_SHIFT))
-                speed *= 3.0f; // Boost
+        // 1. Rotation (Mouse) - Use ImGui delta for reliability
+        Vector2 mouseDelta = {io.MouseDelta.x, io.MouseDelta.y};
 
-            // 1. Rotation (Mouse)
-            Vector2 mouseDelta = FilterMouseDelta(GetMouseDelta());
-            m_cameraYaw -= mouseDelta.x * m_mouseSensitivity * 0.5f;
-            m_cameraPitch -= mouseDelta.y * m_mouseSensitivity * 0.5f;
-            m_cameraPitch = Clamp(m_cameraPitch, -89.0f, 89.0f);
+        // Filter huge spikes (usually happens on first frame of RMB click)
+        if (Vector2Length(mouseDelta) > 100.0f)
+            mouseDelta = {0, 0};
 
-            // Calculate direction vectors
-            Vector3 forward = {sinf(m_cameraYaw * DEG2RAD) * cosf(m_cameraPitch * DEG2RAD),
-                               sinf(m_cameraPitch * DEG2RAD),
-                               cosf(m_cameraYaw * DEG2RAD) * cosf(m_cameraPitch * DEG2RAD)};
-            Vector3 right = {sinf((m_cameraYaw - 90.0f) * DEG2RAD), 0,
-                             cosf((m_cameraYaw - 90.0f) * DEG2RAD)};
+        m_cameraYaw -= mouseDelta.x * m_mouseSensitivity * 0.5f;
+        m_cameraPitch -= mouseDelta.y * m_mouseSensitivity * 0.5f;
+        m_cameraPitch = Clamp(m_cameraPitch, -89.0f, 89.0f);
 
-            // 2. Movement (Keyboard)
-            if (IsKeyDown(KEY_W))
-                m_camera.position = Vector3Add(m_camera.position, Vector3Scale(forward, speed));
-            if (IsKeyDown(KEY_S))
-                m_camera.position =
-                    Vector3Subtract(m_camera.position, Vector3Scale(forward, speed));
-            if (IsKeyDown(KEY_A))
-                m_camera.position = Vector3Subtract(m_camera.position, Vector3Scale(right, speed));
-            if (IsKeyDown(KEY_D))
-                m_camera.position = Vector3Add(m_camera.position, Vector3Scale(right, speed));
-            if (IsKeyDown(KEY_E))
-                m_camera.position.y += speed;
-            if (IsKeyDown(KEY_Q))
-                m_camera.position.y -= speed;
+        // Calculate direction vectors
+        Vector3 forward = {sinf(m_cameraYaw * DEG2RAD) * cosf(m_cameraPitch * DEG2RAD),
+                           sinf(m_cameraPitch * DEG2RAD),
+                           cosf(m_cameraYaw * DEG2RAD) * cosf(m_cameraPitch * DEG2RAD)};
+        Vector3 right = {sinf((m_cameraYaw - 90.0f) * DEG2RAD), 0,
+                         cosf((m_cameraYaw - 90.0f) * DEG2RAD)};
 
-            m_camera.target = Vector3Add(m_camera.position, forward);
-        }
-        else if (isMouseWheelMoving)
-        {
-            // Only allow zoom/standard update for wheel
-            UpdateCamera(&m_camera, m_cameraMode);
-        }
-        else if (m_isRMBDown ||
-                 isAnyMovementKeyPressed) // Only update if RMB is down or movement keys are pressed
-        {
-            UpdateCamera(&m_camera, m_cameraMode);
-        }
+        // 2. Movement (Keyboard)
+        float speed = 5.0f * deltaTime;
+        if (IsKeyDown(KEY_LEFT_SHIFT))
+            speed *= 3.0f;
 
-        // Reset frame-based states
-        m_lastMouseWheelMove = 0.0f;
+        if (IsKeyDown(KEY_W))
+            m_camera.position = Vector3Add(m_camera.position, Vector3Scale(forward, speed));
+        if (IsKeyDown(KEY_S))
+            m_camera.position = Vector3Subtract(m_camera.position, Vector3Scale(forward, speed));
+        if (IsKeyDown(KEY_A))
+            m_camera.position = Vector3Subtract(m_camera.position, Vector3Scale(right, speed));
+        if (IsKeyDown(KEY_D))
+            m_camera.position = Vector3Add(m_camera.position, Vector3Scale(right, speed));
+        if (IsKeyDown(KEY_E))
+            m_camera.position.y += speed;
+        if (IsKeyDown(KEY_Q))
+            m_camera.position.y -= speed;
+
+        m_camera.target = Vector3Add(m_camera.position, forward);
     }
+    else if (m_lastMouseWheelMove != 0.0f || (m_isRMBDown && m_cameraMode != CAMERA_FREE))
+    {
+        // Standard raylib camera update for other modes or zoom
+        UpdateCamera(&m_camera, m_cameraMode);
+    }
+
+    m_lastMouseWheelMove = 0.0f;
 }
 
 void CameraController::UpdateCameraRotation()

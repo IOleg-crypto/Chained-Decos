@@ -34,17 +34,17 @@
         {
             "color": {
                 "a": 255,
-                "b": 80,
-                "g": 80,
-                "r": 80
+                "b": 83,
+                "g": 83,
+                "r": 83
             },
             "height": 1.0,
             "isObstacle": false,
             "isPlatform": false,
-            "name": "Ground",
+            "name": "Default Cube",
             "position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": 0.6000000238418579,
                 "z": 0.0
             },
             "radius": 0.5,
@@ -54,41 +54,7 @@
                 "z": 0.0
             },
             "scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "size": {
-                "height": 100.0,
-                "width": 100.0
-            },
-            "type": 3
-        },
-        {
-            "color": {
-                "a": 255,
-                "b": 255,
-                "g": 255,
-                "r": 255
-            },
-            "height": 1.0,
-            "isObstacle": false,
-            "isPlatform": false,
-            "modelName": "plane.glb",
-            "name": "plane",
-            "position": {
-                "x": 0.5,
-                "y": 2.799999952316284,
-                "z": 0.0
-            },
-            "radius": 0.5,
-            "rotation": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "scale": {
-                "x": 1.0,
+                "x": 16.700000762939453,
                 "y": 1.0,
                 "z": 1.0
             },
@@ -96,8 +62,101 @@
                 "height": 1.0,
                 "width": 1.0
             },
-            "type": 5
+            "type": 0
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 0
+            },
+            "height": 1.0,
+            "isObstacle": false,
+            "isPlatform": false,
+            "name": "Spawn Zone",
+            "position": {
+                "x": 0.0,
+                "y": 8.228102684020996,
+                "z": 0.0
+            },
+            "radius": 0.5,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+            },
+            "size": {
+                "height": 1.0,
+                "width": 1.0
+            },
+            "type": 6
         }
     ],
-    "uiElements": []
+    "uiElements": [
+        {
+            "anchor": 0,
+            "borderColor": {
+                "a": 255,
+                "b": 0,
+                "g": 0,
+                "r": 0
+            },
+            "borderRadius": 0.0,
+            "borderWidth": 0.0,
+            "fontSize": 20,
+            "hoverColor": {
+                "a": 255,
+                "b": 200,
+                "g": 200,
+                "r": 200
+            },
+            "name": "Hello World",
+            "normalColor": {
+                "a": 255,
+                "b": 130,
+                "g": 130,
+                "r": 130
+            },
+            "pivot": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "position": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "pressedColor": {
+                "a": 255,
+                "b": 80,
+                "g": 80,
+                "r": 80
+            },
+            "rotation": 0.0,
+            "size": {
+                "x": 120.0,
+                "y": 50.0
+            },
+            "spacing": 1.0,
+            "text": "Button",
+            "textColor": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "tint": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "type": "button"
+        }
+    ]
 }

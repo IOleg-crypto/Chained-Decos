@@ -1,14 +1,13 @@
 #ifndef HIERARCHYPANEL_H
 #define HIERARCHYPANEL_H
 
+#include "editor/EditorTypes.h"
 #include "scene/resources/map/core/SceneLoader.h"
+#include <functional>
 #include <memory>
 
 namespace CHEngine
 {
-// Forward declaration for EditorLayer
-class EditorLayer;
-
 class HierarchyPanel
 {
 public:
@@ -17,7 +16,10 @@ public:
 
     void SetContext(const std::shared_ptr<GameScene> &scene);
 
-    void OnImGuiRender(EditorLayer *layer);
+    void OnImGuiRender(SelectionType selectionType, int selectedIndex,
+                       std::function<void(SelectionType, int)> onSelect,
+                       std::function<void()> onAddModel,
+                       std::function<void(const std::string &)> onAddUI);
 
 private:
     std::shared_ptr<GameScene> m_Context;

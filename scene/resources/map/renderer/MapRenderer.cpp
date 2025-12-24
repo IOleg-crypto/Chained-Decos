@@ -159,7 +159,22 @@ void MapRenderer::RenderMapObject(const MapObjectData &object,
         break;
 
     case MapObjectType::SPAWN_ZONE:
-        break;
+    {
+        // Draw a translucent cyan box to represent the spawn zone
+        Color spawnColor = {0, 255, 255, 100}; // Translucent Cyan
+        DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, spawnColor);
+        DrawCubeWires(object.position, object.scale.x, object.scale.y, object.scale.z, YELLOW);
+
+        // Draw an arrow or marker to show forward direction (Y rotation)
+        Vector3 forward = {0, 0, 1};
+        forward = Vector3RotateByQuaternion(
+            forward, QuaternionFromEuler(object.rotation.x * DEG2RAD, object.rotation.y * DEG2RAD,
+                                         object.rotation.z * DEG2RAD));
+        Vector3 arrowEnd = Vector3Add(object.position, Vector3Scale(forward, 1.0f));
+        DrawLine3D(object.position, arrowEnd, YELLOW);
+        DrawSphere(arrowEnd, 0.1f, YELLOW);
+    }
+    break;
 
     default:
         DrawCube(object.position, object.scale.x, object.scale.y, object.scale.z, object.color);

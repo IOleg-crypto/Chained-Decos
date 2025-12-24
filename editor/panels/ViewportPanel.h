@@ -3,13 +3,14 @@
 #include "editor/EditorTypes.h"
 #include "scene/camera/core/CameraController.h"
 #include "scene/resources/map/core/SceneLoader.h"
+#include <cstdint>
 #include <imgui.h>
 #include <memory>
 #include <raylib.h>
 
 namespace CHEngine
 {
-enum class GizmoAxis
+enum class GizmoAxis : std::uint8_t
 {
     NONE,
     X,
@@ -30,7 +31,7 @@ public:
 
     void OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                        const std::shared_ptr<CameraController> &cameraController,
-                       EditorLayer *layer);
+                       int selectedObjectIndex, Tool activeTool, std::function<void(int)> onSelect);
 
     bool IsFocused() const
     {

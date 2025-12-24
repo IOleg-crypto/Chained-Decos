@@ -12,9 +12,11 @@ public:
     InspectorPanel() = default;
 
     void OnImGuiRender(MapObjectData *selectedEntity);
+    void OnImGuiRender(UIElementData *selectedElement);
 
 private:
     void DrawComponents(MapObjectData *entity);
+    void DrawUIComponents(UIElementData *element);
     void DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f,
                          float columnWidth = 100.0f);
 };

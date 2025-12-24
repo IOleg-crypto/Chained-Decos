@@ -1,6 +1,12 @@
 #include "LevelManager.h"
 #include "core/Engine.h"
 #include "core/Log.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components/RenderComponent.h"
+#include "scene/ecs/components/ScriptingComponents.h"
+#include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/UIComponents.h"
+#include "scene/ecs/components/UtilityComponents.h"
 #include "scene/main/core/MapCollisionInitializer.h"
 #include "scene/resources/map/core/MapService.h"
 #include "scene/resources/map/renderer/MapRenderer.h"
@@ -530,6 +536,187 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                 cfg.spawn = true;
                 m_modelLoader->AddInstanceEx(candidateName, cfg);
             }
+        }
+    }
+}
+void LevelManager::RefreshUIEntities()
+{
+    auto &registry = ::ECSRegistry::Get();
+
+    // 1. Remove all existing UI entities
+    auto view = registry.view<CHEngine::UIElementIndex>();
+    registry.destroy(view.begin(), view.end());
+
+    // 2. Clear all entities with UI components just to be safe
+    auto uiGroup = registry.view<CHEngine::RectTransform>();
+    registry.destroy(uiGroup.begin(), uiGroup.end());
+
+    // 3. Recreate entities from GameScene data
+    auto &uiElements = m_gameScene->GetUIElements();
+    for (int i = 0; i < (int)uiElements.size(); i++)
+    {
+        const auto &data = uiElements[i];
+        if (!data.isActive)
+            continue;
+
+        auto entity = registry.create();
+
+        // Always add Index and Transform
+        registry.emplace<CHEngine::UIElementIndex>(entity, i);
+        registry.emplace<CHEngine::NameComponent>(entity, data.name);
+
+        CHEngine::RectTransform transform;
+        transform.position = data.position;
+        transform.size = data.size;
+        transform.pivot = data.pivot;
+        transform.anchor = (CHEngine::UIAnchor)data.anchor;
+        registry.emplace<CHEngine::RectTransform>(entity, transform);
+
+        // Add specialized components based on type
+        if (data.type == "button")
+        {
+            CHEngine::UIButton button;
+            button.normalColor = data.normalColor;
+            button.hoverColor = data.hoverColor;
+            button.pressedColor = data.pressedColor;
+            button.borderRadius = data.borderRadius;
+            button.borderWidth = data.borderWidth;
+            button.borderColor = data.borderColor;
+            button.actionType = data.actionType;
+            button.actionTarget = data.actionTarget;
+            button.eventId = data.eventId;
+            registry.emplace<CHEngine::UIButton>(entity, button);
+
+            if (!data.texturePath.empty())
+            {
+                CHEngine::UIImage image;
+                image.texturePath = data.texturePath;
+                image.tint = data.tint;
+                image.borderRadius = data.borderRadius;
+                image.borderWidth = data.borderWidth;
+                image.borderColor = data.borderColor;
+                registry.emplace<CHEngine::UIImage>(entity, image);
+            }
+
+            CHEngine::UIText text;
+            text.text = data.text;
+            text.color = data.textColor;
+            text.fontName = data.fontName.empty() ? "Gantari" : data.fontName;
+            text.fontSize = (float)data.fontSize;
+            text.spacing = data.spacing;
+            registry.emplace<CHEngine::UIText>(entity, text);
+        }
+        else if (data.type == "imgui_button")
+        {
+            CHEngine::ImGuiComponent imgui;
+            imgui.label = data.text;
+            imgui.eventId = data.eventId;
+            imgui.isButton = true;
+            registry.emplace<CHEngine::ImGuiComponent>(entity, imgui);
+        }
+        else if (data.type == "text")
+        {
+            CHEngine::UIText text;
+            text.text = data.text;
+            text.color = data.textColor;
+            text.fontName = data.fontName.empty() ? "Gantari" : data.fontName;
+            text.fontSize = (float)data.fontSize;
+            text.spacing = data.spacing;
+            registry.emplace<CHEngine::UIText>(entity, text);
+        }
+        else if (data.type == "imgui_text")
+        {
+            CHEngine::ImGuiComponent imgui;
+            imgui.label = data.text;
+            imgui.isButton = false;
+            registry.emplace<CHEngine::ImGuiComponent>(entity, imgui);
+        }
+        else if (data.type == "image")
+        {
+            CHEngine::UIImage image;
+            image.tint = data.tint;
+            image.borderRadius = data.borderRadius;
+            image.borderWidth = data.borderWidth;
+            image.borderColor = data.borderColor;
+            image.texturePath = data.texturePath;
+            registry.emplace<CHEngine::UIImage>(entity, image);
+        }
+
+        // Add Scripting if present
+        if (!data.scriptPath.empty())
+        {
+            registry.emplace<CHEngine::LuaScriptComponent>(entity, data.scriptPath, false);
+        }
+    }
+
+    CD_INFO("[LevelManager] Refreshed %d UI entities in ECS.", (int)uiElements.size());
+}
+
+void LevelManager::RefreshMapEntities()
+{
+    auto &registry = ::ECSRegistry::Get();
+
+    // 1. Remove all existing map entities (those created by this system)
+    auto mapEntities = registry.view<CHEngine::MapObjectIndex>();
+    registry.destroy(mapEntities.begin(), mapEntities.end());
+
+    // 2. Recreate entities from GameScene data
+    auto &mapObjects = m_gameScene->GetMapObjects();
+    for (int i = 0; i < (int)mapObjects.size(); i++)
+    {
+        const auto &data = mapObjects[i];
+
+        auto entity = registry.create();
+        registry.emplace<CHEngine::MapObjectIndex>(entity, i);
+        registry.emplace<CHEngine::NameComponent>(entity, data.name);
+
+        registry.emplace<CHEngine::TransformComponent>(entity, data.position, data.rotation,
+                                                       data.scale);
+
+        if (!data.scriptPath.empty())
+        {
+            registry.emplace<CHEngine::LuaScriptComponent>(entity, data.scriptPath, false);
+        }
+
+        CD_INFO("[LevelManager] Created ECS Entity for Map Object[%d]: %s (Type: %d)", i,
+                data.name.c_str(), (int)data.type);
+    }
+}
+
+void LevelManager::SyncEntitiesToMap()
+{
+    auto &registry = ::ECSRegistry::Get();
+    auto &mapObjects = m_gameScene->GetMapObjectsMutable();
+
+    // Sync 3D Map Objects
+    auto view = registry.view<CHEngine::MapObjectIndex, CHEngine::TransformComponent>();
+    for (auto entity : view)
+    {
+        auto &idxComp = view.get<CHEngine::MapObjectIndex>(entity);
+        auto &transform = view.get<CHEngine::TransformComponent>(entity);
+
+        if (idxComp.index >= 0 && idxComp.index < (int)mapObjects.size())
+        {
+            auto &data = mapObjects[idxComp.index];
+            data.position = transform.position;
+            data.rotation = transform.rotation;
+            data.scale = transform.scale;
+        }
+    }
+
+    // Sync UI Elements
+    auto &uiElements = m_gameScene->GetUIElementsMutable();
+    auto uiView = registry.view<CHEngine::UIElementIndex, CHEngine::RectTransform>();
+    for (auto entity : uiView)
+    {
+        auto &idxComp = uiView.get<CHEngine::UIElementIndex>(entity);
+        auto &transform = uiView.get<CHEngine::RectTransform>(entity);
+
+        if (idxComp.index >= 0 && idxComp.index < (int)uiElements.size())
+        {
+            auto &data = uiElements[idxComp.index];
+            data.position = transform.position;
+            data.size = transform.size;
         }
     }
 }

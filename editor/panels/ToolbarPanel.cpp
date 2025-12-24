@@ -1,16 +1,18 @@
 #include "ToolbarPanel.h"
-#include "editor/EditorLayer.h"
 #include "editor/utils/IconsFontAwesome5.h"
 #include <imgui.h>
-#include <imgui_internal.h>
 
 namespace CHEngine
 {
-void ToolbarPanel::OnImGuiRender(EditorLayer *layer)
+void ToolbarPanel::OnImGuiRender(SceneState sceneState, Tool activeTool,
+                                 std::function<void()> onPlay, std::function<void()> onStop,
+                                 std::function<void()> onNew, std::function<void()> onSave,
+                                 std::function<void(Tool)> onToolChange)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+
     auto &colors = ImGui::GetStyle().Colors;
     const auto &buttonHovered = colors[ImGuiCol_ButtonHovered];
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
@@ -33,17 +35,17 @@ void ToolbarPanel::OnImGuiRender(EditorLayer *layer)
     ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x * 0.5f - (size * 0.5f));
 
     // 1. Scene State Controls
-    bool isEdit = (layer->GetSceneState() == SceneState::Edit);
+    bool isEdit = (sceneState == SceneState::Edit);
 
     if (isEdit)
     {
         if (ImGui::Button(ICON_FA_PLAY, ImVec2(size, size)))
-            layer->OnScenePlay();
+            onPlay();
     }
     else
     {
         if (ImGui::Button(ICON_FA_STOP, ImVec2(size, size)))
-            layer->OnSceneStop();
+            onStop();
     }
 
     ImGui::SameLine();
@@ -51,29 +53,29 @@ void ToolbarPanel::OnImGuiRender(EditorLayer *layer)
 
     // 2. File Controls
     if (ImGui::Button(ICON_FA_FILE, ImVec2(size + 10, size)))
-        layer->NewScene();
+        onNew();
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("New Scene");
 
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_SAVE, ImVec2(size + 10, size)))
-        layer->SaveScene();
+        onSave();
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Save Scene");
 
     ImGui::SameLine();
-    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+    ImGui::Separator();
     ImGui::SameLine();
 
     // 3. Tool Selection
     auto toolButton = [&](Tool tool, const char *icon, const char *tooltip)
     {
-        bool selected = (layer->GetActiveTool() == tool);
+        bool selected = (activeTool == tool);
         if (selected)
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 0.6f));
 
         if (ImGui::Button(icon, ImVec2(size + 5, size)))
-            layer->SetActiveTool(tool);
+            onToolChange(tool);
 
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", tooltip);

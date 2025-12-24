@@ -1,59 +1,59 @@
 #ifndef EDITOR_STATE_H
 #define EDITOR_STATE_H
 
-#include "IEditorState.h"
+#include "EditorTypes.h"
 
-class EditorState : public IEditorState
+class EditorState
 {
 public:
     EditorState();
-    ~EditorState() override = default;
+    ~EditorState() = default;
 
     // Tool Management
-    Tool GetActiveTool() const override
+    Tool GetActiveTool() const
     {
         return m_activeTool;
     }
-    void SetActiveTool(Tool tool) override
+    void SetActiveTool(Tool tool)
     {
         m_activeTool = tool;
     }
 
     // Grid Management
-    int GetGridSize() const override
+    int GetGridSize() const
     {
         return m_gridSize;
     }
-    void SetGridSize(int size) override
+    void SetGridSize(int size)
     {
         m_gridSize = size;
     }
 
     // Editor Modes
-    EditorMode GetEditorMode() const override
+    EditorMode GetEditorMode() const
     {
         return m_editorMode;
     }
-    void SetEditorMode(EditorMode mode) override
+    void SetEditorMode(EditorMode mode)
     {
         m_editorMode = mode;
     }
-    bool IsUIDesignMode() const override;
+    bool IsUIDesignMode() const;
 
     // Rendering Flags
-    bool IsWireframeEnabled() const override
+    bool IsWireframeEnabled() const
     {
         return m_drawWireframe;
     }
-    void SetWireframeEnabled(bool enabled) override
+    void SetWireframeEnabled(bool enabled)
     {
         m_drawWireframe = enabled;
     }
-    bool IsCollisionDebugEnabled() const override
+    bool IsCollisionDebugEnabled() const
     {
         return m_drawCollisions;
     }
-    void SetCollisionDebugEnabled(bool enabled) override
+    void SetCollisionDebugEnabled(bool enabled)
     {
         m_drawCollisions = enabled;
     }

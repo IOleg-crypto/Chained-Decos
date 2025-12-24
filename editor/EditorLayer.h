@@ -40,6 +40,8 @@ public:
     void OpenScene();
     void SaveScene();
     void SaveSceneAs();
+    void AddModel();
+    void AddUIElement(const std::string &type);
 
     SceneState GetSceneState() const
     {
@@ -50,11 +52,13 @@ public:
     {
         return m_SelectedObjectIndex;
     }
-    void SetSelectedObjectIndex(int index)
+    void SetSelectedObjectIndex(int index, SelectionType type = SelectionType::WORLD_OBJECT)
     {
         m_SelectedObjectIndex = index;
+        m_SelectionType = type;
     }
     MapObjectData *GetSelectedObject();
+    UIElementData *GetSelectedUIElement();
 
     Tool GetActiveTool() const
     {
@@ -97,6 +101,7 @@ private:
     SceneState m_SceneState = SceneState::Edit;
     Tool m_ActiveTool = Tool::MOVE;
     int m_SelectedObjectIndex = -1;
+    SelectionType m_SelectionType = SelectionType::NONE;
 };
 } // namespace CHEngine
 

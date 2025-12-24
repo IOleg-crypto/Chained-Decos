@@ -3,10 +3,10 @@
 #include "core/Log.h"
 #include "core/audio/Audio.h"
 #include "core/input/Input.h"
+#include "core/interfaces/ILevelManager.h"
 #include "core/physics/Physics.h"
 #include "core/renderer/Renderer.h"
 #include "core/scripting/ScriptManager.h"
-#include "editor/logic/ISceneManager.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/UIEventRegistry.h"
@@ -22,6 +22,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
+
 
 using namespace CHEngine;
 
@@ -108,17 +109,9 @@ void GameLayer::OnUpdate(float deltaTime)
     Engine::Instance().GetScriptManager().UpdateScripts(deltaTime);
 
     // Sync ECS Transforms back to MapObjects for rendering consistency
-    // Only applicable when running in editor context (ISceneManager available)
-    static bool sceneManagerChecked = false;
-    static std::shared_ptr<ISceneManager> cachedSceneManager = nullptr;
-    if (!sceneManagerChecked)
+    if (auto levelManager = Engine::Instance().GetService<ILevelManager>())
     {
-        cachedSceneManager = Engine::Instance().GetService<ISceneManager>();
-        sceneManagerChecked = true;
-    }
-    if (cachedSceneManager)
-    {
-        cachedSceneManager->SyncEntitiesToMap();
+        levelManager->SyncEntitiesToMap();
     }
 
     // 1. UPDATE PLAYER LOGIC (Previously PlayerSystem::Update)
