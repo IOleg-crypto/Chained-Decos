@@ -23,6 +23,8 @@ public:
     GameScene &GetGameScene() override;
     void RemoveObject(int index) override;
     void RefreshUIEntities() override;
+    void RefreshMapEntities() override;
+    void SyncEntitiesToMap() override;
 
     // Scene State
     bool IsSceneModified() const override

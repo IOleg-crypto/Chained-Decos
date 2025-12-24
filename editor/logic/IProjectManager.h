@@ -17,6 +17,8 @@ public:
 
     virtual const std::vector<std::string> &GetRecentProjects() const = 0;
     virtual void AddRecentProject(const std::string &path) = 0;
+
+    virtual void ExportBuildManifest() = 0;
 };
 
 #endif // IPROJECT_MANAGER_H

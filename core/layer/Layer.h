@@ -25,6 +25,9 @@ public:
     virtual void OnRender()
     {
     }
+    virtual void OnImGuiRender()
+    {
+    }
     virtual void OnEvent(Event &event)
     {
     }

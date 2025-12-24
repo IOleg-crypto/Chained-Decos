@@ -10,7 +10,6 @@
 #include <entt/entt.hpp>
 #include <memory>
 
-
 // Manager Interfaces
 #include "components/audio/interfaces/IAudioManager.h"
 #include "components/input/interfaces/IInputManager.h"
@@ -22,6 +21,7 @@
 #include "scene/main/interfaces/IWorldManager.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/interfaces/IModelLoader.h"
+#include "scene/resources/texture/TextureService.h"
 
 #include "../ServiceRegistry.h"
 
@@ -41,6 +41,7 @@ public:
     virtual IGuiManager &GetGuiManager() const = 0;
     virtual CHEngine::SceneManager &GetSceneManager() const = 0;
     virtual CHEngine::FontService &GetFontService() const = 0;
+    virtual CHEngine::TextureService &GetTextureService() const = 0;
     virtual CHEngine::UIEventRegistry &GetUIEventRegistry() const = 0;
     virtual entt::registry &GetECSRegistry() = 0;
 

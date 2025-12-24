@@ -8,5 +8,7 @@ EditorState::EditorState()
 
 bool EditorState::IsUIDesignMode() const
 {
-    return m_editorMode == EditorMode::UI_DESIGN;
+    // In a unified editor, UI design features are always logically "active"
+    // when we are in the scene view.
+    return true;
 }

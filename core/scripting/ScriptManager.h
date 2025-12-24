@@ -31,6 +31,10 @@ public:
     bool RunScript(const std::string &path);
     bool RunString(const std::string &code);
 
+    // Entity Script Lifecycle (Hazel Style)
+    void InitializeScripts();
+    void UpdateScripts(float deltaTime);
+
     // Set scene manager for scene switching API
     void SetSceneManager(::ISceneManager *sceneManager);
 
@@ -41,6 +45,11 @@ private:
     void BindEngineAPI();
     void BindSceneAPI();
     void BindUIAPI();
+    void BindGameplayAPI();
+
+    // Internal Lifecycle Callers
+    void CallLuaFunction(const std::string &scriptPath, const std::string &functionName,
+                         uint32_t entityId, float dt = 0.0f);
 
 private:
     sol::state m_lua;

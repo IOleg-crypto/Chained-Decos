@@ -1,25 +1,17 @@
-//
-// ConsolePanel.h - Console/Log output panel
-//
+#pragma once
 
-#ifndef CONSOLEPANEL_H
-#define CONSOLEPANEL_H
-
-#include "IEditorPanel.h"
+#include <cstdint> // Required for uint8_t
 #include <deque>
 #include <string>
-#include <vector>
 
-
-class IEditor;
-
-// Log message with severity level
+namespace CHEngine
+{
 struct LogMessage
 {
-    enum class Level
+    enum class Level : uint8_t
     {
         Info,
-        Warning,
+        Warn,
         Error
     };
     Level level;
@@ -27,46 +19,23 @@ struct LogMessage
     std::string timestamp;
 };
 
-// Displays log messages and allows command input
-class ConsolePanel : public IEditorPanel
+class ConsolePanel
 {
 public:
-    explicit ConsolePanel(IEditor *editor);
-    ~ConsolePanel() override = default;
+    ConsolePanel();
 
-    // IEditorPanel interface
-    void Render() override;
-    const char *GetName() const override
-    {
-        return "Console";
-    }
-    const char *GetDisplayName() const override
-    {
-        return "Console";
-    }
-    bool IsVisible() const override
-    {
-        return m_visible;
-    }
-    void SetVisible(bool visible) override
-    {
-        m_visible = visible;
-    }
+    void OnImGuiRender();
 
-    // Console-specific
     void Log(const std::string &message, LogMessage::Level level = LogMessage::Level::Info);
     void Clear();
 
 private:
-    IEditor *m_editor;
-    bool m_visible = true;
-    std::deque<LogMessage> m_messages;
+    std::deque<LogMessage> m_Messages;
     static constexpr size_t MAX_MESSAGES = 500;
-    bool m_autoScroll = true;
-    bool m_showInfo = true;
-    bool m_showWarnings = true;
-    bool m_showErrors = true;
-    char m_inputBuffer[256] = {0};
+    bool m_AutoScroll = true;
+    bool m_ShowInfo = true;
+    bool m_ShowWarnings = true;
+    bool m_ShowErrors = true;
+    char m_InputBuffer[256] = {0};
 };
-
-#endif // CONSOLEPANEL_H
+} // namespace CHEngine

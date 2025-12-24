@@ -24,6 +24,14 @@ void MapRenderer::RenderMap(const GameScene &map, Camera3D camera)
     }
 
     BeginMode3D(camera);
+    DrawMapContent(map, camera);
+    EndMode3D();
+}
+
+void MapRenderer::DrawMapContent(const GameScene &map, Camera3D camera)
+{
+    const MapMetadata &metadata = map.GetMapMetaData();
+    Skybox *skybox = map.GetSkyBox();
 
     if (skybox && skybox->IsLoaded())
     {
@@ -35,8 +43,6 @@ void MapRenderer::RenderMap(const GameScene &map, Camera3D camera)
     {
         RenderMapObject(object, map.GetMapModels(), camera);
     }
-
-    EndMode3D();
 }
 
 void MapRenderer::RenderMapObject(const MapObjectData &object,

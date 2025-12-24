@@ -44,37 +44,18 @@ void UIEditorPanel::Render()
     if (!m_visible)
         return;
 
-    ImGui::SetNextWindowSize(ImVec2(350, 500), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("UI Editor", &m_visible))
+    ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("UI Palette", &m_visible))
     {
-        // 1. ADD WIDGETS
-        if (ImGui::CollapsingHeader("Add Widgets", ImGuiTreeNodeFlags_DefaultOpen))
+        // 1. ADD WIDGETS (The main purpose now)
+        if (ImGui::CollapsingHeader("Common Widgets", ImGuiTreeNodeFlags_DefaultOpen))
         {
             RenderAddButtons();
             ImGui::Spacing();
         }
 
-        // 2. SCENE ELEMENTS
-        if (ImGui::CollapsingHeader("Scene Elements", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            RenderUIElementsList();
-            ImGui::Spacing();
-        }
-
-        // 3. SELECTION PROPERTIES
-        auto &uiElements = m_editor->GetSceneManager().GetGameScene().GetUIElementsMutable();
-        int selectedIndex = m_editor->GetSelectionManager().GetSelectedUIElementIndex();
-
-        if (selectedIndex >= 0 && selectedIndex < (int)uiElements.size())
-        {
-            if (ImGui::CollapsingHeader("Element Properties", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                RenderPropertiesPanel();
-            }
-        }
-
-        // 4. SCENE SETTINGS
-        if (ImGui::CollapsingHeader("Scene Settings"))
+        // 2. SCENE SETTINGS (Keep for now, though could go to Inspector)
+        if (ImGui::CollapsingHeader("Global UI Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
             RenderSceneSettings();
         }

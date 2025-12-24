@@ -33,22 +33,25 @@ enum class SceneType : uint8_t
 
 struct MapObjectData
 {
-    std::string name;
-    MapObjectType type;
-    Vector3 position;
-    Vector3 rotation;
-    Vector3 scale;
-    Color color;
+    std::string name = "Entity";
+    MapObjectType type = MapObjectType::CUBE;
+    Vector3 position = {0, 0, 0};
+    Vector3 rotation = {0, 0, 0};
+    Vector3 scale = {1, 1, 1};
+    Color color = RAYWHITE;
     std::string modelName; // For MODEL type objects
 
     // Shape-specific properties
-    float radius; // For spheres
-    float height; // For cylinders
-    Vector2 size; // For planes
+    float radius = 0.5f;   // For spheres
+    float height = 1.0f;   // For cylinders
+    Vector2 size = {1, 1}; // For planes
 
     // Collision properties
-    bool isPlatform;
-    bool isObstacle;
+    bool isPlatform = false;
+    bool isObstacle = false;
+
+    // Scripting System (Hazel style)
+    std::string scriptPath;
 };
 
 // UI Element Data for serialization
@@ -82,6 +85,9 @@ struct UIElementData
 
     Color tint = WHITE;      // For UIImage
     std::string texturePath; // For UIImage (future)
+
+    // Scripting System (Hazel style)
+    std::string scriptPath;
 
     // Action System
     std::string actionType;   // "None", "LoadScene", "Quit", "OpenURL"
