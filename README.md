@@ -1,24 +1,27 @@
-# CHEngine\Chained Decos
+# Chained Decos
 
-[![C++](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Build Status](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/build.yml)](https://github.com/IOleg-crypto/Chained-Decos/actions) [![English](https://img.shields.io/badge/lang-English-blue?logo=github)](README.md)
+### _A 3D Parkour Game powered by CHEngine_
 
-A fast-paced 3D parkour game built with modern C++23 and [raylib](https://www.raylib.com/). Features a custom physics engine with BVH collision detection, modular architecture, and comprehensive debugging tools.
+[![C++](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Build Status](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/build.yml)](https://github.com/IOleg-crypto/Chained-Decos/actions) [![raylib](https://img.shields.io/badge/raylib-5.5-red?logo=raylib)](https://www.raylib.com/)
+
+A fast-paced 3D parkour game built with modern C++23, featuring a custom game engine (CHEngine) with advanced physics, modular architecture, and comprehensive development tools.
 
 ![Game Screenshot](https://i.imgur.com/d9Bxmsq.jpeg)
 
 > [!IMPORTANT]
-> This project is under active development. Expect frequent changes and engine refactors.
+> This project is under active development. The engine architecture and game features are evolving rapidly.
 
 ## 🎮 Overview
 
-Chained Decos is a momentum-based parkour game where players navigate through procedurally generated courses using fluid movement mechanics. The game combines precise physics simulation with intuitive controls to create challenging yet accessible gameplay.
+**Chained Decos** is a momentum-based parkour game where players navigate through procedurally generated courses using fluid movement mechanics. Built on top of **CHEngine**, a custom C++23 game engine, the game combines precise physics simulation with intuitive controls to create challenging yet accessible gameplay.
 
-### Key Highlights
+### Key Features
 
-- **Momentum-Based Physics**: Realistic movement with gravity, drag, and collision response
+- **Custom Game Engine (CHEngine)**: Modular, high-performance engine architecture
+- **Advanced Physics**: Realistic movement with gravity, drag, and collision response using BVH acceleration
 - **Procedural Generation**: Dynamic parkour courses with varying difficulty levels
-- **Modular Architecture**: Clean separation between engine, game logic, and tools
-- **Developer Tools**: Integrated map editor, debugging overlays, and performance monitoring
+- **Developer Tools**: Integrated editor, debugging overlays, and in-game console
+- **Cross-Platform**: Windows, Linux, and macOS support
 
 ## 🏗️ Architecture
 
@@ -38,7 +41,7 @@ Chained Decos follows a **modular architecture** with clear separation between e
 
 ### Development Tools
 
-- **Integrated Map Editor**: Full-featured level editor with real-time preview
+- **Integrated Editor**: Full-featured level editor with real-time preview and asset management
 - **Particle System** _(Planning)_: Dynamic visual effects for enhanced gameplay
 - **Lighting System** _(Planning)_: Advanced lighting with multiple light sources and shadows
 - **Material Editor** _(Planning)_: Comprehensive material system for visual customization
@@ -66,16 +69,17 @@ Chained Decos follows a **modular architecture** with clear separation between e
   - **macOS**: `brew install ninja`
   - Verify: `ninja --version`
 - **C++23 compatible compiler**:
-  - **Windows**: MSVC 2022 17.4+ or MinGW-w64 with GCC 13+
+  - **Windows**: Clang 17+ or GCC 13+ (via MinGW-w64)
   - **Linux**: GCC 13+ or Clang 17+
+  - **macOS**: Clang 17+ (via Xcode Command Line Tools)
 - **Git**: For cloning the repository
 
 #### System Dependencies
 
 **Windows:**
 
-- Visual Studio 2022 (for MSVC) or MinGW-w64 (for GCC)
-- Windows SDK
+- MinGW-w64 (GCC 13+) or LLVM/Clang 17+
+- Windows SDK (for system headers)
 
 **Linux (Ubuntu/Debian):**
 
@@ -161,10 +165,10 @@ cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Debug
 ```
 
-**With Map Editor** (enabled by default):
+**With Editor** (enabled by default):
 
 ```bash
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_MAP_EDITOR=ON
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EDITOR_ENGINE=ON
 ```
 
 **Without tests** (faster build):
@@ -207,7 +211,7 @@ The executable will be located at:
 
 - CMake 3.25+
 - Ninja (download from [GitHub](https://github.com/ninja-build/ninja/releases) or install via Chocolatey: `choco install ninja`)
-- Visual Studio 2022 with C++ tools (MSVC) or MinGW-w64 (GCC 13+)
+- Clang 17+ or MinGW-w64 (GCC 13+)
 
 **Build:**
 
@@ -221,7 +225,7 @@ cmake --build . --config Release
 
 - **"CMake 3.25 required"**: Update CMake from [cmake.org](https://cmake.org/download/)
 - **"Ninja not found"**: Add Ninja to PATH or use full path: `cmake .. -G Ninja -DCMAKE_MAKE_PROGRAM="C:/path/to/ninja.exe"`
-- **"C++23 not supported"**: Update to Visual Studio 2022 17.4+ or MinGW-w64 GCC 13+
+- **"C++23 not supported"**: Update to Clang 17+ or MinGW-w64 GCC 13+
 
 #### Linux
 
@@ -293,7 +297,7 @@ cmake .. -G Ninja -DOPTION_NAME=VALUE
 | ---------------------- | --------- | -------------------------------------------------------------- |
 | `CMAKE_BUILD_TYPE`     | `Release` | Build type: `Debug`, `Release`, `RelWithDebInfo`, `MinSizeRel` |
 | `BUILD_TESTS`          | `ON`      | Build unit tests                                               |
-| `BUILD_MAP_EDITOR`     | `ON`      | Build the map editor tool                                      |
+| `BUILD_EDITOR_ENGINE`  | `ON`      | Build the editor tool                                          |
 | `ENABLE_OPTIMIZATIONS` | `ON`      | Enable compiler optimizations                                  |
 | `ENABLE_WARNINGS`      | `OFF`     | Enable strict compiler warnings                                |
 | `ENABLE_UNITY_BUILD`   | `ON`      | Use unity build for faster compilation                         |
@@ -308,7 +312,7 @@ cmake .. -G Ninja -DOPTION_NAME=VALUE
 cmake .. -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_TESTS=OFF \
-  -DBUILD_MAP_EDITOR=ON \
+  -DBUILD_EDITOR_ENGINE=ON \
   -DENABLE_WARNINGS=ON
 ```
 
@@ -344,7 +348,8 @@ clang++ --version  # Need Clang 17+
 
 # Update compiler if needed
 # Ubuntu: sudo apt-get install gcc-13 g++-13
-# Windows: Update Visual Studio or MinGW
+# Windows: Install MinGW-w64 or LLVM/Clang
+# macOS: xcode-select --install
 ```
 
 **"raylib not found"**
@@ -406,9 +411,9 @@ cmake --build .
 ./bin/tests/ChainedDecosUnitTests
 ```
 
-### Building Map Editor
+### Building the Editor
 
-The map editor is built by default. Executable location:
+The editor is built by default. Executable location:
 
 - **Windows**: `build/bin/ChainedDecosMapEditor.exe`
 - **Linux/macOS**: `build/bin/ChainedDecosMapEditor`
@@ -416,7 +421,7 @@ The map editor is built by default. Executable location:
 To disable:
 
 ```bash
-cmake .. -G Ninja -DBUILD_MAP_EDITOR=OFF
+cmake .. -G Ninja -DBUILD_EDITOR_ENGINE=OFF
 ```
 
 ## 🎮 Getting Started

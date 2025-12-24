@@ -5,6 +5,9 @@
 
 #include <raylib.h>
 
+namespace CHD
+{
+
 class GameLayer : public CHEngine::Layer
 {
 public:
@@ -30,5 +33,7 @@ private:
     int m_locTime = -1;
     bool m_shaderLoaded = false;
 };
+
+} // namespace CHD
 
 #endif // GAMELAYER_H
