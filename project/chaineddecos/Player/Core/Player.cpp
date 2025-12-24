@@ -1,21 +1,22 @@
-#include "core/Log.h"
 #include "Player.h"
 #include "../collision/playerCollision.h"
 #include "../components/playerInput.h"
 #include "../components/playerModel.h"
 #include "../components/playerMovement.h"
 #include "../components/playerRenderable.h"
+#include "core/Log.h"
 #include <components/rendering/interfaces/IGameRenderable.h>
 #include <memory>
 #include <raylib.h>
 #include <scene/camera/core/CameraController.h>
 #include <scene/main/core/World.h>
 
+
 // Define player constants
 Vector3 Player::DEFAULT_SPAWN_POSITION = {0.0f, 0.0f, 0.0f}; // Safe spawn position above ground
 const float Player::MODEL_Y_OFFSET = -1.f;
 
-Player::Player(AudioManager *audioManager)
+Player::Player(IAudioManager *audioManager)
     : m_audioManager(audioManager), m_cameraController(std::make_shared<CameraController>())
 {
     m_boundingBoxSize = {1.2f, 2.8f, 1.2f};
@@ -133,8 +134,8 @@ void Player::UpdateImpl(CollisionManager &collisionManager)
         if (m_movement->GetPhysics().IsGrounded())
         {
             // Check if we just landed (was falling, now grounded)
-            CD_TRACE("[Player] Grounded check: wasFalling=%d, lastFallSpeed=%.2f",
-                     wasFalling, lastFallSpeed);
+            CD_TRACE("[Player] Grounded check: wasFalling=%d, lastFallSpeed=%.2f", wasFalling,
+                     lastFallSpeed);
             if (wasFalling)
             {
                 CD_INFO("[Player] Landed with fall speed: %.2f", lastFallSpeed);
@@ -448,4 +449,3 @@ void Player::InitializeCollision()
 {
     m_collision->InitializeCollision();
 }
-

@@ -1,12 +1,10 @@
 #include "GameLayer.h"
-#include "components/audio/interfaces/IAudioManager.h"
-#include "components/input/core/InputManager.h"
-#include "components/rendering/core/RenderManager.h"
 #include "core/Engine.h"
 #include "core/Log.h"
-
-#include "components/physics/collision/structures/CollisionComponent.h"
-#include "components/physics/collision/structures/CollisionComponent.h" // Moved here
+#include "core/audio/Audio.h"
+#include "core/input/Input.h"
+#include "core/physics/Physics.h"
+#include "core/renderer/Renderer.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/UIEventRegistry.h"
@@ -14,6 +12,7 @@
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
 #include "scene/ecs/components/playerComponent.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
@@ -102,9 +101,6 @@ void GameLayer::OnUpdate(float deltaTime)
 
     // 1. UPDATE PLAYER LOGIC (Previously PlayerSystem::Update)
     auto playerView = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
-    auto &collisionManager = Engine::Instance().GetCollisionManager();
-    auto &input = Engine::Instance().GetInputManager();
-    auto &audioManager = Engine::Instance().GetAudioManager();
 
     for (auto [entity, transform, velocity, player] : playerView.each())
     {
@@ -115,8 +111,8 @@ void GameLayer::OnUpdate(float deltaTime)
             player.maxHeight = transform.position.y;
 
         // Handle Movement
-        Vector2 mouseDelta = input.GetMouseDelta();
-        player.cameraDistance -= input.GetMouseWheelMove() * 1.5f;
+        Vector2 mouseDelta = Input::GetMouseDelta();
+        player.cameraDistance -= Input::GetMouseWheelMove() * 1.5f;
         player.cameraDistance = Clamp(player.cameraDistance, 2.0f, 20.0f);
         player.cameraYaw -= mouseDelta.x * player.mouseSensitivity;
         player.cameraPitch =
@@ -127,13 +123,13 @@ void GameLayer::OnUpdate(float deltaTime)
         Vector3 forward = Vector3Normalize({-sinf(yawRad), 0.0f, -cosf(yawRad)});
         Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, {0, 1, 0}));
 
-        if (input.IsKeyDown(KEY_W))
+        if (Input::IsKeyDown(KEY_W))
             moveDir = Vector3Add(moveDir, forward);
-        if (input.IsKeyDown(KEY_S))
+        if (Input::IsKeyDown(KEY_S))
             moveDir = Vector3Subtract(moveDir, forward);
-        if (input.IsKeyDown(KEY_D))
+        if (Input::IsKeyDown(KEY_D))
             moveDir = Vector3Add(moveDir, right);
-        if (input.IsKeyDown(KEY_A))
+        if (Input::IsKeyDown(KEY_A))
             moveDir = Vector3Subtract(moveDir, right);
 
         float moveLen = Vector3Length(moveDir);
@@ -149,7 +145,7 @@ void GameLayer::OnUpdate(float deltaTime)
         }
 
         float targetSpeed = player.moveSpeed;
-        if (input.IsKeyDown(KEY_LEFT_SHIFT) && player.isGrounded)
+        if (Input::IsKeyDown(KEY_LEFT_SHIFT) && player.isGrounded)
             targetSpeed *= 1.8f;
 
         if (player.isGrounded)
@@ -172,7 +168,7 @@ void GameLayer::OnUpdate(float deltaTime)
         }
 
         // Jump
-        if (input.IsKeyPressed(KEY_SPACE) && player.isGrounded)
+        if (Input::IsKeyPressed(KEY_SPACE) && player.isGrounded)
         {
             velocity.velocity.y = player.jumpForce;
             player.isGrounded = false;
@@ -207,7 +203,7 @@ void GameLayer::OnUpdate(float deltaTime)
             Collision playerCol(center, halfSize);
             Vector3 response = {0};
 
-            if (collisionManager.CheckCollision(playerCol, response))
+            if (Physics::CheckCollision(playerCol, response))
             {
                 proposedPos = Vector3Add(proposedPos, response);
                 float resLen = Vector3Length(response);
@@ -226,7 +222,7 @@ void GameLayer::OnUpdate(float deltaTime)
             rayOrigin.y += 1.0f;
             float hitDist = 0;
             Vector3 hp, hn;
-            if (collisionManager.RaycastDown(rayOrigin, 1.2f, hitDist, hp, hn))
+            if (Physics::RaycastDown(rayOrigin, 1.2f, hitDist, hp, hn))
             {
                 if (velocity.velocity.y <= 0 && (hitDist - 1.0f) <= 0.1f)
                 {
@@ -254,18 +250,18 @@ void GameLayer::OnUpdate(float deltaTime)
         const float fallThresh = -5.0f;
         if (velocity.velocity.y < fallThresh && !player.isFallingSoundPlaying)
         {
-            audioManager.PlayLoopingSoundEffect("player_fall", 1.0f);
+            Audio::PlayLoopingSoundEffect("player_fall", 1.0f);
             player.isFallingSoundPlaying = true;
         }
         else if ((velocity.velocity.y >= fallThresh || player.isGrounded) &&
                  player.isFallingSoundPlaying)
         {
-            audioManager.StopLoopingSoundEffect("player_fall");
+            Audio::StopLoopingSoundEffect("player_fall");
             player.isFallingSoundPlaying = false;
         }
 
         // Camera Update
-        ::Camera &camera = Engine::Instance().GetRenderManager().GetCamera();
+        ::Camera &camera = Renderer::GetCamera();
         float yawRadLocal = player.cameraYaw * DEG2RAD;
         float pitchRadLocal = player.cameraPitch * DEG2RAD;
 
@@ -461,7 +457,7 @@ void GameLayer::RenderScene()
     // DEBUG COLLISION RENDER
     if (Engine::Instance().IsCollisionDebugVisible())
     {
-        Engine::Instance().GetCollisionManager().Render();
+        Physics::Render(); // Wait, I need to check if Physics has Render()
 
         auto playerView = REGISTRY.view<TransformComponent, CollisionComponent, PlayerComponent>();
         for (auto &&[entity, transform, collision, player] : playerView.each())
@@ -498,7 +494,7 @@ void GameLayer::OnEvent(Event &e)
                     player.maxHeight = 0;
                     if (player.isFallingSoundPlaying)
                     {
-                        Engine::Instance().GetAudioManager().StopLoopingSoundEffect("player_fall");
+                        Audio::StopLoopingSoundEffect("player_fall");
                         player.isFallingSoundPlaying = false;
                     }
                 }
