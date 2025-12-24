@@ -1,43 +1,27 @@
-//
-// HierarchyPanel.h - Scene hierarchy tree panel
-//
-
 #ifndef HIERARCHYPANEL_H
 #define HIERARCHYPANEL_H
 
-#include "IEditorPanel.h"
+#include "scene/resources/map/core/SceneLoader.h"
+#include <memory>
 
-class IEditor;
+namespace CHEngine
+{
+// Forward declaration for EditorLayer
+class EditorLayer;
 
-// Displays a tree view of all scene objects
-class HierarchyPanel : public IEditorPanel
+class HierarchyPanel
 {
 public:
-    explicit HierarchyPanel(IEditor *editor);
-    ~HierarchyPanel() override = default;
+    HierarchyPanel() = default;
+    HierarchyPanel(const std::shared_ptr<GameScene> &scene);
 
-    // IEditorPanel interface
-    void Render() override;
-    const char *GetName() const override
-    {
-        return "Hierarchy";
-    }
-    const char *GetDisplayName() const override
-    {
-        return "Hierarchy";
-    }
-    bool IsVisible() const override
-    {
-        return m_visible;
-    }
-    void SetVisible(bool visible) override
-    {
-        m_visible = visible;
-    }
+    void SetContext(const std::shared_ptr<GameScene> &scene);
+
+    void OnImGuiRender(EditorLayer *layer);
 
 private:
-    IEditor *m_editor;
-    bool m_visible = true;
+    std::shared_ptr<GameScene> m_Context;
 };
+} // namespace CHEngine
 
 #endif // HIERARCHYPANEL_H

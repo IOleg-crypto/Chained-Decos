@@ -26,6 +26,8 @@ public:
     virtual CHEngine::Scene *GetActiveScene() = 0;
     virtual GameScene &GetGameScene() = 0;
     virtual void RefreshUIEntities() = 0;
+    virtual void RefreshMapEntities() = 0;
+    virtual void SyncEntitiesToMap() = 0;
 
     // Scene State
     virtual bool IsSceneModified() const = 0;

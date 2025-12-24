@@ -1,99 +1,63 @@
-//
-// ViewportPanel.h - 3D viewport panel for scene rendering
-//
+#pragma once
 
-#ifndef VIEWPORTPANEL_H
-#define VIEWPORTPANEL_H
-
-#include "IEditorPanel.h"
+#include "editor/EditorTypes.h"
+#include "scene/camera/core/CameraController.h"
+#include "scene/resources/map/core/SceneLoader.h"
 #include <imgui.h>
+#include <memory>
 #include <raylib.h>
 
-class IEditor;
+namespace CHEngine
+{
+enum class GizmoAxis
+{
+    NONE,
+    X,
+    Y,
+    Z,
+    XY,
+    YZ,
+    XZ
+};
 
-// Displays the 3D scene viewport with render texture
-class ViewportPanel : public IEditorPanel
+class EditorLayer; // Forward declaration
+
+class ViewportPanel
 {
 public:
-    explicit ViewportPanel(IEditor *editor);
-    ~ViewportPanel() override;
+    ViewportPanel() = default;
+    ~ViewportPanel();
 
-    // IEditorPanel interface
-    void Render() override;
-    void Update(float deltaTime) override;
-    const char *GetName() const override
-    {
-        return "Viewport";
-    }
-    const char *GetDisplayName() const override
-    {
-        return "Scene Viewport";
-    }
-    bool IsVisible() const override
-    {
-        return m_visible;
-    }
-    void SetVisible(bool visible) override
-    {
-        m_visible = visible;
-    }
+    void OnImGuiRender(const std::shared_ptr<GameScene> &scene,
+                       const std::shared_ptr<CameraController> &cameraController,
+                       EditorLayer *layer);
 
-    // Viewport-specific
-    bool IsHovered() const
-    {
-        return m_isHovered;
-    }
     bool IsFocused() const
     {
-        return m_isFocused;
+        return m_Focused;
     }
-    ImVec2 GetViewportSize() const
+    bool IsHovered() const
     {
-        return m_viewportSize;
-    }
-    ImVec2 GetSize() const
-    {
-        return m_viewportSize;
+        return m_Hovered;
     }
 
-    // Rendering helpers
-    void BeginRendering();
-    void EndRendering();
-    RenderTexture2D GetTexture() const
+    Vector2 GetViewportMousePosition() const;
+    ImVec2 GetSize() const
     {
-        return m_renderTexture;
+        return {(float)m_Width, (float)m_Height};
     }
 
 private:
-    void UpdateRenderTexture();
+    void Resize(uint32_t width, uint32_t height);
 
-    // UI Overlay rendering (editor-only, ImGui-based)
-    void RenderUIOverlay();
-    void RenderUIElement(const struct UIElementData &elem, int index, ImDrawList *drawList,
-                         ImVec2 viewportPos);
-    ImVec2 CalculateUIPosition(const struct UIElementData &elem, ImVec2 viewportPos);
+private:
+    RenderTexture2D m_ViewportTexture = {0};
+    uint32_t m_Width = 0, m_Height = 0;
+    bool m_Focused = false, m_Hovered = false;
 
-    // Helper methods for UI editing
-    bool CheckMouseHover(ImVec2 pos, Vector2 size, ImVec2 mousePos);
-    void RenderResizeHandles(ImDrawList *drawList, ImVec2 topLeft, ImVec2 bottomRight);
-    int GetResizeHandleAtMouse(ImVec2 topLeft, ImVec2 bottomRight, ImVec2 mousePos);
-
-    IEditor *m_editor;
-    bool m_visible = true;
-    bool m_isHovered = false;
-    bool m_isFocused = false;
-    ImVec2 m_viewportSize = {800, 600};
-    RenderTexture2D m_renderTexture = {0};
-    bool m_renderTextureValid = false;
-
-    // UI Dragging state
-    bool m_isDraggingUI = false;
-    Vector2 m_dragOffset = {0, 0};
-
-    // UI Hover and Resize state
-    int m_hoveredUIIndex = -1;
-    bool m_isResizingUI = false;
-    int m_resizeHandle = -1; // 0-7 for 8 handles, -1 for none
+    // Gizmo state
+    GizmoAxis m_DraggingAxis = GizmoAxis::NONE;
+    Vector3 m_InitialObjectValue = {0, 0, 0};
+    Vector2 m_InitialMousePos = {0, 0};
 };
-
-#endif // VIEWPORTPANEL_H
+} // namespace CHEngine

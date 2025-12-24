@@ -100,6 +100,7 @@ private:
 
     // Interaction state tracking (Event-driven)
     bool m_isLMBDown = false;
+    bool m_isRMBDown = false;
     int m_activeMovementKeys = 0; // Counter for pressed movement keys
     float m_lastMouseWheelMove = 0.0f;
     bool m_inputCaptureBypass = false; // Bypass ImGui input capture check

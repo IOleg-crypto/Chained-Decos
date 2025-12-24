@@ -1,381 +1,375 @@
-//
-// ViewportPanel.cpp - 3D viewport panel implementation
-//
-
 #include "ViewportPanel.h"
-#include "editor/IEditor.h"
-#include "scene/ecs/ECSRegistry.h"
-#include "scene/ecs/components/UIComponents.h"
-#include "scene/ecs/systems/UIRenderSystem.h"
-#include <cmath>
+#include "editor/EditorLayer.h"
+#include "scene/resources/map/renderer/MapRenderer.h"
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <raymath.h>
+#include <rlImGui.h>
 #include <rlgl.h>
 
-ViewportPanel::ViewportPanel(IEditor *editor) : m_editor(editor)
+namespace CHEngine
 {
+// Internal helper for plane collision if not in raylib
+static RayCollision MyGetRayCollisionPlane(Ray ray, Vector3 planePos, Vector3 planeNormal)
+{
+    RayCollision collision = {0};
+    float denom = Vector3DotProduct(planeNormal, ray.direction);
+    if (fabsf(denom) > 0.0001f)
+    {
+        float t = Vector3DotProduct(Vector3Subtract(planePos, ray.position), planeNormal) / denom;
+        if (t >= 0)
+        {
+            collision.hit = true;
+            collision.distance = t;
+            collision.point = Vector3Add(ray.position, Vector3Scale(ray.direction, t));
+            collision.normal = planeNormal;
+        }
+    }
+    return collision;
 }
 
 ViewportPanel::~ViewportPanel()
 {
-    if (m_renderTextureValid && m_renderTexture.id != 0)
-    {
-        UnloadRenderTexture(m_renderTexture);
-    }
+    if (m_ViewportTexture.id != 0)
+        UnloadRenderTexture(m_ViewportTexture);
 }
 
-void ViewportPanel::Update(float deltaTime)
+void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
+                                  const std::shared_ptr<CameraController> &cameraController,
+                                  EditorLayer *layer)
 {
-    // Viewport-specific updates can go here
-}
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
+                                   ImGuiWindowFlags_NoScrollWithMouse;
+    ImGui::Begin("Viewport", nullptr, windowFlags);
 
-void ViewportPanel::UpdateRenderTexture()
-{
-    int width = static_cast<int>(m_viewportSize.x);
-    int height = static_cast<int>(m_viewportSize.y);
+    m_Focused = ImGui::IsWindowFocused();
+    m_Hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem |
+                                       ImGuiHoveredFlags_ChildWindows);
 
-    if (width <= 0 || height <= 0)
-        return;
-
-    // Only recreate if size changed
-    if (m_renderTextureValid && m_renderTexture.texture.width == width &&
-        m_renderTexture.texture.height == height)
-        return;
-
-    // Unload old texture
-    if (m_renderTextureValid && m_renderTexture.id != 0)
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    if (m_Width != (uint32_t)viewportPanelSize.x || m_Height != (uint32_t)viewportPanelSize.y)
     {
-        UnloadRenderTexture(m_renderTexture);
+        Resize((uint32_t)viewportPanelSize.x, (uint32_t)viewportPanelSize.y);
     }
 
-    // Create new render texture
-    m_renderTexture = LoadRenderTexture(width, height);
-    m_renderTextureValid = (m_renderTexture.id != 0);
-}
-
-void ViewportPanel::BeginRendering()
-{
-    if (!m_renderTextureValid || m_renderTexture.id == 0)
-        return;
-
-    BeginTextureMode(m_renderTexture);
-    // Use background color from scene metadata
-    Color bgColor =
-        m_editor ? m_editor->GetSceneManager().GetGameScene().GetMapMetaData().backgroundColor
-                 : DARKGRAY;
-    ClearBackground(bgColor);
-}
-
-void ViewportPanel::EndRendering()
-{
-    if (m_renderTextureValid && m_renderTexture.id != 0)
+    if (m_ViewportTexture.id != 0)
     {
-        EndTextureMode();
-    }
-}
+        // 1. Render Scene to Texture
+        BeginTextureMode(m_ViewportTexture);
+        ClearBackground(DARKGRAY);
 
-void ViewportPanel::Render()
-{
-    if (!m_visible)
-        return;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-
-    if (ImGui::Begin("Viewport", &m_visible,
-                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-    {
-        m_isHovered = ImGui::IsWindowHovered();
-        m_isFocused = ImGui::IsWindowFocused();
-
-        // Get available size for viewport
-        ImVec2 availableSize = ImGui::GetContentRegionAvail();
-
-        // Minimum viewport size
-        if (availableSize.x < 100)
-            availableSize.x = 100;
-        if (availableSize.y < 100)
-            availableSize.y = 100;
-
-        // Update if size changed
-        if (availableSize.x != m_viewportSize.x || availableSize.y != m_viewportSize.y)
+        if (scene && cameraController)
         {
-            m_viewportSize = availableSize;
-            UpdateRenderTexture();
-        }
+            MapRenderer renderer;
+            // Enter 3D Mode for ALL editor 3D drawing (Objects + Helpers)
+            BeginMode3D(cameraController->GetCamera());
 
-        // Display the render texture (flipped vertically for OpenGL)
-        if (m_renderTextureValid)
-        {
-            // Flip UV vertically because OpenGL texture coordinates are inverted
-            ImGui::Image((ImTextureID)(intptr_t)m_renderTexture.texture.id, m_viewportSize,
-                         ImVec2(0, 1), // UV0: top-left
-                         ImVec2(1, 0)  // UV1: bottom-right (flipped)
-            );
+            // Ensure depth test is ON for Solid objects
+            rlEnableDepthTest();
+            rlEnableDepthMask();
 
-            // UI Mode: Handle clicking to select elements and dragging
-            if (m_editor->GetState().IsUIDesignMode() && !m_editor->IsInPlayMode())
+            // 1. Draw Map Content (Solid Objects)
+            renderer.DrawMapContent(*scene, cameraController->GetCamera());
+
+            // 2. Draw Editor Helpers (Grid)
+            DrawGrid(20, 1.0f);
+
+            // Calculate picking ray INSIDE the texture mode for accuracy
+            Vector2 viewportMouse = GetViewportMousePosition();
+            Ray pickingRay = GetScreenToWorldRay(viewportMouse, cameraController->GetCamera());
+
+            // 3. Object Picking (If clicked on nothing else and tool is SELECT)
+            if (m_Hovered && ImGui::IsMouseClicked(0) && m_DraggingAxis == GizmoAxis::NONE)
             {
-                ImVec2 mousePos = ImGui::GetMousePos();
-                ImVec2 itemPos = ImGui::GetItemRectMin(); // Top-left of the viewport image
-                Vector2 localMousePos = {mousePos.x - itemPos.x, mousePos.y - itemPos.y};
+                int hitIndex = -1;
+                float closestDist = FLT_MAX;
+                auto &objects = scene->GetMapObjects();
 
-                if (m_isHovered && ImGui::IsMouseClicked(0))
+                for (int i = 0; i < (int)objects.size(); i++)
                 {
-                    auto picked = CHEngine::UIRenderSystem::PickUIEntity(
-                        localMousePos, (int)m_viewportSize.x, (int)m_viewportSize.y);
-
-                    if (picked != entt::null)
+                    const auto &obj = objects[i];
+                    BoundingBox box;
+                    if (obj.type == MapObjectType::CUBE)
                     {
-                        auto &registry = ECSRegistry::Get();
-                        if (registry.all_of<CHEngine::UIElementIndex>(picked))
-                        {
-                            int index = registry.get<CHEngine::UIElementIndex>(picked).index;
-                            m_editor->GetSelectionManager().SelectUIElement(index);
-
-                            // Start dragging
-                            m_isDraggingUI = true;
-                            auto &transform = registry.get<CHEngine::RectTransform>(picked);
-                            m_dragOffset = Vector2Subtract(transform.position, localMousePos);
-                        }
+                        box = {Vector3Subtract(obj.position, Vector3Scale(obj.scale, 0.5f)),
+                               Vector3Add(obj.position, Vector3Scale(obj.scale, 0.5f))};
+                    }
+                    else if (obj.type == MapObjectType::SPHERE)
+                    {
+                        box = {Vector3Subtract(obj.position, {obj.radius, obj.radius, obj.radius}),
+                               Vector3Add(obj.position, {obj.radius, obj.radius, obj.radius})};
+                    }
+                    else if (obj.type == MapObjectType::CYLINDER)
+                    {
+                        box = {
+                            Vector3Subtract(obj.position, {obj.radius, obj.height / 2, obj.radius}),
+                            Vector3Add(obj.position, {obj.radius, obj.height / 2, obj.radius})};
+                    }
+                    else if (obj.type == MapObjectType::PLANE)
+                    {
+                        box = {
+                            Vector3Subtract(obj.position, {obj.size.x / 2, 0.05f, obj.size.y / 2}),
+                            Vector3Add(obj.position, {obj.size.x / 2, 0.05f, obj.size.y / 2})};
                     }
                     else
                     {
-                        m_editor->GetSelectionManager().SelectUIElement(-1);
+                        box = {Vector3Subtract(obj.position, {0.5f, 0.5f, 0.5f}),
+                               Vector3Add(obj.position, {0.5f, 0.5f, 0.5f})};
+                    }
+
+                    RayCollision collision = GetRayCollisionBox(pickingRay, box);
+                    if (collision.hit && collision.distance < closestDist)
+                    {
+                        closestDist = collision.distance;
+                        hitIndex = i;
                     }
                 }
 
-                if (m_isDraggingUI)
-                {
-                    if (ImGui::IsMouseDown(0))
-                    {
-                        int selectedIdx =
-                            m_editor->GetSelectionManager().GetSelectedUIElementIndex();
-                        if (selectedIdx != -1)
-                        {
-                            auto &uiElements =
-                                m_editor->GetSceneManager().GetGameScene().GetUIElementsMutable();
-                            if (selectedIdx < (int)uiElements.size())
-                            {
-                                Vector2 newPos = Vector2Add(localMousePos, m_dragOffset);
-                                uiElements[selectedIdx].position = newPos;
-                                m_editor->GetSceneManager().SetSceneModified(true);
+                if (hitIndex != -1)
+                    layer->SetSelectedObjectIndex(hitIndex);
+            }
 
-                                // Refresh ECS for immediate feedback
-                                m_editor->GetSelectionManager().RefreshUIEntities();
+            // 4. Draw Gizmo for selected object
+            int selectedObjectIndex = layer->GetSelectedObjectIndex();
+            if (selectedObjectIndex >= 0 &&
+                selectedObjectIndex < (int)scene->GetMapObjects().size())
+            {
+                auto &obj = scene->GetMapObjectsMutable()[selectedObjectIndex];
+                Tool currentTool = layer->GetActiveTool();
+                Ray ray = pickingRay;
+
+                // 2. Handle Dragging
+                if (m_DraggingAxis != GizmoAxis::NONE)
+                {
+                    if (!ImGui::IsMouseDown(0))
+                    {
+                        m_DraggingAxis = GizmoAxis::NONE;
+                    }
+                    else
+                    {
+                        Vector2 currentMouse = GetViewportMousePosition();
+                        Vector2 mouseDelta = Vector2Subtract(currentMouse, m_InitialMousePos);
+
+                        if (m_DraggingAxis == GizmoAxis::X || m_DraggingAxis == GizmoAxis::Y ||
+                            m_DraggingAxis == GizmoAxis::Z)
+                        {
+                            Vector3 axisDir = {0};
+                            if (m_DraggingAxis == GizmoAxis::X)
+                                axisDir = {1, 0, 0};
+                            else if (m_DraggingAxis == GizmoAxis::Y)
+                                axisDir = {0, 1, 0};
+                            else if (m_DraggingAxis == GizmoAxis::Z)
+                                axisDir = {0, 0, 1};
+
+                            Vector2 screenAxisDir = Vector2Subtract(
+                                GetWorldToScreen(Vector3Add(obj.position, axisDir),
+                                                 cameraController->GetCamera()),
+                                GetWorldToScreen(obj.position, cameraController->GetCamera()));
+                            screenAxisDir = Vector2Normalize(screenAxisDir);
+
+                            float delta =
+                                (mouseDelta.x * screenAxisDir.x + mouseDelta.y * screenAxisDir.y) *
+                                0.1f;
+
+                            if (currentTool == Tool::MOVE)
+                            {
+                                if (m_DraggingAxis == GizmoAxis::X)
+                                    obj.position.x = m_InitialObjectValue.x + delta;
+                                else if (m_DraggingAxis == GizmoAxis::Y)
+                                    obj.position.y = m_InitialObjectValue.y + delta;
+                                else if (m_DraggingAxis == GizmoAxis::Z)
+                                    obj.position.z = m_InitialObjectValue.z + delta;
+                            }
+                            else if (currentTool == Tool::ROTATE)
+                            {
+                                float rotDelta = (currentMouse.x - m_InitialMousePos.x) * 0.5f;
+                                if (m_DraggingAxis == GizmoAxis::X)
+                                    obj.rotation.x = m_InitialObjectValue.x + rotDelta;
+                                else if (m_DraggingAxis == GizmoAxis::Y)
+                                    obj.rotation.y = m_InitialObjectValue.y + rotDelta;
+                                else if (m_DraggingAxis == GizmoAxis::Z)
+                                    obj.rotation.z = m_InitialObjectValue.z + rotDelta;
+                            }
+                            else if (currentTool == Tool::SCALE)
+                            {
+                                float scaleDelta = 1.0f + delta * 0.5f;
+                                if (m_DraggingAxis == GizmoAxis::X)
+                                    obj.scale.x = fmaxf(0.1f, m_InitialObjectValue.x * scaleDelta);
+                                else if (m_DraggingAxis == GizmoAxis::Y)
+                                    obj.scale.y = fmaxf(0.1f, m_InitialObjectValue.y * scaleDelta);
+                                else if (m_DraggingAxis == GizmoAxis::Z)
+                                    obj.scale.z = fmaxf(0.1f, m_InitialObjectValue.z * scaleDelta);
                             }
                         }
                     }
+                }
+
+                // 3. Draw Handles
+                float gizmoSize = 2.0f;
+                float handleRadius = 0.15f;
+                float lineThickness = 0.03f;
+
+                auto drawAxisHandle = [&](GizmoAxis axis, Vector3 direction, Color color)
+                {
+                    Vector3 endPos = Vector3Add(obj.position, Vector3Scale(direction, gizmoSize));
+
+                    // Interaction logic (Collision detection)
+                    BoundingBox handleBox = {Vector3Subtract(endPos, {0.3f, 0.3f, 0.3f}),
+                                             Vector3Add(endPos, {0.3f, 0.3f, 0.3f})};
+                    RayCollision handleColl = GetRayCollisionBox(ray, handleBox);
+
+                    // Line collision (slightly thicker for easier picking)
+                    RayCollision lineColl = GetRayCollisionBox(
+                        ray, {Vector3Subtract(Vector3Min(obj.position, endPos), {0.1f, 0.1f, 0.1f}),
+                              Vector3Add(Vector3Max(obj.position, endPos), {0.1f, 0.1f, 0.1f})});
+
+                    bool hovered = (m_DraggingAxis == axis) || handleColl.hit ||
+                                   (lineColl.hit && lineColl.distance < 10.0f);
+
+                    if (hovered && ImGui::IsMouseClicked(0) && m_DraggingAxis == GizmoAxis::NONE)
+                    {
+                        m_DraggingAxis = axis;
+                        m_InitialMousePos = GetViewportMousePosition();
+                        if (currentTool == Tool::MOVE)
+                            m_InitialObjectValue = obj.position;
+                        else if (currentTool == Tool::SCALE)
+                            m_InitialObjectValue = obj.scale;
+                        else if (currentTool == Tool::ROTATE)
+                            m_InitialObjectValue = obj.rotation;
+                    }
+
+                    Color drawColor = hovered ? YELLOW : color;
+
+                    // Draw Thick Axis Line
+                    DrawCylinderEx(obj.position, endPos, lineThickness, lineThickness, 8,
+                                   drawColor);
+
+                    // Draw Tool-Specific Head
+                    if (currentTool == Tool::MOVE)
+                    {
+                        // Draw Cone (Arrow)
+                        Vector3 coneBase = Vector3Subtract(endPos, Vector3Scale(direction, 0.4f));
+                        DrawCylinderEx(coneBase, endPos, 0.12f, 0.0f, 12, drawColor);
+                    }
+                    else if (currentTool == Tool::SCALE)
+                    {
+                        // Draw Cube
+                        DrawCube(endPos, 0.25f, 0.25f, 0.25f, drawColor);
+                    }
                     else
                     {
-                        m_isDraggingUI = false;
+                        // Fallback/Rotate
+                        DrawSphere(endPos, handleRadius, drawColor);
                     }
+                };
+
+                auto drawPlaneHandle = [&](GizmoAxis axis, Vector3 d1, Vector3 d2, Color color)
+                {
+                    float pSize = 0.5f;
+                    Vector3 p1 = Vector3Add(obj.position, Vector3Scale(d1, pSize));
+                    Vector3 p2 = Vector3Add(
+                        obj.position, Vector3Add(Vector3Scale(d1, pSize), Vector3Scale(d2, pSize)));
+                    Vector3 p3 = Vector3Add(obj.position, Vector3Scale(d2, pSize));
+
+                    Vector3 normal = Vector3Normalize(Vector3CrossProduct(d1, d2));
+                    RayCollision planeColl = MyGetRayCollisionPlane(ray, obj.position, normal);
+
+                    bool hovered = (m_DraggingAxis == axis);
+                    if (!hovered && planeColl.hit && planeColl.distance < 5.0f)
+                    {
+                        Vector3 hitPos = planeColl.point;
+                        Vector3 rel = Vector3Subtract(hitPos, obj.position);
+                        float proj1 = Vector3DotProduct(rel, d1);
+                        float proj2 = Vector3DotProduct(rel, d2);
+                        if (proj1 >= 0 && proj1 <= pSize && proj2 >= 0 && proj2 <= pSize)
+                            hovered = true;
+                    }
+
+                    if (hovered && ImGui::IsMouseClicked(0) && m_DraggingAxis == GizmoAxis::NONE)
+                    {
+                        m_DraggingAxis = axis;
+                        m_InitialMousePos = GetViewportMousePosition();
+                        m_InitialObjectValue = obj.position;
+                    }
+
+                    Color drawColor = hovered ? YELLOW : color;
+                    drawColor.a = 150;
+                    DrawLine3D(obj.position, p1, drawColor);
+                    DrawLine3D(p1, p2, drawColor);
+                    DrawLine3D(p2, p3, drawColor);
+                    DrawLine3D(p3, obj.position, drawColor);
+                    Color fillColor = drawColor;
+                    fillColor.a = 60;
+                    DrawTriangle3D(obj.position, p1, p2, fillColor);
+                    DrawTriangle3D(obj.position, p2, p3, fillColor);
+                };
+
+                if (currentTool != Tool::SELECT)
+                {
+                    drawAxisHandle(GizmoAxis::X, {1, 0, 0}, RED);
+                    drawAxisHandle(GizmoAxis::Y, {0, 1, 0}, GREEN);
+                    drawAxisHandle(GizmoAxis::Z, {0, 0, 1}, BLUE);
+
+                    if (currentTool == Tool::MOVE)
+                    {
+                        drawPlaneHandle(GizmoAxis::XY, {1, 0, 0}, {0, 1, 0}, RED);
+                        drawPlaneHandle(GizmoAxis::YZ, {0, 1, 0}, {0, 0, 1}, GREEN);
+                        drawPlaneHandle(GizmoAxis::XZ, {1, 0, 0}, {0, 0, 1}, BLUE);
+                    }
+                }
+
+                // Draw highlight box
+                DrawCubeWires(obj.position, obj.scale.x + 0.1f, obj.scale.y + 0.1f,
+                              obj.scale.z + 0.1f, YELLOW);
+            }
+
+            EndMode3D();
+
+            // 5. Draw 2D Labels AFTER EndMode3D
+            if (selectedObjectIndex >= 0 &&
+                selectedObjectIndex < (int)scene->GetMapObjects().size())
+            {
+                auto &obj = scene->GetMapObjects()[selectedObjectIndex];
+                if (layer->GetActiveTool() != Tool::SELECT)
+                {
+                    float gizmoSize = 2.0f;
+                    auto drawLabel = [&](Vector3 dir, const char *label, Color color)
+                    {
+                        Vector3 endPos = Vector3Add(obj.position, Vector3Scale(dir, gizmoSize));
+                        Vector2 screenPos = GetWorldToScreen(endPos, cameraController->GetCamera());
+                        DrawText(label, (int)screenPos.x + 5, (int)screenPos.y - 10, 20, color);
+                    };
+                    drawLabel({1, 0, 0}, "X", RED);
+                    drawLabel({0, 1, 0}, "Y", GREEN);
+                    drawLabel({0, 0, 1}, "Z", BLUE);
                 }
             }
         }
-        else
-        {
-            ImGui::TextDisabled("Viewport not initialized");
-        }
 
-        // Render UI overlay if in UI design mode
-        if (m_editor && m_editor->GetState().IsUIDesignMode())
-        {
-            RenderUIOverlay();
-        }
+        EndTextureMode();
+        rlImGuiImageRenderTextureFit(&m_ViewportTexture, true);
     }
-    ImGui::End();
 
+    ImGui::End();
     ImGui::PopStyleVar();
 }
 
-void ViewportPanel::RenderUIOverlay()
+void ViewportPanel::Resize(uint32_t width, uint32_t height)
 {
-    if (!m_editor)
+    if (width == 0 || height == 0)
         return;
-
-    // Get viewport position - the image we just drew
-    ImVec2 viewportPos = ImGui::GetItemRectMin();
-
-    // Use window's draw list to draw on top
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
-
-    // Get mouse position for hover detection
-    ImVec2 mousePos = ImGui::GetMousePos();
-    m_hoveredUIIndex = -1; // Reset hover state
-
-    // Render all UI elements and check for hover
-    auto &uiElements = m_editor->GetSceneManager().GetGameScene().GetUIElements();
-    for (int i = 0; i < (int)uiElements.size(); i++)
-    {
-        if (!uiElements[i].isActive)
-            continue;
-
-        // Check if mouse is hovering over this element
-        ImVec2 elemPos = CalculateUIPosition(uiElements[i], viewportPos);
-        if (CheckMouseHover(elemPos, uiElements[i].size, mousePos))
-        {
-            m_hoveredUIIndex = i;
-        }
-
-        RenderUIElement(uiElements[i], i, drawList, viewportPos);
-    }
+    if (m_ViewportTexture.id != 0)
+        UnloadRenderTexture(m_ViewportTexture);
+    m_Width = width;
+    m_Height = height;
+    m_ViewportTexture = LoadRenderTexture(m_Width, m_Height);
 }
 
-void ViewportPanel::RenderUIElement(const UIElementData &elem, int index, ImDrawList *drawList,
-                                    ImVec2 viewportPos)
+Vector2 ViewportPanel::GetViewportMousePosition() const
 {
-    bool isSelected = (m_editor->GetSelectionManager().GetSelectedUIElementIndex() == index);
-    bool isHovered = (m_hoveredUIIndex == index);
-
-    // Calculate position based on anchor
-    ImVec2 pos = CalculateUIPosition(elem, viewportPos);
-    ImVec2 topLeft = pos;
-    ImVec2 bottomRight = ImVec2(pos.x + elem.size.x, pos.y + elem.size.y);
-
-    // Draw hover highlight if hovered (but not selected)
-    if (isHovered && !isSelected)
-    {
-        // Light blue hover border
-        drawList->AddRect(topLeft, bottomRight, IM_COL32(100, 150, 255, 180), 0.0f, 0, 2.0f);
-    }
-
-    // Draw selection outline if selected
-    if (isSelected)
-    {
-        // Yellow selection border
-        drawList->AddRect(topLeft, bottomRight, IM_COL32(255, 255, 0, 255), 0.0f, 0, 3.0f);
-
-        // Draw anchor point (small circle)
-        ImVec2 anchorPoint = CalculateUIPosition(elem, viewportPos);
-        drawList->AddCircleFilled(anchorPoint, 5.0f, IM_COL32(255, 255, 0, 200));
-
-        // Draw resize handles
-        RenderResizeHandles(drawList, topLeft, bottomRight);
-    }
-
-    // Render based on type (Content is now handled by UIRenderSystem/ImGui)
+    auto mousePos = ImGui::GetMousePos();
+    auto canvasPos = ImGui::GetCursorScreenPos();
+    return {mousePos.x - canvasPos.x, mousePos.y - canvasPos.y};
 }
-
-ImVec2 ViewportPanel::CalculateUIPosition(const UIElementData &elem, ImVec2 viewportPos)
-{
-    ImVec2 viewportSize = m_viewportSize;
-    ImVec2 pos = ImVec2(elem.position.x, elem.position.y);
-
-    // Apply anchor offset
-    switch (elem.anchor)
-    {
-    case 0: // TopLeft
-        // No offset needed
-        break;
-    case 1: // TopCenter
-        pos.x += viewportSize.x * 0.5f;
-        break;
-    case 2: // TopRight
-        pos.x += viewportSize.x;
-        break;
-    case 3: // MiddleLeft
-        pos.y += viewportSize.y * 0.5f;
-        break;
-    case 4: // MiddleCenter
-        pos.x += viewportSize.x * 0.5f;
-        pos.y += viewportSize.y * 0.5f;
-        break;
-    case 5: // MiddleRight
-        pos.x += viewportSize.x;
-        pos.y += viewportSize.y * 0.5f;
-        break;
-    case 6: // BottomLeft
-        pos.y += viewportSize.y;
-        break;
-    case 7: // BottomCenter
-        pos.x += viewportSize.x * 0.5f;
-        pos.y += viewportSize.y;
-        break;
-    case 8: // BottomRight
-        pos.x += viewportSize.x;
-        pos.y += viewportSize.y;
-        break;
-    }
-
-    // Apply pivot offset
-    pos.x -= elem.size.x * elem.pivot.x;
-    pos.y -= elem.size.y * elem.pivot.y;
-
-    // Add viewport position offset (passed as parameter)
-    pos.x += viewportPos.x;
-    pos.y += viewportPos.y;
-
-    return pos;
-}
-
-bool ViewportPanel::CheckMouseHover(ImVec2 pos, Vector2 size, ImVec2 mousePos)
-{
-    return (mousePos.x >= pos.x && mousePos.x <= pos.x + size.x && mousePos.y >= pos.y &&
-            mousePos.y <= pos.y + size.y);
-}
-
-void ViewportPanel::RenderResizeHandles(ImDrawList *drawList, ImVec2 topLeft, ImVec2 bottomRight)
-{
-    const float handleSize = 8.0f;
-    const ImU32 handleColor = IM_COL32(255, 255, 255, 255);
-    const ImU32 handleBorder = IM_COL32(0, 0, 0, 255);
-
-    ImVec2 topRight = ImVec2(bottomRight.x, topLeft.y);
-    ImVec2 bottomLeft = ImVec2(topLeft.x, bottomRight.y);
-    ImVec2 middleTop = ImVec2((topLeft.x + bottomRight.x) * 0.5f, topLeft.y);
-    ImVec2 middleBottom = ImVec2((topLeft.x + bottomRight.x) * 0.5f, bottomRight.y);
-    ImVec2 middleLeft = ImVec2(topLeft.x, (topLeft.y + bottomRight.y) * 0.5f);
-    ImVec2 middleRight = ImVec2(bottomRight.x, (topLeft.y + bottomRight.y) * 0.5f);
-
-    // Draw 8 resize handles (corners + edges)
-    ImVec2 handles[8] = {
-        topLeft,      // 0: Top-Left
-        middleTop,    // 1: Top
-        topRight,     // 2: Top-Right
-        middleRight,  // 3: Right
-        bottomRight,  // 4: Bottom-Right
-        middleBottom, // 5: Bottom
-        bottomLeft,   // 6: Bottom-Left
-        middleLeft    // 7: Left
-    };
-
-    for (int i = 0; i < 8; i++)
-    {
-        ImVec2 handleMin =
-            ImVec2(handles[i].x - handleSize * 0.5f, handles[i].y - handleSize * 0.5f);
-        ImVec2 handleMax =
-            ImVec2(handles[i].x + handleSize * 0.5f, handles[i].y + handleSize * 0.5f);
-
-        // Draw handle background
-        drawList->AddRectFilled(handleMin, handleMax, handleColor);
-        // Draw handle border
-        drawList->AddRect(handleMin, handleMax, handleBorder, 0.0f, 0, 1.0f);
-    }
-}
-
-int ViewportPanel::GetResizeHandleAtMouse(ImVec2 topLeft, ImVec2 bottomRight, ImVec2 mousePos)
-{
-    const float handleSize = 8.0f;
-    const float tolerance = handleSize * 0.5f;
-
-    ImVec2 topRight = ImVec2(bottomRight.x, topLeft.y);
-    ImVec2 bottomLeft = ImVec2(topLeft.x, bottomRight.y);
-    ImVec2 middleTop = ImVec2((topLeft.x + bottomRight.x) * 0.5f, topLeft.y);
-    ImVec2 middleBottom = ImVec2((topLeft.x + bottomRight.x) * 0.5f, bottomRight.y);
-    ImVec2 middleLeft = ImVec2(topLeft.x, (topLeft.y + bottomRight.y) * 0.5f);
-    ImVec2 middleRight = ImVec2(bottomRight.x, (topLeft.y + bottomRight.y) * 0.5f);
-
-    ImVec2 handles[8] = {topLeft,     middleTop,    topRight,   middleRight,
-                         bottomRight, middleBottom, bottomLeft, middleLeft};
-
-    for (int i = 0; i < 8; i++)
-    {
-        if (fabs(mousePos.x - handles[i].x) <= tolerance &&
-            fabs(mousePos.y - handles[i].y) <= tolerance)
-        {
-            return i;
-        }
-    }
-
-    return -1; // No handle at mouse position
-}
+} // namespace CHEngine

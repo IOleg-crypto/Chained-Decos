@@ -1,47 +1,21 @@
-//
-// InspectorPanel.h - Object properties inspector panel
-//
+#pragma once
 
-#ifndef INSPECTORPANEL_H
-#define INSPECTORPANEL_H
-
-#include "IEditorPanel.h"
 #include "scene/resources/map/core/MapData.h"
+#include <imgui.h>
+#include <string>
 
-class IEditor;
-
-// Displays and edits properties of the selected object
-class InspectorPanel : public IEditorPanel
+namespace CHEngine
+{
+class InspectorPanel
 {
 public:
-    explicit InspectorPanel(IEditor *editor);
-    ~InspectorPanel() override = default;
+    InspectorPanel() = default;
 
-    // IEditorPanel interface
-    void Render() override;
-    const char *GetName() const override
-    {
-        return "Inspector";
-    }
-    const char *GetDisplayName() const override
-    {
-        return "Inspector";
-    }
-    bool IsVisible() const override
-    {
-        return m_visible;
-    }
-    void SetVisible(bool visible) override
-    {
-        m_visible = visible;
-    }
+    void OnImGuiRender(MapObjectData *selectedEntity);
 
 private:
-    void RenderTransform(MapObjectData *obj);
-    void RenderObjectProperties(MapObjectData *obj);
-
-    IEditor *m_editor;
-    bool m_visible = true;
+    void DrawComponents(MapObjectData *entity);
+    void DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f,
+                         float columnWidth = 100.0f);
 };
-
-#endif // INSPECTORPANEL_H
+} // namespace CHEngine

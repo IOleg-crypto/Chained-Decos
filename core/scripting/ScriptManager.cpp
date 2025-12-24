@@ -1,7 +1,19 @@
 #include "ScriptManager.h"
+#include "components/physics/collision/core/CollisionManager.h"
 #include "core/Engine.h"
 #include "core/Log.h"
+#include "core/interfaces/ILevelManager.h"
 #include "editor/logic/ISceneManager.h"
+#include "events/Event.h"
+#include "events/KeyEvent.h"
+#include "events/UIEventRegistry.h"
+#include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components/ScriptingComponents.h"
+#include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/VelocityComponent.h"
+#include "scene/ecs/components/playerComponent.h"
+#include <raylib.h>
+#include <raymath.h>
 
 namespace CHEngine
 {
@@ -45,7 +57,65 @@ void ScriptManager::Update(float deltaTime)
     if (!m_initialized)
         return;
 
-    // TODO: Handle global script updates or hot-reloading checks here
+    // Update entity scripts
+    UpdateScripts(deltaTime);
+}
+
+void ScriptManager::InitializeScripts()
+{
+    if (!m_initialized)
+        return;
+
+    auto &registry = REGISTRY;
+    auto view = registry.view<LuaScriptComponent>();
+
+    for (auto entity : view)
+    {
+        auto &script = view.get<LuaScriptComponent>(entity);
+        if (!script.initialized && !script.scriptPath.empty())
+        {
+            // Load the script globally for now (simplest approach)
+            if (RunScript(script.scriptPath))
+            {
+                CallLuaFunction(script.scriptPath, "OnInit", (uint32_t)entity);
+                script.initialized = true;
+            }
+        }
+    }
+}
+
+void ScriptManager::UpdateScripts(float deltaTime)
+{
+    if (!m_initialized)
+        return;
+
+    auto &registry = REGISTRY;
+    auto view = registry.view<LuaScriptComponent>();
+
+    for (auto entity : view)
+    {
+        auto &script = view.get<LuaScriptComponent>(entity);
+        if (script.initialized && !script.scriptPath.empty())
+        {
+            CallLuaFunction(script.scriptPath, "OnUpdate", (uint32_t)entity, deltaTime);
+        }
+    }
+}
+
+void ScriptManager::CallLuaFunction(const std::string &scriptPath, const std::string &functionName,
+                                    uint32_t entityId, float dt)
+{
+    sol::protected_function func = m_lua[functionName];
+    if (func.valid())
+    {
+        auto result = (dt > 0.0f) ? func(entityId, dt) : func(entityId);
+        if (!result.valid())
+        {
+            sol::error err = result;
+            CD_CORE_ERROR("Lua Exception in %s:%s: %s", scriptPath.c_str(), functionName.c_str(),
+                          err.what());
+        }
+    }
 }
 
 bool ScriptManager::RunScript(const std::string &path)
@@ -106,23 +176,74 @@ void ScriptManager::RegisterButtonCallback(const std::string &buttonName, sol::f
 void ScriptManager::BindSceneAPI()
 {
     // Scene Management API
-    m_lua.set_function("LoadScene",
-                       [this](const std::string &scenePath)
-                       {
-                           if (!m_sceneManager)
-                           {
-                               CD_ERROR("[Lua] LoadScene failed: SceneManager not set!");
-                               return;
-                           }
-                           CD_INFO("[Lua] Loading scene: %s", scenePath.c_str());
-                           m_sceneManager->LoadScene(scenePath);
-                       });
+    m_lua.set_function(
+        "LoadScene",
+        [this](sol::object sceneRef)
+        {
+            auto levelManager = Engine::Instance().GetService<ILevelManager>();
+            if (!levelManager)
+            {
+                CD_ERROR("[Lua] LoadScene failed: LevelManager service not found!");
+                return;
+            }
+
+            if (sceneRef.is<std::string>())
+            {
+                std::string path = sceneRef.as<std::string>();
+                CD_INFO("[Lua] Loading scene by name/path: %s", path.c_str());
+                levelManager->LoadScene(path);
+            }
+            else if (sceneRef.is<int>())
+            {
+                int index = sceneRef.as<int>();
+                CD_INFO("[Lua] Loading scene by index: %d", index);
+                levelManager->LoadSceneByIndex(index);
+            }
+            else
+            {
+                CD_ERROR("[Lua] LoadScene failed: Invalid argument type. Expected string or int.");
+                return;
+            }
+
+            // Sync ECS with new scene data
+            auto sceneManager = Engine::Instance().GetService<ISceneManager>();
+            if (sceneManager)
+            {
+                sceneManager->RefreshMapEntities();
+                sceneManager->RefreshUIEntities();
+                CD_INFO("[Lua] Scene ECS entities refreshed.");
+            }
+        });
 
     m_lua.set_function("QuitGame",
                        []()
                        {
                            CD_INFO("[Lua] Quit game requested.");
                            Engine::Instance().RequestExit();
+                       });
+
+    // 3. Entity Manipulation API
+    m_lua.set_function("GetTime", []() { return (float)GetTime(); });
+
+    m_lua.set_function("GetPosition",
+                       [](uint32_t entityId) -> Vector3
+                       {
+                           auto entity = (entt::entity)entityId;
+                           if (REGISTRY.all_of<TransformComponent>(entity))
+                           {
+                               return REGISTRY.get<TransformComponent>(entity).position;
+                           }
+                           return {0, 0, 0};
+                       });
+
+    m_lua.set_function("SetPosition",
+                       [](uint32_t entityId, float x, float y, float z)
+                       {
+                           auto entity = (entt::entity)entityId;
+                           if (REGISTRY.all_of<TransformComponent>(entity))
+                           {
+                               REGISTRY.get<TransformComponent>(entity).position = {x, y, z};
+                           }
                        });
 }
 
@@ -156,6 +277,75 @@ void ScriptManager::BindUIAPI()
                                        buttonName.c_str());
                            }
                        });
+}
+
+void ScriptManager::BindGameplayAPI()
+{
+    // IsColliding(entityId): Simple AABB check against Player
+    m_lua.set_function("IsColliding",
+                       [](uint32_t entityId) -> bool
+                       {
+                           auto entity = (entt::entity)entityId;
+                           if (!REGISTRY.valid(entity))
+                               return false;
+
+                           // Get Entity Transform
+                           Vector3 entPos = {0, 0, 0};
+                           Vector3 entScale = {1, 1, 1};
+                           if (REGISTRY.all_of<TransformComponent>(entity))
+                           {
+                               auto &t = REGISTRY.get<TransformComponent>(entity);
+                               entPos = t.position;
+                               entScale = t.scale;
+                           }
+                           else
+                           {
+                               return false;
+                           }
+
+                           // Construct AABB for Entity
+                           // Assuming unit cube centered at position
+                           Vector3 halfSize = {entScale.x * 0.5f, entScale.y * 0.5f,
+                                               entScale.z * 0.5f};
+                           BoundingBox entBox;
+                           entBox.min = Vector3Subtract(entPos, halfSize);
+                           entBox.max = Vector3Add(entPos, halfSize);
+
+                           // Find Player
+                           auto playerView = REGISTRY.view<PlayerComponent, TransformComponent>();
+                           for (auto [playerEntity, player, playerTransform] : playerView.each())
+                           {
+                               // Construct Player AABB (approximate)
+                               Vector3 playerPos = playerTransform.position;
+                               Vector3 playerHalfSize = {0.5f, 1.0f, 0.5f}; // Approx player size
+                               BoundingBox playerBox;
+                               playerBox.min = Vector3Subtract(playerPos, playerHalfSize);
+                               playerBox.max = Vector3Add(playerPos, playerHalfSize);
+
+                               if (CheckCollisionBoxes(entBox, playerBox))
+                               {
+                                   return true;
+                               }
+                           }
+                           return false; // No collision with player
+                       });
+
+    // RespawnPlayer(): Resets player to spawn position
+    m_lua.set_function(
+        "RespawnPlayer",
+        []()
+        {
+            CD_INFO("[Lua] RespawnPlayer called.");
+            auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
+            for (auto [entity, transform, velocity, player] : view.each())
+            {
+                transform.position = player.spawnPosition;
+                velocity.velocity = {0, 0, 0};
+                player.isGrounded = false;
+                player.runTimer = 0;
+                player.maxHeight = 0;
+            }
+        });
 }
 
 } // namespace CHEngine

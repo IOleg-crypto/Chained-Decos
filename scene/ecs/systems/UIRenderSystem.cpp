@@ -24,6 +24,13 @@ void UIRenderSystem::Render(int screenWidth, int screenHeight)
         auto &transform = view.get<RectTransform>(entity);
         Vector2 screenPos = CalculateScreenPosition(transform, screenWidth, screenHeight);
 
+        // Skip entities that are handled by ImGui during standard Raylib render pass
+        if (registry.all_of<ImGuiComponent>(entity))
+        {
+            continue;
+        }
+
+        // 2. STANDARD RAYLIB RENDERING
         // Handle Button Input
         if (registry.all_of<UIButton>(entity))
         {
@@ -125,25 +132,46 @@ void UIRenderSystem::Render(int screenWidth, int screenHeight)
             auto &image = registry.get<UIImage>(entity);
             Rectangle rect = {screenPos.x, screenPos.y, transform.size.x, transform.size.y};
 
-            if (image.borderRadius > 0.0f)
+            Texture2D tex = {0};
+            if (!image.texturePath.empty())
             {
-                float roundness =
-                    image.borderRadius / (std::min(transform.size.x, transform.size.y) * 0.5f);
-                DrawRectangleRounded(rect, roundness, 16, image.tint);
-                if (image.borderWidth > 0.0f)
+                tex = Engine::Instance().GetTextureService().GetTexture(image.texturePath);
+                if (tex.id == 0)
                 {
-                    DrawRectangleRoundedLinesEx(rect, roundness, 16, image.borderWidth,
-                                                image.borderColor);
+                    Engine::Instance().GetTextureService().LoadTexture(image.texturePath,
+                                                                       image.texturePath);
+                    tex = Engine::Instance().GetTextureService().GetTexture(image.texturePath);
                 }
+            }
+
+            if (tex.id != 0)
+            {
+                // Draw texture fitting the rect
+                Rectangle source = {0, 0, (float)tex.width, (float)tex.height};
+                DrawTexturePro(tex, source, rect, {0, 0}, 0.0f, image.tint);
             }
             else
             {
-                DrawRectangle(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y),
-                              static_cast<int>(transform.size.x),
-                              static_cast<int>(transform.size.y), image.tint);
-                if (image.borderWidth > 0.0f)
+                if (image.borderRadius > 0.0f)
                 {
-                    DrawRectangleLinesEx(rect, image.borderWidth, image.borderColor);
+                    float roundness =
+                        image.borderRadius / (std::min(transform.size.x, transform.size.y) * 0.5f);
+                    DrawRectangleRounded(rect, roundness, 16, image.tint);
+                    if (image.borderWidth > 0.0f)
+                    {
+                        DrawRectangleRoundedLinesEx(rect, roundness, 16, image.borderWidth,
+                                                    image.borderColor);
+                    }
+                }
+                else
+                {
+                    DrawRectangle(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y),
+                                  static_cast<int>(transform.size.x),
+                                  static_cast<int>(transform.size.y), image.tint);
+                    if (image.borderWidth > 0.0f)
+                    {
+                        DrawRectangleLinesEx(rect, image.borderWidth, image.borderColor);
+                    }
                 }
             }
         }
@@ -153,36 +181,19 @@ void UIRenderSystem::Render(int screenWidth, int screenHeight)
         {
             auto &text = registry.get<UIText>(entity);
             Font font = Engine::Instance().GetFontService().GetFont(text.fontName);
-            DrawTextEx(font, text.text.c_str(), screenPos, text.fontSize, text.spacing, text.color);
-        }
 
-        // Render ImGui components if present
-        if (registry.all_of<ImGuiComponent>(entity))
-        {
-            auto &imgui = registry.get<ImGuiComponent>(entity);
-            if (imgui.isButton)
+            Vector2 textPos = screenPos;
+
+            // Center text if it's on a button or image with size
+            if (registry.all_of<UIButton>(entity) || registry.all_of<UIImage>(entity))
             {
-                // Position ImGui button according to RectTransform
-                ImGui::SetNextWindowPos({screenPos.x, screenPos.y});
-                ImGui::SetNextWindowSize({transform.size.x, transform.size.y});
-
-                // Create a transparent window to hold the button
-                std::string winName = "##imgui_win_" + std::to_string((uint32_t)entity);
-                ImGui::Begin(winName.c_str(), nullptr,
-                             ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
-                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_NoInputs);
-
-                if (ImGui::Button(imgui.label.c_str(), {transform.size.x, transform.size.y}))
-                {
-                    if (!imgui.eventId.empty())
-                    {
-                        Engine::Instance().GetUIEventRegistry().Trigger(imgui.eventId);
-                    }
-                }
-
-                ImGui::End();
+                Vector2 textSize =
+                    MeasureTextEx(font, text.text.c_str(), text.fontSize, text.spacing);
+                textPos.x += (transform.size.x - textSize.x) * 0.5f;
+                textPos.y += (transform.size.y - textSize.y) * 0.5f;
             }
+
+            DrawTextEx(font, text.text.c_str(), textPos, text.fontSize, text.spacing, text.color);
         }
     }
 }
@@ -277,4 +288,57 @@ void UIRenderSystem::DrawSelectionHighlight(entt::entity entity, int screenWidth
                    {handleSize, handleSize}, WHITE);
 }
 
+void UIRenderSystem::RenderImGui(int screenWidth, int screenHeight, Vector2 offset)
+{
+    auto &registry = ECSRegistry::Get();
+
+    // Render all UI elements with ImGuiComponent
+    auto view = registry.view<RectTransform, ImGuiComponent>();
+
+    for (auto entity : view)
+    {
+        auto &transform = view.get<RectTransform>(entity);
+        auto &imgui = view.get<ImGuiComponent>(entity);
+
+        // Position relative to viewport, then apply screen offset
+        Vector2 localPos = CalculateScreenPosition(transform, screenWidth, screenHeight);
+        Vector2 screenPos = Vector2Add(localPos, offset);
+
+        if (imgui.isButton)
+        {
+            // Position ImGui button according to RectTransform + Offset
+            ImGui::SetNextWindowPos({screenPos.x, screenPos.y});
+            ImGui::SetNextWindowSize({transform.size.x, transform.size.y});
+
+            // Create a transparent window to hold the button
+            std::string winName = "##imgui_win_" + std::to_string((uint32_t)entity);
+            ImGui::Begin(winName.c_str(), nullptr,
+                         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
+                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_NoInputs);
+
+            if (ImGui::Button(imgui.label.c_str(), {transform.size.x, transform.size.y}))
+            {
+                if (!imgui.eventId.empty())
+                {
+                    Engine::Instance().GetUIEventRegistry().Trigger(imgui.eventId);
+                }
+            }
+
+            ImGui::End();
+        }
+        else
+        {
+            // Simple ImGui text overlay
+            ImGui::SetNextWindowPos({screenPos.x, screenPos.y});
+            std::string winName = "##imgui_text_win_" + std::to_string((uint32_t)entity);
+            ImGui::Begin(winName.c_str(), nullptr,
+                         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
+                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_NoInputs);
+            ImGui::Text("%s", imgui.label.c_str());
+            ImGui::End();
+        }
+    }
+}
 } // namespace CHEngine

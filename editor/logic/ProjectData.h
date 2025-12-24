@@ -1,12 +1,9 @@
 #ifndef PROJECT_DATA_H
 #define PROJECT_DATA_H
 
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <vector>
-
-
-using json = nlohmann::json;
 
 struct ProjectData
 {
@@ -17,35 +14,11 @@ struct ProjectData
     bool drawWireframe = false;
     bool drawCollisions = false;
 
-    json ToJson() const
-    {
-        json j;
-        j["name"] = name;
-        j["version"] = version;
-        j["lastScene"] = lastScene;
-        j["settings"]["gridSize"] = gridSize;
-        j["settings"]["drawWireframe"] = drawWireframe;
-        j["settings"]["drawCollisions"] = drawCollisions;
-        return j;
-    }
+    std::vector<std::string> scenes;
+    std::string startScene;
 
-    static ProjectData FromJson(const json &j)
-    {
-        ProjectData data;
-        data.name = j.value("name", "Untitled Project");
-        data.version = j.value("version", "1.0");
-        data.lastScene = j.value("lastScene", "");
-
-        if (j.contains("settings"))
-        {
-            const auto &s = j["settings"];
-            data.gridSize = s.value("gridSize", 50);
-            data.drawWireframe = s.value("drawWireframe", false);
-            data.drawCollisions = s.value("drawCollisions", false);
-        }
-
-        return data;
-    }
+    nlohmann::json ToJson() const;
+    static ProjectData FromJson(const nlohmann::json &j);
 };
 
 #endif // PROJECT_DATA_H

@@ -6,6 +6,8 @@
 #include "scene/resources/map/renderer/MapRenderer.h"
 #include "scene/resources/model/utils/ModelAnalyzer.h"
 #include <filesystem>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 LevelManager::LevelManager(const LevelManagerConfig &config)
     : m_config(config), m_gameScene(std::make_unique<GameScene>()), m_currentMapPath(""),
@@ -56,20 +58,38 @@ bool LevelManager::Initialize(IEngine *engine)
     m_worldManager = dynamic_cast<WorldManager *>(&engine->GetWorldManager());
     m_collisionManager = dynamic_cast<CollisionManager *>(&engine->GetCollisionManager());
     m_modelLoader = dynamic_cast<ModelLoader *>(&engine->GetModelLoader());
-
-    // RenderManager is accessed directly through Engine
     m_renderManager = &engine->GetRenderManager();
 
-    // Validate required engine dependencies
     if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
     {
         CD_CORE_ERROR("[LevelManager] Required engine services not found");
         return false;
     }
 
-    // Create collision initializer with dependencies
     m_collisionInitializer =
         std::make_unique<MapCollisionInitializer>(m_collisionManager, m_modelLoader, m_player);
+
+    // Load build manifest (scenes available for runtime)
+    std::string manifestPath = std::string(PROJECT_ROOT_DIR) + "/build.manifest";
+    if (std::filesystem::exists(manifestPath))
+    {
+        try
+        {
+            std::ifstream file(manifestPath);
+            if (file.is_open())
+            {
+                nlohmann::json manifest;
+                file >> manifest;
+                m_scenes = manifest.value("scenes", std::vector<std::string>());
+                CD_CORE_INFO("[LevelManager] Build manifest loaded. Found %zu scenes.",
+                             m_scenes.size());
+            }
+        }
+        catch (const std::exception &e)
+        {
+            CD_CORE_ERROR("[LevelManager] Failed to parse manifest: %s", e.what());
+        }
+    }
 
     return true;
 }
@@ -78,8 +98,9 @@ bool LevelManager::LoadScene(const std::string &path)
 {
     std::string mapPath = path;
 
-    // Convert map name to path if it's not already a path
-    if (path.find('/') == std::string::npos && path.find('\\') == std::string::npos)
+    // Convert map name to path if it's not already a path or absolute
+    if (path.find('/') == std::string::npos && path.find('\\') == std::string::npos &&
+        path.find(".json") == std::string::npos)
     {
         mapPath = ConvertMapNameToPath(path);
     }
@@ -92,7 +113,7 @@ bool LevelManager::LoadScene(const std::string &path)
         std::vector<std::string> requiredModels = ModelAnalyzer::GetModelsRequiredForMap(mapPath);
         if (requiredModels.empty())
         {
-            requiredModels.emplace_back("player_low"); // Always need player
+            requiredModels.emplace_back("player_low");
         }
 
         // 2. Load required models selectively
@@ -122,21 +143,50 @@ bool LevelManager::LoadScene(const std::string &path)
     }
 }
 
+bool LevelManager::LoadSceneByIndex(int index)
+{
+    if (index < 0 || index >= (int)m_scenes.size())
+    {
+        CD_CORE_ERROR("[LevelManager] Scene index out of bounds: %d (Total: %zu)", index,
+                      m_scenes.size());
+        return false;
+    }
+
+    return LoadSceneByName(m_scenes[index]);
+}
+
+bool LevelManager::LoadSceneByName(const std::string &name)
+{
+    // Try to find the scene in mapped scenes
+    std::string sceneFile = name;
+    if (name.find(".json") == std::string::npos)
+    {
+        sceneFile += ".json";
+    }
+
+    // Attempt to load from Scenes/ folder relative to project root or resource path
+    std::string fullPath = std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + sceneFile;
+    if (!std::filesystem::exists(fullPath))
+    {
+        fullPath = std::string(PROJECT_ROOT_DIR) + "/Scenes/" + sceneFile;
+    }
+
+    return LoadScene(fullPath);
+}
+
 std::string LevelManager::ConvertMapNameToPath(const std::string &mapName)
 {
     if (mapName.empty())
         return "";
 
-    // If it's already an absolute path or has extension, return as is
     if (std::filesystem::path(mapName).is_absolute() ||
         std::filesystem::path(mapName).has_extension())
     {
         return mapName;
     }
 
-    // Otherwise, assume it's in resources/maps/ and needs .json
-    std::string path = std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + mapName + ".json";
-    return path;
+    // Check manifest mappings or default directories
+    return std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + mapName + ".json";
 }
 
 void LevelManager::UnloadMap()

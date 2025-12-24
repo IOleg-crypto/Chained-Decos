@@ -13,6 +13,7 @@
 #include "scene/main/core/World.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/core/Model.h"
+#include "scene/resources/texture/TextureService.h"
 #include <memory>
 #include <raylib.h>
 #include <stdexcept>
@@ -92,6 +93,7 @@ bool Engine::Initialize(const CHEngine::WindowProps &props)
     // 9. Scenes
     RegisterService<SceneManager>(std::make_shared<SceneManager>());
     RegisterService<FontService>(std::make_shared<FontService>());
+    RegisterService<TextureService>(std::make_shared<TextureService>());
     RegisterService<UIEventRegistry>(std::make_shared<UIEventRegistry>());
 
     CD_CORE_INFO("Engine initialized successfully");
@@ -140,6 +142,9 @@ void Engine::Shutdown()
 
     if (auto font = GetService<FontService>())
         font->Shutdown();
+
+    if (auto texture = GetService<TextureService>())
+        texture->Shutdown();
 
     ServiceRegistry::Clear();
 }
@@ -211,6 +216,11 @@ CHEngine::SceneManager &Engine::GetSceneManager() const
 CHEngine::FontService &Engine::GetFontService() const
 {
     return *GetService<CHEngine::FontService>();
+}
+
+CHEngine::TextureService &Engine::GetTextureService() const
+{
+    return *GetService<CHEngine::TextureService>();
 }
 
 CHEngine::UIEventRegistry &Engine::GetUIEventRegistry() const

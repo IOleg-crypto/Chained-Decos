@@ -1,201 +1,96 @@
-//
-// ToolbarPanel.cpp - Main editor toolbar implementation
-//
-
 #include "ToolbarPanel.h"
-#include "editor/IEditor.h"
+#include "editor/EditorLayer.h"
+#include "editor/utils/IconsFontAwesome5.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 
-ToolbarPanel::ToolbarPanel(IEditor *editor) : m_editor(editor)
+namespace CHEngine
 {
-}
-
-void ToolbarPanel::RenderToolButton(const char *label, Tool tool, const char *tooltip)
+void ToolbarPanel::OnImGuiRender(EditorLayer *layer)
 {
-    bool isActive = (m_editor && m_editor->GetState().GetActiveTool() == tool);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+    auto &colors = ImGui::GetStyle().Colors;
+    const auto &buttonHovered = colors[ImGuiCol_ButtonHovered];
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                          ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+    const auto &buttonActive = colors[ImGuiCol_ButtonActive];
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                          ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
 
-    if (isActive)
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y));
+    ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, 32)); // Fixed height for toolbar
+
+    ImGui::Begin("##toolbar", nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar |
+                     ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoResize);
+
+    float size = ImGui::GetWindowHeight() - 4.0f;
+
+    ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x * 0.5f - (size * 0.5f));
+
+    // 1. Scene State Controls
+    bool isEdit = (layer->GetSceneState() == SceneState::Edit);
+
+    if (isEdit)
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+        if (ImGui::Button(ICON_FA_PLAY, ImVec2(size, size)))
+            layer->OnScenePlay();
+    }
+    else
+    {
+        if (ImGui::Button(ICON_FA_STOP, ImVec2(size, size)))
+            layer->OnSceneStop();
     }
 
-    if (ImGui::Button(label, ImVec2(32, 28)))
-    {
-        if (m_editor)
-        {
-            m_editor->GetState().SetActiveTool(tool);
-        }
-    }
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(10.0f); // Move file controls to the left
 
-    if (isActive)
-    {
-        ImGui::PopStyleColor();
-    }
+    // 2. File Controls
+    if (ImGui::Button(ICON_FA_FILE, ImVec2(size + 10, size)))
+        layer->NewScene();
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("New Scene");
 
-    if (ImGui::IsItemHovered() && tooltip)
-    {
-        ImGui::SetTooltip("%s", tooltip);
-    }
-}
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_SAVE, ImVec2(size + 10, size)))
+        layer->SaveScene();
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Save Scene");
 
-void ToolbarPanel::RenderSeparator()
-{
     ImGui::SameLine();
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
     ImGui::SameLine();
-}
 
-void ToolbarPanel::Render()
-{
-    if (!m_visible)
-        return;
-
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 4));
-
-    if (ImGui::Begin("Toolbar", &m_visible, flags))
+    // 3. Tool Selection
+    auto toolButton = [&](Tool tool, const char *icon, const char *tooltip)
     {
-        // File operations
-        if (ImGui::Button("New", ImVec2(50, 28)))
-        {
-            if (m_editor)
-                m_editor->GetSceneManager().ClearScene();
-        }
+        bool selected = (layer->GetActiveTool() == tool);
+        if (selected)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 0.6f));
+
+        if (ImGui::Button(icon, ImVec2(size + 5, size)))
+            layer->SetActiveTool(tool);
+
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("New Scene (Ctrl+N)");
+            ImGui::SetTooltip("%s", tooltip);
 
-        ImGui::SameLine();
-
-        if (ImGui::Button("Save", ImVec2(50, 28)))
-        {
-            if (m_editor)
-                m_editor->GetSceneManager().SaveScene("");
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Save Scene (Ctrl+S)");
-
-        RenderSeparator();
-
-        // Transform tools
-        RenderToolButton("S", Tool::SELECT, "Select (Q)");
-        ImGui::SameLine();
-        RenderToolButton("M", Tool::MOVE, "Move (W)");
-        ImGui::SameLine();
-        RenderToolButton("R", Tool::ROTATE, "Rotate (E)");
-        ImGui::SameLine();
-        RenderToolButton("C", Tool::SCALE, "Scale (R)");
-
-        RenderSeparator();
-
-        // Create tools
-        RenderToolButton("+", Tool::ADD_MODEL, "Place Object (T)");
-
-        RenderSeparator();
-
-        // Build Button
-        if (ImGui::Button("B", ImVec2(32, 28)))
-        {
-            if (m_editor)
-                m_editor->BuildGame();
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Build Project (Compile)");
-
-        RenderSeparator();
-
-        // Play Mode Controls
-        bool inPlayMode = m_editor && m_editor->IsInPlayMode();
-        if (inPlayMode)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.25f, 0.25f, 1.0f));
-            if (ImGui::Button("Stop", ImVec2(60, 24)))
-            {
-                m_editor->StopPlayMode();
-            }
+        if (selected)
             ImGui::PopStyleColor();
-        }
-        else
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.75f, 0.25f, 1.0f));
-            if (ImGui::Button("Play", ImVec2(60, 24)))
-            {
-                m_editor->StartPlayMode();
-            }
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip(inPlayMode ? "Stop Simulation (Esc)" : "Start Simulation (Ctrl+P)");
-
         ImGui::SameLine();
+    };
 
-        if (ImGui::Button("Run", ImVec2(50, 28)))
-        {
-            if (m_editor)
-                m_editor->RunGame();
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Run Standalone Game (Separate Window)");
+    toolButton(Tool::SELECT, ICON_FA_MOUSE_POINTER, "Select (Q)");
+    toolButton(Tool::MOVE, ICON_FA_ARROWS_ALT, "Move (W)");
+    toolButton(Tool::ROTATE, ICON_FA_SYNC, "Rotate (E)");
+    toolButton(Tool::SCALE, ICON_FA_EXPAND_ARROWS_ALT, "Scale (R)");
 
-        RenderSeparator();
-
-        // Debug Toggles
-        if (m_editor)
-        {
-            bool wire = m_editor->GetState().IsWireframeEnabled();
-            if (wire)
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-            if (ImGui::Button("Wire", ImVec2(45, 28)))
-            {
-                m_editor->GetState().SetWireframeEnabled(!wire);
-            }
-            if (wire)
-                ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Toggle Wireframe Mode");
-
-            ImGui::SameLine();
-
-            bool coll = m_editor->GetState().IsCollisionDebugEnabled();
-            if (coll)
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
-            if (ImGui::Button("Coll", ImVec2(45, 28)))
-            {
-                m_editor->GetState().SetCollisionDebugEnabled(!coll);
-            }
-            if (coll)
-                ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Toggle Collision Bounds Debug");
-
-            ImGui::SameLine();
-
-            bool uiMode = m_editor->GetState().IsUIDesignMode();
-            if (uiMode)
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.5f, 0.3f, 1.0f));
-            if (ImGui::Button("UI", ImVec2(45, 28)))
-            {
-                m_editor->GetState().SetEditorMode(uiMode ? EditorMode::SCENE_3D
-                                                          : EditorMode::UI_DESIGN);
-            }
-            if (uiMode)
-                ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Toggle UI Design Mode");
-        }
-        // // Grid size
-        // ImGui::Text("Grid:");
-        // ImGui::SameLine();
-        // int gridSize = m_editor ? m_editor->GetGridSize() : 50;
-        // ImGui::SetNextItemWidth(80);
-        // if (ImGui::SliderInt("##grid", &gridSize, 10, 200))
-        // {
-        //     if (m_editor)
-        //         m_editor->SetGridSize(gridSize);
-        // }
-    }
     ImGui::End();
 
-    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar(2);
 }
+} // namespace CHEngine

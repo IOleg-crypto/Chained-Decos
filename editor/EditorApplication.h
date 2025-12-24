@@ -1,9 +1,12 @@
 #ifndef EDITOR_APPLICATION_H
 #define EDITOR_APPLICATION_H
 
-#include "Editor.h"
 #include "core/application/IApplication.h"
-#include <memory>
+
+namespace CHEngine
+{
+class EditorLayer;
+}
 
 // Editor application - uses full engine + own modules
 class EditorApplication : public CHEngine::IApplication
@@ -35,7 +38,7 @@ public:
     void OnEvent(CHEngine::Event &e) override;
 
 private:
-    std::unique_ptr<Editor> m_editor;
+    CHEngine::EditorLayer *m_EditorLayer = nullptr;
 };
 
 #endif // EDITOR_APPLICATION_H

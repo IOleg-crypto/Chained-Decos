@@ -5,8 +5,6 @@
 
 # UI and legacy map editing components
 set(mapgui_sources
-    mapgui/UIManager.cpp
-    mapgui/UIManager.h
     mapgui/skyboxBrowser.cpp
     mapgui/skyboxBrowser.h
 )
@@ -27,7 +25,9 @@ set(logic_sources
     logic/MapManager.h
     logic/ProjectManager.cpp
     logic/ProjectManager.h
+    logic/ProjectData.cpp
     logic/ProjectData.h
+    logic/EditorSettings.cpp
     logic/EditorSettings.h
     logic/Scene.cpp
     logic/Scene.h
@@ -66,8 +66,8 @@ set(panels_sources
 set(editor_sources
     EditorApplication.cpp
     EditorApplication.h
-    Editor.cpp
-    Editor.h
+    EditorLayer.cpp
+    EditorLayer.h
 )
 
 add_executable(ChainedEditor

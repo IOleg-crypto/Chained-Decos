@@ -32,6 +32,7 @@ target_link_libraries(ecs PUBLIC
     EnTT::EnTT
     raylib
     font_resources
+    texture_resources
     imguilib
     scene_manager
 )

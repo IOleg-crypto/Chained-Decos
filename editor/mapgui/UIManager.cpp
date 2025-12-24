@@ -515,15 +515,15 @@ void EditorUIManager::RenderWelcomeScreen()
     if (ImGui::Begin("Welcome Screen", nullptr, flags))
     {
         // --- SIDEBAR (Left) ---
-        float sidebarWidth = 220.0f;
+        float sidebarWidth = 260.0f;
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.16f, 0.16f, 0.18f, 1.0f));
         ImGui::BeginChild("Sidebar", ImVec2(sidebarWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
 
         ImGui::Spacing();
         ImGui::Indent(15);
-        ImGui::SetWindowFontScale(1.2f);
+        ImGui::SetWindowFontScale(1.5f);
         ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Chained Editor");
-        ImGui::SetWindowFontScale(0.8f);
+        ImGui::SetWindowFontScale(1.0f);
         ImGui::TextDisabled("v2025.12.22");
         ImGui::Unindent(15);
 
@@ -533,9 +533,9 @@ void EditorUIManager::RenderWelcomeScreen()
         ImGui::Spacing();
 
         // Sidebar Items
-        const char *sidebarItems[] = {"Projects", "Learning", "Plugins", "Settings"};
+        const char *sidebarItems[] = {"Projects"};
         static int selectedSidebar = 0;
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < std::size(sidebarItems); i++)
         {
             bool isSelected = (selectedSidebar == i);
             if (isSelected)
@@ -568,28 +568,29 @@ void EditorUIManager::RenderWelcomeScreen()
         if (ImGui::BeginChild("MainArea", mainAreaSize, false, ImGuiWindowFlags_NoBackground))
         {
             // Title and Header
-            ImGui::SetCursorPosY(60);
-            ImGui::SetWindowFontScale(1.8f);
+            ImGui::SetCursorPosY(80);
+            ImGui::SetWindowFontScale(2.2f);
             std::string welcomeTitle = "Welcome to Chained Editor";
             float welcomeWidth = ImGui::CalcTextSize(welcomeTitle.c_str()).x;
             ImGui::SetCursorPosX((mainAreaSize.x - welcomeWidth) * 0.5f);
             ImGui::Text("%s", welcomeTitle.c_str());
-            ImGui::SetWindowFontScale(1.0f);
+            ImGui::SetWindowFontScale(1.2f);
 
-            ImGui::SetCursorPosY(100);
+            ImGui::SetCursorPosY(130);
             std::string subTitle = "Create a new project or open an existing one to get started.";
             float subWidth = ImGui::CalcTextSize(subTitle.c_str()).x;
             ImGui::SetCursorPosX((mainAreaSize.x - subWidth) * 0.5f);
             ImGui::TextDisabled("%s", subTitle.c_str());
+            ImGui::SetWindowFontScale(1.0f);
 
             // Action Buttons (Horizontal)
-            float iconBoxSize = 100.0f;
-            float buttonSpacing = 80.0f;
+            float iconBoxSize = 160.0f;
+            float buttonSpacing = 100.0f;
             int numButtons = 2;
             float totalW = (iconBoxSize * numButtons) + (buttonSpacing * (numButtons - 1));
             float startX = (mainAreaSize.x - totalW) * 0.5f;
 
-            float buttonsY = 220.0f;
+            float buttonsY = 200.0f;
             auto renderBigButton =
                 [&](const char *id, Texture2D &icon, const char *label, PendingAction action)
             {
@@ -626,12 +627,12 @@ void EditorUIManager::RenderWelcomeScreen()
                 }
 
                 // Draw Icon centered
-                float iconSize = 48.0f;
+                float iconSize = 72.0f;
                 dl->AddImage((ImTextureID)(intptr_t)icon.id,
                              ImVec2(p.x + (iconBoxSize - iconSize) * 0.5f,
-                                    p.y + (iconBoxSize - iconSize) * 0.5f),
+                                    p.y + (iconBoxSize - iconSize) * 0.5f - 10),
                              ImVec2(p.x + (iconBoxSize + iconSize) * 0.5f,
-                                    p.y + (iconBoxSize + iconSize) * 0.5f));
+                                    p.y + (iconBoxSize + iconSize) * 0.5f - 10));
 
                 float labelW = ImGui::CalcTextSize(label).x;
                 dl->AddText(ImVec2(p.x + (iconBoxSize - labelW) * 0.5f, p.y + iconBoxSize + 10),
@@ -648,7 +649,7 @@ void EditorUIManager::RenderWelcomeScreen()
                             PendingAction::OPEN_PROJECT);
 
             // Recent Projects Section - Move down to avoid overlap
-            ImGui::SetCursorPosY(420);
+            ImGui::SetCursorPosY(460);
             ImGui::SetCursorPosX(60);
             ImGui::TextColored(ImVec4(0.4f, 0.6f, 1.0f, 1.0f), "RECENT PROJECTS");
             ImGui::Separator();

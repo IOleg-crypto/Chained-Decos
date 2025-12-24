@@ -68,8 +68,11 @@ target_link_libraries(core
         model
         imguilib
         events
+        font_resources
+        texture_resources
         liblua
         sol2::sol2
+        world
 )
 
 target_compile_definitions(core

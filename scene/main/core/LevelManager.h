@@ -32,6 +32,8 @@ public:
 
     // ILevelManager Implementation
     bool LoadScene(const std::string &path) override;
+    bool LoadSceneByIndex(int index) override;
+    bool LoadSceneByName(const std::string &name) override;
     void UnloadMap() override;
     bool IsMapLoaded() const override;
     const std::string &GetCurrentMapPath() const override;
@@ -89,6 +91,7 @@ private:
     LevelManagerConfig m_config;
     std::unique_ptr<GameScene> m_gameScene;
     std::string m_currentMapPath;
+    std::vector<std::string> m_scenes;
 
     BoundingBox m_playerSpawnZone;
     Texture2D m_spawnTexture;

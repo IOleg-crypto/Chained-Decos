@@ -25,6 +25,7 @@
 #include "scene/main/interfaces/IWorldManager.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/interfaces/IModelLoader.h"
+#include "scene/resources/texture/TextureService.h"
 
 class ModuleManager;
 class IEngineModule;
@@ -57,6 +58,7 @@ public:
     IGuiManager &GetGuiManager() const override;
     CHEngine::SceneManager &GetSceneManager() const override;
     CHEngine::FontService &GetFontService() const override;
+    CHEngine::TextureService &GetTextureService() const override;
     CHEngine::UIEventRegistry &GetUIEventRegistry() const override;
     entt::registry &GetECSRegistry() override;
 

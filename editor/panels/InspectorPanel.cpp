@@ -1,217 +1,172 @@
-//
-// InspectorPanel.cpp - Implementation of object inspector panel
-//
-
 #include "InspectorPanel.h"
-#include "editor/IEditor.h"
-#include "editor/mapgui/IUIManager.h"
+#include "nfd.h"
 #include <cstring>
 #include <imgui.h>
+#include <imgui_internal.h>
+#include <raylib.h>
 
-InspectorPanel::InspectorPanel(IEditor *editor) : m_editor(editor)
+namespace CHEngine
 {
-}
-
-void InspectorPanel::Render()
+void InspectorPanel::OnImGuiRender(MapObjectData *selectedEntity)
 {
-    if (!m_visible)
-        return;
+    ImGui::Begin("Inspector");
 
-    ImGui::Begin("Inspector", &m_visible);
-
-    if (!m_editor)
+    if (selectedEntity)
     {
-        ImGui::Text("No editor instance");
-        ImGui::End();
-        return;
+        DrawComponents(selectedEntity);
     }
-
-    MapObjectData *selected = m_editor->GetSelectionManager().GetSelectedObject();
-    if (!selected)
+    else
     {
-        ImGui::Text("Global Settings");
-        ImGui::Separator();
-
-        // Skybox preview/button
-        std::string skyboxName =
-            m_editor->GetSceneManager().GetGameScene().GetMapMetaData().skyboxTexture;
-        if (skyboxName.empty())
-            skyboxName = "None";
-        ImGui::Text("Active Skybox: %s", skyboxName.c_str());
-
-        if (ImGui::Button("Change Skybox..."))
-        {
-            m_editor->GetUIManager().ToggleSkyboxBrowser();
-        }
-
-        ImGui::Separator();
-
-        // Scene Background Color
-        auto &metadata = m_editor->GetSceneManager().GetGameScene().GetMapMetaDataMutable();
-        float bgCol[4] = {metadata.backgroundColor.r / 255.0f, metadata.backgroundColor.g / 255.0f,
-                          metadata.backgroundColor.b / 255.0f, metadata.backgroundColor.a / 255.0f};
-        if (ImGui::ColorEdit4("Background Color", bgCol))
-        {
-            metadata.backgroundColor = {static_cast<unsigned char>(bgCol[0] * 255),
-                                        static_cast<unsigned char>(bgCol[1] * 255),
-                                        static_cast<unsigned char>(bgCol[2] * 255),
-                                        static_cast<unsigned char>(bgCol[3] * 255)};
-            m_editor->GetSceneManager().SetSceneModified(true);
-        }
-
-        ImGui::Separator();
-
-        // Sky Color (for 3D scenes)
-        float skyCol[4] = {metadata.skyColor.r / 255.0f, metadata.skyColor.g / 255.0f,
-                           metadata.skyColor.b / 255.0f, metadata.skyColor.a / 255.0f};
-        if (ImGui::ColorEdit4("Sky Color", skyCol))
-        {
-            metadata.skyColor = {static_cast<unsigned char>(skyCol[0] * 255),
-                                 static_cast<unsigned char>(skyCol[1] * 255),
-                                 static_cast<unsigned char>(skyCol[2] * 255),
-                                 static_cast<unsigned char>(skyCol[3] * 255)};
-            m_editor->GetSceneManager().SetSceneModified(true);
-        }
-
-        ImGui::End();
-        return;
-    }
-
-    // Object name
-    char nameBuffer[256];
-    strncpy(nameBuffer, selected->name.c_str(), sizeof(nameBuffer) - 1);
-    nameBuffer[sizeof(nameBuffer) - 1] = '\0';
-
-    if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer)))
-    {
-        selected->name = nameBuffer;
-        m_editor->GetSceneManager().SetSceneModified(true);
-    }
-
-    ImGui::Separator();
-
-    // Transform section
-    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        RenderTransform(selected);
-    }
-
-    // Object-specific properties
-    if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        RenderObjectProperties(selected);
+        ImGui::Text("No entity selected");
     }
 
     ImGui::End();
 }
 
-void InspectorPanel::RenderTransform(MapObjectData *obj)
+void InspectorPanel::DrawComponents(MapObjectData *entity)
 {
-    bool modified = false;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5, 5));
-
-    // Use columns or table for nicer layout
-    if (ImGui::BeginTable("TransformTable", 2, ImGuiTableFlags_SizingStretchProp))
+    // 0. Name
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+    strncpy(buffer, entity->name.c_str(), sizeof(buffer));
+    if (ImGui::InputText("##Name", buffer, sizeof(buffer)))
     {
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Position");
-        ImGui::TableSetColumnIndex(1);
-        float pos[3] = {obj->position.x, obj->position.y, obj->position.z};
-        if (ImGui::DragFloat3("##Position", pos, 0.1f))
-        {
-            obj->position = {pos[0], pos[1], pos[2]};
-            modified = true;
-        }
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Rotation");
-        ImGui::TableSetColumnIndex(1);
-        float rot[3] = {obj->rotation.x, obj->rotation.y, obj->rotation.z};
-        if (ImGui::DragFloat3("##Rotation", rot, 1.0f))
-        {
-            obj->rotation = {rot[0], rot[1], rot[2]};
-            modified = true;
-        }
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Scale");
-        ImGui::TableSetColumnIndex(1);
-        float scale[3] = {obj->scale.x, obj->scale.y, obj->scale.z};
-        if (ImGui::DragFloat3("##Scale", scale, 0.05f, 0.01f, 100.0f))
-        {
-            obj->scale = {scale[0], scale[1], scale[2]};
-            modified = true;
-        }
-
-        ImGui::EndTable();
+        entity->name = std::string(buffer);
     }
+
+    ImGui::Separator();
+
+    // 1. Transform
+    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        DrawVec3Control("Translation", entity->position);
+        DrawVec3Control("Rotation", entity->rotation);
+        DrawVec3Control("Scale", entity->scale, 1.0f);
+    }
+
+    // 2. Properties (Type specific)
+    if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        const char *typeNames[] = {"Cube",  "Sphere", "Cylinder",  "Plane",
+                                   "Light", "Model",  "Spawn Zone"};
+        ImGui::Text("Type: %s", typeNames[(int)entity->type]);
+
+        if (entity->type == MapObjectType::SPHERE)
+        {
+            ImGui::DragFloat("Radius", &entity->radius, 0.1f);
+        }
+        else if (entity->type == MapObjectType::CYLINDER)
+        {
+            ImGui::DragFloat("Height", &entity->height, 0.1f);
+        }
+        else if (entity->type == MapObjectType::PLANE)
+        {
+            ImGui::DragFloat2("Size", &entity->size.x, 0.1f);
+        }
+
+        float color[4] = {entity->color.r / 255.0f, entity->color.g / 255.0f,
+                          entity->color.b / 255.0f, entity->color.a / 255.0f};
+        if (ImGui::ColorEdit4("Color", color))
+        {
+            entity->color.r = (unsigned char)(color[0] * 255.0f);
+            entity->color.g = (unsigned char)(color[1] * 255.0f);
+            entity->color.b = (unsigned char)(color[2] * 255.0f);
+            entity->color.a = (unsigned char)(color[3] * 255.0f);
+        }
+
+        ImGui::Checkbox("Is Platform", &entity->isPlatform);
+        ImGui::Checkbox("Is Obstacle", &entity->isObstacle);
+    }
+
+    // 3. Scripting
+    if (ImGui::CollapsingHeader("Scripting", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        char scriptBuffer[256];
+        memset(scriptBuffer, 0, sizeof(scriptBuffer));
+        strncpy(scriptBuffer, entity->scriptPath.c_str(), sizeof(scriptBuffer));
+
+        if (ImGui::InputText("Script Path", scriptBuffer, sizeof(scriptBuffer)))
+        {
+            entity->scriptPath = std::string(scriptBuffer);
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("..."))
+        {
+            nfdfilteritem_t filterItem[1] = {{"Lua Script", "lua"}};
+            nfdchar_t *outPath = nullptr;
+            nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+
+            if (result == NFD_OKAY)
+            {
+                entity->scriptPath = outPath;
+                NFD_FreePath(outPath);
+            }
+        }
+    }
+}
+
+void InspectorPanel::DrawVec3Control(const std::string &label, Vector3 &values, float resetValue,
+                                     float columnWidth)
+{
+    ImGuiIO &io = ImGui::GetIO();
+    auto boldFont = io.Fonts->Fonts[0]; // For now use default, in real app would be bold
+
+    ImGui::PushID(label.c_str());
+
+    ImGui::Columns(2);
+    ImGui::SetColumnWidth(0, columnWidth);
+    ImGui::Text("%s", label.c_str());
+    ImGui::NextColumn();
+
+    ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+
+    float lineHeight = ImGui::GetFontSize() + GImGui->Style.FramePadding.y * 2.0f;
+    ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
+
+    // X
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+    if (ImGui::Button("X", buttonSize))
+        values.x = resetValue;
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    // Y
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+    if (ImGui::Button("Y", buttonSize))
+        values.y = resetValue;
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    // Z
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+    if (ImGui::Button("Z", buttonSize))
+        values.z = resetValue;
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+    ImGui::PopItemWidth();
 
     ImGui::PopStyleVar();
 
-    if (modified)
-    {
-        m_editor->GetSceneManager().SetSceneModified(true);
-    }
+    ImGui::Columns(1);
+
+    ImGui::PopID();
 }
-
-void InspectorPanel::RenderObjectProperties(MapObjectData *obj)
-{
-    // Object type (read-only)
-    const char *typeNames[] = {"Cube",  "Sphere", "Cylinder",  "Plane",
-                               "Light", "Model",  "Spawn Zone"};
-    int typeIndex = static_cast<int>(obj->type);
-    if (typeIndex >= 0 && typeIndex < 7)
-    {
-        ImGui::Text("Type: %s", typeNames[typeIndex]);
-    }
-
-    // Model name (for MODEL type)
-    if (obj->type == MapObjectType::MODEL && !obj->modelName.empty())
-    {
-        ImGui::Text("Model: %s", obj->modelName.c_str());
-    }
-
-    // Sphere radius
-    if (obj->type == MapObjectType::SPHERE)
-    {
-        if (ImGui::DragFloat("Radius", &obj->radius, 0.1f, 0.1f, 100.0f))
-        {
-            m_editor->GetSceneManager().SetSceneModified(true);
-        }
-    }
-
-    // Cylinder height
-    if (obj->type == MapObjectType::CYLINDER)
-    {
-        if (ImGui::DragFloat("Height", &obj->height, 0.1f, 0.1f, 100.0f))
-        {
-            m_editor->GetSceneManager().SetSceneModified(true);
-        }
-    }
-
-    // Platform/Obstacle checkboxes
-    if (ImGui::Checkbox("Is Platform", &obj->isPlatform))
-    {
-        m_editor->GetSceneManager().SetSceneModified(true);
-    }
-    if (ImGui::Checkbox("Is Obstacle", &obj->isObstacle))
-    {
-        m_editor->GetSceneManager().SetSceneModified(true);
-    }
-
-    // Color picker
-    float color[4] = {obj->color.r / 255.0f, obj->color.g / 255.0f, obj->color.b / 255.0f,
-                      obj->color.a / 255.0f};
-    if (ImGui::ColorEdit4("Color", color))
-    {
-        obj->color.r = static_cast<unsigned char>(color[0] * 255);
-        obj->color.g = static_cast<unsigned char>(color[1] * 255);
-        obj->color.b = static_cast<unsigned char>(color[2] * 255);
-        obj->color.a = static_cast<unsigned char>(color[3] * 255);
-        m_editor->GetSceneManager().SetSceneModified(true);
-    }
-}
+} // namespace CHEngine

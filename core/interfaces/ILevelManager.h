@@ -14,6 +14,8 @@ public:
 
     // Map lifecycle
     virtual bool LoadScene(const std::string &path) = 0;
+    virtual bool LoadSceneByIndex(int index) = 0;
+    virtual bool LoadSceneByName(const std::string &name) = 0;
     virtual void UnloadMap() = 0;
     virtual bool IsMapLoaded() const = 0;
     virtual const std::string &GetCurrentMapPath() const = 0;

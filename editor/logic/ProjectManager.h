@@ -23,6 +23,8 @@ public:
     const std::vector<std::string> &GetRecentProjects() const override;
     void AddRecentProject(const std::string &path) override;
 
+    void ExportBuildManifest() override;
+
 private:
     IEditor *m_editor;
     std::string m_projectPath;

@@ -10,6 +10,14 @@ enum class EditorMode : std::uint8_t
     UI_DESIGN = 1 // 2D UI design mode
 };
 
+// Scene state
+enum class SceneState : std::uint8_t
+{
+    Edit = 0,
+    Play = 1,
+    Pause = 2
+};
+
 // Gizmo axes for transformation tools
 enum class GizmoAxis : std::uint8_t
 {

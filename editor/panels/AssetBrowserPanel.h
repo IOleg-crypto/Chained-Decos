@@ -1,70 +1,35 @@
-//
-// AssetBrowserPanel.h - Asset browser panel
-//
+#pragma once
 
-#ifndef ASSETBROWSERPANEL_H
-#define ASSETBROWSERPANEL_H
-
-#include "IEditorPanel.h"
 #include <filesystem>
 #include <string>
 #include <vector>
 
-class IEditor;
 
-struct AssetItem
+namespace CHEngine
 {
-    std::string name;
-    std::string path;
-    std::string extension;
-    bool isDirectory;
-};
-
-// Displays project assets (models, textures, maps)
-class AssetBrowserPanel : public IEditorPanel
+class AssetBrowserPanel
 {
 public:
-    explicit AssetBrowserPanel(IEditor *editor);
-    ~AssetBrowserPanel() override = default;
+    AssetBrowserPanel();
 
-    // IEditorPanel interface
-    void Render() override;
-    const char *GetName() const override
-    {
-        return "Asset Browser";
-    }
-    const char *GetDisplayName() const override
-    {
-        return "Asset Browser";
-    }
-    bool IsVisible() const override
-    {
-        return m_visible;
-    }
-    void SetVisible(bool visible) override
-    {
-        m_visible = visible;
-    }
-
-    // Browser-specific
-    void SetRootPath(const std::string &path);
-    void RefreshCurrentDirectory();
+    void OnImGuiRender();
 
 private:
-    void NavigateToDirectory(const std::string &path);
-    void RenderBreadcrumbs();
-    void RenderFolderTree();
-    void RenderFolderNode(const std::string &path);
-    void RenderAssetGrid();
-    void HandleAssetDoubleClick(const AssetItem &asset);
+    void RefreshAssets();
 
-    IEditor *m_editor;
-    bool m_visible = true;
-    std::string m_rootPath;
-    std::string m_currentPath;
-    std::vector<AssetItem> m_currentAssets;
-    float m_iconSize = 80.0f;
-    std::string m_searchFilter;
+private:
+    std::filesystem::path m_RootPath;
+    std::filesystem::path m_CurrentDirectory;
+
+    struct AssetItem
+    {
+        std::string Name;
+        std::filesystem::path Path;
+        bool IsDirectory;
+    };
+
+    std::vector<AssetItem> m_Assets;
+    float m_ThumbnailSize = 128.0f;
+    float m_Padding = 16.0f;
 };
-
-#endif // ASSETBROWSERPANEL_H
+} // namespace CHEngine

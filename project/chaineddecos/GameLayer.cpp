@@ -5,6 +5,8 @@
 #include "core/input/Input.h"
 #include "core/physics/Physics.h"
 #include "core/renderer/Renderer.h"
+#include "core/scripting/ScriptManager.h"
+#include "editor/logic/ISceneManager.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/UIEventRegistry.h"
@@ -64,6 +66,9 @@ void GameLayer::OnAttach()
     int locWindDir;
     m_playerShader = CHD::GameInitializer::LoadPlayerShader(m_locFallSpeed, m_locTime, locWindDir);
     m_shaderLoaded = (m_playerShader.id != 0);
+
+    // Initialize Scripts
+    Engine::Instance().GetScriptManager().InitializeScripts();
 }
 
 void GameLayer::OnDetach()
@@ -97,6 +102,23 @@ void GameLayer::OnUpdate(float deltaTime)
             float fallSpeed = (velocity.velocity.y < 0) ? std::abs(velocity.velocity.y) : 0.0f;
             SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed, SHADER_UNIFORM_FLOAT);
         }
+    }
+
+    // UPDATE LUA SCRIPTS (Hazel style)
+    Engine::Instance().GetScriptManager().UpdateScripts(deltaTime);
+
+    // Sync ECS Transforms back to MapObjects for rendering consistency
+    // Only applicable when running in editor context (ISceneManager available)
+    static bool sceneManagerChecked = false;
+    static std::shared_ptr<ISceneManager> cachedSceneManager = nullptr;
+    if (!sceneManagerChecked)
+    {
+        cachedSceneManager = Engine::Instance().GetService<ISceneManager>();
+        sceneManagerChecked = true;
+    }
+    if (cachedSceneManager)
+    {
+        cachedSceneManager->SyncEntitiesToMap();
     }
 
     // 1. UPDATE PLAYER LOGIC (Previously PlayerSystem::Update)
@@ -329,6 +351,7 @@ void GameLayer::RenderUI(float width, float height)
 {
     // Render stored UI elements
     UIRenderSystem::Render((int)width, (int)height);
+    UIRenderSystem::RenderImGui((int)width, (int)height);
 
     // 4. HUD SYSTEM LOGIC (Previously HUDSystem::Render)
     auto view = REGISTRY.view<PlayerComponent>();
