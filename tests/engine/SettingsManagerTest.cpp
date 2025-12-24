@@ -1,8 +1,7 @@
-#include "project/CHEngine/gamegui/settings/settingsManager.h"
+#include "project/ChainedDecos/gamegui/settings/SettingsManager.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
-
 
 class SettingsManagerTest : public ::testing::Test
 {
@@ -123,8 +122,3 @@ TEST_F(SettingsManagerTest, SkyboxGammaSettingsMultipleChanges)
     EXPECT_FALSE(settings.IsSkyboxGammaEnabled());
     EXPECT_FLOAT_EQ(settings.GetSkyboxGammaValue(), 2.8f);
 }
-
-
-
-
-

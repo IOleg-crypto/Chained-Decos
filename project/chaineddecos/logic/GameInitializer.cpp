@@ -1,57 +1,92 @@
 #include "GameInitializer.h"
 #include "core/Engine.h"
 #include "core/Log.h"
-#include "project/CHEngine/player/core/Player.h"
+#include "core/assets/AssetManager.h"
+#include "project/ChainedDecos/player/core/Player.h"
 #include "scene/ecs/ECSRegistry.h"
-#include "scene/ecs/Examples.h"
+#include "scene/ecs/components/PhysicsData.h"
+#include "scene/ecs/components/RenderComponent.h"
+#include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/UtilityComponents.h"
+#include "scene/ecs/components/VelocityComponent.h"
+#include "scene/ecs/components/playerComponent.h"
 
 using namespace CHEngine;
-#include "scene/ecs/components/RenderComponent.h"
 
 namespace CHD
 {
 entt::entity GameInitializer::InitializePlayer(Vector3 spawnPos, float sensitivity)
 {
-    auto models = CHEngine::Engine::Instance().GetService<IModelLoader>();
     Model *playerModelPtr = nullptr;
 
     // Explicitly load player model if not loaded
-    if (models)
+    std::string playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
+    if (AssetManager::LoadModel("player_low", playerModelPath))
     {
-        std::string playerModelPath = std::string(PROJECT_ROOT_DIR) + "/resources/player_low.glb";
-        if (models->LoadSingleModel("player_low", playerModelPath))
-        {
-            CD_INFO("[GameInitializer] Loaded player model: %s", playerModelPath.c_str());
-        }
-
-        auto modelOpt = models->GetModelByName("player_low");
-        if (modelOpt.has_value())
-        {
-            playerModelPtr = &modelOpt.value().get();
-        }
+        CD_INFO("[GameInitializer] Loaded player model: %s", playerModelPath.c_str());
     }
 
-    entt::entity playerEntity = entt::null;
+    auto modelOpt = AssetManager::GetModel("player_low");
+    if (modelOpt)
+    {
+        playerModelPtr = &modelOpt->get();
+    }
+
+    // Create player entity directly (replacing ECSExamples::CreatePlayer)
+    auto playerEntity = REGISTRY.create();
+
+    if (!playerModelPtr)
+    {
+        CD_WARN("[GameInitializer] player_low not found, creating player without model.");
+    }
+
+    // Transform
+    REGISTRY.emplace<TransformComponent>(playerEntity,
+                                         spawnPos,         // position
+                                         Vector3{0, 0, 0}, // rotation
+                                         Vector3{1, 1, 1}  // scale
+    );
+
+    // Velocity
+    REGISTRY.emplace<VelocityComponent>(playerEntity);
+
+    // Render (if model available)
     if (playerModelPtr)
     {
-        playerEntity =
-            CHEngine::ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 8.0f, 12.0f, sensitivity);
-    }
-    else
-    {
-        CD_WARN("[GameInitializer] player_low not found, using default cube.");
-        // We can't easily GenMesh here without static storage or management,
-        // but for now let's just use the fallback if possible.
-        // In the original code it used a member m_playerModel.
+        auto &renderComp = REGISTRY.emplace<RenderComponent>(playerEntity,
+                                                             "player",       // modelName
+                                                             playerModelPtr, // model
+                                                             GRAY,           // tint
+                                                             true,           // visible
+                                                             1               // renderLayer
+        );
+        renderComp.offset = {0.0f, ::Player::MODEL_Y_OFFSET, 0.0f};
     }
 
-    if (playerEntity != entt::null &&
-        CHEngine::ECSRegistry::Get().all_of<CHEngine::RenderComponent>(playerEntity))
-    {
-        auto &renderComp =
-            CHEngine::ECSRegistry::Get().get<CHEngine::RenderComponent>(playerEntity);
-        renderComp.offset = {0.0f, Player::MODEL_Y_OFFSET, 0.0f};
-    }
+    // Player-specific component
+    auto &pc = REGISTRY.emplace<PlayerComponent>(playerEntity,
+                                                 8.0f,       // moveSpeed
+                                                 12.0f,      // jumpForce
+                                                 sensitivity // mouseSensitivity
+    );
+    pc.spawnPosition = spawnPos;
+
+    // Physics
+    REGISTRY.emplace<PhysicsData>(playerEntity,
+                                  1.0f,  // mass
+                                  -9.8f, // gravity
+                                  true,  // useGravity
+                                  false  // isKinematic
+    );
+
+    // Collision
+    CHEngine::CollisionComponent collision;
+    collision.bounds = BoundingBox{Vector3{-0.4f, 0.0f, -0.4f}, Vector3{0.4f, 1.8f, 0.4f}};
+    collision.collisionLayer = 1; // Player layer
+    REGISTRY.emplace<CHEngine::CollisionComponent>(playerEntity, collision);
+
+    // Name for debugging
+    REGISTRY.emplace<NameComponent>(playerEntity, "Player");
 
     return playerEntity;
 }

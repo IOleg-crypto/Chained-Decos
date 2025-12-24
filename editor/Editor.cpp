@@ -1,8 +1,10 @@
 #include "Editor.h"
-#include "components/physics/collision/core/CollisionManager.h"
 #include "core/Engine.h"
 #include "core/Log.h"
-#include "core/scripting/ScriptManager.h"
+#include "core/assets/AssetManager.h"
+#include "core/input/Input.h"
+#include "core/renderer/Renderer.h"
+#include "core/scripting/ScriptEngine.h"
 #include "editor/mapgui/UIManager.h" // Added for EditorUIManager and UIManagerConfig
 #include "editor/panels/AssetBrowserPanel.h"
 #include "editor/panels/ConsolePanel.h"
@@ -13,6 +15,7 @@
 #include "editor/panels/ViewportPanel.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/resources/map/core/SceneLoader.h"
+
 
 #define PLATFORM_DESKTOP
 #include "scene/resources/model/interfaces/IModelLoader.h"
@@ -55,7 +58,7 @@ void Editor::InitializeSubsystems()
 {
     // Create concrete managers
     m_projectManager = std::make_unique<ProjectManager>(this);
-    m_sceneManager = std::make_unique<SceneManager>();
+    m_sceneManager = std::make_unique<::SceneManager>();
     m_selectionManager = std::make_unique<SelectionManager>(); // Fixed: matches default constructor
     m_editorState = std::make_unique<EditorState>();
 
@@ -79,11 +82,8 @@ void Editor::InitializeSubsystems()
     m_uiManager = std::make_unique<EditorUIManager>(config);
 
     // Link Scripting System with Scene Manager
-    auto scriptManager = m_engine->GetService<CHEngine::ScriptManager>();
-    if (scriptManager)
-    {
-        scriptManager->SetSceneManager(m_sceneManager.get());
-    }
+    ScriptEngine::GetLuaState(); // Ensure initialized if needed, but ScriptEngine should handle it
+    Engine::Instance().GetScriptManager().SetSceneManager(m_sceneManager.get());
 }
 
 void Editor::Update()
@@ -107,8 +107,8 @@ void Editor::Update()
 void Editor::Render()
 {
     // Use the appropriate camera based on current mode
-    Camera3D &activeCamera = m_isInPlayMode ? Engine::Instance().GetRenderManager().GetCamera()
-                                            : m_cameraController->GetCamera();
+    Camera3D &activeCamera =
+        m_isInPlayMode ? Renderer::GetCamera() : m_cameraController->GetCamera();
 
     bool isUIScene =
         (m_sceneManager->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
@@ -154,12 +154,12 @@ void Editor::RenderObject(const MapObjectData &obj)
     // Simple model/primitive rendering
     if (obj.type == MapObjectType::MODEL && !obj.modelName.empty())
     {
-        auto modelOpt = m_modelLoader->GetModelByName(obj.modelName);
+        auto modelOpt = AssetManager::GetModel(obj.modelName);
         if (modelOpt)
         {
-            DrawModel(modelOpt->get(), obj.position, 1.0f, obj.color);
+            DrawModel(*modelOpt, obj.position, 1.0f, obj.color);
             if (isSelected)
-                DrawModelWires(modelOpt->get(), obj.position, 1.0f, YELLOW);
+                DrawModelWires(*modelOpt, obj.position, 1.0f, YELLOW);
         }
     }
     else if (obj.type == MapObjectType::CUBE)

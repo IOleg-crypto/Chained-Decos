@@ -2,14 +2,16 @@
 #include "GameLayer.h"
 #include "core/Log.h"
 #include "core/application/EngineApplication.h"
+#include "core/assets/AssetManager.h"
+#include "core/audio/Audio.h"
+#include "core/input/Input.h"
+#include "core/physics/Physics.h"
+#include "core/renderer/Renderer.h"
 #include "logic/GameInitializer.h"
 #include "scene/main/core/LevelManager.h"
 
 using namespace CHEngine;
 
-#include "components/input/core/InputManager.h"
-#include "components/physics/collision/core/CollisionManager.h"
-#include "components/rendering/core/RenderManager.h"
 #include "core/config/ConfigManager.h"
 #include "project/ChainedDecos/gamegui/Menu.h"
 #include "project/ChainedDecos/player/core/Player.h"
@@ -20,7 +22,6 @@ using namespace CHEngine;
 #include <raylib.h>
 #include <rlImGui.h>
 
-using CHEngine::InputManager;
 using CHEngine::MenuEvent;
 using CHEngine::MenuEventType;
 using namespace CHEngine;
@@ -115,10 +116,10 @@ void GameApplication::OnStart()
     CD_INFO("[GameApplication] Starting game...");
 
     // Initialize Static Singletons
-    // Note: RenderManager/InputManager/AudioManager are already initialized by CoreServices
+    // Note: Renderer/Input/Audio are already initialized by Engine::Initialize
 
-    Engine::Instance().GetAudioManager().LoadSound(
-        "player_fall", std::string(PROJECT_ROOT_DIR) + "/resources/audio/wind-gust_fall.wav");
+    Audio::LoadSound("player_fall",
+                     std::string(PROJECT_ROOT_DIR) + "/resources/audio/wind-gust_fall.wav");
 
     // Initialize Menu
     m_menu = std::make_shared<Menu>();
@@ -254,11 +255,9 @@ void GameApplication::OnStart()
 
 void GameApplication::OnUpdate(float deltaTime)
 {
-    // Update Input
-    Engine::Instance().GetInputManager().Update(deltaTime);
-
+    // Update Input handled by Engine
     // Update Audio looping
-    Engine::Instance().GetAudioManager().UpdateLoopingSounds();
+    // (In future these will be in Engine::Update)
 
     // Get Menu through Engine (Legacy access)
     auto engine = &Engine::Instance();
@@ -269,7 +268,7 @@ void GameApplication::OnUpdate(float deltaTime)
 
     // Only handle console toggle here if we are NOT in the menu.
     // When in menu, Menu::HandleKeyboardNavigation handles it to avoid double-toggling.
-    if (!m_showMenu && Engine::Instance().GetInputManager().IsKeyPressed(KEY_GRAVE) && menu)
+    if (!m_showMenu && Input::IsKeyPressed(KEY_GRAVE) && menu)
     {
         menu->ToggleConsole();
     }
@@ -367,8 +366,8 @@ void GameApplication::OnRender()
         if (m_isGameInitialized)
         {
             // 3D Rendering (this part is fine for now, though could be moved to GameLayer)
-            auto &camera = Engine::Instance().GetRenderManager().GetCamera();
-            Engine::Instance().GetRenderManager().BeginMode3D(camera);
+            Camera3D &camera = Renderer::GetCamera();
+            Renderer::BeginScene(camera);
 
             auto models = Engine::Instance().GetService<ModelLoader>();
             if (models)
@@ -382,7 +381,7 @@ void GameApplication::OnRender()
             if (world)
                 world->Render();
 
-            Engine::Instance().GetRenderManager().EndMode3D();
+            Renderer::EndScene();
 
             // HUD is now rendered by GameLayer::RenderUI
         }
@@ -429,9 +428,7 @@ void GameApplication::OnShutdown()
     REGISTRY.clear();
 
     // Shutdown Managers
-    Engine::Instance().GetRenderManager().Shutdown();
-    Engine::Instance().GetInputManager().Shutdown();
-    Engine::Instance().GetAudioManager().Shutdown(); // Optional, destructor handles it
+    // (In future these will be in Engine::Shutdown)
 
     auto collisionManager = Engine::Instance().GetService<CollisionManager>();
     if (collisionManager && !collisionManager->GetColliders().empty())
@@ -461,45 +458,30 @@ void GameApplication::InitInput()
         return;
     }
 
-    engine.GetInputManager().RegisterAction(
-        KEY_F1,
-        [this, menu]
-        {
-            if (!m_showMenu && m_isGameInitialized)
-            {
-                menu->SetGameInProgress(true);
-                m_showMenu = true;
-                EnableCursor(); // Show system cursor when opening menu
-            }
-        });
+    Input::RegisterAction(KEY_F1,
+                          [this, menu]
+                          {
+                              if (!m_showMenu && m_isGameInitialized)
+                              {
+                                  menu->SetGameInProgress(true);
+                                  m_showMenu = true;
+                                  EnableCursor(); // Show system cursor when opening menu
+                              }
+                          });
 
-    engine.GetInputManager().RegisterAction(
-        KEY_ESCAPE,
-        [this, menu]
-        {
-            if (!m_showMenu && m_isGameInitialized)
-            {
-                m_menu->SetGameInProgress(true);
-                m_showMenu = true;
-                EnableCursor(); // Show system cursor when opening menu
-            }
-        });
+    Input::RegisterAction(KEY_F2,
+                          [this]
+                          {
+                              m_showDebugCollision = !m_showDebugCollision;
+                              CD_INFO("Debug Collision: %s", m_showDebugCollision ? "ON" : "OFF");
+                          });
 
-    engine.GetInputManager().RegisterAction(KEY_F2,
-                                            [this]
-                                            {
-                                                m_showDebugCollision = !m_showDebugCollision;
-                                                CD_INFO("Debug Collision: %s",
-                                                        m_showDebugCollision ? "ON" : "OFF");
-                                            });
-
-    engine.GetInputManager().RegisterAction(KEY_F3,
-                                            [this]
-                                            {
-                                                m_showDebugStats = !m_showDebugStats;
-                                                CD_INFO("Debug Stats: %s",
-                                                        m_showDebugStats ? "ON" : "OFF");
-                                            });
+    Input::RegisterAction(KEY_F3,
+                          [this]
+                          {
+                              m_showDebugStats = !m_showDebugStats;
+                              CD_INFO("Debug Stats: %s", m_showDebugStats ? "ON" : "OFF");
+                          });
 
     CD_INFO("[GameApplication] Game input bindings configured.");
 }

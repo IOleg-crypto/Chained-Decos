@@ -3,9 +3,9 @@
 
 #include "components/physics/collision/core/collisionManager.h"
 #include "core/Engine.h"
-#include "project/CHEngine/GameApplication.h"
-#include "project/CHEngine/gamegui/Menu.h"
-#include "project/CHEngine/player/core/player.h"
+#include "project/ChainedDecos/GameApplication.h"
+#include "project/ChainedDecos/gamegui/Menu.h"
+#include "project/ChainedDecos/player/core/Player.h"
 #include "scene/resources/map/core/SceneLoader.h"
 #include "scene/resources/model/core/Model.h"
 
@@ -15,14 +15,14 @@ protected:
     void SetUp() override
     {
         // Create dependencies
-        player = std::make_shared<Player>(&Engine::Instance().GetAudioManager());
+        player = std::make_shared<Player>(&CHEngine::Engine::Instance().GetAudioManager());
         collisionManager = std::make_shared<CollisionManager>();
         models = std::make_shared<ModelLoader>();
         world = std::make_shared<WorldManager>();
         menu = std::make_shared<Menu>();
 
         // Create game application instance
-        game = std::make_shared<GameApplication>(0, nullptr);
+        game = std::make_shared<CHD::GameApplication>(0, nullptr);
 
         engine = nullptr;
     }
@@ -39,7 +39,7 @@ protected:
     }
 
     std::shared_ptr<CHEngine::Engine> engine;
-    std::shared_ptr<GameApplication> game;
+    std::shared_ptr<CHD::GameApplication> game;
     std::shared_ptr<CollisionManager> collisionManager;
     std::shared_ptr<Player> player;
     std::shared_ptr<ModelLoader> models;

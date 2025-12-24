@@ -5,7 +5,7 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include "components/audio/core/AudioManager.h"
+#include "components/audio/interfaces/IAudioManager.h"
 #include <components/physics/collision/core/collisionManager.h>
 #include <components/physics/collision/system/collisionSystem.h>
 #include <scene/camera/core/CameraController.h>
@@ -31,7 +31,7 @@ public:
     static const float MODEL_SCALE;
 
     // DI constructor - AudioManager injected
-    Player(AudioManager *audioManager);
+    Player(IAudioManager *audioManager);
     ~Player();
 
     // Initialize services from Kernel (call after Kernel services are registered)
@@ -111,10 +111,8 @@ private:
     Vector3 m_boundingBoxSize{};
 
     // Services - DI with raw pointers
-    AudioManager *m_audioManager;
+    IAudioManager *m_audioManager;
     std::shared_ptr<CollisionManager> m_collisionManager;
 };
 
 #endif // PLAYER_H
-
-

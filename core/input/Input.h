@@ -1,7 +1,9 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+#include <functional>
 #include <raylib.h>
+
 
 namespace CHEngine
 {
@@ -55,6 +57,18 @@ public:
     {
         return ::GetMousePosition().y;
     }
+
+    static Vector2 GetMouseDelta()
+    {
+        return ::GetMouseDelta();
+    }
+
+    static float GetMouseWheelMove()
+    {
+        return ::GetMouseWheelMove();
+    }
+
+    static void RegisterAction(int key, const std::function<void()> &action);
 };
 
 } // namespace CHEngine

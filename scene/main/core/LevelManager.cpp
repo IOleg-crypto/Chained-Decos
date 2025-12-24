@@ -53,12 +53,12 @@ bool LevelManager::Initialize(IEngine *engine)
     m_engine = engine;
 
     // Get required dependencies from Engine
-    m_worldManager = std::static_pointer_cast<WorldManager>(engine->GetWorldManager());
-    m_collisionManager = std::static_pointer_cast<CollisionManager>(engine->GetCollisionManager());
-    m_modelLoader = std::static_pointer_cast<ModelLoader>(engine->GetModelLoader());
+    m_worldManager = dynamic_cast<WorldManager *>(&engine->GetWorldManager());
+    m_collisionManager = dynamic_cast<CollisionManager *>(&engine->GetCollisionManager());
+    m_modelLoader = dynamic_cast<ModelLoader *>(&engine->GetModelLoader());
 
     // RenderManager is accessed directly through Engine
-    m_renderManager = engine->GetRenderManager();
+    m_renderManager = &engine->GetRenderManager();
 
     // Validate required engine dependencies
     if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)

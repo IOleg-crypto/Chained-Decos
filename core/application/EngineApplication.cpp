@@ -8,8 +8,10 @@
 #include "components/input/core/InputManager.h"
 #include "components/rendering/core/RenderManager.h"
 #include "core/interfaces/IGuiManager.h"
+#include "core/module/ModuleManager.h"
 #include <cassert>
 #include <raylib.h>
+#include <rlImGui.h>
 
 namespace CHEngine
 {
@@ -111,7 +113,7 @@ void EngineApplication::Initialize()
 
     // Step 2.5: Initialize Engine & Window (Must be done before modules initialize)
     CHEngine::WindowProps props(m_config.windowName, m_config.width, m_config.height,
-                                     m_config.fullscreen, m_config.vsync);
+                                m_config.fullscreen, m_config.vsync);
     if (!m_engine->Initialize(props))
     {
         CD_CORE_FATAL("[EngineApplication] Failed to initialize Engine!");
@@ -128,10 +130,7 @@ void EngineApplication::Initialize()
     if (m_app)
     {
         // Connect Input Events
-        if (m_engine->GetInputManager())
-        {
-            m_engine->GetInputManager()->SetEventCallback([this](Event &e) { this->OnEvent(e); });
-        }
+        m_engine->GetInputManager().SetEventCallback([this](Event &e) { this->OnEvent(e); });
 
         // Push ImGuiLayer as overlay
         PushOverlay(new ImGuiLayer());
@@ -149,7 +148,7 @@ void EngineApplication::Update()
     if (m_engine)
     {
         m_engine->Update(deltaTime); // Updates Kernel and Modules
-        m_engine->GetInputManager()->ProcessInput();
+        m_engine->GetInputManager().ProcessInput();
     }
 
     // Update Layers (Bottom -> Top)
@@ -165,7 +164,7 @@ void EngineApplication::Render()
     if (m_engine)
     {
         // Begin frame
-        m_engine->GetRenderManager()->BeginFrame();
+        m_engine->GetRenderManager().BeginFrame();
 
         // Render modules (systems)
         if (auto moduleManager = m_engine->GetModuleManager())
@@ -200,16 +199,14 @@ void EngineApplication::Render()
                 m_app->OnImGuiRender();
 
             // Render Custom GUI (Above the game, but maybe below ImGUI dev tools)
-            if (auto gui = m_engine->GetGuiManager())
-            {
-                gui->Render();
-            }
+            auto &gui = m_engine->GetGuiManager();
+            gui.Render();
 
             imguiLayer->End();
         }
 
         // End frame
-        m_engine->GetRenderManager()->EndFrame();
+        m_engine->GetRenderManager().EndFrame();
     }
 }
 

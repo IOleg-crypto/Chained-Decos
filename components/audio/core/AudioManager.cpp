@@ -38,6 +38,15 @@ bool AudioManager::Initialize()
     return ready;
 }
 
+void AudioManager::Update(float deltaTime)
+{
+    if (m_musicPlaying)
+    {
+        UpdateMusicStream(m_currentMusic);
+    }
+    UpdateLoopingSounds();
+}
+
 void AudioManager::Shutdown()
 {
     UnloadAll();

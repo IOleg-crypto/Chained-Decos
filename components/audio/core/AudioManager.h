@@ -20,26 +20,26 @@ public:
 
     // Load audio files
     bool LoadSound(const std::string &name, const std::string &filePath) override;
-    bool LoadMusic(const std::string &name, const std::string &filePath);
+    bool LoadMusic(const std::string &name, const std::string &filePath) override;
 
     // Play audio
     void PlaySoundEffect(const std::string &name, float volume = 5.0f, float pitch = 1.0f) override;
     void PlayLoopingSoundEffect(const std::string &name, float volume = 1.0f,
                                 float pitch = 1.0f) override;
     void StopLoopingSoundEffect(const std::string &name) override;
-    void UpdateLoopingSounds();
-    void PlayMusic(const std::string &name, float volume = 1.0f);
-    void StopMusic();
+    void UpdateLoopingSounds() override;
+    void PlayMusic(const std::string &name, float volume = 1.0f) override;
+    void StopMusic() override;
 
     // Control music playback
-    void PauseMusic();
-    void ResumeMusic();
-    bool IsMusicPlaying() const;
+    void PauseMusic() override;
+    void ResumeMusic() override;
+    bool IsMusicPlaying() const override;
 
     // Volume control
-    void SetMasterVolume(float volume);
-    void SetMusicVolume(float volume);
-    void SetSoundVolume(float volume);
+    void SetMasterVolume(float volume) override;
+    void SetMusicVolume(float volume) override;
+    void SetSoundVolume(float volume) override;
 
     float GetMasterVolume() const
     {

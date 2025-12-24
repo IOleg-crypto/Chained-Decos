@@ -12,8 +12,7 @@
 class MapCollisionInitializer
 {
 public:
-    MapCollisionInitializer(std::shared_ptr<CollisionManager> collisionManager,
-                            std::shared_ptr<ModelLoader> models,
+    MapCollisionInitializer(CollisionManager *collisionManager, ModelLoader *models,
                             std::shared_ptr<IPlayer> player = nullptr);
     ~MapCollisionInitializer() = default;
 
@@ -26,8 +25,8 @@ public:
     void SetPlayer(std::shared_ptr<IPlayer> player);
 
 private:
-    std::shared_ptr<CollisionManager> m_collisionManager;
-    std::shared_ptr<ModelLoader> m_models;
+    CollisionManager *m_collisionManager;
+    ModelLoader *m_models;
     std::shared_ptr<IPlayer> m_player;
 };
 

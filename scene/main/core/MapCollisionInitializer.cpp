@@ -7,11 +7,10 @@
 
 using namespace CHEngine;
 
-MapCollisionInitializer::MapCollisionInitializer(std::shared_ptr<CollisionManager> collisionManager,
-                                                 std::shared_ptr<ModelLoader> models,
+MapCollisionInitializer::MapCollisionInitializer(CollisionManager *collisionManager,
+                                                 ModelLoader *models,
                                                  std::shared_ptr<IPlayer> player)
-    : m_collisionManager(std::move(collisionManager)), m_models(std::move(models)),
-      m_player(std::move(player))
+    : m_collisionManager(collisionManager), m_models(models), m_player(std::move(player))
 {
 }
 

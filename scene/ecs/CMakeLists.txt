@@ -18,8 +18,6 @@ set(ECS_SOURCES
     systems/UIRenderSystem.cpp
     systems/ScriptSystem.h
     systems/ScriptSystem.cpp
-    Examples.h
-    Examples.cpp
 )
 
 add_library(ecs STATIC ${ECS_SOURCES})
