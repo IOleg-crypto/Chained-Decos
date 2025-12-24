@@ -1,15 +1,17 @@
 #include "EditorApplication.h"
-#include "components/rendering/core/RenderManager.h"
 #include "core/Engine.h"
 #include "core/Log.h"
 #include "core/application/EngineApplication.h"
+#include "core/assets/AssetManager.h"
+#include "core/input/Input.h"
+#include "core/renderer/Renderer.h"
 #include "editor/Editor.h"
 #include "editor/mapgui/UIManager.h"
 #include "editor/panels/EditorPanelManager.h"
 #include "editor/panels/ViewportPanel.h"
 #include "scene/camera/core/CameraController.h"
 
-#include "project/CHEngine/GameLayer.h"
+#include "project/ChainedDecos/GameLayer.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
 #include "scene/resources/font/FontService.h"
@@ -28,7 +30,7 @@ DECLARE_APPLICATION(EditorApplication)
 
 // Global/Static Play Mode State
 using namespace CHEngine;
-static GameLayer *s_playLayer = nullptr;
+static CHD::GameLayer *s_playLayer = nullptr;
 
 EditorApplication::EditorApplication(int argc, char *argv[])
 {
@@ -64,8 +66,7 @@ void EditorApplication::OnStart()
     // Initialize Editor components
     auto camera = std::make_shared<CameraController>();
 
-    // Use engine-provided ModelLoader instead of creating a new one
-    auto modelLoader = Engine::Instance().GetModelLoader();
+    // Use static AssetManager instead of creating a new one
 
     m_editor = std::make_unique<Editor>(&Engine::Instance());
 
@@ -95,8 +96,8 @@ void EditorApplication::OnStart()
         m_editor->LoadSpawnTexture();
 
         // Load default fonts for UI
-        Engine::Instance().GetFontService().LoadFont(
-            "Gantari", PROJECT_ROOT_DIR "/resources/font/gantari/Gantari-VariableFont_wght.ttf");
+        AssetManager::LoadFont("Gantari", PROJECT_ROOT_DIR
+                               "/resources/font/gantari/Gantari-VariableFont_wght.ttf");
     }
 
     // Set window icon
@@ -126,7 +127,7 @@ void EditorApplication::OnUpdate(float deltaTime)
             CD_INFO("[EditorApplication] Entering Play Mode: Injecting GameLayer");
             if (GetAppRunner())
             {
-                s_playLayer = new GameLayer();
+                s_playLayer = new CHD::GameLayer();
                 // GetAppRunner()->PushLayer(s_playLayer); // We manually render now
                 s_playLayer->OnAttach(); // Manually attach
             }
@@ -195,7 +196,7 @@ void EditorApplication::OnRender()
         viewport->BeginRendering();
 
         // Use Game Camera in Play Mode, Editor Camera in Edit Mode
-        Camera3D camera = m_editor->IsInPlayMode() ? RenderManager::Get().GetCamera()
+        Camera3D camera = m_editor->IsInPlayMode() ? Renderer::GetCamera()
                                                    : m_editor->GetCameraController().GetCamera();
 
         BeginMode3D(camera);
