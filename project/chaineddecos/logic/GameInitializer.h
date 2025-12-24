@@ -4,7 +4,7 @@
 #include <entt/entt.hpp>
 #include <raylib.h>
 
-namespace CHEngine
+namespace CHD
 {
 class GameInitializer
 {
@@ -13,6 +13,6 @@ public:
     static Shader LoadPlayerShader(int &locFallSpeed, int &locTime, int &locWindDir);
     static Font LoadHUDFont(bool &fontLoaded);
 };
-} // namespace CHEngine
+} // namespace CHD
 
 #endif // GAME_INITIALIZER_H

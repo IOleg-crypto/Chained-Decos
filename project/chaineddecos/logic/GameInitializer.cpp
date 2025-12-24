@@ -8,7 +8,7 @@
 using namespace CHEngine;
 #include "scene/ecs/components/RenderComponent.h"
 
-namespace CHEngine
+namespace CHD
 {
 entt::entity GameInitializer::InitializePlayer(Vector3 spawnPos, float sensitivity)
 {
@@ -35,7 +35,7 @@ entt::entity GameInitializer::InitializePlayer(Vector3 spawnPos, float sensitivi
     if (playerModelPtr)
     {
         playerEntity =
-            ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 8.0f, 12.0f, sensitivity);
+            CHEngine::ECSExamples::CreatePlayer(spawnPos, playerModelPtr, 8.0f, 12.0f, sensitivity);
     }
     else
     {
@@ -45,9 +45,11 @@ entt::entity GameInitializer::InitializePlayer(Vector3 spawnPos, float sensitivi
         // In the original code it used a member m_playerModel.
     }
 
-    if (playerEntity != entt::null && ECSRegistry::Get().all_of<RenderComponent>(playerEntity))
+    if (playerEntity != entt::null &&
+        CHEngine::ECSRegistry::Get().all_of<CHEngine::RenderComponent>(playerEntity))
     {
-        auto &renderComp = ECSRegistry::Get().get<RenderComponent>(playerEntity);
+        auto &renderComp =
+            CHEngine::ECSRegistry::Get().get<CHEngine::RenderComponent>(playerEntity);
         renderComp.offset = {0.0f, Player::MODEL_Y_OFFSET, 0.0f};
     }
 
@@ -101,4 +103,4 @@ Font GameInitializer::LoadHUDFont(bool &fontLoaded)
     }
     return font;
 }
-} // namespace CHEngine
+} // namespace CHD
