@@ -16,7 +16,6 @@
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/resources/map/core/SceneLoader.h"
 
-
 #define PLATFORM_DESKTOP
 #include "scene/resources/model/interfaces/IModelLoader.h"
 
@@ -68,7 +67,8 @@ void Editor::InitializeSubsystems()
     // UI and Panels
     m_panelManager = std::make_unique<EditorPanelManager>(this);
 
-    // Register panels
+    // Register panels (MOVED TO EditorLayer)
+    /*
     m_panelManager->AddPanel<ToolbarPanel>(this);
     m_panelManager->AddPanel<ViewportPanel>(this);
     m_panelManager->AddPanel<HierarchyPanel>(this);
@@ -76,6 +76,7 @@ void Editor::InitializeSubsystems()
     m_panelManager->AddPanel<AssetBrowserPanel>(this);
     m_panelManager->AddPanel<ConsolePanel>(this);
     m_panelManager->AddPanel<UIEditorPanel>(this);
+    */
 
     UIManagerConfig config;
     config.editor = this;
@@ -84,6 +85,12 @@ void Editor::InitializeSubsystems()
     // Link Scripting System with Scene Manager
     ScriptEngine::GetLuaState(); // Ensure initialized if needed, but ScriptEngine should handle it
     Engine::Instance().GetScriptManager().SetSceneManager(m_sceneManager.get());
+
+    // Initial UI synchronization
+    if (m_sceneManager)
+    {
+        m_sceneManager->RefreshUIEntities();
+    }
 }
 
 void Editor::Update()
@@ -110,27 +117,21 @@ void Editor::Render()
     Camera3D &activeCamera =
         m_isInPlayMode ? Renderer::GetCamera() : m_cameraController->GetCamera();
 
-    bool isUIScene =
-        (m_sceneManager->GetGameScene().GetMapMetaData().sceneType == SceneType::UI_MENU);
-
-    if (!isUIScene && m_sceneManager->GetSkybox() && m_sceneManager->GetSkybox()->IsLoaded())
+    if (m_sceneManager->GetSkybox() && m_sceneManager->GetSkybox()->IsLoaded())
     {
         m_sceneManager->GetSkybox()->UpdateGammaFromConfig();
         m_sceneManager->GetSkybox()->DrawSkybox(activeCamera.position);
     }
 
-    // Render all objects in the scene via SceneManager (only if NOT a UI scene)
-    if (!isUIScene)
+    // Render all objects in the scene via SceneManager
+    const auto &objects = m_sceneManager->GetGameScene().GetMapObjects();
+    for (const auto &obj : objects)
     {
-        const auto &objects = m_sceneManager->GetGameScene().GetMapObjects();
-        for (const auto &obj : objects)
-        {
-            RenderObject(obj);
-        }
+        RenderObject(obj);
     }
 
-    // Draw grid only in editor mode and NOT for UI scenes
-    if (!m_isInPlayMode && !isUIScene)
+    // Draw grid only in editor mode
+    if (!m_isInPlayMode)
     {
         DrawGrid(m_editorState->GetGridSize(), 1.0f);
     }
@@ -223,6 +224,14 @@ void Editor::StartPlayMode()
     if (m_isInPlayMode)
         return;
     CD_INFO("[Editor] Starting Play Mode...");
+
+    // Refresh ECS from map data before starting simulation
+    if (m_sceneManager)
+    {
+        m_sceneManager->RefreshUIEntities();
+        m_sceneManager->RefreshMapEntities();
+    }
+
     m_isInPlayMode = true;
 }
 
@@ -233,6 +242,13 @@ void Editor::StopPlayMode()
     CD_INFO("[Editor] Stopping Play Mode...");
     m_isInPlayMode = false;
     REGISTRY.clear();
+
+    // Restore UI and Map entities from scene data after simulation wipe
+    if (m_sceneManager)
+    {
+        m_sceneManager->RefreshUIEntities();
+        m_sceneManager->RefreshMapEntities();
+    }
 }
 
 bool Editor::IsInPlayMode() const

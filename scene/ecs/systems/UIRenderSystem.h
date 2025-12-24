@@ -11,6 +11,7 @@ class UIRenderSystem
 {
 public:
     static void Render(int screenWidth, int screenHeight);
+    static void RenderImGui(int screenWidth, int screenHeight, Vector2 offset = {0, 0});
 
     // Editor support
     static entt::entity PickUIEntity(Vector2 mousePos, int screenWidth, int screenHeight);

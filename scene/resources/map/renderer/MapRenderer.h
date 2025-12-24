@@ -14,8 +14,11 @@ public:
     MapRenderer() = default;
     ~MapRenderer() = default;
 
-    // Render entire map with skybox and all objects
+    // Render entire map with skybox and all objects (Manages its own 3D mode)
     void RenderMap(const GameScene &map, Camera3D camera);
+
+    // Render only map content (Should be called between BeginMode3D/EndMode3D)
+    void DrawMapContent(const GameScene &map, Camera3D camera);
 
     // Render single map object
     void RenderMapObject(const MapObjectData &object,
