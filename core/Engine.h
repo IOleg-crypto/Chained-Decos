@@ -22,7 +22,7 @@
 #include "core/scripting/ScriptManager.h"
 #include "events/UIEventRegistry.h"
 #include "scene/SceneManager.h"
-#include "scene/main/interfaces/IWorldManager.h"
+#include "scene/main/IWorldManager.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/interfaces/IModelLoader.h"
 #include "scene/resources/texture/TextureService.h"
@@ -32,6 +32,7 @@ class IEngineModule;
 
 namespace CHEngine
 {
+class EngineApplication;
 
 class Engine : public IEngine
 {
@@ -51,7 +52,7 @@ public:
     RenderManager &GetRenderManager() const override;
     IInputManager &GetInputManager() const override;
     IAudioManager &GetAudioManager() const override;
-    IModelLoader &GetModelLoader() const override;
+    CHEngine::IModelLoader &GetModelLoader() const override;
     ICollisionManager &GetCollisionManager() const override;
     IWorldManager &GetWorldManager() const override;
     ScriptManager &GetScriptManager() const;
@@ -83,6 +84,9 @@ public:
     // Window Access
     Window *GetWindow() const;
 
+    EngineApplication *GetAppRunner() const override;
+    void SetAppRunner(EngineApplication *appRunner);
+
 private:
     static Engine *s_instance;
 
@@ -93,6 +97,8 @@ private:
 
     bool m_debugInfoVisible = false;
     bool m_shouldExit = false;
+
+    EngineApplication *m_AppRunner = nullptr;
 };
 
 } // namespace CHEngine

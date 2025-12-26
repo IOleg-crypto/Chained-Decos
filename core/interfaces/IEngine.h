@@ -18,12 +18,17 @@
 #include "core/interfaces/IGuiManager.h"
 #include "events/UIEventRegistry.h"
 #include "scene/SceneManager.h"
-#include "scene/main/interfaces/IWorldManager.h"
+#include "scene/main/IWorldManager.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/interfaces/IModelLoader.h"
 #include "scene/resources/texture/TextureService.h"
 
 #include "../ServiceRegistry.h"
+
+namespace CHEngine
+{
+class EngineApplication;
+}
 
 // Engine interface for dependency injection
 class IEngine
@@ -35,7 +40,7 @@ public:
     virtual RenderManager &GetRenderManager() const = 0;
     virtual IInputManager &GetInputManager() const = 0;
     virtual IAudioManager &GetAudioManager() const = 0;
-    virtual IModelLoader &GetModelLoader() const = 0;
+    virtual CHEngine::IModelLoader &GetModelLoader() const = 0;
     virtual ICollisionManager &GetCollisionManager() const = 0;
     virtual IWorldManager &GetWorldManager() const = 0;
     virtual IGuiManager &GetGuiManager() const = 0;
@@ -58,6 +63,8 @@ public:
 
     virtual void RequestExit() = 0;
     virtual bool ShouldExit() const = 0;
+
+    virtual CHEngine::EngineApplication *GetAppRunner() const = 0;
 };
 
 #endif // IENGINE_H

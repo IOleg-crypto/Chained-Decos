@@ -4,13 +4,14 @@
 #include "components/audio/core/AudioManager.h"
 #include "components/physics/collision/core/collisionManager.h"
 #include "core/Engine.h"
-#include "project/ChainedDecos/player/core/Player.h"
+#include "project/Runtime/player/Player.h"
 
 class PlayerTest : public ::testing::Test
 {
 protected:
     void SetUp() override
     {
+        engine = std::make_unique<CHEngine::Engine>();
         player = std::make_unique<Player>(&CHEngine::Engine::Instance().GetAudioManager());
         collisionManager = std::make_unique<CollisionManager>();
     }
@@ -19,8 +20,10 @@ protected:
     {
         player.reset();
         collisionManager.reset();
+        engine.reset();
     }
 
+    std::unique_ptr<CHEngine::Engine> engine;
     std::unique_ptr<Player> player;
     std::unique_ptr<CollisionManager> collisionManager;
 };

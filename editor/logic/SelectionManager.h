@@ -1,7 +1,7 @@
 #ifndef SELECTION_MANAGER_H
 #define SELECTION_MANAGER_H
 
-#include "scene/resources/map/core/SceneLoader.h"
+#include "scene/resources/map/SceneLoader.h"
 #include <vector>
 
 namespace CHEngine

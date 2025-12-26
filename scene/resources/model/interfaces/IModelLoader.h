@@ -7,7 +7,8 @@
 #include <string>
 #include <vector>
 
-
+namespace CHEngine
+{
 class IModelLoader
 {
 public:
@@ -17,8 +18,9 @@ public:
                                  bool preload = true) = 0;
     virtual void UnloadAllModels() = 0;
     virtual std::vector<std::string> GetAvailableModels() const = 0;
-    virtual std::optional<std::reference_wrapper<Model>>
+    virtual std::optional<std::reference_wrapper<::Model>>
     GetModelByName(const std::string &name) = 0;
 };
+} // namespace CHEngine
 
 #endif // IMODELLOADER_H

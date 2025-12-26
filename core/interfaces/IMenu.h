@@ -3,6 +3,11 @@
 
 #include <string>
 
+namespace CHEngine
+{
+class Event;
+}
+
 // Minimal Menu interface
 // Essential API only - 10 methods (down from 40+)
 // Engine depends on this interface, not concrete Menu class.
@@ -10,6 +15,9 @@ class IMenu
 {
 public:
     virtual ~IMenu() = default;
+
+    // Event handling
+    virtual void OnEvent(CHEngine::Event &e) = 0;
 
     // Lifecycle
     virtual void Update() = 0;
