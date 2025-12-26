@@ -17,7 +17,8 @@ void ConsolePanel::OnImGuiRender()
 
     ImGui::Separator();
 
-    ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_HorizontalScrollbar);
 
     for (auto &msg : m_Messages)
     {

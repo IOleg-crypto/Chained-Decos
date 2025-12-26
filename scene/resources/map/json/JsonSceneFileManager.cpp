@@ -10,6 +10,8 @@ json JsonSerializableObject::ToJson() const
     j["rotation"] = {rotation.x, rotation.y, rotation.z};
     j["scale"] = scale;
     j["type"] = type;
+    j["texturePath"] = texturePath;
+    j["tiling"] = tiling;
 
     // UI Element Specifics
     if (type == 1) // UI_MENU - though this is MapObjectType not SceneType..
@@ -42,6 +44,8 @@ JsonSerializableObject JsonSerializableObject::FromJson(const json &j)
 
     obj.scale = j.value("scale", 1.0f);
     obj.type = j.value("type", 0);
+    obj.texturePath = j.value("texturePath", "");
+    obj.tiling = j.value("tiling", 1.0f);
 
     return obj;
 }

@@ -328,7 +328,8 @@ void LevelManager::RenderEditorMap()
             continue;
         }
 
-        renderer.RenderMapObject(object, m_gameScene->GetMapModels(), dummyCamera, false);
+        renderer.RenderMapObject(object, m_gameScene->GetMapModels(), m_gameScene->GetMapTextures(),
+                                 dummyCamera, false);
     }
 }
 
@@ -444,6 +445,27 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
             SceneLoader mapLoader;
             mapLoader.LoadSkyboxForScene(*m_gameScene);
         }
+
+        // Automatic texture loading for map objects (Runtime/Editor support)
+        auto &textures = m_gameScene->GetMapTexturesMutable();
+        for (const auto &obj : m_gameScene->GetMapObjects())
+        {
+            if (!obj.texturePath.empty() && textures.find(obj.texturePath) == textures.end())
+            {
+                Texture2D tex = LoadTexture(obj.texturePath.c_str());
+                if (tex.id != 0)
+                {
+                    CD_CORE_INFO("[LevelManager] Loaded texture for object: %s",
+                                 obj.texturePath.c_str());
+                    textures[obj.texturePath] = tex;
+                }
+                else
+                {
+                    CD_CORE_WARN("[LevelManager] Failed to load texture: %s",
+                                 obj.texturePath.c_str());
+                }
+            }
+        }
     }
 
     for (size_t i = 0; i < m_gameScene->GetMapObjects().size(); ++i)
@@ -491,6 +513,20 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                                                  CollisionType::BVH_ONLY, transform);
                 useBVHCollision = true;
             }
+        }
+        break;
+        case MapObjectType::SPAWN_ZONE:
+        {
+            const float spawnSize = 2.0f;
+            m_playerSpawnZone.min = {object.position.x - spawnSize / 2,
+                                     object.position.y - spawnSize / 2,
+                                     object.position.z - spawnSize / 2};
+            m_playerSpawnZone.max = {object.position.x + spawnSize / 2,
+                                     object.position.y + spawnSize / 2,
+                                     object.position.z + spawnSize / 2};
+            m_hasSpawnZone = true;
+            CD_CORE_INFO("[LevelManager] Found SPAWN_ZONE object at (%.2f, %.2f, %.2f)",
+                         object.position.x, object.position.y, object.position.z);
         }
         break;
         default:

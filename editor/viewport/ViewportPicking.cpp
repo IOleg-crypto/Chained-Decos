@@ -27,7 +27,7 @@ Ray ViewportPicking::GetMouseRay(ImVec2 mousePos, ImVec2 viewportPos, ImVec2 vie
     // View space ray direction
     Vector3 rayDir = {
         ndcX * aspectRatio * tanHalfFovy, ndcY * tanHalfFovy,
-        -1.0f // Forward in view space
+        1.0f // Forward in view space (relative to our basis)
     };
 
     // Transform to world space
@@ -45,21 +45,37 @@ Ray ViewportPicking::GetMouseRay(ImVec2 mousePos, ImVec2 viewportPos, ImVec2 vie
 
 RayCollision ViewportPicking::TestObjectCollision(const Ray &ray, const MapObjectData &obj)
 {
-    // Transform ray to object's local space
-    Matrix transform = MatrixTranslate(obj.position.x, obj.position.y, obj.position.z);
+    // 1. Create full transform matrix (matching MapRenderer)
+    Matrix translation = MatrixTranslate(obj.position.x, obj.position.y, obj.position.z);
+    Vector3 rotationRad = {obj.rotation.x * DEG2RAD, obj.rotation.y * DEG2RAD,
+                           obj.rotation.z * DEG2RAD};
+    Matrix rotation = MatrixRotateXYZ(rotationRad);
+    Matrix scale = MatrixScale(obj.scale.x, obj.scale.y, obj.scale.z);
+    Matrix transform = MatrixMultiply(MatrixMultiply(translation, rotation), scale);
+
     Matrix invTransform = MatrixInvert(transform);
 
+    // 2. Transform ray to object's local space
     Vector3 localRayPos = Vector3Transform(ray.position, invTransform);
+
+    // Transform direction carefully: it's a vector, not a point.
+    // We transform it by the matrix but subtract the translated origin to remove translation
+    // effect.
     Vector3 localRayDir = Vector3Transform(ray.direction, invTransform);
+    Vector3 translatedZero = Vector3Transform({0, 0, 0}, invTransform);
+    localRayDir = Vector3Subtract(localRayDir, translatedZero);
+
     Ray localRay = {localRayPos, Vector3Normalize(localRayDir)};
 
-    // Calculate bounding box based on object type
+    // 3. Define local-space bounding box
     BoundingBox localBox;
 
     switch (obj.type)
     {
     case MapObjectType::CUBE:
-        localBox = {Vector3Scale(obj.scale, -0.5f), Vector3Scale(obj.scale, 0.5f)};
+    case MapObjectType::SPAWN_ZONE:
+        // Use unit box since scale is already in the matrix
+        localBox = {{-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}};
         break;
 
     case MapObjectType::SPHERE:

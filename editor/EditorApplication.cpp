@@ -2,7 +2,6 @@
 #include "core/Engine.h"
 #include "core/Log.h"
 #include "core/ServiceRegistry.h"
-#include "core/application/EntryPoint.h"
 #include "editor/EditorLayer.h"
 #include "project/Runtime/RuntimeLayer.h"
 #include "project/Runtime/player/Player.h"
@@ -11,8 +10,6 @@
 #include "editor/utils/EditorStyles.h"
 #include <imgui.h>
 #include <rlImGui.h>
-
-DECLARE_APPLICATION(EditorApplication)
 
 using namespace CHEngine;
 

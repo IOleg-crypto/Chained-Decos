@@ -14,7 +14,6 @@
 #include <string>
 #include <unordered_set>
 
-
 #include <scene/resources/color/ColorParser.h>
 
 ModelLoader::ModelLoader() : m_cache(std::make_shared<ModelCache>())
@@ -305,10 +304,11 @@ bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
     }
 
     // Special case: Always spawn player model even if spawn is false
-    if (config.name == "player")
+    if (config.name == "player" || config.name == "player_low")
     {
         shouldSpawnModel = true;
-        CD_CORE_INFO("ModelLoader::ProcessModelConfigLegacy() - Forcing spawn of player model");
+        CD_CORE_INFO("ModelLoader::ProcessModelConfigLegacy() - Forcing spawn of player model: %s",
+                     config.name.c_str());
     }
 
     if (shouldSpawnModel)
@@ -1253,8 +1253,10 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
 
     // Validate that we have essential models
     auto availableModels = GetAvailableModels();
-    bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player_low") !=
-                          availableModels.end();
+    bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") !=
+                              availableModels.end() ||
+                          std::find(availableModels.begin(), availableModels.end(), "player_low") !=
+                              availableModels.end();
 
     if (!hasPlayerModel)
     {
@@ -1338,7 +1340,9 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
     // Validate that we have essential models
     auto availableModels = GetAvailableModels();
     bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") !=
-                          availableModels.end();
+                              availableModels.end() ||
+                          std::find(availableModels.begin(), availableModels.end(), "player_low") !=
+                              availableModels.end();
 
     if (!hasPlayerModel)
     {
@@ -1415,7 +1419,9 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
     // Validate that we have essential models
     auto availableModels = GetAvailableModels();
     bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") !=
-                          availableModels.end();
+                              availableModels.end() ||
+                          std::find(availableModels.begin(), availableModels.end(), "player_low") !=
+                              availableModels.end();
 
     if (!hasPlayerModel)
     {

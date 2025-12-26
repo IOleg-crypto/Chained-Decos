@@ -1,14 +1,28 @@
 #include "SelectionManager.h"
 
-MapObjectData *SelectionManager::GetSelectedObject()
+namespace CHEngine
 {
-    // This requires access to the scene/map manager.
-    // We will likely need to inject the SceneManager or Editor facade here.
-    // For now, return nullptr as a placeholder until we fix the Facade interaction.
-    return nullptr;
+MapObjectData *SelectionManager::GetSelectedObject(const std::shared_ptr<GameScene> &scene)
+{
+    if (m_SelectionType != SelectionType::WORLD_OBJECT || m_SelectedIndex < 0 || !scene)
+        return nullptr;
+
+    auto &objects = scene->GetMapObjectsMutable();
+    if (m_SelectedIndex >= (int)objects.size())
+        return nullptr;
+
+    return &objects[m_SelectedIndex];
 }
 
-void SelectionManager::RefreshUIEntities()
+UIElementData *SelectionManager::GetSelectedUIElement(const std::shared_ptr<GameScene> &scene)
 {
-    // Logic for refreshing UI entities
+    if (m_SelectionType != SelectionType::UI_ELEMENT || m_SelectedIndex < 0 || !scene)
+        return nullptr;
+
+    auto &elements = scene->GetUIElementsMutable();
+    if (m_SelectedIndex >= (int)elements.size())
+        return nullptr;
+
+    return &elements[m_SelectedIndex];
 }
+} // namespace CHEngine

@@ -23,6 +23,7 @@ public:
     // Render single map object
     void RenderMapObject(const MapObjectData &object,
                          const std::unordered_map<std::string, Model> &loadedModels,
+                         const std::unordered_map<std::string, Texture2D> &loadedTextures,
                          Camera3D camera, bool useEditorColors = false, bool wireframe = false);
 
     // Render spawn zone with texture

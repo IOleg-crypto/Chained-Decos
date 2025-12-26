@@ -2,7 +2,6 @@
 #include "core/Engine.h"
 #include "core/Log.h"
 #include "core/assets/AssetManager.h"
-#include "project/Runtime/player/Player.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/RenderComponent.h"
@@ -54,7 +53,7 @@ entt::entity RuntimeInitializer::InitializePlayer(Vector3 spawnPos, float sensit
     if (playerModelPtr)
     {
         auto &renderComp = REGISTRY.emplace<RenderComponent>(playerEntity,
-                                                             "player",       // modelName
+                                                             "player_low",   // modelName
                                                              playerModelPtr, // model
                                                              GRAY,           // tint
                                                              true,           // visible
@@ -70,6 +69,8 @@ entt::entity RuntimeInitializer::InitializePlayer(Vector3 spawnPos, float sensit
                                                  sensitivity // mouseSensitivity
     );
     pc.spawnPosition = spawnPos;
+    pc.cameraDistance = 7.0f; // Tuned for better view
+    pc.cameraPitch = 15.0f;   // Tuned for better view
 
     // Physics
     REGISTRY.emplace<PhysicsData>(playerEntity,

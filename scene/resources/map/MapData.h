@@ -63,6 +63,10 @@ struct MapObjectData
     bool isPlatform = false;
     bool isObstacle = false;
 
+    // Material properties
+    std::string texturePath;
+    float tiling = 1.0f;
+
     // Scripting System (Hazel style)
     std::string scriptPath;
 };

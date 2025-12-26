@@ -3,16 +3,21 @@
 
 #include "core/layer/Layer.h"
 #include "editor/EditorTypes.h"
+#include "editor/camera/EditorCamera.h"
+#include "editor/logic/ProjectManager.h"
+#include "editor/logic/SceneSimulationManager.h"
+#include "editor/logic/SelectionManager.h"
+#include "editor/logic/undo/CommandHistory.h"
 #include "editor/panels/AssetBrowserPanel.h"
 #include "editor/panels/ConsolePanel.h"
 #include "editor/panels/HierarchyPanel.h"
 #include "editor/panels/InspectorPanel.h"
+#include "editor/panels/MenuBarPanel.h"
 #include "editor/panels/ToolbarPanel.h"
 #include "editor/panels/ViewportPanel.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/MouseEvent.h"
-#include "scene/camera/CameraController.h"
 #include "scene/resources/map/SceneLoader.h"
 
 #include <imgui.h>
@@ -47,23 +52,25 @@ public:
     void SaveSceneAs();
     void AddModel();
     void AddUIElement(const std::string &type);
+
+    // Object Management Helpers (Undoable)
+    void AddObject(const MapObjectData &data);
+    void DeleteObject(int index);
+    void OnAssetDropped(const std::string &assetPath, const Vector3 &worldPosition);
+
     void LoadSkybox(const std::string &path = "");
     void ApplySkybox(const std::string &path);
 
     SceneState GetSceneState() const
     {
-        return m_SceneState;
+        return m_SimulationManager.GetSceneState();
     }
 
-    int GetSelectedObjectIndex() const
+    SelectionManager &GetSelectionManager()
     {
-        return m_SelectedObjectIndex;
+        return m_SelectionManager;
     }
-    void SetSelectedObjectIndex(int index, SelectionType type = SelectionType::WORLD_OBJECT)
-    {
-        m_SelectedObjectIndex = index;
-        m_SelectionType = type;
-    }
+
     MapObjectData *GetSelectedObject();
     UIElementData *GetSelectedUIElement();
 
@@ -80,11 +87,9 @@ public:
     bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
     void UI_DrawDockspace();
-    void UI_DrawToolbar();
-    void UI_DrawMenuBar();
 
 private:
-    std::shared_ptr<CameraController> m_CameraController;
+    EditorCamera m_EditorCamera;
 
     // Panels
     std::unique_ptr<HierarchyPanel> m_HierarchyPanel;
@@ -93,27 +98,24 @@ private:
     std::unique_ptr<AssetBrowserPanel> m_AssetBrowserPanel;
     std::unique_ptr<ConsolePanel> m_ConsolePanel;
     std::unique_ptr<ToolbarPanel> m_ToolbarPanel;
+    std::unique_ptr<MenuBarPanel> m_MenuBarPanel;
 
-    // Scene context
-    std::shared_ptr<GameScene> m_ActiveScene;
+    // Managers
+    ProjectManager m_ProjectManager;
+    SceneSimulationManager m_SimulationManager;
+    SelectionManager m_SelectionManager;
+    CommandHistory m_CommandHistory;
+
+    std::shared_ptr<GameScene> m_ActiveScene; // Local cache or reference
     std::shared_ptr<GameScene> m_EditorScene;
-    std::string m_ScenePath;
-    std::string m_SceneFilePath;
 
     // Viewport
     ImVec2 m_ViewportSize = {0.0f, 0.0f};
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;
 
-    // State
-    SceneState m_SceneState = SceneState::Edit;
-    RuntimeMode m_RuntimeMode =
-        RuntimeMode::Standalone; // Default to standalone as requested before
-    Tool m_ActiveTool = Tool::MOVE;
-    int m_SelectedObjectIndex = -1;
-    SelectionType m_SelectionType = SelectionType::NONE;
-
     CHD::RuntimeLayer *m_RuntimeLayer = nullptr;
+    Tool m_ActiveTool = Tool::MOVE;
     bool m_ShowProjectSettings = false;
 };
 } // namespace CHEngine

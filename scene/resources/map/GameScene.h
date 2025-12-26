@@ -51,11 +51,17 @@ public:
     void SetMapMetaData(const MapMetadata &mapData);
     MapMetadata &GetMapMetaDataMutable();
 
+    // Textures
+    const std::unordered_map<std::string, Texture2D> &GetMapTextures() const;
+    void AddMapTextures(const std::unordered_map<std::string, Texture2D> &texturesMap);
+    std::unordered_map<std::string, Texture2D> &GetMapTexturesMutable();
+
 private:
     MapMetadata m_metadata;
     std::vector<MapObjectData> m_objects;
     std::vector<UIElementData> m_uiElements;
     std::unordered_map<std::string, Model> m_loadedModels;
+    std::unordered_map<std::string, Texture2D> m_loadedTextures;
     std::shared_ptr<Skybox> m_skybox;
 };
 

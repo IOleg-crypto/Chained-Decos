@@ -30,6 +30,10 @@ struct JsonSerializableObject
     float radiusV = 0.0f;
     Vector2 size = {0.0f, 0.0f};
 
+    // Material properties
+    std::string texturePath = "";
+    float tiling = 1.0f;
+
     // Convert to/from JSON
     json ToJson() const;
     static JsonSerializableObject FromJson(const json &j);
