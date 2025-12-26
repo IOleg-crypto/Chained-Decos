@@ -7,7 +7,6 @@
 #include <scene/ecs/ECSRegistry.h>
 #include <scene/ecs/Entity.h>
 
-
 // Runtime application - uses full engine + own modules
 
 namespace CHD
@@ -35,7 +34,6 @@ private:
     entt::entity m_playerEntity = entt::null;
 
     // Game state
-    bool m_showMenu;
     bool m_isGameInitialized;
     bool m_showDebugCollision = false;
     bool m_showDebugStats = false;
@@ -48,9 +46,6 @@ private:
     // Helper methods
     void InitInput();
     void UpdatePlayerLogic();
-
-    // In-game menu
-    std::shared_ptr<Menu> m_menu;
 };
 
 } // namespace CHD
