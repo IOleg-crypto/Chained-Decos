@@ -399,14 +399,16 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
     std::string extension = std::filesystem::path(mapPath).extension().string();
     if (extension == ".json" || extension == ".JSON" || extension == ".chscene")
     {
+        // Hazel-style: .chscene for scenes (binary), .json for maps only
         if (extension == ".chscene")
         {
+            // Binary scene format - primary format for editor scenes
             auto sharedScene = std::shared_ptr<GameScene>(m_gameScene.get(), [](GameScene *) {});
             CHEngine::SceneSerializer serializer(sharedScene);
             if (!serializer.DeserializeBinary(mapPath))
             {
                 CD_CORE_ERROR(
-                    "LevelManager::LoadEditorMap() - Failed to deserialize binary map: %s",
+                    "LevelManager::LoadEditorMap() - Failed to deserialize binary scene: %s",
                     mapPath.c_str());
                 return;
             }
@@ -414,6 +416,7 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         }
         else
         {
+            // JSON format - for maps only, not scenes
             MapService mapService;
             if (!mapService.LoadScene(mapPath, *m_gameScene))
             {
