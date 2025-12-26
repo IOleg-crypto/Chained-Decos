@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 #include <raylib.h>
 
-
 using json = nlohmann::json;
 
 std::string ModelAnalyzer::GetModelNameForObjectType(int objectType, const std::string &modelName)
@@ -64,11 +63,11 @@ std::vector<std::string> ModelAnalyzer::GetModelsRequiredForMap(const std::strin
     // Convert map identifier to full path
     std::string mapPath = ConvertToMapPath(mapIdentifier);
 
-    // Verify it's a JSON file
+    // Verify it's a JSON or CHSCENE file
     std::string extension = std::filesystem::path(mapPath).extension().string();
-    if (extension != ".json")
+    if (extension != ".json" && extension != ".chscene")
     {
-        CD_CORE_WARN("[ModelAnalyzer] Map file is not JSON format: %s", mapPath.c_str());
+        CD_CORE_WARN("[ModelAnalyzer] Map file is not JSON/CHSCENE format: %s", mapPath.c_str());
         return requiredModels;
     }
 
@@ -269,19 +268,23 @@ std::string ModelAnalyzer::ConvertToMapPath(const std::string &mapIdentifier)
 
     // Check if already a full path with extension
     size_t dotPos = mapPath.find_last_of('.');
-    if (dotPos != std::string::npos && dotPos + 1 < mapPath.length() &&
-        mapPath.substr(dotPos + 1) == "json")
+    if (dotPos != std::string::npos && dotPos + 1 < mapPath.length())
     {
-        return mapPath;
+        std::string ext = mapPath.substr(dotPos + 1);
+        if (ext == "json" || ext == "chscene")
+        {
+            return mapPath;
+        }
     }
 
     // Construct path from map name
     std::string filename = std::filesystem::path(mapIdentifier).filename().string();
     mapPath = std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + filename;
 
-    if (mapPath.find(".json") == std::string::npos)
+    // Prefer .chscene extension, fallback to .json
+    if (mapPath.find(".chscene") == std::string::npos && mapPath.find(".json") == std::string::npos)
     {
-        mapPath += ".json";
+        mapPath += ".chscene";
     }
 
     return mapPath;
