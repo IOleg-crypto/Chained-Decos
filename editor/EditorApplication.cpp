@@ -4,7 +4,6 @@
 #include "core/ServiceRegistry.h"
 #include "editor/EditorLayer.h"
 #include "project/Runtime/RuntimeLayer.h"
-#include "project/Runtime/player/Player.h"
 #include "scene/main/LevelManager.h"
 
 #include "editor/utils/EditorStyles.h"
@@ -32,11 +31,8 @@ void EditorApplication::OnRegister()
 {
     Engine::Instance().RegisterModule(std::make_unique<LevelManager>());
 
-    // Register a dummy Player service to resolve engine errors
-    // Use the concrete Player class as it implements IPlayer
-    auto audioManager = Engine::Instance().GetService<IAudioManager>();
-    auto dummyPlayer = std::make_shared<Player>(audioManager.get());
-    CHEngine::ServiceRegistry::Register<IPlayer>(dummyPlayer);
+    // Note: Player system now uses ECS components (PlayerComponent)
+    // No need for IPlayer service registration
 }
 
 void EditorApplication::OnStart()

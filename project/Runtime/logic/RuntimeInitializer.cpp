@@ -59,7 +59,7 @@ entt::entity RuntimeInitializer::InitializePlayer(Vector3 spawnPos, float sensit
                                                              true,           // visible
                                                              1               // renderLayer
         );
-        renderComp.offset = {0.0f, ::Player::MODEL_Y_OFFSET, 0.0f};
+        renderComp.offset = {0.0f, -1.0f, 0.0f}; // Player model offset
     }
 
     // Player-specific component
