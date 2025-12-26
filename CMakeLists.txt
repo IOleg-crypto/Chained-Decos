@@ -220,7 +220,7 @@ add_subdirectory(events)
 add_subdirectory(core)
 add_subdirectory(components)
 add_subdirectory(scene)
-add_subdirectory(project/ChainedDecos)
+add_subdirectory(project/Runtime)
 
 if(BUILD_TESTS)
     add_subdirectory(tests ${CMAKE_CURRENT_BINARY_DIR}/tests)

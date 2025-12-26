@@ -1,10 +1,10 @@
 set(WORLD_SOURCES
-    core/World.cpp
-    core/World.h
-    core/LevelManager.cpp
-    core/LevelManager.h
-    core/MapCollisionInitializer.cpp
-    core/MapCollisionInitializer.h
+    World.cpp
+    World.h
+    LevelManager.cpp
+    LevelManager.h
+    MapCollisionInitializer.cpp
+    MapCollisionInitializer.h
 )
 
 add_library(world STATIC ${WORLD_SOURCES})

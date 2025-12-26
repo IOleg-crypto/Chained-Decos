@@ -4,9 +4,11 @@
 #include "core/ServiceRegistry.h"
 #include "core/application/EntryPoint.h"
 #include "editor/EditorLayer.h"
-#include "project/ChainedDecos/player/core/Player.h"
-#include "scene/main/core/LevelManager.h"
+#include "project/Runtime/RuntimeLayer.h"
+#include "project/Runtime/player/Player.h"
+#include "scene/main/LevelManager.h"
 
+#include "editor/utils/EditorStyles.h"
 #include <imgui.h>
 #include <rlImGui.h>
 
@@ -35,8 +37,9 @@ void EditorApplication::OnRegister()
 
     // Register a dummy Player service to resolve engine errors
     // Use the concrete Player class as it implements IPlayer
-    auto dummyPlayer = std::make_shared<Player>(nullptr);
-    ServiceRegistry::Register<IPlayer>(dummyPlayer);
+    auto audioManager = Engine::Instance().GetService<IAudioManager>();
+    auto dummyPlayer = std::make_shared<Player>(audioManager.get());
+    CHEngine::ServiceRegistry::Register<IPlayer>(dummyPlayer);
 }
 
 void EditorApplication::OnStart()
@@ -49,19 +52,30 @@ void EditorApplication::OnStart()
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-    // 2. Load Fonts (Hazel style, usually in Layer but let's keep it here for now)
+    // 2. Load Fonts (Hazel style)
     io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/lato/Lato-Regular.ttf", 14.0f);
 
-    // Add Icons
+    // Regular text (18.0f) - DEFAULT FONT
+    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/lato/Lato-Regular.ttf", 18.0f);
+
+    // Add Icons to the first font (Regular)
     static const ImWchar icons_ranges[] = {0xe005, 0xf8ff, 0};
     ImFontConfig icons_config;
     icons_config.MergeMode = true;
     icons_config.PixelSnapH = true;
-    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/fa-solid-900.ttf", 14.0f,
+    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/fa-solid-900.ttf", 18.0f,
                                  &icons_config, icons_ranges);
 
-    // 3. Push Editor Layer
+    // Bold / Header text (20.0f)
+    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/lato/Lato-Bold.ttf", 20.0f);
+
+    // Title text (26.0f)
+    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/lato/Lato-Bold.ttf", 26.0f);
+
+    // 3. Apply Professional Theme
+    EditorStyles::ApplyDarkTheme();
+
+    // 4. Push Editor Layer
     m_EditorLayer = new EditorLayer();
     if (GetAppRunner())
     {

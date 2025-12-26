@@ -7,6 +7,7 @@ uniform samplerCube environmentMap;
 uniform bool vflipped;
 uniform bool doGamma;
 uniform float fragGamma;
+uniform float exposure;
 
 // Output fragment color
 out vec4 finalColor;
@@ -22,6 +23,9 @@ void main()
     else {
         color = texture(environmentMap, fragPosition).rgb;
     }
+
+    // Apply exposure
+    color *= exposure;
 
     if (doGamma)// Apply gamma correction
     {
