@@ -35,6 +35,8 @@ set(panels_sources
     panels/ToolbarPanel.h
     utils/EditorGrid.cpp
     utils/EditorGrid.h
+    viewport/ViewportPicking.cpp
+    viewport/ViewportPicking.h
 )
 
 set(editor_sources
