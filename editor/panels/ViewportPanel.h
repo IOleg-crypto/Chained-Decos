@@ -2,7 +2,10 @@
 #define VIEWPANEL_H
 
 #include "editor/EditorTypes.h"
+#include "editor/logic/undo/CommandHistory.h"
 #include "editor/utils/EditorGrid.h"
+#include "editor/viewport/ViewportGizmo.h"
+#include "editor/viewport/ViewportRenderer.h"
 #include "scene/camera/CameraController.h"
 #include "scene/resources/map/GameScene.h"
 #include <cstdint>
@@ -11,20 +14,12 @@
 #include <memory>
 #include <raylib.h>
 
+class GameScene;
+
 namespace CHEngine
 {
-enum class GizmoAxis : std::uint8_t
-{
-    NONE,
-    X,
-    Y,
-    Z,
-    XY,
-    YZ,
-    XZ
-};
 
-class EditorLayer; // Forward declaration
+class CommandHistory;
 
 class ViewportPanel
 {
@@ -32,10 +27,10 @@ public:
     ViewportPanel() = default;
     ~ViewportPanel();
 
-    void OnImGuiRender(const std::shared_ptr<GameScene> &scene,
-                       const std::shared_ptr<CameraController> &cameraController,
-                       int selectedObjectIndex, Tool currentTool,
-                       const std::function<void(int)> &onSelect);
+    void OnImGuiRender(
+        const std::shared_ptr<GameScene> &scene, const Camera3D &camera, int selectedObjectIndex,
+        Tool currentTool, const std::function<void(int)> &onSelect, CommandHistory *history,
+        const std::function<void(const std::string &, const Vector3 &)> &onAssetDropped = nullptr);
 
     bool IsFocused() const
     {
@@ -74,11 +69,9 @@ private:
     EditorGrid m_Grid;
     bool m_GridInitialized = false;
 
-    // Gizmo state
-    GizmoAxis m_DraggingAxis = GizmoAxis::NONE;
-    bool m_GizmoHovered = false;
-    Vector3 m_InitialObjectValue = {0, 0, 0};
-    Vector2 m_InitialMousePos = {0, 0};
+    // Extracted components
+    ViewportGizmo m_Gizmo;
+    ViewportRenderer m_Renderer;
     bool m_isVisible = true;
 };
 } // namespace CHEngine

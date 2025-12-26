@@ -13,8 +13,6 @@
 using namespace CHEngine;
 
 #include "core/config/ConfigManager.h"
-#include "project/Runtime/gamegui/Menu.h"
-#include "project/Runtime/player/Player.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
 
