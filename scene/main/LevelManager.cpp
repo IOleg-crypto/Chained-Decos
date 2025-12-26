@@ -166,12 +166,14 @@ bool LevelManager::LoadSceneByName(const std::string &name)
 {
     // Try to find the scene in mapped scenes
     std::string sceneFile = name;
-    if (name.find(".json") == std::string::npos)
+
+    // Add .chscene extension if no extension present
+    if (name.find(".chscene") == std::string::npos && name.find(".json") == std::string::npos)
     {
-        sceneFile += ".json";
+        sceneFile += ".chscene";
     }
 
-    // Attempt to load from Scenes/ folder relative to project root or resource path
+    // Attempt to load from resources/maps/ folder relative to project root
     std::string fullPath = std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + sceneFile;
     if (!std::filesystem::exists(fullPath))
     {
@@ -192,8 +194,8 @@ std::string LevelManager::ConvertMapNameToPath(const std::string &mapName)
         return mapName;
     }
 
-    // Check manifest mappings or default directories
-    return std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + mapName + ".json";
+    // Check manifest mappings or default directories - prefer .chscene
+    return std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + mapName + ".chscene";
 }
 
 void LevelManager::UnloadMap()
