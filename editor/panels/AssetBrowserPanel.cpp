@@ -1,5 +1,6 @@
 #include "AssetBrowserPanel.h"
 #include "editor/utils/IconsFontAwesome5.h"
+#include "rlImGui.h"
 #include <algorithm>
 #include <imgui.h>
 
@@ -9,6 +10,15 @@ AssetBrowserPanel::AssetBrowserPanel()
     : m_RootPath(PROJECT_ROOT_DIR "/resources"), m_CurrentDirectory(m_RootPath)
 {
     RefreshAssets();
+}
+
+AssetBrowserPanel::~AssetBrowserPanel()
+{
+    for (auto &pair : m_ThumbnailCache)
+    {
+        ::UnloadTexture(pair.second);
+    }
+    m_ThumbnailCache.clear();
 }
 
 void AssetBrowserPanel::OnImGuiRender()
@@ -42,21 +52,62 @@ void AssetBrowserPanel::OnImGuiRender()
 
         // Icon Selection
         const char *icon = ICON_FA_FILE;
+        Texture2D *thumbnail = nullptr;
+
         if (assetItem.IsDirectory)
+        {
             icon = ICON_FA_FOLDER;
+        }
         else
         {
             std::string ext = assetItem.Path.extension().string();
+            // Convert to lowercase for comparison
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
             if (ext == ".glb" || ext == ".obj")
                 icon = ICON_FA_CUBE;
-            else if (ext == ".png" || ext == ".jpg")
+            else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp")
+            {
                 icon = ICON_FA_IMAGE;
+                std::string pathStr = assetItem.Path.string();
+
+                if (m_ThumbnailCache.find(pathStr) == m_ThumbnailCache.end())
+                {
+                    Texture2D tex = ::LoadTexture(pathStr.c_str());
+                    if (tex.id != 0)
+                        m_ThumbnailCache[pathStr] = tex;
+                }
+
+                if (m_ThumbnailCache.find(pathStr) != m_ThumbnailCache.end())
+                    thumbnail = &m_ThumbnailCache[pathStr];
+            }
             else if (ext == ".lua" || ext == ".cpp" || ext == ".h")
                 icon = ICON_FA_FILE_CODE;
         }
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        ImGui::Button(icon, {thumbnailSize, thumbnailSize});
+
+        bool clicked = false;
+        if (thumbnail)
+        {
+            clicked = rlImGuiImageButtonSize(assetItem.Name.c_str(), thumbnail,
+                                             {thumbnailSize, thumbnailSize});
+        }
+        else
+        {
+            clicked = ImGui::Button(icon, {thumbnailSize, thumbnailSize});
+        }
+
+        if (ImGui::BeginDragDropSource())
+        {
+            std::string itemPath = assetItem.Path.string();
+            const char *itemPathStr = itemPath.c_str();
+            ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPathStr,
+                                      (strlen(itemPathStr) + 1) * sizeof(char));
+            ImGui::Text("%s", assetItem.Name.c_str());
+            ImGui::EndDragDropSource();
+        }
+
         ImGui::PopStyleColor();
 
         if (ImGui::IsItemHovered())

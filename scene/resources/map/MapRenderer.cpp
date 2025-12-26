@@ -42,12 +42,13 @@ void MapRenderer::DrawMapContent(const GameScene &map, Camera3D camera)
     // Render all objects in the map
     for (const auto &object : map.GetMapObjects())
     {
-        RenderMapObject(object, map.GetMapModels(), camera);
+        RenderMapObject(object, map.GetMapModels(), map.GetMapTextures(), camera);
     }
 }
 
 void MapRenderer::RenderMapObject(const MapObjectData &object,
                                   const std::unordered_map<std::string, Model> &loadedModels,
+                                  const std::unordered_map<std::string, Texture2D> &loadedTextures,
                                   [[maybe_unused]] Camera3D camera, bool useEditorColors,
                                   bool wireframe)
 {
@@ -71,9 +72,21 @@ void MapRenderer::RenderMapObject(const MapObjectData &object,
         rlMultMatrixf(MatrixToFloat(transform));
         // Cubes use scale as their primary dimensions
         if (wireframe)
+        {
             DrawCubeWires({0, 0, 0}, 1.0f, 1.0f, 1.0f, drawColor);
+        }
         else
-            DrawCube({0, 0, 0}, 1.0f, 1.0f, 1.0f, drawColor);
+        {
+            auto it = loadedTextures.find(object.texturePath);
+            if (!object.texturePath.empty() && it != loadedTextures.end())
+            {
+                RenderUtils::DrawCubeTexture(it->second, {0, 0, 0}, 1.0f, 1.0f, 1.0f, object.color);
+            }
+            else
+            {
+                DrawCube({0, 0, 0}, 1.0f, 1.0f, 1.0f, drawColor);
+            }
+        }
         rlPopMatrix();
     }
     break;
@@ -193,11 +206,8 @@ void MapRenderer::RenderMapObject(const MapObjectData &object,
         rlPushMatrix();
         rlMultMatrixf(MatrixToFloat(transform));
 
-        // Draw a translucent cyan box to represent the spawn zone
+        // Draw a translucent cyan wires to represent the spawn zone
         Color spawnColor = {0, 255, 255, 100}; // Translucent Cyan
-        if (!wireframe)
-            DrawCube({0, 0, 0}, 1.0f, 1.0f, 1.0f, spawnColor);
-
         DrawCubeWires({0, 0, 0}, 1.0f, 1.0f, 1.0f, drawColor);
 
         // Draw an arrow or marker to show forward direction (Y rotation)

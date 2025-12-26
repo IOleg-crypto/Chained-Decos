@@ -197,6 +197,10 @@ MapObjectData JsonSerializableObjectToMapObjectData(const JsonSerializableObject
     data.isPlatform = true;
     data.isObstacle = false;
 
+    // Material properties
+    data.texturePath = jsonObj.texturePath;
+    data.tiling = jsonObj.tiling;
+
     return data;
 }
 
@@ -267,6 +271,10 @@ JsonSerializableObject MapObjectDataToJsonSerializableObject(const MapObjectData
         break;
     }
 
+    // Material properties
+    jsonObj.texturePath = data.texturePath;
+    jsonObj.tiling = data.tiling;
+
     return jsonObj;
 }
 } // namespace MapObjectConverter
@@ -274,7 +282,3 @@ JsonSerializableObject MapObjectDataToJsonSerializableObject(const MapObjectData
 // Note: MapObject conversions are implemented in MapEditor/Editor/FileManager/FileManager.cpp
 // because MapObject is an Editor-specific class and cannot be included in Engine code.
 // These functions will be moved to use the converter when MapObject is refactored.
-
-
-
-

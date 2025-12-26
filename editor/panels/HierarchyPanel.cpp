@@ -18,7 +18,8 @@ void HierarchyPanel::SetContext(const std::shared_ptr<::GameScene> &scene)
 void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedIndex,
                                    const std::function<void(SelectionType, int)> &onSelect,
                                    const std::function<void()> &onAddModel,
-                                   const std::function<void(const std::string &)> &onAddUI)
+                                   const std::function<void(const std::string &)> &onAddUI,
+                                   const std::function<void(int)> &onDelete)
 {
     ImGui::Begin("Scene hierarchy");
 
@@ -134,15 +135,12 @@ void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedInde
             {
                 if (selectionType == SelectionType::WORLD_OBJECT)
                 {
-                    auto &objects = m_Context->GetMapObjectsMutable();
-                    if (selectedIndex < (int)objects.size())
-                    {
-                        objects.erase(objects.begin() + selectedIndex);
-                        onSelect(SelectionType::NONE, -1);
-                    }
+                    if (onDelete)
+                        onDelete(selectedIndex);
                 }
                 else if (selectionType == SelectionType::UI_ELEMENT)
                 {
+                    // Handle UI deletion separately or extend onDelete
                     auto &elements = m_Context->GetUIElementsMutable();
                     if (selectedIndex < (int)elements.size())
                     {
