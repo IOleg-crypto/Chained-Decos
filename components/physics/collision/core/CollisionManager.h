@@ -4,7 +4,7 @@
 #include "../interfaces/ICollisionManager.h"
 #include "../system/collisionSystem.h"
 
-#include "scene/resources/model/config/ModelConfig.h"
+#include "scene/resources/model/ModelConfig.h"
 #include <algorithm>
 #include <array>
 #include <execution>
@@ -17,9 +17,8 @@
 #include <unordered_map>
 #include <vector>
 
-
 // Include ModelLoader header
-#include "scene/resources/model/core/Model.h"
+#include "scene/resources/model/Model.h"
 
 // Structure to hold model processing data for parallel processing
 struct ModelCollisionTask

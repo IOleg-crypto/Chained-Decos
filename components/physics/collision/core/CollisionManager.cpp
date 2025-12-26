@@ -9,7 +9,7 @@
 #include <future>
 #include <raylib.h>
 #include <raymath.h>
-#include <scene/resources/model/core/Model.h>
+#include <scene/resources/model/Model.h>
 #include <set>
 #include <string>
 #include <thread>

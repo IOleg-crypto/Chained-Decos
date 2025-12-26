@@ -30,7 +30,7 @@ target_link_libraries(ChainedDecosIntegrationTests
     PRIVATE
         GTest::gtest_main
         GTest::gmock_main
-        ChainedDecosGame
+        RuntimeLib
 )
 
 # Include directories for unit tests
@@ -45,6 +45,7 @@ target_include_directories(ChainedDecosIntegrationTests
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}
 )
 
 # Test properties for unit tests

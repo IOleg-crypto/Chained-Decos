@@ -7,17 +7,18 @@
 
 namespace CHEngine
 {
-void InspectorPanel::OnImGuiRender(MapObjectData *selectedEntity)
+void InspectorPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
+                                   MapObjectData *selectedEntity)
 {
-    ImGui::Begin("Inspector");
+    ImGui::Begin("Properties");
 
     if (selectedEntity)
     {
         DrawComponents(selectedEntity);
     }
-    else
+    else if (scene)
     {
-        ImGui::Text("No entity selected");
+        DrawSceneSettings(scene);
     }
 
     ImGui::End();
@@ -106,20 +107,78 @@ void InspectorPanel::DrawComponents(MapObjectData *entity)
     }
 }
 
-void InspectorPanel::OnImGuiRender(UIElementData *selectedElement)
+void InspectorPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
+                                   UIElementData *selectedElement)
 {
-    ImGui::Begin("Inspector");
-
+    ImGui::Begin("Properties");
     if (selectedElement)
     {
         DrawUIComponents(selectedElement);
     }
-    else
+    ImGui::End();
+}
+
+void InspectorPanel::DrawSceneSettings(const std::shared_ptr<GameScene> &scene)
+{
+    ImGui::Text("Scene Settings");
+    ImGui::Separator();
+
+    auto &meta = scene->GetMapMetaDataMutable();
+
+    if (ImGui::CollapsingHeader("Map Metadata", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::Text("No element selected");
+        char nameBuf[256];
+        strncpy(nameBuf, meta.name.c_str(), sizeof(nameBuf));
+        if (ImGui::InputText("Map Name", nameBuf, sizeof(nameBuf)))
+            meta.name = nameBuf;
+
+        char authBuf[256];
+        strncpy(authBuf, meta.author.c_str(), sizeof(authBuf));
+        if (ImGui::InputText("Author", authBuf, sizeof(authBuf)))
+            meta.author = authBuf;
     }
 
-    ImGui::End();
+    if (ImGui::CollapsingHeader("Environment", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Text("Skybox: %s", meta.skyboxTexture.empty() ? "None" : meta.skyboxTexture.c_str());
+        ImGui::SameLine();
+        if (ImGui::Button("..."))
+        {
+            if (m_onSkyboxSelected)
+                m_onSkyboxSelected(""); // Trigger load dialog in EditorLayer
+        }
+
+        float sColor[4] = {meta.skyColor.r / 255.0f, meta.skyColor.g / 255.0f,
+                           meta.skyColor.b / 255.0f, meta.skyColor.a / 255.0f};
+        if (ImGui::ColorEdit4("Sky Color (Fallback)", sColor))
+        {
+            meta.skyColor = {
+                (unsigned char)(sColor[0] * 255.0f), (unsigned char)(sColor[1] * 255.0f),
+                (unsigned char)(sColor[2] * 255.0f), (unsigned char)(sColor[3] * 255.0f)};
+        }
+
+        Skybox *skybox = scene->GetSkyBox();
+        if (skybox)
+        {
+            ImGui::Separator();
+            ImGui::Text("Skybox Settings");
+
+            float exposure = skybox->GetExposure();
+            if (ImGui::SliderFloat("Exposure", &exposure, 0.0f, 5.0f))
+                skybox->SetExposure(exposure);
+
+            bool gammaEnabled = skybox->IsGammaEnabled();
+            if (ImGui::Checkbox("Gamma Correction", &gammaEnabled))
+                skybox->SetGammaEnabled(gammaEnabled);
+
+            if (gammaEnabled)
+            {
+                float gammaVal = skybox->GetGammaValue();
+                if (ImGui::SliderFloat("Gamma Value", &gammaVal, 0.5f, 3.0f))
+                    skybox->SetGammaValue(gammaVal);
+            }
+        }
+    }
 }
 
 void InspectorPanel::DrawUIComponents(UIElementData *element)

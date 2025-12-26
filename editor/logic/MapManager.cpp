@@ -1,6 +1,7 @@
-#include "core/Log.h"
 #include "editor/logic/MapManager.h"
-#include "scene/resources/map/core/SceneLoader.h"
+#include "core/Log.h"
+#include "scene/resources/map/SceneLoader.h"
+
 
 void MapManager::SaveScene(const std::string &filename)
 {
@@ -123,4 +124,3 @@ const std::string &MapManager::GetCurrentMapPath() const
 {
     return m_currentMapPath;
 }
-

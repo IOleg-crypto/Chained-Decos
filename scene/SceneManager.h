@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scene/resources/map/core/SceneLoader.h"
+#include "scene/resources/map/SceneLoader.h"
 #include <memory>
 #include <string>
 #include <vector>

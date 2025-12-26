@@ -10,6 +10,13 @@ enum class EditorMode : std::uint8_t
     UI_DESIGN = 1 // 2D UI design mode
 };
 
+// Runtime execution modes
+enum class RuntimeMode : std::uint8_t
+{
+    Embedded = 0,  // Run inside editor viewport
+    Standalone = 1 // Run in separate window/process
+};
+
 // Scene state
 enum class SceneState : std::uint8_t
 {

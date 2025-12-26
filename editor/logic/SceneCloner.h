@@ -1,7 +1,7 @@
 #ifndef SCENE_CLONER_H
 #define SCENE_CLONER_H
 
-#include "scene/resources/map/core/SceneLoader.h"
+#include "scene/resources/map/SceneLoader.h"
 #include <string>
 
 namespace CHEngine

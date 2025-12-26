@@ -4,10 +4,13 @@
 
 namespace CHEngine
 {
-void ToolbarPanel::OnImGuiRender(SceneState sceneState, Tool activeTool,
-                                 std::function<void()> onPlay, std::function<void()> onStop,
-                                 std::function<void()> onNew, std::function<void()> onSave,
-                                 std::function<void(Tool)> onToolChange)
+void ToolbarPanel::OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode, Tool activeTool,
+                                 const std::function<void()> &onPlay,
+                                 const std::function<void()> &onStop,
+                                 const std::function<void()> &onNew,
+                                 const std::function<void()> &onSave,
+                                 const std::function<void(Tool)> &onToolChange,
+                                 const std::function<void(RuntimeMode)> &onRuntimeModeChange)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
@@ -39,13 +42,29 @@ void ToolbarPanel::OnImGuiRender(SceneState sceneState, Tool activeTool,
 
     if (isEdit)
     {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.9f, 0.3f, 1.0f)); // Bright green
         if (ImGui::Button(ICON_FA_PLAY, ImVec2(size, size)))
             onPlay();
+        ImGui::PopStyleColor();
+
+        // Runtime Mode Selection
+        ImGui::SameLine();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+        ImGui::PushItemWidth(120.0f);
+        const char *modes[] = {"Embedded", "Standalone"};
+        int currentMode = (int)runtimeMode;
+        if (ImGui::Combo("##runtime_mode", &currentMode, modes, IM_ARRAYSIZE(modes)))
+        {
+            onRuntimeModeChange((RuntimeMode)currentMode);
+        }
+        ImGui::PopItemWidth();
     }
     else
     {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.3f, 0.3f, 1.0f)); // Bright red
         if (ImGui::Button(ICON_FA_STOP, ImVec2(size, size)))
             onStop();
+        ImGui::PopStyleColor();
     }
 
     ImGui::SameLine();

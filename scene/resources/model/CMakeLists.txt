@@ -1,20 +1,20 @@
 set(MODEL_SOURCES
-        core/Model.cpp
-        core/Model.h
-        core/ModelInstance.cpp
-        core/ModelInstance.h
+        Model.cpp
+        Model.h
+        ModelInstance.cpp
+        ModelInstance.h
         interfaces/IModelLoader.h
-        animation/animation.cpp
-        animation/animation.h
-        config/ModelConfig.h
-        config/ModelConfig.cpp
-        parser/jsonParser.cpp
-        parser/jsonParser.h
-        parser/jsonHelper.cpp
-        cache/ModelCache.cpp
-        cache/ModelCache.h
-        utils/ModelAnalyzer.cpp
-        utils/ModelAnalyzer.h
+        Animation.cpp
+        Animation.h
+        ModelConfig.h
+        ModelConfig.cpp
+        JsonParser.cpp
+        JsonParser.h
+        JsonHelper.cpp
+        ModelCache.cpp
+        ModelCache.h
+        ModelAnalyzer.cpp
+        ModelAnalyzer.h
 )
 
 add_library(model STATIC ${MODEL_SOURCES})

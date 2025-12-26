@@ -6,7 +6,7 @@
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
-#include <scene/camera/core/CameraController.h>
+#include <scene/camera/CameraController.h>
 
 // Minimal Player interface
 // Essential API only - 8 methods (down from 30+)
@@ -61,5 +61,3 @@ public:
 };
 
 #endif // IPLAYER_H
-
-

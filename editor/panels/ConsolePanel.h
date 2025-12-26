@@ -29,6 +29,15 @@ public:
     void Log(const std::string &message, LogMessage::Level level = LogMessage::Level::Info);
     void Clear();
 
+    bool IsVisible() const
+    {
+        return m_isVisible;
+    }
+    void SetVisible(bool visible)
+    {
+        m_isVisible = visible;
+    }
+
 private:
     std::deque<LogMessage> m_Messages;
     static constexpr size_t MAX_MESSAGES = 500;
@@ -37,5 +46,6 @@ private:
     bool m_ShowWarnings = true;
     bool m_ShowErrors = true;
     char m_InputBuffer[256] = {0};
+    bool m_isVisible = true;
 };
 } // namespace CHEngine

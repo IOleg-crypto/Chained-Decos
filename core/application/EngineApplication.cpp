@@ -22,8 +22,8 @@ EngineApplication::EngineApplication(Config config, IApplication *application)
     assert(m_app != nullptr && "Application instance cannot be null!");
 
     // Create the Engine singleton
-    // Create the Engine singleton
     m_engine = std::make_shared<CHEngine::Engine>();
+    m_engine->SetAppRunner(this);
     m_app->SetAppRunner(this);
 }
 
@@ -54,11 +54,13 @@ void EngineApplication::Run()
 
 void EngineApplication::PushLayer(Layer *layer)
 {
+    layer->SetAppRunner(this);
     m_LayerStack.PushLayer(layer);
 }
 
 void EngineApplication::PushOverlay(Layer *overlay)
 {
+    overlay->SetAppRunner(this);
     m_LayerStack.PushOverlay(overlay);
 }
 

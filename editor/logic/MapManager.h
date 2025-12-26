@@ -1,7 +1,7 @@
 #ifndef MAP_MANAGER_H
 #define MAP_MANAGER_H
 
-#include "scene/resources/map/core/SceneLoader.h"
+#include "scene/resources/map/SceneLoader.h"
 #include <string>
 #include <vector>
 

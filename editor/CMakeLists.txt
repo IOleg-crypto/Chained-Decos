@@ -33,6 +33,8 @@ set(panels_sources
     panels/AssetBrowserPanel.h
     panels/ToolbarPanel.cpp
     panels/ToolbarPanel.h
+    utils/EditorGrid.cpp
+    utils/EditorGrid.h
 )
 
 set(editor_sources
@@ -100,7 +102,7 @@ target_link_libraries(ChainedEditor PUBLIC
     cameracontroller
     model
     map
-    ChainedDecosGame
+    RuntimeLib
     editor_panels
 )
 

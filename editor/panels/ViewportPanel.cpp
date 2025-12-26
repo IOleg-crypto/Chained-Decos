@@ -1,6 +1,6 @@
 #include "ViewportPanel.h"
-#include "editor/EditorLayer.h"
-#include "scene/resources/map/renderer/MapRenderer.h"
+
+#include "scene/resources/map/MapRenderer.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <raymath.h>
@@ -37,7 +37,7 @@ ViewportPanel::~ViewportPanel()
 void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                                   const std::shared_ptr<CameraController> &cameraController,
                                   int selectedObjectIndex, Tool currentTool,
-                                  std::function<void(int)> onSelect)
+                                  const std::function<void(int)> &onSelect)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
@@ -62,6 +62,7 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
 
         if (scene && cameraController)
         {
+            m_GizmoHovered = false; // Reset every frame
             MapRenderer renderer;
             // Enter 3D Mode for ALL editor 3D drawing (Objects + Helpers)
             BeginMode3D(cameraController->GetCamera());
@@ -73,15 +74,35 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
             // 1. Draw Map Content (Solid Objects)
             renderer.DrawMapContent(*scene, cameraController->GetCamera());
 
-            // 2. Draw Editor Helpers (Grid)
-            DrawGrid(20, 1.0f);
+            // 2. Editor Helpers initialization (Draw moved below)
+            if (!m_GridInitialized)
+            {
+                m_Grid.Init();
+                m_GridInitialized = true;
+            }
 
             // Calculate picking ray INSIDE the texture mode for accuracy
+            // Calculate picking ray manually to avoid reliance on Raylib's window size
             Vector2 viewportMouse = GetViewportMousePosition();
-            Ray pickingRay = GetScreenToWorldRay(viewportMouse, cameraController->GetCamera());
+            float mouseX = (viewportMouse.x / (float)m_Width) * 2.0f - 1.0f;
+            float mouseY = 1.0f - (viewportMouse.y / (float)m_Height) * 2.0f;
 
-            // 3. Object Picking (If clicked on nothing else and tool is SELECT)
-            if (m_Hovered && ImGui::IsMouseClicked(0) && m_DraggingAxis == GizmoAxis::NONE)
+            Matrix view = GetCameraMatrix(cameraController->GetCamera());
+            float aspect = (float)m_Width / (float)m_Height;
+            Matrix projection = MatrixPerspective(cameraController->GetCamera().fovy * DEG2RAD,
+                                                  aspect, 0.01f, 1000.0f);
+            Matrix invProjView = MatrixInvert(MatrixMultiply(view, projection));
+
+            Vector3 nearPoint = Vector3Transform({mouseX, mouseY, -1.0f}, invProjView);
+            Vector3 farPoint = Vector3Transform({mouseX, mouseY, 1.0f}, invProjView);
+
+            Ray pickingRay;
+            pickingRay.position = cameraController->GetCamera().position;
+            pickingRay.direction = Vector3Normalize(Vector3Subtract(farPoint, nearPoint));
+
+            // 3. Object Picking (If hovered, clicked, and NOT clicking on a gizmo)
+            if (m_Hovered && ImGui::IsMouseClicked(0) && m_DraggingAxis == GizmoAxis::NONE &&
+                !m_GizmoHovered)
             {
                 int hitIndex = -1;
                 float closestDist = FLT_MAX;
@@ -90,36 +111,47 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                 for (int i = 0; i < (int)objects.size(); i++)
                 {
                     const auto &obj = objects[i];
-                    BoundingBox box;
+
+                    // Transform ray to local space to handle rotation
+                    Matrix worldMat =
+                        MatrixTranslate(obj.position.x, obj.position.y, obj.position.z);
+                    worldMat = MatrixMultiply(MatrixRotateXYZ(Vector3Scale(obj.rotation, DEG2RAD)),
+                                              worldMat);
+                    Matrix invWorldMat = MatrixInvert(worldMat);
+
+                    Ray localRay;
+                    localRay.position = Vector3Transform(pickingRay.position, invWorldMat);
+                    localRay.direction = Vector3Normalize(Vector3Subtract(
+                        Vector3Transform(Vector3Add(pickingRay.position, pickingRay.direction),
+                                         invWorldMat),
+                        localRay.position));
+
+                    BoundingBox localBox;
                     if (obj.type == MapObjectType::CUBE)
                     {
-                        box = {Vector3Subtract(obj.position, Vector3Scale(obj.scale, 0.5f)),
-                               Vector3Add(obj.position, Vector3Scale(obj.scale, 0.5f))};
+                        localBox = {Vector3Scale(obj.scale, -0.5f), Vector3Scale(obj.scale, 0.5f)};
                     }
                     else if (obj.type == MapObjectType::SPHERE)
                     {
-                        box = {Vector3Subtract(obj.position, {obj.radius, obj.radius, obj.radius}),
-                               Vector3Add(obj.position, {obj.radius, obj.radius, obj.radius})};
+                        localBox = {{-obj.radius, -obj.radius, -obj.radius},
+                                    {obj.radius, obj.radius, obj.radius}};
                     }
                     else if (obj.type == MapObjectType::CYLINDER)
                     {
-                        box = {
-                            Vector3Subtract(obj.position, {obj.radius, obj.height / 2, obj.radius}),
-                            Vector3Add(obj.position, {obj.radius, obj.height / 2, obj.radius})};
+                        localBox = {{-obj.radius, -obj.height / 2, -obj.radius},
+                                    {obj.radius, obj.height / 2, obj.radius}};
                     }
                     else if (obj.type == MapObjectType::PLANE)
                     {
-                        box = {
-                            Vector3Subtract(obj.position, {obj.size.x / 2, 0.05f, obj.size.y / 2}),
-                            Vector3Add(obj.position, {obj.size.x / 2, 0.05f, obj.size.y / 2})};
+                        localBox = {{-obj.size.x / 2, -0.05f, -obj.size.y / 2},
+                                    {obj.size.x / 2, 0.05f, obj.size.y / 2}};
                     }
                     else
                     {
-                        box = {Vector3Subtract(obj.position, {0.5f, 0.5f, 0.5f}),
-                               Vector3Add(obj.position, {0.5f, 0.5f, 0.5f})};
+                        localBox = {{-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}};
                     }
 
-                    RayCollision collision = GetRayCollisionBox(pickingRay, box);
+                    RayCollision collision = GetRayCollisionBox(localRay, localBox);
                     if (collision.hit && collision.distance < closestDist)
                     {
                         closestDist = collision.distance;
@@ -162,9 +194,10 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                                 axisDir = {0, 0, 1};
 
                             Vector2 screenAxisDir = Vector2Subtract(
-                                GetWorldToScreen(Vector3Add(obj.position, axisDir),
-                                                 cameraController->GetCamera()),
-                                GetWorldToScreen(obj.position, cameraController->GetCamera()));
+                                GetViewportWorldToScreen(Vector3Add(obj.position, axisDir),
+                                                         cameraController->GetCamera()),
+                                GetViewportWorldToScreen(obj.position,
+                                                         cameraController->GetCamera()));
                             screenAxisDir = Vector2Normalize(screenAxisDir);
 
                             float delta =
@@ -206,8 +239,8 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
 
                 // 3. Draw Handles
                 float gizmoSize = 2.0f;
-                float handleRadius = 0.15f;
-                float lineThickness = 0.03f;
+                float handleRadius = 0.2f;
+                float lineThickness = 0.05f;
 
                 auto drawAxisHandle = [&](GizmoAxis axis, Vector3 direction, Color color)
                 {
@@ -225,6 +258,9 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
 
                     bool hovered = (m_DraggingAxis == axis) || handleColl.hit ||
                                    (lineColl.hit && lineColl.distance < 10.0f);
+
+                    if (hovered)
+                        m_GizmoHovered = true;
 
                     if (hovered && ImGui::IsMouseClicked(0) && m_DraggingAxis == GizmoAxis::NONE)
                     {
@@ -318,10 +354,13 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                     }
                 }
 
-                // Draw highlight box
-                DrawCubeWires(obj.position, obj.scale.x + 0.1f, obj.scale.y + 0.1f,
-                              obj.scale.z + 0.1f, YELLOW);
+                // Draw selection highlight for all types (Models and Primitives)
+                renderer.RenderMapObject(obj, scene->GetMapModels(), cameraController->GetCamera(),
+                                         true, true);
             }
+
+            // Draw Infinite Grid last (with depth testing)
+            m_Grid.Draw(cameraController->GetCamera(), m_Width, m_Height);
 
             EndMode3D();
 
@@ -336,7 +375,8 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                     auto drawLabel = [&](Vector3 dir, const char *label, Color color)
                     {
                         Vector3 endPos = Vector3Add(obj.position, Vector3Scale(dir, gizmoSize));
-                        Vector2 screenPos = GetWorldToScreen(endPos, cameraController->GetCamera());
+                        Vector2 screenPos =
+                            GetViewportWorldToScreen(endPos, cameraController->GetCamera());
                         DrawText(label, (int)screenPos.x + 5, (int)screenPos.y - 10, 20, color);
                     };
                     drawLabel({1, 0, 0}, "X", RED);
@@ -367,8 +407,41 @@ void ViewportPanel::Resize(uint32_t width, uint32_t height)
 
 Vector2 ViewportPanel::GetViewportMousePosition() const
 {
-    auto mousePos = ImGui::GetMousePos();
-    auto canvasPos = ImGui::GetCursorScreenPos();
-    return {mousePos.x - canvasPos.x, mousePos.y - canvasPos.y};
+    ImVec2 mousePos = ImGui::GetMousePos();
+    ImVec2 windowPos = ImGui::GetWindowPos();
+    ImVec2 contentPos = ImGui::GetWindowContentRegionMin();
+
+    return {mousePos.x - (windowPos.x + contentPos.x), mousePos.y - (windowPos.y + contentPos.y)};
+}
+
+Vector2 ViewportPanel::GetViewportWorldToScreen(Vector3 worldPos, Camera3D camera) const
+{
+    // Calculate normalized device coordinates manually
+    Matrix view = GetCameraMatrix(camera);
+    float aspect = (float)m_Width / (float)m_Height;
+    Matrix projection = MatrixPerspective(camera.fovy * DEG2RAD, aspect, 0.01f, 1000.0f);
+
+    // Transform world position to clip space
+    Vector3 clipPos = Vector3Transform(worldPos, MatrixMultiply(view, projection));
+
+    // Perspective division to get NDC (Normalized Device Coordinates)
+    // Note: Vector1/Raylib math doesn't handle W division in Vector3Transform for Matrix4x4
+    // automatically in a way that gives NDC. We need the 4th component.
+
+    // Let's use internal raylib math if possible, but correctly.
+    // Actually, Raylib's GetWorldToScreen can be used IF we compensate for its internal use of
+    // Screen size.
+
+    Vector2 raylibScreenPos = GetWorldToScreen(worldPos, camera);
+
+    // Map from Raylib's window coordinates to our viewport texture coordinates
+    float screenWidth = (float)GetScreenWidth();
+    float screenHeight = (float)GetScreenHeight();
+
+    Vector2 viewportPos;
+    viewportPos.x = (raylibScreenPos.x / screenWidth) * (float)m_Width;
+    viewportPos.y = (raylibScreenPos.y / screenHeight) * (float)m_Height;
+
+    return viewportPos;
 }
 } // namespace CHEngine

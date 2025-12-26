@@ -6,6 +6,7 @@
 
 namespace CHEngine
 {
+class EngineApplication;
 
 class Layer
 {
@@ -37,8 +38,18 @@ public:
         return m_DebugName;
     }
 
+    void SetAppRunner(EngineApplication *appRunner)
+    {
+        m_AppRunner = appRunner;
+    }
+    EngineApplication *GetAppRunner() const
+    {
+        return m_AppRunner;
+    }
+
 protected:
     std::string m_DebugName;
+    EngineApplication *m_AppRunner = nullptr;
 };
 
 } // namespace CHEngine

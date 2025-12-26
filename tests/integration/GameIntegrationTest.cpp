@@ -3,11 +3,11 @@
 
 #include "components/physics/collision/core/collisionManager.h"
 #include "core/Engine.h"
-#include "project/ChainedDecos/GameApplication.h"
-#include "project/ChainedDecos/gamegui/Menu.h"
-#include "project/ChainedDecos/player/core/Player.h"
-#include "scene/resources/map/core/SceneLoader.h"
-#include "scene/resources/model/core/Model.h"
+#include "project/Runtime/RuntimeApplication.h"
+#include "project/Runtime/gamegui/Menu.h"
+#include "project/Runtime/player/Player.h"
+#include "scene/resources/map/SceneLoader.h"
+#include "scene/resources/model/Model.h"
 
 class GameIntegrationTest : public ::testing::Test
 {
@@ -22,7 +22,7 @@ protected:
         menu = std::make_shared<Menu>();
 
         // Create game application instance
-        game = std::make_shared<CHD::GameApplication>(0, nullptr);
+        game = std::make_shared<CHD::RuntimeApplication>(0, nullptr);
 
         engine = nullptr;
     }
@@ -39,7 +39,7 @@ protected:
     }
 
     std::shared_ptr<CHEngine::Engine> engine;
-    std::shared_ptr<CHD::GameApplication> game;
+    std::shared_ptr<CHD::RuntimeApplication> game;
     std::shared_ptr<CollisionManager> collisionManager;
     std::shared_ptr<Player> player;
     std::shared_ptr<ModelLoader> models;
@@ -104,8 +104,8 @@ protected:
 // }
 //
 //
-//  GameApplication doesn't have IsRunning/IsInitialized methods
-//  These tests need to be rewritten for GameApplication architecture
+//  RuntimeApplication doesn't have IsRunning/IsInitialized methods
+//  These tests need to be rewritten for RuntimeApplication architecture
 //  TEST_F(GameIntegrationTest, GameStateQueries) {
 //     // Test state queries that don't trigger graphics
 //     EXPECT_NO_THROW({
