@@ -20,18 +20,14 @@ using namespace CHEngine;
 #include <raylib.h>
 #include <rlImGui.h>
 
-using CHEngine::MenuEvent;
-using CHEngine::MenuEventType;
 using namespace CHEngine;
 
 namespace CHD
 {
 
-using MenuEventCallback = Menu::MenuEventCallback;
-
 RuntimeApplication::RuntimeApplication(int argc, char *argv[])
-    : m_showMenu(true), m_isGameInitialized(false), m_cursorDisabled(false),
-      m_showDebugCollision(false), m_showDebugStats(false)
+    : m_isGameInitialized(false), m_cursorDisabled(false), m_showDebugCollision(false),
+      m_showDebugStats(false)
 {
     // Parse command line arguments
     m_gameConfig = CommandLineHandler::ParseArguments(argc, argv);
@@ -128,58 +124,6 @@ void RuntimeApplication::OnStart()
     Audio::LoadSound("player_fall",
                      std::string(PROJECT_ROOT_DIR) + "/resources/audio/wind-gust_fall.wav");
 
-    // Initialize Menu
-    m_menu = std::make_shared<Menu>();
-    Engine::Instance().RegisterService<IMenu>(m_menu);
-    m_menu->Initialize(&Engine::Instance());
-    m_menu->SetupStyle();
-
-    // Register Menu Events
-    m_menu->SetEventCallback(
-        [this](const CHEngine::MenuEvent &event)
-        {
-            switch (event.GetMenuEventType())
-            {
-            case CHEngine::MenuEventType::StartGame:
-            case CHEngine::MenuEventType::StartGameWithMap:
-            {
-                std::string mapName = event.GetMapName();
-                if (mapName.empty())
-                    mapName = m_menu->GetSelectedMapName();
-
-                auto levelManager = Engine::Instance().GetService<ILevelManager>();
-                if (levelManager && levelManager->LoadScene(mapName))
-                {
-                    m_isGameInitialized = true;
-                    m_showMenu = false;
-                }
-                break;
-            }
-            case CHEngine::MenuEventType::ResumeGame:
-            {
-                if (m_isGameInitialized)
-                {
-                    m_showMenu = false;
-                }
-                break;
-            }
-            case CHEngine::MenuEventType::ExitGame:
-            {
-                Engine::Instance().RequestExit();
-                break;
-            }
-            case CHEngine::MenuEventType::BackToMain:
-            {
-                // Internal menu state change handled by Menu class
-                break;
-            }
-            default:
-                break;
-            }
-        });
-
-    CD_INFO("[RuntimeApplication] Menu initialized and events registered");
-
     // Initialize ECS
     REGISTRY.clear();
 
@@ -197,15 +141,6 @@ void RuntimeApplication::OnStart()
     m_playerEntity = CHD::RuntimeInitializer::InitializePlayer(spawnPos, sensitivity);
 
     CD_INFO("[RuntimeApplication] ECS Player entity created");
-
-    // Apply visual offset to player render component
-    if (REGISTRY.valid(m_playerEntity) && REGISTRY.all_of<RenderComponent>(m_playerEntity))
-    {
-        auto &renderComp = REGISTRY.get<RenderComponent>(m_playerEntity);
-        renderComp.offset = {0.0f, Player::MODEL_Y_OFFSET, 0.0f};
-        CD_INFO("[RuntimeApplication] Set player visual offset to (0, %.2f, 0)",
-                Player::MODEL_Y_OFFSET);
-    }
 
     // Initialize camera to follow player (Hazel-style)
     Camera3D camera = {0};
@@ -232,35 +167,14 @@ void RuntimeApplication::OnStart()
         if (levelManager && levelManager->LoadScene(m_gameConfig.mapPath))
         {
             m_isGameInitialized = true;
-            m_showMenu = false; // Always skip menu when loading from editor
+
             CD_INFO("[RuntimeApplication] Scene loaded successfully, game initialized");
         }
         else
         {
             CD_ERROR("[RuntimeApplication] Failed to load scene: %s", m_gameConfig.mapPath.c_str());
-            m_showMenu = true; // Show menu on failure
         }
     }
-    else
-    {
-        // No map provided - show menu unless skipMenu flag is set
-        m_showMenu = !m_gameConfig.skipMenu;
-        CD_INFO("[RuntimeApplication] No map provided, showing menu: %s",
-                m_showMenu ? "yes" : "no");
-    }
-
-    // Initialize cursor state
-    m_cursorDisabled = !m_showMenu;
-    if (m_cursorDisabled)
-        DisableCursor();
-    else
-        EnableCursor();
-
-    // Configure ImGui
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.MouseDrawCursor = false;
-
     // Initialize input
     InitInput();
 
@@ -275,168 +189,14 @@ void RuntimeApplication::OnStart()
 
 void RuntimeApplication::OnUpdate(float deltaTime)
 {
-    // Update Input handled by Engine
-    // Update Audio looping
-    // (In future these will be in Engine::Update)
-
-    // Get Menu through Engine (Legacy access)
-    auto engine = &Engine::Instance();
-    if (!engine)
-        return;
-
-    Menu *menu = m_menu.get();
-
-    // Only handle console toggle here if we are NOT in the menu.
-    // When in menu, Menu::HandleKeyboardNavigation handles it to avoid double-toggling.
-    if (!m_showMenu && Input::IsKeyPressed(KEY_GRAVE) && menu)
-    {
-        menu->ToggleConsole();
-    }
-
-    // Manage cursor visibility based on menu state
-    if (m_showMenu)
-    {
-        // Menu is open - show system cursor
-        ImGuiIO &io = ImGui::GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-        io.MouseDrawCursor = false;
-
-        if (m_cursorDisabled)
-        {
-            EnableCursor();
-            m_cursorDisabled = false;
-        }
-
-        // Menu actions are now handled via event callbacks registered in OnStart()
-    }
-    else
-    {
-        // Menu is closed - disable keyboard navigation
-        ImGuiIO &io = ImGui::GetIO();
-        io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
-
-        if (io.NavActive)
-        {
-            io.NavActive = false;
-            io.NavVisible = false;
-        }
-
-        io.WantCaptureKeyboard = false;
-        io.WantCaptureMouse = false;
-
-        // Game is running
-        if (m_isGameInitialized)
-        {
-            bool consoleOpen =
-                menu && menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen();
-
-            if (consoleOpen)
-            {
-                if (m_cursorDisabled)
-                {
-                    EnableCursor();
-                    m_cursorDisabled = false;
-                }
-            }
-            else
-            {
-                if (!m_cursorDisabled)
-                {
-                    DisableCursor();
-                    m_cursorDisabled = true;
-                }
-
-                // ECS Systems are now handled by RuntimeLayer
-            }
-        }
-        else
-        {
-            if (m_cursorDisabled)
-            {
-                EnableCursor();
-                m_cursorDisabled = false;
-            }
-        }
-    }
+    // Application-level update logic
+    // Game logic is handled by RuntimeLayer and ECS systems
 }
 
 void RuntimeApplication::OnRender()
 {
     // Frame is begun by EngineApplication::Render()
-
-    // Get Menu
-    auto *engine = &Engine::Instance();
-    Menu *menu = m_menu.get();
-
-    if (m_showMenu && menu)
-    {
-        rlImGuiBegin();
-
-        // Render the menu
-        menu->Render();
-
-        if (menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
-        {
-            menu->GetConsoleManager()->RenderConsole();
-        }
-        rlImGuiEnd();
-    }
-    else
-    {
-        if (m_isGameInitialized)
-        {
-            // 3D Rendering (this part is fine for now, though could be moved to GameLayer)
-            Camera3D &camera = Renderer::GetCamera();
-            Renderer::BeginScene(camera);
-
-            auto models = Engine::Instance().GetService<ModelLoader>();
-            if (models)
-                models->DrawAllModels();
-
-            auto levelManager = Engine::Instance().GetService<ILevelManager>();
-            if (levelManager)
-                levelManager->RenderEditorMap();
-
-            auto world = Engine::Instance().GetService<WorldManager>();
-            if (world)
-                world->Render();
-
-            Renderer::EndScene();
-
-            // HUD is now rendered by GameLayer::RenderUI
-        }
-    }
-    // Render console in game - Now handled inside menu->Render() when showMenu is true
-    // If we want it while playing, we need a single rlImGuiBegin/End block per frame
-    if (menu && menu->GetConsoleManager() && menu->GetConsoleManager()->IsConsoleOpen())
-    {
-        if (!m_showMenu)
-        {
-            rlImGuiBegin();
-            menu->Render(); // Calling Render here instead of just Console so screens can handle it
-                            // if needed
-            rlImGuiEnd();
-        }
-    }
-
-    // Debug Stats
-    if (m_showDebugStats)
-    {
-        DrawFPS(10, 10);
-
-        if (m_isGameInitialized)
-        {
-            // Draw player position for debugging
-            if (REGISTRY.valid(m_playerEntity))
-            {
-                auto &transform = REGISTRY.get<TransformComponent>(m_playerEntity);
-                DrawText(TextFormat("Pos: %.2f, %.2f, %.2f", transform.position.x,
-                                    transform.position.y, transform.position.z),
-                         10, 30, 20, GREEN);
-            }
-        }
-    }
-
+    // Rendering is handled by RuntimeLayer
     // Frame is ended by EngineApplication::Render()
 }
 
@@ -450,18 +210,6 @@ void RuntimeApplication::OnShutdown()
     // Shutdown Managers
     // (In future these will be in Engine::Shutdown)
 
-    auto collisionManager = Engine::Instance().GetService<CollisionManager>();
-    if (collisionManager && !collisionManager->GetColliders().empty())
-    {
-        collisionManager->ClearColliders();
-        {
-            if (m_menu)
-            {
-                m_menu->SetGameInProgress(false);
-            }
-        }
-    }
-
     CD_INFO("[RuntimeApplication] Game resources cleaned up successfully");
 }
 
@@ -469,26 +217,7 @@ void RuntimeApplication::InitInput()
 {
     CD_INFO("[RuntimeApplication] Setting up game-specific input bindings...");
 
-    auto &engine = Engine::Instance();
-    auto *menu = m_menu.get();
-
-    if (!menu)
-    {
-        CD_WARN("[RuntimeApplication] Menu not found, skipping input bindings");
-        return;
-    }
-
-    Input::RegisterAction(KEY_F1,
-                          [this, menu]
-                          {
-                              if (!m_showMenu && m_isGameInitialized)
-                              {
-                                  menu->SetGameInProgress(true);
-                                  m_showMenu = true;
-                                  EnableCursor(); // Show system cursor when opening menu
-                              }
-                          });
-
+    // Debug toggles
     Input::RegisterAction(KEY_F2,
                           [this]
                           {
@@ -508,10 +237,7 @@ void RuntimeApplication::InitInput()
 
 void RuntimeApplication::OnEvent(CHEngine::Event &e)
 {
-    if (m_menu && m_showMenu)
-    {
-        m_menu->OnEvent(e);
-    }
+    // Event handling delegated to RuntimeLayer
 }
 
 } // namespace CHD
