@@ -1,4 +1,5 @@
 #include "ViewportPanel.h"
+#include "../viewport/ViewportPicking.h"
 
 #include "scene/resources/map/MapRenderer.h"
 #include <imgui.h>

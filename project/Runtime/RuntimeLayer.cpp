@@ -275,8 +275,8 @@ void RuntimeLayer::OnUpdate(float deltaTime)
             player.isFallingSoundPlaying = false;
         }
 
-        // Camera Update
-        ::Camera &camera = Renderer::GetCamera();
+        // Camera Update (Hazel-style)
+        Camera3D camera = Renderer::GetCamera();
         float yawRadLocal = player.cameraYaw * DEG2RAD;
         float pitchRadLocal = player.cameraPitch * DEG2RAD;
 
@@ -286,6 +286,12 @@ void RuntimeLayer::OnUpdate(float deltaTime)
 
         camera.target = Vector3Add(transform.position, {0, 1.5f, 0});
         camera.position = Vector3Add(camera.target, camOffset);
+        camera.up = {0.0f, 1.0f, 0.0f};
+        camera.fovy = 45.0f;
+        camera.projection = CAMERA_PERSPECTIVE;
+
+        // Apply camera update to renderer
+        Renderer::SetCamera(camera);
     }
 
     // 2. UPDATE ENTITY COLLISIONS (Previously EntityCollisionSystem::Update)
