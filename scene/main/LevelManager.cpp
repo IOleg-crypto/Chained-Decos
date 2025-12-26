@@ -211,16 +211,8 @@ bool LevelManager::IsMapLoaded() const
 
 void LevelManager::Update(float deltaTime)
 {
-    // Update Player reference if it became available
-    if (!m_player && m_engine && m_collisionInitializer)
-    {
-        auto player = m_engine->GetService<IPlayer>();
-        if (player)
-        {
-            m_player = player;
-            m_collisionInitializer->SetPlayer(m_player);
-        }
-    }
+    // Note: Player is now managed via ECS (PlayerComponent)
+    // No need to update IPlayer service reference
 
     // Map update logic if needed
     (void)deltaTime;

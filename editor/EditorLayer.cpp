@@ -96,11 +96,7 @@ void EditorLayer::OnUpdate(float deltaTime)
             levelManager->Update(deltaTime);
         }
 
-        auto player = Engine::Instance().GetService<IPlayer>();
-        if (player)
-        {
-            player->Update(deltaTime);
-        }
+        // Note: Player update is now handled by ECS systems in RuntimeLayer
     }
 
     // Update logic
