@@ -82,84 +82,22 @@ void ViewportPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene,
                 m_GridInitialized = true;
             }
 
-            // Calculate picking ray INSIDE the texture mode for accuracy
-            // Calculate picking ray manually to avoid reliance on Raylib's window size
-            Vector2 viewportMouse = GetViewportMousePosition();
-            float mouseX = (viewportMouse.x / (float)m_Width) * 2.0f - 1.0f;
-            float mouseY = 1.0f - (viewportMouse.y / (float)m_Height) * 2.0f;
+            // Hazel-style: Use ViewportPicking for clean ray calculation
+            ViewportPicking picker;
+            ImVec2 mousePos = ImGui::GetMousePos();
+            ImVec2 viewportPos = ImGui::GetCursorScreenPos();
+            ImVec2 viewportSize = {(float)m_Width, (float)m_Height};
 
-            Matrix view = GetCameraMatrix(cameraController->GetCamera());
-            float aspect = (float)m_Width / (float)m_Height;
-            Matrix projection = MatrixPerspective(cameraController->GetCamera().fovy * DEG2RAD,
-                                                  aspect, 0.01f, 1000.0f);
-            Matrix invProjView = MatrixInvert(MatrixMultiply(view, projection));
+            // Get ray for gizmo interaction
+            Ray pickingRay = picker.GetMouseRay(mousePos, viewportPos, viewportSize,
+                                                cameraController->GetCamera());
 
-            Vector3 nearPoint = Vector3Transform({mouseX, mouseY, -1.0f}, invProjView);
-            Vector3 farPoint = Vector3Transform({mouseX, mouseY, 1.0f}, invProjView);
-
-            Ray pickingRay;
-            pickingRay.position = cameraController->GetCamera().position;
-            pickingRay.direction = Vector3Normalize(Vector3Subtract(farPoint, nearPoint));
-
-            // 3. Object Picking (If hovered, clicked, and NOT clicking on a gizmo)
+            // Object Picking (If hovered, clicked, and NOT clicking on a gizmo)
             if (m_Hovered && ImGui::IsMouseClicked(0) && m_DraggingAxis == GizmoAxis::NONE &&
                 !m_GizmoHovered)
             {
-                int hitIndex = -1;
-                float closestDist = FLT_MAX;
-                auto &objects = scene->GetMapObjects();
-
-                for (int i = 0; i < (int)objects.size(); i++)
-                {
-                    const auto &obj = objects[i];
-
-                    // Transform ray to local space to handle rotation
-                    Matrix worldMat =
-                        MatrixTranslate(obj.position.x, obj.position.y, obj.position.z);
-                    worldMat = MatrixMultiply(MatrixRotateXYZ(Vector3Scale(obj.rotation, DEG2RAD)),
-                                              worldMat);
-                    Matrix invWorldMat = MatrixInvert(worldMat);
-
-                    Ray localRay;
-                    localRay.position = Vector3Transform(pickingRay.position, invWorldMat);
-                    localRay.direction = Vector3Normalize(Vector3Subtract(
-                        Vector3Transform(Vector3Add(pickingRay.position, pickingRay.direction),
-                                         invWorldMat),
-                        localRay.position));
-
-                    BoundingBox localBox;
-                    if (obj.type == MapObjectType::CUBE)
-                    {
-                        localBox = {Vector3Scale(obj.scale, -0.5f), Vector3Scale(obj.scale, 0.5f)};
-                    }
-                    else if (obj.type == MapObjectType::SPHERE)
-                    {
-                        localBox = {{-obj.radius, -obj.radius, -obj.radius},
-                                    {obj.radius, obj.radius, obj.radius}};
-                    }
-                    else if (obj.type == MapObjectType::CYLINDER)
-                    {
-                        localBox = {{-obj.radius, -obj.height / 2, -obj.radius},
-                                    {obj.radius, obj.height / 2, obj.radius}};
-                    }
-                    else if (obj.type == MapObjectType::PLANE)
-                    {
-                        localBox = {{-obj.size.x / 2, -0.05f, -obj.size.y / 2},
-                                    {obj.size.x / 2, 0.05f, obj.size.y / 2}};
-                    }
-                    else
-                    {
-                        localBox = {{-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}};
-                    }
-
-                    RayCollision collision = GetRayCollisionBox(localRay, localBox);
-                    if (collision.hit && collision.distance < closestDist)
-                    {
-                        closestDist = collision.distance;
-                        hitIndex = i;
-                    }
-                }
-
+                int hitIndex = picker.PickObject(mousePos, viewportPos, viewportSize,
+                                                 cameraController->GetCamera(), scene);
                 if (hitIndex != -1)
                     onSelect(hitIndex);
             }
