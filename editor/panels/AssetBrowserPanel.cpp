@@ -13,7 +13,7 @@ AssetBrowserPanel::AssetBrowserPanel()
 
 void AssetBrowserPanel::OnImGuiRender()
 {
-    ImGui::Begin("Content Browser");
+    ImGui::Begin("File manager");
 
     if (m_CurrentDirectory != m_RootPath)
     {

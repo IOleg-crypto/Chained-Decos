@@ -1,7 +1,9 @@
 #pragma once
 
-#include "scene/resources/map/core/MapData.h"
+#include "scene/resources/map/GameScene.h"
+#include <functional>
 #include <imgui.h>
+#include <memory>
 #include <string>
 
 namespace CHEngine
@@ -11,13 +13,31 @@ class InspectorPanel
 public:
     InspectorPanel() = default;
 
-    void OnImGuiRender(MapObjectData *selectedEntity);
-    void OnImGuiRender(UIElementData *selectedElement);
+    void OnImGuiRender(const std::shared_ptr<GameScene> &scene, MapObjectData *selectedEntity);
+    void OnImGuiRender(const std::shared_ptr<GameScene> &scene, UIElementData *selectedElement);
+
+    void SetSkyboxCallback(std::function<void(const std::string &)> cb)
+    {
+        m_onSkyboxSelected = cb;
+    }
+
+    bool IsVisible() const
+    {
+        return m_isVisible;
+    }
+    void SetVisible(bool visible)
+    {
+        m_isVisible = visible;
+    }
 
 private:
+    void DrawSceneSettings(const std::shared_ptr<GameScene> &scene);
     void DrawComponents(MapObjectData *entity);
     void DrawUIComponents(UIElementData *element);
     void DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f,
                          float columnWidth = 100.0f);
+
+    std::function<void(const std::string &)> m_onSkyboxSelected;
+    bool m_isVisible = true;
 };
 } // namespace CHEngine

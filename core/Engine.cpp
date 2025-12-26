@@ -10,9 +10,9 @@
 #include "core/window/Window.h"
 #include "events/UIEventRegistry.h"
 #include "scene/SceneManager.h"
-#include "scene/main/core/World.h"
+#include "scene/main/World.h"
 #include "scene/resources/font/FontService.h"
-#include "scene/resources/model/core/Model.h"
+#include "scene/resources/model/Model.h"
 #include "scene/resources/texture/TextureService.h"
 #include <memory>
 #include <raylib.h>
@@ -254,4 +254,15 @@ Window *Engine::GetWindow() const
 {
     return m_Window.get();
 }
+
+EngineApplication *Engine::GetAppRunner() const
+{
+    return m_AppRunner;
+}
+
+void Engine::SetAppRunner(EngineApplication *appRunner)
+{
+    m_AppRunner = appRunner;
+}
+
 } // namespace CHEngine

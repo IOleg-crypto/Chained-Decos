@@ -12,11 +12,16 @@
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/MouseEvent.h"
-#include "scene/camera/core/CameraController.h"
-#include "scene/resources/map/core/SceneLoader.h"
+#include "scene/camera/CameraController.h"
+#include "scene/resources/map/SceneLoader.h"
 
 #include <imgui.h>
 #include <memory>
+
+namespace CHD
+{
+class RuntimeLayer;
+}
 
 namespace CHEngine
 {
@@ -42,6 +47,8 @@ public:
     void SaveSceneAs();
     void AddModel();
     void AddUIElement(const std::string &type);
+    void LoadSkybox(const std::string &path = "");
+    void ApplySkybox(const std::string &path);
 
     SceneState GetSceneState() const
     {
@@ -74,6 +81,7 @@ public:
 
     void UI_DrawDockspace();
     void UI_DrawToolbar();
+    void UI_DrawMenuBar();
 
 private:
     std::shared_ptr<CameraController> m_CameraController;
@@ -99,9 +107,14 @@ private:
 
     // State
     SceneState m_SceneState = SceneState::Edit;
+    RuntimeMode m_RuntimeMode =
+        RuntimeMode::Standalone; // Default to standalone as requested before
     Tool m_ActiveTool = Tool::MOVE;
     int m_SelectedObjectIndex = -1;
     SelectionType m_SelectionType = SelectionType::NONE;
+
+    CHD::RuntimeLayer *m_RuntimeLayer = nullptr;
+    bool m_ShowProjectSettings = false;
 };
 } // namespace CHEngine
 

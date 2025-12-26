@@ -1,17 +1,21 @@
 set(MAP_SOURCES
-    core/SceneLoader.cpp
-    core/SceneLoader.h
-    core/MapData.h
-    core/MapService.cpp
-    core/MapService.h
-    converter/MapObjectConverter.cpp
-    converter/MapObjectConverter.h
-    interfaces/ISceneFileOperations.h
-    interfaces/IMapMetadataManager.h
-    renderer/MapRenderer.cpp
-    renderer/MapRenderer.h
-    skybox/skybox.cpp
-    skybox/skybox.h
+    SceneLoader.cpp
+    SceneLoader.h
+    GameScene.cpp
+    GameScene.h
+    MapData.h
+    MapService.cpp
+    MapService.h
+    SceneSerializer.cpp
+    SceneSerializer.h
+    MapObjectConverter.cpp
+    MapObjectConverter.h
+    ISceneFileOperations.h
+    IMapMetadataManager.h
+    MapRenderer.cpp
+    MapRenderer.h
+    Skybox.cpp
+    skybox.h
 )
 
 add_library(map STATIC ${MAP_SOURCES})

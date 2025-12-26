@@ -2,9 +2,13 @@
 #define HIERARCHYPANEL_H
 
 #include "editor/EditorTypes.h"
-#include "scene/resources/map/core/SceneLoader.h"
 #include <functional>
 #include <memory>
+#include <string>
+
+class GameScene;
+
+class GameScene;
 
 namespace CHEngine
 {
@@ -17,12 +21,22 @@ public:
     void SetContext(const std::shared_ptr<GameScene> &scene);
 
     void OnImGuiRender(SelectionType selectionType, int selectedIndex,
-                       std::function<void(SelectionType, int)> onSelect,
-                       std::function<void()> onAddModel,
-                       std::function<void(const std::string &)> onAddUI);
+                       const std::function<void(SelectionType, int)> &onSelect,
+                       const std::function<void()> &onAddModel,
+                       const std::function<void(const std::string &)> &onAddUI);
+
+    bool IsVisible() const
+    {
+        return m_isVisible;
+    }
+    void SetVisible(bool visible)
+    {
+        m_isVisible = visible;
+    }
 
 private:
-    std::shared_ptr<GameScene> m_Context;
+    std::shared_ptr<::GameScene> m_Context;
+    bool m_isVisible = true;
 };
 } // namespace CHEngine
 

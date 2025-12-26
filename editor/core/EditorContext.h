@@ -8,9 +8,9 @@
 #include <entt/entt.hpp>
 
 #include "editor/EditorTypes.h"
-#include "scene/camera/core/CameraController.h"
-#include "scene/resources/map/core/SceneLoader.h"
-#include "scene/resources/map/skybox/skybox.h"
+#include "scene/camera/CameraController.h"
+#include "scene/resources/map/SceneLoader.h"
+#include "scene/resources/map/Skybox.h"
 
 // EditorContext - Central state management for the editor
 // Holds all editor state including scene, selection, tools, and view settings
