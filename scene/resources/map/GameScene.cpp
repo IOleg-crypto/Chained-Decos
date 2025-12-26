@@ -12,6 +12,13 @@ void GameScene::Cleanup()
         UnloadModel(pair.second);
     }
     m_loadedModels.clear();
+
+    for (auto &pair : m_loadedTextures)
+    {
+        UnloadTexture(pair.second);
+    }
+    m_loadedTextures.clear();
+
     m_objects.clear();
     m_uiElements.clear();
     m_skybox.reset();
@@ -85,4 +92,19 @@ void GameScene::AddUIElements(const std::vector<UIElementData> &uiElements)
 std::vector<UIElementData> &GameScene::GetUIElementsMutable()
 {
     return m_uiElements;
+}
+
+const std::unordered_map<std::string, Texture2D> &GameScene::GetMapTextures() const
+{
+    return m_loadedTextures;
+}
+
+void GameScene::AddMapTextures(const std::unordered_map<std::string, Texture2D> &texturesMap)
+{
+    m_loadedTextures.insert(texturesMap.begin(), texturesMap.end());
+}
+
+std::unordered_map<std::string, Texture2D> &GameScene::GetMapTexturesMutable()
+{
+    return m_loadedTextures;
 }

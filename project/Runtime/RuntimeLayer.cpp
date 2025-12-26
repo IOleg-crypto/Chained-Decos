@@ -287,7 +287,7 @@ void RuntimeLayer::OnUpdate(float deltaTime)
         camera.target = Vector3Add(transform.position, {0, 1.5f, 0});
         camera.position = Vector3Add(camera.target, camOffset);
         camera.up = {0.0f, 1.0f, 0.0f};
-        camera.fovy = 45.0f;
+        camera.fovy = 60.0f;
         camera.projection = CAMERA_PERSPECTIVE;
 
         // Apply camera update to renderer
@@ -514,6 +514,9 @@ void RuntimeLayer::OnEvent(Event &e)
                     player.isGrounded = false;
                     player.runTimer = 0;
                     player.maxHeight = 0;
+                    player.cameraDistance = 10.0f;
+                    player.cameraPitch = 25.0f;
+                    player.cameraYaw = 0.0f;
                     if (player.isFallingSoundPlaying)
                     {
                         Audio::StopLoopingSoundEffect("player_fall");

@@ -3,10 +3,10 @@
 
 #include "core/application/IApplication.h"
 #include "core/config/GameConfig.h"
-#include "project/Runtime/gamegui/Menu.h"
 #include <memory>
 #include <scene/ecs/ECSRegistry.h>
 #include <scene/ecs/Entity.h>
+
 
 // Runtime application - uses full engine + own modules
 

@@ -13,7 +13,6 @@ target_include_directories(RuntimeLib
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/project/Runtime
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/project/Runtime/player
         ${CMAKE_SOURCE_DIR}/components/physics/collision
         ${CMAKE_SOURCE_DIR}/scene/resources/model
         ${CMAKE_SOURCE_DIR}/scene/resources/map
@@ -29,14 +28,9 @@ target_include_directories(RuntimeLib
 
 # PROJECT_ROOT_DIR is defined globally in the root CMakeLists.txt
 
-add_subdirectory(gamegui)
-add_subdirectory(player)
-
 
 target_link_libraries(RuntimeLib
     PUBLIC
-        player
-        menu
         world
         raylib
         imguilib

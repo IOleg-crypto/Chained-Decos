@@ -1,50 +1,50 @@
 #ifndef SELECTION_MANAGER_H
 #define SELECTION_MANAGER_H
 
-#include "scene/resources/map/SceneLoader.h"
-#include <vector>
+#include "editor/EditorTypes.h"
+#include "scene/resources/map/GameScene.h"
+#include <memory>
 
 namespace CHEngine
 {
-class Scene;
-}
-
 class SelectionManager
 {
 public:
     SelectionManager() = default;
-    ~SelectionManager() = default;
 
-    // 3D Object Selection
-    MapObjectData *GetSelectedObject();
-    int GetSelectedObjectIndex() const
+    void SetSelection(int index, SelectionType type = SelectionType::WORLD_OBJECT)
     {
-        return m_selectedObjectIndex;
+        m_SelectedIndex = index;
+        m_SelectionType = type;
     }
-    void SelectObject(int index)
-    {
-        m_selectedObjectIndex = index;
-    }
+
     void ClearSelection()
     {
-        m_selectedObjectIndex = -1;
-        m_selectedUIElementIndex = -1;
+        m_SelectedIndex = -1;
+        m_SelectionType = SelectionType::NONE;
     }
 
-    // UI Selection
-    void SelectUIElement(int index)
+    int GetSelectedIndex() const
     {
-        m_selectedUIElementIndex = index;
+        return m_SelectedIndex;
     }
-    int GetSelectedUIElementIndex() const
+    SelectionType GetSelectionType() const
     {
-        return m_selectedUIElementIndex;
+        return m_SelectionType;
     }
-    void RefreshUIEntities(); // May need external context later
+
+    int GetSelectedObjectIndex() const
+    {
+        return (m_SelectionType == SelectionType::WORLD_OBJECT) ? m_SelectedIndex : -1;
+    }
+
+    MapObjectData *GetSelectedObject(const std::shared_ptr<GameScene> &scene);
+    UIElementData *GetSelectedUIElement(const std::shared_ptr<GameScene> &scene);
 
 private:
-    int m_selectedObjectIndex = -1;
-    int m_selectedUIElementIndex = -1;
+    int m_SelectedIndex = -1;
+    SelectionType m_SelectionType = SelectionType::NONE;
 };
+} // namespace CHEngine
 
 #endif // SELECTION_MANAGER_H

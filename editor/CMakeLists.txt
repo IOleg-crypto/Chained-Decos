@@ -14,9 +14,23 @@ set(logic_sources
     logic/SceneManager.h
     logic/SelectionManager.cpp
     logic/SelectionManager.h
+    logic/ProjectManager.cpp
+    logic/ProjectManager.h
+    logic/SceneSimulationManager.cpp
+    logic/SceneSimulationManager.h
     logic/EditorState.cpp
     logic/EditorState.h
     logic/SceneCloner.h
+    logic/undo/EditorCommand.h
+    logic/undo/CommandHistory.cpp
+    logic/undo/CommandHistory.h
+    logic/undo/TransformCommand.cpp
+    logic/undo/TransformCommand.h
+    logic/undo/AddObjectCommand.cpp
+    logic/undo/AddObjectCommand.h
+    logic/undo/ModifyObjectCommand.h
+    logic/undo/DeleteObjectCommand.cpp
+    logic/undo/DeleteObjectCommand.h
 )
 
 set(panels_sources
@@ -33,10 +47,18 @@ set(panels_sources
     panels/AssetBrowserPanel.h
     panels/ToolbarPanel.cpp
     panels/ToolbarPanel.h
+    panels/MenuBarPanel.cpp
+    panels/MenuBarPanel.h
     utils/EditorGrid.cpp
     utils/EditorGrid.h
     viewport/ViewportPicking.cpp
     viewport/ViewportPicking.h
+    viewport/ViewportGizmo.cpp
+    viewport/ViewportGizmo.h
+    viewport/ViewportRenderer.cpp
+    viewport/ViewportRenderer.h
+    camera/EditorCamera.cpp
+    camera/EditorCamera.h
 )
 
 set(editor_sources
@@ -82,11 +104,8 @@ target_link_libraries(editor_panels PUBLIC
     editor_logic
 )
 
-add_executable(ChainedEditor
-    ${editor_sources}
-)
-
-target_include_directories(ChainedEditor PUBLIC
+add_library(editor_core STATIC ${editor_sources})
+target_include_directories(editor_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
@@ -95,17 +114,21 @@ target_include_directories(ChainedEditor PUBLIC
     ${CMAKE_SOURCE_DIR}/include/json/include
     ${CMAKE_SOURCE_DIR}/include/nfd/src/include
 )
-
-target_link_libraries(ChainedEditor PUBLIC 
+target_link_libraries(editor_core PUBLIC 
     raylib
     core
-    nfd
     nlohmann_json::nlohmann_json
     cameracontroller
-    model
-    map
-    RuntimeLib
     editor_panels
+    RuntimeLib
+)
+
+add_executable(ChainedEditor
+    main.cpp 
+)
+
+target_link_libraries(ChainedEditor PUBLIC 
+    editor_core
 )
 
 target_compile_definitions(ChainedEditor PRIVATE CHAINEDEDITOR_EXPORTS)

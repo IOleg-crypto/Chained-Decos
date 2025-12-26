@@ -23,7 +23,8 @@ public:
     void OnImGuiRender(SelectionType selectionType, int selectedIndex,
                        const std::function<void(SelectionType, int)> &onSelect,
                        const std::function<void()> &onAddModel,
-                       const std::function<void(const std::string &)> &onAddUI);
+                       const std::function<void(const std::string &)> &onAddUI,
+                       const std::function<void(int)> &onDelete);
 
     bool IsVisible() const
     {
