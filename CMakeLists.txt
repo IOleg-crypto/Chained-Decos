@@ -255,7 +255,13 @@ FetchContent_Declare(
     GIT_TAG develop
 )
 
-FetchContent_MakeAvailable(lua sol2)
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(lua sol2 yaml-cpp)
 
 # Lua and sol2 are now linked in core/CMakeLists.txt
 

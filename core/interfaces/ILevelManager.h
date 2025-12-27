@@ -6,11 +6,19 @@
 #include <string>
 #include <vector>
 
+namespace CHEngine
+{
+class Scene;
+}
+
 // Engine depends on this interface, not concrete LevelManager class.
 class ILevelManager : public IEngineModule
 {
 public:
     virtual ~ILevelManager() = default;
+
+    // ECS Scene Integration
+    virtual void SetActiveScene(std::shared_ptr<CHEngine::Scene> scene) = 0;
 
     // Map lifecycle
     virtual bool LoadScene(const std::string &path) = 0;
@@ -25,6 +33,7 @@ public:
     virtual Vector3 GetSpawnPosition() const = 0;
 
     // Collision
+    virtual void InitCollisions() = 0;
     virtual bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels) = 0;
 
     // Rendering specialization if needed

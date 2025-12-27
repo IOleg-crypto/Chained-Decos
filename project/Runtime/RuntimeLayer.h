@@ -2,6 +2,8 @@
 #define RUNTIMELAYER_H
 
 #include "core/layer/Layer.h"
+#include "scene/core/Scene.h"
+#include <memory>
 
 #include <raylib.h>
 
@@ -11,7 +13,7 @@ namespace CHD
 class RuntimeLayer : public CHEngine::Layer
 {
 public:
-    RuntimeLayer();
+    RuntimeLayer(std::shared_ptr<CHEngine::Scene> scene);
     virtual ~RuntimeLayer() = default;
 
     virtual void OnAttach() override;
@@ -32,6 +34,7 @@ private:
     int m_locFallSpeed = -1;
     int m_locTime = -1;
     bool m_shaderLoaded = false;
+    std::shared_ptr<CHEngine::Scene> m_Scene;
 };
 
 } // namespace CHD

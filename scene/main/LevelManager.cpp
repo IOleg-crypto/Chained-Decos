@@ -2,12 +2,17 @@
 #include "MapCollisionInitializer.h"
 #include "core/Engine.h"
 #include "core/Log.h"
+#include "core/assets/AssetManager.h"
+#include "scene/core/Entity.h"
+#include "scene/core/Scene.h"
 #include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/ScriptingComponents.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/UIComponents.h"
 #include "scene/ecs/components/UtilityComponents.h"
+#include "scene/ecs/components/playerComponent.h"
 #include "scene/resources/map/MapRenderer.h"
 #include "scene/resources/map/MapService.h"
 #include "scene/resources/map/SceneSerializer.h"
@@ -99,6 +104,12 @@ bool LevelManager::Initialize(IEngine *engine)
     }
 
     return true;
+}
+
+void LevelManager::SetActiveScene(std::shared_ptr<CHEngine::Scene> scene)
+{
+    m_activeScene = scene;
+    CD_CORE_INFO("[LevelManager] Active scene set: %s", scene ? scene->GetName().c_str() : "None");
 }
 
 bool LevelManager::LoadScene(const std::string &path)
@@ -286,26 +297,27 @@ std::vector<std::string> LevelManager::GetDependencies() const
 // Collision initialization methods
 void LevelManager::InitCollisions()
 {
-    if (m_collisionInitializer)
+    if (m_collisionInitializer && m_activeScene)
     {
-        m_collisionInitializer->InitializeCollisions(*m_gameScene);
+        m_collisionInitializer->InitializeCollisions(m_activeScene->GetRegistry(), *m_gameScene);
     }
 }
 
 void LevelManager::InitCollisionsWithModels(const std::vector<std::string> &requiredModels)
 {
-    if (m_collisionInitializer)
+    if (m_collisionInitializer && m_activeScene)
     {
-        m_collisionInitializer->InitializeCollisionsWithModels(*m_gameScene, requiredModels);
+        m_collisionInitializer->InitializeCollisionsWithModels(m_activeScene->GetRegistry(),
+                                                               *m_gameScene, requiredModels);
     }
 }
 
 bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels)
 {
-    if (m_collisionInitializer)
+    if (m_collisionInitializer && m_activeScene)
     {
-        return m_collisionInitializer->InitializeCollisionsWithModelsSafe(*m_gameScene,
-                                                                          requiredModels);
+        return m_collisionInitializer->InitializeCollisionsWithModelsSafe(
+            m_activeScene->GetRegistry(), *m_gameScene, requiredModels);
     }
     return false;
 }
@@ -632,7 +644,9 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
 }
 void LevelManager::RefreshUIEntities()
 {
-    auto &registry = ::ECSRegistry::Get();
+    if (!m_activeScene)
+        return;
+    auto &registry = m_activeScene->GetRegistry();
 
     // 1. Remove all existing UI entities
     auto view = registry.view<CHEngine::UIElementIndex>();
@@ -745,7 +759,13 @@ void LevelManager::RefreshUIEntities()
 
 void LevelManager::RefreshMapEntities()
 {
-    auto &registry = ::ECSRegistry::Get();
+    if (!m_activeScene)
+    {
+        CD_CORE_WARN("[LevelManager] No active scene to refresh entities!");
+        return;
+    }
+
+    auto &registry = m_activeScene->GetRegistry();
 
     // 1. Remove all existing map entities (those created by this system)
     auto mapEntities = registry.view<CHEngine::MapObjectIndex>();
@@ -769,14 +789,87 @@ void LevelManager::RefreshMapEntities()
             registry.emplace<CHEngine::LuaScriptComponent>(entity, data.scriptPath, false);
         }
 
+        // 4. Add RenderComponent for Visibility in Runtime
+        if (!data.modelName.empty())
+        {
+            CHEngine::RenderComponent rc;
+            rc.modelName = data.modelName;
+
+            // Resolve model via AssetManager
+            auto modelOpt = CHEngine::AssetManager::GetModel(data.modelName);
+            if (modelOpt)
+                rc.model = &modelOpt->get();
+
+            rc.tint = data.color;
+            rc.visible = true;
+            rc.renderLayer = (data.type == MapObjectType::PLANE) ? -1 : 0;
+            registry.emplace<CHEngine::RenderComponent>(entity, rc);
+        }
+
+        // 5. Add CollisionComponent for ECS-based queries
+        if (data.isPlatform || data.isObstacle)
+        {
+            CHEngine::CollisionComponent cc;
+            cc.collisionLayer = 0; // Default layer
+
+            // Primitive bounds approximation if not specified
+            if (data.type == MapObjectType::CUBE)
+                cc.bounds = {Vector3{-0.5f, -0.5f, -0.5f}, Vector3{0.5f, 0.5f, 0.5f}};
+            else if (data.type == MapObjectType::PLANE)
+                cc.bounds = {Vector3{-0.5f, -0.05f, -0.5f}, Vector3{0.5f, 0.05f, 0.5f}};
+
+            registry.emplace<CHEngine::CollisionComponent>(entity, cc);
+        }
+
         CD_INFO("[LevelManager] Created ECS Entity for Map Object[%d]: %s (Type: %d)", i,
                 data.name.c_str(), (int)data.type);
     }
+
+    // 3. Sync Spawn Position for Player
+    auto playerView = registry.view<CHEngine::PlayerComponent>();
+    if (!playerView.empty())
+    {
+        auto playerEntity = playerView.front();
+        auto &pc = registry.get<CHEngine::PlayerComponent>(playerEntity);
+
+        Vector3 spawnPos = {0, 0, 0};
+        bool foundSpawn = false;
+
+        for (const auto &obj : mapObjects)
+        {
+            if (obj.type == MapObjectType::SPAWN_ZONE)
+            {
+                spawnPos = obj.position;
+                foundSpawn = true;
+                break;
+            }
+        }
+
+        if (!foundSpawn)
+        {
+            spawnPos = m_gameScene->GetMapMetaData().startPosition;
+            if (spawnPos.x != 0 || spawnPos.y != 0 || spawnPos.z != 0)
+                foundSpawn = true;
+        }
+
+        if (foundSpawn)
+        {
+            pc.spawnPosition = spawnPos;
+            CD_INFO("[LevelManager] Updated Player spawn position to (%.2f, %.2f, %.2f)",
+                    spawnPos.x, spawnPos.y, spawnPos.z);
+        }
+    }
+
+    // 4. Initialize collisions for the new entities
+    InitCollisions();
 }
 
 void LevelManager::SyncEntitiesToMap()
 {
-    auto &registry = ::ECSRegistry::Get();
+    if (!m_activeScene)
+        return;
+
+    auto &registry = m_activeScene->GetRegistry();
     auto &mapObjects = m_gameScene->GetMapObjectsMutable();
 
     // Sync 3D Map Objects

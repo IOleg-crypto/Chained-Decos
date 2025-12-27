@@ -19,8 +19,8 @@ SceneSimulationManager::SceneSimulationManager() = default;
 
 void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene,
                                          std::shared_ptr<GameScene> &editorScene,
-                                         RuntimeMode runtimeMode, CHD::RuntimeLayer **runtimeLayer,
-                                         EngineApplication *app)
+                                         std::shared_ptr<Scene> &newScene, RuntimeMode runtimeMode,
+                                         CHD::RuntimeLayer **runtimeLayer, EngineApplication *app)
 {
     m_SceneState = SceneState::Play;
     m_RuntimeMode = runtimeMode;
@@ -87,15 +87,24 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
                     // Load skybox for the deserialized scene
                     SceneLoader().LoadSkyboxForScene(*activeScene);
 
+                    // Initialize collisions for the simulation
+                    if (levelManager)
+                    {
+                        levelManager->InitCollisions();
+                    }
+
                     // Clear registry before starting embedded simulation
-                    REGISTRY.clear();
+                    if (newScene)
+                    {
+                        newScene->GetRegistry().clear();
+                    }
 
                     // Spawn Player entity
                     Vector3 spawnPos =
                         levelManager ? levelManager->GetSpawnPosition() : Vector3{0, 5, 0};
-                    CHD::RuntimeInitializer::InitializePlayer(spawnPos, 0.15f);
+                    CHD::RuntimeInitializer::InitializePlayer(newScene.get(), spawnPos, 0.15f);
 
-                    *runtimeLayer = new CHD::RuntimeLayer();
+                    *runtimeLayer = new CHD::RuntimeLayer(newScene);
                     app->PushLayer(*runtimeLayer);
 
                     // Enable mouse capture for camera control in embedded simulation
@@ -108,6 +117,7 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
 
 void SceneSimulationManager::OnSceneStop(std::shared_ptr<GameScene> &activeScene,
                                          std::shared_ptr<GameScene> editorScene,
+                                         std::shared_ptr<Scene> &newScene,
                                          CHD::RuntimeLayer **runtimeLayer, EngineApplication *app)
 {
     m_SceneState = SceneState::Edit;
@@ -126,7 +136,10 @@ void SceneSimulationManager::OnSceneStop(std::shared_ptr<GameScene> &activeScene
         EnableCursor();
 
         // Clear simulation entities
-        REGISTRY.clear();
+        if (newScene)
+        {
+            newScene->GetRegistry().clear();
+        }
 
         // Restore editor scene
         if (editorScene)

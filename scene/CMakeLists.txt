@@ -13,10 +13,21 @@ add_library(scene_core STATIC
     core/Scene.h 
     core/Entity.cpp 
     core/Entity.h
+    core/SceneSerializer.cpp
+    core/SceneSerializer.h
 )
-target_link_libraries(scene_core PUBLIC raylib EnTT::EnTT)
+target_link_libraries(scene_core PUBLIC 
+    raylib 
+    EnTT::EnTT 
+    yaml-cpp
+    nlohmann_json::nlohmann_json
+    sol2::sol2
+    liblua
+)
 target_include_directories(scene_core PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include/json/include
+    ${lua_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
