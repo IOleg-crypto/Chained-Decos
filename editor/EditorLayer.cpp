@@ -6,6 +6,9 @@
 #include "core/input/Input.h"
 #include "core/renderer/Renderer.h"
 #include "editor/utils/EditorStyles.h"
+#include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/core/IDComponent.h"
+#include "scene/ecs/components/core/TagComponent.h"
 #include <cstdlib>
 
 #include "core/interfaces/ILevelManager.h"
@@ -32,6 +35,29 @@ void EditorLayer::OnAttach()
 {
     CD_INFO("EditorLayer attached");
 
+    // Initialize new Scene system
+    m_Scene = std::make_shared<Scene>("EditorScene");
+    CD_INFO("[EditorLayer] Created editor scene: %s", m_Scene->GetName().c_str());
+
+    // Create default entities using raw entt::entity (temporary workaround for circular dependency)
+    auto &registry = m_Scene->GetRegistry();
+
+    // Ground entity
+    entt::entity ground = registry.create();
+    registry.emplace<IDComponent>(ground);
+    registry.emplace<TagComponent>(ground, "Ground");
+    registry.emplace<TransformComponent>(ground);
+
+    // Cube entity
+    entt::entity cube = registry.create();
+    registry.emplace<IDComponent>(cube);
+    registry.emplace<TagComponent>(cube, "Default Cube");
+    auto &cubeTransform = registry.emplace<TransformComponent>(cube);
+    cubeTransform.position = {0, 0.5f, 0};
+
+    CD_INFO("[EditorLayer] Created 2 default entities in scene");
+
+    // Legacy GameScene initialization
     m_ProjectManager.SetSceneChangedCallback(
         [this](std::shared_ptr<GameScene> scene)
         {
@@ -54,25 +80,25 @@ void EditorLayer::OnAttach()
 
     m_InspectorPanel->SetSkyboxCallback([this](const std::string &path) { LoadSkybox(path); });
 
-    // Default Scene Content
+    // Default Scene Content (legacy)
     m_ActiveScene = m_EditorScene;
     auto &objects = m_ActiveScene->GetMapObjectsMutable();
 
     // ground
-    MapObjectData ground;
-    ground.name = "Ground";
-    ground.type = MapObjectType::PLANE;
-    ground.size = {100, 100};
-    ground.color = DARKGRAY;
-    objects.push_back(ground);
+    MapObjectData ground_legacy;
+    ground_legacy.name = "Ground";
+    ground_legacy.type = MapObjectType::PLANE;
+    ground_legacy.size = {100, 100};
+    ground_legacy.color = DARKGRAY;
+    objects.push_back(ground_legacy);
 
     // default cube
-    MapObjectData cube;
-    cube.name = "Default Cube";
-    cube.type = MapObjectType::CUBE;
-    cube.position = {0, 0.5f, 0};
-    cube.color = WHITE;
-    objects.push_back(cube);
+    MapObjectData cube_legacy;
+    cube_legacy.name = "Default Cube";
+    cube_legacy.type = MapObjectType::CUBE;
+    cube_legacy.position = {0, 0.5f, 0};
+    cube_legacy.color = WHITE;
+    objects.push_back(cube_legacy);
 
     m_HierarchyPanel->SetContext(m_ActiveScene);
 
