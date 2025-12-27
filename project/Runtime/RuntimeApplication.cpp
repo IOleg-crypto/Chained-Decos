@@ -124,7 +124,11 @@ void RuntimeApplication::OnStart()
     Audio::LoadSound("player_fall",
                      std::string(PROJECT_ROOT_DIR) + "/resources/audio/wind-gust_fall.wav");
 
-    // Initialize ECS
+    // Initialize Scene System (new architecture)
+    m_ActiveScene = std::make_shared<Scene>("RuntimeScene");
+    CD_INFO("[RuntimeApplication] Created active scene: %s", m_ActiveScene->GetName().c_str());
+
+    // Initialize ECS (legacy - will be migrated to Scene)
     REGISTRY.clear();
 
     // Initial player state
@@ -142,7 +146,7 @@ void RuntimeApplication::OnStart()
 
     CD_INFO("[RuntimeApplication] ECS Player entity created");
 
-    // Initialize camera to follow player (Hazel-style)
+    // Initialize camera to follow player
     Camera3D camera = {0};
     camera.position = {spawnPos.x, spawnPos.y + 5.0f, spawnPos.z + 10.0f};
     camera.target = spawnPos;

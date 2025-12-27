@@ -3,6 +3,7 @@
 
 #include "core/application/IApplication.h"
 #include "core/config/GameConfig.h"
+#include "scene/core/Scene.h"
 #include <memory>
 #include <scene/ecs/ECSRegistry.h>
 #include <scene/ecs/Entity.h>
@@ -30,7 +31,10 @@ public:
 private:
     // Managers are now accessed through Engine services
 
-    // ECS Entities
+    // Scene System (new architecture)
+    std::shared_ptr<CHEngine::Scene> m_ActiveScene;
+
+    // ECS Entities (legacy - will be migrated to Scene)
     entt::entity m_playerEntity = entt::null;
 
     // Game state
