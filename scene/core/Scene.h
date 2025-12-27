@@ -1,9 +1,8 @@
-#pragma once
+#ifndef SCENE_H
+#define SCENE_H
 
 #include <entt/entt.hpp>
-#include <memory>
 #include <string>
-
 
 namespace CHEngine
 {
@@ -11,7 +10,7 @@ namespace CHEngine
 class Entity;
 
 /**
- * Scene - Core ECS container (Hazel-style)
+ * Scene - Core ECS container
  *
  * Manages entities and their components using EnTT registry.
  * Each scene has its own isolated ECS world.
@@ -74,3 +73,5 @@ private:
 };
 
 } // namespace CHEngine
+
+#endif // SCENE_H

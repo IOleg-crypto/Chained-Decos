@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ENTITY_H
+#define ENTITY_H
 
 #include "Scene.h"
 #include "core/Log.h"
@@ -10,7 +11,7 @@ namespace CHEngine
 {
 
 /**
- * Entity - Lightweight wrapper around entt::entity (Hazel-style)
+ * Entity - Lightweight wrapper around entt::entity
  *
  * Provides convenient API for component operations.
  * Holds reference to parent Scene for validation.
@@ -90,3 +91,5 @@ private:
 };
 
 } // namespace CHEngine
+
+#endif // ENTITY_H

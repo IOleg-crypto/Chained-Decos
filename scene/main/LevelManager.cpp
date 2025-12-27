@@ -116,20 +116,58 @@ bool LevelManager::LoadScene(const std::string &path)
 
     try
     {
-        // 1. Analyze map for required models
-        std::vector<std::string> requiredModels = ModelAnalyzer::GetModelsRequiredForMap(mapPath);
-        if (requiredModels.empty())
+        std::string extension = std::filesystem::path(mapPath).extension().string();
+        std::vector<std::string> requiredModels;
+
+        // Handling based on file type
+        if (extension == ".chscene")
         {
-            requiredModels.emplace_back("player_low");
+            // Binary Scene Workflow:
+            // 1. Deserialize scene first to get object data
+            LoadEditorMap(mapPath);
+
+            // 2. Extract models from loaded scene objects
+            requiredModels.push_back("player_low"); // Always required
+            if (m_gameScene)
+            {
+                for (const auto &obj : m_gameScene->GetMapObjects())
+                {
+                    if (!obj.modelName.empty())
+                    {
+                        // Avoid duplicates
+                        bool exists = false;
+                        for (const auto &m : requiredModels)
+                        {
+                            if (m == obj.modelName)
+                            {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists)
+                            requiredModels.push_back(obj.modelName);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // JSON/Legacy Workflow:
+            // 1. Analyze map file text for models
+            requiredModels = ModelAnalyzer::GetModelsRequiredForMap(mapPath);
+            if (requiredModels.empty())
+            {
+                requiredModels.emplace_back("player_low");
+            }
         }
 
-        // 2. Load required models selectively
+        // 3. Load required models
         if (m_modelLoader)
         {
             m_modelLoader->LoadGameModelsSelective(requiredModels);
         }
 
-        // 3. Initialize collision system with models
+        // 4. Initialize collision system with models
         if (!InitCollisionsWithModelsSafe(requiredModels))
         {
             CD_CORE_ERROR("[LevelManager] Failed to initialize collision system for map: %s",
@@ -137,8 +175,11 @@ bool LevelManager::LoadScene(const std::string &path)
             return false;
         }
 
-        // 4. Load map objects and instances
-        LoadEditorMap(mapPath);
+        // 5. Load map contents (Only for JSON - .chscene already loaded in step 1)
+        if (extension != ".chscene")
+        {
+            LoadEditorMap(mapPath);
+        }
 
         CD_CORE_INFO("[LevelManager] Level loaded successfully: %s", mapPath.c_str());
         return true;
