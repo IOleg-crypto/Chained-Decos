@@ -14,11 +14,9 @@
 #include <memory>
 #include <raylib.h>
 
-class GameScene;
-
 namespace CHEngine
 {
-
+class Scene;
 class CommandHistory;
 
 class ViewportPanel
@@ -28,7 +26,8 @@ public:
     ~ViewportPanel();
 
     void OnImGuiRender(
-        const std::shared_ptr<GameScene> &scene, const Camera3D &camera, int selectedObjectIndex,
+        SceneState state, const std::shared_ptr<GameScene> &legacyScene,
+        const std::shared_ptr<Scene> &modernScene, const Camera3D &camera, int selectedObjectIndex,
         Tool currentTool, const std::function<void(int)> &onSelect, CommandHistory *history,
         const std::function<void(const std::string &, const Vector3 &)> &onAssetDropped = nullptr);
 

@@ -100,7 +100,7 @@ void SceneManager::RemoveObject(int index)
 
 void SceneManager::RefreshUIEntities()
 {
-    auto &registry = ::ECSRegistry::Get();
+    auto &registry = m_activeScene->GetRegistry();
 
     // 1. Remove all existing UI entities
     auto view = registry.view<CHEngine::UIElementIndex>();
@@ -213,7 +213,7 @@ void SceneManager::RefreshUIEntities()
 
 void SceneManager::RefreshMapEntities()
 {
-    auto &registry = ::ECSRegistry::Get();
+    auto &registry = m_activeScene->GetRegistry();
 
     // 1. Remove all existing map entities (those created by this system)
     // For now, let's tag them with a MapObjectIndex component to identify them
@@ -250,7 +250,7 @@ void SceneManager::RefreshMapEntities()
 
 void SceneManager::SyncEntitiesToMap()
 {
-    auto &registry = ::ECSRegistry::Get();
+    auto &registry = m_activeScene->GetRegistry();
     auto &mapObjects = GetGameScene().GetMapObjectsMutable();
 
     // Sync 3D Map Objects

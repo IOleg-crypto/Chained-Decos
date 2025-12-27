@@ -201,6 +201,14 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision) const
         if (collisionDetected)
             return true;
     }
+
+    // Also check dynamic entity colliders
+    for (const auto &pair : m_entityColliders)
+    {
+        if (playerCollision.Intersects(*pair.second))
+            return true;
+    }
+
     return false;
 }
 bool CollisionManager::CheckCollision(const Collision &playerCollision,
@@ -864,6 +872,34 @@ bool CollisionManager::CheckCollisionSpatial(const Collision &playerCollision) c
 
         if (collisionDetected)
             return true;
+    }
+
+    // Case 2: Check dynamic entities using their own spatial grid
+    const float entityCellSize = m_entityGridCellSize;
+    int entMinX = static_cast<int>(floorf(playerMin.x / entityCellSize));
+    int entMaxX = static_cast<int>(floorf(playerMax.x / entityCellSize));
+    int entMinZ = static_cast<int>(floorf(playerMin.z / entityCellSize));
+    int entMaxZ = static_cast<int>(floorf(playerMax.z / entityCellSize));
+
+    for (int x = entMinX; x <= entMaxX; ++x)
+    {
+        for (int z = entMinZ; z <= entMaxZ; ++z)
+        {
+            GridKey key = {x, z};
+            auto it = m_entitySpatialGrid.find(key);
+            if (it != m_entitySpatialGrid.end())
+            {
+                for (ECS::EntityID entityId : it->second)
+                {
+                    auto colIt = m_entityColliders.find(entityId);
+                    if (colIt != m_entityColliders.end() && colIt->second)
+                    {
+                        if (playerCollision.Intersects(*colIt->second))
+                            return true;
+                    }
+                }
+            }
+        }
     }
 
     return false;

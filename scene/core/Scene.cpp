@@ -1,6 +1,8 @@
 #include "Scene.h"
 #include "Entity.h"
+#include "core/Engine.h"
 #include "core/Log.h"
+#include "core/scripting/ScriptManager.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/core/IDComponent.h"
 #include "scene/ecs/components/core/TagComponent.h"
@@ -33,9 +35,14 @@ Entity Scene::CreateEntityWithUUID(uint64_t uuid, const std::string &name)
 
 void Scene::DestroyEntity(Entity entity)
 {
-    if (entity.HasComponent<TagComponent>())
+    DestroyEntity(entity.m_EntityHandle);
+}
+
+void Scene::DestroyEntity(entt::entity entity)
+{
+    if (m_Registry.all_of<TagComponent>(entity))
     {
-        auto &tag = entity.GetComponent<TagComponent>();
+        auto &tag = m_Registry.get<TagComponent>(entity);
         CD_CORE_TRACE("[Scene] Destroying entity: %s", tag.Tag.c_str());
     }
 
@@ -44,9 +51,10 @@ void Scene::DestroyEntity(Entity entity)
 
 void Scene::OnUpdateRuntime(float deltaTime)
 {
-    // Runtime update logic will be implemented here
-    // This will replace RuntimeLayer's update logic
-    (void)deltaTime;
+    // 1. Update Scripts
+    auto &scriptManager = Engine::Instance().GetScriptManager();
+    scriptManager.SetActiveRegistry(&m_Registry);
+    scriptManager.UpdateScripts(m_Registry, deltaTime);
 }
 
 void Scene::OnUpdateEditor(float deltaTime)

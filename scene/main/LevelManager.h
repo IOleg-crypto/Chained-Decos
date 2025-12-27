@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-
 // Configuration for LevelManager
 struct LevelManagerConfig
 {
@@ -33,6 +32,7 @@ public:
     ~LevelManager() override;
 
     // ILevelManager Implementation
+    void SetActiveScene(std::shared_ptr<CHEngine::Scene> scene) override;
     bool LoadScene(const std::string &path) override;
     bool LoadSceneByIndex(int index) override;
     bool LoadSceneByName(const std::string &name) override;
@@ -113,6 +113,7 @@ private:
     std::shared_ptr<IPlayer> m_player;
     std::shared_ptr<IMenu> m_menu;
     IEngine *m_engine = nullptr;
+    std::shared_ptr<CHEngine::Scene> m_activeScene;
 };
 
 #endif // LEVELMANAGER_H

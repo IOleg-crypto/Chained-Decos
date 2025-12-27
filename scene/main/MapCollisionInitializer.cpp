@@ -14,7 +14,8 @@ MapCollisionInitializer::MapCollisionInitializer(CollisionManager *collisionMana
 {
 }
 
-void MapCollisionInitializer::InitializeCollisions(const GameScene &gameMap)
+void MapCollisionInitializer::InitializeCollisions(entt::registry &registry,
+                                                   const GameScene &gameMap)
 {
     // Only clear existing colliders if no custom map is loaded
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
@@ -38,10 +39,31 @@ void MapCollisionInitializer::InitializeCollisions(const GameScene &gameMap)
     {
         m_player->InitializeCollision();
     }
+
+    // 4. Initialize primitive collisions (CUBE, PLANE)
+    for (const auto &obj : gameMap.GetMapObjects())
+    {
+        if (obj.type == MapObjectType::CUBE && (obj.isPlatform || obj.isObstacle))
+        {
+            Vector3 center = obj.position;
+            Vector3 halfSize = {obj.scale.x * 0.5f, obj.scale.y * 0.5f, obj.scale.z * 0.5f};
+            auto col = std::make_shared<Collision>(center, halfSize);
+            m_collisionManager->AddCollider(col);
+        }
+        else if (obj.type == MapObjectType::PLANE && (obj.isPlatform || obj.isObstacle))
+        {
+            Vector3 center = obj.position;
+            // Planes need some thickness to prevent tunneling
+            Vector3 halfSize = {obj.size.x * 0.5f, 0.1f, obj.size.y * 0.5f};
+            auto col = std::make_shared<Collision>(center, halfSize);
+            m_collisionManager->AddCollider(col);
+        }
+    }
 }
 
 void MapCollisionInitializer::InitializeCollisionsWithModels(
-    const GameScene &gameMap, const std::vector<std::string> &requiredModels)
+    entt::registry &registry, const GameScene &gameMap,
+    const std::vector<std::string> &requiredModels)
 {
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
     if (previousColliderCount > 0 && gameMap.GetMapObjects().empty())
@@ -56,11 +78,31 @@ void MapCollisionInitializer::InitializeCollisionsWithModels(
     if (m_player)
     {
         m_player->InitializeCollision();
+    }
+
+    // 4. Initialize primitive collisions (CUBE, PLANE)
+    for (const auto &obj : gameMap.GetMapObjects())
+    {
+        if (obj.type == MapObjectType::CUBE && (obj.isPlatform || obj.isObstacle))
+        {
+            Vector3 center = obj.position;
+            Vector3 halfSize = {obj.scale.x * 0.5f, obj.scale.y * 0.5f, obj.scale.z * 0.5f};
+            auto col = std::make_shared<Collision>(center, halfSize);
+            m_collisionManager->AddCollider(col);
+        }
+        else if (obj.type == MapObjectType::PLANE && (obj.isPlatform || obj.isObstacle))
+        {
+            Vector3 center = obj.position;
+            Vector3 halfSize = {obj.size.x * 0.5f, 0.1f, obj.size.y * 0.5f};
+            auto col = std::make_shared<Collision>(center, halfSize);
+            m_collisionManager->AddCollider(col);
+        }
     }
 }
 
 bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
-    const GameScene &gameMap, const std::vector<std::string> &requiredModels)
+    entt::registry &registry, const GameScene &gameMap,
+    const std::vector<std::string> &requiredModels)
 {
     size_t previousColliderCount = m_collisionManager->GetColliders().size();
     if (previousColliderCount > 0 && gameMap.GetMapObjects().empty())
@@ -75,16 +117,35 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
     if (m_player)
     {
         m_player->InitializeCollision();
+    }
+
+    // Initialize primitive collisions (CUBE, PLANE)
+    for (const auto &obj : gameMap.GetMapObjects())
+    {
+        if (obj.type == MapObjectType::CUBE && (obj.isPlatform || obj.isObstacle))
+        {
+            Vector3 center = obj.position;
+            Vector3 halfSize = {obj.scale.x * 0.5f, obj.scale.y * 0.5f, obj.scale.z * 0.5f};
+            auto col = std::make_shared<Collision>(center, halfSize);
+            m_collisionManager->AddCollider(col);
+        }
+        else if (obj.type == MapObjectType::PLANE && (obj.isPlatform || obj.isObstacle))
+        {
+            Vector3 center = obj.position;
+            Vector3 halfSize = {obj.size.x * 0.5f, 0.1f, obj.size.y * 0.5f};
+            auto col = std::make_shared<Collision>(center, halfSize);
+            m_collisionManager->AddCollider(col);
+        }
     }
 
     // Sync collisions to ECS
     for (auto &&collider : m_collisionManager->GetColliders())
     {
-        auto entity = REGISTRY.create();
-        REGISTRY.emplace<TransformComponent>(entity, collider->GetCenter(), Vector3{0, 0, 0},
+        auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity, collider->GetCenter(), Vector3{0, 0, 0},
                                              Vector3{1, 1, 1});
 
-        auto &colComp = REGISTRY.emplace<CollisionComponent>(entity);
+        auto &colComp = registry.emplace<CollisionComponent>(entity);
         colComp.bounds = collider->GetBoundingBox();
         colComp.collider = collider;
         colComp.isTrigger = false;

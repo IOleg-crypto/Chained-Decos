@@ -2,6 +2,7 @@
 #define HIERARCHYPANEL_H
 
 #include "editor/EditorTypes.h"
+#include <entt/entt.hpp>
 #include <functional>
 #include <memory>
 #include <string>
@@ -25,7 +26,11 @@ public:
                        const std::function<void(SelectionType, int)> &onSelect,
                        const std::function<void()> &onAddModel,
                        const std::function<void(const std::string &)> &onAddUI,
-                       const std::function<void(int)> &onDelete);
+                       const std::function<void(int)> &onDelete,
+                       entt::entity selectedEntity = entt::null,
+                       const std::function<void(entt::entity)> &onSelectEntity = nullptr,
+                       const std::function<void()> &onCreateEntity = nullptr,
+                       const std::function<void(entt::entity)> &onDeleteEntity = nullptr);
 
     bool IsVisible() const
     {

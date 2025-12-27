@@ -2,21 +2,13 @@
 #include "RuntimeLayer.h"
 #include "core/Log.h"
 #include "core/application/EngineApplication.h"
-#include "core/assets/AssetManager.h"
 #include "core/audio/Audio.h"
+#include "core/config/ConfigManager.h"
 #include "core/input/Input.h"
-#include "core/physics/Physics.h"
+#include "core/interfaces/ILevelManager.h"
 #include "core/renderer/Renderer.h"
 #include "logic/RuntimeInitializer.h"
 #include "scene/main/LevelManager.h"
-
-using namespace CHEngine;
-
-#include "core/config/ConfigManager.h"
-#include "scene/ecs/components/RenderComponent.h"
-#include "scene/ecs/components/TransformComponent.h"
-
-#include "scene/resources/model/Model.h"
 #include <raylib.h>
 #include <rlImGui.h>
 
@@ -98,20 +90,11 @@ void RuntimeApplication::OnRegister()
 {
     auto &engine = Engine::Instance();
 
-    // Register LevelManager
+    // Register LevelManager (Specialized for CHD)
     auto levelManager = std::make_shared<LevelManager>();
     engine.RegisterService<ILevelManager>(levelManager);
 
-    // Register WorldManager
-    auto worldManager = std::make_shared<WorldManager>();
-    engine.RegisterService<WorldManager>(worldManager);
-
-    // Register CollisionManager
-    auto collisionManager = std::make_shared<CollisionManager>();
-    engine.RegisterService<CollisionManager>(collisionManager);
-
-    CD_INFO("[RuntimeApplication] Game systems registered (LevelManager, WorldManager, "
-            "CollisionManager).");
+    CD_INFO("[RuntimeApplication] Game systems registered (LevelManager).");
 }
 
 void RuntimeApplication::OnStart()
@@ -128,8 +111,9 @@ void RuntimeApplication::OnStart()
     m_ActiveScene = std::make_shared<Scene>("RuntimeScene");
     CD_INFO("[RuntimeApplication] Created active scene: %s", m_ActiveScene->GetName().c_str());
 
-    // Initialize ECS (legacy - will be migrated to Scene)
-    REGISTRY.clear();
+    auto levelManager = Engine::Instance().GetService<ILevelManager>();
+    if (levelManager)
+        levelManager->SetActiveScene(m_ActiveScene);
 
     // Initial player state
     Vector3 spawnPos = {0, 2, 0};
@@ -142,7 +126,8 @@ void RuntimeApplication::OnStart()
         sensitivity = 0.15f; // Default if not set
 
     // Initialize player via Initializer
-    m_playerEntity = CHD::RuntimeInitializer::InitializePlayer(spawnPos, sensitivity);
+    m_playerEntity =
+        CHD::RuntimeInitializer::InitializePlayer(m_ActiveScene.get(), spawnPos, sensitivity);
 
     CD_INFO("[RuntimeApplication] ECS Player entity created");
 
@@ -160,7 +145,7 @@ void RuntimeApplication::OnStart()
     // Push RuntimeLayer using the new Layer system
     if (GetAppRunner())
     {
-        GetAppRunner()->PushLayer(new CHD::RuntimeLayer());
+        GetAppRunner()->PushLayer(new CHD::RuntimeLayer(m_ActiveScene));
     }
 
     // Load initial map if provided (from editor or command line)
@@ -208,8 +193,7 @@ void RuntimeApplication::OnShutdown()
 {
     CD_INFO("[RuntimeApplication] Cleaning up game resources...");
 
-    // Clear ECS
-    REGISTRY.clear();
+    // Clear ECS (Scene will be destroyed automatically as it's a shared_ptr)
 
     // Shutdown Managers
     // (In future these will be in Engine::Shutdown)

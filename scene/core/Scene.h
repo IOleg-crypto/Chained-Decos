@@ -25,6 +25,7 @@ public:
     Entity CreateEntity(const std::string &name = "Entity");
     Entity CreateEntityWithUUID(uint64_t uuid, const std::string &name = "Entity");
     void DestroyEntity(Entity entity);
+    void DestroyEntity(entt::entity entity);
 
     // Lifecycle
     void OnUpdateRuntime(float deltaTime);
@@ -69,7 +70,7 @@ private:
     uint32_t m_ViewportHeight = 720;
 
     friend class Entity;
-    friend class SceneSerializer;
+    friend class ECSSceneSerializer;
 };
 
 } // namespace CHEngine

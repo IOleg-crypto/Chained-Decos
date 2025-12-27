@@ -28,7 +28,8 @@ using namespace CHEngine;
 namespace CHD
 {
 
-RuntimeLayer::RuntimeLayer() : Layer("RuntimeLayer")
+RuntimeLayer::RuntimeLayer(std::shared_ptr<CHEngine::Scene> scene)
+    : Layer("RuntimeLayer"), m_Scene(scene)
 {
 }
 
@@ -37,11 +38,12 @@ void RuntimeLayer::OnAttach()
     // Register UI Events
     Engine::Instance().GetUIEventRegistry().Register(
         "start_game",
-        []()
+        [this]()
         {
             CD_INFO("[RuntimeLayer] Start Game Event Triggered!");
             // Example logic: Reset player position
-            auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
+            auto view = m_Scene->GetRegistry()
+                            .view<TransformComponent, VelocityComponent, PlayerComponent>();
             for (auto [entity, transform, velocity, player] : view.each())
             {
                 transform.position = player.spawnPosition;
@@ -51,7 +53,7 @@ void RuntimeLayer::OnAttach()
 
     Engine::Instance().GetUIEventRegistry().Register(
         "quit_game",
-        []()
+        [this]()
         {
             CD_INFO("[RuntimeLayer] Quit Game Event Triggered!");
             Engine::Instance().RequestExit();
@@ -69,7 +71,7 @@ void RuntimeLayer::OnAttach()
     m_shaderLoaded = (m_playerShader.id != 0);
 
     // Initialize Scripts
-    Engine::Instance().GetScriptManager().InitializeScripts();
+    Engine::Instance().GetScriptManager().InitializeScripts(m_Scene->GetRegistry());
 }
 
 void RuntimeLayer::OnDetach()
@@ -97,7 +99,7 @@ void RuntimeLayer::OnUpdate(float deltaTime)
         float time = (float)GetTime();
         SetShaderValue(m_playerShader, m_locTime, &time, SHADER_UNIFORM_FLOAT);
 
-        auto playerView = REGISTRY.view<PlayerComponent, VelocityComponent>();
+        auto playerView = m_Scene->GetRegistry().view<PlayerComponent, VelocityComponent>();
         for (auto &&[entity, player, velocity] : playerView.each())
         {
             float fallSpeed = (velocity.velocity.y < 0) ? std::abs(velocity.velocity.y) : 0.0f;
@@ -106,7 +108,8 @@ void RuntimeLayer::OnUpdate(float deltaTime)
     }
 
     // UPDATE LUA SCRIPTS (Hazel style)
-    Engine::Instance().GetScriptManager().UpdateScripts(deltaTime);
+    Engine::Instance().GetScriptManager().SetActiveRegistry(&m_Scene->GetRegistry());
+    Engine::Instance().GetScriptManager().UpdateScripts(m_Scene->GetRegistry(), deltaTime);
 
     // Sync ECS Transforms back to MapObjects for rendering consistency
     if (auto levelManager = Engine::Instance().GetService<ILevelManager>())
@@ -115,7 +118,8 @@ void RuntimeLayer::OnUpdate(float deltaTime)
     }
 
     // 1. UPDATE PLAYER LOGIC (Previously PlayerSystem::Update)
-    auto playerView = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
+    auto playerView =
+        m_Scene->GetRegistry().view<TransformComponent, VelocityComponent, PlayerComponent>();
 
     for (auto [entity, transform, velocity, player] : playerView.each())
     {
@@ -190,9 +194,9 @@ void RuntimeLayer::OnUpdate(float deltaTime)
         }
 
         // Physics Integration
-        if (REGISTRY.all_of<PhysicsData>(entity))
+        if (m_Scene->GetRegistry().all_of<PhysicsData>(entity))
         {
-            auto &physics = REGISTRY.get<PhysicsData>(entity);
+            auto &physics = m_Scene->GetRegistry().get<PhysicsData>(entity);
             if (physics.useGravity && !physics.isKinematic && !player.isGrounded)
                 velocity.acceleration.y = physics.gravity;
             else
@@ -205,9 +209,9 @@ void RuntimeLayer::OnUpdate(float deltaTime)
             Vector3Add(transform.position, Vector3Scale(velocity.velocity, deltaTime));
 
         // World Collision
-        if (REGISTRY.all_of<CollisionComponent>(entity))
+        if (m_Scene->GetRegistry().all_of<CollisionComponent>(entity))
         {
-            auto &collision = REGISTRY.get<CollisionComponent>(entity);
+            auto &collision = m_Scene->GetRegistry().get<CollisionComponent>(entity);
             Vector3 center = proposedPos;
             center.x += (collision.bounds.max.x + collision.bounds.min.x) * 0.5f;
             center.y += (collision.bounds.max.y + collision.bounds.min.y) * 0.5f;
@@ -295,7 +299,7 @@ void RuntimeLayer::OnUpdate(float deltaTime)
     }
 
     // 2. UPDATE ENTITY COLLISIONS (Previously EntityCollisionSystem::Update)
-    auto collView = REGISTRY.view<TransformComponent, CollisionComponent>();
+    auto collView = m_Scene->GetRegistry().view<TransformComponent, CollisionComponent>();
     for (auto &&[entityA, transformA, collisionA] : collView.each())
     {
         collisionA.hasCollision = false;
@@ -327,7 +331,7 @@ void RuntimeLayer::OnUpdate(float deltaTime)
     }
 
     // 3. UPDATE LIFETIME (Previously LifetimeSystem::Update)
-    auto lifetimeView = REGISTRY.view<LifetimeComponent>();
+    auto lifetimeView = m_Scene->GetRegistry().view<LifetimeComponent>();
     std::vector<entt::entity> toDestroy;
 
     for (auto &&[entity, lifetime] : lifetimeView.each())
@@ -338,26 +342,28 @@ void RuntimeLayer::OnUpdate(float deltaTime)
     }
 
     for (auto entity : toDestroy)
-        REGISTRY.destroy(entity);
+        m_Scene->GetRegistry().destroy(entity);
 }
 
 void RuntimeLayer::OnRender()
 {
+    Renderer::BeginScene(Renderer::GetCamera());
     RenderScene();
+    Renderer::EndScene();
 }
 
 void RuntimeLayer::RenderUI(float width, float height)
 {
     // Render stored UI elements
-    UIRenderSystem::Render((int)width, (int)height);
-    UIRenderSystem::RenderImGui((int)width, (int)height);
+    UIRenderSystem::Render(m_Scene->GetRegistry(), (int)width, (int)height);
+    UIRenderSystem::RenderImGui(m_Scene->GetRegistry(), (int)width, (int)height);
 
     // 4. HUD SYSTEM LOGIC (Previously HUDSystem::Render)
-    auto view = REGISTRY.view<PlayerComponent>();
+    auto view = m_Scene->GetRegistry().view<PlayerComponent>();
 
     for (auto entity : view)
     {
-        auto &playerComp = view.get<PlayerComponent>(entity);
+        auto &playerComp = m_Scene->GetRegistry().get<PlayerComponent>(entity);
 
         int hours = (int)playerComp.runTimer / 3600;
         int minutes = ((int)playerComp.runTimer % 3600) / 60;
@@ -445,7 +451,7 @@ void RuntimeLayer::RenderUI(float width, float height)
 void RuntimeLayer::RenderScene()
 {
     // RENDER SYSTEM LOGIC (Previously RenderSystem::Render)
-    auto view = REGISTRY.view<TransformComponent, RenderComponent>();
+    auto view = m_Scene->GetRegistry().view<TransformComponent, RenderComponent>();
     std::vector<entt::entity> entities(view.begin(), view.end());
 
     // Sort by render layer
@@ -481,7 +487,8 @@ void RuntimeLayer::RenderScene()
     {
         Physics::Render(); // Wait, I need to check if Physics has Render()
 
-        auto playerView = REGISTRY.view<TransformComponent, CollisionComponent, PlayerComponent>();
+        auto playerView =
+            m_Scene->GetRegistry().view<TransformComponent, CollisionComponent, PlayerComponent>();
         for (auto &&[entity, transform, collision, player] : playerView.each())
         {
             BoundingBox b = collision.bounds;
@@ -506,7 +513,8 @@ void RuntimeLayer::OnEvent(Event &e)
         {
             if (event.GetKeyCode() == KEY_F) // Respawn
             {
-                auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
+                auto view = m_Scene->GetRegistry()
+                                .view<TransformComponent, VelocityComponent, PlayerComponent>();
                 for (auto &&[entity, transform, velocity, player] : view.each())
                 {
                     transform.position = player.spawnPosition;

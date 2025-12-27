@@ -22,7 +22,6 @@
 #include "scene/core/Scene.h"
 #include "scene/resources/map/SceneLoader.h"
 
-
 #include <imgui.h>
 #include <memory>
 
@@ -58,6 +57,8 @@ public:
 
     // Object Management Helpers (Undoable)
     void AddObject(const MapObjectData &data);
+    void CreateEntity();
+    void DeleteEntity(entt::entity entity);
     void DeleteObject(int index);
     void OnAssetDropped(const std::string &assetPath, const Vector3 &worldPosition);
 

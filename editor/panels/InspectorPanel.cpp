@@ -1,12 +1,15 @@
 #include "InspectorPanel.h"
 #include "editor/utils/IconsFontAwesome5.h"
 #include "nfd.h"
+#include "scene/core/Scene.h"
+#include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/core/IDComponent.h"
+#include "scene/ecs/components/core/TagComponent.h"
 #include <cstring>
 #include <filesystem>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <raylib.h>
-
 
 namespace CHEngine
 {
@@ -41,6 +44,57 @@ void InspectorPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene, int 
     }
 
     ImGui::End();
+}
+
+void InspectorPanel::OnImGuiRender(const std::shared_ptr<Scene> &scene, entt::entity entity)
+{
+    ImGui::Begin("Properties");
+
+    if (entity != entt::null && scene)
+    {
+        DrawEntityComponents(scene, entity);
+    }
+
+    ImGui::End();
+}
+
+void InspectorPanel::DrawEntityComponents(const std::shared_ptr<Scene> &scene, entt::entity entity)
+{
+    auto &registry = scene->GetRegistry();
+
+    // 0. Name/Tag
+    if (registry.all_of<TagComponent>(entity))
+    {
+        auto &tag = registry.get<TagComponent>(entity);
+        char buffer[256];
+        memset(buffer, 0, sizeof(buffer));
+        strncpy(buffer, tag.Tag.c_str(), sizeof(buffer));
+        if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
+        {
+            tag.Tag = std::string(buffer);
+        }
+    }
+
+    // 1. ID
+    if (registry.all_of<IDComponent>(entity))
+    {
+        auto &id = registry.get<IDComponent>(entity);
+        ImGui::TextDisabled("UUID: %llu", (unsigned long long)id.ID);
+    }
+
+    ImGui::Separator();
+
+    // 2. Transform
+    if (registry.all_of<TransformComponent>(entity))
+    {
+        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            auto &transform = registry.get<TransformComponent>(entity);
+            DrawVec3Control("Translation", transform.position);
+            DrawVec3Control("Rotation", transform.rotation);
+            DrawVec3Control("Scale", transform.scale, 1.0f);
+        }
+    }
 }
 
 void InspectorPanel::DrawComponents(MapObjectData *entity)

@@ -8,8 +8,6 @@ set(logic_sources
     logic/ProjectData.h
     logic/EditorSettings.cpp
     logic/EditorSettings.h
-    logic/Scene.cpp
-    logic/Scene.h
     logic/SceneManager.cpp
     logic/SceneManager.h
     logic/SelectionManager.cpp

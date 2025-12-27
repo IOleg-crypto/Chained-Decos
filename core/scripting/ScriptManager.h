@@ -1,6 +1,7 @@
 #ifndef SCRIPT_MANAGER_H
 #define SCRIPT_MANAGER_H
 
+#include <entt/entt.hpp>
 #include <sol/sol.hpp>
 #include <string>
 #include <unordered_map>
@@ -30,8 +31,13 @@ public:
     bool RunString(const std::string &code);
 
     // Entity Script Lifecycle (Hazel Style)
-    void InitializeScripts();
-    void UpdateScripts(float deltaTime);
+    void InitializeScripts(entt::registry &registry);
+    void UpdateScripts(entt::registry &registry, float deltaTime);
+
+    void SetActiveRegistry(entt::registry *registry)
+    {
+        m_activeRegistry = registry;
+    }
 
     // Deprecated for now, ScriptManager should use Engine services directly
     void SetSceneManager(void *unused);
@@ -52,6 +58,7 @@ private:
 private:
     sol::state m_lua;
     bool m_initialized = false;
+    entt::registry *m_activeRegistry = nullptr;
     std::unordered_map<std::string, sol::function> m_buttonCallbacks;
 };
 

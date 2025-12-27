@@ -14,8 +14,15 @@ using namespace CHEngine;
 
 namespace CHD
 {
-entt::entity RuntimeInitializer::InitializePlayer(Vector3 spawnPos, float sensitivity)
+CHEngine::Entity RuntimeInitializer::InitializePlayer(CHEngine::Scene *scene, Vector3 spawnPos,
+                                                      float sensitivity)
 {
+    if (!scene)
+    {
+        CD_CORE_ERROR("[RuntimeInitializer] Scene is null!");
+        return {};
+    }
+
     Model *playerModelPtr = nullptr;
 
     // Explicitly load player model if not loaded
@@ -31,63 +38,56 @@ entt::entity RuntimeInitializer::InitializePlayer(Vector3 spawnPos, float sensit
         playerModelPtr = &modelOpt->get();
     }
 
-    // Create player entity directly (replacing ECSExamples::CreatePlayer)
-    auto playerEntity = REGISTRY.create();
+    // Create player entity using new Scene system
+    Entity playerEntity = scene->CreateEntity("Player");
 
     if (!playerModelPtr)
     {
         CD_WARN("[RuntimeInitializer] player_low not found, creating player without model.");
     }
 
-    // Transform
-    REGISTRY.emplace<TransformComponent>(playerEntity,
-                                         spawnPos,         // position
-                                         Vector3{0, 0, 0}, // rotation
-                                         Vector3{1, 1, 1}  // scale
-    );
+    // Transform is already added by CreateEntity, we just update it
+    auto &transform = playerEntity.GetComponent<TransformComponent>();
+    transform.position = spawnPos;
+    transform.rotation = Vector3{0, 0, 0};
+    transform.scale = Vector3{1, 1, 1};
 
     // Velocity
-    REGISTRY.emplace<VelocityComponent>(playerEntity);
+    playerEntity.AddComponent<VelocityComponent>();
 
     // Render (if model available)
     if (playerModelPtr)
     {
-        auto &renderComp = REGISTRY.emplace<RenderComponent>(playerEntity,
-                                                             "player_low",   // modelName
-                                                             playerModelPtr, // model
-                                                             GRAY,           // tint
-                                                             true,           // visible
-                                                             1               // renderLayer
-        );
+        auto &renderComp = playerEntity.AddComponent<RenderComponent>();
+        renderComp.modelName = "player_low";
+        renderComp.model = playerModelPtr;
+        renderComp.tint = GRAY;
+        renderComp.visible = true;
+        renderComp.renderLayer = 1;
         renderComp.offset = {0.0f, -1.0f, 0.0f}; // Player model offset
     }
 
     // Player-specific component
-    auto &pc = REGISTRY.emplace<PlayerComponent>(playerEntity,
-                                                 8.0f,       // moveSpeed
-                                                 12.0f,      // jumpForce
-                                                 sensitivity // mouseSensitivity
+    auto &pc = playerEntity.AddComponent<PlayerComponent>(8.0f,       // moveSpeed
+                                                          12.0f,      // jumpForce
+                                                          sensitivity // mouseSensitivity
     );
     pc.spawnPosition = spawnPos;
     pc.cameraDistance = 7.0f; // Tuned for better view
     pc.cameraPitch = 15.0f;   // Tuned for better view
 
     // Physics
-    REGISTRY.emplace<PhysicsData>(playerEntity,
-                                  1.0f,  // mass
-                                  -9.8f, // gravity
-                                  true,  // useGravity
-                                  false  // isKinematic
+    playerEntity.AddComponent<PhysicsData>(1.0f,  // mass
+                                           -9.8f, // gravity
+                                           true,  // useGravity
+                                           false  // isKinematic
     );
 
     // Collision
     CHEngine::CollisionComponent collision;
     collision.bounds = BoundingBox{Vector3{-0.4f, 0.0f, -0.4f}, Vector3{0.4f, 1.8f, 0.4f}};
     collision.collisionLayer = 1; // Player layer
-    REGISTRY.emplace<CHEngine::CollisionComponent>(playerEntity, collision);
-
-    // Name for debugging
-    REGISTRY.emplace<NameComponent>(playerEntity, "Player");
+    playerEntity.AddComponent<CHEngine::CollisionComponent>(collision);
 
     return playerEntity;
 }

@@ -3,10 +3,9 @@
 
 #include "core/application/IApplication.h"
 #include "core/config/GameConfig.h"
+#include "scene/core/Entity.h"
 #include "scene/core/Scene.h"
-#include <memory>
-#include <scene/ecs/ECSRegistry.h>
-#include <scene/ecs/Entity.h>
+
 
 // Runtime application - uses full engine + own modules
 
@@ -34,8 +33,7 @@ private:
     // Scene System (new architecture)
     std::shared_ptr<CHEngine::Scene> m_ActiveScene;
 
-    // ECS Entities (legacy - will be migrated to Scene)
-    entt::entity m_playerEntity = entt::null;
+    CHEngine::Entity m_playerEntity;
 
     // Game state
     bool m_isGameInitialized;

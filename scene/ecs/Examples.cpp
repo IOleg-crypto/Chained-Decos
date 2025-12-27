@@ -1,6 +1,6 @@
 #include "scene/ecs/Examples.h"
-#include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/components/AudioComponent.h"
+#include "scene/ecs/components/CameraComponent.h"
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
@@ -9,7 +9,6 @@
 #include "scene/ecs/components/playerComponent.h"
 #include <raymath.h>
 
-
 using namespace CHEngine;
 
 namespace CHEngine
@@ -17,25 +16,25 @@ namespace CHEngine
 namespace ECSExamples
 {
 
-entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed, float jumpForce,
-                          float mouseSensitivity, Vector3 spawnPosition)
+entt::entity CreatePlayer(entt::registry &registry, Vector3 position, Model *model, float moveSpeed,
+                          float jumpForce, float mouseSensitivity, Vector3 spawnPosition)
 {
-    auto player = REGISTRY.create();
+    auto player = registry.create();
 
     // Transform
-    REGISTRY.emplace<TransformComponent>(player,
+    registry.emplace<TransformComponent>(player,
                                          position,         // position
                                          Vector3{0, 0, 0}, // rotation
                                          Vector3{1, 1, 1}  // scale
     );
 
     // Velocity
-    REGISTRY.emplace<VelocityComponent>(player);
+    registry.emplace<VelocityComponent>(player);
 
     // Render
     if (model)
     {
-        REGISTRY.emplace<RenderComponent>(player,
+        registry.emplace<RenderComponent>(player,
                                           "player", // modelName
                                           model,    // model
                                           GRAY,     // tint
@@ -45,7 +44,7 @@ entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed, float
     }
 
     // Player-specific
-    auto &pc = REGISTRY.emplace<PlayerComponent>(player,
+    auto &pc = registry.emplace<PlayerComponent>(player,
                                                  moveSpeed,       // moveSpeed
                                                  jumpForce,       // jumpForce
                                                  mouseSensitivity // mouseSensitivity
@@ -53,7 +52,7 @@ entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed, float
     pc.spawnPosition = spawnPosition;
 
     // Physics
-    REGISTRY.emplace<PhysicsData>(player,
+    registry.emplace<PhysicsData>(player,
                                   1.0f,  // mass
                                   -9.8f, // gravity
                                   true,  // useGravity
@@ -65,23 +64,23 @@ entt::entity CreatePlayer(Vector3 position, Model *model, float moveSpeed, float
     // BoundingBox: min at 0 (feet), max at 1.8 (head)
     collision.bounds = BoundingBox{Vector3{-0.4f, 0.0f, -0.4f}, Vector3{0.4f, 1.8f, 0.4f}};
     collision.collisionLayer = 1; // Player layer
-    REGISTRY.emplace<CollisionComponent>(player, collision);
+    registry.emplace<CollisionComponent>(player, collision);
 
     // Name for debugging
-    REGISTRY.emplace<NameComponent>(player, "Player");
+    registry.emplace<NameComponent>(player, "Player");
 
     return player;
 }
 
-entt::entity CreateEnemy(Vector3 position, Model *model)
+entt::entity CreateEnemy(entt::registry &registry, Vector3 position, Model *model)
 {
-    auto enemy = REGISTRY.create();
+    auto enemy = registry.create();
 
-    REGISTRY.emplace<TransformComponent>(enemy, position);
-    REGISTRY.emplace<VelocityComponent>(enemy);
+    registry.emplace<TransformComponent>(enemy, position);
+    registry.emplace<VelocityComponent>(enemy);
 
     // Render
-    REGISTRY.emplace<RenderComponent>(enemy,
+    registry.emplace<RenderComponent>(enemy,
                                       "enemy", // modelName
                                       model,   // model
                                       RED,     // tint
@@ -90,49 +89,50 @@ entt::entity CreateEnemy(Vector3 position, Model *model)
     );
 
     // Physics
-    REGISTRY.emplace<PhysicsData>(enemy);
+    registry.emplace<PhysicsData>(enemy);
 
     // Collision
     CollisionComponent collision;
     collision.bounds = BoundingBox{Vector3{-0.5f, -0.5f, -0.5f}, Vector3{0.5f, 0.5f, 0.5f}};
     collision.collisionLayer = 2; // Enemy layer
-    REGISTRY.emplace<CollisionComponent>(enemy, collision);
+    registry.emplace<CollisionComponent>(enemy, collision);
 
-    REGISTRY.emplace<NameComponent>(enemy, "Enemy");
+    registry.emplace<NameComponent>(enemy, "Enemy");
 
     return enemy;
 }
 
-entt::entity CreateBullet(Vector3 position, Vector3 direction, float speed)
+entt::entity CreateBullet(entt::registry &registry, Vector3 position, Vector3 direction,
+                          float speed)
 {
-    auto bullet = REGISTRY.create();
+    auto bullet = registry.create();
 
-    REGISTRY.emplace<TransformComponent>(bullet, position);
+    registry.emplace<TransformComponent>(bullet, position);
 
     VelocityComponent velocity;
     velocity.velocity = Vector3Scale(direction, speed);
-    REGISTRY.emplace<VelocityComponent>(bullet, velocity);
+    registry.emplace<VelocityComponent>(bullet, velocity);
 
     // Lifetime - destroy after 5 seconds
-    REGISTRY.emplace<LifetimeComponent>(bullet, 5.0f);
+    registry.emplace<LifetimeComponent>(bullet, 5.0f);
 
     // Collision
     CollisionComponent collision;
     collision.bounds = BoundingBox{Vector3{-0.1f, -0.1f, -0.1f}, Vector3{0.1f, 0.1f, 0.1f}};
     collision.isTrigger = true;   // Does not block movement
     collision.collisionLayer = 3; // Bullet layer
-    REGISTRY.emplace<CollisionComponent>(bullet, collision);
+    registry.emplace<CollisionComponent>(bullet, collision);
 
-    REGISTRY.emplace<TagComponent>(bullet, "Bullet");
+    registry.emplace<TagComponent>(bullet, "Bullet");
 
     return bullet;
 }
 
-entt::entity CreateCamera(Vector3 position, Vector3 target)
+entt::entity CreateCamera(entt::registry &registry, Vector3 position, Vector3 target)
 {
-    auto cameraEntity = REGISTRY.create();
+    auto cameraEntity = registry.create();
 
-    REGISTRY.emplace<TransformComponent>(cameraEntity, position);
+    registry.emplace<TransformComponent>(cameraEntity, position);
 
     CameraComponent camera;
     camera.camera.position = position;
@@ -142,33 +142,34 @@ entt::entity CreateCamera(Vector3 position, Vector3 target)
     camera.camera.projection = CAMERA_PERSPECTIVE;
     camera.isActive = true;
     camera.priority = 0;
-    REGISTRY.emplace<CameraComponent>(cameraEntity, camera);
+    registry.emplace<CameraComponent>(cameraEntity, camera);
 
-    REGISTRY.emplace<NameComponent>(cameraEntity, "MainCamera");
+    registry.emplace<NameComponent>(cameraEntity, "MainCamera");
 
     return cameraEntity;
 }
 
-entt::entity CreateStaticObject(Vector3 position, Model *model, BoundingBox bounds)
+entt::entity CreateStaticObject(entt::registry &registry, Vector3 position, Model *model,
+                                BoundingBox bounds)
 {
-    auto obj = REGISTRY.create();
+    auto obj = registry.create();
 
-    REGISTRY.emplace<TransformComponent>(obj, position);
+    registry.emplace<TransformComponent>(obj, position);
 
-    REGISTRY.emplace<RenderComponent>(obj, "static", model, WHITE, true, 0);
+    registry.emplace<RenderComponent>(obj, "static", model, WHITE, true, 0);
 
     // Kinematic physics - does not move
     PhysicsData physics;
     physics.isKinematic = true;
     physics.useGravity = false;
-    REGISTRY.emplace<PhysicsData>(obj, physics);
+    registry.emplace<PhysicsData>(obj, physics);
 
     CollisionComponent collision;
     collision.bounds = bounds;
     collision.collisionLayer = 0; // Static layer
-    REGISTRY.emplace<CollisionComponent>(obj, collision);
+    registry.emplace<CollisionComponent>(obj, collision);
 
-    REGISTRY.emplace<TagComponent>(obj, "Static");
+    registry.emplace<TagComponent>(obj, "Static");
 
     return obj;
 }

@@ -8,7 +8,7 @@
 
 #include "core/application/EngineApplication.h"
 #include "project/Runtime/RuntimeLayer.h"
-
+#include "scene/core/Scene.h"
 
 namespace CHEngine
 {
@@ -20,11 +20,12 @@ public:
     ~SceneSimulationManager() = default;
 
     void OnScenePlay(std::shared_ptr<GameScene> &activeScene,
-                     std::shared_ptr<GameScene> &editorScene, RuntimeMode runtimeMode,
-                     CHD::RuntimeLayer **runtimeLayer, EngineApplication *app);
-    void OnSceneStop(std::shared_ptr<GameScene> &activeScene,
-                     std::shared_ptr<GameScene> editorScene, CHD::RuntimeLayer **runtimeLayer,
+                     std::shared_ptr<GameScene> &editorScene, std::shared_ptr<Scene> &newScene,
+                     RuntimeMode runtimeMode, CHD::RuntimeLayer **runtimeLayer,
                      EngineApplication *app);
+    void OnSceneStop(std::shared_ptr<GameScene> &activeScene,
+                     std::shared_ptr<GameScene> editorScene, std::shared_ptr<Scene> &newScene,
+                     CHD::RuntimeLayer **runtimeLayer, EngineApplication *app);
 
     SceneState GetSceneState() const
     {

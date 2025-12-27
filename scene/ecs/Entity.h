@@ -1,5 +1,5 @@
-#ifndef ENTITY_H
-#define ENTITY_H
+#ifndef CHENGINE_ECS_ENTITY_H
+#define CHENGINE_ECS_ENTITY_H
 
 #include <cstdint>
 
@@ -12,7 +12,3 @@ const EntityID NULL_ENTITY = 0xFFFFFFFF;
 
 } // namespace ECS
 #endif // ENTITY_H
-
-
-
-

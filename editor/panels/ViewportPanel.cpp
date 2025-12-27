@@ -1,5 +1,8 @@
 #include "ViewportPanel.h"
 #include "../viewport/ViewportPicking.h"
+#include "core/Engine.h"
+#include "core/physics/Physics.h"
+#include "scene/core/Scene.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
@@ -20,7 +23,8 @@ ViewportPanel::~ViewportPanel()
 }
 
 void ViewportPanel::OnImGuiRender(
-    const std::shared_ptr<GameScene> &scene, const Camera3D &camera, int selectedObjectIndex,
+    SceneState sceneState, const std::shared_ptr<GameScene> &legacyScene,
+    const std::shared_ptr<Scene> &modernScene, const Camera3D &camera, int selectedObjectIndex,
     Tool currentTool, const std::function<void(int)> &onSelect, CommandHistory *history,
     const std::function<void(const std::string &, const Vector3 &)> &onAssetDropped)
 {
@@ -45,7 +49,7 @@ void ViewportPanel::OnImGuiRender(
         BeginTextureMode(m_ViewportTexture);
         ClearBackground(DARKGRAY);
 
-        if (scene)
+        if (legacyScene)
         {
             MapRenderer renderer;
             // Enter 3D Mode for ALL editor 3D drawing
@@ -56,28 +60,41 @@ void ViewportPanel::OnImGuiRender(
             rlEnableDepthMask();
 
             // 1. Draw Map Content
-            renderer.DrawMapContent(*scene, camera);
+            renderer.DrawMapContent(*legacyScene, camera);
 
-            // 1.5 Draw ECS Entities (Player, etc.)
-            auto view = ECSRegistry::Get().view<TransformComponent, RenderComponent>();
-            for (auto [entity, transform, render] : view.each())
+            // 1.6 Draw New Scene Entities (New system)
+            if (modernScene)
             {
-                if (!render.visible || !render.model)
-                    continue;
+                auto &registry = modernScene->GetRegistry();
+                auto sceneView = registry.view<TransformComponent, RenderComponent>();
+                for (auto entity : sceneView)
+                {
+                    auto &transform = sceneView.get<TransformComponent>(entity);
+                    auto &render = sceneView.get<RenderComponent>(entity);
 
-                Matrix translation = MatrixTranslate(transform.position.x + render.offset.x,
-                                                     transform.position.y + render.offset.y,
-                                                     transform.position.z + render.offset.z);
-                Matrix rotation =
-                    MatrixRotateXYZ({transform.rotation.x * DEG2RAD, transform.rotation.y * DEG2RAD,
-                                     transform.rotation.z * DEG2RAD});
-                Matrix scale = MatrixScale(transform.scale.x, transform.scale.y, transform.scale.z);
+                    if (!render.visible || !render.model)
+                        continue;
 
-                Matrix modelTransform =
-                    MatrixMultiply(MatrixMultiply(translation, rotation), scale);
-                render.model->transform = modelTransform;
+                    Matrix translation = MatrixTranslate(transform.position.x + render.offset.x,
+                                                         transform.position.y + render.offset.y,
+                                                         transform.position.z + render.offset.z);
+                    Matrix rotation = MatrixRotateXYZ(transform.rotation);
+                    Matrix scale =
+                        MatrixScale(transform.scale.x, transform.scale.y, transform.scale.z);
 
-                DrawModel(*render.model, {0, 0, 0}, 1.0f, render.tint);
+                    Matrix modelTransform =
+                        MatrixMultiply(MatrixMultiply(scale, rotation), translation);
+                    render.model->transform = modelTransform;
+
+                    DrawModel(*render.model, {0, 0, 0}, 1.0f, render.tint);
+                }
+            }
+
+            // 1.7 Draw Physics Debug Visualization
+            if (Engine::Instance().IsCollisionDebugVisible() ||
+                Engine::Instance().IsDebugInfoVisible())
+            {
+                Physics::Render();
             }
 
             // 2. Editor Helpers
@@ -88,43 +105,49 @@ void ViewportPanel::OnImGuiRender(
             }
 
             // 3. Picking & Gizmo Logic (Decomposed)
-            ViewportPicking picker;
-            ImVec2 mousePos = ImGui::GetMousePos();
-            ImVec2 viewportPos = ImGui::GetCursorScreenPos();
-            ImVec2 viewportSize = {(float)m_Width, (float)m_Height};
-
-            // Handle Gizmo interaction and rendering
-            bool gizmoInteracting = m_Gizmo.RenderAndHandle(
-                scene, camera, selectedObjectIndex, currentTool, viewportSize, m_Hovered, history);
-
-            // Object Picking (If hovered, clicked, and NOT interacting with gizmo)
-            if (m_Hovered && ImGui::IsMouseClicked(0) && !gizmoInteracting)
+            if (sceneState == SceneState::Edit)
             {
-                int hitIndex =
-                    picker.PickObject(mousePos, viewportPos, viewportSize, camera, scene);
-                if (hitIndex != -1)
-                    onSelect(hitIndex);
+                ViewportPicking picker;
+                ImVec2 mousePos = ImGui::GetMousePos();
+                ImVec2 viewportPos = ImGui::GetCursorScreenPos();
+                ImVec2 viewportSize = {(float)m_Width, (float)m_Height};
+
+                // Handle Gizmo interaction and rendering
+                bool gizmoInteracting =
+                    m_Gizmo.RenderAndHandle(legacyScene, camera, selectedObjectIndex, currentTool,
+                                            viewportSize, m_Hovered, history);
+
+                // Object Picking (If hovered, clicked, and NOT interacting with gizmo)
+                if (m_Hovered && ImGui::IsMouseClicked(0) && !gizmoInteracting)
+                {
+                    int hitIndex =
+                        picker.PickObject(mousePos, viewportPos, viewportSize, camera, legacyScene);
+                    if (hitIndex != -1)
+                        onSelect(hitIndex);
+                }
             }
 
             // Draw selection highlight via extracted renderer
             if (selectedObjectIndex >= 0 &&
-                selectedObjectIndex < (int)scene->GetMapObjects().size())
+                selectedObjectIndex < (int)legacyScene->GetMapObjects().size())
             {
-                m_Renderer.RenderSelectionHighlight(scene->GetMapObjects()[selectedObjectIndex],
-                                                    scene->GetMapModels(), camera);
+                m_Renderer.RenderSelectionHighlight(
+                    legacyScene->GetMapObjects()[selectedObjectIndex], legacyScene->GetMapModels(),
+                    camera);
             }
 
             // Draw Grid
-            m_Grid.Draw(camera, m_Width, m_Height);
+            if (sceneState == SceneState::Edit)
+                m_Grid.Draw(camera, m_Width, m_Height);
 
             EndMode3D();
 
             // 4. Draw 2D Labels AFTER EndMode3D
             if (selectedObjectIndex >= 0 &&
-                selectedObjectIndex < (int)scene->GetMapObjects().size())
+                selectedObjectIndex < (int)legacyScene->GetMapObjects().size())
             {
-                m_Renderer.RenderAxisLabels(scene->GetMapObjects()[selectedObjectIndex], camera,
-                                            currentTool);
+                m_Renderer.RenderAxisLabels(legacyScene->GetMapObjects()[selectedObjectIndex],
+                                            camera, currentTool);
             }
         }
 
@@ -159,29 +182,32 @@ void ViewportPanel::OnImGuiRender(
         }
 
         // --- Snapping Toolbar Overlay ---
-        ImGui::SetCursorPos(ImVec2(10, 30));
-        ImGui::BeginChild("SnappingToolbar", ImVec2(0, 0),
-                          ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysAutoResize |
-                              ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY,
-                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        if (sceneState == SceneState::Edit)
+        {
+            ImGui::SetCursorPos(ImVec2(10, 30));
+            ImGui::BeginChild("SnappingToolbar", ImVec2(0, 0),
+                              ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysAutoResize |
+                                  ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY,
+                              ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-        bool snapping = m_Gizmo.IsSnappingEnabled();
-        if (ImGui::Checkbox("Snap", &snapping))
-            m_Gizmo.SetSnapping(snapping);
+            bool snapping = m_Gizmo.IsSnappingEnabled();
+            if (ImGui::Checkbox("Snap", &snapping))
+                m_Gizmo.SetSnapping(snapping);
 
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(70);
-        float grid = m_Gizmo.GetGridSize();
-        if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
-            m_Gizmo.SetGridSize(grid);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(70);
+            float grid = m_Gizmo.GetGridSize();
+            if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
+                m_Gizmo.SetGridSize(grid);
 
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(70);
-        float rot = m_Gizmo.GetRotationStep();
-        if (ImGui::DragFloat("##Rot", &rot, 1.0f, 1.0f, 180.0f, "Rot: %.0f"))
-            m_Gizmo.SetRotationStep(rot);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(70);
+            float rot = m_Gizmo.GetRotationStep();
+            if (ImGui::DragFloat("##Rot", &rot, 1.0f, 1.0f, 180.0f, "Rot: %.0f"))
+                m_Gizmo.SetRotationStep(rot);
 
-        ImGui::EndChild();
+            ImGui::EndChild();
+        }
     }
 
     ImGui::End();
