@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ID_COMPONENT_H
+#define ID_COMPONENT_H
 
 #include <cstdint>
 #include <random>
@@ -38,3 +39,5 @@ private:
 };
 
 } // namespace CHEngine
+
+#endif // ID_COMPONENT_H

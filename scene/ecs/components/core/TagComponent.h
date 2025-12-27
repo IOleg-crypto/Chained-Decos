@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TAG_COMPONENT_H
+#define TAG_COMPONENT_H
 
 #include <string>
 
@@ -31,3 +32,5 @@ struct TagComponent
 };
 
 } // namespace CHEngine
+
+#endif // TAG_COMPONENT_H
