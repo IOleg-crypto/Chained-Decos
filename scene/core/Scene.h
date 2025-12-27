@@ -7,7 +7,7 @@
 namespace CHEngine
 {
 
-class Entity;
+class Entity; // Forward declaration
 
 /**
  * Scene - Core ECS container
