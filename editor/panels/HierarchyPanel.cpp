@@ -1,4 +1,6 @@
 #include "HierarchyPanel.h"
+#include "scene/core/Scene.h"
+#include "scene/ecs/components/core/TagComponent.h"
 #include "scene/resources/map/GameScene.h"
 #include "scene/resources/map/MapData.h"
 #include <imgui.h>
@@ -15,6 +17,11 @@ void HierarchyPanel::SetContext(const std::shared_ptr<::GameScene> &scene)
     m_Context = scene;
 }
 
+void HierarchyPanel::SetSceneContext(const std::shared_ptr<Scene> &scene)
+{
+    m_SceneContext = scene;
+}
+
 void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedIndex,
                                    const std::function<void(SelectionType, int)> &onSelect,
                                    const std::function<void()> &onAddModel,
@@ -23,9 +30,43 @@ void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedInde
 {
     ImGui::Begin("Scene hierarchy");
 
+    // New Scene System - Entities
+    if (m_SceneContext)
+    {
+        if (ImGui::CollapsingHeader("Entities (New)", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            auto &registry = m_SceneContext->GetRegistry();
+            auto view = registry.view<TagComponent>();
+
+            int entityIndex = 0;
+            for (auto entity : view)
+            {
+                auto &tag = view.get<TagComponent>(entity);
+
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
+                                           ImGuiTreeNodeFlags_SpanAvailWidth |
+                                           ImGuiTreeNodeFlags_Leaf;
+
+                ImGui::PushID(static_cast<int>(entity));
+                bool opened = ImGui::TreeNodeEx("##Entity", flags, "%s", tag.Tag.c_str());
+                if (ImGui::IsItemClicked())
+                {
+                    // TODO: Handle entity selection
+                }
+                if (opened)
+                    ImGui::TreePop();
+                ImGui::PopID();
+                entityIndex++;
+            }
+        }
+
+        ImGui::Spacing();
+    }
+
+    // Legacy GameScene - World Objects
     if (m_Context)
     {
-        // 1. World Section
+        // 1. World Section (Legacy)
         if (ImGui::CollapsingHeader("World", ImGuiTreeNodeFlags_DefaultOpen))
         {
             auto &objects = m_Context->GetMapObjectsMutable();

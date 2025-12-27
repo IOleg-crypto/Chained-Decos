@@ -8,10 +8,10 @@
 
 class GameScene;
 
-class GameScene;
-
 namespace CHEngine
 {
+class Scene;
+
 class HierarchyPanel
 {
 public:
@@ -19,6 +19,7 @@ public:
     HierarchyPanel(const std::shared_ptr<GameScene> &scene);
 
     void SetContext(const std::shared_ptr<GameScene> &scene);
+    void SetSceneContext(const std::shared_ptr<Scene> &scene);
 
     void OnImGuiRender(SelectionType selectionType, int selectedIndex,
                        const std::function<void(SelectionType, int)> &onSelect,
@@ -37,6 +38,7 @@ public:
 
 private:
     std::shared_ptr<::GameScene> m_Context;
+    std::shared_ptr<Scene> m_SceneContext;
     bool m_isVisible = true;
 };
 } // namespace CHEngine
