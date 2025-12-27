@@ -71,6 +71,7 @@ void EditorLayer::OnAttach()
     m_EditorScene = m_ActiveScene;
 
     m_HierarchyPanel = std::make_unique<HierarchyPanel>(m_ActiveScene);
+    m_HierarchyPanel->SetSceneContext(m_Scene); // Connect to new Scene system
     m_InspectorPanel = std::make_unique<InspectorPanel>();
     m_ViewportPanel = std::make_unique<ViewportPanel>();
     m_AssetBrowserPanel = std::make_unique<AssetBrowserPanel>();
