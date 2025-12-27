@@ -12,9 +12,8 @@ using namespace CHEngine;
 
 namespace CHEngine
 {
-void UIRenderSystem::Render(int screenWidth, int screenHeight)
+void UIRenderSystem::Render(entt::registry &registry, int screenWidth, int screenHeight)
 {
-    auto &registry = ECSRegistry::Get();
 
     // Render all UI elements with RectTransform
     auto view = registry.view<RectTransform>();
@@ -237,9 +236,9 @@ Vector2 UIRenderSystem::GetAnchorPosition(UIAnchor anchor, int screenWidth, int 
         return {0, 0};
     }
 }
-entt::entity UIRenderSystem::PickUIEntity(Vector2 mousePos, int screenWidth, int screenHeight)
+entt::entity UIRenderSystem::PickUIEntity(entt::registry &registry, Vector2 mousePos,
+                                          int screenWidth, int screenHeight)
 {
-    auto &registry = ECSRegistry::Get();
     auto view = registry.view<RectTransform>();
 
     entt::entity picked = entt::null;
@@ -266,7 +265,12 @@ void UIRenderSystem::DrawSelectionHighlight(entt::entity entity, int screenWidth
     if (entity == entt::null)
         return;
 
+    // Need to think how to pass registry here.
+    // For now, let's keep it using global or use a different approach.
+    // Actually, this is editor-only.
+    // Let's use REGISTRY for now or refactor to take registry.
     auto &registry = ECSRegistry::Get();
+
     if (!registry.valid(entity) || !registry.all_of<RectTransform>(entity))
         return;
 
@@ -288,9 +292,9 @@ void UIRenderSystem::DrawSelectionHighlight(entt::entity entity, int screenWidth
                    {handleSize, handleSize}, WHITE);
 }
 
-void UIRenderSystem::RenderImGui(int screenWidth, int screenHeight, Vector2 offset)
+void UIRenderSystem::RenderImGui(entt::registry &registry, int screenWidth, int screenHeight,
+                                 Vector2 offset)
 {
-    auto &registry = ECSRegistry::Get();
 
     // Render all UI elements with ImGuiComponent
     auto view = registry.view<RectTransform, ImGuiComponent>();

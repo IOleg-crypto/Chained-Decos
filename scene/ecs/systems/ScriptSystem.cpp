@@ -5,18 +5,17 @@
 #include "scene/ecs/components/ScriptComponent.h"
 #include <filesystem>
 
-
 namespace CHEngine
 {
 
-void ScriptSystem::Update(float deltaTime)
+void ScriptSystem::Update(entt::registry &registry, float deltaTime)
 {
     auto &engine = CHEngine::Engine::Instance();
     auto scriptManager = engine.GetService<CHEngine::ScriptManager>();
     if (!scriptManager)
         return;
 
-    auto view = REGISTRY.view<ScriptComponent>();
+    auto view = registry.view<ScriptComponent>();
     for (auto entity : view)
     {
         auto &script = view.get<ScriptComponent>(entity);
@@ -40,14 +39,14 @@ void ScriptSystem::Update(float deltaTime)
     }
 }
 
-void ScriptSystem::OnStart()
+void ScriptSystem::OnStart(entt::registry &registry)
 {
     auto &engine = CHEngine::Engine::Instance();
     auto scriptManager = engine.GetService<CHEngine::ScriptManager>();
     if (!scriptManager)
         return;
 
-    auto view = REGISTRY.view<ScriptComponent>();
+    auto view = registry.view<ScriptComponent>();
     for (auto entity : view)
     {
         auto &script = view.get<ScriptComponent>(entity);

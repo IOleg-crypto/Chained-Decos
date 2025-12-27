@@ -53,19 +53,18 @@ void ScriptManager::Shutdown()
 
 void ScriptManager::Update(float deltaTime)
 {
-    if (!m_initialized)
+    if (!m_initialized || !m_activeRegistry)
         return;
 
     // Update entity scripts
-    UpdateScripts(deltaTime);
+    UpdateScripts(*m_activeRegistry, deltaTime);
 }
 
-void ScriptManager::InitializeScripts()
+void ScriptManager::InitializeScripts(entt::registry &registry)
 {
     if (!m_initialized)
         return;
 
-    auto &registry = REGISTRY;
     auto view = registry.view<LuaScriptComponent>();
 
     for (auto entity : view)
@@ -83,12 +82,11 @@ void ScriptManager::InitializeScripts()
     }
 }
 
-void ScriptManager::UpdateScripts(float deltaTime)
+void ScriptManager::UpdateScripts(entt::registry &registry, float deltaTime)
 {
     if (!m_initialized)
         return;
 
-    auto &registry = REGISTRY;
     auto view = registry.view<LuaScriptComponent>();
 
     for (auto entity : view)
@@ -223,23 +221,28 @@ void ScriptManager::BindSceneAPI()
     m_lua.set_function("GetTime", []() { return (float)GetTime(); });
 
     m_lua.set_function("GetPosition",
-                       [](uint32_t entityId) -> Vector3
+                       [this](uint32_t entityId) -> Vector3
                        {
+                           if (!m_activeRegistry)
+                               return {0, 0, 0};
                            auto entity = (entt::entity)entityId;
-                           if (REGISTRY.all_of<TransformComponent>(entity))
+                           if (m_activeRegistry->all_of<TransformComponent>(entity))
                            {
-                               return REGISTRY.get<TransformComponent>(entity).position;
+                               return m_activeRegistry->get<TransformComponent>(entity).position;
                            }
                            return {0, 0, 0};
                        });
 
     m_lua.set_function("SetPosition",
-                       [](uint32_t entityId, float x, float y, float z)
+                       [this](uint32_t entityId, float x, float y, float z)
                        {
+                           if (!m_activeRegistry)
+                               return;
                            auto entity = (entt::entity)entityId;
-                           if (REGISTRY.all_of<TransformComponent>(entity))
+                           if (m_activeRegistry->all_of<TransformComponent>(entity))
                            {
-                               REGISTRY.get<TransformComponent>(entity).position = {x, y, z};
+                               m_activeRegistry->get<TransformComponent>(entity).position = {x, y,
+                                                                                             z};
                            }
                        });
 }
@@ -280,18 +283,21 @@ void ScriptManager::BindGameplayAPI()
 {
     // IsColliding(entityId): Simple AABB check against Player
     m_lua.set_function("IsColliding",
-                       [](uint32_t entityId) -> bool
+                       [this](uint32_t entityId) -> bool
                        {
+                           if (!m_activeRegistry)
+                               return false;
+                           auto &registry = *m_activeRegistry;
                            auto entity = (entt::entity)entityId;
-                           if (!REGISTRY.valid(entity))
+                           if (!registry.valid(entity))
                                return false;
 
                            // Get Entity Transform
                            Vector3 entPos = {0, 0, 0};
                            Vector3 entScale = {1, 1, 1};
-                           if (REGISTRY.all_of<TransformComponent>(entity))
+                           if (registry.all_of<TransformComponent>(entity))
                            {
-                               auto &t = REGISTRY.get<TransformComponent>(entity);
+                               auto &t = registry.get<TransformComponent>(entity);
                                entPos = t.position;
                                entScale = t.scale;
                            }
@@ -309,7 +315,7 @@ void ScriptManager::BindGameplayAPI()
                            entBox.max = Vector3Add(entPos, halfSize);
 
                            // Find Player
-                           auto playerView = REGISTRY.view<PlayerComponent, TransformComponent>();
+                           auto playerView = registry.view<PlayerComponent, TransformComponent>();
                            for (auto [playerEntity, player, playerTransform] : playerView.each())
                            {
                                // Construct Player AABB (approximate)
@@ -330,10 +336,13 @@ void ScriptManager::BindGameplayAPI()
     // RespawnPlayer(): Resets player to spawn position
     m_lua.set_function(
         "RespawnPlayer",
-        []()
+        [this]()
         {
+            if (!m_activeRegistry)
+                return;
             CD_INFO("[Lua] RespawnPlayer called.");
-            auto view = REGISTRY.view<TransformComponent, VelocityComponent, PlayerComponent>();
+            auto view =
+                m_activeRegistry->view<TransformComponent, VelocityComponent, PlayerComponent>();
             for (auto [entity, transform, velocity, player] : view.each())
             {
                 transform.position = player.spawnPosition;

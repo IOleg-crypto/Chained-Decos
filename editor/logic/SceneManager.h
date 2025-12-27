@@ -2,7 +2,7 @@
 #define SCENE_MANAGER_IMPL_H
 
 #include "MapManager.h"
-#include "Scene.h"
+#include "scene/core/Scene.h"
 #include <memory>
 #include <string>
 
