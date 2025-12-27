@@ -18,7 +18,10 @@
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/MouseEvent.h"
+#include "scene/core/Entity.h"
+#include "scene/core/Scene.h"
 #include "scene/resources/map/SceneLoader.h"
+
 
 #include <imgui.h>
 #include <memory>
@@ -88,6 +91,12 @@ public:
 
     void UI_DrawDockspace();
 
+    // Scene System Accessors
+    std::shared_ptr<Scene> GetActiveScene()
+    {
+        return m_Scene;
+    }
+
 private:
     EditorCamera m_EditorCamera;
 
@@ -106,7 +115,11 @@ private:
     SelectionManager m_SelectionManager;
     CommandHistory m_CommandHistory;
 
-    std::shared_ptr<GameScene> m_ActiveScene; // Local cache or reference
+    // Scene System (new architecture)
+    std::shared_ptr<Scene> m_Scene;
+
+    // Legacy scene system (will be migrated)
+    std::shared_ptr<GameScene> m_ActiveScene;
     std::shared_ptr<GameScene> m_EditorScene;
 
     // Viewport
