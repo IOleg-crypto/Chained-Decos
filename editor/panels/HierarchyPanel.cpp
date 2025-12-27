@@ -26,7 +26,11 @@ void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedInde
                                    const std::function<void(SelectionType, int)> &onSelect,
                                    const std::function<void()> &onAddModel,
                                    const std::function<void(const std::string &)> &onAddUI,
-                                   const std::function<void(int)> &onDelete)
+                                   const std::function<void(int)> &onDelete,
+                                   entt::entity selectedEntity,
+                                   const std::function<void(entt::entity)> &onSelectEntity,
+                                   const std::function<void()> &onCreateEntity,
+                                   const std::function<void(entt::entity)> &onDeleteEntity)
 {
     ImGui::Begin("Scene hierarchy");
 
@@ -47,11 +51,17 @@ void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedInde
                                            ImGuiTreeNodeFlags_SpanAvailWidth |
                                            ImGuiTreeNodeFlags_Leaf;
 
+                // Highlight if selected
+                if (selectionType == SelectionType::ENTITY && selectedEntity == entity)
+                {
+                    flags |= ImGuiTreeNodeFlags_Selected;
+                }
+
                 ImGui::PushID(static_cast<int>(entity));
                 bool opened = ImGui::TreeNodeEx("##Entity", flags, "%s", tag.Tag.c_str());
-                if (ImGui::IsItemClicked())
+                if (ImGui::IsItemClicked() && onSelectEntity)
                 {
-                    // TODO: Handle entity selection
+                    onSelectEntity(entity);
                 }
                 if (opened)
                     ImGui::TreePop();
@@ -122,6 +132,12 @@ void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedInde
     {
         if (ImGui::BeginMenu("Create..."))
         {
+            if (ImGui::MenuItem("Entity (New)"))
+            {
+                if (onCreateEntity)
+                    onCreateEntity();
+            }
+            ImGui::Separator();
             if (ImGui::BeginMenu("3D Object"))
             {
                 auto addObject = [&](const std::string &name, MapObjectType type, Color color)
@@ -178,6 +194,11 @@ void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedInde
                 {
                     if (onDelete)
                         onDelete(selectedIndex);
+                }
+                else if (selectionType == SelectionType::ENTITY)
+                {
+                    if (onDeleteEntity)
+                        onDeleteEntity(selectedEntity);
                 }
                 else if (selectionType == SelectionType::UI_ELEMENT)
                 {

@@ -1,4 +1,5 @@
 #include "EditorLayer.h"
+#include "components/physics/collision/interfaces/ICollisionManager.h"
 #include "core/Base.h"
 #include "core/Engine.h"
 #include "core/Log.h"
@@ -6,6 +7,7 @@
 #include "core/input/Input.h"
 #include "core/renderer/Renderer.h"
 #include "editor/utils/EditorStyles.h"
+#include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/core/IDComponent.h"
 #include "scene/ecs/components/core/TagComponent.h"
@@ -22,6 +24,7 @@
 #include "nfd.h"
 #include "project/Runtime/RuntimeLayer.h"
 #include "raylib.h"
+#include "scene/core/SceneSerializer.h"
 #include "scene/resources/map/SceneSerializer.h"
 #include <filesystem>
 
@@ -39,6 +42,10 @@ void EditorLayer::OnAttach()
     m_Scene = std::make_shared<Scene>("EditorScene");
     CD_INFO("[EditorLayer] Created editor scene: %s", m_Scene->GetName().c_str());
 
+    auto levelManager = Engine::Instance().GetService<ILevelManager>();
+    if (levelManager)
+        levelManager->SetActiveScene(m_Scene);
+
     // Create default entities using raw entt::entity (temporary workaround for circular dependency)
     auto &registry = m_Scene->GetRegistry();
 
@@ -47,6 +54,12 @@ void EditorLayer::OnAttach()
     registry.emplace<IDComponent>(ground);
     registry.emplace<TagComponent>(ground, "Ground");
     registry.emplace<TransformComponent>(ground);
+    auto &groundCol = registry.emplace<CollisionComponent>(ground);
+    groundCol.bounds = {{-50, -0.1f, -50}, {50, 0.1f, 50}};
+    groundCol.collider = std::make_shared<Collision>(Vector3{0, 0, 0}, Vector3{50, 0.1f, 50});
+    auto collManager = Engine::Instance().GetService<ICollisionManager>();
+    if (collManager)
+        collManager->AddCollider(groundCol.collider);
 
     // Cube entity
     entt::entity cube = registry.create();
@@ -54,6 +67,11 @@ void EditorLayer::OnAttach()
     registry.emplace<TagComponent>(cube, "Default Cube");
     auto &cubeTransform = registry.emplace<TransformComponent>(cube);
     cubeTransform.position = {0, 0.5f, 0};
+    auto &cubeCol = registry.emplace<CollisionComponent>(cube);
+    cubeCol.bounds = {{-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}};
+    cubeCol.collider = std::make_shared<Collision>(Vector3{0, 0.5f, 0}, Vector3{0.5f, 0.5f, 0.5f});
+    if (collManager)
+        collManager->AddCollider(cubeCol.collider);
 
     CD_INFO("[EditorLayer] Created 2 default entities in scene");
 
@@ -73,6 +91,9 @@ void EditorLayer::OnAttach()
     m_HierarchyPanel = std::make_unique<HierarchyPanel>(m_ActiveScene);
     m_HierarchyPanel->SetSceneContext(m_Scene); // Connect to new Scene system
     m_InspectorPanel = std::make_unique<InspectorPanel>();
+    m_InspectorPanel->SetPropertyChangeCallback(
+        [this](int index, const MapObjectData &old, const MapObjectData &now)
+        { CD_INFO("Object '%s' properties modified", now.name.c_str()); });
     m_ViewportPanel = std::make_unique<ViewportPanel>();
     m_AssetBrowserPanel = std::make_unique<AssetBrowserPanel>();
     m_ToolbarPanel = std::make_unique<ToolbarPanel>();
@@ -142,6 +163,31 @@ void EditorLayer::OnUpdate(float deltaTime)
     {
         OnSceneStop();
     }
+
+    // Update New Scene Architecture
+    if (m_Scene)
+    {
+        m_Scene->OnUpdateEditor(deltaTime);
+
+        // Sync Scene Entities to Physics System
+        auto collisionManager = Engine::Instance().GetService<ICollisionManager>();
+        if (collisionManager)
+        {
+            auto &registry = m_Scene->GetRegistry();
+            auto view = registry.view<TransformComponent, CollisionComponent>();
+            for (auto entity : view)
+            {
+                auto &transform = view.get<TransformComponent>(entity);
+                auto &collision = view.get<CollisionComponent>(entity);
+
+                if (collision.collider)
+                {
+                    // Update collider position from transform
+                    collision.collider->Update(transform.position, collision.collider->GetSize());
+                }
+            }
+        }
+    }
 }
 
 void EditorLayer::OnRender()
@@ -164,7 +210,9 @@ void EditorLayer::OnImGuiRender()
             m_SelectionManager.GetSelectionType(), m_SelectionManager.GetSelectedIndex(),
             [this](SelectionType type, int i) { m_SelectionManager.SetSelection(i, type); },
             [this]() { AddModel(); }, [this](const std::string &type) { AddUIElement(type); },
-            [this](int i) { DeleteObject(i); });
+            [this](int i) { DeleteObject(i); }, m_SelectionManager.GetSelectedEntity(),
+            [this](entt::entity e) { m_SelectionManager.SetEntitySelection(e); },
+            [this]() { CreateEntity(); }, [this](entt::entity e) { DeleteEntity(e); });
 
         m_InspectorPanel->SetPropertyChangeCallback(
             [this](int index, const MapObjectData &oldData, const MapObjectData &newData)
@@ -197,7 +245,10 @@ void EditorLayer::OnImGuiRender()
 
     if (m_InspectorPanel && m_InspectorPanel->IsVisible())
     {
-        if (m_SelectionManager.GetSelectionType() == SelectionType::UI_ELEMENT)
+        SelectionType selectionType = m_SelectionManager.GetSelectionType();
+        if (selectionType == SelectionType::ENTITY)
+            m_InspectorPanel->OnImGuiRender(m_Scene, m_SelectionManager.GetSelectedEntity());
+        else if (selectionType == SelectionType::UI_ELEMENT)
             m_InspectorPanel->OnImGuiRender(m_ActiveScene, GetSelectedUIElement());
         else
             m_InspectorPanel->OnImGuiRender(
@@ -217,9 +268,9 @@ void EditorLayer::OnImGuiRender()
         m_EditorCamera.SetViewportSize(viewportSize.x, viewportSize.y);
 
         m_ViewportPanel->OnImGuiRender(
-            m_ActiveScene, activeCamera, m_SelectionManager.GetSelectedIndex(), m_ActiveTool,
-            [this](int i) { m_SelectionManager.SetSelection(i, SelectionType::WORLD_OBJECT); },
-            &m_CommandHistory,
+            m_SimulationManager.GetSceneState(), m_ActiveScene, m_Scene, activeCamera,
+            m_SelectionManager.GetSelectedIndex(), m_ActiveTool, [this](int i)
+            { m_SelectionManager.SetSelection(i, SelectionType::WORLD_OBJECT); }, &m_CommandHistory,
             [this](const std::string &path, const Vector3 &pos) { OnAssetDropped(path, pos); });
     }
 
@@ -328,28 +379,46 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent &e)
             if (m_SimulationManager.GetSceneState() == SceneState::Play)
                 OnSceneStop();
             break;
-        case KEY_Q:
-            SetActiveTool(Tool::SELECT);
-            break;
-        case KEY_W:
-            SetActiveTool(Tool::MOVE);
-            break;
-        case KEY_E:
-            SetActiveTool(Tool::ROTATE);
-            break;
-        case KEY_R:
-            SetActiveTool(Tool::SCALE);
-            break;
         case KEY_DELETE:
-            if (m_SelectionManager.GetSelectedIndex() >= 0 && m_ActiveScene)
+        {
+            SelectionType type = m_SelectionManager.GetSelectionType();
+            if (type == SelectionType::ENTITY)
             {
-                auto &objects = m_ActiveScene->GetMapObjectsMutable();
-                if (m_SelectionManager.GetSelectedIndex() < (int)objects.size())
+                DeleteEntity(m_SelectionManager.GetSelectedEntity());
+            }
+            else if (type == SelectionType::WORLD_OBJECT)
+            {
+                DeleteObject(m_SelectionManager.GetSelectedIndex());
+            }
+            else if (type == SelectionType::UI_ELEMENT)
+            {
+                if (m_SelectionManager.GetSelectedIndex() >= 0 && m_ActiveScene)
                 {
-                    objects.erase(objects.begin() + m_SelectionManager.GetSelectedIndex());
-                    m_SelectionManager.ClearSelection();
+                    auto &elements = m_ActiveScene->GetUIElementsMutable();
+                    if (m_SelectionManager.GetSelectedIndex() < (int)elements.size())
+                    {
+                        elements.erase(elements.begin() + m_SelectionManager.GetSelectedIndex());
+                        m_SelectionManager.ClearSelection();
+                    }
                 }
             }
+            break;
+        }
+        case KEY_Q:
+            if (m_SimulationManager.GetSceneState() == SceneState::Edit)
+                SetActiveTool(Tool::SELECT);
+            break;
+        case KEY_W:
+            if (m_SimulationManager.GetSceneState() == SceneState::Edit)
+                SetActiveTool(Tool::MOVE);
+            break;
+        case KEY_E:
+            if (m_SimulationManager.GetSceneState() == SceneState::Edit)
+                SetActiveTool(Tool::ROTATE);
+            break;
+        case KEY_R:
+            if (m_SimulationManager.GetSceneState() == SceneState::Edit)
+                SetActiveTool(Tool::SCALE);
             break;
         }
     }
@@ -463,14 +532,15 @@ void EditorLayer::UI_DrawDockspace()
 
 void EditorLayer::OnScenePlay()
 {
-    m_SimulationManager.OnScenePlay(m_ActiveScene, m_EditorScene,
+    m_SimulationManager.OnScenePlay(m_ActiveScene, m_EditorScene, m_Scene,
                                     m_SimulationManager.GetRuntimeMode(), &m_RuntimeLayer,
                                     GetAppRunner());
 }
 
 void EditorLayer::OnSceneStop()
 {
-    m_SimulationManager.OnSceneStop(m_ActiveScene, m_EditorScene, &m_RuntimeLayer, GetAppRunner());
+    m_SimulationManager.OnSceneStop(m_ActiveScene, m_EditorScene, m_Scene, &m_RuntimeLayer,
+                                    GetAppRunner());
 }
 
 MapObjectData *EditorLayer::GetSelectedObject()
@@ -490,17 +560,37 @@ void EditorLayer::NewScene()
 
 void EditorLayer::OpenScene()
 {
-    m_ProjectManager.OpenScene();
+    if (m_ProjectManager.OpenScene())
+    {
+        std::string path = m_ProjectManager.GetScenePath();
+        if (path.find(".chscene") != std::string::npos)
+        {
+            ECSSceneSerializer ecsSerializer(m_Scene);
+            ecsSerializer.Deserialize(path); // New YAML format
+        }
+    }
 }
 
 void EditorLayer::SaveScene()
 {
     m_ProjectManager.SaveScene();
+    std::string path = m_ProjectManager.GetScenePath();
+    if (!path.empty())
+    {
+        ECSSceneSerializer ecsSerializer(m_Scene);
+        ecsSerializer.Serialize(path);
+    }
 }
 
 void EditorLayer::SaveSceneAs()
 {
     m_ProjectManager.SaveSceneAs();
+    std::string path = m_ProjectManager.GetScenePath();
+    if (!path.empty())
+    {
+        ECSSceneSerializer ecsSerializer(m_Scene);
+        ecsSerializer.Serialize(path);
+    }
 }
 void EditorLayer::AddModel()
 {
@@ -608,6 +698,7 @@ void EditorLayer::AddObject(const MapObjectData &data)
 
     auto cmd = std::make_unique<AddObjectCommand>(m_ActiveScene, data);
     m_CommandHistory.PushCommand(std::move(cmd));
+    CD_INFO("Added legacy object: %s", data.name.c_str());
 }
 
 void EditorLayer::DeleteObject(int index)
@@ -615,12 +706,46 @@ void EditorLayer::DeleteObject(int index)
     if (!m_ActiveScene || index < 0)
         return;
 
+    std::string name = m_ActiveScene->GetMapObjects()[index].name;
     auto cmd = std::make_unique<DeleteObjectCommand>(m_ActiveScene, index);
     m_CommandHistory.PushCommand(std::move(cmd));
+    CD_INFO("Deleted legacy object: %s", name.c_str());
 
     // Deselect if we deleted the current selection
     if (m_SelectionManager.GetSelectedIndex() == index)
         m_SelectionManager.SetSelection(-1, SelectionType::NONE);
+}
+
+void EditorLayer::CreateEntity()
+{
+    if (!m_Scene)
+        return;
+
+    // Temporary until circular dependency is resolved
+    auto &registry = m_Scene->GetRegistry();
+    entt::entity e = registry.create();
+    registry.emplace<IDComponent>(e);
+    registry.emplace<TagComponent>(e, "Empty Entity");
+    registry.emplace<TransformComponent>(e);
+
+    m_SelectionManager.SetEntitySelection(e);
+    CD_INFO("Created new entity: %llu", (unsigned long long)registry.get<IDComponent>(e).ID);
+}
+
+void EditorLayer::DeleteEntity(entt::entity entity)
+{
+    if (!m_Scene || entity == entt::null)
+        return;
+
+    std::string tag = "Unknown";
+    if (m_Scene->GetRegistry().all_of<TagComponent>(entity))
+        tag = m_Scene->GetRegistry().get<TagComponent>(entity).Tag;
+
+    m_Scene->DestroyEntity(entity);
+    CD_INFO("Deleted entity: %s", tag.c_str());
+
+    if (m_SelectionManager.GetSelectedEntity() == entity)
+        m_SelectionManager.ClearSelection();
 }
 
 void EditorLayer::OnAssetDropped(const std::string &assetPath, const Vector3 &worldPosition)

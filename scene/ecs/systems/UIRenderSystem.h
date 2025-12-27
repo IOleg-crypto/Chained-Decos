@@ -10,11 +10,13 @@ namespace CHEngine
 class UIRenderSystem
 {
 public:
-    static void Render(int screenWidth, int screenHeight);
-    static void RenderImGui(int screenWidth, int screenHeight, Vector2 offset = {0, 0});
+    static void Render(entt::registry &registry, int screenWidth, int screenHeight);
+    static void RenderImGui(entt::registry &registry, int screenWidth, int screenHeight,
+                            Vector2 offset = {0, 0});
 
     // Editor support
-    static entt::entity PickUIEntity(Vector2 mousePos, int screenWidth, int screenHeight);
+    static entt::entity PickUIEntity(entt::registry &registry, Vector2 mousePos, int screenWidth,
+                                     int screenHeight);
     static void DrawSelectionHighlight(entt::entity entity, int screenWidth, int screenHeight);
 
 private:

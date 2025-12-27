@@ -30,7 +30,8 @@ enum class SelectionType : std::uint8_t
 {
     NONE = 0,
     WORLD_OBJECT = 1,
-    UI_ELEMENT = 2
+    UI_ELEMENT = 2,
+    ENTITY = 3 // Scene system entity
 };
 
 // Gizmo axes for transformation tools

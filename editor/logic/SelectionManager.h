@@ -3,6 +3,7 @@
 
 #include "editor/EditorTypes.h"
 #include "scene/resources/map/GameScene.h"
+#include <entt/entt.hpp>
 #include <memory>
 
 namespace CHEngine
@@ -16,12 +17,21 @@ public:
     {
         m_SelectedIndex = index;
         m_SelectionType = type;
+        m_SelectedEntity = entt::null;
+    }
+
+    void SetEntitySelection(entt::entity entity)
+    {
+        m_SelectedEntity = entity;
+        m_SelectionType = SelectionType::ENTITY;
+        m_SelectedIndex = -1;
     }
 
     void ClearSelection()
     {
         m_SelectedIndex = -1;
         m_SelectionType = SelectionType::NONE;
+        m_SelectedEntity = entt::null;
     }
 
     int GetSelectedIndex() const
@@ -31,6 +41,11 @@ public:
     SelectionType GetSelectionType() const
     {
         return m_SelectionType;
+    }
+
+    entt::entity GetSelectedEntity() const
+    {
+        return m_SelectedEntity;
     }
 
     int GetSelectedObjectIndex() const
@@ -44,6 +59,7 @@ public:
 private:
     int m_SelectedIndex = -1;
     SelectionType m_SelectionType = SelectionType::NONE;
+    entt::entity m_SelectedEntity = entt::null;
 };
 } // namespace CHEngine
 

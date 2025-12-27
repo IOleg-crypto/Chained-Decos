@@ -1,11 +1,10 @@
-#ifndef ENTITY_H
-#define ENTITY_H
+#ifndef CHENGINE_CORE_ENTITY_H
+#define CHENGINE_CORE_ENTITY_H
 
 #include "Scene.h"
 #include "core/Log.h"
 #include <cstdint>
 #include <entt/entt.hpp>
-
 
 namespace CHEngine
 {
@@ -88,6 +87,8 @@ public:
 private:
     entt::entity m_EntityHandle{entt::null};
     Scene *m_Scene = nullptr;
+
+    friend class Scene;
 };
 
 } // namespace CHEngine
