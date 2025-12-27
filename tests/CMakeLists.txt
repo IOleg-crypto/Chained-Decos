@@ -48,6 +48,20 @@ target_include_directories(ChainedDecosIntegrationTests
         ${CMAKE_SOURCE_DIR}
 )
 
+# Scene/Entity System Test (standalone validation)
+add_executable(SceneEntityTest scene/SceneEntityTest.cpp)
+target_link_libraries(SceneEntityTest
+    PRIVATE
+        scene_core
+        ecs
+        raylib
+        core
+)
+target_include_directories(SceneEntityTest
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}
+)
+
 # Test properties for unit tests
 set_target_properties(ChainedDecosUnitTests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests"
