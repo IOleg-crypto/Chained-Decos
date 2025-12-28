@@ -26,10 +26,10 @@
       ]
     },
     {
-      "name": "Debug MapEditor with LLDB",
+      "name": "Debug Editor with LLDB",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/src/MapEditor/ChainedDecosMapEditor.exe",
+      "program": "${workspaceFolder}/build/bin/ChainedEditor.exe",
       "args": [],
       "cwd": "${workspaceFolder}/build",
       "stopOnEntry": true,
