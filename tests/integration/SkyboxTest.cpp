@@ -9,9 +9,14 @@ class SkyboxTest : public ::testing::Test
 protected:
     void SetUp() override
     {
+        // InitWindow is required for GenMeshCube, LoadModelFromMesh, LoadShader, etc.
+        if (!IsWindowReady())
+        {
+            InitWindow(100, 100, "SkyboxTest");
+        }
+
         // Create a temporary config file for testing
         testConfigFile = "test_game.cfg";
-
         // Clean up any existing test file
         if (std::filesystem::exists(testConfigFile))
         {
@@ -25,6 +30,11 @@ protected:
 
     void TearDown() override
     {
+        if (IsWindowReady())
+        {
+            CloseWindow();
+        }
+
         // Clean up test file
         if (std::filesystem::exists(testConfigFile))
         {
