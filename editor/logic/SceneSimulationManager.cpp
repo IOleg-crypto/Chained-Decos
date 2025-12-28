@@ -104,6 +104,9 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
                         levelManager ? levelManager->GetSpawnPosition() : Vector3{0, 5, 0};
                     CHD::RuntimeInitializer::InitializePlayer(newScene.get(), spawnPos, 0.15f);
 
+                    // Register scene in ECS Scene Manager for systems to access
+                    Engine::Instance().GetECSSceneManager().LoadScene(newScene);
+
                     *runtimeLayer = new CHD::RuntimeLayer(newScene);
                     app->PushLayer(*runtimeLayer);
 
@@ -131,6 +134,9 @@ void SceneSimulationManager::OnSceneStop(std::shared_ptr<GameScene> &activeScene
             delete *runtimeLayer;
             *runtimeLayer = nullptr;
         }
+
+        // Unload from ECS Scene Manager
+        Engine::Instance().GetECSSceneManager().UnloadCurrentScene();
 
         // Restore mouse cursor for editor control
         EnableCursor();

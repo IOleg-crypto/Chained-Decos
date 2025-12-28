@@ -29,7 +29,7 @@ void MapRenderer::RenderMap(const GameScene &map, Camera3D camera)
     EndMode3D();
 }
 
-void MapRenderer::DrawMapContent(const GameScene &map, Camera3D camera)
+void MapRenderer::DrawMapContent(const GameScene &map, Camera3D camera, bool hideSpawnZones)
 {
     const MapMetadata &metadata = map.GetMapMetaData();
     Skybox *skybox = map.GetSkyBox();
@@ -42,6 +42,10 @@ void MapRenderer::DrawMapContent(const GameScene &map, Camera3D camera)
     // Render all objects in the map
     for (const auto &object : map.GetMapObjects())
     {
+        // Skip spawn zones if hideSpawnZones is true (e.g., during Play mode)
+        if (hideSpawnZones && object.type == MapObjectType::SPAWN_ZONE)
+            continue;
+
         RenderMapObject(object, map.GetMapModels(), map.GetMapTextures(), camera);
     }
 }

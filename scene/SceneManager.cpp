@@ -17,8 +17,8 @@ void SceneManager::LoadSceneAsync(const std::string &scenePath)
 {
     CD_CORE_INFO("[SceneManager] Async loading scene: %s", scenePath.c_str());
 
-    m_isLoadingAsync = true;
     m_nextScenePath = scenePath;
+    m_isLoadingAsync = true;
     BeginTransition();
 }
 
@@ -115,14 +115,14 @@ void SceneManager::BeginTransition()
 void SceneManager::EndTransition()
 {
     m_isTransitioning = false;
-    m_transitionProgress = 0.0f;
+    m_transitionProgress = 1.0f;
 }
 
 void SceneManager::LoadSceneInternal(const std::string &scenePath)
 {
+    m_currentScenePath = scenePath;
     SceneLoader loader;
     m_currentScene = loader.LoadScene(scenePath);
-    m_currentScenePath = scenePath;
 
     CD_CORE_INFO("[SceneManager] Scene loaded: %s", scenePath.c_str());
 }
