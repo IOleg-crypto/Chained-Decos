@@ -11,6 +11,8 @@ std::string MouseMovedEvent::ToString() const
     return ss.str();
 }
 
+MouseMovedEvent::MouseMovedEvent(float x, float y) : m_MouseX(x), m_MouseY(y){}
+
 std::string MouseScrolledEvent::ToString() const
 {
     std::stringstream ss;

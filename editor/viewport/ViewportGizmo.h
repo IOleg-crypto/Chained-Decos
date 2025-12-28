@@ -22,39 +22,19 @@ public:
     ViewportGizmo() = default;
     ~ViewportGizmo() = default;
 
-    /**
-     * @brief Render and handle gizmo interaction
-     * @param scene Scene containing objects
-     * @param camera Current camera
-     * @param selectedObjectIndex Index of selected object
-     * @param currentTool Current transformation tool (Move/Rotate/Scale)
-     * @param viewportSize Viewport dimensions
-     * @param isHovered Whether viewport is hovered
-     * @return True if gizmo is being interacted with
-     */
     bool RenderAndHandle(const std::shared_ptr<GameScene> &scene, const Camera3D &camera,
                          int selectedObjectIndex, Tool currentTool, ImVec2 viewportSize,
                          bool isHovered, CommandHistory *history = nullptr);
-
-    /**
-     * @brief Check if gizmo is currently hovered
-     */
     bool IsHovered() const
     {
         return m_GizmoHovered;
     }
 
-    /**
-     * @brief Check if currently dragging a gizmo axis
-     */
     bool IsDragging() const
     {
         return m_DraggingAxis != GizmoAxis::NONE;
     }
 
-    /**
-     * @brief Set snapping configuration
-     */
     void SetSnapping(bool enabled)
     {
         m_SnappingEnabled = enabled;
@@ -102,7 +82,7 @@ private:
                          const Camera3D &camera);
     bool CheckGizmoHover(const Vector3 &handlePos, const Camera3D &camera, ImVec2 viewportSize);
 
-    float SnapValue(float value, float step) const
+    static float SnapValue(float value, float step)
     {
         if (step <= 0.0f)
             return value;

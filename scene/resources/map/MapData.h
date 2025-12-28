@@ -60,8 +60,8 @@ struct MapObjectData
     Vector2 size = {1, 1}; // For planes
 
     // Collision properties
-    bool isPlatform = false;
-    bool isObstacle = false;
+    bool isPlatform = true;
+    bool isObstacle = true;
 
     // Material properties
     std::string texturePath;

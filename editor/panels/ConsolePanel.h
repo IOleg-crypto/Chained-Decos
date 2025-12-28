@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CONSOLEPANEL_H
+#define CONSOLEPANEL_H
 
 #include <cstdint> // Required for uint8_t
 #include <deque>
@@ -23,11 +24,14 @@ class ConsolePanel
 {
 public:
     ConsolePanel();
+    virtual ~ConsolePanel();
 
     void OnImGuiRender();
 
     void Log(const std::string &message, LogMessage::Level level = LogMessage::Level::Info);
     void Clear();
+
+    static void AddLog(const char *message, LogMessage::Level level = LogMessage::Level::Info);
 
     bool IsVisible() const
     {
@@ -39,6 +43,7 @@ public:
     }
 
 private:
+    static ConsolePanel *s_Instance;
     std::deque<LogMessage> m_Messages;
     static constexpr size_t MAX_MESSAGES = 500;
     bool m_AutoScroll = true;
@@ -49,3 +54,4 @@ private:
     bool m_isVisible = true;
 };
 } // namespace CHEngine
+#endif

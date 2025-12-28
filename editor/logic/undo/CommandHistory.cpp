@@ -14,9 +14,7 @@ void CommandHistory::PushCommand(std::unique_ptr<IEditorCommand> command)
         return;
 
     // Execute the command first
-    // command->Execute(); // Assuming it might already be executed by the caller if it's a drag
-    // But for a pure command push, we should execute it.
-    // In our gizmo case, the object is already moved, so we just capture the final state.
+    command->Execute();
 
     // Clear redo stack on new command
     m_RedoStack.clear();

@@ -60,7 +60,8 @@ void ViewportPanel::OnImGuiRender(
             rlEnableDepthMask();
 
             // 1. Draw Map Content
-            renderer.DrawMapContent(*legacyScene, camera);
+            bool hideSpawnZones = (sceneState != SceneState::Edit);
+            renderer.DrawMapContent(*legacyScene, camera, hideSpawnZones);
 
             // 1.6 Draw New Scene Entities (New system)
             if (modernScene)
@@ -127,8 +128,8 @@ void ViewportPanel::OnImGuiRender(
                 }
             }
 
-            // Draw selection highlight via extracted renderer
-            if (selectedObjectIndex >= 0 &&
+            // Draw selection highlight via extracted renderer (ONLY in Edit mode)
+            if (sceneState == SceneState::Edit && selectedObjectIndex >= 0 &&
                 selectedObjectIndex < (int)legacyScene->GetMapObjects().size())
             {
                 m_Renderer.RenderSelectionHighlight(
@@ -142,8 +143,8 @@ void ViewportPanel::OnImGuiRender(
 
             EndMode3D();
 
-            // 4. Draw 2D Labels AFTER EndMode3D
-            if (selectedObjectIndex >= 0 &&
+            // 4. Draw 2D Labels AFTER EndMode3D (ONLY in Edit mode)
+            if (sceneState == SceneState::Edit && selectedObjectIndex >= 0 &&
                 selectedObjectIndex < (int)legacyScene->GetMapObjects().size())
             {
                 m_Renderer.RenderAxisLabels(legacyScene->GetMapObjects()[selectedObjectIndex],

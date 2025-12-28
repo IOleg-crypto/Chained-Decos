@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ASSETBROWSERPANEL_H
+#define ASSETBROWSERPANEL_H
 
 #include <filesystem>
 #include <raylib.h>
@@ -46,3 +47,4 @@ private:
     bool m_isVisible = true;
 };
 } // namespace CHEngine
+#endif

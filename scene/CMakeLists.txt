@@ -15,6 +15,8 @@ add_library(scene_core STATIC
     core/Entity.h
     core/SceneSerializer.cpp
     core/SceneSerializer.h
+    core/SceneManager.cpp
+    core/SceneManager.h
 )
 target_link_libraries(scene_core PUBLIC 
     raylib 
