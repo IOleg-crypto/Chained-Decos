@@ -1,6 +1,12 @@
 name: ChainedDecos Debug Build
 
 on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - chained-gui
+      - refactor-branch
   workflow_dispatch:
     inputs:
       tag_name:
