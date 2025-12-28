@@ -17,10 +17,8 @@
 
 CHEngine follows a modern, modular design inspired by professional game engines:
 
-- **⚡ Modern ECS (EnTT)**: High-performance Entity Component System for efficient data management and system updates.
-- **📂 Modern Scene Management**: Integrated `ECSSceneManager` supporting seamless transitions between Main Menu, Editor, and Simulation modes.
-- **🛠️ Built-in Map Editor**: A powerful integrated toolset for real-time level design, object manipulation (Gizmos), and instant simulation testing.
-- **🦾 Advanced Physics**: Precision collision detection and buoyancy-based parkour movement.
+- **Modern ECS (EnTT)**: High-performance Entity Component System for efficient data management and system updates.
+- **Modern Scene Management**: Integrated `ECSSceneManager` supporting seamless transitions between Main Menu, Editor, and Simulation modes.
 
 ---
 
@@ -41,20 +39,11 @@ The Chained Editor is the primary tool for creating and testing parkour courses.
 
 ---
 
-## ✨ Features
-
-### Core Gameplay
-
-- **Fluid Parkour**: Momentum-based movement with precise air control and jumping.
-- **Dynamic Physics**: Custom collision system with global defaults for all map objects.
-- **Environment Interaction**: Support for spawn zones, kill zones, and difficulty-based course segments.
-
 ### Engine Technicals
 
 - **High-Performance Rendering**: Optimized Raylib-based renderer with custom shader support (Skyboxes, PBR planning).
 - **Undo/Redo System**: Full command history for editor operations (Object Add/Delete/Move).
 - **Asset Management**: Centralized asset loading for models, textures, and scenes.
-- **Integrated Console**: Source-engine style developer console for debugging and real-time tweaks.
 
 ---
 
