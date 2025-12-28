@@ -92,6 +92,7 @@ bool Engine::Initialize(const CHEngine::WindowProps &props)
 
     // 9. Scenes
     RegisterService<SceneManager>(std::make_shared<SceneManager>());
+    RegisterService<ECSSceneManager>(std::make_shared<ECSSceneManager>());
     RegisterService<FontService>(std::make_shared<FontService>());
     RegisterService<TextureService>(std::make_shared<TextureService>());
     RegisterService<UIEventRegistry>(std::make_shared<UIEventRegistry>());
@@ -118,7 +119,7 @@ void Engine::Update(float deltaTime)
         gui->Update(deltaTime);
 }
 
-void Engine::Shutdown()
+void Engine::Shutdown() const
 {
     CD_CORE_INFO("Shutting down Engine and clearing ServiceRegistry...");
 
@@ -149,7 +150,7 @@ void Engine::Shutdown()
     ServiceRegistry::Clear();
 }
 
-void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)
+void Engine::RegisterModule(std::unique_ptr<IEngineModule> module) const
 {
     if (m_ModuleManager)
     {
@@ -159,8 +160,15 @@ void Engine::RegisterModule(std::unique_ptr<IEngineModule> module)
 
 bool Engine::IsCollisionDebugVisible() const
 {
-    auto render = GetService<RenderManager>();
-    return render ? render->IsCollisionDebugVisible() : false;
+    const auto render = GetService<RenderManager>();
+    if (render)
+    {
+        return render->IsCollisionDebugVisible();
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool Engine::ShouldExit() const
@@ -208,9 +216,14 @@ ScriptManager &Engine::GetScriptManager() const
     return *GetService<ScriptManager>();
 }
 
-CHEngine::SceneManager &Engine::GetSceneManager() const
+SceneManager &Engine::GetSceneManager() const
 {
-    return *GetService<CHEngine::SceneManager>();
+    return *GetService<SceneManager>();
+}
+
+ECSSceneManager &Engine::GetECSSceneManager() const
+{
+    return *GetService<ECSSceneManager>();
 }
 
 CHEngine::FontService &Engine::GetFontService() const
