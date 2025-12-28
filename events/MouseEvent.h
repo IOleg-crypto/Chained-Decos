@@ -10,9 +10,7 @@ namespace CHEngine
 class MouseMovedEvent : public Event
 {
 public:
-    MouseMovedEvent(float x, float y) : m_MouseX(x), m_MouseY(y)
-    {
-    }
+    MouseMovedEvent(float x, float y);
 
     float GetX() const
     {

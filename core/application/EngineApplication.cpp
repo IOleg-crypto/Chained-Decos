@@ -154,7 +154,9 @@ void EngineApplication::Update()
     }
 
     // Update Layers (Bottom -> Top)
-    for (Layer *layer : m_LayerStack)
+    // Use a copy to avoid iterator invalidation if layers are pushed/popped during update
+    std::vector<Layer *> layers(m_LayerStack.begin(), m_LayerStack.end());
+    for (Layer *layer : layers)
         layer->OnUpdate(deltaTime);
 
     if (m_app)
@@ -175,7 +177,9 @@ void EngineApplication::Render()
         }
 
         // Render Layers (Bottom -> Top)
-        for (Layer *layer : m_LayerStack)
+        // Use a copy to avoid iterator invalidation if layers are pushed/popped during render
+        std::vector<Layer *> layers(m_LayerStack.begin(), m_LayerStack.end());
+        for (Layer *layer : layers)
             layer->OnRender();
 
         // Allow project to render its own
@@ -217,7 +221,10 @@ void EngineApplication::Shutdown()
     CD_CORE_INFO("Shutting down application...");
 
     if (m_app)
+    {
         m_app->OnShutdown();
+        m_app = nullptr; // Nullify to prevent access after shutdown
+    }
 
     // Shutdown in reverse order
     if (auto moduleManager = m_engine->GetModuleManager())

@@ -22,6 +22,7 @@
 #include "core/scripting/ScriptManager.h"
 #include "events/UIEventRegistry.h"
 #include "scene/SceneManager.h"
+#include "scene/core/SceneManager.h" // Contains ECSSceneManager
 #include "scene/main/IWorldManager.h"
 #include "scene/resources/font/FontService.h"
 #include "scene/resources/model/interfaces/IModelLoader.h"
@@ -46,7 +47,7 @@ public:
     bool Initialize(const WindowProps &props);
 
     void Update(float deltaTime);
-    void Shutdown();
+    void Shutdown() const;
 
     // Core System Accessors (Overriding IEngine)
     RenderManager &GetRenderManager() const override;
@@ -58,6 +59,7 @@ public:
     ScriptManager &GetScriptManager() const;
     IGuiManager &GetGuiManager() const override;
     CHEngine::SceneManager &GetSceneManager() const override;
+    ECSSceneManager &GetECSSceneManager() const;
     CHEngine::FontService &GetFontService() const override;
     CHEngine::TextureService &GetTextureService() const override;
     CHEngine::UIEventRegistry &GetUIEventRegistry() const override;
@@ -66,7 +68,7 @@ public:
     class ModuleManager *GetModuleManager() const;
 
     // Module registration
-    void RegisterModule(std::unique_ptr<IEngineModule> module);
+    void RegisterModule(std::unique_ptr<IEngineModule> module) const;
 
     // Generic Service Locator
     template <typename T> std::shared_ptr<T> GetService() const;

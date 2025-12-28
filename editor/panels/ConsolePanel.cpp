@@ -3,9 +3,24 @@
 
 namespace CHEngine
 {
+ConsolePanel *ConsolePanel::s_Instance = nullptr;
+
 ConsolePanel::ConsolePanel()
 {
+    s_Instance = this;
     Log("Console initialized");
+}
+
+ConsolePanel::~ConsolePanel()
+{
+    if (s_Instance == this)
+        s_Instance = nullptr;
+}
+
+void ConsolePanel::AddLog(const char *message, LogMessage::Level level)
+{
+    if (s_Instance)
+        s_Instance->Log(message, level);
 }
 
 void ConsolePanel::OnImGuiRender()

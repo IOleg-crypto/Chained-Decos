@@ -18,7 +18,7 @@ public:
     void RenderMap(const GameScene &map, Camera3D camera);
 
     // Render only map content (Should be called between BeginMode3D/EndMode3D)
-    void DrawMapContent(const GameScene &map, Camera3D camera);
+    void DrawMapContent(const GameScene &map, Camera3D camera, bool hideSpawnZones = false);
 
     // Render single map object
     void RenderMapObject(const MapObjectData &object,

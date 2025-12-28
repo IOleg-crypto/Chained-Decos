@@ -6,15 +6,18 @@
 #include "core/application/EngineApplication.h"
 #include "core/input/Input.h"
 #include "core/renderer/Renderer.h"
+#include "editor/panels/ConsolePanel.h"
 #include "editor/utils/EditorStyles.h"
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/core/IDComponent.h"
 #include "scene/ecs/components/core/TagComponent.h"
 #include <cstdlib>
+#include <fstream>
 
 #include "core/interfaces/ILevelManager.h"
 #include "core/interfaces/IPlayer.h"
+#include "core/physics/Physics.h"
 #include "editor/logic/SceneCloner.h"
 #include "editor/logic/undo/AddObjectCommand.h"
 #include "editor/logic/undo/DeleteObjectCommand.h"
@@ -38,6 +41,31 @@ void EditorLayer::OnAttach()
 {
     CD_INFO("EditorLayer attached");
 
+    // Register Raylib log callback to redirect logs to ConsolePanel
+    SetTraceLogCallback(
+        [](int logLevel, const char *text, va_list args)
+        {
+            char buffer[4096];
+            vsnprintf(buffer, sizeof(buffer), text, args);
+
+            LogMessage::Level level = LogMessage::Level::Info;
+            switch (logLevel)
+            {
+            case LOG_WARNING:
+                level = LogMessage::Level::Warn;
+                break;
+            case LOG_ERROR:
+            case LOG_FATAL:
+                level = LogMessage::Level::Error;
+                break;
+            default:
+                level = LogMessage::Level::Info;
+                break;
+            }
+
+            ConsolePanel::AddLog(buffer, level);
+        });
+
     // Initialize new Scene system
     m_Scene = std::make_shared<Scene>("EditorScene");
     CD_INFO("[EditorLayer] Created editor scene: %s", m_Scene->GetName().c_str());
@@ -57,6 +85,7 @@ void EditorLayer::OnAttach()
     auto &groundCol = registry.emplace<CollisionComponent>(ground);
     groundCol.bounds = {{-50, -0.1f, -50}, {50, 0.1f, 50}};
     groundCol.collider = std::make_shared<Collision>(Vector3{0, 0, 0}, Vector3{50, 0.1f, 50});
+    groundCol.collisionLayer = 1 << 0; // Layer 0 for ground
     auto collManager = Engine::Instance().GetService<ICollisionManager>();
     if (collManager)
         collManager->AddCollider(groundCol.collider);
@@ -70,6 +99,7 @@ void EditorLayer::OnAttach()
     auto &cubeCol = registry.emplace<CollisionComponent>(cube);
     cubeCol.bounds = {{-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}};
     cubeCol.collider = std::make_shared<Collision>(Vector3{0, 0.5f, 0}, Vector3{0.5f, 0.5f, 0.5f});
+    cubeCol.collisionLayer = 1 << 0;
     if (collManager)
         collManager->AddCollider(cubeCol.collider);
 
@@ -77,7 +107,7 @@ void EditorLayer::OnAttach()
 
     // Legacy GameScene initialization
     m_ProjectManager.SetSceneChangedCallback(
-        [this](std::shared_ptr<GameScene> scene)
+        [this](const std::shared_ptr<GameScene> &scene)
         {
             m_ActiveScene = scene;
             m_EditorScene = scene;
@@ -112,6 +142,8 @@ void EditorLayer::OnAttach()
     ground_legacy.type = MapObjectType::PLANE;
     ground_legacy.size = {100, 100};
     ground_legacy.color = DARKGRAY;
+    ground_legacy.isPlatform = true; // Fix legacy collision
+    ground_legacy.isObstacle = true;
     objects.push_back(ground_legacy);
 
     // default cube
@@ -120,6 +152,8 @@ void EditorLayer::OnAttach()
     cube_legacy.type = MapObjectType::CUBE;
     cube_legacy.position = {0, 0.5f, 0};
     cube_legacy.color = WHITE;
+    cube_legacy.isPlatform = true; // Fix legacy collision
+    cube_legacy.isObstacle = true;
     objects.push_back(cube_legacy);
 
     m_HierarchyPanel->SetContext(m_ActiveScene);
@@ -162,6 +196,7 @@ void EditorLayer::OnUpdate(float deltaTime)
         Input::IsKeyPressed(KEY_BACKSPACE))
     {
         OnSceneStop();
+        return; // Exit to prevent accessing invalidated iterators after scene stop
     }
 
     // Update New Scene Architecture
@@ -175,17 +210,17 @@ void EditorLayer::OnUpdate(float deltaTime)
         {
             auto &registry = m_Scene->GetRegistry();
             auto view = registry.view<TransformComponent, CollisionComponent>();
-            for (auto entity : view)
-            {
-                auto &transform = view.get<TransformComponent>(entity);
-                auto &collision = view.get<CollisionComponent>(entity);
 
-                if (collision.collider)
+            view.each(
+                [&](auto entity, auto &transform, auto &collision)
                 {
-                    // Update collider position from transform
-                    collision.collider->Update(transform.position, collision.collider->GetSize());
-                }
-            }
+                    if (collision.collider)
+                    {
+                        // Update collider position from transform
+                        collision.collider->Update(transform.position,
+                                                   collision.collider->GetSize());
+                    }
+                });
         }
     }
 }
@@ -243,7 +278,8 @@ void EditorLayer::OnImGuiRender()
             });
     }
 
-    if (m_InspectorPanel && m_InspectorPanel->IsVisible())
+    if (m_InspectorPanel && m_InspectorPanel->IsVisible() &&
+        m_SimulationManager.GetSceneState() == SceneState::Edit)
     {
         SelectionType selectionType = m_SelectionManager.GetSelectionType();
         if (selectionType == SelectionType::ENTITY)
@@ -565,8 +601,27 @@ void EditorLayer::OpenScene()
         std::string path = m_ProjectManager.GetScenePath();
         if (path.find(".chscene") != std::string::npos)
         {
+            // Check if file is binary (starts with CHSC)
+            // If so, ProjectManager has already loaded it via SceneSerializer (binary)
+            // We only need to use ECSSceneSerializer for YAML files (new format)
+
+            std::ifstream file(path, std::ios::binary);
+            char magic[4];
+            if (file.is_open() && file.read(magic, 4))
+            {
+                if (magic[0] == 'C' && magic[1] == 'H' && magic[2] == 'S' && magic[3] == 'C')
+                {
+                    CD_CORE_INFO(
+                        "EditorLayer detecting binary scene '%s', skipping YAML deserialization.",
+                        path.c_str());
+                    // Binary file, do NOT try to parse as YAML
+                    return;
+                }
+            }
+
+            // If not binary, try YAML deserialization (migration path)
             ECSSceneSerializer ecsSerializer(m_Scene);
-            ecsSerializer.Deserialize(path); // New YAML format
+            ecsSerializer.Deserialize(path);
         }
     }
 }
@@ -577,8 +632,10 @@ void EditorLayer::SaveScene()
     std::string path = m_ProjectManager.GetScenePath();
     if (!path.empty())
     {
-        ECSSceneSerializer ecsSerializer(m_Scene);
-        ecsSerializer.Serialize(path);
+        // For now, don't overwrite binary scenes with YAML unless explicitly requested
+        // or ensure we really want to switch formats.
+        // ECSSceneSerializer ecsSerializer(m_Scene);
+        // ecsSerializer.Serialize(path);
     }
 }
 

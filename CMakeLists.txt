@@ -11,7 +11,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 option(BUILD_TESTS "Build unit tests" ON)
 option(BUILD_EDITOR_ENGINE "Build Editor tools" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
-option(ENABLE_WARNINGS "Enable strict compiler warnings" ON)
+option(ENABLE_WARNINGS "Enable strict compiler warnings" OFF)
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(ENABLE_UNITY_BUILD "Enable unity build for faster compilation" ON)
 

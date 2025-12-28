@@ -41,9 +41,12 @@ void RuntimeLayer::OnAttach()
         [this]()
         {
             CD_INFO("[RuntimeLayer] Start Game Event Triggered!");
+            auto scene = Engine::Instance().GetECSSceneManager().GetActiveScene();
+            if (!scene)
+                return;
             // Example logic: Reset player position
-            auto view = m_Scene->GetRegistry()
-                            .view<TransformComponent, VelocityComponent, PlayerComponent>();
+            auto view =
+                scene->GetRegistry().view<TransformComponent, VelocityComponent, PlayerComponent>();
             for (auto [entity, transform, velocity, player] : view.each())
             {
                 transform.position = player.spawnPosition;
@@ -71,7 +74,9 @@ void RuntimeLayer::OnAttach()
     m_shaderLoaded = (m_playerShader.id != 0);
 
     // Initialize Scripts
-    Engine::Instance().GetScriptManager().InitializeScripts(m_Scene->GetRegistry());
+    auto scene = Engine::Instance().GetECSSceneManager().GetActiveScene();
+    if (scene)
+        Engine::Instance().GetScriptManager().InitializeScripts(scene->GetRegistry());
 }
 
 void RuntimeLayer::OnDetach()
@@ -99,17 +104,25 @@ void RuntimeLayer::OnUpdate(float deltaTime)
         float time = (float)GetTime();
         SetShaderValue(m_playerShader, m_locTime, &time, SHADER_UNIFORM_FLOAT);
 
-        auto playerView = m_Scene->GetRegistry().view<PlayerComponent, VelocityComponent>();
-        for (auto &&[entity, player, velocity] : playerView.each())
+        auto scene = Engine::Instance().GetECSSceneManager().GetActiveScene();
+        if (scene)
         {
-            float fallSpeed = (velocity.velocity.y < 0) ? std::abs(velocity.velocity.y) : 0.0f;
-            SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed, SHADER_UNIFORM_FLOAT);
+            auto playerView = scene->GetRegistry().view<PlayerComponent, VelocityComponent>();
+            for (auto &&[entity, player, velocity] : playerView.each())
+            {
+                float fallSpeed = (velocity.velocity.y < 0) ? std::abs(velocity.velocity.y) : 0.0f;
+                SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed, SHADER_UNIFORM_FLOAT);
+            }
         }
     }
 
     // UPDATE LUA SCRIPTS (Hazel style)
-    Engine::Instance().GetScriptManager().SetActiveRegistry(&m_Scene->GetRegistry());
-    Engine::Instance().GetScriptManager().UpdateScripts(m_Scene->GetRegistry(), deltaTime);
+    auto currentScene = Engine::Instance().GetECSSceneManager().GetActiveScene();
+    if (currentScene)
+    {
+        Engine::Instance().GetScriptManager().SetActiveRegistry(&currentScene->GetRegistry());
+        Engine::Instance().GetScriptManager().UpdateScripts(currentScene->GetRegistry(), deltaTime);
+    }
 
     // Sync ECS Transforms back to MapObjects for rendering consistency
     if (auto levelManager = Engine::Instance().GetService<ILevelManager>())
@@ -118,8 +131,13 @@ void RuntimeLayer::OnUpdate(float deltaTime)
     }
 
     // 1. UPDATE PLAYER LOGIC (Previously PlayerSystem::Update)
+    // Physics Update
+    auto scene = Engine::Instance().GetECSSceneManager().GetActiveScene();
+    if (!scene)
+        return;
+
     auto playerView =
-        m_Scene->GetRegistry().view<TransformComponent, VelocityComponent, PlayerComponent>();
+        scene->GetRegistry().view<TransformComponent, VelocityComponent, PlayerComponent>();
 
     for (auto [entity, transform, velocity, player] : playerView.each())
     {
