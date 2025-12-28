@@ -35,6 +35,7 @@ void Window::Init(const WindowProps &props)
     }
 
     InitWindow(m_Data.Width, m_Data.Height, m_Data.Title.c_str());
+    SetExitKey(0); // Disable ESC as exit key
 
     if (m_Data.Fullscreen)
     {
@@ -117,4 +118,3 @@ bool Window::ShouldClose() const
 
 } // namespace CHEngine
 #include "core/Log.h"
-

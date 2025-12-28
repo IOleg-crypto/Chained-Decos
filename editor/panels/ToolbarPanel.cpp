@@ -35,37 +35,44 @@ void ToolbarPanel::OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode,
 
     float size = ImGui::GetWindowHeight() - 4.0f;
 
-    ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x * 0.5f - (size * 0.5f));
+    // Center the controls
+    float totalControlsWidth = (size * 2.0f) + 120.0f + 10.0f; // 2 buttons + combo + spacing
+    ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x * 0.5f - (totalControlsWidth * 0.5f));
 
     // 1. Scene State Controls
     bool isEdit = (sceneState == SceneState::Edit);
 
-    if (isEdit)
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.9f, 0.3f, 1.0f)); // Bright green
-        if (ImGui::Button(ICON_FA_PLAY, ImVec2(size, size)))
-            onPlay();
-        ImGui::PopStyleColor();
+    // Play Button
+    ImGui::BeginDisabled(!isEdit);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.9f, 0.3f, 1.0f)); // Bright green
+    if (ImGui::Button(ICON_FA_PLAY, ImVec2(size, size)))
+        onPlay();
+    ImGui::PopStyleColor();
+    ImGui::EndDisabled();
 
-        // Runtime Mode Selection
-        ImGui::SameLine();
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
-        ImGui::PushItemWidth(120.0f);
-        const char *modes[] = {"Embedded", "Standalone"};
-        int currentMode = (int)runtimeMode;
-        if (ImGui::Combo("##runtime_mode", &currentMode, modes, IM_ARRAYSIZE(modes)))
-        {
-            onRuntimeModeChange((RuntimeMode)currentMode);
-        }
-        ImGui::PopItemWidth();
-    }
-    else
+    ImGui::SameLine();
+
+    // Stop Button
+    ImGui::BeginDisabled(isEdit);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.3f, 0.3f, 1.0f)); // Bright red
+    if (ImGui::Button(ICON_FA_STOP, ImVec2(size, size)))
+        onStop();
+    ImGui::PopStyleColor();
+    ImGui::EndDisabled();
+
+    // Runtime Mode Selection
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!isEdit);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+    ImGui::PushItemWidth(120.0f);
+    const char *modes[] = {"Embedded", "Standalone"};
+    int currentMode = (int)runtimeMode;
+    if (ImGui::Combo("##runtime_mode", &currentMode, modes, IM_ARRAYSIZE(modes)))
     {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.3f, 0.3f, 1.0f)); // Bright red
-        if (ImGui::Button(ICON_FA_STOP, ImVec2(size, size)))
-            onStop();
-        ImGui::PopStyleColor();
+        onRuntimeModeChange((RuntimeMode)currentMode);
     }
+    ImGui::PopItemWidth();
+    ImGui::EndDisabled();
 
     ImGui::SameLine();
     ImGui::SetCursorPosX(10.0f); // Move file controls to the left

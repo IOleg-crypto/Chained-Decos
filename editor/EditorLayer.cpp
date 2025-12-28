@@ -191,12 +191,25 @@ void EditorLayer::OnUpdate(float deltaTime)
             m_EditorCamera.OnUpdate(deltaTime);
     }
 
-    // Direct simulation escape check
-    if (m_SimulationManager.GetSceneState() == SceneState::Play &&
-        Input::IsKeyPressed(KEY_BACKSPACE))
+    // Simulation input handling
+    if (m_SimulationManager.GetSceneState() == SceneState::Play)
     {
-        OnSceneStop();
-        return; // Exit to prevent accessing invalidated iterators after scene stop
+        // Toggle cursor with ESCAPE
+        if (Input::IsKeyPressed(KEY_ESCAPE))
+        {
+            m_CursorLocked = !m_CursorLocked;
+            if (m_CursorLocked)
+                DisableCursor();
+            else
+                EnableCursor();
+        }
+
+        // Emergency stop with BACKSPACE
+        if (Input::IsKeyPressed(KEY_BACKSPACE))
+        {
+            OnSceneStop();
+            return;
+        }
     }
 
     // Update New Scene Architecture

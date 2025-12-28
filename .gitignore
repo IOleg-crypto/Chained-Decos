@@ -60,8 +60,16 @@ cmake-build-*/
 .cmake
 .cache
 .zencoder
-.idea
-Testing
+.idea/
+.vscode/
+.vs/
+Testing/
+*.log
+.ninja_deps
+.ninja_log
+build.ninja
+CPackConfig.cmake
+CPackSourceConfig.cmake
 
 
 

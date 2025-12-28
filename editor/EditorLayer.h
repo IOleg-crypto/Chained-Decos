@@ -108,6 +108,7 @@ private:
     std::unique_ptr<AssetBrowserPanel> m_AssetBrowserPanel;
     std::unique_ptr<ConsolePanel> m_ConsolePanel;
     std::unique_ptr<ToolbarPanel> m_ToolbarPanel;
+    bool m_CursorLocked = true;
     std::unique_ptr<MenuBarPanel> m_MenuBarPanel;
 
     // Managers

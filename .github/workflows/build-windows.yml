@@ -61,7 +61,11 @@ jobs:
         shell: bash
         run: |
           if [[ -f "build/bin/tests/ChainedDecosUnitTests.exe" ]]; then
-            build/bin/tests/ChainedDecosUnitTests.exe || echo "⚠️ Unit tests failed"
+            build/bin/tests/ChainedDecosUnitTests.exe || echo "Unit tests failed"
+          fi
+          if [[ -f "build/bin/tests/ChainedDecosIntegrationTests.exe" ]]; then
+            # NOTE: Integration tests might require a headless setup or might fail if raylib can't init
+            build/bin/tests/ChainedDecosIntegrationTests.exe || echo "Integration tests failed (might need display)"
           fi
 
       - name: Upload artifacts
