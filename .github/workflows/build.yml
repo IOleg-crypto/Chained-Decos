@@ -13,9 +13,6 @@ env:
   CI: true
 
 jobs:
-  # ==========================================
-  # LINUX BUILD
-  # ==========================================
   linux:
     uses: ./.github/workflows/build-linux.yml
     with:
@@ -26,9 +23,6 @@ jobs:
     with:
       build_type: Debug
 
-  # ==========================================
-  # WINDOWS BUILD
-  # ==========================================
   windows:
     uses: ./.github/workflows/build-windows.yml
     with:
@@ -39,12 +33,9 @@ jobs:
     with:
       build_type: Debug
 
-  # ==========================================
-  # TESTS (after builds)
-  # ==========================================
   tests:
     needs: [linux, windows]
     runs-on: ubuntu-latest
     steps:
       - name: All builds completed
-        run: echo "✅ All platform builds successful!"
+        run: echo "All platform builds successful!"
