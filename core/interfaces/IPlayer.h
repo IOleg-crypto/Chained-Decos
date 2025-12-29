@@ -1,7 +1,7 @@
 #ifndef IPLAYER_H
 #define IPLAYER_H
 
-#include <components/physics/collision/system/collisionSystem.h>
+#include <components/physics/collision/colsystem/CollisionSystem.h>
 #include <components/physics/dynamics/components/PhysicsComponent.h>
 #include <memory>
 #include <raylib.h>

@@ -1,11 +1,10 @@
 #ifndef IGAMERENDERABLE_H
 #define IGAMERENDERABLE_H
 
-#include "components/physics/collision/core/collisionManager.h"
-#include "components/physics/collision/system/collisionSystem.h"
+#include "components/physics/collision/colsystem/CollisionSystem.h"
+#include "components/physics/collision/core/CollisionManager.h"
 #include "scene/resources/model/Model.h"
 #include <raylib.h>
-
 
 // Interface for objects that require full game rendering (Player, NPC, etc.)
 // Follows Interface Segregation Principle - only methods needed for game objects

@@ -1,12 +1,11 @@
 #ifndef ICOLLISION_MANAGER_H
 #define ICOLLISION_MANAGER_H
 
-#include "components/physics/collision/system/collisionSystem.h"
+#include "components/physics/collision/colsystem/CollisionSystem.h"
 #include <memory>
 #include <raylib.h>
 #include <scene/ecs/Entity.h>
 #include <vector>
-
 class ICollisionManager
 {
 public:
