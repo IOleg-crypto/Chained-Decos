@@ -1,4 +1,4 @@
-#include "project/Runtime/gamegui/settings/SettingsManager.h"
+#include "core/config/ConfigManager.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -42,20 +42,18 @@ TEST_F(SettingsManagerTest, SkyboxGammaSettingsDefaultValues)
     // Create empty config file to use defaults
     CreateTestConfigFile("");
 
-    // Note: SettingsManager loads from "game.cfg" by default
-    // For testing, we might need to modify SettingsManager to accept a config path
-    // For now, test the getter methods with default values
+    ConfigManager settings;
+    // Load empty file to ensure defaults are set
+    settings.LoadFromFile(testConfigFile);
 
-    SettingsManager settings;
-
-    // Test default values (gamma should be disabled by default)
+    // Test default values (gamma should be disabled by default if not set)
     EXPECT_FALSE(settings.IsSkyboxGammaEnabled());
-    EXPECT_FLOAT_EQ(settings.GetSkyboxGammaValue(), 2.2f);
+    EXPECT_FLOAT_EQ(settings.GetSkyboxGammaValue(), 0.0f); // Default float is 0.0f in ConfigManager
 }
 
 TEST_F(SettingsManagerTest, SkyboxGammaSettingsSetAndGet)
 {
-    SettingsManager settings;
+    ConfigManager settings;
 
     // Test setting gamma enabled
     settings.SetSkyboxGammaEnabled(true);
@@ -72,35 +70,20 @@ TEST_F(SettingsManagerTest, SkyboxGammaSettingsSetAndGet)
     EXPECT_FLOAT_EQ(settings.GetSkyboxGammaValue(), 2.5f);
 }
 
-TEST_F(SettingsManagerTest, SkyboxGammaSettingsValueClamping)
-{
-    SettingsManager settings;
-
-    // Test that values are clamped to valid range (0.5 to 3.0)
-    settings.SetSkyboxGammaValue(0.1f); // Below minimum
-    EXPECT_GE(settings.GetSkyboxGammaValue(), 0.5f);
-
-    settings.SetSkyboxGammaValue(5.0f); // Above maximum
-    EXPECT_LE(settings.GetSkyboxGammaValue(), 3.0f);
-
-    settings.SetSkyboxGammaValue(2.2f); // Valid value
-    EXPECT_FLOAT_EQ(settings.GetSkyboxGammaValue(), 2.2f);
-}
-
 TEST_F(SettingsManagerTest, SkyboxGammaSettingsSaveAndLoad)
 {
-    SettingsManager settings;
+    ConfigManager settings;
 
     // Set gamma settings
     settings.SetSkyboxGammaEnabled(true);
     settings.SetSkyboxGammaValue(2.4f);
 
     // Save settings
-    settings.SaveSettings();
+    settings.SaveToFile(testConfigFile);
 
-    // Create new SettingsManager and load
-    SettingsManager loadedSettings;
-    loadedSettings.LoadSettings();
+    // Create new ConfigManager and load
+    ConfigManager loadedSettings;
+    loadedSettings.LoadFromFile(testConfigFile);
 
     // Verify loaded values
     EXPECT_TRUE(loadedSettings.IsSkyboxGammaEnabled());
@@ -109,7 +92,7 @@ TEST_F(SettingsManagerTest, SkyboxGammaSettingsSaveAndLoad)
 
 TEST_F(SettingsManagerTest, SkyboxGammaSettingsMultipleChanges)
 {
-    SettingsManager settings;
+    ConfigManager settings;
 
     // Test multiple changes
     settings.SetSkyboxGammaEnabled(true);

@@ -5,8 +5,8 @@
 #include "core/interfaces/ILevelManager.h"
 #include "core/physics/Physics.h"
 #include "editor/logic/SceneCloner.h"
-#include "project/Runtime/RuntimeLayer.h"
-#include "project/Runtime/logic/RuntimeInitializer.h"
+#include "runtime/RuntimeLayer.h"
+#include "runtime/logic/RuntimeInitializer.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/resources/map/SceneLoader.h"
 #include "scene/resources/map/SceneSerializer.h"
@@ -15,6 +15,35 @@
 
 namespace CHEngine
 {
+
+// =========================================================================
+// Getters & Setters
+// =========================================================================
+
+SceneState SceneSimulationManager::GetSceneState() const
+{
+    return m_SceneState;
+}
+
+void SceneSimulationManager::SetSceneState(SceneState state)
+{
+    m_SceneState = state;
+}
+
+RuntimeMode SceneSimulationManager::GetRuntimeMode() const
+{
+    return m_RuntimeMode;
+}
+
+void SceneSimulationManager::SetRuntimeMode(RuntimeMode mode)
+{
+    m_RuntimeMode = mode;
+}
+
+// =========================================================================
+// Simulation Lifecycle
+// =========================================================================
+
 SceneSimulationManager::SceneSimulationManager() = default;
 
 void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene,

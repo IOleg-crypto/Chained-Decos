@@ -13,11 +13,13 @@
 #include "editor/panels/HierarchyPanel.h"
 #include "editor/panels/InspectorPanel.h"
 #include "editor/panels/MenuBarPanel.h"
+#include "editor/panels/ProjectBrowserPanel.h"
 #include "editor/panels/ToolbarPanel.h"
 #include "editor/panels/ViewportPanel.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
 #include "events/MouseEvent.h"
+#include "project/Project.h"
 #include "scene/core/Entity.h"
 #include "scene/core/Scene.h"
 #include "scene/resources/map/SceneLoader.h"
@@ -38,66 +40,68 @@ public:
     EditorLayer();
     virtual ~EditorLayer() = default;
 
+    // --- Layer Lifecycle ---
+public:
     virtual void OnAttach() override;
     virtual void OnDetach() override;
     virtual void OnUpdate(float deltaTime) override;
     virtual void OnRender() override;
-    virtual void OnImGuiRender();
+    virtual void OnImGuiRender() override;
     virtual void OnEvent(Event &event) override;
 
+    // --- Scene Lifecycle ---
+public:
     void OnScenePlay();
     void OnSceneStop();
 
+    // --- Scene Commands ---
+public:
     void NewScene();
     void OpenScene();
     void SaveScene();
     void SaveSceneAs();
-    void AddModel();
-    void AddUIElement(const std::string &type);
 
-    // Object Management Helpers (Undoable)
+    // --- Project Management ---
+public:
+    void NewProject(const std::string &name, const std::string &location);
+    void OpenProject(const std::string &projectPath);
+    void CloseProject();
+
+    // --- Entity/Object Management ---
+public:
     void AddObject(const MapObjectData &data);
     void CreateEntity();
     void DeleteEntity(entt::entity entity);
     void DeleteObject(int index);
+    void AddModel();
+    void AddUIElement(const std::string &type);
     void OnAssetDropped(const std::string &assetPath, const Vector3 &worldPosition);
 
+    // --- Environment Management ---
+public:
     void LoadSkybox(const std::string &path = "");
     void ApplySkybox(const std::string &path);
 
-    SceneState GetSceneState() const
-    {
-        return m_SimulationManager.GetSceneState();
-    }
-
-    SelectionManager &GetSelectionManager()
-    {
-        return m_SelectionManager;
-    }
-
+    // --- Getters & Setters ---
+public:
+    SceneState GetSceneState() const;
+    SelectionManager &GetSelectionManager();
     MapObjectData *GetSelectedObject();
     UIElementData *GetSelectedUIElement();
+    Tool GetActiveTool() const;
+    void SetActiveTool(Tool tool);
+    std::shared_ptr<Scene> GetActiveScene();
 
-    Tool GetActiveTool() const
-    {
-        return m_ActiveTool;
-    }
-    void SetActiveTool(Tool tool)
-    {
-        m_ActiveTool = tool;
-    }
-
+    // --- Input Handling ---
+private:
     bool OnKeyPressed(KeyPressedEvent &e);
     bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
+    // --- UI Helpers ---
+private:
     void UI_DrawDockspace();
 
-    // Scene System Accessors
-    std::shared_ptr<Scene> GetActiveScene()
-    {
-        return m_Scene;
-    }
-
+    // --- Member Variables ---
 private:
     EditorCamera m_EditorCamera;
 
@@ -108,7 +112,7 @@ private:
     std::unique_ptr<AssetBrowserPanel> m_AssetBrowserPanel;
     std::unique_ptr<ConsolePanel> m_ConsolePanel;
     std::unique_ptr<ToolbarPanel> m_ToolbarPanel;
-    bool m_CursorLocked = true;
+    std::unique_ptr<ProjectBrowserPanel> m_ProjectBrowserPanel;
     std::unique_ptr<MenuBarPanel> m_MenuBarPanel;
 
     // Managers
@@ -117,21 +121,22 @@ private:
     SelectionManager m_SelectionManager;
     CommandHistory m_CommandHistory;
 
-    // Scene System (new architecture)
-    std::shared_ptr<Scene> m_Scene;
+    bool m_ShowProjectBrowser = true;
 
-    // Legacy scene system (will be migrated)
+    // Scene System
+    std::shared_ptr<Scene> m_Scene;
     std::shared_ptr<GameScene> m_ActiveScene;
     std::shared_ptr<GameScene> m_EditorScene;
 
-    // Viewport
+    // Viewport State
     ImVec2 m_ViewportSize = {0.0f, 0.0f};
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;
+    bool m_CursorLocked = true;
+    bool m_ShowProjectSettings = false;
 
     CHD::RuntimeLayer *m_RuntimeLayer = nullptr;
     Tool m_ActiveTool = Tool::MOVE;
-    bool m_ShowProjectSettings = false;
 };
 } // namespace CHEngine
 

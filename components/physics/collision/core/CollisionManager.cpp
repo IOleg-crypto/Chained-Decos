@@ -3,18 +3,15 @@
 #include <algorithm>
 #include <array>
 #include <cfloat>
-#include <compare>
 #include <components/physics/collision/colsystem/CollisionSystem.h>
-#include <execution>
 #include <future>
+#include <memory>
 #include <raylib.h>
 #include <raymath.h>
-#include <scene/resources/model/Model.h>
 #include <set>
 #include <string>
 #include <thread>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 bool CollisionManager::Initialize()
@@ -98,41 +95,8 @@ void CollisionManager::Shutdown()
 // Spatial partitioning optimization
 void CollisionManager::UpdateSpatialPartitioning()
 {
-    if (m_collisionObjects.empty())
-        return;
-
-    // Reserve space for better performance
-    m_spatialGrid.clear();
-    m_spatialGrid.reserve(m_collisionObjects.size() * 4); // Estimate 4 cells per object
-
-    // Grid cell size (adjust based on typical object sizes)
-    const float cellSize = 10.0f;
-
-    for (size_t i = 0; i < m_collisionObjects.size(); ++i)
-    {
-        const auto &collisionObject = m_collisionObjects[i];
-        Vector3 min = collisionObject->GetMin();
-        Vector3 max = collisionObject->GetMax();
-
-        // Calculate grid cells this object spans
-        int minX = static_cast<int>(floorf(min.x / cellSize));
-        int maxX = static_cast<int>(floorf(max.x / cellSize));
-        int minZ = static_cast<int>(floorf(min.z / cellSize));
-        int maxZ = static_cast<int>(floorf(max.z / cellSize));
-
-        // Add object to all cells it spans (optimized loop)
-        for (int x = minX; x <= maxX; ++x)
-        {
-            for (int z = minZ; z <= maxZ; ++z)
-            {
-                GridKey key = {x, z};
-                m_spatialGrid[key].push_back(i);
-            }
-        }
-    }
-
-    CD_CORE_TRACE("Updated spatial partitioning: %zu cells created for %zu objects",
-                  m_spatialGrid.size(), m_collisionObjects.size());
+    m_grid.Build(m_collisionObjects);
+    m_grid.BuildEntities(m_entityColliders);
 }
 
 void CollisionManager::Render()
@@ -175,41 +139,12 @@ void CollisionManager::AddCollider(std::shared_ptr<Collision> collisionObject)
 void CollisionManager::ClearColliders()
 {
     m_collisionObjects.clear();
+    m_grid.Clear();
 }
 
 bool CollisionManager::CheckCollision(const Collision &playerCollision) const
 {
-    if (m_collisionObjects.empty())
-        return false;
-
-    // Use spatial partitioning for faster collision queries
-    if (!m_spatialGrid.empty())
-    {
-        return CheckCollisionSpatial(playerCollision);
-    }
-
-    // Fallback to original method if spatial partitioning not available
-    for (const auto &collisionObject : m_collisionObjects)
-    {
-        bool collisionDetected = false;
-
-        if (collisionObject->IsUsingBVH())
-            collisionDetected = playerCollision.IntersectsBVH(*collisionObject);
-        else
-            collisionDetected = playerCollision.Intersects(*collisionObject);
-
-        if (collisionDetected)
-            return true;
-    }
-
-    // Also check dynamic entity colliders
-    for (const auto &pair : m_entityColliders)
-    {
-        if (playerCollision.Intersects(*pair.second))
-            return true;
-    }
-
-    return false;
+    return CheckCollisionSpatial(playerCollision);
 }
 bool CollisionManager::CheckCollision(const Collision &playerCollision,
                                       Vector3 &collisionResponse) const
@@ -218,14 +153,11 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision,
         return false;
 
     // Check prediction cache first
-    size_t cacheHash =
-        const_cast<CollisionManager *>(this)->GetPredictionCacheHash(playerCollision);
-    auto cacheIt = m_predictionCache.find(cacheHash);
-    if (cacheIt != m_predictionCache.end() &&
-        m_currentFrame - cacheIt->second.frameCount < CACHE_LIFETIME_FRAMES)
+    bool hit = false;
+    if (const_cast<CollisionManager *>(this)->m_cache.TryGet(playerCollision, m_currentFrame,
+                                                             collisionResponse, hit))
     {
-        collisionResponse = cacheIt->second.response;
-        return cacheIt->second.hasCollision;
+        return hit;
     }
 
     const Vector3 playerMin = playerCollision.GetMin();
@@ -240,8 +172,16 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision,
     float optimalSeparationDistanceSquared = FLT_MAX;
     Vector3 groundSeparationVector = {0, 0, 0};
     bool hasGroundSeparationVector = false;
-    for (const auto &collisionObject : m_collisionObjects)
+
+    // Use spatial grid
+    auto objectsToCheck = m_grid.GetNearbyObjectIndices(playerCollision);
+
+    for (size_t objIndex : objectsToCheck)
     {
+        if (objIndex >= m_collisionObjects.size())
+            continue;
+        const auto &collisionObject = m_collisionObjects[objIndex];
+
         if (collisionObject->IsUsingBVH())
         {
             CollisionResult res = playerCollision.CheckCollisionDetailed(*collisionObject);
@@ -341,34 +281,24 @@ bool CollisionManager::CheckCollision(const Collision &playerCollision,
             }
         }
     }
+
     if (hasGroundSeparationVector)
     {
         collisionResponse = groundSeparationVector;
-
-        // Cache the result and manage cache size
-        const_cast<CollisionManager *>(this)->m_predictionCache[cacheHash] = {
-            true, collisionResponse, const_cast<CollisionManager *>(this)->m_currentFrame};
-        const_cast<CollisionManager *>(this)->ManageCacheSize();
-
+        const_cast<CollisionManager *>(this)->m_cache.Set(playerCollision, m_currentFrame, true,
+                                                          collisionResponse);
         return true;
     }
     if (hasOptimalResponse)
     {
         collisionResponse = optimalSeparationVector;
-
-        // Cache the result and manage cache size
-        const_cast<CollisionManager *>(this)->m_predictionCache[cacheHash] = {
-            true, collisionResponse, const_cast<CollisionManager *>(this)->m_currentFrame};
-        const_cast<CollisionManager *>(this)->ManageCacheSize();
-
+        const_cast<CollisionManager *>(this)->m_cache.Set(playerCollision, m_currentFrame, true,
+                                                          collisionResponse);
         return true;
     }
 
-    // Cache negative result too and manage cache size
-    const_cast<CollisionManager *>(this)->m_predictionCache[cacheHash] = {
-        collisionDetected, collisionResponse, const_cast<CollisionManager *>(this)->m_currentFrame};
-    const_cast<CollisionManager *>(this)->ManageCacheSize();
-
+    const_cast<CollisionManager *>(this)->m_cache.Set(playerCollision, m_currentFrame,
+                                                      collisionDetected, collisionResponse);
     return collisionDetected;
 }
 
@@ -541,197 +471,61 @@ void CollisionManager::CreateAutoCollisionsFromModelsSelective(
 
     // Final spatial partitioning update for optimal performance
     UpdateSpatialPartitioning();
-
-    CD_CORE_INFO("Spatial partitioning updated with %zu cells", m_spatialGrid.size());
 }
 
 // Helper function to create cache key
 std::string CollisionManager::MakeCollisionCacheKey(const std::string &modelName, float scale) const
 {
-    // Round scale to 3 decimal places for better precision while avoiding cache misses
-    int scaledInt = static_cast<int>(roundf(scale * 1000.0f));
-    std::string key = modelName + "_s" + std::to_string(scaledInt);
-
-    // Limit key length for performance
-    if (key.length() > 64)
-    {
-        key = key.substr(0, 64);
-    }
-
-    return key;
+    return m_modelProcessor.MakeCollisionCacheKey(modelName, scale);
 }
 
 bool CollisionManager::CreateCollisionFromModel(const Model &model, const std::string &modelName,
                                                 Vector3 position, float scale,
                                                 const ModelLoader &models)
 {
-    CD_CORE_INFO("Creating collision from model '%s' at position (%.2f, %.2f, %.2f) scale=%.2f",
-                 modelName.c_str(), position.x, position.y, position.z, scale);
-
-    // Validate inputs
-    if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z))
-    {
-        CD_CORE_ERROR("Model '%s' has invalid position (%.2f, %.2f, %.2f)", modelName.c_str(),
-                      position.x, position.y, position.z);
-        return false;
-    }
-
-    if (!std::isfinite(scale) || scale <= 0.0f || scale > 1000.0f)
-    {
-        CD_CORE_ERROR("Model '%s' has invalid scale %.2f", modelName.c_str(), scale);
-        return false;
-    }
-
-    // Validate model data before proceeding
-    if (model.meshCount == 0)
-    {
-        CD_CORE_ERROR("Model '%s' has no meshes, cannot create collision", modelName.c_str());
-        return false;
-    }
-
-    // Check for excessive mesh count that could cause memory issues
-    if (model.meshCount > 1000)
-    {
-        CD_CORE_ERROR("Model '%s' has excessive mesh count (%d)", modelName.c_str(),
-                      model.meshCount);
-        return false;
-    }
-
-    // Check if model has any valid geometry
-    bool hasValidGeometry = false;
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        const Mesh &mesh = model.meshes[i];
-        if (mesh.vertices && mesh.indices && mesh.vertexCount > 0 && mesh.triangleCount > 0)
-        {
-            hasValidGeometry = true;
-            break;
-        }
-    }
-
-    if (!hasValidGeometry)
-    {
-        CD_CORE_WARN("Model '%s' has no valid geometry, creating fallback AABB collision",
-                     modelName.c_str());
-
-        // Create fallback AABB collision using model bounds
-        BoundingBox modelBounds = GetModelBoundingBox(model);
-        Vector3 size = {modelBounds.max.x - modelBounds.min.x,
-                        modelBounds.max.y - modelBounds.min.y,
-                        modelBounds.max.z - modelBounds.min.z};
-        Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
-                          (modelBounds.max.y + modelBounds.min.y) * 0.5f,
-                          (modelBounds.max.z + modelBounds.min.z) * 0.5f};
-
-        Collision fallbackCollision(center, Vector3Scale(size, 0.5f * scale));
-        fallbackCollision.SetCollisionType(CollisionType::AABB_ONLY);
-
-        // Transform to instance position and scale
-        fallbackCollision.Update(Vector3Add(center, position),
-                                 Vector3Scale(Vector3Scale(size, 0.5f), scale));
-
-        AddCollider(std::make_shared<Collision>(std::move(fallbackCollision)));
-        return true;
-    }
-
-    // Get model configuration
+    // Analysis and configuration
     const ModelFileConfig *config = models.GetModelConfig(modelName);
-    bool needsPreciseCollision =
-        config && (config->collisionPrecision == CollisionPrecision::TRIANGLE_PRECISE ||
-                   config->collisionPrecision == CollisionPrecision::BVH_ONLY ||
-                   config->collisionPrecision == CollisionPrecision::IMPROVED_AABB ||
-                   config->collisionPrecision == CollisionPrecision::AUTO);
+    bool needsPrecise = m_modelProcessor.AnalyzeModelShape(model, modelName);
 
-    // If no explicit config or AUTO, analyze model shape to determine collision type
-    if (!config || config->collisionPrecision == CollisionPrecision::AUTO)
+    // Cache lookup
+    std::string cacheKey = m_modelProcessor.MakeCollisionCacheKey(modelName, scale);
+    std::shared_ptr<Collision> cached;
+
+    auto it = m_collisionCache.find(cacheKey);
+    if (it != m_collisionCache.end())
     {
-        needsPreciseCollision = AnalyzeModelShape(model, modelName);
-    }
-
-    // Get or create cached collision with improved caching strategy
-    std::string cacheKey = MakeCollisionCacheKey(modelName, scale);
-    std::shared_ptr<Collision> cachedCollision;
-
-    auto cacheIt = m_collisionCache.find(cacheKey);
-    if (cacheIt != m_collisionCache.end())
-    {
-        cachedCollision = cacheIt->second;
-        CD_CORE_TRACE("Using cached collision for '%s'", cacheKey.c_str());
+        cached = it->second;
     }
     else
     {
-        // Create collision with optimized settings
-        cachedCollision = CreateBaseCollision(model, modelName, config, needsPreciseCollision);
-
-        // Only cache if it's actually useful (has geometry or is AABB)
-        if (cachedCollision &&
-            (cachedCollision->GetCollisionType() != CollisionType::AABB_ONLY ||
-             cachedCollision->GetSize().x > 1.0f || cachedCollision->GetSize().z > 1.0f))
-        {
-            m_collisionCache[cacheKey] = cachedCollision;
-            CD_CORE_INFO("Cached collision for '%s' (cache size: %zu)", cacheKey.c_str(),
-                         m_collisionCache.size());
-        }
+        cached = m_modelProcessor.CreateBaseCollision(model, modelName, config, needsPrecise);
+        m_collisionCache[cacheKey] = cached;
     }
 
-    // Create instance collision
-    Collision instanceCollision;
-    bool usePreciseForInstance =
-        needsPreciseCollision &&
-        (cachedCollision->GetCollisionType() == CollisionType::BVH_ONLY ||
-         cachedCollision->GetCollisionType() == CollisionType::TRIANGLE_PRECISE);
-
-    if (usePreciseForInstance &&
+    // Instance creation
+    Collision instance;
+    if (needsPrecise &&
         m_preciseCollisionCountPerModel[modelName] < MAX_PRECISE_COLLISIONS_PER_MODEL)
     {
-        // Use precise collision (prefer cached triangles)
-        if (cachedCollision->HasTriangleData())
+        if (cached->HasTriangleData())
         {
-            instanceCollision =
-                CreatePreciseInstanceCollisionFromCached(*cachedCollision, position, scale);
+            instance =
+                m_modelProcessor.CreatePreciseInstanceCollisionFromCached(*cached, position, scale);
         }
         else
         {
-            instanceCollision = CreatePreciseInstanceCollision(model, position, scale, config);
+            instance =
+                m_modelProcessor.CreatePreciseInstanceCollision(model, position, scale, config);
         }
         m_preciseCollisionCountPerModel[modelName]++;
     }
     else
     {
-        // Use simple AABB collision
-        instanceCollision = CreateSimpleAABBInstanceCollision(*cachedCollision, position, scale);
-        if (usePreciseForInstance)
-        {
-            CD_CORE_WARN("Reached limit of %d precise collision objects for model '%s', using AABB",
-                         MAX_PRECISE_COLLISIONS_PER_MODEL, modelName.c_str());
-        }
+        instance = m_modelProcessor.CreateSimpleAABBInstanceCollision(*cached, position, scale);
     }
 
-    // Add to collision manager
-    size_t beforeCount = GetColliders().size();
-
-    try
-    {
-        AddCollider(std::make_shared<Collision>(std::move(instanceCollision)));
-
-        bool success = GetColliders().size() > beforeCount;
-        CD_CORE_INFO("%s created instance collision for '%s', collider count: %zu -> %zu",
-                     success ? "Successfully" : "FAILED to", modelName.c_str(), beforeCount,
-                     GetColliders().size());
-
-        return success;
-    }
-    catch (const std::exception &e)
-    {
-        CD_CORE_ERROR("Failed to add collision for model '%s': %s", modelName.c_str(), e.what());
-        return false;
-    }
-    catch (...)
-    {
-        CD_CORE_ERROR("Unknown error occurred while adding collision for model '%s'",
-                      modelName.c_str());
-        return false;
-    }
+    AddCollider(std::make_shared<Collision>(std::move(instance)));
+    return true;
 }
 
 const std::vector<std::shared_ptr<Collision>> &CollisionManager::GetColliders() const
@@ -825,464 +619,44 @@ bool CollisionManager::RaycastDown(const Vector3 &raycastOrigin, float maxRaycas
 }
 
 // Spatial partitioning optimized collision checking
+// Spatial partitioning optimized collision checking
 bool CollisionManager::CheckCollisionSpatial(const Collision &playerCollision) const
 {
-    const Vector3 playerMin = playerCollision.GetMin();
-    const Vector3 playerMax = playerCollision.GetMax();
-
-    // Calculate grid cells the player spans
-    const float cellSize = 10.0f;
-    int playerMinX = static_cast<int>(floorf(playerMin.x / cellSize));
-    int playerMaxX = static_cast<int>(floorf(playerMax.x / cellSize));
-    int playerMinZ = static_cast<int>(floorf(playerMin.z / cellSize));
-    int playerMaxZ = static_cast<int>(floorf(playerMax.z / cellSize));
-
-    // Check only objects in overlapping grid cells
-    std::unordered_set<size_t> objectsToCheck;
-
-    for (int x = playerMinX; x <= playerMaxX; ++x)
-    {
-        for (int z = playerMinZ; z <= playerMaxZ; ++z)
-        {
-            GridKey key = {x, z};
-            auto it = m_spatialGrid.find(key);
-            if (it != m_spatialGrid.end())
-            {
-                for (size_t objIndex : it->second)
-                {
-                    objectsToCheck.insert(objIndex);
-                }
-            }
-        }
-    }
-
-    // Check collision against objects in relevant cells
+    auto objectsToCheck = m_grid.GetNearbyObjectIndices(playerCollision);
     for (size_t objIndex : objectsToCheck)
     {
         if (objIndex >= m_collisionObjects.size())
             continue;
-
         const auto &collisionObject = m_collisionObjects[objIndex];
-        bool collisionDetected = false;
-
-        if (collisionObject->IsUsingBVH())
-            collisionDetected = playerCollision.IntersectsBVH(*collisionObject);
-        else
-            collisionDetected = playerCollision.Intersects(*collisionObject);
-
-        if (collisionDetected)
+        if (playerCollision.Intersects(*collisionObject))
             return true;
     }
 
-    // Case 2: Check dynamic entities using their own spatial grid
-    const float entityCellSize = m_entityGridCellSize;
-    int entMinX = static_cast<int>(floorf(playerMin.x / entityCellSize));
-    int entMaxX = static_cast<int>(floorf(playerMax.x / entityCellSize));
-    int entMinZ = static_cast<int>(floorf(playerMin.z / entityCellSize));
-    int entMaxZ = static_cast<int>(floorf(playerMax.z / entityCellSize));
-
-    for (int x = entMinX; x <= entMaxX; ++x)
+    auto entitiesToCheck = m_grid.GetNearbyEntities(playerCollision);
+    for (auto entityId : entitiesToCheck)
     {
-        for (int z = entMinZ; z <= entMaxZ; ++z)
+        auto colIt = m_entityColliders.find(entityId);
+        if (colIt != m_entityColliders.end() && colIt->second)
         {
-            GridKey key = {x, z};
-            auto it = m_entitySpatialGrid.find(key);
-            if (it != m_entitySpatialGrid.end())
-            {
-                for (ECS::EntityID entityId : it->second)
-                {
-                    auto colIt = m_entityColliders.find(entityId);
-                    if (colIt != m_entityColliders.end() && colIt->second)
-                    {
-                        if (playerCollision.Intersects(*colIt->second))
-                            return true;
-                    }
-                }
-            }
+            if (playerCollision.Intersects(*colIt->second))
+                return true;
         }
     }
 
     return false;
 }
 
-// Helper method to analyze model shape and determine if it needs precise collision
-bool CollisionManager::AnalyzeModelShape(const Model &model, const std::string &modelName)
-{
-    try
-    {
-        // Get model bounding box
-        BoundingBox bounds = GetModelBoundingBox(model);
-        Vector3 size = {bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y,
-                        bounds.max.z - bounds.min.z};
-
-        // Calculate aspect ratios to detect rectangular shapes
-        float maxDim = fmaxf(fmaxf(size.x, size.y), size.z);
-        float minDim = fminf(fminf(size.x, size.y), size.z);
-
-        if (maxDim <= 0.0f || minDim <= 0.0f)
-        {
-            CD_CORE_WARN("Model '%s' has invalid dimensions, defaulting to AABB",
-                         modelName.c_str());
-            return false; // Use AABB for invalid shapes
-        }
-
-        // Calculate rectangularity score (how close to a rectangular box)
-        float aspectRatioXY = size.x / size.y;
-        float aspectRatioXZ = size.x / size.z;
-        float aspectRatioYZ = size.y / size.z;
-
-        // For rectangular shapes, aspect ratios should be reasonable (not extreme)
-        const float MAX_RECTANGULAR_RATIO = 10.0f; // Max ratio for rectangular detection
-        bool isRectangular = (aspectRatioXY <= MAX_RECTANGULAR_RATIO &&
-                              aspectRatioXY >= 1.0f / MAX_RECTANGULAR_RATIO) &&
-                             (aspectRatioXZ <= MAX_RECTANGULAR_RATIO &&
-                              aspectRatioXZ >= 1.0f / MAX_RECTANGULAR_RATIO) &&
-                             (aspectRatioYZ <= MAX_RECTANGULAR_RATIO &&
-                              aspectRatioYZ >= 1.0f / MAX_RECTANGULAR_RATIO);
-
-        // Additional check: analyze triangle count and complexity
-        int totalTriangles = 0;
-        for (int i = 0; i < model.meshCount; i++)
-        {
-            const Mesh &mesh = model.meshes[i];
-            if (mesh.triangleCount > 0)
-            {
-                totalTriangles += mesh.triangleCount;
-            }
-        }
-
-        // If very few triangles and rectangular, definitely use AABB
-        if (totalTriangles <= 12 && isRectangular)
-        {
-            CD_CORE_TRACE(
-                "Model '%s' detected as simple rectangular shape (%d triangles), using AABB",
-                modelName.c_str(), totalTriangles);
-            return false; // Use AABB
-        }
-
-        // If many triangles or non-rectangular, use BVH
-        if (totalTriangles > 100 || !isRectangular)
-        {
-            TraceLog(
-                LOG_DEBUG,
-                "Model '%s' detected as complex shape (%d triangles, rectangular=%s), using BVH",
-                modelName.c_str(), totalTriangles, isRectangular ? "true" : "false");
-            return true; // Use BVH
-        }
-
-        // Medium complexity: check if the shape is actually close to rectangular
-        // by analyzing vertex distribution
-        if (totalTriangles > 12 && totalTriangles <= 100)
-        {
-            // For medium complexity, do a more detailed analysis
-            bool hasIrregularGeometry = AnalyzeGeometryIrregularity(model);
-            if (!hasIrregularGeometry && isRectangular)
-            {
-                CD_CORE_TRACE("Model '%s' medium complexity but regular geometry, using AABB",
-                              modelName.c_str());
-                return false; // Use AABB
-            }
-            else
-            {
-                CD_CORE_TRACE("Model '%s' medium complexity with irregular geometry, using BVH",
-                              modelName.c_str());
-                return true; // Use BVH
-            }
-        }
-
-        // Default fallback
-        CD_CORE_TRACE("Model '%s' analysis inconclusive, defaulting to AABB", modelName.c_str());
-        return false; // Use AABB as safe default
-    }
-    catch (const std::exception &e)
-    {
-        CD_CORE_WARN("Shape analysis failed for model '%s': %s, defaulting to AABB",
-                     modelName.c_str(), e.what());
-        return false; // Use AABB on analysis failure
-    }
-}
-
-// Helper method to analyze if geometry has irregular features that would benefit from BVH
-bool CollisionManager::AnalyzeGeometryIrregularity(const Model &model)
-{
-    try
-    {
-        // Simple irregularity check: look for non-planar faces or complex vertex arrangements
-        // This is a basic implementation - could be enhanced with more sophisticated analysis
-
-        int irregularFeatures = 0;
-        int totalFaces = 0;
-
-        for (int meshIdx = 0; meshIdx < model.meshCount; meshIdx++)
-        {
-            const Mesh &mesh = model.meshes[meshIdx];
-            if (!mesh.vertices || !mesh.indices || mesh.vertexCount == 0 || mesh.triangleCount == 0)
-                continue;
-
-            totalFaces += mesh.triangleCount;
-
-            // Check for irregular vertex patterns (simplified analysis)
-            // In a real implementation, you might check for curvature, holes, etc.
-            if (mesh.vertexCount > mesh.triangleCount * 2)
-            {
-                irregularFeatures++; // Many vertices relative to faces suggests complexity
-            }
-        }
-
-        // If more than 30% of meshes show irregular features, consider it irregular
-        return (irregularFeatures * 3) > totalFaces;
-    }
-    catch (const std::exception &e)
-    {
-        CD_CORE_WARN("Geometry irregularity analysis failed: %s", e.what());
-        return true; // Assume irregular on failure to be safe
-    }
-}
-
-// Helper method to create base collision for caching
-std::shared_ptr<Collision> CollisionManager::CreateBaseCollision(const Model &model,
-                                                                 const std::string &modelName,
-                                                                 const ModelFileConfig *config,
-                                                                 bool needsPreciseCollision)
-{
-    std::shared_ptr<Collision> collision;
-
-    try
-    {
-        // Validate model data before proceeding
-        if (model.meshCount == 0)
-        {
-            CD_CORE_ERROR("Model '%s' has no meshes, creating fallback collision",
-                          modelName.c_str());
-            BoundingBox modelBounds = GetModelBoundingBox(model);
-            Vector3 size = {modelBounds.max.x - modelBounds.min.x,
-                            modelBounds.max.y - modelBounds.min.y,
-                            modelBounds.max.z - modelBounds.min.z};
-            Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
-                              (modelBounds.max.y + modelBounds.min.y) * 0.5f,
-                              (modelBounds.max.z + modelBounds.min.z) * 0.5f};
-
-            collision = std::make_shared<Collision>(center, Vector3Scale(size, 0.5f));
-            collision->SetCollisionType(CollisionType::AABB_ONLY);
-            return collision;
-        }
-
-        // Check if model has any valid geometry
-        bool hasValidGeometry = false;
-        for (int i = 0; i < model.meshCount; i++)
-        {
-            const Mesh &mesh = model.meshes[i];
-            if (mesh.vertices && mesh.indices && mesh.vertexCount > 0 && mesh.triangleCount > 0)
-            {
-                hasValidGeometry = true;
-                break;
-            }
-        }
-
-        if (!hasValidGeometry)
-        {
-            // Fallback AABB for models without geometry
-            CD_CORE_WARN("Model '%s' has no valid geometry, creating fallback collision",
-                         modelName.c_str());
-            BoundingBox modelBounds = GetModelBoundingBox(model);
-            Vector3 size = {modelBounds.max.x - modelBounds.min.x,
-                            modelBounds.max.y - modelBounds.min.y,
-                            modelBounds.max.z - modelBounds.min.z};
-            Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
-                              (modelBounds.max.y + modelBounds.min.y) * 0.5f,
-                              (modelBounds.max.z + modelBounds.min.z) * 0.5f};
-
-            collision = std::make_shared<Collision>(center, Vector3Scale(size, 0.5f));
-            collision->SetCollisionType(CollisionType::AABB_ONLY);
-        }
-        else
-        {
-            // Create collision from model geometry with error handling
-            collision = std::make_shared<Collision>();
-
-            try
-            {
-                Model modelCopy = model; // Create a copy for collision building
-                collision->BuildFromModel(&modelCopy, MatrixIdentity());
-
-                // Set collision type based on configuration
-                if (needsPreciseCollision && config)
-                {
-                    CollisionType targetType = CollisionType::HYBRID_AUTO;
-
-                    switch (config->collisionPrecision)
-                    {
-                    case CollisionPrecision::TRIANGLE_PRECISE:
-                        targetType = CollisionType::TRIANGLE_PRECISE;
-                        break;
-                    case CollisionPrecision::BVH_ONLY:
-                        targetType = CollisionType::BVH_ONLY;
-                        break;
-                    case CollisionPrecision::AUTO:
-                    default:
-                        targetType = CollisionType::HYBRID_AUTO;
-                        break;
-                    }
-
-                    collision->SetCollisionType(targetType);
-                }
-                else
-                {
-                    collision->SetCollisionType(CollisionType::AABB_ONLY);
-                }
-            }
-            catch (const std::exception &e)
-            {
-                CD_CORE_ERROR("Failed to build collision from model '%s': %s", modelName.c_str(),
-                              e.what());
-
-                // Fallback to AABB collision
-                BoundingBox modelBounds = GetModelBoundingBox(model);
-                Vector3 size = {modelBounds.max.x - modelBounds.min.x,
-                                modelBounds.max.y - modelBounds.min.y,
-                                modelBounds.max.z - modelBounds.min.z};
-                Vector3 center = {(modelBounds.max.x + modelBounds.min.x) * 0.5f,
-                                  (modelBounds.max.y + modelBounds.min.y) * 0.5f,
-                                  (modelBounds.max.z + modelBounds.min.z) * 0.5f};
-
-                *collision = Collision(center, Vector3Scale(size, 0.5f));
-                collision->SetCollisionType(CollisionType::AABB_ONLY);
-            }
-        }
-    }
-    catch (const std::exception &e)
-    {
-        CD_CORE_ERROR("Critical error creating collision for model '%s': %s", modelName.c_str(),
-                      e.what());
-
-        // Create emergency fallback collision
-        collision = std::make_shared<Collision>(Vector3{0, 0, 0}, Vector3{1, 1, 1});
-        collision->SetCollisionType(CollisionType::AABB_ONLY);
-    }
-
-    return collision;
-}
-
-Collision CollisionManager::CreatePreciseInstanceCollision(const Model &model, Vector3 position,
-                                                           float scale,
-                                                           const ModelFileConfig *config)
-{
-    Collision instanceCollision;
-
-    Matrix transform = MatrixIdentity();
-    transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
-    // If there is rotation:
-    // transform = MatrixMultiply(transform, MatrixRotateXYZ(rotation));
-    transform = MatrixMultiply(transform, MatrixTranslate(position.x, position.y, position.z));
-
-    Model modelCopy = model;
-
-    if (config)
-        instanceCollision.BuildFromModel(&modelCopy, transform);
-
-    instanceCollision.SetCollisionType(CollisionType::BVH_ONLY);
-
-    CD_CORE_INFO("Built BVH collision for instance at (%.2f, %.2f, %.2f)", position.x, position.y,
-                 position.z);
-
-    return instanceCollision;
-}
-
-Collision
-CollisionManager::CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
-                                                           Vector3 position, float scale)
-{
-
-    Collision instance;
-
-    Matrix transform = MatrixIdentity();
-    transform = MatrixMultiply(transform, MatrixScale(scale, scale, scale));
-    transform = MatrixMultiply(transform, MatrixTranslate(position.x, position.y, position.z));
-
-    const auto &tris = cachedCollision.GetTriangles();
-    instance = Collision{};
-    for (const auto &t : tris)
-    {
-        Vector3 v0 = Vector3Transform(t.V0(), transform);
-        Vector3 v1 = Vector3Transform(t.V1(), transform);
-        Vector3 v2 = Vector3Transform(t.V2(), transform);
-        instance.AddTriangle(CollisionTriangle(v0, v1, v2));
-    }
-
-    instance.UpdateAABBFromTriangles();
-    instance.InitializeBVH();
-    instance.SetCollisionType(CollisionType::BVH_ONLY);
-    return instance;
-}
-
-Collision CollisionManager::CreateSimpleAABBInstanceCollision(const Collision &cachedCollision,
-                                                              const Vector3 &position, float scale)
-{
-    Vector3 transformedCenter =
-        Vector3Add(Vector3Scale(cachedCollision.GetCenter(), scale), position);
-    Vector3 scaledSize = Vector3Scale(cachedCollision.GetSize(), scale);
-
-    // Collision expects half-size extents
-    Collision instanceCollision(transformedCenter, Vector3Scale(scaledSize, 0.5f));
-    instanceCollision.SetCollisionType(CollisionType::AABB_ONLY);
-    return instanceCollision;
-}
-
 // Prediction cache management
 void CollisionManager::UpdateFrameCache()
 {
     m_currentFrame++;
-    if (m_currentFrame % 60 == 0) // Clean cache every 60 frames
-    {
-        ClearExpiredCache();
-    }
+    m_cache.Update(m_currentFrame);
 }
 
 void CollisionManager::ClearExpiredCache()
 {
-    auto it = m_predictionCache.begin();
-    while (it != m_predictionCache.end())
-    {
-        if (m_currentFrame - it->second.frameCount > CACHE_LIFETIME_FRAMES)
-        {
-            it = m_predictionCache.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
+    m_cache.Clear();
 }
-
-size_t CollisionManager::GetPredictionCacheHash(const Collision &playerCollision) const
-{
-    // Simple hash based on player collision bounds and position
-    Vector3 min = playerCollision.GetMin();
-    Vector3 max = playerCollision.GetMax();
-
-    // Use a simple combination of position and size for hashing
-    size_t hash = 0;
-    hash = std::hash<float>{}(min.x) ^ std::hash<float>{}(min.y) ^ std::hash<float>{}(min.z);
-    hash = hash * 31 + std::hash<float>{}(max.x) ^ std::hash<float>{}(max.y) ^
-           std::hash<float>{}(max.z);
-
-    return hash;
-}
-
-void CollisionManager::ManageCacheSize()
-{
-    if (m_predictionCache.size() > MAX_PREDICTION_CACHE_SIZE)
-    {
-        // Remove oldest entries (simple LRU-like behavior)
-        size_t entriesToRemove = m_predictionCache.size() - MAX_PREDICTION_CACHE_SIZE;
-        auto it = m_predictionCache.begin();
-
-        {
-            it = m_predictionCache.erase(it);
-        }
-    }
-}
-
 //
 // Dynamic Entity Management
 //
@@ -1293,13 +667,13 @@ void CollisionManager::AddEntityCollider(ECS::EntityID entity,
     if (!collider)
         return;
     m_entityColliders[entity] = collider;
-    UpdateEntitySpatialPartitioning(); // Rebuild grid immediately or defer
+    m_grid.BuildEntities(m_entityColliders);
 }
 
 void CollisionManager::RemoveEntityCollider(ECS::EntityID entity)
 {
     m_entityColliders.erase(entity);
-    // Note: optimization - we might want to just remove it from grid instead of full rebuild
+    m_grid.BuildEntities(m_entityColliders);
 }
 
 void CollisionManager::UpdateEntityCollider(ECS::EntityID entity, const Vector3 &position)
@@ -1310,7 +684,7 @@ void CollisionManager::UpdateEntityCollider(ECS::EntityID entity, const Vector3 
         Collision &col = *it->second;
         Vector3 currentSize = col.GetSize();
         // Force update position
-        col.Update(position, currentSize);
+        col.Update(position, Vector3Scale(currentSize, 0.5f));
     }
 }
 
@@ -1322,91 +696,27 @@ std::shared_ptr<Collision> CollisionManager::GetEntityCollider(ECS::EntityID ent
     return nullptr;
 }
 
-void CollisionManager::UpdateEntitySpatialPartitioning()
-{
-    m_entitySpatialGrid.clear();
-    // Use smaller grid size for entities if needed, or same
-    float cellSize = m_entityGridCellSize;
-
-    for (const auto &[entity, collider] : m_entityColliders)
-    {
-        Vector3 min = collider->GetMin();
-        Vector3 max = collider->GetMax();
-
-        int minX = static_cast<int>(floorf(min.x / cellSize));
-        int maxX = static_cast<int>(floorf(max.x / cellSize));
-        int minZ = static_cast<int>(floorf(min.z / cellSize));
-        int maxZ = static_cast<int>(floorf(max.z / cellSize));
-
-        for (int x = minX; x <= maxX; ++x)
-        {
-            for (int z = minZ; z <= maxZ; ++z)
-            {
-                GridKey key = {x, z};
-                m_entitySpatialGrid[key].push_back(entity);
-            }
-        }
-    }
-}
-
 bool CollisionManager::CheckEntityCollision(ECS::EntityID selfEntity, const Collision &collider,
                                             std::vector<ECS::EntityID> &outCollidedEntities) const
 {
     bool collisionDetected = false;
-    Vector3 min = collider.GetMin();
-    Vector3 max = collider.GetMax();
+    auto entitiesToCheck = m_grid.GetNearbyEntities(collider);
 
-    int minX = static_cast<int>(floorf(min.x / m_entityGridCellSize));
-    int maxX = static_cast<int>(floorf(max.x / m_entityGridCellSize));
-    int minZ = static_cast<int>(floorf(min.z / m_entityGridCellSize));
-    int maxZ = static_cast<int>(floorf(max.z / m_entityGridCellSize));
-
-    // Keep track of checked entities to avoid duplicates
-    static thread_local std::vector<ECS::EntityID> checkedEntities; // Simple optimization
-    checkedEntities.clear();
-
-    for (int x = minX; x <= maxX; ++x)
+    for (ECS::EntityID otherEntity : entitiesToCheck)
     {
-        for (int z = minZ; z <= maxZ; ++z)
+        if (otherEntity == selfEntity)
+            continue;
+
+        auto colIt = m_entityColliders.find(otherEntity);
+        if (colIt != m_entityColliders.end() && colIt->second)
         {
-            GridKey key = {x, z};
-            auto it = m_entitySpatialGrid.find(key);
-            if (it == m_entitySpatialGrid.end())
-                continue;
-
-            for (ECS::EntityID otherEntity : it->second)
+            if (collider.Intersects(*colIt->second))
             {
-                if (otherEntity == selfEntity)
-                    continue;
-
-                // Check if already processed
-                bool alreadyChecked = false;
-                for (auto checked : checkedEntities)
-                {
-                    if (checked == otherEntity)
-                    {
-                        alreadyChecked = true;
-                        break;
-                    }
-                }
-                if (alreadyChecked)
-                    continue;
-
-                checkedEntities.push_back(otherEntity);
-
-                auto colIt = m_entityColliders.find(otherEntity);
-                if (colIt != m_entityColliders.end() && colIt->second)
-                {
-                    if (collider.Intersects(*colIt->second))
-                    {
-                        outCollidedEntities.push_back(otherEntity);
-                        collisionDetected = true;
-                    }
-                }
+                outCollidedEntities.push_back(otherEntity);
+                collisionDetected = true;
             }
         }
     }
 
     return collisionDetected;
 }
-#include "core/Log.h"

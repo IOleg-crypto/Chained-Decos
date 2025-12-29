@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LOG_H
+#define LOG_H
 
 #include <raylib.h>
 #include <string>
@@ -80,3 +81,5 @@ public:
 };
 
 } // namespace CHEngine
+
+#endif // LOG_H

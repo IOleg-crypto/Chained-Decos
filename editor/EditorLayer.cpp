@@ -25,8 +25,8 @@
 #include "editor/logic/undo/TransformCommand.h"
 #include "imgui_internal.h"
 #include "nfd.h"
-#include "project/Runtime/RuntimeLayer.h"
 #include "raylib.h"
+#include "runtime/RuntimeLayer.h"
 #include "scene/core/SceneSerializer.h"
 #include "scene/resources/map/SceneSerializer.h"
 #include <filesystem>
@@ -36,6 +36,10 @@ namespace CHEngine
 EditorLayer::EditorLayer() : Layer("EditorLayer")
 {
 }
+
+// =========================================================================
+// Layer Lifecycle
+// =========================================================================
 
 void EditorLayer::OnAttach()
 {
@@ -77,34 +81,6 @@ void EditorLayer::OnAttach()
     // Create default entities using raw entt::entity (temporary workaround for circular dependency)
     auto &registry = m_Scene->GetRegistry();
 
-    // Ground entity
-    entt::entity ground = registry.create();
-    registry.emplace<IDComponent>(ground);
-    registry.emplace<TagComponent>(ground, "Ground");
-    registry.emplace<TransformComponent>(ground);
-    auto &groundCol = registry.emplace<CollisionComponent>(ground);
-    groundCol.bounds = {{-50, -0.1f, -50}, {50, 0.1f, 50}};
-    groundCol.collider = std::make_shared<Collision>(Vector3{0, 0, 0}, Vector3{50, 0.1f, 50});
-    groundCol.collisionLayer = 1 << 0; // Layer 0 for ground
-    auto collManager = Engine::Instance().GetService<ICollisionManager>();
-    if (collManager)
-        collManager->AddCollider(groundCol.collider);
-
-    // Cube entity
-    entt::entity cube = registry.create();
-    registry.emplace<IDComponent>(cube);
-    registry.emplace<TagComponent>(cube, "Default Cube");
-    auto &cubeTransform = registry.emplace<TransformComponent>(cube);
-    cubeTransform.position = {0, 0.5f, 0};
-    auto &cubeCol = registry.emplace<CollisionComponent>(cube);
-    cubeCol.bounds = {{-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}};
-    cubeCol.collider = std::make_shared<Collision>(Vector3{0, 0.5f, 0}, Vector3{0.5f, 0.5f, 0.5f});
-    cubeCol.collisionLayer = 1 << 0;
-    if (collManager)
-        collManager->AddCollider(cubeCol.collider);
-
-    CD_INFO("[EditorLayer] Created 2 default entities in scene");
-
     // Legacy GameScene initialization
     m_ProjectManager.SetSceneChangedCallback(
         [this](const std::shared_ptr<GameScene> &scene)
@@ -136,27 +112,12 @@ void EditorLayer::OnAttach()
     m_ActiveScene = m_EditorScene;
     auto &objects = m_ActiveScene->GetMapObjectsMutable();
 
-    // ground
-    MapObjectData ground_legacy;
-    ground_legacy.name = "Ground";
-    ground_legacy.type = MapObjectType::PLANE;
-    ground_legacy.size = {100, 100};
-    ground_legacy.color = DARKGRAY;
-    ground_legacy.isPlatform = true; // Fix legacy collision
-    ground_legacy.isObstacle = true;
-    objects.push_back(ground_legacy);
-
-    // default cube
-    MapObjectData cube_legacy;
-    cube_legacy.name = "Default Cube";
-    cube_legacy.type = MapObjectType::CUBE;
-    cube_legacy.position = {0, 0.5f, 0};
-    cube_legacy.color = WHITE;
-    cube_legacy.isPlatform = true; // Fix legacy collision
-    cube_legacy.isObstacle = true;
-    objects.push_back(cube_legacy);
-
-    m_HierarchyPanel->SetContext(m_ActiveScene);
+    // Project Browser Initialization
+    m_ProjectBrowserPanel = std::make_unique<ProjectBrowserPanel>();
+    m_ProjectBrowserPanel->SetOnCreateProject(
+        [this](const std::string &name, const std::string &location)
+        { NewProject(name, location); });
+    m_ProjectBrowserPanel->SetOnOpenProject([this](const std::string &path) { OpenProject(path); });
 
     // Apply theme
     EditorStyles::ApplyDarkTheme();
@@ -238,6 +199,10 @@ void EditorLayer::OnUpdate(float deltaTime)
     }
 }
 
+// =========================================================================
+// Rendering & UI
+// =========================================================================
+
 void EditorLayer::OnRender()
 {
 }
@@ -250,6 +215,16 @@ void EditorLayer::OnImGuiRender()
         [this]() { OnScenePlay(); }, [this]() { OnSceneStop(); }, [this]() { NewScene(); },
         [this]() { SaveScene(); }, [this](Tool t) { SetActiveTool(t); },
         [this](RuntimeMode mode) { m_SimulationManager.SetRuntimeMode(mode); });
+
+    // Project Browser Logic
+    if (m_ShowProjectBrowser)
+    {
+        if (m_ProjectBrowserPanel)
+        {
+            m_ProjectBrowserPanel->OnImGuiRender();
+        }
+        return; // Don't show other panels if no project is active
+    }
 
     // Panels
     if (m_HierarchyPanel && m_HierarchyPanel->IsVisible())
@@ -376,6 +351,10 @@ void EditorLayer::OnImGuiRender()
         ImGui::End();
     }
 }
+
+// =========================================================================
+// Events & Input
+// =========================================================================
 
 void EditorLayer::OnEvent(Event &event)
 {
@@ -548,6 +527,27 @@ void EditorLayer::UI_DrawDockspace()
     visibility.Console = m_ConsolePanel && m_ConsolePanel->IsVisible();
 
     MenuBarCallbacks callbacks;
+    // --- Project Actions ---
+    callbacks.OnNewProject = [this]()
+    {
+        m_ShowProjectBrowser = true;
+        if (m_ProjectBrowserPanel)
+            m_ProjectBrowserPanel->OpenCreateDialog();
+    };
+    callbacks.OnOpenProject = [this]()
+    {
+        nfdfilteritem_t filterItem[1] = {{"CHEngine Project", "chproject"}};
+        nfdchar_t *outPath = nullptr;
+        nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+        if (result == NFD_OKAY)
+        {
+            OpenProject(outPath);
+            NFD_FreePath(outPath);
+        }
+    };
+    callbacks.OnCloseProject = [this]() { CloseProject(); };
+
+    // --- Scene Actions ---
     callbacks.OnNew = [this]() { NewScene(); };
     callbacks.OnOpen = [this]() { OpenScene(); };
     callbacks.OnSave = [this]() { SaveScene(); };
@@ -578,6 +578,10 @@ void EditorLayer::UI_DrawDockspace()
 
     ImGui::End();
 }
+
+// =========================================================================
+// Scene Commands
+// =========================================================================
 
 void EditorLayer::OnScenePlay()
 {
@@ -704,6 +708,10 @@ void EditorLayer::AddModel()
     }
 }
 
+// =========================================================================
+// Entity/Object Management
+// =========================================================================
+
 void EditorLayer::AddUIElement(const std::string &type)
 {
     if (!m_ActiveScene)
@@ -729,6 +737,10 @@ void EditorLayer::AddUIElement(const std::string &type)
     elements.push_back(el);
     m_SelectionManager.SetSelection((int)elements.size() - 1, SelectionType::UI_ELEMENT);
 }
+
+// =========================================================================
+// Environment & Skybox
+// =========================================================================
 
 void EditorLayer::LoadSkybox(const std::string &path)
 {
@@ -858,6 +870,89 @@ void EditorLayer::OnAssetDropped(const std::string &assetPath, const Vector3 &wo
 
         AddObject(obj);
     }
+}
+
+// =========================================================================
+// Getters & Setters
+// =========================================================================
+
+SceneState EditorLayer::GetSceneState() const
+{
+    return m_SimulationManager.GetSceneState();
+}
+
+SelectionManager &EditorLayer::GetSelectionManager()
+{
+    return m_SelectionManager;
+}
+
+Tool EditorLayer::GetActiveTool() const
+{
+    return m_ActiveTool;
+}
+
+void EditorLayer::SetActiveTool(Tool tool)
+{
+    m_ActiveTool = tool;
+}
+
+std::shared_ptr<Scene> EditorLayer::GetActiveScene()
+{
+    return m_Scene;
+}
+
+// =========================================================================
+// Project Management
+// =========================================================================
+
+void EditorLayer::NewProject(const std::string &name, const std::string &location)
+{
+    auto activeProject = m_ProjectManager.NewProject(name, location);
+    if (activeProject)
+    {
+        m_ShowProjectBrowser = false;
+        m_ProjectBrowserPanel->AddRecentProject(activeProject->GetProjectFilePath().string());
+
+        // Update asset browser to point to project assets
+        if (m_AssetBrowserPanel)
+        {
+            m_AssetBrowserPanel->SetRootDirectory(activeProject->GetAssetDirectory());
+        }
+
+        CD_INFO("[EditorLayer] Created new project: %s", name.c_str());
+    }
+    else
+    {
+        CD_ERROR("[EditorLayer] Failed to create project: %s", name.c_str());
+    }
+}
+
+void EditorLayer::OpenProject(const std::string &projectPath)
+{
+    auto activeProject = m_ProjectManager.OpenProject(projectPath);
+    if (activeProject)
+    {
+        m_ShowProjectBrowser = false;
+        m_ProjectBrowserPanel->AddRecentProject(projectPath);
+
+        // Update asset browser
+        if (m_AssetBrowserPanel)
+        {
+            m_AssetBrowserPanel->SetRootDirectory(activeProject->GetAssetDirectory());
+        }
+
+        CD_INFO("[EditorLayer] Opened project: %s", activeProject->GetName().c_str());
+    }
+    else
+    {
+        CD_ERROR("[EditorLayer] Failed to open project: %s", projectPath.c_str());
+    }
+}
+
+void EditorLayer::CloseProject()
+{
+    m_ProjectManager.CloseProject();
+    m_ShowProjectBrowser = true;
 }
 
 } // namespace CHEngine

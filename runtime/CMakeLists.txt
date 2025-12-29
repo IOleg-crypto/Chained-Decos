@@ -11,7 +11,7 @@ target_include_directories(RuntimeLib
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}
-        ${CMAKE_SOURCE_DIR}/project/Runtime
+        ${CMAKE_SOURCE_DIR}/runtime
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/components/physics/collision
         ${CMAKE_SOURCE_DIR}/scene/resources/model
