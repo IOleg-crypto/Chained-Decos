@@ -3,6 +3,7 @@
 
 #include "editor/EditorTypes.h"
 #include "scene/resources/map/GameScene.h"
+#include <cmath>
 #include <imgui.h>
 #include <memory>
 #include <raylib.h>
@@ -84,7 +85,7 @@ private:
     {
         if (step <= 0.0f)
             return value;
-        return roundf(value / step) * step;
+        return std::roundf(value / step) * step;
     }
 };
 
