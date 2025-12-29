@@ -6,7 +6,7 @@
 #include <cmath>
 #include <vector>
 
-#include "../structures/collisionStructures.h"
+#include "components/physics/collision/structures/CollisionStructures.h"
 #include <raylib.h>
 #include <raymath.h>
 
@@ -75,6 +75,36 @@ Collision &Collision::operator=(Collision &&other) noexcept
     return *this;
 }
 Collision::~Collision() = default;
+
+Vector3 Collision::GetMin() const
+{
+    return m_bounds.min;
+}
+
+Vector3 Collision::GetMax() const
+{
+    return m_bounds.max;
+}
+
+BoundingBox Collision::GetBoundingBox() const
+{
+    return m_bounds;
+}
+
+bool Collision::IntersectsBVH(const Collision &other) const
+{
+    return Intersects(other);
+}
+
+bool Collision::IsUsingBVH() const
+{
+    return m_bvhRoot != nullptr;
+}
+
+bool Collision::IsUsingOctree() const
+{
+    return IsUsingBVH();
+}
 
 // ----------------- AABB -----------------
 void Collision::Update(const Vector3 &center, const Vector3 &halfSize)

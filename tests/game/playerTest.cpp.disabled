@@ -4,7 +4,7 @@
 #include "components/audio/core/AudioManager.h"
 #include "components/physics/collision/core/collisionManager.h"
 #include "core/Engine.h"
-#include "project/Runtime/player/Player.h"
+#include "runtime/player/Player.h"
 
 class PlayerTest : public ::testing::Test
 {

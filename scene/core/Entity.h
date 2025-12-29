@@ -10,7 +10,7 @@ namespace CHEngine
 {
 
 /**
- * Entity - Lightweight wrapper around entt::entity
+ * @brief Entity - Lightweight wrapper around entt::entity
  *
  * Provides convenient API for component operations.
  * Holds reference to parent Scene for validation.
@@ -21,8 +21,10 @@ public:
     Entity() = default;
     Entity(entt::entity handle, Scene *scene);
     Entity(const Entity &other) = default;
+    ~Entity() = default;
 
-    // Component Operations
+    // --- Component Operations ---
+public:
     template <typename T, typename... Args> T &AddComponent(Args &&...args)
     {
         if (HasComponent<T>())
@@ -31,7 +33,7 @@ public:
             return GetComponent<T>();
         }
 
-        return m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+        return m_Scene->GetRegistry().emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
     }
 
     template <typename T> T &GetComponent()
@@ -41,12 +43,12 @@ public:
             CD_CORE_ERROR("[Entity] Entity does not have component!");
         }
 
-        return m_Scene->m_Registry.get<T>(m_EntityHandle);
+        return m_Scene->GetRegistry().get<T>(m_EntityHandle);
     }
 
     template <typename T> bool HasComponent()
     {
-        return m_Scene->m_Registry.all_of<T>(m_EntityHandle);
+        return m_Scene->GetRegistry().all_of<T>(m_EntityHandle);
     }
 
     template <typename T> void RemoveComponent()
@@ -57,10 +59,11 @@ public:
             return;
         }
 
-        m_Scene->m_Registry.remove<T>(m_EntityHandle);
+        m_Scene->GetRegistry().remove<T>(m_EntityHandle);
     }
 
-    // Operators
+    // --- Operators ---
+public:
     operator bool() const
     {
         return m_EntityHandle != entt::null && m_Scene != nullptr;
@@ -84,6 +87,7 @@ public:
         return !(*this == other);
     }
 
+    // --- Member Variables ---
 private:
     entt::entity m_EntityHandle{entt::null};
     Scene *m_Scene = nullptr;

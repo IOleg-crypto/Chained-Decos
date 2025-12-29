@@ -1,6 +1,12 @@
 set(COLLISION_SOURCES
     core/CollisionManager.cpp
     core/CollisionManager.h
+    core/CollisionSpatialGrid.cpp
+    core/CollisionSpatialGrid.h
+    core/CollisionModelProcessor.cpp
+    core/CollisionModelProcessor.h
+    core/CollisionPredictionCache.cpp
+    core/CollisionPredictionCache.h
     interfaces/ICollisionManager.h
     colsystem/CollisionSystem.cpp
     colsystem/CollisionSystem.h

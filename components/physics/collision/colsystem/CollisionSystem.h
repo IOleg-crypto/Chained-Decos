@@ -1,15 +1,13 @@
 #ifndef COLLISIONSYSTEM_H
 #define COLLISIONSYSTEM_H
 
-#include <algorithm>
-#include <cstdint>
 #include <limits>
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
 
-#include "../structures/CollisionStructures.h"
+#include "components/physics/collision/structures/CollisionStructures.h"
 
 struct BVHNode
 {
@@ -52,18 +50,9 @@ public:
 
 public:
     // AABB getters (using raylib BoundingBox)
-    Vector3 GetMin() const
-    {
-        return m_bounds.min;
-    }
-    Vector3 GetMax() const
-    {
-        return m_bounds.max;
-    }
-    BoundingBox GetBoundingBox() const
-    {
-        return m_bounds;
-    }
+    Vector3 GetMin() const;
+    Vector3 GetMax() const;
+    BoundingBox GetBoundingBox() const;
     Vector3 GetCenter() const;
     Vector3 GetSize() const;
 
@@ -123,18 +112,9 @@ private:
 
 public:
     // Compatibility helpers expected by CollisionManager (legacy Octree paths)
-    bool IntersectsBVH(const Collision &other) const
-    {
-        return Intersects(other);
-    }
-    bool IsUsingBVH() const
-    {
-        return m_bvhRoot != nullptr;
-    }
-    bool IsUsingOctree() const
-    {
-        return IsUsingBVH();
-    }
+    bool IntersectsBVH(const Collision &other) const;
+    bool IsUsingBVH() const;
+    bool IsUsingOctree() const;
     bool RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
                        float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const;
 

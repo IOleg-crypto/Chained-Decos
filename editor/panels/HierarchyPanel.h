@@ -13,15 +13,18 @@ namespace CHEngine
 {
 class Scene;
 
+/**
+ * @brief Panel for displaying and managing scene hierarchy
+ */
 class HierarchyPanel
 {
 public:
     HierarchyPanel() = default;
     HierarchyPanel(const std::shared_ptr<GameScene> &scene);
+    ~HierarchyPanel() = default;
 
-    void SetContext(const std::shared_ptr<GameScene> &scene);
-    void SetSceneContext(const std::shared_ptr<Scene> &scene);
-
+    // --- Panel Lifecycle ---
+public:
     void OnImGuiRender(SelectionType selectionType, int selectedIndex,
                        const std::function<void(SelectionType, int)> &onSelect,
                        const std::function<void()> &onAddModel,
@@ -32,15 +35,15 @@ public:
                        const std::function<void()> &onCreateEntity = nullptr,
                        const std::function<void(entt::entity)> &onDeleteEntity = nullptr);
 
-    bool IsVisible() const
-    {
-        return m_isVisible;
-    }
-    void SetVisible(bool visible)
-    {
-        m_isVisible = visible;
-    }
+    // --- Configuration & Context ---
+public:
+    void SetContext(const std::shared_ptr<GameScene> &scene);
+    void SetSceneContext(const std::shared_ptr<Scene> &scene);
 
+    bool IsVisible() const;
+    void SetVisible(bool visible);
+
+    // --- Member Variables ---
 private:
     std::shared_ptr<::GameScene> m_Context;
     std::shared_ptr<Scene> m_SceneContext;

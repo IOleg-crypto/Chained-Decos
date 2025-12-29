@@ -1,10 +1,10 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
-#include "../colsystem/CollisionSystem.h"
-#include "../interfaces/ICollisionManager.h"
+#include "components/physics/collision/colsystem/CollisionSystem.h"
+#include "components/physics/collision/interfaces/ICollisionManager.h"
 
-#include "scene/resources/model/ModelConfig.h"
+#include "scene/ecs/Entity.h"
 #include <algorithm>
 #include <array>
 #include <execution>
@@ -12,10 +12,13 @@
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
-#include <scene/ecs/Entity.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "components/physics/collision/core/CollisionModelProcessor.h"
+#include "components/physics/collision/core/CollisionPredictionCache.h"
+#include "components/physics/collision/core/CollisionSpatialGrid.h"
 
 // Include ModelLoader header
 #include "scene/resources/model/Model.h"
@@ -99,30 +102,17 @@ public:
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
                                   Vector3 position, float scale, const ModelLoader &models);
 
-    // Create a base collision for caching (AABB or BVH)
-    std::shared_ptr<Collision> CreateBaseCollision(const Model &model, const std::string &modelName,
-                                                   const ModelFileConfig *config,
-                                                   bool needsPreciseCollision);
-
-    // Create precise collision (Triangle/BVH) for an instance
-    Collision CreatePreciseInstanceCollision(const Model &model, Vector3 position, float scale,
-                                             const ModelFileConfig *config);
-
-    // Create precise collision from cached triangles to avoid re-reading model meshes
-    Collision CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
-                                                       Vector3 position, float scale);
-
-    // Create simple AABB collision for an instance
-    Collision CreateSimpleAABBInstanceCollision(const Collision &cachedCollision,
-                                                const Vector3 &position, float scale);
-
     // Prediction cache management
     void UpdateFrameCache();
     void ClearExpiredCache();
-    size_t GetPredictionCacheHash(const Collision &playerCollision) const;
 
 private:
-    std::vector<std::shared_ptr<Collision>> m_collisionObjects; // All collision objects
+    std::vector<std::shared_ptr<Collision>> m_collisionObjects;
+
+    // Extracted helper classes
+    CollisionSpatialGrid m_grid;
+    CollisionModelProcessor m_modelProcessor;
+    CollisionPredictionCache m_cache;
 
     // Cache to prevent rebuilding precise collisions for same models
     std::unordered_map<std::string, std::shared_ptr<Collision>> m_collisionCache;
@@ -131,54 +121,10 @@ private:
     std::unordered_map<std::string, int> m_preciseCollisionCountPerModel;
     static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 50;
 
-    // Spatial partitioning for faster collision queries
-    struct GridKey
-    {
-        int x, z;
-        bool operator==(const GridKey &other) const
-        {
-            return x == other.x && z == other.z;
-        }
-    };
-
-    struct GridKeyHash
-    {
-        std::size_t operator()(const GridKey &key) const
-        {
-            return std::hash<int>()(key.x) ^ (std::hash<int>()(key.z) << 1);
-        }
-    };
-
-    std::unordered_map<GridKey, std::vector<size_t>, GridKeyHash> m_spatialGrid;
-
     // Dynamic Entity Storage
     std::unordered_map<ECS::EntityID, std::shared_ptr<Collision>> m_entityColliders;
 
-    // Spatial grid for dynamic entities (rebuilt frequently)
-    std::unordered_map<GridKey, std::vector<ECS::EntityID>, GridKeyHash> m_entitySpatialGrid;
-    float m_entityGridCellSize = 10.0f;
-
-    void UpdateEntitySpatialPartitioning();
-
-    // Collision prediction cache for frequently checked objects
-    struct PredictionCacheEntry
-    {
-        bool hasCollision;
-        Vector3 response;
-        size_t frameCount;
-    };
-
-    std::unordered_map<size_t, PredictionCacheEntry> m_predictionCache;
     size_t m_currentFrame = 0;
-    static constexpr size_t CACHE_LIFETIME_FRAMES = 5;
-    static constexpr size_t MAX_PREDICTION_CACHE_SIZE = 1000;
-
-    // Cache size management
-    void ManageCacheSize();
-
-    // Shape analysis methods for automatic collision type determination
-    bool AnalyzeModelShape(const Model &model, const std::string &modelName);
-    bool AnalyzeGeometryIrregularity(const Model &model);
 };
 
 #endif // COLLISIONMANAGER_H

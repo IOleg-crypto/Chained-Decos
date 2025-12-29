@@ -8,6 +8,11 @@
 
 namespace CHEngine
 {
+
+// =========================================================================
+// Configuration & Context
+// =========================================================================
+
 HierarchyPanel::HierarchyPanel(const std::shared_ptr<::GameScene> &scene) : m_Context(scene)
 {
 }
@@ -21,6 +26,20 @@ void HierarchyPanel::SetSceneContext(const std::shared_ptr<Scene> &scene)
 {
     m_SceneContext = scene;
 }
+
+bool HierarchyPanel::IsVisible() const
+{
+    return m_isVisible;
+}
+
+void HierarchyPanel::SetVisible(bool visible)
+{
+    m_isVisible = visible;
+}
+
+// =========================================================================
+// Panel Lifecycle
+// =========================================================================
 
 void HierarchyPanel::OnImGuiRender(SelectionType selectionType, int selectedIndex,
                                    const std::function<void(SelectionType, int)> &onSelect,

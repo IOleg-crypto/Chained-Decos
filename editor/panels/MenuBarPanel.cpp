@@ -10,21 +10,37 @@ void MenuBarPanel::OnImGuiRender(const PanelVisibility &visibility,
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("New", "Ctrl+N"))
+            if (ImGui::MenuItem("New Project"))
+                if (callbacks.OnNewProject)
+                    callbacks.OnNewProject();
+            if (ImGui::MenuItem("Open Project..."))
+                if (callbacks.OnOpenProject)
+                    callbacks.OnOpenProject();
+            if (ImGui::MenuItem("Close Project"))
+                if (callbacks.OnCloseProject)
+                    callbacks.OnCloseProject();
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("New Scene", "Ctrl+N"))
                 if (callbacks.OnNew)
                     callbacks.OnNew();
-            if (ImGui::MenuItem("Open...", "Ctrl+O"))
+            if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
                 if (callbacks.OnOpen)
                     callbacks.OnOpen();
+
             ImGui::Separator();
-            if (ImGui::MenuItem("Save", "Ctrl+S"))
+
+            if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
                 if (callbacks.OnSave)
                     callbacks.OnSave();
-            if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
+            if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
                 if (callbacks.OnSaveAs)
                     callbacks.OnSaveAs();
+
             ImGui::Separator();
-            if (ImGui::MenuItem("Exit"))
+
+            if (ImGui::MenuItem("Exit", "Alt+F4"))
                 if (callbacks.OnExit)
                     callbacks.OnExit();
             ImGui::EndMenu();

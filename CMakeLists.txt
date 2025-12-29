@@ -102,6 +102,9 @@ if(WIN32)
 endif()
 
 
+# Global include directories - allow including from project root
+include_directories(${CMAKE_SOURCE_DIR})
+
 include(FetchContent)
 
 find_package(Threads REQUIRED)
@@ -220,7 +223,8 @@ add_subdirectory(events)
 add_subdirectory(core)
 add_subdirectory(components)
 add_subdirectory(scene)
-add_subdirectory(project/Runtime)
+add_subdirectory(project)
+add_subdirectory(runtime)
 
 if(BUILD_TESTS)
     add_subdirectory(tests ${CMAKE_CURRENT_BINARY_DIR}/tests)

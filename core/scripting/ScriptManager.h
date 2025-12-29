@@ -34,10 +34,7 @@ public:
     void InitializeScripts(entt::registry &registry);
     void UpdateScripts(entt::registry &registry, float deltaTime);
 
-    void SetActiveRegistry(entt::registry *registry)
-    {
-        m_activeRegistry = registry;
-    }
+    void SetActiveRegistry(entt::registry *registry);
 
     // Deprecated for now, ScriptManager should use Engine services directly
     void SetSceneManager(void *unused);

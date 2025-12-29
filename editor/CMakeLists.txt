@@ -4,8 +4,6 @@
 set(logic_sources
     logic/MapManager.cpp
     logic/MapManager.h
-    logic/ProjectData.cpp
-    logic/ProjectData.h
     logic/EditorSettings.cpp
     logic/EditorSettings.h
     logic/SceneManager.cpp
@@ -47,6 +45,8 @@ set(panels_sources
     panels/ToolbarPanel.h
     panels/MenuBarPanel.cpp
     panels/MenuBarPanel.h
+    panels/ProjectBrowserPanel.cpp
+    panels/ProjectBrowserPanel.h
     utils/EditorGrid.cpp
     utils/EditorGrid.h
     viewport/ViewportPicking.cpp
@@ -82,6 +82,7 @@ target_link_libraries(editor_logic PUBLIC
     nfd
     nlohmann_json::nlohmann_json
     map
+    project
 )
 
 add_library(editor_panels STATIC ${panels_sources})
@@ -100,6 +101,7 @@ target_link_libraries(editor_panels PUBLIC
     nlohmann_json::nlohmann_json
     cameracontroller
     editor_logic
+    project
 )
 
 add_library(editor_core STATIC ${editor_sources})
@@ -119,6 +121,7 @@ target_link_libraries(editor_core PUBLIC
     cameracontroller
     editor_panels
     RuntimeLib
+    project
 )
 
 add_executable(ChainedEditor

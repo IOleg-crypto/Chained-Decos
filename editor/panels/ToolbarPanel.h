@@ -6,11 +6,16 @@
 
 namespace CHEngine
 {
+/**
+ * @brief Top toolbar for quick scene actions and tool selection
+ */
 class ToolbarPanel
 {
 public:
     ToolbarPanel() = default;
+    ~ToolbarPanel() = default;
 
+    // --- Panel Lifecycle ---
 public:
     void OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode, Tool activeTool,
                        const std::function<void()> &onPlay, const std::function<void()> &onStop,

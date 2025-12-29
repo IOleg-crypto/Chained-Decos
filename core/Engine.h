@@ -3,12 +3,7 @@
 
 #include <entt/entt.hpp>
 #include <memory>
-#include <string>
-#include <vector>
 
-// Forward detections/Forward declarations are avoided as per user request
-// but for Engine members we need the full types or pointers.
-// Since we are cleaning up forward declarations later, I will add the necessary includes now.
 #include "core/ServiceRegistry.h"
 #include "core/interfaces/IEngine.h"
 #include "core/window/Window.h" // For WindowProps
@@ -35,6 +30,9 @@ namespace CHEngine
 {
 class EngineApplication;
 
+/**
+ * @brief Core Engine singleton that manages all major systems
+ */
 class Engine : public IEngine
 {
 public:
@@ -43,52 +41,56 @@ public:
     Engine();
     ~Engine();
 
-    // Core System Initialization
+    // --- Engine Lifecycle ---
+public:
     bool Initialize(const WindowProps &props);
-
     void Update(float deltaTime);
     void Shutdown() const;
 
-    // Core System Accessors (Overriding IEngine)
+    // --- System Accessors (IEngine Overrides) ---
+public:
     RenderManager &GetRenderManager() const override;
     IInputManager &GetInputManager() const override;
     IAudioManager &GetAudioManager() const override;
     CHEngine::IModelLoader &GetModelLoader() const override;
     ICollisionManager &GetCollisionManager() const override;
     IWorldManager &GetWorldManager() const override;
-    ScriptManager &GetScriptManager() const;
     IGuiManager &GetGuiManager() const override;
     CHEngine::SceneManager &GetSceneManager() const override;
-    ECSSceneManager &GetECSSceneManager() const;
     CHEngine::FontService &GetFontService() const override;
     CHEngine::TextureService &GetTextureService() const override;
     CHEngine::UIEventRegistry &GetUIEventRegistry() const override;
     entt::registry &GetECSRegistry() override;
 
+    // --- Extended Accessors ---
+public:
+    ScriptManager &GetScriptManager() const;
+    ECSSceneManager &GetECSSceneManager() const;
     class ModuleManager *GetModuleManager() const;
+    Window *GetWindow() const;
 
-    // Module registration
+    // --- Module & Service Management ---
+public:
     void RegisterModule(std::unique_ptr<IEngineModule> module) const;
 
-    // Generic Service Locator
     template <typename T> std::shared_ptr<T> GetService() const;
     template <typename T> void RegisterService(std::shared_ptr<T> service);
 
-    // Debug
-    bool IsDebugInfoVisible() const;
-    void SetDebugInfoVisible(bool visible);
-    bool IsCollisionDebugVisible() const;
-
-    // Application control
+    // --- Application Control ---
+public:
     void RequestExit() override;
     bool ShouldExit() const override;
-
-    // Window Access
-    Window *GetWindow() const;
 
     EngineApplication *GetAppRunner() const override;
     void SetAppRunner(EngineApplication *appRunner);
 
+    // --- Debug Utilities ---
+public:
+    bool IsDebugInfoVisible() const;
+    void SetDebugInfoVisible(bool visible);
+    bool IsCollisionDebugVisible() const;
+
+    // --- Member Variables ---
 private:
     static Engine *s_instance;
 

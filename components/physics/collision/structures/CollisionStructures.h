@@ -1,11 +1,9 @@
 #ifndef COLLISIONSTRUCTURES_H
 #define COLLISIONSTRUCTURES_H
 
-#include <cstdint>
-#include <memory>
+#include <functional>
 #include <raylib.h>
 #include <raymath.h>
-#include <vector>
 
 //
 // CollisionRay - represents a ray for ray casting
@@ -70,7 +68,22 @@ enum class CollisionType : uint8_t
     TRIANGLE_PRECISE // Brute force (triangle-to-triangle)
 };
 
+// Grid storage key for spatial partitioning
+struct GridKey
+{
+    int x, z;
+    bool operator==(const GridKey &other) const
+    {
+        return x == other.x && z == other.z;
+    }
+};
+
+struct GridKeyHash
+{
+    std::size_t operator()(const GridKey &key) const
+    {
+        return std::hash<int>()(key.x) ^ (std::hash<int>()(key.z) << 1);
+    }
+};
+
 #endif // COLLISIONSTRUCTURES_H
-
-
-
