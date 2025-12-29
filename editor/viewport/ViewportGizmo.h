@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VIEWPORT_GIZMO_H
+#define VIEWPORT_GIZMO_H
 
 #include "editor/EditorTypes.h"
 #include "scene/resources/map/GameScene.h"
@@ -12,10 +13,6 @@ namespace CHEngine
 {
 class CommandHistory;
 
-/**
- * @brief Hazel-style viewport gizmo system
- * Handles 3D gizmo rendering and interaction for object transformation
- */
 class ViewportGizmo
 {
 public:
@@ -82,6 +79,7 @@ private:
                          const Camera3D &camera);
     bool CheckGizmoHover(const Vector3 &handlePos, const Camera3D &camera, ImVec2 viewportSize);
 
+private:
     static float SnapValue(float value, float step)
     {
         if (step <= 0.0f)
@@ -91,3 +89,4 @@ private:
 };
 
 } // namespace CHEngine
+#endif // VIEWPORT_GIZMO_H
