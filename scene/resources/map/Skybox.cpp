@@ -1,6 +1,6 @@
 #include "Skybox.h"
 #include "core/Log.h"
-#include "core/config/configManager.h"
+#include "core/config/ConfigManager.h"
 #include "rlImGui/rlImGui.h"
 #include "rlgl.h"
 #include <filesystem>
