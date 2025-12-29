@@ -68,13 +68,16 @@ jobs:
         run: |
           cmake --build build \
             --config ${{ inputs.build_type }} \
-            --target ChainedDecos map_editor ChainedDecosUnitTests ChainedDecosIntegrationTests \
+            --target ChainedEditor ChainedEngineUnitTests ChainedEngineIntegrationTests \
             --parallel $(nproc)
 
       - name: Test
         run: |
-          if [[ -f "build/bin/tests/ChainedDecosUnitTests" ]]; then
-            build/bin/tests/ChainedDecosUnitTests || echo "⚠️ Unit tests failed"
+          if [[ -f "build/bin/tests/ChainedEngineUnitTests" ]]; then
+            build/bin/tests/ChainedEngineUnitTests || echo "Unit tests failed"
+          fi
+          if [[ -f "build/bin/tests/ChainedEngineIntegrationTests" ]]; then
+            build/bin/tests/ChainedEngineIntegrationTests || echo "Integration tests failed (might need display)"
           fi
 
       - name: Upload artifacts
