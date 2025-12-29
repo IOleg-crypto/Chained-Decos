@@ -296,4 +296,10 @@ void ViewportGizmo::DrawGizmo(const MapObjectData &obj, const Camera3D &camera, 
     // For Hazel-style, it's better to keep it clean.
 }
 
+float ViewportGizmo::SnapValue(float value, float step)
+{
+    if (step <= 0.0f)
+        return value;
+    return std::roundf(value / step) * step;
+}
 } // namespace CHEngine
