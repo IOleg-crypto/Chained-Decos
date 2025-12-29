@@ -1,8 +1,8 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
+#include "../colsystem/CollisionSystem.h"
 #include "../interfaces/ICollisionManager.h"
-#include "../system/collisionSystem.h"
 
 #include "scene/resources/model/ModelConfig.h"
 #include <algorithm>

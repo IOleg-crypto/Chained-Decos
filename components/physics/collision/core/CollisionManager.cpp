@@ -4,7 +4,7 @@
 #include <array>
 #include <cfloat>
 #include <compare>
-#include <components/physics/collision/system/CollisionSystem.h>
+#include <components/physics/collision/colsystem/CollisionSystem.h>
 #include <execution>
 #include <future>
 #include <raylib.h>

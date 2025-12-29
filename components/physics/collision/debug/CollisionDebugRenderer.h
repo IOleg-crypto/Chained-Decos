@@ -1,9 +1,10 @@
 #ifndef COLLISION_DEBUG_RENDERER_H
 #define COLLISION_DEBUG_RENDERER_H
 
-#include "../system/collisionSystem.h"
-#include <vector>
+#include "../colsystem/CollisionSystem.h"
 #include <raylib.h>
+#include <vector>
+
 
 // Only Render collision
 class CollisionDebugRenderer
@@ -33,9 +34,3 @@ private:
 };
 
 #endif
-
-
-
-
-
-
