@@ -3,13 +3,13 @@ cmake_minimum_required(VERSION 3.25)
 
 set(UNIT_TEST_SOURCES
     engine/PhysicsComponentTest.cpp
-    engine/collisionSystemTest.cpp
+    engine/CollisionSystemTest.cpp
 )
 
 set(INTEGRATION_TEST_SOURCES
     # game/playerTest.cpp - DISABLED (legacy Player class removed)
     # integration/GameIntegrationTest.cpp - DISABLED (legacy Menu class removed)
-    integration/skyboxTest.cpp
+    integration/SkyboxTest.cpp
     integration/EditorInputTest.cpp
 )
 

@@ -15,7 +15,7 @@ set(MAP_SOURCES
     MapRenderer.cpp
     MapRenderer.h
     Skybox.cpp
-    skybox.h
+    Skybox.h
 )
 
 add_library(map STATIC ${MAP_SOURCES})
