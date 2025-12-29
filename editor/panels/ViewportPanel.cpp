@@ -16,6 +16,39 @@
 namespace CHEngine
 {
 
+// =========================================================================
+// State & Configuration
+// =========================================================================
+
+bool ViewportPanel::IsFocused() const
+{
+    return m_Focused;
+}
+
+bool ViewportPanel::IsHovered() const
+{
+    return m_Hovered;
+}
+
+bool ViewportPanel::IsVisible() const
+{
+    return m_isVisible;
+}
+
+void ViewportPanel::SetVisible(bool visible)
+{
+    m_isVisible = visible;
+}
+
+ImVec2 ViewportPanel::GetSize() const
+{
+    return {(float)m_Width, (float)m_Height};
+}
+
+// =========================================================================
+// Panel Lifecycle
+// =========================================================================
+
 ViewportPanel::~ViewportPanel()
 {
     if (m_ViewportTexture.id != 0)
@@ -182,10 +215,24 @@ void ViewportPanel::OnImGuiRender(
             ImGui::EndDragDropTarget();
         }
 
+        // --- Stats Overlay ---
+        {
+            ImGui::SetCursorPos(ImVec2(10, 10));
+            ImGui::BeginChild("StatsOverlay", ImVec2(0, 0),
+                              ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeX |
+                                  ImGuiChildFlags_AutoResizeY,
+                              ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar |
+                                  ImGuiWindowFlags_NoBackground);
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "FPS: %d", GetFPS());
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Time: %.3f ms",
+                               GetFrameTime() * 1000.0f);
+            ImGui::EndChild();
+        }
+
         // --- Snapping Toolbar Overlay ---
         if (sceneState == SceneState::Edit)
         {
-            ImGui::SetCursorPos(ImVec2(10, 30));
+            ImGui::SetCursorPos(ImVec2(10, 50));
             ImGui::BeginChild("SnappingToolbar", ImVec2(0, 0),
                               ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysAutoResize |
                                   ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY,

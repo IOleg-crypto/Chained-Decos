@@ -354,4 +354,8 @@ void ScriptManager::BindGameplayAPI()
         });
 }
 
+void ScriptManager::SetActiveRegistry(entt::registry *registry)
+{
+    m_activeRegistry = registry;
+}
 } // namespace CHEngine

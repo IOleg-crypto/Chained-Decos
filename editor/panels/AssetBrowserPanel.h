@@ -15,20 +15,21 @@ public:
     AssetBrowserPanel();
     ~AssetBrowserPanel();
 
+    // --- Panel Lifecycle ---
+public:
     void OnImGuiRender();
 
-    bool IsVisible() const
-    {
-        return m_isVisible;
-    }
-    void SetVisible(bool visible)
-    {
-        m_isVisible = visible;
-    }
+    // --- Configuration ---
+public:
+    bool IsVisible() const;
+    void SetVisible(bool visible);
+    void SetRootDirectory(const std::filesystem::path &path);
 
+    // --- Internal Logic ---
 private:
     void RefreshAssets();
 
+    // --- Member Variables ---
 private:
     std::filesystem::path m_RootPath;
     std::filesystem::path m_CurrentDirectory;

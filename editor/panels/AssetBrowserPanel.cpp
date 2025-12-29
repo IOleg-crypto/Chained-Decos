@@ -21,6 +21,27 @@ AssetBrowserPanel::~AssetBrowserPanel()
     m_ThumbnailCache.clear();
 }
 
+// --- Configuration ---
+
+bool AssetBrowserPanel::IsVisible() const
+{
+    return m_isVisible;
+}
+
+void AssetBrowserPanel::SetVisible(bool visible)
+{
+    m_isVisible = visible;
+}
+
+void AssetBrowserPanel::SetRootDirectory(const std::filesystem::path &path)
+{
+    m_RootPath = path;
+    m_CurrentDirectory = m_RootPath;
+    RefreshAssets();
+}
+
+// --- Panel Lifecycle ---
+
 void AssetBrowserPanel::OnImGuiRender()
 {
     ImGui::Begin("File manager");

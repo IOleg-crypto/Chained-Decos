@@ -5,6 +5,10 @@ namespace CHEngine
 {
 ConsolePanel *ConsolePanel::s_Instance = nullptr;
 
+// =========================================================================
+// Lifecycle
+// =========================================================================
+
 ConsolePanel::ConsolePanel()
 {
     s_Instance = this;
@@ -17,11 +21,33 @@ ConsolePanel::~ConsolePanel()
         s_Instance = nullptr;
 }
 
+// =========================================================================
+// Configuration
+// =========================================================================
+
+bool ConsolePanel::IsVisible() const
+{
+    return m_isVisible;
+}
+
+void ConsolePanel::SetVisible(bool visible)
+{
+    m_isVisible = visible;
+}
+
+// =========================================================================
+// Logging API
+// =========================================================================
+
 void ConsolePanel::AddLog(const char *message, LogMessage::Level level)
 {
     if (s_Instance)
         s_Instance->Log(message, level);
 }
+
+// =========================================================================
+// Panel Lifecycle
+// =========================================================================
 
 void ConsolePanel::OnImGuiRender()
 {

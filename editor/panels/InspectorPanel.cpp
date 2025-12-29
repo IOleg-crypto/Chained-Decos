@@ -2,6 +2,7 @@
 #include "editor/utils/IconsFontAwesome5.h"
 #include "nfd.h"
 #include "scene/core/Scene.h"
+#include "scene/ecs/components/ScriptingComponents.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/core/IDComponent.h"
 #include "scene/ecs/components/core/TagComponent.h"
@@ -13,6 +14,35 @@
 
 namespace CHEngine
 {
+
+// =========================================================================
+// Callbacks & Configuration
+// =========================================================================
+
+void InspectorPanel::SetPropertyChangeCallback(
+    std::function<void(int, const MapObjectData &, const MapObjectData &)> cb)
+{
+    m_onPropertyChange = cb;
+}
+
+void InspectorPanel::SetSkyboxCallback(std::function<void(const std::string &)> cb)
+{
+    m_onSkyboxSelected = cb;
+}
+
+bool InspectorPanel::IsVisible() const
+{
+    return m_isVisible;
+}
+
+void InspectorPanel::SetVisible(bool visible)
+{
+    m_isVisible = visible;
+}
+
+// =========================================================================
+// Panel Lifecycle
+// =========================================================================
 void InspectorPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene, int selectedObjectIndex,
                                    MapObjectData *selectedEntity)
 {
@@ -93,6 +123,58 @@ void InspectorPanel::DrawEntityComponents(const std::shared_ptr<Scene> &scene, e
             DrawVec3Control("Translation", transform.position);
             DrawVec3Control("Rotation", transform.rotation);
             DrawVec3Control("Scale", transform.scale, 1.0f);
+        }
+    }
+
+    // 3. Lua Script Component
+    if (registry.all_of<LuaScriptComponent>(entity))
+    {
+        if (ImGui::CollapsingHeader("Lua Script", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            auto &script = registry.get<LuaScriptComponent>(entity);
+
+            char scriptBuffer[256];
+            memset(scriptBuffer, 0, sizeof(scriptBuffer));
+            strncpy(scriptBuffer, script.scriptPath.c_str(), sizeof(scriptBuffer));
+
+            ImGui::Text("Script Path:");
+            if (ImGui::InputText("##ScriptPath", scriptBuffer, sizeof(scriptBuffer)))
+            {
+                script.scriptPath = std::string(scriptBuffer);
+                script.initialized = false; // Mark for re-initialization
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("...##BrowseScript"))
+            {
+                nfdfilteritem_t filterItem[1] = {{"Lua Script", "lua"}};
+                nfdchar_t *outPath = nullptr;
+                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+
+                if (result == NFD_OKAY)
+                {
+                    script.scriptPath = outPath;
+                    script.initialized = false;
+                    NFD_FreePath(outPath);
+                }
+            }
+
+            ImGui::Spacing();
+            ImGui::TextDisabled("Status: %s",
+                                script.initialized ? "Initialized" : "Not Initialized");
+
+            if (ImGui::Button("Remove Script Component"))
+            {
+                registry.remove<LuaScriptComponent>(entity);
+            }
+        }
+    }
+    else
+    {
+        // Add Script Component button
+        if (ImGui::Button("Add Lua Script Component"))
+        {
+            registry.emplace<LuaScriptComponent>(entity);
         }
     }
 }
