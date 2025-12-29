@@ -9,14 +9,14 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include <CameraController/CameraController.h>
-#include <Color/ColorParser.h>
-#include <Engine/Engine.h>
-#include <Input/core/InputManager.h>
-#include <Map/core/SceneLoader.h>
-#include <Menu/Menu.h>
-#include <Model/Model.h>
-#include <player/player.h>
+// #include <CameraController/CameraController.h>
+// #include <Color/ColorParser.h>
+// #include <Engine/Engine.h>
+// #include <Input/core/InputManager.h>
+// #include <Map/core/SceneLoader.h>
+// #include <Menu/Menu.h>
+// #include <Model/Model.h>
+// #include <player/player.h>
 
 using json = nlohmann::json;
 
@@ -795,4 +795,3 @@ TEST(StressTest, MultipleModelInstances)
 
     EXPECT_EQ(instances.size(), 100);
 }
-

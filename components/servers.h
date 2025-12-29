@@ -23,7 +23,7 @@
 #include "input/core/InputManager.h"
 
 // Physics server
-#include "physics/collision/core/collisionManager.h"
+#include "physics/collision/core/CollisionManager.h"
 #include "physics/collision/debug/collisionDebugRenderer.h"
 #include "physics/collision/interfaces/ICollisionManager.h"
 #include "physics/collision/structures/collisionComponent.h"
@@ -32,9 +32,3 @@
 #include "physics/dynamics/components/SurfaceComponent.h"
 
 #endif // SERVERS_H
-
-
-
-
-
-

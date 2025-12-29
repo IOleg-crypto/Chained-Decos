@@ -1,7 +1,7 @@
 #ifndef MAP_COLLISION_INITIALIZER_H
 #define MAP_COLLISION_INITIALIZER_H
 
-#include "components/physics/collision/core/collisionManager.h"
+#include "components/physics/collision/core/CollisionManager.h"
 #include "core/interfaces/IPlayer.h"
 #include "scene/resources/map/SceneLoader.h"
 #include "scene/resources/model/Model.h"
