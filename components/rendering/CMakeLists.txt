@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 # Rendering server
 set(RENDER_SOURCES
     core/RenderManager.cpp
-    shader/shaderManager.cpp
+    shader/ShaderManager.cpp
     utils/RenderUtils.cpp
     helpers/ImGuiHelper.cpp
 )

@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.20)
 # ECS library
 set(ECS_SOURCES
     ECSRegistry.h
-    Components.h
-    Systems.h
+    components.h
+    systems.h
     components/TransformComponent.h
     components/VelocityComponent.h
-    components/playerComponent.h
+    components/PlayerComponent.h
     components/RenderComponent.h
     components/PhysicsData.h
     components/AudioComponent.h
