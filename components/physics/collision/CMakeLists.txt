@@ -4,11 +4,11 @@ set(COLLISION_SOURCES
     interfaces/ICollisionManager.h
     system/CollisionSystem.cpp
     system/CollisionSystem.h
-    structures/collisionStructures.cpp
-    structures/collisionStructures.h
-    structures/collisionComponent.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/debug/collisionDebugRenderer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/debug/collisionDebugRenderer.h
+    structures/CollisionStructures.cpp
+    structures/CollisionStructures.h
+    structures/CollisionComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/CollisionDebugRenderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/CollisionDebugRenderer.h
 )
 
 add_library(collision STATIC ${COLLISION_SOURCES})

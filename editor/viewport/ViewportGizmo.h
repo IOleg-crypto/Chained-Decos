@@ -81,12 +81,7 @@ private:
     bool CheckGizmoHover(const Vector3 &handlePos, const Camera3D &camera, ImVec2 viewportSize);
 
 private:
-    static float SnapValue(float value, float step)
-    {
-        if (step <= 0.0f)
-            return value;
-        return std::roundf(value / step) * step;
-    }
+    static float SnapValue(float value, float step);
 };
 
 } // namespace CHEngine
