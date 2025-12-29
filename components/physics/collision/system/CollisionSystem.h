@@ -9,7 +9,7 @@
 #include <raymath.h>
 #include <vector>
 
-#include "../structures/collisionStructures.h"
+#include "../structures/CollisionStructures.h"
 
 struct BVHNode
 {
