@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.29)
 set(UNIT_TEST_SOURCES
     engine/PhysicsComponentTest.cpp
     engine/CollisionSystemTest.cpp
+    engine/SettingsManagerTest.cpp
 )
 
 set(INTEGRATION_TEST_SOURCES
@@ -21,6 +22,7 @@ target_link_libraries(ChainedEngineUnitTests
     PRIVATE
         GTest::gtest_main
         GTest::gmock_main
+        core
 )
 
 # Create integration test executable (with full game dependencies)
@@ -38,15 +40,16 @@ target_link_libraries(ChainedEngineIntegrationTests
 target_include_directories(ChainedEngineUnitTests
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}
 )
 
 # Include directories for integration tests
 target_include_directories(ChainedEngineIntegrationTests
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/include/raylib/src
+        ${CMAKE_SOURCE_DIR}/include/entt/src
 )
 
 # Scene/Entity System Test (standalone validation)

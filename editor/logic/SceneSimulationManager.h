@@ -7,18 +7,23 @@
 #include <string>
 
 #include "core/application/EngineApplication.h"
-#include "project/Runtime/RuntimeLayer.h"
+#include "runtime/RuntimeLayer.h"
 #include "scene/core/Scene.h"
 
 namespace CHEngine
 {
 
+/**
+ * @brief Manager for toggling between Edit and Play modes
+ */
 class SceneSimulationManager
 {
 public:
     SceneSimulationManager();
     ~SceneSimulationManager() = default;
 
+    // --- Simulation Lifecycle ---
+public:
     void OnScenePlay(std::shared_ptr<GameScene> &activeScene,
                      std::shared_ptr<GameScene> &editorScene, std::shared_ptr<Scene> &newScene,
                      RuntimeMode runtimeMode, CHD::RuntimeLayer **runtimeLayer,
@@ -27,24 +32,15 @@ public:
                      std::shared_ptr<GameScene> editorScene, std::shared_ptr<Scene> &newScene,
                      CHD::RuntimeLayer **runtimeLayer, EngineApplication *app);
 
-    SceneState GetSceneState() const
-    {
-        return m_SceneState;
-    }
-    void SetSceneState(SceneState state)
-    {
-        m_SceneState = state;
-    }
+    // --- Getters & Setters ---
+public:
+    SceneState GetSceneState() const;
+    void SetSceneState(SceneState state);
 
-    RuntimeMode GetRuntimeMode() const
-    {
-        return m_RuntimeMode;
-    }
-    void SetRuntimeMode(RuntimeMode mode)
-    {
-        m_RuntimeMode = mode;
-    }
+    RuntimeMode GetRuntimeMode() const;
+    void SetRuntimeMode(RuntimeMode mode);
 
+    // --- Member Variables ---
 private:
     SceneState m_SceneState = SceneState::Edit;
     RuntimeMode m_RuntimeMode = RuntimeMode::Standalone;

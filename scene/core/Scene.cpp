@@ -10,6 +10,44 @@
 namespace CHEngine
 {
 
+// =========================================================================
+// Getters & Setters
+// =========================================================================
+
+entt::registry &Scene::GetRegistry()
+{
+    return m_Registry;
+}
+
+const entt::registry &Scene::GetRegistry() const
+{
+    return m_Registry;
+}
+
+const std::string &Scene::GetName() const
+{
+    return m_Name;
+}
+
+void Scene::SetName(const std::string &name)
+{
+    m_Name = name;
+}
+
+uint32_t Scene::GetViewportWidth() const
+{
+    return m_ViewportWidth;
+}
+
+uint32_t Scene::GetViewportHeight() const
+{
+    return m_ViewportHeight;
+}
+
+// =========================================================================
+// Lifecycle
+// =========================================================================
+
 Scene::Scene(const std::string &name) : m_Name(name)
 {
     CD_CORE_INFO("[Scene] Created scene: %s", name.c_str());
