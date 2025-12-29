@@ -1,5 +1,5 @@
 # Test configuration
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.29)
 
 set(UNIT_TEST_SOURCES
     engine/PhysicsComponentTest.cpp
