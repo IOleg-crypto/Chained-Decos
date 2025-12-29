@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VIEWPORT_PICKING_H
+#define VIEWPORT_PICKING_H
 
 #include "scene/resources/map/GameScene.h"
 #include <functional>
@@ -24,3 +25,5 @@ private:
 };
 
 } // namespace CHEngine
+
+#endif // VIEWPORT_PICKING_H
