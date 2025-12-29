@@ -4,7 +4,7 @@
 #include "IWorldManager.h"
 #include "MapCollisionInitializer.h"
 #include "World.h"
-#include "components/physics/collision/core/collisionManager.h"
+#include "components/physics/collision/core/CollisionManager.h"
 #include "components/rendering/core/RenderManager.h"
 #include "core/interfaces/IEngineModule.h"
 #include "core/interfaces/ILevelManager.h"

@@ -7,12 +7,11 @@
 #include "components/AudioComponent.h"
 #include "components/CameraComponent.h"
 #include "components/PhysicsData.h"
+#include "components/PlayerComponent.h"
 #include "components/RenderComponent.h"
 #include "components/ScriptingComponents.h"
 #include "components/TransformComponent.h"
 #include "components/UtilityComponents.h"
 #include "components/VelocityComponent.h"
-#include "components/playerComponent.h"
-
 
 #endif // ECS_COMPONENTS_H
