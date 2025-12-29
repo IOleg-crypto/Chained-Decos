@@ -56,7 +56,7 @@ jobs:
       - name: Configure
         run: |
           cmake -B build \
-            -G "Unix Makefiles" \
+            -G "Ninja" \
             -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
