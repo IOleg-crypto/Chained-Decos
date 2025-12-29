@@ -1,6 +1,6 @@
 set(COLLISION_SOURCES
-    core/collisionManager.cpp
-    core/collisionManager.h
+    core/CollisionManager.cpp
+    core/CollisionManager.h
     interfaces/ICollisionManager.h
     system/collisionSystem.cpp
     system/collisionSystem.h
