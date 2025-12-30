@@ -49,6 +49,7 @@ Engine::~Engine()
 bool Engine::Initialize(const CHEngine::WindowProps &props)
 {
     CD_CORE_INFO("Initializing Core Services via ServiceRegistry...");
+    m_initialized = true;
 
     // 0. Window Creation
     m_Window = std::make_unique<CHEngine::Window>(props);
@@ -121,7 +122,11 @@ void Engine::Update(float deltaTime)
 
 void Engine::Shutdown() const
 {
+    if (!m_initialized)
+        return;
+
     CD_CORE_INFO("Shutting down Engine and clearing ServiceRegistry...");
+    m_initialized = false;
 
     if (m_ModuleManager)
         m_ModuleManager->ShutdownAllModules();

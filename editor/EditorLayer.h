@@ -60,6 +60,7 @@ public:
     void OpenScene();
     void SaveScene();
     void SaveSceneAs();
+    void PlayInRuntime();
 
     // --- Project Management ---
 public:

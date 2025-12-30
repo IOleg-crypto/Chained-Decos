@@ -41,8 +41,9 @@ public:
     // Skybox operations
     void LoadSkyboxForScene(GameScene &map);
 
-private:
     bool SaveSceneToFile(const GameScene &map, const std::string &path);
+
+private:
 };
 
 // ============================================================================

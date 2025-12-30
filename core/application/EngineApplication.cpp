@@ -218,7 +218,11 @@ void EngineApplication::Render()
 
 void EngineApplication::Shutdown()
 {
+    if (!m_initialized)
+        return;
+
     CD_CORE_INFO("Shutting down application...");
+    m_initialized = false;
 
     if (m_app)
     {

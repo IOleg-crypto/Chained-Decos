@@ -8,6 +8,7 @@
 #include "core/interfaces/ILevelManager.h"
 #include "core/renderer/Renderer.h"
 #include "logic/RuntimeInitializer.h"
+#include "project/Project.h"
 #include "scene/main/LevelManager.h"
 #include <raylib.h>
 #include <rlImGui.h>
@@ -81,7 +82,7 @@ void RuntimeApplication::OnConfigure(IApplication::EngineConfig &config)
     config.width = width;
     config.height = height;
     config.title = "Chained Decos";
-    config.fullscreen = m_gameConfig.fullscreen;
+    config.fullscreen = m_gameConfig.fullscreen = false;
     config.vsync = true;
     config.enableAudio = true;
 }
@@ -90,48 +91,111 @@ void RuntimeApplication::OnRegister()
 {
     auto &engine = Engine::Instance();
 
-    // Register LevelManager (Specialized for CHD)
-    auto levelManager = std::make_shared<LevelManager>();
-    engine.RegisterService<ILevelManager>(levelManager);
+    // Register LevelManager as a module (Specialized for CHD)
+    // It will register itself as ILevelManager service during initialization
+    engine.RegisterModule(std::make_unique<LevelManager>());
 
     CD_INFO("[RuntimeApplication] Game systems registered (LevelManager).");
 }
 
 void RuntimeApplication::OnStart()
 {
-    CD_INFO("[RuntimeApplication] Starting game...");
+    CD_INFO("[RuntimeApplication] Pre-initialization...");
 
-    // Initialize Static Singletons
-    // Note: Renderer/Input/Audio are already initialized by Engine::Initialize
+    // 1. Determine which scene to load
+    std::string sceneToLoad = m_gameConfig.mapPath;
 
+    // If no scene provided via command line, search for project file
+    if (sceneToLoad.empty())
+    {
+        std::filesystem::path root(PROJECT_ROOT_DIR);
+        std::shared_ptr<Project> project = nullptr;
+        try
+        {
+            for (auto const &dir_entry : std::filesystem::recursive_directory_iterator(root))
+            {
+                if (dir_entry.path().extension() == ".chproject")
+                {
+                    CD_INFO("[RuntimeApplication] Found project file: %s",
+                            dir_entry.path().string().c_str());
+                    project = Project::Load(dir_entry.path());
+                    if (project)
+                        break;
+                }
+            }
+        }
+        catch (...)
+        {
+            CD_WARN("[RuntimeApplication] Error while searching for project file");
+        }
+
+        if (project)
+        {
+            std::string startScene = project->GetConfig().startScene;
+            if (!startScene.empty())
+            {
+                std::filesystem::path scenePath = project->GetProjectDirectory() / startScene;
+                sceneToLoad = scenePath.string();
+                CD_INFO("[RuntimeApplication] Loading start_scene from project: %s",
+                        sceneToLoad.c_str());
+            }
+        }
+    }
+
+    // 2. Initialize input, audio, and basic scene
+    InitInput();
     Audio::LoadSound("player_fall",
                      std::string(PROJECT_ROOT_DIR) + "/resources/audio/wind-gust_fall.wav");
 
-    // Initialize Scene System (new architecture)
     m_ActiveScene = std::make_shared<Scene>("RuntimeScene");
-    CD_INFO("[RuntimeApplication] Created active scene: %s", m_ActiveScene->GetName().c_str());
-
     auto levelManager = Engine::Instance().GetService<ILevelManager>();
     if (levelManager)
+    {
         levelManager->SetActiveScene(m_ActiveScene);
 
-    // Initial player state
-    Vector3 spawnPos = {0, 2, 0};
+        // Pre-load all game models so they are available for the scene entities
+        if (auto modelLoader = std::dynamic_pointer_cast<ModelLoader>(
+                Engine::Instance().GetService<IModelLoader>()))
+        {
+            modelLoader->LoadGameModels();
+        }
+
+        // 3. Load the scene content BEFORE spawning player or pushing layers
+        if (!sceneToLoad.empty())
+        {
+            CD_INFO("[RuntimeApplication] Loading scene: %s", sceneToLoad.c_str());
+            if (levelManager->LoadScene(sceneToLoad))
+            {
+                // Sync legacy objects to ECS entities
+                levelManager->RefreshMapEntities();
+                levelManager->RefreshUIEntities();
+                m_isGameInitialized = true;
+            }
+            else
+            {
+                CD_ERROR("[RuntimeApplication] Failed to load scene: %s", sceneToLoad.c_str());
+            }
+        }
+    }
+
+    // 4. Initialize player and camera in the loaded world
+    // Use spawn position from level manager if available
+    Vector3 spawnPos =
+        (levelManager && m_isGameInitialized) ? levelManager->GetSpawnPosition() : Vector3{0, 5, 0};
 
     // Load mouse sensitivity from config
     ConfigManager configManager;
     configManager.LoadFromFile(std::string(PROJECT_ROOT_DIR) + "/game.cfg");
     float sensitivity = configManager.GetMouseSensitivity();
     if (sensitivity <= 0.0f)
-        sensitivity = 0.15f; // Default if not set
+        sensitivity = 0.15f;
 
-    // Initialize player via Initializer
     m_playerEntity =
         CHD::RuntimeInitializer::InitializePlayer(m_ActiveScene.get(), spawnPos, sensitivity);
+    CD_INFO("[RuntimeApplication] ECS Player entity created at (%.2f, %.2f, %.2f)", spawnPos.x,
+            spawnPos.y, spawnPos.z);
 
-    CD_INFO("[RuntimeApplication] ECS Player entity created");
-
-    // Initialize camera to follow player
+    // Initial camera setup
     Camera3D camera = {0};
     camera.position = {spawnPos.x, spawnPos.y + 5.0f, spawnPos.z + 10.0f};
     camera.target = spawnPos;
@@ -139,41 +203,26 @@ void RuntimeApplication::OnStart()
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
     Renderer::SetCamera(camera);
-    CD_INFO("[RuntimeApplication] Camera initialized at (%.2f, %.2f, %.2f)", camera.position.x,
-            camera.position.y, camera.position.z);
 
-    // Push RuntimeLayer using the new Layer system
+    // 5. Setup Viewport and Layers
     if (GetAppRunner())
     {
         GetAppRunner()->PushLayer(new CHD::RuntimeLayer(m_ActiveScene));
     }
 
-    // Load initial map if provided (from editor or command line)
-    if (!m_gameConfig.mapPath.empty())
-    {
-        CD_INFO("[RuntimeApplication] Loading scene from: %s", m_gameConfig.mapPath.c_str());
-        auto levelManager = Engine::Instance().GetService<ILevelManager>();
-        if (levelManager && levelManager->LoadScene(m_gameConfig.mapPath))
-        {
-            m_isGameInitialized = true;
-
-            CD_INFO("[RuntimeApplication] Scene loaded successfully, game initialized");
-        }
-        else
-        {
-            CD_ERROR("[RuntimeApplication] Failed to load scene: %s", m_gameConfig.mapPath.c_str());
-        }
-    }
-    // Initialize input
-    InitInput();
-
     // Set window icon
-    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/CHEngine.jpg");
-    ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    SetWindowIcon(m_icon);
-    UnloadImage(m_icon);
+    Image m_icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/ChainedDecos.jpg");
+    if (m_icon.data != nullptr)
+    {
+        ImageFormat(&m_icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+        SetWindowIcon(m_icon);
+        UnloadImage(m_icon);
+    }
 
-    CD_INFO("[RuntimeApplication] Game application initialized with ECS.");
+    // Disable cursor for game control (mouse delta camera movement)
+    Engine::Instance().GetInputManager().DisableCursor();
+
+    CD_INFO("[RuntimeApplication] Game application initialized successfully.");
 }
 
 void RuntimeApplication::OnUpdate(float deltaTime)

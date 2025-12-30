@@ -5,7 +5,7 @@
       "name": "Debug with LLDB",
       "type": "lldb",
       "request":"launch",
-      "program": "${workspaceFolder}/build/bin/ChainedDecos_debug.exe",
+      "program": "${workspaceFolder}/build/bin/Runtime.exe",
       "args": ["--fullscreen"],
       "cwd": "${workspaceFolder}/build",
       "stopOnEntry": true,

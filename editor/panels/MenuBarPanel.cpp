@@ -40,6 +40,12 @@ void MenuBarPanel::OnImGuiRender(const PanelVisibility &visibility,
 
             ImGui::Separator();
 
+            if (ImGui::MenuItem("Play in Runtime", "F5"))
+                if (callbacks.OnPlayInRuntime)
+                    callbacks.OnPlayInRuntime();
+
+            ImGui::Separator();
+
             if (ImGui::MenuItem("Exit", "Alt+F4"))
                 if (callbacks.OnExit)
                     callbacks.OnExit();
