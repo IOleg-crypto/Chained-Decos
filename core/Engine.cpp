@@ -1,109 +1,286 @@
 #include "Engine.h"
-#include "Application.h"
+#include "components/audio/core/AudioManager.h"
+#include "components/input/core/InputManager.h"
+#include "components/physics/collision/core/CollisionManager.h"
+#include "components/rendering/core/RenderManager.h"
+#include "core/Log.h"
+#include "core/imgui/core/GuiManager.h"
+#include "core/module/ModuleManager.h"
+#include "core/scripting/ScriptManager.h"
+#include "core/window/Window.h"
+#include "events/UIEventRegistry.h"
+#include "scene/SceneManager.h"
+#include "scene/main/World.h"
+#include "scene/resources/font/FontService.h"
+#include "scene/resources/model/Model.h"
+#include "scene/resources/texture/TextureService.h"
+#include <memory>
 #include <raylib.h>
+#include <stdexcept>
 
-namespace Core
+namespace CHEngine
 {
 
-Engine::Engine() : m_running(false)
+using namespace CHEngine;
+
+Engine *Engine::s_instance = nullptr;
+
+Engine &Engine::Instance()
 {
+    if (!s_instance)
+    {
+        throw std::runtime_error("Engine not initialized!");
+    }
+    return *s_instance;
+}
+
+Engine::Engine()
+{
+    s_instance = this;
+    m_ModuleManager = std::make_unique<ModuleManager>();
 }
 
 Engine::~Engine()
 {
     Shutdown();
+    s_instance = nullptr;
 }
 
-int Engine::Run(Application &app)
+bool Engine::Initialize(const CHEngine::WindowProps &props)
 {
-    // Get configuration from application
-    app.OnConfigure(m_config);
+    CD_CORE_INFO("Initializing Core Services via ServiceRegistry...");
+    m_initialized = true;
 
-    // Initialize engine
-    if (!Initialize(m_config))
-    {
-        return -1;
-    }
+    // 0. Window Creation
+    m_Window = std::make_unique<CHEngine::Window>(props);
 
-    // Initialize application
-    app.SetEngine(this);
-    app.OnStart();
+    // 1. Rendering
+    auto renderManager = std::make_shared<RenderManager>();
+    renderManager->Initialize(props.Width, props.Height, props.Title.c_str());
+    RegisterService<RenderManager>(renderManager);
 
-    // Run main loop
-    m_running = true;
-    MainLoop(app);
+    // 2. Input
+    auto inputManager = std::make_shared<CHEngine::InputManager>();
+    inputManager->Initialize();
+    RegisterService<CHEngine::InputManager>(inputManager);
 
-    // Shutdown
-    app.OnShutdown();
-    Shutdown();
+    // 3. Audio
+    auto audioManager = std::make_shared<AudioManager>();
+    audioManager->Initialize();
+    RegisterService<IAudioManager>(audioManager);
 
-    return 0;
-}
+    // 4. Physics
+    auto collisionManager = std::make_shared<CollisionManager>();
+    RegisterService<ICollisionManager>(collisionManager);
 
-void Engine::RequestExit()
-{
-    m_running = false;
-}
+    // 5. Resources
+    auto modelLoader = std::make_shared<ModelLoader>();
+    RegisterService<IModelLoader>(modelLoader);
 
-bool Engine::IsRunning() const
-{
-    return m_running && !WindowShouldClose();
-}
+    // 6. World
+    auto worldManager = std::make_shared<WorldManager>();
+    RegisterService<IWorldManager>(worldManager);
 
-bool Engine::Initialize(const EngineConfig &config)
-{
-    // Initialize window
-    if (config.window.vsync)
-    {
-        SetConfigFlags(FLAG_VSYNC_HINT);
-    }
+    // 7. Scripting
+    auto scriptManager = std::make_shared<ScriptManager>();
+    scriptManager->Initialize();
+    RegisterService<ScriptManager>(scriptManager);
 
-    InitWindow(config.window.width, config.window.height, config.window.title.c_str());
+    // 8. GUI
+    auto guiManager = std::make_shared<CHEngine::GuiManager>();
+    guiManager->Initialize();
+    RegisterService<CHEngine::GuiManager>(guiManager);
 
-    if (!IsWindowReady())
-    {
-        return false;
-    }
+    // 9. Scenes
+    RegisterService<SceneManager>(std::make_shared<SceneManager>());
+    RegisterService<ECSSceneManager>(std::make_shared<ECSSceneManager>());
+    RegisterService<FontService>(std::make_shared<FontService>());
+    RegisterService<TextureService>(std::make_shared<TextureService>());
+    RegisterService<UIEventRegistry>(std::make_shared<UIEventRegistry>());
 
-    SetTargetFPS(config.window.target_fps);
-
-    // Initialize audio if enabled
-    if (config.enable_audio)
-    {
-        InitAudioDevice();
-    }
-
+    CD_CORE_INFO("Engine initialized successfully");
     return true;
 }
 
-void Engine::Shutdown()
+void Engine::Update(float deltaTime)
 {
-    if (IsAudioDeviceReady())
-    {
-        CloseAudioDevice();
-    }
+    if (m_ModuleManager)
+        m_ModuleManager->UpdateAllModules(deltaTime);
 
-    if (IsWindowReady())
+    if (auto input = GetService<InputManager>())
+        input->Update(deltaTime);
+
+    if (auto audio = GetService<IAudioManager>())
+        audio->Update(deltaTime);
+
+    if (auto script = GetService<ScriptManager>())
+        script->Update(deltaTime);
+
+    if (auto gui = GetService<GuiManager>())
+        gui->Update(deltaTime);
+}
+
+void Engine::Shutdown() const
+{
+    if (!m_initialized)
+        return;
+
+    CD_CORE_INFO("Shutting down Engine and clearing ServiceRegistry...");
+    m_initialized = false;
+
+    if (m_ModuleManager)
+        m_ModuleManager->ShutdownAllModules();
+
+    if (auto audio = GetService<IAudioManager>())
+        audio->Shutdown();
+
+    if (auto input = GetService<InputManager>())
+        input->Shutdown();
+
+    if (auto render = GetService<RenderManager>())
+        render->Shutdown();
+
+    if (auto script = GetService<ScriptManager>())
+        script->Shutdown();
+
+    if (auto gui = GetService<GuiManager>())
+        gui->Shutdown();
+
+    if (auto font = GetService<FontService>())
+        font->Shutdown();
+
+    if (auto texture = GetService<TextureService>())
+        texture->Shutdown();
+
+    ServiceRegistry::Clear();
+}
+
+void Engine::RegisterModule(std::unique_ptr<IEngineModule> module) const
+{
+    if (m_ModuleManager)
     {
-        CloseWindow();
+        m_ModuleManager->RegisterModule(std::move(module));
     }
 }
 
-void Engine::MainLoop(Application &app)
+bool Engine::IsCollisionDebugVisible() const
 {
-    while (IsRunning())
+    const auto render = GetService<RenderManager>();
+    if (render)
     {
-        float delta_time = GetFrameTime();
-
-        // Update
-        app.OnUpdate(delta_time);
-
-        // Render
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-        app.OnRender();
-        EndDrawing();
+        return render->IsCollisionDebugVisible();
+    }
+    else
+    {
+        return false;
     }
 }
 
-} // namespace Core
+bool Engine::ShouldExit() const
+{
+    return m_shouldExit || WindowShouldClose();
+}
+
+RenderManager &Engine::GetRenderManager() const
+{
+    return *GetService<RenderManager>();
+}
+
+IInputManager &Engine::GetInputManager() const
+{
+    return *GetService<CHEngine::InputManager>();
+}
+
+IAudioManager &Engine::GetAudioManager() const
+{
+    return *GetService<IAudioManager>();
+}
+
+IModelLoader &Engine::GetModelLoader() const
+{
+    return *GetService<IModelLoader>();
+}
+
+IGuiManager &Engine::GetGuiManager() const
+{
+    return *GetService<CHEngine::GuiManager>();
+}
+
+ICollisionManager &Engine::GetCollisionManager() const
+{
+    return *GetService<ICollisionManager>();
+}
+
+IWorldManager &Engine::GetWorldManager() const
+{
+    return *GetService<IWorldManager>();
+}
+
+ScriptManager &Engine::GetScriptManager() const
+{
+    return *GetService<ScriptManager>();
+}
+
+SceneManager &Engine::GetSceneManager() const
+{
+    return *GetService<SceneManager>();
+}
+
+ECSSceneManager &Engine::GetECSSceneManager() const
+{
+    return *GetService<ECSSceneManager>();
+}
+
+CHEngine::FontService &Engine::GetFontService() const
+{
+    return *GetService<CHEngine::FontService>();
+}
+
+CHEngine::TextureService &Engine::GetTextureService() const
+{
+    return *GetService<CHEngine::TextureService>();
+}
+
+CHEngine::UIEventRegistry &Engine::GetUIEventRegistry() const
+{
+    return *GetService<CHEngine::UIEventRegistry>();
+}
+
+entt::registry &Engine::GetECSRegistry()
+{
+    return m_ECSRegistry;
+}
+
+ModuleManager *Engine::GetModuleManager() const
+{
+    return m_ModuleManager.get();
+}
+bool Engine::IsDebugInfoVisible() const
+{
+    return m_debugInfoVisible;
+}
+void Engine::SetDebugInfoVisible(bool visible)
+{
+    m_debugInfoVisible = visible;
+}
+void Engine::RequestExit()
+{
+    m_shouldExit = true;
+}
+
+Window *Engine::GetWindow() const
+{
+    return m_Window.get();
+}
+
+EngineApplication *Engine::GetAppRunner() const
+{
+    return m_AppRunner;
+}
+
+void Engine::SetAppRunner(EngineApplication *appRunner)
+{
+    m_AppRunner = appRunner;
+}
+
+} // namespace CHEngine

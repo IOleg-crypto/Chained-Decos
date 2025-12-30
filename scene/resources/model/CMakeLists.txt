@@ -1,26 +1,23 @@
-add_library(model STATIC
-        Core/Model.cpp
-        Core/Model.h
-        Core/ModelInstance.cpp
-        Core/ModelInstance.h
-        Interfaces/IModelLoader.h
-        Animation/Animation.cpp
-        Animation/Animation.h
-        Config/ModelConfig.h
-        Config/ModelConfig.cpp
-        Parser/JsonParser.cpp
-        Parser/JsonParser.h
-        Parser/JsonHelper.cpp
-        Cache/ModelCache.cpp
-        Cache/ModelCache.h
-        Utils/ModelAnalyzer.cpp
-        Utils/ModelAnalyzer.h
+set(MODEL_SOURCES
+        Model.cpp
+        Model.h
+        ModelInstance.cpp
+        ModelInstance.h
+        interfaces/IModelLoader.h
+        Animation.cpp
+        Animation.h
+        ModelConfig.h
+        ModelConfig.cpp
+        JsonParser.cpp
+        JsonParser.h
+        JsonHelper.cpp
+        ModelCache.cpp
+        ModelCache.h
+        ModelAnalyzer.cpp
+        ModelAnalyzer.h
 )
 
-# Add PROJECT_ROOT_DIR definition for consistent path handling
-target_compile_definitions(model PRIVATE
-    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
-)
+add_library(model STATIC ${MODEL_SOURCES})
 
 target_include_directories(model PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -37,3 +34,5 @@ target_link_libraries(model PUBLIC
 )
 
 set_target_properties(model PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+
