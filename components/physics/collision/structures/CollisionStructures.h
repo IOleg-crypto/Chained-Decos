@@ -6,23 +6,6 @@
 #include <raymath.h>
 
 //
-// CollisionRay - represents a ray for ray casting
-//
-class CollisionRay
-{
-public:
-    CollisionRay() = default;
-    CollisionRay(const Vector3 &orig, const Vector3 &dir);
-
-    const Vector3 &GetOrigin() const;
-    const Vector3 &GetDirection() const;
-
-private:
-    Vector3 m_origin{};
-    Vector3 m_direction{};
-};
-
-//
 // CollisionTriangle - represents a triangle in 3D space for collision detection
 //
 class CollisionTriangle
@@ -32,7 +15,7 @@ public:
     CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c);
 
     // Ray-triangle intersection using Möller-Trumbore algorithm
-    bool Intersects(const CollisionRay &ray, float &t) const;
+    bool Intersects(const Ray &ray, float &t) const;
     bool Intersects(const Vector3 &origin, const Vector3 &direction, float &t) const;
 
     // Get triangle properties
@@ -60,11 +43,10 @@ private:
 //
 // CollisionType - determines which collision method to use
 //
-enum class CollisionType : uint8_t
+enum class CollisionType
 {
     AABB_ONLY,       // Simple AABB collision (fast, less precise)
     BVH_ONLY,        // BVH-based collision (precise, scalable)
-    HYBRID_AUTO,     // Automatically choose based on model complexity
     TRIANGLE_PRECISE // Brute force (triangle-to-triangle)
 };
 

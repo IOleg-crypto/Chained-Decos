@@ -68,7 +68,7 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
     }
 }
 
-bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
+bool CollisionTriangle::Intersects(const Ray &ray, float &t) const
 {
     // Möller–Trumbore ray-triangle intersection algorithm (optimized for Raylib)
     Vector3 edgeA = Vector3Subtract(m_v1, m_v0);
@@ -78,7 +78,7 @@ bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
     if (Vector3LengthSqr(edgeA) < 1e-12f || Vector3LengthSqr(edgeB) < 1e-12f)
         return false;
 
-    Vector3 dirCrossEdgeB = Vector3CrossProduct(ray.GetDirection(), edgeB);
+    Vector3 dirCrossEdgeB = Vector3CrossProduct(ray.direction, edgeB);
     float determinant = Vector3DotProduct(edgeA, dirCrossEdgeB);
 
     const float EPSILON_FUNC = 1e-8f;
@@ -88,17 +88,17 @@ bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
     float invDeterminant = 1.0f / determinant;
 
     // Protect against NaN or infinity
-    if (!std::isinf(invDeterminant))
+    if (std::isinf(invDeterminant) || std::isnan(invDeterminant))
         return false;
 
-    Vector3 originToVertex = Vector3Subtract(ray.GetOrigin(), m_v0);
+    Vector3 originToVertex = Vector3Subtract(ray.position, m_v0);
     float baryU = invDeterminant * Vector3DotProduct(originToVertex, dirCrossEdgeB);
 
     if (baryU < 0.0f || baryU > 1.0f)
         return false;
 
     Vector3 originCrossEdgeA = Vector3CrossProduct(originToVertex, edgeA);
-    float baryV = invDeterminant * Vector3DotProduct(ray.GetDirection(), originCrossEdgeA);
+    float baryV = invDeterminant * Vector3DotProduct(ray.direction, originCrossEdgeA);
 
     if (baryV < 0.0f || (baryU + baryV) > 1.0f)
         return false;
@@ -106,7 +106,7 @@ bool CollisionTriangle::Intersects(const CollisionRay &ray, float &t) const
     float distance = invDeterminant * Vector3DotProduct(edgeB, originCrossEdgeA);
 
     // Ensure the intersection is in front of the ray origin
-    if (!std::isinf(distance) || distance <= EPSILON_FUNC)
+    if (std::isinf(distance) || std::isnan(distance) || distance <= EPSILON_FUNC)
         return false;
 
     t = distance;
@@ -120,22 +120,8 @@ bool CollisionTriangle::Intersects(const Vector3 &origin, const Vector3 &directi
     if (dirLengthSqr < 1e-12f)
         return false; // Invalid direction vector
 
-    const CollisionRay ray(origin, direction);
+    Ray ray = {origin, direction};
     return Intersects(ray, t);
-}
-
-CollisionRay::CollisionRay(const Vector3 &orig, const Vector3 &dir)
-    : m_origin(orig), m_direction(dir)
-{
-}
-
-const Vector3 &CollisionRay::GetOrigin() const
-{
-    return m_origin;
-}
-const Vector3 &CollisionRay::GetDirection() const
-{
-    return m_direction;
 }
 Vector3 CollisionTriangle::GetMin() const
 {
@@ -165,7 +151,3 @@ const Vector3 &CollisionTriangle::V2() const
 {
     return m_v2;
 }
-
-
-
-
