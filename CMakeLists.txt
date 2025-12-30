@@ -1,28 +1,25 @@
-﻿cmake_minimum_required(VERSION 3.25)
-project(ChainedDecos VERSION 1.0.0 LANGUAGES CXX C)
+cmake_minimum_required(VERSION 3.25)
+project(CHEngine LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+
 # Build configuration options
-option(FAST_CONFIG "Reduce CMake configure time" ON)
+# Build configuration options
 option(BUILD_TESTS "Build unit tests" ON)
-option(BUILD_MAP_EDITOR "Build MapEditor tools" ON)
+option(BUILD_EDITOR_ENGINE "Build Editor tools" ON)
 option(ENABLE_PROFILING "Enable profiling support" OFF)
-option(ENABLE_OPTIMIZATIONS "Enable compiler optimizations" ON)
 option(ENABLE_WARNINGS "Enable strict compiler warnings" OFF)
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
-option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" ON)
 option(ENABLE_UNITY_BUILD "Enable unity build for faster compilation" ON)
 
 # Platform-specific options
 option(ENABLE_OPENGL_DEBUG "Enable OpenGL debug context" OFF)
 option(ENABLE_AUDIO "Enable audio support" ON)
-option(ENABLE_MULTITHREADING "Enable multithreading support" ON)
 
 # Development options
-option(ENABLE_DEV_TOOLS "Enable development tools" OFF)
 option(ENABLE_DEBUG_INFO "Enable debug information" ON)
 option(ENABLE_SANITIZERS "Enable sanitizers for debugging" OFF)
 
@@ -31,43 +28,28 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 # Set build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
-    if(ENABLE_OPTIMIZATIONS)
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
-    else()
-        set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
-    endif()
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
 endif()
 
-# Set install prefix for CI/CD environments
-if(DEFINED ENV{CI})
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefix" FORCE)
-else()
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefix" FORCE)
-endif()
+# Set default install prefix
+set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Install prefix" FORCE)
 
 # Compiler-specific settings
 if(MSVC)
     # MSVC-specific settings
     add_compile_options(
-        $<$<CONFIG:Debug>:/Od>
-        $<$<CONFIG:Release>:/O2>
-        $<$<CONFIG:Release>:/DNDEBUG>
+        $<$<CONFIG:Debug>:/Od> $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:Release>:/O2> $<$<CONFIG:Release>:/MT> $<$<CONFIG:Release>:/DNDEBUG>
+        /Zi /EHsc
     )
 
-    if(DISABLE_ALL_WARNINGS)
-        add_compile_options(/W0)
-    elseif(ENABLE_WARNINGS)
+    if(ENABLE_WARNINGS)
         add_compile_options(/W4 /permissive-)
-        if(ENABLE_DEBUG_INFO)
-            add_compile_options(/Zi)
+        if(WARNINGS_AS_ERRORS)
+            add_compile_options(/WX)
         endif()
-    endif()
-
-    # Use static CRT for static linking
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_compile_options(/MTd)  # MultiThreadedDebug (static)
     else()
-        add_compile_options(/MT)   # MultiThreaded (static)
+        add_compile_options(/W0)
     endif()
 
     if(ENABLE_SANITIZERS)
@@ -77,15 +59,11 @@ if(MSVC)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # GCC/Clang settings
     add_compile_options(
-        $<$<CONFIG:Debug>:-O0>
-        $<$<CONFIG:Debug>:-g>
-        $<$<CONFIG:Release>:-O3>
-        $<$<CONFIG:Release>:-DNDEBUG>
+        $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
+        $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
     )
 
-    if(DISABLE_ALL_WARNINGS)
-        add_compile_options(-w -Wno-error=implicit-function-declaration)
-    elseif(ENABLE_WARNINGS)
+    if(ENABLE_WARNINGS)
         add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
         if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             add_compile_options(-Wmost -Wno-missing-braces -Wno-missing-field-initializers -Wno-attributes)
@@ -96,6 +74,8 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         if(WARNINGS_AS_ERRORS)
             add_compile_options(-Werror)
         endif()
+    else()
+        add_compile_options(-w)
     endif()
 
     if(ENABLE_DEBUG_INFO)
@@ -118,24 +98,20 @@ if(WIN32)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
     add_compile_definitions(NOMINMAX)
-
-    # Ensure proper DLL loading on Windows
     add_compile_definitions(_WIN32_WINNT=0x0601)  # Windows 7+
-
-    # Avoid conflicts between raylib and Windows API - more targeted approach
-    # Exclude specific parts of Windows API that conflict with raylib
-    add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    add_compile_definitions(NOMINMAX)
 endif()
 
 
-if(ENABLE_MULTITHREADING)
-    find_package(Threads REQUIRED)
-endif()
+# Global include directories - allow including from project root
+include_directories(${CMAKE_SOURCE_DIR})
 
-# Unity build configuration
+include(FetchContent)
+
+find_package(Threads REQUIRED)
+
+# Unity build configuration (DISABLED for cleaner builds)
 if(ENABLE_UNITY_BUILD)
-    set(CMAKE_UNITY_BUILD ON)
+    set(CMAKE_UNITY_BUILD OFF)
     set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
 endif()
 
@@ -160,7 +136,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/raylib/CMakeLists.txt")
     endif()
 
     add_subdirectory(include/raylib)
-    message(STATUS "✓ Raylib loaded from submodule")
+    message(STATUS "Raylib loaded from submodule")
 else()
     message(FATAL_ERROR "Raylib submodule not found. Run: git submodule update --init --recursive")
 endif()
@@ -169,7 +145,7 @@ endif()
 if(EXISTS "${CMAKE_SOURCE_DIR}/include/json/CMakeLists.txt")
     message(STATUS "Loading nlohmann_json from submodule...")
     add_subdirectory(include/json)
-    message(STATUS "✓ nlohmann_json loaded from submodule")
+    message(STATUS "nlohmann_json loaded from submodule")
 else()
     message(FATAL_ERROR "nlohmann_json submodule not found. Run: git submodule update --init --recursive")
 endif()
@@ -187,7 +163,7 @@ if(BUILD_TESTS)
         endif()
         
         add_subdirectory(include/googletest)
-        message(STATUS "✓ GoogleTest loaded from submodule")
+        message(STATUS "GoogleTest loaded from submodule")
     else()
         message(WARNING "GoogleTest submodule not found. Tests will be disabled.")
     endif()
@@ -199,12 +175,12 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/entt/src")
     add_library(EnTT INTERFACE)
     target_include_directories(EnTT INTERFACE ${CMAKE_SOURCE_DIR}/include/entt/src)
     add_library(EnTT::EnTT ALIAS EnTT)
-    message(STATUS "✓ EnTT loaded from submodule (header-only)")
+    message(STATUS "EnTT loaded from submodule (header-only)")
 else()
     message(FATAL_ERROR "EnTT submodule not found. Run: git submodule update --init --recursive")
 endif()
 
-add_library(imguilib STATIC
+set(IMGUI_SOURCES
     include/rlImGui/rlImGui.cpp
     include/rlImGui/rlImGui.h
     include/rlImGui/imgui_impl_raylib.h
@@ -215,6 +191,9 @@ add_library(imguilib STATIC
     include/imgui/imgui_demo.cpp
     include/imgui/misc/cpp/imgui_stdlib.cpp
 )
+
+add_library(imguilib STATIC ${IMGUI_SOURCES})
+
 target_include_directories(imguilib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/include/rlImGui
@@ -240,82 +219,66 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
 endif()
 
 # Add new modular structure
+add_subdirectory(events)
 add_subdirectory(core)
 add_subdirectory(components)
 add_subdirectory(scene)
-add_subdirectory(project/chaineddecos)
-
-
-add_executable(ChainedDecos project/chaineddecos/main.cpp)
-target_link_libraries(ChainedDecos PRIVATE
-    ChainedDecosGame
-    imguilib
-)
+add_subdirectory(project)
+add_subdirectory(runtime)
 
 if(BUILD_TESTS)
     add_subdirectory(tests ${CMAKE_CURRENT_BINARY_DIR}/tests)
 endif()
 
-if(BUILD_MAP_EDITOR)
-    add_subdirectory(map_editor)
+if(BUILD_EDITOR_ENGINE)
+    add_subdirectory(editor)
 endif()
 
-# Set the target properties
-set_target_properties(ChainedDecos PROPERTIES
-    CXX_STANDARD 23
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-)
 
-# Set output name based on build type
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos_debug")
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set_target_properties(ChainedDecos PROPERTIES OUTPUT_NAME "ChainedDecos")
-endif()
 
 # Native File Dialog (nfd)
 if(EXISTS "${CMAKE_SOURCE_DIR}/include/nfd/CMakeLists.txt")
     message(STATUS "Loading nfd from submodule...")
     set(NFD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     add_subdirectory(include/nfd)
-    message(STATUS "✓ nfd loaded from submodule")
+    message(STATUS "nfd loaded from submodule")
 endif()
 
-# Installation configuration
-install(TARGETS ChainedDecos
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+# Lua & sol2 integration
+message(STATUS "Fetching Lua and sol2...")
+
+FetchContent_Declare(
+    lua
+    GIT_REPOSITORY https://github.com/marovira/lua.git
+    GIT_TAG master
 )
+
+FetchContent_Declare(
+    sol2
+    GIT_REPOSITORY https://github.com/ThePhD/sol2.git
+    GIT_TAG develop
+)
+
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(lua sol2 yaml-cpp)
+
+# Lua and sol2 are now linked in core/CMakeLists.txt
+
+
 # Install configuration files
 install(FILES game.cfg
-    DESTINATION share/ChainedDecos
+    DESTINATION share/CHEngine
 )
 
-# Package configuration
+# Package configuration (simplified)
 if(NOT FAST_CONFIG)
     set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
-    export(TARGETS ChainedDecos
-        NAMESPACE ChainedDecos::
-        FILE ChainedDecosConfig.cmake
-    )
-
-    # Generate package version file
-    include(CMakePackageConfigHelpers)
-    write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfigVersion.cmake"
-        VERSION 1.0.0
-        COMPATIBILITY AnyNewerVersion
-    )
-
-    install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfig.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/ChainedDecosConfigVersion.cmake"
-        DESTINATION lib/cmake/ChainedDecos
-    )
 endif()
+
+
 

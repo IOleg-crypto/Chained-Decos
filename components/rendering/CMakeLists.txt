@@ -1,17 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
 
 # Rendering server
-add_library(render STATIC
-    Core/RenderManager.cpp
-    Shader/ShaderManager.cpp
-    Utils/RenderUtils.cpp
-    Helpers/ImGuiHelper.cpp
+set(RENDER_SOURCES
+    core/RenderManager.cpp
+    shader/ShaderManager.cpp
+    utils/RenderUtils.cpp
+    helpers/ImGuiHelper.cpp
 )
+
+add_library(render STATIC ${RENDER_SOURCES})
 
 target_include_directories(render
     PUBLIC
         ${CMAKE_SOURCE_DIR}
-        ${CMAKE_SOURCE_DIR}/servers/rendering
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(render
@@ -21,3 +23,5 @@ target_link_libraries(render
         core
         collision
 )
+
+

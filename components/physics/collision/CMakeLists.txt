@@ -1,15 +1,17 @@
-add_library(collision STATIC
-    Core/CollisionManager.cpp
-    Core/CollisionManager.h
-    Interfaces/ICollisionManager.h
-    System/CollisionSystem.cpp
-    System/CollisionSystem.h
-    Structures/CollisionStructures.cpp
-    Structures/CollisionStructures.h
-    Structures/CollisionComponent.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Debug/CollisionDebugRenderer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Debug/CollisionDebugRenderer.h
+set(COLLISION_SOURCES
+    core/CollisionManager.cpp
+    core/CollisionManager.h
+    interfaces/ICollisionManager.h
+    colsystem/CollisionSystem.cpp
+    colsystem/CollisionSystem.h
+    structures/CollisionStructures.cpp
+    structures/CollisionStructures.h
+    structures/CollisionComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/CollisionDebugRenderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/CollisionDebugRenderer.h
 )
+
+add_library(collision STATIC ${COLLISION_SOURCES})
 
 # Disable Unity build for this library to avoid duplicate definitions
 set_target_properties(collision PROPERTIES
@@ -31,3 +33,4 @@ if(TARGET raylib)
         target_include_directories(collision PUBLIC ${raylib_INCLUDE_DIRS})
     endif()
 endif()
+

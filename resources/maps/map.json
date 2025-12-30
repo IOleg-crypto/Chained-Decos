@@ -16,12 +16,8 @@
             "r": 0
         },
         "name": "map",
-        "skyColor": {
-            "a": 255,
-            "b": 255,
-            "g": 191,
-            "r": 102
-        },
+        "sceneType": 0,
+        "skyboxTexture": "D:/gitnext/Chained Decos/resources/skyboxes/skybox.png",
         "startPosition": {
             "x": -0.800000011920929,
             "y": 6.699999809265137,
@@ -1811,6 +1807,142 @@
                 "width": 8.0
             },
             "type": 3
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "height": 0.0,
+            "isObstacle": false,
+            "isPlatform": false,
+            "modelName": "doric_arena",
+            "name": "doric_arena 54",
+            "position": {
+                "x": 0.0,
+                "y": -19.299999237060547,
+                "z": -2.200000047683716
+            },
+            "radius": 0.0,
+            "rotation": {
+                "x": 95.0,
+                "y": 62.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "size": {
+                "height": 0.0,
+                "width": 0.0
+            },
+            "type": 5
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "height": 0.0,
+            "isObstacle": false,
+            "isPlatform": false,
+            "modelName": "TaverGLTF",
+            "name": "TaverGLTF 55",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 0.0,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "size": {
+                "height": 0.0,
+                "width": 0.0
+            },
+            "type": 5
+        },
+        {
+            "color": {
+                "a": 255,
+                "b": 255,
+                "g": 255,
+                "r": 255
+            },
+            "height": 0.0,
+            "isObstacle": false,
+            "isPlatform": false,
+            "modelName": "arena",
+            "name": "arena 56",
+            "position": {
+                "x": 58.20000076293945,
+                "y": 0.20000000298023224,
+                "z": 0.30000001192092896
+            },
+            "radius": 0.0,
+            "rotation": {
+                "x": -9.0,
+                "y": -78.0,
+                "z": -3.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "size": {
+                "height": 0.0,
+                "width": 0.0
+            },
+            "type": 5
+        },
+        {
+            "color": {
+                "a": 200,
+                "b": 50,
+                "g": 100,
+                "r": 255
+            },
+            "height": 4.590373509435236e-41,
+            "isObstacle": true,
+            "isPlatform": false,
+            "name": "Spawn Zone 57",
+            "position": {
+                "x": 0.0,
+                "y": 6.0,
+                "z": 0.0
+            },
+            "radius": -0.09496951103210449,
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 0.699999988079071,
+                "z": 1.0
+            },
+            "size": {
+                "height": 7.146622168056567e-43,
+                "width": 2.7106218982440086e-17
+            },
+            "type": 6
         }
-    ]
+    ],
+    "uiElements": []
 }

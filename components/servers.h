@@ -6,29 +6,29 @@
 // Following Godot architecture principles
 
 // Must include core first (dependency)
-#include "core/core.h"
+#include "core/utils/core.h"
 
 // Rendering server
-#include "rendering/Commands/IRenderCommand.h"
-#include "rendering/Core/RenderManager.h"
-#include "rendering/Interfaces/IGameRenderable.h"
-#include "rendering/Interfaces/IRenderable.h"
-#include "rendering/Shader/ShaderManager.h"
+#include "rendering/commands/IRenderCommand.h"
+#include "rendering/core/RenderManager.h"
+#include "rendering/interfaces/IGameRenderable.h"
+#include "rendering/interfaces/IRenderable.h"
+#include "rendering/shader/shaderManager.h"
 
 // Audio server
-#include "audio/Core/AudioManager.h"
-#include "audio/Interfaces/IAudioManager.h"
+#include "audio/core/AudioManager.h"
+#include "audio/interfaces/IAudioManager.h"
 
 // Input server
-#include "input/Core/InputManager.h"
+#include "input/core/InputManager.h"
 
 // Physics server
-#include "physics/collision/Core/CollisionManager.h"
-#include "physics/collision/Debug/CollisionDebugRenderer.h"
-#include "physics/collision/Interfaces/ICollisionManager.h"
-#include "physics/collision/Structures/CollisionComponent.h"
-#include "physics/collision/Structures/CollisionStructures.h"
-#include "physics/dynamics/Components/PhysicsComponent.h"
-#include "physics/dynamics/Components/SurfaceComponent.h"
+#include "physics/collision/core/CollisionManager.h"
+#include "physics/collision/debug/collisionDebugRenderer.h"
+#include "physics/collision/interfaces/ICollisionManager.h"
+#include "physics/collision/structures/collisionComponent.h"
+#include "physics/collision/structures/collisionStructures.h"
+#include "physics/dynamics/components/PhysicsComponent.h"
+#include "physics/dynamics/components/SurfaceComponent.h"
 
 #endif // SERVERS_H
