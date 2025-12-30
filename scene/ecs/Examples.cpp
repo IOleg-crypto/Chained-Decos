@@ -2,12 +2,13 @@
 #include "scene/ecs/components/AudioComponent.h"
 #include "scene/ecs/components/CameraComponent.h"
 #include "scene/ecs/components/PhysicsData.h"
+#include "scene/ecs/components/PlayerComponent.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
-#include "scene/ecs/components/playerComponent.h"
 #include <raymath.h>
+
 
 using namespace CHEngine;
 

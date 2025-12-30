@@ -7,12 +7,12 @@
 #include "scene/core/Scene.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/components/PhysicsData.h"
+#include "scene/ecs/components/PlayerComponent.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/ScriptingComponents.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/UIComponents.h"
 #include "scene/ecs/components/UtilityComponents.h"
-#include "scene/ecs/components/playerComponent.h"
 #include "scene/resources/map/MapRenderer.h"
 #include "scene/resources/map/MapService.h"
 #include "scene/resources/map/SceneSerializer.h"
@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+
 
 LevelManager::LevelManager(const LevelManagerConfig &config)
     : m_config(config), m_gameScene(std::make_unique<GameScene>()), m_currentMapPath(""),
