@@ -402,6 +402,26 @@ float ConfigManager::GetSkyboxGammaValue() const
     return GetFloat("skybox_gamma_value", 2.2f);
 }
 
+void ConfigManager::SetSkyboxExposure(float exposure)
+{
+    SetFloat("skybox_exposure", exposure);
+}
+
+float ConfigManager::GetSkyboxExposure() const
+{
+    return GetFloat("skybox_exposure", 1.0f);
+}
+
+void ConfigManager::SetDefaultScenePath(const std::string &path)
+{
+    SetString("runtime_default_scene", path);
+}
+
+std::string ConfigManager::GetDefaultScenePath() const
+{
+    return GetString("runtime_default_scene", "");
+}
+
 // Game progression settings
 void ConfigManager::SetCompletedLevels(const std::string &levels)
 {

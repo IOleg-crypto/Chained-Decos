@@ -405,9 +405,14 @@ void Skybox::UpdateGammaFromConfig()
         return;
     }
 
+    // Load config
+    ConfigManager configManager;
+    configManager.LoadFromFile(std::string(PROJECT_ROOT_DIR) + "/game.cfg");
+
     // Update gamma settings from config
-    // SetGammaEnabled(IsSkyboxGammaEnabled());
-    // SetGammaValue(GetSkyboxGammaValue());
+    SetGammaEnabled(configManager.IsSkyboxGammaEnabled());
+    SetGammaValue(configManager.GetSkyboxGammaValue());
+    SetExposure(configManager.GetSkyboxExposure());
 }
 bool Skybox::IsLoaded() const
 {

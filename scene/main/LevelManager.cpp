@@ -461,6 +461,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                 return;
             }
             SceneLoader().LoadSkyboxForScene(*m_gameScene);
+            if (m_gameScene->GetSkyBox())
+                m_gameScene->GetSkyBox()->UpdateGammaFromConfig();
         }
         else
         {
@@ -491,6 +493,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         {
             SceneLoader mapLoader;
             mapLoader.LoadSkyboxForScene(*m_gameScene);
+            if (m_gameScene->GetSkyBox())
+                m_gameScene->GetSkyBox()->UpdateGammaFromConfig();
         }
 
         // Automatic texture loading for map objects (Runtime/Editor support)
