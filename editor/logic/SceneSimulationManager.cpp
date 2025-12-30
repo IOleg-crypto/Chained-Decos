@@ -5,12 +5,15 @@
 #include "core/interfaces/ILevelManager.h"
 #include "core/physics/Physics.h"
 #include "editor/logic/SceneCloner.h"
+#include "editor/utils/ProcessUtils.h"
+#include "project/Project.h"
 #include "runtime/RuntimeLayer.h"
 #include "runtime/logic/RuntimeInitializer.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/resources/map/SceneLoader.h"
 #include "scene/resources/map/SceneSerializer.h"
 #include <cstdlib>
+#include <filesystem>
 #include <raylib.h>
 
 namespace CHEngine
@@ -70,78 +73,121 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
     }
 
     // 2. Save current state to temp for simulation
-    if (activeScene)
+    std::string tempPath;
+    auto levelManager = Engine::Instance().GetService<ILevelManager>();
+
+    // Try to find the project to save in the project's scenes directory
+    // This is a bit tricky from here, but we can look for .chproject files nearby or use
+    // levelManager For now, let's look for any project file in the root subdirectories
+    std::filesystem::path root(PROJECT_ROOT_DIR);
+    std::filesystem::path sceneDir;
+
+    try
     {
-        std::string tempPath = SceneCloner::GetTempPath();
-        if (tempPath.find(".json") != std::string::npos)
-            tempPath.replace(tempPath.find(".json"), 5, ".chscene");
-
-        // Ensure absolute path for standalone runtime
-        std::filesystem::path absoluteTempPath = std::filesystem::absolute(tempPath);
-        tempPath = absoluteTempPath.string();
-
-        SceneSerializer serializer(activeScene);
-        if (serializer.SerializeBinary(tempPath))
+        for (auto const &dir_entry : std::filesystem::recursive_directory_iterator(root))
         {
-            if (m_RuntimeMode == RuntimeMode::Standalone)
+            if (dir_entry.path().extension() == ".chproject")
             {
-                std::filesystem::path runtimePath =
-                    std::filesystem::path(PROJECT_ROOT_DIR) / "build" / "bin" / "Runtime.exe";
-                std::string cmd = TextFormat("start \"\" \"%s\" --map \"%s\" --skip-menu",
-                                             runtimePath.string().c_str(), tempPath.c_str());
-                CD_INFO("Launching standalone runtime: %s", cmd.c_str());
-                std::system(cmd.c_str());
-                CD_INFO("Standalone runtime process started");
+                auto project = Project::Load(dir_entry.path());
+                if (project)
+                {
+                    sceneDir = project->GetSceneDirectory();
+                    break;
+                }
+            }
+        }
+    }
+    catch (...)
+    {
+    }
+
+    if (!sceneDir.empty())
+    {
+        if (!std::filesystem::exists(sceneDir))
+        {
+            std::filesystem::create_directories(sceneDir);
+        }
+        tempPath = (sceneDir / "test.chscene").string();
+    }
+    else
+    {
+        tempPath = (root / "test.chscene").string();
+    }
+
+    CD_INFO("[SceneSimulationManager] Saving runtime scene to: %s", tempPath.c_str());
+
+    SceneSerializer serializer(activeScene);
+    if (serializer.SerializeBinary(tempPath))
+    {
+        if (m_RuntimeMode == RuntimeMode::Standalone)
+        {
+            std::filesystem::path runtimePath =
+                std::filesystem::path(PROJECT_ROOT_DIR) / "build" / "bin" / "Runtime.exe";
+
+            // Build command line with --map and --skip-menu
+            std::string commandLine =
+                "\"" + runtimePath.string() + "\" --map \"" + tempPath + "\" --skip-menu";
+
+            CD_INFO("[SceneSimulationManager] Launching standalone runtime: %s",
+                    commandLine.c_str());
+
+            if (ProcessUtils::LaunchProcess(commandLine, PROJECT_ROOT_DIR))
+            {
+                CD_INFO("[SceneSimulationManager] Standalone runtime process started successfully");
             }
             else
             {
-                CD_INFO("Launching embedded runtime...");
-                if (app)
+                CD_ERROR("[SceneSimulationManager] Failed to launch standalone runtime");
+            }
+        }
+        else
+        {
+            CD_INFO("Launching embedded runtime...");
+            if (app)
+            {
+                editorScene = activeScene; // Backup
+
+                // Load into LevelManager
+                auto levelManager = Engine::Instance().GetService<ILevelManager>();
+                if (levelManager)
                 {
-                    editorScene = activeScene; // Backup
-
-                    // Load into LevelManager
-                    auto levelManager = Engine::Instance().GetService<ILevelManager>();
-                    if (levelManager)
-                    {
-                        levelManager->LoadScene(tempPath);
-                        activeScene = std::shared_ptr<GameScene>(&levelManager->GetGameScene(),
-                                                                 [](GameScene *) {});
-                    }
-
-                    activeScene = std::make_shared<GameScene>();
-                    SceneSerializer runtimeLoader(activeScene);
-                    runtimeLoader.DeserializeBinary(tempPath);
-
-                    // Load skybox for the deserialized scene
-                    SceneLoader().LoadSkyboxForScene(*activeScene);
-
-                    // Initialize collisions for the simulation
-                    if (levelManager)
-                    {
-                        levelManager->InitCollisions();
-                    }
-
-                    // Clear registry before starting embedded simulation
-                    if (newScene)
-                    {
-                        newScene->GetRegistry().clear();
-                    }
-
-                    // Spawn Player entity
-                    Vector3 spawnPos =
-                        levelManager ? levelManager->GetSpawnPosition() : Vector3{0, 5, 0};
-                    CHD::RuntimeInitializer::InitializePlayer(newScene.get(), spawnPos, 0.15f);
-
-                    // Register scene in ECS Scene Manager for systems to access
-                    Engine::Instance().GetECSSceneManager().LoadScene(newScene);
-
-                    *runtimeLayer = new CHD::RuntimeLayer(newScene);
-                    app->PushLayer(*runtimeLayer);
-
-                    // Enable mouse capture for camera control in embedded simulation
-                    DisableCursor();
+                    levelManager->LoadScene(tempPath);
+                    activeScene = std::shared_ptr<GameScene>(&levelManager->GetGameScene(),
+                                                             [](GameScene *) {});
                 }
+
+                activeScene = std::make_shared<GameScene>();
+                SceneSerializer runtimeLoader(activeScene);
+                runtimeLoader.DeserializeBinary(tempPath);
+
+                // Load skybox for the deserialized scene
+                SceneLoader().LoadSkyboxForScene(*activeScene);
+
+                // Initialize collisions for the simulation
+                if (levelManager)
+                {
+                    levelManager->InitCollisions();
+                }
+
+                // Clear registry before starting embedded simulation
+                if (newScene)
+                {
+                    newScene->GetRegistry().clear();
+                }
+
+                // Spawn Player entity
+                Vector3 spawnPos =
+                    levelManager ? levelManager->GetSpawnPosition() : Vector3{0, 5, 0};
+                CHD::RuntimeInitializer::InitializePlayer(newScene.get(), spawnPos, 0.15f);
+
+                // Register scene in ECS Scene Manager for systems to access
+                Engine::Instance().GetECSSceneManager().LoadScene(newScene);
+
+                *runtimeLayer = new CHD::RuntimeLayer(newScene);
+                app->PushLayer(*runtimeLayer);
+
+                // Enable mouse capture for camera control in embedded simulation
+                DisableCursor();
             }
         }
     }

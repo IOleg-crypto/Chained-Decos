@@ -88,6 +88,12 @@ public:
     bool IsSkyboxGammaEnabled() const;
     void SetSkyboxGammaValue(float gamma);
     float GetSkyboxGammaValue() const;
+    void SetSkyboxExposure(float exposure);
+    float GetSkyboxExposure() const;
+
+    // Runtime settings
+    void SetDefaultScenePath(const std::string &path);
+    std::string GetDefaultScenePath() const;
 
     // Game progression settings
     void SetCompletedLevels(const std::string &levels);
@@ -124,6 +130,3 @@ private:
 };
 
 #endif // CONFIGMANAGER_H
-
-
-

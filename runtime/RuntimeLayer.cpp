@@ -366,6 +366,17 @@ void RuntimeLayer::OnUpdate(float deltaTime)
 void RuntimeLayer::OnRender()
 {
     Renderer::BeginScene(Renderer::GetCamera());
+
+    // Render Skybox from LevelManager's GameScene
+    if (auto levelManager = Engine::Instance().GetService<ILevelManager>())
+    {
+        auto &gameScene = levelManager->GetGameScene();
+        if (gameScene.GetSkyBox() && gameScene.GetSkyBox()->IsLoaded())
+        {
+            gameScene.GetSkyBox()->DrawSkybox(Renderer::GetCamera().position);
+        }
+    }
+
     RenderScene();
     Renderer::EndScene();
 }

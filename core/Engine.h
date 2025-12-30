@@ -99,6 +99,7 @@ private:
 
     entt::registry m_ECSRegistry;
 
+    mutable bool m_initialized = false;
     bool m_debugInfoVisible = false;
     bool m_shouldExit = false;
 
