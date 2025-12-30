@@ -1,4 +1,5 @@
 #include "core/layer/LayerStack.h"
+#include <algorithm>
 
 namespace CHEngine
 {
@@ -47,9 +48,3 @@ void LayerStack::PopOverlay(Layer *overlay)
 }
 
 } // namespace CHEngine
-
-
-
-
-
-
