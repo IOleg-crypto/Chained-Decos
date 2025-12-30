@@ -34,6 +34,7 @@ public:
     std::function<void()> OnOpen;
     std::function<void()> OnSave;
     std::function<void()> OnSaveAs;
+    std::function<void()> OnPlayInRuntime;
     std::function<void()> OnExit;
 
     // --- Edit Actions ---

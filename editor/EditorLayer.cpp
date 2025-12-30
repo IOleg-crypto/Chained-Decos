@@ -8,11 +8,13 @@
 #include "core/renderer/Renderer.h"
 #include "editor/panels/ConsolePanel.h"
 #include "editor/utils/EditorStyles.h"
+#include "editor/utils/ProcessUtils.h"
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/core/IDComponent.h"
 #include "scene/ecs/components/core/TagComponent.h"
 #include <cstdlib>
+
 #include <fstream>
 
 #include "core/interfaces/ILevelManager.h"
@@ -552,6 +554,7 @@ void EditorLayer::UI_DrawDockspace()
     callbacks.OnOpen = [this]() { OpenScene(); };
     callbacks.OnSave = [this]() { SaveScene(); };
     callbacks.OnSaveAs = [this]() { SaveSceneAs(); };
+    callbacks.OnPlayInRuntime = [this]() { PlayInRuntime(); };
     callbacks.OnExit = []() { Engine::Instance().RequestExit(); };
 
     callbacks.OnUndo = [this]() { m_CommandHistory.Undo(); };
@@ -953,6 +956,62 @@ void EditorLayer::CloseProject()
 {
     m_ProjectManager.CloseProject();
     m_ShowProjectBrowser = true;
+}
+
+void EditorLayer::PlayInRuntime()
+{
+    if (!m_ActiveScene)
+    {
+        CD_WARN("[EditorLayer] No active scene to play in runtime");
+        return;
+    }
+
+    // Use project's scene directory if available, otherwise fallback to project root
+    std::string tempScenePath;
+    auto activeProject = m_ProjectManager.GetActiveProject();
+    if (activeProject)
+    {
+        std::filesystem::path sceneDir = activeProject->GetSceneDirectory();
+        if (!std::filesystem::exists(sceneDir))
+        {
+            std::filesystem::create_directories(sceneDir);
+        }
+        tempScenePath = (sceneDir / "RuntimeScene.chscene").string();
+    }
+    else
+    {
+        tempScenePath = (std::filesystem::path(PROJECT_ROOT_DIR) / "RuntimeScene.chscene").string();
+    }
+
+    CD_INFO("[EditorLayer] Saving runtime scene to: %s", tempScenePath.c_str());
+
+    // Use SceneLoader to save the scene
+    SceneLoader sceneLoader;
+    if (!sceneLoader.SaveSceneToFile(*m_ActiveScene, tempScenePath))
+    {
+        CD_ERROR("[EditorLayer] Failed to save runtime scene to file");
+        return;
+    }
+
+    CD_INFO("[EditorLayer] Scene saved successfully, launching runtime...");
+
+    // Build runtime executable path
+    std::string runtimePath = std::string(PROJECT_ROOT_DIR) + "/build/bin/Runtime.exe";
+
+    // Build command line with --map and --skip-menu arguments
+    std::string commandLine = "\"" + runtimePath + "\" --map \"" + tempScenePath + "\" --skip-menu";
+
+    CD_INFO("[EditorLayer] Launching: %s", commandLine.c_str());
+
+    // Launch runtime process using ProcessUtils (non-blocking)
+    if (ProcessUtils::LaunchProcess(commandLine, PROJECT_ROOT_DIR))
+    {
+        CD_INFO("[EditorLayer] Runtime launched successfully");
+    }
+    else
+    {
+        CD_ERROR("[EditorLayer] Failed to launch runtime");
+    }
 }
 
 } // namespace CHEngine

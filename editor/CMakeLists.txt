@@ -49,6 +49,8 @@ set(panels_sources
     panels/ProjectBrowserPanel.h
     utils/EditorGrid.cpp
     utils/EditorGrid.h
+    utils/ProcessUtils.cpp
+    utils/ProcessUtils.h
     viewport/ViewportPicking.cpp
     viewport/ViewportPicking.h
     viewport/ViewportGizmo.cpp
