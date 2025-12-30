@@ -12,16 +12,17 @@
 #include "events/UIEventRegistry.h"
 #include "logic/RuntimeInitializer.h"
 #include "scene/ecs/components/PhysicsData.h"
+#include "scene/ecs/components/PlayerComponent.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
-#include "scene/ecs/components/playerComponent.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
 #include <algorithm>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
+
 
 using namespace CHEngine;
 
