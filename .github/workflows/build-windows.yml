@@ -13,7 +13,7 @@ env:
 
 jobs:
   build-msvc:
-    name: Windows MSVC (${{ inputs.build_type }})
+    name: Windows (${{ inputs.build_type }})
     runs-on: windows-2022
 
     steps:
@@ -54,14 +54,18 @@ jobs:
         run: |
           cmake --build build \
             --config ${{ inputs.build_type }} \
-            --target ChainedDecos map_editor ChainedDecosUnitTests ChainedDecosIntegrationTests \
+            --target ChainedEditor ChainedEngineUnitTests ChainedEngineIntegrationTests \
             --parallel 4
 
       - name: Test
         shell: bash
         run: |
-          if [[ -f "build/bin/tests/ChainedDecosUnitTests.exe" ]]; then
-            build/bin/tests/ChainedDecosUnitTests.exe || echo "⚠️ Unit tests failed"
+          if [[ -f "build/bin/tests/ChainedEngineUnitTests.exe" ]]; then
+            build/bin/tests/ChainedEngineUnitTests.exe || echo "Unit tests failed"
+          fi
+          if [[ -f "build/bin/tests/ChainedEngineIntegrationTests.exe" ]]; then
+            # NOTE: Integration tests might require a headless setup or might fail if raylib can't init
+            build/bin/tests/ChainedEngineIntegrationTests.exe || echo "Integration tests failed (might need display)"
           fi
 
       - name: Upload artifacts

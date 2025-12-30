@@ -1,65 +1,115 @@
-#ifndef SCENE_CAMERA_CONTROLLER_H
-#define SCENE_CAMERA_CONTROLLER_H
+//
+// Created by I#Oleg.
+//
 
+#ifndef CAMERACONTROLLER_H
+#define CAMERACONTROLLER_H
+
+#include "ICameraSensitivityController.h"
 #include <raylib.h>
 #include <raymath.h>
 
-namespace Scene
-{
+#include "events/Event.h"
 
-class CameraController
+//
+// CameraController
+// Handles the 3D camera system including position, rotation, mode, and input smoothing.
+// Supports different camera modes (Third) and mouse-based rotation.
+//
+class CameraController : public ICameraSensitivityController
 {
 public:
-    CameraController();
+    CameraController(); // Initialize camera
     ~CameraController() = default;
 
-    // Non-copyable
-    CameraController(const CameraController &) = delete;
-    CameraController &operator=(const CameraController &) = delete;
+    CameraController(const CameraController &other);
+    CameraController &operator=(const CameraController &other);
+    CameraController(CameraController &&other) = delete;
 
-    // Core
+    // -------------------- Accessors --------------------
+
+    // Get current camera reference (modifiable)
+    [[nodiscard]] Camera &GetCamera();
+
+    // Get reference to camera mode integer
+    [[nodiscard]] int &GetCameraMode();
+
+    // Set camera mode
+    void SetCameraMode(int cameraMode);
+
+    // -------------------- Updates --------------------
+
+    // Update camera logic (called every frame)
     void Update();
-    void UpdateRotation();
-    void UpdateOrbit(const Vector3 &target_position);
 
-    // Accessors
-    Camera3D &GetCamera();
-    const Camera3D &GetCamera() const;
+    // Update camera rotation based on mouse input
+    void UpdateCameraRotation();
 
-    // Settings
-    void SetMode(int mode);
-    int GetMode() const;
+    // Event handling
+    void OnEvent(CHEngine::Event &e);
 
-    void SetFOV(float fov);
-    float GetFOV() const;
+    // Update camera offset based on FOV and angles relative to player position
+    void UpdateMouseRotation(Camera &camera, const Vector3 &playerPosition);
 
-    void SetSensitivity(float sensitivity);
-    float GetSensitivity() const;
+    // -------------------- Screen Shake --------------------
 
-    // Effects
-    void AddShake(float intensity, float duration = 0.5f);
+    // Add screen shake effect (intensity based on fall speed or impact)
+    void AddScreenShake(float intensity, float duration = 0.5f);
+
+    // Update screen shake (call every frame)
+    void UpdateScreenShake(float deltaTime);
+
+    // -------------------- Settings --------------------
+
+    // Set field of view (radius)
+    void SetFOV(float FOV);
+    void SetMouseSensitivity(float sensitivity) override;
+    void ApplyJumpToCamera(Camera &camera, const Vector3 &baseTarget, float jumpOffsetY);
+    void SetInputCaptureBypass(bool bypass)
+    {
+        m_inputCaptureBypass = bypass;
+    }
+
+    // -------------------- Getters --------------------
+
+    [[nodiscard]] float GetCameraYaw() const;
+    [[nodiscard]] float GetCameraPitch() const;
+    [[nodiscard]] float GetCameraSmoothingFactor() const;
+    [[nodiscard]] float GetFOV() const;
+    [[nodiscard]] float GetMouseSensitivity() const override;
+
+    // -------------------- Static Utilities --------------------
+
+    // Static utility function for filtering mouse delta (prevents glitches on Linux/VM)
+    // Use this everywhere GetMouseDelta() is called to ensure consistent behavior
+    static Vector2 FilterMouseDelta(const Vector2 &mouseDelta);
 
 private:
-    void UpdateShake(float dt);
-    static Vector2 GetFilteredMouseDelta();
+    Camera m_camera;                      // Raylib camera struct representing the 3D perspective
+    int m_cameraMode;                     // Current camera mode (First, Free, Third, Orbital)
+    float m_baseCameraY = 1.7f;           // Base camera height offset (eye level)
+    float m_cameraYaw = 1.0f;             // Yaw angle for rotation
+    float m_cameraPitch = 0.0f;           // Pitch angle for rotation
+    float m_cameraSmoothingFactor = 4.0f; // Smoothing speed for camera rotation
+    float m_radiusFOV = 8.0f;             // Radius or distance for field of view
 
-    Camera3D m_camera;
-    int m_mode;
+    float m_mouseSensitivity = 0.1f; // Mouse sensitivity
+    // Smoothing for virtual machines
+    Vector2 m_smoothedMouseDelta = {0.0f, 0.0f};   // Smoothed mouse delta value
+    static constexpr float MOUSE_DEAD_ZONE = 0.5f; // Dead zone - ignore very small movements
 
-    // Camera params
-    float m_yaw;
-    float m_pitch;
-    float m_radius_fov;
-    float m_mouse_sensitivity;
-    float m_smoothing;
-    float m_base_y;
+    // Interaction state tracking (Event-driven)
+    bool m_isLMBDown = false;
+    bool m_isRMBDown = false;
+    int m_activeMovementKeys = 0; // Counter for pressed movement keys
+    float m_lastMouseWheelMove = 0.0f;
+    bool m_inputCaptureBypass = false; // Bypass ImGui input capture check
 
-    // Shake state
-    float m_shake_intensity;
-    float m_shake_duration;
-    Vector3 m_shake_offset;
+    // Screen shake
+    float m_shakeIntensity = 0.0f;              // Current shake intensity
+    float m_shakeDuration = 0.0f;               // Remaining shake duration
+    float m_shakeTimer = 0.0f;                  // Internal timer for shake animation
+    Vector3 m_shakeOffset = {0.0f, 0.0f, 0.0f}; // Current shake offset applied to camera
 };
 
-} // namespace Scene
-
-#endif // SCENE_CAMERA_CONTROLLER_H
+#endif // CAMERACONTROLLER_H

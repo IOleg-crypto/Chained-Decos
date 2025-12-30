@@ -1,6 +1,7 @@
 //
 // Created by I#Oleg
 //
+#include "core/Log.h"
 #include <chrono>
 #include <gtest/gtest.h>
 #include <memory>
@@ -8,14 +9,14 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#include <CameraController/CameraController.h>
-#include <Color/ColorParser.h>
-#include <Engine/Engine.h>
-#include <Input/Core/InputManager.h>
-#include <Map/Core/MapLoader.h>
-#include <Menu/Menu.h>
-#include <Model/Model.h>
-#include <Player/Player.h>
+// #include <CameraController/CameraController.h>
+// #include <Color/ColorParser.h>
+// #include <Engine/Engine.h>
+// #include <Input/core/InputManager.h>
+// #include <Map/core/SceneLoader.h>
+// #include <Menu/Menu.h>
+// #include <Model/Model.h>
+// #include <player/player.h>
 
 using json = nlohmann::json;
 
@@ -30,7 +31,7 @@ public:
 #else
         // Don't initialize any graphics context for tests
         // Tests should run without requiring window/graphics context
-        TraceLog(LOG_INFO, "Test environment: Skipping graphics initialization");
+        CD_INFO("Test environment: Skipping graphics initialization");
 #endif
     }
     void TearDown() override
@@ -208,30 +209,30 @@ TEST(MenuTest, MenuActionEnum)
 }
 
 // ============================================================================
-// MapLoader Tests
+// SceneLoader Tests
 // ============================================================================
 
-TEST(MapLoaderTest, Constructor)
+TEST(SceneLoaderTest, Constructor)
 {
-    MapLoader loader;
+    SceneLoader loader;
     EXPECT_TRUE(true); // Basic test that constructor doesn't crash
 }
 
-// TEST(MapLoaderTest, LoadMapNonExistent) {
-//     // Test loading non-existent map
-//     auto result = LoadMap("non_existent_map.json");
+// TEST(SceneLoaderTest, LoadSceneNonExistent) {
+//     // Test loading non-existent scene
+//     auto result = LoadScene("non_existent_scene.json");
 //     EXPECT_TRUE(result.empty());
 // }
 
-// TEST(MapLoaderTest, LoadMapEmptyFile) {
+// TEST(SceneLoaderTest, LoadSceneEmptyFile) {
 //     // Test loading empty file
-//     auto result = LoadMap("empty_map.json");
+//     auto result = LoadScene("empty_scene.json");
 //     EXPECT_TRUE(result.empty());
 // }
 
-TEST(MapLoaderTest, MapLoaderStruct)
+TEST(SceneLoaderTest, SceneLoaderStruct)
 {
-    MapLoader loader;
+    SceneLoader loader;
 
     // Test default values
     EXPECT_TRUE(loader.modelName.empty());
@@ -246,9 +247,9 @@ TEST(MapLoaderTest, MapLoaderStruct)
     EXPECT_EQ(loader.scale.z, 0.0f);
 }
 
-// TEST(MapLoaderTest, LoadMapInvalidJson) {
+// TEST(SceneLoaderTest, LoadSceneInvalidJson) {
 //     // Test loading invalid JSON
-//     auto result = LoadMap("invalid_json.json");
+//     auto result = LoadScene("invalid_json.json");
 //     EXPECT_TRUE(result.empty());
 // }
 
@@ -734,7 +735,7 @@ TEST(EdgeCaseTest, ModelInstanceEdgeCases)
     });
 }
 
-// TEST(EdgeCaseTest, MapLoaderEdgeCases) {
+// TEST(EdgeCaseTest, SceneLoaderEdgeCases) {
 //     // Test with very long path
 //     std::string longPath(1000, 'a');
 //     auto result = LoadMap(longPath);

@@ -136,3 +136,7 @@ TEST_F(PhysicsComponentTest, VelocityOperations) {
     physics->SetVelocity(newVelocity);
     EXPECT_EQ(physics->GetVelocity(), newVelocity);
 }
+
+
+
+
