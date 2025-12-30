@@ -46,9 +46,9 @@ TEST_F(SettingsManagerTest, SkyboxGammaSettingsDefaultValues)
     // Load empty file to ensure defaults are set
     settings.LoadFromFile(testConfigFile);
 
-    // Test default values (gamma should be disabled by default if not set)
+    // Test default values
     EXPECT_FALSE(settings.IsSkyboxGammaEnabled());
-    EXPECT_FLOAT_EQ(settings.GetSkyboxGammaValue(), 0.0f); // Default float is 0.0f in ConfigManager
+    EXPECT_FLOAT_EQ(settings.GetSkyboxGammaValue(), 2.2f); // Default for gamma is 2.2f
 }
 
 TEST_F(SettingsManagerTest, SkyboxGammaSettingsSetAndGet)

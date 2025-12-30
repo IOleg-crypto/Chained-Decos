@@ -556,8 +556,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                     MatrixMultiply(scaleMatrix, MatrixMultiply(rotationMatrix, translation));
 
                 collision = Collision();
-                collision.BuildFromModelWithType(const_cast<Model *>(modelPtr),
-                                                 CollisionType::BVH_ONLY, transform);
+                collision.BuildFromModel(const_cast<Model *>(modelPtr), transform);
+                collision.SetCollisionType(CollisionType::BVH_ONLY);
                 useBVHCollision = true;
             }
         }

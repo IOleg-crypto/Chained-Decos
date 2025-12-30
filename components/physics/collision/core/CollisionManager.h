@@ -5,10 +5,6 @@
 #include "components/physics/collision/interfaces/ICollisionManager.h"
 
 #include "scene/ecs/Entity.h"
-#include <algorithm>
-#include <array>
-#include <execution>
-#include <future>
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
@@ -16,21 +12,14 @@
 #include <unordered_map>
 #include <vector>
 
-#include "components/physics/collision/core/CollisionModelProcessor.h"
-#include "components/physics/collision/core/CollisionPredictionCache.h"
-#include "components/physics/collision/core/CollisionSpatialGrid.h"
+#include <set>
 
 // Include ModelLoader header
 #include "scene/resources/model/Model.h"
 
-// Structure to hold model processing data for parallel processing
-struct ModelCollisionTask
+struct CollisionConfig
 {
-    std::string modelName;
-    Model *model;
-    bool hasCollision;
-    std::vector<ModelInstance *> instances;
-    int createdCollisions = 0;
+    int maxPrecisePerModel = 50;
 };
 
 //
@@ -90,10 +79,6 @@ public:
     CheckEntityCollision(ECS::EntityID selfEntity, const Collision &collider,
                          std::vector<ECS::EntityID> &outCollidedEntities) const override;
 
-    // Create collisions only for specific models
-    void CreateAutoCollisionsFromModelsSelective(ModelLoader &models,
-                                                 const std::vector<std::string> &modelNames);
-
     // Helper function to create cache key
     [[nodiscard]] std::string MakeCollisionCacheKey(const std::string &modelName,
                                                     float scale) const;
@@ -102,29 +87,41 @@ public:
     bool CreateCollisionFromModel(const Model &model, const std::string &modelName,
                                   Vector3 position, float scale, const ModelLoader &models);
 
-    // Prediction cache management
-    void UpdateFrameCache();
-    void ClearExpiredCache();
-
 private:
     std::vector<std::shared_ptr<Collision>> m_collisionObjects;
 
-    // Extracted helper classes
-    CollisionSpatialGrid m_grid;
-    CollisionModelProcessor m_modelProcessor;
-    CollisionPredictionCache m_cache;
+    // Spatial Partitioning
+    float m_cellSize = 10.0f;
+    std::unordered_map<GridKey, std::vector<size_t>, GridKeyHash> m_staticGrid;
+    std::unordered_map<GridKey, std::vector<ECS::EntityID>, GridKeyHash> m_entityGrid;
 
-    // Cache to prevent rebuilding precise collisions for same models
+    void BuildSpatialGrid(const std::vector<std::shared_ptr<Collision>> &objects);
+    void BuildEntityGrid(
+        const std::unordered_map<ECS::EntityID, std::shared_ptr<Collision>> &entityColliders);
+    [[nodiscard]] std::vector<size_t> GetNearbyObjectIndices(const Collision &target) const;
+    [[nodiscard]] std::vector<ECS::EntityID> GetNearbyEntities(const Collision &target) const;
+
+    // Model Processing
+    CollisionConfig m_config;
     std::unordered_map<std::string, std::shared_ptr<Collision>> m_collisionCache;
-
-    // Limit the number of precise collisions per model
     std::unordered_map<std::string, int> m_preciseCollisionCountPerModel;
     static constexpr int MAX_PRECISE_COLLISIONS_PER_MODEL = 50;
 
+    std::shared_ptr<Collision> CreateBaseCollision(const Model &model, const std::string &modelName,
+                                                   const ModelFileConfig *config,
+                                                   bool needsPreciseCollision);
+
+    Collision CreatePreciseInstanceCollision(const Model &model, Vector3 position, float scale,
+                                             const ModelFileConfig *config);
+
+    Collision CreatePreciseInstanceCollisionFromCached(const Collision &cachedCollision,
+                                                       Vector3 position, float scale);
+
+    Collision CreateSimpleAABBInstanceCollision(const Collision &cachedCollision,
+                                                const Vector3 &position, float scale);
+
     // Dynamic Entity Storage
     std::unordered_map<ECS::EntityID, std::shared_ptr<Collision>> m_entityColliders;
-
-    size_t m_currentFrame = 0;
 };
 
 #endif // COLLISIONMANAGER_H

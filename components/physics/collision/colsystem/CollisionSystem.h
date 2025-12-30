@@ -63,8 +63,6 @@ public:
     bool IntersectsAABB(const Collision &other) const;
 
     void BuildFromModel(void *model, const Matrix &transform = MatrixIdentity());
-    void BuildFromModelWithType(void *model, CollisionType type,
-                                const Matrix &transform = MatrixIdentity());
 
     // Collision type control
     CollisionType GetCollisionType() const;
@@ -84,8 +82,7 @@ public:
     void InitializeBVH();
 
     // Raycast using BVH (returns true if hit within maxDistance)
-    bool RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxDistance,
-                    RayHit &outHit) const;
+    bool RaycastBVH(const Ray &ray, float maxDistance, RayHit &outHit) const;
 
     // Intersection with another Collision (broad-phase AABB then BVH narrow-phase)
     bool Intersects(const Collision &other) const;
@@ -106,25 +103,20 @@ private:
 
     // Internal BVH helpers
     std::unique_ptr<BVHNode> BuildBVHNode(std::vector<CollisionTriangle> &tris, int depth = 0);
-    bool RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const Vector3 &dir,
-                        float maxDistance, RayHit &outHit) const;
+    bool RaycastBVHNode(const BVHNode *node, const Ray &ray, float maxDistance,
+                        RayHit &outHit) const;
     void DrawDebugBVHNode(const BVHNode *node, int depth, bool leafOnly) const;
 
 public:
-    // Compatibility helpers expected by CollisionManager (legacy Octree paths)
-    bool IntersectsBVH(const Collision &other) const;
+    // Compatibility helpers expected by CollisionManager
     bool IsUsingBVH() const;
-    bool IsUsingOctree() const;
-    bool RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
-                       float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const;
-
     void UpdateAABBFromTriangles();
 
 private:
     // AABB using raylib BoundingBox directly
     BoundingBox m_bounds{};
 
-    CollisionType m_collisionType = CollisionType::HYBRID_AUTO;
+    CollisionType m_collisionType = CollisionType::AABB_ONLY;
     std::vector<CollisionTriangle> m_triangles;
 
     // BVH root
@@ -138,8 +130,7 @@ private:
     static void ExpandAABB(Vector3 &minOut, Vector3 &maxOut, const Vector3 &p);
 
     // Moller-Trumbore ray/triangle
-    static bool RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
-                                      const CollisionTriangle &tri, RayHit &outHit);
+    static bool RayIntersectsTriangle(const Ray &ray, const CollisionTriangle &tri, RayHit &outHit);
 };
 
 // CollisionManager is defined in CollisionManager.h

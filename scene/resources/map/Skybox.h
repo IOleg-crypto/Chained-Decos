@@ -30,33 +30,18 @@ public:
     void LoadMaterialShader(const std::string &vsPath, const std::string &fsPath);
     void DrawSkybox(Vector3 position);
     void UnloadSkybox();
-    bool IsInitialized() const
-    {
-        return m_initialized;
-    }
-    bool IsLoaded() const
-    {
-        return m_skyboxTexture.id != 0;
-    }
+    bool IsInitialized() const;
+    bool IsLoaded() const;
 
     // Gamma correction settings
     void SetGammaEnabled(bool enabled);
     void SetGammaValue(float gamma);
-    float GetGammaValue() const
-    {
-        return m_gammaValue;
-    }
-    bool IsGammaEnabled() const
-    {
-        return m_gammaEnabled;
-    }
+    float GetGammaValue() const;
+    bool IsGammaEnabled() const;
 
     // Exposure settings
     void SetExposure(float exposure);
-    float GetExposure() const
-    {
-        return m_exposure;
-    }
+    float GetExposure() const;
 
     // Update gamma from config (for settings integration)
     void UpdateGammaFromConfig();

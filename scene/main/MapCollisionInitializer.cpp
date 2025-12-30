@@ -27,10 +27,6 @@ void MapCollisionInitializer::InitializeCollisions(entt::registry &registry,
     // Initialize ground collider first
     m_collisionManager->Initialize();
 
-    // Load model collisions only for models that are actually loaded and required for this map
-    auto availableModels = m_models->GetAvailableModels();
-    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, availableModels);
-
     // Reinitialize after adding all model colliders
     m_collisionManager->Initialize();
 
@@ -72,7 +68,6 @@ void MapCollisionInitializer::InitializeCollisionsWithModels(
     }
 
     m_collisionManager->Initialize();
-    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
     m_collisionManager->Initialize();
 
     if (m_player)
@@ -111,7 +106,6 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
     }
 
     m_collisionManager->Initialize();
-    m_collisionManager->CreateAutoCollisionsFromModelsSelective(*m_models, requiredModels);
     m_collisionManager->Initialize();
 
     if (m_player)

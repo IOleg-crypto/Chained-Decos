@@ -46,8 +46,7 @@ Collision &Collision::operator=(const Collision &other)
     m_triangles = other.m_triangles;
     m_isBuilt = other.m_isBuilt;
 
-    if (!m_triangles.empty() && (m_collisionType == CollisionType::BVH_ONLY ||
-                                 m_collisionType == CollisionType::TRIANGLE_PRECISE))
+    if (!m_triangles.empty())
     {
         BuildBVHFromTriangles();
     }
@@ -91,19 +90,9 @@ BoundingBox Collision::GetBoundingBox() const
     return m_bounds;
 }
 
-bool Collision::IntersectsBVH(const Collision &other) const
-{
-    return Intersects(other);
-}
-
 bool Collision::IsUsingBVH() const
 {
     return m_bvhRoot != nullptr;
-}
-
-bool Collision::IsUsingOctree() const
-{
-    return IsUsingBVH();
 }
 
 // ----------------- AABB -----------------
@@ -288,12 +277,6 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
     }
 
     m_isBuilt = true;
-}
-
-void Collision::BuildFromModelWithType(void *model, CollisionType type, const Matrix &transform)
-{
-    m_collisionType = type;
-    BuildFromModel(model, transform);
 }
 
 // ----------------- Helpers for triangle bounds -----------------
@@ -496,8 +479,7 @@ void Collision::BuildBVHFromTriangles()
 }
 
 // ----------------- Ray/triangle (Möller–Trumbore) -----------------
-bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
-                                      const CollisionTriangle &tri, RayHit &outHit)
+bool Collision::RayIntersectsTriangle(const Ray &ray, const CollisionTriangle &tri, RayHit &outHit)
 {
     // Enhanced Möller-Trumbore with safety checks
     const float EPS_PARALLEL = 1e-8f;
@@ -508,7 +490,7 @@ bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
     if (Vector3LengthSqr(edge1) < 1e-12f || Vector3LengthSqr(edge2) < 1e-12f)
         return false;
 
-    Vector3 h = Vector3CrossProduct(dir, edge2);
+    Vector3 h = Vector3CrossProduct(ray.direction, edge2);
     float a = Vector3DotProduct(edge1, h);
 
     // Enhanced parallel check
@@ -521,14 +503,14 @@ bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
     if (!std::isfinite(f))
         return false;
 
-    Vector3 s = Vector3Subtract(orig, tri.V0());
+    Vector3 s = Vector3Subtract(ray.position, tri.V0());
     float u = f * Vector3DotProduct(s, h);
 
     if (u < 0.0f || u > 1.0f)
         return false;
 
     Vector3 q = Vector3CrossProduct(s, edge1);
-    float v = f * Vector3DotProduct(dir, q);
+    float v = f * Vector3DotProduct(ray.direction, q);
 
     if (v < 0.0f || u + v > 1.0f)
         return false;
@@ -540,7 +522,7 @@ bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
     {
         outHit.hit = true;
         outHit.distance = t;
-        outHit.position = Vector3Add(orig, Vector3Scale(dir, t));
+        outHit.position = Vector3Add(ray.position, Vector3Scale(ray.direction, t));
 
         // Safely compute normal
         Vector3 normal = Vector3CrossProduct(edge1, edge2);
@@ -558,13 +540,12 @@ bool Collision::RayIntersectsTriangle(const Vector3 &orig, const Vector3 &dir,
     return false;
 }
 
-bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const Vector3 &dir,
-                               float maxDistance, RayHit &outHit) const
+bool Collision::RaycastBVHNode(const BVHNode *node, const Ray &ray, float maxDistance,
+                               RayHit &outHit) const
 {
     if (!node)
         return false;
     // Use raylib for AABB-ray intersection test
-    Ray ray = {origin, dir};
     BoundingBox box = {node->min, node->max};
     RayCollision collision = GetRayCollisionBox(ray, box);
 
@@ -580,7 +561,7 @@ bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const
         {
             const auto &tri = node->triangles[i];
             RayHit hit;
-            if (RayIntersectsTriangle(origin, dir, tri, hit))
+            if (RayIntersectsTriangle(ray, tri, hit))
             {
                 if (hit.distance < outHit.distance)
                 {
@@ -593,13 +574,12 @@ bool Collision::RaycastBVHNode(const BVHNode *node, const Vector3 &origin, const
     }
 
     // traverse both children (order heuristic could be added)
-    bool hitL = RaycastBVHNode(node->left.get(), origin, dir, maxDistance, outHit);
-    bool hitR = RaycastBVHNode(node->right.get(), origin, dir, maxDistance, outHit);
+    bool hitL = RaycastBVHNode(node->left.get(), ray, maxDistance, outHit);
+    bool hitR = RaycastBVHNode(node->right.get(), ray, maxDistance, outHit);
     return hitL || hitR;
 }
 
-bool Collision::RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxDistance,
-                           RayHit &outHit) const
+bool Collision::RaycastBVH(const Ray &ray, float maxDistance, RayHit &outHit) const
 {
     if (!m_bvhRoot)
         return false;
@@ -607,13 +587,12 @@ bool Collision::RaycastBVH(const Vector3 &origin, const Vector3 &dir, float maxD
     outHit.hit = false;
     outHit.distance = std::numeric_limits<float>::infinity();
 
-    // Safely normalize direction vector
-    float dirLengthSqr = Vector3LengthSqr(dir);
+    // Safely normalize direction vector (if needed, but usually Ray handles this)
+    float dirLengthSqr = Vector3LengthSqr(ray.direction);
     if (dirLengthSqr < 1e-12f)
         return false; // Invalid direction vector
 
-    Vector3 ndir = Vector3Scale(dir, 1.0f / sqrtf(dirLengthSqr));
-    bool ok = RaycastBVHNode(m_bvhRoot.get(), origin, ndir, maxDistance, outHit);
+    bool ok = RaycastBVHNode(m_bvhRoot.get(), ray, maxDistance, outHit);
     return ok;
 }
 
@@ -1067,17 +1046,4 @@ void Collision::DrawDebugBVHNode(const BVHNode *node, int depth, bool leafOnly) 
         DrawDebugBVHNode(node->left.get(), depth + 1, leafOnly);
     if (node->right)
         DrawDebugBVHNode(node->right.get(), depth + 1, leafOnly);
-}
-
-// ======================================================================================================================
-bool Collision::RaycastOctree(const Vector3 &origin, const Vector3 &dir, float maxDistance,
-                              float &hitDistance, Vector3 &hitPoint, Vector3 &hitNormal) const
-{
-    RayHit hit;
-    if (!RaycastBVH(origin, dir, maxDistance, hit))
-        return false;
-    hitDistance = hit.distance;
-    hitPoint = hit.position;
-    hitNormal = hit.normal;
-    return true;
 }

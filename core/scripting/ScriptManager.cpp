@@ -7,10 +7,10 @@
 #include "events/KeyEvent.h"
 #include "events/UIEventRegistry.h"
 #include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components/PlayerComponent.h"
 #include "scene/ecs/components/ScriptingComponents.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/VelocityComponent.h"
-#include "scene/ecs/components/playerComponent.h"
 #include <raylib.h>
 #include <raymath.h>
 
