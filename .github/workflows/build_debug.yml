@@ -1,6 +1,12 @@
 name: ChainedDecos Debug Build
 
 on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - chained-gui
+      - refactor-branch
   workflow_dispatch:
     inputs:
       tag_name:
@@ -97,13 +103,6 @@ jobs:
         run: |
           choco install cmake ninja ccache --no-progress
 
-      # macOS setup
-      - name: Install dependencies (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew update
-          brew install cmake ninja ccache
-
       - name: Clear CMake cache
         shell: bash
         run: |
@@ -117,14 +116,14 @@ jobs:
           find "${{ github.workspace }}" -name "_deps" -type d -exec rm -rf {} + 2>/dev/null || true
 
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            echo "🪟 Performing Windows-specific cleanup..."
+            echo "Performing Windows-specific cleanup..."
             find "${{ github.workspace }}" -name "*.vcxproj" -delete 2>/dev/null || true
             find "${{ github.workspace }}" -name "*.sln" -delete 2>/dev/null || true
             find "${{ github.workspace }}" -name ".vs" -type d -exec rm -rf {} + 2>/dev/null || true
             find "${{ github.workspace }}" -name "Debug" -type d -exec rm -rf {} + 2>/dev/null || true
             find "${{ github.workspace }}" -name "Release" -type d -exec rm -rf {} + 2>/dev/null || true
           fi
-          echo "✅ CMake cache cleared completely"
+          echo "CMake cache cleared completely"
 
       - name: Create build and package directories
         run: |
@@ -161,22 +160,20 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             PARALLEL_JOBS=8
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            PARALLEL_JOBS=4
           else
             PARALLEL_JOBS=$(nproc 2>/dev/null || echo 4)
           fi
-          echo "🏗️ Building release targets with $PARALLEL_JOBS parallel jobs..."
+          echo "Building release targets with $PARALLEL_JOBS parallel jobs..."
           cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
             --config Debug \
-            --target ChainedDecos ChainedDecosMapEditor \
+            --target ChainedEditor ChainedEngineUnitTests ChainedEngineIntegrationTests \
             --parallel "$PARALLEL_JOBS"
 
       - name: Install to package directory
         shell: bash
         run: |
           cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
-            --config Release \
+            --config Debug \
             --component Runtime
 
       - name: Package binaries

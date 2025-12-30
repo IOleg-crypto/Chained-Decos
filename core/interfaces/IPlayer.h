@@ -1,19 +1,16 @@
 #ifndef IPLAYER_H
 #define IPLAYER_H
 
-#include <components/physics/collision/System/CollisionSystem.h>
-#include <components/physics/dynamics/Components/PhysicsComponent.h>
+#include <components/physics/collision/colsystem/CollisionSystem.h>
+#include <components/physics/dynamics/components/PhysicsComponent.h>
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
-#include <scene/3d/camera/Core/CameraController.h>
+#include <scene/camera/CameraController.h>
 
-/**
- * @brief Minimal Player interface
- *
- * Essential API only - 8 methods (down from 30+)
- * Engine depends on this interface, not concrete Player class.
- */
+// Minimal Player interface
+// Essential API only - 8 methods (down from 30+)
+// Engine depends on this interface, not concrete Player class.
 class IPlayer
 {
 public:
@@ -35,7 +32,7 @@ public:
     // Camera
     virtual Camera3D &GetCamera() = 0;
 
-    // Debug/Cheat
+    // debug/Cheat
     virtual void SetNoclip(bool enabled) = 0;
     virtual bool IsNoclip() const = 0;
 
@@ -45,8 +42,8 @@ public:
     virtual void SetPlayerPosition(const Vector3 &pos) const = 0;
 
     // Physics
-    virtual LegacyPhysicsComponent &GetPhysics() = 0;
-    virtual const LegacyPhysicsComponent &GetPhysics() const = 0;
+    virtual PhysicsComponent &GetPhysics() = 0;
+    virtual const PhysicsComponent &GetPhysics() const = 0;
 
     // Movement
     virtual void ApplyJumpImpulse(float impulse) = 0;
