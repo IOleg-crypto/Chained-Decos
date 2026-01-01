@@ -2,6 +2,7 @@
 #include "EditorMapManager.h"
 #include "core/Log.h"
 #include "scene/ecs/ECSRegistry.h"
+#include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/ScriptingComponents.h"
 #include "scene/ecs/components/TransformComponent.h"
@@ -12,7 +13,8 @@ namespace CHEngine
 {
 
 EditorSceneManager::EditorSceneManager()
-    : m_mapManager(std::make_unique<EditorMapManager>()), m_activeScene(std::make_unique<Scene>()),
+    : m_mapManager(std::make_unique<EditorMapManager>()),
+      m_activeScene(std::make_unique<Scene>("Game")), m_uiScene(std::make_unique<Scene>("UI")),
       m_skybox(std::make_unique<Skybox>())
 {
 }
@@ -20,7 +22,8 @@ EditorSceneManager::EditorSceneManager()
 void EditorSceneManager::ClearScene()
 {
     m_mapManager->ClearScene();
-    m_activeScene = std::make_unique<Scene>();
+    m_activeScene = std::make_unique<Scene>("Game");
+    m_uiScene = std::make_unique<Scene>("UI");
     m_currentMapPath.clear();
     m_modified = false;
 }
@@ -102,7 +105,7 @@ void EditorSceneManager::RemoveObject(int index)
 
 void EditorSceneManager::RefreshUIEntities()
 {
-    auto &registry = m_activeScene->GetRegistry();
+    auto &registry = m_uiScene->GetRegistry();
 
     // 1. Remove all existing UI entities
     auto view = registry.view<UIElementIndex>();
@@ -206,7 +209,7 @@ void EditorSceneManager::RefreshUIEntities()
         // Add Scripting if present
         if (!data.scriptPath.empty())
         {
-            registry.emplace<LuaScriptComponent>(entity, data.scriptPath, false);
+            registry.emplace<CSharpScriptComponent>(entity, data.scriptPath, false);
         }
     }
 
@@ -226,21 +229,21 @@ void EditorSceneManager::RefreshMapEntities()
     for (int i = 0; i < (int)mapObjects.size(); i++)
     {
         const auto &data = mapObjects[i];
-        if (data.scriptPath.empty())
-            continue;
+        if (!data.scriptPath.empty())
+        {
+            auto entity = registry.create();
+            registry.emplace<MapObjectIndex>(entity, i);
+            registry.emplace<NameComponent>(entity, data.name);
 
-        auto entity = registry.create();
-        registry.emplace<MapObjectIndex>(entity, i);
-        registry.emplace<NameComponent>(entity, data.name);
+            // Match legacy MapObjectData to ECS components
+            registry.emplace<TransformComponent>(entity, data.position, data.rotation, data.scale);
 
-        // Match legacy MapObjectData to ECS components
-        registry.emplace<TransformComponent>(entity, data.position, data.rotation, data.scale);
+            // Add ScriptComponent (using scriptPath as className for compatibility)
+            registry.emplace<CSharpScriptComponent>(entity, data.scriptPath, false);
 
-        // Add ScriptComponent
-        registry.emplace<LuaScriptComponent>(entity, data.scriptPath, false);
-
-        CD_CORE_INFO("[EditorSceneManager] Created ECS Entity for Map Object[%d]: %s", i,
-                     data.name.c_str());
+            CD_CORE_INFO("[EditorSceneManager] Created ECS Entity for Map Object[%d]: %s", i,
+                         data.name.c_str());
+        }
     }
 }
 
@@ -267,7 +270,7 @@ void EditorSceneManager::SyncEntitiesToMap()
 
     // Sync UI Elements
     auto &uiElements = GetGameScene().GetUIElementsMutable();
-    auto uiView = registry.view<UIElementIndex, RectTransform>();
+    auto uiView = m_uiScene->GetRegistry().view<UIElementIndex, RectTransform>();
     for (auto entity : uiView)
     {
         auto &idxComp = uiView.get<UIElementIndex>(entity);

@@ -5,9 +5,11 @@
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/PlayerComponent.h"
 #include "scene/ecs/components/RenderComponent.h"
+#include "scene/ecs/components/ScriptingComponents.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
+
 
 using namespace CHEngine;
 
@@ -87,6 +89,11 @@ CHEngine::Entity RuntimeInitializer::InitializePlayer(CHEngine::Scene *scene, Ve
     collision.bounds = BoundingBox{Vector3{-0.4f, 0.0f, -0.4f}, Vector3{0.4f, 1.8f, 0.4f}};
     collision.collisionLayer = 1; // Player layer
     playerEntity.AddComponent<CHEngine::CollisionComponent>(collision);
+
+    // --- C# SCRIPTING TEST ---
+    auto &script = playerEntity.AddComponent<CHEngine::CSharpScriptComponent>();
+    script.className = "ChainedEngine.TestScript, ChainedEngine.Managed";
+    script.initialized = false;
 
     return playerEntity;
 }

@@ -92,11 +92,11 @@ void UIRenderSystem::Render(entt::registry &registry, int screenWidth, int scree
                         if (registry.all_of<NameComponent>(entity))
                         {
                             auto &nameComp = registry.get<NameComponent>(entity);
-                            if (ScriptManager::IsInitialized())
+                            /*if (ScriptManager::IsInitialized())
                             {
                                 ScriptManager::RunString("TriggerButtonCallback('" + nameComp.name +
                                                          "')");
-                            }
+                            }*/
                         }
 
                         // Trigger Event

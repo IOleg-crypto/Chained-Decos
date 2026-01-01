@@ -4,17 +4,15 @@
 #include "core/layer/Layer.h"
 #include "editor/EditorTypes.h"
 #include "editor/camera/EditorCamera.h"
+#include "editor/logic/EditorEntityFactory.h"
+#include "editor/logic/EditorInput.h"
+#include "editor/logic/EditorProjectActions.h"
+#include "editor/logic/EditorSceneActions.h"
+#include "editor/logic/PanelManager.h"
 #include "editor/logic/ProjectManager.h"
 #include "editor/logic/SceneSimulationManager.h"
 #include "editor/logic/SelectionManager.h"
 #include "editor/logic/undo/CommandHistory.h"
-#include "editor/panels/AssetBrowserPanel.h"
-#include "editor/panels/ConsolePanel.h"
-#include "editor/panels/HierarchyPanel.h"
-#include "editor/panels/InspectorPanel.h"
-#include "editor/panels/MenuBarPanel.h"
-#include "editor/panels/ProjectBrowserPanel.h"
-#include "editor/panels/ToolbarPanel.h"
 #include "editor/panels/ViewportPanel.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
@@ -49,34 +47,16 @@ public:
     virtual void OnImGuiRender() override;
     virtual void OnEvent(Event &event) override;
 
-    // --- Scene Lifecycle ---
-public:
-    void OnScenePlay();
-    void OnSceneStop();
-
-    // --- Scene Commands ---
-public:
-    void NewScene();
-    void OpenScene();
-    void SaveScene();
-    void SaveSceneAs();
+    // --- Scene Operations ---
     void PlayInRuntime();
 
-    // --- Project Management ---
-public:
-    void NewProject(const std::string &name, const std::string &location);
-    void OpenProject(const std::string &projectPath);
-    void CloseProject();
+    // --- Project Actions ---
+    // (Handled by m_ProjectActions)
 
     // --- Entity/Object Management ---
 public:
-    void AddObject(const MapObjectData &data);
-    void CreateEntity();
-    void DeleteEntity(entt::entity entity);
-    void DeleteObject(int index);
-    void AddModel();
-    void AddUIElement(const std::string &type);
-    void OnAssetDropped(const std::string &assetPath, const Vector3 &worldPosition);
+    // --- Entity/Object Actions ---
+    // (Handled by m_EntityFactory)
 
     // --- Environment Management ---
 public:
@@ -92,29 +72,35 @@ public:
     Tool GetActiveTool() const;
     void SetActiveTool(Tool tool);
     std::shared_ptr<Scene> GetActiveScene();
+    std::shared_ptr<Scene> GetUIScene();
 
-    // --- Input Handling ---
-private:
-    bool OnKeyPressed(KeyPressedEvent &e);
-    bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
+    enum class SceneContext
+    {
+        Game,
+        UI
+    };
+    void SetSceneContext(SceneContext context)
+    {
+        m_CurrentContext = context;
+    }
+    SceneContext GetSceneContext() const
+    {
+        return m_CurrentContext;
+    }
+    std::shared_ptr<Scene> GetCurrentEditingScene()
+    {
+        return m_CurrentContext == SceneContext::Game ? m_Scene : m_UIScene;
+    }
 
-    // --- UI Helpers ---
-private:
-    void UI_DrawDockspace();
+    // (Handled by m_Input)
+
+    // (Handled by m_Interface)
+
+    void InitPanels();
 
     // --- Member Variables ---
 private:
     EditorCamera m_EditorCamera;
-
-    // Panels
-    std::unique_ptr<HierarchyPanel> m_HierarchyPanel;
-    std::unique_ptr<InspectorPanel> m_InspectorPanel;
-    std::unique_ptr<ViewportPanel> m_ViewportPanel;
-    std::unique_ptr<AssetBrowserPanel> m_AssetBrowserPanel;
-    std::unique_ptr<ConsolePanel> m_ConsolePanel;
-    std::unique_ptr<ToolbarPanel> m_ToolbarPanel;
-    std::unique_ptr<ProjectBrowserPanel> m_ProjectBrowserPanel;
-    std::unique_ptr<MenuBarPanel> m_MenuBarPanel;
 
     // Managers
     ProjectManager m_ProjectManager;
@@ -122,10 +108,19 @@ private:
     SelectionManager m_SelectionManager;
     CommandHistory m_CommandHistory;
 
+    // Actions (Godot Style)
+    std::unique_ptr<EditorSceneActions> m_SceneActions;
+    std::unique_ptr<EditorProjectActions> m_ProjectActions;
+    std::unique_ptr<EditorEntityFactory> m_EntityFactory;
+    std::unique_ptr<EditorInput> m_Input;
+    std::unique_ptr<PanelManager> m_PanelManager;
+
     bool m_ShowProjectBrowser = true;
 
     // Scene System
-    std::shared_ptr<Scene> m_Scene;
+    std::shared_ptr<Scene> m_Scene; // Game Scene
+    std::shared_ptr<Scene> m_UIScene;
+    SceneContext m_CurrentContext = SceneContext::Game;
 
     // Viewport State
     ImVec2 m_ViewportSize = {0.0f, 0.0f};

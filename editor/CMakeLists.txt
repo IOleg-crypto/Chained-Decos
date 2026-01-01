@@ -8,15 +8,22 @@ set(logic_sources
     logic/EditorSettings.h
     logic/EditorSceneManager.cpp
     logic/EditorSceneManager.h
+    logic/EditorSceneActions.cpp
+    logic/EditorSceneActions.h
+    logic/EditorProjectActions.cpp
+    logic/EditorProjectActions.h
+    logic/EditorEntityFactory.cpp
+    logic/EditorEntityFactory.h
+    logic/EditorInput.cpp
+    logic/EditorInput.h
     logic/SelectionManager.cpp
     logic/SelectionManager.h
     logic/ProjectManager.cpp
     logic/ProjectManager.h
     logic/SceneSimulationManager.cpp
     logic/SceneSimulationManager.h
-    logic/EditorState.cpp
-    logic/EditorState.h
     logic/SceneCloner.h
+    logic/PanelManager.h
     logic/undo/EditorCommand.h
     logic/undo/CommandHistory.cpp
     logic/undo/CommandHistory.h
@@ -30,7 +37,7 @@ set(logic_sources
 )
 
 set(panels_sources
-    panels/IEditorPanel.h
+    panels/EditorPanel.h
     panels/HierarchyPanel.cpp
     panels/HierarchyPanel.h
     panels/InspectorPanel.cpp
@@ -39,14 +46,14 @@ set(panels_sources
     panels/ViewportPanel.h
     panels/ConsolePanel.cpp
     panels/ConsolePanel.h
-    panels/AssetBrowserPanel.cpp
-    panels/AssetBrowserPanel.h
     panels/ToolbarPanel.cpp
     panels/ToolbarPanel.h
     panels/MenuBarPanel.cpp
     panels/MenuBarPanel.h
     panels/ProjectBrowserPanel.cpp
     panels/ProjectBrowserPanel.h
+    panels/ContentBrowserPanel.cpp
+    panels/ContentBrowserPanel.h
     utils/EditorGrid.cpp
     utils/EditorGrid.h
     utils/ProcessUtils.cpp

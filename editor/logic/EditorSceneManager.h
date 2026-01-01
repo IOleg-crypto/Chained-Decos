@@ -23,7 +23,30 @@ public:
     {
         return m_activeScene.get();
     }
+    CHEngine::Scene *GetUIScene()
+    {
+        return m_uiScene.get();
+    }
     CHEngine::GameScene &GetGameScene();
+
+    enum class SceneContext
+    {
+        Game,
+        UI
+    };
+    void SetContext(SceneContext context)
+    {
+        m_currentContext = context;
+    }
+    SceneContext GetContext() const
+    {
+        return m_currentContext;
+    }
+    CHEngine::Scene *GetCurrentEditingScene()
+    {
+        return m_currentContext == SceneContext::Game ? m_activeScene.get() : m_uiScene.get();
+    }
+
     void RemoveObject(int index);
     void RefreshUIEntities();
     void RefreshMapEntities();
@@ -63,6 +86,9 @@ public:
 
 private:
     std::unique_ptr<CHEngine::Scene> m_activeScene;
+    std::unique_ptr<CHEngine::Scene> m_uiScene;
+    SceneContext m_currentContext = SceneContext::Game;
+
     std::string m_currentMapPath;
     bool m_modified = false;
     std::unique_ptr<Skybox> m_skybox;

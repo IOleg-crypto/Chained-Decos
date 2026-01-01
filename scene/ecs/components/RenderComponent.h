@@ -10,6 +10,8 @@ struct RenderComponent
 {
     std::string modelName;
     Model *model = nullptr;
+    Texture2D *texture = nullptr;
+    float tiling = 1.0f;
     Color tint = WHITE;
     bool visible = true;
     int renderLayer = 0;

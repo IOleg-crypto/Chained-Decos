@@ -1,3 +1,4 @@
+#pragma once
 #include "project/Project.h"
 #include "scene/resources/map/GameScene.h"
 #include <functional>

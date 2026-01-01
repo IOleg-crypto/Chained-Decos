@@ -53,6 +53,16 @@ public:
     void SetMapMetaData(const MapMetadata &mapData);
     MapMetadata &GetMapMetaDataMutable();
 
+    // Scene Type
+    SceneType GetSceneType() const
+    {
+        return m_sceneType;
+    }
+    void SetSceneType(SceneType type)
+    {
+        m_sceneType = type;
+    }
+
     // Textures
     const std::unordered_map<std::string, Texture2D> &GetMapTextures() const;
     void AddMapTextures(const std::unordered_map<std::string, Texture2D> &texturesMap);
@@ -65,6 +75,7 @@ private:
     std::unordered_map<std::string, Model> m_loadedModels;
     std::unordered_map<std::string, Texture2D> m_loadedTextures;
     std::shared_ptr<Skybox> m_skybox;
+    SceneType m_sceneType = SceneType::Game; // Default to Game scene
 };
 } // namespace CHEngine
 

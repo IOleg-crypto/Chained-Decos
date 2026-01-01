@@ -1,45 +1,32 @@
 #include "ProjectBrowserPanel.h"
 #include "core/Log.h"
+#include "editor/logic/EditorProjectActions.h"
 #include "nfd.h"
 #include <filesystem>
 #include <imgui.h>
 #include <imgui_internal.h>
+
 
 namespace CHEngine
 {
 
 ProjectBrowserPanel::ProjectBrowserPanel()
 {
-    m_Visible = true;
     // Set default location to current working directory
     std::string cwd = std::filesystem::current_path().string();
     strncpy(m_ProjectLocationBuffer, cwd.c_str(), sizeof(m_ProjectLocationBuffer));
 }
 
-bool ProjectBrowserPanel::IsVisible() const
+ProjectBrowserPanel::ProjectBrowserPanel(EditorProjectActions *projectActions)
+    : m_ProjectActions(projectActions)
 {
-    return m_Visible;
-}
-
-void ProjectBrowserPanel::SetVisible(bool visible)
-{
-    m_Visible = visible;
+    std::string cwd = std::filesystem::current_path().string();
+    strncpy(m_ProjectLocationBuffer, cwd.c_str(), sizeof(m_ProjectLocationBuffer));
 }
 
 void ProjectBrowserPanel::OpenCreateDialog()
 {
     m_TriggerOpenCreateDialog = true;
-}
-
-void ProjectBrowserPanel::SetOnCreateProject(
-    std::function<void(const std::string &, const std::string &)> callback)
-{
-    m_OnCreateProject = callback;
-}
-
-void ProjectBrowserPanel::SetOnOpenProject(std::function<void(const std::string &)> callback)
-{
-    m_OnOpenProject = callback;
 }
 
 const std::vector<std::string> &ProjectBrowserPanel::GetRecentProjects() const
@@ -49,9 +36,6 @@ const std::vector<std::string> &ProjectBrowserPanel::GetRecentProjects() const
 
 void ProjectBrowserPanel::OnImGuiRender()
 {
-    if (!m_Visible)
-        return;
-
     // Fullscreen welcome window
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -113,8 +97,8 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
 
         if (result == NFD_OKAY)
         {
-            if (m_OnOpenProject)
-                m_OnOpenProject(outPath);
+            if (m_ProjectActions)
+                m_ProjectActions->OpenProject(outPath);
             NFD_FreePath(outPath);
         }
     }
@@ -175,8 +159,8 @@ void ProjectBrowserPanel::DrawCreateProjectDialog()
         {
             if (strlen(m_ProjectNameBuffer) > 0 && strlen(m_ProjectLocationBuffer) > 0)
             {
-                if (m_OnCreateProject)
-                    m_OnCreateProject(m_ProjectNameBuffer, m_ProjectLocationBuffer);
+                if (m_ProjectActions)
+                    m_ProjectActions->NewProject(m_ProjectNameBuffer, m_ProjectLocationBuffer);
                 m_ShowCreateDialog = false;
                 ImGui::CloseCurrentPopup();
             }
@@ -205,8 +189,8 @@ void ProjectBrowserPanel::DrawRecentProjects()
         ImGui::SetCursorPos(ImVec2(center.x - 200, center.y + 70 + i * 30));
         if (ImGui::Selectable(projectName.c_str(), false, 0, ImVec2(400, 25)))
         {
-            if (m_OnOpenProject)
-                m_OnOpenProject(m_RecentProjects[i]);
+            if (m_ProjectActions)
+                m_ProjectActions->OpenProject(m_RecentProjects[i]);
         }
 
         if (ImGui::IsItemHovered())

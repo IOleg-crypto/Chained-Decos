@@ -537,7 +537,7 @@ GameScene SceneLoader::LoadScene(const std::string &path)
 
         metadata.difficulty = meta.value("difficulty", 1.0f);
         metadata.sceneType =
-            static_cast<SceneType>(meta.value("sceneType", static_cast<int>(SceneType::LEVEL_3D)));
+            static_cast<SceneType>(meta.value("sceneType", static_cast<int>(SceneType::Game)));
 
         // Load colors
         if (meta.contains("skyColor"))

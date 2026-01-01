@@ -8,6 +8,8 @@ set(MAP_SOURCES
     MapService.h
     SceneSerializer.cpp
     SceneSerializer.h
+    SceneMetadata.cpp
+    SceneMetadata.h
     MapObjectConverter.cpp
     MapObjectConverter.h
     ISceneFileOperations.h

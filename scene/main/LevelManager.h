@@ -10,6 +10,7 @@
 #include "core/interfaces/ILevelManager.h"
 #include "core/interfaces/IMenu.h"
 #include "core/interfaces/IPlayer.h"
+#include "scene/ecs/systems/UISystem.h"
 #include "scene/resources/map/SceneLoader.h"
 #include "scene/resources/model/Model.h"
 #include <memory>
@@ -36,6 +37,8 @@ public:
     static bool IsInitialized();
 
     static void SetActiveScene(std::shared_ptr<CHEngine::Scene> scene);
+    static void SetUIScene(std::shared_ptr<CHEngine::Scene> scene);
+    static std::shared_ptr<CHEngine::Scene> GetUIScene();
     static bool LoadScene(const std::string &path);
     static bool LoadSceneByIndex(int index);
     static bool LoadSceneByName(const std::string &name);
@@ -49,6 +52,7 @@ public:
 
     static void Update(float deltaTime);
     static void Render();
+    static void RenderUI();
 
     // Map Management
     static void LoadEditorMap(const std::string &mapPath);
@@ -66,7 +70,9 @@ public:
     static bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels);
 
     // Accessors
+    static LevelManager &Get();
     static GameScene &GetGameScene();
+    static UISystem &GetUISystem();
     static Vector3 GetPlayerSpawnPosition();
     static bool HasSpawnZone();
     static MapCollisionInitializer *GetCollisionInitializer();
@@ -79,6 +85,18 @@ public:
 
     void InternalShutdown();
     void InternalSetActiveScene(std::shared_ptr<CHEngine::Scene> scene);
+    void InternalSetUIScene(std::shared_ptr<CHEngine::Scene> scene)
+    {
+        m_uiScene = scene;
+    }
+    std::shared_ptr<CHEngine::Scene> InternalGetUIScene()
+    {
+        return m_uiScene;
+    }
+    UISystem &InternalGetUISystem()
+    {
+        return *m_uiSystem;
+    }
     bool InternalLoadScene(const std::string &path);
     bool InternalLoadSceneByIndex(int index);
     bool InternalLoadSceneByName(const std::string &name);
@@ -93,6 +111,7 @@ public:
 
     void InternalUpdate(float deltaTime);
     void InternalRender();
+    void InternalRenderUI();
 
     void InternalLoadEditorMap(const std::string &mapPath);
     void InternalRenderEditorMap();
@@ -155,7 +174,9 @@ private:
     RenderManager *m_renderManager;
     std::shared_ptr<IPlayer> m_player;
     std::shared_ptr<IMenu> m_menu;
-    std::shared_ptr<CHEngine::Scene> m_activeScene;
+    std::shared_ptr<CHEngine::Scene> m_activeScene; // Game Scene
+    std::shared_ptr<CHEngine::Scene> m_uiScene;
+    std::unique_ptr<CHEngine::UISystem> m_uiSystem;
 };
 
 } // namespace CHEngine

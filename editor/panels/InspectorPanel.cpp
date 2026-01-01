@@ -12,39 +12,63 @@
 #include <imgui_internal.h>
 #include <raylib.h>
 
+#include "editor/logic/SelectionManager.h"
+#include "editor/logic/undo/CommandHistory.h"
+#include "scene/MapManager.h"
+
 namespace CHEngine
 {
 
 // =========================================================================
-// Callbacks & Configuration
+// Configuration & Context
 // =========================================================================
 
-void InspectorPanel::SetPropertyChangeCallback(
-    std::function<void(int, const MapObjectData &, const MapObjectData &)> cb)
+InspectorPanel::InspectorPanel(SelectionManager *selection, CommandHistory *history)
+    : m_SelectionManager(selection), m_CommandHistory(history)
 {
-    m_onPropertyChange = cb;
-}
-
-void InspectorPanel::SetSkyboxCallback(std::function<void(const std::string &)> cb)
-{
-    m_onSkyboxSelected = cb;
-}
-
-bool InspectorPanel::IsVisible() const
-{
-    return m_isVisible;
-}
-
-void InspectorPanel::SetVisible(bool visible)
-{
-    m_isVisible = visible;
 }
 
 // =========================================================================
 // Panel Lifecycle
 // =========================================================================
-void InspectorPanel::OnImGuiRender(const std::shared_ptr<GameScene> &scene, int selectedObjectIndex,
-                                   MapObjectData *selectedEntity)
+
+void InspectorPanel::OnImGuiRender()
+{
+    ImGui::Begin("Properties");
+
+    auto activeScene = MapManager::GetCurrentScene();
+    SelectionType selectionType = m_SelectionManager->GetSelectionType();
+
+    if (selectionType == SelectionType::ENTITY)
+    {
+        entt::entity entity = m_SelectionManager->GetSelectedEntity();
+        if (entity != entt::null)
+            DrawEntityComponents(*MapManager::GetActiveScene(), entity);
+    }
+    else if (selectionType == SelectionType::WORLD_OBJECT)
+    {
+        int selectedObjectIndex = m_SelectionManager->GetSelectedIndex();
+        auto selectedObject = m_SelectionManager->GetSelectedObject(activeScene);
+        if (selectedObject)
+        {
+            // Capture initial state for undo (Simplified, should probably use ModifyObjectCommand
+            // pattern)
+            DrawComponents(selectedObject);
+        }
+    }
+    else if (selectionType == SelectionType::UI_ELEMENT)
+    {
+        auto selectedElement = m_SelectionManager->GetSelectedUIElement(activeScene);
+        if (selectedElement)
+            DrawUIComponents(selectedElement);
+    }
+    else
+    {
+        DrawSceneSettings(activeScene);
+    }
+
+    ImGui::End();
+}
 {
     ImGui::Begin("Properties");
 
@@ -126,34 +150,33 @@ void InspectorPanel::DrawEntityComponents(const std::shared_ptr<Scene> &scene, e
         }
     }
 
-    // 3. Lua Script Component
-    if (registry.all_of<LuaScriptComponent>(entity))
+    // 3. CSharp Script Component
+    if (registry.all_of<CSharpScriptComponent>(entity))
     {
-        if (ImGui::CollapsingHeader("Lua Script", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            auto &script = registry.get<LuaScriptComponent>(entity);
+            auto &script = registry.get<CSharpScriptComponent>(entity);
 
             char scriptBuffer[256];
             memset(scriptBuffer, 0, sizeof(scriptBuffer));
-            strncpy(scriptBuffer, script.scriptPath.c_str(), sizeof(scriptBuffer));
+            strncpy(scriptBuffer, script.className.c_str(), sizeof(scriptBuffer));
 
-            ImGui::Text("Script Path:");
-            if (ImGui::InputText("##ScriptPath", scriptBuffer, sizeof(scriptBuffer)))
+            if (ImGui::InputText("Class Name", scriptBuffer, sizeof(scriptBuffer)))
             {
-                script.scriptPath = std::string(scriptBuffer);
+                script.className = std::string(scriptBuffer);
                 script.initialized = false; // Mark for re-initialization
             }
 
             ImGui::SameLine();
             if (ImGui::Button("...##BrowseScript"))
             {
-                nfdfilteritem_t filterItem[1] = {{"Lua Script", "lua"}};
+                nfdfilteritem_t filterItem[1] = {{"C# Script", "cs"}}; // Changed filter to C#
                 nfdchar_t *outPath = nullptr;
                 nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
 
                 if (result == NFD_OKAY)
                 {
-                    script.scriptPath = outPath;
+                    script.className = outPath;
                     script.initialized = false;
                     NFD_FreePath(outPath);
                 }
@@ -163,18 +186,18 @@ void InspectorPanel::DrawEntityComponents(const std::shared_ptr<Scene> &scene, e
             ImGui::TextDisabled("Status: %s",
                                 script.initialized ? "Initialized" : "Not Initialized");
 
-            if (ImGui::Button("Remove Script Component"))
+            if (ImGui::Button("Remove Script"))
             {
-                registry.remove<LuaScriptComponent>(entity);
+                registry.remove<CSharpScriptComponent>(entity);
             }
         }
     }
     else
     {
         // Add Script Component button
-        if (ImGui::Button("Add Lua Script Component"))
+        if (ImGui::Button("Add Script Component"))
         {
-            registry.emplace<LuaScriptComponent>(entity);
+            registry.emplace<CSharpScriptComponent>(entity);
         }
     }
 }
@@ -408,10 +431,15 @@ void InspectorPanel::DrawSceneSettings(const std::shared_ptr<GameScene> &scene)
             meta.sceneType = (SceneType)currentType;
         }
 
-        if (meta.sceneType == SceneType::UI_MENU)
+        bool hasUIProperties = false;
+        if (meta.sceneType == SceneType::UI)
         {
-            ImGui::Separator();
-            ImGui::Text("UI Background");
+            hasUIProperties = true;
+        }
+
+        if (hasUIProperties)
+        {
+            ImGui::SeparatorText("Scene Metadata");
 
             float bgCol[4] = {meta.backgroundColor.r / 255.0f, meta.backgroundColor.g / 255.0f,
                               meta.backgroundColor.b / 255.0f, meta.backgroundColor.a / 255.0f};

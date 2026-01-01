@@ -1,16 +1,13 @@
 #ifndef VIEWPANEL_H
 #define VIEWPANEL_H
 
+#include "EditorPanel.h"
 #include "editor/EditorTypes.h"
 #include "editor/logic/undo/CommandHistory.h"
 #include "editor/utils/EditorGrid.h"
 #include "editor/viewport/ViewportGizmo.h"
 #include "editor/viewport/ViewportRenderer.h"
-#include "scene/camera/CameraController.h"
-#include "scene/resources/map/GameScene.h"
 #include <cstdint>
-#include <functional>
-#include <imgui.h>
 #include <memory>
 #include <raylib.h>
 
@@ -18,31 +15,29 @@ namespace CHEngine
 {
 class Scene;
 class CommandHistory;
+class EditorSceneActions;
+class SelectionManager;
+class SceneSimulationManager;
+class EditorCamera;
+class EditorEntityFactory;
 
 /**
  * @brief Main editor viewport for 3D rendering and interaction
  */
-class ViewportPanel
+class ViewportPanel : public EditorPanel
 {
 public:
-    ViewportPanel() = default;
-    ~ViewportPanel();
+    ViewportPanel(EditorSceneActions *sceneActions, SelectionManager *selection,
+                  SceneSimulationManager *simulation, EditorCamera *camera,
+                  EditorEntityFactory *factory, CommandHistory *history);
+    virtual ~ViewportPanel();
 
-    // --- Panel Lifecycle ---
-public:
-    void OnImGuiRender(
-        SceneState state, SelectionType selectionType,
-        const std::shared_ptr<GameScene> &legacyScene, const std::shared_ptr<Scene> &modernScene,
-        const Camera3D &camera, int selectedObjectIndex, Tool currentTool,
-        const std::function<void(int)> &onSelect, CommandHistory *history,
-        const std::function<void(const std::string &, const Vector3 &)> &onAssetDropped = nullptr);
+    virtual void OnImGuiRender() override;
 
     // --- State & Configuration ---
 public:
     bool IsFocused() const;
     bool IsHovered() const;
-    bool IsVisible() const;
-    void SetVisible(bool visible);
 
     ImVec2 GetSize() const;
 
@@ -57,10 +52,16 @@ private:
 
     // --- Member Variables ---
 private:
+    EditorSceneActions *m_SceneActions = nullptr;
+    SelectionManager *m_SelectionManager = nullptr;
+    SceneSimulationManager *m_SimulationManager = nullptr;
+    EditorCamera *m_Camera = nullptr;
+    EditorEntityFactory *m_EntityFactory = nullptr;
+    CommandHistory *m_CommandHistory = nullptr;
+
     RenderTexture2D m_ViewportTexture = {0};
     uint32_t m_Width = 0, m_Height = 0;
     bool m_Focused = false, m_Hovered = false;
-    bool m_isVisible = true;
 
     // Grid
     EditorGrid m_Grid;
