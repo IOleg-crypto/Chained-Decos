@@ -13,6 +13,9 @@
 #include <future>
 #include <mutex>
 
+namespace CHEngine
+{
+
 Collision::Collision()
 {
     m_bounds = {{0, 0, 0}, {0, 0, 0}};
@@ -111,7 +114,7 @@ bool Collision::IntersectsAABB(const Collision &other) const
 // ----------------- Build from model (optimized) -----------------
 void Collision::BuildFromModel(void *model, const Matrix &transform)
 {
-    Model *rayModel = static_cast<Model *>(model);
+    ::Model *rayModel = static_cast<::Model *>(model);
     if (!rayModel)
     {
         CD_CORE_ERROR("Collision::BuildFromModel() - Invalid model pointer");
@@ -252,7 +255,7 @@ void Collision::BuildFromModel(void *model, const Matrix &transform)
     else
     {
         // Fallback to model's bounding box if no triangles
-        BoundingBox bb = GetModelBoundingBox(*rayModel);
+        ::BoundingBox bb = ::GetModelBoundingBox(*rayModel);
         Vector3 corners[8] = {{bb.min.x, bb.min.y, bb.min.z}, {bb.max.x, bb.min.y, bb.min.z},
                               {bb.min.x, bb.max.y, bb.min.z}, {bb.min.x, bb.min.y, bb.max.z},
                               {bb.max.x, bb.max.y, bb.min.z}, {bb.min.x, bb.max.y, bb.max.z},
@@ -457,8 +460,8 @@ void Collision::BuildBVHFromTriangles()
 
     if (validTriangles < m_triangles.size())
     {
-        TraceLog(
-            LOG_WARNING,
+        ::TraceLog(
+            ::LOG_WARNING,
             "Collision::BuildBVHFromTriangles() - Found %zu invalid triangles out of %zu total",
             m_triangles.size() - validTriangles, m_triangles.size());
     }
@@ -479,7 +482,8 @@ void Collision::BuildBVHFromTriangles()
 }
 
 // ----------------- Ray/triangle (Möller–Trumbore) -----------------
-bool Collision::RayIntersectsTriangle(const Ray &ray, const CollisionTriangle &tri, RayHit &outHit)
+bool Collision::RayIntersectsTriangle(const ::Ray &ray, const CollisionTriangle &tri,
+                                      RayHit &outHit)
 {
     // Enhanced Möller-Trumbore with safety checks
     const float EPS_PARALLEL = 1e-8f;
@@ -540,14 +544,14 @@ bool Collision::RayIntersectsTriangle(const Ray &ray, const CollisionTriangle &t
     return false;
 }
 
-bool Collision::RaycastBVHNode(const BVHNode *node, const Ray &ray, float maxDistance,
+bool Collision::RaycastBVHNode(const BVHNode *node, const ::Ray &ray, float maxDistance,
                                RayHit &outHit) const
 {
     if (!node)
         return false;
     // Use raylib for AABB-ray intersection test
-    BoundingBox box = {node->min, node->max};
-    RayCollision collision = GetRayCollisionBox(ray, box);
+    ::BoundingBox box = {node->min, node->max};
+    ::RayCollision collision = ::GetRayCollisionBox(ray, box);
 
     if (!collision.hit || collision.distance > maxDistance)
         return false;
@@ -579,7 +583,7 @@ bool Collision::RaycastBVHNode(const BVHNode *node, const Ray &ray, float maxDis
     return hitL || hitR;
 }
 
-bool Collision::RaycastBVH(const Ray &ray, float maxDistance, RayHit &outHit) const
+bool Collision::RaycastBVH(const ::Ray &ray, float maxDistance, RayHit &outHit) const
 {
     if (!m_bvhRoot)
         return false;
@@ -1047,3 +1051,5 @@ void Collision::DrawDebugBVHNode(const BVHNode *node, int depth, bool leafOnly) 
     if (node->right)
         DrawDebugBVHNode(node->right.get(), depth + 1, leafOnly);
 }
+
+} // namespace CHEngine

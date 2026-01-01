@@ -13,11 +13,11 @@ namespace CHEngine
 // Configuration & Context
 // =========================================================================
 
-HierarchyPanel::HierarchyPanel(const std::shared_ptr<::GameScene> &scene) : m_Context(scene)
+HierarchyPanel::HierarchyPanel(const std::shared_ptr<GameScene> &scene) : m_Context(scene)
 {
 }
 
-void HierarchyPanel::SetContext(const std::shared_ptr<::GameScene> &scene)
+void HierarchyPanel::SetContext(const std::shared_ptr<GameScene> &scene)
 {
     m_Context = scene;
 }

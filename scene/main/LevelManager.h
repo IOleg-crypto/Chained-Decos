@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+namespace CHEngine
+{
+
 // Configuration for LevelManager
 struct LevelManagerConfig
 {
@@ -25,74 +28,116 @@ struct LevelManagerConfig
 };
 
 // Central System for managing maps and levels
-class LevelManager : public ILevelManager
+class LevelManager
 {
 public:
-    explicit LevelManager(const LevelManagerConfig &config = {});
-    ~LevelManager() override;
+    static void Init(const LevelManagerConfig &config = {});
+    static void Shutdown();
+    static bool IsInitialized();
 
-    // ILevelManager Implementation
-    void SetActiveScene(std::shared_ptr<CHEngine::Scene> scene) override;
-    bool LoadScene(const std::string &path) override;
-    bool LoadSceneByIndex(int index) override;
-    bool LoadSceneByName(const std::string &name) override;
-    void UnloadMap() override;
-    bool IsMapLoaded() const override;
-    const std::string &GetCurrentMapPath() const override;
-    std::string GetCurrentMapName() const override;
-    Vector3 GetSpawnPosition() const override;
+    static void SetActiveScene(std::shared_ptr<CHEngine::Scene> scene);
+    static bool LoadScene(const std::string &path);
+    static bool LoadSceneByIndex(int index);
+    static bool LoadSceneByName(const std::string &name);
+    static bool LoadUIScene(const std::string &path);
+    static void UnloadMap();
+    static void UnloadUIScene();
+    static bool IsMapLoaded();
+    static const std::string &GetCurrentMapPath();
+    static std::string GetCurrentMapName();
+    static Vector3 GetSpawnPosition();
 
-    // IEngineModule Implementation
-    const char *GetModuleName() const override
-    {
-        return "LevelManager";
-    }
-    const char *GetModuleVersion() const override
-    {
-        return "1.1.0";
-    }
-    const char *GetModuleDescription() const override
-    {
-        return "Central Map and Level Management";
-    }
-
-    bool Initialize(IEngine *engine) override;
-    void Shutdown() override;
-    void Update(float deltaTime) override;
-    void Render() override;
-    void RegisterServices(IEngine *engine) override;
-    std::vector<std::string> GetDependencies() const override;
+    static void Update(float deltaTime);
+    static void Render();
 
     // Map Management
-    void LoadEditorMap(const std::string &mapPath);
-    std::string ConvertMapNameToPath(const std::string &mapName);
-    void RenderEditorMap() override;
-    void RefreshMapEntities() override;
-    void RefreshUIEntities() override;
-    void SyncEntitiesToMap() override;
-    void RenderSpawnZone() const;
-    void DumpMapDiagnostics() const;
+    static void LoadEditorMap(const std::string &mapPath);
+    static std::string ConvertMapNameToPath(const std::string &mapName);
+    static void RenderEditorMap();
+    static void RefreshMapEntities();
+    static void RefreshUIEntities();
+    static void SyncEntitiesToMap();
+    static void RenderSpawnZone();
+    static void DumpMapDiagnostics();
 
     // Collision Initialization
-    void InitCollisions();
-    void InitCollisionsWithModels(const std::vector<std::string> &requiredModels);
-    bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels) override;
+    static void InitCollisions();
+    static void InitCollisionsWithModels(const std::vector<std::string> &requiredModels);
+    static bool InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels);
 
     // Accessors
-    GameScene &GetGameScene() override;
-    Vector3 GetPlayerSpawnPosition() const;
-    bool HasSpawnZone() const
+    static GameScene &GetGameScene();
+    static Vector3 GetPlayerSpawnPosition();
+    static bool HasSpawnZone();
+    static MapCollisionInitializer *GetCollisionInitializer();
+
+    static void SetPlayer(std::shared_ptr<IPlayer> player);
+
+public:
+    LevelManager(const LevelManagerConfig &config = {});
+    ~LevelManager();
+
+    void InternalShutdown();
+    void InternalSetActiveScene(std::shared_ptr<CHEngine::Scene> scene);
+    bool InternalLoadScene(const std::string &path);
+    bool InternalLoadSceneByIndex(int index);
+    bool InternalLoadSceneByName(const std::string &name);
+    bool InternalLoadUIScene(const std::string &path);
+    void InternalUnloadMap();
+    void InternalUnloadUIScene();
+    bool InternalIsMapLoaded() const;
+    const std::string &InternalGetCurrentMapPath() const
+    {
+        return m_currentMapPath;
+    }
+
+    void InternalUpdate(float deltaTime);
+    void InternalRender();
+
+    void InternalLoadEditorMap(const std::string &mapPath);
+    void InternalRenderEditorMap();
+    void InternalRefreshMapEntities();
+    void InternalRefreshUIEntities();
+    void InternalSyncEntitiesToMap();
+    void InternalRenderSpawnZone() const;
+    void InternalDumpMapDiagnostics() const;
+
+    void InternalInitCollisions();
+    void InternalInitCollisionsWithModels(const std::vector<std::string> &requiredModels);
+    bool InternalInitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels);
+
+    GameScene &InternalGetGameScene()
+    {
+        return *m_gameScene;
+    }
+    std::string InternalGetCurrentMapName() const
+    {
+        if (m_currentMapPath.empty())
+            return "";
+        return std::filesystem::path(m_currentMapPath).stem().string();
+    }
+    Vector3 InternalGetSpawnPosition() const
+    {
+        return Vector3Scale(Vector3Add(m_playerSpawnZone.min, m_playerSpawnZone.max), 0.5f);
+    }
+    bool InternalHasSpawnZone() const
     {
         return m_hasSpawnZone;
     }
-    MapCollisionInitializer *GetCollisionInitializer()
+    MapCollisionInitializer *InternalGetCollisionInitializer()
     {
         return m_collisionInitializer.get();
     }
 
-    void SetPlayer(std::shared_ptr<IPlayer> player);
+    void InternalSetPlayer(std::shared_ptr<IPlayer> player)
+    {
+        m_player = player;
+    }
 
 private:
+    void InternalPopulateUIFromData(entt::registry &registry,
+                                    const std::vector<UIElementData> &uiElements);
+
     LevelManagerConfig m_config;
     std::shared_ptr<GameScene> m_gameScene;
     std::string m_currentMapPath;
@@ -106,14 +151,13 @@ private:
     std::unique_ptr<MapCollisionInitializer> m_collisionInitializer;
 
     // Dependencies
-    IWorldManager *m_worldManager;
-    CollisionManager *m_collisionManager;
     ModelLoader *m_modelLoader;
     RenderManager *m_renderManager;
     std::shared_ptr<IPlayer> m_player;
     std::shared_ptr<IMenu> m_menu;
-    IEngine *m_engine = nullptr;
     std::shared_ptr<CHEngine::Scene> m_activeScene;
 };
+
+} // namespace CHEngine
 
 #endif // LEVELMANAGER_H

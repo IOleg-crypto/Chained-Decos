@@ -90,6 +90,10 @@ public:
     float GetSkyboxGammaValue() const;
     void SetSkyboxExposure(float exposure);
     float GetSkyboxExposure() const;
+    void SetSkyboxBrightness(float brightness);
+    float GetSkyboxBrightness() const;
+    void SetSkyboxContrast(float contrast);
+    float GetSkyboxContrast() const;
 
     // Runtime settings
     void SetDefaultScenePath(const std::string &path);

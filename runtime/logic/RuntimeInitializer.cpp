@@ -1,5 +1,4 @@
 #include "RuntimeInitializer.h"
-#include "core/Engine.h"
 #include "core/Log.h"
 #include "core/assets/AssetManager.h"
 #include "scene/ecs/ECSRegistry.h"
@@ -9,7 +8,6 @@
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
-
 
 using namespace CHEngine;
 
@@ -122,8 +120,7 @@ Shader RuntimeInitializer::LoadPlayerShader(int &locFallSpeed, int &locTime, int
 
 Font RuntimeInitializer::LoadHUDFont(bool &fontLoaded)
 {
-    std::string fontPath =
-        std::string(PROJECT_ROOT_DIR) + "/resources/font/gantari/static/gantari-Bold.ttf";
+    std::string fontPath = std::string(PROJECT_ROOT_DIR) + "/resources/font/lato/Lato-Bold.ttf";
     Font font = LoadFontEx(fontPath.c_str(), 96, 0, 0);
 
     if (font.baseSize > 0)

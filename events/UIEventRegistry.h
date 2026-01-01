@@ -12,36 +12,31 @@ namespace CHEngine
 class UIEventRegistry
 {
 public:
-    UIEventRegistry() = default;
     using EventCallback = std::function<void()>;
 
-    void Register(const std::string &eventId, EventCallback callback)
+    static void Register(const std::string &eventId, EventCallback callback)
     {
-        m_events[eventId] = callback;
+        s_Events[eventId] = callback;
     }
 
-    void Trigger(const std::string &eventId)
+    static void Trigger(const std::string &eventId)
     {
-        auto it = m_events.find(eventId);
-        if (it != m_events.end())
+        auto it = s_Events.find(eventId);
+        if (it != s_Events.end())
         {
             if (it->second)
                 it->second();
             CD_CORE_INFO("[UIEventRegistry] Triggered event: %s", eventId.c_str());
         }
-        else
-        {
-            CD_CORE_WARN("[UIEventRegistry] Event not found: %s", eventId.c_str());
-        }
     }
 
-    void Clear()
+    static void Clear()
     {
-        m_events.clear();
+        s_Events.clear();
     }
 
 private:
-    std::unordered_map<std::string, EventCallback> m_events;
+    inline static std::unordered_map<std::string, EventCallback> s_Events;
 };
 } // namespace CHEngine
 

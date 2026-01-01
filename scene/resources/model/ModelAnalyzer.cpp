@@ -8,6 +8,8 @@
 
 using json = nlohmann::json;
 
+namespace CHEngine
+{
 std::string ModelAnalyzer::GetModelNameForObjectType(int objectType, const std::string &modelName)
 {
     MapObjectType type = static_cast<MapObjectType>(objectType);
@@ -327,3 +329,4 @@ bool ModelAnalyzer::AddModelIfUnique(const std::string &modelName,
     requiredModels.push_back(modelName);
     return true;
 }
+} // namespace CHEngine

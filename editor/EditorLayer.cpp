@@ -1,14 +1,15 @@
 #include "EditorLayer.h"
-#include "components/physics/collision/interfaces/ICollisionManager.h"
+#include "components/physics/collision/core/CollisionManager.h"
 #include "core/Base.h"
-#include "core/Engine.h"
 #include "core/Log.h"
-#include "core/application/EngineApplication.h"
+#include "core/application/Application.h"
 #include "core/input/Input.h"
 #include "core/renderer/Renderer.h"
 #include "editor/panels/ConsolePanel.h"
 #include "editor/utils/EditorStyles.h"
 #include "editor/utils/ProcessUtils.h"
+#include "events/MouseEvent.h"
+#include "scene/MapManager.h"
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/core/IDComponent.h"
@@ -17,7 +18,6 @@
 
 #include <fstream>
 
-#include "core/interfaces/ILevelManager.h"
 #include "core/interfaces/IPlayer.h"
 #include "core/physics/Physics.h"
 #include "editor/logic/SceneCloner.h"
@@ -30,7 +30,9 @@
 #include "raylib.h"
 #include "runtime/RuntimeLayer.h"
 #include "scene/core/SceneSerializer.h"
+#include "scene/main/LevelManager.h"
 #include "scene/resources/map/SceneSerializer.h"
+#include "scene/resources/model/Model.h"
 #include <filesystem>
 
 namespace CHEngine
@@ -76,27 +78,25 @@ void EditorLayer::OnAttach()
     m_Scene = std::make_shared<Scene>("EditorScene");
     CD_INFO("[EditorLayer] Created editor scene: %s", m_Scene->GetName().c_str());
 
-    auto levelManager = Engine::Instance().GetService<ILevelManager>();
-    if (levelManager)
-        levelManager->SetActiveScene(m_Scene);
+    if (LevelManager::IsInitialized())
+        LevelManager::SetActiveScene(m_Scene);
 
     // Create default entities using raw entt::entity (temporary workaround for circular dependency)
     auto &registry = m_Scene->GetRegistry();
 
     // Legacy GameScene initialization
     m_ProjectManager.SetSceneChangedCallback(
-        [this](const std::shared_ptr<GameScene> &scene)
+        [this](const std::shared_ptr<CHEngine::GameScene> &scene)
         {
-            m_ActiveScene = scene;
-            m_EditorScene = scene;
+            if (MapManager::IsInitialized())
+            {
+                MapManager::SetCurrentScene(scene);
+            }
             if (m_HierarchyPanel)
                 m_HierarchyPanel->SetContext(scene);
         });
 
-    m_ActiveScene = m_ProjectManager.GetActiveScene();
-    m_EditorScene = m_ActiveScene;
-
-    m_HierarchyPanel = std::make_unique<HierarchyPanel>(m_ActiveScene);
+    m_HierarchyPanel = std::make_unique<HierarchyPanel>(MapManager::GetCurrentScene());
     m_HierarchyPanel->SetSceneContext(m_Scene); // Connect to new Scene system
     m_InspectorPanel = std::make_unique<InspectorPanel>();
     m_InspectorPanel->SetPropertyChangeCallback(
@@ -111,8 +111,8 @@ void EditorLayer::OnAttach()
     m_InspectorPanel->SetSkyboxCallback([this](const std::string &path) { LoadSkybox(path); });
 
     // Default Scene Content (legacy)
-    m_ActiveScene = m_EditorScene;
-    auto &objects = m_ActiveScene->GetMapObjectsMutable();
+    auto activeScene = MapManager::GetCurrentScene();
+    auto &objects = activeScene->GetMapObjectsMutable();
 
     // Project Browser Initialization
     m_ProjectBrowserPanel = std::make_unique<ProjectBrowserPanel>();
@@ -135,10 +135,9 @@ void EditorLayer::OnUpdate(float deltaTime)
     if (m_SimulationManager.GetSceneState() == SceneState::Play)
     {
         // Update Game Logic via Engine modules
-        auto levelManager = Engine::Instance().GetService<ILevelManager>();
-        if (levelManager)
+        if (LevelManager::IsInitialized())
         {
-            levelManager->Update(deltaTime);
+            LevelManager::Update(deltaTime);
         }
 
         // Note: Player update is now handled by ECS systems in RuntimeLayer
@@ -181,8 +180,7 @@ void EditorLayer::OnUpdate(float deltaTime)
         m_Scene->OnUpdateEditor(deltaTime);
 
         // Sync Scene Entities to Physics System
-        auto collisionManager = Engine::Instance().GetService<ICollisionManager>();
-        if (collisionManager)
+        if (CollisionManager::IsInitialized())
         {
             auto &registry = m_Scene->GetRegistry();
             auto view = registry.view<TransformComponent, CollisionComponent>();
@@ -248,10 +246,11 @@ void EditorLayer::OnImGuiRender()
 
                 if (actualIndex != -1)
                 {
+                    auto activeScene = MapManager::GetCurrentScene();
                     // Ensure texture is loaded if it changed
                     if (newData.texturePath != oldData.texturePath && !newData.texturePath.empty())
                     {
-                        auto &textures = m_ActiveScene->GetMapTexturesMutable();
+                        auto &textures = activeScene->GetMapTexturesMutable();
                         if (textures.find(newData.texturePath) == textures.end())
                         {
                             Texture2D tex = LoadTexture(newData.texturePath.c_str());
@@ -263,7 +262,7 @@ void EditorLayer::OnImGuiRender()
                     }
 
                     m_CommandHistory.PushCommand(std::make_unique<ModifyObjectCommand>(
-                        m_ActiveScene, actualIndex, oldData, newData));
+                        activeScene, actualIndex, oldData, newData));
                 }
             });
     }
@@ -275,10 +274,11 @@ void EditorLayer::OnImGuiRender()
         if (selectionType == SelectionType::ENTITY)
             m_InspectorPanel->OnImGuiRender(m_Scene, m_SelectionManager.GetSelectedEntity());
         else if (selectionType == SelectionType::UI_ELEMENT)
-            m_InspectorPanel->OnImGuiRender(m_ActiveScene, GetSelectedUIElement());
+            m_InspectorPanel->OnImGuiRender(MapManager::GetCurrentScene(), GetSelectedUIElement());
         else
-            m_InspectorPanel->OnImGuiRender(
-                m_ActiveScene, m_SelectionManager.GetSelectedObjectIndex(), GetSelectedObject());
+            m_InspectorPanel->OnImGuiRender(MapManager::GetCurrentScene(),
+                                            m_SelectionManager.GetSelectedObjectIndex(),
+                                            GetSelectedObject());
     }
 
     // Active Camera for Rendering
@@ -294,7 +294,8 @@ void EditorLayer::OnImGuiRender()
         m_EditorCamera.SetViewportSize(viewportSize.x, viewportSize.y);
 
         m_ViewportPanel->OnImGuiRender(
-            m_SimulationManager.GetSceneState(), m_ActiveScene, m_Scene, activeCamera,
+            m_SimulationManager.GetSceneState(), m_SelectionManager.GetSelectionType(),
+            MapManager::GetCurrentScene(), m_Scene, activeCamera,
             m_SelectionManager.GetSelectedIndex(), m_ActiveTool, [this](int i)
             { m_SelectionManager.SetSelection(i, SelectionType::WORLD_OBJECT); }, &m_CommandHistory,
             [this](const std::string &path, const Vector3 &pos) { OnAssetDropped(path, pos); });
@@ -327,23 +328,25 @@ void EditorLayer::OnImGuiRender()
                     "process.");
         }
 
-        if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            static float gravity[3] = {0.0f, -9.81f, 0.0f};
-            ImGui::DragFloat3("Gravity", gravity, 0.1f);
-            static bool airResistance = true;
-            ImGui::Checkbox("Enable Air Resistance", &airResistance);
-        }
+        // if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
+        // {
+        //     static float gravity[3] = {0.0f, -9.81f, 0.0f};
+        //     ImGui::DragFloat3("Gravity", gravity, 0.1f);
+        //     static bool airResistance = true;
+        //     ImGui::Checkbox("Enable Air Resistance", &airResistance);
+        // }
 
         if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen))
         {
             static bool vsync = true;
             if (ImGui::Checkbox("VSync", &vsync))
             {
-                // Engine::Instance().GetWindow()->SetVSync(vsync);
+                Application::Get().GetWindow().SetVSync(vsync);
             }
             static float fov = 60.0f;
             ImGui::SliderFloat("Field of View", &fov, 30.0f, 120.0f);
+            MouseScrolledEvent e(0.0f, fov);
+            m_EditorCamera.OnEvent(e);
         }
 
         ImGui::Separator();
@@ -422,9 +425,10 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent &e)
             }
             else if (type == SelectionType::UI_ELEMENT)
             {
-                if (m_SelectionManager.GetSelectedIndex() >= 0 && m_ActiveScene)
+                auto activeScene = MapManager::GetCurrentScene();
+                if (m_SelectionManager.GetSelectedIndex() >= 0 && activeScene)
                 {
-                    auto &elements = m_ActiveScene->GetUIElementsMutable();
+                    auto &elements = activeScene->GetUIElementsMutable();
                     if (m_SelectionManager.GetSelectedIndex() < (int)elements.size())
                     {
                         elements.erase(elements.begin() + m_SelectionManager.GetSelectedIndex());
@@ -555,7 +559,7 @@ void EditorLayer::UI_DrawDockspace()
     callbacks.OnSave = [this]() { SaveScene(); };
     callbacks.OnSaveAs = [this]() { SaveSceneAs(); };
     callbacks.OnPlayInRuntime = [this]() { PlayInRuntime(); };
-    callbacks.OnExit = []() { Engine::Instance().RequestExit(); };
+    callbacks.OnExit = []() { Application::Get().Close(); };
 
     callbacks.OnUndo = [this]() { m_CommandHistory.Undo(); };
     callbacks.OnRedo = [this]() { m_CommandHistory.Redo(); };
@@ -588,25 +592,26 @@ void EditorLayer::UI_DrawDockspace()
 
 void EditorLayer::OnScenePlay()
 {
-    m_SimulationManager.OnScenePlay(m_ActiveScene, m_EditorScene, m_Scene,
-                                    m_SimulationManager.GetRuntimeMode(), &m_RuntimeLayer,
-                                    GetAppRunner());
+    auto activeScene = MapManager::GetCurrentScene();
+    m_SimulationManager.OnScenePlay(activeScene, activeScene, m_Scene, &m_RuntimeLayer,
+                                    &Application::Get());
 }
 
 void EditorLayer::OnSceneStop()
 {
-    m_SimulationManager.OnSceneStop(m_ActiveScene, m_EditorScene, m_Scene, &m_RuntimeLayer,
-                                    GetAppRunner());
+    auto activeScene = MapManager::GetCurrentScene();
+    m_SimulationManager.OnSceneStop(activeScene, activeScene, m_Scene, &m_RuntimeLayer,
+                                    &Application::Get());
 }
 
 MapObjectData *EditorLayer::GetSelectedObject()
 {
-    return m_SelectionManager.GetSelectedObject(m_ActiveScene);
+    return m_SelectionManager.GetSelectedObject(MapManager::GetCurrentScene());
 }
 
 UIElementData *EditorLayer::GetSelectedUIElement()
 {
-    return m_SelectionManager.GetSelectedUIElement(m_ActiveScene);
+    return m_SelectionManager.GetSelectedUIElement(MapManager::GetCurrentScene());
 }
 
 void EditorLayer::NewScene()
@@ -680,7 +685,8 @@ void EditorLayer::AddModel()
         std::filesystem::path fullPath(outPath);
         std::string filename = fullPath.filename().string();
 
-        auto &models = m_ActiveScene->GetMapModelsMutable();
+        auto activeScene = MapManager::GetCurrentScene();
+        auto &models = activeScene->GetMapModelsMutable();
         if (models.find(filename) == models.end())
         {
             Model model = LoadModel(outPath);
@@ -703,7 +709,7 @@ void EditorLayer::AddModel()
         obj.scale = {1, 1, 1};
         obj.color = WHITE;
 
-        auto &objects = m_ActiveScene->GetMapObjectsMutable();
+        auto &objects = activeScene->GetMapObjectsMutable();
         objects.push_back(obj);
         m_SelectionManager.SetSelection((int)objects.size() - 1, SelectionType::WORLD_OBJECT);
 
@@ -717,26 +723,24 @@ void EditorLayer::AddModel()
 
 void EditorLayer::AddUIElement(const std::string &type)
 {
-    if (!m_ActiveScene)
+    auto activeScene = MapManager::GetCurrentScene();
+    if (!activeScene)
         return;
 
     UIElementData el;
-    el.name = "New " + type;
+    el.name = "element_" + std::to_string(rand() % 1000);
     el.type = type;
-    el.position = {100, 100};
-    el.size = {120, 50};
+    el.position = {m_ViewportSize.x * 0.5f, m_ViewportSize.y * 0.5f};
+    el.size = {100, 40};
+    el.anchor = 0;
+    el.pivot = {0.5f, 0.5f};
 
-    if (type == "text")
-    {
-        el.text = "New Text";
-        el.fontSize = 20;
-    }
-    else if (type == "button")
+    if (type == "Button")
     {
         el.text = "Button";
     }
 
-    auto &elements = m_ActiveScene->GetUIElementsMutable();
+    auto &elements = activeScene->GetUIElementsMutable();
     elements.push_back(el);
     m_SelectionManager.SetSelection((int)elements.size() - 1, SelectionType::UI_ELEMENT);
 }
@@ -768,31 +772,34 @@ void EditorLayer::LoadSkybox(const std::string &path)
 
 void EditorLayer::ApplySkybox(const std::string &path)
 {
+    auto activeScene = MapManager::GetCurrentScene();
     auto skybox = std::make_shared<Skybox>();
     skybox->Init();
     skybox->LoadMaterialTexture(path);
-    m_ActiveScene->SetSkyBox(skybox);
-    m_ActiveScene->GetMapMetaDataMutable().skyboxTexture = path;
+    activeScene->SetSkyBox(skybox);
+    activeScene->GetMapMetaDataMutable().skyboxTexture = path;
     CD_INFO("Skybox applied: %s", path.c_str());
 }
 
 void EditorLayer::AddObject(const MapObjectData &data)
 {
-    if (!m_ActiveScene)
+    auto activeScene = MapManager::GetCurrentScene();
+    if (!activeScene)
         return;
 
-    auto cmd = std::make_unique<AddObjectCommand>(m_ActiveScene, data);
+    auto cmd = std::make_unique<AddObjectCommand>(activeScene, data);
     m_CommandHistory.PushCommand(std::move(cmd));
     CD_INFO("Added legacy object: %s", data.name.c_str());
 }
 
 void EditorLayer::DeleteObject(int index)
 {
-    if (!m_ActiveScene || index < 0)
+    auto activeScene = MapManager::GetCurrentScene();
+    if (!activeScene || index < 0)
         return;
 
-    std::string name = m_ActiveScene->GetMapObjects()[index].name;
-    auto cmd = std::make_unique<DeleteObjectCommand>(m_ActiveScene, index);
+    std::string name = activeScene->GetMapObjects()[index].name;
+    auto cmd = std::make_unique<DeleteObjectCommand>(activeScene, index);
     m_CommandHistory.PushCommand(std::move(cmd));
     CD_INFO("Deleted legacy object: %s", name.c_str());
 
@@ -835,7 +842,8 @@ void EditorLayer::DeleteEntity(entt::entity entity)
 
 void EditorLayer::OnAssetDropped(const std::string &assetPath, const Vector3 &worldPosition)
 {
-    if (!m_ActiveScene)
+    auto activeScene = MapManager::GetCurrentScene();
+    if (!activeScene)
         return;
 
     std::filesystem::path fullPath(assetPath);
@@ -846,7 +854,7 @@ void EditorLayer::OnAssetDropped(const std::string &assetPath, const Vector3 &wo
     if (ext == ".obj" || ext == ".glb" || ext == ".gltf")
     {
         // 1. Ensure model is loaded in the scene
-        auto &models = m_ActiveScene->GetMapModelsMutable();
+        auto &models = activeScene->GetMapModelsMutable();
         if (models.find(filename) == models.end())
         {
             Model model = LoadModel(assetPath.c_str());
@@ -960,7 +968,7 @@ void EditorLayer::CloseProject()
 
 void EditorLayer::PlayInRuntime()
 {
-    if (!m_ActiveScene)
+    if (!m_Scene)
     {
         CD_WARN("[EditorLayer] No active scene to play in runtime");
         return;
@@ -985,13 +993,9 @@ void EditorLayer::PlayInRuntime()
 
     CD_INFO("[EditorLayer] Saving runtime scene to: %s", tempScenePath.c_str());
 
-    // Use SceneLoader to save the scene
-    SceneLoader sceneLoader;
-    if (!sceneLoader.SaveSceneToFile(*m_ActiveScene, tempScenePath))
-    {
-        CD_ERROR("[EditorLayer] Failed to save runtime scene to file");
-        return;
-    }
+    // Use ECSSceneSerializer to save the ECS scene
+    CHEngine::ECSSceneSerializer serializer(m_Scene);
+    serializer.Serialize(tempScenePath);
 
     CD_INFO("[EditorLayer] Scene saved successfully, launching runtime...");
 

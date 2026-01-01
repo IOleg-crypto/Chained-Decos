@@ -126,8 +126,6 @@ private:
 
     // Scene System
     std::shared_ptr<Scene> m_Scene;
-    std::shared_ptr<GameScene> m_ActiveScene;
-    std::shared_ptr<GameScene> m_EditorScene;
 
     // Viewport State
     ImVec2 m_ViewportSize = {0.0f, 0.0f};

@@ -1,68 +1,90 @@
 #include "Audio.h"
-#include "components/audio/interfaces/IAudioManager.h"
-#include "core/Engine.h"
+#include "components/audio/core/AudioManager.h"
+#include <memory>
 
 namespace CHEngine
 {
+static std::unique_ptr<AudioManager> s_AudioManager = nullptr;
+
+void Audio::Init()
+{
+    s_AudioManager = std::make_unique<AudioManager>();
+    s_AudioManager->Initialize();
+}
+
+bool Audio::IsInitialized()
+{
+    return s_AudioManager != nullptr;
+}
+
+void Audio::Shutdown()
+{
+    s_AudioManager->Shutdown();
+    s_AudioManager.reset();
+}
+
+void Audio::Update(float deltaTime)
+{
+    s_AudioManager->Update(deltaTime);
+}
 
 void Audio::PlaySoundEffect(const std::string &name, float volume, float pitch)
 {
-    Engine::Instance().GetAudioManager().PlaySoundEffect(name, volume, pitch);
+    s_AudioManager->PlaySoundEffect(name, volume, pitch);
 }
 
 void Audio::PlayLoopingSoundEffect(const std::string &name, float volume, float pitch)
 {
-    Engine::Instance().GetAudioManager().PlayLoopingSoundEffect(name, volume, pitch);
+    s_AudioManager->PlayLoopingSoundEffect(name, volume, pitch);
 }
 
 void Audio::StopLoopingSoundEffect(const std::string &name)
 {
-    Engine::Instance().GetAudioManager().StopLoopingSoundEffect(name);
+    s_AudioManager->StopLoopingSoundEffect(name);
 }
 
 void Audio::UpdateLoopingSounds()
 {
-    Engine::Instance().GetAudioManager().UpdateLoopingSounds();
+    s_AudioManager->UpdateLoopingSounds();
 }
 
 void Audio::PlayMusic(const std::string &name, float volume)
 {
-    Engine::Instance().GetAudioManager().PlayMusic(name, volume);
+    s_AudioManager->PlayMusic(name, volume);
 }
 
 void Audio::StopMusic()
 {
-    Engine::Instance().GetAudioManager().StopMusic();
+    s_AudioManager->StopMusic();
 }
 
 void Audio::PauseMusic()
 {
-    Engine::Instance().GetAudioManager().PauseMusic();
+    s_AudioManager->PauseMusic();
 }
 
 void Audio::ResumeMusic()
 {
-    Engine::Instance().GetAudioManager().ResumeMusic();
+    s_AudioManager->ResumeMusic();
 }
 
 void Audio::SetMasterVolume(float volume)
 {
-    Engine::Instance().GetAudioManager().SetMasterVolume(volume);
+    s_AudioManager->SetMasterVolume(volume);
 }
 
 bool Audio::LoadSound(const std::string &name, const std::string &filePath)
 {
-    return Engine::Instance().GetAudioManager().LoadSound(name, filePath);
+    return s_AudioManager->LoadSound(name, filePath);
 }
 
 void Audio::SetMusicVolume(float volume)
 {
-    Engine::Instance().GetAudioManager().SetMusicVolume(volume);
+    s_AudioManager->SetMusicVolume(volume);
 }
 
 void Audio::SetSoundVolume(float volume)
 {
-    Engine::Instance().GetAudioManager().SetSoundVolume(volume);
+    s_AudioManager->SetSoundVolume(volume);
 }
-
 } // namespace CHEngine

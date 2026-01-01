@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <string>
 
+namespace CHEngine
+{
 namespace MapObjectConverter
 {
 // ============================================================================
@@ -278,6 +280,7 @@ JsonSerializableObject MapObjectDataToJsonSerializableObject(const MapObjectData
     return jsonObj;
 }
 } // namespace MapObjectConverter
+} // namespace CHEngine
 
 // Note: MapObject conversions are implemented in MapEditor/Editor/FileManager/FileManager.cpp
 // because MapObject is an Editor-specific class and cannot be included in Engine code.

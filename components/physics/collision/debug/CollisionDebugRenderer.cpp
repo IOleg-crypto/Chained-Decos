@@ -2,6 +2,8 @@
 #include "core/Log.h"
 #include <raylib.h>
 
+namespace CHEngine
+{
 void CollisionDebugRenderer::RenderCollisionBox(const Collision &collision, Color color) const
 {
     Vector3 center = collision.GetCenter();
@@ -74,3 +76,4 @@ void CollisionDebugRenderer::SetWireframeMode(bool wireframe)
 {
     m_wireframe = wireframe;
 }
+} // namespace CHEngine

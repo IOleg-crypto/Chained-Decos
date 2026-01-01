@@ -9,6 +9,9 @@
 
 #include "components/physics/collision/structures/CollisionStructures.h"
 
+namespace CHEngine
+{
+
 struct BVHNode
 {
     Vector3 min;
@@ -52,7 +55,7 @@ public:
     // AABB getters (using raylib BoundingBox)
     Vector3 GetMin() const;
     Vector3 GetMax() const;
-    BoundingBox GetBoundingBox() const;
+    ::BoundingBox GetBoundingBox() const;
     Vector3 GetCenter() const;
     Vector3 GetSize() const;
 
@@ -82,7 +85,7 @@ public:
     void InitializeBVH();
 
     // Raycast using BVH (returns true if hit within maxDistance)
-    bool RaycastBVH(const Ray &ray, float maxDistance, RayHit &outHit) const;
+    bool RaycastBVH(const ::Ray &ray, float maxDistance, RayHit &outHit) const;
 
     // Intersection with another Collision (broad-phase AABB then BVH narrow-phase)
     bool Intersects(const Collision &other) const;
@@ -103,7 +106,7 @@ private:
 
     // Internal BVH helpers
     std::unique_ptr<BVHNode> BuildBVHNode(std::vector<CollisionTriangle> &tris, int depth = 0);
-    bool RaycastBVHNode(const BVHNode *node, const Ray &ray, float maxDistance,
+    bool RaycastBVHNode(const BVHNode *node, const ::Ray &ray, float maxDistance,
                         RayHit &outHit) const;
     void DrawDebugBVHNode(const BVHNode *node, int depth, bool leafOnly) const;
 
@@ -114,7 +117,7 @@ public:
 
 private:
     // AABB using raylib BoundingBox directly
-    BoundingBox m_bounds{};
+    ::BoundingBox m_bounds{};
 
     CollisionType m_collisionType = CollisionType::AABB_ONLY;
     std::vector<CollisionTriangle> m_triangles;
@@ -130,8 +133,11 @@ private:
     static void ExpandAABB(Vector3 &minOut, Vector3 &maxOut, const Vector3 &p);
 
     // Moller-Trumbore ray/triangle
-    static bool RayIntersectsTriangle(const Ray &ray, const CollisionTriangle &tri, RayHit &outHit);
+    static bool RayIntersectsTriangle(const ::Ray &ray, const CollisionTriangle &tri,
+                                      RayHit &outHit);
 };
+
+} // namespace CHEngine
 
 // CollisionManager is defined in CollisionManager.h
 

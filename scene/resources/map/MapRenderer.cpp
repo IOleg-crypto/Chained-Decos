@@ -6,6 +6,9 @@
 #include <raymath.h>
 #include <rlgl.h>
 
+namespace CHEngine
+{
+
 void MapRenderer::RenderMap(const GameScene &map, Camera3D camera)
 {
     const MapMetadata &metadata = map.GetMapMetaData();
@@ -256,3 +259,5 @@ void MapRenderer::RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &p
     RenderUtils::DrawCubeTexture(texture, position, size, size, size, color);
     DrawCubeWires(position, size, size, size, WHITE);
 }
+
+} // namespace CHEngine

@@ -4,15 +4,20 @@
 #include <entt/entt.hpp>
 
 // Global registry for the entire project
-#include "core/Engine.h"
+#include "scene/core/SceneManager.h"
 
-// Global registry wrapper that uses the Engine's registry
+// Global registry wrapper that uses the Active Scene's registry
 class ECSRegistry
 {
 public:
     static entt::registry &Get()
     {
-        return CHEngine::Engine::Instance().GetECSRegistry();
+        auto scene = CHEngine::SceneManager::GetActiveScene();
+        if (scene)
+            return scene->GetRegistry();
+
+        static entt::registry s_Dummy;
+        return s_Dummy;
     }
 
     // Helper methods
