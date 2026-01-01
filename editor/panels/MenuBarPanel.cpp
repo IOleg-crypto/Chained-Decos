@@ -1,99 +1,102 @@
 #include "MenuBarPanel.h"
+#include "editor/logic/EditorProjectActions.h"
+#include "editor/logic/EditorSceneActions.h"
+#include "editor/logic/PanelManager.h"
+#include "editor/logic/undo/CommandHistory.h"
 #include <imgui.h>
 
 namespace CHEngine
 {
-void MenuBarPanel::OnImGuiRender(const PanelVisibility &visibility,
-                                 const MenuBarCallbacks &callbacks)
+MenuBarPanel::MenuBarPanel(EditorSceneActions *sceneActions, EditorProjectActions *projectActions,
+                           CommandHistory *commandHistory, PanelManager *panelManager,
+                           bool *showProjectSettings)
+    : m_SceneActions(sceneActions), m_ProjectActions(projectActions),
+      m_CommandHistory(commandHistory), m_PanelManager(panelManager),
+      m_ShowProjectSettings(showProjectSettings)
+{
+}
+
+void MenuBarPanel::OnImGuiRender()
 {
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))
         {
             if (ImGui::MenuItem("New Project"))
-                if (callbacks.OnNewProject)
-                    callbacks.OnNewProject();
+                if (m_ProjectActions)
+                    m_ProjectActions->NewProject("NewProject", ".");
             if (ImGui::MenuItem("Open Project..."))
-                if (callbacks.OnOpenProject)
-                    callbacks.OnOpenProject();
-            if (ImGui::MenuItem("Close Project"))
-                if (callbacks.OnCloseProject)
-                    callbacks.OnCloseProject();
+                if (m_ProjectActions)
+                    m_ProjectActions->OpenProject("");
 
             ImGui::Separator();
 
             if (ImGui::MenuItem("New Scene", "Ctrl+N"))
-                if (callbacks.OnNew)
-                    callbacks.OnNew();
+                if (m_SceneActions)
+                    m_SceneActions->OnSceneNew();
             if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
-                if (callbacks.OnOpen)
-                    callbacks.OnOpen();
+                if (m_SceneActions)
+                    m_SceneActions->OnSceneOpen();
 
             ImGui::Separator();
 
             if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
-                if (callbacks.OnSave)
-                    callbacks.OnSave();
+                if (m_SceneActions)
+                    m_SceneActions->OnSceneSave();
             if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
-                if (callbacks.OnSaveAs)
-                    callbacks.OnSaveAs();
-
-            ImGui::Separator();
-
-            if (ImGui::MenuItem("Play in Runtime", "F5"))
-                if (callbacks.OnPlayInRuntime)
-                    callbacks.OnPlayInRuntime();
+                if (m_SceneActions)
+                    m_SceneActions->OnSceneSaveAs();
 
             ImGui::Separator();
 
             if (ImGui::MenuItem("Exit", "Alt+F4"))
-                if (callbacks.OnExit)
-                    callbacks.OnExit();
+            {
+                // Handle exit logic
+            }
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Edit"))
         {
             if (ImGui::MenuItem("Undo", "Ctrl+Z", false,
-                                callbacks.CanUndo ? callbacks.CanUndo() : false))
+                                m_CommandHistory ? m_CommandHistory->CanUndo() : false))
             {
-                if (callbacks.OnUndo)
-                    callbacks.OnUndo();
+                if (m_CommandHistory)
+                    m_CommandHistory->Undo();
             }
             if (ImGui::MenuItem("Redo", "Ctrl+Y", false,
-                                callbacks.CanRedo ? callbacks.CanRedo() : false))
+                                m_CommandHistory ? m_CommandHistory->CanRedo() : false))
             {
-                if (callbacks.OnRedo)
-                    callbacks.OnRedo();
+                if (m_CommandHistory)
+                    m_CommandHistory->Redo();
             }
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("View"))
         {
-            if (ImGui::MenuItem("Hierarchy", nullptr, visibility.Hierarchy))
-                if (callbacks.TogglePanel)
-                    callbacks.TogglePanel("Hierarchy");
-            if (ImGui::MenuItem("Inspector", nullptr, visibility.Inspector))
-                if (callbacks.TogglePanel)
-                    callbacks.TogglePanel("Inspector");
-            if (ImGui::MenuItem("Viewport", nullptr, visibility.Viewport))
-                if (callbacks.TogglePanel)
-                    callbacks.TogglePanel("Viewport");
-            if (ImGui::MenuItem("Asset Browser", nullptr, visibility.AssetBrowser))
-                if (callbacks.TogglePanel)
-                    callbacks.TogglePanel("Asset Browser");
-            if (ImGui::MenuItem("Console", nullptr, visibility.Console))
-                if (callbacks.TogglePanel)
-                    callbacks.TogglePanel("Console");
+            static const char *panelNames[] = {"Hierarchy", "Inspector", "Viewport",
+                                               "Content Browser", "Console"};
+            for (const char *name : panelNames)
+            {
+                auto panel = m_PanelManager->GetPanel<EditorPanel>(name);
+                if (panel)
+                {
+                    bool visible = panel->IsVisible();
+                    if (ImGui::MenuItem(name, nullptr, visible))
+                    {
+                        panel->SetVisible(!visible);
+                    }
+                }
+            }
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Project"))
         {
             if (ImGui::MenuItem("Project Settings"))
-                if (callbacks.OnShowProjectSettings)
-                    callbacks.OnShowProjectSettings();
+                if (m_ShowProjectSettings)
+                    *m_ShowProjectSettings = !(*m_ShowProjectSettings);
             ImGui::EndMenu();
         }
 
@@ -101,8 +104,7 @@ void MenuBarPanel::OnImGuiRender(const PanelVisibility &visibility,
         {
             if (ImGui::MenuItem("About"))
             {
-                if (callbacks.OnAbout)
-                    callbacks.OnAbout();
+                // Handle about dialog
             }
             ImGui::EndMenu();
         }

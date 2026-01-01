@@ -1,17 +1,25 @@
 #include "ToolbarPanel.h"
+#include "editor/logic/EditorSceneActions.h"
+#include "editor/logic/SceneSimulationManager.h"
 #include "editor/utils/IconsFontAwesome5.h"
 #include <imgui.h>
 
 namespace CHEngine
 {
-void ToolbarPanel::OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode, Tool activeTool,
-                                 const std::function<void()> &onPlay,
-                                 const std::function<void()> &onStop,
-                                 const std::function<void()> &onNew,
-                                 const std::function<void()> &onSave,
-                                 const std::function<void(Tool)> &onToolChange,
-                                 const std::function<void(RuntimeMode)> &onRuntimeModeChange)
+
+ToolbarPanel::ToolbarPanel(EditorSceneActions *sceneActions, SceneSimulationManager *simulation,
+                           Tool *activeTool)
+    : m_SceneActions(sceneActions), m_SimulationManager(simulation), m_ActiveTool(activeTool)
 {
+}
+
+void ToolbarPanel::OnImGuiRender()
+{
+    // Local aliases for readability (Hazel-style)
+    SceneState sceneState = m_SimulationManager->GetSceneState();
+    RuntimeMode runtimeMode = m_SimulationManager->GetRuntimeMode();
+    Tool activeTool = *m_ActiveTool;
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -46,7 +54,7 @@ void ToolbarPanel::OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode,
     ImGui::BeginDisabled(!isEdit);
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.9f, 0.3f, 1.0f)); // Bright green
     if (ImGui::Button(ICON_FA_PLAY, ImVec2(size, size)))
-        onPlay();
+        m_SceneActions->OnScenePlay();
     ImGui::PopStyleColor();
     ImGui::EndDisabled();
 
@@ -56,7 +64,7 @@ void ToolbarPanel::OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode,
     ImGui::BeginDisabled(isEdit);
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.3f, 0.3f, 1.0f)); // Bright red
     if (ImGui::Button(ICON_FA_STOP, ImVec2(size, size)))
-        onStop();
+        m_SceneActions->OnSceneStop();
     ImGui::PopStyleColor();
     ImGui::EndDisabled();
 
@@ -69,7 +77,7 @@ void ToolbarPanel::OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode,
     int currentMode = (int)runtimeMode;
     if (ImGui::Combo("##runtime_mode", &currentMode, modes, IM_ARRAYSIZE(modes)))
     {
-        onRuntimeModeChange((RuntimeMode)currentMode);
+        m_SimulationManager->SetRuntimeMode((RuntimeMode)currentMode);
     }
     ImGui::PopItemWidth();
     ImGui::EndDisabled();
@@ -79,13 +87,13 @@ void ToolbarPanel::OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode,
 
     // 2. File Controls
     if (ImGui::Button(ICON_FA_FILE, ImVec2(size + 10, size)))
-        onNew();
+        m_SceneActions->NewScene();
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("New Scene");
 
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_SAVE, ImVec2(size + 10, size)))
-        onSave();
+        m_SceneActions->SaveScene();
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Save Scene");
 
@@ -101,7 +109,7 @@ void ToolbarPanel::OnImGuiRender(SceneState sceneState, RuntimeMode runtimeMode,
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 0.6f));
 
         if (ImGui::Button(icon, ImVec2(size + 5, size)))
-            onToolChange(tool);
+            *m_ActiveTool = tool;
 
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", tooltip);
