@@ -8,6 +8,8 @@
 #include <ctime>
 #include <string>
 
+namespace CHEngine
+{
 namespace MapObjectConverter
 {
 MapObjectData JsonSerializableObjectToMapObjectData(const JsonSerializableObject &jsonObj);
@@ -19,5 +21,6 @@ int MapObjectTypeToInt(MapObjectType type);
 Vector3 SanitizeVector3(const Vector3 &vec);
 float SanitizeFloat(float value, float fallback = 0.0f);
 } // namespace MapObjectConverter
+} // namespace CHEngine
 
 #endif // MAPOBJECTCONVERTER_H

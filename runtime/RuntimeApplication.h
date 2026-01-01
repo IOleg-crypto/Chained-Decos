@@ -1,30 +1,23 @@
 #ifndef RUNTIME_APPLICATION_H
 #define RUNTIME_APPLICATION_H
 
-#include "core/application/IApplication.h"
+#include "core/application/Application.h"
 #include "core/config/GameConfig.h"
 #include "scene/core/Entity.h"
 #include "scene/core/Scene.h"
 
-
-// Runtime application - uses full engine + own modules
+// Runtime application - uses full engine + own layers
 
 namespace CHD
 {
 
-class RuntimeApplication : public CHEngine::IApplication
+class RuntimeApplication : public CHEngine::Application
 {
 public:
     RuntimeApplication(int argc, char *argv[]);
     ~RuntimeApplication();
 
-    // Lifecycle methods
-    void OnConfigure(EngineConfig &config) override;
-    void OnRegister() override;
-    void OnStart() override;
-    void OnUpdate(float deltaTime) override;
-    void OnRender() override;
-    void OnShutdown() override;
+    // Event handling
     void OnEvent(CHEngine::Event &e) override;
 
 private:

@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-
+namespace CHEngine
+{
 /**
  * @brief Utility class for analyzing map files and determining model requirements
  *
@@ -85,5 +86,6 @@ private:
     static bool AddModelIfUnique(const std::string &modelName,
                                  std::vector<std::string> &requiredModels);
 };
+} // namespace CHEngine
 
 #endif // MODEL_ANALYZER_H

@@ -6,80 +6,106 @@
 #include <string>
 #include <vector>
 
+namespace CHEngine
+{
 class RenderManager
 {
 public:
-    // Initialization
+    static void Init(int width = 1280, int height = 720, const char *title = "Chained Decos");
+    static void Shutdown();
+    static bool IsInitialized();
+
+    static void Update(float deltaTime);
+
+    // Main rendering
+    static void BeginFrame();
+    static void EndFrame();
+
+    // 3D rendering
+    static void BeginMode3D(Camera camera);
+    static void EndMode3D();
+
+    // Camera access
+    static Camera &GetCamera();
+    static void SetCamera(const Camera &camera);
+
+    // Window
+    static int GetScreenWidth();
+    static int GetScreenHeight();
+    static void SetBackgroundColor(Color color);
+    static Color GetBackgroundColor();
+
+    // Debug
+    static void ToggleDebugInfo();
+    static void SetDebugInfo(bool enabled);
+    static bool IsDebugInfoVisible();
+    static bool IsCollisionDebugVisible();
+    static void SetCollisionDebugVisible(bool visible);
+
+    // Font
+    static Font GetFont();
+    static void SetFont(Font font);
+
+public:
     RenderManager();
     ~RenderManager();
 
-    // Initialization
-    bool Initialize(int width, int height, const char *title);
-    void Shutdown();
-    void Update(float deltaTime);
+    bool InternalInitialize(int width, int height, const char *title);
+    void InternalShutdown();
+    void InternalUpdate(float deltaTime);
 
-    // Main rendering
-    void BeginFrame();
-    void EndFrame();
+    void InternalBeginFrame();
+    void InternalEndFrame();
 
-    // 3D rendering
-    void BeginMode3D(Camera camera);
-    void EndMode3D();
+    void InternalBeginMode3D(Camera camera);
+    void InternalEndMode3D();
 
-    // Camera access
-    Camera &GetCamera()
+    Camera &InternalGetCamera()
     {
         return m_camera;
     }
-    const Camera &GetCamera() const
-    {
-        return m_camera;
-    }
-    void SetCamera(const Camera &camera)
+    void InternalSetCamera(const Camera &camera)
     {
         m_camera = camera;
     }
 
-    // Window
-    int GetScreenWidth() const;
-    int GetScreenHeight() const;
-    void SetBackgroundColor(Color color)
+    int InternalGetScreenWidth() const;
+    int InternalGetScreenHeight() const;
+    void InternalSetBackgroundColor(Color color)
     {
         m_backgroundColor = color;
     }
-    Color GetBackgroundColor() const
+    Color InternalGetBackgroundColor() const
     {
         return m_backgroundColor;
     }
 
-    // Debug
-    void ToggleDebugInfo()
+    void InternalToggleDebugInfo()
     {
         m_showDebugInfo = !m_showDebugInfo;
     }
-    void SetDebugInfo(bool enabled)
+    void InternalSetDebugInfo(bool enabled)
     {
         m_showDebugInfo = enabled;
     }
-    bool IsDebugInfoVisible() const
+    bool InternalIsDebugInfoVisible() const
     {
         return m_showDebugInfo;
     }
-    bool IsCollisionDebugVisible() const
+    bool InternalIsCollisionDebugVisible() const
     {
         return m_debugCollision;
     }
-    void SetCollisionDebugVisible(bool visible)
+    void InternalSetCollisionDebugVisible(bool visible)
     {
         m_debugCollision = visible;
     }
 
-    // Font
-    Font GetFont() const
+    Font InternalGetFont() const
     {
         return m_font;
     }
-    void SetFont(Font font)
+    void InternalSetFont(Font font)
     {
         m_font = font;
     }
@@ -96,5 +122,6 @@ private:
     int m_screenWidth = 1280;
     int m_screenHeight = 720;
 };
+} // namespace CHEngine
 
 #endif // RENDERMANAGER_H

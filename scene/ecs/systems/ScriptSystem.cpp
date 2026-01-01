@@ -1,5 +1,4 @@
 #include "ScriptSystem.h"
-#include "core/Engine.h"
 #include "core/scripting/ScriptManager.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/components/ScriptComponent.h"
@@ -10,9 +9,7 @@ namespace CHEngine
 
 void ScriptSystem::Update(entt::registry &registry, float deltaTime)
 {
-    auto &engine = CHEngine::Engine::Instance();
-    auto scriptManager = engine.GetService<CHEngine::ScriptManager>();
-    if (!scriptManager)
+    if (!ScriptManager::IsInitialized())
         return;
 
     auto view = registry.view<ScriptComponent>();
@@ -29,7 +26,7 @@ void ScriptSystem::Update(entt::registry &registry, float deltaTime)
                 std::filesystem::last_write_time(script.scriptPath).time_since_epoch().count();
             if (script.lastModified != 0 && lastWrite > script.lastModified)
             {
-                scriptManager->RunScript(script.scriptPath);
+                ScriptManager::RunScript(script.scriptPath);
             }
             script.lastModified = lastWrite;
         }
@@ -41,9 +38,7 @@ void ScriptSystem::Update(entt::registry &registry, float deltaTime)
 
 void ScriptSystem::OnStart(entt::registry &registry)
 {
-    auto &engine = CHEngine::Engine::Instance();
-    auto scriptManager = engine.GetService<CHEngine::ScriptManager>();
-    if (!scriptManager)
+    if (!ScriptManager::IsInitialized())
         return;
 
     auto view = registry.view<ScriptComponent>();
@@ -52,7 +47,7 @@ void ScriptSystem::OnStart(entt::registry &registry)
         auto &script = view.get<ScriptComponent>(entity);
         if (script.isEnabled && !script.scriptPath.empty())
         {
-            scriptManager->RunScript(script.scriptPath);
+            ScriptManager::RunScript(script.scriptPath);
             // TODO: Call 'OnStart' in Lua
         }
     }

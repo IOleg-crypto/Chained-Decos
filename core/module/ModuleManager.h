@@ -7,23 +7,42 @@
 #include <unordered_map>
 #include <vector>
 
-#include "core/interfaces/IEngine.h"
+namespace CHEngine
+{
+class IEngine;
+class IEngineModule;
 
+/**
+ * @brief ModuleManager - Handles engine module lifecycle
+ */
 class ModuleManager
 {
 public:
-    explicit ModuleManager();
+    static void Init();
+    static void Shutdown();
+    static bool IsInitialized();
+
+    static void RegisterModule(std::unique_ptr<IEngineModule> module);
+    static bool LoadModule(const std::string &moduleName);
+    static void UpdateAll(float deltaTime);
+    static void RenderAll();
+    static IEngineModule *GetModule(const std::string &name);
+    static std::vector<std::string> GetLoadedModules();
+    static bool IsModuleLoaded(const std::string &name);
+
     ~ModuleManager();
 
-    void RegisterModule(std::unique_ptr<IEngineModule> module);
-    bool LoadModule(const std::string &moduleName);
-    bool InitializeAllModules(IEngine *engine);
-    void ShutdownAllModules();
-    void UpdateAllModules(float deltaTime);
-    void RenderAllModules();
-    IEngineModule *GetModule(const std::string &name) const;
-    std::vector<std::string> GetLoadedModules() const;
-    bool IsModuleLoaded(const std::string &name) const;
+private:
+    explicit ModuleManager();
+
+    void InternalRegisterModule(std::unique_ptr<IEngineModule> module);
+    bool InternalLoadModule(const std::string &moduleName);
+    void InternalShutdownAllModules();
+    void InternalUpdateAllModules(float deltaTime);
+    void InternalRenderAllModules();
+    IEngineModule *InternalGetModule(const std::string &name) const;
+    std::vector<std::string> InternalGetLoadedModules() const;
+    bool InternalIsModuleLoaded(const std::string &name) const;
 
 private:
     std::unordered_map<std::string, std::unique_ptr<IEngineModule>> m_modules;
@@ -34,5 +53,6 @@ private:
     bool CheckDependencies(const std::string &moduleName,
                            const std::vector<std::string> &deps) const;
 };
+} // namespace CHEngine
 
 #endif // MODULE_MANAGER_H

@@ -1,7 +1,6 @@
 #include "SceneSimulationManager.h"
 #include "core/Base.h"
-#include "core/Engine.h"
-#include "core/application/EngineApplication.h"
+#include "core/application/Application.h"
 #include "core/interfaces/ILevelManager.h"
 #include "core/physics/Physics.h"
 #include "editor/logic/SceneCloner.h"
@@ -10,6 +9,7 @@
 #include "runtime/RuntimeLayer.h"
 #include "runtime/logic/RuntimeInitializer.h"
 #include "scene/ecs/ECSRegistry.h"
+#include "scene/main/LevelManager.h"
 #include "scene/resources/map/SceneLoader.h"
 #include "scene/resources/map/SceneSerializer.h"
 #include <cstdlib>
@@ -51,11 +51,10 @@ SceneSimulationManager::SceneSimulationManager() = default;
 
 void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene,
                                          std::shared_ptr<GameScene> &editorScene,
-                                         std::shared_ptr<Scene> &newScene, RuntimeMode runtimeMode,
-                                         CHD::RuntimeLayer **runtimeLayer, EngineApplication *app)
+                                         std::shared_ptr<Scene> &newScene,
+                                         CHD::RuntimeLayer **runtimeLayer, Application *app)
 {
     m_SceneState = SceneState::Play;
-    m_RuntimeMode = runtimeMode;
 
     CD_INFO("Scene Play started (Mode: %s)",
             m_RuntimeMode == RuntimeMode::Standalone ? "Standalone" : "Embedded");
@@ -74,7 +73,10 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
 
     // 2. Save current state to temp for simulation
     std::string tempPath;
-    auto levelManager = Engine::Instance().GetService<ILevelManager>();
+    if (LevelManager::IsInitialized())
+    {
+        tempPath = LevelManager::GetCurrentMapPath(); // Or somewhere else
+    }
 
     // Try to find the project to save in the project's scenes directory
     // This is a bit tricky from here, but we can look for .chproject files nearby or use
@@ -148,11 +150,10 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
                 editorScene = activeScene; // Backup
 
                 // Load into LevelManager
-                auto levelManager = Engine::Instance().GetService<ILevelManager>();
-                if (levelManager)
+                if (LevelManager::IsInitialized())
                 {
-                    levelManager->LoadScene(tempPath);
-                    activeScene = std::shared_ptr<GameScene>(&levelManager->GetGameScene(),
+                    LevelManager::LoadScene(tempPath);
+                    activeScene = std::shared_ptr<GameScene>(&LevelManager::GetGameScene(),
                                                              [](GameScene *) {});
                 }
 
@@ -164,9 +165,9 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
                 SceneLoader().LoadSkyboxForScene(*activeScene);
 
                 // Initialize collisions for the simulation
-                if (levelManager)
+                if (LevelManager::IsInitialized())
                 {
-                    levelManager->InitCollisions();
+                    LevelManager::InitCollisions();
                 }
 
                 // Clear registry before starting embedded simulation
@@ -176,12 +177,15 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
                 }
 
                 // Spawn Player entity
-                Vector3 spawnPos =
-                    levelManager ? levelManager->GetSpawnPosition() : Vector3{0, 5, 0};
+                Vector3 spawnPos = LevelManager::IsInitialized() ? LevelManager::GetSpawnPosition()
+                                                                 : Vector3{0, 5, 0};
                 CHD::RuntimeInitializer::InitializePlayer(newScene.get(), spawnPos, 0.15f);
 
                 // Register scene in ECS Scene Manager for systems to access
-                Engine::Instance().GetECSSceneManager().LoadScene(newScene);
+                if (SceneManager::IsInitialized())
+                {
+                    SceneManager::LoadScene(newScene);
+                }
 
                 *runtimeLayer = new CHD::RuntimeLayer(newScene);
                 app->PushLayer(*runtimeLayer);
@@ -196,7 +200,7 @@ void SceneSimulationManager::OnScenePlay(std::shared_ptr<GameScene> &activeScene
 void SceneSimulationManager::OnSceneStop(std::shared_ptr<GameScene> &activeScene,
                                          std::shared_ptr<GameScene> editorScene,
                                          std::shared_ptr<Scene> &newScene,
-                                         CHD::RuntimeLayer **runtimeLayer, EngineApplication *app)
+                                         CHD::RuntimeLayer **runtimeLayer, Application *app)
 {
     m_SceneState = SceneState::Edit;
     CD_INFO("Scene Play stopped");
@@ -206,12 +210,14 @@ void SceneSimulationManager::OnSceneStop(std::shared_ptr<GameScene> &activeScene
         if (*runtimeLayer != nullptr && app != nullptr)
         {
             app->PopLayer(*runtimeLayer);
-            delete *runtimeLayer;
             *runtimeLayer = nullptr;
         }
 
         // Unload from ECS Scene Manager
-        Engine::Instance().GetECSSceneManager().UnloadCurrentScene();
+        if (SceneManager::IsInitialized())
+        {
+            SceneManager::UnloadCurrentScene();
+        }
 
         // Restore mouse cursor for editor control
         EnableCursor();

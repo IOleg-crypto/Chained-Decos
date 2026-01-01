@@ -2,12 +2,12 @@
 # ChainedEditor - Engine Editor for Chained Decos
 
 set(logic_sources
-    logic/MapManager.cpp
-    logic/MapManager.h
+    logic/EditorMapManager.cpp
+    logic/EditorMapManager.h
     logic/EditorSettings.cpp
     logic/EditorSettings.h
-    logic/SceneManager.cpp
-    logic/SceneManager.h
+    logic/EditorSceneManager.cpp
+    logic/EditorSceneManager.h
     logic/SelectionManager.cpp
     logic/SelectionManager.h
     logic/ProjectManager.cpp

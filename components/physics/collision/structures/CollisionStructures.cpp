@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <cmath>
 
+namespace CHEngine
+{
+
 static constexpr float EPS = 1e-6f;
 
 CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c)
@@ -68,7 +71,7 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
     }
 }
 
-bool CollisionTriangle::Intersects(const Ray &ray, float &t) const
+bool CollisionTriangle::Intersects(const ::Ray &ray, float &t) const
 {
     // Möller–Trumbore ray-triangle intersection algorithm (optimized for Raylib)
     Vector3 edgeA = Vector3Subtract(m_v1, m_v0);
@@ -120,7 +123,7 @@ bool CollisionTriangle::Intersects(const Vector3 &origin, const Vector3 &directi
     if (dirLengthSqr < 1e-12f)
         return false; // Invalid direction vector
 
-    Ray ray = {origin, direction};
+    ::Ray ray = {origin, direction};
     return Intersects(ray, t);
 }
 Vector3 CollisionTriangle::GetMin() const
@@ -151,3 +154,5 @@ const Vector3 &CollisionTriangle::V2() const
 {
     return m_v2;
 }
+
+} // namespace CHEngine

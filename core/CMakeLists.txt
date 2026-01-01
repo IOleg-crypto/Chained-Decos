@@ -6,10 +6,8 @@ add_subdirectory(config)
 
 # Core library - base systems, events, and module management
 set(CORE_SOURCES
-    Engine.cpp
-    Engine.h
-    application/EngineApplication.cpp
-    application/EngineApplication.h
+    application/Application.cpp
+    application/Application.h
     application/IApplication.h
     window/Window.cpp
     window/Window.h
@@ -24,20 +22,35 @@ set(CORE_SOURCES
     utils/core.h
     imgui/core/GuiElement.h
     imgui/core/GuiManager.h
+    imgui/core/GuiManager.cpp
     imgui/ImGuiLayer.h
     imgui/ImGuiLayer.cpp
     imgui/components/GuiButton.h
     imgui/components/GuiPanel.h
     scripting/ScriptManager.cpp
     scripting/ScriptManager.h
-    scripting/ScriptEngine.cpp
-    scripting/ScriptEngine.h
     input/Input.h
     input/Input.cpp
     renderer/Renderer.cpp
     renderer/Renderer.h
-    assets/AssetManager.cpp
+    renderer/RendererAPI.cpp
+    renderer/RendererAPI.h
+    renderer/OpenGLRendererAPI.cpp
+    renderer/OpenGLRendererAPI.h
+    renderer/Buffer.cpp
+    renderer/Buffer.h
+    renderer/OpenGLBuffer.cpp
+    renderer/OpenGLBuffer.h
+    renderer/VertexArray.cpp
+    renderer/VertexArray.h
+    renderer/OpenGLVertexArray.cpp
+    renderer/OpenGLVertexArray.h
+    renderer/Shader.cpp
+    renderer/Shader.h
+    renderer/OpenGLShader.cpp
+    renderer/OpenGLShader.h
     assets/AssetManager.h
+    assets/AssetManager.cpp
     physics/Physics.cpp
     physics/Physics.h
     audio/Audio.cpp
@@ -52,6 +65,8 @@ target_include_directories(core
         ${CMAKE_SOURCE_DIR}/core
         ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
         ${lua_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/include/raylib/src
+        ${CMAKE_SOURCE_DIR}/include/raylib/src/external
 )
 
 target_link_libraries(core

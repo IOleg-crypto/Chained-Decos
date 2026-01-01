@@ -5,6 +5,9 @@
 #include <raylib.h>
 #include <raymath.h>
 
+namespace CHEngine
+{
+
 //
 // CollisionTriangle - represents a triangle in 3D space for collision detection
 //
@@ -67,5 +70,7 @@ struct GridKeyHash
         return std::hash<int>()(key.x) ^ (std::hash<int>()(key.z) << 1);
     }
 };
+
+} // namespace CHEngine
 
 #endif // COLLISIONSTRUCTURES_H

@@ -1,16 +1,21 @@
 #include "RuntimeLayer.h"
-#include "core/Engine.h"
+#include "components/physics/collision/colsystem/CollisionSystem.h"
 #include "core/Log.h"
+#include "core/application/Application.h"
 #include "core/audio/Audio.h"
 #include "core/input/Input.h"
 #include "core/interfaces/ILevelManager.h"
 #include "core/physics/Physics.h"
 #include "core/renderer/Renderer.h"
-#include "core/scripting/ScriptManager.h"
-#include "events/Event.h"
 #include "events/KeyEvent.h"
+#include "scene/core/SceneManager.h"
+#include "scene/main/LevelManager.h"
+
+// Services
+#include "core/scripting/ScriptManager.h"
 #include "events/UIEventRegistry.h"
 #include "logic/RuntimeInitializer.h"
+#include "scene/core/SceneManager.h"
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/PlayerComponent.h"
 #include "scene/ecs/components/RenderComponent.h"
@@ -18,13 +23,14 @@
 #include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
 #include "scene/ecs/systems/UIRenderSystem.h"
+#include "scene/resources/map/GameScene.h"
 #include <algorithm>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
 
-
 using namespace CHEngine;
+using namespace CHD;
 
 namespace CHD
 {
@@ -37,12 +43,12 @@ RuntimeLayer::RuntimeLayer(std::shared_ptr<CHEngine::Scene> scene)
 void RuntimeLayer::OnAttach()
 {
     // Register UI Events
-    Engine::Instance().GetUIEventRegistry().Register(
+    UIEventRegistry::Register(
         "start_game",
         [this]()
         {
             CD_INFO("[RuntimeLayer] Start Game Event Triggered!");
-            auto scene = Engine::Instance().GetECSSceneManager().GetActiveScene();
+            auto scene = SceneManager::IsInitialized() ? SceneManager::GetActiveScene() : nullptr;
             if (!scene)
                 return;
             // Example logic: Reset player position
@@ -55,13 +61,12 @@ void RuntimeLayer::OnAttach()
             }
         });
 
-    Engine::Instance().GetUIEventRegistry().Register(
-        "quit_game",
-        [this]()
-        {
-            CD_INFO("[RuntimeLayer] Quit Game Event Triggered!");
-            Engine::Instance().RequestExit();
-        });
+    UIEventRegistry::Register("quit_game",
+                              [this]()
+                              {
+                                  CD_INFO("[RuntimeLayer] Quit Game Event Triggered!");
+                                  Application::Get().Close();
+                              });
 
     CD_INFO("RuntimeLayer Attached");
 
@@ -75,9 +80,9 @@ void RuntimeLayer::OnAttach()
     m_shaderLoaded = (m_playerShader.id != 0);
 
     // Initialize Scripts
-    auto scene = Engine::Instance().GetECSSceneManager().GetActiveScene();
-    if (scene)
-        Engine::Instance().GetScriptManager().InitializeScripts(scene->GetRegistry());
+    auto scene = SceneManager::IsInitialized() ? SceneManager::GetActiveScene() : nullptr;
+    if (scene && ScriptManager::IsInitialized())
+        ScriptManager::InitializeScripts(scene->GetRegistry());
 }
 
 void RuntimeLayer::OnDetach()
@@ -105,35 +110,45 @@ void RuntimeLayer::OnUpdate(float deltaTime)
         float time = (float)GetTime();
         SetShaderValue(m_playerShader, m_locTime, &time, SHADER_UNIFORM_FLOAT);
 
-        auto scene = Engine::Instance().GetECSSceneManager().GetActiveScene();
-        if (scene)
+        // Use SceneManager
+        if (SceneManager::IsInitialized())
         {
-            auto playerView = scene->GetRegistry().view<PlayerComponent, VelocityComponent>();
-            for (auto &&[entity, player, velocity] : playerView.each())
+            auto scene = SceneManager::GetActiveScene();
+            if (scene)
             {
-                float fallSpeed = (velocity.velocity.y < 0) ? std::abs(velocity.velocity.y) : 0.0f;
-                SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed, SHADER_UNIFORM_FLOAT);
+                auto playerView = scene->GetRegistry().view<PlayerComponent, VelocityComponent>();
+                for (auto &&[entity, player, velocity] : playerView.each())
+                {
+                    float fallSpeed =
+                        (velocity.velocity.y < 0) ? std::abs(velocity.velocity.y) : 0.0f;
+                    SetShaderValue(m_playerShader, m_locFallSpeed, &fallSpeed,
+                                   SHADER_UNIFORM_FLOAT);
+                }
             }
         }
     }
 
     // UPDATE LUA SCRIPTS (Hazel style)
-    auto currentScene = Engine::Instance().GetECSSceneManager().GetActiveScene();
-    if (currentScene)
+    if (SceneManager::IsInitialized())
     {
-        Engine::Instance().GetScriptManager().SetActiveRegistry(&currentScene->GetRegistry());
-        Engine::Instance().GetScriptManager().UpdateScripts(currentScene->GetRegistry(), deltaTime);
+        auto currentScene = SceneManager::GetActiveScene();
+        if (currentScene && ScriptManager::IsInitialized())
+        {
+            ScriptManager::SetActiveRegistry(&currentScene->GetRegistry());
+            ScriptManager::UpdateScripts(currentScene->GetRegistry(), deltaTime);
+        }
     }
 
     // Sync ECS Transforms back to MapObjects for rendering consistency
-    if (auto levelManager = Engine::Instance().GetService<ILevelManager>())
+    if (LevelManager::IsInitialized())
     {
-        levelManager->SyncEntitiesToMap();
+        LevelManager::SyncEntitiesToMap();
     }
 
     // 1. UPDATE PLAYER LOGIC (Previously PlayerSystem::Update)
     // Physics Update
-    auto scene = Engine::Instance().GetECSSceneManager().GetActiveScene();
+    // Use SceneManager
+    auto scene = SceneManager::GetActiveScene();
     if (!scene)
         return;
 
@@ -150,6 +165,14 @@ void RuntimeLayer::OnUpdate(float deltaTime)
 
         // Handle Movement
         Vector2 mouseDelta = Input::GetMouseDelta();
+
+        // Debug mouse delta if it's non-zero
+        if (mouseDelta.x != 0.0f || mouseDelta.y != 0.0f)
+        {
+            CD_TRACE("[RuntimeLayer] Mouse Delta: %.2f, %.2f | Sensitivity: %.3f", mouseDelta.x,
+                     mouseDelta.y, player.mouseSensitivity);
+        }
+
         player.cameraDistance -= Input::GetMouseWheelMove() * 1.5f;
         player.cameraDistance = Clamp(player.cameraDistance, 2.0f, 20.0f);
         player.cameraYaw -= mouseDelta.x * player.mouseSensitivity;
@@ -238,10 +261,10 @@ void RuntimeLayer::OnUpdate(float deltaTime)
 
             Vector3 halfSize =
                 Vector3Scale(Vector3Subtract(collision.bounds.max, collision.bounds.min), 0.5f);
-            Collision playerCol(center, halfSize);
+            CHEngine::Collision playerCol(center, halfSize);
             Vector3 response = {0};
 
-            if (Physics::CheckCollision(playerCol, response))
+            if (CHEngine::Physics::CheckCollision(playerCol, response))
             {
                 proposedPos = Vector3Add(proposedPos, response);
                 float resLen = Vector3Length(response);
@@ -362,16 +385,52 @@ void RuntimeLayer::OnUpdate(float deltaTime)
 
     for (auto entity : toDestroy)
         m_Scene->GetRegistry().destroy(entity);
+
+    // Update UI Overlay Scene
+    if (SceneManager::IsInitialized())
+    {
+        auto uiScene = SceneManager::GetUIScene();
+        if (uiScene && uiScene.get() != m_Scene.get() && ScriptManager::IsInitialized())
+        {
+            ScriptManager::SetActiveRegistry(&uiScene->GetRegistry());
+            ScriptManager::UpdateScripts(uiScene->GetRegistry(), deltaTime);
+        }
+    }
+
+    // 4. Handle Input Polling (Respawn)
+    if (::IsKeyPressed(KEY_F))
+    {
+        auto view =
+            m_Scene->GetRegistry().view<TransformComponent, VelocityComponent, PlayerComponent>();
+        for (auto &&[entity, transform, velocity, player] : view.each())
+        {
+            transform.position = player.spawnPosition;
+            velocity.velocity = {0, 0, 0};
+            player.isGrounded = false;
+            player.runTimer = 0;
+            player.maxHeight = 0;
+            player.cameraDistance = 10.0f;
+            player.cameraPitch = 25.0f;
+            player.cameraYaw = 0.0f;
+            if (player.isFallingSoundPlaying)
+            {
+                Audio::StopLoopingSoundEffect("player_fall");
+                player.isFallingSoundPlaying = false;
+            }
+            CD_INFO("[RuntimeLayer] Player respawned at (%.2f, %.2f, %.2f)", player.spawnPosition.x,
+                    player.spawnPosition.y, player.spawnPosition.z);
+        }
+    }
 }
 
 void RuntimeLayer::OnRender()
 {
-    Renderer::BeginScene(Renderer::GetCamera());
+    Renderer::BeginMode3D(Renderer::GetCamera());
 
     // Render Skybox from LevelManager's GameScene
-    if (auto levelManager = Engine::Instance().GetService<ILevelManager>())
+    if (LevelManager::IsInitialized())
     {
-        auto &gameScene = levelManager->GetGameScene();
+        auto &gameScene = LevelManager::GetGameScene();
         if (gameScene.GetSkyBox() && gameScene.GetSkyBox()->IsLoaded())
         {
             gameScene.GetSkyBox()->DrawSkybox(Renderer::GetCamera().position);
@@ -379,102 +438,135 @@ void RuntimeLayer::OnRender()
     }
 
     RenderScene();
-    Renderer::EndScene();
+    Renderer::EndMode3D();
+
+    // Render 2D UI / HUD
+    RenderUI((float)GetScreenWidth(), (float)GetScreenHeight());
 }
 
 void RuntimeLayer::RenderUI(float width, float height)
 {
-    // Render stored UI elements
+    // 1. Render World Scene UI
     UIRenderSystem::Render(m_Scene->GetRegistry(), (int)width, (int)height);
     UIRenderSystem::RenderImGui(m_Scene->GetRegistry(), (int)width, (int)height);
 
-    // 4. HUD SYSTEM LOGIC (Previously HUDSystem::Render)
-    auto view = m_Scene->GetRegistry().view<PlayerComponent>();
+    // 2. Render UI Overlay Scene (if any)
+    if (SceneManager::IsInitialized())
+    {
+        auto uiScene = SceneManager::GetUIScene();
+        if (uiScene && uiScene.get() != m_Scene.get())
+        {
+            UIRenderSystem::Render(uiScene->GetRegistry(), (int)width, (int)height);
+            UIRenderSystem::RenderImGui(uiScene->GetRegistry(), (int)width, (int)height);
+        }
+    }
+
+    // 4. HUD SYSTEM LOGIC
+    auto view = m_Scene->GetRegistry().view<PlayerComponent, TransformComponent>();
 
     for (auto entity : view)
     {
         auto &playerComp = m_Scene->GetRegistry().get<PlayerComponent>(entity);
+        auto &transform = m_Scene->GetRegistry().get<TransformComponent>(entity);
 
         int hours = (int)playerComp.runTimer / 3600;
         int minutes = ((int)playerComp.runTimer % 3600) / 60;
         int seconds = (int)playerComp.runTimer % 60;
 
-        int startX = 40;
-        int startY = 80;
-        float spacing = 2.0f;
+        // UI Layout Constants
+        const float margin = 30.0f;
+        const float fontSize = 24.0f;
+        const float spacing = 1.0f;
+        const Color accentColor = WHITE;
+        const Vector2 shadowOffset = {1.5f, 1.5f};
+        const Color shadowColor = ColorAlpha(BLACK, 0.4f);
 
-        // 1. Height Section
-        const char *heightText = TextFormat("height : %.0fm", playerComp.maxHeight);
-        float fontSizeHeight = 36.0f;
-        Vector2 heightSize;
+        // --- 1. TOP-LEFT HUD (Height & Timer) ---
+
+        // Height Text
+        std::string heightStr = std::to_string((int)playerComp.maxHeight) + "m";
+        const char *heightText = heightStr.c_str();
+        Vector2 heightTextSize =
+            m_fontLoaded ? MeasureTextEx(m_hudFont, heightText, fontSize, spacing)
+                         : Vector2{(float)MeasureText(heightText, (int)fontSize), fontSize};
+
+        // Draw Height
+        if (m_fontLoaded)
+        {
+            DrawTextEx(m_hudFont, heightText, {margin + shadowOffset.x, margin + shadowOffset.y},
+                       fontSize, spacing, shadowColor);
+            DrawTextEx(m_hudFont, heightText, {margin, margin}, fontSize, spacing, accentColor);
+        }
+        else
+        {
+            DrawText(heightText, (int)margin + 2, (int)margin + 2, (int)fontSize, BLACK);
+            DrawText(heightText, (int)margin, (int)margin, (int)fontSize, WHITE);
+        }
+
+        // Timer Icon & Text
+        float timerX = margin + heightTextSize.x + 25.0f;
+
+        // Clock Icon (Minimalist)
+        DrawCircleLines((int)timerX + 8, (int)margin + 12, 7, WHITE);
+        DrawLine((int)timerX + 8, (int)margin + 12, (int)timerX + 8, (int)margin + 8, WHITE);
+        DrawLine((int)timerX + 8, (int)margin + 12, (int)timerX + 11, (int)margin + 12, WHITE);
+
+        const char *timerText = (hours > 0) ? TextFormat("%dh %dm %ds", hours, minutes, seconds)
+                                            : TextFormat("%dm %ds", minutes, seconds);
 
         if (m_fontLoaded)
-            heightSize = MeasureTextEx(m_hudFont, heightText, fontSizeHeight, spacing);
-        else
-            heightSize = {(float)MeasureText(heightText, (int)fontSizeHeight), fontSizeHeight};
-
-        // Draw Height Shadow
-        Vector2 heightPos = {(float)startX, (float)startY};
-        Vector2 shadowOffset = {2.0f, 2.0f};
-
-        if (m_fontLoaded)
-            DrawTextEx(m_hudFont, heightText,
-                       {heightPos.x + shadowOffset.x, heightPos.y + shadowOffset.y}, fontSizeHeight,
-                       spacing, ColorAlpha(BLACK, 0.5f));
-        else
-            DrawText(heightText, (int)(heightPos.x + shadowOffset.x),
-                     (int)(heightPos.y + shadowOffset.y), (int)fontSizeHeight, BLACK);
-
-        // Draw Height Text
-        if (m_fontLoaded)
-            DrawTextEx(m_hudFont, heightText, heightPos, fontSizeHeight, spacing, WHITE);
-        else
-            DrawText(heightText, (int)heightPos.x, (int)heightPos.y, (int)fontSizeHeight, WHITE);
-
-        // Vertical separator bar
-        int barX = (int)(heightPos.x + heightSize.x + 10);
-        DrawLineEx({(float)barX, (float)startY}, {(float)barX, (float)startY + 30}, 3.0f, WHITE);
-
-        // 2. Timer Section with Clock Icon
-        const char *timerText;
-        if (hours > 0)
-            timerText = TextFormat("%02d:%02d:%02d", hours, minutes, seconds);
-        else
-            timerText = TextFormat("%02d:%02d", minutes, seconds);
-
-        // Clock icon position
-        int iconX = (int)(heightPos.x + heightSize.x + 20);
-        int iconY = (int)(startY + 12);
-        int iconRadius = 10;
-
-        // Draw clock circle with shadow
-        DrawCircle(iconX + 1, iconY + 1, (float)iconRadius, ColorAlpha(BLACK, 0.3f));
-        DrawCircle(iconX, iconY, (float)iconRadius, WHITE);
-        DrawCircle(iconX, iconY, (float)iconRadius - 1, ColorAlpha(SKYBLUE, 0.2f));
-
-        // Clock hands
-        DrawLine(iconX, iconY, iconX, iconY - 6, BLACK); // Hour hand
-        DrawLine(iconX, iconY, iconX + 5, iconY, BLACK); // Minute hand
-        DrawCircle(iconX, iconY, 2.0f, BLACK);           // Center dot
-
-        // Timer text position
-        int timerX = iconX + iconRadius + 8;
-        float fontSizeTimer = 28.0f;
-
-        // Draw Timer Shadow
-        if (m_fontLoaded)
+        {
             DrawTextEx(m_hudFont, timerText,
-                       {(float)timerX + shadowOffset.x, (float)startY + shadowOffset.y},
-                       fontSizeTimer, spacing, ColorAlpha(BLACK, 0.5f));
+                       {timerX + 22.0f + shadowOffset.x, margin + shadowOffset.y}, fontSize,
+                       spacing, shadowColor);
+            DrawTextEx(m_hudFont, timerText, {timerX + 22.0f, margin}, fontSize, spacing,
+                       accentColor);
+        }
         else
-            DrawText(timerText, timerX + 2, startY + 2, (int)fontSizeTimer, BLACK);
+        {
+            DrawText(timerText, (int)timerX + 24, (int)margin + 2, (int)fontSize, BLACK);
+            DrawText(timerText, (int)timerX + 22, (int)margin, (int)fontSize, WHITE);
+        }
 
-        // Draw Timer Text
+        // --- 2. VERTICAL HEIGHT METER (Left) ---
+        float meterX = margin + 5.0f;
+        float meterY = margin + 45.0f;
+        float meterHeight = 120.0f;
+        float meterWidth = 2.0f;
+
+        // Draw main line
+        DrawRectangle((int)meterX, (int)meterY, (int)meterWidth, (int)meterHeight,
+                      ColorAlpha(WHITE, 0.5f));
+
+        // Draw notches
+        for (int i = 0; i <= 4; i++)
+        {
+            float notchY = meterY + (meterHeight * (i / 4.0f));
+            DrawRectangle((int)meterX, (int)notchY, 6, 1, ColorAlpha(WHITE, 0.5f));
+        }
+
+        // Draw marker (Current vs Max relative position - simplified for now)
+        // In "Only Up" it often shows relative progress or just a sleek marker
+        float markerPos = meterY + meterHeight * 0.2f; // Dummy position for aesthetic
+        DrawTriangle({meterX + 8, markerPos - 4}, {meterX + 8, markerPos + 4},
+                     {meterX + 4, markerPos}, WHITE);
+
+        // --- 3. INPUT TIPS (Bottom-Left) ---
+        const char *tipText = "[F] Respawn";
+        float tipFontSize = 18.0f;
         if (m_fontLoaded)
-            DrawTextEx(m_hudFont, timerText, {(float)timerX, (float)startY}, fontSizeTimer, spacing,
-                       WHITE);
+        {
+            DrawTextEx(m_hudFont, tipText,
+                       {margin + shadowOffset.x, height - margin - tipFontSize + shadowOffset.y},
+                       tipFontSize, spacing, shadowColor);
+            DrawTextEx(m_hudFont, tipText, {margin, height - margin - tipFontSize}, tipFontSize,
+                       spacing, ColorAlpha(WHITE, 0.7f));
+        }
         else
-            DrawText(timerText, timerX, startY, (int)fontSizeTimer, WHITE);
+        {
+            DrawText(tipText, (int)margin, (int)(height - margin - 20), 20,
+                     ColorAlpha(WHITE, 0.6f));
+        }
     }
 }
 
@@ -513,9 +605,10 @@ void RuntimeLayer::RenderScene()
     }
 
     // DEBUG COLLISION RENDER
-    if (Engine::Instance().IsCollisionDebugVisible())
+    if (true) // TODO: Implement CollisionDebugVisibility in Engine or Window
     {
-        Physics::Render(); // Wait, I need to check if Physics has Render()
+        // TODO: Physics::RenderDebug() API has been removed
+        // Physics::RenderDebug();
 
         auto playerView =
             m_Scene->GetRegistry().view<TransformComponent, CollisionComponent, PlayerComponent>();

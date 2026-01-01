@@ -4,7 +4,10 @@
 #include "scene/resources/map/MapData.h"
 #include <memory>
 
+namespace CHEngine
+{
 class GameScene;
+}
 
 namespace CHEngine
 {
@@ -15,7 +18,7 @@ namespace CHEngine
 class DeleteObjectCommand : public IEditorCommand
 {
 public:
-    DeleteObjectCommand(const std::shared_ptr<::GameScene> &scene, int index);
+    DeleteObjectCommand(const std::shared_ptr<GameScene> &scene, int index);
 
     void Execute() override;
     void Undo() override;
@@ -25,8 +28,8 @@ public:
     }
 
 private:
-    std::shared_ptr<::GameScene> m_Scene;
-    ::MapObjectData m_ObjectData;
+    std::shared_ptr<GameScene> m_Scene;
+    MapObjectData m_ObjectData;
     int m_OriginalIndex;
 };
 

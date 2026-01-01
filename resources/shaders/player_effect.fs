@@ -1,11 +1,11 @@
-#version 330
+#version 450 core
 
 // Input fragment attributes (from vertex shader)
-in vec2 fragTexCoord;
-in vec3 fragNormal;
-in vec3 fragPosition;
-in vec4 fragColor;
-in float windIntensity;
+layout(location = 0) in vec2 fragTexCoord;
+layout(location = 1) in vec3 fragNormal;
+layout(location = 2) in vec3 fragPosition;
+layout(location = 3) in vec4 fragColor;
+layout(location = 4) in float windIntensity;
 
 // Input uniform values
 uniform sampler2D texture0;

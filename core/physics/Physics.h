@@ -5,10 +5,10 @@
 #include <raylib.h>
 #include <vector>
 
-class Collision; // Forward declaration moved outside the namespace
-
 namespace CHEngine
 {
+
+class Collision;
 
 class Physics
 {
@@ -18,10 +18,11 @@ public:
                             Vector3 &hitPoint, Vector3 &hitNormal);
 
     // General collision check
-    static bool CheckCollision(const ::Collision &collider);
-    static bool CheckCollision(const ::Collision &collider, Vector3 &response);
+    static bool CheckCollision(const Collision &collider);
+    static bool CheckCollision(const Collision &collider, Vector3 &response);
 
     static void Render();
+    static void RenderDebug();
 
     // Manual collider management (if needed)
     // static void AddCollider(std::shared_ptr<class Collision> collider);

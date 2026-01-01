@@ -2,15 +2,16 @@
 #define INPUT_H
 
 #include <functional>
+#include <map>
 #include <raylib.h>
-
 
 namespace CHEngine
 {
-
 class Input
 {
 public:
+    static void Update();
+
     static bool IsKeyPressed(int key)
     {
         return ::IsKeyPressed(key);
@@ -62,15 +63,16 @@ public:
     {
         return ::GetMouseDelta();
     }
-
     static float GetMouseWheelMove()
     {
         return ::GetMouseWheelMove();
     }
 
     static void RegisterAction(int key, const std::function<void()> &action);
-};
 
+private:
+    static std::map<int, std::function<void()>> s_Actions;
+};
 } // namespace CHEngine
 
 #endif // INPUT_H

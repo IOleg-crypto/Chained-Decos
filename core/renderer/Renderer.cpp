@@ -1,13 +1,19 @@
 #include "Renderer.h"
-#include "core/Engine.h"
+#include "RendererAPI.h"
+#include "Shader.h"
+#include "VertexArray.h"
+#include "core/Log.h"
+#include <raylib.h>
+#include <raymath.h>
+#include <rcamera.h>
+#include <rlgl.h>
 
 namespace CHEngine
 {
-
-// Internal data
 struct RendererData
 {
-    Camera3D *ActiveCamera = nullptr;
+    Camera3D SceneCamera;
+    std::unique_ptr<RendererAPI> API;
 };
 
 static RendererData *s_Data = nullptr;
@@ -15,6 +21,21 @@ static RendererData *s_Data = nullptr;
 void Renderer::Init()
 {
     s_Data = new RendererData();
+    s_Data->SceneCamera = {.position = {0.0f, 10.0f, 10.0f},
+                           .target = {0.0f, 0.0f, 0.0f},
+                           .up = {0.0f, 1.0f, 0.0f},
+                           .fovy = 45.0f,
+                           .projection = CAMERA_PERSPECTIVE};
+
+    s_Data->API = RendererAPI::Create();
+    s_Data->API->Init();
+
+    CD_CORE_INFO("Renderer Initialized");
+}
+
+bool Renderer::IsInitialized()
+{
+    return s_Data != nullptr;
 }
 
 void Renderer::Shutdown()
@@ -23,31 +44,66 @@ void Renderer::Shutdown()
     s_Data = nullptr;
 }
 
+void Renderer::OnWindowResize(uint32_t width, uint32_t height)
+{
+    if (s_Data && s_Data->API)
+        s_Data->API->SetViewport(0, 0, width, height);
+}
+
 void Renderer::BeginScene(const Camera3D &camera)
 {
-    // Delegate to RenderManager
-    Engine::Instance().GetRenderManager().BeginMode3D(const_cast<Camera3D &>(camera));
-
-    if (s_Data)
-    {
-        s_Data->ActiveCamera = const_cast<Camera3D *>(&camera);
-    }
+    s_Data->SceneCamera = camera;
 }
 
 void Renderer::EndScene()
 {
-    Engine::Instance().GetRenderManager().EndMode3D();
-
-    if (s_Data)
-    {
-        s_Data->ActiveCamera = nullptr;
-    }
 }
 
-void Renderer::BeginMode2D()
+void Renderer::Submit(const std::shared_ptr<Shader> &shader,
+                      const std::shared_ptr<VertexArray> &vertexArray, const Matrix transform)
 {
-    // For 2D rendering if needed
-    BeginMode2D();
+    shader->Bind();
+
+    float aspect = (float)GetScreenWidth() / (float)GetScreenHeight();
+    Matrix projection;
+    if (s_Data->SceneCamera.projection == CAMERA_PERSPECTIVE)
+    {
+        projection = MatrixPerspective(s_Data->SceneCamera.fovy * DEG2RAD, aspect, 0.01f, 1000.0f);
+    }
+    else
+    {
+        float top = s_Data->SceneCamera.fovy / 2.0f;
+        float right = top * aspect;
+        projection = MatrixOrtho(-right, right, -top, top, 0.01f, 1000.0f);
+    }
+
+    Matrix view = GetCameraMatrix(s_Data->SceneCamera);
+    shader->SetMat4("u_ViewProjection", MatrixMultiply(view, projection));
+    shader->SetMat4("u_Transform", transform);
+
+    vertexArray->Bind();
+    s_Data->API->DrawIndexed(vertexArray->GetIndexBuffer()->GetCount());
+}
+
+void Renderer::BeginMode3D(const Camera3D &camera)
+{
+    s_Data->SceneCamera = camera;
+    ::BeginMode3D(camera);
+}
+
+void Renderer::BeginMode3D()
+{
+    ::BeginMode3D(s_Data->SceneCamera);
+}
+
+void Renderer::EndMode3D()
+{
+    ::EndMode3D();
+}
+
+void Renderer::BeginMode2D(const Camera2D &camera)
+{
+    ::BeginMode2D(camera);
 }
 
 void Renderer::EndMode2D()
@@ -55,30 +111,25 @@ void Renderer::EndMode2D()
     ::EndMode2D();
 }
 
-void Renderer::DrawModel(Model &model, Vector3 position, float scale, Color tint)
+void Renderer::DrawModel(Model model, Vector3 position, Color tint)
 {
-    ::DrawModel(model, position, scale, tint);
+    ::DrawModel(model, position, 1.0f, tint);
 }
 
-void Renderer::DrawModelEx(Model &model, Vector3 position, Vector3 rotationAxis,
-                           float rotationAngle, Vector3 scale, Color tint)
+void Renderer::DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rotationAngle,
+                           Vector3 scale, Color tint)
 {
     ::DrawModelEx(model, position, rotationAxis, rotationAngle, scale, tint);
 }
 
-Camera3D &Renderer::GetCamera()
+Camera3D Renderer::GetCamera()
 {
-    return Engine::Instance().GetRenderManager().GetCamera();
+    return s_Data->SceneCamera;
 }
 
 void Renderer::SetCamera(const Camera3D &camera)
 {
-    Engine::Instance().GetRenderManager().GetCamera() = camera;
-}
-
-void Renderer::Clear(Color color)
-{
-    ClearBackground(color);
+    s_Data->SceneCamera = camera;
 }
 
 } // namespace CHEngine

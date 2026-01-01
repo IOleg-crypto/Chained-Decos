@@ -6,6 +6,9 @@
 #include <raylib.h>
 #include <scene/ecs/Entity.h>
 #include <vector>
+namespace CHEngine
+{
+
 class ICollisionManager
 {
 public:
@@ -33,5 +36,7 @@ public:
     virtual bool CheckEntityCollision(ECS::EntityID selfEntity, const Collision &collider,
                                       std::vector<ECS::EntityID> &outCollidedEntities) const = 0;
 };
+
+} // namespace CHEngine
 
 #endif // ICOLLISION_MANAGER_H

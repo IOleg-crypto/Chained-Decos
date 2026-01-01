@@ -1,4 +1,8 @@
 #include "Window.h"
+#include "core/Base.h"
+#include "core/Log.h"
+#include "events/ApplicationEvent.h"
+#include <glad.h>
 #include <iostream>
 #include <raylib.h>
 
@@ -34,7 +38,17 @@ void Window::Init(const WindowProps &props)
         // Note: Raylib ToggleFullscreen logic is usually after InitWindow
     }
 
+    // Request OpenGL 4.3 Core
+    // Note: Raylib handles GLFW hints based on OPENGL_VERSION in CMake,
+    // but we can ensure diagnostic logging reveals the version.
+
     InitWindow(m_Data.Width, m_Data.Height, m_Data.Title.c_str());
+
+    CD_CORE_INFO("OpenGL Vendor:   %s", glGetString(GL_VENDOR));
+    CD_CORE_INFO("OpenGL Renderer: %s", glGetString(GL_RENDERER));
+    CD_CORE_INFO("OpenGL Version:  %s", glGetString(GL_VERSION));
+    CD_CORE_INFO("GLSL Version:    %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
     SetExitKey(0); // Disable ESC as exit key
 
     if (m_Data.Fullscreen)
@@ -67,7 +81,22 @@ void Window::Shutdown()
 
 void Window::OnUpdate()
 {
-    // If we ever need to handle window events manually
+    if (WindowShouldClose())
+    {
+        WindowCloseEvent event;
+        m_Data.EventCallback(event);
+    }
+
+    if (IsWindowResized())
+    {
+        int width = GetScreenWidth();
+        int height = GetScreenHeight();
+        m_Data.Width = width;
+        m_Data.Height = height;
+
+        WindowResizeEvent event(width, height);
+        m_Data.EventCallback(event);
+    }
 }
 
 int Window::GetWidth() const
@@ -117,4 +146,3 @@ bool Window::ShouldClose() const
 }
 
 } // namespace CHEngine
-#include "core/Log.h"

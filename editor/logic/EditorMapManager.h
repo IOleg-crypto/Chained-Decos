@@ -1,15 +1,23 @@
-#ifndef MAP_MANAGER_H
-#define MAP_MANAGER_H
+#ifndef EDITOR_MAP_MANAGER_H
+#define EDITOR_MAP_MANAGER_H
 
+#include "scene/resources/map/GameScene.h"
 #include "scene/resources/map/SceneLoader.h"
 #include <string>
 #include <vector>
 
-class MapManager
+namespace CHEngine
+{
+class GameScene;
+}
+
+namespace CHEngine
+{
+class EditorMapManager
 {
 public:
-    MapManager() = default;
-    ~MapManager() = default;
+    EditorMapManager() = default;
+    ~EditorMapManager() = default;
 
     // File operations
     void SaveScene(const std::string &filename);
@@ -24,7 +32,7 @@ public:
     void ClearObjects();
 
     // Accessors
-    GameScene &GetGameScene();
+    CHEngine::GameScene &GetGameScene();
     int GetSelectedIndex() const;
     MapObjectData *GetSelectedObject();
     bool IsSceneModified() const;
@@ -32,10 +40,11 @@ public:
     const std::string &GetCurrentMapPath() const;
 
 private:
-    GameScene m_gameScene;
+    CHEngine::GameScene m_gameScene;
     int m_selectedIndex = -1;
     bool m_isSceneModified = false;
     std::string m_currentMapPath;
 };
+} // namespace CHEngine
 
-#endif // MAP_MANAGER_H
+#endif // EDITOR_MAP_MANAGER_H

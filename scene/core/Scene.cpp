@@ -1,11 +1,13 @@
 #include "Scene.h"
 #include "Entity.h"
-#include "core/Engine.h"
 #include "core/Log.h"
 #include "core/scripting/ScriptManager.h"
+#include "scene/core/SceneManager.h"
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/ecs/components/core/IDComponent.h"
 #include "scene/ecs/components/core/TagComponent.h"
+#include "scene/main/LevelManager.h"
+
 
 namespace CHEngine
 {
@@ -90,9 +92,11 @@ void Scene::DestroyEntity(entt::entity entity)
 void Scene::OnUpdateRuntime(float deltaTime)
 {
     // 1. Update Scripts
-    auto &scriptManager = Engine::Instance().GetScriptManager();
-    scriptManager.SetActiveRegistry(&m_Registry);
-    scriptManager.UpdateScripts(m_Registry, deltaTime);
+    if (ScriptManager::IsInitialized())
+    {
+        ScriptManager::SetActiveRegistry(&m_Registry);
+        ScriptManager::UpdateScripts(m_Registry, deltaTime);
+    }
 }
 
 void Scene::OnUpdateEditor(float deltaTime)

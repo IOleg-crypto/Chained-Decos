@@ -5,24 +5,55 @@
 #include <memory>
 #include <raylib.h>
 
+namespace CHEngine
+{
 // Simple CollisionComponent class for testing
-class CollisionComponent {
+class CollisionComponent
+{
 public:
     CollisionComponent() = default;
     ~CollisionComponent() = default;
 
-    void SetBoundingBox(const BoundingBox& box) { m_boundingBox = box; }
-    const BoundingBox& GetBoundingBox() const { return m_boundingBox; }
+    void SetBoundingBox(const BoundingBox &box)
+    {
+        m_boundingBox = box;
+    }
+    const BoundingBox &GetBoundingBox() const
+    {
+        return m_boundingBox;
+    }
 
-    void SetSphereCollision(float radius) { m_radius = radius; m_isSphere = true; }
-    float GetRadius() const { return m_radius; }
-    bool IsSphere() const { return m_isSphere; }
+    void SetSphereCollision(float radius)
+    {
+        m_radius = radius;
+        m_isSphere = true;
+    }
+    float GetRadius() const
+    {
+        return m_radius;
+    }
+    bool IsSphere() const
+    {
+        return m_isSphere;
+    }
 
-    void SetPosition(const Vector3& pos) { m_position = pos; }
-    const Vector3& GetPosition() const { return m_position; }
+    void SetPosition(const Vector3 &pos)
+    {
+        m_position = pos;
+    }
+    const Vector3 &GetPosition() const
+    {
+        return m_position;
+    }
 
-    void SetCollisionCallback(std::function<void()> callback) { m_callback = callback; }
-    std::function<void()>& GetCollisionCallback() { return m_callback; }
+    void SetCollisionCallback(std::function<void()> callback)
+    {
+        m_callback = callback;
+    }
+    std::function<void()> &GetCollisionCallback()
+    {
+        return m_callback;
+    }
 
 private:
     BoundingBox m_boundingBox{0};
@@ -32,7 +63,6 @@ private:
     std::function<void()> m_callback;
 };
 
+} // namespace CHEngine
+
 #endif // COLLISION_COMPONENT_H
-
-
-

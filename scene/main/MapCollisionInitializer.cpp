@@ -5,12 +5,12 @@
 #include "scene/ecs/components/TransformComponent.h"
 #include <raylib.h>
 
-using namespace CHEngine;
+namespace CHEngine
+{
 
-MapCollisionInitializer::MapCollisionInitializer(CollisionManager *collisionManager,
-                                                 ModelLoader *models,
-                                                 std::shared_ptr<IPlayer> player)
-    : m_collisionManager(collisionManager), m_models(models), m_player(std::move(player))
+MapCollisionInitializer::MapCollisionInitializer(ModelLoader *models,
+                                                 std::shared_ptr<::IPlayer> player)
+    : m_models(models), m_player(std::move(player))
 {
 }
 
@@ -18,17 +18,17 @@ void MapCollisionInitializer::InitializeCollisions(entt::registry &registry,
                                                    const GameScene &gameMap)
 {
     // Only clear existing colliders if no custom map is loaded
-    size_t previousColliderCount = m_collisionManager->GetColliders().size();
+    size_t previousColliderCount = CollisionManager::GetColliders().size();
     if (previousColliderCount > 0 && gameMap.GetMapObjects().empty())
     {
-        m_collisionManager->ClearColliders();
+        CollisionManager::ClearColliders();
     }
 
     // Initialize ground collider first
-    m_collisionManager->Initialize();
+    CollisionManager::Initialize();
 
     // Reinitialize after adding all model colliders
-    m_collisionManager->Initialize();
+    CollisionManager::Initialize();
 
     // Initialize player collision (if player is available)
     if (m_player)
@@ -44,7 +44,7 @@ void MapCollisionInitializer::InitializeCollisions(entt::registry &registry,
             Vector3 center = obj.position;
             Vector3 halfSize = {obj.scale.x * 0.5f, obj.scale.y * 0.5f, obj.scale.z * 0.5f};
             auto col = std::make_shared<Collision>(center, halfSize);
-            m_collisionManager->AddCollider(col);
+            CollisionManager::AddCollider(col);
         }
         else if (obj.type == MapObjectType::PLANE && (obj.isPlatform || obj.isObstacle))
         {
@@ -52,7 +52,7 @@ void MapCollisionInitializer::InitializeCollisions(entt::registry &registry,
             // Planes need some thickness to prevent tunneling
             Vector3 halfSize = {obj.size.x * 0.5f, 0.1f, obj.size.y * 0.5f};
             auto col = std::make_shared<Collision>(center, halfSize);
-            m_collisionManager->AddCollider(col);
+            CollisionManager::AddCollider(col);
         }
     }
 }
@@ -61,14 +61,14 @@ void MapCollisionInitializer::InitializeCollisionsWithModels(
     entt::registry &registry, const GameScene &gameMap,
     const std::vector<std::string> &requiredModels)
 {
-    size_t previousColliderCount = m_collisionManager->GetColliders().size();
+    size_t previousColliderCount = CollisionManager::GetColliders().size();
     if (previousColliderCount > 0 && gameMap.GetMapObjects().empty())
     {
-        m_collisionManager->ClearColliders();
+        CollisionManager::ClearColliders();
     }
 
-    m_collisionManager->Initialize();
-    m_collisionManager->Initialize();
+    CollisionManager::Initialize();
+    CollisionManager::Initialize();
 
     if (m_player)
     {
@@ -83,14 +83,14 @@ void MapCollisionInitializer::InitializeCollisionsWithModels(
             Vector3 center = obj.position;
             Vector3 halfSize = {obj.scale.x * 0.5f, obj.scale.y * 0.5f, obj.scale.z * 0.5f};
             auto col = std::make_shared<Collision>(center, halfSize);
-            m_collisionManager->AddCollider(col);
+            CollisionManager::AddCollider(col);
         }
         else if (obj.type == MapObjectType::PLANE && (obj.isPlatform || obj.isObstacle))
         {
             Vector3 center = obj.position;
             Vector3 halfSize = {obj.size.x * 0.5f, 0.1f, obj.size.y * 0.5f};
             auto col = std::make_shared<Collision>(center, halfSize);
-            m_collisionManager->AddCollider(col);
+            CollisionManager::AddCollider(col);
         }
     }
 }
@@ -99,14 +99,14 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
     entt::registry &registry, const GameScene &gameMap,
     const std::vector<std::string> &requiredModels)
 {
-    size_t previousColliderCount = m_collisionManager->GetColliders().size();
+    size_t previousColliderCount = CollisionManager::GetColliders().size();
     if (previousColliderCount > 0 && gameMap.GetMapObjects().empty())
     {
-        m_collisionManager->ClearColliders();
+        CollisionManager::ClearColliders();
     }
 
-    m_collisionManager->Initialize();
-    m_collisionManager->Initialize();
+    CollisionManager::Initialize();
+    CollisionManager::Initialize();
 
     if (m_player)
     {
@@ -121,19 +121,19 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
             Vector3 center = obj.position;
             Vector3 halfSize = {obj.scale.x * 0.5f, obj.scale.y * 0.5f, obj.scale.z * 0.5f};
             auto col = std::make_shared<Collision>(center, halfSize);
-            m_collisionManager->AddCollider(col);
+            CollisionManager::AddCollider(col);
         }
         else if (obj.type == MapObjectType::PLANE && (obj.isPlatform || obj.isObstacle))
         {
             Vector3 center = obj.position;
             Vector3 halfSize = {obj.size.x * 0.5f, 0.1f, obj.size.y * 0.5f};
             auto col = std::make_shared<Collision>(center, halfSize);
-            m_collisionManager->AddCollider(col);
+            CollisionManager::AddCollider(col);
         }
     }
 
     // Sync collisions to ECS
-    for (auto &&collider : m_collisionManager->GetColliders())
+    for (auto &&collider : CollisionManager::GetColliders())
     {
         auto entity = registry.create();
         registry.emplace<TransformComponent>(entity, collider->GetCenter(), Vector3{0, 0, 0},
@@ -151,7 +151,9 @@ bool MapCollisionInitializer::InitializeCollisionsWithModelsSafe(
     return true;
 }
 
-void MapCollisionInitializer::SetPlayer(std::shared_ptr<IPlayer> player)
+void MapCollisionInitializer::SetPlayer(std::shared_ptr<::IPlayer> player)
 {
     m_player = std::move(player);
 }
+
+} // namespace CHEngine

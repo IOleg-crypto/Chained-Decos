@@ -7,6 +7,11 @@
 #include <string>
 #include <unordered_map>
 
+namespace CHEngine
+{
+
+class GameScene;
+
 // MapRenderer - handles all rendering operations for maps
 class MapRenderer
 {
@@ -35,5 +40,7 @@ private:
     void RenderSpawnZoneWithTexture(Texture2D texture, const Vector3 &position, float size,
                                     Color color, bool textureLoaded) const;
 };
+
+} // namespace CHEngine
 
 #endif // MAP_RENDERER_H

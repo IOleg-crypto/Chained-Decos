@@ -10,17 +10,24 @@ namespace CHEngine
 class TextureService
 {
 public:
-    TextureService() = default;
-    ~TextureService() = default;
+    static void Init();
+    static void Shutdown();
+    static bool IsInitialized();
 
     // Load a texture from file and cache it
-    bool LoadTexture(const std::string &name, const std::string &path);
+    static bool LoadTexture(const std::string &name, const std::string &path);
 
     // Get a cached texture. Returns empty texture if not found.
-    Texture2D GetTexture(const std::string &name);
+    static Texture2D GetTexture(const std::string &name);
 
-    // Unload all textures
-    void Shutdown();
+    ~TextureService() = default;
+
+private:
+    TextureService() = default;
+
+    bool InternalLoadTexture(const std::string &name, const std::string &path);
+    Texture2D InternalGetTexture(const std::string &name);
+    void InternalShutdown();
 
 private:
     std::unordered_map<std::string, Texture2D> m_textures;

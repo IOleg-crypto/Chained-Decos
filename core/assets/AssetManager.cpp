@@ -1,38 +1,61 @@
 #include "AssetManager.h"
-#include "core/Engine.h"
+#include "core/Log.h"
+#include "scene/resources/model/Model.h"
 #include "scene/resources/model/interfaces/IModelLoader.h"
+
 
 namespace CHEngine
 {
 
 bool AssetManager::LoadModel(const std::string &name, const std::string &path, bool preload)
 {
-    return Engine::Instance().GetModelLoader().LoadSingleModel(name, path, preload);
+    if (ModelLoader::IsInitialized())
+    {
+        return ModelLoader::LoadSingleModel(name, path, preload);
+    }
+    CD_CORE_ERROR("AssetManager::LoadModel - ModelLoader not initialized!");
+    return false;
 }
 
 void AssetManager::UnloadAllModels()
 {
-    Engine::Instance().GetModelLoader().UnloadAllModels();
+    if (ModelLoader::IsInitialized())
+    {
+        ModelLoader::UnloadAllModels();
+    }
 }
 
 std::vector<std::string> AssetManager::GetAvailableModels()
 {
-    return Engine::Instance().GetModelLoader().GetAvailableModels();
+    if (ModelLoader::IsInitialized())
+    {
+        return ModelLoader::GetAvailableModels();
+    }
+    return {};
 }
 
 std::optional<std::reference_wrapper<Model>> AssetManager::GetModel(const std::string &name)
 {
-    return Engine::Instance().GetModelLoader().GetModelByName(name);
+    if (ModelLoader::IsInitialized())
+    {
+        return ModelLoader::GetModelByName(name);
+    }
+    return std::nullopt;
 }
 
 bool AssetManager::LoadFont(const std::string &name, const std::string &path)
 {
-    return Engine::Instance().GetFontService().LoadFont(name, path);
+    // TODO: Implement FontService wrapper if needed
+    (void)name;
+    (void)path;
+    return false;
 }
 
 Font AssetManager::GetFont(const std::string &name)
 {
-    return Engine::Instance().GetFontService().GetFont(name);
+    // TODO: Implement FontService wrapper if needed
+    (void)name;
+    return GetFontDefault();
 }
 
 } // namespace CHEngine

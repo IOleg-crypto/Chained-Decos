@@ -22,6 +22,8 @@ public:
                           float gizmoSize = 2.0f);
 
     void RenderGrid(const Camera3D &camera, uint32_t width, uint32_t height);
+    void RenderUIBackground(const MapMetadata &meta, uint32_t width, uint32_t height);
+    void RenderUIElements(const std::vector<UIElementData> &elements, int selectedIndex);
 };
 } // namespace CHEngine
 

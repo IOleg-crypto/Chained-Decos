@@ -1,16 +1,19 @@
-#ifndef SCENE_MANAGER_IMPL_H
-#define SCENE_MANAGER_IMPL_H
+#ifndef EDITOR_SCENE_MANAGER_H
+#define EDITOR_SCENE_MANAGER_H
 
-#include "MapManager.h"
+#include "EditorMapManager.h"
 #include "scene/core/Scene.h"
+#include "scene/resources/map/GameScene.h"
 #include <memory>
 #include <string>
 
-class SceneManager
+namespace CHEngine
+{
+class EditorSceneManager
 {
 public:
-    SceneManager();
-    ~SceneManager() = default;
+    EditorSceneManager();
+    ~EditorSceneManager() = default;
 
     // Scene Lifecycle
     void ClearScene();
@@ -20,7 +23,7 @@ public:
     {
         return m_activeScene.get();
     }
-    GameScene &GetGameScene();
+    CHEngine::GameScene &GetGameScene();
     void RemoveObject(int index);
     void RefreshUIEntities();
     void RefreshMapEntities();
@@ -64,8 +67,9 @@ private:
     bool m_modified = false;
     std::unique_ptr<Skybox> m_skybox;
     Color m_clearColor = DARKGRAY;
-    // Legacy mapping support
-    std::unique_ptr<MapManager> m_mapManager;
+    // editor-specific map manager
+    std::unique_ptr<EditorMapManager> m_mapManager;
 };
+} // namespace CHEngine
 
-#endif // SCENE_MANAGER_IMPL_H
+#endif // EDITOR_SCENE_MANAGER_H

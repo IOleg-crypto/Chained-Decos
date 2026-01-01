@@ -8,6 +8,9 @@
 
 using json = nlohmann::json;
 
+namespace CHEngine
+{
+
 // Helper function to resolve model paths
 std::vector<std::string> ResolveModelPaths(const std::string &modelName)
 {
@@ -189,7 +192,16 @@ bool SceneLoader::SaveSceneToFile(const GameScene &map, const std::string &path)
     else
     {
         metaJson["skyboxTexture"] = metadata.skyboxTexture;
+        metaJson["skyboxExposure"] = metadata.skyboxExposure;
+        metaJson["skyboxGamma"] = metadata.skyboxGamma;
     }
+
+    metaJson["backgroundColor"] = {{"r", metadata.backgroundColor.r},
+                                   {"g", metadata.backgroundColor.g},
+                                   {"b", metadata.backgroundColor.b},
+                                   {"a", metadata.backgroundColor.a}};
+    if (!metadata.backgroundTexture.empty())
+        metaJson["backgroundTexture"] = metadata.backgroundTexture;
 
     metaJson["groundColor"] = {{"r", metadata.groundColor.r},
                                {"g", metadata.groundColor.g},
@@ -477,7 +489,13 @@ void SceneLoader::LoadSkyboxForScene(GameScene &map)
     if (skybox)
     {
         skybox->LoadMaterialTexture(absolutePath);
-        CD_CORE_INFO("LoadSkyboxForScene() - Loaded skybox from %s", absolutePath.c_str());
+
+        // Apply per-scene exposure and gamma settings from metadata
+        skybox->SetExposure(metadata.skyboxExposure);
+        skybox->SetGammaValue(metadata.skyboxGamma);
+
+        CD_CORE_INFO("LoadSkyboxForScene() - Loaded skybox from %s (Exposure: %.2f, Gamma: %.2f)",
+                     absolutePath.c_str(), metadata.skyboxExposure, metadata.skyboxGamma);
     }
 }
 
@@ -559,7 +577,19 @@ GameScene SceneLoader::LoadScene(const std::string &path)
         if (meta.contains("skyboxTexture"))
         {
             metadata.skyboxTexture = meta.value("skyboxTexture", "");
+            metadata.skyboxExposure = meta.value("skyboxExposure", 1.0f);
+            metadata.skyboxGamma = meta.value("skyboxGamma", 2.2f);
         }
+
+        if (meta.contains("backgroundColor"))
+        {
+            auto &bg = meta["backgroundColor"];
+            metadata.backgroundColor = Color{static_cast<unsigned char>(bg.value("r", 0)),
+                                             static_cast<unsigned char>(bg.value("g", 0)),
+                                             static_cast<unsigned char>(bg.value("b", 0)),
+                                             static_cast<unsigned char>(bg.value("a", 255))};
+        }
+        metadata.backgroundTexture = meta.value("backgroundTexture", "");
     }
 
     // Note: Skybox loading will be done by the caller after map is loaded
@@ -1050,3 +1080,4 @@ std::vector<std::string> SceneLoader::GetSceneNamesFromDirectory(const std::stri
 
     return names;
 }
+} // namespace CHEngine

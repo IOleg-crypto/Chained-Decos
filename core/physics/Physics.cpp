@@ -1,30 +1,30 @@
+#ifndef PHYSICS_CPP
+#define PHYSICS_CPP
 #include "Physics.h"
-#include "components/physics/collision/interfaces/ICollisionManager.h"
-#include "core/Engine.h"
+#include "components/physics/collision/core/CollisionManager.h"
+#endif
 
-namespace CHEngine
-{
+using namespace CHEngine;
 
 bool Physics::RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
                           Vector3 &hitPoint, Vector3 &hitNormal)
 {
-    return Engine::Instance().GetCollisionManager().RaycastDown(origin, maxDistance, hitDistance,
-                                                                hitPoint, hitNormal);
+    return CollisionManager::RaycastDown(origin, maxDistance, hitDistance, hitPoint, hitNormal);
 }
 
-bool Physics::CheckCollision(const ::Collision &collider)
+bool Physics::CheckCollision(const Collision &collider)
 {
-    return Engine::Instance().GetCollisionManager().CheckCollision(collider);
+    return CollisionManager::CheckCollision(collider);
 }
 
-bool Physics::CheckCollision(const ::Collision &collider, Vector3 &response)
+bool Physics::CheckCollision(const Collision &collider, Vector3 &response)
 {
-    return Engine::Instance().GetCollisionManager().CheckCollision(collider, response);
+    return CollisionManager::CheckCollision(collider, response);
 }
 
 void Physics::Render()
 {
-    Engine::Instance().GetCollisionManager().Render();
+    if (!CollisionManager::IsInitialized())
+        return; // Or handle error
+    CollisionManager::Render();
 }
-
-} // namespace CHEngine

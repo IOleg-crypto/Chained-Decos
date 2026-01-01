@@ -11,17 +11,24 @@ namespace CHEngine
 class FontService
 {
 public:
-    FontService() = default;
-    ~FontService() = default;
+    static void Init();
+    static void Shutdown();
+    static bool IsInitialized();
 
     // Load a font from file and cache it
-    bool LoadFont(const std::string &name, const std::string &path);
+    static bool LoadFont(const std::string &name, const std::string &path);
 
     // Get a cached font. Returns default font if not found.
-    Font GetFont(const std::string &name);
+    static Font GetFont(const std::string &name);
 
-    // Unload all fonts
-    void Shutdown();
+    ~FontService() = default;
+
+private:
+    FontService() = default;
+
+    bool InternalLoadFont(const std::string &name, const std::string &path);
+    Font InternalGetFont(const std::string &name);
+    void InternalShutdown();
 
 private:
     std::unordered_map<std::string, Font> m_fonts;

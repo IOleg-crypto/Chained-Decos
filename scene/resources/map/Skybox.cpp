@@ -10,7 +10,8 @@
 
 Skybox::Skybox()
     : m_cube(), m_skyboxModel(), m_skyboxTexture(), m_initialized(false), m_gammaEnabled(false),
-      m_gammaValue(2.2f), m_exposure(1.0f), m_doGammaLoc(-1), m_fragGammaLoc(-1), m_exposureLoc(-1)
+      m_gammaValue(2.2f), m_exposure(1.0f), m_brightness(0.0f), m_contrast(1.0f), m_doGammaLoc(-1),
+      m_fragGammaLoc(-1), m_exposureLoc(-1), m_brightnessLoc(-1), m_contrastLoc(-1)
 {
     // Only initialize members, actual setup happens in Init()
 }
@@ -140,6 +141,22 @@ void Skybox::LoadMaterialShader(const std::string &vsPath, const std::string &fs
         m_exposureLoc = exposureLoc;
         float exposureValue[1] = {m_exposure};
         SetShaderValue(shader, exposureLoc, exposureValue, SHADER_UNIFORM_FLOAT);
+    }
+
+    int brightnessLoc = GetShaderLocation(shader, "brightness");
+    if (brightnessLoc >= 0)
+    {
+        m_brightnessLoc = brightnessLoc;
+        float brightnessValue[1] = {m_brightness};
+        SetShaderValue(shader, brightnessLoc, brightnessValue, SHADER_UNIFORM_FLOAT);
+    }
+
+    int contrastLoc = GetShaderLocation(shader, "contrast");
+    if (contrastLoc >= 0)
+    {
+        m_contrastLoc = contrastLoc;
+        float contrastValue[1] = {m_contrast};
+        SetShaderValue(shader, contrastLoc, contrastValue, SHADER_UNIFORM_FLOAT);
     }
 
     CD_CORE_INFO("Skybox::LoadMaterialShader() - Shaders loaded successfully");
@@ -347,6 +364,18 @@ void Skybox::DrawSkybox(Vector3 position)
         SetShaderValue(m_skyboxModel.materials[0].shader, m_exposureLoc, exposureValue,
                        SHADER_UNIFORM_FLOAT);
     }
+    if (m_brightnessLoc >= 0)
+    {
+        float brightnessValue[1] = {m_brightness};
+        SetShaderValue(m_skyboxModel.materials[0].shader, m_brightnessLoc, brightnessValue,
+                       SHADER_UNIFORM_FLOAT);
+    }
+    if (m_contrastLoc >= 0)
+    {
+        float contrastValue[1] = {m_contrast};
+        SetShaderValue(m_skyboxModel.materials[0].shader, m_contrastLoc, contrastValue,
+                       SHADER_UNIFORM_FLOAT);
+    }
 
     // Disable backface culling for inside cube rendering
     rlDisableBackfaceCulling();
@@ -398,6 +427,28 @@ void Skybox::SetExposure(float exposure)
     }
 }
 
+void Skybox::SetContrast(float contrast)
+{
+    m_contrast = std::max(0.0f, contrast);
+    if (m_initialized && m_contrastLoc >= 0)
+    {
+        float contrastValue[1] = {m_contrast};
+        SetShaderValue(m_skyboxModel.materials[0].shader, m_contrastLoc, contrastValue,
+                       SHADER_UNIFORM_FLOAT);
+    }
+}
+
+void Skybox::SetBrightness(float brightness)
+{
+    m_brightness = brightness; // Can be negative
+    if (m_initialized && m_brightnessLoc >= 0)
+    {
+        float brightnessValue[1] = {m_brightness};
+        SetShaderValue(m_skyboxModel.materials[0].shader, m_brightnessLoc, brightnessValue,
+                       SHADER_UNIFORM_FLOAT);
+    }
+}
+
 void Skybox::UpdateGammaFromConfig()
 {
     if (!m_initialized)
@@ -413,6 +464,8 @@ void Skybox::UpdateGammaFromConfig()
     SetGammaEnabled(configManager.IsSkyboxGammaEnabled());
     SetGammaValue(configManager.GetSkyboxGammaValue());
     SetExposure(configManager.GetSkyboxExposure());
+    SetBrightness(configManager.GetSkyboxBrightness());
+    SetContrast(configManager.GetSkyboxContrast());
 }
 bool Skybox::IsLoaded() const
 {
@@ -433,4 +486,12 @@ bool Skybox::IsGammaEnabled() const
 float Skybox::GetExposure() const
 {
     return m_exposure;
+}
+float Skybox::GetBrightness() const
+{
+    return m_brightness;
+}
+float Skybox::GetContrast() const
+{
+    return m_contrast;
 }

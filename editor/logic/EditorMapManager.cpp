@@ -1,9 +1,11 @@
-#include "editor/logic/MapManager.h"
+#include "EditorMapManager.h"
 #include "core/Log.h"
 #include "scene/resources/map/SceneLoader.h"
 
+namespace CHEngine
+{
 
-void MapManager::SaveScene(const std::string &filename)
+void EditorMapManager::SaveScene(const std::string &filename)
 {
     std::string savePath = filename;
     if (savePath.empty())
@@ -13,7 +15,8 @@ void MapManager::SaveScene(const std::string &filename)
 
     if (savePath.empty())
     {
-        CD_WARN("[MapManager] Cannot save map: No filename provided and no current map active.");
+        CD_CORE_WARN(
+            "[EditorMapManager] Cannot save map: No filename provided and no current map active.");
         return;
     }
 
@@ -22,15 +25,15 @@ void MapManager::SaveScene(const std::string &filename)
     {
         m_currentMapPath = savePath;
         m_isSceneModified = false;
-        CD_INFO("[MapManager] Saved map to: %s", savePath.c_str());
+        CD_CORE_INFO("[EditorMapManager] Saved map to: %s", savePath.c_str());
     }
     else
     {
-        CD_ERROR("[MapManager] FAILED to save map to: %s", savePath.c_str());
+        CD_CORE_ERROR("[EditorMapManager] FAILED to save map to: %s", savePath.c_str());
     }
 }
 
-void MapManager::LoadScene(const std::string &filename)
+void EditorMapManager::LoadScene(const std::string &filename)
 {
     SceneLoader loader;
     auto map = loader.LoadScene(filename);
@@ -42,7 +45,7 @@ void MapManager::LoadScene(const std::string &filename)
     m_selectedIndex = -1;
 }
 
-void MapManager::ClearScene()
+void EditorMapManager::ClearScene()
 {
     m_gameScene = GameScene();
     m_selectedIndex = -1;
@@ -50,14 +53,14 @@ void MapManager::ClearScene()
     m_currentMapPath = "";
 }
 
-void MapManager::AddObject(const MapObjectData &obj)
+void EditorMapManager::AddObject(const MapObjectData &obj)
 {
     m_gameScene.GetMapObjectsMutable().push_back(obj);
     m_isSceneModified = true;
     m_selectedIndex = static_cast<int>(m_gameScene.GetMapObjects().size()) - 1;
 }
 
-void MapManager::RemoveObject(int index)
+void EditorMapManager::RemoveObject(int index)
 {
     auto &objects = m_gameScene.GetMapObjectsMutable();
     if (index >= 0 && index < static_cast<int>(objects.size()))
@@ -71,7 +74,7 @@ void MapManager::RemoveObject(int index)
     }
 }
 
-void MapManager::SelectObject(int index)
+void EditorMapManager::SelectObject(int index)
 {
     if (index >= 0 && index < static_cast<int>(m_gameScene.GetMapObjects().size()))
     {
@@ -83,19 +86,19 @@ void MapManager::SelectObject(int index)
     }
 }
 
-void MapManager::ClearSelection()
+void EditorMapManager::ClearSelection()
 {
     m_selectedIndex = -1;
 }
 
-void MapManager::ClearObjects()
+void EditorMapManager::ClearObjects()
 {
     m_gameScene.GetMapObjectsMutable().clear();
     m_isSceneModified = true;
     m_selectedIndex = -1;
 }
 
-MapObjectData *MapManager::GetSelectedObject()
+MapObjectData *EditorMapManager::GetSelectedObject()
 {
     if (m_selectedIndex >= 0 &&
         m_selectedIndex < static_cast<int>(m_gameScene.GetMapObjects().size()))
@@ -104,23 +107,30 @@ MapObjectData *MapManager::GetSelectedObject()
     }
     return nullptr;
 }
-GameScene &MapManager::GetGameScene()
+
+GameScene &EditorMapManager::GetGameScene()
 {
     return m_gameScene;
 }
-int MapManager::GetSelectedIndex() const
+
+int EditorMapManager::GetSelectedIndex() const
 {
     return m_selectedIndex;
 }
-bool MapManager::IsSceneModified() const
+
+bool EditorMapManager::IsSceneModified() const
 {
     return m_isSceneModified;
 }
-void MapManager::SetSceneModified(bool modified)
+
+void EditorMapManager::SetSceneModified(bool modified)
 {
     m_isSceneModified = modified;
 }
-const std::string &MapManager::GetCurrentMapPath() const
+
+const std::string &EditorMapManager::GetCurrentMapPath() const
 {
     return m_currentMapPath;
 }
+
+} // namespace CHEngine

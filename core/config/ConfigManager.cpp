@@ -412,6 +412,26 @@ float ConfigManager::GetSkyboxExposure() const
     return GetFloat("skybox_exposure", 1.0f);
 }
 
+void ConfigManager::SetSkyboxBrightness(float brightness)
+{
+    SetFloat("skybox_brightness", brightness);
+}
+
+float ConfigManager::GetSkyboxBrightness() const
+{
+    return GetFloat("skybox_brightness", 0.0f);
+}
+
+void ConfigManager::SetSkyboxContrast(float contrast)
+{
+    SetFloat("skybox_contrast", contrast);
+}
+
+float ConfigManager::GetSkyboxContrast() const
+{
+    return GetFloat("skybox_contrast", 1.0f);
+}
+
 void ConfigManager::SetDefaultScenePath(const std::string &path)
 {
     SetString("runtime_default_scene", path);

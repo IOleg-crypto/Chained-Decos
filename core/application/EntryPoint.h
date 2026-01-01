@@ -1,72 +1,28 @@
-#ifndef CHE_ENTRY_POINT_H
-#define CHE_ENTRY_POINT_H
+#ifndef ENTRY_POINT_H
+#define ENTRY_POINT_H
 
+#include "Application.h"
+#include "core/Base.h"
 #include "core/Log.h"
-#include "core/application/EngineApplication.h"
-#include "core/application/IApplication.h"
-#include <exception>
 
-// To be defined by the client application
-extern CHEngine::IApplication *CHEngine::CreateApplication(int argc, char *argv[]);
+#ifdef CD_PLATFORM_WINDOWS
 
-#ifndef CHE_ENTRY_POINT_DEFINED
-#define CHE_ENTRY_POINT_DEFINED
+extern CHEngine::Application *CHEngine::CreateApplication(int argc, char **argv);
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
-    try
-    {
-        // 1. Create the client application instance
-        CHEngine::IApplication *app = CHEngine::CreateApplication(argc, argv);
-        if (!app)
-        {
-            CD_CORE_FATAL("Failed to create application!");
-            return -1;
-        }
+    // CHEngine::Log::Init(); // If we need explicit init later
 
-        // 2. Initial configuration from the application
-        CHEngine::IApplication::EngineConfig appConfig;
-        app->OnConfigure(appConfig);
+    CD_CORE_INFO("Engine Entry Point: Starting Application...");
 
-        // 3. Create Engine Runtime Config based on App requirements
-        CHEngine::EngineApplication::Config engineConfig;
-        engineConfig.windowName = appConfig.windowName;
-        engineConfig.width = appConfig.width;
-        engineConfig.height = appConfig.height;
-        engineConfig.fullscreen = appConfig.fullscreen;
-        engineConfig.vsync = appConfig.vsync;
-        engineConfig.enableMSAA = true; // Default to true
+    auto app = CHEngine::CreateApplication(argc, argv);
+    app->Run();
+    delete app;
 
-        // 4. Create Engine Application Runner
-        CHEngine::EngineApplication engineApp(engineConfig, app);
-
-        // 5. Run the engine (Main Loop)
-        engineApp.Run();
-
-        // 6. Cleanup
-        delete app;
-
-        return 0;
-    }
-    catch (const std::exception &e)
-    {
-        CD_CORE_FATAL("Unhandled exception: %s", e.what());
-        return -1;
-    }
-    catch (...)
-    {
-        CD_CORE_FATAL("Unknown exception occurred");
-        return -1;
-    }
+    CD_CORE_INFO("Engine Entry Point: Application Shutdown.");
+    return 0;
 }
 
-// Optional helper macro for quick application declaration
-#define DECLARE_APPLICATION(AppClass)                                                              \
-    CHEngine::IApplication *CHEngine::CreateApplication(int argc, char *argv[])                    \
-    {                                                                                              \
-        return new AppClass(argc, argv);                                                           \
-    }
+#endif
 
-#endif // CHE_ENTRY_POINT_DEFINED
-
-#endif // CHE_ENTRY_POINT_H
+#endif // ENTRY_POINT_H

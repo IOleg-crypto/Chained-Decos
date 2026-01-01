@@ -36,7 +36,7 @@ target_link_libraries(RuntimeLib
         imguilib
         nlohmann_json
         core
-        scene_manager
+        scene_core
         cameracontroller
         model
         map

@@ -1,4 +1,3 @@
 #include "RuntimeApplication.h"
 #include "core/application/EntryPoint.h"
-
-DECLARE_APPLICATION(CHD::RuntimeApplication)
+// No additional code needed here, EntryPoint.h defines main()

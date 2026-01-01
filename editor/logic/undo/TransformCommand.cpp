@@ -4,8 +4,8 @@
 namespace CHEngine
 {
 
-TransformCommand::TransformCommand(const std::shared_ptr<::GameScene> &scene, int objectIndex,
-                                   const ::MapObjectData &oldData, const ::MapObjectData &newData)
+TransformCommand::TransformCommand(const std::shared_ptr<GameScene> &scene, int objectIndex,
+                                   const MapObjectData &oldData, const MapObjectData &newData)
     : m_Scene(scene), m_ObjectIndex(objectIndex), m_OldData(oldData), m_NewData(newData)
 {
 }

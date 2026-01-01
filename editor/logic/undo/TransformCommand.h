@@ -4,10 +4,9 @@
 #include "scene/resources/map/MapData.h"
 #include <memory>
 
-class GameScene;
-
 namespace CHEngine
 {
+class GameScene;
 
 /**
  * @brief Command for undoing/redoing map object transformations
@@ -15,8 +14,8 @@ namespace CHEngine
 class TransformCommand : public IEditorCommand
 {
 public:
-    TransformCommand(const std::shared_ptr<::GameScene> &scene, int objectIndex,
-                     const ::MapObjectData &oldData, const ::MapObjectData &newData);
+    TransformCommand(const std::shared_ptr<GameScene> &scene, int objectIndex,
+                     const MapObjectData &oldData, const MapObjectData &newData);
 
     void Execute() override;
     void Undo() override;
@@ -26,10 +25,10 @@ public:
     }
 
 private:
-    std::shared_ptr<::GameScene> m_Scene;
+    std::shared_ptr<GameScene> m_Scene;
     int m_ObjectIndex;
-    ::MapObjectData m_OldData;
-    ::MapObjectData m_NewData;
+    MapObjectData m_OldData;
+    MapObjectData m_NewData;
 };
 
 } // namespace CHEngine

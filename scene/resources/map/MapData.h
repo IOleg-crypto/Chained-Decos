@@ -5,6 +5,9 @@
 #include <raylib.h>
 #include <string>
 
+namespace CHEngine
+{
+
 // ============================================================================
 // Enumerations
 // ============================================================================
@@ -129,8 +132,13 @@ struct MapMetadata
     std::string modifiedDate;
     Vector3 worldBounds;
     Color backgroundColor;
+    std::string backgroundTexture;
     std::string skyboxTexture;
+    float skyboxExposure = 1.0f;
+    float skyboxGamma = 2.2f;
     SceneType sceneType;
 };
+
+} // namespace CHEngine
 
 #endif /* MAPDATA_H */

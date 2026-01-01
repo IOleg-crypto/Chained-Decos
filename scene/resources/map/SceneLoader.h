@@ -11,6 +11,8 @@
 
 #include "GameScene.h"
 
+namespace CHEngine
+{
 // ============================================================================
 // SceneLoader Class
 // ============================================================================
@@ -52,5 +54,7 @@ private:
 
 MapObjectData CreateMapObjectFromType(MapObjectType type, const Vector3 &position,
                                       const Vector3 &scale, const Color &color);
+
+} // namespace CHEngine
 
 #endif // SCENELOADER_H

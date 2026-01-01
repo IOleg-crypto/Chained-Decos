@@ -1,4 +1,3 @@
 #include "EditorApplication.h"
 #include "core/application/EntryPoint.h"
-
-DECLARE_APPLICATION(EditorApplication)
+// No additional code needed here, EntryPoint.h defines main()

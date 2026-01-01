@@ -5,7 +5,6 @@
 #include <raylib.h>
 #include <string>
 
-
 namespace CHEngine
 {
 enum class UIAnchor : std::uint8_t
@@ -28,6 +27,7 @@ struct RectTransform
     Vector2 pivot = {0.5f, 0.5f}; // Center point for rotation/scaling
     UIAnchor anchor = UIAnchor::MiddleCenter;
     float rotation = 0.0f; // Rotation in degrees
+    bool active = true;    // Whether this UI element is active/visible
 };
 
 struct UIImage
@@ -74,6 +74,12 @@ struct ImGuiComponent
     std::string eventId;
     bool isButton = true;
     bool useSceneTheme = true;
+};
+
+struct UIBackground
+{
+    Color color = BLANK;
+    std::string texturePath;
 };
 
 // Editor-only component to map back to GameScene index

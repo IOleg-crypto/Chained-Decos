@@ -4,7 +4,6 @@
 #include "scene/ecs/components/RenderComponent.h"
 #include "scene/ecs/components/TransformComponent.h"
 
-
 using namespace CHEngine;
 
 /**
@@ -50,12 +49,12 @@ int main()
     // Verify component queries
     if (player.HasComponent<TransformComponent>())
     {
-        CD_CORE_INFO("✓ Player has TransformComponent");
+        CD_CORE_INFO("Player has TransformComponent");
     }
 
     if (player.HasComponent<RenderComponent>())
     {
-        CD_CORE_INFO("✓ Player has RenderComponent");
+        CD_CORE_INFO("Player has RenderComponent");
     }
 
     // Test entity iteration (EnTT v3.x API)

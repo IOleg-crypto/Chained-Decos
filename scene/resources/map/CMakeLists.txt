@@ -26,10 +26,11 @@ target_include_directories(map
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include/json/include
+        ${lua_SOURCE_DIR}/src
 )
 
 
-target_link_libraries(map PUBLIC raylib nlohmann_json config render)
+target_link_libraries(map PUBLIC raylib nlohmann_json config render sol2::sol2)
 
 set_target_properties(map PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

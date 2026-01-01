@@ -9,6 +9,8 @@ namespace CHEngine
 class GuiElement;
 }
 
+namespace CHEngine
+{
 class IGuiManager
 {
 public:
@@ -26,5 +28,6 @@ public:
     virtual bool IsVisible() const = 0;
     virtual void SetVisible(bool visible) = 0;
 };
+} // namespace CHEngine
 
 #endif // IGUI_MANAGER_H

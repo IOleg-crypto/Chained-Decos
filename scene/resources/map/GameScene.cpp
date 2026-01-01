@@ -1,5 +1,8 @@
 #include "GameScene.h"
 
+namespace CHEngine
+{
+
 GameScene::~GameScene()
 {
     Cleanup();
@@ -108,3 +111,5 @@ std::unordered_map<std::string, Texture2D> &GameScene::GetMapTexturesMutable()
 {
     return m_loadedTextures;
 }
+
+} // namespace CHEngine

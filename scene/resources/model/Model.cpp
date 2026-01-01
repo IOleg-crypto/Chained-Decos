@@ -16,6 +16,186 @@
 
 #include <scene/resources/color/ColorParser.h>
 
+namespace CHEngine
+{
+static std::unique_ptr<ModelLoader> s_Instance = nullptr;
+
+void ModelLoader::Init()
+{
+    s_Instance = std::make_unique<ModelLoader>();
+    s_Instance->InternalInitialize();
+}
+
+void ModelLoader::Shutdown()
+{
+    if (s_Instance)
+        s_Instance->InternalShutdown();
+    s_Instance.reset();
+}
+
+bool ModelLoader::IsInitialized()
+{
+    return s_Instance != nullptr;
+}
+
+std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std::string &path)
+{
+    return s_Instance ? s_Instance->InternalLoadModelsFromJson(path) : std::nullopt;
+}
+
+std::optional<ModelLoader::LoadResult>
+ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
+                                         const std::vector<std::string> &modelNames)
+{
+    return s_Instance ? s_Instance->InternalLoadModelsFromJsonSelective(path, modelNames)
+                      : std::nullopt;
+}
+
+void ModelLoader::SetSelectiveMode(bool enabled)
+{
+    if (s_Instance)
+        s_Instance->InternalSetSelectiveMode(enabled);
+}
+
+void ModelLoader::DrawAllModels()
+{
+    if (s_Instance)
+        s_Instance->InternalDrawAllModels();
+}
+
+std::optional<std::reference_wrapper<::Model>> ModelLoader::GetModelByName(const std::string &name)
+{
+    return s_Instance ? s_Instance->InternalGetModelByName(name) : std::nullopt;
+}
+
+bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config)
+{
+    return s_Instance ? s_Instance->InternalAddInstanceEx(modelName, config) : false;
+}
+
+std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
+{
+    return s_Instance ? s_Instance->InternalLoadGameModels() : std::nullopt;
+}
+
+std::optional<ModelLoader::LoadResult>
+ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
+{
+    return s_Instance ? s_Instance->InternalLoadGameModelsSelective(modelNames) : std::nullopt;
+}
+
+std::optional<ModelLoader::LoadResult>
+ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames)
+{
+    return s_Instance ? s_Instance->InternalLoadGameModelsSelectiveSafe(modelNames) : std::nullopt;
+}
+
+bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &path, bool preload)
+{
+    return s_Instance ? s_Instance->InternalLoadSingleModel(name, path, preload) : false;
+}
+
+bool ModelLoader::UnloadModel(const std::string &name)
+{
+    return s_Instance ? s_Instance->InternalUnloadModel(name) : false;
+}
+
+void ModelLoader::UnloadAllModels()
+{
+    if (s_Instance)
+        s_Instance->InternalUnloadAllModels();
+}
+
+bool ModelLoader::ReloadModel(const std::string &name)
+{
+    return s_Instance ? s_Instance->InternalReloadModel(name) : false;
+}
+
+bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &model)
+{
+    return s_Instance ? s_Instance->InternalRegisterLoadedModel(name, model) : false;
+}
+
+std::vector<ModelInstance *> ModelLoader::GetInstancesByTag(const std::string &tag)
+{
+    return s_Instance ? s_Instance->InternalGetInstancesByTag(tag) : std::vector<ModelInstance *>();
+}
+
+std::vector<ModelInstance *> ModelLoader::GetInstancesByCategory(const std::string &category)
+{
+    return s_Instance ? s_Instance->InternalGetInstancesByCategory(category)
+                      : std::vector<ModelInstance *>();
+}
+
+std::vector<std::string> ModelLoader::GetAvailableModels()
+{
+    return s_Instance ? s_Instance->InternalGetAvailableModels() : std::vector<std::string>();
+}
+
+bool ModelLoader::HasCollision(const std::string &modelName)
+{
+    return s_Instance ? s_Instance->InternalHasCollision(modelName) : false;
+}
+
+const LoadingStats &ModelLoader::GetLoadingStats()
+{
+    static LoadingStats empty{};
+    return s_Instance ? s_Instance->InternalGetLoadingStats() : empty;
+}
+
+void ModelLoader::PrintStatistics()
+{
+    if (s_Instance)
+        s_Instance->InternalPrintStatistics();
+}
+
+void ModelLoader::PrintCacheInfo()
+{
+    if (s_Instance)
+        s_Instance->InternalPrintCacheInfo();
+}
+
+void ModelLoader::SetCacheEnabled(bool enabled)
+{
+    if (s_Instance)
+        s_Instance->InternalSetCacheEnabled(enabled);
+}
+
+void ModelLoader::SetMaxCacheSize(size_t maxSize)
+{
+    if (s_Instance)
+        s_Instance->InternalSetMaxCacheSize(maxSize);
+}
+
+void ModelLoader::EnableLOD(bool enabled)
+{
+    if (s_Instance)
+        s_Instance->InternalEnableLOD(enabled);
+}
+
+const ModelFileConfig *ModelLoader::GetModelConfig(const std::string &modelName)
+{
+    return s_Instance ? s_Instance->InternalGetModelConfig(modelName) : nullptr;
+}
+
+void ModelLoader::CleanupUnusedModels()
+{
+    if (s_Instance)
+        s_Instance->InternalCleanupUnusedModels();
+}
+
+void ModelLoader::OptimizeCache()
+{
+    if (s_Instance)
+        s_Instance->InternalOptimizeCache();
+}
+
+void ModelLoader::ClearInstances()
+{
+    if (s_Instance)
+        s_Instance->InternalClearInstances();
+}
+
 ModelLoader::ModelLoader() : m_cache(std::make_shared<ModelCache>())
 {
     // Initialize statistics
@@ -34,16 +214,33 @@ ModelLoader::~ModelLoader()
             delete modelPtr;
         }
     }
+}
+
+bool ModelLoader::InternalInitialize()
+{
+    return true;
+}
+
+void ModelLoader::InternalShutdown()
+{
+    // Legacy cleanup
+    for (auto &[name, modelPtr] : m_modelByName)
+    {
+        if (modelPtr)
+        {
+            ::UnloadModel(*modelPtr);
+            delete modelPtr;
+        }
+    }
 
     m_modelByName.clear();
     m_instances.clear();
     m_animations.clear();
     m_configs.clear();
-
-    CD_CORE_INFO("Enhanced Models Manager destroyed (instance: %p)", this);
 }
 
-std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std::string &path)
+std::optional<ModelLoader::LoadResult>
+ModelLoader::InternalLoadModelsFromJson(const std::string &path)
 {
     auto startTime = std::chrono::steady_clock::now();
     CD_CORE_INFO("Loading enhanced models from: %s", path.c_str());
@@ -110,7 +307,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
         m_configs[config.name] = config;
 
         // Load model
-        if (ProcessModelConfigLegacy(config))
+        if (InternalProcessModelConfigLegacy(config))
         {
             result.loadedModels++;
             CD_CORE_INFO("Successfully loaded model: %s", config.name.c_str());
@@ -138,8 +335,8 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadModelsFromJson(const std
 }
 
 std::optional<ModelLoader::LoadResult>
-ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
-                                         const std::vector<std::string> &modelNames)
+ModelLoader::InternalLoadModelsFromJsonSelective(const std::string &path,
+                                                 const std::vector<std::string> &modelNames)
 {
     auto startTime = std::chrono::steady_clock::now();
     CD_CORE_INFO("Loading selective models from: %s (models: %d)", path.c_str(), modelNames.size());
@@ -226,7 +423,7 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
         m_configs[config.name] = config;
 
         // Load model
-        if (ProcessModelConfigLegacy(config))
+        if (InternalProcessModelConfigLegacy(config))
         {
             result.loadedModels++;
             CD_CORE_INFO("Successfully loaded selective model: %s", config.name.c_str());
@@ -254,7 +451,7 @@ ModelLoader::LoadModelsFromJsonSelective(const std::string &path,
 }
 
 // Legacy compatible method for config processing
-bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
+bool ModelLoader::InternalProcessModelConfigLegacy(const ModelFileConfig &config)
 {
     std::string modelPath = config.path;
 
@@ -343,7 +540,7 @@ bool ModelLoader::ProcessModelConfigLegacy(const ModelFileConfig &config)
     return true;
 }
 
-void ModelLoader::DrawAllModels() const
+void ModelLoader::InternalDrawAllModels() const
 {
     for (const auto &instance : m_instances)
     {
@@ -478,7 +675,8 @@ void ModelLoader::DrawAllModels() const
     }
 }
 
-std::optional<std::reference_wrapper<Model>> ModelLoader::GetModelByName(const std::string &name)
+std::optional<std::reference_wrapper<Model>>
+ModelLoader::InternalGetModelByName(const std::string &name)
 {
     // 1) Exact match
     auto it = m_modelByName.find(name);
@@ -609,7 +807,8 @@ void ModelLoader::AddInstance(const json &instanceJson, Model *modelPtr,
     }
 }
 
-bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config)
+bool ModelLoader::InternalAddInstanceEx(const std::string &modelName,
+                                        const ModelInstanceConfig &config)
 {
     Model *model = nullptr;
 
@@ -662,12 +861,13 @@ bool ModelLoader::AddInstanceEx(const std::string &modelName, const ModelInstanc
     return true;
 }
 
-bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &path, bool preload)
+bool ModelLoader::InternalLoadSingleModel(const std::string &name, const std::string &path,
+                                          bool preload)
 {
     std::string fullPath;
 
-    // Simple path handling - if path doesn't contain directory separators, assume it's in resources
-    // folder
+    // Simple path handling - if path doesn't contain directory separators, assume it's in
+    // resources folder
     if (path.find('/') == std::string::npos && path.find('\\') == std::string::npos)
     {
         fullPath = "../resources/" + path;
@@ -746,9 +946,8 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
         // Try to load as different format or check if file is valid
         if (std::ifstream(fullPath).good())
         {
-            TraceLog(
-                LOG_WARNING,
-                "Model file exists but failed to load - may be corrupted or unsupported format");
+            TraceLog(LOG_WARNING, "Model file exists but failed to load - may be corrupted or "
+                                  "unsupported format");
         }
         else
         {
@@ -794,7 +993,7 @@ bool ModelLoader::LoadSingleModel(const std::string &name, const std::string &pa
     return true;
 }
 
-bool ModelLoader::UnloadModel(const std::string &name)
+bool ModelLoader::InternalUnloadModel(const std::string &name)
 {
     auto it = m_modelByName.find(name);
     if (it == m_modelByName.end())
@@ -825,7 +1024,7 @@ bool ModelLoader::UnloadModel(const std::string &name)
     return true;
 }
 
-std::vector<ModelInstance *> ModelLoader::GetInstancesByTag(const std::string &tag)
+std::vector<ModelInstance *> ModelLoader::InternalGetInstancesByTag(const std::string &tag)
 {
     std::vector<ModelInstance *> result;
 
@@ -841,7 +1040,8 @@ std::vector<ModelInstance *> ModelLoader::GetInstancesByTag(const std::string &t
     return result;
 }
 
-std::vector<ModelInstance *> ModelLoader::GetInstancesByCategory(const std::string &category)
+std::vector<ModelInstance *>
+ModelLoader::InternalGetInstancesByCategory(const std::string &category)
 {
     std::vector<ModelInstance *> result;
 
@@ -858,7 +1058,7 @@ std::vector<ModelInstance *> ModelLoader::GetInstancesByCategory(const std::stri
     return result;
 }
 
-std::vector<std::string> ModelLoader::GetAvailableModels() const
+std::vector<std::string> ModelLoader::InternalGetAvailableModels() const
 {
     std::vector<std::string> models;
     models.reserve(m_modelByName.size());
@@ -872,7 +1072,7 @@ std::vector<std::string> ModelLoader::GetAvailableModels() const
     return models;
 }
 
-bool ModelLoader::HasCollision(const std::string &modelName) const
+bool ModelLoader::InternalHasCollision(const std::string &modelName) const
 {
     auto configIt = m_configs.find(modelName);
     if (configIt != m_configs.end())
@@ -884,12 +1084,12 @@ bool ModelLoader::HasCollision(const std::string &modelName) const
     return false;
 }
 
-const LoadingStats &ModelLoader::GetLoadingStats() const
+const LoadingStats &ModelLoader::InternalGetLoadingStats() const
 {
     return m_stats;
 }
 
-void ModelLoader::PrintStatistics() const
+void ModelLoader::InternalPrintStatistics() const
 {
     CD_CORE_INFO("=== Enhanced Model Manager Statistics ===");
     CD_CORE_INFO("Total models processed: %d", m_stats.totalModels);
@@ -902,7 +1102,7 @@ void ModelLoader::PrintStatistics() const
     CD_CORE_INFO("LOD enabled: %s", m_lodEnabled ? "Yes" : "No");
 }
 
-void ModelLoader::PrintCacheInfo() const
+void ModelLoader::InternalPrintCacheInfo() const
 {
     if (m_cache && m_cacheEnabled)
     {
@@ -914,12 +1114,12 @@ void ModelLoader::PrintCacheInfo() const
     }
 }
 
-void ModelLoader::SetCacheEnabled(const bool enabled)
+void ModelLoader::InternalSetCacheEnabled(const bool enabled)
 {
     m_cacheEnabled = enabled;
 }
 
-void ModelLoader::SetMaxCacheSize(const size_t maxSize) const
+void ModelLoader::InternalSetMaxCacheSize(const size_t maxSize) const
 {
     if (m_cache)
     {
@@ -928,17 +1128,17 @@ void ModelLoader::SetMaxCacheSize(const size_t maxSize) const
     }
 }
 
-void ModelLoader::EnableLOD(bool enabled)
+void ModelLoader::InternalEnableLOD(bool enabled)
 {
     m_lodEnabled = enabled;
 }
 
-void ModelLoader::SetSelectiveMode(bool enabled)
+void ModelLoader::InternalSetSelectiveMode(bool enabled)
 {
     m_selectiveMode = enabled;
 }
 
-void ModelLoader::CleanupUnusedModels() const
+void ModelLoader::InternalCleanupUnusedModels() const
 {
     if (m_cache && m_cacheEnabled)
     {
@@ -947,7 +1147,7 @@ void ModelLoader::CleanupUnusedModels() const
     }
 }
 
-void ModelLoader::OptimizeCache() const
+void ModelLoader::InternalOptimizeCache() const
 {
     if (m_cache && m_cacheEnabled)
     {
@@ -956,7 +1156,7 @@ void ModelLoader::OptimizeCache() const
     }
 }
 
-void ModelLoader::ClearInstances()
+void ModelLoader::InternalClearInstances()
 {
     size_t count = m_instances.size();
     m_instances.clear();
@@ -1021,7 +1221,7 @@ bool ModelLoader::ValidateModelPath(const std::string &path) const
     return true;
 }
 
-bool ModelLoader::ReloadModel(const std::string &name)
+bool ModelLoader::InternalReloadModel(const std::string &name)
 {
     auto configIt = m_configs.find(name);
     if (configIt == m_configs.end())
@@ -1033,16 +1233,16 @@ bool ModelLoader::ReloadModel(const std::string &name)
     CD_CORE_INFO("Reloading model: %s", name.c_str());
 
     // First unload existing model
-    if (!UnloadModel(name))
+    if (!InternalUnloadModel(name))
     {
         CD_CORE_WARN("Failed to unload model '%s' before reload", name.c_str());
     }
 
     // Reload
-    return LoadSingleModel(name, configIt->second.path, true);
+    return InternalLoadSingleModel(name, configIt->second.path, true);
 }
 
-const ModelFileConfig *ModelLoader::GetModelConfig(const std::string &modelName) const
+const ModelFileConfig *ModelLoader::InternalGetModelConfig(const std::string &modelName) const
 {
     const auto it = m_configs.find(modelName);
     if (it != m_configs.end())
@@ -1053,7 +1253,7 @@ const ModelFileConfig *ModelLoader::GetModelConfig(const std::string &modelName)
 }
 
 // Register a Model that was already loaded by another system (SceneLoader)
-bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &model)
+bool ModelLoader::InternalRegisterLoadedModel(const std::string &name, const ::Model &model)
 {
     // If already present, skip
     if (m_modelByName.find(name) != m_modelByName.end())
@@ -1092,10 +1292,10 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
             else
             {
                 Color col = pModel->materials[i].maps[MATERIAL_MAP_ALBEDO].color;
-                TraceLog(
-                    LOG_INFO,
-                    "  Registered Material[%d]: no texture (using default), color=(%d,%d,%d,%d)", i,
-                    col.r, col.g, col.b, col.a);
+                TraceLog(LOG_INFO,
+                         "  Registered Material[%d]: no texture (using default), "
+                         "color=(%d,%d,%d,%d)",
+                         i, col.r, col.g, col.b, col.a);
             }
         }
     }
@@ -1156,10 +1356,10 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
         if (anim.LoadAnimations(potentialPath))
         {
             m_animations[name] = std::move(anim);
-            TraceLog(
-                LOG_INFO,
-                "ModelLoader::RegisterLoadedModel() - Loaded animations for '%s' (if available)",
-                name.c_str());
+            TraceLog(LOG_INFO,
+                     "ModelLoader::RegisterLoadedModel() - Loaded animations for '%s' (if "
+                     "available)",
+                     name.c_str());
         }
     }
     catch (...)
@@ -1169,7 +1369,7 @@ bool ModelLoader::RegisterLoadedModel(const std::string &name, const ::Model &mo
     return true;
 }
 
-void ModelLoader::UnloadAllModels()
+void ModelLoader::InternalUnloadAllModels()
 {
     // Clear all instances
     m_instances.clear();
@@ -1194,17 +1394,17 @@ void ModelLoader::UnloadAllModels()
 
 // ==================== GAME MODEL LOADING METHODS ====================
 
-std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
+std::optional<ModelLoader::LoadResult> ModelLoader::InternalLoadGameModels()
 {
     CD_CORE_INFO("[ModelLoader] Loading game models from resources directory...");
 
     // Configure for optimal game performance
-    SetCacheEnabled(true);
-    SetMaxCacheSize(50);
-    EnableLOD(true);
-    SetSelectiveMode(false);
+    InternalSetCacheEnabled(true);
+    InternalSetMaxCacheSize(50);
+    InternalEnableLOD(true);
+    InternalSetSelectiveMode(false);
 
-    SceneLoader mapLoader;
+    CHEngine::SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
     auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
@@ -1232,7 +1432,7 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
         CD_CORE_INFO("[ModelLoader] Loading model: %s from %s", modelInfo.name.c_str(),
                      modelInfo.path.c_str());
 
-        if (LoadSingleModel(modelInfo.name, modelInfo.path, true))
+        if (InternalLoadSingleModel(modelInfo.name, modelInfo.path, true))
         {
             result.loadedModels++;
             CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelInfo.name.c_str());
@@ -1247,12 +1447,12 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
     auto endTime = std::chrono::steady_clock::now();
     result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
-    PrintStatistics();
+    InternalPrintStatistics();
     CD_CORE_INFO("[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
                  result.totalModels, result.loadingTime);
 
     // Validate that we have essential models
-    auto availableModels = GetAvailableModels();
+    auto availableModels = InternalGetAvailableModels();
     bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") !=
                               availableModels.end() ||
                           std::find(availableModels.begin(), availableModels.end(), "player_low") !=
@@ -1267,18 +1467,18 @@ std::optional<ModelLoader::LoadResult> ModelLoader::LoadGameModels()
 }
 
 std::optional<ModelLoader::LoadResult>
-ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
+ModelLoader::InternalLoadGameModelsSelective(const std::vector<std::string> &modelNames)
 {
     CD_CORE_INFO("[ModelLoader] Loading selective models: %d models",
                  static_cast<int>(modelNames.size()));
 
     // Configure for selective loading
-    SetCacheEnabled(true);
-    SetMaxCacheSize(50);
-    EnableLOD(false);
-    SetSelectiveMode(true);
+    InternalSetCacheEnabled(true);
+    InternalSetMaxCacheSize(50);
+    InternalEnableLOD(false);
+    InternalSetSelectiveMode(true);
 
-    SceneLoader mapLoader;
+    CHEngine::SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
     auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
@@ -1312,7 +1512,7 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
             CD_CORE_INFO("[ModelLoader] Loading required model: %s from %s", modelName.c_str(),
                          it->path.c_str());
 
-            if (LoadSingleModel(modelName, it->path, true))
+            if (InternalLoadSingleModel(modelName, it->path, true))
             {
                 result.loadedModels++;
                 CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelName.c_str());
@@ -1333,12 +1533,12 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
     auto endTime = std::chrono::steady_clock::now();
     result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
-    PrintStatistics();
+    InternalPrintStatistics();
     CD_CORE_INFO("[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
                  result.totalModels, result.loadingTime);
 
     // Validate that we have essential models
-    auto availableModels = GetAvailableModels();
+    auto availableModels = InternalGetAvailableModels();
     bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") !=
                               availableModels.end() ||
                           std::find(availableModels.begin(), availableModels.end(), "player_low") !=
@@ -1353,18 +1553,18 @@ ModelLoader::LoadGameModelsSelective(const std::vector<std::string> &modelNames)
 }
 
 std::optional<ModelLoader::LoadResult>
-ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames)
+ModelLoader::InternalLoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames)
 {
     CD_CORE_INFO("[ModelLoader] Loading selective models (safe): %d models",
                  static_cast<int>(modelNames.size()));
 
     // Configure for selective loading
-    SetCacheEnabled(true);
-    SetMaxCacheSize(50);
-    EnableLOD(false);
-    SetSelectiveMode(true);
+    InternalSetCacheEnabled(true);
+    InternalSetMaxCacheSize(50);
+    InternalEnableLOD(false);
+    InternalSetSelectiveMode(true);
 
-    SceneLoader mapLoader;
+    CHEngine::SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
     auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
 
@@ -1396,7 +1596,7 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
             CD_CORE_INFO("[ModelLoader] Loading required model: %s from %s", modelInfo.name.c_str(),
                          modelInfo.path.c_str());
 
-            if (LoadSingleModel(modelInfo.name, modelInfo.path, true))
+            if (InternalLoadSingleModel(modelInfo.name, modelInfo.path, true))
             {
                 result.loadedModels++;
                 CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelInfo.name.c_str());
@@ -1412,12 +1612,12 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
     auto endTime = std::chrono::steady_clock::now();
     result.loadingTime = std::chrono::duration<float>(endTime - startTime).count();
 
-    PrintStatistics();
+    InternalPrintStatistics();
     CD_CORE_INFO("[ModelLoader] Loaded %d/%d models in %.2f seconds", result.loadedModels,
                  result.totalModels, result.loadingTime);
 
     // Validate that we have essential models
-    auto availableModels = GetAvailableModels();
+    auto availableModels = InternalGetAvailableModels();
     bool hasPlayerModel = std::find(availableModels.begin(), availableModels.end(), "player") !=
                               availableModels.end() ||
                           std::find(availableModels.begin(), availableModels.end(), "player_low") !=
@@ -1430,3 +1630,5 @@ ModelLoader::LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNa
 
     return result;
 }
+
+} // namespace CHEngine

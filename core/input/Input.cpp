@@ -1,14 +1,23 @@
 #include "Input.h"
-#include "components/input/interfaces/IInputManager.h"
-#include "core/Engine.h"
-
 
 namespace CHEngine
 {
+std::map<int, std::function<void()>> Input::s_Actions;
+
+void Input::Update()
+{
+    for (auto const &[key, action] : s_Actions)
+    {
+        if (::IsKeyPressed(key))
+        {
+            action();
+        }
+    }
+}
 
 void Input::RegisterAction(int key, const std::function<void()> &action)
 {
-    Engine::Instance().GetInputManager().RegisterAction(key, action);
+    s_Actions[key] = action;
 }
 
 } // namespace CHEngine

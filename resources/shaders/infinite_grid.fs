@@ -1,12 +1,12 @@
-#version 330
+#version 450 core
 
 // Infinite Grid Shader (Hazel-style)
 // Based on: http://asliceofrendering.com/webgl/2019/06/19/InfiniteGrid/
 
-in vec3 nearPoint;
-in vec3 farPoint;
-in mat4 fragView;
-in mat4 fragProj;
+layout(location = 0) in vec3 nearPoint;
+layout(location = 1) in vec3 farPoint;
+layout(location = 2) in mat4 fragView;
+layout(location = 6) in mat4 fragProj;
 
 layout(location = 0) out vec4 outColor;
 

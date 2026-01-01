@@ -5,7 +5,8 @@
 #include <raylib.h>
 #include <vector>
 
-
+namespace CHEngine
+{
 // Only Render collision
 class CollisionDebugRenderer
 {
@@ -32,5 +33,6 @@ private:
     void DrawCollisionWireframe(const Vector3 &center, const Vector3 &size, Color color) const;
     void DrawCollisionSolid(const Vector3 &center, const Vector3 &size, Color color) const;
 };
+} // namespace CHEngine
 
 #endif

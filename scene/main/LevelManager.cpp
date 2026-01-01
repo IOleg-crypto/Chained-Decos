@@ -1,10 +1,10 @@
 #include "LevelManager.h"
 #include "MapCollisionInitializer.h"
-#include "core/Engine.h"
 #include "core/Log.h"
 #include "core/assets/AssetManager.h"
 #include "scene/core/Entity.h"
 #include "scene/core/Scene.h"
+#include "scene/core/SceneManager.h"
 #include "scene/ecs/ECSRegistry.h"
 #include "scene/ecs/components/PhysicsData.h"
 #include "scene/ecs/components/PlayerComponent.h"
@@ -21,66 +21,213 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-
-LevelManager::LevelManager(const LevelManagerConfig &config)
-    : m_config(config), m_gameScene(std::make_unique<GameScene>()), m_currentMapPath(""),
-      m_playerSpawnZone({0}), m_spawnTexture({0}), m_hasSpawnZone(false),
-      m_spawnTextureLoaded(false), m_collisionInitializer(nullptr), m_worldManager(nullptr),
-      m_collisionManager(nullptr), m_modelLoader(nullptr), m_renderManager(nullptr),
-      m_player(nullptr), m_menu(nullptr), m_engine(nullptr)
+namespace CHEngine
 {
-}
+static std::unique_ptr<LevelManager> s_Instance = nullptr;
 
-LevelManager::~LevelManager()
+void LevelManager::Init(const LevelManagerConfig &config)
 {
-    Shutdown();
+    s_Instance = std::make_unique<LevelManager>(config);
 }
 
 void LevelManager::Shutdown()
 {
-    if (m_gameScene)
-        m_gameScene->Cleanup();
-    m_currentMapPath = "";
-    m_hasSpawnZone = false;
-    if (m_spawnTextureLoaded)
-    {
-        UnloadTexture(m_spawnTexture);
-        m_spawnTextureLoaded = false;
-    }
-    m_collisionInitializer = nullptr;
-    m_worldManager = nullptr;
-    m_collisionManager = nullptr;
-    m_modelLoader = nullptr;
-    m_renderManager = nullptr;
-    m_player = nullptr;
-    m_menu = nullptr;
-    m_engine = nullptr;
+    if (s_Instance)
+        s_Instance->InternalShutdown();
+    s_Instance.reset();
 }
 
-bool LevelManager::Initialize(IEngine *engine)
+bool LevelManager::IsInitialized()
 {
-    if (!engine)
+    return s_Instance != nullptr;
+}
+
+void LevelManager::SetActiveScene(std::shared_ptr<CHEngine::Scene> scene)
+{
+    if (s_Instance)
+        s_Instance->InternalSetActiveScene(scene);
+}
+
+bool LevelManager::LoadScene(const std::string &path)
+{
+    return s_Instance ? s_Instance->InternalLoadScene(path) : false;
+}
+
+bool LevelManager::LoadSceneByIndex(int index)
+{
+    return s_Instance ? s_Instance->InternalLoadSceneByIndex(index) : false;
+}
+
+bool LevelManager::LoadSceneByName(const std::string &name)
+{
+    return s_Instance ? s_Instance->InternalLoadSceneByName(name) : false;
+}
+
+bool LevelManager::LoadUIScene(const std::string &path)
+{
+    return s_Instance ? s_Instance->InternalLoadUIScene(path) : false;
+}
+
+void LevelManager::UnloadUIScene()
+{
+    if (s_Instance)
+        s_Instance->InternalUnloadUIScene();
+}
+
+bool LevelManager::IsMapLoaded()
+{
+    return s_Instance ? s_Instance->InternalIsMapLoaded() : false;
+}
+
+const std::string &LevelManager::GetCurrentMapPath()
+{
+    static std::string empty = "";
+    return s_Instance ? s_Instance->InternalGetCurrentMapPath() : empty;
+}
+
+std::string LevelManager::GetCurrentMapName()
+{
+    return s_Instance ? s_Instance->InternalGetCurrentMapName() : "";
+}
+
+Vector3 LevelManager::GetSpawnPosition()
+{
+    return s_Instance ? s_Instance->InternalGetSpawnPosition() : Vector3{0};
+}
+
+void LevelManager::Update(float deltaTime)
+{
+    if (s_Instance)
+        s_Instance->InternalUpdate(deltaTime);
+}
+
+void LevelManager::Render()
+{
+    if (s_Instance)
+        s_Instance->InternalRender();
+}
+
+void LevelManager::LoadEditorMap(const std::string &mapPath)
+{
+    if (s_Instance)
+        s_Instance->InternalLoadEditorMap(mapPath);
+}
+
+std::string LevelManager::ConvertMapNameToPath(const std::string &mapName)
+{
+    // Simple enough to be static without instance if it only uses PROJECT_ROOT_DIR
+    if (mapName.empty())
+        return "";
+
+    if (std::filesystem::path(mapName).is_absolute() ||
+        std::filesystem::path(mapName).has_extension())
     {
-        CD_CORE_ERROR("[LevelManager] Engine is null");
-        return false;
+        return mapName;
     }
 
-    m_engine = engine;
+    return std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + mapName + ".chscene";
+}
 
-    // Get required dependencies from Engine
-    m_worldManager = dynamic_cast<WorldManager *>(&engine->GetWorldManager());
-    m_collisionManager = dynamic_cast<CollisionManager *>(&engine->GetCollisionManager());
-    m_modelLoader = dynamic_cast<ModelLoader *>(&engine->GetModelLoader());
-    m_renderManager = &engine->GetRenderManager();
+void LevelManager::RenderEditorMap()
+{
+    if (s_Instance)
+        s_Instance->InternalRenderEditorMap();
+}
 
-    if (!m_worldManager || !m_collisionManager || !m_modelLoader || !m_renderManager)
+void LevelManager::RefreshMapEntities()
+{
+    if (s_Instance)
+        s_Instance->InternalRefreshMapEntities();
+}
+
+void LevelManager::RefreshUIEntities()
+{
+    if (s_Instance)
+        s_Instance->InternalRefreshUIEntities();
+}
+
+void LevelManager::SyncEntitiesToMap()
+{
+    if (s_Instance)
+        s_Instance->InternalSyncEntitiesToMap();
+}
+
+void LevelManager::RenderSpawnZone()
+{
+    if (s_Instance)
+        s_Instance->InternalRenderSpawnZone();
+}
+
+void LevelManager::DumpMapDiagnostics()
+{
+    if (s_Instance)
+        s_Instance->InternalDumpMapDiagnostics();
+}
+
+void LevelManager::InitCollisions()
+{
+    if (s_Instance)
+        s_Instance->InternalInitCollisions();
+}
+
+void LevelManager::InitCollisionsWithModels(const std::vector<std::string> &requiredModels)
+{
+    if (s_Instance)
+        s_Instance->InternalInitCollisionsWithModels(requiredModels);
+}
+
+bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels)
+{
+    return s_Instance ? s_Instance->InternalInitCollisionsWithModelsSafe(requiredModels) : false;
+}
+
+GameScene &LevelManager::GetGameScene()
+{
+    return s_Instance->InternalGetGameScene();
+}
+
+Vector3 LevelManager::GetPlayerSpawnPosition()
+{
+    return s_Instance ? s_Instance->InternalGetSpawnPosition() : Vector3{0};
+}
+
+bool LevelManager::HasSpawnZone()
+{
+    return s_Instance ? s_Instance->InternalHasSpawnZone() : false;
+}
+
+MapCollisionInitializer *LevelManager::GetCollisionInitializer()
+{
+    return s_Instance ? s_Instance->InternalGetCollisionInitializer() : nullptr;
+}
+
+void LevelManager::SetPlayer(std::shared_ptr<IPlayer> player)
+{
+    if (s_Instance)
+        s_Instance->InternalSetPlayer(std::move(player));
+}
+
+LevelManager::LevelManager(const LevelManagerConfig &config)
+    : m_config(config), m_gameScene(std::make_unique<GameScene>()), m_currentMapPath(""),
+      m_playerSpawnZone({0}), m_spawnTexture({0}), m_hasSpawnZone(false),
+      m_spawnTextureLoaded(false), m_collisionInitializer(nullptr), m_modelLoader(nullptr),
+      m_renderManager(nullptr), m_player(nullptr), m_menu(nullptr)
+{
+    m_collisionInitializer = std::make_unique<MapCollisionInitializer>(nullptr, nullptr);
+
+    // Register Default Primitive Models for Runtime / Non-Model Objects
+    if (ModelLoader::IsInitialized())
     {
-        CD_CORE_ERROR("[LevelManager] Required engine services not found");
-        return false;
+        ModelLoader::RegisterLoadedModel("primitive_cube",
+                                         LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f)));
+        ModelLoader::RegisterLoadedModel("primitive_sphere",
+                                         LoadModelFromMesh(GenMeshSphere(0.5f, 16, 16)));
+        ModelLoader::RegisterLoadedModel("primitive_plane",
+                                         LoadModelFromMesh(GenMeshPlane(1.0f, 1.0f, 1, 1)));
+        ModelLoader::RegisterLoadedModel("primitive_cylinder",
+                                         LoadModelFromMesh(GenMeshCylinder(0.5f, 1.0f, 16)));
+        CD_CORE_INFO("[LevelManager] Registered default primitive models");
     }
-
-    m_collisionInitializer =
-        std::make_unique<MapCollisionInitializer>(m_collisionManager, m_modelLoader, m_player);
 
     // Load build manifest (scenes available for runtime)
     std::string manifestPath = std::string(PROJECT_ROOT_DIR) + "/build.manifest";
@@ -103,17 +250,86 @@ bool LevelManager::Initialize(IEngine *engine)
             CD_CORE_ERROR("[LevelManager] Failed to parse manifest: %s", e.what());
         }
     }
-
-    return true;
 }
 
-void LevelManager::SetActiveScene(std::shared_ptr<CHEngine::Scene> scene)
+LevelManager::~LevelManager()
+{
+    InternalShutdown();
+}
+
+void LevelManager::InternalShutdown()
+{
+    if (m_gameScene)
+        m_gameScene->Cleanup();
+    m_currentMapPath = "";
+    m_hasSpawnZone = false;
+    if (m_spawnTextureLoaded)
+    {
+        UnloadTexture(m_spawnTexture);
+        m_spawnTextureLoaded = false;
+    }
+    m_collisionInitializer = nullptr;
+    m_modelLoader = nullptr;
+    m_renderManager = nullptr;
+    m_player = nullptr;
+    m_menu = nullptr;
+}
+
+void LevelManager::InternalSetActiveScene(std::shared_ptr<CHEngine::Scene> scene)
 {
     m_activeScene = scene;
+    if (CHEngine::SceneManager::IsInitialized())
+    {
+        CHEngine::SceneManager::LoadScene(scene);
+    }
     CD_CORE_INFO("[LevelManager] Active scene set: %s", scene ? scene->GetName().c_str() : "None");
 }
 
-bool LevelManager::LoadScene(const std::string &path)
+bool LevelManager::InternalLoadUIScene(const std::string &path)
+{
+    CD_CORE_INFO("[LevelManager] Loading UI scene: %s", path.c_str());
+
+    CHEngine::SceneLoader loader;
+    CHEngine::GameScene gameScene = loader.LoadScene(path);
+
+    if (gameScene.GetUIElements().empty())
+    {
+        CD_CORE_ERROR("[LevelManager] Failed to load UI scene or scene has no UI elements: %s",
+                      path.c_str());
+        return false;
+    }
+
+    auto uiScene = std::make_shared<CHEngine::Scene>(std::filesystem::path(path).stem().string());
+    InternalPopulateUIFromData(uiScene->GetRegistry(), gameScene.GetUIElements());
+
+    // Apply Background Settings from Metadata
+    const auto &meta = gameScene.GetMapMetaData();
+    if (meta.backgroundColor.a > 0 || !meta.backgroundTexture.empty())
+    {
+        auto bgEntity = uiScene->CreateEntity("UI_Background");
+        auto &bg = bgEntity.AddComponent<CHEngine::UIBackground>();
+        bg.color = meta.backgroundColor;
+        bg.texturePath = meta.backgroundTexture;
+    }
+
+    if (CHEngine::SceneManager::IsInitialized())
+    {
+        CHEngine::SceneManager::LoadUIScene(uiScene);
+        return true;
+    }
+
+    return false;
+}
+
+void LevelManager::InternalUnloadUIScene()
+{
+    if (CHEngine::SceneManager::IsInitialized())
+    {
+        CHEngine::SceneManager::UnloadUIScene();
+    }
+}
+
+bool LevelManager::InternalLoadScene(const std::string &path)
 {
     std::string mapPath = path;
 
@@ -136,7 +352,7 @@ bool LevelManager::LoadScene(const std::string &path)
         {
             // Binary Scene Workflow:
             // 1. Deserialize scene first to get object data
-            LoadEditorMap(mapPath);
+            InternalLoadEditorMap(mapPath);
 
             // 2. Extract models from loaded scene objects
             requiredModels.push_back("player_low"); // Always required
@@ -174,13 +390,13 @@ bool LevelManager::LoadScene(const std::string &path)
         }
 
         // 3. Load required models
-        if (m_modelLoader)
+        if (ModelLoader::IsInitialized())
         {
-            m_modelLoader->LoadGameModelsSelective(requiredModels);
+            ModelLoader::LoadGameModelsSelective(requiredModels);
         }
 
         // 4. Initialize collision system with models
-        if (!InitCollisionsWithModelsSafe(requiredModels))
+        if (!InternalInitCollisionsWithModelsSafe(requiredModels))
         {
             CD_CORE_ERROR("[LevelManager] Failed to initialize collision system for map: %s",
                           mapPath.c_str());
@@ -190,7 +406,7 @@ bool LevelManager::LoadScene(const std::string &path)
         // 5. Load map contents (Only for JSON - .chscene already loaded in step 1)
         if (extension != ".chscene")
         {
-            LoadEditorMap(mapPath);
+            InternalLoadEditorMap(mapPath);
         }
 
         CD_CORE_INFO("[LevelManager] Level loaded successfully: %s", mapPath.c_str());
@@ -203,7 +419,7 @@ bool LevelManager::LoadScene(const std::string &path)
     }
 }
 
-bool LevelManager::LoadSceneByIndex(int index)
+bool LevelManager::InternalLoadSceneByIndex(int index)
 {
     if (index < 0 || index >= (int)m_scenes.size())
     {
@@ -212,10 +428,10 @@ bool LevelManager::LoadSceneByIndex(int index)
         return false;
     }
 
-    return LoadSceneByName(m_scenes[index]);
+    return InternalLoadSceneByName(m_scenes[index]);
 }
 
-bool LevelManager::LoadSceneByName(const std::string &name)
+bool LevelManager::InternalLoadSceneByName(const std::string &name)
 {
     // Try to find the scene in mapped scenes
     std::string sceneFile = name;
@@ -233,38 +449,15 @@ bool LevelManager::LoadSceneByName(const std::string &name)
         fullPath = std::string(PROJECT_ROOT_DIR) + "/Scenes/" + sceneFile;
     }
 
-    return LoadScene(fullPath);
+    return InternalLoadScene(fullPath);
 }
 
-std::string LevelManager::ConvertMapNameToPath(const std::string &mapName)
-{
-    if (mapName.empty())
-        return "";
-
-    if (std::filesystem::path(mapName).is_absolute() ||
-        std::filesystem::path(mapName).has_extension())
-    {
-        return mapName;
-    }
-
-    // Check manifest mappings or default directories - prefer .chscene
-    return std::string(PROJECT_ROOT_DIR) + "/resources/maps/" + mapName + ".chscene";
-}
-
-void LevelManager::UnloadMap()
-{
-    if (m_gameScene)
-        m_gameScene->Cleanup();
-    m_currentMapPath = "";
-    m_hasSpawnZone = false;
-}
-
-bool LevelManager::IsMapLoaded() const
+bool LevelManager::InternalIsMapLoaded() const
 {
     return !m_currentMapPath.empty();
 }
 
-void LevelManager::Update(float deltaTime)
+void LevelManager::InternalUpdate(float deltaTime)
 {
     // Note: Player is now managed via ECS (PlayerComponent)
     // No need to update IPlayer service reference
@@ -273,30 +466,13 @@ void LevelManager::Update(float deltaTime)
     (void)deltaTime;
 }
 
-void LevelManager::Render()
+void LevelManager::InternalRender()
 {
     // Rendering is handled by RenderingSystem or MapRenderer
 }
 
-void LevelManager::RegisterServices(IEngine *engine)
-{
-    if (!engine)
-    {
-        return;
-    }
-
-    // Register LevelManager directly
-    engine->RegisterService<ILevelManager>(
-        std::shared_ptr<ILevelManager>(this, [](ILevelManager *) {}));
-}
-
-std::vector<std::string> LevelManager::GetDependencies() const
-{
-    return {};
-}
-
 // Collision initialization methods
-void LevelManager::InitCollisions()
+void LevelManager::InternalInitCollisions()
 {
     if (m_collisionInitializer && m_activeScene)
     {
@@ -304,7 +480,7 @@ void LevelManager::InitCollisions()
     }
 }
 
-void LevelManager::InitCollisionsWithModels(const std::vector<std::string> &requiredModels)
+void LevelManager::InternalInitCollisionsWithModels(const std::vector<std::string> &requiredModels)
 {
     if (m_collisionInitializer && m_activeScene)
     {
@@ -313,7 +489,8 @@ void LevelManager::InitCollisionsWithModels(const std::vector<std::string> &requ
     }
 }
 
-bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &requiredModels)
+bool LevelManager::InternalInitCollisionsWithModelsSafe(
+    const std::vector<std::string> &requiredModels)
 {
     if (m_collisionInitializer && m_activeScene)
     {
@@ -323,48 +500,7 @@ bool LevelManager::InitCollisionsWithModelsSafe(const std::vector<std::string> &
     return false;
 }
 
-void LevelManager::SetPlayer(std::shared_ptr<IPlayer> player)
-{
-    m_player = std::move(player);
-    if (m_collisionInitializer)
-    {
-        m_collisionInitializer->SetPlayer(m_player);
-    }
-}
-
-GameScene &LevelManager::GetGameScene()
-{
-    return *m_gameScene;
-}
-
-const std::string &LevelManager::GetCurrentMapPath() const
-{
-    return m_currentMapPath;
-}
-
-std::string LevelManager::GetCurrentMapName() const
-{
-    return GetCurrentMapPath();
-}
-
-Vector3 LevelManager::GetSpawnPosition() const
-{
-    return GetPlayerSpawnPosition();
-}
-
-Vector3 LevelManager::GetPlayerSpawnPosition() const
-{
-    if (!m_hasSpawnZone)
-    {
-        return {0.0f, 0.0f, 0.0f};
-    }
-
-    return {(m_playerSpawnZone.min.x + m_playerSpawnZone.max.x) * 0.5f,
-            (m_playerSpawnZone.min.y + m_playerSpawnZone.max.y) * 0.5f,
-            (m_playerSpawnZone.min.z + m_playerSpawnZone.max.z) * 0.5f};
-}
-
-void LevelManager::RenderEditorMap()
+void LevelManager::InternalRenderEditorMap()
 {
     MapRenderer renderer;
     Camera3D dummyCamera = {0};
@@ -381,7 +517,7 @@ void LevelManager::RenderEditorMap()
     }
 }
 
-void LevelManager::RenderSpawnZone() const
+void LevelManager::InternalRenderSpawnZone() const
 {
     if (!m_hasSpawnZone)
     {
@@ -419,11 +555,12 @@ void LevelManager::RenderSpawnZone() const
     }
 }
 
-void LevelManager::DumpMapDiagnostics() const
+void LevelManager::InternalDumpMapDiagnostics() const
 {
+    // Implementation here or remove if not needed
 }
 
-void LevelManager::LoadEditorMap(const std::string &mapPath)
+void LevelManager::InternalLoadEditorMap(const std::string &mapPath)
 {
 
     if (!std::filesystem::exists(mapPath))
@@ -433,17 +570,17 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         return;
     }
 
-    m_modelLoader->ClearInstances();
+    ModelLoader::ClearInstances();
 
     for (const auto &pair : m_gameScene->GetMapModels())
     {
-        m_modelLoader->UnloadModel(pair.first);
+        ModelLoader::UnloadModel(pair.first);
     }
 
     m_gameScene->Cleanup();
     m_hasSpawnZone = false;
     m_playerSpawnZone = {0};
-    m_collisionManager->ClearColliders();
+    CollisionManager::ClearColliders();
 
     std::string extension = std::filesystem::path(mapPath).extension().string();
     if (extension == ".json" || extension == ".JSON" || extension == ".chscene")
@@ -452,7 +589,8 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         if (extension == ".chscene")
         {
             // Binary scene format - primary format for editor scenes
-            auto sharedScene = std::shared_ptr<GameScene>(m_gameScene.get(), [](GameScene *) {});
+            auto sharedScene = std::shared_ptr<CHEngine::GameScene>(m_gameScene.get(),
+                                                                    [](CHEngine::GameScene *) {});
             CHEngine::SceneSerializer serializer(sharedScene);
             if (!serializer.DeserializeBinary(mapPath))
             {
@@ -461,7 +599,7 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                     mapPath.c_str());
                 return;
             }
-            SceneLoader().LoadSkyboxForScene(*m_gameScene);
+            CHEngine::SceneLoader().LoadSkyboxForScene(*m_gameScene);
             if (m_gameScene->GetSkyBox())
                 m_gameScene->GetSkyBox()->UpdateGammaFromConfig();
         }
@@ -485,14 +623,14 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
             {
                 if (p.second.meshCount > 0)
                 {
-                    m_modelLoader->RegisterLoadedModel(p.first, p.second);
+                    ModelLoader::RegisterLoadedModel(p.first, p.second);
                 }
             }
         }
 
         if (!m_gameScene->GetMapMetaData().skyboxTexture.empty())
         {
-            SceneLoader mapLoader;
+            CHEngine::SceneLoader mapLoader;
             mapLoader.LoadSkyboxForScene(*m_gameScene);
             if (m_gameScene->GetSkyBox())
                 m_gameScene->GetSkyBox()->UpdateGammaFromConfig();
@@ -544,7 +682,7 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
             const Model *modelPtr = nullptr;
             if (!object.modelName.empty())
             {
-                auto modelOpt = m_modelLoader->GetModelByName(object.modelName);
+                auto modelOpt = ModelLoader::GetModelByName(object.modelName);
                 if (modelOpt)
                     modelPtr = &modelOpt->get();
             }
@@ -588,14 +726,14 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         if (useBVHCollision)
         {
             collision.SetCollisionType(CollisionType::BVH_ONLY);
-            m_collisionManager->AddCollider(std::make_shared<Collision>(std::move(collision)));
+            CollisionManager::AddCollider(std::make_shared<Collision>(std::move(collision)));
         }
         else if (object.type != MapObjectType::LIGHT && object.type != MapObjectType::SPAWN_ZONE)
         {
             Vector3 halfSize = Vector3Scale(colliderSize, 0.5f);
             collision = Collision(object.position, halfSize);
-            collision.SetCollisionType(CollisionType::AABB_ONLY);
-            m_collisionManager->AddCollider(std::make_shared<Collision>(std::move(collision)));
+            collision.SetCollisionType(CollisionType::BVH_ONLY);
+            CollisionManager::AddCollider(std::make_shared<Collision>(std::move(collision)));
         }
     }
 
@@ -612,10 +750,10 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
         m_hasSpawnZone = true;
     }
 
-    m_collisionManager->Initialize();
+    CollisionManager::Initialize();
 
     // Create instances for all MODEL objects
-    auto available = m_modelLoader->GetAvailableModels();
+    auto available = ModelLoader::GetAvailableModels();
     for (const auto &object : m_gameScene->GetMapObjects())
     {
         if (object.type == MapObjectType::MODEL && !object.modelName.empty())
@@ -642,12 +780,12 @@ void LevelManager::LoadEditorMap(const std::string &mapPath)
                 cfg.scale = (object.scale.x != 0.0f) ? object.scale.x : 1.0f;
                 cfg.color = object.color;
                 cfg.spawn = true;
-                m_modelLoader->AddInstanceEx(candidateName, cfg);
+                ModelLoader::AddInstanceEx(candidateName, cfg);
             }
         }
     }
 }
-void LevelManager::RefreshUIEntities()
+void LevelManager::InternalRefreshUIEntities()
 {
     if (!m_activeScene)
         return;
@@ -662,12 +800,18 @@ void LevelManager::RefreshUIEntities()
     registry.destroy(uiGroup.begin(), uiGroup.end());
 
     // 3. Recreate entities from GameScene data
-    auto &uiElements = m_gameScene->GetUIElements();
+    InternalPopulateUIFromData(registry, m_gameScene->GetUIElements());
+
+    CD_INFO("[LevelManager] Refreshed %d UI entities in ECS.",
+            (int)m_gameScene->GetUIElements().size());
+}
+
+void LevelManager::InternalPopulateUIFromData(entt::registry &registry,
+                                              const std::vector<UIElementData> &uiElements)
+{
     for (int i = 0; i < (int)uiElements.size(); i++)
     {
         const auto &data = uiElements[i];
-        if (!data.isActive)
-            continue;
 
         auto entity = registry.create();
 
@@ -680,6 +824,7 @@ void LevelManager::RefreshUIEntities()
         transform.size = data.size;
         transform.pivot = data.pivot;
         transform.anchor = (CHEngine::UIAnchor)data.anchor;
+        transform.active = data.isActive;
         registry.emplace<CHEngine::RectTransform>(entity, transform);
 
         // Add specialized components based on type
@@ -758,11 +903,9 @@ void LevelManager::RefreshUIEntities()
             registry.emplace<CHEngine::LuaScriptComponent>(entity, data.scriptPath, false);
         }
     }
-
-    CD_INFO("[LevelManager] Refreshed %d UI entities in ECS.", (int)uiElements.size());
 }
 
-void LevelManager::RefreshMapEntities()
+void LevelManager::InternalRefreshMapEntities()
 {
     if (!m_activeScene)
     {
@@ -795,20 +938,75 @@ void LevelManager::RefreshMapEntities()
         }
 
         // 4. Add RenderComponent for Visibility in Runtime
+        CHEngine::RenderComponent rc;
+        bool hasRender = false;
+
         if (!data.modelName.empty())
         {
-            CHEngine::RenderComponent rc;
             rc.modelName = data.modelName;
 
             // Resolve model via AssetManager
             auto modelOpt = CHEngine::AssetManager::GetModel(data.modelName);
             if (modelOpt)
+            {
                 rc.model = &modelOpt->get();
+                hasRender = true;
+            }
+        }
+        else
+        {
+            // Handle Primitives
+            std::string primitiveName;
+            switch (data.type)
+            {
+            case MapObjectType::CUBE:
+                primitiveName = "primitive_cube";
+                break;
+            case MapObjectType::SPHERE:
+                primitiveName = "primitive_sphere";
+                break;
+            case MapObjectType::PLANE:
+                primitiveName = "primitive_plane";
+                rc.renderLayer = -1; // Standard for floors
+                break;
+            case MapObjectType::CYLINDER:
+                primitiveName = "primitive_cylinder";
+                break;
+            default:
+                break;
+            }
 
+            if (!primitiveName.empty())
+            {
+                auto modelOpt = CHEngine::AssetManager::GetModel(primitiveName);
+                if (modelOpt)
+                {
+                    rc.model = &modelOpt->get();
+                    rc.modelName = primitiveName;
+                    hasRender = true;
+                }
+            }
+        }
+
+        if (hasRender)
+        {
             rc.tint = data.color;
             rc.visible = true;
-            rc.renderLayer = (data.type == MapObjectType::PLANE) ? -1 : 0;
+            // Default layer if not set
+            if (rc.renderLayer == 0 && data.type != MapObjectType::PLANE)
+                rc.renderLayer = 0;
+
             registry.emplace<CHEngine::RenderComponent>(entity, rc);
+        }
+
+        // 4b. Handle Lights
+        if (data.type == MapObjectType::LIGHT)
+        {
+            // Add LightSource tag for identification
+            registry.emplace<CHEngine::TagComponent>(entity, "LightSource");
+
+            // In future, add a LightComponent here
+            // registry.emplace<LightComponent>(entity, data.color, 10.0f);
         }
 
         // 5. Add CollisionComponent for ECS-based queries
@@ -866,10 +1064,10 @@ void LevelManager::RefreshMapEntities()
     }
 
     // 4. Initialize collisions for the new entities
-    InitCollisions();
+    InternalInitCollisions();
 }
 
-void LevelManager::SyncEntitiesToMap()
+void LevelManager::InternalSyncEntitiesToMap()
 {
     if (!m_activeScene)
         return;
@@ -909,3 +1107,5 @@ void LevelManager::SyncEntitiesToMap()
         }
     }
 }
+
+} // namespace CHEngine

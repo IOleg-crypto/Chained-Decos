@@ -4,10 +4,9 @@
 #include "scene/resources/map/MapData.h"
 #include <memory>
 
-class GameScene;
-
 namespace CHEngine
 {
+class GameScene;
 
 /**
  * @brief Command for adding an object to the scene
@@ -15,7 +14,7 @@ namespace CHEngine
 class AddObjectCommand : public IEditorCommand
 {
 public:
-    AddObjectCommand(const std::shared_ptr<::GameScene> &scene, const ::MapObjectData &objData);
+    AddObjectCommand(const std::shared_ptr<GameScene> &scene, const MapObjectData &objData);
 
     void Execute() override;
     void Undo() override;
@@ -25,8 +24,8 @@ public:
     }
 
 private:
-    std::shared_ptr<::GameScene> m_Scene;
-    ::MapObjectData m_ObjectData;
+    std::shared_ptr<GameScene> m_Scene;
+    MapObjectData m_ObjectData;
     int m_AddedIndex = -1;
 };
 
