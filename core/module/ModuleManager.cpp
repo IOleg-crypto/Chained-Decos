@@ -1,11 +1,68 @@
 #include "core/module/ModuleManager.h"
-#include "Engine.h"
 #include "core/Log.h"
-#include "interfaces/IEngineModule.h"
+#include "core/interfaces/IEngineModule.h"
 #include <algorithm>
 #include <functional>
-#include <raylib.h>
 #include <set>
+
+namespace CHEngine
+{
+static std::unique_ptr<ModuleManager> s_Instance = nullptr;
+
+void ModuleManager::Init()
+{
+    s_Instance = std::unique_ptr<ModuleManager>(new ModuleManager());
+    s_Instance->m_initialized = true;
+}
+
+bool ModuleManager::IsInitialized()
+{
+    return s_Instance != nullptr;
+}
+
+void ModuleManager::Shutdown()
+{
+    if (s_Instance)
+    {
+        s_Instance->InternalShutdownAllModules();
+        s_Instance.reset();
+    }
+}
+
+void ModuleManager::RegisterModule(std::unique_ptr<IEngineModule> module)
+{
+    s_Instance->InternalRegisterModule(std::move(module));
+}
+
+bool ModuleManager::LoadModule(const std::string &moduleName)
+{
+    return s_Instance->InternalLoadModule(moduleName);
+}
+
+void ModuleManager::UpdateAll(float deltaTime)
+{
+    s_Instance->InternalUpdateAllModules(deltaTime);
+}
+
+void ModuleManager::RenderAll()
+{
+    s_Instance->InternalRenderAllModules();
+}
+
+IEngineModule *ModuleManager::GetModule(const std::string &name)
+{
+    return s_Instance->InternalGetModule(name);
+}
+
+std::vector<std::string> ModuleManager::GetLoadedModules()
+{
+    return s_Instance->InternalGetLoadedModules();
+}
+
+bool ModuleManager::IsModuleLoaded(const std::string &name)
+{
+    return s_Instance->InternalIsModuleLoaded(name);
+}
 
 ModuleManager::ModuleManager() : m_initialized(false)
 {
@@ -13,90 +70,34 @@ ModuleManager::ModuleManager() : m_initialized(false)
 
 ModuleManager::~ModuleManager()
 {
-    if (m_initialized)
-    {
-        ShutdownAllModules();
-    }
+    InternalShutdownAllModules();
 }
 
-void ModuleManager::RegisterModule(std::unique_ptr<IEngineModule> module)
+void ModuleManager::InternalRegisterModule(std::unique_ptr<IEngineModule> module)
 {
     if (!module)
-    {
         return;
-    }
 
     std::string moduleName = module->GetModuleName();
-
     if (m_modules.find(moduleName) != m_modules.end())
-    {
         return;
-    }
 
     m_modules[moduleName] = std::move(module);
     m_registrationOrder.push_back(moduleName);
+
+    // Auto-initialize for now as IEngine is being deprecated
+    auto &m = m_modules[moduleName];
+    m->Initialize();
+    m->SetInitialized(true);
 }
 
-bool ModuleManager::LoadModule(const std::string &moduleName)
+bool ModuleManager::InternalLoadModule(const std::string &moduleName)
 {
-    return IsModuleLoaded(moduleName);
+    return InternalIsModuleLoaded(moduleName);
 }
 
-bool ModuleManager::InitializeAllModules(IEngine *engine)
+void ModuleManager::InternalShutdownAllModules()
 {
-    if (m_initialized)
-    {
-        return true;
-    }
-
-    if (!engine)
-    {
-        CD_CORE_ERROR("[ModuleManager] Cannot initialize modules with null engine");
-        return false;
-    }
-
-    auto sortedModules = SortModulesByDependencies();
-
-    for (auto *module : sortedModules)
-    {
-        if (!module)
-        {
-            continue;
-        }
-
-        auto deps = module->GetDependencies();
-        std::string moduleName = module->GetModuleName();
-
-        if (!CheckDependencies(moduleName, deps))
-        {
-            continue;
-        }
-
-        // First initialize the module (creates components)
-        if (!module->Initialize(engine))
-        {
-            CD_CORE_WARN("[ModuleManager] Failed to initialize module: %s", moduleName.c_str());
-            continue;
-        }
-
-        // Register services after initialization
-        module->RegisterServices(engine);
-
-        module->SetInitialized(true);
-    }
-
-    m_initialized = true;
-    return true;
-}
-
-void ModuleManager::ShutdownAllModules()
-{
-    if (!m_initialized)
-    {
-        return;
-    }
-
-    // Shutdown in reverse registration order
     for (auto it = m_registrationOrder.rbegin(); it != m_registrationOrder.rend(); ++it)
     {
         auto modIt = m_modules.find(*it);
@@ -105,17 +106,12 @@ void ModuleManager::ShutdownAllModules()
             modIt->second->Shutdown();
         }
     }
-
-    m_initialized = false;
+    m_modules.clear();
+    m_registrationOrder.clear();
 }
 
-void ModuleManager::UpdateAllModules(float deltaTime)
+void ModuleManager::InternalUpdateAllModules(float deltaTime)
 {
-    if (!m_initialized)
-    {
-        return;
-    }
-
     for (const auto &name : m_registrationOrder)
     {
         auto it = m_modules.find(name);
@@ -126,13 +122,8 @@ void ModuleManager::UpdateAllModules(float deltaTime)
     }
 }
 
-void ModuleManager::RenderAllModules()
+void ModuleManager::InternalRenderAllModules()
 {
-    if (!m_initialized)
-    {
-        return;
-    }
-
     for (const auto &name : m_registrationOrder)
     {
         auto it = m_modules.find(name);
@@ -143,89 +134,19 @@ void ModuleManager::RenderAllModules()
     }
 }
 
-IEngineModule *ModuleManager::GetModule(const std::string &name) const
+IEngineModule *ModuleManager::InternalGetModule(const std::string &name) const
 {
     auto it = m_modules.find(name);
-    if (it != m_modules.end())
-    {
-        return it->second.get();
-    }
-    return nullptr;
+    return (it != m_modules.end()) ? it->second.get() : nullptr;
 }
 
-std::vector<std::string> ModuleManager::GetLoadedModules() const
+std::vector<std::string> ModuleManager::InternalGetLoadedModules() const
 {
     return m_registrationOrder;
 }
 
-bool ModuleManager::IsModuleLoaded(const std::string &name) const
+bool ModuleManager::InternalIsModuleLoaded(const std::string &name) const
 {
     return m_modules.find(name) != m_modules.end();
 }
-
-std::vector<IEngineModule *> ModuleManager::SortModulesByDependencies() const
-{
-    std::vector<IEngineModule *> sorted;
-    std::set<std::string> visited;
-    std::set<std::string> visiting;
-
-    std::function<void(IEngineModule *)> visit = [&](IEngineModule *module)
-    {
-        if (!module)
-            return;
-
-        std::string name = module->GetModuleName();
-
-        if (visited.count(name))
-        {
-            return;
-        }
-
-        if (visiting.count(name))
-        {
-            CD_CORE_WARN("[ModuleManager] Circular dependency detected involving module: %s",
-                         name.c_str());
-            return;
-        }
-
-        visiting.insert(name);
-
-        auto deps = module->GetDependencies();
-        for (const auto &depName : deps)
-        {
-            auto it = m_modules.find(depName);
-            if (it != m_modules.end())
-            {
-                visit(it->second.get());
-            }
-        }
-
-        visiting.erase(name);
-        visited.insert(name);
-        sorted.push_back(module);
-    };
-
-    for (const auto &pair : m_modules)
-    {
-        if (pair.second)
-        {
-            visit(pair.second.get());
-        }
-    }
-
-    return sorted;
-}
-
-bool ModuleManager::CheckDependencies(const std::string &moduleName,
-                                      const std::vector<std::string> &deps) const
-{
-    for (const auto &depName : deps)
-    {
-        auto *depModule = GetModule(depName);
-        if (!depModule || !depModule->IsInitialized())
-        {
-            return false;
-        }
-    }
-    return true;
-}
+} // namespace CHEngine

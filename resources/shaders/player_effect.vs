@@ -1,16 +1,16 @@
-#version 330
+#version 450 core
 
 // Input vertex attributes
-in vec3 vertexPosition;
-in vec2 vertexTexCoord;
-in vec3 vertexNormal;
-in vec4 vertexColor;
+layout(location = 0) in vec3 vertexPosition;
+layout(location = 1) in vec2 vertexTexCoord;
+layout(location = 2) in vec3 vertexNormal;
+layout(location = 3) in vec4 vertexColor;
 
 // Input uniform values
-uniform mat4 mvp;
-uniform mat4 matModel;
-uniform mat4 matView;
-uniform mat4 matProjection;
+layout(location = 0) uniform mat4 mvp;
+layout(location = 1) uniform mat4 matModel;
+layout(location = 2) uniform mat4 matView;
+layout(location = 3) uniform mat4 matProjection;
 
 // Wind effect parameters
 uniform float fallSpeed;      // Fall speed (0-60, negative velocity.y)
@@ -18,11 +18,11 @@ uniform float time;            // Time for animation
 uniform vec3 windDirection;   // Wind direction (e.g., vec3(1.0, 0.0, 0.5))
 
 // Output vertex attributes (to fragment shader)
-out vec2 fragTexCoord;
-out vec3 fragNormal;
-out vec3 fragPosition;
-out vec4 fragColor;
-out float windIntensity;      // Pass wind intensity to fragment shader
+layout(location = 0) out vec2 fragTexCoord;
+layout(location = 1) out vec3 fragNormal;
+layout(location = 2) out vec3 fragPosition;
+layout(location = 3) out vec4 fragColor;
+layout(location = 4) out float windIntensity;      // Pass wind intensity to fragment shader
 
 void main()
 {

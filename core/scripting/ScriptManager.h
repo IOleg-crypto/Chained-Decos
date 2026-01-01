@@ -2,9 +2,11 @@
 #define SCRIPT_MANAGER_H
 
 #include <entt/entt.hpp>
+#include <memory>
 #include <sol/sol.hpp>
 #include <string>
 #include <unordered_map>
+
 
 namespace CHEngine
 {
@@ -15,38 +17,48 @@ public:
     ScriptManager();
     ~ScriptManager();
 
-    bool Initialize();
-    void Shutdown();
+    static void Init();
+    static void Shutdown();
+    static bool IsInitialized();
 
-    void Update(float deltaTime);
+    static void Update(float deltaTime);
 
-    // Lua State Access
-    sol::state &GetLuaState()
+    static ScriptManager &Get()
     {
-        return m_lua;
+        return *s_Instance;
     }
 
+    // Lua State Access
+    static sol::state &GetLuaState();
+
     // Script execution
-    bool RunScript(const std::string &path);
-    bool RunString(const std::string &code);
+    static bool RunScript(const std::string &path);
+    static bool RunString(const std::string &code);
 
     // Entity Script Lifecycle (Hazel Style)
-    void InitializeScripts(entt::registry &registry);
-    void UpdateScripts(entt::registry &registry, float deltaTime);
+    static void InitializeScripts(entt::registry &registry);
+    static void UpdateScripts(entt::registry &registry, float deltaTime);
 
-    void SetActiveRegistry(entt::registry *registry);
-
-    // Deprecated for now, ScriptManager should use Engine services directly
-    void SetSceneManager(void *unused);
+    static void SetActiveRegistry(entt::registry *registry);
 
     // Register UI button callback
-    void RegisterButtonCallback(const std::string &buttonName, sol::function callback);
+    static void RegisterButtonCallback(const std::string &buttonName, sol::function callback);
 
 private:
     void BindEngineAPI();
     void BindSceneAPI();
     void BindUIAPI();
+    void BindAudioAPI();
     void BindGameplayAPI();
+
+    bool InternalInitialize();
+    void InternalShutdown();
+    void InternalUpdate(float deltaTime);
+    void InternalInitializeScripts(entt::registry &registry);
+    void InternalUpdateScripts(entt::registry &registry, float deltaTime);
+    bool InternalRunScript(const std::string &path);
+    bool InternalRunString(const std::string &code);
+    void InternalRegisterButtonCallback(const std::string &buttonName, sol::function callback);
 
     // Internal Lifecycle Callers
     void CallLuaFunction(const std::string &scriptPath, const std::string &functionName,
@@ -57,6 +69,8 @@ private:
     bool m_initialized = false;
     entt::registry *m_activeRegistry = nullptr;
     std::unordered_map<std::string, sol::function> m_buttonCallbacks;
+
+    static std::unique_ptr<ScriptManager> s_Instance;
 };
 
 } // namespace CHEngine

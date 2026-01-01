@@ -1,6 +1,6 @@
 #include "ViewportPanel.h"
 #include "../viewport/ViewportPicking.h"
-#include "core/Engine.h"
+#include "core/application/Application.h"
 #include "core/physics/Physics.h"
 #include "scene/core/Scene.h"
 #include "scene/ecs/ECSRegistry.h"
@@ -8,6 +8,8 @@
 #include "scene/ecs/components/TransformComponent.h"
 #include "scene/resources/map/MapRenderer.h"
 #include <imgui.h>
+
+using namespace CHEngine;
 #include <imgui_internal.h>
 #include <raymath.h>
 #include <rlImGui.h>
@@ -56,9 +58,10 @@ ViewportPanel::~ViewportPanel()
 }
 
 void ViewportPanel::OnImGuiRender(
-    SceneState sceneState, const std::shared_ptr<GameScene> &legacyScene,
-    const std::shared_ptr<Scene> &modernScene, const Camera3D &camera, int selectedObjectIndex,
-    Tool currentTool, const std::function<void(int)> &onSelect, CommandHistory *history,
+    SceneState sceneState, SelectionType selectionType,
+    const std::shared_ptr<GameScene> &legacyScene, const std::shared_ptr<Scene> &modernScene,
+    const Camera3D &camera, int selectedObjectIndex, Tool currentTool,
+    const std::function<void(int)> &onSelect, CommandHistory *history,
     const std::function<void(const std::string &, const Vector3 &)> &onAssetDropped)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
@@ -80,10 +83,19 @@ void ViewportPanel::OnImGuiRender(
     {
         // 1. Render Scene to Texture
         BeginTextureMode(m_ViewportTexture);
-        ClearBackground(DARKGRAY);
 
         if (legacyScene)
         {
+            const auto &meta = legacyScene->GetMapMetaData();
+            if (meta.sceneType == SceneType::UI_MENU)
+            {
+                m_Renderer.RenderUIBackground(meta, m_Width, m_Height);
+            }
+            else
+            {
+                ClearBackground(DARKGRAY);
+            }
+
             MapRenderer renderer;
             // Enter 3D Mode for ALL editor 3D drawing
             BeginMode3D(camera);
@@ -94,7 +106,12 @@ void ViewportPanel::OnImGuiRender(
 
             // 1. Draw Map Content
             bool hideSpawnZones = (sceneState != SceneState::Edit);
-            renderer.DrawMapContent(*legacyScene, camera, hideSpawnZones);
+            bool isUIScene = (legacyScene->GetMapMetaData().sceneType == SceneType::UI_MENU);
+
+            if (!isUIScene)
+            {
+                renderer.DrawMapContent(*legacyScene, camera, hideSpawnZones);
+            }
 
             // 1.6 Draw New Scene Entities (New system)
             if (modernScene)
@@ -125,8 +142,8 @@ void ViewportPanel::OnImGuiRender(
             }
 
             // 1.7 Draw Physics Debug Visualization
-            if (Engine::Instance().IsCollisionDebugVisible() ||
-                Engine::Instance().IsDebugInfoVisible())
+            if (Application::Get().IsCollisionDebugVisible() ||
+                Application::Get().IsDebugInfoVisible())
             {
                 Physics::Render();
             }
@@ -171,12 +188,20 @@ void ViewportPanel::OnImGuiRender(
             }
 
             // Draw Grid
-            if (sceneState == SceneState::Edit)
+            if (sceneState == SceneState::Edit && !isUIScene)
                 m_Grid.Draw(camera, m_Width, m_Height);
 
             EndMode3D();
 
-            // 4. Draw 2D Labels AFTER EndMode3D (ONLY in Edit mode)
+            // 4. Render UI Elements and Labels
+            if (isUIScene)
+            {
+                int selectedUIIndex =
+                    (selectionType == SelectionType::UI_ELEMENT) ? selectedObjectIndex : -1;
+                m_Renderer.RenderUIElements(legacyScene->GetUIElements(), selectedUIIndex);
+            }
+
+            // Draw 2D Labels AFTER EndMode3D (ONLY in Edit mode)
             if (sceneState == SceneState::Edit && selectedObjectIndex >= 0 &&
                 selectedObjectIndex < (int)legacyScene->GetMapObjects().size())
             {

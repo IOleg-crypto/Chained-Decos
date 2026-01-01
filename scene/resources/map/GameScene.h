@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace CHEngine
+{
 // ============================================================================
 // GameScene Class
 // ============================================================================
@@ -64,5 +66,6 @@ private:
     std::unordered_map<std::string, Texture2D> m_loadedTextures;
     std::shared_ptr<Skybox> m_skybox;
 };
+} // namespace CHEngine
 
 #endif // GAMESCENE_H

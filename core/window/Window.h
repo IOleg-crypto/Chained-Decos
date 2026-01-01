@@ -1,9 +1,11 @@
 #pragma once
-
+#include "events/Event.h"
+#include <functional>
 #include <string>
 
 namespace CHEngine
 {
+using EventCallbackFn = std::function<void(Event &)>;
 
 struct WindowProps
 {
@@ -13,8 +15,8 @@ struct WindowProps
     bool Fullscreen;
     bool VSync;
 
-    WindowProps(const std::string &title = "Chained Decos Engine", int width = 1280,
-                int height = 720, bool fullscreen = false, bool vsync = true)
+    WindowProps(const std::string &title = "Chained Decos", int width = 1280, int height = 720,
+                bool fullscreen = false, bool vsync = true)
         : Title(title), Width(width), Height(height), Fullscreen(fullscreen), VSync(vsync)
     {
     }
@@ -30,7 +32,10 @@ public:
 
     int GetWidth() const;
     int GetHeight() const;
-    void SetEventCallback(const void *callback); // Placeholder if needed
+    void SetEventCallback(const EventCallbackFn &callback)
+    {
+        m_Data.EventCallback = callback;
+    }
 
     // Attributes
     void SetVSync(bool enabled);
@@ -51,6 +56,8 @@ private:
         int Width, Height;
         bool VSync;
         bool Fullscreen;
+
+        EventCallbackFn EventCallback;
     };
 
     WindowData m_Data;

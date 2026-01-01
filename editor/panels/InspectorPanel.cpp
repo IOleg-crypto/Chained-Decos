@@ -398,18 +398,83 @@ void InspectorPanel::DrawSceneSettings(const std::shared_ptr<GameScene> &scene)
             }
         }
     }
+
+    if (ImGui::CollapsingHeader("Scene Configuration", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        const char *sceneTypeNames[] = {"Level 3D", "UI Menu", "Empty"};
+        int currentType = (int)meta.sceneType;
+        if (ImGui::Combo("Scene Type", &currentType, sceneTypeNames, IM_ARRAYSIZE(sceneTypeNames)))
+        {
+            meta.sceneType = (SceneType)currentType;
+        }
+
+        if (meta.sceneType == SceneType::UI_MENU)
+        {
+            ImGui::Separator();
+            ImGui::Text("UI Background");
+
+            float bgCol[4] = {meta.backgroundColor.r / 255.0f, meta.backgroundColor.g / 255.0f,
+                              meta.backgroundColor.b / 255.0f, meta.backgroundColor.a / 255.0f};
+            if (ImGui::ColorEdit4("Background Color", bgCol))
+            {
+                meta.backgroundColor = {
+                    (unsigned char)(bgCol[0] * 255.0f), (unsigned char)(bgCol[1] * 255.0f),
+                    (unsigned char)(bgCol[2] * 255.0f), (unsigned char)(bgCol[3] * 255.0f)};
+            }
+
+            char texPath[256];
+            memset(texPath, 0, sizeof(texPath));
+            strncpy(texPath, meta.backgroundTexture.c_str(), sizeof(texPath));
+            if (ImGui::InputText("Background Image", texPath, sizeof(texPath)))
+            {
+                meta.backgroundTexture = std::string(texPath);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("...##UIBackgroundPicker"))
+            {
+                nfdfilteritem_t filterItem[1] = {{"Image Files", "png,jpg,jpeg,bmp"}};
+                nfdchar_t *outPath = nullptr;
+                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+
+                if (result == NFD_OKAY)
+                {
+                    meta.backgroundTexture = outPath;
+                    NFD_FreePath(outPath);
+                }
+            }
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload *payload =
+                        ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                {
+                    const char *path = (const char *)payload->Data;
+                    std::string ext = std::filesystem::path(path).extension().string();
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp")
+                    {
+                        meta.backgroundTexture = path;
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+        }
+    }
 }
 
 void InspectorPanel::DrawUIComponents(UIElementData *element)
 {
-    // Name
+    // Name and Active state
     char buffer[256];
     memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, element->name.c_str(), sizeof(buffer));
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.7f);
     if (ImGui::InputText("##Name", buffer, sizeof(buffer)))
     {
         element->name = std::string(buffer);
     }
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+    ImGui::Checkbox("Active", &element->isActive);
 
     ImGui::Separator();
 
@@ -459,6 +524,59 @@ void InspectorPanel::DrawUIComponents(UIElementData *element)
 
         if (element->type == "button")
         {
+            ImGui::Separator();
+            ImGui::Text("Button Logic");
+
+            char eventBuffer[256];
+            memset(eventBuffer, 0, sizeof(eventBuffer));
+            strncpy(eventBuffer, element->eventId.c_str(), sizeof(eventBuffer));
+            if (ImGui::InputText("Event ID", eventBuffer, sizeof(eventBuffer)))
+            {
+                element->eventId = std::string(eventBuffer);
+            }
+
+            const char *actionTypes[] = {"None", "LoadScene", "Quit", "OpenURL"};
+            int currentAction = 0;
+            if (element->actionType == "LoadScene")
+                currentAction = 1;
+            else if (element->actionType == "Quit")
+                currentAction = 2;
+            else if (element->actionType == "OpenURL")
+                currentAction = 3;
+
+            if (ImGui::Combo("Action Type", &currentAction, actionTypes, IM_ARRAYSIZE(actionTypes)))
+            {
+                element->actionType = actionTypes[currentAction];
+            }
+
+            if (currentAction == 1 || currentAction == 3) // LoadScene or OpenURL
+            {
+                char targetBuffer[512];
+                memset(targetBuffer, 0, sizeof(targetBuffer));
+                strncpy(targetBuffer, element->actionTarget.c_str(), sizeof(targetBuffer));
+                if (ImGui::InputText("Action Target", targetBuffer, sizeof(targetBuffer)))
+                {
+                    element->actionTarget = std::string(targetBuffer);
+                }
+
+                if (currentAction == 1) // Scene picker for LoadScene
+                {
+                    ImGui::SameLine();
+                    if (ImGui::Button("...##TargetPicker"))
+                    {
+                        nfdfilteritem_t filterItem[1] = {{"Scene File", "chscene,json"}};
+                        nfdchar_t *outPath = nullptr;
+                        nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+                        if (result == NFD_OKAY)
+                        {
+                            element->actionTarget = outPath;
+                            NFD_FreePath(outPath);
+                        }
+                    }
+                }
+            }
+
+            ImGui::Separator();
             ImGui::Text("Button Colors");
             // Normal
             float nColor[4] = {element->normalColor.r / 255.0f, element->normalColor.g / 255.0f,
@@ -489,6 +607,33 @@ void InspectorPanel::DrawUIComponents(UIElementData *element)
                 element->pressedColor.g = (unsigned char)(pColor[1] * 255.0f);
                 element->pressedColor.b = (unsigned char)(pColor[2] * 255.0f);
                 element->pressedColor.a = (unsigned char)(pColor[3] * 255.0f);
+            }
+        }
+    }
+
+    // Scripting
+    if (ImGui::CollapsingHeader("Scripting", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        char scriptBuffer[256];
+        memset(scriptBuffer, 0, sizeof(scriptBuffer));
+        strncpy(scriptBuffer, element->scriptPath.c_str(), sizeof(scriptBuffer));
+
+        if (ImGui::InputText("Script Path", scriptBuffer, sizeof(scriptBuffer)))
+        {
+            element->scriptPath = std::string(scriptBuffer);
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("...##UIScriptPicker"))
+        {
+            nfdfilteritem_t filterItem[1] = {{"Lua Script", "lua"}};
+            nfdchar_t *outPath = nullptr;
+            nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+
+            if (result == NFD_OKAY)
+            {
+                element->scriptPath = outPath;
+                NFD_FreePath(outPath);
             }
         }
     }

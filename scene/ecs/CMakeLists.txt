@@ -26,6 +26,7 @@ target_include_directories(ecs PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/include/json/include
+    ${lua_SOURCE_DIR}/src
 )
 
 target_link_libraries(ecs PUBLIC
@@ -34,7 +35,8 @@ target_link_libraries(ecs PUBLIC
     font_resources
     texture_resources
     imguilib
-    scene_manager
+    scene_core
+    sol2::sol2
 )
 
 set_target_properties(ecs PROPERTIES POSITION_INDEPENDENT_CODE ON)

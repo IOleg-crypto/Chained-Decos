@@ -21,55 +21,86 @@
 
 using json = nlohmann::json;
 
-// Model loader with caching and statistics
-class ModelLoader : public CHEngine::IModelLoader
+namespace CHEngine
 {
+
+// Model loader with caching and statistics
+class ModelLoader
+{
+public:
+    // Model loader results
+    struct LoadResult
+    {
+        int totalModels = 0;
+        int loadedModels = 0;
+        int failedModels = 0;
+        float loadingTime = 0.0f;
+    };
+
 public:
     // Model constants
     static constexpr int CACHE_SIZE = 20;
     static constexpr bool LOD_ENABLED = false;
     static constexpr bool CACHE_ENABLED = true;
+    static void Init();
+    static void Shutdown();
+    static bool IsInitialized();
+
+    static std::optional<LoadResult> LoadModelsFromJson(const std::string &path);
+    static std::optional<LoadResult>
+    LoadModelsFromJsonSelective(const std::string &path,
+                                const std::vector<std::string> &modelNames);
+    static void SetSelectiveMode(bool enabled);
+    static void DrawAllModels();
+    static std::optional<std::reference_wrapper<::Model>> GetModelByName(const std::string &name);
+    static bool AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config);
+    static std::optional<LoadResult> LoadGameModels();
+    static std::optional<LoadResult>
+    LoadGameModelsSelective(const std::vector<std::string> &modelNames);
+    static std::optional<LoadResult>
+    LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames);
+
+    static bool LoadSingleModel(const std::string &name, const std::string &path,
+                                bool preload = true);
+    static bool UnloadModel(const std::string &name);
+    static void UnloadAllModels();
+    static bool ReloadModel(const std::string &name);
+    static bool RegisterLoadedModel(const std::string &name, const ::Model &model);
+
+    static std::vector<ModelInstance *> GetInstancesByTag(const std::string &tag);
+    static std::vector<ModelInstance *> GetInstancesByCategory(const std::string &category);
+    static std::vector<std::string> GetAvailableModels();
+
+    static bool HasCollision(const std::string &modelName);
+    static const LoadingStats &GetLoadingStats();
+
+    static void PrintStatistics();
+    static void PrintCacheInfo();
+    static void SetCacheEnabled(bool enabled);
+    static void SetMaxCacheSize(size_t maxSize);
+    static void EnableLOD(bool enabled);
+    static const ModelFileConfig *GetModelConfig(const std::string &modelName);
+    static void CleanupUnusedModels();
+    static void OptimizeCache();
+    static void ClearInstances();
+
+public:
     ModelLoader();
     ~ModelLoader();
 
-    bool Initialize();
-    void Shutdown();
+    bool InternalInitialize();
+    void InternalShutdown();
+
+    std::optional<LoadResult> InternalLoadModelsFromJson(const std::string &path);
+    std::optional<LoadResult>
+    InternalLoadModelsFromJsonSelective(const std::string &path,
+                                        const std::vector<std::string> &modelNames);
 
     // ==================== CORE METHODS ====================
 
-    // Load models from JSON config
-    struct LoadResult
-    {
-        int totalModels;
-        int loadedModels;
-        int failedModels;
-        float loadingTime;
-    };
-
-    std::optional<LoadResult> LoadModelsFromJson(const std::string &path);
-
-    // Load only specific models from JSON config
-    std::optional<LoadResult>
-    LoadModelsFromJsonSelective(const std::string &path,
-                                const std::vector<std::string> &modelNames);
-
-    // Set selective loading mode
-    void SetSelectiveMode(bool enabled);
-
-    // Render all model instances
-    void DrawAllModels() const;
-
-    // Get model by name
-    std::optional<std::reference_wrapper<Model>> GetModelByName(const std::string &name) override;
-
     // Add instance (legacy method)
-    void AddInstance(const json &instanceJson, Model *modelPtr, const std::string &modelName,
+    void AddInstance(const json &instanceJson, ::Model *modelPtr, const std::string &modelName,
                      Animation *animation);
-
-    // ==================== ENHANCED METHODS ====================
-
-    // Add instance with enhanced config
-    bool AddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config);
 
     // ==================== GAME MODEL LOADING ====================
 
@@ -81,76 +112,47 @@ public:
      *
      * @return LoadResult with statistics, or nullopt on failure
      */
-    std::optional<LoadResult> LoadGameModels();
-
-    /**
-     * @brief Load specific models required for a map
-     *
-     * Loads only the models specified in the modelNames list.
-     * More efficient than LoadGameModels() for map-specific loading.
-     *
-     * @param modelNames List of model names to load
-     * @return LoadResult with statistics, or nullopt on failure
-     */
-    std::optional<LoadResult> LoadGameModelsSelective(const std::vector<std::string> &modelNames);
-
-    /**
-     * @brief Load specific models with safe fallback handling
-     *
-     * Similar to LoadGameModelsSelective but with enhanced error handling
-     * and validation. Uses hash set for faster lookup.
-     *
-     * @param modelNames List of model names to load
-     * @return LoadResult with statistics, or nullopt on failure
-     */
+    std::optional<LoadResult> InternalLoadGameModels();
     std::optional<LoadResult>
-    LoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames);
+    InternalLoadGameModelsSelective(const std::vector<std::string> &modelNames);
+    std::optional<LoadResult>
+    InternalLoadGameModelsSelectiveSafe(const std::vector<std::string> &modelNames);
 
-    // Model management
-    bool LoadSingleModel(const std::string &name, const std::string &path,
-                         bool preload = true) override;
-    bool UnloadModel(const std::string &name);
-    void UnloadAllModels() override;
-    bool ReloadModel(const std::string &name);
-    // Register a raylib::Model that was already loaded elsewhere (e.g. SceneLoader)
-    bool RegisterLoadedModel(const std::string &name, const ::Model &model);
+    bool InternalLoadSingleModel(const std::string &name, const std::string &path,
+                                 bool preload = true);
+    bool InternalUnloadModel(const std::string &name);
+    void InternalUnloadAllModels();
+    bool InternalReloadModel(const std::string &name);
+    bool InternalRegisterLoadedModel(const std::string &name, const ::Model &model);
 
-    // Filtering and search
-    std::vector<ModelInstance *> GetInstancesByTag(const std::string &tag);
-    std::vector<ModelInstance *> GetInstancesByCategory(const std::string &category);
-    [[nodiscard]] std::vector<std::string> GetAvailableModels() const override;
+    std::vector<ModelInstance *> InternalGetInstancesByTag(const std::string &tag);
+    std::vector<ModelInstance *> InternalGetInstancesByCategory(const std::string &category);
+    [[nodiscard]] std::vector<std::string> InternalGetAvailableModels() const;
 
-    // Configuration access
-    [[nodiscard]] bool HasCollision(const std::string &modelName) const;
+    [[nodiscard]] bool InternalHasCollision(const std::string &modelName) const;
+    [[nodiscard]] const LoadingStats &InternalGetLoadingStats() const;
 
-    // Statistics and monitoring
-    [[nodiscard]] const LoadingStats &GetLoadingStats() const;
+    void InternalPrintStatistics() const;
+    void InternalPrintCacheInfo() const;
+    void InternalSetCacheEnabled(bool enabled);
+    void InternalSetMaxCacheSize(size_t maxSize) const;
+    void InternalEnableLOD(bool enabled);
+    [[nodiscard]] const ModelFileConfig *InternalGetModelConfig(const std::string &modelName) const;
+    void InternalCleanupUnusedModels() const;
+    void InternalOptimizeCache() const;
+    void InternalClearInstances();
 
-    void PrintStatistics() const;
-    void PrintCacheInfo() const;
-
-    // Settings
-    void SetCacheEnabled(bool enabled);
-
-    void SetMaxCacheSize(size_t maxSize) const;
-    void EnableLOD(bool enabled);
-
-    // Configuration access
-    [[nodiscard]] const ModelFileConfig *GetModelConfig(const std::string &modelName) const;
-
-    // Cleanup and optimization
-    void CleanupUnusedModels() const;
-    void OptimizeCache() const;
-
-    // Clear all model instances (useful when loading new maps)
-    void ClearInstances();
+    std::optional<std::reference_wrapper<::Model>> InternalGetModelByName(const std::string &name);
+    void InternalDrawAllModels() const;
+    bool InternalAddInstanceEx(const std::string &modelName, const ModelInstanceConfig &config);
+    void InternalSetSelectiveMode(bool enabled);
 
 private:
     // ==================== LEGACY FIELDS ====================
-    std::vector<ModelInstance> m_instances;                  // All model instances
-    std::unordered_map<std::string, Model *> m_modelByName;  // Models by name
-    std::unordered_map<std::string, Animation> m_animations; // Animation data
-    bool m_spawnInstance = true;                             // Auto spawn instances
+    std::vector<ModelInstance> m_instances;                   // All model instances
+    std::unordered_map<std::string, ::Model *> m_modelByName; // Models by name
+    std::unordered_map<std::string, Animation> m_animations;  // Animation data
+    bool m_spawnInstance = true;                              // Auto spawn instances
 
     // ==================== ENHANCED FIELDS ====================
     std::shared_ptr<ModelCache> m_cache;                        // Model cache
@@ -164,7 +166,7 @@ private:
     bool m_selectiveMode = false;
 
     // ==================== PRIVATE HELPER METHODS ====================
-    bool ProcessModelConfigLegacy(const ModelFileConfig &config); // Legacy compatibility
+    bool InternalProcessModelConfigLegacy(const ModelFileConfig &config); // Legacy compatibility
     bool ValidateModelPath(const std::string &path) const;
 
     // Validation helper functions for crash prevention
@@ -172,5 +174,7 @@ private:
     static bool IsValidColor(const Color &c);
     static bool IsValidMatrix(const Matrix &m);
 };
+
+} // namespace CHEngine
 
 #endif // MODEL_H

@@ -1,7 +1,8 @@
 #include "ScriptManager.h"
 #include "components/physics/collision/core/CollisionManager.h"
-#include "core/Engine.h"
 #include "core/Log.h"
+#include "core/application/Application.h"
+#include "core/audio/Audio.h"
 #include "core/interfaces/ILevelManager.h"
 #include "events/Event.h"
 #include "events/KeyEvent.h"
@@ -10,12 +11,17 @@
 #include "scene/ecs/components/PlayerComponent.h"
 #include "scene/ecs/components/ScriptingComponents.h"
 #include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/UIComponents.h"
+#include "scene/ecs/components/UtilityComponents.h"
 #include "scene/ecs/components/VelocityComponent.h"
+#include "scene/main/LevelManager.h"
 #include <raylib.h>
 #include <raymath.h>
 
+
 namespace CHEngine
 {
+std::unique_ptr<ScriptManager> ScriptManager::s_Instance = nullptr;
 
 ScriptManager::ScriptManager()
 {
@@ -25,7 +31,25 @@ ScriptManager::~ScriptManager()
 {
 }
 
-bool ScriptManager::Initialize()
+void ScriptManager::Init()
+{
+    s_Instance = std::make_unique<ScriptManager>();
+    s_Instance->InternalInitialize();
+}
+
+void ScriptManager::Shutdown()
+{
+    if (s_Instance)
+        s_Instance->InternalShutdown();
+    s_Instance.reset();
+}
+
+bool ScriptManager::IsInitialized()
+{
+    return s_Instance != nullptr && s_Instance->m_initialized;
+}
+
+bool ScriptManager::InternalInitialize()
 {
     CD_CORE_INFO("Initializing Scripting System (Lua)...");
 
@@ -45,7 +69,7 @@ bool ScriptManager::Initialize()
     }
 }
 
-void ScriptManager::Shutdown()
+void ScriptManager::InternalShutdown()
 {
     CD_CORE_INFO("Shutting down Scripting System...");
     m_initialized = false;
@@ -53,14 +77,26 @@ void ScriptManager::Shutdown()
 
 void ScriptManager::Update(float deltaTime)
 {
+    if (s_Instance)
+        s_Instance->InternalUpdate(deltaTime);
+}
+
+void ScriptManager::InternalUpdate(float deltaTime)
+{
     if (!m_initialized || !m_activeRegistry)
         return;
 
     // Update entity scripts
-    UpdateScripts(*m_activeRegistry, deltaTime);
+    InternalUpdateScripts(*m_activeRegistry, deltaTime);
 }
 
 void ScriptManager::InitializeScripts(entt::registry &registry)
+{
+    if (s_Instance)
+        s_Instance->InternalInitializeScripts(registry);
+}
+
+void ScriptManager::InternalInitializeScripts(entt::registry &registry)
 {
     if (!m_initialized)
         return;
@@ -73,7 +109,7 @@ void ScriptManager::InitializeScripts(entt::registry &registry)
         if (!script.initialized && !script.scriptPath.empty())
         {
             // Load the script globally for now (simplest approach)
-            if (RunScript(script.scriptPath))
+            if (InternalRunScript(script.scriptPath))
             {
                 CallLuaFunction(script.scriptPath, "OnInit", (uint32_t)entity);
                 script.initialized = true;
@@ -83,6 +119,12 @@ void ScriptManager::InitializeScripts(entt::registry &registry)
 }
 
 void ScriptManager::UpdateScripts(entt::registry &registry, float deltaTime)
+{
+    if (s_Instance)
+        s_Instance->InternalUpdateScripts(registry, deltaTime);
+}
+
+void ScriptManager::InternalUpdateScripts(entt::registry &registry, float deltaTime)
 {
     if (!m_initialized)
         return;
@@ -115,7 +157,19 @@ void ScriptManager::CallLuaFunction(const std::string &scriptPath, const std::st
     }
 }
 
+sol::state &ScriptManager::GetLuaState()
+{
+    return s_Instance->m_lua;
+}
+
 bool ScriptManager::RunScript(const std::string &path)
+{
+    if (s_Instance)
+        return s_Instance->InternalRunScript(path);
+    return false;
+}
+
+bool ScriptManager::InternalRunScript(const std::string &path)
 {
     if (!m_initialized)
         return false;
@@ -131,6 +185,13 @@ bool ScriptManager::RunScript(const std::string &path)
 }
 
 bool ScriptManager::RunString(const std::string &code)
+{
+    if (s_Instance)
+        return s_Instance->InternalRunString(code);
+    return false;
+}
+
+bool ScriptManager::InternalRunString(const std::string &code)
 {
     if (!m_initialized)
         return false;
@@ -156,14 +217,18 @@ void ScriptManager::BindEngineAPI()
     // 2. Bind Scene and UI APIs
     BindSceneAPI();
     BindUIAPI();
-}
-
-void ScriptManager::SetSceneManager(void *unused)
-{
-    // Deprecated for now, ScriptManager should use Engine services directly
+    BindGameplayAPI();
+    BindAudioAPI();
 }
 
 void ScriptManager::RegisterButtonCallback(const std::string &buttonName, sol::function callback)
+{
+    if (s_Instance)
+        s_Instance->InternalRegisterButtonCallback(buttonName, std::move(callback));
+}
+
+void ScriptManager::InternalRegisterButtonCallback(const std::string &buttonName,
+                                                   sol::function callback)
 {
     m_buttonCallbacks[buttonName] = std::move(callback);
     CD_CORE_INFO("ScriptManager: Registered callback for button '%s'", buttonName.c_str());
@@ -176,10 +241,9 @@ void ScriptManager::BindSceneAPI()
         "LoadScene",
         [this](sol::object sceneRef)
         {
-            auto levelManager = Engine::Instance().GetService<ILevelManager>();
-            if (!levelManager)
+            if (!LevelManager::IsInitialized())
             {
-                CD_ERROR("[Lua] LoadScene failed: LevelManager service not found!");
+                CD_ERROR("[Lua] LoadScene failed: LevelManager not initialized!");
                 return;
             }
 
@@ -187,13 +251,13 @@ void ScriptManager::BindSceneAPI()
             {
                 std::string path = sceneRef.as<std::string>();
                 CD_INFO("[Lua] Loading scene by name/path: %s", path.c_str());
-                levelManager->LoadScene(path);
+                LevelManager::LoadScene(path);
             }
             else if (sceneRef.is<int>())
             {
                 int index = sceneRef.as<int>();
                 CD_INFO("[Lua] Loading scene by index: %d", index);
-                levelManager->LoadSceneByIndex(index);
+                LevelManager::LoadSceneByIndex(index);
             }
             else
             {
@@ -202,10 +266,10 @@ void ScriptManager::BindSceneAPI()
             }
 
             // Sync ECS with new scene data
-            if (levelManager)
+            if (LevelManager::IsInitialized())
             {
-                levelManager->RefreshMapEntities();
-                levelManager->RefreshUIEntities();
+                LevelManager::RefreshMapEntities();
+                LevelManager::RefreshUIEntities();
                 CD_INFO("[Lua] Scene ECS entities refreshed.");
             }
         });
@@ -214,7 +278,7 @@ void ScriptManager::BindSceneAPI()
                        []()
                        {
                            CD_INFO("[Lua] Quit game requested.");
-                           Engine::Instance().RequestExit();
+                           Application::Get().Close();
                        });
 
     // 3. Entity Manipulation API
@@ -277,6 +341,49 @@ void ScriptManager::BindUIAPI()
                                        buttonName.c_str());
                            }
                        });
+
+    m_lua.set_function(
+        "SetUIActive",
+        [this](const std::string &name, bool active)
+        {
+            if (!m_activeRegistry)
+                return;
+            auto view = m_activeRegistry->view<CHEngine::NameComponent, CHEngine::RectTransform>();
+            for (auto entity : view)
+            {
+                if (view.get<CHEngine::NameComponent>(entity).name == name)
+                {
+                    view.get<CHEngine::RectTransform>(entity).active = active;
+                }
+            }
+        });
+
+    m_lua.set_function("SetUIText",
+                       [this](const std::string &name, const std::string &text)
+                       {
+                           if (!m_activeRegistry)
+                               return;
+                           auto view = m_activeRegistry->view<CHEngine::NameComponent>();
+                           for (auto entity : view)
+                           {
+                               if (view.get<CHEngine::NameComponent>(entity).name == name)
+                               {
+                                   if (m_activeRegistry->all_of<CHEngine::UIText>(entity))
+                                       m_activeRegistry->get<CHEngine::UIText>(entity).text = text;
+                               }
+                           }
+                       });
+
+    m_lua.set_function("TriggerEvent",
+                       [](const std::string &eventId) { UIEventRegistry::Trigger(eventId); });
+}
+
+void ScriptManager::BindAudioAPI()
+{
+    m_lua.set_function("PlaySound",
+                       [](const std::string &name) { CHEngine::Audio::PlaySoundEffect(name); });
+
+    m_lua.set_function("StopMusic", []() { CHEngine::Audio::StopMusic(); });
 }
 
 void ScriptManager::BindGameplayAPI()
@@ -356,6 +463,7 @@ void ScriptManager::BindGameplayAPI()
 
 void ScriptManager::SetActiveRegistry(entt::registry *registry)
 {
-    m_activeRegistry = registry;
+    if (s_Instance)
+        s_Instance->m_activeRegistry = registry;
 }
 } // namespace CHEngine
