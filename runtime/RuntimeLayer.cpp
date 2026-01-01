@@ -128,13 +128,14 @@ void RuntimeLayer::OnUpdate(float deltaTime)
         }
     }
 
-    // UPDATE LUA SCRIPTS (Hazel style)
+    // UPDATE C# SCRIPTS
     if (SceneManager::IsInitialized())
     {
         auto currentScene = SceneManager::GetActiveScene();
         if (currentScene && ScriptManager::IsInitialized())
         {
             ScriptManager::SetActiveRegistry(&currentScene->GetRegistry());
+            ScriptManager::InitializeScripts(currentScene->GetRegistry());
             ScriptManager::UpdateScripts(currentScene->GetRegistry(), deltaTime);
         }
     }
@@ -599,9 +600,28 @@ void RuntimeLayer::RenderScene()
 
         r.model->transform = MatrixMultiply(MatrixMultiply(matS, matR), matT);
 
+        // --- TEXTURE OVERRIDE ---
+        Texture2D originalTexture;
+        bool hasTextureOverride = (r.texture != nullptr);
+        if (hasTextureOverride)
+        {
+            originalTexture = r.model->materials[0].maps[MATERIAL_MAP_ALBEDO].texture;
+            r.model->materials[0].maps[MATERIAL_MAP_ALBEDO].texture = *r.texture;
+
+            // Handle Tiling (simplified via material parameters if needed, for now just texture)
+            // Raylib doesn't have a direct tiling param in MaterialMap usually, often requires
+            // shader
+        }
+
         // Check if editor is available for wireframe (Optional)
         // For now, simple render
         DrawModel(*r.model, Vector3Zero(), 1.0f, r.tint);
+
+        // Restore original texture
+        if (hasTextureOverride)
+        {
+            r.model->materials[0].maps[MATERIAL_MAP_ALBEDO].texture = originalTexture;
+        }
     }
 
     // DEBUG COLLISION RENDER

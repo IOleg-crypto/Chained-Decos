@@ -7,18 +7,15 @@ namespace CHEngine
 {
 
 /**
- * @brief Component that links an entity to a Lua script.
- *
- * In Hazel-style architecture, the engine calls OnInit and OnUpdate
- * for any entity possessing this component.
+ * @brief Component that links an entity to a C# script class.
  */
-struct LuaScriptComponent
+struct CSharpScriptComponent
 {
-    std::string scriptPath; // Path to the .lua file
+    std::string className; // Full name: Namespace.Class
     bool initialized = false;
 
-    // Properties that can be passed from the editor to Lua
-    // (Future enhancement: std::map<std::string, std::string> properties)
+    // Pointer to the managed instance (GCHandle)
+    void *handle = nullptr;
 };
 
 } // namespace CHEngine

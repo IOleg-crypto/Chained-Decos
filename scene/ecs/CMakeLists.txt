@@ -16,8 +16,8 @@ set(ECS_SOURCES
     components/UIComponents.h
     systems/UIRenderSystem.h
     systems/UIRenderSystem.cpp
-    systems/ScriptSystem.h
-    systems/ScriptSystem.cpp
+    systems/UISystem.h
+    systems/UISystem.cpp
 )
 
 add_library(ecs STATIC ${ECS_SOURCES})
@@ -26,7 +26,6 @@ target_include_directories(ecs PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/include/json/include
-    ${lua_SOURCE_DIR}/src
 )
 
 target_link_libraries(ecs PUBLIC
@@ -36,7 +35,6 @@ target_link_libraries(ecs PUBLIC
     texture_resources
     imguilib
     scene_core
-    sol2::sol2
 )
 
 set_target_properties(ecs PROPERTIES POSITION_INDEPENDENT_CODE ON)

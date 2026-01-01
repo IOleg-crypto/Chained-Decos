@@ -1,0 +1,14 @@
+D:\gitnext\Chained Decos\game\scripts\managed\bin\managed\ChainedEngine.Managed.deps.json
+D:\gitnext\Chained Decos\game\scripts\managed\bin\managed\ChainedEngine.Managed.dll
+D:\gitnext\Chained Decos\game\scripts\managed\bin\managed\ChainedEngine.Managed.pdb
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ChainedEngine.Managed.GeneratedMSBuildEditorConfig.editorconfig
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ChainedEngine.Managed.AssemblyInfoInputs.cache
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ChainedEngine.Managed.AssemblyInfo.cs
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ChainedEngine.Managed.csproj.CoreCompileInputs.cache
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ChainedEngine.Managed.sourcelink.json
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ChainedEngine.Managed.dll
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\refint\ChainedEngine.Managed.dll
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ChainedEngine.Managed.pdb
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ref\ChainedEngine.Managed.dll
+D:\gitnext\Chained Decos\game\scripts\managed\bin\managed\ChainedEngine.Managed.runtimeconfig.json
+D:\gitnext\Chained Decos\game\scripts\managed\obj\Debug\ChainedEngine.Managed.genruntimeconfig.cache

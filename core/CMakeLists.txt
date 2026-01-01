@@ -8,7 +8,6 @@ add_subdirectory(config)
 set(CORE_SOURCES
     application/Application.cpp
     application/Application.h
-    application/IApplication.h
     window/Window.cpp
     window/Window.h
     layer/Layer.cpp
@@ -27,8 +26,12 @@ set(CORE_SOURCES
     imgui/ImGuiLayer.cpp
     imgui/components/GuiButton.h
     imgui/components/GuiPanel.h
-    scripting/ScriptManager.cpp
+    scripting/ScriptManagerImpl.cpp
     scripting/ScriptManager.h
+    scripting/csharp/DotNetHost.cpp
+    scripting/csharp/DotNetHost.h
+    scripting/csharp/ScriptGlue.cpp
+    scripting/csharp/ScriptGlue.h
     input/Input.h
     input/Input.cpp
     renderer/Renderer.cpp
@@ -85,16 +88,13 @@ target_link_libraries(core
         events
         font_resources
         texture_resources
-        liblua
-        sol2::sol2
+        texture_resources
         world
 )
 
 target_compile_definitions(core
     PRIVATE
         _CRT_SECURE_NO_WARNINGS
-        SOL_ALL_SAFETIES_ON=1
-        SOL_USE_CXX17_OPTIONAL=0
 )
 
 
