@@ -1,40 +1,21 @@
 #ifndef EDITOR_APPLICATION_H
 #define EDITOR_APPLICATION_H
 
-#include "core/application/IApplication.h"
+#include "core/application/Application.h"
 
 namespace CHEngine
 {
 class EditorLayer;
 }
 
-// Editor application - uses full engine + own modules
-class EditorApplication : public CHEngine::IApplication
+// Editor application - uses full engine + own layers
+class EditorApplication : public CHEngine::Application
 {
 public:
     EditorApplication(int argc, char *argv[]);
     ~EditorApplication();
 
-    // 1. Configuration
-    void OnConfigure(EngineConfig &config) override;
-
-    // 2. Registration
-    void OnRegister() override;
-
-    // 3. Start
-    void OnStart() override;
-
-    // Update
-    void OnUpdate(float deltaTime) override;
-
-    // Render
-    void OnRender() override;
-    void OnImGuiRender() override;
-
-    // Shutdown
-    void OnShutdown() override;
-
-    // Event handling
+    // Event handling (optional override if custom app-level events needed)
     void OnEvent(CHEngine::Event &e) override;
 
 private:

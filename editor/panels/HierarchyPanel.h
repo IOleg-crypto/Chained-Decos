@@ -7,10 +7,9 @@
 #include <memory>
 #include <string>
 
-class GameScene;
-
 namespace CHEngine
 {
+class GameScene;
 class Scene;
 
 /**
@@ -45,7 +44,7 @@ public:
 
     // --- Member Variables ---
 private:
-    std::shared_ptr<::GameScene> m_Context;
+    std::shared_ptr<GameScene> m_Context;
     std::shared_ptr<Scene> m_SceneContext;
     bool m_isVisible = true;
 };

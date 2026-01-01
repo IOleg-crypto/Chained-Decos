@@ -2,83 +2,55 @@
 #define GUI_MANAGER_H
 
 #include "GuiElement.h"
-#include "core/interfaces/IGuiManager.h"
 #include <algorithm>
+#include <memory>
 #include <vector>
-
 
 namespace CHEngine
 {
-class GuiManager : public IGuiManager
+class GuiManager
 {
 public:
-    GuiManager() : m_visible(true)
-    {
-    }
-    ~GuiManager() override
-    {
-        Shutdown();
-    }
+    static void Init();
+    static void Shutdown();
+    static bool IsInitialized();
+    static void Update(float deltaTime);
+    static void Render();
 
-    void Initialize() override
-    {
-    }
+    static void AddElement(std::shared_ptr<GuiElement> element);
+    static void RemoveElement(std::shared_ptr<GuiElement> element);
+    static void Clear();
 
-    void Update(float deltaTime) override
-    {
-        if (!m_visible)
-            return;
+    static bool IsVisible();
+    static void SetVisible(bool visible);
 
-        for (auto &element : m_elements)
-        {
-            if (element->IsEnabled())
-            {
-                element->Update(deltaTime);
-                element->HandleInput();
-            }
-        }
-    }
+    ~GuiManager();
 
-    void Render() override
-    {
-        if (!m_visible)
-            return;
+public:
+    GuiManager();
 
-        for (auto &element : m_elements)
-        {
-            if (element->IsVisible())
-            {
-                element->Render();
-            }
-        }
-    }
+    void InternalUpdate(float deltaTime);
+    void InternalRender();
+    void InternalShutdown();
 
-    void Shutdown() override
-    {
-        Clear();
-    }
-
-    void AddElement(std::shared_ptr<GuiElement> element) override
+    void InternalAddElement(std::shared_ptr<GuiElement> element)
     {
         m_elements.push_back(element);
     }
-
-    void RemoveElement(std::shared_ptr<GuiElement> element) override
+    void InternalRemoveElement(std::shared_ptr<GuiElement> element)
     {
         m_elements.erase(std::remove(m_elements.begin(), m_elements.end(), element),
                          m_elements.end());
     }
-
-    void Clear() override
+    void InternalClear()
     {
         m_elements.clear();
     }
-
-    bool IsVisible() const override
+    bool InternalIsVisible() const
     {
         return m_visible;
     }
-    void SetVisible(bool visible) override
+    void InternalSetVisible(bool visible)
     {
         m_visible = visible;
     }
@@ -90,5 +62,3 @@ private:
 } // namespace CHEngine
 
 #endif // GUI_MANAGER_H
-
-

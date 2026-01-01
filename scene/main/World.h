@@ -6,9 +6,23 @@
 #include <raymath.h>
 #include <vector>
 
-class WorldManager : public IWorldManager
+class WorldManager
 {
 public:
+    static void Init();
+    static void Shutdown();
+    static void Update(float deltaTime);
+
+    // World state queries
+    static bool IsPointInWorld(const Vector3 &point);
+    static bool IsPointOnGround(const Vector3 &point);
+    static float GetGroundHeight();
+
+    // Debug
+    static void DrawDebugWorld();
+    static void ToggleDebugDraw();
+    static bool IsDebugDrawEnabled();
+
     // World constants
     static constexpr float WORLD_FLOOR_Y = -10.0f;
     static constexpr Vector2 GROUND_SIZE = {2000.0f, 2000.0f};
@@ -17,44 +31,16 @@ public:
     WorldManager();
     ~WorldManager() = default;
 
-    // World update
-    void Update(float deltaTime);
+private:
+    bool InternalIsPointInWorld(const Vector3 &point) const;
+    bool InternalIsPointOnGround(const Vector3 &point) const;
+    void InternalUpdate(float deltaTime);
+    void InternalDrawDebugWorld() const;
 
-    // Service implementation
-    bool Initialize()
-    {
-        InitializeWorld();
-        return true;
-    }
-    void Shutdown()
-    {
-    }
-    void Render()
-    {
-    }
-
-    // World setup
     void InitializeWorld();
     void LoadWorldGeometry();
-
-    // World state
-    bool IsPointInWorld(const Vector3 &point) const;
-    bool IsPointOnGround(const Vector3 &point) const;
-    float GetGroundHeight() const
-    {
-        return WORLD_FLOOR_Y;
-    }
-
-    // Debug
-    void DrawDebugWorld() const;
-    void ToggleDebugDraw()
-    {
-        m_drawDebug = !m_drawDebug;
-    }
-    bool IsDebugDrawEnabled() const
-    {
-        return m_drawDebug;
-    }
+    void UpdateWorldBounds();
+    void DrawDebugBounds() const;
 
 private:
     bool m_drawDebug = false;
@@ -63,7 +49,4 @@ private:
     // World boundaries
     BoundingBox m_worldBounds;
     std::vector<BoundingBox> m_groundSegments;
-
-    void UpdateWorldBounds();
-    void DrawDebugBounds() const;
 };

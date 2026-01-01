@@ -4,8 +4,8 @@
 namespace CHEngine
 {
 
-AddObjectCommand::AddObjectCommand(const std::shared_ptr<::GameScene> &scene,
-                                   const ::MapObjectData &objData)
+AddObjectCommand::AddObjectCommand(const std::shared_ptr<GameScene> &scene,
+                                   const MapObjectData &objData)
     : m_Scene(scene), m_ObjectData(objData)
 {
 }

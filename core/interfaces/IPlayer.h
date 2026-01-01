@@ -49,7 +49,7 @@ public:
     virtual void ApplyJumpImpulse(float impulse) = 0;
 
     // Collision
-    virtual const Collision &GetCollision() const = 0;
+    virtual const CHEngine::Collision &GetCollision() const = 0;
     virtual void SyncCollision() const = 0;
     virtual void InitializeCollision() = 0;
 

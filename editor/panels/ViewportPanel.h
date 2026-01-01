@@ -31,9 +31,10 @@ public:
     // --- Panel Lifecycle ---
 public:
     void OnImGuiRender(
-        SceneState state, const std::shared_ptr<GameScene> &legacyScene,
-        const std::shared_ptr<Scene> &modernScene, const Camera3D &camera, int selectedObjectIndex,
-        Tool currentTool, const std::function<void(int)> &onSelect, CommandHistory *history,
+        SceneState state, SelectionType selectionType,
+        const std::shared_ptr<GameScene> &legacyScene, const std::shared_ptr<Scene> &modernScene,
+        const Camera3D &camera, int selectedObjectIndex, Tool currentTool,
+        const std::function<void(int)> &onSelect, CommandHistory *history,
         const std::function<void(const std::string &, const Vector3 &)> &onAssetDropped = nullptr);
 
     // --- State & Configuration ---

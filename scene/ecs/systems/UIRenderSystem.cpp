@@ -1,10 +1,11 @@
 #include "UIRenderSystem.h"
-#include "core/Engine.h"
+#include "core/application/Application.h"
 #include "core/scripting/ScriptManager.h"
 #include "events/UIEventRegistry.h"
-#include "scene/SceneManager.h"
+#include "scene/MapManager.h"
 #include "scene/ecs/components/UtilityComponents.h"
 #include "scene/resources/font/FontService.h"
+#include "scene/resources/texture/TextureService.h"
 
 using namespace CHEngine;
 #include <imgui.h>
@@ -14,6 +15,36 @@ namespace CHEngine
 {
 void UIRenderSystem::Render(entt::registry &registry, int screenWidth, int screenHeight)
 {
+    // 0. Render Background
+    auto bgView = registry.view<UIBackground>();
+    for (auto entity : bgView)
+    {
+        auto &bg = bgView.get<UIBackground>(entity);
+
+        // Draw Solid Color if alpha > 0
+        if (bg.color.a > 0)
+        {
+            DrawRectangle(0, 0, screenWidth, screenHeight, bg.color);
+        }
+
+        // Draw Texture if path is provided
+        if (!bg.texturePath.empty())
+        {
+            Texture2D tex = TextureService::GetTexture(bg.texturePath);
+            if (tex.id == 0)
+            {
+                TextureService::LoadTexture(bg.texturePath, bg.texturePath);
+                tex = TextureService::GetTexture(bg.texturePath);
+            }
+
+            if (tex.id != 0)
+            {
+                Rectangle source = {0, 0, (float)tex.width, (float)tex.height};
+                Rectangle dest = {0, 0, (float)screenWidth, (float)screenHeight};
+                DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, WHITE);
+            }
+        }
+    }
 
     // Render all UI elements with RectTransform
     auto view = registry.view<RectTransform>();
@@ -21,6 +52,9 @@ void UIRenderSystem::Render(entt::registry &registry, int screenWidth, int scree
     for (auto entity : view)
     {
         auto &transform = view.get<RectTransform>(entity);
+        if (!transform.active)
+            continue;
+
         Vector2 screenPos = CalculateScreenPosition(transform, screenWidth, screenHeight);
 
         // Skip entities that are handled by ImGui during standard Raylib render pass
@@ -58,11 +92,9 @@ void UIRenderSystem::Render(entt::registry &registry, int screenWidth, int scree
                         if (registry.all_of<NameComponent>(entity))
                         {
                             auto &nameComp = registry.get<NameComponent>(entity);
-                            auto scriptManager =
-                                CHEngine::Engine::Instance().GetService<CHEngine::ScriptManager>();
-                            if (scriptManager)
+                            if (ScriptManager::IsInitialized())
                             {
-                                scriptManager->RunString("TriggerButtonCallback('" + nameComp.name +
+                                ScriptManager::RunString("TriggerButtonCallback('" + nameComp.name +
                                                          "')");
                             }
                         }
@@ -70,17 +102,17 @@ void UIRenderSystem::Render(entt::registry &registry, int screenWidth, int scree
                         // Trigger Event
                         if (!button.eventId.empty())
                         {
-                            Engine::Instance().GetUIEventRegistry().Trigger(button.eventId);
+                            UIEventRegistry::Trigger(button.eventId);
                         }
 
                         // Execute Action
                         if (button.actionType == "LoadScene" && !button.actionTarget.empty())
                         {
-                            Engine::Instance().GetSceneManager().LoadScene(button.actionTarget);
+                            MapManager::LoadScene(button.actionTarget);
                         }
                         else if (button.actionType == "Quit")
                         {
-                            CHEngine::Engine::Instance().RequestExit();
+                            Application::Get().Close();
                         }
                         else if (button.actionType == "OpenURL" && !button.actionTarget.empty())
                         {
@@ -134,12 +166,11 @@ void UIRenderSystem::Render(entt::registry &registry, int screenWidth, int scree
             Texture2D tex = {0};
             if (!image.texturePath.empty())
             {
-                tex = Engine::Instance().GetTextureService().GetTexture(image.texturePath);
+                tex = TextureService::GetTexture(image.texturePath);
                 if (tex.id == 0)
                 {
-                    Engine::Instance().GetTextureService().LoadTexture(image.texturePath,
-                                                                       image.texturePath);
-                    tex = Engine::Instance().GetTextureService().GetTexture(image.texturePath);
+                    TextureService::LoadTexture(image.texturePath, image.texturePath);
+                    tex = TextureService::GetTexture(image.texturePath);
                 }
             }
 
@@ -179,7 +210,7 @@ void UIRenderSystem::Render(entt::registry &registry, int screenWidth, int scree
         if (registry.all_of<UIText>(entity))
         {
             auto &text = registry.get<UIText>(entity);
-            Font font = Engine::Instance().GetFontService().GetFont(text.fontName);
+            Font font = FontService::GetFont(text.fontName);
 
             Vector2 textPos = screenPos;
 
@@ -246,6 +277,9 @@ entt::entity UIRenderSystem::PickUIEntity(entt::registry &registry, Vector2 mous
     for (auto entity : view)
     {
         auto &transform = view.get<RectTransform>(entity);
+        if (!transform.active)
+            continue;
+
         Vector2 screenPos = CalculateScreenPosition(transform, screenWidth, screenHeight);
 
         Rectangle btnRect = {screenPos.x, screenPos.y, transform.size.x, transform.size.y};
@@ -302,6 +336,9 @@ void UIRenderSystem::RenderImGui(entt::registry &registry, int screenWidth, int 
     for (auto entity : view)
     {
         auto &transform = view.get<RectTransform>(entity);
+        if (!transform.active)
+            continue;
+
         auto &imgui = view.get<ImGuiComponent>(entity);
 
         // Position relative to viewport, then apply screen offset
@@ -325,7 +362,7 @@ void UIRenderSystem::RenderImGui(entt::registry &registry, int screenWidth, int 
             {
                 if (!imgui.eventId.empty())
                 {
-                    Engine::Instance().GetUIEventRegistry().Trigger(imgui.eventId);
+                    UIEventRegistry::Trigger(imgui.eventId);
                 }
             }
 

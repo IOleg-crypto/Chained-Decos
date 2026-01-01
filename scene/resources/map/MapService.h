@@ -4,6 +4,11 @@
 #include "SceneLoader.h"
 #include <string>
 
+namespace CHEngine
+{
+
+class GameScene;
+
 // Unified service for map operations used by both Editor and Game
 class MapService
 {
@@ -23,5 +28,7 @@ public:
 private:
     SceneLoader m_mapLoader;
 };
+
+} // namespace CHEngine
 
 #endif // MAPSERVICE_H

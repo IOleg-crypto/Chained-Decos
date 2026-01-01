@@ -2,15 +2,9 @@
 #define CORE_H
 
 // Core headers - simplified and flattened
-#include "core/Engine.h"
-#include "core/application/EngineApplication.h"
-#include "events/Event.h"
+#include "core/application/Application.h"
 #include "core/module/ModuleManager.h"
+#include "events/Event.h"
+
 
 #endif // CORE_H
-
-
-
-
-
-

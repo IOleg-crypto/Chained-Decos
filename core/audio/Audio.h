@@ -9,6 +9,11 @@ namespace CHEngine
 class Audio
 {
 public:
+    static void Init();
+    static void Shutdown();
+    static bool IsInitialized();
+    static void Update(float deltaTime);
+
     static bool LoadSound(const std::string &name, const std::string &filePath);
     static void PlaySoundEffect(const std::string &name, float volume = 5.0f, float pitch = 1.0f);
     static void PlayLoopingSoundEffect(const std::string &name, float volume = 1.0f,

@@ -4,7 +4,7 @@
 namespace CHEngine
 {
 
-DeleteObjectCommand::DeleteObjectCommand(const std::shared_ptr<::GameScene> &scene, int index)
+DeleteObjectCommand::DeleteObjectCommand(const std::shared_ptr<GameScene> &scene, int index)
     : m_Scene(scene), m_OriginalIndex(index)
 {
     if (m_Scene && index >= 0 && index < (int)m_Scene->GetMapObjects().size())
