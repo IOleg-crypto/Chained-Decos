@@ -42,10 +42,24 @@ bool LevelManager::IsInitialized()
     return s_Instance != nullptr;
 }
 
+LevelManager &LevelManager::Get()
+{
+    return *s_Instance;
+}
+
 void LevelManager::SetActiveScene(std::shared_ptr<CHEngine::Scene> scene)
 {
-    if (s_Instance)
-        s_Instance->InternalSetActiveScene(scene);
+    Get().InternalSetActiveScene(scene);
+}
+
+void LevelManager::SetUIScene(std::shared_ptr<CHEngine::Scene> scene)
+{
+    Get().InternalSetUIScene(scene);
+}
+
+std::shared_ptr<CHEngine::Scene> LevelManager::GetUIScene()
+{
+    return Get().InternalGetUIScene();
 }
 
 bool LevelManager::LoadScene(const std::string &path)
@@ -105,6 +119,12 @@ void LevelManager::Render()
 {
     if (s_Instance)
         s_Instance->InternalRender();
+}
+
+void LevelManager::RenderUI()
+{
+    if (s_Instance)
+        s_Instance->InternalRenderUI();
 }
 
 void LevelManager::LoadEditorMap(const std::string &mapPath)
@@ -207,11 +227,17 @@ void LevelManager::SetPlayer(std::shared_ptr<IPlayer> player)
         s_Instance->InternalSetPlayer(std::move(player));
 }
 
+UISystem &LevelManager::GetUISystem()
+{
+    return Get().InternalGetUISystem();
+}
+
 LevelManager::LevelManager(const LevelManagerConfig &config)
     : m_config(config), m_gameScene(std::make_unique<GameScene>()), m_currentMapPath(""),
       m_playerSpawnZone({0}), m_spawnTexture({0}), m_hasSpawnZone(false),
       m_spawnTextureLoaded(false), m_collisionInitializer(nullptr), m_modelLoader(nullptr),
-      m_renderManager(nullptr), m_player(nullptr), m_menu(nullptr)
+      m_renderManager(nullptr), m_player(nullptr), m_menu(nullptr),
+      m_uiSystem(std::make_unique<UISystem>())
 {
     m_collisionInitializer = std::make_unique<MapCollisionInitializer>(nullptr, nullptr);
 
@@ -469,6 +495,14 @@ void LevelManager::InternalUpdate(float deltaTime)
 void LevelManager::InternalRender()
 {
     // Rendering is handled by RenderingSystem or MapRenderer
+}
+
+void LevelManager::InternalRenderUI()
+{
+    if (m_uiScene && m_uiSystem)
+    {
+        m_uiSystem->Render(m_uiScene->GetRegistry(), GetScreenWidth(), GetScreenHeight());
+    }
 }
 
 // Collision initialization methods
@@ -900,7 +934,7 @@ void LevelManager::InternalPopulateUIFromData(entt::registry &registry,
         // Add Scripting if present
         if (!data.scriptPath.empty())
         {
-            registry.emplace<CHEngine::LuaScriptComponent>(entity, data.scriptPath, false);
+            registry.emplace<CHEngine::CSharpScriptComponent>(entity, data.scriptPath, false);
         }
     }
 }
@@ -934,7 +968,7 @@ void LevelManager::InternalRefreshMapEntities()
 
         if (!data.scriptPath.empty())
         {
-            registry.emplace<CHEngine::LuaScriptComponent>(entity, data.scriptPath, false);
+            registry.emplace<CHEngine::CSharpScriptComponent>(entity, data.scriptPath, false);
         }
 
         // 4. Add RenderComponent for Visibility in Runtime
@@ -985,6 +1019,17 @@ void LevelManager::InternalRefreshMapEntities()
                     rc.modelName = primitiveName;
                     hasRender = true;
                 }
+            }
+        }
+
+        // 4a. Handle Textures
+        if (!data.texturePath.empty())
+        {
+            auto &textures = m_gameScene->GetMapTextures();
+            if (textures.count(data.texturePath))
+            {
+                rc.texture = const_cast<Texture2D *>(&textures.at(data.texturePath));
+                rc.tiling = data.tiling;
             }
         }
 

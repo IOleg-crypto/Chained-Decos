@@ -1,7 +1,6 @@
-#ifndef CONSOLEPANEL_H
-#define CONSOLEPANEL_H
-
-#include <cstdint> // Required for uint8_t
+#pragma once
+#include "editor/panels/EditorPanel.h"
+#include <cstdint>
 #include <deque>
 #include <string>
 
@@ -23,7 +22,7 @@ struct LogMessage
 /**
  * @brief Panel for displaying engine and editor logs
  */
-class ConsolePanel
+class ConsolePanel : public EditorPanel
 {
 public:
     ConsolePanel();
@@ -31,18 +30,13 @@ public:
 
     // --- Panel Lifecycle ---
 public:
-    void OnImGuiRender();
+    virtual void OnImGuiRender() override;
 
     // --- Logging API ---
 public:
     void Log(const std::string &message, LogMessage::Level level = LogMessage::Level::Info);
     void Clear();
     static void AddLog(const char *message, LogMessage::Level level = LogMessage::Level::Info);
-
-    // --- Configuration ---
-public:
-    bool IsVisible() const;
-    void SetVisible(bool visible);
 
     // --- Member Variables ---
 private:
@@ -54,9 +48,7 @@ private:
     bool m_ShowInfo = true;
     bool m_ShowWarnings = true;
     bool m_ShowErrors = true;
-    bool m_isVisible = true;
 
     char m_InputBuffer[256] = {0};
 };
 } // namespace CHEngine
-#endif

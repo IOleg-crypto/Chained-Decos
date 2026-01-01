@@ -22,20 +22,6 @@ ConsolePanel::~ConsolePanel()
 }
 
 // =========================================================================
-// Configuration
-// =========================================================================
-
-bool ConsolePanel::IsVisible() const
-{
-    return m_isVisible;
-}
-
-void ConsolePanel::SetVisible(bool visible)
-{
-    m_isVisible = visible;
-}
-
-// =========================================================================
 // Logging API
 // =========================================================================
 
@@ -94,3 +80,4 @@ void ConsolePanel::Clear()
     m_Messages.clear();
 }
 } // namespace CHEngine
+Riverside : cleaned up old isVisible getters / setters

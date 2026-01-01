@@ -26,9 +26,8 @@ enum class MapObjectType : uint8_t
 
 enum class SceneType : uint8_t
 {
-    LEVEL_3D = 0, // Standard map with geometry
-    UI_MENU = 1,  // UI-focused scene (e.g. Main Menu)
-    EMPTY = 2     // Blank slate
+    Game = 0, // 3D world scene (was LEVEL_3D)
+    UI = 1    // UI scene (was UI_MENU)
 };
 
 struct ModelInfo

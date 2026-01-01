@@ -45,19 +45,16 @@ private:
 
     // --- Member Variables ---
 private:
-    std::function<void(const std::string &name, const std::string &location)> m_OnCreateProject;
-    std::function<void(const std::string &path)> m_OnOpenProject;
+    EditorProjectActions *m_ProjectActions = nullptr;
 
     std::vector<std::string> m_RecentProjects;
 
     // UI State
-    bool m_Visible = true;
     bool m_ShowCreateDialog = false;
     bool m_TriggerOpenCreateDialog = false;
     char m_ProjectNameBuffer[256] = "MyProject";
     char m_ProjectLocationBuffer[512] = "";
 };
-
 } // namespace CHEngine
 
 #endif // PROJECTBROWSERPANEL_H
