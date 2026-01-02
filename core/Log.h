@@ -1,5 +1,5 @@
-#ifndef LOG_H
-#define LOG_H
+﻿#ifndef CD_CORE_LOG_H
+#define CD_CORE_LOG_H
 
 #include <raylib.h>
 #include <string>
@@ -37,6 +37,10 @@ static inline const char *ConvertArg(const std::string &arg)
 class Log
 {
 public:
+    static void Init()
+    {
+    } // Dummy for compatibility with Hazel-style entry point
+
     // Core logging functions
     template <typename... Args> static void CoreTrace(const char *format, Args... args)
     {
@@ -66,30 +70,30 @@ public:
     // Client logging functions
     template <typename... Args> static void ClientTrace(const char *format, Args... args)
     {
-        TraceLog(LOG_TRACE, ("[APP] " + std::string(format)).c_str(), ConvertArg(args)...);
+        TraceLog(LOG_TRACE, ("[CLIENT] " + std::string(format)).c_str(), ConvertArg(args)...);
     }
 
     template <typename... Args> static void ClientInfo(const char *format, Args... args)
     {
-        TraceLog(LOG_INFO, ("[APP] " + std::string(format)).c_str(), ConvertArg(args)...);
+        TraceLog(LOG_INFO, ("[CLIENT] " + std::string(format)).c_str(), ConvertArg(args)...);
     }
 
     template <typename... Args> static void ClientWarn(const char *format, Args... args)
     {
-        TraceLog(LOG_WARNING, ("[APP] " + std::string(format)).c_str(), ConvertArg(args)...);
+        TraceLog(LOG_WARNING, ("[CLIENT] " + std::string(format)).c_str(), ConvertArg(args)...);
     }
 
     template <typename... Args> static void ClientError(const char *format, Args... args)
     {
-        TraceLog(LOG_ERROR, ("[APP] " + std::string(format)).c_str(), ConvertArg(args)...);
+        TraceLog(LOG_ERROR, ("[CLIENT] " + std::string(format)).c_str(), ConvertArg(args)...);
     }
 
     template <typename... Args> static void ClientFatal(const char *format, Args... args)
     {
-        TraceLog(LOG_FATAL, ("[APP] " + std::string(format)).c_str(), ConvertArg(args)...);
+        TraceLog(LOG_FATAL, ("[CLIENT] " + std::string(format)).c_str(), ConvertArg(args)...);
     }
 };
 
 } // namespace CHEngine
 
-#endif // LOG_H
+#endif // CD_CORE_LOG_H

@@ -1,8 +1,8 @@
-#include "core/Log.h"
+#include "core/log.h"
 #include "scene/core/Entity.h"
 #include "scene/core/Scene.h"
-#include "scene/ecs/components/RenderComponent.h"
-#include "scene/ecs/components/TransformComponent.h"
+#include "scene/ecs/components/render_component.h"
+#include "scene/ecs/components/transform_component.h"
 
 using namespace CHEngine;
 

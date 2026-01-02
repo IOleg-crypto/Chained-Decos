@@ -1,5 +1,5 @@
-#ifndef SCENE_H
-#define SCENE_H
+﻿#ifndef CD_SCENE_CORE_SCENE_H
+#define CD_SCENE_CORE_SCENE_H
 
 #include <entt/entt.hpp>
 #include <string>
@@ -61,4 +61,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // SCENE_H
+#endif // CD_SCENE_CORE_SCENE_H

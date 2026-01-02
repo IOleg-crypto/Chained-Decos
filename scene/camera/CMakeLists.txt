@@ -1,7 +1,7 @@
 set(CAMERA_SOURCES
-    CameraController.h
-    CameraController.cpp
-    ICameraSensitivityController.h
+    camera_controller.h
+    camera_controller.cpp
+    i_camera_sensitivity_controller.h
 )
 
 add_library(cameracontroller STATIC ${CAMERA_SOURCES})

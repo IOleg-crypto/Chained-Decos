@@ -1,5 +1,6 @@
-#include "World.h"
-#include "core/Log.h"
+﻿#include "core/log.h"
+#include "world.h"
+#include "core/log.h"
 #include <algorithm>
 
 static std::unique_ptr<WorldManager> s_Instance = nullptr;
@@ -151,3 +152,5 @@ void WorldManager::DrawDebugBounds() const
         DrawBoundingBox(groundBox, BLUE);
     }
 }
+#include "core/log.h"
+

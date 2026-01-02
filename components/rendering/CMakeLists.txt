@@ -2,10 +2,9 @@ cmake_minimum_required(VERSION 3.20)
 
 # Rendering server
 set(RENDER_SOURCES
-    core/RenderManager.cpp
-    shader/ShaderManager.cpp
-    utils/RenderUtils.cpp
-    helpers/ImGuiHelper.cpp
+    shader/shader_manager.cpp
+    utils/render_utils.cpp
+    helpers/imgui_helper.cpp
 )
 
 add_library(render STATIC ${RENDER_SOURCES})

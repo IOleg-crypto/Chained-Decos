@@ -8,9 +8,6 @@ set(UNIT_TEST_SOURCES
 )
 
 set(INTEGRATION_TEST_SOURCES
-    # game/playerTest.cpp - DISABLED (legacy Player class removed)
-    # integration/GameIntegrationTest.cpp - DISABLED (legacy Menu class removed)
-    integration/SkyboxTest.cpp
     integration/EditorInputTest.cpp
 )
 

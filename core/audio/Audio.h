@@ -1,5 +1,5 @@
-#ifndef AUDIO_H
-#define AUDIO_H
+﻿#ifndef CD_CORE_AUDIO_AUDIO_H
+#define CD_CORE_AUDIO_AUDIO_H
 
 #include <string>
 
@@ -33,4 +33,4 @@ public:
 
 } // namespace CHEngine
 
-#endif // AUDIO_H
+#endif // CD_CORE_AUDIO_AUDIO_H

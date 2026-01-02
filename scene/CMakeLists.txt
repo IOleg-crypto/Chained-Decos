@@ -9,29 +9,24 @@ add_subdirectory(ecs)
 
 # Scene Core Library (Hazel-style Scene/Entity)
 add_library(scene_core STATIC 
-    core/Scene.cpp 
-    core/Scene.h 
-    core/Entity.cpp 
-    core/Entity.h
-    core/SceneSerializer.cpp
-    core/SceneSerializer.h
-    core/SceneManager.cpp
-    core/SceneManager.h
-    MapManager.cpp
-    MapManager.h
+    core/scene.cpp 
+    core/scene.h 
+    core/entity.cpp 
+    core/entity.h
+    core/scene_serializer.cpp
+    core/scene_serializer.h
+    core/scene_manager.cpp
+    core/scene_manager.h
 )
 target_link_libraries(scene_core PUBLIC 
     raylib 
     EnTT::EnTT 
     yaml-cpp
     nlohmann_json::nlohmann_json
-    sol2::sol2
-    liblua
 )
 target_include_directories(scene_core PUBLIC 
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/include/json/include
-    ${lua_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 

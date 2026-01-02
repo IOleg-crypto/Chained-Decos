@@ -1,6 +1,7 @@
-#include "Buffer.h"
-#include "OpenGLBuffer.h"
-#include "RendererAPI.h"
+﻿#include "core/log.h"
+#include "buffer.h"
+#include "opengl_buffer.h"
+#include "renderer_api.h"
 #include "core/Base.h"
 
 namespace CHEngine
@@ -52,3 +53,5 @@ std::shared_ptr<IndexBuffer> IndexBuffer::Create(uint32_t *indices, uint32_t cou
 }
 
 } // namespace CHEngine
+#include "core/log.h"
+

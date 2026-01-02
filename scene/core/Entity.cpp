@@ -1,6 +1,7 @@
-#include "Entity.h"
-#include "Scene.h"
-#include "core/Log.h"
+#include "entity.h"
+#include "core/log.h"
+#include "scene.h"
+
 
 namespace CHEngine
 {
