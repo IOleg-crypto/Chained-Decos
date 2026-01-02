@@ -1,6 +1,6 @@
 set(GAME_SOURCES
-    RuntimeLayer.cpp
-    RuntimeLayer.h
+    runtime_layer.cpp
+    runtime_layer.h
     logic/RuntimeInitializer.cpp
     logic/RuntimeInitializer.h
 )
@@ -44,7 +44,6 @@ target_link_libraries(RuntimeLib
         render
         collision
         audio
-        input
         events
         font_resources
         texture_resources
@@ -53,9 +52,9 @@ target_link_libraries(RuntimeLib
 
 # Standalone Runtime Executable
 add_executable(Runtime 
-    RuntimeMain.cpp
-    RuntimeApplication.cpp 
-    RuntimeApplication.h
+    runtime_main.cpp
+    runtime_application.cpp 
+    runtime_application.h
 )
 
 target_link_libraries(Runtime

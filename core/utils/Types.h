@@ -1,5 +1,5 @@
-#ifndef ENGINE_TYPES_H
-#define ENGINE_TYPES_H
+﻿#ifndef CD_CORE_UTILS_TYPES_H
+#define CD_CORE_UTILS_TYPES_H
 
 #include <cstdint>
 #include <raylib.h>
@@ -28,7 +28,7 @@ struct EngineConfig
 
 } // namespace Core
 
-#endif // ENGINE_TYPES_H
+#endif // CD_CORE_UTILS_TYPES_H
 
 
 

@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.20)
 add_subdirectory(rendering)
 add_subdirectory(physics)
 add_subdirectory(audio)
-add_subdirectory(input)
 
 # Servers interface library
 add_library(servers INTERFACE)
@@ -15,5 +14,4 @@ target_link_libraries(servers
         physics_collision
         physics_dynamics
         audio
-        input
 )

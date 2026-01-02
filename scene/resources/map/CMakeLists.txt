@@ -1,23 +1,6 @@
 set(MAP_SOURCES
-    SceneLoader.cpp
-    SceneLoader.h
-    GameScene.cpp
-    GameScene.h
-    MapData.h
-    MapService.cpp
-    MapService.h
-    SceneSerializer.cpp
-    SceneSerializer.h
-    SceneMetadata.cpp
-    SceneMetadata.h
-    MapObjectConverter.cpp
-    MapObjectConverter.h
-    ISceneFileOperations.h
-    IMapMetadataManager.h
-    MapRenderer.cpp
-    MapRenderer.h
-    Skybox.cpp
-    Skybox.h
+    scene_metadata.cpp
+    scene_metadata.h
 )
 
 add_library(map STATIC ${MAP_SOURCES})
@@ -28,13 +11,8 @@ target_include_directories(map
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include/json/include
-        ${lua_SOURCE_DIR}/src
 )
 
-
-target_link_libraries(map PUBLIC raylib nlohmann_json config render sol2::sol2)
+target_link_libraries(map PUBLIC raylib nlohmann_json config)
 
 set_target_properties(map PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-
-

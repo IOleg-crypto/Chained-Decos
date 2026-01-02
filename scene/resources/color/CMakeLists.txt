@@ -1,6 +1,6 @@
 set(COLOR_SOURCES
-    ColorParser.cpp
-    ColorParser.h
+    color_parser.cpp
+    color_parser.h
 )
 
 add_library(color STATIC ${COLOR_SOURCES})

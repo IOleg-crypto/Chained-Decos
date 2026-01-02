@@ -1,14 +1,13 @@
 set(COLLISION_SOURCES
-    core/CollisionManager.cpp
-    core/CollisionManager.h
-    interfaces/ICollisionManager.h
-    colsystem/CollisionSystem.cpp
-    colsystem/CollisionSystem.h
-    structures/CollisionStructures.cpp
-    structures/CollisionStructures.h
-    structures/CollisionComponent.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/debug/CollisionDebugRenderer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/debug/CollisionDebugRenderer.h
+    core/collision_manager.cpp
+    core/collision_manager.h
+    colsystem/collision_system.cpp
+    colsystem/collision_system.h
+    structures/collision_structures.cpp
+    structures/collision_structures.h
+    structures/collision_component.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/collision_debug_renderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/collision_debug_renderer.h
 )
 
 add_library(collision STATIC ${COLLISION_SOURCES})

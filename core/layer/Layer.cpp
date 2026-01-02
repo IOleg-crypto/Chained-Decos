@@ -1,4 +1,4 @@
-#include "core/layer/Layer.h"
+#include "core/layer/layer.h"
 
 namespace CHEngine
 {
