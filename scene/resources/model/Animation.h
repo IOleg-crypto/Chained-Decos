@@ -1,7 +1,7 @@
+﻿//
 //
-//
-#ifndef ANIMATION_H
-#define ANIMATION_H
+#ifndef CD_SCENE_RESOURCES_MODEL_ANIMATION_H
+#define CD_SCENE_RESOURCES_MODEL_ANIMATION_H
 
 #include <raylib.h>
 #include <string>
@@ -24,7 +24,4 @@ private:
     ModelAnimation *m_modelAnimations;
 };
 
-#endif /* ANIMATION_H */
-
-
-
+#endif /* CD_ANIMATION_H */

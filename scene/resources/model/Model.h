@@ -1,16 +1,16 @@
-//
+﻿//
 // Created by I#Oleg
 //
 
-#ifndef MODEL_H
-#define MODEL_H
+#ifndef CD_SCENE_RESOURCES_MODEL_MODEL_H
+#define CD_SCENE_RESOURCES_MODEL_MODEL_H
 
 #include "Animation.h"
-#include "JsonParser.h"
-#include "ModelCache.h"
-#include "ModelConfig.h"
-#include "ModelInstance.h"
-#include "interfaces/IModelLoader.h"
+#include "interfaces/i_model_loader.h"
+#include "json_parser.h"
+#include "model_cache.h"
+#include "model_config.h"
+#include "model_instance.h"
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <raylib.h>
@@ -19,10 +19,18 @@
 #include <unordered_map>
 #include <vector>
 
+
 using json = nlohmann::json;
 
 namespace CHEngine
 {
+
+// Information about a model file found on disk
+struct ModelResourceInfo
+{
+    std::string name;
+    std::string path;
+};
 
 // Model loader with caching and statistics
 class ModelLoader
@@ -177,4 +185,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // MODEL_H
+#endif // CD_SCENE_RESOURCES_MODEL_MODEL_H

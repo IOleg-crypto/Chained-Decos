@@ -1,5 +1,5 @@
-#ifndef EDITOR_CONTEXT_H
-#define EDITOR_CONTEXT_H
+﻿#ifndef CD_EDITOR_CORE_EDITORCONTEXT_H
+#define CD_EDITOR_CORE_EDITORCONTEXT_H
 
 #include <memory>
 #include <string>
@@ -7,9 +7,9 @@
 
 #include <entt/entt.hpp>
 
-#include "editor/EditorTypes.h"
-#include "scene/camera/CameraController.h"
-#include "scene/resources/map/SceneLoader.h"
+#include "editor/editor_types.h"
+#include "scene/camera/camera_controller.h"
+#include "scene/resources/map/scene_loader.h"
 #include "scene/resources/map/Skybox.h"
 
 // EditorContext - Central state management for the editor
@@ -84,4 +84,4 @@ private:
     entt::registry &m_ecsRegistry;
 };
 
-#endif // EDITOR_CONTEXT_H
+#endif // CD_EDITOR_CORE_EDITORCONTEXT_H

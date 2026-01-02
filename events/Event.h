@@ -1,5 +1,5 @@
-#ifndef EVENT_H
-#define EVENT_H
+﻿#ifndef CD_EVENTS_EVENT_H
+#define CD_EVENTS_EVENT_H
 
 #include <cstdint>
 #include <iostream>
@@ -109,4 +109,4 @@ std::ostream &operator<<(std::ostream &os, const Event &e);
 
 } // namespace CHEngine
 
-#endif // EVENT_H
+#endif // CD_EVENTS_EVENT_H

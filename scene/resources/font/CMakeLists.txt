@@ -1,6 +1,6 @@
 add_library(font_resources STATIC
-    FontService.cpp
-    FontService.h
+    font_service.cpp
+    font_service.h
 )
 
 target_include_directories(font_resources PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

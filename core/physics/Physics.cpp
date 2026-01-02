@@ -1,7 +1,7 @@
 #ifndef PHYSICS_CPP
 #define PHYSICS_CPP
-#include "Physics.h"
-#include "components/physics/collision/core/CollisionManager.h"
+#include "physics.h"
+#include "components/physics/collision/core/collision_manager.h"
 #endif
 
 using namespace CHEngine;

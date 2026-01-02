@@ -1,5 +1,5 @@
-#ifndef CHENGINE_ECS_ENTITY_H
-#define CHENGINE_ECS_ENTITY_H
+﻿#ifndef CD_SCENE_ECS_ENTITY_H
+#define CD_SCENE_ECS_ENTITY_H
 
 #include <cstdint>
 
@@ -11,4 +11,4 @@ const EntityID MAX_ENTITIES = 10000;
 const EntityID NULL_ENTITY = 0xFFFFFFFF;
 
 } // namespace ECS
-#endif // ENTITY_H
+#endif // CD_SCENE_ECS_ENTITY_H

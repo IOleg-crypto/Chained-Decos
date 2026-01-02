@@ -1,7 +1,7 @@
-#ifndef LAYER_H
-#define LAYER_H
+﻿#ifndef CD_CORE_LAYER_LAYER_H
+#define CD_CORE_LAYER_LAYER_H
 
-#include "events/Event.h"
+#include "events/event.h"
 #include <string>
 
 namespace CHEngine
@@ -54,4 +54,4 @@ protected:
 
 } // namespace CHEngine
 
-#endif // LAYER_H
+#endif // CD_CORE_LAYER_LAYER_H

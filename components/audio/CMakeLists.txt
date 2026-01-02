@@ -1,7 +1,6 @@
 set(AUDIO_SOURCES
-    core/AudioManager.cpp
-    core/AudioManager.h
-    interfaces/IAudioManager.h
+    core/audio_manager.cpp
+    core/audio_manager.h
 )
 
 add_library(audio STATIC ${AUDIO_SOURCES})
