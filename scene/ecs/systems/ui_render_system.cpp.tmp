@@ -1,0 +1,117 @@
+#include "ui_render_system.h"
+#include "core/application/application.h"
+#include "core/scripting/script_manager.h"
+#include "events/ui_event_registry.h"
+#include "scene/ecs/components/utility_components.h"
+#include "scene/ecs/components/player_component.h"
+#include "scene/ecs/components/transform_component.h"
+#include "scene/resources/font/font_service.h"
+#include "scene/resources/texture/texture_service.h"
+#include <imgui.h>
+#include <raymath.h>
+#include <string>
+#include <algorithm>
+
+namespace CHEngine
+{
+void UIRenderSystem::RenderHUD(entt::registry &registry, int screenWidth, int screenHeight)
+{
+    auto view = registry.view<PlayerComponent, TransformComponent>();
+
+    for (auto entity : view)
+    {
+        auto &playerComp = registry.get<PlayerComponent>(entity);
+        
+        int hours = (int)playerComp.runTimer / 3600;
+        int minutes = ((int)playerComp.runTimer % 3600) / 60;
+        int seconds = (int)playerComp.runTimer % 60;
+
+        // UI Layout Constants
+        const float margin = 30.0f;
+        const float fontSize = 24.0f;
+        const float spacing = 1.0f;
+        const Color accentColor = WHITE;
+        const Color shadowColor = ColorAlpha(BLACK, 0.5f);
+        const Vector2 shadowOffset = {1.5f, 1.5f};
+        
+        Font hudFont = FontService::GetFont("Orbitron"); // Or default
+        bool fontLoaded = (hudFont.id != 0);
+
+        // Height Text
+        std::string heightStr = std::to_string((int)playerComp.maxHeight) + "m";
+        const char *heightText = heightStr.c_str();
+        Vector2 heightTextSize = fontLoaded ? MeasureTextEx(hudFont, heightText, fontSize, spacing)
+                                            : Vector2{(float)MeasureText(heightText, (int)fontSize), fontSize};
+
+        // Draw Height
+        if (fontLoaded)
+        {
+            DrawTextEx(hudFont, heightText, {margin + shadowOffset.x, margin + shadowOffset.y},
+                       fontSize, spacing, shadowColor);
+            DrawTextEx(hudFont, heightText, {margin, margin}, fontSize, spacing, accentColor);
+        }
+        else
+        {
+            DrawText(heightText, (int)margin + 2, (int)margin + 2, (int)fontSize, BLACK);
+            DrawText(heightText, (int)margin, (int)margin, (int)fontSize, WHITE);
+        }
+
+        // Timer Icon & Text
+        float timerX = margin + heightTextSize.x + 25.0f;
+
+        // Clock Icon
+        DrawCircleLines((int)timerX + 8, (int)margin + 12, 7, WHITE);
+        DrawLine((int)timerX + 8, (int)margin + 12, (int)timerX + 8, (int)margin + 8, WHITE);
+        DrawLine((int)timerX + 8, (int)margin + 12, (int)timerX + 11, (int)margin + 12, WHITE);
+
+        const char *timerText = (hours > 0) ? TextFormat("%dh %dm %ds", hours, minutes, seconds)
+                                            : TextFormat("%dm %ds", minutes, seconds);
+
+        if (fontLoaded)
+        {
+            DrawTextEx(hudFont, timerText,
+                       {timerX + 22.0f + shadowOffset.x, margin + shadowOffset.y}, fontSize,
+                       spacing, shadowColor);
+            DrawTextEx(hudFont, timerText, {timerX + 22.0f, margin}, fontSize, spacing,
+                       accentColor);
+        }
+        else
+        {
+            DrawText(timerText, (int)timerX + 24, (int)margin + 2, (int)fontSize, BLACK);
+            DrawText(timerText, (int)timerX + 22, (int)margin, (int)fontSize, WHITE);
+        }
+
+        // Vertical Height Meter
+        float meterX = margin + 5.0f;
+        float meterY = margin + 45.0f;
+        float meterHeight = 120.0f;
+        float meterWidth = 2.0f;
+
+        DrawRectangle((int)meterX, (int)meterY, (int)meterWidth, (int)meterHeight, ColorAlpha(WHITE, 0.5f));
+        for (int i = 0; i <= 4; i++)
+        {
+            float notchY = meterY + (meterHeight * (i / 4.0f));
+            DrawRectangle((int)meterX, (int)notchY, 6, 1, ColorAlpha(WHITE, 0.5f));
+        }
+        float markerPos = meterY + meterHeight * 0.2f;
+        DrawTriangle({meterX + 8, markerPos - 4}, {meterX + 8, markerPos + 4}, {meterX + 4, markerPos}, WHITE);
+
+        // Input Tips
+        const char *tipText = "[F] Respawn";
+        float tipFontSize = 18.0f;
+        float height = (float)screenHeight;
+        if (fontLoaded)
+        {
+            DrawTextEx(hudFont, tipText,
+                       {margin + shadowOffset.x, height - margin - tipFontSize + shadowOffset.y},
+                       tipFontSize, spacing, shadowColor);
+            DrawTextEx(hudFont, tipText, {margin, height - margin - tipFontSize}, tipFontSize,
+                       spacing, ColorAlpha(WHITE, 0.7f));
+        }
+        else
+        {
+            DrawText(tipText, (int)margin, (int)(height - margin - 20), 20, ColorAlpha(WHITE, 0.6f));
+        }
+    }
+}
+// ... rest of UIRenderSystem.cpp ...

@@ -1,5 +1,5 @@
-#ifndef SHADER_H
-#define SHADER_H
+﻿#ifndef CD_CORE_RENDERER_SHADER_H
+#define CD_CORE_RENDERER_SHADER_H
 
 #include <memory>
 #include <raylib.h>
@@ -50,4 +50,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // SHADER_H
+#endif // CD_CORE_RENDERER_SHADER_H

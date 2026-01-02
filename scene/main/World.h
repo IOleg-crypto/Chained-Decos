@@ -1,6 +1,5 @@
 #pragma once
 
-#include "IWorldManager.h"
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>

@@ -1,6 +1,7 @@
-#include "Shader.h"
-#include "OpenGLShader.h"
-#include "RendererAPI.h"
+﻿#include "core/log.h"
+#include "shader.h"
+#include "opengl_shader.h"
+#include "renderer_api.h"
 #include "core/Base.h"
 
 namespace CHEngine
@@ -75,3 +76,5 @@ bool ShaderLibrary::Exists(const std::string &name) const
 }
 
 } // namespace CHEngine
+#include "core/log.h"
+

@@ -1,5 +1,5 @@
-#ifndef SKYBOX_H
-#define SKYBOX_H
+﻿#ifndef CD_SCENE_RESOURCES_MAP_SKYBOX_H
+#define CD_SCENE_RESOURCES_MAP_SKYBOX_H
 
 #include "raylib.h"
 #include <string>
@@ -57,4 +57,4 @@ public:
     void UpdateGammaFromConfig();
 };
 
-#endif // SKYBOX_H
+#endif // CD_SCENE_RESOURCES_MAP_SKYBOX_H

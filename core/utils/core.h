@@ -1,10 +1,8 @@
-#ifndef CORE_H
-#define CORE_H
+﻿#ifndef CD_CORE_UTILS_CORE_H
+#define CD_CORE_UTILS_CORE_H
 
 // Core headers - simplified and flattened
-#include "core/application/Application.h"
-#include "core/module/ModuleManager.h"
-#include "events/Event.h"
+#include "core/application/application.h"
+#include "events/event.h"
 
-
-#endif // CORE_H
+#endif // CD_CORE_UTILS_CORE_H

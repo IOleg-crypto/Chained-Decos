@@ -1,8 +1,8 @@
 set(DYNAMICS_SOURCES
-    components/PhysicsComponent.cpp
-    components/PhysicsComponent.h
-    components/SurfaceComponent.h
-    components/SurfaceComponent.cpp
+    components/physics_component.cpp
+    components/physics_component.h
+    components/surface_component.h
+    components/surface_component.cpp
 )
 
 add_library(physics STATIC ${DYNAMICS_SOURCES})

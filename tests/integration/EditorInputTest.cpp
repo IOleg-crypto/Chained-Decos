@@ -1,6 +1,6 @@
-#include "core/application/Application.h"
+#include "core/application/application.h"
 #include "core/window/Window.h"
-#include "editor/EditorLayer.h"
+#include "editor/editor_layer.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <raylib.h>

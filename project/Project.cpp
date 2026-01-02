@@ -1,5 +1,5 @@
-#include "Project.h"
-#include "core/Log.h"
+#include "project.h"
+#include "core/log.h"
 #include <fstream>
 
 namespace CHEngine

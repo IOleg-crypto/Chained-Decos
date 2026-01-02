@@ -1,8 +1,8 @@
-#ifndef RUNTIME_INITIALIZER_H
-#define RUNTIME_INITIALIZER_H
+﻿#ifndef CD_RUNTIME_LOGIC_RUNTIMEINITIALIZER_H
+#define CD_RUNTIME_LOGIC_RUNTIMEINITIALIZER_H
 
-#include "scene/core/Entity.h"
-#include "scene/core/Scene.h"
+#include "scene/core/entity.h"
+#include "scene/core/scene.h"
 #include <raylib.h>
 
 
@@ -18,4 +18,4 @@ public:
 };
 } // namespace CHD
 
-#endif // RUNTIME_INITIALIZER_H
+#endif // CD_RUNTIME_LOGIC_RUNTIMEINITIALIZER_H

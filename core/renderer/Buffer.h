@@ -1,5 +1,5 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+﻿#ifndef CD_CORE_RENDERER_BUFFER_H
+#define CD_CORE_RENDERER_BUFFER_H
 
 #include <cstdint>
 #include <memory>
@@ -189,4 +189,4 @@ public:
 
 } // namespace CHEngine
 
-#endif // BUFFER_H
+#endif // CD_CORE_RENDERER_BUFFER_H

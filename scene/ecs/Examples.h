@@ -1,5 +1,5 @@
-#ifndef ECS_EXAMPLES_H
-#define ECS_EXAMPLES_H
+﻿#ifndef CD_SCENE_ECS_EXAMPLES_H
+#define CD_SCENE_ECS_EXAMPLES_H
 
 #include <entt/entt.hpp>
 #include <raylib.h>
@@ -33,4 +33,4 @@ entt::entity CreateStaticObject(entt::registry &registry, Vector3 position, Mode
 } // namespace ECSExamples
 } // namespace CHEngine
 
-#endif // ECS_EXAMPLES_H
+#endif // CD_SCENE_ECS_EXAMPLES_H

@@ -1,7 +1,14 @@
-#ifndef ECS_SYSTEMS_H
-#define ECS_SYSTEMS_H
+﻿#ifndef CD_SCENE_ECS_SYSTEMS_H
+#define CD_SCENE_ECS_SYSTEMS_H
 
-// Legacy systems header - logic moved to RuntimeLayer
-// This file is kept briefly for compatibility during transition
+#include "systems/entity_collision_system.h"
+#include "systems/lifetime_system.h"
+#include "systems/physics_system.h"
+#include "systems/player_system.h"
+#include "systems/render_system.h"
+#include "systems/skybox_system.h"
+#include "systems/ui_render_system.h"
+#include "systems/ui_system.h"
 
-#endif // ECS_SYSTEMS_H
+
+#endif // CD_SCENE_ECS_SYSTEMS_H

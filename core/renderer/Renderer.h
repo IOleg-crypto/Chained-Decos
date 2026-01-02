@@ -1,9 +1,9 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+﻿#ifndef CD_CORE_RENDERER_RENDERER_H
+#define CD_CORE_RENDERER_RENDERER_H
 
-#include "RendererAPI.h"
-#include "Shader.h"
-#include "VertexArray.h"
+#include "renderer_api.h"
+#include "shader.h"
+#include "vertex_array.h"
 #include <memory>
 #include <raylib.h>
 
@@ -39,6 +39,15 @@ public:
     static Camera3D GetCamera();
     static void SetCamera(const Camera3D &camera);
 
+    static void SetBackgroundColor(Color color);
+    static Color GetBackgroundColor();
+
+    static void SetCollisionDebugVisible(bool visible);
+    static bool IsCollisionDebugVisible();
+
+    static void SetDebugInfoVisible(bool visible);
+    static bool IsDebugInfoVisible();
+
     static inline RendererAPI::API GetAPI()
     {
         return RendererAPI::GetAPI();
@@ -50,4 +59,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // RENDERER_H
+#endif // CD_CORE_RENDERER_RENDERER_H

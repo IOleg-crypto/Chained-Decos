@@ -1,5 +1,6 @@
-#include "Animation.h"
-#include "core/Log.h"
+﻿#include "core/log.h"
+#include "animation.h"
+#include "core/log.h"
 
 Animation::Animation()
     : m_animCount(0), m_animIndex(0), m_animCurrentFrame(0), m_modelAnimations(nullptr)
@@ -63,3 +64,5 @@ bool Animation::LoadAnimations(const std::string &path)
     }
     return true;
 }
+#include "core/log.h"
+

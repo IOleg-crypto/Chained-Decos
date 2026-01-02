@@ -1,7 +1,7 @@
-#ifndef EDITOR_EVENTS_H
-#define EDITOR_EVENTS_H
+﻿#ifndef CD_EDITOR_EVENTS_EDITOREVENTS_H
+#define CD_EDITOR_EVENTS_EDITOREVENTS_H
 
-#include "events/Event.h"
+#include "events/event.h"
 #include <string>
 
 namespace CHEngine
@@ -61,4 +61,4 @@ public:
 
 } // namespace CHEngine
 
-#endif // EDITOR_EVENTS_H
+#endif // CD_EDITOR_EVENTS_EDITOREVENTS_H

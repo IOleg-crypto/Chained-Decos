@@ -1,15 +1,14 @@
-#include "RuntimeInitializer.h"
-#include "core/Log.h"
-#include "core/assets/AssetManager.h"
-#include "scene/ecs/ECSRegistry.h"
-#include "scene/ecs/components/PhysicsData.h"
-#include "scene/ecs/components/PlayerComponent.h"
-#include "scene/ecs/components/RenderComponent.h"
-#include "scene/ecs/components/ScriptingComponents.h"
-#include "scene/ecs/components/TransformComponent.h"
-#include "scene/ecs/components/UtilityComponents.h"
-#include "scene/ecs/components/VelocityComponent.h"
-
+﻿#include "RuntimeInitializer.h"
+#include "core/assets/asset_manager.h"
+#include "core/log.h"
+#include "scene/ecs/components/physics_data.h"
+#include "scene/ecs/components/player_component.h"
+#include "scene/ecs/components/render_component.h"
+#include "scene/ecs/components/scripting_components.h"
+#include "scene/ecs/components/transform_component.h"
+#include "scene/ecs/components/utility_components.h"
+#include "scene/ecs/components/velocity_component.h"
+#include "scene/ecs/ecs_registry.h"
 
 using namespace CHEngine;
 

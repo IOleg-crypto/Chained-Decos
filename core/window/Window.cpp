@@ -1,7 +1,8 @@
-#include "Window.h"
+﻿#include "core/log.h"
+#include "window.h"
 #include "core/Base.h"
-#include "core/Log.h"
-#include "events/ApplicationEvent.h"
+#include "core/log.h"
+#include "events/application_event.h"
 #include <glad.h>
 #include <iostream>
 #include <raylib.h>
@@ -146,3 +147,5 @@ bool Window::ShouldClose() const
 }
 
 } // namespace CHEngine
+#include "core/log.h"
+

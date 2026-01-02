@@ -1,5 +1,5 @@
-#ifndef CGUI_HELPERS_H
-#define CGUI_HELPERS_H
+﻿#ifndef CD_SCENE_GUI_HELPERS_CGUIHELPERS_H
+#define CD_SCENE_GUI_HELPERS_CGUIHELPERS_H
 
 #include <imgui.h>
 #include <vector>
@@ -18,7 +18,7 @@ bool CGUICheckbox(const char* label, bool* value, float labelWidth = 180.0f);
 bool CGUIComboBox(const char* label, int* currentIndex, const std::vector<std::string>& options,
                   float labelWidth = 180.0f, float comboWidth = 200.0f);
 
-#endif // CGUI_HELPERS_H
+#endif // CD_SCENE_GUI_HELPERS_CGUIHELPERS_H
 
 
 

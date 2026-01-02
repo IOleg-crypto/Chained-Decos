@@ -1,11 +1,12 @@
-#ifndef APPLICATION_H
-#define APPLICATION_H
+﻿#ifndef CD_CORE_APPLICATION_APPLICATION_H
+#define CD_CORE_APPLICATION_APPLICATION_H
 
-#include "core/Base.h"
-#include "core/layer/LayerStack.h"
-#include "core/window/Window.h"
-#include "events/ApplicationEvent.h"
-#include "events/Event.h"
+#include "core/layer/layer_stack.h"
+#include "core/utils/base.h"
+#include "core/window/window.h"
+#include "events/application_event.h"
+#include "events/event.h"
+
 
 #include <memory>
 
@@ -31,24 +32,6 @@ public:
         m_Running = false;
     }
 
-    bool IsCollisionDebugVisible() const
-    {
-        return m_CollisionDebug;
-    }
-    void SetCollisionDebugVisible(bool visible)
-    {
-        m_CollisionDebug = visible;
-    }
-
-    bool IsDebugInfoVisible() const
-    {
-        return m_DebugInfo;
-    }
-    void SetDebugInfoVisible(bool visible)
-    {
-        m_DebugInfo = visible;
-    }
-
     inline Window &GetWindow()
     {
         return *m_Window;
@@ -71,9 +54,6 @@ private:
     std::vector<Layer *> m_LayerDeletionQueue;
     float m_LastFrameTime = 0.0f;
 
-    bool m_CollisionDebug = false;
-    bool m_DebugInfo = false;
-
 private:
     static Application *s_Instance;
 };
@@ -83,4 +63,4 @@ Application *CreateApplication(int argc, char **argv);
 
 } // namespace CHEngine
 
-#endif // APPLICATION_H
+#endif // CD_CORE_APPLICATION_APPLICATION_H

@@ -1,5 +1,5 @@
-#include "Audio.h"
-#include "components/audio/core/AudioManager.h"
+#include "audio.h"
+#include "components/audio/core/audio_manager.h"
 #include <memory>
 
 namespace CHEngine

@@ -1,12 +1,13 @@
-#include "Renderer.h"
-#include "RendererAPI.h"
-#include "Shader.h"
-#include "VertexArray.h"
-#include "core/Log.h"
+﻿#include "renderer.h"
+#include "core/log.h"
+#include "renderer_api.h"
+#include "shader.h"
+#include "vertex_array.h"
 #include <raylib.h>
 #include <raymath.h>
 #include <rcamera.h>
 #include <rlgl.h>
+
 
 namespace CHEngine
 {
@@ -14,6 +15,9 @@ struct RendererData
 {
     Camera3D SceneCamera;
     std::unique_ptr<RendererAPI> API;
+    Color BackgroundColor = BLACK;
+    bool CollisionDebugVisible = false;
+    bool DebugInfoVisible = false;
 };
 
 static RendererData *s_Data = nullptr;
@@ -130,6 +134,36 @@ Camera3D Renderer::GetCamera()
 void Renderer::SetCamera(const Camera3D &camera)
 {
     s_Data->SceneCamera = camera;
+}
+
+void Renderer::SetBackgroundColor(Color color)
+{
+    s_Data->BackgroundColor = color;
+}
+
+Color Renderer::GetBackgroundColor()
+{
+    return s_Data->BackgroundColor;
+}
+
+void Renderer::SetCollisionDebugVisible(bool visible)
+{
+    s_Data->CollisionDebugVisible = visible;
+}
+
+bool Renderer::IsCollisionDebugVisible()
+{
+    return s_Data->CollisionDebugVisible;
+}
+
+void Renderer::SetDebugInfoVisible(bool visible)
+{
+    s_Data->DebugInfoVisible = visible;
+}
+
+bool Renderer::IsDebugInfoVisible()
+{
+    return s_Data->DebugInfoVisible;
 }
 
 } // namespace CHEngine

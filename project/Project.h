@@ -1,5 +1,5 @@
-#ifndef PROJECT_H
-#define PROJECT_H
+﻿#ifndef CD_PROJECT_PROJECT_H
+#define CD_PROJECT_PROJECT_H
 
 #include <filesystem>
 #include <memory>
@@ -105,4 +105,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // PROJECT_H
+#endif // CD_PROJECT_PROJECT_H

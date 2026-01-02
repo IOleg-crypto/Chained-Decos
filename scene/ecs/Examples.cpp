@@ -1,12 +1,12 @@
 #include "scene/ecs/Examples.h"
-#include "scene/ecs/components/AudioComponent.h"
-#include "scene/ecs/components/CameraComponent.h"
-#include "scene/ecs/components/PhysicsData.h"
-#include "scene/ecs/components/PlayerComponent.h"
-#include "scene/ecs/components/RenderComponent.h"
-#include "scene/ecs/components/TransformComponent.h"
-#include "scene/ecs/components/UtilityComponents.h"
-#include "scene/ecs/components/VelocityComponent.h"
+#include "scene/ecs/components/audio_component.h"
+#include "scene/ecs/components/camera_component.h"
+#include "scene/ecs/components/physics_data.h"
+#include "scene/ecs/components/player_component.h"
+#include "scene/ecs/components/render_component.h"
+#include "scene/ecs/components/transform_component.h"
+#include "scene/ecs/components/utility_components.h"
+#include "scene/ecs/components/velocity_component.h"
 #include <raymath.h>
 
 

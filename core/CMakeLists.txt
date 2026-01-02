@@ -6,58 +6,56 @@ add_subdirectory(config)
 
 # Core library - base systems, events, and module management
 set(CORE_SOURCES
-    application/Application.cpp
-    application/Application.h
-    window/Window.cpp
-    window/Window.h
-    layer/Layer.cpp
-    layer/Layer.h
-    layer/LayerStack.cpp
-    layer/LayerStack.h
-    module/ModuleManager.cpp
-    module/ModuleManager.h
-    utils/Base.h
-    utils/Types.h
+    application/application.cpp
+    application/application.h
+    window/window.cpp
+    window/window.h
+    layer/layer.cpp
+    layer/layer.h
+    layer/layer_stack.cpp
+    layer/layer_stack.h
+    utils/base.h
+    utils/types.h
     utils/core.h
-    imgui/core/GuiElement.h
-    imgui/core/GuiManager.h
-    imgui/core/GuiManager.cpp
-    imgui/ImGuiLayer.h
-    imgui/ImGuiLayer.cpp
-    imgui/components/GuiButton.h
-    imgui/components/GuiPanel.h
-    scripting/ScriptManagerImpl.cpp
-    scripting/ScriptManager.h
-    scripting/csharp/DotNetHost.cpp
-    scripting/csharp/DotNetHost.h
-    scripting/csharp/ScriptGlue.cpp
-    scripting/csharp/ScriptGlue.h
-    input/Input.h
-    input/Input.cpp
-    renderer/Renderer.cpp
-    renderer/Renderer.h
-    renderer/RendererAPI.cpp
-    renderer/RendererAPI.h
-    renderer/OpenGLRendererAPI.cpp
-    renderer/OpenGLRendererAPI.h
-    renderer/Buffer.cpp
-    renderer/Buffer.h
-    renderer/OpenGLBuffer.cpp
-    renderer/OpenGLBuffer.h
-    renderer/VertexArray.cpp
-    renderer/VertexArray.h
-    renderer/OpenGLVertexArray.cpp
-    renderer/OpenGLVertexArray.h
-    renderer/Shader.cpp
-    renderer/Shader.h
-    renderer/OpenGLShader.cpp
-    renderer/OpenGLShader.h
-    assets/AssetManager.h
-    assets/AssetManager.cpp
-    physics/Physics.cpp
-    physics/Physics.h
-    audio/Audio.cpp
-    audio/Audio.h
+    imgui/core/gui_element.h
+    imgui/core/gui_manager.h
+    imgui/core/gui_manager.cpp
+    imgui/imgui_layer.h
+    imgui/imgui_layer.cpp
+    imgui/components/gui_button.h
+    imgui/components/gui_panel.h
+    scripting/script_manager_impl.cpp
+    scripting/script_manager.h
+    scripting/csharp/dot_net_host.cpp
+    scripting/csharp/dot_net_host.h
+    scripting/csharp/script_glue.cpp
+    scripting/csharp/script_glue.h
+    input/input.h
+    input/input.cpp
+    renderer/renderer.cpp
+    renderer/renderer.h
+    renderer/renderer_api.cpp
+    renderer/renderer_api.h
+    renderer/opengl_renderer_api.cpp
+    renderer/opengl_renderer_api.h
+    renderer/buffer.cpp
+    renderer/buffer.h
+    renderer/opengl_buffer.cpp
+    renderer/opengl_buffer.h
+    renderer/vertex_array.cpp
+    renderer/vertex_array.h
+    renderer/opengl_vertex_array.cpp
+    renderer/opengl_vertex_array.h
+    renderer/shader.cpp
+    renderer/shader.h
+    renderer/opengl_shader.cpp
+    renderer/opengl_shader.h
+    assets/asset_manager.h
+    assets/asset_manager.cpp
+    physics/physics.cpp
+    physics/physics.h
+    audio/audio.cpp
+    audio/audio.h
 )
 
 add_library(core STATIC ${CORE_SOURCES})
@@ -67,7 +65,6 @@ target_include_directories(core
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/core
         ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
-        ${lua_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/include/raylib/src
         ${CMAKE_SOURCE_DIR}/include/raylib/src/external
 )
@@ -80,7 +77,6 @@ target_link_libraries(core
         config
         ecs
         audio
-        input
         render
         collision
         model

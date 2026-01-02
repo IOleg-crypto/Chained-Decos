@@ -2,77 +2,68 @@
 # ChainedEditor - Engine Editor for Chained Decos
 
 set(logic_sources
-    logic/EditorMapManager.cpp
-    logic/EditorMapManager.h
-    logic/EditorSettings.cpp
-    logic/EditorSettings.h
-    logic/EditorSceneManager.cpp
-    logic/EditorSceneManager.h
-    logic/EditorSceneActions.cpp
-    logic/EditorSceneActions.h
-    logic/EditorProjectActions.cpp
-    logic/EditorProjectActions.h
-    logic/EditorEntityFactory.cpp
-    logic/EditorEntityFactory.h
-    logic/EditorInput.cpp
-    logic/EditorInput.h
-    logic/SelectionManager.cpp
-    logic/SelectionManager.h
-    logic/ProjectManager.cpp
-    logic/ProjectManager.h
-    logic/SceneSimulationManager.cpp
-    logic/SceneSimulationManager.h
-    logic/SceneCloner.h
-    logic/PanelManager.h
-    logic/undo/EditorCommand.h
-    logic/undo/CommandHistory.cpp
-    logic/undo/CommandHistory.h
-    logic/undo/TransformCommand.cpp
-    logic/undo/TransformCommand.h
-    logic/undo/AddObjectCommand.cpp
-    logic/undo/AddObjectCommand.h
-    logic/undo/ModifyObjectCommand.h
-    logic/undo/DeleteObjectCommand.cpp
-    logic/undo/DeleteObjectCommand.h
+    logic/editor_settings.cpp
+    logic/editor_settings.h
+    logic/editor_scene_manager.cpp
+    logic/editor_scene_manager.h
+    logic/editor_scene_actions.cpp
+    logic/editor_scene_actions.h
+    logic/editor_project_actions.cpp
+    logic/editor_project_actions.h
+    logic/editor_entity_factory.cpp
+    logic/editor_entity_factory.h
+    logic/editor_input.cpp
+    logic/editor_input.h
+    logic/selection_manager.cpp
+    logic/selection_manager.h
+    logic/project_manager.cpp
+    logic/project_manager.h
+    logic/scene_simulation_manager.cpp
+    logic/scene_simulation_manager.h
+    logic/scene_cloner.h
+    logic/panel_manager.h
+    logic/undo/editor_command.h
+    logic/undo/command_history.cpp
+    logic/undo/command_history.h
 )
 
 set(panels_sources
-    panels/EditorPanel.h
-    panels/HierarchyPanel.cpp
-    panels/HierarchyPanel.h
-    panels/InspectorPanel.cpp
-    panels/InspectorPanel.h
-    panels/ViewportPanel.cpp
-    panels/ViewportPanel.h
-    panels/ConsolePanel.cpp
-    panels/ConsolePanel.h
-    panels/ToolbarPanel.cpp
-    panels/ToolbarPanel.h
-    panels/MenuBarPanel.cpp
-    panels/MenuBarPanel.h
-    panels/ProjectBrowserPanel.cpp
-    panels/ProjectBrowserPanel.h
-    panels/ContentBrowserPanel.cpp
-    panels/ContentBrowserPanel.h
-    utils/EditorGrid.cpp
-    utils/EditorGrid.h
-    utils/ProcessUtils.cpp
-    utils/ProcessUtils.h
-    viewport/ViewportPicking.cpp
-    viewport/ViewportPicking.h
-    viewport/ViewportGizmo.cpp
-    viewport/ViewportGizmo.h
-    viewport/ViewportRenderer.cpp
-    viewport/ViewportRenderer.h
-    camera/EditorCamera.cpp
-    camera/EditorCamera.h
+    panels/editor_panel.h
+    panels/hierarchy_panel.cpp
+    panels/hierarchy_panel.h
+    panels/inspector_panel.cpp
+    panels/inspector_panel.h
+    panels/viewport_panel.cpp
+    panels/viewport_panel.h
+    panels/console_panel.cpp
+    panels/console_panel.h
+    panels/toolbar_panel.cpp
+    panels/toolbar_panel.h
+    panels/menu_bar_panel.cpp
+    panels/menu_bar_panel.h
+    panels/project_browser_panel.cpp
+    panels/project_browser_panel.h
+    panels/content_browser_panel.cpp
+    panels/content_browser_panel.h
+    utils/editor_grid.cpp
+    utils/editor_grid.h
+    utils/process_utils.cpp
+    utils/process_utils.h
+    viewport/viewport_picking.cpp
+    viewport/viewport_picking.h
+    viewport/viewport_gizmo.cpp
+    viewport/viewport_gizmo.h
+    viewport/viewport_renderer.cpp
+    viewport/viewport_renderer.h
+    camera/editor_camera.cpp
+    camera/editor_camera.h
 )
 
 set(editor_sources
-    EditorApplication.cpp
-    EditorApplication.h
-    EditorLayer.cpp
-    EditorLayer.h
+    editor_application.cpp
+    editor_application.h
+    editor_layer.cpp
+    editor_layer.h
 )
 
 add_library(editor_logic STATIC ${logic_sources})

@@ -1,10 +1,11 @@
-#ifndef CHENGINE_CORE_ENTITY_H
-#define CHENGINE_CORE_ENTITY_H
+﻿#ifndef CD_SCENE_CORE_ENTITY_H
+#define CD_SCENE_CORE_ENTITY_H
 
-#include "Scene.h"
-#include "core/Log.h"
+#include "core/log.h"
+#include "scene.h"
 #include <cstdint>
 #include <entt/entt.hpp>
+
 
 namespace CHEngine
 {
@@ -97,4 +98,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // ENTITY_H
+#endif // CD_SCENE_CORE_ENTITY_H

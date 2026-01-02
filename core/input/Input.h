@@ -1,5 +1,5 @@
-#ifndef INPUT_H
-#define INPUT_H
+﻿#ifndef CD_CORE_INPUT_INPUT_H
+#define CD_CORE_INPUT_INPUT_H
 
 #include <functional>
 #include <map>
@@ -75,4 +75,4 @@ private:
 };
 } // namespace CHEngine
 
-#endif // INPUT_H
+#endif // CD_CORE_INPUT_INPUT_H

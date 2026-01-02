@@ -1,7 +1,8 @@
+#include "core/log.h"
 
-#include "Model.h"
-#include "JsonParser.h"
-#include "core/Log.h"
+#include "core/log.h"
+#include "json_parser.h"
+#include "model.h"
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -10,11 +11,12 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
-#include <scene/resources/map/SceneLoader.h>
+
+// removed
 #include <string>
 #include <unordered_set>
 
-#include <scene/resources/color/ColorParser.h>
+#include <scene/resources/color/color_parser.h>
 
 namespace CHEngine
 {
@@ -562,7 +564,7 @@ void ModelLoader::InternalDrawAllModels() const
             continue;
         }
 
-        // Debug: Check if model has materials and textures
+        // Debug: Check if model.has materials and textures
         static bool loggedMaterialInfo = false;
         if (!loggedMaterialInfo && modelPtr->materialCount > 0)
         {
@@ -1404,9 +1406,22 @@ std::optional<ModelLoader::LoadResult> ModelLoader::InternalLoadGameModels()
     InternalEnableLOD(true);
     InternalSetSelectiveMode(false);
 
-    CHEngine::SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
-    auto models = mapLoader.LoadModelsFromDirectory(resourcesDir);
+    std::vector<ModelResourceInfo> models;
+    if (std::filesystem::exists(resourcesDir))
+    {
+        for (const auto &entry : std::filesystem::recursive_directory_iterator(resourcesDir))
+        {
+            if (entry.is_regular_file())
+            {
+                std::string ext = entry.path().extension().string();
+                if (ext == ".obj" || ext == ".glb" || ext == ".gltf")
+                {
+                    models.push_back({entry.path().stem().string(), entry.path().string()});
+                }
+            }
+        }
+    }
 
     if (models.empty())
     {
@@ -1427,20 +1442,20 @@ std::optional<ModelLoader::LoadResult> ModelLoader::InternalLoadGameModels()
     auto startTime = std::chrono::steady_clock::now();
 
     // Load each model found in the directory
-    for (const auto &modelInfo : models)
+    for (const auto &modelResource : models)
     {
-        CD_CORE_INFO("[ModelLoader] Loading model: %s from %s", modelInfo.name.c_str(),
-                     modelInfo.path.c_str());
+        CD_CORE_INFO("[ModelLoader] Loading model: %s from %s", modelResource.name.c_str(),
+                     modelResource.path.c_str());
 
-        if (InternalLoadSingleModel(modelInfo.name, modelInfo.path, true))
+        if (InternalLoadSingleModel(modelResource.name, modelResource.path, true))
         {
             result.loadedModels++;
-            CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelInfo.name.c_str());
+            CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelResource.name.c_str());
         }
         else
         {
             result.failedModels++;
-            CD_CORE_WARN("[ModelLoader] Failed to load model: %s", modelInfo.name.c_str());
+            CD_CORE_WARN("[ModelLoader] Failed to load model: %s", modelResource.name.c_str());
         }
     }
 
@@ -1478,9 +1493,22 @@ ModelLoader::InternalLoadGameModelsSelective(const std::vector<std::string> &mod
     InternalEnableLOD(false);
     InternalSetSelectiveMode(true);
 
-    CHEngine::SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
-    auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+    std::vector<ModelResourceInfo> allModels;
+    if (std::filesystem::exists(resourcesDir))
+    {
+        for (const auto &entry : std::filesystem::recursive_directory_iterator(resourcesDir))
+        {
+            if (entry.is_regular_file())
+            {
+                std::string ext = entry.path().extension().string();
+                if (ext == ".obj" || ext == ".glb" || ext == ".gltf")
+                {
+                    allModels.push_back({entry.path().stem().string(), entry.path().string()});
+                }
+            }
+        }
+    }
 
     if (allModels.empty())
     {
@@ -1503,9 +1531,9 @@ ModelLoader::InternalLoadGameModelsSelective(const std::vector<std::string> &mod
     // Load only the models that are in the required list
     for (const auto &modelName : modelNames)
     {
-        auto it =
-            std::find_if(allModels.begin(), allModels.end(),
-                         [&modelName](const ModelInfo &info) { return info.name == modelName; });
+        auto it = std::find_if(allModels.begin(), allModels.end(),
+                               [&modelName](const ModelResourceInfo &info)
+                               { return info.name == modelName; });
 
         if (it != allModels.end())
         {
@@ -1564,9 +1592,22 @@ ModelLoader::InternalLoadGameModelsSelectiveSafe(const std::vector<std::string> 
     InternalEnableLOD(false);
     InternalSetSelectiveMode(true);
 
-    CHEngine::SceneLoader mapLoader;
     std::string resourcesDir = std::string(PROJECT_ROOT_DIR) + "/resources";
-    auto allModels = mapLoader.LoadModelsFromDirectory(resourcesDir);
+    std::vector<ModelResourceInfo> allModels;
+    if (std::filesystem::exists(resourcesDir))
+    {
+        for (const auto &entry : std::filesystem::recursive_directory_iterator(resourcesDir))
+        {
+            if (entry.is_regular_file())
+            {
+                std::string ext = entry.path().extension().string();
+                if (ext == ".obj" || ext == ".glb" || ext == ".gltf")
+                {
+                    allModels.push_back({entry.path().stem().string(), entry.path().string()});
+                }
+            }
+        }
+    }
 
     if (allModels.empty())
     {
@@ -1589,22 +1630,23 @@ ModelLoader::InternalLoadGameModelsSelectiveSafe(const std::vector<std::string> 
     // Use hash set for faster lookup
     std::unordered_set<std::string> modelNameSet(modelNames.begin(), modelNames.end());
 
-    for (const auto &modelInfo : allModels)
+    for (const auto &modelResource : allModels)
     {
-        if (modelNameSet.find(modelInfo.name) != modelNameSet.end())
+        if (modelNameSet.find(modelResource.name) != modelNameSet.end())
         {
-            CD_CORE_INFO("[ModelLoader] Loading required model: %s from %s", modelInfo.name.c_str(),
-                         modelInfo.path.c_str());
+            CD_CORE_INFO("[ModelLoader] Loading required model: %s from %s",
+                         modelResource.name.c_str(), modelResource.path.c_str());
 
-            if (InternalLoadSingleModel(modelInfo.name, modelInfo.path, true))
+            if (InternalLoadSingleModel(modelResource.name, modelResource.path, true))
             {
                 result.loadedModels++;
-                CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s", modelInfo.name.c_str());
+                CD_CORE_INFO("[ModelLoader] Successfully loaded model: %s",
+                             modelResource.name.c_str());
             }
             else
             {
                 result.failedModels++;
-                CD_CORE_WARN("[ModelLoader] Failed to load model: %s", modelInfo.name.c_str());
+                CD_CORE_WARN("[ModelLoader] Failed to load model: %s", modelResource.name.c_str());
             }
         }
     }
@@ -1632,3 +1674,4 @@ ModelLoader::InternalLoadGameModelsSelectiveSafe(const std::vector<std::string> 
 }
 
 } // namespace CHEngine
+#include "core/log.h"

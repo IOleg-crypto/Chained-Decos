@@ -1,9 +1,10 @@
 #pragma once
-#include "core/Log.h"
+#include "core/log.h"
 
 // Platform detection
 #if defined(_WIN32) || defined(_WIN64)
 #define CD_PLATFORM_WINDOWS
+#define CE_PLATFORM_WINDOWS
 #ifdef _WIN64
 #define CD_PLATFORM_WIN64
 #else
@@ -11,11 +12,7 @@
 #endif
 #elif defined(__linux__)
 #define CD_PLATFORM_LINUX
-#elif defined(__APPLE__) || defined(__MACH__)
-#include <TargetConditionals.h>
-#if TARGET_OS_MAC
-#define CD_PLATFORM_MACOS
-#endif
+#define CE_PLATFORM_LINUX
 #else
 #error "Unknown platform!"
 #endif

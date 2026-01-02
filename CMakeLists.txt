@@ -248,20 +248,8 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/nfd/CMakeLists.txt")
     message(STATUS "nfd loaded from submodule")
 endif()
 
-# Lua & sol2 integration
-message(STATUS "Fetching Lua and sol2...")
-
-FetchContent_Declare(
-    lua
-    GIT_REPOSITORY https://github.com/marovira/lua.git
-    GIT_TAG master
-)
-
-FetchContent_Declare(
-    sol2
-    GIT_REPOSITORY https://github.com/ThePhD/sol2.git
-    GIT_TAG develop
-)
+# yaml-cpp integration
+message(STATUS "Fetching yaml-cpp...")
 
 FetchContent_Declare(
     yaml-cpp
@@ -269,9 +257,7 @@ FetchContent_Declare(
     GIT_TAG master
 )
 
-FetchContent_MakeAvailable(lua sol2 yaml-cpp)
-
-# Lua and sol2 are now linked in core/CMakeLists.txt
+FetchContent_MakeAvailable(yaml-cpp)
 
 
 # Install configuration files

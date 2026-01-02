@@ -1,6 +1,7 @@
-#include "Skybox.h"
-#include "core/Log.h"
-#include "core/config/ConfigManager.h"
+﻿#include "core/log.h"
+#include "skybox.h"
+#include "core/log.h"
+#include "core/config/config_manager.h"
 #include "rlImGui/rlImGui.h"
 #include "rlgl.h"
 #include <algorithm>
@@ -495,3 +496,5 @@ float Skybox::GetContrast() const
 {
     return m_contrast;
 }
+#include "core/log.h"
+

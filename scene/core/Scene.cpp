@@ -1,13 +1,12 @@
-#include "Scene.h"
-#include "Entity.h"
-#include "core/Log.h"
-#include "core/scripting/ScriptManager.h"
-#include "scene/core/SceneManager.h"
-#include "scene/ecs/components/TransformComponent.h"
-#include "scene/ecs/components/core/IDComponent.h"
-#include "scene/ecs/components/core/TagComponent.h"
-#include "scene/main/LevelManager.h"
-
+﻿#include "scene.h"
+#include "core/log.h"
+#include "core/scripting/script_manager.h"
+#include "entity.h"
+#include "scene/core/scene_manager.h"
+#include "scene/ecs/components/core/id_component.h"
+#include "scene/ecs/components/core/tag_component.h"
+#include "scene/ecs/components/transform_component.h"
+#include "scene/ecs/systems/physics_system.h"
 
 namespace CHEngine
 {
@@ -91,7 +90,10 @@ void Scene::DestroyEntity(entt::entity entity)
 
 void Scene::OnUpdateRuntime(float deltaTime)
 {
-    // 1. Update Scripts
+    // 1. Update Physics
+    PhysicsSystem::Update(m_Registry, deltaTime);
+
+    // 2. Update Scripts
     if (ScriptManager::IsInitialized())
     {
         ScriptManager::SetActiveRegistry(&m_Registry);
