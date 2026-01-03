@@ -1,10 +1,8 @@
-#ifndef PHYSICS_CPP
-#define PHYSICS_CPP
 #include "physics.h"
 #include "components/physics/collision/core/collision_manager.h"
-#endif
 
-using namespace CHEngine;
+namespace CHEngine
+{
 
 bool Physics::RaycastDown(const Vector3 &origin, float maxDistance, float &hitDistance,
                           Vector3 &hitPoint, Vector3 &hitNormal)
@@ -25,6 +23,8 @@ bool Physics::CheckCollision(const Collision &collider, Vector3 &response)
 void Physics::Render()
 {
     if (!CollisionManager::IsInitialized())
-        return; // Or handle error
+        return;
     CollisionManager::Render();
 }
+
+} // namespace CHEngine

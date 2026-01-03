@@ -1,6 +1,8 @@
 set(COLLISION_SOURCES
     core/collision_manager.cpp
     core/collision_manager.h
+    core/physics.cpp
+    core/physics.h
     colsystem/collision_system.cpp
     colsystem/collision_system.h
     structures/collision_structures.cpp

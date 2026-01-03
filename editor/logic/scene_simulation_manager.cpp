@@ -1,6 +1,6 @@
 #include "scene_simulation_manager.h"
+#include "components/physics/collision/core/physics.h"
 #include "core/application/application.h"
-#include "core/physics/physics.h"
 #include "core/utils/base.h"
 #include "editor/logic/scene_cloner.h"
 #include "editor/utils/process_utils.h"
@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <raylib.h>
+
 
 namespace CHEngine
 {

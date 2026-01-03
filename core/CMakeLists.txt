@@ -24,12 +24,6 @@ set(CORE_SOURCES
     imgui/imgui_layer.cpp
     imgui/components/gui_button.h
     imgui/components/gui_panel.h
-    scripting/script_manager_impl.cpp
-    scripting/script_manager.h
-    scripting/csharp/dot_net_host.cpp
-    scripting/csharp/dot_net_host.h
-    scripting/csharp/script_glue.cpp
-    scripting/csharp/script_glue.h
     input/input.h
     input/input.cpp
     renderer/renderer.cpp
@@ -52,8 +46,6 @@ set(CORE_SOURCES
     renderer/opengl_shader.h
     assets/asset_manager.h
     assets/asset_manager.cpp
-    physics/physics.cpp
-    physics/physics.h
     audio/audio.cpp
     audio/audio.h
 )

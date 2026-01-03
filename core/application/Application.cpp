@@ -5,7 +5,6 @@
 #include "core/input/input.h"
 #include "core/log.h"
 #include "core/renderer/renderer.h"
-#include "core/scripting/script_manager.h"
 #include "rlImGui.h"
 #include "scene/core/scene_manager.h"
 #include "scene/main/world.h"
@@ -34,21 +33,21 @@ Application::Application(const std::string &name)
     CollisionManager::Init();
     ModelLoader::Init();
     Audio::Init();
-    ScriptManager::Init();
+    SceneManager::Init();
     GuiManager::Init();
 
     // Font and Texture services are still needed for now
     FontService::Init();
     TextureService::Init();
 
-    CD_CORE_INFO("Application initialized (Pure ECS Engine Core).");
+    CD_CORE_INFO("Application initialized.");
 }
 
 Application::~Application()
 {
     TextureService::Shutdown();
     FontService::Shutdown();
-    ScriptManager::Shutdown();
+    SceneManager::Shutdown();
     GuiManager::Shutdown();
     Audio::Shutdown();
     ModelLoader::Shutdown();

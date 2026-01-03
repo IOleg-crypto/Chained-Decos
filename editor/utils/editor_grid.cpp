@@ -17,8 +17,8 @@ EditorGrid::~EditorGrid()
 
 void EditorGrid::Init()
 {
-    const char *vsPath = TextFormat("%s/resources/shaders/infinite_grid.vs", PROJECT_ROOT_DIR);
-    const char *fsPath = TextFormat("%s/resources/shaders/infinite_grid.fs", PROJECT_ROOT_DIR);
+    const char *vsPath = PROJECT_ROOT_DIR "/resources/shaders/infinite_grid.vs";
+    const char *fsPath = PROJECT_ROOT_DIR "/resources/shaders/infinite_grid.fs";
 
     m_Shader = LoadShader(vsPath, fsPath);
 

@@ -1,6 +1,5 @@
 #include "ui_render_system.h"
 #include "core/application/application.h"
-#include "core/scripting/script_manager.h"
 #include "events/ui_event_registry.h"
 #include "scene/ecs/components/player_component.h"
 #include "scene/ecs/components/transform_component.h"
@@ -11,7 +10,6 @@
 #include <imgui.h>
 #include <raymath.h>
 #include <string>
-
 
 namespace CHEngine
 {
