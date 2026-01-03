@@ -113,147 +113,137 @@ std::string Project::GetRelativePath(const std::filesystem::path &absolutePath) 
 
 bool Project::CreateDirectoryStructure()
 {
-    try
-    {
-        // Create project root
-        std::filesystem::create_directories(m_ProjectDirectory);
+    std::error_code ec;
 
-        // Create subdirectories
-        std::filesystem::create_directories(GetAssetDirectory());
-        std::filesystem::create_directories(GetAssetDirectory() / "Models");
-        std::filesystem::create_directories(GetAssetDirectory() / "Textures");
-        std::filesystem::create_directories(GetAssetDirectory() / "Audio");
-        std::filesystem::create_directories(GetScriptDirectory());
-        std::filesystem::create_directories(GetSceneDirectory());
-        std::filesystem::create_directories(GetCacheDirectory());
-
-        return true;
-    }
-    catch (const std::exception &e)
+    // Create folders using std::error_code to avoid exceptions
+    std::filesystem::create_directories(m_ProjectDirectory, ec);
+    if (ec)
     {
-        CD_CORE_ERROR("[Project] Exception creating directories: %s", e.what());
+        CD_CORE_ERROR("[Project] Error creating root: %s", ec.message().c_str());
         return false;
     }
+
+    std::filesystem::create_directories(GetAssetDirectory(), ec);
+    std::filesystem::create_directories(GetAssetDirectory() / "Models", ec);
+    std::filesystem::create_directories(GetAssetDirectory() / "Textures", ec);
+    std::filesystem::create_directories(GetAssetDirectory() / "Audio", ec);
+    std::filesystem::create_directories(GetScriptDirectory(), ec);
+    std::filesystem::create_directories(GetSceneDirectory(), ec);
+    std::filesystem::create_directories(GetCacheDirectory(), ec);
+
+    if (ec)
+    {
+        CD_CORE_ERROR("[Project] Exception creating directories: %s", ec.message().c_str());
+        return false;
+    }
+    return true;
 }
 
 bool Project::SerializeToYAML()
 {
-    try
-    {
-        YAML::Emitter out;
-        out << YAML::BeginMap;
+    YAML::Emitter out;
+    out << YAML::BeginMap;
 
-        out << YAML::Key << "name" << YAML::Value << m_Config.name;
-        out << YAML::Key << "version" << YAML::Value << m_Config.version;
-        out << YAML::Key << "engine_version" << YAML::Value << m_Config.engineVersion;
-        out << YAML::Key << "start_scene" << YAML::Value << m_Config.startScene;
+    out << YAML::Key << "name" << YAML::Value << m_Config.name;
+    out << YAML::Key << "version" << YAML::Value << m_Config.version;
+    out << YAML::Key << "engine_version" << YAML::Value << m_Config.engineVersion;
+    out << YAML::Key << "start_scene" << YAML::Value << m_Config.startScene;
 
-        out << YAML::Key << "directories" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "assets" << YAML::Value << m_Config.directories.assets;
-        out << YAML::Key << "scenes" << YAML::Value << m_Config.directories.scenes;
-        out << YAML::Key << "scripts" << YAML::Value << m_Config.directories.scripts;
-        out << YAML::Key << "cache" << YAML::Value << m_Config.directories.cache;
-        out << YAML::EndMap;
+    out << YAML::Key << "directories" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "assets" << YAML::Value << m_Config.directories.assets;
+    out << YAML::Key << "scenes" << YAML::Value << m_Config.directories.scenes;
+    out << YAML::Key << "scripts" << YAML::Value << m_Config.directories.scripts;
+    out << YAML::Key << "cache" << YAML::Value << m_Config.directories.cache;
+    out << YAML::EndMap;
 
-        out << YAML::Key << "settings" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "settings" << YAML::Value << YAML::BeginMap;
 
-        out << YAML::Key << "physics" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "gravity" << YAML::Value << YAML::Flow << YAML::BeginSeq
-            << m_Config.settings.physics.gravity[0] << m_Config.settings.physics.gravity[1]
-            << m_Config.settings.physics.gravity[2] << YAML::EndSeq;
-        out << YAML::Key << "fixed_timestep" << YAML::Value
-            << m_Config.settings.physics.fixedTimestep;
-        out << YAML::EndMap;
+    out << YAML::Key << "physics" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "gravity" << YAML::Value << YAML::Flow << YAML::BeginSeq
+        << m_Config.settings.physics.gravity[0] << m_Config.settings.physics.gravity[1]
+        << m_Config.settings.physics.gravity[2] << YAML::EndSeq;
+    out << YAML::Key << "fixed_timestep" << YAML::Value << m_Config.settings.physics.fixedTimestep;
+    out << YAML::EndMap;
 
-        out << YAML::Key << "rendering" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "vsync" << YAML::Value << m_Config.settings.rendering.vsync;
-        out << YAML::Key << "target_fps" << YAML::Value << m_Config.settings.rendering.targetFPS;
-        out << YAML::EndMap;
+    out << YAML::Key << "rendering" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "vsync" << YAML::Value << m_Config.settings.rendering.vsync;
+    out << YAML::Key << "target_fps" << YAML::Value << m_Config.settings.rendering.targetFPS;
+    out << YAML::EndMap;
 
-        out << YAML::Key << "editor" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "grid_size" << YAML::Value << m_Config.settings.editor.gridSize;
-        out << YAML::Key << "draw_wireframe" << YAML::Value
-            << m_Config.settings.editor.drawWireframe;
-        out << YAML::Key << "draw_collisions" << YAML::Value
-            << m_Config.settings.editor.drawCollisions;
-        out << YAML::EndMap;
+    out << YAML::Key << "editor" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "grid_size" << YAML::Value << m_Config.settings.editor.gridSize;
+    out << YAML::Key << "draw_wireframe" << YAML::Value << m_Config.settings.editor.drawWireframe;
+    out << YAML::Key << "draw_collisions" << YAML::Value << m_Config.settings.editor.drawCollisions;
+    out << YAML::EndMap;
 
-        out << YAML::EndMap; // settings
-        out << YAML::EndMap; // root
+    out << YAML::EndMap; // settings
+    out << YAML::EndMap; // root
 
-        std::ofstream fout(m_ProjectFilePath);
-        fout << out.c_str();
-        fout.close();
-
-        return true;
-    }
-    catch (const std::exception &e)
-    {
-        CD_CORE_ERROR("[Project] Exception serializing to YAML: %s", e.what());
+    std::ofstream fout(m_ProjectFilePath);
+    if (!fout.is_open())
         return false;
-    }
+    fout << out.c_str();
+    fout.close();
+
+    return true;
 }
 
 bool Project::DeserializeFromYAML()
 {
-    try
-    {
-        YAML::Node root = YAML::LoadFile(m_ProjectFilePath.string());
-
-        m_Config.name = root["name"].as<std::string>();
-        m_Config.version = root["version"].as<std::string>("1.0.0");
-        m_Config.engineVersion = root["engine_version"].as<std::string>("0.1.0");
-        m_Config.startScene = root["start_scene"].as<std::string>("");
-
-        if (root["directories"])
-        {
-            auto dirs = root["directories"];
-            m_Config.directories.assets = dirs["assets"].as<std::string>("Assets");
-            m_Config.directories.scenes = dirs["scenes"].as<std::string>("Scenes");
-            m_Config.directories.scripts = dirs["scripts"].as<std::string>("Assets/Scripts");
-            m_Config.directories.cache = dirs["cache"].as<std::string>("Cache");
-        }
-
-        if (root["settings"])
-        {
-            auto settings = root["settings"];
-
-            if (settings["physics"])
-            {
-                auto physics = settings["physics"];
-                if (physics["gravity"] && physics["gravity"].IsSequence())
-                {
-                    m_Config.settings.physics.gravity[0] = physics["gravity"][0].as<float>(0.0f);
-                    m_Config.settings.physics.gravity[1] = physics["gravity"][1].as<float>(-9.81f);
-                    m_Config.settings.physics.gravity[2] = physics["gravity"][2].as<float>(0.0f);
-                }
-                m_Config.settings.physics.fixedTimestep =
-                    physics["fixed_timestep"].as<float>(0.02f);
-            }
-
-            if (settings["rendering"])
-            {
-                auto rendering = settings["rendering"];
-                m_Config.settings.rendering.vsync = rendering["vsync"].as<bool>(true);
-                m_Config.settings.rendering.targetFPS = rendering["target_fps"].as<int>(60);
-            }
-
-            if (settings["editor"])
-            {
-                auto editor = settings["editor"];
-                m_Config.settings.editor.gridSize = editor["grid_size"].as<int>(50);
-                m_Config.settings.editor.drawWireframe = editor["draw_wireframe"].as<bool>(false);
-                m_Config.settings.editor.drawCollisions = editor["draw_collisions"].as<bool>(false);
-            }
-        }
-
-        return true;
-    }
-    catch (const std::exception &e)
-    {
-        CD_CORE_ERROR("[Project] Exception deserializing from YAML: %s", e.what());
+    if (!std::filesystem::exists(m_ProjectFilePath))
         return false;
+
+    YAML::Node root = YAML::LoadFile(m_ProjectFilePath.string());
+    if (!root)
+        return false;
+
+    m_Config.name = root["name"].as<std::string>();
+    m_Config.version = root["version"].as<std::string>("1.0.0");
+    m_Config.engineVersion = root["engine_version"].as<std::string>("0.1.0");
+    m_Config.startScene = root["start_scene"].as<std::string>("");
+
+    if (root["directories"])
+    {
+        auto dirs = root["directories"];
+        m_Config.directories.assets = dirs["assets"].as<std::string>("Assets");
+        m_Config.directories.scenes = dirs["scenes"].as<std::string>("Scenes");
+        m_Config.directories.scripts = dirs["scripts"].as<std::string>("Assets/Scripts");
+        m_Config.directories.cache = dirs["cache"].as<std::string>("Cache");
     }
+
+    if (root["settings"])
+    {
+        auto settings = root["settings"];
+
+        if (settings["physics"])
+        {
+            auto physics = settings["physics"];
+            if (physics["gravity"] && physics["gravity"].IsSequence())
+            {
+                m_Config.settings.physics.gravity[0] = physics["gravity"][0].as<float>(0.0f);
+                m_Config.settings.physics.gravity[1] = physics["gravity"][1].as<float>(-9.81f);
+                m_Config.settings.physics.gravity[2] = physics["gravity"][2].as<float>(0.0f);
+            }
+            m_Config.settings.physics.fixedTimestep = physics["fixed_timestep"].as<float>(0.02f);
+        }
+
+        if (settings["rendering"])
+        {
+            auto rendering = settings["rendering"];
+            m_Config.settings.rendering.vsync = rendering["vsync"].as<bool>(true);
+            m_Config.settings.rendering.targetFPS = rendering["target_fps"].as<int>(60);
+        }
+
+        if (settings["editor"])
+        {
+            auto editor = settings["editor"];
+            m_Config.settings.editor.gridSize = editor["grid_size"].as<int>(50);
+            m_Config.settings.editor.drawWireframe = editor["draw_wireframe"].as<bool>(false);
+            m_Config.settings.editor.drawCollisions = editor["draw_collisions"].as<bool>(false);
+        }
+    }
+
+    return true;
 }
 
 const std::filesystem::path &Project::GetProjectDirectory() const
