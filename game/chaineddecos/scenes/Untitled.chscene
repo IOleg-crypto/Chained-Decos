@@ -1,0 +1,39 @@
+Scene: Untitled
+Entities:
+  - Entity: 1283719283719283
+    TagComponent:
+      Tag: Spawn Zone
+    TransformComponent:
+      Translation: [0, 8.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpawnComponent:
+      IsActive: true
+      ZoneSize: [14.5, 8.80000019, 11.5]
+  - Entity: 1283719283719283
+    TagComponent:
+      Tag: Torus
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ":torus:"
+      Tint: [255, 255, 255, 255]
+  - Entity: 1283719283719283
+    TagComponent:
+      Tag: Default Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ..\..\..\resources\map.glb
+      Tint: [255, 255, 255, 255]
+  - Entity: 1283719283719283
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]

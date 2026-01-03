@@ -1,4 +1,6 @@
 #include "application.h"
+#include "asset_manager.h"
+#include "physics.h"
 #include "renderer.h"
 #include <raylib.h>
 
@@ -16,12 +18,16 @@ Application::Application(const Config &config)
     m_Running = true;
 
     Renderer::Init();
+    Physics::Init();
+    AssetManager::Init();
 
     CH_CORE_INFO("Application Initialized: %s (%dx%d)", config.Title, config.Width, config.Height);
 }
 
 Application::~Application()
 {
+    AssetManager::Shutdown();
+    Physics::Shutdown();
     Renderer::Shutdown();
     CloseWindow();
     s_Instance = nullptr;
@@ -60,6 +66,13 @@ void Application::BeginFrame()
 
     for (Layer *layer : s_Instance->m_LayerStack)
         layer->OnUpdate(s_Instance->m_DeltaTime);
+
+    // Update Physics (Scene based)
+    // For now, we only update systems if we have an active scene
+    // This might be better handled within a specific scene-owning layer
+    // but for foundation we put it here or in EditorLayer.
+    // However, Application doesn't know about ActiveScene yet (it's in EditorLayer).
+    // So let's handle Physics update in the Layer that owns the scene.
 
     BeginDrawing();
     ClearBackground(DARKGRAY);
