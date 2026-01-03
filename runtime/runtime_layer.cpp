@@ -1,9 +1,9 @@
 #include "runtime_layer.h"
+#include "components/physics/collision/core/physics.h"
 #include "core/application/application.h"
 #include "core/audio/audio.h"
 #include "core/input/input.h"
 #include "core/log.h"
-#include "core/physics/physics.h"
 #include "core/renderer/renderer.h"
 #include "events/key_event.h"
 #include "scene/core/scene_manager.h"
@@ -11,7 +11,6 @@
 #include "scene/ecs/components/spawn_point_component.h"
 
 // Services
-#include "core/scripting/script_manager.h"
 #include "events/ui_event_registry.h"
 #include "logic/RuntimeInitializer.h"
 #include "scene/core/scene.h"
@@ -79,10 +78,6 @@ void RuntimeLayer::OnAttach()
     m_playerShader =
         CHD::RuntimeInitializer::LoadPlayerShader(m_locFallSpeed, m_locTime, locWindDir);
     m_shaderLoaded = (m_playerShader.id != 0);
-
-    auto scene = SceneManager::IsInitialized() ? SceneManager::GetActiveScene() : nullptr;
-    if (scene && ScriptManager::IsInitialized())
-        ScriptManager::InitializeScripts(scene->GetRegistry());
 }
 
 void RuntimeLayer::OnDetach()
@@ -127,18 +122,6 @@ void RuntimeLayer::OnUpdate(float deltaTime)
         }
     }
 
-    // UPDATE C# SCRIPTS
-    if (SceneManager::IsInitialized())
-    {
-        auto currentScene = SceneManager::GetActiveScene();
-        if (currentScene && ScriptManager::IsInitialized())
-        {
-            ScriptManager::SetActiveRegistry(&currentScene->GetRegistry());
-            ScriptManager::InitializeScripts(currentScene->GetRegistry());
-            ScriptManager::UpdateScripts(currentScene->GetRegistry(), deltaTime);
-        }
-    }
-
     auto scene = SceneManager::GetActiveScene();
     if (!scene)
         return;
@@ -148,17 +131,6 @@ void RuntimeLayer::OnUpdate(float deltaTime)
     PhysicsSystem::Update(scene->GetRegistry(), deltaTime);
     EntityCollisionSystem::Update(scene->GetRegistry(), deltaTime);
     LifetimeSystem::Update(scene->GetRegistry(), deltaTime);
-
-    // Overlay Scripts
-    if (SceneManager::IsInitialized())
-    {
-        auto uiScene = SceneManager::GetUIScene();
-        if (uiScene && uiScene.get() != m_Scene.get() && ScriptManager::IsInitialized())
-        {
-            ScriptManager::SetActiveRegistry(&uiScene->GetRegistry());
-            ScriptManager::UpdateScripts(uiScene->GetRegistry(), deltaTime);
-        }
-    }
 }
 
 void RuntimeLayer::OnRender()

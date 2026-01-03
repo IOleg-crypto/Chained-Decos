@@ -1,6 +1,5 @@
 ﻿#include "scene.h"
 #include "core/log.h"
-#include "core/scripting/script_manager.h"
 #include "entity.h"
 #include "scene/core/scene_manager.h"
 #include "scene/ecs/components/core/id_component.h"
@@ -90,15 +89,7 @@ void Scene::DestroyEntity(entt::entity entity)
 
 void Scene::OnUpdateRuntime(float deltaTime)
 {
-    // 1. Update Physics
     PhysicsSystem::Update(m_Registry, deltaTime);
-
-    // 2. Update Scripts
-    if (ScriptManager::IsInitialized())
-    {
-        ScriptManager::SetActiveRegistry(&m_Registry);
-        ScriptManager::UpdateScripts(m_Registry, deltaTime);
-    }
 }
 
 void Scene::OnUpdateEditor(float deltaTime)

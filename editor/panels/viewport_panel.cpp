@@ -1,7 +1,7 @@
 #include "viewport_panel.h"
 #include "../viewport/viewport_picking.h"
+#include "components/physics/collision/core/physics.h"
 #include "core/application/application.h"
-#include "core/physics/physics.h"
 #include "core/renderer/renderer.h"
 #include "editor/logic/editor_scene_manager.h"
 #include "scene/core/scene.h"
@@ -13,6 +13,7 @@
 #include <raymath.h>
 #include <rlImGui.h>
 #include <rlgl.h>
+
 
 #include "editor/camera/editor_camera.h"
 #include "editor/logic/editor_entity_factory.h"

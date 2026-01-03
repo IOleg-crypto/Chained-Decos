@@ -1,12 +1,11 @@
 ﻿#ifndef CD_EDITOR_LOGIC_SCENE_SIMULATION_MANAGER_H
 #define CD_EDITOR_LOGIC_SCENE_SIMULATION_MANAGER_H
 
-#include "editor_types.h"
+#include "../editor_types.h"
 #include <memory>
 #include <string>
 
 #include "core/application/application.h"
-#include "core/scripting/script_manager.h"
 #include "runtime/runtime_layer.h"
 #include "scene/core/scene.h"
 #include "scene/core/scene_manager.h"

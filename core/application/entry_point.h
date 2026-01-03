@@ -1,9 +1,8 @@
 ﻿#ifndef CD_CORE_APPLICATION_ENTRY_POINT_H
 #define CD_CORE_APPLICATION_ENTRY_POINT_H
 
-#include "core/log.h"
 #include "core/application/application.h"
-
+#include "core/log.h"
 
 #ifdef CD_PLATFORM_WINDOWS
 
@@ -13,7 +12,7 @@ int main(int argc, char **argv)
 {
     CHEngine::Log::Init();
 
-    CD_CORE_INFO("--- Chained Engine Initialized (Hazel Style) ---");
+    CD_CORE_INFO("--- Chained Engine Initialized ---");
 
     auto app = CHEngine::CreateApplication(argc, argv);
     app->Run();
