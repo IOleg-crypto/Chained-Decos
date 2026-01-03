@@ -15,17 +15,15 @@ class RuntimeApplication : public CHEngine::Application
 {
 public:
     RuntimeApplication(int argc, char *argv[]);
-    ~RuntimeApplication();
+    ~RuntimeApplication() = default;
 
     // event.handling
     void OnEvent(CHEngine::Event &e) override;
 
 private:
     // Managers are now accessed through Engine services
-
     // Scene System (new architecture)
     std::shared_ptr<CHEngine::Scene> m_ActiveScene;
-
     CHEngine::Entity m_playerEntity;
 
     // Game state
