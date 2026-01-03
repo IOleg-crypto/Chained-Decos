@@ -1,6 +1,7 @@
 ﻿#include "scene_manager.h"
 #include "core/log.h"
 #include <algorithm>
+#include <memory>
 
 namespace CHEngine
 {
@@ -90,20 +91,7 @@ void SceneManager::InternalLoadScene(std::shared_ptr<Scene> scene)
         return;
     }
 
-    if (m_ActiveScene && m_OnSceneUnloaded)
-    {
-        m_OnSceneUnloaded(m_ActiveScene);
-    }
-
-    m_ActiveScene = scene;
-    CD_CORE_INFO("[SceneManager] Loaded scene: %s", scene->GetName().c_str());
-
-    if (m_OnSceneLoaded)
-        m_OnSceneLoaded(m_ActiveScene);
-
-    // Start transition
-    m_IsTransitioning = true;
-    m_TransitionProgress = 0.0f;
+    m_NextActiveScene = scene;
 }
 
 void SceneManager::InternalLoadUIScene(std::shared_ptr<Scene> scene)
@@ -114,8 +102,39 @@ void SceneManager::InternalLoadUIScene(std::shared_ptr<Scene> scene)
         return;
     }
 
-    m_UIScene = scene;
-    CD_CORE_INFO("[SceneManager] Loaded UI overlay scene: %s", scene->GetName().c_str());
+    m_NextUIScene = scene;
+}
+
+void SceneManager::PerformSceneChanges()
+{
+    // Handle Active Scene Change
+    if (m_NextActiveScene)
+    {
+        if (m_ActiveScene && m_OnSceneUnloaded)
+        {
+            m_OnSceneUnloaded(m_ActiveScene);
+        }
+
+        m_ActiveScene = m_NextActiveScene;
+        m_NextActiveScene = nullptr;
+
+        CD_CORE_INFO("[SceneManager] Set active scene: %s", m_ActiveScene->GetName().c_str());
+
+        if (m_OnSceneLoaded)
+            m_OnSceneLoaded(m_ActiveScene);
+
+        // Start transition
+        m_IsTransitioning = true;
+        m_TransitionProgress = 0.0f;
+    }
+
+    // Handle UI Scene Change
+    if (m_NextUIScene)
+    {
+        m_UIScene = m_NextUIScene;
+        m_NextUIScene = nullptr;
+        CD_CORE_INFO("[SceneManager] Loaded UI overlay scene: %s", m_UIScene->GetName().c_str());
+    }
 }
 
 void SceneManager::InternalUnloadUIScene()
@@ -142,6 +161,8 @@ void SceneManager::InternalUnloadCurrentScene()
 
 void SceneManager::InternalUpdate(float deltaTime)
 {
+    PerformSceneChanges();
+
     // Handle transitions
     if (m_IsTransitioning)
     {

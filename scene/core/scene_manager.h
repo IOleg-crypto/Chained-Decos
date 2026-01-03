@@ -4,6 +4,7 @@
 #include "scene.h"
 #include <functional>
 #include <memory>
+#include <vector>
 
 namespace CHEngine
 {
@@ -41,6 +42,8 @@ public:
     void InternalLoadUIScene(std::shared_ptr<Scene> scene);
     void InternalUnloadUIScene();
     void InternalUnloadCurrentScene();
+
+    void PerformSceneChanges();
 
     std::shared_ptr<Scene> InternalGetActiveScene() const
     {
@@ -89,6 +92,8 @@ public:
 private:
     std::shared_ptr<Scene> m_ActiveScene;
     std::shared_ptr<Scene> m_UIScene;
+    std::shared_ptr<Scene> m_NextActiveScene;
+    std::shared_ptr<Scene> m_NextUIScene;
     std::vector<std::shared_ptr<Scene>> m_SceneStack;
 
     // Transition state

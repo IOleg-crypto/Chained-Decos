@@ -1,13 +1,12 @@
 #include "physics_system.h"
 #include "components/physics/collision/core/collision_manager.h"
-#include "core/physics/physics.h"
+#include "components/physics/collision/core/physics.h"
 #include "scene/ecs/components/physics_data.h"
 #include "scene/ecs/components/player_component.h"
 #include "scene/ecs/components/transform_component.h"
 #include "scene/ecs/components/velocity_component.h"
 #include <raylib.h>
 #include <raymath.h>
-
 
 namespace CHEngine
 {

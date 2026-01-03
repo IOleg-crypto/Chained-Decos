@@ -56,6 +56,16 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
     file(COPY "${CMAKE_SOURCE_DIR}/resources" DESTINATION "${CMAKE_BINARY_DIR}")
 endif()
 
+# --- Scripting Support (C# Managed Build) ---
+set(MANAGED_DIR "${PROJECT_SOURCE_DIR}/game/scripts/managed")
+set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/managed")
+
+add_custom_target(ChainedEngine.Managed
+    COMMAND dotnet build "${MANAGED_DIR}/ChainedEngine.Managed.csproj" -c $<CONFIG> -o "${MANAGED_OUTPUT_DIR}"
+    COMMENT "Building C# Managed Assemblies..."
+    VERBATIM
+)
+
 # ============================================================================
 # Add Engine Modules
 # ============================================================================
