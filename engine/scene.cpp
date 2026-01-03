@@ -20,6 +20,7 @@ Entity Scene::CreateEntity(const std::string &name)
 
 void Scene::DestroyEntity(Entity entity)
 {
+    CH_CORE_INFO("Entity Destroyed: %d", (uint32_t)entity);
     m_Registry.destroy(entity);
 }
 
