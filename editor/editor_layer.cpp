@@ -26,7 +26,7 @@
 
 #include <fstream>
 
-#include "core/physics/physics.h"
+#include "components/physics/collision/core/physics.h"
 #include "editor/logic/editor_scene_actions.h"
 #include "editor/logic/editor_scene_manager.h"
 #include "editor/logic/scene_cloner.h"
@@ -77,23 +77,22 @@ void EditorLayer::OnAttach()
             ConsolePanel::AddLog(buffer, level);
         });
 
-    // Initialize new Scene system
-    m_Scene = std::make_shared<Scene>("GameScene");
-    m_UIScene = std::make_shared<Scene>("UIScene");
-    CD_INFO("[EditorLayer] Created editor scenes: %s, %s", m_Scene->GetName().c_str(),
-            m_UIScene->GetName().c_str());
+    // Initialize scenes as null initially (will be loaded by project/manager)
+    m_Scene = nullptr;
+    m_UIScene = nullptr;
 
-    SceneManager::LoadScene(m_Scene);
-    SceneManager::LoadUIScene(m_UIScene);
-
-    // Create default entities using raw entt::entity (temporary workaround for circular dependency)
-    auto &registry = m_Scene->GetRegistry();
-
-    // Legacy GameScene initialization
+    // Legacy ProjectManager setup
     m_ProjectManager.SetSceneChangedCallback(
         [this](const std::shared_ptr<CHEngine::Scene> &scene)
         {
+            m_Scene = scene; // CRITICAL: Update EditorLayer's own scene pointer
+
             SceneManager::LoadScene(scene);
+
+            if (m_SceneActions)
+                m_SceneActions->SetScene(scene);
+            if (m_EntityFactory)
+                m_EntityFactory->SetScene(scene);
 
             if (m_PanelManager)
             {
@@ -132,12 +131,10 @@ void EditorLayer::OnDetach()
 
 void EditorLayer::OnUpdate(float deltaTime)
 {
-    if (m_SimulationManager.GetSceneState() == SceneState::Play)
+    if (m_Scene && m_SimulationManager.GetSceneState() == SceneState::Play)
     {
         // Update ECS runtime
         m_Scene->OnUpdateRuntime(deltaTime);
-
-        // Note: Player update is now handled by ECS systems in RuntimeLayer
     }
 
     // Update logic
@@ -231,16 +228,33 @@ void EditorLayer::OnImGuiRender()
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
 
-    if (m_PanelManager)
-    {
-        // MenuBar rendering (it will use BeginMenuBar since the DockSpace window has
-        // ImGuiWindowFlags_MenuBar)
-        auto menuBar = m_PanelManager->GetPanelTyped<MenuBarPanel>("MenuBar");
-        if (menuBar && menuBar->IsVisible())
-            menuBar->OnImGuiRender();
+    // OPTIONAL: Only show the dockspace/panels if a project is loaded
+    bool hasProject = m_ProjectManager.GetActiveProject() != nullptr;
 
-        // Render all other panels
-        m_PanelManager->OnImGuiRender();
+    if (hasProject)
+    {
+        if (m_PanelManager)
+        {
+            // MenuBar rendering
+            auto menuBar = m_PanelManager->GetPanelTyped<MenuBarPanel>("MenuBar");
+            if (menuBar && menuBar->IsVisible())
+                menuBar->OnImGuiRender();
+
+            // Render all other panels
+            m_PanelManager->OnImGuiRender();
+        }
+    }
+    else
+    {
+        // Project Manager View - only show Project Browser Panel
+        if (m_PanelManager)
+        {
+            auto projectBrowser = m_PanelManager->GetPanel("Project Browser");
+            if (projectBrowser && projectBrowser->IsVisible())
+            {
+                projectBrowser->OnImGuiRender();
+            }
+        }
     }
 
     ImGui::End();

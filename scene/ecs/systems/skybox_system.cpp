@@ -26,8 +26,12 @@ void SkyboxSystem::Init()
 
     CD_CORE_INFO("Initializing SkyboxSystem...");
 
-    // Load skybox shader
-    s_SkyboxShader = LoadShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+    // Load skybox shader with robust paths
+    const char *vsPath = PROJECT_ROOT_DIR "/resources/shaders/skybox.vs";
+    const char *fsPath = PROJECT_ROOT_DIR "/resources/shaders/skybox.fs";
+
+    CD_CORE_INFO("SkyboxSystem: Loading shaders from: %s, %s", vsPath, fsPath);
+    s_SkyboxShader = LoadShader(vsPath, fsPath);
 
     s_VflippedLoc = GetShaderLocation(s_SkyboxShader, "vflipped");
     s_DoGammaLoc = GetShaderLocation(s_SkyboxShader, "doGamma");

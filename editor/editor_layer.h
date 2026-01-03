@@ -49,15 +49,6 @@ public:
     // --- Scene Operations ---
     void PlayInRuntime();
 
-    // --- Project Actions ---
-    // (Handled by m_ProjectActions)
-
-    // --- Entity/Object Management ---
-public:
-    // --- Entity/Object Actions ---
-    // (Handled by m_EntityFactory)
-
-    // --- Environment Management ---
 public:
     void LoadSkybox(const std::string &path = "");
     void ApplySkybox(const std::string &path);
@@ -89,13 +80,8 @@ public:
         return m_CurrentContext == SceneContext::Game ? m_Scene : m_UIScene;
     }
 
-    // (Handled by m_Input)
-
-    // (Handled by m_Interface)
-
     void InitPanels();
 
-    // --- Member Variables ---
 private:
     EditorCamera m_EditorCamera;
 

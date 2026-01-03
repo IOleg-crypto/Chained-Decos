@@ -1,11 +1,12 @@
-﻿#include "core/log.h"
-#include "opengl_shader.h"
+﻿#include "opengl_shader.h"
 #include "core/Base.h"
 #include "core/log.h"
 #include <array>
+#include <cstring>
 #include <fstream>
 #include <raymath.h>
 #include <vector>
+
 
 namespace CHEngine
 {
@@ -267,4 +268,3 @@ const std::string &OpenGLShader::GetName() const
 }
 } // namespace CHEngine
 #include "core/log.h"
-

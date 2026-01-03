@@ -47,6 +47,7 @@ target_link_libraries(ecs PUBLIC
     texture_resources
     imguilib
     scene_core
+    collision
 )
 
 set_target_properties(ecs PROPERTIES POSITION_INDEPENDENT_CODE ON)

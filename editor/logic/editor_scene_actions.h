@@ -39,6 +39,11 @@ public:
     void SaveScene();
     void SaveSceneAs();
 
+    void SetScene(std::shared_ptr<CHEngine::Scene> scene)
+    {
+        m_Scene = scene;
+    }
+
 private:
     EditorSceneManager *m_SceneManager;
     SceneSimulationManager *m_SimulationManager;
