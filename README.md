@@ -59,16 +59,20 @@ The Chained Editor is the primary tool for creating and testing parkour courses.
 ### Quick Start
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/IOleg-crypto/Chained-Decos.git
 cd Chained-Decos
 
-# 2. Configure and Build
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
+cmake --preset ninja-release
+cmake --build --preset ninja-release
+
+cmake --preset vs2022
+cmake --build --preset vs2022-release
+
+cmake --preset make-release
+cmake --build --preset make-release
 
 # 3. Run the Editor
-./build/bin/ChainedEditor.exe
+./build/release/bin/ChainedEditor.exe # Path may vary based on preset
 ```
 
 ---

@@ -31,5 +31,4 @@ target_include_directories(scene_core PUBLIC
 )
 
 
-# Add imgui include path for all scene components
-include_directories(${CMAKE_SOURCE_DIR}/include/imgui)
+# ImGui include is now via imguilib target linkage
