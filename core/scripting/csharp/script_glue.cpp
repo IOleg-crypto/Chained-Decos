@@ -1,13 +1,12 @@
 #include "script_glue.h"
-#include "dot_net_host.h"
 #include "core/log.h"
 #include "core/scripting/script_manager.h"
+#include "dot_net_host.h"
 #include "scene/ecs/components/transform_component.h"
 #include "scene/ecs/components/ui_components.h"
 #include "scene/ecs/ecs_registry.h"
 #include <imgui.h>
 #include <raylib.h>
-
 
 namespace CHEngine
 {
@@ -205,7 +204,7 @@ void ScriptGlue::UIText_SetText(uint32_t entityID, void *text)
 
 void ScriptGlue::RegisterFunctions()
 {
-    std::wstring assemblyPath = L"bin/managed/ChainedEngine.Managed.dll";
+    std::wstring assemblyPath = L"managed/ChainedEngine.Managed.dll";
 
     typedef void (*InitFn)(void *, void *, void *, void *, void *, void *, void *, void *, void *);
     auto initFunc = (InitFn)DotNetHost::GetManagedFunction(

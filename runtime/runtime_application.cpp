@@ -140,9 +140,7 @@ RuntimeApplication::RuntimeApplication(int argc, char *argv[])
     CD_INFO("[RuntimeApplication] Game application initialized successfully.");
 }
 
-RuntimeApplication::~RuntimeApplication()
-{
-}
+// Destructor is = default in header
 
 void RuntimeApplication::OnEvent(CHEngine::Event &e)
 {
