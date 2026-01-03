@@ -2,6 +2,7 @@ set(ENGINE_SOURCES
     application.cpp
     layer_stack.cpp
     scene.cpp
+    renderer.cpp
 )
 
 add_library(engine STATIC ${ENGINE_SOURCES})
