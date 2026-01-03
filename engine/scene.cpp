@@ -13,6 +13,8 @@ Entity Scene::CreateEntity(const std::string &name)
     Entity entity(m_Registry.create(), this);
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
+
+    CH_CORE_INFO("Entity Created: %s (%d)", name, (uint32_t)entity);
     return entity;
 }
 
