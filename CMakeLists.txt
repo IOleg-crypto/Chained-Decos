@@ -1,4 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.31)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 project(ChainedDecos LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -18,7 +19,6 @@ include(cmake/Dependencies.cmake)
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
 
-# New V2 Modules
 add_subdirectory(engine)
 add_subdirectory(editor)
 add_subdirectory(game)
