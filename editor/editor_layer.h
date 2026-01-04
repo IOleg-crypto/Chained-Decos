@@ -1,17 +1,29 @@
 ﻿#ifndef CH_EDITOR_LAYER_H
 #define CH_EDITOR_LAYER_H
 
-#include "engine/base.h"
-#include "engine/layer.h"
-#include "engine/scene.h"
-#include "inspector_panel.h"
-#include "scene_hierarchy_panel.h"
+#include "engine/core/base.h"
+#include "engine/core/layer.h"
+#include "engine/scene/scene.h"
+#include "logic/undo/command_history.h"
+#include "panels/console_panel.h"
+#include "panels/content_browser_panel.h"
+#include "panels/inspector_panel.h"
+#include "panels/project_browser_panel.h"
+#include "panels/scene_hierarchy_panel.h"
+#include "panels/viewport_panel.h"
+#include "viewport/editor_camera.h"
+#include "viewport/editor_gizmo.h"
 #include <filesystem>
 #include <raylib.h>
 
-
 namespace CH
 {
+enum class SceneState : std::uint8_t
+{
+    Edit = 0,
+    Play = 1
+};
+
 class EditorLayer : public Layer
 {
 public:
@@ -26,7 +38,6 @@ public:
     virtual void OnEvent(Event &e) override;
 
 private:
-    void UI_DrawProjectSelector();
     void NewProject();
     void OpenProject();
     void OpenProject(const std::filesystem::path &path);
@@ -38,13 +49,33 @@ private:
     void SaveScene();
     void SaveSceneAs();
 
-private:
-    Camera3D m_EditorCamera;
-    Ref<Scene> m_ActiveScene;
+    void OnScenePlay();
+    void OnSceneStop();
+
+    void SetDarkThemeColors();
+    Camera3D GetActiveCamera();
+
+public:
+    static CommandHistory &GetCommandHistory();
 
 private:
+    EditorCamera m_EditorCamera;
+    Ref<Scene> m_ActiveScene;
+    SceneState m_SceneState = SceneState::Edit;
+
+private:
+    EditorGizmo m_Gizmo;
+    GizmoType m_CurrentTool = GizmoType::SELECT;
+    CommandHistory m_CommandHistory;
+
+private:
+    ProjectBrowserPanel m_ProjectBrowserPanel;
     SceneHierarchyPanel m_SceneHierarchyPanel;
     InspectorPanel m_InspectorPanel;
+    ContentBrowserPanel m_ContentBrowserPanel;
+    ConsolePanel m_ConsolePanel;
+    ViewportPanel m_ViewportPanel;
+    Texture2D m_AppIcon;
 };
 } // namespace CH
 
