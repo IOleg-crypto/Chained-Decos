@@ -1,6 +1,7 @@
 #include "physics.h"
 #include "bvh/bvh.h"
 #include "collision/collision.h"
+#include "engine/renderer/asset_manager.h"
 #include "engine/scene/components.h"
 #include <cfloat>
 #include <cmath>
@@ -19,39 +20,153 @@ void Physics::Shutdown()
 
 void Physics::Update(Scene *scene, float deltaTime)
 {
-    auto view = scene->GetRegistry().view<TransformComponent, BoxColliderComponent>();
+    auto &registry = scene->GetRegistry();
+    const float GRAVITY_CONSTANT = 20.0f;
 
-    // Reset collision states
-    for (auto entity : view)
+    // 1. Auto-Calculate Box Colliders
     {
-        auto &collider = view.get<BoxColliderComponent>(entity);
-        collider.IsColliding = false;
+        auto view = registry.view<BoxColliderComponent, ModelComponent, TransformComponent>();
+        for (auto entity : view)
+        {
+            auto &collider = view.get<BoxColliderComponent>(entity);
+            if (collider.bAutoCalculate)
+            {
+                auto &modelComp = view.get<ModelComponent>(entity);
+                BoundingBox box = AssetManager::GetModelBoundingBox(modelComp.ModelPath);
+
+                collider.Size = Vector3Subtract(box.max, box.min);
+                collider.Offset = box.min;
+                collider.bAutoCalculate = false;
+            }
+        }
     }
 
-    // Check collisions (O(n^2) for now - simple)
-    for (auto entityA : view)
+    // 2. Auto-Build Mesh Colliders (BVH)
     {
-        auto &transformA = view.get<TransformComponent>(entityA);
-        auto &colliderA = view.get<BoxColliderComponent>(entityA);
-
-        Vector3 minA = Vector3Add(transformA.Translation, colliderA.Offset);
-        Vector3 maxA = Vector3Add(minA, colliderA.Size);
-
-        for (auto entityB : view)
+        auto view = registry.view<MeshColliderComponent, TransformComponent>();
+        for (auto entity : view)
         {
-            if (entityA == entityB)
+            auto &meshCollider = view.get<MeshColliderComponent>(entity);
+            if (!meshCollider.Root && !meshCollider.ModelPath.empty())
+            {
+                Model model = AssetManager::LoadModel(meshCollider.ModelPath);
+                if (model.meshCount > 0)
+                {
+                    meshCollider.Root = BVHBuilder::Build(model);
+                    CH_CORE_INFO("BVH Built for entity %d", (uint32_t)entity);
+                }
+            }
+        }
+    }
+
+    // 3. Apply Gravity to RigidBodies
+    {
+        auto view = registry.view<TransformComponent, RigidBodyComponent>();
+        for (auto entity : view)
+        {
+            auto &rb = view.get<RigidBodyComponent>(entity);
+            auto &transform = view.get<TransformComponent>(entity);
+
+            if (rb.UseGravity && !rb.IsGrounded)
+            {
+                rb.Velocity.y -= GRAVITY_CONSTANT * deltaTime;
+            }
+
+            // Tentative movement
+            Vector3 delta = Vector3Scale(rb.Velocity, deltaTime);
+            transform.Translation = Vector3Add(transform.Translation, delta);
+        }
+    }
+
+    // 4. Collision Resolution & Grounding
+    auto rigidBodies = registry.view<TransformComponent, RigidBodyComponent>();
+    for (auto rbEntity : rigidBodies)
+    {
+        auto &transform = rigidBodies.get<TransformComponent>(rbEntity);
+        auto &rb = rigidBodies.get<RigidBodyComponent>(rbEntity);
+
+        rb.IsGrounded = false;
+
+        // A. Check against Box Colliders
+        auto boxColliders = registry.view<TransformComponent, BoxColliderComponent>();
+        for (auto boxEntity : boxColliders)
+        {
+            if (rbEntity == boxEntity)
                 continue;
 
-            auto &transformB = view.get<TransformComponent>(entityB);
-            auto &colliderB = view.get<BoxColliderComponent>(entityB);
+            auto &bt = boxColliders.get<TransformComponent>(boxEntity);
+            auto &bc = boxColliders.get<BoxColliderComponent>(boxEntity);
 
-            Vector3 minB = Vector3Add(transformB.Translation, colliderB.Offset);
-            Vector3 maxB = Vector3Add(minB, colliderB.Size);
-
-            if (Collision::CheckAABB(minA, maxA, minB, maxB))
+            Vector3 rbMin = transform.Translation; // Simplified
+            Vector3 rbMax = transform.Translation;
+            if (registry.all_of<BoxColliderComponent>(rbEntity))
             {
-                colliderA.IsColliding = true;
-                colliderB.IsColliding = true;
+                auto &rbc = registry.get<BoxColliderComponent>(rbEntity);
+                rbMin = Vector3Add(transform.Translation, rbc.Offset);
+                rbMax = Vector3Add(rbMin, rbc.Size);
+            }
+
+            Vector3 otherMin = Vector3Add(bt.Translation, bc.Offset);
+            Vector3 otherMax = Vector3Add(otherMin, bc.Size);
+
+            if (Collision::CheckAABB(rbMin, rbMax, otherMin, otherMax))
+            {
+                if (rb.Velocity.y <= 0.0f && rbMax.y > otherMax.y)
+                {
+                    rb.IsGrounded = true;
+                    rb.Velocity.y = 0.0f;
+
+                    float rbcOffset = 0.0f;
+                    if (registry.all_of<BoxColliderComponent>(rbEntity))
+                        rbcOffset = registry.get<BoxColliderComponent>(rbEntity).Offset.y;
+
+                    transform.Translation.y = otherMax.y - rbcOffset;
+                }
+            }
+        }
+
+        // B. Check against Mesh Colliders (BVH) for stairs/terrain
+        if (!rb.IsGrounded)
+        {
+            auto meshColliders = registry.view<TransformComponent, MeshColliderComponent>();
+            for (auto meshEntity : meshColliders)
+            {
+                auto &mt = meshColliders.get<TransformComponent>(meshEntity);
+                auto &mc = meshColliders.get<MeshColliderComponent>(meshEntity);
+
+                if (mc.Root)
+                {
+                    // Raycast down from slightly above the bottom to detect floor
+                    Ray ray;
+                    ray.position = transform.Translation;
+                    ray.position.y += 0.5f; // Start ray inside/above
+                    ray.direction = {0.0f, -1.0f, 0.0f};
+
+                    float t = 1.0f; // Max distance to check
+                    Vector3 normal;
+
+                    // Transform ray to local space of the mesh if it has rotation/scale (not
+                    // supported by current BVHBuilder yet) For now assume static meshes at world
+                    // space or identity transform
+
+                    if (BVHBuilder::Raycast(mc.Root.get(), ray, t, normal))
+                    {
+                        float hitY = ray.position.y - t;
+                        float floorThreshold = 0.1f;
+
+                        // If hit is close to our current foot position
+                        if (hitY >= transform.Translation.y - floorThreshold &&
+                            hitY <= transform.Translation.y + 0.5f)
+                        {
+                            if (rb.Velocity.y <= 0.0f)
+                            {
+                                rb.IsGrounded = true;
+                                rb.Velocity.y = 0.0f;
+                                transform.Translation.y = hitY;
+                            }
+                        }
+                    }
+                }
             }
         }
     }

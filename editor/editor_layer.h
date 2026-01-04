@@ -7,6 +7,7 @@
 #include "logic/undo/command_history.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
+#include "panels/environment_panel.h"
 #include "panels/inspector_panel.h"
 #include "panels/project_browser_panel.h"
 #include "panels/scene_hierarchy_panel.h"
@@ -75,6 +76,7 @@ private:
     ContentBrowserPanel m_ContentBrowserPanel;
     ConsolePanel m_ConsolePanel;
     ViewportPanel m_ViewportPanel;
+    EnvironmentPanel m_EnvironmentPanel;
     Texture2D m_AppIcon;
 };
 } // namespace CH

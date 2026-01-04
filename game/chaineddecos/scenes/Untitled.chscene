@@ -7,6 +7,16 @@ Skybox:
 Entities:
   - Entity: 1283719283719283
     TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [-8.89234257, -2832.41333, 8.86526108]
+      Rotation: [0, -1.60221279, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: D:/gitnext/Chained Decos/resources/player_low.glb
+      Tint: [255, 255, 255, 255]
+  - Entity: 1283719283719283
+    TagComponent:
       Tag: Plane
     TransformComponent:
       Translation: [0, 20.3999996, 0]
@@ -16,7 +26,7 @@ Entities:
     TagComponent:
       Tag: Empty Entity
     TransformComponent:
-      Translation: [0, -27.3999996, 0]
+      Translation: [0, -9.60000038, 0]
       Rotation: [4.69999981, 0, -0.100000001]
       Scale: [1, 9.80000019, 1]
     ModelComponent:
@@ -39,8 +49,8 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [8.18332577, 0, -38.9069939]
-      Rotation: [0, 0.172787756, 0]
+      Translation: [3.6159966, 1.66611171, -57.4710808]
+      Rotation: [0, -1.1780982, 0]
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: D:/gitnext/Chained Decos/resources/player_low.glb
@@ -59,3 +69,10 @@ Entities:
       Translation: [9.89999962, 3.49999809, 1.10000002]
       Rotation: [0, 0, 0]
       Scale: [3.79999995, 8.60000038, 5.30000019]
+  - Entity: 1283719283719283
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]

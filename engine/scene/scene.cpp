@@ -47,7 +47,8 @@ void Scene::OnUpdateRuntime(float deltaTime)
 
             auto player = CreateEntity("Player");
             player.AddComponent<PlayerComponent>();
-            player.AddComponent<WorldComponent>();
+            player.AddComponent<RigidBodyComponent>();
+            player.AddComponent<BoxColliderComponent>(); // Will be auto-calculated
             player.AddComponent<ModelComponent>(PROJECT_ROOT_DIR "/resources/player_low.glb");
             player.GetComponent<TransformComponent>().Translation = spawnTransform.Translation;
             CH_CORE_INFO("Player Spawned at: %.2f, %.2f, %.2f", spawnTransform.Translation.x,
@@ -56,12 +57,12 @@ void Scene::OnUpdateRuntime(float deltaTime)
     }
 
     // 2. Player Movement
-    auto view = m_Registry.view<PlayerComponent, TransformComponent, WorldComponent>();
+    auto view = m_Registry.view<PlayerComponent, TransformComponent, RigidBodyComponent>();
     for (auto entity : view)
     {
         auto &player = view.get<PlayerComponent>(entity);
         auto &transform = view.get<TransformComponent>(entity);
-        auto &world = view.get<WorldComponent>(entity);
+        auto &rb = view.get<RigidBodyComponent>(entity);
 
         float speed = player.MovementSpeed;
         if (Input::IsKeyDown(KEY_LEFT_SHIFT))
@@ -69,10 +70,7 @@ void Scene::OnUpdateRuntime(float deltaTime)
 
         Vector3 movement = {0.0f, 0.0f, 0.0f};
 
-        // Calculate forward/right vectors relative to camera yaw
-        // cameraYaw is in degrees, convert to radians
         float yawRad = player.CameraYaw * DEG2RAD;
-
         Vector3 forward = {sinf(yawRad), 0.0f, -cosf(yawRad)};
         Vector3 right = {cosf(yawRad), 0.0f, -sinf(yawRad)};
 
@@ -95,9 +93,6 @@ void Scene::OnUpdateRuntime(float deltaTime)
             auto colliders = m_Registry.view<TransformComponent, BoxColliderComponent>();
             bool wallHit = false;
 
-            // Player AABB
-            // Assume player has a default small collider if no component is attached
-            // But let's check if player has its own BoxColliderComponent
             Vector3 playerMin = Vector3Subtract(targetTranslation, {0.4f, 0.0f, 0.4f});
             Vector3 playerMax = Vector3Add(targetTranslation, {0.4f, 1.8f, 0.4f});
 
@@ -122,36 +117,25 @@ void Scene::OnUpdateRuntime(float deltaTime)
                 if (Physics::CheckAABB(playerMin, playerMax, otherMin, otherMax))
                 {
                     wallHit = true;
-                    // For now, just block movement
                     break;
                 }
             }
 
             if (!wallHit)
             {
-                transform.Translation = targetTranslation;
+                transform.Translation.x = targetTranslation.x;
+                transform.Translation.z = targetTranslation.z;
             }
 
-            // Rotation to face movement direction
             float targetAngle = atan2f(movement.x, movement.z);
             transform.Rotation = {0.0f, targetAngle, 0.0f};
         }
 
-        if (player.IsGrounded && Input::IsKeyPressed(KEY_SPACE))
+        // Jump logic using RigidBody
+        if (rb.IsGrounded && Input::IsKeyPressed(KEY_SPACE))
         {
-            player.VerticalVelocity = world.jumpForce;
-            player.IsGrounded = false;
-        }
-
-        player.VerticalVelocity -= world.gravity * deltaTime;
-        transform.Translation.y += player.VerticalVelocity * deltaTime;
-
-        // Simple Ground Collision
-        if (transform.Translation.y <= world.groundLevel)
-        {
-            transform.Translation.y = world.groundLevel;
-            player.VerticalVelocity = 0.0f;
-            player.IsGrounded = true;
+            rb.Velocity.y = 10.0f; // Jump force
+            rb.IsGrounded = false;
         }
     }
 }
