@@ -24,6 +24,8 @@ set(EDITOR_SOURCES
     panels/viewport_panel.cpp
     panels/project_browser_panel.cpp
     panels/viewport_panel.h
+    panels/environment_panel.h
+    panels/environment_panel.cpp
     ui/toolbar.h
     ui/toolbar.cpp
     ui/project_selector.h

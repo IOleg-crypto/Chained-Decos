@@ -28,6 +28,9 @@ public:
     // Cubemap Management
     static Texture2D LoadCubemap(const std::string &path);
 
+    // Helper
+    static BoundingBox GetModelBoundingBox(const std::string &path);
+
 private:
     static std::unordered_map<std::string, Model> s_Models;
     static std::unordered_map<std::string, Texture2D> s_Textures;

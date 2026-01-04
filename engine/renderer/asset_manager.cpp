@@ -173,4 +173,14 @@ Texture2D AssetManager::LoadCubemap(const std::string &path)
     // logic if we detect it's a 2D panorama.
     return LoadTexture(path);
 }
+BoundingBox AssetManager::GetModelBoundingBox(const std::string &path)
+{
+    Model model = LoadModel(path);
+    if (model.meshCount > 0)
+    {
+        return ::GetModelBoundingBox(model);
+    }
+    return BoundingBox{{0, 0, 0}, {0, 0, 0}};
+}
+
 } // namespace CH

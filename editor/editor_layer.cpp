@@ -229,6 +229,7 @@ void EditorLayer::OnImGuiRender()
             ImGui::MenuItem("Viewport", nullptr, true);
             ImGui::MenuItem("Scene Hierarchy", nullptr, true);
             ImGui::MenuItem("Inspector", nullptr, true);
+            ImGui::MenuItem("Environment", nullptr, &m_EnvironmentPanel.IsOpen());
             ImGui::MenuItem("Content Browser", nullptr, true);
             ImGui::MenuItem("Console", nullptr, true);
 
@@ -270,6 +271,7 @@ void EditorLayer::OnImGuiRender()
         m_SceneHierarchyPanel.OnImGuiRender();
         m_ContentBrowserPanel.OnImGuiRender();
         m_ConsolePanel.OnImGuiRender();
+        m_EnvironmentPanel.OnImGuiRender(m_ActiveScene.get());
         m_InspectorPanel.OnImGuiRender(m_ActiveScene.get(),
                                        m_SceneHierarchyPanel.GetSelectedEntity());
     }

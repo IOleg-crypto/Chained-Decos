@@ -61,12 +61,21 @@ struct BoxColliderComponent
 {
     Vector3 Offset = {0.0f, 0.0f, 0.0f};
     Vector3 Size = {1.0f, 1.0f, 1.0f};
-
-    // Collision state
     bool IsColliding = false;
+    bool bAutoCalculate = true;
 
     BoxColliderComponent() = default;
     BoxColliderComponent(const BoxColliderComponent &) = default;
+};
+
+struct RigidBodyComponent
+{
+    Vector3 Velocity = {0.0f, 0.0f, 0.0f};
+    bool UseGravity = true;
+    bool IsGrounded = false;
+    float Mass = 1.0f;
+
+    RigidBodyComponent() = default;
 };
 
 struct SpawnComponent
@@ -105,12 +114,10 @@ struct PlayerComponent
     float LookSensitivity = 0.9f;
     Vector3 coordinates = {0.0f, 0.0f, 0.0f};
 
-    // Physics & Camera Sync
+    // Camera Sync
     float CameraYaw = 0.0f;
     float CameraPitch = 20.0f;
     float CameraDistance = 10.0f;
-    float VerticalVelocity = 0.0f;
-    bool IsGrounded = false;
 
     PlayerComponent() = default;
 };
