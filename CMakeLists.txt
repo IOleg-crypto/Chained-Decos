@@ -21,7 +21,7 @@ add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
 
 add_subdirectory(engine)
 add_subdirectory(editor)
-add_subdirectory(game)
+add_subdirectory(runtime)
 
 if(BUILD_TESTS)
     enable_testing()

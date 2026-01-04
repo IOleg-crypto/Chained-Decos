@@ -11,13 +11,4 @@ Editor::Editor(const Application::Config &config) : Application(config)
     PushLayer(new EditorLayer());
 }
 
-Application *CreateApplication()
-{
-    Application::Config config;
-    config.Title = "Chained Editor";
-    config.Width = 1600;
-    config.Height = 900;
-
-    return new Editor(config);
-}
 } // namespace CH

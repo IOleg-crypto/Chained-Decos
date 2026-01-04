@@ -1,0 +1,71 @@
+#ifndef CH_SCENE_H
+#define CH_SCENE_H
+
+#include "components.h"
+#include "engine/core/types.h"
+#include "entity.h"
+#include <entt/entt.hpp>
+#include <string>
+
+namespace CH
+{
+class Scene
+{
+public:
+    Scene();
+    ~Scene() = default;
+
+    Entity CreateEntity(const std::string &name = "Entity");
+    void DestroyEntity(Entity entity);
+
+    void OnUpdateRuntime(float deltaTime);
+    void OnUpdateEditor(float deltaTime);
+
+    entt::registry &GetRegistry()
+    {
+        return m_Registry;
+    }
+    const entt::registry &GetRegistry() const
+    {
+        return m_Registry;
+    }
+
+    struct SkyboxComponent &GetSkybox()
+    {
+        return m_Skybox;
+    }
+    const struct SkyboxComponent &GetSkybox() const
+    {
+        return m_Skybox;
+    }
+
+private:
+    entt::registry m_Registry;
+    struct SkyboxComponent m_Skybox;
+
+    friend class Entity;
+};
+
+// Entity Template Implementations
+template <typename T, typename... Args> T &Entity::AddComponent(Args &&...args)
+{
+    return m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+}
+
+template <typename T> T &Entity::GetComponent()
+{
+    return m_Scene->m_Registry.get<T>(m_EntityHandle);
+}
+
+template <typename T> bool Entity::HasComponent()
+{
+    return m_Scene->m_Registry.all_of<T>(m_EntityHandle);
+}
+
+template <typename T> void Entity::RemoveComponent()
+{
+    m_Scene->m_Registry.remove<T>(m_EntityHandle);
+}
+} // namespace CH
+
+#endif // CH_SCENE_H

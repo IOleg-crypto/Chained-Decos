@@ -1,8 +1,7 @@
-#include "engine/components.h"
-#include "engine/entity.h"
-#include "engine/scene.h"
+#include "engine/scene/components.h"
+#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include <gtest/gtest.h>
-
 
 using namespace CH;
 

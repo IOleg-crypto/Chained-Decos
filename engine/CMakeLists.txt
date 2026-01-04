@@ -1,13 +1,18 @@
 set(ENGINE_SOURCES
-    application.cpp
-    layer_stack.cpp
-    scene.cpp
-    renderer.cpp
-    asset_manager.cpp
-    scene_serializer.cpp
-    project.cpp
-    project_serializer.cpp
-    physics.cpp
+    core/application.cpp
+    core/layer_stack.cpp
+    scene/scene.cpp
+    scene/scene_serializer.cpp
+    scene/project.cpp
+    scene/project_serializer.cpp
+    renderer/renderer.cpp
+    renderer/asset_manager.cpp
+    physics/physics.cpp
+    physics/physics.h
+    physics/bvh/bvh.cpp
+    physics/bvh/bvh.h
+    audio/audio_manager.cpp
+    audio/audio_manager.h
 )
 
 add_library(engine STATIC ${ENGINE_SOURCES})
