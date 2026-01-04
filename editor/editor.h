@@ -1,7 +1,7 @@
 #ifndef CH_EDITOR_H
 #define CH_EDITOR_H
 
-#include "engine/application.h"
+#include "engine/core/application.h"
 
 namespace CH
 {

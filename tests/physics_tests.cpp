@@ -1,4 +1,5 @@
-#include "engine/physics.h"
+#include "engine/physics/physics.h"
+#include "engine/scene/components.h"
 #include <gtest/gtest.h>
 
 using namespace CH;
@@ -26,8 +27,29 @@ TEST(PhysicsTest, AABBIntersection)
     EXPECT_FALSE(Physics::CheckAABB(minA, maxA, minD, maxD));
 }
 
-TEST(PhysicsTest, ColliderOffsetAndSize)
+TEST(PhysicsTest, Raycast)
 {
-    // This would require a scene and entities to test the Physics::Update logic
-    // But for now, we focus on the core AABB check.
+    auto scene = CreateRef<Scene>();
+    auto entity = scene->CreateEntity("Test Entity");
+    auto &transform = entity.GetComponent<TransformComponent>();
+    transform.Translation = {0.0f, 0.0f, 5.0f};
+
+    auto &collider = entity.AddComponent<BoxColliderComponent>();
+    collider.Size = {1.0f, 1.0f, 1.0f};
+    collider.Offset = {-0.5f, -0.5f, -0.5f}; // Center it
+
+    // Ray from origin looking forward
+    Ray ray;
+    ray.position = {0.0f, 0.0f, 0.0f};
+    ray.direction = {0.0f, 0.0f, 1.0f};
+
+    RaycastResult result = Physics::Raycast(scene.get(), ray);
+    EXPECT_TRUE(result.Hit);
+    EXPECT_NEAR(result.Distance, 4.5f, 0.001f);
+    EXPECT_EQ(result.Entity, (entt::entity)entity);
+
+    // Ray looking away
+    ray.direction = {0.0f, 0.0f, -1.0f};
+    result = Physics::Raycast(scene.get(), ray);
+    EXPECT_FALSE(result.Hit);
 }
