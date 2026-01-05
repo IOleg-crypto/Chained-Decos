@@ -34,7 +34,7 @@ TEST(PhysicsTest, Raycast)
     auto &transform = entity.GetComponent<TransformComponent>();
     transform.Translation = {0.0f, 0.0f, 5.0f};
 
-    auto &collider = entity.AddComponent<BoxColliderComponent>();
+    auto &collider = entity.AddComponent<ColliderComponent>();
     collider.Size = {1.0f, 1.0f, 1.0f};
     collider.Offset = {-0.5f, -0.5f, -0.5f}; // Center it
 
