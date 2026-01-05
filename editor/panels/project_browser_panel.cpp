@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <imgui.h>
 
-
 namespace CH
 {
 ProjectBrowserPanel::ProjectBrowserPanel()
@@ -44,9 +43,9 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImVec2 center = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
 
     ImGui::SetCursorPos(ImVec2(center.x - 150, center.y - 100));
-    ImGui::Text("Chained Decos V2");
+    ImGui::Text("Chained Engine");
     ImGui::SetCursorPos(ImVec2(center.x - 150, center.y - 70));
-    ImGui::TextDisabled("V2 Modular Architecture Rebuild");
+    ImGui::TextDisabled("Engine Editor");
 
     ImGui::SetCursorPos(ImVec2(center.x - 100, center.y));
     if (ImGui::Button("Create New Project", ImVec2(200, 40)))
@@ -58,7 +57,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::SetCursorPos(ImVec2(center.x - 100, center.y + 50));
     if (ImGui::Button("Open Existing Project", ImVec2(200, 40)))
     {
-        nfdfilteritem_t filterItem[1] = {{"Chained Decos Project", "chproject"}};
+        nfdfilteritem_t filterItem[1] = {{"Chained Engine Project", "chproject"}};
         nfdchar_t *outPath = nullptr;
         nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
 

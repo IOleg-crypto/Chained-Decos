@@ -179,10 +179,10 @@ void Renderer::DrawScene(Scene *scene)
 
     // Draw Colliders (Gizmo style)
     {
-        auto view = scene->GetRegistry().view<TransformComponent, BoxColliderComponent>();
+        auto view = scene->GetRegistry().view<TransformComponent, ColliderComponent>();
         for (auto entity : view)
         {
-            auto [transform, collider] = view.get<TransformComponent, BoxColliderComponent>(entity);
+            auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
 
             Vector3 min = Vector3Add(transform.Translation, collider.Offset);
             Vector3 size = collider.Size;
