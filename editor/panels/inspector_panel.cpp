@@ -195,10 +195,10 @@ void InspectorPanel::DrawComponents(Entity entity)
             ImGui::CloseCurrentPopup();
         }
 
-        if (ImGui::MenuItem("Box Collider"))
+        if (ImGui::MenuItem("Collider"))
         {
-            if (!entity.HasComponent<BoxColliderComponent>())
-                entity.AddComponent<BoxColliderComponent>();
+            if (!entity.HasComponent<ColliderComponent>())
+                entity.AddComponent<ColliderComponent>();
             ImGui::CloseCurrentPopup();
         }
 
@@ -213,13 +213,6 @@ void InspectorPanel::DrawComponents(Entity entity)
         {
             if (!entity.HasComponent<MaterialComponent>())
                 entity.AddComponent<MaterialComponent>();
-            ImGui::CloseCurrentPopup();
-        }
-
-        if (ImGui::MenuItem("Mesh Collider"))
-        {
-            if (!entity.HasComponent<MeshColliderComponent>())
-                entity.AddComponent<MeshColliderComponent>();
             ImGui::CloseCurrentPopup();
         }
 
@@ -337,27 +330,101 @@ void InspectorPanel::DrawComponents(Entity entity)
             }
         });
 
-    DrawComponent<BoxColliderComponent>("Box Collider", entity,
-                                        [](auto &bc)
-                                        {
-                                            ImGui::Checkbox("Auto Calculate", &bc.bAutoCalculate);
-                                            if (!bc.bAutoCalculate)
-                                            {
-                                                DrawVec3Control("Offset", bc.Offset);
-                                                DrawVec3Control("Size", bc.Size, 1.0f);
-                                            }
+    DrawComponent<ColliderComponent>(
+        "Collider", entity,
+        [](auto &collider)
+        {
+            const char *types[] = {"Box (AABB)", "Mesh (BVH)"};
+            int currentType = (int)collider.Type;
+            if (ImGui::Combo("Type", &currentType, types, IM_ARRAYSIZE(types)))
+            {
+                collider.Type = (ColliderType)currentType;
+            }
 
-                                            bool colliding = bc.IsColliding;
-                                            ImGui::Checkbox("Colliding", &colliding);
-                                        });
+            ImGui::Checkbox("Enabled", &collider.bEnabled);
+
+            if (collider.Type == ColliderType::Box)
+            {
+                ImGui::Checkbox("Auto Calculate", &collider.bAutoCalculate);
+                if (!collider.bAutoCalculate)
+                {
+                    DrawVec3Control("Offset", collider.Offset);
+                    DrawVec3Control("Size", collider.Size, 1.0f);
+                }
+            }
+            else if (collider.Type == ColliderType::Mesh)
+            {
+                char buffer[256];
+                memset(buffer, 0, sizeof(buffer));
+                strcpy(buffer, collider.ModelPath.c_str());
+                if (ImGui::InputText("Model Path", buffer, sizeof(buffer)))
+                {
+                    collider.ModelPath = std::string(buffer);
+                    collider.BVHRoot = nullptr; // Reset to force rebuild
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("...##MeshCol"))
+                {
+                    nfdchar_t *outPath = NULL;
+                    nfdu8filteritem_t filterItem[1] = {{"Model Files", "obj,glb,gltf,iqm,msh"}};
+                    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
+                    if (result == NFD_OKAY)
+                    {
+                        std::filesystem::path fullPath = outPath;
+                        if (Project::GetActive())
+                        {
+                            std::filesystem::path assetDir = Project::GetAssetDirectory();
+                            std::error_code ec;
+                            auto relativePath = std::filesystem::relative(fullPath, assetDir, ec);
+                            if (!ec)
+                                collider.ModelPath = relativePath.string();
+                            else
+                                collider.ModelPath = fullPath.string();
+                        }
+                        else
+                        {
+                            collider.ModelPath = fullPath.string();
+                        }
+                        collider.BVHRoot = nullptr; // Reset to force rebuild
+                        NFD_FreePath(outPath);
+                    }
+                }
+
+                if (ImGui::Button("Build BVH") ||
+                    (!collider.BVHRoot && !collider.ModelPath.empty()))
+                {
+                    Model model = AssetManager::LoadModel(collider.ModelPath);
+                    if (model.meshCount > 0)
+                    {
+                        collider.BVHRoot = BVHBuilder::Build(model);
+                    }
+                }
+                if (collider.BVHRoot)
+                    ImGui::Text("BVH State: Built");
+                else
+                    ImGui::Text("BVH State: Not Built");
+            }
+
+            ImGui::Separator();
+            ImGui::Text("Colliding: ");
+            ImGui::SameLine();
+            ImGui::TextColored(collider.IsColliding ? ImVec4{0, 1, 0, 1} : ImVec4{1, 0, 0, 1},
+                               collider.IsColliding ? "YES" : "NO");
+        });
 
     DrawComponent<RigidBodyComponent>("Rigid Body", entity,
                                       [](auto &rb)
                                       {
                                           DrawVec3Control("Velocity", rb.Velocity);
                                           ImGui::Checkbox("Use Gravity", &rb.UseGravity);
-                                          ImGui::Checkbox("Is Grounded", &rb.IsGrounded);
+                                          ImGui::Checkbox("Is Kinematic", &rb.IsKinematic);
                                           ImGui::DragFloat("Mass", &rb.Mass, 0.1f, 0.1f, 100.0f);
+
+                                          ImGui::Text("Grounded: ");
+                                          ImGui::SameLine();
+                                          ImGui::TextColored(rb.IsGrounded ? ImVec4{0, 1, 0, 1}
+                                                                           : ImVec4{1, 0, 0, 1},
+                                                             rb.IsGrounded ? "YES" : "NO");
                                       });
 
     DrawComponent<SpawnComponent>("Spawn Zone", entity,
@@ -414,60 +481,6 @@ void InspectorPanel::DrawComponents(Entity entity)
                     NFD_FreePath(outPath);
                 }
             }
-        });
-
-    DrawComponent<MeshColliderComponent>(
-        "Mesh Collider", entity,
-        [](auto &mc)
-        {
-            char buffer[256];
-            memset(buffer, 0, sizeof(buffer));
-            strcpy(buffer, mc.ModelPath.c_str());
-            if (ImGui::InputText("Model Path", buffer, sizeof(buffer)))
-            {
-                mc.ModelPath = std::string(buffer);
-                mc.Root = nullptr; // Reset to force rebuild
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("...##MeshCol"))
-            {
-                nfdchar_t *outPath = NULL;
-                nfdu8filteritem_t filterItem[1] = {{"Model Files", "obj,glb,gltf,iqm,msh"}};
-                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
-                if (result == NFD_OKAY)
-                {
-                    std::filesystem::path fullPath = outPath;
-                    if (Project::GetActive())
-                    {
-                        std::filesystem::path assetDir = Project::GetAssetDirectory();
-                        std::error_code ec;
-                        auto relativePath = std::filesystem::relative(fullPath, assetDir, ec);
-                        if (!ec)
-                            mc.ModelPath = relativePath.string();
-                        else
-                            mc.ModelPath = fullPath.string();
-                    }
-                    else
-                    {
-                        mc.ModelPath = fullPath.string();
-                    }
-                    mc.Root = nullptr; // Reset to force rebuild
-                    NFD_FreePath(outPath);
-                }
-            }
-
-            if (ImGui::Button("Build BVH") || (!mc.Root && !mc.ModelPath.empty()))
-            {
-                Model model = AssetManager::LoadModel(mc.ModelPath);
-                if (model.meshCount > 0)
-                {
-                    mc.Root = BVHBuilder::Build(model);
-                }
-            }
-            if (mc.Root)
-                ImGui::Text("BVH State: Built");
-            else
-                ImGui::Text("BVH State: Not Built");
         });
 
     DrawComponent<AudioComponent>(
