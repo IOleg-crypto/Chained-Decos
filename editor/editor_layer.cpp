@@ -11,6 +11,7 @@
 #include "ui/toolbar.h"
 #include <extras/IconsFontAwesome6.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <nfd.h>
 #include <rlImGui.h>
 
@@ -231,9 +232,14 @@ void EditorLayer::OnImGuiRender()
             ImGui::MenuItem("Viewport", nullptr, true);
             ImGui::MenuItem("Scene Hierarchy", nullptr, true);
             ImGui::MenuItem("Inspector", nullptr, true);
-            ImGui::MenuItem("Environment", nullptr, &m_EnvironmentPanel.IsOpen());
-            ImGui::MenuItem("Content Browser", nullptr, true);
+            ImGui::MenuItem("Skybox", nullptr, &m_EnvironmentPanel.IsOpen());
+            ImGui::MenuItem("Content Browser", nullptr, &m_ShowContentBrowser);
             ImGui::MenuItem("Console", nullptr, true);
+            ImGui::Separator();
+            if (ImGui::MenuItem("Reset UI Layout"))
+            {
+                ResetLayout();
+            }
 
             ImGui::EndMenu();
         }
@@ -271,7 +277,8 @@ void EditorLayer::OnImGuiRender()
                                       m_SceneHierarchyPanel.GetSelectedEntity(), m_CurrentTool,
                                       m_Gizmo);
         m_SceneHierarchyPanel.OnImGuiRender();
-        m_ContentBrowserPanel.OnImGuiRender();
+        if (m_ShowContentBrowser)
+            m_ContentBrowserPanel.OnImGuiRender(&m_ShowContentBrowser);
         m_ConsolePanel.OnImGuiRender();
         m_EnvironmentPanel.OnImGuiRender(m_ActiveScene.get());
         m_InspectorPanel.OnImGuiRender(m_ActiveScene.get(),
@@ -304,6 +311,7 @@ void EditorLayer::NewProject()
         // Auto-create asset folder
         std::filesystem::path projectDir = std::filesystem::path(savePath).parent_path();
         std::filesystem::create_directories(projectDir / "assets/scenes");
+        m_ContentBrowserPanel.SetRootDirectory(newProject->GetAssetDirectory());
 
         NFD_FreePath(savePath);
         NewScene();
@@ -330,6 +338,7 @@ void EditorLayer::OpenProject(const std::filesystem::path &path)
     {
         Project::SetActive(project);
         CH_CORE_INFO("Project Opened: %s", path.string().c_str());
+        m_ContentBrowserPanel.SetRootDirectory(project->GetAssetDirectory());
 
         auto &config = project->GetConfig();
         if (!config.ActiveScenePath.empty())
@@ -450,6 +459,39 @@ void EditorLayer::SaveSceneAs()
         }
         NFD_FreePath(savePath);
     }
+}
+
+void EditorLayer::ResetLayout()
+{
+    // Reset Visibility
+    m_ShowContentBrowser = true;
+    m_EnvironmentPanel.IsOpen() = true;
+
+    // Reset Dockspace
+    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+    ImGui::DockBuilderRemoveNode(dockspace_id); // Clear existing layout
+    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace |
+                                                ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
+
+    // Split
+    ImGuiID dock_main_id = dockspace_id;
+    ImGuiID dock_right =
+        ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+    ImGuiID dock_left =
+        ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.25f, nullptr, &dock_main_id);
+    ImGuiID dock_down =
+        ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.30f, nullptr, &dock_main_id);
+
+    // Dock Windows
+    ImGui::DockBuilderDockWindow("Viewport", dock_main_id);
+    ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_left);
+    ImGui::DockBuilderDockWindow("Inspector", dock_right);
+    ImGui::DockBuilderDockWindow("Skybox", dock_right);
+    ImGui::DockBuilderDockWindow("Content Browser", dock_down);
+    ImGui::DockBuilderDockWindow("Console", dock_down);
+
+    ImGui::DockBuilderFinish(dockspace_id);
 }
 
 void EditorLayer::OnEvent(Event &e)

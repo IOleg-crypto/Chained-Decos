@@ -50,6 +50,8 @@ private:
     void SaveScene();
     void SaveSceneAs();
 
+    void ResetLayout();
+
     void OnScenePlay();
     void OnSceneStop();
 
@@ -78,6 +80,7 @@ private:
     ViewportPanel m_ViewportPanel;
     EnvironmentPanel m_EnvironmentPanel;
     Image m_AppIcon;
+    bool m_ShowContentBrowser = true;
 };
 } // namespace CH
 
