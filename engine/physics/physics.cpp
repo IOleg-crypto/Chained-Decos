@@ -23,13 +23,13 @@ void Physics::Update(Scene *scene, float deltaTime)
     auto &registry = scene->GetRegistry();
     const float GRAVITY_CONSTANT = 20.0f;
 
-    // 1. Auto-Calculate Box Colliders
+    // 1. Process Collider Generation (Box AABB & Mesh BVH)
     {
-        auto view = registry.view<BoxColliderComponent, ModelComponent, TransformComponent>();
+        auto view = registry.view<ColliderComponent, ModelComponent, TransformComponent>();
         for (auto entity : view)
         {
-            auto &collider = view.get<BoxColliderComponent>(entity);
-            if (collider.bAutoCalculate)
+            auto &collider = view.get<ColliderComponent>(entity);
+            if (collider.Type == ColliderType::Box && collider.bAutoCalculate)
             {
                 auto &modelComp = view.get<ModelComponent>(entity);
                 BoundingBox box = AssetManager::GetModelBoundingBox(modelComp.ModelPath);
@@ -38,28 +38,20 @@ void Physics::Update(Scene *scene, float deltaTime)
                 collider.Offset = box.min;
                 collider.bAutoCalculate = false;
             }
-        }
-    }
-
-    // 2. Auto-Build Mesh Colliders (BVH)
-    {
-        auto view = registry.view<MeshColliderComponent, TransformComponent>();
-        for (auto entity : view)
-        {
-            auto &meshCollider = view.get<MeshColliderComponent>(entity);
-            if (!meshCollider.Root && !meshCollider.ModelPath.empty())
+            else if (collider.Type == ColliderType::Mesh && !collider.BVHRoot &&
+                     !collider.ModelPath.empty())
             {
-                Model model = AssetManager::LoadModel(meshCollider.ModelPath);
+                Model model = AssetManager::LoadModel(collider.ModelPath);
                 if (model.meshCount > 0)
                 {
-                    meshCollider.Root = BVHBuilder::Build(model);
+                    collider.BVHRoot = BVHBuilder::Build(model);
                     CH_CORE_INFO("BVH Built for entity %d", (uint32_t)entity);
                 }
             }
         }
     }
 
-    // 3. Apply Gravity to RigidBodies
+    // 2. Apply Gravity to RigidBodies
     {
         auto view = registry.view<TransformComponent, RigidBodyComponent>();
         for (auto entity : view)
@@ -67,96 +59,93 @@ void Physics::Update(Scene *scene, float deltaTime)
             auto &rb = view.get<RigidBodyComponent>(entity);
             auto &transform = view.get<TransformComponent>(entity);
 
-            if (rb.UseGravity && !rb.IsGrounded)
+            if (rb.UseGravity && !rb.IsGrounded && !rb.IsKinematic)
             {
                 rb.Velocity.y -= GRAVITY_CONSTANT * deltaTime;
             }
 
-            // Tentative movement
-            Vector3 delta = Vector3Scale(rb.Velocity, deltaTime);
-            transform.Translation = Vector3Add(transform.Translation, delta);
+            // Move
+            if (!rb.IsKinematic || Vector3Length(rb.Velocity) > 0.001f)
+            {
+                Vector3 delta = Vector3Scale(rb.Velocity, deltaTime);
+                transform.Translation = Vector3Add(transform.Translation, delta);
+            }
         }
     }
 
-    // 4. Collision Resolution & Grounding
+    // 3. Collision Resolution & Grounding
     auto rigidBodies = registry.view<TransformComponent, RigidBodyComponent>();
     for (auto rbEntity : rigidBodies)
     {
         auto &transform = rigidBodies.get<TransformComponent>(rbEntity);
         auto &rb = rigidBodies.get<RigidBodyComponent>(rbEntity);
 
+        if (rb.IsKinematic)
+            continue;
+
         rb.IsGrounded = false;
 
-        // A. Check against Box Colliders
-        auto boxColliders = registry.view<TransformComponent, BoxColliderComponent>();
-        for (auto boxEntity : boxColliders)
+        auto colliders = registry.view<TransformComponent, ColliderComponent>();
+        for (auto otherEntity : colliders)
         {
-            if (rbEntity == boxEntity)
+            if (rbEntity == otherEntity)
                 continue;
 
-            auto &bt = boxColliders.get<TransformComponent>(boxEntity);
-            auto &bc = boxColliders.get<BoxColliderComponent>(boxEntity);
+            auto &ot = colliders.get<TransformComponent>(otherEntity);
+            auto &oc = colliders.get<ColliderComponent>(otherEntity);
 
-            Vector3 rbMin = transform.Translation; // Simplified
-            Vector3 rbMax = transform.Translation;
-            if (registry.all_of<BoxColliderComponent>(rbEntity))
+            if (!oc.bEnabled)
+                continue;
+
+            if (oc.Type == ColliderType::Box)
             {
-                auto &rbc = registry.get<BoxColliderComponent>(rbEntity);
-                rbMin = Vector3Add(transform.Translation, rbc.Offset);
-                rbMax = Vector3Add(rbMin, rbc.Size);
-            }
+                Vector3 rbMin = transform.Translation;
+                Vector3 rbMax = transform.Translation;
+                Vector3 rbcOffset = {0.0f, 0.0f, 0.0f};
 
-            Vector3 otherMin = Vector3Add(bt.Translation, bc.Offset);
-            Vector3 otherMax = Vector3Add(otherMin, bc.Size);
-
-            if (Collision::CheckAABB(rbMin, rbMax, otherMin, otherMax))
-            {
-                if (rb.Velocity.y <= 0.0f && rbMax.y > otherMax.y)
+                if (registry.all_of<ColliderComponent>(rbEntity))
                 {
-                    rb.IsGrounded = true;
-                    rb.Velocity.y = 0.0f;
+                    auto &rbc = registry.get<ColliderComponent>(rbEntity);
+                    if (!rbc.bEnabled || rbc.Type != ColliderType::Box)
+                        continue;
 
-                    float rbcOffset = 0.0f;
-                    if (registry.all_of<BoxColliderComponent>(rbEntity))
-                        rbcOffset = registry.get<BoxColliderComponent>(rbEntity).Offset.y;
+                    rbcOffset = rbc.Offset;
+                    rbMin = Vector3Add(transform.Translation, rbc.Offset);
+                    rbMax = Vector3Add(rbMin, rbc.Size);
+                }
 
-                    transform.Translation.y = otherMax.y - rbcOffset;
+                Vector3 otherMin = Vector3Add(ot.Translation, oc.Offset);
+                Vector3 otherMax = Vector3Add(otherMin, oc.Size);
+
+                if (Collision::CheckAABB(rbMin, rbMax, otherMin, otherMax))
+                {
+                    if (rb.Velocity.y <= 0.0f && rbMin.y + 0.2f > otherMax.y)
+                    {
+                        rb.IsGrounded = true;
+                        rb.Velocity.y = 0.0f;
+                        transform.Translation.y = otherMax.y - rbcOffset.y;
+                    }
                 }
             }
-        }
-
-        // B. Check against Mesh Colliders (BVH) for stairs/terrain
-        if (!rb.IsGrounded)
-        {
-            auto meshColliders = registry.view<TransformComponent, MeshColliderComponent>();
-            for (auto meshEntity : meshColliders)
+            else if (oc.Type == ColliderType::Mesh && oc.BVHRoot)
             {
-                auto &mt = meshColliders.get<TransformComponent>(meshEntity);
-                auto &mc = meshColliders.get<MeshColliderComponent>(meshEntity);
-
-                if (mc.Root)
+                if (!rb.IsGrounded)
                 {
-                    // Raycast down from slightly above the bottom to detect floor
                     Ray ray;
                     ray.position = transform.Translation;
-                    ray.position.y += 0.5f; // Start ray inside/above
+                    ray.position.y += 0.5f;
                     ray.direction = {0.0f, -1.0f, 0.0f};
 
-                    float t = 1.0f; // Max distance to check
+                    float t = 1.0f;
                     Vector3 normal;
 
-                    // Transform ray to local space of the mesh if it has rotation/scale (not
-                    // supported by current BVHBuilder yet) For now assume static meshes at world
-                    // space or identity transform
-
-                    if (BVHBuilder::Raycast(mc.Root.get(), ray, t, normal))
+                    if (BVHBuilder::Raycast(oc.BVHRoot.get(), ray, t, normal))
                     {
                         float hitY = ray.position.y - t;
-                        float floorThreshold = 0.1f;
+                        float floorThreshold = 0.51f;
 
-                        // If hit is close to our current foot position
-                        if (hitY >= transform.Translation.y - floorThreshold &&
-                            hitY <= transform.Translation.y + 0.5f)
+                        if (hitY >= transform.Translation.y - 0.1f &&
+                            hitY <= transform.Translation.y + floorThreshold)
                         {
                             if (rb.Velocity.y <= 0.0f)
                             {
@@ -185,14 +174,17 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
     result.Distance = FLT_MAX;
     result.Entity = entt::null;
 
-    // Box Colliders
+    auto view = scene->GetRegistry().view<TransformComponent, ColliderComponent>();
+    for (auto entity : view)
     {
-        auto view = scene->GetRegistry().view<TransformComponent, BoxColliderComponent>();
-        for (auto entity : view)
-        {
-            auto &transform = view.get<TransformComponent>(entity);
-            auto &collider = view.get<BoxColliderComponent>(entity);
+        auto &transform = view.get<TransformComponent>(entity);
+        auto &collider = view.get<ColliderComponent>(entity);
 
+        if (!collider.bEnabled)
+            continue;
+
+        if (collider.Type == ColliderType::Box)
+        {
             BoundingBox box;
             box.min = Vector3Add(transform.Translation, collider.Offset);
             box.max = Vector3Add(box.min, collider.Size);
@@ -207,20 +199,11 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
                 result.Entity = entity;
             }
         }
-    }
-
-    // Mesh Colliders
-    {
-        auto view = scene->GetRegistry().view<TransformComponent, MeshColliderComponent>();
-        for (auto entity : view)
+        else if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
         {
-            auto &meshCollider = view.get<MeshColliderComponent>(entity);
-            if (!meshCollider.Root)
-                continue;
-
             float t = result.Distance;
             Vector3 normal;
-            if (BVHBuilder::Raycast(meshCollider.Root.get(), ray, t, normal))
+            if (BVHBuilder::Raycast(collider.BVHRoot.get(), ray, t, normal))
             {
                 if (t < result.Distance)
                 {

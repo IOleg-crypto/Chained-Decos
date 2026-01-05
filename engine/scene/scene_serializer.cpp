@@ -132,6 +132,32 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
+    if (entity.HasComponent<ColliderComponent>())
+    {
+        out << YAML::Key << "ColliderComponent";
+        auto &cc = entity.GetComponent<ColliderComponent>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "Type" << YAML::Value << (int)cc.Type;
+        out << YAML::Key << "bEnabled" << YAML::Value << cc.bEnabled;
+        out << YAML::Key << "Offset" << YAML::Value << cc.Offset;
+        out << YAML::Key << "Size" << YAML::Value << cc.Size;
+        out << YAML::Key << "bAutoCalculate" << YAML::Value << cc.bAutoCalculate;
+        out << YAML::Key << "ModelPath" << YAML::Value << cc.ModelPath;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<RigidBodyComponent>())
+    {
+        out << YAML::Key << "RigidBodyComponent";
+        auto &rb = entity.GetComponent<RigidBodyComponent>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "Velocity" << YAML::Value << rb.Velocity;
+        out << YAML::Key << "UseGravity" << YAML::Value << rb.UseGravity;
+        out << YAML::Key << "IsKinematic" << YAML::Value << rb.IsKinematic;
+        out << YAML::Key << "Mass" << YAML::Value << rb.Mass;
+        out << YAML::EndMap;
+    }
+
     out << YAML::EndMap; // Entity
 }
 
@@ -245,6 +271,28 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 auto &mc = deserializedEntity.AddComponent<MaterialComponent>();
                 mc.AlbedoColor = materialComponent["AlbedoColor"].as<Color>();
                 mc.AlbedoPath = materialComponent["AlbedoPath"].as<std::string>();
+            }
+
+            auto colliderComponent = entity["ColliderComponent"];
+            if (colliderComponent)
+            {
+                auto &cc = deserializedEntity.AddComponent<ColliderComponent>();
+                cc.Type = (ColliderType)colliderComponent["Type"].as<int>();
+                cc.bEnabled = colliderComponent["bEnabled"].as<bool>();
+                cc.Offset = colliderComponent["Offset"].as<Vector3>();
+                cc.Size = colliderComponent["Size"].as<Vector3>();
+                cc.bAutoCalculate = colliderComponent["bAutoCalculate"].as<bool>();
+                cc.ModelPath = colliderComponent["ModelPath"].as<std::string>();
+            }
+
+            auto rigidBodyComponent = entity["RigidBodyComponent"];
+            if (rigidBodyComponent)
+            {
+                auto &rb = deserializedEntity.AddComponent<RigidBodyComponent>();
+                rb.Velocity = rigidBodyComponent["Velocity"].as<Vector3>();
+                rb.UseGravity = rigidBodyComponent["UseGravity"].as<bool>();
+                rb.IsKinematic = rigidBodyComponent["IsKinematic"].as<bool>();
+                rb.Mass = rigidBodyComponent["Mass"].as<float>();
             }
         }
     }

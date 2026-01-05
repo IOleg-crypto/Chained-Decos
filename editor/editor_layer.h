@@ -77,7 +77,7 @@ private:
     ConsolePanel m_ConsolePanel;
     ViewportPanel m_ViewportPanel;
     EnvironmentPanel m_EnvironmentPanel;
-    Texture2D m_AppIcon;
+    Image m_AppIcon;
 };
 } // namespace CH
 

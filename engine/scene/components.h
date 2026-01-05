@@ -57,15 +57,30 @@ struct ModelComponent
     }
 };
 
-struct BoxColliderComponent
+enum class ColliderType : uint8_t
 {
+    Box = 0,
+    Mesh = 1
+};
+
+struct ColliderComponent
+{
+    ColliderType Type = ColliderType::Box;
+    bool bEnabled = true;
+
+    // Common/Box fields
     Vector3 Offset = {0.0f, 0.0f, 0.0f};
     Vector3 Size = {1.0f, 1.0f, 1.0f};
-    bool IsColliding = false;
     bool bAutoCalculate = true;
 
-    BoxColliderComponent() = default;
-    BoxColliderComponent(const BoxColliderComponent &) = default;
+    // Mesh (BVH) fields
+    std::string ModelPath;
+    Ref<BVHNode> BVHRoot = nullptr;
+
+    bool IsColliding = false;
+
+    ColliderComponent() = default;
+    ColliderComponent(const ColliderComponent &) = default;
 };
 
 struct RigidBodyComponent
@@ -73,6 +88,7 @@ struct RigidBodyComponent
     Vector3 Velocity = {0.0f, 0.0f, 0.0f};
     bool UseGravity = true;
     bool IsGrounded = false;
+    bool IsKinematic = false;
     float Mass = 1.0f;
 
     RigidBodyComponent() = default;
@@ -129,14 +145,6 @@ struct AudioComponent
     float Pitch = 1.0f;
     bool Loop = false;
     bool PlayOnStart = true;
-};
-
-struct MeshColliderComponent
-{
-    std::string ModelPath;
-    Ref<BVHNode> Root = nullptr;
-
-    MeshColliderComponent() = default;
 };
 
 struct CameraComponent

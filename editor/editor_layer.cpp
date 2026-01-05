@@ -62,12 +62,14 @@ void EditorLayer::OnAttach()
             NewProject(); // This is a bit simplified, but fine for now
         });
 
-    m_AppIcon = LoadTexture(PROJECT_ROOT_DIR "/resources/icons/ChainedDecosMapEditor.png");
+    m_AppIcon = LoadImage(
+        PROJECT_ROOT_DIR "/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
+    SetWindowIcon(m_AppIcon);
 }
 
 void EditorLayer::OnDetach()
 {
-    UnloadTexture(m_AppIcon);
+    UnloadImage(m_AppIcon);
     NFD_Quit();
     rlImGuiShutdown();
 }

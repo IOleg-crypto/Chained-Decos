@@ -48,7 +48,7 @@ void Scene::OnUpdateRuntime(float deltaTime)
             auto player = CreateEntity("Player");
             player.AddComponent<PlayerComponent>();
             player.AddComponent<RigidBodyComponent>();
-            player.AddComponent<BoxColliderComponent>(); // Will be auto-calculated
+            player.AddComponent<ColliderComponent>(); // Will be auto-calculated
             player.AddComponent<ModelComponent>(PROJECT_ROOT_DIR "/resources/player_low.glb");
             player.GetComponent<TransformComponent>().Translation = spawnTransform.Translation;
             CH_CORE_INFO("Player Spawned at: %.2f, %.2f, %.2f", spawnTransform.Translation.x,
@@ -90,15 +90,15 @@ void Scene::OnUpdateRuntime(float deltaTime)
                 Vector3Add(transform.Translation, Vector3Scale(movement, speed * deltaTime));
 
             // Collision Resolution (AABB vs AABB)
-            auto colliders = m_Registry.view<TransformComponent, BoxColliderComponent>();
+            auto colliders = m_Registry.view<TransformComponent, ColliderComponent>();
             bool wallHit = false;
 
             Vector3 playerMin = Vector3Subtract(targetTranslation, {0.4f, 0.0f, 0.4f});
             Vector3 playerMax = Vector3Add(targetTranslation, {0.4f, 1.8f, 0.4f});
 
-            if (m_Registry.all_of<BoxColliderComponent>(entity))
+            if (m_Registry.all_of<ColliderComponent>(entity))
             {
-                auto &pc = m_Registry.get<BoxColliderComponent>(entity);
+                auto &pc = m_Registry.get<ColliderComponent>(entity);
                 playerMin = Vector3Add(targetTranslation, pc.Offset);
                 playerMax = Vector3Add(playerMin, pc.Size);
             }
@@ -109,7 +109,7 @@ void Scene::OnUpdateRuntime(float deltaTime)
                     continue;
 
                 auto &ot = colliders.get<TransformComponent>(other);
-                auto &oc = colliders.get<BoxColliderComponent>(other);
+                auto &oc = colliders.get<ColliderComponent>(other);
 
                 Vector3 otherMin = Vector3Add(ot.Translation, oc.Offset);
                 Vector3 otherMax = Vector3Add(otherMin, oc.Size);
