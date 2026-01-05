@@ -45,7 +45,11 @@ void Physics::Update(Scene *scene, float deltaTime)
                 if (model.meshCount > 0)
                 {
                     collider.BVHRoot = BVHBuilder::Build(model);
-                    CH_CORE_INFO("BVH Built for entity %d", (uint32_t)entity);
+                    // Cache AABB for visualization
+                    BoundingBox box = AssetManager::GetModelBoundingBox(collider.ModelPath);
+                    collider.Offset = box.min;
+                    collider.Size = Vector3Subtract(box.max, box.min);
+                    CH_CORE_INFO("BVH Built & AABB Cached for entity %d", (uint32_t)entity);
                 }
             }
         }
@@ -109,13 +113,23 @@ void Physics::Update(Scene *scene, float deltaTime)
                     if (!rbc.bEnabled || rbc.Type != ColliderType::Box)
                         continue;
 
-                    rbcOffset = rbc.Offset;
-                    rbMin = Vector3Add(transform.Translation, rbc.Offset);
-                    rbMax = Vector3Add(rbMin, rbc.Size);
+                    // Apply Scale to RB Collider
+                    Vector3 rbScale = transform.Scale;
+                    rbcOffset = Vector3Multiply(rbc.Offset, rbScale);
+                    Vector3 rbcSize = Vector3Multiply(rbc.Size, rbScale);
+
+                    rbMin = Vector3Add(transform.Translation, rbcOffset);
+                    rbMax = Vector3Add(rbMin, rbcSize);
                 }
 
-                Vector3 otherMin = Vector3Add(ot.Translation, oc.Offset);
-                Vector3 otherMax = Vector3Add(otherMin, oc.Size);
+                auto &ot = colliders.get<TransformComponent>(otherEntity);
+                // Apply Scale to Other Collider
+                Vector3 otherScale = ot.Scale;
+                Vector3 otherOffset = Vector3Multiply(oc.Offset, otherScale);
+                Vector3 otherSize = Vector3Multiply(oc.Size, otherScale);
+
+                Vector3 otherMin = Vector3Add(ot.Translation, otherOffset);
+                Vector3 otherMax = Vector3Add(otherMin, otherSize);
 
                 if (Collision::CheckAABB(rbMin, rbMax, otherMin, otherMax))
                 {
@@ -133,17 +147,38 @@ void Physics::Update(Scene *scene, float deltaTime)
                 {
                     Ray ray;
                     ray.position = transform.Translation;
-                    ray.position.y += 0.5f;
+                    ray.position.y += 0.5f; // Start ray slightly above feet
                     ray.direction = {0.0f, -1.0f, 0.0f};
 
-                    float t = 1.0f;
-                    Vector3 normal;
+                    // Transform Ray to Model Local Space
+                    auto &ot = colliders.get<TransformComponent>(otherEntity);
+                    Matrix modelTransform = ot.GetTransform();
+                    Matrix invTransform = MatrixInvert(modelTransform);
 
-                    if (BVHBuilder::Raycast(oc.BVHRoot.get(), ray, t, normal))
+                    Vector3 localOrigin = Vector3Transform(ray.position, invTransform);
+                    // For direction, we transform a point "origin + dir" and subtract transformed
+                    // origin
+                    Vector3 localTarget =
+                        Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
+                    Vector3 localDir = Vector3Normalize(Vector3Subtract(localTarget, localOrigin));
+
+                    Ray localRay = {localOrigin, localDir};
+                    float t_local = FLT_MAX;
+                    Vector3 localNormal;
+
+                    if (BVHBuilder::Raycast(oc.BVHRoot.get(), localRay, t_local, localNormal))
                     {
-                        float hitY = ray.position.y - t;
-                        float floorThreshold = 0.51f;
+                        // Convert hit point back to World Space to calculate true distance
+                        Vector3 hitPosLocal =
+                            Vector3Add(localOrigin, Vector3Scale(localDir, t_local));
+                        Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
 
+                        // Distance from original ray origin (feet + 0.5) to hit position
+                        // We only care about Y distance for grounding
+                        float hitY = hitPosWorld.y;
+                        float floorThreshold = 0.51f; // Tolerance
+
+                        // Only snap if we are close enough to the floor
                         if (hitY >= transform.Translation.y - 0.1f &&
                             hitY <= transform.Translation.y + floorThreshold)
                         {
@@ -186,10 +221,13 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
         if (collider.Type == ColliderType::Box)
         {
             BoundingBox box;
-            box.min = Vector3Add(transform.Translation, collider.Offset);
-            box.max = Vector3Add(box.min, collider.Size);
+            Vector3 size = Vector3Multiply(collider.Size, transform.Scale);
+            Vector3 offset = Vector3Multiply(collider.Offset, transform.Scale);
 
-            RayCollision collision = GetRayCollisionBox(ray, box);
+            box.min = Vector3Add(transform.Translation, offset);
+            box.max = Vector3Add(box.min, size);
+
+            RayCollision collision = GetRayCollisionBox(ray, box); // World Space AABB
             if (collision.hit && collision.distance < result.Distance)
             {
                 result.Hit = true;
@@ -201,16 +239,43 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
         }
         else if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
         {
-            float t = result.Distance;
-            Vector3 normal;
-            if (BVHBuilder::Raycast(collider.BVHRoot.get(), ray, t, normal))
+            Matrix modelTransform = transform.GetTransform();
+            Matrix invTransform = MatrixInvert(modelTransform);
+
+            Vector3 localOrigin = Vector3Transform(ray.position, invTransform);
+            Vector3 localTarget =
+                Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
+            Vector3 localDir = Vector3Normalize(Vector3Subtract(localTarget, localOrigin));
+
+            Ray localRay = {localOrigin, localDir};
+            float t_local = FLT_MAX;
+            Vector3 localNormal;
+
+            if (BVHBuilder::Raycast(collider.BVHRoot.get(), localRay, t_local, localNormal))
             {
-                if (t < result.Distance)
+                // Convert result to World Space
+                Vector3 hitPosLocal = Vector3Add(localOrigin, Vector3Scale(localDir, t_local));
+                Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
+                float distWorld = Vector3Distance(ray.position, hitPosWorld);
+
+                if (distWorld < result.Distance)
                 {
                     result.Hit = true;
-                    result.Distance = t;
-                    result.Position = Vector3Add(ray.position, Vector3Scale(ray.direction, t));
-                    result.Normal = normal;
+                    result.Distance = distWorld;
+                    result.Position = hitPosWorld;
+                    // Normal also needs transform (Rotation only)
+                    // Simple approximation: Transform as vector, normalize
+                    // For correct normal transform: Inverse Transpose of Model Matrix
+                    // But for now, Rotate is likely enough
+                    // Matrix rotation = MatrixRotateXYZ(transform.Rotation);
+                    // Let's use Vector3Transform with 0 translation
+                    // Actually, easiest is Vector3Subtract(Vector3Transform(normal, mat),
+                    // Vector3Transform(0, mat))
+                    Vector3 normalWorld = Vector3Normalize(
+                        Vector3Subtract(Vector3Transform(localNormal, modelTransform),
+                                        Vector3Transform({0, 0, 0}, modelTransform)));
+
+                    result.Normal = normalWorld;
                     result.Entity = entity;
                 }
             }

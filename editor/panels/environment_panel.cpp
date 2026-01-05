@@ -5,7 +5,6 @@
 #include <imgui.h>
 #include <nfd.h>
 
-
 namespace CH
 {
 void EnvironmentPanel::OnImGuiRender(Scene *scene)
@@ -13,7 +12,7 @@ void EnvironmentPanel::OnImGuiRender(Scene *scene)
     if (!m_IsOpen)
         return;
 
-    ImGui::Begin("Environment", &m_IsOpen);
+    ImGui::Begin("Skybox", &m_IsOpen);
     if (scene)
     {
         auto &skybox = scene->GetSkybox();

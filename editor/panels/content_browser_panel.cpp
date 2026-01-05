@@ -5,7 +5,6 @@
 #include <extras/IconsFontAwesome6.h>
 #include <imgui.h>
 
-
 namespace CH
 {
 ContentBrowserPanel::ContentBrowserPanel()
@@ -23,9 +22,9 @@ ContentBrowserPanel::~ContentBrowserPanel()
     // Unload textures if they were loaded
 }
 
-void ContentBrowserPanel::OnImGuiRender()
+void ContentBrowserPanel::OnImGuiRender(bool *p_open)
 {
-    ImGui::Begin("Content Browser");
+    ImGui::Begin("Content Browser", p_open);
 
     RenderToolbar();
     ImGui::Separator();

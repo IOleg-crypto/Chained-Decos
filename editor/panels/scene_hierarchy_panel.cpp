@@ -23,6 +23,7 @@ void SceneHierarchyPanel::OnImGuiRender()
 
     if (m_Context)
     {
+        m_DrawnEntities.clear();
         auto &registry = m_Context->GetRegistry();
 
         entt::entity entityToDelete = entt::null;
@@ -63,6 +64,20 @@ void SceneHierarchyPanel::OnImGuiRender()
         {
             if (ImGui::MenuItem("Create Empty Entity"))
                 m_Context->CreateEntity("Empty Entity");
+
+            if (ImGui::BeginMenu("Create"))
+            {
+                if (ImGui::MenuItem("Static Box Collider"))
+                {
+                    auto entity = m_Context->CreateEntity("Static Collider");
+                    auto &collider = entity.AddComponent<ColliderComponent>();
+                    collider.Type = ColliderType::Box;
+                    collider.bAutoCalculate = false; // Important: Manual size
+                    collider.Size = {1.0f, 1.0f, 1.0f};
+                    collider.Offset = {0.0f, 0.0f, 0.0f};
+                }
+                ImGui::EndMenu();
+            }
 
             if (ImGui::MenuItem("Spawn Zone"))
             {
@@ -112,12 +127,19 @@ void SceneHierarchyPanel::OnImGuiRender()
 
 bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
 {
+    if (m_DrawnEntities.find(entity) != m_DrawnEntities.end())
+        return false;
+
+    m_DrawnEntities.insert(entity);
+
     auto &tag = entity.GetComponent<TagComponent>().Tag;
 
     ImGuiTreeNodeFlags flags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) |
                                ImGuiTreeNodeFlags_OpenOnArrow;
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-    bool opened = ImGui::TreeNodeEx((void *)(uint64_t)(uint32_t)entity, flags, tag.c_str());
+
+    ImGui::PushID((int)(uint32_t)entity);
+    bool opened = ImGui::TreeNodeEx(tag.c_str(), flags);
 
     if (ImGui::IsItemClicked())
     {
@@ -146,6 +168,7 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
         }
         ImGui::TreePop();
     }
+    ImGui::PopID();
 
     return entityDeleted;
 }

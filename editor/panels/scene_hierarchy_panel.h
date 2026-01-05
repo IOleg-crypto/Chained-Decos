@@ -33,6 +33,7 @@ private:
 private:
     Ref<Scene> m_Context;
     Entity m_SelectionContext;
+    std::unordered_set<entt::entity> m_DrawnEntities;
 };
 } // namespace CH
 

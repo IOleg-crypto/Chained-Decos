@@ -397,6 +397,10 @@ void InspectorPanel::DrawComponents(Entity entity)
                     if (model.meshCount > 0)
                     {
                         collider.BVHRoot = BVHBuilder::Build(model);
+                        // Cache AABB for visualization
+                        BoundingBox box = AssetManager::GetModelBoundingBox(collider.ModelPath);
+                        collider.Offset = box.min;
+                        collider.Size = Vector3Subtract(box.max, box.min);
                     }
                 }
                 if (collider.BVHRoot)

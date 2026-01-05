@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-
 namespace CH
 {
 enum class AssetType
@@ -35,7 +34,7 @@ public:
     ContentBrowserPanel();
     ~ContentBrowserPanel();
 
-    void OnImGuiRender();
+    void OnImGuiRender(bool *p_open = nullptr);
 
     void SetRootDirectory(const std::filesystem::path &path);
 

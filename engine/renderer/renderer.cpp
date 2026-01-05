@@ -184,12 +184,28 @@ void Renderer::DrawScene(Scene *scene)
         {
             auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
 
-            Vector3 min = Vector3Add(transform.Translation, collider.Offset);
-            Vector3 size = collider.Size;
-            Vector3 center = Vector3Add(min, Vector3Scale(size, 0.5f));
+            // Apply scale to visualization
+            Vector3 scale = transform.Scale;
+            Vector3 scaledSize = Vector3Multiply(collider.Size, scale);
+            Vector3 scaledOffset = Vector3Multiply(collider.Offset, scale);
 
-            Color color = collider.IsColliding ? RED : GREEN;
-            ::DrawCubeWires(center, size.x, size.y, size.z, color);
+            Vector3 min = Vector3Add(transform.Translation, scaledOffset);
+            Vector3 center = Vector3Add(min, Vector3Scale(scaledSize, 0.5f));
+
+            Color color;
+            if (!collider.bEnabled)
+                color = ORANGE;
+            else if (collider.IsColliding)
+                color = RED;
+            else if (collider.Type == ColliderType::Mesh)
+                color = SKYBLUE;
+            else
+                color = GREEN;
+
+            if (!collider.bEnabled)
+                color = GRAY;
+
+            ::DrawCubeWires(center, scaledSize.x, scaledSize.y, scaledSize.z, color);
         }
     }
 }
