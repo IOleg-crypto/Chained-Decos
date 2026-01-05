@@ -35,26 +35,7 @@ void Scene::DestroyEntity(Entity entity)
 
 void Scene::OnUpdateRuntime(float deltaTime)
 {
-    // 1. Player Spawning
-    auto playerView = m_Registry.view<PlayerComponent>();
-    if (playerView.begin() == playerView.end())
-    {
-        auto spawnView = m_Registry.view<SpawnComponent, TransformComponent>();
-        if (spawnView.begin() != spawnView.end())
-        {
-            auto spawnEntity = *spawnView.begin();
-            auto &spawnTransform = spawnView.get<TransformComponent>(spawnEntity);
-
-            auto player = CreateEntity("Player");
-            player.AddComponent<PlayerComponent>();
-            player.AddComponent<RigidBodyComponent>();
-            player.AddComponent<ColliderComponent>(); // Will be auto-calculated
-            player.AddComponent<ModelComponent>(PROJECT_ROOT_DIR "/resources/player_low.glb");
-            player.GetComponent<TransformComponent>().Translation = spawnTransform.Translation;
-            CH_CORE_INFO("Player Spawned at: %.2f, %.2f, %.2f", spawnTransform.Translation.x,
-                         spawnTransform.Translation.y, spawnTransform.Translation.z);
-        }
-    }
+    // 1. Player Spawning Logic Removed (Manual placement only)
 
     // 2. Player Movement
     auto view = m_Registry.view<PlayerComponent, TransformComponent, RigidBodyComponent>();
