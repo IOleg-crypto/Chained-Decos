@@ -8,7 +8,6 @@
 #include <filesystem>
 #include <vector>
 
-
 Skybox::Skybox()
     : m_cube(), m_skyboxModel(), m_skyboxTexture(), m_initialized(false), m_gammaEnabled(false),
       m_gammaValue(2.2f), m_exposure(1.0f), m_brightness(0.0f), m_contrast(1.0f), m_doGammaLoc(-1),
@@ -329,6 +328,7 @@ void Skybox::UnloadSkybox()
     }
 
     UnloadModel(m_skyboxModel);
+#include "core/log.h"
     m_skyboxModel = {0};
 }
 
@@ -496,4 +496,3 @@ float Skybox::GetContrast() const
 {
     return m_contrast;
 }
-#include "core/log.h"

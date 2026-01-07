@@ -16,13 +16,15 @@ void ConsolePanel::AddLog(const char *message, ConsoleLogLevel level)
         s_Instance->Log(message, level);
 }
 
-void ConsolePanel::OnImGuiRender()
+void ConsolePanel::OnImGuiRender(bool readOnly)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
     ImGui::Begin("Console");
 
+    ImGui::BeginDisabled(readOnly);
     if (ImGui::Button("Clear"))
         Clear();
+    ImGui::EndDisabled();
 
     ImGui::Separator();
     ImGui::Spacing();

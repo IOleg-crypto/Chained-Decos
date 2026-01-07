@@ -63,7 +63,7 @@ void Physics::Update(Scene *scene, float deltaTime)
             auto &rb = view.get<RigidBodyComponent>(entity);
             auto &transform = view.get<TransformComponent>(entity);
 
-            if (rb.UseGravity && !rb.IsGrounded && !rb.IsKinematic)
+            if (rb.UseGravity && !rb.IsGrounded)
             {
                 rb.Velocity.y -= GRAVITY_CONSTANT * deltaTime;
             }
@@ -84,8 +84,8 @@ void Physics::Update(Scene *scene, float deltaTime)
         auto &transform = rigidBodies.get<TransformComponent>(rbEntity);
         auto &rb = rigidBodies.get<RigidBodyComponent>(rbEntity);
 
-        if (rb.IsKinematic)
-            continue;
+        // if (rb.IsKinematic)
+        //     continue;
 
         rb.IsGrounded = false;
 
@@ -145,8 +145,17 @@ void Physics::Update(Scene *scene, float deltaTime)
             {
                 if (!rb.IsGrounded)
                 {
+                    Vector3 feetPos = transform.Translation;
+                    if (registry.all_of<ColliderComponent>(rbEntity))
+                    {
+                        auto &rbc = registry.get<ColliderComponent>(rbEntity);
+                        // Apply Scale to Raycast Offset
+                        feetPos = Vector3Add(transform.Translation,
+                                             Vector3Multiply(rbc.Offset, transform.Scale));
+                    }
+
                     Ray ray;
-                    ray.position = transform.Translation;
+                    ray.position = feetPos;
                     ray.position.y += 0.5f; // Start ray slightly above feet
                     ray.direction = {0.0f, -1.0f, 0.0f};
 
@@ -156,8 +165,6 @@ void Physics::Update(Scene *scene, float deltaTime)
                     Matrix invTransform = MatrixInvert(modelTransform);
 
                     Vector3 localOrigin = Vector3Transform(ray.position, invTransform);
-                    // For direction, we transform a point "origin + dir" and subtract transformed
-                    // origin
                     Vector3 localTarget =
                         Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
                     Vector3 localDir = Vector3Normalize(Vector3Subtract(localTarget, localOrigin));
@@ -168,19 +175,15 @@ void Physics::Update(Scene *scene, float deltaTime)
 
                     if (BVHBuilder::Raycast(oc.BVHRoot.get(), localRay, t_local, localNormal))
                     {
-                        // Convert hit point back to World Space to calculate true distance
                         Vector3 hitPosLocal =
                             Vector3Add(localOrigin, Vector3Scale(localDir, t_local));
                         Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
 
-                        // Distance from original ray origin (feet + 0.5) to hit position
-                        // We only care about Y distance for grounding
                         float hitY = hitPosWorld.y;
-                        float floorThreshold = 0.51f; // Tolerance
+                        float floorThreshold = 0.55f; // Tolerance relative to ray start (0.5)
 
                         // Only snap if we are close enough to the floor
-                        if (hitY >= transform.Translation.y - 0.1f &&
-                            hitY <= transform.Translation.y + floorThreshold)
+                        if (hitY >= feetPos.y - 0.1f && hitY <= feetPos.y + floorThreshold)
                         {
                             if (rb.Velocity.y <= 0.0f)
                             {

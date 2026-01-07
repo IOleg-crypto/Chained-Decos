@@ -2,6 +2,7 @@
 #define CH_CONTENT_BROWSER_PANEL_H
 
 #include <filesystem>
+#include <functional>
 #include <raylib.h>
 #include <string>
 #include <vector>
@@ -34,9 +35,15 @@ public:
     ContentBrowserPanel();
     ~ContentBrowserPanel();
 
-    void OnImGuiRender(bool *p_open = nullptr);
-
+public:
+    void OnImGuiRender(bool *p_open = nullptr, bool readOnly = false);
     void SetRootDirectory(const std::filesystem::path &path);
+
+    using SceneOpenCallback = std::function<void(const std::filesystem::path &)>;
+    void SetSceneOpenCallback(SceneOpenCallback callback)
+    {
+        m_OnSceneOpenCallback = callback;
+    }
 
 private:
     void RenderToolbar();
@@ -58,6 +65,7 @@ private:
 
     Texture2D m_FolderIcon;
     Texture2D m_FileIcon;
+    SceneOpenCallback m_OnSceneOpenCallback;
 };
 } // namespace CH
 

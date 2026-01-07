@@ -41,13 +41,12 @@ public:
     {
         return m_GizmoHovered;
     }
-
     bool IsDragging() const
     {
         return m_DraggingAxis != GizmoAxis::NONE;
     }
 
-    // Snapping configuration
+    // Snapping
     void SetSnapping(bool enabled)
     {
         m_SnappingEnabled = enabled;
@@ -78,14 +77,20 @@ private:
     // Gizmo state
     GizmoAxis m_DraggingAxis = GizmoAxis::NONE;
     bool m_GizmoHovered = false;
-    ImVec2 m_InitialMousePos = {0, 0};
-    Vector3 m_InitialObjectValue = {0, 0, 0};
+
+    // Drag (ray → plane)
+    Vector3 m_DragPlaneNormal{};
+    Vector3 m_DragPlanePos{};
+    Vector3 m_DragStartHit{};
+    Vector3 m_DragStartValue{};
+
+    // Undo
     TransformComponent m_OldTransform;
 
-    // Snapping config
+    // Snapping
     bool m_SnappingEnabled = false;
     float m_GridSize = 1.0f;
-    float m_RotationStep = 15.0f; // Degrees
+    float m_RotationStep = 15.0f; // degrees
 
     static float SnapValue(float value, float step);
 };

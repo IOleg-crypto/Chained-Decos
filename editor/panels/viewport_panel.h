@@ -13,8 +13,9 @@ public:
     ViewportPanel();
     ~ViewportPanel();
 
-    void OnImGuiRender(Scene *scene, const Camera3D &camera, Entity selectedEntity,
-                       GizmoType currentTool, EditorGizmo &gizmo);
+public:
+    Entity OnImGuiRender(Scene *scene, const Camera3D &camera, Entity selectedEntity,
+                         GizmoType &currentTool, EditorGizmo &gizmo, bool allowTools = true);
 
 public:
     bool IsFocused() const;

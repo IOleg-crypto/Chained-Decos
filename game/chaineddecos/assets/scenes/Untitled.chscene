@@ -1,0 +1,64 @@
+Scene: Untitled
+Skybox:
+  TexturePath: ..\..\..\resources\skyboxes\skybox.png
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Entities:
+  - Entity: 1283719283719283
+  - Entity: 1283719283719283
+  - Entity: 1283719283719283
+  - Entity: 1283719283719283
+  - Entity: 1283719283719283
+  - Entity: 1283719283719283
+    TagComponent:
+      Tag: Static Collider
+    TransformComponent:
+      Translation: [-21.2000008, -51.9000015, -25.6000004]
+      Rotation: [0, 0, 0]
+      Scale: [50, 50, 50]
+    ColliderComponent:
+      Type: 0
+      bEnabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      bAutoCalculate: false
+      ModelPath: ""
+  - Entity: 1283719283719283
+    TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [41.5622978, 10, -0.345110506]
+      Rotation: [0, -2.61538792, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: D:/gitnext/Chained Decos/resources/player_low.glb
+      Tint: [255, 255, 255, 255]
+    ColliderComponent:
+      Type: 0
+      bEnabled: true
+      Offset: [-1.0896225, 0.00202974328, -0.293091357]
+      Size: [2.179245, 6.18353701, 1.20018852]
+      bAutoCalculate: false
+      ModelPath: ""
+    RigidBodyComponent:
+      Velocity: [0, 0, 0]
+      UseGravity: false
+      IsKinematic: true
+      Mass: 24.3999996
+    PlayerComponent:
+      MovementSpeed: 9.10000038
+      LookSensitivity: 1.14999998
+      CameraYaw: 143.299316
+      CameraPitch: 89
+      CameraDistance: 27
+  - Entity: 1283719283719283
+    TagComponent:
+      Tag: Spawn Zone
+    TransformComponent:
+      Translation: [0, 8.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpawnComponent:
+      IsActive: true
+      ZoneSize: [6.0999999, 4.4000001, 5.0999999]

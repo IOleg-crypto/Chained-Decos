@@ -51,8 +51,14 @@ void Scene::OnUpdateRuntime(float deltaTime)
 
         Vector3 movement = {0.0f, 0.0f, 0.0f};
 
+        // Wrap CameraYaw (0-360)
+        while (player.CameraYaw < 0)
+            player.CameraYaw += 360.0f;
+        while (player.CameraYaw >= 360.0f)
+            player.CameraYaw -= 360.0f;
+
         float yawRad = player.CameraYaw * DEG2RAD;
-        Vector3 forward = {sinf(yawRad), 0.0f, -cosf(yawRad)};
+        Vector3 forward = {-sinf(yawRad), 0.0f, -cosf(yawRad)};
         Vector3 right = {cosf(yawRad), 0.0f, -sinf(yawRad)};
 
         if (Input::IsKeyDown(KEY_W))
@@ -74,14 +80,18 @@ void Scene::OnUpdateRuntime(float deltaTime)
             auto colliders = m_Registry.view<TransformComponent, ColliderComponent>();
             bool wallHit = false;
 
-            Vector3 playerMin = Vector3Subtract(targetTranslation, {0.4f, 0.0f, 0.4f});
-            Vector3 playerMax = Vector3Add(targetTranslation, {0.4f, 1.8f, 0.4f});
+            // Use default player AABB scaled by transform
+            Vector3 playerScale = transform.Scale;
+            Vector3 playerMin = Vector3Subtract(targetTranslation,
+                                                Vector3Multiply({0.4f, 0.0f, 0.4f}, playerScale));
+            Vector3 playerMax =
+                Vector3Add(targetTranslation, Vector3Multiply({0.4f, 1.8f, 0.4f}, playerScale));
 
             if (m_Registry.all_of<ColliderComponent>(entity))
             {
                 auto &pc = m_Registry.get<ColliderComponent>(entity);
-                playerMin = Vector3Add(targetTranslation, pc.Offset);
-                playerMax = Vector3Add(playerMin, pc.Size);
+                playerMin = Vector3Add(targetTranslation, Vector3Multiply(pc.Offset, playerScale));
+                playerMax = Vector3Add(playerMin, Vector3Multiply(pc.Size, playerScale));
             }
 
             for (auto other : colliders)
@@ -92,8 +102,13 @@ void Scene::OnUpdateRuntime(float deltaTime)
                 auto &ot = colliders.get<TransformComponent>(other);
                 auto &oc = colliders.get<ColliderComponent>(other);
 
-                Vector3 otherMin = Vector3Add(ot.Translation, oc.Offset);
-                Vector3 otherMax = Vector3Add(otherMin, oc.Size);
+                if (!oc.bEnabled)
+                    continue;
+
+                Vector3 otherScale = ot.Scale;
+                Vector3 otherMin =
+                    Vector3Add(ot.Translation, Vector3Multiply(oc.Offset, otherScale));
+                Vector3 otherMax = Vector3Add(otherMin, Vector3Multiply(oc.Size, otherScale));
 
                 if (Physics::CheckAABB(playerMin, playerMax, otherMin, otherMax))
                 {

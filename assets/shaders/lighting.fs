@@ -18,6 +18,19 @@ uniform vec3 lightDir;
 uniform vec4 lightColor;
 uniform float ambient;
 
+#define MAX_LIGHTS 8
+
+struct Light {
+    vec3 position;
+    vec4 color;
+    float radius;
+    float radiance;
+    float falloff;
+    int enabled;
+};
+
+uniform Light lights[MAX_LIGHTS];
+
 void main()
 {
     // Texel color fetching from texture sampler
@@ -31,6 +44,27 @@ void main()
     float diff = max(dot(fragNormal, normalize(-lightDir)), 0.0);
     vec4 diffuseColor = diffuse * lightColor * diff;
 
+    // Point lights
+    vec4 pointLightsColor = vec4(0.0);
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        if (lights[i].enabled == 0) continue;
+
+        vec3 lightVector = lights[i].position - fragPosition;
+        float distance = length(lightVector);
+        
+        if (distance < lights[i].radius)
+        {
+            vec3 L = normalize(lightVector);
+            float NdotL = max(dot(fragNormal, L), 0.0);
+            
+            // Basic falloff
+            float attenuation = pow(clamp(1.0 - distance/lights[i].radius, 0.0, 1.0), lights[i].falloff);
+            
+            pointLightsColor += diffuse * lights[i].color * NdotL * attenuation * lights[i].radiance;
+        }
+    }
+
     // Final color
-    finalColor = (ambientColor + diffuseColor) * texelColor;
+    finalColor = (ambientColor + diffuseColor + pointLightsColor) * texelColor;
 }

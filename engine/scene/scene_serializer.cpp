@@ -1,7 +1,10 @@
 #include "scene_serializer.h"
 #include "components.h"
 #include "engine/core/log.h"
+#include "engine/physics/bvh/bvh.h"
+#include "engine/renderer/asset_manager.h"
 #include "scene.h"
+
 
 #include <fstream>
 #include <yaml-cpp/yaml.h>
@@ -146,6 +149,18 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
+    if (entity.HasComponent<PointLightComponent>())
+    {
+        out << YAML::Key << "PointLightComponent";
+        out << YAML::BeginMap;
+        auto &plc = entity.GetComponent<PointLightComponent>();
+        out << YAML::Key << "LightColor" << YAML::Value << plc.LightColor;
+        out << YAML::Key << "Radiance" << YAML::Value << plc.Radiance;
+        out << YAML::Key << "Radius" << YAML::Value << plc.Radius;
+        out << YAML::Key << "Falloff" << YAML::Value << plc.Falloff;
+        out << YAML::EndMap;
+    }
+
     if (entity.HasComponent<RigidBodyComponent>())
     {
         out << YAML::Key << "RigidBodyComponent";
@@ -155,6 +170,19 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::Key << "UseGravity" << YAML::Value << rb.UseGravity;
         out << YAML::Key << "IsKinematic" << YAML::Value << rb.IsKinematic;
         out << YAML::Key << "Mass" << YAML::Value << rb.Mass;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<PlayerComponent>())
+    {
+        out << YAML::Key << "PlayerComponent";
+        out << YAML::BeginMap;
+        auto &pc = entity.GetComponent<PlayerComponent>();
+        out << YAML::Key << "MovementSpeed" << YAML::Value << pc.MovementSpeed;
+        out << YAML::Key << "LookSensitivity" << YAML::Value << pc.LookSensitivity;
+        out << YAML::Key << "CameraYaw" << YAML::Value << pc.CameraYaw;
+        out << YAML::Key << "CameraPitch" << YAML::Value << pc.CameraPitch;
+        out << YAML::Key << "CameraDistance" << YAML::Value << pc.CameraDistance;
         out << YAML::EndMap;
     }
 
@@ -283,6 +311,25 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 cc.Size = colliderComponent["Size"].as<Vector3>();
                 cc.bAutoCalculate = colliderComponent["bAutoCalculate"].as<bool>();
                 cc.ModelPath = colliderComponent["ModelPath"].as<std::string>();
+
+                if (cc.Type == ColliderType::Mesh && !cc.ModelPath.empty())
+                {
+                    Model model = AssetManager::LoadModel(cc.ModelPath);
+                    if (model.meshCount > 0)
+                    {
+                        cc.BVHRoot = BVHBuilder::Build(model);
+                    }
+                }
+            }
+
+            auto pointLightComponent = entity["PointLightComponent"];
+            if (pointLightComponent)
+            {
+                auto &plc = deserializedEntity.AddComponent<PointLightComponent>();
+                plc.LightColor = pointLightComponent["LightColor"].as<Color>();
+                plc.Radiance = pointLightComponent["Radiance"].as<float>();
+                plc.Radius = pointLightComponent["Radius"].as<float>();
+                plc.Falloff = pointLightComponent["Falloff"].as<float>();
             }
 
             auto rigidBodyComponent = entity["RigidBodyComponent"];
@@ -293,6 +340,17 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 rb.UseGravity = rigidBodyComponent["UseGravity"].as<bool>();
                 rb.IsKinematic = rigidBodyComponent["IsKinematic"].as<bool>();
                 rb.Mass = rigidBodyComponent["Mass"].as<float>();
+            }
+
+            auto playerComponent = entity["PlayerComponent"];
+            if (playerComponent)
+            {
+                auto &pc = deserializedEntity.AddComponent<PlayerComponent>();
+                pc.MovementSpeed = playerComponent["MovementSpeed"].as<float>();
+                pc.LookSensitivity = playerComponent["LookSensitivity"].as<float>();
+                pc.CameraYaw = playerComponent["CameraYaw"].as<float>();
+                pc.CameraPitch = playerComponent["CameraPitch"].as<float>();
+                pc.CameraDistance = playerComponent["CameraDistance"].as<float>();
             }
         }
     }

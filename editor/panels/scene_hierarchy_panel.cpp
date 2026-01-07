@@ -17,10 +17,11 @@ void SceneHierarchyPanel::SetContext(const Ref<Scene> &context)
     m_SelectionContext = {};
 }
 
-void SceneHierarchyPanel::OnImGuiRender()
+void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 {
     ImGui::Begin("Scene Hierarchy");
 
+    ImGui::BeginDisabled(readOnly);
     if (m_Context)
     {
         m_DrawnEntities.clear();
@@ -122,6 +123,7 @@ void SceneHierarchyPanel::OnImGuiRender()
         }
     }
 
+    ImGui::EndDisabled();
     ImGui::End();
 }
 

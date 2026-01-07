@@ -7,12 +7,13 @@
 
 namespace CH
 {
-void EnvironmentPanel::OnImGuiRender(Scene *scene)
+void EnvironmentPanel::OnImGuiRender(Scene *scene, bool readOnly)
 {
     if (!m_IsOpen)
         return;
 
     ImGui::Begin("Skybox", &m_IsOpen);
+    ImGui::BeginDisabled(readOnly);
     if (scene)
     {
         auto &skybox = scene->GetSkybox();
@@ -54,6 +55,7 @@ void EnvironmentPanel::OnImGuiRender(Scene *scene)
     {
         ImGui::TextDisabled("No active scene context.");
     }
+    ImGui::EndDisabled();
     ImGui::End();
 }
 } // namespace CH

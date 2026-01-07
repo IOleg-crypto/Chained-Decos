@@ -37,6 +37,7 @@ public:
     static bool ShouldClose();
     static void BeginFrame();
     static void EndFrame();
+    static void PollEvents();
     static void OnEvent(Event &e);
 
     void Run();

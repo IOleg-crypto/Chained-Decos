@@ -136,12 +136,14 @@ static void DrawComponent(const std::string &name, Entity entity, UIFunction uiF
     }
 }
 
-void InspectorPanel::OnImGuiRender(Scene *scene, Entity entity)
+void InspectorPanel::OnImGuiRender(Scene *scene, Entity entity, bool readOnly)
 {
     ImGui::Begin("Inspector");
     if (entity)
     {
+        ImGui::BeginDisabled(readOnly);
         DrawComponents(entity);
+        ImGui::EndDisabled();
     }
     else
     {
@@ -241,6 +243,20 @@ void InspectorPanel::DrawComponents(Entity entity)
         {
             if (!entity.HasComponent<RigidBodyComponent>())
                 entity.AddComponent<RigidBodyComponent>();
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::MenuItem("Player"))
+        {
+            if (!entity.HasComponent<PlayerComponent>())
+                entity.AddComponent<PlayerComponent>();
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::MenuItem("Point Light"))
+        {
+            if (!entity.HasComponent<PointLightComponent>())
+                entity.AddComponent<PointLightComponent>();
             ImGui::CloseCurrentPopup();
         }
 
@@ -438,6 +454,22 @@ void InspectorPanel::DrawComponents(Entity entity)
                                       DrawVec3Control("Zone Size", sc.ZoneSize, 1.0f);
                                   });
 
+    DrawComponent<PlayerComponent>(
+        "Player", entity,
+        [](auto &player)
+        {
+            ImGui::DragFloat("Movement Speed", &player.MovementSpeed, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat("Look Sensitivity", &player.LookSensitivity, 0.01f, 0.1f, 5.0f);
+            ImGui::DragFloat("Camera Yaw", &player.CameraYaw, 1.0f, -180.0f, 180.0f);
+            ImGui::DragFloat("Camera Pitch", &player.CameraPitch, 1.0f, -89.0f, 89.0f);
+            ImGui::DragFloat("Camera Distance", &player.CameraDistance, 0.1f, 2.0f, 40.0f);
+
+            ImGui::Separator();
+            ImGui::Text("Debug Info:");
+            ImGui::Text("Coordinates: %.2f, %.2f, %.2f", player.coordinates.x, player.coordinates.y,
+                        player.coordinates.z);
+        });
+
     DrawComponent<MaterialComponent>(
         "Material", entity,
         [](auto &mc)
@@ -454,7 +486,7 @@ void InspectorPanel::DrawComponents(Entity entity)
 
             char buffer[256];
             memset(buffer, 0, sizeof(buffer));
-            strcpy(buffer, mc.AlbedoPath.c_str());
+            strncpy(buffer, mc.AlbedoPath.c_str(), sizeof(buffer)); // Use strncpy for safety
             if (ImGui::InputText("Albedo Path", buffer, sizeof(buffer)))
             {
                 mc.AlbedoPath = std::string(buffer);
@@ -485,6 +517,26 @@ void InspectorPanel::DrawComponents(Entity entity)
                     NFD_FreePath(outPath);
                 }
             }
+        });
+
+    DrawComponent<PointLightComponent>(
+        "Point Light", entity,
+        [](auto &component)
+        {
+            float color[4] = {component.LightColor.r / 255.0f, component.LightColor.g / 255.0f,
+                              component.LightColor.b / 255.0f, component.LightColor.a / 255.0f};
+
+            if (ImGui::ColorEdit4("Light Color", color))
+            {
+                component.LightColor.r = (unsigned char)(color[0] * 255.0f);
+                component.LightColor.g = (unsigned char)(color[1] * 255.0f);
+                component.LightColor.b = (unsigned char)(color[2] * 255.0f);
+                component.LightColor.a = (unsigned char)(color[3] * 255.0f);
+            }
+
+            ImGui::DragFloat("Radiance", &component.Radiance, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat("Radius", &component.Radius, 0.1f, 0.0f, 1000.0f);
+            ImGui::DragFloat("Falloff", &component.Falloff, 0.1f, 0.0f, 20.0f);
         });
 
     DrawComponent<AudioComponent>(

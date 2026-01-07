@@ -39,6 +39,7 @@ void ProjectBrowserPanel::OnImGuiRender()
 
 void ProjectBrowserPanel::DrawWelcomeScreen()
 {
+    // Refactor later!
     ImVec2 windowSize = ImGui::GetWindowSize();
     ImVec2 center = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
 

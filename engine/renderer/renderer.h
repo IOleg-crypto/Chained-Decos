@@ -41,6 +41,16 @@ private:
         int lightColorLoc;
         int ambientLoc;
 
+        struct ShaderLightLocs
+        {
+            int position;
+            int color;
+            int radius;
+            int radiance;
+            int falloff;
+            int enabled;
+        } lightLocs[8];
+
         Color lightColor = WHITE;
         Vector3 lightDir = {0.0f, -1.0f, 0.0f};
         float ambient = 0.2f;

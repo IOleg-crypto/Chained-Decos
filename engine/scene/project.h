@@ -44,6 +44,13 @@ public:
         return "";
     }
 
+    static std::filesystem::path GetProjectDirectory()
+    {
+        if (s_ActiveProject)
+            return s_ActiveProject->m_Config.ProjectDirectory;
+        return "";
+    }
+
     void SetActiveScenePath(const std::filesystem::path &path)
     {
         m_Config.ActiveScenePath = path;

@@ -11,7 +11,7 @@ public:
     EnvironmentPanel() = default;
     ~EnvironmentPanel() = default;
 
-    void OnImGuiRender(Scene *scene);
+    void OnImGuiRender(Scene *scene, bool readOnly = false);
 
 private:
     bool m_IsOpen = true;
