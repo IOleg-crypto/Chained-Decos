@@ -1,6 +1,6 @@
 add_library(project STATIC
-    Project.cpp
-    Project.h
+    project.cpp
+    project.h
 )
 
 target_include_directories(project PUBLIC

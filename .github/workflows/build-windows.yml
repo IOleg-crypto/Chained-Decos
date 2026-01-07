@@ -23,7 +23,7 @@ jobs:
           submodules: recursive
 
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             C:/ccache
@@ -38,39 +38,48 @@ jobs:
           choco install cmake ninja ccache --no-progress
 
       - name: Configure
-        shell: bash
+        shell: pwsh
         run: |
-          cmake -B build \
-            -G "Ninja" \
-            -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DBUILD_TESTS=ON \
-            -DBUILD_MAP_EDITOR=ON \
+          cmake -B build `
+            -G "Ninja" `
+            -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} `
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
+            -DBUILD_TESTS=ON `
+            -DBUILD_MAP_EDITOR=ON `
             -DDISABLE_ALL_WARNINGS=ON
 
       - name: Build
-        shell: bash
+        shell: pwsh
         run: |
-          cmake --build build \
-            --config ${{ inputs.build_type }} \
-            --target ChainedEditor ChainedEngineUnitTests ChainedEngineIntegrationTests \
+          cmake --build build `
+            --config ${{ inputs.build_type }} `
+            --target ChainedEditor EngineTests `
             --parallel 4
 
-      - name: Test
-        shell: bash
+      - name: List Build Files (Debug)
+        shell: pwsh
         run: |
-          if [[ -f "build/bin/tests/ChainedEngineUnitTests.exe" ]]; then
-            build/bin/tests/ChainedEngineUnitTests.exe || echo "Unit tests failed"
-          fi
-          if [[ -f "build/bin/tests/ChainedEngineIntegrationTests.exe" ]]; then
-            # NOTE: Integration tests might require a headless setup or might fail if raylib can't init
-            build/bin/tests/ChainedEngineIntegrationTests.exe || echo "Integration tests failed (might need display)"
-          fi
+          Get-ChildItem -Path build -Filter *.exe -Recurse
+
+      - name: Test
+        shell: pwsh
+        run: |
+          $testExe = Get-ChildItem -Path build -Filter EngineTests.exe -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          if ($testExe) {
+            Write-Host "Running tests: $testExe"
+            & $testExe
+          } else {
+            Write-Error "EngineTests.exe not found!"
+            exit 1
+          }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-msvc-${{ inputs.build_type }}
-          path: build/bin/
+          path: |
+            build/editor/ChainedEditor.exe
+            build/runtime/ChainedRuntime.exe
+            build/tests/EngineTests.exe
           retention-days: 7

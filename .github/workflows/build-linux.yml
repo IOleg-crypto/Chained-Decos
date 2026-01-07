@@ -5,8 +5,6 @@ on:
     branches:
       - main
       - develop
-      - chained-gui
-      - refactor-branch
   workflow_call:
     inputs:
       build_type:
@@ -29,7 +27,7 @@ jobs:
           submodules: recursive
 
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.ccache
@@ -46,7 +44,8 @@ jobs:
             libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
             libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
             libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+            xvfb libxkbcommon-x11-0
 
       - name: Setup GCC
         run: |
@@ -68,23 +67,28 @@ jobs:
         run: |
           cmake --build build \
             --config ${{ inputs.build_type }} \
-            --target ChainedEditor ChainedEngineUnitTests ChainedEngineIntegrationTests \
+            --target ChainedEditor EngineTests \
             --parallel $(nproc)
 
       - name: Test
         run: |
-          if [[ -f "build/bin/tests/ChainedEngineUnitTests" ]]; then
-            build/bin/tests/ChainedEngineUnitTests || echo "Unit tests failed"
-          fi
-          if [[ -f "build/bin/tests/ChainedEngineIntegrationTests" ]]; then
-            build/bin/tests/ChainedEngineIntegrationTests || echo "Integration tests failed (might need display)"
+          if [[ -f "build/tests/EngineTests" ]]; then
+            xvfb-run ./build/tests/EngineTests
+          elif [[ -f "build/bin/EngineTests" ]]; then
+            xvfb-run ./build/bin/EngineTests
+          else
+             echo "EngineTests not found."
+             exit 1
           fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-gcc-${{ inputs.build_type }}
-          path: build/bin/
+          path: |
+            build/editor/ChainedEditor
+            build/runtime/ChainedRuntime
+            build/tests/EngineTests
           retention-days: 7
 
   build-clang:
@@ -98,7 +102,7 @@ jobs:
           submodules: recursive
 
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.ccache
@@ -112,7 +116,8 @@ jobs:
             libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
             libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
             libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+            xvfb libxkbcommon-x11-0
 
       - name: Setup Clang
         run: |
@@ -122,7 +127,7 @@ jobs:
       - name: Configure
         run: |
           cmake -B build \
-            -G "Unix Makefiles" \
+            -G "Ninja" \
             -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
@@ -134,11 +139,14 @@ jobs:
         run: |
           cmake --build build \
             --config ${{ inputs.build_type }} \
+            --target ChainedEditor EngineTests \
             --parallel $(nproc)
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-clang-${{ inputs.build_type }}
-          path: build/bin/
+          path: |
+            build/editor/ChainedEditor
+            build/runtime/ChainedRuntime
           retention-days: 7

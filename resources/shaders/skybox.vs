@@ -1,14 +1,14 @@
-#version 330
+#version 450 core
 
 // Input vertex attributes
-in vec3 vertexPosition;
+layout(location = 0) in vec3 vertexPosition;
 
 // Input uniform values
-uniform mat4 matProjection;
-uniform mat4 matView;
+layout(location = 0) uniform mat4 matProjection;
+layout(location = 1) uniform mat4 matView;
 
 // Output vertex attributes (to fragment shader)
-out vec3 fragPosition;
+layout(location = 0) out vec3 fragPosition;
 
 
 void main()
