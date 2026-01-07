@@ -43,3 +43,15 @@ TEST(SceneTest, ComponentOperations)
     entity.RemoveComponent<CustomComponent>();
     EXPECT_FALSE(entity.HasComponent<CustomComponent>());
 }
+
+TEST(SceneTest, EntityRenaming)
+{
+    Scene scene;
+    Entity entity = scene.CreateEntity("Old Name");
+
+    auto &tag = entity.GetComponent<TagComponent>().Tag;
+    EXPECT_EQ(tag, "Old Name");
+
+    tag = "New Name";
+    EXPECT_EQ(entity.GetComponent<TagComponent>().Tag, "New Name");
+}

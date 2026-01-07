@@ -5,7 +5,6 @@
 #include "engine/renderer/asset_manager.h"
 #include "scene.h"
 
-
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
@@ -183,6 +182,7 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::Key << "CameraYaw" << YAML::Value << pc.CameraYaw;
         out << YAML::Key << "CameraPitch" << YAML::Value << pc.CameraPitch;
         out << YAML::Key << "CameraDistance" << YAML::Value << pc.CameraDistance;
+        out << YAML::Key << "JumpForce" << YAML::Value << pc.JumpForce;
         out << YAML::EndMap;
     }
 
@@ -351,6 +351,8 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 pc.CameraYaw = playerComponent["CameraYaw"].as<float>();
                 pc.CameraPitch = playerComponent["CameraPitch"].as<float>();
                 pc.CameraDistance = playerComponent["CameraDistance"].as<float>();
+                if (playerComponent["JumpForce"])
+                    pc.JumpForce = playerComponent["JumpForce"].as<float>();
             }
         }
     }

@@ -112,7 +112,7 @@ void Renderer::DrawModel(const std::string &path, const Matrix &transform, Color
         }
 
         Matrix originalTransform = model.transform;
-        model.transform = transform;
+        model.transform = MatrixMultiply(originalTransform, transform);
         ::DrawModel(model, {0, 0, 0}, 1.0f, tint);
         model.transform = originalTransform;
     }
@@ -144,7 +144,7 @@ void Renderer::DrawModel(const std::string &path, const Matrix &transform,
         }
 
         Matrix originalTransform = model.transform;
-        model.transform = transform;
+        model.transform = MatrixMultiply(originalTransform, transform);
         ::DrawModel(model, {0, 0, 0}, 1.0f, WHITE);
         model.transform = originalTransform;
     }

@@ -21,7 +21,7 @@ public:
     static void Init();
     static void Shutdown();
 
-    static void Update(Scene *scene, float deltaTime);
+    static void Update(Scene *scene, float deltaTime, bool runtime = false);
 
     // Collision Detection Helpers
     static bool CheckAABB(const Vector3 &min1, const Vector3 &max1, const Vector3 &min2,
