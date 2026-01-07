@@ -1,0 +1,37 @@
+set(COLLISION_SOURCES
+    core/collision_manager.cpp
+    core/collision_manager.h
+    core/physics.cpp
+    core/physics.h
+    colsystem/collision_system.cpp
+    colsystem/collision_system.h
+    structures/collision_structures.cpp
+    structures/collision_structures.h
+    structures/collision_component.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/collision_debug_renderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug/collision_debug_renderer.h
+)
+
+add_library(collision_core STATIC ${COLLISION_SOURCES})
+
+# Disable Unity build for this library to avoid duplicate definitions
+set_target_properties(collision_core PROPERTIES
+    UNITY_BUILD OFF
+    POSITION_INDEPENDENT_CODE ON
+)
+
+target_include_directories(collision_core PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src/Engine
+)
+
+target_link_libraries(collision_core PUBLIC raylib model EnTT::EnTT)
+
+# Raylib is always available via submodule
+if(TARGET raylib)
+    get_target_property(raylib_INCLUDE_DIRS raylib INTERFACE_INCLUDE_DIRECTORIES)
+    if(raylib_INCLUDE_DIRS)
+        target_include_directories(collision_core PUBLIC ${raylib_INCLUDE_DIRS})
+    endif()
+endif()
+
