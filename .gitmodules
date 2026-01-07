@@ -44,3 +44,8 @@
 	path = include/entt
 	url = https://github.com/skypjack/entt.git
 	branch = master
+
+[submodule "include/mono"]
+	path = include/mono
+	url = https://github.com/mono/mono.git
+	branch = main
