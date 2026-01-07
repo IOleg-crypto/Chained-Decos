@@ -146,6 +146,8 @@ struct PlayerComponent
     float CameraPitch = 20.0f;
     float CameraDistance = 10.0f;
 
+    float JumpForce = 10.0f;
+
     PlayerComponent() = default;
 };
 

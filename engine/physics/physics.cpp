@@ -11,185 +11,173 @@ namespace CH
 {
 void Physics::Init()
 {
-    // Minimalist physics init
 }
 
 void Physics::Shutdown()
 {
 }
 
-void Physics::Update(Scene *scene, float deltaTime)
+static void ProcessColliderData(entt::registry &sceneRegistry)
 {
-    auto &registry = scene->GetRegistry();
+    auto view = sceneRegistry.view<ColliderComponent, ModelComponent, TransformComponent>();
+    for (auto entity : view)
+    {
+        auto &colliderComp = view.get<ColliderComponent>(entity);
+        if (colliderComp.Type == ColliderType::Box && colliderComp.bAutoCalculate)
+        {
+            auto &modelComp = view.get<ModelComponent>(entity);
+            BoundingBox box = AssetManager::GetModelBoundingBox(modelComp.ModelPath);
+
+            colliderComp.Size = Vector3Subtract(box.max, box.min);
+            colliderComp.Offset = box.min;
+            colliderComp.bAutoCalculate = false;
+        }
+        else if (colliderComp.Type == ColliderType::Mesh && !colliderComp.BVHRoot &&
+                 !colliderComp.ModelPath.empty())
+        {
+            Model model = AssetManager::LoadModel(colliderComp.ModelPath);
+            if (model.meshCount > 0)
+            {
+                colliderComp.BVHRoot = BVHBuilder::Build(model);
+                BoundingBox box = AssetManager::GetModelBoundingBox(colliderComp.ModelPath);
+                colliderComp.Offset = box.min;
+                colliderComp.Size = Vector3Subtract(box.max, box.min);
+                CH_CORE_INFO("BVH Built & AABB Cached for entity %d", (uint32_t)entity);
+            }
+        }
+    }
+}
+
+static void ApplyRigidBodyPhysics(entt::registry &sceneRegistry, float deltaTime)
+{
     const float GRAVITY_CONSTANT = 20.0f;
-
-    // 1. Process Collider Generation (Box AABB & Mesh BVH)
+    auto view = sceneRegistry.view<TransformComponent, RigidBodyComponent>();
+    for (auto entity : view)
     {
-        auto view = registry.view<ColliderComponent, ModelComponent, TransformComponent>();
-        for (auto entity : view)
-        {
-            auto &collider = view.get<ColliderComponent>(entity);
-            if (collider.Type == ColliderType::Box && collider.bAutoCalculate)
-            {
-                auto &modelComp = view.get<ModelComponent>(entity);
-                BoundingBox box = AssetManager::GetModelBoundingBox(modelComp.ModelPath);
+        auto &rigidBody = view.get<RigidBodyComponent>(entity);
+        auto &entityTransform = view.get<TransformComponent>(entity);
 
-                collider.Size = Vector3Subtract(box.max, box.min);
-                collider.Offset = box.min;
-                collider.bAutoCalculate = false;
-            }
-            else if (collider.Type == ColliderType::Mesh && !collider.BVHRoot &&
-                     !collider.ModelPath.empty())
-            {
-                Model model = AssetManager::LoadModel(collider.ModelPath);
-                if (model.meshCount > 0)
-                {
-                    collider.BVHRoot = BVHBuilder::Build(model);
-                    // Cache AABB for visualization
-                    BoundingBox box = AssetManager::GetModelBoundingBox(collider.ModelPath);
-                    collider.Offset = box.min;
-                    collider.Size = Vector3Subtract(box.max, box.min);
-                    CH_CORE_INFO("BVH Built & AABB Cached for entity %d", (uint32_t)entity);
-                }
-            }
+        if (rigidBody.UseGravity && !rigidBody.IsGrounded)
+        {
+            rigidBody.Velocity.y -= GRAVITY_CONSTANT * deltaTime;
+        }
+
+        if (!rigidBody.IsKinematic || Vector3Length(rigidBody.Velocity) > 0.001f)
+        {
+            Vector3 velocityDelta = Vector3Scale(rigidBody.Velocity, deltaTime);
+            entityTransform.Translation = Vector3Add(entityTransform.Translation, velocityDelta);
         }
     }
+}
 
-    // 2. Apply Gravity to RigidBodies
-    {
-        auto view = registry.view<TransformComponent, RigidBodyComponent>();
-        for (auto entity : view)
-        {
-            auto &rb = view.get<RigidBodyComponent>(entity);
-            auto &transform = view.get<TransformComponent>(entity);
-
-            if (rb.UseGravity && !rb.IsGrounded)
-            {
-                rb.Velocity.y -= GRAVITY_CONSTANT * deltaTime;
-            }
-
-            // Move
-            if (!rb.IsKinematic || Vector3Length(rb.Velocity) > 0.001f)
-            {
-                Vector3 delta = Vector3Scale(rb.Velocity, deltaTime);
-                transform.Translation = Vector3Add(transform.Translation, delta);
-            }
-        }
-    }
-
-    // 3. Collision Resolution & Grounding
-    auto rigidBodies = registry.view<TransformComponent, RigidBodyComponent>();
+static void ResolveCollisionLogic(entt::registry &sceneRegistry)
+{
+    auto rigidBodies = sceneRegistry.view<TransformComponent, RigidBodyComponent>();
     for (auto rbEntity : rigidBodies)
     {
-        auto &transform = rigidBodies.get<TransformComponent>(rbEntity);
-        auto &rb = rigidBodies.get<RigidBodyComponent>(rbEntity);
+        auto &entityTransform = rigidBodies.get<TransformComponent>(rbEntity);
+        auto &rigidBody = rigidBodies.get<RigidBodyComponent>(rbEntity);
 
-        // if (rb.IsKinematic)
-        //     continue;
+        rigidBody.IsGrounded = false;
 
-        rb.IsGrounded = false;
-
-        auto colliders = registry.view<TransformComponent, ColliderComponent>();
+        auto colliders = sceneRegistry.view<TransformComponent, ColliderComponent>();
         for (auto otherEntity : colliders)
         {
             if (rbEntity == otherEntity)
                 continue;
 
-            auto &ot = colliders.get<TransformComponent>(otherEntity);
-            auto &oc = colliders.get<ColliderComponent>(otherEntity);
+            auto &otherTransform = colliders.get<TransformComponent>(otherEntity);
+            auto &otherCollider = colliders.get<ColliderComponent>(otherEntity);
 
-            if (!oc.bEnabled)
+            if (!otherCollider.bEnabled)
                 continue;
 
-            if (oc.Type == ColliderType::Box)
+            if (otherCollider.Type == ColliderType::Box)
             {
-                Vector3 rbMin = transform.Translation;
-                Vector3 rbMax = transform.Translation;
-                Vector3 rbcOffset = {0.0f, 0.0f, 0.0f};
+                Vector3 rigidBodyMin = entityTransform.Translation;
+                Vector3 rigidBodyMax = entityTransform.Translation;
+                Vector3 rbColliderOffset = {0.0f, 0.0f, 0.0f};
 
-                if (registry.all_of<ColliderComponent>(rbEntity))
+                if (sceneRegistry.all_of<ColliderComponent>(rbEntity))
                 {
-                    auto &rbc = registry.get<ColliderComponent>(rbEntity);
+                    auto &rbc = sceneRegistry.get<ColliderComponent>(rbEntity);
                     if (!rbc.bEnabled || rbc.Type != ColliderType::Box)
                         continue;
 
-                    // Apply Scale to RB Collider
-                    Vector3 rbScale = transform.Scale;
-                    rbcOffset = Vector3Multiply(rbc.Offset, rbScale);
+                    Vector3 rbScale = entityTransform.Scale;
+                    rbColliderOffset = Vector3Multiply(rbc.Offset, rbScale);
                     Vector3 rbcSize = Vector3Multiply(rbc.Size, rbScale);
 
-                    rbMin = Vector3Add(transform.Translation, rbcOffset);
-                    rbMax = Vector3Add(rbMin, rbcSize);
+                    rigidBodyMin = Vector3Add(entityTransform.Translation, rbColliderOffset);
+                    rigidBodyMax = Vector3Add(rigidBodyMin, rbcSize);
                 }
 
-                auto &ot = colliders.get<TransformComponent>(otherEntity);
-                // Apply Scale to Other Collider
-                Vector3 otherScale = ot.Scale;
-                Vector3 otherOffset = Vector3Multiply(oc.Offset, otherScale);
-                Vector3 otherSize = Vector3Multiply(oc.Size, otherScale);
+                Vector3 otherScale = otherTransform.Scale;
+                Vector3 otherMin = Vector3Add(otherTransform.Translation,
+                                              Vector3Multiply(otherCollider.Offset, otherScale));
+                Vector3 otherMax =
+                    Vector3Add(otherMin, Vector3Multiply(otherCollider.Size, otherScale));
 
-                Vector3 otherMin = Vector3Add(ot.Translation, otherOffset);
-                Vector3 otherMax = Vector3Add(otherMin, otherSize);
-
-                if (Collision::CheckAABB(rbMin, rbMax, otherMin, otherMax))
+                if (Collision::CheckAABB(rigidBodyMin, rigidBodyMax, otherMin, otherMax))
                 {
-                    if (rb.Velocity.y <= 0.0f && rbMin.y + 0.2f > otherMax.y)
+                    if (rigidBody.Velocity.y <= 0.0f && rigidBodyMin.y + 0.2f > otherMax.y)
                     {
-                        rb.IsGrounded = true;
-                        rb.Velocity.y = 0.0f;
-                        transform.Translation.y = otherMax.y - rbcOffset.y;
+                        rigidBody.IsGrounded = true;
+                        rigidBody.Velocity.y = 0.0f;
+                        entityTransform.Translation.y = otherMax.y - rbColliderOffset.y;
+                        otherCollider.IsColliding = true;
                     }
                 }
             }
-            else if (oc.Type == ColliderType::Mesh && oc.BVHRoot)
+            else if (otherCollider.Type == ColliderType::Mesh && otherCollider.BVHRoot)
             {
-                if (!rb.IsGrounded)
+                if (!rigidBody.IsGrounded)
                 {
-                    Vector3 feetPos = transform.Translation;
-                    if (registry.all_of<ColliderComponent>(rbEntity))
+                    Vector3 feetPosition = entityTransform.Translation;
+                    if (sceneRegistry.all_of<ColliderComponent>(rbEntity))
                     {
-                        auto &rbc = registry.get<ColliderComponent>(rbEntity);
-                        // Apply Scale to Raycast Offset
-                        feetPos = Vector3Add(transform.Translation,
-                                             Vector3Multiply(rbc.Offset, transform.Scale));
+                        auto &rbc = sceneRegistry.get<ColliderComponent>(rbEntity);
+                        feetPosition =
+                            Vector3Add(entityTransform.Translation,
+                                       Vector3Multiply(rbc.Offset, entityTransform.Scale));
                     }
 
-                    Ray ray;
-                    ray.position = feetPos;
-                    ray.position.y += 0.5f; // Start ray slightly above feet
-                    ray.direction = {0.0f, -1.0f, 0.0f};
+                    Ray groundingRay;
+                    groundingRay.position = feetPosition;
+                    groundingRay.position.y += 0.5f;
+                    groundingRay.direction = {0.0f, -1.0f, 0.0f};
 
-                    // Transform Ray to Model Local Space
-                    auto &ot = colliders.get<TransformComponent>(otherEntity);
-                    Matrix modelTransform = ot.GetTransform();
+                    Matrix modelTransform = otherTransform.GetTransform();
                     Matrix invTransform = MatrixInvert(modelTransform);
 
-                    Vector3 localOrigin = Vector3Transform(ray.position, invTransform);
-                    Vector3 localTarget =
-                        Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
+                    Vector3 localOrigin = Vector3Transform(groundingRay.position, invTransform);
+                    Vector3 localTarget = Vector3Transform(
+                        Vector3Add(groundingRay.position, groundingRay.direction), invTransform);
                     Vector3 localDir = Vector3Normalize(Vector3Subtract(localTarget, localOrigin));
 
                     Ray localRay = {localOrigin, localDir};
                     float t_local = FLT_MAX;
                     Vector3 localNormal;
 
-                    if (BVHBuilder::Raycast(oc.BVHRoot.get(), localRay, t_local, localNormal))
+                    if (BVHBuilder::Raycast(otherCollider.BVHRoot.get(), localRay, t_local,
+                                            localNormal))
                     {
                         Vector3 hitPosLocal =
                             Vector3Add(localOrigin, Vector3Scale(localDir, t_local));
                         Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
 
                         float hitY = hitPosWorld.y;
-                        float floorThreshold = 0.55f; // Tolerance relative to ray start (0.5)
+                        float floorThreshold = 0.55f;
 
-                        // Only snap if we are close enough to the floor
-                        if (hitY >= feetPos.y - 0.1f && hitY <= feetPos.y + floorThreshold)
+                        if (hitY >= feetPosition.y - 0.1f &&
+                            hitY <= feetPosition.y + floorThreshold)
                         {
-                            if (rb.Velocity.y <= 0.0f)
+                            if (rigidBody.Velocity.y <= 0.0f)
                             {
-                                rb.IsGrounded = true;
-                                rb.Velocity.y = 0.0f;
-                                transform.Translation.y = hitY;
+                                rigidBody.IsGrounded = true;
+                                rigidBody.Velocity.y = 0.0f;
+                                entityTransform.Translation.y = hitY;
+                                otherCollider.IsColliding = true;
                             }
                         }
                     }
@@ -197,6 +185,30 @@ void Physics::Update(Scene *scene, float deltaTime)
             }
         }
     }
+}
+
+void Physics::Update(Scene *scene, float deltaTime, bool runtime)
+{
+    auto &sceneRegistry = scene->GetRegistry();
+
+    // 0. Clear collision flags
+    auto collView = sceneRegistry.view<ColliderComponent>();
+    for (auto entity : collView)
+    {
+        collView.get<ColliderComponent>(entity).IsColliding = false;
+    }
+
+    // 1. Process Collider Generation (Box AABB & Mesh BVH)
+    ProcessColliderData(sceneRegistry);
+
+    if (!runtime)
+        return;
+
+    // 2. Apply Gravity & Movement
+    ApplyRigidBodyPhysics(sceneRegistry, deltaTime);
+
+    // 3. Collision Resolution & Grounding
+    ResolveCollisionLogic(sceneRegistry);
 }
 
 bool Physics::CheckAABB(const Vector3 &minA, const Vector3 &maxA, const Vector3 &minB,
@@ -215,22 +227,22 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
     auto view = scene->GetRegistry().view<TransformComponent, ColliderComponent>();
     for (auto entity : view)
     {
-        auto &transform = view.get<TransformComponent>(entity);
-        auto &collider = view.get<ColliderComponent>(entity);
+        auto &entityTransform = view.get<TransformComponent>(entity);
+        auto &colliderComp = view.get<ColliderComponent>(entity);
 
-        if (!collider.bEnabled)
+        if (!colliderComp.bEnabled)
             continue;
 
-        if (collider.Type == ColliderType::Box)
+        if (colliderComp.Type == ColliderType::Box)
         {
             BoundingBox box;
-            Vector3 size = Vector3Multiply(collider.Size, transform.Scale);
-            Vector3 offset = Vector3Multiply(collider.Offset, transform.Scale);
+            Vector3 scaledSize = Vector3Multiply(colliderComp.Size, entityTransform.Scale);
+            Vector3 scaledOffset = Vector3Multiply(colliderComp.Offset, entityTransform.Scale);
 
-            box.min = Vector3Add(transform.Translation, offset);
-            box.max = Vector3Add(box.min, size);
+            box.min = Vector3Add(entityTransform.Translation, scaledOffset);
+            box.max = Vector3Add(box.min, scaledSize);
 
-            RayCollision collision = GetRayCollisionBox(ray, box); // World Space AABB
+            RayCollision collision = GetRayCollisionBox(ray, box);
             if (collision.hit && collision.distance < result.Distance)
             {
                 result.Hit = true;
@@ -240,9 +252,9 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
                 result.Entity = entity;
             }
         }
-        else if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
+        else if (colliderComp.Type == ColliderType::Mesh && colliderComp.BVHRoot)
         {
-            Matrix modelTransform = transform.GetTransform();
+            Matrix modelTransform = entityTransform.GetTransform();
             Matrix invTransform = MatrixInvert(modelTransform);
 
             Vector3 localOrigin = Vector3Transform(ray.position, invTransform);
@@ -254,9 +266,8 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
             float t_local = FLT_MAX;
             Vector3 localNormal;
 
-            if (BVHBuilder::Raycast(collider.BVHRoot.get(), localRay, t_local, localNormal))
+            if (BVHBuilder::Raycast(colliderComp.BVHRoot.get(), localRay, t_local, localNormal))
             {
-                // Convert result to World Space
                 Vector3 hitPosLocal = Vector3Add(localOrigin, Vector3Scale(localDir, t_local));
                 Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
                 float distWorld = Vector3Distance(ray.position, hitPosWorld);
@@ -266,14 +277,7 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
                     result.Hit = true;
                     result.Distance = distWorld;
                     result.Position = hitPosWorld;
-                    // Normal also needs transform (Rotation only)
-                    // Simple approximation: Transform as vector, normalize
-                    // For correct normal transform: Inverse Transpose of Model Matrix
-                    // But for now, Rotate is likely enough
-                    // Matrix rotation = MatrixRotateXYZ(transform.Rotation);
-                    // Let's use Vector3Transform with 0 translation
-                    // Actually, easiest is Vector3Subtract(Vector3Transform(normal, mat),
-                    // Vector3Transform(0, mat))
+
                     Vector3 normalWorld = Vector3Normalize(
                         Vector3Subtract(Vector3Transform(localNormal, modelTransform),
                                         Vector3Transform({0, 0, 0}, modelTransform)));
