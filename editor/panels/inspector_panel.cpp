@@ -20,7 +20,6 @@ static bool DrawVec3Control(const std::string &label, Vector3 &values, float res
 {
     bool modified = false;
     ImGuiIO &io = ImGui::GetIO();
-    auto boldFont = io.Fonts->Fonts[0];
 
     ImGui::PushID(label.c_str());
 
@@ -155,6 +154,33 @@ void InspectorPanel::OnImGuiRender(Scene *scene, Entity entity, bool readOnly)
 
 void InspectorPanel::DrawComponents(Entity entity)
 {
+    DrawTagComponent(entity);
+
+    ImGui::SameLine();
+    ImGui::PushItemWidth(-1);
+
+    if (ImGui::Button("Add Component"))
+        ImGui::OpenPopup("AddComponent");
+
+    DrawAddComponentPopup(entity);
+
+    ImGui::PopItemWidth();
+
+    DrawTransformComponent(entity);
+    DrawModelComponent(entity);
+    DrawColliderComponent(entity);
+    DrawRigidBodyComponent(entity);
+    DrawSpawnComponent(entity);
+    DrawPlayerComponent(entity);
+    DrawMaterialComponent(entity);
+    DrawPointLightComponent(entity);
+    DrawAudioComponent(entity);
+    DrawHierarchyComponent(entity);
+    DrawCSharpScriptComponent(entity);
+}
+
+void InspectorPanel::DrawTagComponent(Entity entity)
+{
     if (entity.HasComponent<TagComponent>())
     {
         auto &tag = entity.GetComponent<TagComponent>().Tag;
@@ -167,13 +193,10 @@ void InspectorPanel::DrawComponents(Entity entity)
             tag = std::string(buffer);
         }
     }
+}
 
-    ImGui::SameLine();
-    ImGui::PushItemWidth(-1);
-
-    if (ImGui::Button("Add Component"))
-        ImGui::OpenPopup("AddComponent");
-
+void InspectorPanel::DrawAddComponentPopup(Entity entity)
+{
     if (ImGui::BeginPopup("AddComponent"))
     {
         if (ImGui::MenuItem("Tag"))
@@ -262,9 +285,10 @@ void InspectorPanel::DrawComponents(Entity entity)
 
         ImGui::EndPopup();
     }
+}
 
-    ImGui::PopItemWidth();
-
+void InspectorPanel::DrawTransformComponent(Entity entity)
+{
     DrawComponent<TransformComponent>(
         "Transform", entity,
         [&](auto &tc)
@@ -296,7 +320,10 @@ void InspectorPanel::DrawComponents(Entity entity)
                     std::make_unique<TransformCommand>(entity, s_OldTransform, tc));
             }
         });
+}
 
+void InspectorPanel::DrawModelComponent(Entity entity)
+{
     DrawComponent<ModelComponent>(
         "Model", entity,
         [](auto &mc)
@@ -345,7 +372,10 @@ void InspectorPanel::DrawComponents(Entity entity)
                 mc.Tint.a = (unsigned char)(color[3] * 255.0f);
             }
         });
+}
 
+void InspectorPanel::DrawColliderComponent(Entity entity)
+{
     DrawComponent<ColliderComponent>(
         "Collider", entity,
         [](auto &collider)
@@ -376,7 +406,7 @@ void InspectorPanel::DrawComponents(Entity entity)
                 if (ImGui::InputText("Model Path", buffer, sizeof(buffer)))
                 {
                     collider.ModelPath = std::string(buffer);
-                    collider.BVHRoot = nullptr; // Reset to force rebuild
+                    collider.BVHRoot = nullptr;
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("...##MeshCol"))
@@ -401,7 +431,7 @@ void InspectorPanel::DrawComponents(Entity entity)
                         {
                             collider.ModelPath = fullPath.string();
                         }
-                        collider.BVHRoot = nullptr; // Reset to force rebuild
+                        collider.BVHRoot = nullptr;
                         NFD_FreePath(outPath);
                     }
                 }
@@ -413,7 +443,6 @@ void InspectorPanel::DrawComponents(Entity entity)
                     if (model.meshCount > 0)
                     {
                         collider.BVHRoot = BVHBuilder::Build(model);
-                        // Cache AABB for visualization
                         BoundingBox box = AssetManager::GetModelBoundingBox(collider.ModelPath);
                         collider.Offset = box.min;
                         collider.Size = Vector3Subtract(box.max, box.min);
@@ -431,7 +460,10 @@ void InspectorPanel::DrawComponents(Entity entity)
             ImGui::TextColored(collider.IsColliding ? ImVec4{0, 1, 0, 1} : ImVec4{1, 0, 0, 1},
                                collider.IsColliding ? "YES" : "NO");
         });
+}
 
+void InspectorPanel::DrawRigidBodyComponent(Entity entity)
+{
     DrawComponent<RigidBodyComponent>("Rigid Body", entity,
                                       [](auto &rb)
                                       {
@@ -446,19 +478,26 @@ void InspectorPanel::DrawComponents(Entity entity)
                                                                            : ImVec4{1, 0, 0, 1},
                                                              rb.IsGrounded ? "YES" : "NO");
                                       });
+}
 
+void InspectorPanel::DrawSpawnComponent(Entity entity)
+{
     DrawComponent<SpawnComponent>("Spawn Zone", entity,
                                   [](auto &sc)
                                   {
                                       ImGui::Checkbox("Active", &sc.IsActive);
                                       DrawVec3Control("Zone Size", sc.ZoneSize, 1.0f);
                                   });
+}
 
+void InspectorPanel::DrawPlayerComponent(Entity entity)
+{
     DrawComponent<PlayerComponent>(
         "Player", entity,
         [](auto &player)
         {
             ImGui::DragFloat("Movement Speed", &player.MovementSpeed, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat("Jump Force", &player.JumpForce, 0.1f, 0.0f, 100.0f);
             ImGui::DragFloat("Look Sensitivity", &player.LookSensitivity, 0.01f, 0.1f, 5.0f);
             ImGui::DragFloat("Camera Yaw", &player.CameraYaw, 1.0f, -180.0f, 180.0f);
             ImGui::DragFloat("Camera Pitch", &player.CameraPitch, 1.0f, -89.0f, 89.0f);
@@ -469,7 +508,10 @@ void InspectorPanel::DrawComponents(Entity entity)
             ImGui::Text("Coordinates: %.2f, %.2f, %.2f", player.coordinates.x, player.coordinates.y,
                         player.coordinates.z);
         });
+}
 
+void InspectorPanel::DrawMaterialComponent(Entity entity)
+{
     DrawComponent<MaterialComponent>(
         "Material", entity,
         [](auto &mc)
@@ -486,7 +528,7 @@ void InspectorPanel::DrawComponents(Entity entity)
 
             char buffer[256];
             memset(buffer, 0, sizeof(buffer));
-            strncpy(buffer, mc.AlbedoPath.c_str(), sizeof(buffer)); // Use strncpy for safety
+            strncpy(buffer, mc.AlbedoPath.c_str(), sizeof(buffer));
             if (ImGui::InputText("Albedo Path", buffer, sizeof(buffer)))
             {
                 mc.AlbedoPath = std::string(buffer);
@@ -518,7 +560,10 @@ void InspectorPanel::DrawComponents(Entity entity)
                 }
             }
         });
+}
 
+void InspectorPanel::DrawPointLightComponent(Entity entity)
+{
     DrawComponent<PointLightComponent>(
         "Point Light", entity,
         [](auto &component)
@@ -538,7 +583,10 @@ void InspectorPanel::DrawComponents(Entity entity)
             ImGui::DragFloat("Radius", &component.Radius, 0.1f, 0.0f, 1000.0f);
             ImGui::DragFloat("Falloff", &component.Falloff, 0.1f, 0.0f, 20.0f);
         });
+}
 
+void InspectorPanel::DrawAudioComponent(Entity entity)
+{
     DrawComponent<AudioComponent>(
         "Audio", entity,
         [](auto &ac)
@@ -584,22 +632,20 @@ void InspectorPanel::DrawComponents(Entity entity)
 
             if (ImGui::Button("Play"))
             {
-                // In V2, we might want to use a full path or asset path
                 std::filesystem::path path = ac.SoundPath;
                 if (!path.is_absolute() && Project::GetActive())
-                {
                     path = Project::GetAssetDirectory() / path;
-                }
                 AudioManager::LoadSound(ac.SoundPath, path.string());
                 AudioManager::PlaySound(ac.SoundPath, ac.Volume, ac.Pitch);
             }
             ImGui::SameLine();
             if (ImGui::Button("Stop"))
-            {
                 AudioManager::StopSound(ac.SoundPath);
-            }
         });
+}
 
+void InspectorPanel::DrawHierarchyComponent(Entity entity)
+{
     DrawComponent<HierarchyComponent>("Hierarchy", entity,
                                       [&](auto &hc)
                                       {
@@ -615,7 +661,10 @@ void InspectorPanel::DrawComponents(Entity entity)
                                                                 (uint32_t)child);
                                           }
                                       });
+}
 
+void InspectorPanel::DrawCSharpScriptComponent(Entity entity)
+{
     DrawComponent<CSharpScriptComponent>(
         "Script", entity,
         [](auto &sc)

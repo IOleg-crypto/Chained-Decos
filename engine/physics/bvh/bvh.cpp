@@ -161,7 +161,7 @@ static bool IntersectAABB(const Ray &ray, Vector3 min, Vector3 max, float &t)
 
     if (tmax < 0 || tmin > tmax)
         return false;
-    t = tmin;
+    t = fmaxf(0.0f, tmin);
     return true;
 }
 

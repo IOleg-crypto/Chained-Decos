@@ -17,6 +17,20 @@ public:
 
 private:
     void DrawComponents(Entity entity);
+    void DrawTagComponent(Entity entity);
+    void DrawTransformComponent(Entity entity);
+    void DrawModelComponent(Entity entity);
+    void DrawColliderComponent(Entity entity);
+    void DrawRigidBodyComponent(Entity entity);
+    void DrawSpawnComponent(Entity entity);
+    void DrawPlayerComponent(Entity entity);
+    void DrawMaterialComponent(Entity entity);
+    void DrawPointLightComponent(Entity entity);
+    void DrawAudioComponent(Entity entity);
+    void DrawHierarchyComponent(Entity entity);
+    void DrawCSharpScriptComponent(Entity entity);
+
+    void DrawAddComponentPopup(Entity entity);
 };
 } // namespace CH
 

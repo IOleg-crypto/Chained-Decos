@@ -23,7 +23,7 @@ jobs:
           submodules: recursive
 
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             C:/ccache
@@ -54,23 +54,27 @@ jobs:
         run: |
           cmake --build build \
             --config ${{ inputs.build_type }} \
-            --target ChainedEditor ChainedEngineUnitTests ChainedEngineIntegrationTests \
+            --target ChainedEditor EngineTests \
             --parallel 4
 
       - name: Test
         shell: bash
         run: |
-          if [[ -f "build/bin/tests/ChainedEngineUnitTests.exe" ]]; then
-            build/bin/tests/ChainedEngineUnitTests.exe || echo "Unit tests failed"
-          fi
-          if [[ -f "build/bin/tests/ChainedEngineIntegrationTests.exe" ]]; then
-            # NOTE: Integration tests might require a headless setup or might fail if raylib can't init
-            build/bin/tests/ChainedEngineIntegrationTests.exe || echo "Integration tests failed (might need display)"
+          if [[ -f "build/tests/EngineTests.exe" ]]; then
+            ./build/tests/EngineTests.exe
+          elif [[ -f "build/bin/EngineTests.exe" ]]; then
+             ./build/bin/EngineTests.exe
+          else
+            echo "EngineTests not found. Check build directory structure."
+            exit 1
           fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-msvc-${{ inputs.build_type }}
-          path: build/bin/
+          path: |
+            build/editor/ChainedEditor.exe
+            build/runtime/ChainedRuntime.exe
+            build/tests/EngineTests.exe
           retention-days: 7

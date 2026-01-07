@@ -2,9 +2,11 @@
 #include "components.h"
 #include "engine/core/input.h"
 #include "engine/core/log.h"
+#include "engine/physics/bvh/bvh.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/asset_manager.h"
 #include "entity.h"
+#include <cfloat>
 
 namespace CH
 {
@@ -33,105 +35,147 @@ void Scene::DestroyEntity(Entity entity)
     m_Registry.destroy(entity);
 }
 
+static bool CheckWallCollision(entt::registry &registry, entt::entity playerEntity,
+                               const Vector3 &targetTranslation, const Vector3 &movementDir)
+{
+    auto &playerTransform = registry.get<TransformComponent>(playerEntity);
+    Vector3 playerScale = playerTransform.Scale;
+
+    // Default player AABB
+    Vector3 playerMin =
+        Vector3Subtract(targetTranslation, Vector3Multiply({0.4f, 0.0f, 0.4f}, playerScale));
+    Vector3 playerMax =
+        Vector3Add(targetTranslation, Vector3Multiply({0.4f, 1.8f, 0.4f}, playerScale));
+
+    if (registry.all_of<ColliderComponent>(playerEntity))
+    {
+        auto &pc = registry.get<ColliderComponent>(playerEntity);
+        playerMin = Vector3Add(targetTranslation, Vector3Multiply(pc.Offset, playerScale));
+        playerMax = Vector3Add(playerMin, Vector3Multiply(pc.Size, playerScale));
+    }
+
+    auto colView = registry.view<TransformComponent, ColliderComponent>();
+    for (auto other : colView)
+    {
+        if (other == playerEntity)
+            continue;
+
+        auto &otherTransform = colView.get<TransformComponent>(other);
+        auto &otherCollider = colView.get<ColliderComponent>(other);
+
+        if (!otherCollider.bEnabled)
+            continue;
+
+        if (otherCollider.Type == ColliderType::Box)
+        {
+            Vector3 otherScale = otherTransform.Scale;
+            Vector3 otherMin = Vector3Add(otherTransform.Translation,
+                                          Vector3Multiply(otherCollider.Offset, otherScale));
+            Vector3 otherMax =
+                Vector3Add(otherMin, Vector3Multiply(otherCollider.Size, otherScale));
+
+            if (Physics::CheckAABB(playerMin, playerMax, otherMin, otherMax))
+            {
+                if (playerMin.y + 0.3f > otherMax.y)
+                    continue; // Step up
+                if (playerMax.y - 0.3f < otherMin.y)
+                    continue; // High above
+
+                otherCollider.IsColliding = true;
+                return true;
+            }
+        }
+        else if (otherCollider.Type == ColliderType::Mesh && otherCollider.BVHRoot)
+        {
+            float heights[2] = {0.3f, 1.0f};
+            for (float h : heights)
+            {
+                Ray moveRay;
+                moveRay.position = playerTransform.Translation;
+                moveRay.position.y += h;
+                moveRay.direction = movementDir;
+
+                Matrix modelTransform = otherTransform.GetTransform();
+                Matrix invTransform = MatrixInvert(modelTransform);
+                Vector3 localOrigin = Vector3Transform(moveRay.position, invTransform);
+                Vector3 localTarget =
+                    Vector3Transform(Vector3Add(moveRay.position, moveRay.direction), invTransform);
+                Vector3 localDir = Vector3Normalize(Vector3Subtract(localTarget, localOrigin));
+
+                Ray localRay = {localOrigin, localDir};
+                float t_local = FLT_MAX;
+                Vector3 localNormal;
+
+                if (BVHBuilder::Raycast(otherCollider.BVHRoot.get(), localRay, t_local,
+                                        localNormal))
+                {
+                    if (t_local < 0.5f)
+                    {
+                        otherCollider.IsColliding = true;
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
 void Scene::OnUpdateRuntime(float deltaTime)
 {
-    // 1. Player Spawning Logic Removed (Manual placement only)
-
-    // 2. Player Movement
-    auto view = m_Registry.view<PlayerComponent, TransformComponent, RigidBodyComponent>();
-    for (auto entity : view)
+    auto playerView = m_Registry.view<PlayerComponent, TransformComponent, RigidBodyComponent>();
+    for (auto entity : playerView)
     {
-        auto &player = view.get<PlayerComponent>(entity);
-        auto &transform = view.get<TransformComponent>(entity);
-        auto &rb = view.get<RigidBodyComponent>(entity);
+        auto &player = playerView.get<PlayerComponent>(entity);
+        auto &transform = playerView.get<TransformComponent>(entity);
+        auto &rigidBody = playerView.get<RigidBodyComponent>(entity);
 
-        float speed = player.MovementSpeed;
+        float currentSpeed = player.MovementSpeed;
         if (Input::IsKeyDown(KEY_LEFT_SHIFT))
-            speed *= 2.0f;
+            currentSpeed *= 2.0f;
 
-        Vector3 movement = {0.0f, 0.0f, 0.0f};
-
-        // Wrap CameraYaw (0-360)
+        // Camera Rotation
         while (player.CameraYaw < 0)
             player.CameraYaw += 360.0f;
         while (player.CameraYaw >= 360.0f)
             player.CameraYaw -= 360.0f;
 
-        float yawRad = player.CameraYaw * DEG2RAD;
-        Vector3 forward = {-sinf(yawRad), 0.0f, -cosf(yawRad)};
-        Vector3 right = {cosf(yawRad), 0.0f, -sinf(yawRad)};
+        float yawRadians = player.CameraYaw * DEG2RAD;
+        Vector3 forwardDir = {-sinf(yawRadians), 0.0f, -cosf(yawRadians)};
+        Vector3 rightDir = {cosf(yawRadians), 0.0f, -sinf(yawRadians)};
 
+        // Movement Input
+        Vector3 movementVector = {0.0f, 0.0f, 0.0f};
         if (Input::IsKeyDown(KEY_W))
-            movement = Vector3Add(movement, forward);
+            movementVector = Vector3Add(movementVector, forwardDir);
         if (Input::IsKeyDown(KEY_S))
-            movement = Vector3Subtract(movement, forward);
+            movementVector = Vector3Subtract(movementVector, forwardDir);
         if (Input::IsKeyDown(KEY_A))
-            movement = Vector3Subtract(movement, right);
+            movementVector = Vector3Subtract(movementVector, rightDir);
         if (Input::IsKeyDown(KEY_D))
-            movement = Vector3Add(movement, right);
+            movementVector = Vector3Add(movementVector, rightDir);
 
-        if (Vector3Length(movement) > 0.1f)
+        if (Vector3Length(movementVector) > 0.1f)
         {
-            movement = Vector3Normalize(movement);
-            Vector3 targetTranslation =
-                Vector3Add(transform.Translation, Vector3Scale(movement, speed * deltaTime));
+            movementVector = Vector3Normalize(movementVector);
+            Vector3 targetPosition = Vector3Add(
+                transform.Translation, Vector3Scale(movementVector, currentSpeed * deltaTime));
 
-            // Collision Resolution (AABB vs AABB)
-            auto colliders = m_Registry.view<TransformComponent, ColliderComponent>();
-            bool wallHit = false;
-
-            // Use default player AABB scaled by transform
-            Vector3 playerScale = transform.Scale;
-            Vector3 playerMin = Vector3Subtract(targetTranslation,
-                                                Vector3Multiply({0.4f, 0.0f, 0.4f}, playerScale));
-            Vector3 playerMax =
-                Vector3Add(targetTranslation, Vector3Multiply({0.4f, 1.8f, 0.4f}, playerScale));
-
-            if (m_Registry.all_of<ColliderComponent>(entity))
+            if (!CheckWallCollision(m_Registry, entity, targetPosition, movementVector))
             {
-                auto &pc = m_Registry.get<ColliderComponent>(entity);
-                playerMin = Vector3Add(targetTranslation, Vector3Multiply(pc.Offset, playerScale));
-                playerMax = Vector3Add(playerMin, Vector3Multiply(pc.Size, playerScale));
+                transform.Translation.x = targetPosition.x;
+                transform.Translation.z = targetPosition.z;
             }
 
-            for (auto other : colliders)
-            {
-                if (other == entity)
-                    continue;
-
-                auto &ot = colliders.get<TransformComponent>(other);
-                auto &oc = colliders.get<ColliderComponent>(other);
-
-                if (!oc.bEnabled)
-                    continue;
-
-                Vector3 otherScale = ot.Scale;
-                Vector3 otherMin =
-                    Vector3Add(ot.Translation, Vector3Multiply(oc.Offset, otherScale));
-                Vector3 otherMax = Vector3Add(otherMin, Vector3Multiply(oc.Size, otherScale));
-
-                if (Physics::CheckAABB(playerMin, playerMax, otherMin, otherMax))
-                {
-                    wallHit = true;
-                    break;
-                }
-            }
-
-            if (!wallHit)
-            {
-                transform.Translation.x = targetTranslation.x;
-                transform.Translation.z = targetTranslation.z;
-            }
-
-            float targetAngle = atan2f(movement.x, movement.z);
-            transform.Rotation = {0.0f, targetAngle, 0.0f};
+            float targetRotationY = atan2f(movementVector.x, movementVector.z);
+            transform.Rotation = {0.0f, targetRotationY, 0.0f};
         }
 
-        // Jump logic using RigidBody
-        if (rb.IsGrounded && Input::IsKeyPressed(KEY_SPACE))
+        // Jump Logic
+        if (rigidBody.IsGrounded && Input::IsKeyPressed(KEY_SPACE))
         {
-            rb.Velocity.y = 10.0f; // Jump force
-            rb.IsGrounded = false;
+            rigidBody.Velocity.y = player.JumpForce;
+            rigidBody.IsGrounded = false;
         }
     }
 }

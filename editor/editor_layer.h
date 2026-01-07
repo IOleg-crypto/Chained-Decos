@@ -58,6 +58,10 @@ private:
     void SetDarkThemeColors();
     Camera3D GetActiveCamera();
 
+    void UI_DrawMenuBar();
+    void UI_DrawDockSpace();
+    void UI_DrawPanels();
+
 public:
     static CommandHistory &GetCommandHistory();
 
