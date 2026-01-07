@@ -8,15 +8,16 @@
 namespace CH
 {
 
-// Helper: Ray-Plane collision
 static RayCollision GetRayCollisionPlane(Ray ray, Vector3 planePos, Vector3 planeNormal)
 {
     RayCollision collision = {0};
+
     float denom = Vector3DotProduct(planeNormal, ray.direction);
     if (fabsf(denom) > 0.0001f)
     {
         float t = Vector3DotProduct(Vector3Subtract(planePos, ray.position), planeNormal) / denom;
-        if (t >= 0)
+
+        if (t >= 0.0f)
         {
             collision.hit = true;
             collision.distance = t;
@@ -30,50 +31,46 @@ static RayCollision GetRayCollisionPlane(Ray ray, Vector3 planePos, Vector3 plan
 bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity entity,
                                   GizmoType type, ImVec2 viewportSize, bool isHovered)
 {
-    if (!scene || !entity)
-        return false;
-
-    if (!entity.HasComponent<TransformComponent>())
+    if (!scene || !entity || !entity.HasComponent<TransformComponent>())
         return false;
 
     auto &transform = entity.GetComponent<TransformComponent>();
-
-    // Reset hover state
     m_GizmoHovered = false;
 
-    // Get mouse position for ray casting
+    // ------------------------------------------------------------
+    // Mouse → Ray
+    // ------------------------------------------------------------
     ImVec2 mousePos = ImGui::GetMousePos();
     ImVec2 viewportPos = ImGui::GetCursorScreenPos();
 
-    // Convert to viewport-local coordinates
     Vector2 localMouse = {mousePos.x - viewportPos.x, mousePos.y - viewportPos.y};
+
     float ndcX = (2.0f * localMouse.x) / viewportSize.x - 1.0f;
     float ndcY = 1.0f - (2.0f * localMouse.y) / viewportSize.y;
 
-    // Calculate ray direction in view space
-    float aspectRatio = viewportSize.x / viewportSize.y;
+    float aspect = viewportSize.x / viewportSize.y;
     float tanHalfFovy = tanf(camera.fovy * 0.5f * DEG2RAD);
 
-    Vector3 rayDir = {ndcX * aspectRatio * tanHalfFovy, ndcY * tanHalfFovy, 1.0f};
+    Vector3 rayDirView = {ndcX * aspect * tanHalfFovy, ndcY * tanHalfFovy, 1.0f};
 
-    // Transform to world space
     Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
     Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
     Vector3 up = Vector3CrossProduct(right, forward);
 
-    Vector3 worldRayDir =
-        Vector3Normalize({rayDir.x * right.x + rayDir.y * up.x + rayDir.z * forward.x,
-                          rayDir.x * right.y + rayDir.y * up.y + rayDir.z * forward.y,
-                          rayDir.x * right.z + rayDir.y * up.z + rayDir.z * forward.z});
+    Vector3 rayDirWorld =
+        Vector3Normalize({rayDirView.x * right.x + rayDirView.y * up.x + rayDirView.z * forward.x,
+                          rayDirView.x * right.y + rayDirView.y * up.y + rayDirView.z * forward.y,
+                          rayDirView.x * right.z + rayDirView.y * up.z + rayDirView.z * forward.z});
 
-    Ray ray = {camera.position, worldRayDir};
+    Ray ray = {camera.position, rayDirWorld};
 
-    // Handle dragging
+    // ------------------------------------------------------------
+    // Drag update
+    // ------------------------------------------------------------
     if (m_DraggingAxis != GizmoAxis::NONE)
     {
         if (!ImGui::IsMouseDown(0))
         {
-            // Drag finished - Push Undo Command
             EditorLayer::GetCommandHistory().PushCommand(
                 std::make_unique<TransformCommand>(entity, m_OldTransform, transform));
 
@@ -81,34 +78,19 @@ bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity e
         }
         else
         {
-            Vector2 mouseDelta = {mousePos.x - m_InitialMousePos.x,
-                                  mousePos.y - m_InitialMousePos.y};
-            float delta = (mouseDelta.x + mouseDelta.y) * 0.1f;
-
-            if (type == GizmoType::TRANSLATE)
+            auto hit = GetRayCollisionPlane(ray, m_DragPlanePos, m_DragPlaneNormal);
+            if (hit.hit)
             {
-                Vector3 newPos = m_InitialObjectValue;
+                Vector3 delta = Vector3Subtract(hit.point, m_DragStartHit);
+
                 if (m_DraggingAxis == GizmoAxis::X)
-                    newPos.x += delta;
-                else if (m_DraggingAxis == GizmoAxis::Y)
-                    newPos.y += delta;
-                else if (m_DraggingAxis == GizmoAxis::Z)
-                    newPos.z += delta;
-                else if (m_DraggingAxis == GizmoAxis::XY)
-                {
-                    newPos.x += mouseDelta.x * 0.1f;
-                    newPos.y -= mouseDelta.y * 0.1f;
-                }
-                else if (m_DraggingAxis == GizmoAxis::YZ)
-                {
-                    newPos.y -= mouseDelta.y * 0.1f;
-                    newPos.z += mouseDelta.x * 0.1f;
-                }
-                else if (m_DraggingAxis == GizmoAxis::XZ)
-                {
-                    newPos.x += mouseDelta.x * 0.1f;
-                    newPos.z += mouseDelta.y * 0.1f;
-                }
+                    delta = {delta.x, 0, 0};
+                if (m_DraggingAxis == GizmoAxis::Y)
+                    delta = {0, delta.y, 0};
+                if (m_DraggingAxis == GizmoAxis::Z)
+                    delta = {0, 0, delta.z};
+
+                Vector3 newPos = Vector3Add(m_DragStartValue, delta);
 
                 if (m_SnappingEnabled)
                 {
@@ -116,102 +98,73 @@ bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity e
                     newPos.y = SnapValue(newPos.y, m_GridSize);
                     newPos.z = SnapValue(newPos.z, m_GridSize);
                 }
+
                 transform.Translation = newPos;
-            }
-            else if (type == GizmoType::ROTATE)
-            {
-                float rotDelta = mouseDelta.x * 0.5f * DEG2RAD;
-                if (m_SnappingEnabled)
-                    rotDelta = SnapValue(rotDelta, m_RotationStep * DEG2RAD);
-
-                if (m_DraggingAxis == GizmoAxis::X)
-                    transform.Rotation.x = m_InitialObjectValue.x + rotDelta;
-                else if (m_DraggingAxis == GizmoAxis::Y)
-                    transform.Rotation.y = m_InitialObjectValue.y + rotDelta;
-                else if (m_DraggingAxis == GizmoAxis::Z)
-                    transform.Rotation.z = m_InitialObjectValue.z + rotDelta;
-            }
-            else if (type == GizmoType::SCALE)
-            {
-                float scaleDelta = 1.0f + delta * 0.5f;
-                if (m_DraggingAxis == GizmoAxis::X)
-                    transform.Scale.x = fmaxf(0.1f, m_InitialObjectValue.x * scaleDelta);
-                else if (m_DraggingAxis == GizmoAxis::Y)
-                    transform.Scale.y = fmaxf(0.1f, m_InitialObjectValue.y * scaleDelta);
-                else if (m_DraggingAxis == GizmoAxis::Z)
-                    transform.Scale.z = fmaxf(0.1f, m_InitialObjectValue.z * scaleDelta);
-
-                if (m_SnappingEnabled)
-                {
-                    transform.Scale.x = SnapValue(transform.Scale.x, 0.1f);
-                    transform.Scale.y = SnapValue(transform.Scale.y, 0.1f);
-                    transform.Scale.z = SnapValue(transform.Scale.z, 0.1f);
-                }
             }
         }
     }
 
-    // Draw gizmo handles
-    float gizmoSize = 2.0f;
-    float lineThickness = 0.05f;
+    // ------------------------------------------------------------
+    // Draw gizmo axes
+    // ------------------------------------------------------------
+    float gizmoSize = 5.0f;
+    float thickness = 0.1f;
 
-    auto drawAxisHandle = [&](GizmoAxis axis, Vector3 direction, Color color)
+    auto drawAxis = [&](GizmoAxis axis, Vector3 dir, Color color)
     {
-        Vector3 endPos = Vector3Add(transform.Translation, Vector3Scale(direction, gizmoSize));
+        Vector3 start = transform.Translation;
+        Vector3 end = Vector3Add(start, Vector3Scale(dir, gizmoSize));
 
-        // Interaction logic (bounding box for picking)
-        BoundingBox handleBox = {Vector3Subtract(endPos, {0.3f, 0.3f, 0.3f}),
-                                 Vector3Add(endPos, {0.3f, 0.3f, 0.3f})};
-        RayCollision handleColl = GetRayCollisionBox(ray, handleBox);
+        BoundingBox box = {Vector3Subtract(end, {0.3f, 0.3f, 0.3f}),
+                           Vector3Add(end, {0.3f, 0.3f, 0.3f})};
 
-        RayCollision lineColl = GetRayCollisionBox(
-            ray, {Vector3Subtract(Vector3Min(transform.Translation, endPos), {0.1f, 0.1f, 0.1f}),
-                  Vector3Add(Vector3Max(transform.Translation, endPos), {0.1f, 0.1f, 0.1f})});
+        RayCollision hit = GetRayCollisionBox(ray, box);
 
-        bool hovered = (m_DraggingAxis == axis) || handleColl.hit ||
-                       (lineColl.hit && lineColl.distance < 10.0f);
+        // Restore shaft collision
+        Vector3 minV = Vector3Min(start, end);
+        Vector3 maxV = Vector3Max(start, end);
+        BoundingBox lineBox = {Vector3Subtract(minV, {0.1f, 0.1f, 0.1f}),
+                               Vector3Add(maxV, {0.1f, 0.1f, 0.1f})};
+        RayCollision lineHit = GetRayCollisionBox(ray, lineBox);
+
+        bool hovered = hit.hit || (lineHit.hit && lineHit.distance < 10.0f);
 
         if (hovered)
             m_GizmoHovered = true;
 
-        // Start dragging
         if (hovered && ImGui::IsMouseClicked(0) && m_DraggingAxis == GizmoAxis::NONE && isHovered)
         {
             m_DraggingAxis = axis;
-            m_InitialMousePos = mousePos;
             m_OldTransform = transform;
 
-            if (type == GizmoType::TRANSLATE)
-                m_InitialObjectValue = transform.Translation;
-            else if (type == GizmoType::SCALE)
-                m_InitialObjectValue = transform.Scale;
-            else if (type == GizmoType::ROTATE)
-                m_InitialObjectValue = transform.Rotation;
+            // Площина руху
+            if (axis == GizmoAxis::X)
+                m_DragPlaneNormal = {0, 1, 0}; // YZ
+            else if (axis == GizmoAxis::Y)
+                m_DragPlaneNormal = {1, 0, 0}; // XZ
+            else if (axis == GizmoAxis::Z)
+                m_DragPlaneNormal = {0, 1, 0}; // XY
+
+            m_DragPlanePos = transform.Translation;
+            m_DragStartValue = transform.Translation;
+
+            auto pHit = GetRayCollisionPlane(ray, m_DragPlanePos, m_DragPlaneNormal);
+            if (pHit.hit)
+                m_DragStartHit = pHit.point;
         }
 
-        // Draw visual
-        Color drawColor = hovered ? YELLOW : color;
-        DrawCylinderEx(transform.Translation, endPos, lineThickness, lineThickness, 8, drawColor);
+        Color drawColor = (hovered || m_DraggingAxis == axis) ? YELLOW : color;
+        DrawCylinderEx(start, end, thickness, thickness, 8, drawColor);
 
-        if (type == GizmoType::TRANSLATE)
-        {
-            // Arrow cone
-            Vector3 coneBase = Vector3Subtract(endPos, Vector3Scale(direction, 0.4f));
-            DrawCylinderEx(coneBase, endPos, 0.12f, 0.0f, 12, drawColor);
-        }
-        else if (type == GizmoType::SCALE)
-        {
-            // Cube
-            DrawCube(endPos, 0.25f, 0.25f, 0.25f, drawColor);
-        }
+        Vector3 coneBase = Vector3Subtract(end, Vector3Scale(dir, 0.4f));
+        DrawCylinderEx(coneBase, end, 0.15f, 0.0f, 12, drawColor);
     };
 
-    // Render axes
-    if (type != GizmoType::SELECT)
+    if (type == GizmoType::TRANSLATE)
     {
-        drawAxisHandle(GizmoAxis::X, {1, 0, 0}, RED);
-        drawAxisHandle(GizmoAxis::Y, {0, 1, 0}, GREEN);
-        drawAxisHandle(GizmoAxis::Z, {0, 0, 1}, BLUE);
+        drawAxis(GizmoAxis::X, {1, 0, 0}, RED);
+        drawAxis(GizmoAxis::Y, {0, 1, 0}, GREEN);
+        drawAxis(GizmoAxis::Z, {0, 0, 1}, BLUE);
     }
 
     return m_GizmoHovered || m_DraggingAxis != GizmoAxis::NONE;
