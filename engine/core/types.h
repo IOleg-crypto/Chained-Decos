@@ -1,6 +1,12 @@
 #ifndef CH_TYPES_H
 #define CH_TYPES_H
 
+#if defined(_WIN32) || defined(_WIN64)
+#define CH_PLATFORM_WINDOWS
+#elif defined(__linux__)
+#define CH_PLATFORM_LINUX
+#endif
+
 #include "engine/core/base.h"
 #include "engine/core/log.h"
 #include <cstdint>
