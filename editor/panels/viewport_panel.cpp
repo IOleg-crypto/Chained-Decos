@@ -1,4 +1,5 @@
 #include "viewport_panel.h"
+#include "engine/physics/physics.h"
 #include "engine/renderer/renderer.h"
 #include <imgui.h>
 #include <rlImGui.h>
@@ -15,14 +16,17 @@ ViewportPanel::~ViewportPanel()
     UnloadRenderTexture(m_ViewportTexture);
 }
 
-void ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity selectedEntity,
-                                  GizmoType currentTool, EditorGizmo &gizmo)
+Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity selectedEntity,
+                                    GizmoType &currentTool, EditorGizmo &gizmo, bool allowTools)
 {
+    Entity pickedEntity = {};
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGui::Begin("Viewport");
 
     m_Focused = ImGui::IsWindowFocused();
     m_Hovered = ImGui::IsWindowHovered();
+    ImVec2 viewportPos = ImGui::GetCursorScreenPos(); // Absolute position of viewport content
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     if (m_ViewportSize.x != viewportPanelSize.x || m_ViewportSize.y != viewportPanelSize.y)
@@ -48,7 +52,7 @@ void ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity s
         Renderer::DrawScene(scene);
 
         // Gizmos
-        if (selectedEntity)
+        if (selectedEntity && allowTools)
         {
             gizmo.RenderAndHandle(scene, camera, selectedEntity, currentTool,
                                   {m_ViewportSize.x, m_ViewportSize.y}, m_Hovered);
@@ -57,10 +61,165 @@ void ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity s
         Renderer::EndScene();
     }
 
+    // --- Picking Logic ---
+    if (allowTools && m_Hovered && !gizmo.IsHovered() && ImGui::IsMouseClicked(0) && scene)
+    {
+        ImVec2 mousePos = ImGui::GetMousePos();
+        Vector2 relativeMousePos = {mousePos.x - viewportPos.x, mousePos.y - viewportPos.y};
+
+        // Get Ray from Camera
+        // Note: Raylib's GetMouseRay uses GetWindowSize, which is wrong for ImGui Viewport.
+        // We must calculate it manually or pretend window size is viewport size.
+        // Manual Ray Calculation:
+        Ray ray = {0};
+        ray.position = camera.position;
+
+        // Normalized Device Coordinates
+        float x = (2.0f * relativeMousePos.x) / m_ViewportSize.x - 1.0f;
+        float y = 1.0f - (2.0f * relativeMousePos.y) / m_ViewportSize.y;
+        float z = 1.0f;
+
+        // Inverse Projection and View Matrix
+        Matrix matView = GetCameraMatrix(camera);
+        Matrix matProj = MatrixPerspective(camera.fovy * DEG2RAD,
+                                           m_ViewportSize.x / m_ViewportSize.y, 0.01f, 1000.0f);
+        Matrix matViewProj = MatrixMultiply(matView, matProj);
+        Matrix matInvViewProj = MatrixInvert(matViewProj);
+
+        // Unproject
+        Vector4 clipCoords = {x, y, z, 1.0f};
+        // Transform to World
+        // Note: Raylib matrix math might be column/row major specific.
+        // Simplest fallback: usage of CameraUnproject if we can set window size context? No.
+
+        // Alternative: Use Raylib's GetMouseRay but temporary set window dimensions? Dangerous.
+        // Let's rely on GetMouseRay by converting relative pos to "Window" pos if the viewport
+        // WAS the window. Actually, let's implement the Ray calculation directly using Raylib
+        // math.
+
+        Vector3 deviceCoords = {x, y, 1.0f};
+        Vector3 farPoint = Vector3Transform(deviceCoords, matInvViewProj);
+        // Perspective divide
+        // Wait, Vector3Transform assumes w=1. For projection we need Vector4 mul.
+        // Let's use Raylib GetMouseRay logic adapted:
+
+        // Proper way using Raylib API:
+        // We can't easily change global window state.
+        // But we can reproduce `GetMouseRay`:
+        // It uses `GetCameraMatrix` (View) and `MatrixPerspective` (Proj).
+        // Let's use the exact same logic.
+
+        // Calculate direction
+        Vector3 target =
+            Vector3Unproject({relativeMousePos.x, relativeMousePos.y, 1.0f}, matProj, matView);
+        // Wait, Vector3Unproject doesn't take viewport size? In Raylib it assumes screen size?
+        // Let's check Raylib source mentally:
+        // Vector3Unproject(source, proj, view) assumes viewport is 0,0,width,height?
+        // Raylib 5.0 Vector3Unproject:
+        //   Calculate MatrixInv(View * Proj)
+        //   Transform vector.
+        //   Divide by w.
+        //   However, input X,Y are expected in Screen Coordinates?
+        //   NO, it expects viewport relative coordinates if we constructs the matrix correctly?
+        //   Raylib internal implementation uses GetScreenWidth/Height for viewport mapping if
+        //   not provided? Actually Raylib's Vector3Unproject doesn't take viewport rect. It
+        //   takes source x,y which it maps from Viewport to NDC? No, Vector3Unproject inputs
+        //   ARE coordinates. Wait, Raylib's Unproject assumes (0,0,w,h) viewport?
+
+        // Let's use simpler approach:
+        // Since we have Physics::Raycast, let's use a "Center Screen" ray for testing if
+        // needed, but for Picking we need exact mouse ray.
+
+        // Let's trust Raylib's picking ONLY IF we can offset picking?
+        // No.
+
+        // Let's Try:
+        ray = GetMouseRay({relativeMousePos.x, relativeMousePos.y}, camera);
+        // But Update Raylib's concept of screen size?
+        // No, `GetMouseRay` internally calls `GetMousePosition()`? No, we pass mousePosition.
+        // But it uses `GetScreenWidth()` for aspect ratio and normalization.
+
+        // If we want correct ray, we should manually construct it.
+        // Ray direction = Normalize(Unproject(MouseX, MouseY, 1.0f) - CameraPos)
+
+        // Custom Unproject:
+        // 1. NDC
+        float ndc_x = (2.0f * relativeMousePos.x) / m_ViewportSize.x - 1.0f;
+        float ndc_y = 1.0f - (2.0f * relativeMousePos.y) / m_ViewportSize.y; // Invert Y
+
+        // 2. Clip Space
+        Vector4 clip = {ndc_x, ndc_y, 1.0f, 1.0f}; // Forward
+
+        // 3. World Space
+        // We need MatrixMultiply(View, Proj) -> Invert.
+        // Raylib Match:
+        Matrix proj = MatrixPerspective(camera.fovy * DEG2RAD, m_ViewportSize.x / m_ViewportSize.y,
+                                        0.01f, 1000.0f);
+        Matrix view = GetCameraMatrix(camera);
+        Matrix invVP = MatrixInvert(MatrixMultiply(view, proj));
+
+        // Transform
+        Quaternion q;        // Unused
+        Vector3 scale;       // Unused
+        Vector3 translation; // Unused
+        // Just raw matrix mul
+        // Manually:
+        Vector4 worldPos;
+        worldPos.x = clip.x * invVP.m0 + clip.y * invVP.m4 + clip.z * invVP.m8 + clip.w * invVP.m12;
+        worldPos.y = clip.x * invVP.m1 + clip.y * invVP.m5 + clip.z * invVP.m9 + clip.w * invVP.m13;
+        worldPos.z =
+            clip.x * invVP.m2 + clip.y * invVP.m6 + clip.z * invVP.m10 + clip.w * invVP.m14;
+        worldPos.w =
+            clip.x * invVP.m3 + clip.y * invVP.m7 + clip.z * invVP.m11 + clip.w * invVP.m15;
+
+        // Perspective Divide
+        if (worldPos.w != 0.0f)
+        {
+            worldPos.x /= worldPos.w;
+            worldPos.y /= worldPos.w;
+            worldPos.z /= worldPos.w;
+        }
+
+        ray.position = camera.position;
+        ray.direction = Vector3Normalize(
+            Vector3Subtract({worldPos.x, worldPos.y, worldPos.z}, camera.position));
+
+        // Perform Raycast
+        RaycastResult res = Physics::Raycast(scene, ray);
+        if (res.Hit)
+        {
+            pickedEntity = Entity{res.Entity, scene};
+        }
+        else
+        {
+            pickedEntity = {}; // Deselect if clicked empty space
+        }
+    }
+
     EndTextureMode();
 
     // Draw texture in ImGui
     rlImGuiImageRenderTextureFit(&m_ViewportTexture, true);
+
+    // --- Gizmo Toolbar Overlay ---
+    ImGui::SetCursorPos(ImVec2(10, 30));                          // Slightly below top-left
+    ImGui::BeginChild("GizmoToolbar", ImVec2(120, 40), false, 0); // Transparent background
+    // Transparent style
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0.5f));
+
+    if (ImGui::Button("T", ImVec2(30, 30)))
+        currentTool = GizmoType::TRANSLATE;
+    ImGui::SameLine();
+    if (ImGui::Button("R", ImVec2(30, 30)))
+        currentTool = GizmoType::ROTATE;
+    ImGui::SameLine();
+    if (ImGui::Button("S", ImVec2(30, 30)))
+        currentTool = GizmoType::SCALE;
+
+    ImGui::PopStyleColor();
+    ImGui::EndChild();
+
+    // Reset cursor for overlay logic if needed, but EndChild handles it.
 
     // --- Snapping / Overlay Toolbar ---
     ImGui::SetCursorPos(ImVec2(10, 10));
@@ -83,6 +242,8 @@ void ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity s
 
     ImGui::End();
     ImGui::PopStyleVar();
+
+    return pickedEntity;
 }
 bool ViewportPanel::IsFocused() const
 {

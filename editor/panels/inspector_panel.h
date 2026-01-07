@@ -12,7 +12,8 @@ class InspectorPanel
 public:
     InspectorPanel() = default;
 
-    void OnImGuiRender(Scene *scene, Entity entity);
+public:
+    void OnImGuiRender(Scene *scene, Entity entity, bool readOnly = false);
 
 private:
     void DrawComponents(Entity entity);

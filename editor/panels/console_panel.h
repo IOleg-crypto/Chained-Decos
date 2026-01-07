@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-
 namespace CH
 {
 enum class ConsoleLogLevel : uint32_t
@@ -28,7 +27,7 @@ public:
     ConsolePanel();
     ~ConsolePanel() = default;
 
-    void OnImGuiRender();
+    void OnImGuiRender(bool readOnly = false);
     void Log(const std::string &message, ConsoleLogLevel level = ConsoleLogLevel::Info);
     void Clear();
 

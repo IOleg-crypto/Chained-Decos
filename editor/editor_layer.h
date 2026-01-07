@@ -19,7 +19,7 @@
 
 namespace CH
 {
-enum class SceneState : std::uint8_t
+enum class SceneState : uint8_t
 {
     Edit = 0,
     Play = 1
@@ -79,7 +79,6 @@ private:
     ConsolePanel m_ConsolePanel;
     ViewportPanel m_ViewportPanel;
     EnvironmentPanel m_EnvironmentPanel;
-    Image m_AppIcon;
     bool m_ShowContentBrowser = true;
 };
 } // namespace CH

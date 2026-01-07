@@ -113,6 +113,17 @@ struct MaterialComponent
     MaterialComponent(const MaterialComponent &) = default;
 };
 
+struct PointLightComponent
+{
+    Color LightColor = WHITE;
+    float Radiance = 1.0f;
+    float Radius = 10.0f;
+    float Falloff = 1.0f;
+
+    PointLightComponent() = default;
+    PointLightComponent(const PointLightComponent &) = default;
+};
+
 struct SkyboxComponent
 {
     std::string TexturePath;
