@@ -44,7 +44,8 @@ jobs:
             libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
             libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
             libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+            xvfb libxkbcommon-x11-0
 
       - name: Setup GCC
         run: |
@@ -72,9 +73,9 @@ jobs:
       - name: Test
         run: |
           if [[ -f "build/tests/EngineTests" ]]; then
-            ./build/tests/EngineTests
+            xvfb-run ./build/tests/EngineTests
           elif [[ -f "build/bin/EngineTests" ]]; then
-            ./build/bin/EngineTests
+            xvfb-run ./build/bin/EngineTests
           else
              echo "EngineTests not found."
              exit 1
@@ -115,7 +116,8 @@ jobs:
             libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
             libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
             libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+            xvfb libxkbcommon-x11-0
 
       - name: Setup Clang
         run: |
