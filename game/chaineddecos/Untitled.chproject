@@ -1,5 +1,5 @@
 Project:
   Name: Untitled
-  StartScene: ""
+  StartScene: Untitled.chscene
   AssetDirectory: assets
-  ActiveScene: scenes\Untitled.chscene
+  ActiveScene: assets\scenes\Untitled.chscene
