@@ -38,36 +38,41 @@ jobs:
           choco install cmake ninja ccache --no-progress
 
       - name: Configure
-        shell: bash
+        shell: pwsh
         run: |
-          cmake -B build \
-            -G "Ninja" \
-            -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DBUILD_TESTS=ON \
-            -DBUILD_MAP_EDITOR=ON \
+          cmake -B build `
+            -G "Ninja" `
+            -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} `
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
+            -DBUILD_TESTS=ON `
+            -DBUILD_MAP_EDITOR=ON `
             -DDISABLE_ALL_WARNINGS=ON
 
       - name: Build
-        shell: bash
+        shell: pwsh
         run: |
-          cmake --build build \
-            --config ${{ inputs.build_type }} \
-            --target ChainedEditor EngineTests \
+          cmake --build build `
+            --config ${{ inputs.build_type }} `
+            --target ChainedEditor EngineTests `
             --parallel 4
 
-      - name: Test
-        shell: bash
+      - name: List Build Files (Debug)
+        shell: pwsh
         run: |
-          if [[ -f "build/tests/EngineTests.exe" ]]; then
-            ./build/tests/EngineTests.exe
-          elif [[ -f "build/bin/EngineTests.exe" ]]; then
-             ./build/bin/EngineTests.exe
-          else
-            echo "EngineTests not found. Check build directory structure."
+          Get-ChildItem -Path build -Filter *.exe -Recurse
+
+      - name: Test
+        shell: pwsh
+        run: |
+          $testExe = Get-ChildItem -Path build -Filter EngineTests.exe -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          if ($testExe) {
+            Write-Host "Running tests: $testExe"
+            & $testExe
+          } else {
+            Write-Error "EngineTests.exe not found!"
             exit 1
-          fi
+          }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
