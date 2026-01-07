@@ -15,27 +15,21 @@
 
 ## 🏗️ The CHEngine Architecture
 
-CHEngine follows a modern, modular design inspired by professional game engines:
-
-- **Modern ECS (EnTT)**: High-performance Entity Component System for efficient data management and system updates.
-- **Modern Scene Management**: Integrated `ECSSceneManager` supporting seamless transitions between Main Menu, Editor, and Simulation modes.
-
----
+## CHEngine follows a modern, modular design inspired by professional game engines
 
 ## 🛠️ Editor & Simulation Workflow
 
 The Chained Editor is the primary tool for creating and testing parkour courses.
 
-> [!IMPORTANT] > **Cursor Control in Simulation Mode**:
+> [!IMPORTANT]
+> **Cursor Control in Simulation Mode**:
 > When you press **PLAY**, the editor captures the cursor for game control.
->
-> - Press **ESCAPE** to unlock the cursor and interact with the UI (e.g., to click **STOP**).
-> - Press **ESCAPE** again to return to simulation control.
-> - **BACKSPACE** acts as an emergency simulation stop.
+> Press **ESCAPE** again to return to simulation control.
 
-![Editor Screenshot](https://i.imgur.com/5PsjyMl.png)
+![Editor Screenshot](https://i.postimg.cc/sXSj3qBC/Znimok-ekrana-2026-01-07-172723.png)
 
-> [!WARNING] > **Standalone Runtime**: Standalone executable (`Runtime.exe`) is currently in development and may be unstable. It is recommended to run courses via the **ChainedEditor**.
+> [!WARNING] 
+> **Standalone Runtime**: Standalone executable (`Runtime.exe`) is currently in development and may be unstable. It is recommended to run courses via the **ChainedEditor**.
 
 ---
 
@@ -63,12 +57,22 @@ The Chained Editor is the primary tool for creating and testing parkour courses.
 git clone https://github.com/IOleg-crypto/Chained-Decos.git
 cd Chained-Decos
 
-# 2. Configure and Build
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
+# 2. Build using CMake Presets (Choose one)
+
+# Option A: Ninja (Recommended for fast builds)
+cmake --preset ninja-release
+cmake --build --preset ninja-release
+
+# Option B: Visual Studio 2022
+cmake --preset vs2022
+cmake --build --preset vs2022-release
+
+# Option C: Linux (Makefiles)
+cmake --preset make-release
+cmake --build --preset make-release
 
 # 3. Run the Editor
-./build/bin/ChainedEditor.exe
+./build/release/bin/ChainedEditor.exe # Path may vary based on preset
 ```
 
 ---
