@@ -21,13 +21,15 @@
 
 The Chained Editor is the primary tool for creating and testing parkour courses.
 
-> [!IMPORTANT] > **Cursor Control in Simulation Mode**:
+> [!IMPORTANT]
+> **Cursor Control in Simulation Mode**:
 > When you press **PLAY**, the editor captures the cursor for game control.
 > Press **ESCAPE** again to return to simulation control.
 
 ![Editor Screenshot](https://i.postimg.cc/sXSj3qBC/Znimok-ekrana-2026-01-07-172723.png)
 
-> [!WARNING] > **Standalone Runtime**: Standalone executable (`Runtime.exe`) is currently in development and may be unstable. It is recommended to run courses via the **ChainedEditor**.
+> [!WARNING] 
+> **Standalone Runtime**: Standalone executable (`Runtime.exe`) is currently in development and may be unstable. It is recommended to run courses via the **ChainedEditor**.
 
 ---
 
