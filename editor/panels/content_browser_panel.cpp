@@ -22,14 +22,16 @@ ContentBrowserPanel::~ContentBrowserPanel()
     // Unload textures if they were loaded
 }
 
-void ContentBrowserPanel::OnImGuiRender(bool *p_open)
+void ContentBrowserPanel::OnImGuiRender(bool *p_open, bool readOnly)
 {
     ImGui::Begin("Content Browser", p_open);
 
+    ImGui::BeginDisabled(readOnly);
     RenderToolbar();
     ImGui::Separator();
     RenderGridView();
 
+    ImGui::EndDisabled();
     ImGui::End();
 }
 
@@ -102,6 +104,10 @@ void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry &entry)
     {
         m_CurrentDirectory = entry.path;
         RefreshDirectory();
+    }
+    else if (entry.type == AssetType::Scene && m_OnSceneOpenCallback)
+    {
+        m_OnSceneOpenCallback(entry.path);
     }
 }
 

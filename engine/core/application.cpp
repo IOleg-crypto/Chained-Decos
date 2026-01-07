@@ -21,7 +21,8 @@ Application::Application(const Config &config)
 
     InitWindow(config.Width, config.Height, config.Title.c_str());
     SetTargetFPS(60);
-    rlImGuiSetup(true); // Added
+    SetExitKey(KEY_NULL); // Prevent ESC from closing the app
+    rlImGuiSetup(true);   // Added
     m_Running = true;
 
     Renderer::Init();
@@ -75,17 +76,12 @@ void Application::PushOverlay(Layer *overlay)
 
 void Application::BeginFrame()
 {
+    PollEvents();
+
     s_Instance->m_DeltaTime = GetFrameTime();
 
     for (Layer *layer : s_Instance->m_LayerStack)
         layer->OnUpdate(s_Instance->m_DeltaTime);
-
-    // Update Physics (Scene based)
-    // For now, we only update systems if we have an active scene
-    // This might be better handled within a specific scene-owning layer
-    // but for foundation we put it here or in EditorLayer.
-    // However, Application doesn't know about ActiveScene yet (it's in EditorLayer).
-    // So let's handle Physics update in the Layer that owns the scene.
 
     BeginDrawing();
     ClearBackground(DARKGRAY);
@@ -100,6 +96,54 @@ void Application::BeginFrame()
 void Application::EndFrame()
 {
     EndDrawing();
+}
+
+void Application::PollEvents()
+{
+    // 1. Keyboard Events
+    // Raylib stores key events in a buffer
+    int key = GetKeyPressed();
+    while (key != 0)
+    {
+        KeyPressedEvent e(key, false);
+        OnEvent(e);
+        key = GetKeyPressed();
+    }
+
+    // Note: Raylib doesn't have a buffer for released keys.
+    // This is a limitation of Raylib's polling model when trying to map to a pure event model.
+    // We could track state manually, but for now we'll focus on what Raylib supports well.
+
+    // 2. Mouse Events
+    for (int i = 0; i < 3; i++) // Standard buttons
+    {
+        if (IsMouseButtonPressed(i))
+        {
+            MouseButtonPressedEvent e(i);
+            OnEvent(e);
+        }
+        if (IsMouseButtonReleased(i))
+        {
+            MouseButtonReleasedEvent e(i);
+            OnEvent(e);
+        }
+    }
+
+    static Vector2 lastMousePos = {-1, -1};
+    Vector2 currentMousePos = GetMousePosition();
+    if (currentMousePos.x != lastMousePos.x || currentMousePos.y != lastMousePos.y)
+    {
+        MouseMovedEvent e(currentMousePos.x, currentMousePos.y);
+        OnEvent(e);
+        lastMousePos = currentMousePos;
+    }
+
+    float wheel = GetMouseWheelMove();
+    if (wheel != 0)
+    {
+        MouseScrolledEvent e(0, wheel);
+        OnEvent(e);
+    }
 }
 
 bool Application::ShouldClose()

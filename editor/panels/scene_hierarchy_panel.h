@@ -15,7 +15,7 @@ public:
 
     void SetContext(const Ref<Scene> &context);
 
-    void OnImGuiRender();
+    void OnImGuiRender(bool readOnly = false);
 
     void SetSelectedEntity(Entity entity)
     {

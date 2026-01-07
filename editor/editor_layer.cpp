@@ -63,14 +63,24 @@ void EditorLayer::OnAttach()
             NewProject(); // This is a bit simplified, but fine for now
         });
 
-    m_AppIcon = LoadImage(
-        PROJECT_ROOT_DIR "/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
-    SetWindowIcon(m_AppIcon);
+    if (Project::GetActive())
+    {
+        auto projectDir = Project::GetProjectDirectory();
+        m_ContentBrowserPanel.SetRootDirectory(projectDir);
+
+        std::filesystem::path scenesDir = projectDir / "scenes";
+        if (std::filesystem::exists(scenesDir))
+            m_ContentBrowserPanel.SetRootDirectory(scenesDir);
+    }
+
+    m_ContentBrowserPanel.SetSceneOpenCallback([this](const std::filesystem::path &path)
+                                               { OpenScene(path); });
+
+    CH_CORE_INFO("EditorLayer Attached.");
 }
 
 void EditorLayer::OnDetach()
 {
-    UnloadImage(m_AppIcon);
     NFD_Quit();
     rlImGuiShutdown();
 }
@@ -92,16 +102,6 @@ void EditorLayer::OnUpdate(float deltaTime)
                 if (IsKeyPressed(KEY_Y))
                     m_CommandHistory.Redo();
             }
-
-            // Gizmo tool selection (Q/W/E/R)
-            if (Input::IsKeyPressed(KEY_Q))
-                m_CurrentTool = GizmoType::SELECT;
-            if (Input::IsKeyPressed(KEY_W))
-                m_CurrentTool = GizmoType::TRANSLATE;
-            if (Input::IsKeyPressed(KEY_E))
-                m_CurrentTool = GizmoType::ROTATE;
-            if (Input::IsKeyPressed(KEY_R))
-                m_CurrentTool = GizmoType::SCALE;
         }
 
         if (m_ActiveScene)
@@ -109,7 +109,8 @@ void EditorLayer::OnUpdate(float deltaTime)
             Physics::Update(m_ActiveScene.get(), deltaTime);
 
             // Entity picking
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !ImGui::GetIO().WantCaptureMouse)
+            if (m_SceneState == SceneState::Edit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
+                !ImGui::GetIO().WantCaptureMouse)
             {
                 Ray ray = GetMouseRay(GetMousePosition(), m_EditorCamera.GetRaylibCamera());
                 RaycastResult result = Physics::Raycast(m_ActiveScene.get(), ray);
@@ -273,16 +274,23 @@ void EditorLayer::OnImGuiRender()
 
     if (Project::GetActive())
     {
-        m_ViewportPanel.OnImGuiRender(m_ActiveScene.get(), GetActiveCamera(),
-                                      m_SceneHierarchyPanel.GetSelectedEntity(), m_CurrentTool,
-                                      m_Gizmo);
-        m_SceneHierarchyPanel.OnImGuiRender();
+        bool bIsEdit = m_SceneState == SceneState::Edit;
+        Entity picked = m_ViewportPanel.OnImGuiRender(m_ActiveScene.get(), GetActiveCamera(),
+                                                      m_SceneHierarchyPanel.GetSelectedEntity(),
+                                                      m_CurrentTool, m_Gizmo, bIsEdit);
+        if (picked)
+        {
+            m_SceneHierarchyPanel.SetSelectedEntity(picked);
+        }
+        m_SceneHierarchyPanel.OnImGuiRender(!bIsEdit);
         if (m_ShowContentBrowser)
-            m_ContentBrowserPanel.OnImGuiRender(&m_ShowContentBrowser);
-        m_ConsolePanel.OnImGuiRender();
-        m_EnvironmentPanel.OnImGuiRender(m_ActiveScene.get());
+        {
+            m_ContentBrowserPanel.OnImGuiRender(&m_ShowContentBrowser, !bIsEdit);
+        }
+        m_ConsolePanel.OnImGuiRender(!bIsEdit);
+        m_EnvironmentPanel.OnImGuiRender(m_ActiveScene.get(), !bIsEdit);
         m_InspectorPanel.OnImGuiRender(m_ActiveScene.get(),
-                                       m_SceneHierarchyPanel.GetSelectedEntity());
+                                       m_SceneHierarchyPanel.GetSelectedEntity(), !bIsEdit);
     }
     else
     {
@@ -496,6 +504,38 @@ void EditorLayer::ResetLayout()
 
 void EditorLayer::OnEvent(Event &e)
 {
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<KeyPressedEvent>(
+        [this](KeyPressedEvent &ev)
+        {
+            if (m_SceneState == SceneState::Play && ev.GetKeyCode() == KEY_ESCAPE)
+            {
+                OnSceneStop();
+                return true;
+            }
+
+            // Gizmo Shortcuts in Edit Mode
+            if (m_SceneState == SceneState::Edit && !Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+            {
+                switch (ev.GetKeyCode())
+                {
+                case KEY_Q:
+                    m_CurrentTool = GizmoType::SELECT;
+                    return true;
+                case KEY_W:
+                    m_CurrentTool = GizmoType::TRANSLATE;
+                    return true;
+                case KEY_E:
+                    m_CurrentTool = GizmoType::ROTATE;
+                    return true;
+                case KEY_R:
+                    m_CurrentTool = GizmoType::SCALE;
+                    return true;
+                }
+            }
+
+            return false;
+        });
 }
 void EditorLayer::OnScenePlay()
 {
@@ -518,6 +558,8 @@ void EditorLayer::OnScenePlay()
         }
     }
 
+    DisableCursor();
+
     CH_CORE_INFO("Scene Started.");
 }
 
@@ -532,6 +574,8 @@ void EditorLayer::OnSceneStop()
         auto &spawn = spawnView.get<SpawnComponent>(entity);
         spawn.RenderSpawnZoneInScene = true;
     }
+
+    EnableCursor();
 
     CH_CORE_INFO("Scene Stopped.");
 }
@@ -591,16 +635,15 @@ Camera3D EditorLayer::GetActiveCamera()
 
         // Mouse control (internal to this state for follow camera)
         Vector2 mouseDelta = GetMouseDelta();
-        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-        {
-            player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
-            player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
 
-            if (player.CameraPitch > 89.0f)
-                player.CameraPitch = 89.0f;
-            if (player.CameraPitch < -10.0f)
-                player.CameraPitch = -10.0f;
-        }
+        // In Play mode, we always control camera (cursor disabled)
+        player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
+        player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
+
+        if (player.CameraPitch > 89.0f)
+            player.CameraPitch = 89.0f;
+        if (player.CameraPitch < -10.0f)
+            player.CameraPitch = -10.0f;
 
         player.CameraDistance -= GetMouseWheelMove() * 2.0f;
         if (player.CameraDistance < 2.0f)
@@ -623,13 +666,15 @@ Camera3D EditorLayer::GetActiveCamera()
         camera.position = Vector3Add(target, offset);
         camera.target = target;
         camera.up = {0.0f, 1.0f, 0.0f};
-        camera.fovy = 60.0f;
+        camera.fovy = 90.0f;
         camera.projection = CAMERA_PERSPECTIVE;
 
         player.coordinates = camera.position;
         return camera;
     }
 
+    // Fallback if no player found
+    CH_CORE_WARN("No player with PlayerComponent+TransformComponent found! Using editor camera.");
     return m_EditorCamera.GetRaylibCamera();
 }
 } // namespace CH

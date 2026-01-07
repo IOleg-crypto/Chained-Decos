@@ -20,6 +20,23 @@ void Renderer::Init()
     s_LightState.lightColorLoc = GetShaderLocation(s_LightState.lightingShader, "lightColor");
     s_LightState.ambientLoc = GetShaderLocation(s_LightState.lightingShader, "ambient");
 
+    for (int i = 0; i < 8; i++)
+    {
+        std::string base = "lights[" + std::to_string(i) + "].";
+        s_LightState.lightLocs[i].position =
+            GetShaderLocation(s_LightState.lightingShader, (base + "position").c_str());
+        s_LightState.lightLocs[i].color =
+            GetShaderLocation(s_LightState.lightingShader, (base + "color").c_str());
+        s_LightState.lightLocs[i].radius =
+            GetShaderLocation(s_LightState.lightingShader, (base + "radius").c_str());
+        s_LightState.lightLocs[i].radiance =
+            GetShaderLocation(s_LightState.lightingShader, (base + "radiance").c_str());
+        s_LightState.lightLocs[i].falloff =
+            GetShaderLocation(s_LightState.lightingShader, (base + "falloff").c_str());
+        s_LightState.lightLocs[i].enabled =
+            GetShaderLocation(s_LightState.lightingShader, (base + "enabled").c_str());
+    }
+
     SetDirectionalLight({-1.0f, -1.0f, -1.0f}, WHITE);
     SetAmbientLight(0.3f);
 
@@ -206,6 +223,58 @@ void Renderer::DrawScene(Scene *scene)
                 color = GRAY;
 
             ::DrawCubeWires(center, scaledSize.x, scaledSize.y, scaledSize.z, color);
+        }
+    }
+
+    // 4. Point Lights
+    {
+        auto view = scene->GetRegistry().view<TransformComponent, PointLightComponent>();
+        int lightCount = 0;
+
+        // Reset/Disable all lights first
+        for (int i = 0; i < 8; i++)
+        {
+            int disabled = 0;
+            SetShaderValue(s_LightState.lightingShader, s_LightState.lightLocs[i].enabled,
+                           &disabled, SHADER_UNIFORM_INT);
+        }
+
+        for (auto entity : view)
+        {
+            if (lightCount >= 8)
+                break;
+
+            auto [transform, light] = view.get<TransformComponent, PointLightComponent>(entity);
+
+            // Upload to shader
+            float pos[3] = {transform.Translation.x, transform.Translation.y,
+                            transform.Translation.z};
+            float col[4] = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f,
+                            light.LightColor.b / 255.0f, light.LightColor.a / 255.0f};
+            int enabled = 1;
+
+            SetShaderValue(s_LightState.lightingShader, s_LightState.lightLocs[lightCount].position,
+                           pos, SHADER_UNIFORM_VEC3);
+            SetShaderValue(s_LightState.lightingShader, s_LightState.lightLocs[lightCount].color,
+                           col, SHADER_UNIFORM_VEC4);
+            SetShaderValue(s_LightState.lightingShader, s_LightState.lightLocs[lightCount].radius,
+                           &light.Radius, SHADER_UNIFORM_FLOAT);
+            SetShaderValue(s_LightState.lightingShader, s_LightState.lightLocs[lightCount].radiance,
+                           &light.Radiance, SHADER_UNIFORM_FLOAT);
+            SetShaderValue(s_LightState.lightingShader, s_LightState.lightLocs[lightCount].falloff,
+                           &light.Falloff, SHADER_UNIFORM_FLOAT);
+            SetShaderValue(s_LightState.lightingShader, s_LightState.lightLocs[lightCount].enabled,
+                           &enabled, SHADER_UNIFORM_INT);
+
+            // Visualize
+            ::DrawSphereWires(transform.Translation, 0.5f, 8, 8, light.LightColor);
+
+            // Draw Radius (faint)
+            Color radiusColor = light.LightColor;
+            radiusColor.a = 30;
+            ::DrawSphereWires(transform.Translation, light.Radius, 12, 12, radiusColor);
+
+            lightCount++;
         }
     }
 }

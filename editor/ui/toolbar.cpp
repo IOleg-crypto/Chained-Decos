@@ -48,6 +48,18 @@ void DrawToolbar(bool isPlaying, std::function<void()> onPlay, std::function<voi
                 onPlay();
         }
     }
+
+    if (isPlaying)
+    {
+        ImGui::SameLine();
+        float textWidth = ImGui::CalcTextSize("Press ESC to Exit").x;
+        float padding = 20.0f;
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - textWidth - padding);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (toolbarSize * 0.2f));
+        ImGui::Text("Press ESC to Exit");
+        ImGui::PopStyleColor();
+    }
     ImGui::End();
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar(2);
