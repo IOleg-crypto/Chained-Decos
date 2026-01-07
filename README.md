@@ -15,12 +15,7 @@
 
 ## 🏗️ The CHEngine Architecture
 
-CHEngine follows a modern, modular design inspired by professional game engines:
-
-- **Modern ECS (EnTT)**: High-performance Entity Component System for efficient data management and system updates.
-- **Modern Scene Management**: Integrated `ECSSceneManager` supporting seamless transitions between Main Menu, Editor, and Simulation modes.
-
----
+## CHEngine follows a modern, modular design inspired by professional game engines
 
 ## 🛠️ Editor & Simulation Workflow
 
@@ -28,8 +23,7 @@ The Chained Editor is the primary tool for creating and testing parkour courses.
 
 > [!IMPORTANT] > **Cursor Control in Simulation Mode**:
 > When you press **PLAY**, the editor captures the cursor for game control.
->
-> - Press **ESCAPE** again to return to simulation control.
+> Press **ESCAPE** again to return to simulation control.
 
 ![Editor Screenshot](https://i.postimg.cc/sXSj3qBC/Znimok-ekrana-2026-01-07-172723.png)
 
