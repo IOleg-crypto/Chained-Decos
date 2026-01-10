@@ -7,12 +7,12 @@
 
 namespace CH
 {
-void EnvironmentPanel::OnImGuiRender(Scene *scene, bool readOnly)
+void EnvironmentPanel::OnImGuiRender(Scene *scene, bool readOnly, DebugRenderFlags *debugFlags)
 {
     if (!m_IsOpen)
         return;
 
-    ImGui::Begin("Skybox", &m_IsOpen);
+    ImGui::Begin("Environment", &m_IsOpen);
     ImGui::BeginDisabled(readOnly);
     if (scene)
     {
@@ -49,6 +49,15 @@ void EnvironmentPanel::OnImGuiRender(Scene *scene, bool readOnly)
             ImGui::DragFloat("Exposure##Skybox", &skybox.Exposure, 0.01f, 0.0f, 10.0f);
             ImGui::DragFloat("Brightness##Skybox", &skybox.Brightness, 0.01f, -1.0f, 1.0f);
             ImGui::DragFloat("Contrast##Skybox", &skybox.Contrast, 0.01f, 0.0f, 2.0f);
+        }
+
+        if (debugFlags)
+        {
+            ImGui::Separator();
+            ImGui::Text("Debug Visualization");
+            ImGui::Checkbox("Show Colliders", &debugFlags->DrawColliders);
+            ImGui::Checkbox("Show Lights", &debugFlags->DrawLights);
+            ImGui::Checkbox("Show Spawn Zones", &debugFlags->DrawSpawnZones);
         }
     }
     else

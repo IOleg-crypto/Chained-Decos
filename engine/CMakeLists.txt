@@ -1,6 +1,8 @@
 set(ENGINE_SOURCES
     core/application.cpp
+    core/input.cpp
     core/layer_stack.cpp
+    core/thread_pool.cpp
     scene/scene.cpp
     scene/scene_serializer.cpp
     scene/project.cpp
