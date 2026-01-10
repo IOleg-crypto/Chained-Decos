@@ -20,14 +20,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          fetch-depth: 1
 
+      - name: Fast parallel submodules
+        shell: pwsh
+        run: |
+          git submodule update --init --recursive --depth 1 --jobs 8
       - name: Cache
         uses: actions/cache@v4
         with:
           path: |
             C:/ccache
-            .deps
+            build/_deps
+            build/CMakeFiles
           key: windows-msvc-${{ inputs.build_type }}-${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             windows-msvc-${{ inputs.build_type }}-
@@ -55,7 +60,7 @@ jobs:
           cmake --build build `
             --config ${{ inputs.build_type }} `
             --target ChainedEditor EngineTests `
-            --parallel 4
+            --parallel $(nproc)
 
       - name: List Build Files (Debug)
         shell: pwsh

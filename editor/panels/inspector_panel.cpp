@@ -371,6 +371,8 @@ void InspectorPanel::DrawModelComponent(Entity entity)
                 mc.Tint.b = (unsigned char)(color[2] * 255.0f);
                 mc.Tint.a = (unsigned char)(color[3] * 255.0f);
             }
+
+            DrawVec3Control("Scale", mc.Scale, 1.0f);
         });
 }
 
@@ -398,7 +400,8 @@ void InspectorPanel::DrawColliderComponent(Entity entity)
                     DrawVec3Control("Size", collider.Size, 1.0f);
                 }
             }
-            else if (collider.Type == ColliderType::Mesh)
+
+            if (collider.Type == ColliderType::Mesh)
             {
                 char buffer[256];
                 memset(buffer, 0, sizeof(buffer));

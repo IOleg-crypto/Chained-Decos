@@ -6,6 +6,18 @@
 
 namespace CH
 {
+struct DebugRenderFlags
+{
+    bool DrawColliders = false;
+    bool DrawLights = false;
+    bool DrawSpawnZones = false;
+
+    bool IsAnyEnabled() const
+    {
+        return DrawColliders || DrawLights || DrawSpawnZones;
+    }
+};
+
 class Renderer
 {
 public:
@@ -17,11 +29,13 @@ public:
 
     static void DrawGrid(int slices, float spacing);
     static void DrawLine(Vector3 start, Vector3 end, Color color);
-    static void DrawModel(const std::string &path, const Matrix &transform, Color tint = WHITE);
+    static void DrawModel(const std::string &path, const Matrix &transform, Color tint = WHITE,
+                          Vector3 scale = {1.0f, 1.0f, 1.0f});
     static void DrawModel(const std::string &path, const Matrix &transform,
-                          const struct MaterialComponent &material);
+                          const struct MaterialComponent &material,
+                          Vector3 scale = {1.0f, 1.0f, 1.0f});
 
-    static void DrawScene(class Scene *scene);
+    static void DrawScene(class Scene *scene, const DebugRenderFlags *debugFlags = nullptr);
 
     // Lighting
     static void SetDirectionalLight(Vector3 direction, Color color);
@@ -75,6 +89,12 @@ private:
 
     static LightState s_LightState;
     static Camera3D s_CurrentCamera;
+
+    // Debug rendering helpers
+    static void DrawColliderDebug(Scene *scene);
+    static void DrawLightDebug(Scene *scene);
+    static void DrawSpawnZoneDebug(Scene *scene);
+
     Renderer() = default;
 };
 } // namespace CH

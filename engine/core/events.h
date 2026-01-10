@@ -191,22 +191,38 @@ private:
 class MouseButtonEvent : public Event
 {
 public:
+    enum class Action
+    {
+        None = 0,
+        Pressed,
+        Released
+    };
+
     int GetMouseButton() const
     {
         return m_Button;
     }
+
+    Action GetAction() const
+    {
+        return m_Action;
+    }
+
     EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput | EventCategoryMouseButton)
+
 protected:
-    MouseButtonEvent(int button) : m_Button(button)
+    MouseButtonEvent(int button, Action action) : m_Button(button), m_Action(action)
     {
     }
+
     int m_Button;
+    Action m_Action;
 };
 
 class MouseButtonPressedEvent : public MouseButtonEvent
 {
 public:
-    MouseButtonPressedEvent(int button) : MouseButtonEvent(button)
+    MouseButtonPressedEvent(int button) : MouseButtonEvent(button, Action::Pressed)
     {
     }
     EVENT_CLASS_TYPE(MouseButtonPressed)
@@ -215,7 +231,7 @@ public:
 class MouseButtonReleasedEvent : public MouseButtonEvent
 {
 public:
-    MouseButtonReleasedEvent(int button) : MouseButtonEvent(button)
+    MouseButtonReleasedEvent(int button) : MouseButtonEvent(button, Action::Released)
     {
     }
     EVENT_CLASS_TYPE(MouseButtonReleased)
