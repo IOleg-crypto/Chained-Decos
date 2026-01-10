@@ -5,7 +5,6 @@
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 
-
 namespace CH
 {
 /**

@@ -1,6 +1,7 @@
 #ifndef CH_VIEWPORT_PANEL_H
 #define CH_VIEWPORT_PANEL_H
 
+#include "engine/renderer/renderer.h"
 #include "engine/scene/scene.h"
 #include "viewport/editor_gizmo.h"
 #include <raylib.h>
@@ -15,7 +16,8 @@ public:
 
 public:
     Entity OnImGuiRender(Scene *scene, const Camera3D &camera, Entity selectedEntity,
-                         GizmoType &currentTool, EditorGizmo &gizmo, bool allowTools = true);
+                         GizmoType &currentTool, EditorGizmo &gizmo,
+                         const DebugRenderFlags *debugFlags, bool allowTools = true);
 
 public:
     bool IsFocused() const;
