@@ -1,11 +1,14 @@
 #include "scene.h"
+#include "core/events.h"
 #include "core/log.h"
-#include "entity.h"
+#include "engine/core/events.h"
 #include "engine/scene/core/scene_manager.h"
 #include "engine/scene/ecs/components/core/id_component.h"
 #include "engine/scene/ecs/components/core/tag_component.h"
 #include "engine/scene/ecs/components/transform_component.h"
 #include "engine/scene/ecs/systems/physics_system.h"
+#include "entity.h"
+
 
 namespace CHEngine
 {
@@ -89,6 +92,10 @@ void Scene::DestroyEntity(entt::entity entity)
 
 void Scene::OnUpdateRuntime(float deltaTime)
 {
+    CH::MouseButtonEvent event;
+    event.m_Button = MOUSE_BUTTON_LEFT;
+    event.m_EventType = CH::MouseButtonEvent::EventType::Pressed;
+    event.m_EventType = CH::MouseButtonEvent::EventType::Released;
     PhysicsSystem::Update(m_Registry, deltaTime);
 }
 
