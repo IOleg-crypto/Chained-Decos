@@ -1,5 +1,6 @@
 #include "bvh.h"
 #include <algorithm>
+#include <cfloat>
 #include <raymath.h>
 
 namespace CH
@@ -112,27 +113,98 @@ Scope<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, 
         return node;
     }
 
-    // Split
+    // For small sets, use fast median split instead of SAH
+    if (tris.size() <= 16)
+    {
+        // Fast median split
+        Vector3 size = Vector3Subtract(node->max, node->min);
+        int axis = 0;
+        if (size.y > size.x && size.y > size.z)
+            axis = 1;
+        if (size.z > size.x && size.z > size.y)
+            axis = 2;
+
+        std::sort(tris.begin(), tris.end(),
+                  [axis](const CollisionTriangle &a, const CollisionTriangle &b)
+                  {
+                      if (axis == 0)
+                          return a.center.x < b.center.x;
+                      if (axis == 1)
+                          return a.center.y < b.center.y;
+                      return a.center.z < b.center.z;
+                  });
+
+        size_t mid = tris.size() / 2;
+        std::vector<CollisionTriangle> leftTris(tris.begin(), tris.begin() + mid);
+        std::vector<CollisionTriangle> rightTris(tris.begin() + mid, tris.end());
+
+        node->left = BuildRecursive(leftTris, depth + 1);
+        node->right = BuildRecursive(rightTris, depth + 1);
+        return node;
+    }
+
+    // SAH Split evaluation (only for larger sets where it matters)
+    int bestAxis = -1;
+    float bestCost = FLT_MAX;
+    size_t bestMid = 0;
+
+    // Only evaluate the longest axis (saves 2/3 of evaluations)
     Vector3 size = Vector3Subtract(node->max, node->min);
-    int axis = 0;
+    int primaryAxis = 0;
     if (size.y > size.x && size.y > size.z)
-        axis = 1;
+        primaryAxis = 1;
     if (size.z > size.x && size.z > size.y)
-        axis = 2;
+        primaryAxis = 2;
 
     std::sort(tris.begin(), tris.end(),
-              [axis](const CollisionTriangle &a, const CollisionTriangle &b)
+              [primaryAxis](const CollisionTriangle &a, const CollisionTriangle &b)
               {
-                  if (axis == 0)
+                  if (primaryAxis == 0)
                       return a.center.x < b.center.x;
-                  if (axis == 1)
+                  if (primaryAxis == 1)
                       return a.center.y < b.center.y;
                   return a.center.z < b.center.z;
               });
 
-    size_t mid = tris.size() / 2;
-    std::vector<CollisionTriangle> leftTris(tris.begin(), tris.begin() + mid);
-    std::vector<CollisionTriangle> rightTris(tris.begin() + mid, tris.end());
+    // Evaluate only 4 split candidates instead of tris.size()/8
+    int numCandidates = 4;
+    for (int c = 1; c <= numCandidates; c++)
+    {
+        size_t i = (tris.size() * c) / (numCandidates + 1);
+        if (i == 0 || i >= tris.size())
+            continue;
+
+        // Evaluate cost: SA_L * N_L + SA_R * N_R
+        Vector3 minL = {1e30f, 1e30f, 1e30f}, maxL = {-1e30f, -1e30f, -1e30f};
+        for (size_t k = 0; k < i; k++)
+        {
+            minL = Vector3Min(minL, tris[k].min);
+            maxL = Vector3Max(maxL, tris[k].max);
+        }
+        Vector3 sizeL = Vector3Subtract(maxL, minL);
+        float saL = 2.0f * (sizeL.x * sizeL.y + sizeL.y * sizeL.z + sizeL.z * sizeL.x);
+
+        Vector3 minR = {1e30f, 1e30f, 1e30f}, maxR = {-1e30f, -1e30f, -1e30f};
+        for (size_t k = i; k < tris.size(); k++)
+        {
+            minR = Vector3Min(minR, tris[k].min);
+            maxR = Vector3Max(maxR, tris[k].max);
+        }
+        Vector3 sizeR = Vector3Subtract(maxR, minR);
+        float saR = 2.0f * (sizeR.x * sizeR.y + sizeR.y * sizeR.z + sizeR.z * sizeR.x);
+
+        float cost = saL * (float)i + saR * (float)(tris.size() - i);
+        if (cost < bestCost)
+        {
+            bestCost = cost;
+            bestAxis = primaryAxis;
+            bestMid = i;
+        }
+    }
+
+    // Already sorted by primaryAxis, just split
+    std::vector<CollisionTriangle> leftTris(tris.begin(), tris.begin() + bestMid);
+    std::vector<CollisionTriangle> rightTris(tris.begin() + bestMid, tris.end());
 
     node->left = BuildRecursive(leftTris, depth + 1);
     node->right = BuildRecursive(rightTris, depth + 1);
@@ -202,4 +274,18 @@ bool BVHBuilder::RayInternal(const BVHNode *node, const Ray &ray, float &t, Vect
 
     return hit;
 }
+
+static ThreadPool s_BVHThreadPool(8); // 2 threads for BVH building
+
+ThreadPool &BVHBuilder::GetThreadPool()
+{
+    return s_BVHThreadPool;
+}
+
+std::future<Scope<BVHNode>> BVHBuilder::BuildAsync(const Model &model, const Matrix &transform)
+{
+    return s_BVHThreadPool.Enqueue([model, transform]() -> Scope<BVHNode>
+                                   { return Build(model, transform); });
+}
+
 } // namespace CH

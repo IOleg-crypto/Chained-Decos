@@ -49,6 +49,7 @@ struct ModelComponent
 {
     std::string ModelPath;
     Color Tint = WHITE;
+    Vector3 Scale = {1.0f, 1.0f, 1.0f};
 
     ModelComponent() = default;
     ModelComponent(const ModelComponent &) = default;
@@ -99,6 +100,7 @@ struct SpawnComponent
     bool IsActive = true;
     Vector3 ZoneSize = {1.0f, 1.0f, 1.0f};
     bool RenderSpawnZoneInScene = true;
+    Vector3 SpawnPoint = {0.0f, 0.0f, 0.0f};
 
     SpawnComponent() = default;
     SpawnComponent(const SpawnComponent &) = default;

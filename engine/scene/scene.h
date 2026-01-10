@@ -9,6 +9,8 @@
 
 namespace CH
 {
+class Event;
+
 class Scene
 {
 public:
@@ -20,6 +22,7 @@ public:
 
     void OnUpdateRuntime(float deltaTime);
     void OnUpdateEditor(float deltaTime);
+    void OnEvent(Event &e);
 
     entt::registry &GetRegistry()
     {

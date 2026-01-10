@@ -3,6 +3,7 @@
 
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
+#include "engine/renderer/renderer.h"
 #include "engine/scene/scene.h"
 #include "logic/undo/command_history.h"
 #include "panels/console_panel.h"
@@ -69,6 +70,7 @@ private:
     EditorCamera m_EditorCamera;
     Ref<Scene> m_ActiveScene;
     SceneState m_SceneState = SceneState::Edit;
+    DebugRenderFlags m_DebugRenderFlags;
 
 private:
     EditorGizmo m_Gizmo;

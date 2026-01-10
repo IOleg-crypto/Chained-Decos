@@ -17,7 +17,8 @@ ViewportPanel::~ViewportPanel()
 }
 
 Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity selectedEntity,
-                                    GizmoType &currentTool, EditorGizmo &gizmo, bool allowTools)
+                                    GizmoType &currentTool, EditorGizmo &gizmo,
+                                    const DebugRenderFlags *debugFlags, bool allowTools)
 {
     Entity pickedEntity = {};
 
@@ -49,7 +50,7 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
     {
         Renderer::BeginScene(camera);
         Renderer::DrawGrid(20, 1.0f);
-        Renderer::DrawScene(scene);
+        Renderer::DrawScene(scene, debugFlags);
 
         // Gizmos
         if (selectedEntity && allowTools)
