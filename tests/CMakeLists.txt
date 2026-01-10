@@ -3,6 +3,7 @@ add_executable(EngineTests
     physics_tests.cpp
     asset_manager_tests.cpp
     hierarchy_tests.cpp
+    event_input_tests.cpp
 )
 
 target_link_libraries(EngineTests PRIVATE engine GTest::gmock_main GTest::gtest_main)

@@ -8,6 +8,9 @@ namespace CH
 {
 std::unordered_map<std::string, Model> AssetManager::s_Models;
 std::unordered_map<std::string, Texture2D> AssetManager::s_Textures;
+std::mutex AssetManager::s_ModelsMutex;
+std::mutex AssetManager::s_TexturesMutex;
+ThreadPool AssetManager::s_ThreadPool(4); // 4 worker threads
 
 void AssetManager::Init()
 {
@@ -33,8 +36,12 @@ void AssetManager::Shutdown()
 
 Model AssetManager::LoadModel(const std::string &path)
 {
-    if (s_Models.find(path) != s_Models.end())
-        return s_Models[path];
+    // Check cache first (thread-safe)
+    {
+        std::lock_guard<std::mutex> lock(s_ModelsMutex);
+        if (s_Models.find(path) != s_Models.end())
+            return s_Models[path];
+    }
 
     // Check for procedural first before prepending project path
     if (path.size() > 0 && path[0] == ':')
@@ -79,6 +86,7 @@ Model AssetManager::LoadModel(const std::string &path)
     Model model = ::LoadModel(fullPath.string().c_str());
     if (model.meshCount > 0)
     {
+        std::lock_guard<std::mutex> lock(s_ModelsMutex);
         s_Models[path] = model;
         CH_CORE_INFO("Model Loaded: %s", path);
     }
@@ -181,6 +189,117 @@ BoundingBox AssetManager::GetModelBoundingBox(const std::string &path)
         return ::GetModelBoundingBox(model);
     }
     return BoundingBox{{0, 0, 0}, {0, 0, 0}};
+}
+
+std::future<ModelLoadResult> AssetManager::LoadModelAsync(const std::string &path)
+{
+    // Check cache first (thread-safe)
+    {
+        std::lock_guard<std::mutex> lock(s_ModelsMutex);
+        if (s_Models.find(path) != s_Models.end())
+        {
+            ModelLoadResult result{s_Models[path], path, true};
+            std::promise<ModelLoadResult> promise;
+            promise.set_value(result);
+            return promise.get_future();
+        }
+    }
+
+    // Enqueue background loading task
+    return s_ThreadPool.Enqueue(
+        [path]() -> ModelLoadResult
+        {
+            ModelLoadResult result;
+            result.path = path;
+            result.success = false;
+
+            // Check for procedural models
+            if (path.size() > 0 && path[0] == ':')
+            {
+                Mesh mesh = {0};
+                if (path == ":cube:")
+                    mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
+                else if (path == ":sphere:")
+                    mesh = GenMeshSphere(0.5f, 16, 16);
+                else if (path == ":plane:")
+                    mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
+
+                if (mesh.vertexCount > 0)
+                {
+                    Model model = LoadModelFromMesh(mesh);
+                    result.model = model;
+                    result.success = true;
+
+                    std::lock_guard<std::mutex> lock(s_ModelsMutex);
+                    s_Models[path] = model;
+                    CH_CORE_INFO("Procedural Model Generated Async: %s", path.c_str());
+                    return result;
+                }
+            }
+
+            // Load from file
+            std::filesystem::path fullPath = path;
+            if (Project::GetActive() && !fullPath.is_absolute())
+                fullPath = Project::GetAssetDirectory() / path;
+
+            if (!std::filesystem::exists(fullPath))
+            {
+                CH_CORE_ERROR("Model file does not exist: %s", fullPath.string().c_str());
+                return result;
+            }
+
+            Model model = ::LoadModel(fullPath.string().c_str());
+            if (model.meshCount > 0)
+            {
+                result.model = model;
+                result.success = true;
+
+                std::lock_guard<std::mutex> lock(s_ModelsMutex);
+                s_Models[path] = model;
+                CH_CORE_INFO("Model Loaded Async: %s", path.c_str());
+            }
+            else
+            {
+                CH_CORE_ERROR("Failed to load model async: %s", path.c_str());
+            }
+
+            return result;
+        });
+}
+
+void AssetManager::LoadModelsAsync(const std::vector<std::string> &paths,
+                                   std::function<void(float)> progressCallback)
+{
+    if (paths.empty())
+        return;
+
+    std::vector<std::future<ModelLoadResult>> futures;
+    futures.reserve(paths.size());
+
+    // Enqueue all loads
+    CH_CORE_INFO("Starting parallel load of %d models...", paths.size());
+    for (const auto &path : paths)
+    {
+        futures.push_back(LoadModelAsync(path));
+    }
+
+    // Wait and report progress
+    size_t completed = 0;
+    for (auto &future : futures)
+    {
+        future.wait();
+        completed++;
+        if (progressCallback)
+            progressCallback(static_cast<float>(completed) / paths.size());
+    }
+
+    CH_CORE_INFO("Parallel model loading complete: %d/%d models loaded", completed, paths.size());
+}
+
+bool AssetManager::IsModelReady(const std::string &path)
+{
+    std::lock_guard<std::mutex> lock(s_ModelsMutex);
+    return s_Models.find(path) != s_Models.end();
 }
 
 } // namespace CH

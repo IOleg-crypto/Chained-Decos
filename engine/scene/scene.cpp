@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "components.h"
+#include "engine/core/events.h"
 #include "engine/core/input.h"
 #include "engine/core/log.h"
 #include "engine/physics/bvh/bvh.h"
@@ -144,7 +145,7 @@ void Scene::OnUpdateRuntime(float deltaTime)
         Vector3 forwardDir = {-sinf(yawRadians), 0.0f, -cosf(yawRadians)};
         Vector3 rightDir = {cosf(yawRadians), 0.0f, -sinf(yawRadians)};
 
-        // Movement Input
+        // Movement Input (Polling for smooth movement)
         Vector3 movementVector = {0.0f, 0.0f, 0.0f};
         if (Input::IsKeyDown(KEY_W))
             movementVector = Vector3Add(movementVector, forwardDir);
@@ -171,17 +172,75 @@ void Scene::OnUpdateRuntime(float deltaTime)
             transform.Rotation = {0.0f, targetRotationY, 0.0f};
         }
 
-        // Jump Logic
-        if (rigidBody.IsGrounded && Input::IsKeyPressed(KEY_SPACE))
-        {
-            rigidBody.Velocity.y = player.JumpForce;
-            rigidBody.IsGrounded = false;
-        }
+        // Jump logic moved to OnEvent for precise one-time trigger
     }
 }
 
 void Scene::OnUpdateEditor(float deltaTime)
 {
     // TODO: Editor specific updates
+}
+
+void Scene::OnEvent(Event &e)
+{
+    EventDispatcher dispatcher(e);
+
+    // Jump on Space key press (event-driven for precise one-time trigger)
+    dispatcher.Dispatch<KeyPressedEvent>(
+        [this](KeyPressedEvent &ev)
+        {
+            if (ev.GetKeyCode() == KEY_SPACE)
+            {
+                auto playerView = m_Registry.view<PlayerComponent, RigidBodyComponent>();
+                for (auto entity : playerView)
+                {
+                    auto &player = playerView.get<PlayerComponent>(entity);
+                    auto &rigidBody = playerView.get<RigidBodyComponent>(entity);
+
+                    if (rigidBody.IsGrounded)
+                    {
+                        rigidBody.Velocity.y = player.JumpForce;
+                        rigidBody.IsGrounded = false;
+                        return true; // Event handled
+                    }
+                }
+            }
+            return false;
+        });
+    dispatcher.Dispatch<KeyPressedEvent>(
+        [this](KeyPressedEvent &ev)
+        {
+            if (ev.GetKeyCode() == KEY_F)
+            {
+                // Find active spawn point
+                Vector3 spawnPoint = {0.0f, 0.0f, 0.0f};
+                bool foundSpawn = false;
+
+                auto spawnView = m_Registry.view<SpawnComponent>();
+                for (auto spawnEntity : spawnView)
+                {
+                    auto &spawn = spawnView.get<SpawnComponent>(spawnEntity);
+                    if (spawn.IsActive)
+                    {
+                        spawnPoint = spawn.SpawnPoint;
+                        foundSpawn = true;
+                        break;
+                    }
+                }
+
+                if (!foundSpawn)
+                    return false;
+
+                // Teleport player to spawn point
+                auto playerView = m_Registry.view<PlayerComponent, TransformComponent>();
+                for (auto playerEntity : playerView)
+                {
+                    auto &transform = playerView.get<TransformComponent>(playerEntity);
+                    transform.Translation = spawnPoint;
+                    return true; // Event handled
+                }
+            }
+            return false;
+        });
 }
 } // namespace CH

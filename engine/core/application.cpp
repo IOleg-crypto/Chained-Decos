@@ -1,11 +1,12 @@
 #include "application.h"
-#include "engine/audio/audio_manager.h" // Added
-#include "engine/core/log.h"            // Added
+#include "engine/audio/audio_manager.h"
+#include "engine/core/input.h"
+#include "engine/core/log.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/renderer.h"
 #include <raylib.h>
-#include <rlImGui.h> // Added
+#include <rlImGui.h>
 
 namespace CH
 {
@@ -76,6 +77,9 @@ void Application::PushOverlay(Layer *overlay)
 
 void Application::BeginFrame()
 {
+    // Clear per-frame input state
+    Input::UpdateState();
+
     PollEvents();
 
     s_Instance->m_DeltaTime = GetFrameTime();
@@ -101,29 +105,48 @@ void Application::EndFrame()
 void Application::PollEvents()
 {
     // 1. Keyboard Events
-    // Raylib stores key events in a buffer
     int key = GetKeyPressed();
     while (key != 0)
     {
+        Input::OnKeyPressed(key);
         KeyPressedEvent e(key, false);
         OnEvent(e);
         key = GetKeyPressed();
     }
 
-    // Note: Raylib doesn't have a buffer for released keys.
-    // This is a limitation of Raylib's polling model when trying to map to a pure event model.
-    // We could track state manually, but for now we'll focus on what Raylib supports well.
+    // Track key releases
+    static bool s_KeysDown[512] = {false};
+    for (int i = 32; i < 349; i++)
+    {
+        if (IsKeyDown(i))
+        {
+            if (!s_KeysDown[i])
+                s_KeysDown[i] = true;
+        }
+        else
+        {
+            if (s_KeysDown[i])
+            {
+                Input::OnKeyReleased(i);
+                KeyReleasedEvent e(i);
+                OnEvent(e);
+                s_KeysDown[i] = false;
+            }
+        }
+    }
 
     // 2. Mouse Events
-    for (int i = 0; i < 3; i++) // Standard buttons
+    for (int i = 0; i < 7; i++)
     {
         if (IsMouseButtonPressed(i))
         {
+            Input::OnMouseButtonPressed(i);
             MouseButtonPressedEvent e(i);
             OnEvent(e);
         }
         if (IsMouseButtonReleased(i))
         {
+            Input::OnMouseButtonReleased(i);
             MouseButtonReleasedEvent e(i);
             OnEvent(e);
         }

@@ -3,6 +3,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
+#include "raylib.h"
 #include <filesystem>
 #include <raymath.h>
 #include <rlgl.h>
@@ -100,7 +101,8 @@ void Renderer::DrawLine(Vector3 start, Vector3 end, Color color)
     ::DrawLine3D(start, end, color);
 }
 
-void Renderer::DrawModel(const std::string &path, const Matrix &transform, Color tint)
+void Renderer::DrawModel(const std::string &path, const Matrix &transform, Color tint,
+                         Vector3 scale)
 {
     Model model = AssetManager::LoadModel(path);
     if (model.meshCount > 0)
@@ -111,15 +113,15 @@ void Renderer::DrawModel(const std::string &path, const Matrix &transform, Color
             model.materials[i].shader = s_LightState.lightingShader;
         }
 
-        Matrix originalTransform = model.transform;
-        model.transform = MatrixMultiply(originalTransform, transform);
-        ::DrawModel(model, {0, 0, 0}, 1.0f, tint);
-        model.transform = originalTransform;
+        rlPushMatrix();
+        rlMultMatrixf(MatrixToFloat(transform));
+        ::DrawModelEx(model, {0, 0, 0}, {1, 0, 0}, 0.0f, scale, tint);
+        rlPopMatrix();
     }
 }
 
 void Renderer::DrawModel(const std::string &path, const Matrix &transform,
-                         const MaterialComponent &material)
+                         const MaterialComponent &material, Vector3 scale)
 {
     Model model = AssetManager::LoadModel(path);
     if (model.meshCount > 0)
@@ -143,14 +145,14 @@ void Renderer::DrawModel(const std::string &path, const Matrix &transform,
             }
         }
 
-        Matrix originalTransform = model.transform;
-        model.transform = MatrixMultiply(originalTransform, transform);
-        ::DrawModel(model, {0, 0, 0}, 1.0f, WHITE);
-        model.transform = originalTransform;
+        rlPushMatrix();
+        rlMultMatrixf(MatrixToFloat(transform));
+        ::DrawModelEx(model, {0, 0, 0}, {1, 0, 0}, 0.0f, scale, WHITE);
+        rlPopMatrix();
     }
 }
 
-void Renderer::DrawScene(Scene *scene)
+void Renderer::DrawScene(Scene *scene, const DebugRenderFlags *debugFlags)
 {
     // Draw Skybox
 
@@ -167,63 +169,25 @@ void Renderer::DrawScene(Scene *scene)
             if (e.HasComponent<MaterialComponent>())
             {
                 DrawModel(model.ModelPath, transform.GetTransform(),
-                          e.GetComponent<MaterialComponent>());
+                          e.GetComponent<MaterialComponent>(), model.Scale);
             }
             else
             {
-                DrawModel(model.ModelPath, transform.GetTransform(), model.Tint);
+                DrawModel(model.ModelPath, transform.GetTransform(), model.Tint, model.Scale);
             }
         }
     }
 
-    // Draw Spawn Zones (Gizmo style)
-
-    auto view = scene->GetRegistry().view<TransformComponent, SpawnComponent>();
-    for (auto entity : view)
+    // Draw Spawn Zones (Debug only)
+    if (debugFlags && debugFlags->DrawSpawnZones)
     {
-        auto [transform, spawn] = view.get<TransformComponent, SpawnComponent>(entity);
-
-        // Draw a translucent cyan box for the spawn zone
-        Vector3 pos = transform.Translation;
-        Vector3 size = spawn.ZoneSize;
-
-        if (spawn.RenderSpawnZoneInScene)
-        {
-            ::DrawCubeWires(pos, size.x, size.y, size.z, Color{0, 255, 255, 255});
-            ::DrawCube(pos, size.x, size.y, size.z, ColorAlpha(Color{0, 255, 255, 255}, 0.2f));
-        }
+        DrawSpawnZoneDebug(scene);
     }
 
-    // Draw Colliders (Gizmo style)
+    // Draw Colliders (Debug only)
+    if (debugFlags && debugFlags->DrawColliders)
     {
-        auto view = scene->GetRegistry().view<TransformComponent, ColliderComponent>();
-        for (auto entity : view)
-        {
-            auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-
-            // Apply scale to visualization
-            Vector3 scale = transform.Scale;
-            Vector3 scaledSize = Vector3Multiply(collider.Size, scale);
-            Vector3 scaledOffset = Vector3Multiply(collider.Offset, scale);
-
-            Vector3 min = Vector3Add(transform.Translation, scaledOffset);
-            Vector3 center = Vector3Add(min, Vector3Scale(scaledSize, 0.5f));
-
-            Color color;
-            if (!collider.bEnabled)
-                color = ORANGE;
-            else if (collider.IsColliding)
-                color = RED;
-            else if (collider.Type == ColliderType::Mesh)
-                color = SKYBLUE;
-            else
-                color = GREEN;
-
-            if (!collider.bEnabled)
-                color = GRAY;
-
-            ::DrawCubeWires(center, scaledSize.x, scaledSize.y, scaledSize.z, color);
-        }
+        DrawColliderDebug(scene);
     }
 
     // 4. Point Lights
@@ -375,5 +339,73 @@ void Renderer::BeginUI()
 
 void Renderer::EndUI()
 {
+}
+
+void Renderer::DrawColliderDebug(Scene *scene)
+{
+    auto view = scene->GetRegistry().view<TransformComponent, ColliderComponent>();
+    for (auto entity : view)
+    {
+        auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
+
+        Vector3 scale = transform.Scale;
+        Vector3 scaledSize = Vector3Multiply(collider.Size, scale);
+        Vector3 scaledOffset = Vector3Multiply(collider.Offset, scale);
+
+        Vector3 min = Vector3Add(transform.Translation, scaledOffset);
+        Vector3 center = Vector3Add(min, Vector3Scale(scaledSize, 0.5f));
+
+        Color color;
+        if (!collider.bEnabled)
+            color = ORANGE;
+        else if (collider.IsColliding)
+            color = RED;
+        else if (collider.Type == ColliderType::Mesh)
+            color = SKYBLUE;
+        else
+            color = GREEN;
+
+        if (!collider.bEnabled)
+            color = GRAY;
+
+        if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
+        {
+            Model model = AssetManager::LoadModel(collider.ModelPath);
+            Matrix originalTransform = model.transform;
+            model.transform = MatrixMultiply(originalTransform, transform.GetTransform());
+            ::DrawModelWires(model, {0, 0, 0}, 1.0f, color);
+            model.transform = originalTransform;
+        }
+        else
+        {
+            ::DrawCubeWires(center, scaledSize.x, scaledSize.y, scaledSize.z, color);
+        }
+    }
+}
+
+void Renderer::DrawLightDebug(Scene *scene)
+{
+    auto view = scene->GetRegistry().view<TransformComponent, PointLightComponent>();
+    for (auto entity : view)
+    {
+        auto [transform, light] = view.get<TransformComponent, PointLightComponent>(entity);
+        ::DrawSphere(transform.Translation, 0.2f, light.LightColor);
+        ::DrawSphereWires(transform.Translation, light.Radius, 16, 16,
+                          ColorAlpha(light.LightColor, 0.3f));
+    }
+}
+
+void Renderer::DrawSpawnZoneDebug(Scene *scene)
+{
+    auto view = scene->GetRegistry().view<TransformComponent, SpawnComponent>();
+    for (auto entity : view)
+    {
+        auto [transform, spawn] = view.get<TransformComponent, SpawnComponent>(entity);
+        Vector3 pos = transform.Translation;
+        Vector3 size = spawn.ZoneSize;
+
+        ::DrawCubeWires(pos, size.x, size.y, size.z, Color{0, 255, 255, 255});
+        ::DrawCube(pos, size.x, size.y, size.z, ColorAlpha(Color{0, 255, 255, 255}, 0.2f));
+    }
 }
 } // namespace CH
