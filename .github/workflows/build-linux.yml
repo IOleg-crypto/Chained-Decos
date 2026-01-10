@@ -24,14 +24,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          fetch-depth: 1
+
+      - name: Fast parallel submodules
+        run: |
+          git submodule update --init --recursive --depth 1 --jobs $(nproc)
 
       - name: Cache
         uses: actions/cache@v4
         with:
           path: |
             ~/.ccache
-            .deps
+            build/_deps
+            build/CMakeFiles
           key: linux-gcc-${{ inputs.build_type }}-${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             linux-gcc-${{ inputs.build_type }}-

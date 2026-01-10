@@ -52,8 +52,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 1
+
+      - name: Fast parallel submodules
+        shell: bash
+        run: |
+          git submodule update --init --recursive --depth 1 --jobs 8
 
       - name: Setup ccache
         uses: actions/cache@v3
@@ -61,6 +65,8 @@ jobs:
           path: |
             ~/.ccache
             ${{ runner.os == 'Windows' && 'C:/ccache' || '~/.ccache' }}
+            build/_deps
+            build/CMakeFiles
           key: release-${{ matrix.os }}-${{ github.sha }}
           restore-keys: |
             release-${{ matrix.os }}-
