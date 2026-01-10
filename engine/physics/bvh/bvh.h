@@ -2,6 +2,8 @@
 #define CH_PHYSICS_BVH_H
 
 #include "engine/core/base.h"
+#include "engine/core/thread_pool.h"
+#include <future>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
@@ -36,8 +38,17 @@ struct BVHNode
 class BVHBuilder
 {
 public:
+    // Synchronous API
     static Scope<BVHNode> Build(const Model &model, const Matrix &transform = MatrixIdentity());
+
+    // Asynchronous API
+    static std::future<Scope<BVHNode>> BuildAsync(const Model &model,
+                                                  const Matrix &transform = MatrixIdentity());
+
     static bool Raycast(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal);
+
+    // Thread pool access
+    static ThreadPool &GetThreadPool();
 
 private:
     static Scope<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris, int depth);

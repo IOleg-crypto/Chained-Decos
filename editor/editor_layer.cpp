@@ -19,6 +19,9 @@ namespace CH
 {
 EditorLayer::EditorLayer() : Layer("EditorLayer")
 {
+    m_DebugRenderFlags.DrawColliders = true;
+    m_DebugRenderFlags.DrawLights = true;
+    m_DebugRenderFlags.DrawSpawnZones = true;
 }
 
 void EditorLayer::OnAttach()
@@ -280,9 +283,9 @@ void EditorLayer::UI_DrawPanels()
         m_SceneState == SceneState::Play, [this]() { OnScenePlay(); }, [this]() { OnSceneStop(); });
 
     bool bIsEdit = m_SceneState == SceneState::Edit;
-    Entity picked = m_ViewportPanel.OnImGuiRender(m_ActiveScene.get(), GetActiveCamera(),
-                                                  m_SceneHierarchyPanel.GetSelectedEntity(),
-                                                  m_CurrentTool, m_Gizmo, bIsEdit);
+    Entity picked = m_ViewportPanel.OnImGuiRender(
+        m_ActiveScene.get(), GetActiveCamera(), m_SceneHierarchyPanel.GetSelectedEntity(),
+        m_CurrentTool, m_Gizmo, &m_DebugRenderFlags, bIsEdit);
     if (picked)
     {
         m_SceneHierarchyPanel.SetSelectedEntity(picked);
@@ -293,7 +296,8 @@ void EditorLayer::UI_DrawPanels()
         m_ContentBrowserPanel.OnImGuiRender(&m_ShowContentBrowser, !bIsEdit);
     }
     m_ConsolePanel.OnImGuiRender(!bIsEdit);
-    m_EnvironmentPanel.OnImGuiRender(m_ActiveScene.get(), !bIsEdit);
+
+    m_EnvironmentPanel.OnImGuiRender(m_ActiveScene.get(), !bIsEdit, &m_DebugRenderFlags);
     m_InspectorPanel.OnImGuiRender(m_ActiveScene.get(), m_SceneHierarchyPanel.GetSelectedEntity(),
                                    !bIsEdit);
 }
@@ -474,6 +478,12 @@ void EditorLayer::ResetLayout()
 
 void EditorLayer::OnEvent(Event &e)
 {
+    if (m_ActiveScene)
+        m_ActiveScene->OnEvent(e);
+
+    if (e.Handled)
+        return;
+
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<KeyPressedEvent>(
         [this](KeyPressedEvent &ev)
@@ -510,11 +520,13 @@ void EditorLayer::OnScenePlay()
 {
     m_SceneState = SceneState::Play;
 
-    auto spawnView = m_ActiveScene->GetRegistry().view<SpawnComponent>();
+    auto spawnView = m_ActiveScene->GetRegistry().view<SpawnComponent, TransformComponent>();
     for (auto entity : spawnView)
     {
         auto &spawn = spawnView.get<SpawnComponent>(entity);
+        auto &transform = spawnView.get<TransformComponent>(entity);
         spawn.RenderSpawnZoneInScene = false;
+        spawn.SpawnPoint = transform.Translation;
     }
     DisableCursor();
     CH_CORE_INFO("Scene Started.");
