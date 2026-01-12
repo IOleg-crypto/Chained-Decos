@@ -92,10 +92,10 @@ void Scene::DestroyEntity(entt::entity entity)
 
 void Scene::OnUpdateRuntime(float deltaTime)
 {
-    CH::MouseButtonEvent event;
+    CHEngine::MouseButtonEvent event;
     event.m_Button = MOUSE_BUTTON_LEFT;
-    event.m_EventType = CH::MouseButtonEvent::EventType::Pressed;
-    event.m_EventType = CH::MouseButtonEvent::EventType::Released;
+    event.m_EventType = CHEngine::MouseButtonEvent::EventType::Pressed;
+    event.m_EventType = CHEngine::MouseButtonEvent::EventType::Released;
     PhysicsSystem::Update(m_Registry, deltaTime);
 }
 

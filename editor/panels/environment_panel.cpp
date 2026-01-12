@@ -5,7 +5,7 @@
 #include <imgui.h>
 #include <nfd.h>
 
-namespace CH
+namespace CHEngine
 {
 void EnvironmentPanel::OnImGuiRender(Scene *scene, bool readOnly, DebugRenderFlags *debugFlags)
 {
@@ -58,6 +58,7 @@ void EnvironmentPanel::OnImGuiRender(Scene *scene, bool readOnly, DebugRenderFla
             ImGui::Checkbox("Show Colliders", &debugFlags->DrawColliders);
             ImGui::Checkbox("Show Lights", &debugFlags->DrawLights);
             ImGui::Checkbox("Show Spawn Zones", &debugFlags->DrawSpawnZones);
+            ImGui::Checkbox("Show Grid", &debugFlags->DrawGrid);
         }
     }
     else
@@ -67,4 +68,4 @@ void EnvironmentPanel::OnImGuiRender(Scene *scene, bool readOnly, DebugRenderFla
     ImGui::EndDisabled();
     ImGui::End();
 }
-} // namespace CH
+} // namespace CHEngine

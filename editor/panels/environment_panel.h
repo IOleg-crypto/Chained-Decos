@@ -1,11 +1,11 @@
 #ifndef CH_ENVIRONMENT_PANEL_H
 #define CH_ENVIRONMENT_PANEL_H
 
-#include "engine/renderer/renderer.h"
+#include "engine/renderer/render.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 
-namespace CH
+namespace CHEngine
 {
 class EnvironmentPanel
 {
@@ -24,6 +24,6 @@ public:
         return m_IsOpen;
     }
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_ENVIRONMENT_PANEL_H

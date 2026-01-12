@@ -2,13 +2,15 @@
 #include "engine/audio/audio_manager.h"
 #include "engine/core/input.h"
 #include "engine/core/log.h"
+#include "engine/core/thread_dispatcher.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/asset_manager.h"
-#include "engine/renderer/renderer.h"
+#include "engine/renderer/render.h"
+#include "engine/renderer/scene_render.h"
 #include <raylib.h>
 #include <rlImGui.h>
 
-namespace CH
+namespace CHEngine
 {
 Application *Application::s_Instance = nullptr;
 
@@ -19,14 +21,16 @@ Application::Application(const Config &config)
 
     // Log::Init(); // Removed
     CH_CORE_INFO("Initializing Engine..."); // Added
-
+    SetTraceLogLevel(LOG_WARNING);          // Reduce spam
     InitWindow(config.Width, config.Height, config.Title.c_str());
     SetTargetFPS(60);
     SetExitKey(KEY_NULL); // Prevent ESC from closing the app
     rlImGuiSetup(true);   // Added
     m_Running = true;
 
-    Renderer::Init();
+    Render::Init();
+    SceneRender::Init();
+    ThreadDispatcher::Init();
     Physics::Init();
     AssetManager::Init();
     AudioManager::Init(); // Added
@@ -37,8 +41,10 @@ Application::Application(const Config &config)
 Application::~Application()
 {
     AssetManager::Shutdown();
+    ThreadDispatcher::Shutdown();
     Physics::Shutdown();
-    Renderer::Shutdown();
+    SceneRender::Shutdown();
+    Render::Shutdown();
     CloseWindow();
     s_Instance = nullptr;
 }
@@ -79,6 +85,8 @@ void Application::BeginFrame()
 {
     // Clear per-frame input state
     Input::UpdateState();
+
+    ThreadDispatcher::ExecuteMainThreadQueue();
 
     PollEvents();
 
@@ -205,4 +213,4 @@ float Application::GetDeltaTime()
 {
     return s_Instance->m_DeltaTime;
 }
-} // namespace CH
+} // namespace CHEngine

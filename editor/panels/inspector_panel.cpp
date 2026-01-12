@@ -7,13 +7,14 @@
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
 #include "logic/undo/transform_command.h"
+#include <chrono>
 #include <filesystem>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <nfd.h>
 #include <raymath.h>
 
-namespace CH
+namespace CHEngine
 {
 static bool DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f,
                             float columnWidth = 100.0f)
@@ -362,6 +363,13 @@ void InspectorPanel::DrawModelComponent(Entity entity)
                 }
             }
 
+            if (ImGui::Button("Load / Reload"))
+            {
+                AssetManager::LoadModel(mc.ModelPath);
+            }
+            ImGui::SameLine();
+            ImGui::TextDisabled("(?) Load model into VRAM");
+
             float color[4] = {mc.Tint.r / 255.0f, mc.Tint.g / 255.0f, mc.Tint.b / 255.0f,
                               mc.Tint.a / 255.0f};
             if (ImGui::ColorEdit4("Tint", color))
@@ -439,22 +447,32 @@ void InspectorPanel::DrawColliderComponent(Entity entity)
                     }
                 }
 
-                if (ImGui::Button("Build BVH") ||
-                    (!collider.BVHRoot && !collider.ModelPath.empty()))
+                if (ImGui::Button("Build BVH (Force)"))
                 {
                     Model model = AssetManager::LoadModel(collider.ModelPath);
                     if (model.meshCount > 0)
                     {
-                        collider.BVHRoot = BVHBuilder::Build(model);
-                        BoundingBox box = AssetManager::GetModelBoundingBox(collider.ModelPath);
-                        collider.Offset = box.min;
-                        collider.Size = Vector3Subtract(box.max, box.min);
+                        collider.BVHFuture = BVHBuilder::BuildAsync(model);
+                        collider.BVHRoot = nullptr;
                     }
                 }
+
                 if (collider.BVHRoot)
-                    ImGui::Text("BVH State: Built");
+                {
+                    ImGui::TextColored(ImVec4{0, 1, 0, 1}, "BVH State: Ready");
+                }
+                else if (collider.BVHFuture.valid())
+                {
+                    auto status = collider.BVHFuture.wait_for(std::chrono::seconds(0));
+                    if (status == std::future_status::ready)
+                        ImGui::TextColored(ImVec4{0, 1, 0, 1}, "BVH State: Finished (Updating...)");
+                    else
+                        ImGui::TextColored(ImVec4{1, 0.5f, 0, 1}, "BVH State: Building...");
+                }
                 else
-                    ImGui::Text("BVH State: Not Built");
+                {
+                    ImGui::TextColored(ImVec4{1, 0, 0, 1}, "BVH State: Not Built");
+                }
             }
 
             ImGui::Separator();
@@ -684,4 +702,4 @@ void InspectorPanel::DrawCSharpScriptComponent(Entity entity)
             ImGui::Text("Handle: %p", sc.Handle);
         });
 }
-} // namespace CH
+} // namespace CHEngine

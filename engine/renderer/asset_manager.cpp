@@ -1,16 +1,18 @@
 #include "asset_manager.h"
 #include "engine/core/log.h"
+#include "engine/core/thread_dispatcher.h"
 #include "engine/core/types.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 
-namespace CH
+namespace CHEngine
 {
-std::unordered_map<std::string, Model> AssetManager::s_Models;
-std::unordered_map<std::string, Texture2D> AssetManager::s_Textures;
+std::unordered_map<std::string, Model, AssetManager::StringHash, std::equal_to<>>
+    AssetManager::s_Models;
+std::unordered_map<std::string, Texture2D, AssetManager::StringHash, std::equal_to<>>
+    AssetManager::s_Textures;
 std::mutex AssetManager::s_ModelsMutex;
 std::mutex AssetManager::s_TexturesMutex;
-ThreadPool AssetManager::s_ThreadPool(4); // 4 worker threads
 
 void AssetManager::Init()
 {
@@ -34,13 +36,14 @@ void AssetManager::Shutdown()
     s_Textures.clear();
 }
 
-Model AssetManager::LoadModel(const std::string &path)
+Model AssetManager::LoadModel(std::string_view path)
 {
     // Check cache first (thread-safe)
     {
         std::lock_guard<std::mutex> lock(s_ModelsMutex);
-        if (s_Models.find(path) != s_Models.end())
-            return s_Models[path];
+        auto it = s_Models.find(path);
+        if (it != s_Models.end())
+            return it->second;
     }
 
     // Check for procedural first before prepending project path
@@ -65,8 +68,9 @@ Model AssetManager::LoadModel(const std::string &path)
         if (mesh.vertexCount > 0)
         {
             Model model = LoadModelFromMesh(mesh);
-            s_Models[path] = model;
-            CH_CORE_INFO("Procedural Model Generated: %s", path.c_str());
+            std::lock_guard<std::mutex> lock(s_ModelsMutex);
+            s_Models[std::string(path)] = model;
+            CH_CORE_INFO("Procedural Model Generated: %s", std::string(path).c_str());
             return model;
         }
     }
@@ -79,7 +83,11 @@ Model AssetManager::LoadModel(const std::string &path)
 
     if (!std::filesystem::exists(fullPath))
     {
-        CH_CORE_ERROR("Model file does not exist: %s", fullPath.string().c_str());
+        // Don't log error for procedural paths that were somehow missed by the prefix check
+        if (path.size() > 0 && path[0] != ':')
+        {
+            CH_CORE_ERROR("Model file does not exist: %s", fullPath.string().c_str());
+        }
         return {0};
     }
 
@@ -87,44 +95,52 @@ Model AssetManager::LoadModel(const std::string &path)
     if (model.meshCount > 0)
     {
         std::lock_guard<std::mutex> lock(s_ModelsMutex);
-        s_Models[path] = model;
-        CH_CORE_INFO("Model Loaded: %s", path);
+        s_Models[std::string(path)] = model;
+        CH_CORE_INFO("Model Loaded: %s", fullPath.string().c_str());
     }
     else
     {
-        CH_CORE_ERROR("Failed to load model: %s", path);
+        CH_CORE_ERROR("Failed to load model: %s", fullPath.string().c_str());
     }
 
     return model;
 }
 
-Model AssetManager::GetModel(const std::string &name)
+Model AssetManager::GetModel(std::string_view name)
 {
-    if (s_Models.find(name) != s_Models.end())
-        return s_Models[name];
+    auto it = s_Models.find(name);
+    if (it != s_Models.end())
+        return it->second;
 
     return Model{0}; // Return empty model if not found
 }
 
-bool AssetManager::HasModel(const std::string &name)
+bool AssetManager::HasModel(std::string_view name)
 {
+    std::lock_guard<std::mutex> lock(s_ModelsMutex);
     return s_Models.find(name) != s_Models.end();
 }
 
-void AssetManager::UnloadModel(const std::string &name)
+void AssetManager::UnloadModel(std::string_view name)
 {
-    if (s_Models.find(name) != s_Models.end())
+    std::lock_guard<std::mutex> lock(s_ModelsMutex);
+    auto it = s_Models.find(name);
+    if (it != s_Models.end())
     {
-        ::UnloadModel(s_Models[name]);
-        s_Models.erase(name);
-        CH_CORE_INFO("Model Unloaded: %s", name);
+        ::UnloadModel(it->second);
+        s_Models.erase(it);
+        CH_CORE_INFO("Model Unloaded: %s", std::string(name).c_str());
     }
 }
 
-Texture2D AssetManager::LoadTexture(const std::string &path)
+Texture2D AssetManager::LoadTexture(std::string_view path)
 {
-    if (s_Textures.find(path) != s_Textures.end())
-        return s_Textures[path];
+    {
+        std::lock_guard<std::mutex> lock(s_TexturesMutex);
+        auto it = s_Textures.find(path);
+        if (it != s_Textures.end())
+            return it->second;
+    }
 
     std::filesystem::path fullPath = path;
     if (Project::GetActive() && !fullPath.is_absolute())
@@ -141,47 +157,52 @@ Texture2D AssetManager::LoadTexture(const std::string &path)
     Texture2D texture = ::LoadTexture(fullPath.string().c_str());
     if (texture.id > 0)
     {
-        s_Textures[path] = texture;
-        CH_CORE_INFO("Texture Loaded: %s", path.c_str());
+        std::lock_guard<std::mutex> lock(s_TexturesMutex);
+        s_Textures[std::string(path)] = texture;
+        CH_CORE_INFO("Texture Loaded: %s", fullPath.string().c_str());
     }
     else
     {
-        CH_CORE_ERROR("Failed to load texture: %s", path.c_str());
+        CH_CORE_ERROR("Failed to load texture: %s", fullPath.string().c_str());
     }
 
     return texture;
 }
 
-Texture2D AssetManager::GetTexture(const std::string &name)
+Texture2D AssetManager::GetTexture(std::string_view name)
 {
-    if (s_Textures.find(name) != s_Textures.end())
-        return s_Textures[name];
+    auto it = s_Textures.find(name);
+    if (it != s_Textures.end())
+        return it->second;
 
     return Texture2D{0};
 }
 
-bool AssetManager::HasTexture(const std::string &name)
+bool AssetManager::HasTexture(std::string_view name)
 {
+    std::lock_guard<std::mutex> lock(s_TexturesMutex);
     return s_Textures.find(name) != s_Textures.end();
 }
 
-void AssetManager::UnloadTexture(const std::string &name)
+void AssetManager::UnloadTexture(std::string_view name)
 {
-    if (s_Textures.find(name) != s_Textures.end())
+    std::lock_guard<std::mutex> lock(s_TexturesMutex);
+    auto it = s_Textures.find(name);
+    if (it != s_Textures.end())
     {
-        ::UnloadTexture(s_Textures[name]);
-        s_Textures.erase(name);
-        CH_CORE_INFO("Texture Unloaded: %s", name);
+        ::UnloadTexture(it->second);
+        s_Textures.erase(it);
+        CH_CORE_INFO("Texture Unloaded: %s", std::string(name).c_str());
     }
 }
 
-Texture2D AssetManager::LoadCubemap(const std::string &path)
+Texture2D AssetManager::LoadCubemap(std::string_view path)
 {
     // Use LoadTexture for now, but in Renderer we will handle the 2D to Cubemap conversion
     // logic if we detect it's a 2D panorama.
     return LoadTexture(path);
 }
-BoundingBox AssetManager::GetModelBoundingBox(const std::string &path)
+BoundingBox AssetManager::GetModelBoundingBox(std::string_view path)
 {
     Model model = LoadModel(path);
     if (model.meshCount > 0)
@@ -191,37 +212,39 @@ BoundingBox AssetManager::GetModelBoundingBox(const std::string &path)
     return BoundingBox{{0, 0, 0}, {0, 0, 0}};
 }
 
-std::future<ModelLoadResult> AssetManager::LoadModelAsync(const std::string &path)
+std::future<ModelLoadResult> AssetManager::LoadModelAsync(std::string_view path)
 {
     // Check cache first (thread-safe)
     {
         std::lock_guard<std::mutex> lock(s_ModelsMutex);
-        if (s_Models.find(path) != s_Models.end())
+        auto it = s_Models.find(path);
+        if (it != s_Models.end())
         {
-            ModelLoadResult result{s_Models[path], path, true};
+            ModelLoadResult result{it->second, std::string(path), true};
             std::promise<ModelLoadResult> promise;
             promise.set_value(result);
             return promise.get_future();
         }
     }
 
+    std::string pathStr(path);
     // Enqueue background loading task
-    return s_ThreadPool.Enqueue(
-        [path]() -> ModelLoadResult
+    return ThreadDispatcher::DispatchAsync(
+        [pathStr]() -> ModelLoadResult
         {
             ModelLoadResult result;
-            result.path = path;
+            result.path = pathStr;
             result.success = false;
 
             // Check for procedural models
-            if (path.size() > 0 && path[0] == ':')
+            if (pathStr.size() > 0 && pathStr[0] == ':')
             {
                 Mesh mesh = {0};
-                if (path == ":cube:")
+                if (pathStr == ":cube:")
                     mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
-                else if (path == ":sphere:")
+                else if (pathStr == ":sphere:")
                     mesh = GenMeshSphere(0.5f, 16, 16);
-                else if (path == ":plane:")
+                else if (pathStr == ":plane:")
                     mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
 
                 if (mesh.vertexCount > 0)
@@ -231,16 +254,16 @@ std::future<ModelLoadResult> AssetManager::LoadModelAsync(const std::string &pat
                     result.success = true;
 
                     std::lock_guard<std::mutex> lock(s_ModelsMutex);
-                    s_Models[path] = model;
-                    CH_CORE_INFO("Procedural Model Generated Async: %s", path.c_str());
+                    s_Models[pathStr] = model;
+                    CH_CORE_INFO("Procedural Model Generated Async: %s", pathStr.c_str());
                     return result;
                 }
             }
 
             // Load from file
-            std::filesystem::path fullPath = path;
+            std::filesystem::path fullPath = pathStr;
             if (Project::GetActive() && !fullPath.is_absolute())
-                fullPath = Project::GetAssetDirectory() / path;
+                fullPath = Project::GetAssetDirectory() / pathStr;
 
             if (!std::filesystem::exists(fullPath))
             {
@@ -255,12 +278,12 @@ std::future<ModelLoadResult> AssetManager::LoadModelAsync(const std::string &pat
                 result.success = true;
 
                 std::lock_guard<std::mutex> lock(s_ModelsMutex);
-                s_Models[path] = model;
-                CH_CORE_INFO("Model Loaded Async: %s", path.c_str());
+                s_Models[pathStr] = model;
+                CH_CORE_INFO("Model Loaded Async: %s", fullPath.string().c_str());
             }
             else
             {
-                CH_CORE_ERROR("Failed to load model async: %s", path.c_str());
+                CH_CORE_ERROR("Failed to load model async: %s", pathStr.c_str());
             }
 
             return result;
@@ -296,10 +319,10 @@ void AssetManager::LoadModelsAsync(const std::vector<std::string> &paths,
     CH_CORE_INFO("Parallel model loading complete: %d/%d models loaded", completed, paths.size());
 }
 
-bool AssetManager::IsModelReady(const std::string &path)
+bool AssetManager::IsModelReady(std::string_view path)
 {
     std::lock_guard<std::mutex> lock(s_ModelsMutex);
     return s_Models.find(path) != s_Models.end();
 }
 
-} // namespace CH
+} // namespace CHEngine

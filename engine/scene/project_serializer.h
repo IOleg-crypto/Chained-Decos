@@ -3,7 +3,7 @@
 
 #include "project.h"
 
-namespace CH
+namespace CHEngine
 {
 class ProjectSerializer
 {
@@ -16,6 +16,6 @@ public:
 private:
     Ref<Project> m_Project;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_PROJECT_SERIALIZER_H

@@ -2,15 +2,14 @@
 #define CH_APPLICATION_H
 
 #include "engine/core/events.h"
+#include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/types.h"
 #include <raylib.h>
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
-class Layer;
-class Event;
 
 struct ApplicationConfig
 {
@@ -65,6 +64,6 @@ private:
 
 // To be defined by CLIENT
 Application *CreateApplication();
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_APPLICATION_H

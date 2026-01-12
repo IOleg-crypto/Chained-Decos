@@ -2,12 +2,12 @@
 #include "extras/IconsFontAwesome6.h"
 #include <imgui.h>
 
-namespace CH
+namespace CHEngine
 {
 namespace UI
 {
 
-void DrawToolbar(bool isPlaying, std::function<void()> onPlay, std::function<void()> onStop)
+void DrawToolbar(bool isPlaying, const EventCallbackFn &callback)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
@@ -39,14 +39,26 @@ void DrawToolbar(bool isPlaying, std::function<void()> onPlay, std::function<voi
     {
         if (isPlaying)
         {
-            if (onStop)
-                onStop();
+            SceneStopEvent e;
+            callback(e);
         }
         else
         {
-            if (onPlay)
-                onPlay();
+            ScenePlayEvent e;
+            callback(e);
         }
+    }
+
+    if (!isPlaying)
+    {
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_ROCKET, ImVec2(toolbarSize, toolbarSize)))
+        {
+            AppLaunchRuntimeEvent e;
+            callback(e);
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Launch Standalone Runtime");
     }
 
     if (isPlaying)
@@ -66,4 +78,4 @@ void DrawToolbar(bool isPlaying, std::function<void()> onPlay, std::function<voi
 }
 
 } // namespace UI
-} // namespace CH
+} // namespace CHEngine

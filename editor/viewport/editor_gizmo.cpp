@@ -5,7 +5,7 @@
 #include <raymath.h>
 #include <rlgl.h>
 
-namespace CH
+namespace CHEngine
 {
 
 static RayCollision GetRayCollisionPlane(Ray ray, Vector3 planePos, Vector3 planeNormal)
@@ -177,4 +177,4 @@ float EditorGizmo::SnapValue(float value, float step)
     return std::roundf(value / step) * step;
 }
 
-} // namespace CH
+} // namespace CHEngine

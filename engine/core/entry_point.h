@@ -4,12 +4,12 @@
 #include "engine/core/application.h"
 #include <raylib.h>
 
-extern CH::Application *CH::CreateApplication();
+extern CHEngine::Application *CHEngine::CreateApplication();
 
 int main(int argc, char **argv)
 {
     SetExitKey(NULL); // To prevent raylib from exiting on escape
-    auto app = CH::CreateApplication();
+    auto app = CHEngine::CreateApplication();
     app->Run();
     delete app;
     return 0;
