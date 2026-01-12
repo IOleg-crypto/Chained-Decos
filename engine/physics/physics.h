@@ -1,11 +1,12 @@
 #ifndef CH_PHYSICS_H
 #define CH_PHYSICS_H
 
-#include "engine/scene/scene.h"
+#include <entt/entt.hpp>
 #include <raylib.h>
 
-namespace CH
+namespace CHEngine
 {
+class Scene;
 struct RaycastResult
 {
     bool Hit = false;
@@ -29,6 +30,6 @@ public:
 
     static RaycastResult Raycast(Scene *scene, Ray ray);
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_PHYSICS_H

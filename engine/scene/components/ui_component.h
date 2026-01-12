@@ -5,8 +5,7 @@
 #include <string>
 #include <vector>
 
-
-namespace CH
+namespace CHEngine
 {
 // Base class for game-level UI elements (HUD, Menus)
 // Unlike ImGui (Editor UI), this will be designed for the final game.
@@ -27,6 +26,6 @@ struct UIComponent
     UIComponent() = default;
 };
 
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_UI_COMPONENT_H

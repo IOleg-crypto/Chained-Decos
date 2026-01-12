@@ -1,11 +1,10 @@
 #ifndef CH_SCENE_SERIALIZER_H
 #define CH_SCENE_SERIALIZER_H
 
-#include <string>
+#include "engine/scene/scene.h"
 
-namespace CH
+namespace CHEngine
 {
-class Scene;
 
 class SceneSerializer
 {
@@ -18,6 +17,6 @@ public:
 private:
     Scene *m_Scene;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_SCENE_SERIALIZER_H

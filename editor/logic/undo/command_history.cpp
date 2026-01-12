@@ -1,7 +1,7 @@
 #include "command_history.h"
 #include "engine/core/log.h"
 
-namespace CH
+namespace CHEngine
 {
 CommandHistory::CommandHistory(size_t maxHistory) : m_MaxHistory(maxHistory)
 {
@@ -72,4 +72,4 @@ std::string CommandHistory::GetRedoName() const
 {
     return m_RedoStack.empty() ? "" : m_RedoStack.back()->GetName();
 }
-} // namespace CH
+} // namespace CHEngine

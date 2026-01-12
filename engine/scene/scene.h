@@ -7,9 +7,10 @@
 #include <entt/entt.hpp>
 #include <string>
 
-namespace CH
+#include "engine/core/events.h"
+
+namespace CHEngine
 {
-class Event;
 
 class Scene
 {
@@ -69,6 +70,6 @@ template <typename T> void Entity::RemoveComponent()
 {
     m_Scene->m_Registry.remove<T>(m_EntityHandle);
 }
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_SCENE_H

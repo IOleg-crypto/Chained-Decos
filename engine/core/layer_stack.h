@@ -4,7 +4,7 @@
 #include "layer.h"
 #include <vector>
 
-namespace CH
+namespace CHEngine
 {
 class LayerStack
 {
@@ -44,6 +44,6 @@ private:
     std::vector<Layer *> m_Layers;
     unsigned int m_LayerInsertIndex = 0;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_LAYER_STACK_H

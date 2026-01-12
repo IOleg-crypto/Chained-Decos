@@ -3,11 +3,13 @@
 #include "collision/collision.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/scene/components.h"
+#include "engine/scene/scene.h"
 #include <cfloat>
+#include <chrono>
 #include <cmath>
 #include <raymath.h>
 
-namespace CH
+namespace CHEngine
 {
 void Physics::Init()
 {
@@ -45,17 +47,24 @@ static void ProcessColliderData(entt::registry &sceneRegistry)
             Model model = AssetManager::LoadModel(colliderComp.ModelPath);
             if (model.meshCount > 0)
             {
-                // Build BVH asynchronously
-                auto future = BVHBuilder::BuildAsync(model);
+                // Start building BVH asynchronously if not already building
+                if (!colliderComp.BVHFuture.valid())
+                {
+                    colliderComp.BVHFuture = BVHBuilder::BuildAsync(model).share();
+                    CH_CORE_INFO("Started BVH Build Async for entity %d", (uint32_t)entity);
+                }
 
-                // Store the future and process it next frame
-                // For now, we'll wait (blocking) but this can be improved
-                colliderComp.BVHRoot = future.get();
+                // Check if future is ready
+                if (colliderComp.BVHFuture.wait_for(std::chrono::seconds(0)) ==
+                    std::future_status::ready)
+                {
+                    colliderComp.BVHRoot = colliderComp.BVHFuture.get();
 
-                BoundingBox box = AssetManager::GetModelBoundingBox(colliderComp.ModelPath);
-                colliderComp.Offset = box.min;
-                colliderComp.Size = Vector3Subtract(box.max, box.min);
-                CH_CORE_INFO("BVH Built Async for entity %d", (uint32_t)entity);
+                    BoundingBox box = AssetManager::GetModelBoundingBox(colliderComp.ModelPath);
+                    colliderComp.Offset = box.min;
+                    colliderComp.Size = Vector3Subtract(box.max, box.min);
+                    CH_CORE_INFO("BVH Build Finished for entity %d", (uint32_t)entity);
+                }
             }
         }
     }
@@ -159,52 +168,51 @@ static void ResolveCollisionLogic(entt::registry &sceneRegistry)
             {
                 if (!rigidBody.IsGrounded)
                 {
-                    Vector3 feetPosition = entityTransform.Translation;
+                    Vector3 rbScale = entityTransform.Scale;
+                    Vector3 rbcSize = {1.0f, 1.0f, 1.0f};
+                    Vector3 rbColliderOffset = {0, 0, 0};
+
                     if (sceneRegistry.all_of<ColliderComponent>(rbEntity))
                     {
                         auto &rbc = sceneRegistry.get<ColliderComponent>(rbEntity);
-                        feetPosition =
-                            Vector3Add(entityTransform.Translation,
-                                       Vector3Multiply(rbc.Offset, entityTransform.Scale));
+                        rbcSize = Vector3Multiply(rbc.Size, rbScale);
+                        rbColliderOffset = Vector3Multiply(rbc.Offset, rbScale);
                     }
 
-                    Ray groundingRay;
-                    groundingRay.position = feetPosition;
-                    groundingRay.position.y += 0.5f;
-                    groundingRay.direction = {0.0f, -1.0f, 0.0f};
+                    BoundingBox rbBox;
+                    rbBox.min = Vector3Add(entityTransform.Translation, rbColliderOffset);
+                    rbBox.max = Vector3Add(rbBox.min, rbcSize);
 
-                    Matrix modelTransform = otherTransform.GetTransform();
-                    Matrix invTransform = MatrixInvert(modelTransform);
+                    Vector3 overlapNormal;
+                    float overlapDepth;
 
-                    Vector3 localOrigin = Vector3Transform(groundingRay.position, invTransform);
-                    Vector3 localTarget = Vector3Transform(
-                        Vector3Add(groundingRay.position, groundingRay.direction), invTransform);
-                    Vector3 localDir = Vector3Normalize(Vector3Subtract(localTarget, localOrigin));
-
-                    Ray localRay = {localOrigin, localDir};
-                    float t_local = FLT_MAX;
-                    Vector3 localNormal;
-
-                    if (BVHBuilder::Raycast(otherCollider.BVHRoot.get(), localRay, t_local,
-                                            localNormal))
+                    if (BVHBuilder::IntersectAABB(otherCollider.BVHRoot.get(), rbBox, overlapNormal,
+                                                  overlapDepth))
                     {
-                        Vector3 hitPosLocal =
-                            Vector3Add(localOrigin, Vector3Scale(localDir, t_local));
-                        Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
-
-                        float hitY = hitPosWorld.y;
-                        float floorThreshold = 0.55f;
-
-                        if (hitY >= feetPosition.y - 0.1f &&
-                            hitY <= feetPosition.y + floorThreshold)
+                        if (overlapDepth > 0.001f)
                         {
-                            if (rigidBody.Velocity.y <= 0.0f)
+                            // Resolution
+                            entityTransform.Translation =
+                                Vector3Add(entityTransform.Translation,
+                                           Vector3Scale(overlapNormal, overlapDepth));
+
+                            // Grounding check based on normal
+                            if (overlapNormal.y > 0.5f)
                             {
                                 rigidBody.IsGrounded = true;
-                                rigidBody.Velocity.y = 0.0f;
-                                entityTransform.Translation.y = hitY;
-                                otherCollider.IsColliding = true;
+                                if (rigidBody.Velocity.y < 0)
+                                    rigidBody.Velocity.y = 0;
                             }
+
+                            // Sliding
+                            float dot = Vector3DotProduct(rigidBody.Velocity, overlapNormal);
+                            if (dot < 0)
+                            {
+                                rigidBody.Velocity = Vector3Subtract(
+                                    rigidBody.Velocity, Vector3Scale(overlapNormal, dot));
+                            }
+
+                            otherCollider.IsColliding = true;
                         }
                     }
                 }
@@ -324,4 +332,4 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
 
     return result;
 }
-} // namespace CH
+} // namespace CHEngine

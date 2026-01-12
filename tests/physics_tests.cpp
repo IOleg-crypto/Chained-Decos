@@ -2,7 +2,7 @@
 #include "engine/scene/components.h"
 #include <gtest/gtest.h>
 
-using namespace CH;
+using namespace CHEngine;
 
 TEST(PhysicsTest, AABBIntersection)
 {

@@ -5,11 +5,12 @@
 #include "components/scripting_components.h"
 #include "components/ui_component.h"
 #include "engine/core/base.h"
+#include <future>
 #include <raylib.h>
 #include <raymath.h>
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 struct BVHNode;
 
@@ -77,6 +78,7 @@ struct ColliderComponent
     // Mesh (BVH) fields
     std::string ModelPath;
     Ref<BVHNode> BVHRoot = nullptr;
+    std::shared_future<Ref<BVHNode>> BVHFuture;
 
     bool IsColliding = false;
 
@@ -181,6 +183,6 @@ struct WorldComponent
     WorldComponent() = default;
 };
 
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_COMPONENTS_H

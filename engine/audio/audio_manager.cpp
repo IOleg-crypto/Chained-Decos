@@ -1,7 +1,7 @@
 #include "audio_manager.h"
 #include "engine/core/log.h"
 
-namespace CH
+namespace CHEngine
 {
 std::unordered_map<std::string, Sound> AudioManager::s_Sounds;
 
@@ -72,4 +72,4 @@ void AudioManager::SetMasterVolume(float volume)
 {
     ::SetMasterVolume(volume);
 }
-} // namespace CH
+} // namespace CHEngine

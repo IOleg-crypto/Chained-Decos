@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <imgui.h>
 
-namespace CH
+namespace CHEngine
 {
 ProjectBrowserPanel::ProjectBrowserPanel()
 {
@@ -45,13 +45,10 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImVec2 windowSize = ImGui::GetWindowSize();
     ImVec2 center = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
 
-    // Background Gradient or stylized background could be added here
-
-    ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // TODO: Use a larger font if available
+    ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
 
     // Title Section
     {
-        float titlePadding = 120.0f;
         ImGui::SetCursorPosY(center.y - 250.0f);
 
         auto drawCenteredText = [](const char *text, ImVec4 color = {1, 1, 1, 1})
@@ -64,8 +61,6 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.7f, 1.0f, 1.0f));
         drawCenteredText("CHAINED ENGINE", {0.3f, 0.8f, 1.0f, 1.0f});
         ImGui::PopStyleColor();
-
-        // drawCenteredText("Precision. Performance. Power.", {0.6f, 0.6f, 0.6f, 1.0f});
     }
 
     // Actions Section
@@ -94,7 +89,6 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
         {
             hovered = ImGui::IsWindowHovered();
 
-            // Icon/Image
             Texture2D tex = AssetManager::LoadTexture(iconPath);
             ImVec2 imageSize = {120, 120};
             ImGui::SetCursorPosX((cardWidth - imageSize.x) * 0.5f);
@@ -104,7 +98,6 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
                          hovered ? ImVec4(1, 1, 1, 1) : ImVec4(0.8f, 0.8f, 0.8f, 0.8f),
                          ImVec4(0, 0, 0, 0));
 
-            // Text
             ImGui::SetCursorPosY(180.0f);
             float textWidth = ImGui::CalcTextSize(label).x;
             ImGui::SetCursorPosX((cardWidth - textWidth) * 0.5f);
@@ -113,13 +106,10 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
             ImGui::SetCursorPosY(210.0f);
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
             ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + cardWidth - 30.0f);
-            float descWidth = ImGui::CalcTextSize(description).x;
-            // Center description wrapped? tricky.
             ImGui::TextWrapped("%s", description);
             ImGui::PopTextWrapPos();
             ImGui::PopStyleColor();
 
-            // Overlay button for click detection
             ImGui::SetCursorPos(ImVec2(0, 0));
             if (ImGui::InvisibleButton("##CardClick", {cardWidth, cardHeight}))
             {
@@ -155,14 +145,17 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
                    "Continue working on an existing Chained Engine project file.",
                    [&]()
                    {
-                       nfdfilteritem_t filterItem[1] = {{"Chained Engine Project", "chproject"}};
+                       nfdu8filteritem_t filterItem[1] = {{"Chained Engine Project", "chproject"}};
                        nfdchar_t *outPath = nullptr;
                        nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
 
                        if (result == NFD_OKAY)
                        {
-                           if (m_OnProjectOpen)
-                               m_OnProjectOpen(outPath);
+                           if (m_EventCallback)
+                           {
+                               ProjectOpenedEvent e(outPath);
+                               m_EventCallback(e);
+                           }
                            NFD_FreePath(outPath);
                        }
                    });
@@ -205,8 +198,11 @@ void ProjectBrowserPanel::DrawCreateProjectDialog()
 
         if (ImGui::Button("Create", ImVec2(120, 0)))
         {
-            if (m_OnProjectCreate)
-                m_OnProjectCreate(m_ProjectNameBuffer, m_ProjectLocationBuffer);
+            if (m_EventCallback)
+            {
+                ProjectCreatedEvent e(m_ProjectNameBuffer, m_ProjectLocationBuffer);
+                m_EventCallback(e);
+            }
             m_ShowCreateDialog = false;
             ImGui::CloseCurrentPopup();
         }
@@ -221,4 +217,4 @@ void ProjectBrowserPanel::DrawCreateProjectDialog()
         ImGui::EndPopup();
     }
 }
-} // namespace CH
+} // namespace CHEngine

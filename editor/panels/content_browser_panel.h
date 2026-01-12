@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace CH
+namespace CHEngine
 {
 enum class AssetType
 {
@@ -67,6 +67,6 @@ private:
     Texture2D m_FileIcon;
     SceneOpenCallback m_OnSceneOpenCallback;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_CONTENT_BROWSER_PANEL_H

@@ -1,9 +1,10 @@
 #include "bvh.h"
+#include "engine/core/thread_dispatcher.h"
 #include <algorithm>
 #include <cfloat>
 #include <raymath.h>
 
-namespace CH
+namespace CHEngine
 {
 CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c)
     : v0(a), v1(b), v2(c)
@@ -40,7 +41,7 @@ bool CollisionTriangle::IntersectsRay(const Ray &ray, float &t) const
     return t > 0.000001f;
 }
 
-Scope<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
+Ref<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
 {
     std::vector<CollisionTriangle> tris;
 
@@ -94,9 +95,9 @@ Scope<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
     return BuildRecursive(tris, 0);
 }
 
-Scope<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, int depth)
+Ref<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, int depth)
 {
-    auto node = CreateScope<BVHNode>();
+    auto node = CreateRef<BVHNode>();
 
     // Calculate Bounds
     node->min = {1e30f, 1e30f, 1e30f};
@@ -143,18 +144,13 @@ Scope<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, 
         return node;
     }
 
-    // SAH Split evaluation (only for larger sets where it matters)
+    // SAH Split evaluation - O(N) using prefix/suffix bounds
     int bestAxis = -1;
     float bestCost = FLT_MAX;
     size_t bestMid = 0;
 
-    // Only evaluate the longest axis (saves 2/3 of evaluations)
     Vector3 size = Vector3Subtract(node->max, node->min);
-    int primaryAxis = 0;
-    if (size.y > size.x && size.y > size.z)
-        primaryAxis = 1;
-    if (size.z > size.x && size.z > size.y)
-        primaryAxis = 2;
+    int primaryAxis = (size.y > size.x && size.y > size.z) ? 1 : (size.z > size.x ? 2 : 0);
 
     std::sort(tris.begin(), tris.end(),
               [primaryAxis](const CollisionTriangle &a, const CollisionTriangle &b)
@@ -166,34 +162,30 @@ Scope<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, 
                   return a.center.z < b.center.z;
               });
 
-    // Evaluate only 4 split candidates instead of tris.size()/8
-    int numCandidates = 4;
-    for (int c = 1; c <= numCandidates; c++)
+    size_t n = tris.size();
+    std::vector<BoundingBox> rightBounds(n);
+    BoundingBox currentRight = {{1e30f, 1e30f, 1e30f}, {-1e30f, -1e30f, -1e30f}};
+
+    for (int i = (int)n - 1; i >= 0; i--)
     {
-        size_t i = (tris.size() * c) / (numCandidates + 1);
-        if (i == 0 || i >= tris.size())
-            continue;
+        currentRight.min = Vector3Min(currentRight.min, tris[i].min);
+        currentRight.max = Vector3Max(currentRight.max, tris[i].max);
+        rightBounds[i] = currentRight;
+    }
 
-        // Evaluate cost: SA_L * N_L + SA_R * N_R
-        Vector3 minL = {1e30f, 1e30f, 1e30f}, maxL = {-1e30f, -1e30f, -1e30f};
-        for (size_t k = 0; k < i; k++)
-        {
-            minL = Vector3Min(minL, tris[k].min);
-            maxL = Vector3Max(maxL, tris[k].max);
-        }
-        Vector3 sizeL = Vector3Subtract(maxL, minL);
-        float saL = 2.0f * (sizeL.x * sizeL.y + sizeL.y * sizeL.z + sizeL.z * sizeL.x);
+    BoundingBox leftBound = {{1e30f, 1e30f, 1e30f}, {-1e30f, -1e30f, -1e30f}};
+    for (size_t i = 1; i < n; i++)
+    {
+        leftBound.min = Vector3Min(leftBound.min, tris[i - 1].min);
+        leftBound.max = Vector3Max(leftBound.max, tris[i - 1].max);
 
-        Vector3 minR = {1e30f, 1e30f, 1e30f}, maxR = {-1e30f, -1e30f, -1e30f};
-        for (size_t k = i; k < tris.size(); k++)
-        {
-            minR = Vector3Min(minR, tris[k].min);
-            maxR = Vector3Max(maxR, tris[k].max);
-        }
-        Vector3 sizeR = Vector3Subtract(maxR, minR);
-        float saR = 2.0f * (sizeR.x * sizeR.y + sizeR.y * sizeR.z + sizeR.z * sizeR.x);
+        Vector3 sL = Vector3Subtract(leftBound.max, leftBound.min);
+        float saL = 2.0f * (sL.x * sL.y + sL.y * sL.z + sL.z * sL.x);
 
-        float cost = saL * (float)i + saR * (float)(tris.size() - i);
+        Vector3 sR = Vector3Subtract(rightBounds[i].max, rightBounds[i].min);
+        float saR = 2.0f * (sR.x * sR.y + sR.y * sR.z + sR.z * sR.x);
+
+        float cost = saL * (float)i + saR * (float)(n - i);
         if (cost < bestCost)
         {
             bestCost = cost;
@@ -219,7 +211,7 @@ bool BVHBuilder::Raycast(const BVHNode *node, const Ray &ray, float &t, Vector3 
     return RayInternal(node, ray, t, normal);
 }
 
-static bool IntersectAABB(const Ray &ray, Vector3 min, Vector3 max, float &t)
+static bool IntersectRayAABB(const Ray &ray, Vector3 min, Vector3 max, float &t)
 {
     float t1 = (min.x - ray.position.x) / ray.direction.x;
     float t2 = (max.x - ray.position.x) / ray.direction.x;
@@ -240,7 +232,7 @@ static bool IntersectAABB(const Ray &ray, Vector3 min, Vector3 max, float &t)
 bool BVHBuilder::RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal)
 {
     float tBox;
-    if (!IntersectAABB(ray, node->min, node->max, tBox))
+    if (!IntersectRayAABB(ray, node->min, node->max, tBox))
         return false;
 
     if (tBox > t)
@@ -275,17 +267,131 @@ bool BVHBuilder::RayInternal(const BVHNode *node, const Ray &ray, float &t, Vect
     return hit;
 }
 
-static ThreadPool s_BVHThreadPool(8); // 2 threads for BVH building
-
-ThreadPool &BVHBuilder::GetThreadPool()
+static bool TestAxis(const Vector3 &axis, const Vector3 &v0, const Vector3 &v1, const Vector3 &v2,
+                     const Vector3 &boxCenter, const Vector3 &boxHalfSize)
 {
-    return s_BVHThreadPool;
+    float p0 = Vector3DotProduct(v0, axis);
+    float p1 = Vector3DotProduct(v1, axis);
+    float p2 = Vector3DotProduct(v2, axis);
+
+    float r = boxHalfSize.x * fabsf(Vector3DotProduct({1, 0, 0}, axis)) +
+              boxHalfSize.y * fabsf(Vector3DotProduct({0, 1, 0}, axis)) +
+              boxHalfSize.z * fabsf(Vector3DotProduct({0, 0, 1}, axis));
+
+    float triMin = fminf(fminf(p0, p1), p2);
+    float triMax = fmaxf(fmaxf(p0, p1), p2);
+
+    float boxProj = Vector3DotProduct(boxCenter, axis);
+    float boxMin = boxProj - r;
+    float boxMax = boxProj + r;
+
+    return !(triMin > boxMax || triMax < boxMin);
 }
 
-std::future<Scope<BVHNode>> BVHBuilder::BuildAsync(const Model &model, const Matrix &transform)
+static bool TriangleIntersectAABB(const CollisionTriangle &tri, const BoundingBox &box)
 {
-    return s_BVHThreadPool.Enqueue([model, transform]() -> Scope<BVHNode>
-                                   { return Build(model, transform); });
+    Vector3 boxCenter = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
+    Vector3 boxHalfSize = Vector3Scale(Vector3Subtract(box.max, box.min), 0.5f);
+
+    Vector3 v0 = Vector3Subtract(tri.v0, boxCenter);
+    Vector3 v1 = Vector3Subtract(tri.v1, boxCenter);
+    Vector3 v2 = Vector3Subtract(tri.v2, boxCenter);
+
+    Vector3 e0 = Vector3Subtract(v1, v0);
+    Vector3 e1 = Vector3Subtract(v2, v1);
+    Vector3 e2 = Vector3Subtract(v0, v2);
+
+    // Box normals
+    if (!TestAxis({1, 0, 0}, v0, v1, v2, {0, 0, 0}, boxHalfSize))
+        return false;
+    if (!TestAxis({0, 1, 0}, v0, v1, v2, {0, 0, 0}, boxHalfSize))
+        return false;
+    if (!TestAxis({0, 0, 1}, v0, v1, v2, {0, 0, 0}, boxHalfSize))
+        return false;
+
+    // Triangle normal
+    Vector3 normal = Vector3CrossProduct(e0, e1);
+    if (!TestAxis(normal, v0, v1, v2, {0, 0, 0}, boxHalfSize))
+        return false;
+
+    // 9 edges cross products
+    Vector3 axes[9] = {Vector3CrossProduct({1, 0, 0}, e0), Vector3CrossProduct({1, 0, 0}, e1),
+                       Vector3CrossProduct({1, 0, 0}, e2), Vector3CrossProduct({0, 1, 0}, e0),
+                       Vector3CrossProduct({0, 1, 0}, e1), Vector3CrossProduct({0, 1, 0}, e2),
+                       Vector3CrossProduct({0, 0, 1}, e0), Vector3CrossProduct({0, 0, 1}, e1),
+                       Vector3CrossProduct({0, 0, 1}, e2)};
+
+    for (int i = 0; i < 9; i++)
+    {
+        if (Vector3Length(axes[i]) < 0.0001f)
+            continue;
+        if (!TestAxis(axes[i], v0, v1, v2, {0, 0, 0}, boxHalfSize))
+            return false;
+    }
+
+    return true;
 }
 
-} // namespace CH
+static bool IntersectAABBInternal(const BVHNode *node, const BoundingBox &box, Vector3 &outNormal,
+                                  float &outDepth)
+{
+    if (!(node->min.x <= box.max.x && node->max.x >= box.min.x && node->min.y <= box.max.y &&
+          node->max.y >= box.min.y && node->min.z <= box.max.z && node->max.z >= box.min.z))
+        return false;
+
+    bool hit = false;
+    if (node->IsLeaf())
+    {
+        for (const auto &tri : node->triangles)
+        {
+            if (TriangleIntersectAABB(tri, box))
+            {
+                // For resolution, we take the triangle normal and the penetration depth
+                Vector3 normal = Vector3Normalize(Vector3CrossProduct(
+                    Vector3Subtract(tri.v1, tri.v0), Vector3Subtract(tri.v2, tri.v0)));
+
+                // Estimate penetration depth along normal
+                // This is a simplification. A better way would be actual SAT penetration.
+                Vector3 boxCenter = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
+                float dist = Vector3DotProduct(Vector3Subtract(tri.v0, boxCenter), normal);
+                float radius = 0.5f * (fabsf(normal.x * (box.max.x - box.min.x)) +
+                                       fabsf(normal.y * (box.max.y - box.min.y)) +
+                                       fabsf(normal.z * (box.max.z - box.min.z)));
+
+                float depth = radius - fabsf(dist);
+
+                if (depth > outDepth)
+                {
+                    outDepth = depth;
+                    outNormal = (dist > 0) ? Vector3Scale(normal, -1.0f) : normal;
+                    hit = true;
+                }
+            }
+        }
+    }
+    else
+    {
+        if (IntersectAABBInternal(node->left.get(), box, outNormal, outDepth))
+            hit = true;
+        if (IntersectAABBInternal(node->right.get(), box, outNormal, outDepth))
+            hit = true;
+    }
+    return hit;
+}
+
+bool BVHBuilder::IntersectAABB(const BVHNode *node, const BoundingBox &box, Vector3 &outNormal,
+                               float &outDepth)
+{
+    if (!node)
+        return false;
+    outDepth = -1.0f;
+    return IntersectAABBInternal(node, box, outNormal, outDepth);
+}
+
+std::future<Ref<BVHNode>> BVHBuilder::BuildAsync(const Model &model, const Matrix &transform)
+{
+    return ThreadDispatcher::DispatchAsync([model, transform]() -> Ref<BVHNode>
+                                           { return Build(model, transform); });
+}
+
+} // namespace CHEngine

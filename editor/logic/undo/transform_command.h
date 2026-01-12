@@ -5,7 +5,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 
-namespace CH
+namespace CHEngine
 {
 /**
  * @brief Command for undoing/redoing transform changes
@@ -45,6 +45,6 @@ private:
     TransformComponent m_OldTransform;
     TransformComponent m_NewTransform;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_TRANSFORM_COMMAND_H

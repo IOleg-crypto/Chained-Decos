@@ -1,10 +1,11 @@
 #ifndef CH_EVENTS_H
 #define CH_EVENTS_H
 
+#include <entt/entt.hpp>
 #include <functional>
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 enum class EventType
 {
@@ -23,7 +24,14 @@ enum class EventType
     MouseButtonPressed,
     MouseButtonReleased,
     MouseMoved,
-    MouseScrolled
+    MouseScrolled,
+    ProjectCreated,
+    ProjectOpened,
+    SceneSaved,
+    ScenePlay,
+    SceneStop,
+    AppLaunchRuntime,
+    EntitySelected
 };
 
 enum EventCategory
@@ -97,6 +105,8 @@ public:
 private:
     Event &m_Event;
 };
+
+using EventCallbackFn = std::function<void(Event &)>;
 
 // Keyboard Events
 class KeyEvent : public Event
@@ -237,6 +247,100 @@ public:
     EVENT_CLASS_TYPE(MouseButtonReleased)
 };
 
-} // namespace CH
+// Project Events
+class ProjectCreatedEvent : public Event
+{
+public:
+    ProjectCreatedEvent(const std::string &name, const std::string &path)
+        : m_Name(name), m_Path(path)
+    {
+    }
+
+    const std::string &GetProjectName() const
+    {
+        return m_Name;
+    }
+    const std::string &GetPath() const
+    {
+        return m_Path;
+    }
+
+    EVENT_CLASS_TYPE(ProjectCreated)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+
+private:
+    std::string m_Name;
+    std::string m_Path;
+};
+
+class ProjectOpenedEvent : public Event
+{
+public:
+    ProjectOpenedEvent(const std::string &path) : m_Path(path)
+    {
+    }
+
+    const std::string &GetPath() const
+    {
+        return m_Path;
+    }
+
+    EVENT_CLASS_TYPE(ProjectOpened)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+
+private:
+    std::string m_Path;
+};
+
+// Selection Events
+class EntitySelectedEvent : public Event
+{
+public:
+    EntitySelectedEvent(entt::entity entity, class Scene *scene) : m_Entity(entity), m_Scene(scene)
+    {
+    }
+
+    entt::entity GetEntity() const
+    {
+        return m_Entity;
+    }
+    class Scene *GetScene() const
+    {
+        return m_Scene;
+    }
+
+    EVENT_CLASS_TYPE(EntitySelected)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+
+private:
+    entt::entity m_Entity;
+    class Scene *m_Scene;
+};
+
+class ScenePlayEvent : public Event
+{
+public:
+    ScenePlayEvent() = default;
+    EVENT_CLASS_TYPE(ScenePlay)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+};
+
+class SceneStopEvent : public Event
+{
+public:
+    SceneStopEvent() = default;
+    EVENT_CLASS_TYPE(SceneStop)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+};
+
+class AppLaunchRuntimeEvent : public Event
+{
+public:
+    AppLaunchRuntimeEvent() = default;
+    EVENT_CLASS_TYPE(AppLaunchRuntime)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+};
+
+} // namespace CHEngine
 
 #endif // CH_EVENTS_H

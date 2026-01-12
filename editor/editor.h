@@ -3,7 +3,7 @@
 
 #include "engine/core/application.h"
 
-namespace CH
+namespace CHEngine
 {
 class Editor : public Application
 {
@@ -11,6 +11,6 @@ public:
     Editor(const Application::Config &config);
     virtual ~Editor() = default;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_EDITOR_H

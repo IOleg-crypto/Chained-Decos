@@ -42,7 +42,7 @@
     [this](auto &&...args) -> decltype(auto)                                                       \
     { return this->fn(std::forward<decltype(args)>(args)...); }
 
-namespace CH
+namespace CHEngine
 {
 template <typename T> using Scope = std::unique_ptr<T>;
 template <typename T, typename... Args> constexpr Scope<T> CreateScope(Args &&...args)
@@ -55,6 +55,6 @@ template <typename T, typename... Args> constexpr Ref<T> CreateRef(Args &&...arg
 {
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_BASE_H

@@ -3,6 +3,7 @@
 #include "engine/core/log.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/renderer/asset_manager.h"
+#include "engine/renderer/render.h"
 #include "scene.h"
 
 #include <fstream>
@@ -59,7 +60,7 @@ template <> struct convert<Color>
 };
 } // namespace YAML
 
-namespace CH
+namespace CHEngine
 {
 YAML::Emitter &operator<<(YAML::Emitter &out, const Vector3 &v)
 {
@@ -186,6 +187,15 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
+    if (entity.HasComponent<CSharpScriptComponent>())
+    {
+        out << YAML::Key << "CSharpScriptComponent";
+        auto &sc = entity.GetComponent<CSharpScriptComponent>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "ClassName" << YAML::Value << sc.ClassName;
+        out << YAML::EndMap;
+    }
+
     out << YAML::EndMap; // Entity
 }
 
@@ -219,7 +229,15 @@ void SceneSerializer::Serialize(const std::string &filepath)
     out << YAML::EndMap;
 
     std::ofstream fout(filepath);
-    fout << out.c_str();
+    if (fout.is_open())
+    {
+        fout << out.c_str();
+        CH_CORE_INFO("Scene saved successfully to: %s", filepath.c_str());
+    }
+    else
+    {
+        CH_CORE_ERROR("Failed to save scene to: %s", filepath.c_str());
+    }
 }
 
 bool SceneSerializer::Deserialize(const std::string &filepath)
@@ -255,6 +273,34 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
     auto entities = data["Entities"];
     if (entities)
     {
+        // Phase 1: Pre-collect and pre-load all assets asynchronously
+        std::vector<std::string> modelPaths;
+        for (auto entity : entities)
+        {
+            auto mc = entity["ModelComponent"];
+            if (mc)
+                modelPaths.push_back(mc["ModelPath"].as<std::string>());
+            auto cc = entity["ColliderComponent"];
+            if (cc && cc["Type"].as<int>() == (int)ColliderType::Mesh)
+                modelPaths.push_back(cc["ModelPath"].as<std::string>());
+        }
+
+        // Trigger batch async load
+        for (const auto &path : modelPaths)
+        {
+            if (!path.empty())
+                AssetManager::LoadModelAsync(path);
+        }
+
+        // Phase 2: Actual deserialization with BVH generation dispatch
+        struct BVHTask
+        {
+            ColliderComponent *cc;
+            std::string path;
+            std::future<Ref<BVHNode>> future;
+        };
+        std::vector<BVHTask> bvhTasks;
+
         for (auto entity : entities)
         {
             uint64_t uuid = entity["Entity"].as<uint64_t>();
@@ -314,10 +360,12 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
 
                 if (cc.Type == ColliderType::Mesh && !cc.ModelPath.empty())
                 {
+                    // Block until model is loaded (it might be in cache or loading async)
                     Model model = AssetManager::LoadModel(cc.ModelPath);
                     if (model.meshCount > 0)
                     {
-                        cc.BVHRoot = BVHBuilder::Build(model);
+                        // Build BVH asynchronously
+                        bvhTasks.push_back({&cc, cc.ModelPath, BVHBuilder::BuildAsync(model)});
                     }
                 }
             }
@@ -355,8 +403,15 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                     pc.JumpForce = playerComponent["JumpForce"].as<float>();
             }
         }
+
+        // Finalize all BVH tasks
+        for (auto &task : bvhTasks)
+        {
+            task.cc->BVHRoot = task.future.get();
+            CH_CORE_INFO("Parallel BVH Construction complete for: %s", task.path.c_str());
+        }
     }
 
     return true;
 }
-} // namespace CH
+} // namespace CHEngine

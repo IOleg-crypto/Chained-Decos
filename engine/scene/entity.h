@@ -3,7 +3,7 @@
 
 #include <entt/entt.hpp>
 
-namespace CH
+namespace CHEngine
 {
 class Scene;
 
@@ -59,6 +59,6 @@ private:
     entt::entity m_EntityHandle{entt::null};
     Scene *m_Scene = nullptr;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_ENTITY_H

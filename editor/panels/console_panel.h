@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace CH
+namespace CHEngine
 {
 enum class ConsoleLogLevel : uint32_t
 {
@@ -38,6 +38,6 @@ private:
     std::deque<ConsoleLogEntry> m_Messages;
     static constexpr size_t MAX_MESSAGES = 500;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_CONSOLE_PANEL_H

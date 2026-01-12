@@ -1,13 +1,14 @@
 #include "editor_layer.h"
 #include "engine/core/application.h"
 #include "engine/core/input.h"
+#include "engine/core/process_utils.h"
 #include "engine/physics/physics.h"
-#include "engine/renderer/renderer.h"
+#include "engine/renderer/render.h"
+#include "engine/renderer/scene_render.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
 #include "raylib.h"
-#include "ui/project_selector.h"
 #include "ui/toolbar.h"
 #include <extras/IconsFontAwesome6.h>
 #include <imgui.h>
@@ -15,7 +16,7 @@
 #include <nfd.h>
 #include <rlImGui.h>
 
-namespace CH
+namespace CHEngine
 {
 EditorLayer::EditorLayer() : Layer("EditorLayer")
 {
@@ -57,9 +58,9 @@ void EditorLayer::OnAttach()
     m_ActiveScene->CreateEntity("Default Entity");
     m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 
-    m_ProjectBrowserPanel.SetOnProjectOpen([this](const std::string &path) { OpenProject(path); });
-    m_ProjectBrowserPanel.SetOnProjectCreate(
-        [this](const std::string &name, const std::string &path) { NewProject(); });
+    m_ProjectBrowserPanel.SetEventCallback([this](Event &e) { OnEvent(e); });
+    m_ViewportPanel.SetEventCallback([this](Event &e) { OnEvent(e); });
+    m_SceneHierarchyPanel.SetEventCallback([this](Event &e) { OnEvent(e); });
 
     if (Project::GetActive())
     {
@@ -98,6 +99,12 @@ void EditorLayer::OnUpdate(float deltaTime)
                     m_CommandHistory.Undo();
                 if (IsKeyPressed(KEY_Y))
                     m_CommandHistory.Redo();
+                if (IsKeyPressed(KEY_S))
+                    SaveScene();
+                if (IsKeyPressed(KEY_O))
+                    OpenScene();
+                if (IsKeyPressed(KEY_N))
+                    NewScene();
             }
         }
 
@@ -279,8 +286,7 @@ void EditorLayer::UI_DrawDockSpace()
 
 void EditorLayer::UI_DrawPanels()
 {
-    UI::DrawToolbar(
-        m_SceneState == SceneState::Play, [this]() { OnScenePlay(); }, [this]() { OnSceneStop(); });
+    UI::DrawToolbar(m_SceneState == SceneState::Play, [this](Event &e) { OnEvent(e); });
 
     bool bIsEdit = m_SceneState == SceneState::Edit;
     Entity picked = m_ViewportPanel.OnImGuiRender(
@@ -309,20 +315,30 @@ void EditorLayer::NewProject()
     nfdresult_t result = NFD_SaveDialog(&savePath, filterItem, 1, NULL, "Untitled.chproject");
     if (result == NFD_OKAY)
     {
-        Ref<Project> newProject = CreateRef<Project>();
-        newProject->SetName(std::filesystem::path(savePath).stem().string());
-        ProjectSerializer serializer(newProject);
-        serializer.Serialize(savePath);
-        Project::SetActive(newProject);
-        CH_CORE_INFO("Project Created: %s", savePath);
-
-        std::filesystem::path projectDir = std::filesystem::path(savePath).parent_path();
-        std::filesystem::create_directories(projectDir / "assets/scenes");
-        m_ContentBrowserPanel.SetRootDirectory(newProject->GetAssetDirectory());
-
+        NewProject(std::filesystem::path(savePath).stem().string(), savePath);
         NFD_FreePath(savePath);
-        NewScene();
     }
+}
+
+void EditorLayer::NewProject(const std::string &name, const std::string &path)
+{
+    Ref<Project> newProject = CreateRef<Project>();
+    newProject->SetName(name);
+
+    std::filesystem::path projectFilePath = path;
+    std::filesystem::path projectDir = projectFilePath.parent_path();
+
+    newProject->SetProjectDirectory(projectDir);
+
+    ProjectSerializer serializer(newProject);
+    serializer.Serialize(projectFilePath);
+    Project::SetActive(newProject);
+    CH_CORE_INFO("Project Created: %s", projectFilePath.string().c_str());
+
+    std::filesystem::create_directories(projectDir / "assets/scenes");
+    m_ContentBrowserPanel.SetRootDirectory(newProject->GetAssetDirectory());
+
+    NewScene();
 }
 
 void EditorLayer::OpenProject()
@@ -413,13 +429,15 @@ void EditorLayer::SaveScene()
     auto project = Project::GetActive();
     if (project && !project->GetConfig().ActiveScenePath.empty())
     {
+        std::filesystem::path fullPath =
+            project->GetConfig().ProjectDirectory / project->GetConfig().ActiveScenePath;
+        CH_CORE_INFO("Saving Scene to: {0}", fullPath.string());
         SceneSerializer serializer(m_ActiveScene.get());
-        serializer.Serialize(
-            (project->GetConfig().ProjectDirectory / project->GetConfig().ActiveScenePath)
-                .string());
+        serializer.Serialize(fullPath.string());
     }
     else
     {
+        CH_CORE_INFO("No active scene path, calling Save Scene As...");
         SaveSceneAs();
     }
 }
@@ -515,6 +533,49 @@ void EditorLayer::OnEvent(Event &e)
 
             return false;
         });
+
+    dispatcher.Dispatch<ScenePlayEvent>(
+        [this](ScenePlayEvent &ev)
+        {
+            OnScenePlay();
+            return true;
+        });
+
+    dispatcher.Dispatch<SceneStopEvent>(
+        [this](SceneStopEvent &ev)
+        {
+            OnSceneStop();
+            return true;
+        });
+
+    dispatcher.Dispatch<AppLaunchRuntimeEvent>(
+        [this](AppLaunchRuntimeEvent &ev)
+        {
+            LaunchStandalone();
+            return true;
+        });
+
+    dispatcher.Dispatch<ProjectOpenedEvent>(
+        [this](ProjectOpenedEvent &ev)
+        {
+            OpenProject(ev.GetPath());
+            return true;
+        });
+
+    dispatcher.Dispatch<ProjectCreatedEvent>(
+        [this](ProjectCreatedEvent &ev)
+        {
+            NewProject(ev.GetProjectName(), ev.GetPath());
+            return true;
+        });
+
+    dispatcher.Dispatch<EntitySelectedEvent>(
+        [this](EntitySelectedEvent &ev)
+        {
+            m_SelectedEntity = Entity{ev.GetEntity(), ev.GetScene()};
+            m_SceneHierarchyPanel.SetSelectedEntity(m_SelectedEntity);
+            return true;
+        });
 }
 void EditorLayer::OnScenePlay()
 {
@@ -545,6 +606,52 @@ void EditorLayer::OnSceneStop()
 
     EnableCursor();
     CH_CORE_INFO("Scene Stopped.");
+}
+
+void EditorLayer::LaunchStandalone()
+{
+    SaveProject();
+    auto project = Project::GetActive();
+    if (project)
+    {
+        std::filesystem::path projectFile =
+            project->GetConfig().ProjectDirectory / (project->GetConfig().Name + ".chproject");
+
+        // Try to find the runtime by searching up from the editor location
+        std::filesystem::path editorPath = ProcessUtils::GetExecutablePath();
+        std::filesystem::path searchPath = editorPath.parent_path();
+        std::filesystem::path runtimePath;
+
+        // Search up to 3 levels up for a 'bin' directory or the executable itself
+        for (int i = 0; i < 3; ++i)
+        {
+            if (std::filesystem::exists(searchPath / "bin" / "ChainedRuntime.exe"))
+            {
+                runtimePath = searchPath / "bin" / "ChainedRuntime.exe";
+                break;
+            }
+            if (std::filesystem::exists(searchPath / "ChainedRuntime.exe"))
+            {
+                runtimePath = searchPath / "ChainedRuntime.exe";
+                break;
+            }
+            searchPath = searchPath.parent_path();
+        }
+
+        if (runtimePath.empty())
+        {
+            // Absolute fallback: current working directory / bin
+            runtimePath = std::filesystem::current_path() / "bin" / "ChainedRuntime.exe";
+        }
+
+        std::string command = "\"" + runtimePath.string() + "\" \"" + projectFile.string() + "\"";
+        CH_CORE_INFO("Launching Standalone: %s", command.c_str());
+
+        if (!ProcessUtils::LaunchProcess(command))
+        {
+            CH_CORE_ERROR("Failed to launch standalone runtime!");
+        }
+    }
 }
 
 void EditorLayer::SetDarkThemeColors()
@@ -618,4 +725,4 @@ Camera3D EditorLayer::GetActiveCamera()
     }
     return m_EditorCamera.GetRaylibCamera();
 }
-} // namespace CH
+} // namespace CHEngine

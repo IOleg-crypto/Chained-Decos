@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 /**
  * @brief Base interface for all undoable commands in the editor
@@ -28,6 +28,6 @@ public:
      */
     virtual std::string GetName() const = 0;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_EDITOR_COMMAND_H

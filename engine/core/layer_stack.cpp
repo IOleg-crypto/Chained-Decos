@@ -1,7 +1,7 @@
 #include "layer_stack.h"
 #include <algorithm>
 
-namespace CH
+namespace CHEngine
 {
 LayerStack::~LayerStack()
 {
@@ -43,4 +43,4 @@ void LayerStack::PopOverlay(Layer *overlay)
         m_Layers.erase(it);
     }
 }
-} // namespace CH
+} // namespace CHEngine

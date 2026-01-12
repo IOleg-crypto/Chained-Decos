@@ -1,16 +1,18 @@
 #ifndef CH_RENDERER_H
 #define CH_RENDERER_H
 
+#include "engine/scene/scene.h"
 #include <raylib.h>
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 struct DebugRenderFlags
 {
     bool DrawColliders = false;
     bool DrawLights = false;
     bool DrawSpawnZones = false;
+    bool DrawGrid = true;
 
     bool IsAnyEnabled() const
     {
@@ -18,7 +20,7 @@ struct DebugRenderFlags
     }
 };
 
-class Renderer
+class Render
 {
 public:
     static void Init();
@@ -35,20 +37,21 @@ public:
                           const struct MaterialComponent &material,
                           Vector3 scale = {1.0f, 1.0f, 1.0f});
 
-    static void DrawScene(class Scene *scene, const DebugRenderFlags *debugFlags = nullptr);
+    static void DrawScene(Scene *scene,
+                          const DebugRenderFlags *debugFlags = nullptr); // To be removed soon
 
     // Lighting
     static void SetDirectionalLight(Vector3 direction, Color color);
     static void SetAmbientLight(float intensity);
 
-    static void DrawSkybox(const struct SkyboxComponent &skybox, const Camera3D &camera);
+    static void DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera);
 
     // For 2D / UI
     static void BeginUI();
     static void EndUI();
 
 private:
-    struct LightState
+    struct ShaderState
     {
         Shader lightingShader;
         int lightDirLoc;
@@ -64,10 +67,6 @@ private:
             int falloff;
             int enabled;
         } lightLocs[8];
-
-        Color lightColor = WHITE;
-        Vector3 lightDir = {0.0f, -1.0f, 0.0f};
-        float ambient = 0.2f;
 
         Shader skyboxShader;
         Shader panoramaShader;
@@ -85,18 +84,30 @@ private:
         int panoExposureLoc;
         int panoBrightnessLoc;
         int panoContrastLoc;
+
+        // Infinite Grid
+        Shader gridShader;
+        unsigned int gridVAO = 0;
+        unsigned int gridVBO = 0;
+        int gridNearLoc;
+        int gridFarLoc;
+        int gridViewLoc;
+        int gridProjLoc;
     };
 
-    static LightState s_LightState;
-    static Camera3D s_CurrentCamera;
+    struct SceneData
+    {
+        Color lightColor = WHITE;
+        Vector3 lightDir = {0.0f, -1.0f, 0.0f};
+        float ambientIntensity = 0.2f;
+        Camera3D currentCamera;
+    };
 
-    // Debug rendering helpers
-    static void DrawColliderDebug(Scene *scene);
-    static void DrawLightDebug(Scene *scene);
-    static void DrawSpawnZoneDebug(Scene *scene);
+    static ShaderState s_Shaders;
+    static SceneData s_Scene;
 
-    Renderer() = default;
+    Render() = default;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_RENDERER_H

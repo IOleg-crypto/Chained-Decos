@@ -9,7 +9,7 @@
 #include "entity.h"
 #include <cfloat>
 
-namespace CH
+namespace CHEngine
 {
 Scene::Scene()
 {
@@ -156,11 +156,17 @@ void Scene::OnUpdateRuntime(float deltaTime)
         if (Input::IsKeyDown(KEY_D))
             movementVector = Vector3Add(movementVector, rightDir);
 
-        if (Vector3Length(movementVector) > 0.1f)
+        float magSq = movementVector.x * movementVector.x + movementVector.z * movementVector.z;
+        if (magSq > 0.01f)
         {
-            movementVector = Vector3Normalize(movementVector);
-            Vector3 targetPosition = Vector3Add(
-                transform.Translation, Vector3Scale(movementVector, currentSpeed * deltaTime));
+            float mag = sqrtf(magSq);
+            movementVector.x /= mag;
+            movementVector.z /= mag;
+
+            Vector3 targetPosition = {
+                transform.Translation.x + movementVector.x * currentSpeed * deltaTime,
+                transform.Translation.y,
+                transform.Translation.z + movementVector.z * currentSpeed * deltaTime};
 
             if (!CheckWallCollision(m_Registry, entity, targetPosition, movementVector))
             {
@@ -168,8 +174,7 @@ void Scene::OnUpdateRuntime(float deltaTime)
                 transform.Translation.z = targetPosition.z;
             }
 
-            float targetRotationY = atan2f(movementVector.x, movementVector.z);
-            transform.Rotation = {0.0f, targetRotationY, 0.0f};
+            transform.Rotation.y = atan2f(movementVector.x, movementVector.z);
         }
 
         // Jump logic moved to OnEvent for precise one-time trigger
@@ -243,4 +248,4 @@ void Scene::OnEvent(Event &e)
             return false;
         });
 }
-} // namespace CH
+} // namespace CHEngine

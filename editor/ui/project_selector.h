@@ -4,7 +4,7 @@
 #include <functional>
 #include <raylib.h>
 
-namespace CH
+namespace CHEngine
 {
 namespace UI
 {
@@ -13,6 +13,6 @@ void DrawProjectSelector(bool active, Texture2D icon, std::function<void()> onNe
                          std::function<void()> onOpen, std::function<void()> onExit);
 
 } // namespace UI
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_UI_PROJECT_SELECTOR_H

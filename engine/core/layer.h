@@ -5,7 +5,7 @@
 #include "engine/core/types.h"
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 class Layer
 {
@@ -42,6 +42,6 @@ public:
 protected:
     std::string m_DebugName;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_LAYER_H

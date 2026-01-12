@@ -1,8 +1,7 @@
 #include "editor.h"
 #include <engine/core/entry_point.h>
 
-
-namespace CH
+namespace CHEngine
 {
 Application *CreateApplication()
 {
@@ -13,4 +12,4 @@ Application *CreateApplication()
 
     return new Editor(config);
 }
-} // namespace CH
+} // namespace CHEngine

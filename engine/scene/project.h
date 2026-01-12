@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 struct ProjectConfig
 {
@@ -61,12 +61,17 @@ public:
         m_Config.Name = name;
     }
 
+    void SetProjectDirectory(const std::filesystem::path &path)
+    {
+        m_Config.ProjectDirectory = path;
+    }
+
 private:
     ProjectConfig m_Config;
     static Ref<Project> s_ActiveProject;
 
     friend class ProjectSerializer;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_PROJECT_H

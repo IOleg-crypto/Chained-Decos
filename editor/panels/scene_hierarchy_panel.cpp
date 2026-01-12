@@ -4,7 +4,7 @@
 #include "logic/undo/entity_commands.h"
 #include <imgui.h>
 
-namespace CH
+namespace CHEngine
 {
 SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene> &context)
 {
@@ -90,31 +90,33 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             {
                 if (ImGui::MenuItem("Cube"))
                     EditorLayer::GetCommandHistory().PushCommand(
-                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Cube"));
+                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Cube", ":cube:"));
 
                 if (ImGui::MenuItem("Sphere"))
                     EditorLayer::GetCommandHistory().PushCommand(
-                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Sphere"));
+                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Sphere",
+                                                              ":sphere:"));
 
                 if (ImGui::MenuItem("Cylinder"))
                     EditorLayer::GetCommandHistory().PushCommand(
-                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Cylinder"));
+                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Cylinder",
+                                                              ":cylinder:"));
 
                 if (ImGui::MenuItem("Cone"))
                     EditorLayer::GetCommandHistory().PushCommand(
-                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Cone"));
+                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Cone", ":cone:"));
 
                 if (ImGui::MenuItem("Torus"))
                     EditorLayer::GetCommandHistory().PushCommand(
-                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Torus"));
+                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Torus", ":torus:"));
 
                 if (ImGui::MenuItem("Knot"))
                     EditorLayer::GetCommandHistory().PushCommand(
-                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Knot"));
+                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Knot", ":knot:"));
 
                 if (ImGui::MenuItem("Plane"))
                     EditorLayer::GetCommandHistory().PushCommand(
-                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Plane"));
+                        std::make_unique<CreateEntityCommand>(m_Context.get(), "Plane", ":plane:"));
 
                 ImGui::EndMenu();
             }
@@ -146,6 +148,11 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
     if (ImGui::IsItemClicked())
     {
         m_SelectionContext = entity;
+        if (m_EventCallback)
+        {
+            EntitySelectedEvent e(entity, m_Context.get());
+            m_EventCallback(e);
+        }
     }
 
     bool entityDeleted = false;
@@ -174,4 +181,4 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
 
     return entityDeleted;
 }
-} // namespace CH
+} // namespace CHEngine

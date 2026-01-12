@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 /**
  * @brief Component that links an entity to a C# script class.
@@ -22,6 +22,6 @@ struct CSharpScriptComponent
     {
     }
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_SCRIPTING_COMPONENTS_H

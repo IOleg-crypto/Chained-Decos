@@ -1,7 +1,7 @@
 #include "thread_pool.h"
 #include "engine/core/log.h"
 
-namespace CH
+namespace CHEngine
 {
 ThreadPool::ThreadPool(size_t numThreads)
 {
@@ -61,4 +61,4 @@ void ThreadPool::WaitAll()
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
-} // namespace CH
+} // namespace CHEngine

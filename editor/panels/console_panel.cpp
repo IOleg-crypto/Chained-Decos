@@ -1,7 +1,7 @@
 #include "console_panel.h"
 #include <imgui.h>
 
-namespace CH
+namespace CHEngine
 {
 ConsolePanel *ConsolePanel::s_Instance = nullptr;
 
@@ -67,4 +67,4 @@ void ConsolePanel::Clear()
 {
     m_Messages.clear();
 }
-} // namespace CH
+} // namespace CHEngine

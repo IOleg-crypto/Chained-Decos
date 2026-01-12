@@ -6,7 +6,7 @@
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 
-namespace CH
+namespace CHEngine
 {
 /**
  * @brief Command for destroying an entity
@@ -50,13 +50,19 @@ private:
 class CreateEntityCommand : public IEditorCommand
 {
 public:
-    CreateEntityCommand(Scene *scene, const std::string &name) : m_Scene(scene), m_Name(name)
+    CreateEntityCommand(Scene *scene, const std::string &name, const std::string &modelPath = "")
+        : m_Scene(scene), m_Name(name), m_ModelPath(modelPath)
     {
     }
 
     void Execute() override
     {
         m_Entity = m_Scene->CreateEntity(m_Name);
+        if (!m_ModelPath.empty())
+        {
+            auto &mc = m_Entity.AddComponent<ModelComponent>();
+            mc.ModelPath = m_ModelPath;
+        }
     }
 
     void Undo() override
@@ -73,8 +79,9 @@ public:
 private:
     Scene *m_Scene;
     std::string m_Name;
+    std::string m_ModelPath;
     Entity m_Entity;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_ENTITY_COMMANDS_H

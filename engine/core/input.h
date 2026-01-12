@@ -4,8 +4,7 @@
 #include <array>
 #include <raylib.h>
 
-
-namespace CH
+namespace CHEngine
 {
 class Input
 {
@@ -55,6 +54,6 @@ private:
     static Vector2 s_LastMousePosition;
     static Vector2 s_MouseDelta;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_INPUT_H

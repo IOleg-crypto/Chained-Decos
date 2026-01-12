@@ -5,8 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-
-namespace CH
+namespace CHEngine
 {
 class AudioManager
 {
@@ -23,6 +22,6 @@ public:
 private:
     static std::unordered_map<std::string, Sound> s_Sounds;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_AUDIO_MANAGER_H

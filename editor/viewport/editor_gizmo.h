@@ -6,7 +6,7 @@
 #include "raylib.h"
 #include <imgui.h>
 
-namespace CH
+namespace CHEngine
 {
 
 enum class GizmoAxis
@@ -95,6 +95,6 @@ private:
     static float SnapValue(float value, float step);
 };
 
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_EDITOR_GIZMO_H
