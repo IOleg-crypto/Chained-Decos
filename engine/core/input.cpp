@@ -1,6 +1,6 @@
 #include "input.h"
 
-namespace CH
+namespace CHEngine
 {
 // Static member initialization
 std::array<bool, Input::MAX_KEYS> Input::s_KeysDown = {};
@@ -150,4 +150,4 @@ void Input::OnMouseButtonReleased(int button)
         s_MouseButtonsReleasedThisFrame[button] = true;
     }
 }
-} // namespace CH
+} // namespace CHEngine

@@ -2,10 +2,12 @@
 #define CH_SCENE_HIERARCHY_PANEL_H
 
 #include "engine/core/base.h"
+#include "engine/core/events.h"
+#include "engine/renderer/render.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 
-namespace CH
+namespace CHEngine
 {
 class SceneHierarchyPanel
 {
@@ -27,6 +29,11 @@ public:
         return m_SelectionContext;
     }
 
+    void SetEventCallback(const EventCallbackFn &callback)
+    {
+        m_EventCallback = callback;
+    }
+
 private:
     bool DrawEntityNode(Entity entity);
 
@@ -34,7 +41,9 @@ private:
     Ref<Scene> m_Context;
     Entity m_SelectionContext;
     std::unordered_set<entt::entity> m_DrawnEntities;
+    EventCallbackFn m_EventCallback;
 };
-} // namespace CH
+
+} // namespace CHEngine
 
 #endif // CH_SCENE_HIERARCHY_PANEL_H

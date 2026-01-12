@@ -1,9 +1,10 @@
-﻿#ifndef CH_EDITOR_LAYER_H
+#ifndef CH_EDITOR_LAYER_H
 #define CH_EDITOR_LAYER_H
 
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
-#include "engine/renderer/renderer.h"
+#include "engine/renderer/render.h"
+#include "engine/renderer/scene_render.h"
 #include "engine/scene/scene.h"
 #include "logic/undo/command_history.h"
 #include "panels/console_panel.h"
@@ -18,7 +19,7 @@
 #include <filesystem>
 #include <raylib.h>
 
-namespace CH
+namespace CHEngine
 {
 enum class SceneState : uint8_t
 {
@@ -41,6 +42,7 @@ public:
 
 private:
     void NewProject();
+    void NewProject(const std::string &name, const std::string &path);
     void OpenProject();
     void OpenProject(const std::filesystem::path &path);
     void SaveProject();
@@ -55,6 +57,7 @@ private:
 
     void OnScenePlay();
     void OnSceneStop();
+    void LaunchStandalone();
 
     void SetDarkThemeColors();
     Camera3D GetActiveCamera();
@@ -69,6 +72,7 @@ public:
 private:
     EditorCamera m_EditorCamera;
     Ref<Scene> m_ActiveScene;
+    Entity m_SelectedEntity;
     SceneState m_SceneState = SceneState::Edit;
     DebugRenderFlags m_DebugRenderFlags;
 
@@ -87,6 +91,6 @@ private:
     EnvironmentPanel m_EnvironmentPanel;
     bool m_ShowContentBrowser = true;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_EDITOR_LAYER_H

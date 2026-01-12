@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 /**
  * @brief Manages undo and redo stacks for the editor
@@ -64,6 +64,6 @@ private:
     std::deque<std::unique_ptr<IEditorCommand>> m_UndoStack;
     std::deque<std::unique_ptr<IEditorCommand>> m_RedoStack;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_COMMAND_HISTORY_H

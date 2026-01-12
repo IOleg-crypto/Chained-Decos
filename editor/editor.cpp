@@ -2,7 +2,7 @@
 #include "editor_layer.h"
 #include <raylib.h>
 
-namespace CH
+namespace CHEngine
 {
 Editor::Editor(const Application::Config &config) : Application(config)
 {
@@ -13,4 +13,4 @@ Editor::Editor(const Application::Config &config) : Application(config)
     PushLayer(new EditorLayer());
 }
 
-} // namespace CH
+} // namespace CHEngine

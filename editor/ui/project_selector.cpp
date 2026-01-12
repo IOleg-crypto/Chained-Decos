@@ -2,7 +2,7 @@
 #include <imgui.h>
 #include <rlImGui.h>
 
-namespace CH
+namespace CHEngine
 {
 namespace UI
 {
@@ -67,4 +67,4 @@ void DrawProjectSelector(bool active, Texture2D icon, std::function<void()> onNe
 }
 
 } // namespace UI
-} // namespace CH
+} // namespace CHEngine

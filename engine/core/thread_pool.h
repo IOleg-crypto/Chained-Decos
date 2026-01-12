@@ -10,7 +10,7 @@
 #include <thread>
 #include <vector>
 
-namespace CH
+namespace CHEngine
 {
 class ThreadPool
 {
@@ -54,6 +54,6 @@ private:
     std::atomic<bool> m_Stop{false};
     std::atomic<size_t> m_ActiveTasks{0};
 };
-} // namespace CH
+} // namespace CHEngine
 
-#endif // CH_THREAD_POOL_H
+#endif // CHEngine_THREAD_POOL_H

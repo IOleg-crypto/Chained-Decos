@@ -2,7 +2,7 @@
 #include "engine/renderer/asset_manager.h"
 #include <gtest/gtest.h>
 
-using namespace CH;
+using namespace CHEngine;
 
 class AssetManagerTest : public ::testing::Test
 {

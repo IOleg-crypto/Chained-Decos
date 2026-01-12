@@ -1,14 +1,25 @@
 set(ENGINE_SOURCES
     core/application.cpp
+    core/thread_dispatcher.cpp
+    core/process_utils.cpp
     core/input.cpp
     core/layer_stack.cpp
-    core/thread_pool.cpp
     scene/scene.cpp
     scene/scene_serializer.cpp
     scene/project.cpp
     scene/project_serializer.cpp
-    renderer/renderer.cpp
+    renderer/render.cpp
+    renderer/render_command.cpp
+    renderer/scene_render.cpp
     renderer/asset_manager.cpp
+    renderer/buffer.cpp
+    renderer/vertex_array.cpp
+    renderer/shader.cpp
+    renderer/render_api.cpp
+    renderer/opengl_buffer.cpp
+    renderer/opengl_vertex_array.cpp
+    renderer/opengl_shader.cpp
+    renderer/opengl_render_api.cpp
     physics/physics.cpp
     physics/physics.h
     physics/bvh/bvh.cpp
