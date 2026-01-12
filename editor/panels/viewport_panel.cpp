@@ -1,10 +1,11 @@
 #include "viewport_panel.h"
 #include "engine/physics/physics.h"
-#include "engine/renderer/renderer.h"
+#include "engine/renderer/render.h"
+#include "engine/renderer/scene_render.h"
 #include <imgui.h>
 #include <rlImGui.h>
 
-namespace CH
+namespace CHEngine
 {
 ViewportPanel::ViewportPanel()
 {
@@ -48,9 +49,10 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
 
     if (scene && m_ViewportSize.x > 0)
     {
-        Renderer::BeginScene(camera);
-        Renderer::DrawGrid(20, 1.0f);
-        Renderer::DrawScene(scene, debugFlags);
+        SceneRender::BeginScene(scene, camera);
+        if (debugFlags && debugFlags->DrawGrid)
+            Render::DrawGrid((int)viewportPanelSize.x, 1.0f);
+        SceneRender::SubmitScene(scene, debugFlags);
 
         // Gizmos
         if (selectedEntity && allowTools)
@@ -59,7 +61,7 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
                                   {m_ViewportSize.x, m_ViewportSize.y}, m_Hovered);
         }
 
-        Renderer::EndScene();
+        SceneRender::EndScene();
     }
 
     // --- Picking Logic ---
@@ -190,10 +192,20 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
         if (res.Hit)
         {
             pickedEntity = Entity{res.Entity, scene};
+            if (m_EventCallback)
+            {
+                EntitySelectedEvent e(res.Entity, scene);
+                m_EventCallback(e);
+            }
         }
         else
         {
             pickedEntity = {}; // Deselect if clicked empty space
+            if (m_EventCallback)
+            {
+                EntitySelectedEvent e(entt::null, scene);
+                m_EventCallback(e);
+            }
         }
     }
 
@@ -258,4 +270,4 @@ Vector2 ViewportPanel::GetSize() const
 {
     return m_ViewportSize;
 }
-} // namespace CH
+} // namespace CHEngine

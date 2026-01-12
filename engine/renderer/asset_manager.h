@@ -6,10 +6,11 @@
 #include <mutex>
 #include <raylib.h>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
-namespace CH
+namespace CHEngine
 {
 struct ModelLoadResult
 {
@@ -25,38 +26,54 @@ public:
     static void Shutdown();
 
     // Model Management (Synchronous)
-    static Model LoadModel(const std::string &path);
-    static Model GetModel(const std::string &name);
-    static bool HasModel(const std::string &name);
-    static void UnloadModel(const std::string &name);
+    static Model LoadModel(std::string_view path);
+    static Model GetModel(std::string_view name);
+    static bool HasModel(std::string_view name);
+    static void UnloadModel(std::string_view name);
 
     // Model Management (Asynchronous)
-    static std::future<ModelLoadResult> LoadModelAsync(const std::string &path);
+    static std::future<ModelLoadResult> LoadModelAsync(std::string_view path);
     static void LoadModelsAsync(const std::vector<std::string> &paths,
                                 std::function<void(float)> progressCallback = nullptr);
-    static bool IsModelReady(const std::string &path);
+    static bool IsModelReady(std::string_view path);
 
     // Texture Management
-    static Texture2D LoadTexture(const std::string &path);
-    static Texture2D GetTexture(const std::string &name);
-    static bool HasTexture(const std::string &name);
-    static void UnloadTexture(const std::string &name);
+    static Texture2D LoadTexture(std::string_view path);
+    static Texture2D GetTexture(std::string_view name);
+    static bool HasTexture(std::string_view name);
+    static void UnloadTexture(std::string_view name);
 
     // Cubemap Management
-    static Texture2D LoadCubemap(const std::string &path);
+    static Texture2D LoadCubemap(std::string_view path);
 
     // Helper
-    static BoundingBox GetModelBoundingBox(const std::string &path);
+    static BoundingBox GetModelBoundingBox(std::string_view path);
 
 private:
-    static std::unordered_map<std::string, Model> s_Models;
-    static std::unordered_map<std::string, Texture2D> s_Textures;
+    struct StringHash
+    {
+        using is_transparent = void;
+        size_t operator()(const char *txt) const
+        {
+            return std::hash<std::string_view>{}(txt);
+        }
+        size_t operator()(std::string_view txt) const
+        {
+            return std::hash<std::string_view>{}(txt);
+        }
+        size_t operator()(const std::string &txt) const
+        {
+            return std::hash<std::string>{}(txt);
+        }
+    };
+
+    static std::unordered_map<std::string, Model, StringHash, std::equal_to<>> s_Models;
+    static std::unordered_map<std::string, Texture2D, StringHash, std::equal_to<>> s_Textures;
     static std::mutex s_ModelsMutex;
     static std::mutex s_TexturesMutex;
-    static ThreadPool s_ThreadPool;
 
     AssetManager() = default;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_ASSET_MANAGER_H

@@ -2,13 +2,12 @@
 #define CH_PHYSICS_BVH_H
 
 #include "engine/core/base.h"
-#include "engine/core/thread_pool.h"
 #include <future>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
 
-namespace CH
+namespace CHEngine
 {
 struct CollisionTriangle
 {
@@ -25,8 +24,8 @@ struct BVHNode
     Vector3 min;
     Vector3 max;
     std::vector<CollisionTriangle> triangles;
-    Scope<BVHNode> left;
-    Scope<BVHNode> right;
+    Ref<BVHNode> left;
+    Ref<BVHNode> right;
 
     BVHNode() = default;
     bool IsLeaf() const
@@ -39,21 +38,20 @@ class BVHBuilder
 {
 public:
     // Synchronous API
-    static Scope<BVHNode> Build(const Model &model, const Matrix &transform = MatrixIdentity());
+    static Ref<BVHNode> Build(const Model &model, const Matrix &transform = MatrixIdentity());
 
     // Asynchronous API
-    static std::future<Scope<BVHNode>> BuildAsync(const Model &model,
-                                                  const Matrix &transform = MatrixIdentity());
+    static std::future<Ref<BVHNode>> BuildAsync(const Model &model,
+                                                const Matrix &transform = MatrixIdentity());
 
     static bool Raycast(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal);
-
-    // Thread pool access
-    static ThreadPool &GetThreadPool();
+    static bool IntersectAABB(const BVHNode *node, const BoundingBox &box,
+                              Vector3 &outOverlapNormal, float &outOverlapDepth);
 
 private:
-    static Scope<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris, int depth);
+    static Ref<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris, int depth);
     static bool RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal);
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_BVH_H

@@ -4,7 +4,7 @@
 #include <raylib.h>
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 // Internal helper to convert std::string to const char* for variadic functions
 template <typename T> static inline T ConvertLogArg(T arg)
@@ -71,20 +71,20 @@ public:
         TraceLog(LOG_FATAL, ("[CLIENT] " + std::string(format)).c_str(), ConvertLogArg(args)...);
     }
 };
-} // namespace CH
+} // namespace CHEngine
 
 // Core logging macros
-#define CH_CORE_TRACE(...) ::CH::Log::CoreTrace(__VA_ARGS__)
-#define CH_CORE_INFO(...) ::CH::Log::CoreInfo(__VA_ARGS__)
-#define CH_CORE_WARN(...) ::CH::Log::CoreWarn(__VA_ARGS__)
-#define CH_CORE_ERROR(...) ::CH::Log::CoreError(__VA_ARGS__)
-#define CH_CORE_FATAL(...) ::CH::Log::CoreFatal(__VA_ARGS__)
+#define CH_CORE_TRACE(...) ::CHEngine::Log::CoreTrace(__VA_ARGS__)
+#define CH_CORE_INFO(...) ::CHEngine::Log::CoreInfo(__VA_ARGS__)
+#define CH_CORE_WARN(...) ::CHEngine::Log::CoreWarn(__VA_ARGS__)
+#define CH_CORE_ERROR(...) ::CHEngine::Log::CoreError(__VA_ARGS__)
+#define CH_CORE_FATAL(...) ::CHEngine::Log::CoreFatal(__VA_ARGS__)
 
 // Client logging macros
-#define CH_TRACE(...) ::CH::Log::ClientTrace(__VA_ARGS__)
-#define CH_INFO(...) ::CH::Log::ClientInfo(__VA_ARGS__)
-#define CH_WARN(...) ::CH::Log::ClientWarn(__VA_ARGS__)
-#define CH_ERROR(...) ::CH::Log::ClientError(__VA_ARGS__)
-#define CH_FATAL(...) ::CH::Log::ClientFatal(__VA_ARGS__)
+#define CH_TRACE(...) ::CHEngine::Log::ClientTrace(__VA_ARGS__)
+#define CH_INFO(...) ::CHEngine::Log::ClientInfo(__VA_ARGS__)
+#define CH_WARN(...) ::CHEngine::Log::ClientWarn(__VA_ARGS__)
+#define CH_ERROR(...) ::CHEngine::Log::ClientError(__VA_ARGS__)
+#define CH_FATAL(...) ::CHEngine::Log::ClientFatal(__VA_ARGS__)
 
 #endif // CH_LOG_H

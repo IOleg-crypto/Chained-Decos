@@ -11,7 +11,7 @@
 #include "engine/core/log.h"
 #include <cstdint>
 
-namespace CH
+namespace CHEngine
 {
 // Assertions
 #ifdef CH_ENABLE_ASSERTS
@@ -35,6 +35,6 @@ namespace CH
 #define CH_ASSERT(x, ...)
 #define CH_CORE_ASSERT(x, ...)
 #endif
-} // namespace CH
+} // namespace CHEngine
 
-#endif // CH_TYPES_H
+#endif // CHEngine_TYPES_H

@@ -5,7 +5,7 @@
 #include <extras/IconsFontAwesome6.h>
 #include <imgui.h>
 
-namespace CH
+namespace CHEngine
 {
 ContentBrowserPanel::ContentBrowserPanel()
 {
@@ -153,4 +153,4 @@ void ContentBrowserPanel::SetRootDirectory(const std::filesystem::path &path)
     m_CurrentDirectory = path;
     RefreshDirectory();
 }
-} // namespace CH
+} // namespace CHEngine

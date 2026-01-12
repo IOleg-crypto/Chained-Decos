@@ -3,7 +3,7 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-namespace CH
+namespace CHEngine
 {
 ProjectSerializer::ProjectSerializer(Ref<Project> project) : m_Project(project)
 {
@@ -57,4 +57,4 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
 
     return true;
 }
-} // namespace CH
+} // namespace CHEngine

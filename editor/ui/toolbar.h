@@ -1,16 +1,16 @@
 #ifndef CH_UI_TOOLBAR_H
 #define CH_UI_TOOLBAR_H
 
-#include <functional>
+#include "engine/core/events.h"
 
-namespace CH
+namespace CHEngine
 {
 namespace UI
 {
 
-void DrawToolbar(bool isPlaying, std::function<void()> onPlay, std::function<void()> onStop);
+void DrawToolbar(bool isPlaying, const EventCallbackFn &callback);
 
 } // namespace UI
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_UI_TOOLBAR_H

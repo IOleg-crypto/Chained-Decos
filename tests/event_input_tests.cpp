@@ -2,7 +2,7 @@
 #include "engine/core/input.h"
 #include <gtest/gtest.h>
 
-using namespace CH;
+using namespace CHEngine;
 
 // ============================================================================
 // Event System Tests
