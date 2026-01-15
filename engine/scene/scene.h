@@ -2,7 +2,7 @@
 #define CH_SCENE_H
 
 #include "components.h"
-#include "engine/core/types.h"
+#include "engine/core/base.h"
 #include "entity.h"
 #include <entt/entt.hpp>
 #include <string>
@@ -19,7 +19,11 @@ public:
     ~Scene() = default;
 
     Entity CreateEntity(const std::string &name = "Entity");
+    Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
     void DestroyEntity(Entity entity);
+
+    Entity FindEntityByTag(const std::string &tag);
+    Entity GetEntityByUUID(UUID uuid);
 
     void OnUpdateRuntime(float deltaTime);
     void OnUpdateEditor(float deltaTime);

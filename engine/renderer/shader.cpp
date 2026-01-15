@@ -1,8 +1,9 @@
 #include "shader.h"
+#include "engine/core/base.h"
 #include "engine/core/log.h"
-#include "engine/core/types.h"
 #include "opengl_shader.h"
 #include "render_api.h"
+
 
 namespace CHEngine
 {

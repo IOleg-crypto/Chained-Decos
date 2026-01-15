@@ -3,10 +3,12 @@
 #include "engine/core/input.h"
 #include "engine/core/process_utils.h"
 #include "engine/physics/physics.h"
+#include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
 #include "engine/renderer/scene_render.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project_serializer.h"
+#include "engine/scene/scene.h"
 #include "engine/scene/scene_serializer.h"
 #include "raylib.h"
 #include "ui/toolbar.h"
@@ -33,17 +35,21 @@ void EditorLayer::OnAttach()
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/lato/Lato-Regular.ttf", 18.0f);
+    io.Fonts->AddFontFromFileTTF(
+        AssetManager::ResolvePath("engine:font/lato/Lato-Regular.ttf").string().c_str(), 18.0f);
 
     static const ImWchar icons_ranges[] = {0xe005, 0xf8ff, 0};
     ImFontConfig icons_config;
     icons_config.MergeMode = true;
     icons_config.PixelSnapH = true;
-    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/fa-solid-900.ttf", 18.0f,
-                                 &icons_config, icons_ranges);
+    io.Fonts->AddFontFromFileTTF(
+        AssetManager::ResolvePath("engine:font/fa-solid-900.ttf").string().c_str(), 18.0f,
+        &icons_config, icons_ranges);
 
-    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/lato/Lato-Bold.ttf", 20.0f);
-    io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/resources/font/lato/Lato-Bold.ttf", 26.0f);
+    io.Fonts->AddFontFromFileTTF(
+        AssetManager::ResolvePath("engine:font/lato/Lato-Bold.ttf").string().c_str(), 20.0f);
+    io.Fonts->AddFontFromFileTTF(
+        AssetManager::ResolvePath("engine:font/lato/Lato-Bold.ttf").string().c_str(), 26.0f);
 
     rlImGuiEndInitImGui();
     SetDarkThemeColors();
@@ -231,14 +237,7 @@ void EditorLayer::UI_DrawMenuBar()
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Scripting"))
-        {
-            if (ImGui::MenuItem("Reload Assemblies", "Ctrl+R"))
-            {
-                // TODO: Call CSharp scripting reload logic
-            }
-            ImGui::EndMenu();
-        }
+        // Scripting menu removed (C# remnants)
         ImGui::EndMenuBar();
     }
 }
@@ -380,8 +379,19 @@ void EditorLayer::SaveProject()
         ProjectSerializer serializer(project);
         std::filesystem::path projectFile =
             project->GetConfig().ProjectDirectory / (project->GetConfig().Name + ".chproject");
-        serializer.Serialize(projectFile);
-        CH_CORE_INFO("Project Saved: %s", projectFile.string().c_str());
+
+        if (serializer.Serialize(projectFile))
+        {
+            CH_CORE_INFO("Project Saved successfully: {0}", projectFile.string());
+        }
+        else
+        {
+            CH_CORE_ERROR("Failed to save project: {0}", projectFile.string());
+        }
+    }
+    else
+    {
+        CH_CORE_WARN("No active project to save!");
     }
 }
 
@@ -431,9 +441,16 @@ void EditorLayer::SaveScene()
     {
         std::filesystem::path fullPath =
             project->GetConfig().ProjectDirectory / project->GetConfig().ActiveScenePath;
-        CH_CORE_INFO("Saving Scene to: {0}", fullPath.string());
+
         SceneSerializer serializer(m_ActiveScene.get());
-        serializer.Serialize(fullPath.string());
+        if (serializer.Serialize(fullPath.string()))
+        {
+            CH_CORE_INFO("Scene Saved successfully: {0}", fullPath.string());
+        }
+        else
+        {
+            CH_CORE_ERROR("Failed to save scene: {0}", fullPath.string());
+        }
     }
     else
     {
@@ -450,16 +467,22 @@ void EditorLayer::SaveSceneAs()
     if (result == NFD_OKAY)
     {
         SceneSerializer serializer(m_ActiveScene.get());
-        serializer.Serialize(savePath);
-
-        auto project = Project::GetActive();
-        if (project)
+        if (serializer.Serialize(savePath))
         {
-            std::error_code ec;
-            auto relPath =
-                std::filesystem::relative(savePath, project->GetConfig().ProjectDirectory, ec);
-            if (!ec)
-                project->SetActiveScenePath(relPath);
+            auto project = Project::GetActive();
+            if (project)
+            {
+                std::error_code ec;
+                auto relPath =
+                    std::filesystem::relative(savePath, project->GetConfig().ProjectDirectory, ec);
+                if (!ec)
+                    project->SetActiveScenePath(relPath);
+            }
+            CH_CORE_INFO("Scene Saved As: {0}", savePath);
+        }
+        else
+        {
+            CH_CORE_ERROR("Failed to save scene to: {0}", savePath);
         }
         NFD_FreePath(savePath);
     }
@@ -694,18 +717,7 @@ Camera3D EditorLayer::GetActiveCamera()
         auto entity = *view.begin();
         auto &transform = view.get<TransformComponent>(entity);
         auto &player = view.get<PlayerComponent>(entity);
-        Vector2 mouseDelta = GetMouseDelta();
-        player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
-        player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
-        if (player.CameraPitch > 89.0f)
-            player.CameraPitch = 89.0f;
-        if (player.CameraPitch < -10.0f)
-            player.CameraPitch = -10.0f;
-        player.CameraDistance -= GetMouseWheelMove() * 2.0f;
-        if (player.CameraDistance < 2.0f)
-            player.CameraDistance = 2.0f;
-        if (player.CameraDistance > 40.0f)
-            player.CameraDistance = 40.0f;
+
         Vector3 target = transform.Translation;
         target.y += 1.0f;
         float yawRad = player.CameraYaw * DEG2RAD;
@@ -720,7 +732,6 @@ Camera3D EditorLayer::GetActiveCamera()
         camera.up = {0.0f, 1.0f, 0.0f};
         camera.fovy = 90.0f;
         camera.projection = CAMERA_PERSPECTIVE;
-        player.coordinates = camera.position;
         return camera;
     }
     return m_EditorCamera.GetRaylibCamera();

@@ -1,17 +1,31 @@
 #ifndef CH_COMPONENTS_H
 #define CH_COMPONENTS_H
 
+#include "components/animation_component.h"
 #include "components/hierarchy_component.h"
 #include "components/scripting_components.h"
 #include "components/ui_component.h"
 #include "engine/core/base.h"
+#include "engine/core/math_types.h"
+#include "engine/core/uuid.h"
+#include "engine/renderer/material.h"
 #include <future>
-#include <raylib.h>
 #include <raymath.h>
 #include <string>
 
 namespace CHEngine
 {
+struct IDComponent
+{
+    UUID ID;
+
+    IDComponent() = default;
+    IDComponent(const IDComponent &) = default;
+    IDComponent(const UUID &id) : ID(id)
+    {
+    }
+};
+
 struct BVHNode;
 
 struct TagComponent
@@ -49,7 +63,7 @@ struct TransformComponent
 struct ModelComponent
 {
     std::string ModelPath;
-    Color Tint = WHITE;
+    MaterialInstance Material;
     Vector3 Scale = {1.0f, 1.0f, 1.0f};
 
     ModelComponent() = default;
@@ -108,14 +122,8 @@ struct SpawnComponent
     SpawnComponent(const SpawnComponent &) = default;
 };
 
-struct MaterialComponent
-{
-    Color AlbedoColor = WHITE;
-    std::string AlbedoPath = "";
-
-    MaterialComponent() = default;
-    MaterialComponent(const MaterialComponent &) = default;
-};
+// DEPRECATED: Material is now part of ModelComponent or separate MaterialInstance
+// struct MaterialComponent ...
 
 struct PointLightComponent
 {
@@ -143,7 +151,6 @@ struct PlayerComponent
 {
     float MovementSpeed = 15.0f;
     float LookSensitivity = 0.9f;
-    Vector3 coordinates = {0.0f, 0.0f, 0.0f};
 
     // Camera Sync
     float CameraYaw = 0.0f;
@@ -171,16 +178,6 @@ struct CameraComponent
     Vector2 MousePosition = {0.0f, 0.0f};
 
     CameraComponent() = default;
-};
-
-struct WorldComponent
-{
-    // Jumping & Gravity
-    float gravity = 30.0f;
-    float jumpForce = 10.0f;
-    float groundLevel = 0.0f; // Simple floor at Y=0 for now
-
-    WorldComponent() = default;
 };
 
 } // namespace CHEngine

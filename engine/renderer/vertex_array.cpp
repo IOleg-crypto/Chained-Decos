@@ -1,8 +1,9 @@
 #include "vertex_array.h"
+#include "engine/core/base.h"
 #include "engine/core/log.h"
-#include "engine/core/types.h"
 #include "opengl_vertex_array.h"
 #include "render_api.h"
+
 
 namespace CHEngine
 {

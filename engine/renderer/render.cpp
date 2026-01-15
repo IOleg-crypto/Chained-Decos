@@ -15,8 +15,8 @@ Render::SceneData Render::s_Scene;
 
 void Render::Init()
 {
-    s_Shaders.lightingShader = LoadShader(PROJECT_ROOT_DIR "/assets/shaders/lighting.vs",
-                                          PROJECT_ROOT_DIR "/assets/shaders/lighting.fs");
+    s_Shaders.lightingShader =
+        AssetManager::LoadShader("engine:shaders/lighting.vs", "engine:shaders/lighting.fs");
     s_Shaders.lightDirLoc = GetShaderLocation(s_Shaders.lightingShader, "lightDir");
     s_Shaders.lightColorLoc = GetShaderLocation(s_Shaders.lightingShader, "lightColor");
     s_Shaders.ambientLoc = GetShaderLocation(s_Shaders.lightingShader, "ambient");
@@ -42,8 +42,8 @@ void Render::Init()
     SetAmbientLight(0.3f);
 
     // Skybox initialization
-    s_Shaders.skyboxShader = LoadShader(PROJECT_ROOT_DIR "/assets/shaders/skybox.vs",
-                                        PROJECT_ROOT_DIR "/assets/shaders/skybox.fs");
+    s_Shaders.skyboxShader =
+        AssetManager::LoadShader("engine:shaders/skybox.vs", "engine:shaders/skybox.fs");
     s_Shaders.skyboxCube = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
     s_Shaders.skyboxCube.materials[0].shader = s_Shaders.skyboxShader;
 
@@ -63,8 +63,8 @@ void Render::Init()
     }
 
     // Panorama initialization
-    s_Shaders.panoramaShader = LoadShader(PROJECT_ROOT_DIR "/assets/shaders/skybox.vs",
-                                          PROJECT_ROOT_DIR "/assets/shaders/skybox_panorama.fs");
+    s_Shaders.panoramaShader =
+        AssetManager::LoadShader("engine:shaders/skybox.vs", "engine:shaders/skybox_panorama.fs");
     s_Shaders.panoDoGammaLoc = GetShaderLocation(s_Shaders.panoramaShader, "doGamma");
     s_Shaders.panoFragGammaLoc = GetShaderLocation(s_Shaders.panoramaShader, "fragGamma");
     s_Shaders.panoExposureLoc = GetShaderLocation(s_Shaders.panoramaShader, "exposure");
@@ -72,8 +72,8 @@ void Render::Init()
     s_Shaders.panoContrastLoc = GetShaderLocation(s_Shaders.panoramaShader, "contrast");
 
     // Infinite Grid initialization
-    s_Shaders.gridShader = LoadShader(PROJECT_ROOT_DIR "/resources/shaders/infinite_grid.vs",
-                                      PROJECT_ROOT_DIR "/resources/shaders/infinite_grid.fs");
+    s_Shaders.gridShader = AssetManager::LoadShader("engine:shaders/infinite_grid.vs",
+                                                    "engine:shaders/infinite_grid.fs");
     s_Shaders.gridNearLoc = GetShaderLocation(s_Shaders.gridShader, "near");
     s_Shaders.gridFarLoc = GetShaderLocation(s_Shaders.gridShader, "far");
     s_Shaders.gridViewLoc = GetShaderLocation(s_Shaders.gridShader, "matView");
@@ -150,50 +150,48 @@ void Render::DrawLine(Vector3 start, Vector3 end, Color color)
 
 void Render::DrawModel(const std::string &path, const Matrix &transform, Color tint, Vector3 scale)
 {
-    Model model = AssetManager::LoadModel(path);
-    if (model.meshCount > 0)
-    {
-        // Apply our lighting shader to all materials in the model
-        for (int i = 0; i < model.materialCount; i++)
-        {
-            model.materials[i].shader = s_Shaders.lightingShader;
-        }
-
-        rlPushMatrix();
-        rlMultMatrixf(MatrixToFloat(transform));
-        ::DrawModelEx(model, {0, 0, 0}, {1, 0, 0}, 0.0f, scale, tint);
-        rlPopMatrix();
-    }
+    MaterialInstance material;
+    material.AlbedoColor = tint;
+    DrawModel(path, transform, material, scale);
 }
 
 void Render::DrawModel(const std::string &path, const Matrix &transform,
-                       const MaterialComponent &material, Vector3 scale)
+                       const MaterialInstance &material, Vector3 scale)
 {
     Model model = AssetManager::LoadModel(path);
     if (model.meshCount > 0)
     {
-        // Apply our lighting shader to all materials in the model
-        for (int i = 0; i < model.materialCount; i++)
-        {
-            model.materials[i].shader = s_Shaders.lightingShader;
+        rlPushMatrix();
+        rlMultMatrixf(MatrixToFloat(transform));
 
-            // Apply material properties (TEMPORARY - will affect all instances of this model)
-            // TODO: Use a per-instance material system
-            model.materials[i].maps[MATERIAL_MAP_ALBEDO].color = material.AlbedoColor;
+        for (int i = 0; i < model.meshCount; i++)
+        {
+            Material mat = model.materials[model.meshMaterial[i]];
+
+            // Raylib Material maps are pointers to shared data.
+            // We MUST use a local copy to avoid modifying other instances.
+            MaterialMap localMaps[12]; // MAX_MATERIAL_MAPS is usually 12
+            for (int j = 0; j < 12; j++)
+                localMaps[j] = mat.maps[j];
+            mat.maps = localMaps;
+
+            mat.shader = s_Shaders.lightingShader;
+            mat.maps[MATERIAL_MAP_ALBEDO].color = material.AlbedoColor;
 
             if (!material.AlbedoPath.empty())
             {
                 Texture2D tex = AssetManager::LoadTexture(material.AlbedoPath);
                 if (tex.id > 0)
                 {
-                    model.materials[i].maps[MATERIAL_MAP_ALBEDO].texture = tex;
+                    mat.maps[MATERIAL_MAP_ALBEDO].texture = tex;
                 }
             }
+
+            // Draw this mesh with our custom material and it's own scale (identity transform
+            // because we pushed it)
+            ::DrawMesh(model.meshes[i], mat, MatrixScale(scale.x, scale.y, scale.z));
         }
 
-        rlPushMatrix();
-        rlMultMatrixf(MatrixToFloat(transform));
-        ::DrawModelEx(model, {0, 0, 0}, {1, 0, 0}, 0.0f, scale, WHITE);
         rlPopMatrix();
     }
 }

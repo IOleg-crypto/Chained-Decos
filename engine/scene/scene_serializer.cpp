@@ -5,6 +5,7 @@
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
 #include "scene.h"
+#include "script_registry.h"
 
 #include <fstream>
 #include <yaml-cpp/yaml.h>
@@ -24,13 +25,21 @@ template <> struct convert<Vector3>
 
     static bool decode(const Node &node, Vector3 &rhs)
     {
-        if (!node.IsSequence() || node.size() != 3)
-            return false;
-
-        rhs.x = node[0].as<float>();
-        rhs.y = node[1].as<float>();
-        rhs.z = node[2].as<float>();
-        return true;
+        if (node.IsSequence() && node.size() == 3)
+        {
+            rhs.x = node[0].as<float>();
+            rhs.y = node[1].as<float>();
+            rhs.z = node[2].as<float>();
+            return true;
+        }
+        else if (node.IsMap())
+        {
+            rhs.x = node["x"] ? node["x"].as<float>() : 0.0f;
+            rhs.y = node["y"] ? node["y"].as<float>() : 0.0f;
+            rhs.z = node["z"] ? node["z"].as<float>() : 0.0f;
+            return true;
+        }
+        return false;
     }
 };
 
@@ -48,14 +57,23 @@ template <> struct convert<Color>
 
     static bool decode(const Node &node, Color &rhs)
     {
-        if (!node.IsSequence() || node.size() != 4)
-            return false;
-
-        rhs.r = node[0].as<unsigned char>();
-        rhs.g = node[1].as<unsigned char>();
-        rhs.b = node[2].as<unsigned char>();
-        rhs.a = node[3].as<unsigned char>();
-        return true;
+        if (node.IsSequence() && node.size() == 4)
+        {
+            rhs.r = node[0].as<unsigned char>();
+            rhs.g = node[1].as<unsigned char>();
+            rhs.b = node[2].as<unsigned char>();
+            rhs.a = node[3].as<unsigned char>();
+            return true;
+        }
+        else if (node.IsMap())
+        {
+            rhs.r = node["r"] ? node["r"].as<unsigned char>() : 255;
+            rhs.g = node["g"] ? node["g"].as<unsigned char>() : 255;
+            rhs.b = node["b"] ? node["b"].as<unsigned char>() : 255;
+            rhs.a = node["a"] ? node["a"].as<unsigned char>() : 255;
+            return true;
+        }
+        return false;
     }
 };
 } // namespace YAML
@@ -82,8 +100,16 @@ SceneSerializer::SceneSerializer(Scene *scene) : m_Scene(scene)
 
 static void SerializeEntity(YAML::Emitter &out, Entity entity)
 {
-    out << YAML::BeginMap;                                             // Entity
-    out << YAML::Key << "Entity" << YAML::Value << "1283719283719283"; // TODO: UUID
+    out << YAML::BeginMap; // Entity
+    if (entity.HasComponent<IDComponent>())
+    {
+        out << YAML::Key << "Entity" << YAML::Value
+            << (uint64_t)entity.GetComponent<IDComponent>().ID;
+    }
+    else
+    {
+        out << YAML::Key << "Entity" << YAML::Value << 0;
+    }
 
     if (entity.HasComponent<TagComponent>())
     {
@@ -110,7 +136,11 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         auto &mc = entity.GetComponent<ModelComponent>();
         out << YAML::BeginMap;
         out << YAML::Key << "ModelPath" << YAML::Value << mc.ModelPath;
-        out << YAML::Key << "Tint" << YAML::Value << mc.Tint;
+        out << YAML::Key << "Material";
+        out << YAML::BeginMap;
+        out << YAML::Key << "AlbedoColor" << YAML::Value << mc.Material.AlbedoColor;
+        out << YAML::Key << "AlbedoPath" << YAML::Value << mc.Material.AlbedoPath;
+        out << YAML::EndMap;
         out << YAML::EndMap;
     }
 
@@ -124,16 +154,8 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<MaterialComponent>())
-    {
-        out << YAML::Key << "MaterialComponent";
-        out << YAML::BeginMap;
-        out << YAML::Key << "AlbedoColor" << YAML::Value
-            << entity.GetComponent<MaterialComponent>().AlbedoColor;
-        out << YAML::Key << "AlbedoPath" << YAML::Value
-            << entity.GetComponent<MaterialComponent>().AlbedoPath;
-        out << YAML::EndMap;
-    }
+    // MaterialComponent is now deprecated and merged into ModelComponent
+    // if (entity.HasComponent<MaterialComponent>()) ...
 
     if (entity.HasComponent<ColliderComponent>())
     {
@@ -187,19 +209,86 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<CSharpScriptComponent>())
+    if (entity.HasComponent<NativeScriptComponent>())
     {
-        out << YAML::Key << "CSharpScriptComponent";
-        auto &sc = entity.GetComponent<CSharpScriptComponent>();
+        out << YAML::Key << "NativeScriptComponent";
+        auto &nsc = entity.GetComponent<NativeScriptComponent>();
         out << YAML::BeginMap;
-        out << YAML::Key << "ClassName" << YAML::Value << sc.ClassName;
+        out << YAML::Key << "Scripts" << YAML::Value << YAML::BeginSeq;
+        for (const auto &script : nsc.Scripts)
+        {
+            out << script.ScriptName;
+        }
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<AnimationComponent>())
+    {
+        out << YAML::Key << "AnimationComponent";
+        out << YAML::BeginMap;
+        auto &animation = entity.GetComponent<AnimationComponent>();
+        out << YAML::Key << "AnimationPath" << YAML::Value << animation.AnimationPath;
+        out << YAML::Key << "CurrentAnimationIndex" << YAML::Value
+            << animation.CurrentAnimationIndex;
+        out << YAML::Key << "IsLooping" << YAML::Value << animation.IsLooping;
+        out << YAML::Key << "IsPlaying" << YAML::Value << animation.IsPlaying;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<HierarchyComponent>())
+    {
+        out << YAML::Key << "HierarchyComponent";
+        auto &hc = entity.GetComponent<HierarchyComponent>();
+        out << YAML::BeginMap;
+        if (hc.Parent != entt::null)
+        {
+            Entity parent{hc.Parent, entity.GetScene()};
+            out << YAML::Key << "Parent" << YAML::Value
+                << (uint64_t)parent.GetComponent<IDComponent>().ID;
+        }
+        else
+        {
+            out << YAML::Key << "Parent" << YAML::Value << 0;
+        }
+
+        out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+        for (auto childID : hc.Children)
+        {
+            Entity child{childID, entity.GetScene()};
+            out << (uint64_t)child.GetComponent<IDComponent>().ID;
+        }
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<AudioComponent>())
+    {
+        out << YAML::Key << "AudioComponent";
+        auto &ac = entity.GetComponent<AudioComponent>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "SoundPath" << YAML::Value << ac.SoundPath;
+        out << YAML::Key << "Volume" << YAML::Value << ac.Volume;
+        out << YAML::Key << "Pitch" << YAML::Value << ac.Pitch;
+        out << YAML::Key << "Loop" << YAML::Value << ac.Loop;
+        out << YAML::Key << "PlayOnStart" << YAML::Value << ac.PlayOnStart;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<CameraComponent>())
+    {
+        out << YAML::Key << "CameraComponent";
+        auto &cc = entity.GetComponent<CameraComponent>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "Fov" << YAML::Value << cc.Fov;
+        out << YAML::Key << "Offset" << YAML::Value << cc.Offset;
         out << YAML::EndMap;
     }
 
     out << YAML::EndMap; // Entity
 }
 
-void SceneSerializer::Serialize(const std::string &filepath)
+bool SceneSerializer::Serialize(const std::string &filepath)
 {
     YAML::Emitter out;
     out << YAML::BeginMap;
@@ -219,11 +308,12 @@ void SceneSerializer::Serialize(const std::string &filepath)
 
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
-    for (auto entityID : m_Scene->GetRegistry().storage<entt::entity>())
-    {
-        Entity entity = {entityID, m_Scene};
-        SerializeEntity(out, entity);
-    }
+    m_Scene->GetRegistry().view<IDComponent>().each(
+        [&](auto entityID, auto &id)
+        {
+            Entity entity = {entityID, m_Scene};
+            SerializeEntity(out, entity);
+        });
 
     out << YAML::EndSeq;
     out << YAML::EndMap;
@@ -233,10 +323,12 @@ void SceneSerializer::Serialize(const std::string &filepath)
     {
         fout << out.c_str();
         CH_CORE_INFO("Scene saved successfully to: %s", filepath.c_str());
+        return true;
     }
     else
     {
         CH_CORE_ERROR("Failed to save scene to: %s", filepath.c_str());
+        return false;
     }
 }
 
@@ -292,10 +384,17 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 AssetManager::LoadModelAsync(path);
         }
 
-        // Phase 2: Actual deserialization with BVH generation dispatch
+        struct HierarchyTask
+        {
+            Entity entity;
+            uint64_t parent;
+            std::vector<uint64_t> children;
+        };
+        std::vector<HierarchyTask> hierarchyTasks;
+
         struct BVHTask
         {
-            ColliderComponent *cc;
+            Entity entity;
             std::string path;
             std::future<Ref<BVHNode>> future;
         };
@@ -312,7 +411,7 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
 
             CH_CORE_TRACE("Deserialized entity with ID = %llu, name = %s", uuid, name.c_str());
 
-            Entity deserializedEntity = m_Scene->CreateEntity(name);
+            Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
 
             auto transformComponent = entity["TransformComponent"];
             if (transformComponent)
@@ -328,7 +427,17 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
             {
                 auto &mc = deserializedEntity.AddComponent<ModelComponent>();
                 mc.ModelPath = modelComponent["ModelPath"].as<std::string>();
-                mc.Tint = modelComponent["Tint"].as<Color>();
+
+                if (modelComponent["Material"])
+                {
+                    auto mat = modelComponent["Material"];
+                    mc.Material.AlbedoColor = mat["AlbedoColor"].as<Color>();
+                    mc.Material.AlbedoPath = mat["AlbedoPath"].as<std::string>();
+                }
+                else if (modelComponent["Tint"]) // Legacy support
+                {
+                    mc.Material.AlbedoColor = modelComponent["Tint"].as<Color>();
+                }
             }
 
             auto spawnComponent = entity["SpawnComponent"];
@@ -342,9 +451,13 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
             auto materialComponent = entity["MaterialComponent"];
             if (materialComponent)
             {
-                auto &mc = deserializedEntity.AddComponent<MaterialComponent>();
-                mc.AlbedoColor = materialComponent["AlbedoColor"].as<Color>();
-                mc.AlbedoPath = materialComponent["AlbedoPath"].as<std::string>();
+                // Legacy support for separate MaterialComponent
+                if (!deserializedEntity.HasComponent<ModelComponent>())
+                    deserializedEntity.AddComponent<ModelComponent>();
+
+                auto &mc = deserializedEntity.GetComponent<ModelComponent>();
+                mc.Material.AlbedoColor = materialComponent["AlbedoColor"].as<Color>();
+                mc.Material.AlbedoPath = materialComponent["AlbedoPath"].as<std::string>();
             }
 
             auto colliderComponent = entity["ColliderComponent"];
@@ -365,9 +478,69 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                     if (model.meshCount > 0)
                     {
                         // Build BVH asynchronously
-                        bvhTasks.push_back({&cc, cc.ModelPath, BVHBuilder::BuildAsync(model)});
+                        bvhTasks.push_back(
+                            {deserializedEntity, cc.ModelPath, BVHBuilder::BuildAsync(model)});
                     }
                 }
+            }
+
+            auto audioComponent = entity["AudioComponent"];
+            if (audioComponent)
+            {
+                auto &ac = deserializedEntity.AddComponent<AudioComponent>();
+                ac.SoundPath = audioComponent["SoundPath"].as<std::string>();
+                ac.Volume = audioComponent["Volume"].as<float>();
+                ac.Pitch = audioComponent["Pitch"].as<float>();
+                ac.Loop = audioComponent["Loop"].as<bool>();
+                ac.PlayOnStart = audioComponent["PlayOnStart"].as<bool>();
+            }
+
+            auto cameraComponent = entity["CameraComponent"];
+            if (cameraComponent)
+            {
+                auto &cc = deserializedEntity.AddComponent<CameraComponent>();
+                cc.Fov = cameraComponent["Fov"].as<float>();
+                cc.Offset = cameraComponent["Offset"].as<Vector3>();
+            }
+
+            auto hierarchyComponent = entity["HierarchyComponent"];
+            if (hierarchyComponent)
+            {
+                HierarchyTask task;
+                task.entity = deserializedEntity;
+                task.parent = hierarchyComponent["Parent"].as<uint64_t>();
+                auto children = hierarchyComponent["Children"];
+                if (children)
+                {
+                    for (auto child : children)
+                        task.children.push_back(child.as<uint64_t>());
+                }
+                hierarchyTasks.push_back(task);
+            }
+
+            auto nativeScriptComponent = entity["NativeScriptComponent"];
+            if (nativeScriptComponent)
+            {
+                auto &nsc = deserializedEntity.AddComponent<NativeScriptComponent>();
+                auto scripts = nativeScriptComponent["Scripts"];
+                if (scripts)
+                {
+                    for (auto script : scripts)
+                    {
+                        std::string scriptName = script.as<std::string>();
+                        ScriptRegistry::AddScript(scriptName, nsc);
+                    }
+                }
+            }
+
+            auto animationComponent = entity["AnimationComponent"];
+            if (animationComponent)
+            {
+                auto &anim = deserializedEntity.AddComponent<AnimationComponent>();
+                anim.AnimationPath = animationComponent["AnimationPath"].as<std::string>();
+                anim.CurrentAnimationIndex = animationComponent["CurrentAnimationIndex"].as<int>();
+                anim.IsLooping = animationComponent["IsLooping"].as<bool>();
+                anim.IsPlaying = animationComponent["IsPlaying"].as<bool>();
             }
 
             auto pointLightComponent = entity["PointLightComponent"];
@@ -402,13 +575,35 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 if (playerComponent["JumpForce"])
                     pc.JumpForce = playerComponent["JumpForce"].as<float>();
             }
+        } // End of entity loop
+
+        // Phase 3: Finalize Hierarchy
+        for (auto &task : hierarchyTasks)
+        {
+            auto &hc = task.entity.AddComponent<HierarchyComponent>();
+            if (task.parent != 0)
+            {
+                Entity parent = m_Scene->GetEntityByUUID(task.parent);
+                if (parent)
+                    hc.Parent = parent;
+            }
+
+            for (uint64_t childUUID : task.children)
+            {
+                Entity child = m_Scene->GetEntityByUUID(childUUID);
+                if (child)
+                    hc.Children.push_back(child);
+            }
         }
 
-        // Finalize all BVH tasks
+        // Phase 4: Finalize all BVH tasks
         for (auto &task : bvhTasks)
         {
-            task.cc->BVHRoot = task.future.get();
-            CH_CORE_INFO("Parallel BVH Construction complete for: %s", task.path.c_str());
+            if (task.entity.HasComponent<ColliderComponent>())
+            {
+                task.entity.GetComponent<ColliderComponent>().BVHRoot = task.future.get();
+                CH_CORE_INFO("Parallel BVH Construction complete for: %s", task.path.c_str());
+            }
         }
     }
 

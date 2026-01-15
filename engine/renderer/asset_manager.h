@@ -1,7 +1,7 @@
 #ifndef CH_ASSET_MANAGER_H
 #define CH_ASSET_MANAGER_H
 
-#include "engine/core/thread_pool.h"
+#include <filesystem>
 #include <future>
 #include <mutex>
 #include <raylib.h>
@@ -31,6 +31,10 @@ public:
     static bool HasModel(std::string_view name);
     static void UnloadModel(std::string_view name);
 
+    // Animation Management
+    static ModelAnimation *LoadAnimation(std::string_view path, int *count);
+    static ModelAnimation *GetAnimations(std::string_view path, int *count);
+
     // Model Management (Asynchronous)
     static std::future<ModelLoadResult> LoadModelAsync(std::string_view path);
     static void LoadModelsAsync(const std::vector<std::string> &paths,
@@ -46,10 +50,12 @@ public:
     // Cubemap Management
     static Texture2D LoadCubemap(std::string_view path);
 
+    // Shader Management
+    static Shader LoadShader(std::string_view vsPath, std::string_view fsPath);
+
     // Helper
     static BoundingBox GetModelBoundingBox(std::string_view path);
-
-private:
+    static std::filesystem::path ResolvePath(std::string_view path);
     struct StringHash
     {
         using is_transparent = void;
@@ -67,10 +73,14 @@ private:
         }
     };
 
-    static std::unordered_map<std::string, Model, StringHash, std::equal_to<>> s_Models;
-    static std::unordered_map<std::string, Texture2D, StringHash, std::equal_to<>> s_Textures;
-    static std::mutex s_ModelsMutex;
-    static std::mutex s_TexturesMutex;
+    static std::unordered_map<std::string, Model, StringHash, std::equal_to<>> s_LoadedModels;
+    static std::unordered_map<std::string, Texture2D, StringHash, std::equal_to<>> s_LoadedTextures;
+    static std::unordered_map<std::string, std::pair<ModelAnimation *, int>, StringHash,
+                              std::equal_to<>>
+        s_LoadedAnimations;
+    static std::mutex s_ModelsCacheMutex;
+    static std::mutex s_TexturesCacheMutex;
+    static std::mutex s_AnimationsCacheMutex;
 
     AssetManager() = default;
 };

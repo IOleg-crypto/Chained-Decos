@@ -7,6 +7,7 @@
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
 #include "engine/renderer/scene_render.h"
+#include "engine/scene/script_registry.h"
 #include <raylib.h>
 #include <rlImGui.h>
 
@@ -34,6 +35,13 @@ Application::Application(const Config &config)
     Physics::Init();
     AssetManager::Init();
     AudioManager::Init(); // Added
+
+    // Register Default Input Actions
+    Input::RegisterAction("Jump", KEY_SPACE);
+    Input::RegisterAction("Teleport", KEY_F);
+
+    // Register Game-Specific Scripts
+    RegisterGameScripts();
 
     CH_CORE_INFO("Application Initialized: %s (%dx%d)", config.Title, config.Width, config.Height);
 }
@@ -112,69 +120,7 @@ void Application::EndFrame()
 
 void Application::PollEvents()
 {
-    // 1. Keyboard Events
-    int key = GetKeyPressed();
-    while (key != 0)
-    {
-        Input::OnKeyPressed(key);
-        KeyPressedEvent e(key, false);
-        OnEvent(e);
-        key = GetKeyPressed();
-    }
-
-    // Track key releases
-    static bool s_KeysDown[512] = {false};
-    for (int i = 32; i < 349; i++)
-    {
-        if (IsKeyDown(i))
-        {
-            if (!s_KeysDown[i])
-                s_KeysDown[i] = true;
-        }
-        else
-        {
-            if (s_KeysDown[i])
-            {
-                Input::OnKeyReleased(i);
-                KeyReleasedEvent e(i);
-                OnEvent(e);
-                s_KeysDown[i] = false;
-            }
-        }
-    }
-
-    // 2. Mouse Events
-    for (int i = 0; i < 7; i++)
-    {
-        if (IsMouseButtonPressed(i))
-        {
-            Input::OnMouseButtonPressed(i);
-            MouseButtonPressedEvent e(i);
-            OnEvent(e);
-        }
-        if (IsMouseButtonReleased(i))
-        {
-            Input::OnMouseButtonReleased(i);
-            MouseButtonReleasedEvent e(i);
-            OnEvent(e);
-        }
-    }
-
-    static Vector2 lastMousePos = {-1, -1};
-    Vector2 currentMousePos = GetMousePosition();
-    if (currentMousePos.x != lastMousePos.x || currentMousePos.y != lastMousePos.y)
-    {
-        MouseMovedEvent e(currentMousePos.x, currentMousePos.y);
-        OnEvent(e);
-        lastMousePos = currentMousePos;
-    }
-
-    float wheel = GetMouseWheelMove();
-    if (wheel != 0)
-    {
-        MouseScrolledEvent e(0, wheel);
-        OnEvent(e);
-    }
+    Input::PollEvents(Application::OnEvent);
 }
 
 bool Application::ShouldClose()

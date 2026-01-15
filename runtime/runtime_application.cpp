@@ -39,24 +39,6 @@ public:
             auto &transform = view.get<TransformComponent>(entity);
             auto &player = view.get<PlayerComponent>(entity);
 
-            // Mouse/Zoom control
-            if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-            {
-                Vector2 mouseDelta = GetMouseDelta();
-                player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
-                player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
-
-                if (player.CameraPitch > 89.0f)
-                    player.CameraPitch = 89.0f;
-                if (player.CameraPitch < -10.0f)
-                    player.CameraPitch = -10.0f;
-            }
-            player.CameraDistance -= GetMouseWheelMove() * 2.0f;
-            if (player.CameraDistance < 2.0f)
-                player.CameraDistance = 2.0f;
-            if (player.CameraDistance > 40.0f)
-                player.CameraDistance = 40.0f;
-
             Vector3 target = transform.Translation;
             target.y += 1.0f;
 
