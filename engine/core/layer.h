@@ -1,9 +1,10 @@
 #ifndef CH_LAYER_H
 #define CH_LAYER_H
 
+#include "engine/core/base.h"
 #include "engine/core/events.h"
-#include "engine/core/types.h"
 #include <string>
+
 
 namespace CHEngine
 {

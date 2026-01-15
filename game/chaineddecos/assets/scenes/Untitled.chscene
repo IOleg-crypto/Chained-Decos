@@ -1,6 +1,6 @@
 Scene: Untitled
 Skybox:
-  TexturePath: ..\..\..\resources\skyboxes\skybox.png
+  TexturePath: skyboxes\skybox.png
   Exposure: 1
   Brightness: 0
   Contrast: 1
@@ -21,7 +21,9 @@ Entities:
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: ":plane:"
-      Tint: [255, 255, 255, 255]
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 0
       bEnabled: true
@@ -38,7 +40,9 @@ Entities:
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: ":plane:"
-      Tint: [255, 255, 255, 255]
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 0
       bEnabled: true
@@ -55,7 +59,9 @@ Entities:
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: ":plane:"
-      Tint: [255, 255, 255, 255]
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 0
       bEnabled: true
@@ -123,12 +129,14 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [-55.7012215, 2.59520078, 17.3421116]
-      Rotation: [0, -1.57080221, 0]
+      Translation: [-3.72426462, 0.94383657, 48.3565636]
+      Rotation: [0, 2.96880126, 0]
       Scale: [1, 1, 1]
     ModelComponent:
-      ModelPath: ..\..\..\resources\player_low.glb
-      Tint: [255, 255, 255, 255]
+      ModelPath: Models\player_low.glb
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 0
       bEnabled: true
@@ -137,17 +145,21 @@ Entities:
       bAutoCalculate: false
       ModelPath: ""
     RigidBodyComponent:
-      Velocity: [0.138601139, 10, 0.0112464204]
+      Velocity: [0, 0, 0]
       UseGravity: true
       IsKinematic: false
       Mass: 68
     PlayerComponent:
       MovementSpeed: 15
       LookSensitivity: 0.899999976
-      CameraYaw: 179.999664
-      CameraPitch: 50.3000031
-      CameraDistance: 10
+      CameraYaw: -9.90021801
+      CameraPitch: 24.2000256
+      CameraDistance: 8
       JumpForce: 10
+    NativeScriptComponent:
+      Scripts:
+        - CameraController
+        - PlayerController
   - Entity: 1283719283719283
     TagComponent:
       Tag: Empty Entity
@@ -156,15 +168,17 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
-      ModelPath: ..\..\..\resources\stairs_f.glb
-      Tint: [255, 255, 255, 255]
+      ModelPath: Models\stairs_f.glb
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 1
       bEnabled: true
       Offset: [-24.1706467, 0, -4.68093872]
       Size: [36.9141235, 7.48315048, 19.6414242]
       bAutoCalculate: false
-      ModelPath: ..\..\..\resources\stairs_f.glb
+      ModelPath: Models\stairs_f.glb
   - Entity: 1283719283719283
     TagComponent:
       Tag: Castle
@@ -173,15 +187,17 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
-      ModelPath: ..\..\..\resources\TaverGLTF.gltf
-      Tint: [255, 255, 255, 255]
+      ModelPath: Models\TaverGLTF.gltf
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 1
       bEnabled: true
       Offset: [-141.248138, -2.58676767, -9.35314369]
       Size: [86.9047241, 20.7643909, 83.494278]
       bAutoCalculate: false
-      ModelPath: ..\..\..\resources\TaverGLTF.gltf
+      ModelPath: Models\TaverGLTF.gltf
   - Entity: 1283719283719283
     TagComponent:
       Tag: Arena
@@ -190,15 +206,17 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1.20000005, 1]
     ModelComponent:
-      ModelPath: ..\..\..\resources\arena.glb
-      Tint: [255, 255, 255, 255]
+      ModelPath: Models\arena.glb
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 1
       bEnabled: true
       Offset: [-43.8236694, -46.1545258, -25.5901108]
       Size: [86.6819458, 89.0095215, 94.478302]
       bAutoCalculate: false
-      ModelPath: ..\..\..\resources\arena.glb
+      ModelPath: Models\arena.glb
   - Entity: 1283719283719283
     TagComponent:
       Tag: Entity
@@ -207,15 +225,17 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
-      ModelPath: ..\..\..\resources\stairs.glb
-      Tint: [255, 255, 255, 255]
+      ModelPath: Models\stairs.glb
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 1
       bEnabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
       Size: [34.1756821, 8.59185219, 22.6057091]
       bAutoCalculate: false
-      ModelPath: ..\..\..\resources\stairs.glb
+      ModelPath: Models\stairs.glb
   - Entity: 1283719283719283
     TagComponent:
       Tag: Plane
@@ -223,15 +243,17 @@ Entities:
       Translation: [-80.556427, 1.49723053, 13.7532673]
       Rotation: [4.80000019, 3.5999999, -6.5999999]
       Scale: [64, 1.10000002, 11.6000004]
-    MaterialComponent:
-      AlbedoColor: [24, 13, 13, 255]
-      AlbedoPath: ..\..\..\resources\textures\brick.jpg
+    ModelComponent:
+      ModelPath: ""
+      Material:
+        AlbedoColor: [24, 13, 13, 255]
+        AlbedoPath: Textures\brick.jpg
     ColliderComponent:
       Type: 0
       bEnabled: true
       Offset: [0, 0, 0]
-      Size: [1, 1, 1]
-      bAutoCalculate: true
+      Size: [0, 0, 0]
+      bAutoCalculate: false
       ModelPath: ""
   - Entity: 1283719283719283
     TagComponent:
@@ -252,7 +274,9 @@ Entities:
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: ":torus:"
-      Tint: [255, 255, 255, 255]
+      Material:
+        AlbedoColor: [255, 255, 255, 255]
+        AlbedoPath: ""
     ColliderComponent:
       Type: 1
       bEnabled: true

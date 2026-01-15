@@ -11,9 +11,11 @@ bool ThreadDispatcher::s_Running = false;
 
 std::queue<std::function<void()>> ThreadDispatcher::s_MainThreadQueue;
 std::mutex ThreadDispatcher::s_MainThreadMutex;
+std::thread::id ThreadDispatcher::s_MainThreadId;
 
 void ThreadDispatcher::Init()
 {
+    s_MainThreadId = std::this_thread::get_id();
     s_Running = true;
     uint32_t threadCount = std::thread::hardware_concurrency();
     if (threadCount == 0)

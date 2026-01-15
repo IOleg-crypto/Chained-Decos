@@ -1,9 +1,11 @@
 #ifndef CH_RENDERER_H
 #define CH_RENDERER_H
 
+#include "engine/core/math_types.h"
+#include "engine/renderer/material.h"
 #include "engine/scene/scene.h"
-#include <raylib.h>
 #include <string>
+
 
 namespace CHEngine
 {
@@ -31,10 +33,9 @@ public:
 
     static void DrawGrid(int slices, float spacing);
     static void DrawLine(Vector3 start, Vector3 end, Color color);
-    static void DrawModel(const std::string &path, const Matrix &transform, Color tint = WHITE,
-                          Vector3 scale = {1.0f, 1.0f, 1.0f});
     static void DrawModel(const std::string &path, const Matrix &transform,
-                          const struct MaterialComponent &material,
+                          const MaterialInstance &material, Vector3 scale = {1.0f, 1.0f, 1.0f});
+    static void DrawModel(const std::string &path, const Matrix &transform, Color tint = WHITE,
                           Vector3 scale = {1.0f, 1.0f, 1.0f});
 
     static void DrawScene(Scene *scene,

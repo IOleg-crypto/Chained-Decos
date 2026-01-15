@@ -1,18 +1,22 @@
 #include "asset_manager.h"
+#include "engine/core/base.h"
 #include "engine/core/log.h"
 #include "engine/core/thread_dispatcher.h"
-#include "engine/core/types.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 
 namespace CHEngine
 {
 std::unordered_map<std::string, Model, AssetManager::StringHash, std::equal_to<>>
-    AssetManager::s_Models;
+    AssetManager::s_LoadedModels;
 std::unordered_map<std::string, Texture2D, AssetManager::StringHash, std::equal_to<>>
-    AssetManager::s_Textures;
-std::mutex AssetManager::s_ModelsMutex;
-std::mutex AssetManager::s_TexturesMutex;
+    AssetManager::s_LoadedTextures;
+std::unordered_map<std::string, std::pair<ModelAnimation *, int>, AssetManager::StringHash,
+                   std::equal_to<>>
+    AssetManager::s_LoadedAnimations;
+std::mutex AssetManager::s_ModelsCacheMutex;
+std::mutex AssetManager::s_TexturesCacheMutex;
+std::mutex AssetManager::s_AnimationsCacheMutex;
 
 void AssetManager::Init()
 {
@@ -21,28 +25,46 @@ void AssetManager::Init()
 
 void AssetManager::Shutdown()
 {
-    CH_CORE_INFO("Asset Manager Shutting Down: Unloading %d models", s_Models.size());
-    for (auto &[name, model] : s_Models)
+    CH_CORE_INFO("Asset Manager Shutting Down: Unloading %d models", s_LoadedModels.size());
+    for (auto &[name, model] : s_LoadedModels)
     {
         ::UnloadModel(model);
     }
-    s_Models.clear();
+    s_LoadedModels.clear();
 
-    CH_CORE_INFO("Asset Manager Shutting Down: Unloading %d textures", s_Textures.size());
-    for (auto &[name, texture] : s_Textures)
+    CH_CORE_INFO("Asset Manager Shutting Down: Unloading %d textures", s_LoadedTextures.size());
+    for (auto &[name, texture] : s_LoadedTextures)
     {
         ::UnloadTexture(texture);
     }
-    s_Textures.clear();
+    s_LoadedTextures.clear();
+
+    CH_CORE_INFO("Asset Manager Shutting Down: Unloading %d animation sets",
+                 s_LoadedAnimations.size());
+    for (auto &[name, animPair] : s_LoadedAnimations)
+    {
+        ::UnloadModelAnimations(animPair.first, animPair.second);
+    }
+    s_LoadedAnimations.clear();
 }
 
 Model AssetManager::LoadModel(std::string_view path)
 {
+    if (path.empty())
+        return {0};
+
+    if (!ThreadDispatcher::IsMainThread())
+    {
+        CH_CORE_WARN("AssetManager::LoadModel called from non-main thread! This may cause "
+                     "Raylib/OpenGL crashes. Path: {0}",
+                     path);
+    }
+
     // Check cache first (thread-safe)
     {
-        std::lock_guard<std::mutex> lock(s_ModelsMutex);
-        auto it = s_Models.find(path);
-        if (it != s_Models.end())
+        std::lock_guard<std::mutex> lock(s_ModelsCacheMutex);
+        auto it = s_LoadedModels.find(path);
+        if (it != s_LoadedModels.end())
             return it->second;
     }
 
@@ -68,25 +90,22 @@ Model AssetManager::LoadModel(std::string_view path)
         if (mesh.vertexCount > 0)
         {
             Model model = LoadModelFromMesh(mesh);
-            std::lock_guard<std::mutex> lock(s_ModelsMutex);
-            s_Models[std::string(path)] = model;
+            std::lock_guard<std::mutex> lock(s_ModelsCacheMutex);
+            s_LoadedModels[std::string(path)] = model;
             CH_CORE_INFO("Procedural Model Generated: %s", std::string(path).c_str());
             return model;
         }
     }
 
-    std::filesystem::path fullPath = path;
-    if (Project::GetActive() && !fullPath.is_absolute())
-    {
-        fullPath = Project::GetAssetDirectory() / path;
-    }
+    std::filesystem::path fullPath = ResolvePath(path);
 
     if (!std::filesystem::exists(fullPath))
     {
         // Don't log error for procedural paths that were somehow missed by the prefix check
         if (path.size() > 0 && path[0] != ':')
         {
-            CH_CORE_ERROR("Model file does not exist: %s", fullPath.string().c_str());
+            CH_CORE_ERROR("Model file does not exist: %s (Original: %s)", fullPath.string().c_str(),
+                          std::string(path).c_str());
         }
         return {0};
     }
@@ -94,9 +113,19 @@ Model AssetManager::LoadModel(std::string_view path)
     Model model = ::LoadModel(fullPath.string().c_str());
     if (model.meshCount > 0)
     {
-        std::lock_guard<std::mutex> lock(s_ModelsMutex);
-        s_Models[std::string(path)] = model;
+        std::lock_guard<std::mutex> lock(s_ModelsCacheMutex);
+        s_LoadedModels[std::string(path)] = model;
         CH_CORE_INFO("Model Loaded: %s", fullPath.string().c_str());
+
+        // Load animations if any
+        int animCount = 0;
+        ModelAnimation *animations = ::LoadModelAnimations(fullPath.string().c_str(), &animCount);
+        if (animations != nullptr)
+        {
+            std::lock_guard<std::mutex> animLock(s_AnimationsCacheMutex);
+            s_LoadedAnimations[std::string(path)] = {animations, animCount};
+            CH_CORE_INFO("Loaded %d animations for: %s", animCount, fullPath.string().c_str());
+        }
     }
     else
     {
@@ -108,8 +137,8 @@ Model AssetManager::LoadModel(std::string_view path)
 
 Model AssetManager::GetModel(std::string_view name)
 {
-    auto it = s_Models.find(name);
-    if (it != s_Models.end())
+    auto it = s_LoadedModels.find(name);
+    if (it != s_LoadedModels.end())
         return it->second;
 
     return Model{0}; // Return empty model if not found
@@ -117,48 +146,126 @@ Model AssetManager::GetModel(std::string_view name)
 
 bool AssetManager::HasModel(std::string_view name)
 {
-    std::lock_guard<std::mutex> lock(s_ModelsMutex);
-    return s_Models.find(name) != s_Models.end();
+    std::lock_guard<std::mutex> lock(s_ModelsCacheMutex);
+    return s_LoadedModels.find(name) != s_LoadedModels.end();
 }
 
 void AssetManager::UnloadModel(std::string_view name)
 {
-    std::lock_guard<std::mutex> lock(s_ModelsMutex);
-    auto it = s_Models.find(name);
-    if (it != s_Models.end())
+    std::lock_guard<std::mutex> lock(s_ModelsCacheMutex);
+    auto it = s_LoadedModels.find(name);
+    if (it != s_LoadedModels.end())
     {
         ::UnloadModel(it->second);
-        s_Models.erase(it);
-        CH_CORE_INFO("Model Unloaded: %s", std::string(name).c_str());
+        s_LoadedModels.erase(it);
+
+        // Unload animations too
+        std::lock_guard<std::mutex> animLock(s_AnimationsCacheMutex);
+        auto animIt = s_LoadedAnimations.find(name);
+        if (animIt != s_LoadedAnimations.end())
+        {
+            ::UnloadModelAnimations(animIt->second.first, animIt->second.second);
+            s_LoadedAnimations.erase(animIt);
+        }
+
+        CH_CORE_INFO("Model and Animations Unloaded: %s", std::string(name).c_str());
     }
+}
+
+ModelAnimation *AssetManager::LoadAnimation(std::string_view path, int *count)
+{
+    if (path.empty())
+    {
+        if (count)
+            *count = 0;
+        return nullptr;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(s_AnimationsCacheMutex);
+        auto it = s_LoadedAnimations.find(path);
+        if (it != s_LoadedAnimations.end())
+        {
+            *count = it->second.second;
+            return it->second.first;
+        }
+    }
+
+    // If not found in cache, try to load the model which will also load animations
+    // This is a bit of a workaround, as animations are tied to models in Raylib
+    // and loaded as a side effect of LoadModel.
+    // A more robust solution might involve a separate animation loading mechanism.
+    Model model = LoadModel(path); // This will attempt to load the model and its animations
+    if (model.meshCount > 0)
+    {
+        // Check cache again after LoadModel might have populated it
+        std::lock_guard<std::mutex> lock(s_AnimationsCacheMutex);
+        auto it = s_LoadedAnimations.find(path);
+        if (it != s_LoadedAnimations.end())
+        {
+            *count = it->second.second;
+            return it->second.first;
+        }
+    }
+
+    if (count)
+        *count = 0;
+    return nullptr;
+}
+
+ModelAnimation *AssetManager::GetAnimations(std::string_view path, int *count)
+{
+    std::lock_guard<std::mutex> lock(s_AnimationsCacheMutex);
+    auto it = s_LoadedAnimations.find(path);
+    if (it != s_LoadedAnimations.end())
+    {
+        *count = it->second.second;
+        return it->second.first;
+    }
+
+    *count = 0;
+    return nullptr;
 }
 
 Texture2D AssetManager::LoadTexture(std::string_view path)
 {
+    if (path.empty())
+        return {0};
+
     {
-        std::lock_guard<std::mutex> lock(s_TexturesMutex);
-        auto it = s_Textures.find(path);
-        if (it != s_Textures.end())
+        std::lock_guard<std::mutex> lock(s_TexturesCacheMutex);
+        auto it = s_LoadedTextures.find(path);
+        if (it != s_LoadedTextures.end())
             return it->second;
     }
 
-    std::filesystem::path fullPath = path;
-    if (Project::GetActive() && !fullPath.is_absolute())
-    {
-        fullPath = Project::GetAssetDirectory() / path;
-    }
+    std::filesystem::path fullPath = ResolvePath(path);
 
     if (!std::filesystem::exists(fullPath))
     {
-        CH_CORE_ERROR("Texture file does not exist: %s", fullPath.string().c_str());
-        return {0};
+        // Try fallback: search in Textures/ directory using just the filename
+        std::filesystem::path filename = std::filesystem::path(path).filename();
+        std::filesystem::path fallbackPath = ResolvePath("Textures/" + filename.string());
+
+        if (std::filesystem::exists(fallbackPath))
+        {
+            CH_CORE_WARN("Texture not found at '%s', using fallback: %s", fullPath.string().c_str(),
+                         fallbackPath.string().c_str());
+            fullPath = fallbackPath;
+        }
+        else
+        {
+            CH_CORE_ERROR("Texture file does not exist: %s (Original: %s)",
+                          fullPath.string().c_str(), std::string(path).c_str());
+            return {0};
+        }
     }
 
     Texture2D texture = ::LoadTexture(fullPath.string().c_str());
     if (texture.id > 0)
     {
-        std::lock_guard<std::mutex> lock(s_TexturesMutex);
-        s_Textures[std::string(path)] = texture;
+        std::lock_guard<std::mutex> lock(s_TexturesCacheMutex);
+        s_LoadedTextures[std::string(path)] = texture;
         CH_CORE_INFO("Texture Loaded: %s", fullPath.string().c_str());
     }
     else
@@ -171,8 +278,8 @@ Texture2D AssetManager::LoadTexture(std::string_view path)
 
 Texture2D AssetManager::GetTexture(std::string_view name)
 {
-    auto it = s_Textures.find(name);
-    if (it != s_Textures.end())
+    auto it = s_LoadedTextures.find(name);
+    if (it != s_LoadedTextures.end())
         return it->second;
 
     return Texture2D{0};
@@ -180,18 +287,18 @@ Texture2D AssetManager::GetTexture(std::string_view name)
 
 bool AssetManager::HasTexture(std::string_view name)
 {
-    std::lock_guard<std::mutex> lock(s_TexturesMutex);
-    return s_Textures.find(name) != s_Textures.end();
+    std::lock_guard<std::mutex> lock(s_TexturesCacheMutex);
+    return s_LoadedTextures.find(name) != s_LoadedTextures.end();
 }
 
 void AssetManager::UnloadTexture(std::string_view name)
 {
-    std::lock_guard<std::mutex> lock(s_TexturesMutex);
-    auto it = s_Textures.find(name);
-    if (it != s_Textures.end())
+    std::lock_guard<std::mutex> lock(s_TexturesCacheMutex);
+    auto it = s_LoadedTextures.find(name);
+    if (it != s_LoadedTextures.end())
     {
         ::UnloadTexture(it->second);
-        s_Textures.erase(it);
+        s_LoadedTextures.erase(it);
         CH_CORE_INFO("Texture Unloaded: %s", std::string(name).c_str());
     }
 }
@@ -214,11 +321,18 @@ BoundingBox AssetManager::GetModelBoundingBox(std::string_view path)
 
 std::future<ModelLoadResult> AssetManager::LoadModelAsync(std::string_view path)
 {
-    // Check cache first (thread-safe)
+    if (path.empty())
     {
-        std::lock_guard<std::mutex> lock(s_ModelsMutex);
-        auto it = s_Models.find(path);
-        if (it != s_Models.end())
+        std::promise<ModelLoadResult> promise;
+        promise.set_value({{0}, "", false});
+        return promise.get_future();
+    }
+
+    // Fast cache check
+    {
+        std::lock_guard<std::mutex> lock(s_ModelsCacheMutex);
+        auto it = s_LoadedModels.find(path);
+        if (it != s_LoadedModels.end())
         {
             ModelLoadResult result{it->second, std::string(path), true};
             std::promise<ModelLoadResult> promise;
@@ -228,66 +342,51 @@ std::future<ModelLoadResult> AssetManager::LoadModelAsync(std::string_view path)
     }
 
     std::string pathStr(path);
-    // Enqueue background loading task
-    return ThreadDispatcher::DispatchAsync(
-        [pathStr]() -> ModelLoadResult
+    auto promise = std::make_shared<std::promise<ModelLoadResult>>();
+    std::future<ModelLoadResult> future = promise->get_future();
+
+    // Async preparation (IO and path checks)
+    ThreadDispatcher::DispatchAsync(
+        [pathStr, promise]()
         {
-            ModelLoadResult result;
-            result.path = pathStr;
-            result.success = false;
-
-            // Check for procedural models
-            if (pathStr.size() > 0 && pathStr[0] == ':')
+            // Preparation in background
+            std::filesystem::path fullPath = pathStr;
+            if (Project::GetActive() && !fullPath.is_absolute() && !pathStr.empty() &&
+                pathStr[0] != ':')
             {
-                Mesh mesh = {0};
-                if (pathStr == ":cube:")
-                    mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
-                else if (pathStr == ":sphere:")
-                    mesh = GenMeshSphere(0.5f, 16, 16);
-                else if (pathStr == ":plane:")
-                    mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
-
-                if (mesh.vertexCount > 0)
-                {
-                    Model model = LoadModelFromMesh(mesh);
-                    result.model = model;
-                    result.success = true;
-
-                    std::lock_guard<std::mutex> lock(s_ModelsMutex);
-                    s_Models[pathStr] = model;
-                    CH_CORE_INFO("Procedural Model Generated Async: %s", pathStr.c_str());
-                    return result;
-                }
+                fullPath = Project::GetAssetDirectory() / pathStr;
             }
 
-            // Load from file
-            std::filesystem::path fullPath = pathStr;
-            if (Project::GetActive() && !fullPath.is_absolute())
-                fullPath = Project::GetAssetDirectory() / pathStr;
-
-            if (!std::filesystem::exists(fullPath))
+            if (!pathStr.empty() && pathStr[0] != ':' && !std::filesystem::exists(fullPath))
             {
                 CH_CORE_ERROR("Model file does not exist: %s", fullPath.string().c_str());
-                return result;
+                promise->set_value({{0}, pathStr, false});
+                return;
             }
 
-            Model model = ::LoadModel(fullPath.string().c_str());
-            if (model.meshCount > 0)
-            {
-                result.model = model;
-                result.success = true;
+            // Dispatch GPU upload (LoadModel) to Main Thread
+            ThreadDispatcher::DispatchMain(
+                [pathStr, promise]()
+                {
+                    // Check cache again on main thread
+                    {
+                        std::lock_guard<std::mutex> lock(s_ModelsCacheMutex);
+                        if (s_LoadedModels.count(pathStr))
+                        {
+                            promise->set_value({s_LoadedModels[pathStr], pathStr, true});
+                            return;
+                        }
+                    }
 
-                std::lock_guard<std::mutex> lock(s_ModelsMutex);
-                s_Models[pathStr] = model;
-                CH_CORE_INFO("Model Loaded Async: %s", fullPath.string().c_str());
-            }
-            else
-            {
-                CH_CORE_ERROR("Failed to load model async: %s", pathStr.c_str());
-            }
+                    // Actual Raylib upload
+                    Model model = AssetManager::LoadModel(pathStr);
+                    bool success = model.meshCount > 0;
 
-            return result;
+                    promise->set_value({model, pathStr, success});
+                });
         });
+
+    return future;
 }
 
 void AssetManager::LoadModelsAsync(const std::vector<std::string> &paths,
@@ -300,7 +399,7 @@ void AssetManager::LoadModelsAsync(const std::vector<std::string> &paths,
     futures.reserve(paths.size());
 
     // Enqueue all loads
-    CH_CORE_INFO("Starting parallel load of %d models...", paths.size());
+    CH_CORE_INFO("Starting parallel load of {0} models...", paths.size());
     for (const auto &path : paths)
     {
         futures.push_back(LoadModelAsync(path));
@@ -308,21 +407,61 @@ void AssetManager::LoadModelsAsync(const std::vector<std::string> &paths,
 
     // Wait and report progress
     size_t completed = 0;
+    bool isMainThread = ThreadDispatcher::IsMainThread();
+
     for (auto &future : futures)
     {
-        future.wait();
+        if (isMainThread)
+        {
+            // If on main thread, we MUST pump the main thread queue while waiting to avoid deadlock
+            while (future.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+            {
+                ThreadDispatcher::ExecuteMainThreadQueue();
+                std::this_thread::yield();
+            }
+        }
+        else
+        {
+            future.wait();
+        }
+
         completed++;
         if (progressCallback)
             progressCallback(static_cast<float>(completed) / paths.size());
     }
 
-    CH_CORE_INFO("Parallel model loading complete: %d/%d models loaded", completed, paths.size());
+    CH_CORE_INFO("Parallel model loading complete: {0}/{1} models loaded", completed, paths.size());
 }
 
 bool AssetManager::IsModelReady(std::string_view path)
 {
-    std::lock_guard<std::mutex> lock(s_ModelsMutex);
-    return s_Models.find(path) != s_Models.end();
+    std::lock_guard<std::mutex> lock(s_ModelsCacheMutex);
+    return s_LoadedModels.find(path) != s_LoadedModels.end();
+}
+
+Shader AssetManager::LoadShader(std::string_view vsPath, std::string_view fsPath)
+{
+    std::filesystem::path vsFullPath = ResolvePath(vsPath);
+    std::filesystem::path fsFullPath = ResolvePath(fsPath);
+
+    return ::LoadShader(vsFullPath.string().c_str(), fsFullPath.string().c_str());
+}
+
+std::filesystem::path AssetManager::ResolvePath(std::string_view path)
+{
+    if (path.starts_with("engine:"))
+    {
+        return (std::filesystem::path(PROJECT_ROOT_DIR) / "engine/resources" / path.substr(7))
+            .make_preferred();
+    }
+
+    std::filesystem::path fullPath = path;
+    if (Project::GetActive() && !fullPath.is_absolute())
+    {
+        return (Project::GetAssetDirectory() / path).make_preferred();
+    }
+
+    return fullPath.make_preferred();
 }
 
 } // namespace CHEngine

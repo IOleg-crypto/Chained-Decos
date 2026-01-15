@@ -89,12 +89,7 @@ void SceneRender::RenderOpaquePass()
     for (auto entity : view)
     {
         auto [transform, model] = view.get<TransformComponent, ModelComponent>(entity);
-
-        MaterialComponent *mat = registry.try_get<MaterialComponent>(entity);
-        if (mat)
-            Render::DrawModel(model.ModelPath, transform.GetTransform(), *mat, model.Scale);
-        else
-            Render::DrawModel(model.ModelPath, transform.GetTransform(), model.Tint, model.Scale);
+        Render::DrawModel(model.ModelPath, transform.GetTransform(), model.Material, model.Scale);
     }
 }
 
