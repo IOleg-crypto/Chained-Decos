@@ -2,26 +2,54 @@
 #define CH_SCRIPTING_COMPONENTS_H
 
 #include <string>
+#include <vector>
 
 namespace CHEngine
 {
+class ScriptableEntity;
+
 /**
- * @brief Component that links an entity to a C# script class.
+ * @brief Component that enables Native (C++) scripting for an entity.
+ * Following Hazel-style architecture.
  */
-struct CSharpScriptComponent
+struct ScriptInstance
 {
-    std::string ClassName; // Full name: Namespace.Class
-    bool Initialized = false;
+    ScriptableEntity *Instance = nullptr;
+    std::string ScriptName;
 
-    // Pointer to the managed instance (GCHandle)
-    void *Handle = nullptr;
+    ScriptableEntity *(*InstantiateScript)() = nullptr;
+    void (*DestroyScript)(ScriptInstance *) = nullptr;
 
-    CSharpScriptComponent() = default;
-    CSharpScriptComponent(const CSharpScriptComponent &) = default;
-    CSharpScriptComponent(const std::string &className) : ClassName(className)
+    ScriptInstance() = default;
+
+    template <typename T> void Bind(const std::string &name)
     {
+        ScriptName = name;
+        InstantiateScript = []() { return static_cast<ScriptableEntity *>(new T()); };
+        DestroyScript = [](ScriptInstance *si)
+        {
+            delete si->Instance;
+            si->Instance = nullptr;
+        };
     }
 };
+
+struct NativeScriptComponent
+{
+    std::vector<ScriptInstance> Scripts;
+
+    ~NativeScriptComponent()
+    {
+        for (auto &script : Scripts)
+        {
+            if (script.Instance && script.DestroyScript)
+            {
+                script.DestroyScript(&script);
+            }
+        }
+    }
+};
+
 } // namespace CHEngine
 
 #endif // CH_SCRIPTING_COMPONENTS_H

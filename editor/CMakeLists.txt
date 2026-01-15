@@ -12,6 +12,8 @@ set(EDITOR_SOURCES
     panels/scene_hierarchy_panel.cpp
     panels/inspector_panel.h
     panels/inspector_panel.cpp
+    panels/component_ui.h
+    panels/component_ui.cpp
     logic/undo/command_history.cpp
     logic/undo/command_history.h
     logic/undo/editor_command.h

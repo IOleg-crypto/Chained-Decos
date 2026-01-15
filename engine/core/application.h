@@ -1,12 +1,13 @@
 #ifndef CH_APPLICATION_H
 #define CH_APPLICATION_H
 
+#include "engine/core/base.h"
 #include "engine/core/events.h"
 #include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
-#include "engine/core/types.h"
 #include <raylib.h>
 #include <string>
+
 
 namespace CHEngine
 {
