@@ -87,14 +87,14 @@ cmake --build --preset make-release
 
 ---
 
-## 🧪 Testing & CI
+## Testing & CI
 
 We use **Google Test** for engine validation. The project includes automated CI workflows via GitHub Actions for Windows and Linux.
 
 ```bash
 # Run unit and integration tests
-./build/bin/tests/ChainedDecosUnitTests.exe
-./build/bin/tests/ChainedDecosIntegrationTests.exe
+./build/bin/tests/EngineUnitTests.exe
+./build/bin/tests/SceneEntityTest.exe
 ```
 
 ---
