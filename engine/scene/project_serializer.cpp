@@ -9,7 +9,7 @@ ProjectSerializer::ProjectSerializer(Ref<Project> project) : m_Project(project)
 {
 }
 
-void ProjectSerializer::Serialize(const std::filesystem::path &filepath)
+bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
 {
     const auto &config = m_Project->m_Config;
 
@@ -27,7 +27,14 @@ void ProjectSerializer::Serialize(const std::filesystem::path &filepath)
     out << YAML::EndMap; // Project
 
     std::ofstream fout(filepath);
-    fout << out.c_str();
+    if (fout.is_open())
+    {
+        fout << out.c_str();
+        return true;
+    }
+
+    CH_CORE_ERROR("Failed to save project file: {0}", filepath.string());
+    return false;
 }
 
 bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)

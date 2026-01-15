@@ -1,6 +1,7 @@
 #ifndef CH_BASE_H
 #define CH_BASE_H
 
+#include "engine/core/log.h"
 #include <memory>
 
 // Platform detection
@@ -44,6 +45,29 @@
 
 namespace CHEngine
 {
+// Assertions
+#ifdef CH_ENABLE_ASSERTS
+#define CH_ASSERT(x, ...)                                                                          \
+    {                                                                                              \
+        if (!(x))                                                                                  \
+        {                                                                                          \
+            CH_ERROR("Assertion Failed: {0}", ##__VA_ARGS__);                                      \
+            CH_DEBUGBREAK();                                                                       \
+        }                                                                                          \
+    }
+#define CH_CORE_ASSERT(x, ...)                                                                     \
+    {                                                                                              \
+        if (!(x))                                                                                  \
+        {                                                                                          \
+            CH_CORE_ERROR("Assertion Failed: {0}", ##__VA_ARGS__);                                 \
+            CH_DEBUGBREAK();                                                                       \
+        }                                                                                          \
+    }
+#else
+#define CH_ASSERT(x, ...)
+#define CH_CORE_ASSERT(x, ...)
+#endif
+
 template <typename T> using Scope = std::unique_ptr<T>;
 template <typename T, typename... Args> constexpr Scope<T> CreateScope(Args &&...args)
 {

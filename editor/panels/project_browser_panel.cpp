@@ -131,7 +131,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
         ImGui::EndGroup();
     };
 
-    drawActionCard("New Project", PROJECT_ROOT_DIR "/resources/map_editor/newproject.jpg",
+    drawActionCard("New Project", "engine:icons/newproject.jpg",
                    "Start a fresh journey with a clean scene and default settings.",
                    [&]()
                    {
@@ -141,7 +141,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
 
     ImGui::SameLine(0, gap);
 
-    drawActionCard("Open Project", PROJECT_ROOT_DIR "/resources/map_editor/folder.png",
+    drawActionCard("Open Project", "engine:icons/folder.png",
                    "Continue working on an existing Chained Engine project file.",
                    [&]()
                    {

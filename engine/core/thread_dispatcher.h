@@ -10,7 +10,6 @@
 #include <thread>
 #include <vector>
 
-
 namespace CHEngine
 {
 class ThreadDispatcher
@@ -42,6 +41,14 @@ public:
     static void DispatchMain(std::function<void()> func);
 
     static void ExecuteMainThreadQueue();
+    static std::thread::id GetMainThreadId()
+    {
+        return s_MainThreadId;
+    }
+    static bool IsMainThread()
+    {
+        return std::this_thread::get_id() == s_MainThreadId;
+    }
 
 private:
     static void WorkerThread();
@@ -55,6 +62,7 @@ private:
 
     static std::queue<std::function<void()>> s_MainThreadQueue;
     static std::mutex s_MainThreadMutex;
+    static std::thread::id s_MainThreadId;
 };
 } // namespace CHEngine
 
