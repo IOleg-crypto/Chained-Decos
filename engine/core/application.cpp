@@ -24,6 +24,10 @@ Application::Application(const Config &config)
     // Log::Init(); // Removed
     CH_CORE_INFO("Initializing Engine..."); // Added
     SetTraceLogLevel(LOG_WARNING);          // Reduce spam
+
+    // Enable resizing and MSAA
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+
     InitWindow(config.Width, config.Height, config.Title.c_str());
     SetTargetFPS(60);
     SetExitKey(KEY_NULL); // Prevent ESC from closing the app
