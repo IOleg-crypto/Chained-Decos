@@ -92,6 +92,11 @@ void EditorLayer::OnDetach()
 
 void EditorLayer::OnUpdate(float deltaTime)
 {
+    if (IsKeyPressed(KEY_F11))
+    {
+        ToggleFullscreen();
+    }
+
     if (m_SceneState == SceneState::Edit)
     {
         m_EditorCamera.OnUpdate(deltaTime);
@@ -231,6 +236,8 @@ void EditorLayer::UI_DrawMenuBar()
             ImGui::MenuItem("Content Browser", nullptr, &m_ShowContentBrowser);
             ImGui::MenuItem("Console", nullptr, true);
             ImGui::Separator();
+            if (ImGui::MenuItem("Fullscreen", "F11", IsWindowFullscreen()))
+                ToggleFullscreen();
             if (ImGui::MenuItem("Reset UI Layout"))
                 ResetLayout();
 
