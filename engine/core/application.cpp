@@ -1,6 +1,7 @@
 #include "application.h"
 #include "engine/audio/audio_manager.h"
 #include "engine/core/input.h"
+#include "engine/core/input_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/thread_dispatcher.h"
 #include "engine/physics/physics.h"
@@ -34,20 +35,29 @@ Application::Application(const Config &config)
     ThreadDispatcher::Init();
     Physics::Init();
     AssetManager::Init();
-    AudioManager::Init(); // Added
+    AudioManager::Init();
+    InputManager::Init();
 
-    // Register Default Input Actions
+    // Register Default Input Actions (old system - for compatibility)
     Input::RegisterAction("Jump", KEY_SPACE);
     Input::RegisterAction("Teleport", KEY_F);
 
     // Register Game-Specific Scripts
     RegisterGameScripts();
 
+    // Load Input Action Graph (new system)
+    if (InputManager::LoadInputGraph("assets/input/gameplay_input.json"))
+    {
+        InputManager::PushContext("Gameplay");
+        CH_CORE_INFO("Input Action System initialized with Gameplay context");
+    }
+
     CH_CORE_INFO("Application Initialized: %s (%dx%d)", config.Title, config.Width, config.Height);
 }
 
 Application::~Application()
 {
+    InputManager::Shutdown();
     AssetManager::Shutdown();
     ThreadDispatcher::Shutdown();
     Physics::Shutdown();
