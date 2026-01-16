@@ -10,7 +10,6 @@ class ScriptableEntity;
 
 /**
  * @brief Component that enables Native (C++) scripting for an entity.
- * Following Hazel-style architecture.
  */
 struct ScriptInstance
 {
