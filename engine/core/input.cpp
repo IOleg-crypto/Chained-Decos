@@ -1,5 +1,6 @@
 #include "input.h"
 #include "engine/core/events.h"
+#include "input_manager.h"
 #include <algorithm>
 
 namespace CHEngine
@@ -131,12 +132,14 @@ void Input::PollEvents(std::function<void(class Event &)> eventCallback)
     while (key != 0)
     {
         OnKeyPressed(key);
-        // Only add if not already in active keys (Raylib can multi-trigger some keys? Usually not
-        // for GetKeyPressed)
+        // Only add if not already in active keys
         if (std::find(s_ActiveKeys.begin(), s_ActiveKeys.end(), key) == s_ActiveKeys.end())
         {
             s_ActiveKeys.push_back(key);
         }
+
+        // Notify InputManager for action processing
+        InputManager::ProcessKeyPressed(key);
 
         KeyPressedEvent e(key, false);
         eventCallback(e);
@@ -152,6 +155,10 @@ void Input::PollEvents(std::function<void(class Event &)> eventCallback)
         if (::IsKeyReleased(activeKey))
         {
             OnKeyReleased(activeKey);
+
+            // Notify InputManager for action processing
+            InputManager::ProcessKeyReleased(activeKey);
+
             KeyReleasedEvent e(activeKey);
             eventCallback(e);
             it = s_ActiveKeys.erase(it);
@@ -214,6 +221,9 @@ void Input::UpdateState()
     s_MouseDelta = {currentMousePos.x - s_LastMousePosition.x,
                     currentMousePos.y - s_LastMousePosition.y};
     s_LastMousePosition = currentMousePos;
+
+    // Process axis inputs for InputManager (continuous input like WASD movement)
+    InputManager::ProcessAxisInput();
 }
 
 void Input::OnKeyPressed(int key)
