@@ -62,6 +62,17 @@ void InputGraphPanel::RenderActionList()
     {
         ImGui::TextColored(ImVec4(1, 0, 0, 1), "Context '%s' not found!",
                            m_SelectedContext.c_str());
+
+        if (ImGui::Button("Create Default Gameplay Context"))
+        {
+            InputManager::RegisterContext("Gameplay");
+            CH_CORE_INFO("Created default Gameplay context via editor");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Load assets/input/gameplay_input.json"))
+        {
+            LoadContext("assets/input/gameplay_input.json");
+        }
         return;
     }
 
