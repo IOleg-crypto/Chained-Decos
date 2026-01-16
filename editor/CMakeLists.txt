@@ -28,6 +28,8 @@ set(EDITOR_SOURCES
     panels/viewport_panel.h
     panels/environment_panel.h
     panels/environment_panel.cpp
+    panels/input_graph_panel.h
+    panels/input_graph_panel.cpp
     ui/toolbar.h
     ui/toolbar.cpp
     ui/project_selector.h

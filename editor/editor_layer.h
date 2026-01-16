@@ -10,6 +10,7 @@
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/environment_panel.h"
+#include "panels/input_graph_panel.h"
 #include "panels/inspector_panel.h"
 #include "panels/project_browser_panel.h"
 #include "panels/scene_hierarchy_panel.h"
@@ -89,6 +90,7 @@ private:
     ConsolePanel m_ConsolePanel;
     ViewportPanel m_ViewportPanel;
     EnvironmentPanel m_EnvironmentPanel;
+    InputGraphPanel m_InputGraphPanel;
     bool m_ShowContentBrowser = true;
 };
 } // namespace CHEngine

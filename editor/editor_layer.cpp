@@ -305,6 +305,7 @@ void EditorLayer::UI_DrawPanels()
     m_EnvironmentPanel.OnImGuiRender(m_ActiveScene.get(), !bIsEdit, &m_DebugRenderFlags);
     m_InspectorPanel.OnImGuiRender(m_ActiveScene.get(), m_SceneHierarchyPanel.GetSelectedEntity(),
                                    !bIsEdit);
+    m_InputGraphPanel.OnImGuiRender();
 }
 
 void EditorLayer::NewProject()
