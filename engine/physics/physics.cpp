@@ -3,6 +3,7 @@
 #include "collision/collision.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/scene/components.h"
+#include "engine/scene/project.h"
 #include "engine/scene/scene.h"
 #include <cfloat>
 #include <chrono>
@@ -28,29 +29,25 @@ static void ProcessColliderData(entt::registry &sceneRegistry)
         if (colliderComp.Type == ColliderType::Box && colliderComp.bAutoCalculate)
         {
             auto &modelComp = view.get<ModelComponent>(entity);
-            BoundingBox box = AssetManager::GetModelBoundingBox(modelComp.ModelPath);
-
-            colliderComp.Size = Vector3Subtract(box.max, box.min);
-            colliderComp.Offset = box.min;
-            colliderComp.bAutoCalculate = false;
+            auto asset = Assets::LoadModel(modelComp.ModelPath);
+            if (asset)
+            {
+                BoundingBox box = asset->GetBoundingBox();
+                colliderComp.Size = Vector3Subtract(box.max, box.min);
+                colliderComp.Offset = box.min;
+                colliderComp.bAutoCalculate = false;
+            }
         }
         else if (colliderComp.Type == ColliderType::Mesh && !colliderComp.BVHRoot &&
                  !colliderComp.ModelPath.empty())
         {
-            // Load model async if not cached
-            if (!AssetManager::IsModelReady(colliderComp.ModelPath))
-            {
-                AssetManager::LoadModelAsync(colliderComp.ModelPath);
-                continue; // Will process next frame when ready
-            }
-
-            Model model = AssetManager::LoadModel(colliderComp.ModelPath);
-            if (model.meshCount > 0)
+            auto asset = Assets::LoadModel(colliderComp.ModelPath);
+            if (asset && asset->GetModel().meshCount > 0)
             {
                 // Start building BVH asynchronously if not already building
                 if (!colliderComp.BVHFuture.valid())
                 {
-                    colliderComp.BVHFuture = BVHBuilder::BuildAsync(model).share();
+                    colliderComp.BVHFuture = BVHBuilder::BuildAsync(asset->GetModel()).share();
                     CH_CORE_INFO("Started BVH Build Async for entity %d", (uint32_t)entity);
                 }
 
@@ -60,7 +57,7 @@ static void ProcessColliderData(entt::registry &sceneRegistry)
                 {
                     colliderComp.BVHRoot = colliderComp.BVHFuture.get();
 
-                    BoundingBox box = AssetManager::GetModelBoundingBox(colliderComp.ModelPath);
+                    BoundingBox box = asset->GetBoundingBox();
                     colliderComp.Offset = box.min;
                     colliderComp.Size = Vector3Subtract(box.max, box.min);
                     CH_CORE_INFO("BVH Build Finished for entity %d", (uint32_t)entity);
@@ -72,7 +69,10 @@ static void ProcessColliderData(entt::registry &sceneRegistry)
 
 static void ApplyRigidBodyPhysics(entt::registry &sceneRegistry, float deltaTime)
 {
-    const float GRAVITY_CONSTANT = 20.0f;
+    float gravity = 20.0f;
+    if (Project::GetActive())
+        gravity = Project::GetActive()->GetConfig().Physics.Gravity;
+
     auto view = sceneRegistry.view<TransformComponent, RigidBodyComponent>();
     for (auto entity : view)
     {
@@ -81,7 +81,7 @@ static void ApplyRigidBodyPhysics(entt::registry &sceneRegistry, float deltaTime
 
         if (rigidBody.UseGravity && !rigidBody.IsGrounded)
         {
-            rigidBody.Velocity.y -= GRAVITY_CONSTANT * deltaTime;
+            rigidBody.Velocity.y -= gravity * deltaTime;
         }
 
         if (!rigidBody.IsKinematic || Vector3Length(rigidBody.Velocity) > 0.001f)
@@ -183,21 +183,49 @@ static void ResolveCollisionLogic(entt::registry &sceneRegistry)
                     rbBox.min = Vector3Add(entityTransform.Translation, rbColliderOffset);
                     rbBox.max = Vector3Add(rbBox.min, rbcSize);
 
-                    Vector3 overlapNormal;
+                    // Transform world rbBox into other collider's local space
+                    Matrix meshMatrix = otherTransform.GetTransform();
+                    Matrix invMeshMatrix = MatrixInvert(meshMatrix);
+
+                    // We need to transform the box corners and find the new AABB in local space
+                    // This is conservative but required since BVH expects an AABB
+                    Vector3 corners[8] = {{rbBox.min.x, rbBox.min.y, rbBox.min.z},
+                                          {rbBox.max.x, rbBox.min.y, rbBox.min.z},
+                                          {rbBox.min.x, rbBox.max.y, rbBox.min.z},
+                                          {rbBox.max.x, rbBox.max.y, rbBox.min.z},
+                                          {rbBox.min.x, rbBox.min.y, rbBox.max.z},
+                                          {rbBox.max.x, rbBox.min.y, rbBox.max.z},
+                                          {rbBox.min.x, rbBox.max.y, rbBox.max.z},
+                                          {rbBox.max.x, rbBox.max.y, rbBox.max.z}};
+
+                    BoundingBox localBox = {{1e30f, 1e30f, 1e30f}, {-1e30f, -1e30f, -1e30f}};
+                    for (int k = 0; k < 8; k++)
+                    {
+                        Vector3 localCorner = Vector3Transform(corners[k], invMeshMatrix);
+                        localBox.min = Vector3Min(localBox.min, localCorner);
+                        localBox.max = Vector3Max(localBox.max, localCorner);
+                    }
+
+                    Vector3 localNormal;
                     float overlapDepth;
 
-                    if (BVHBuilder::IntersectAABB(otherCollider.BVHRoot.get(), rbBox, overlapNormal,
-                                                  overlapDepth))
+                    if (BVHBuilder::IntersectAABB(otherCollider.BVHRoot.get(), localBox,
+                                                  localNormal, overlapDepth))
                     {
                         if (overlapDepth > 0.001f)
                         {
-                            // Resolution
+                            // Transform normal back to world space
+                            Vector3 worldNormal = Vector3Normalize(
+                                Vector3Subtract(Vector3Transform(localNormal, meshMatrix),
+                                                Vector3Transform({0, 0, 0}, meshMatrix)));
+
+                            // Resolution in world space
                             entityTransform.Translation =
                                 Vector3Add(entityTransform.Translation,
-                                           Vector3Scale(overlapNormal, overlapDepth));
+                                           Vector3Scale(worldNormal, overlapDepth));
 
                             // Grounding check based on normal
-                            if (overlapNormal.y > 0.5f)
+                            if (worldNormal.y > 0.5f)
                             {
                                 rigidBody.IsGrounded = true;
                                 if (rigidBody.Velocity.y < 0)
@@ -205,11 +233,11 @@ static void ResolveCollisionLogic(entt::registry &sceneRegistry)
                             }
 
                             // Sliding
-                            float dot = Vector3DotProduct(rigidBody.Velocity, overlapNormal);
+                            float dot = Vector3DotProduct(rigidBody.Velocity, worldNormal);
                             if (dot < 0)
                             {
                                 rigidBody.Velocity = Vector3Subtract(
-                                    rigidBody.Velocity, Vector3Scale(overlapNormal, dot));
+                                    rigidBody.Velocity, Vector3Scale(worldNormal, dot));
                             }
 
                             otherCollider.IsColliding = true;
@@ -305,9 +333,10 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
 
             Ray localRay = {localOrigin, localDir};
             float t_local = FLT_MAX;
-            Vector3 localNormal;
-
-            if (BVHBuilder::Raycast(colliderComp.BVHRoot.get(), localRay, t_local, localNormal))
+            Vector3 localNormal = {0, 0, 0};
+            int localMeshIndex = -1;
+            if (BVHBuilder::Raycast(colliderComp.BVHRoot.get(), localRay, t_local, localNormal,
+                                    localMeshIndex))
             {
                 Vector3 hitPosLocal = Vector3Add(localOrigin, Vector3Scale(localDir, t_local));
                 Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
@@ -325,6 +354,7 @@ RaycastResult Physics::Raycast(Scene *scene, Ray ray)
 
                     result.Normal = normalWorld;
                     result.Entity = entity;
+                    result.MeshIndex = localMeshIndex;
                 }
             }
         }
