@@ -1,6 +1,7 @@
 #include "scene_serializer.h"
 #include "components.h"
 #include "engine/core/log.h"
+#include "engine/core/thread_dispatcher.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
@@ -136,12 +137,40 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         auto &mc = entity.GetComponent<ModelComponent>();
         out << YAML::BeginMap;
         out << YAML::Key << "ModelPath" << YAML::Value << mc.ModelPath;
-        out << YAML::Key << "Material";
-        out << YAML::BeginMap;
-        out << YAML::Key << "AlbedoColor" << YAML::Value << mc.Material.AlbedoColor;
-        out << YAML::Key << "AlbedoPath" << YAML::Value << mc.Material.AlbedoPath;
+        out << YAML::Key << "Scale" << YAML::Value << mc.Scale;
         out << YAML::EndMap;
-        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<MaterialComponent>())
+    {
+        out << YAML::Key << "MaterialComponent";
+        auto &mc = entity.GetComponent<MaterialComponent>();
+        out << YAML::BeginSeq;
+        for (const auto &slot : mc.Slots)
+        {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Name" << YAML::Value << slot.Name;
+            out << YAML::Key << "Index" << YAML::Value << slot.Index;
+            out << YAML::Key << "Target" << YAML::Value << (int)slot.Target;
+            out << YAML::Key << "Material";
+            out << YAML::BeginMap;
+            out << YAML::Key << "AlbedoColor" << YAML::Value << slot.Material.AlbedoColor;
+            out << YAML::Key << "AlbedoPath" << YAML::Value << slot.Material.AlbedoPath;
+            out << YAML::Key << "OverrideAlbedo" << YAML::Value << slot.Material.OverrideAlbedo;
+            out << YAML::Key << "NormalMapPath" << YAML::Value << slot.Material.NormalMapPath;
+            out << YAML::Key << "OverrideNormal" << YAML::Value << slot.Material.OverrideNormal;
+            out << YAML::Key << "MetallicRoughnessPath" << YAML::Value
+                << slot.Material.MetallicRoughnessPath;
+            out << YAML::Key << "OverrideMetallicRoughness" << YAML::Value
+                << slot.Material.OverrideMetallicRoughness;
+            out << YAML::Key << "EmissivePath" << YAML::Value << slot.Material.EmissivePath;
+            out << YAML::Key << "OverrideEmissive" << YAML::Value << slot.Material.OverrideEmissive;
+            out << YAML::Key << "Metalness" << YAML::Value << slot.Material.Metalness;
+            out << YAML::Key << "Roughness" << YAML::Value << slot.Material.Roughness;
+            out << YAML::EndMap;
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
     }
 
     if (entity.HasComponent<SpawnComponent>())
@@ -366,15 +395,15 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
     if (entities)
     {
         // Phase 1: Pre-collect and pre-load all assets asynchronously
-        std::vector<std::string> modelPaths;
+        std::set<std::string> modelPaths;
         for (auto entity : entities)
         {
             auto mc = entity["ModelComponent"];
             if (mc)
-                modelPaths.push_back(mc["ModelPath"].as<std::string>());
+                modelPaths.insert(mc["ModelPath"].as<std::string>());
             auto cc = entity["ColliderComponent"];
             if (cc && cc["Type"].as<int>() == (int)ColliderType::Mesh)
-                modelPaths.push_back(cc["ModelPath"].as<std::string>());
+                modelPaths.insert(cc["ModelPath"].as<std::string>());
         }
 
         // Trigger batch async load
@@ -383,6 +412,10 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
             if (!path.empty())
                 AssetManager::LoadModelAsync(path);
         }
+
+        // Drain the main thread queue immediately to start loading these models
+        // while the background IO warmup for others might still be happening.
+        ThreadDispatcher::ExecuteMainThreadQueue();
 
         struct HierarchyTask
         {
@@ -396,13 +429,25 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
         {
             Entity entity;
             std::string path;
-            std::future<Ref<BVHNode>> future;
+            std::shared_future<Ref<BVHNode>> future;
         };
         std::vector<BVHTask> bvhTasks;
+        std::map<std::string, std::shared_future<Ref<BVHNode>>> bvhFutureMap;
 
+        std::set<uint64_t> seenUUIDs;
         for (auto entity : entities)
         {
             uint64_t uuid = entity["Entity"].as<uint64_t>();
+
+            // Collision check
+            if (seenUUIDs.count(uuid))
+            {
+                uint64_t oldUUID = uuid;
+                uuid = UUID(); // Generate new one
+                CH_CORE_WARN("SceneSerializer: Duplicate UUID {0} found! Regenerated as {1}",
+                             oldUUID, uuid);
+            }
+            seenUUIDs.insert(uuid);
 
             std::string name;
             auto tagComponent = entity["TagComponent"];
@@ -427,16 +472,45 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
             {
                 auto &mc = deserializedEntity.AddComponent<ModelComponent>();
                 mc.ModelPath = modelComponent["ModelPath"].as<std::string>();
+                if (modelComponent["Scale"])
+                    mc.Scale = modelComponent["Scale"].as<Vector3>();
 
-                if (modelComponent["Material"])
+                if (modelComponent["Material"] || modelComponent["Tint"])
                 {
-                    auto mat = modelComponent["Material"];
-                    mc.Material.AlbedoColor = mat["AlbedoColor"].as<Color>();
-                    mc.Material.AlbedoPath = mat["AlbedoPath"].as<std::string>();
-                }
-                else if (modelComponent["Tint"]) // Legacy support
-                {
-                    mc.Material.AlbedoColor = modelComponent["Tint"].as<Color>();
+                    auto &matComp = deserializedEntity.AddComponent<MaterialComponent>();
+                    MaterialSlot slot("Legacy Migration", -1);
+
+                    if (modelComponent["Material"])
+                    {
+                        auto mat = modelComponent["Material"];
+                        slot.Material.AlbedoColor = mat["AlbedoColor"].as<Color>();
+                        slot.Material.AlbedoPath = mat["AlbedoPath"].as<std::string>();
+                        if (mat["OverrideAlbedo"])
+                            slot.Material.OverrideAlbedo = mat["OverrideAlbedo"].as<bool>();
+                        if (mat["NormalMapPath"])
+                            slot.Material.NormalMapPath = mat["NormalMapPath"].as<std::string>();
+                        if (mat["OverrideNormal"])
+                            slot.Material.OverrideNormal = mat["OverrideNormal"].as<bool>();
+                        if (mat["MetallicRoughnessPath"])
+                            slot.Material.MetallicRoughnessPath =
+                                mat["MetallicRoughnessPath"].as<std::string>();
+                        if (mat["OverrideMetallicRoughness"])
+                            slot.Material.OverrideMetallicRoughness =
+                                mat["OverrideMetallicRoughness"].as<bool>();
+                        if (mat["EmissivePath"])
+                            slot.Material.EmissivePath = mat["EmissivePath"].as<std::string>();
+                        if (mat["OverrideEmissive"])
+                            slot.Material.OverrideEmissive = mat["OverrideEmissive"].as<bool>();
+                        if (mat["Metalness"])
+                            slot.Material.Metalness = mat["Metalness"].as<float>();
+                        if (mat["Roughness"])
+                            slot.Material.Roughness = mat["Roughness"].as<float>();
+                    }
+                    else if (modelComponent["Tint"])
+                    {
+                        slot.Material.AlbedoColor = modelComponent["Tint"].as<Color>();
+                    }
+                    matComp.Slots.push_back(slot);
                 }
             }
 
@@ -451,13 +525,56 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
             auto materialComponent = entity["MaterialComponent"];
             if (materialComponent)
             {
-                // Legacy support for separate MaterialComponent
-                if (!deserializedEntity.HasComponent<ModelComponent>())
-                    deserializedEntity.AddComponent<ModelComponent>();
+                if (!deserializedEntity.HasComponent<MaterialComponent>())
+                    deserializedEntity.AddComponent<MaterialComponent>();
 
-                auto &mc = deserializedEntity.GetComponent<ModelComponent>();
-                mc.Material.AlbedoColor = materialComponent["AlbedoColor"].as<Color>();
-                mc.Material.AlbedoPath = materialComponent["AlbedoPath"].as<std::string>();
+                auto &mc = deserializedEntity.GetComponent<MaterialComponent>();
+                if (materialComponent.IsSequence())
+                {
+                    for (auto slotNode : materialComponent)
+                    {
+                        MaterialSlot slot;
+                        slot.Name = slotNode["Name"].as<std::string>();
+                        slot.Index = slotNode["Index"].as<int>();
+                        if (slotNode["Target"])
+                            slot.Target = (MaterialSlotTarget)slotNode["Target"].as<int>();
+
+                        auto mat = slotNode["Material"];
+                        slot.Material.AlbedoColor = mat["AlbedoColor"].as<Color>();
+                        slot.Material.AlbedoPath = mat["AlbedoPath"].as<std::string>();
+                        if (mat["OverrideAlbedo"])
+                            slot.Material.OverrideAlbedo = mat["OverrideAlbedo"].as<bool>();
+                        if (mat["NormalMapPath"])
+                            slot.Material.NormalMapPath = mat["NormalMapPath"].as<std::string>();
+                        if (mat["OverrideNormal"])
+                            slot.Material.OverrideNormal = mat["OverrideNormal"].as<bool>();
+                        if (mat["MetallicRoughnessPath"])
+                            slot.Material.MetallicRoughnessPath =
+                                mat["MetallicRoughnessPath"].as<std::string>();
+                        if (mat["OverrideMetallicRoughness"])
+                            slot.Material.OverrideMetallicRoughness =
+                                mat["OverrideMetallicRoughness"].as<bool>();
+                        if (mat["EmissivePath"])
+                            slot.Material.EmissivePath = mat["EmissivePath"].as<std::string>();
+                        if (mat["OverrideEmissive"])
+                            slot.Material.OverrideEmissive = mat["OverrideEmissive"].as<bool>();
+                        if (mat["Metalness"])
+                            slot.Material.Metalness = mat["Metalness"].as<float>();
+                        if (mat["Roughness"])
+                            slot.Material.Roughness = mat["Roughness"].as<float>();
+
+                        mc.Slots.push_back(slot);
+                    }
+                }
+                else
+                {
+                    // Legacy migration case already handled if it was in ModelComponent,
+                    // but if there's a standalone old MaterialComponent:
+                    MaterialSlot slot("Legacy Standalone", -1);
+                    slot.Material.AlbedoColor = materialComponent["AlbedoColor"].as<Color>();
+                    slot.Material.AlbedoPath = materialComponent["AlbedoPath"].as<std::string>();
+                    mc.Slots.push_back(slot);
+                }
             }
 
             auto colliderComponent = entity["ColliderComponent"];
@@ -474,12 +591,28 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 if (cc.Type == ColliderType::Mesh && !cc.ModelPath.empty())
                 {
                     // Block until model is loaded (it might be in cache or loading async)
-                    Model model = AssetManager::LoadModel(cc.ModelPath);
-                    if (model.meshCount > 0)
+                    auto asset = Assets::LoadModel(cc.ModelPath);
+                    if (asset && asset->GetModel().meshCount > 0)
                     {
-                        // Build BVH asynchronously
-                        bvhTasks.push_back(
-                            {deserializedEntity, cc.ModelPath, BVHBuilder::BuildAsync(model)});
+                        // Check model's persistent cache first
+                        auto existingBVH = asset->GetBVHCache();
+                        if (existingBVH)
+                        {
+                            cc.BVHRoot = existingBVH;
+                        }
+                        else
+                        {
+                            // Check if a build task is already in flight for this mesh
+                            if (bvhFutureMap.find(cc.ModelPath) == bvhFutureMap.end())
+                            {
+                                bvhFutureMap[cc.ModelPath] =
+                                    BVHBuilder::BuildAsync(asset->GetModel());
+                            }
+
+                            // Track that this entity needs to receive the BVH result
+                            bvhTasks.push_back(
+                                {deserializedEntity, cc.ModelPath, bvhFutureMap[cc.ModelPath]});
+                        }
                     }
                 }
             }
@@ -601,8 +734,15 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
         {
             if (task.entity.HasComponent<ColliderComponent>())
             {
-                task.entity.GetComponent<ColliderComponent>().BVHRoot = task.future.get();
-                CH_CORE_INFO("Parallel BVH Construction complete for: %s", task.path.c_str());
+                auto bvh = task.future.get();
+                task.entity.GetComponent<ColliderComponent>().BVHRoot = bvh;
+
+                // Also update the ModelAsset's persistent cache if not already set
+                auto asset = Assets::LoadModel(task.path);
+                if (asset && !asset->GetBVHCache())
+                    asset->SetBVHCache(bvh);
+
+                CH_CORE_INFO("BVH Construction complete for: %s", task.path.c_str());
             }
         }
     }

@@ -29,6 +29,7 @@ private:
     EventCallbackFn m_EventCallback;
 
     bool m_ShowCreateDialog = false;
+    bool m_OpenCreatePopupRequest = false;
     char m_ProjectNameBuffer[256] = "MyProject";
     char m_ProjectLocationBuffer[512] = "";
 };
