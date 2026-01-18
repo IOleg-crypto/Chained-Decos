@@ -13,12 +13,17 @@ class InspectorPanel
 {
 public:
     InspectorPanel() = default;
-
-public:
     void OnImGuiRender(Scene *scene, Entity entity, bool readOnly = false);
+    void SetSelectedMeshIndex(int index)
+    {
+        m_SelectedMeshIndex = index;
+    }
 
 private:
     void DrawComponents(Entity entity);
+
+private:
+    int m_SelectedMeshIndex = -1;
 };
 } // namespace CHEngine
 

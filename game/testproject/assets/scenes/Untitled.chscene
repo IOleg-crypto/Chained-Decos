@@ -1,0 +1,14 @@
+Scene: Untitled
+Skybox:
+  TexturePath: ""
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Entities:
+  - Entity: 6450974704076442874
+    TagComponent:
+      Tag: Default Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]

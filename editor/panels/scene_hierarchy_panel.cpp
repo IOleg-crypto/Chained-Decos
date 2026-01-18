@@ -1,7 +1,7 @@
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
 #include "engine/scene/components.h"
-#include "logic/undo/entity_commands.h"
+#include "undo/entity_commands.h"
 #include <imgui.h>
 
 namespace CHEngine
@@ -131,6 +131,9 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 
 bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
 {
+    if (!entity || !entity.IsValid())
+        return false;
+
     if (m_DrawnEntities.find(entity) != m_DrawnEntities.end())
         return false;
 

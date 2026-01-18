@@ -8,9 +8,6 @@
 
 namespace CHEngine
 {
-/**
- * @brief Command for destroying an entity
- */
 class DestroyEntityCommand : public IEditorCommand
 {
 public:
@@ -23,8 +20,8 @@ public:
         // TODO: In a real engine, we'd serialize the entity here for Undo
         // For now, let's just log it. Destroying in EnTT is destructive.
         // A better approach is to have a "Recycle Bin" or "Inactive" state.
-        CH_CORE_INFO("Destroying entity via command: %s",
-                     m_Entity.GetComponent<TagComponent>().Tag.c_str());
+        CH_CORE_INFO("Destroying entity via command: {}",
+                     m_Entity.GetComponent<TagComponent>().Tag);
         m_Scene->DestroyEntity(m_Entity);
     }
 
@@ -44,9 +41,6 @@ private:
     Scene *m_Scene;
 };
 
-/**
- * @brief Command for creating a new entity
- */
 class CreateEntityCommand : public IEditorCommand
 {
 public:

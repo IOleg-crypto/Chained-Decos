@@ -7,7 +7,7 @@ namespace CHEngine
 void InspectorPanel::OnImGuiRender(Scene *scene, Entity entity, bool readOnly)
 {
     ImGui::Begin("Inspector");
-    if (entity)
+    if (entity && entity.IsValid())
     {
         ImGui::BeginDisabled(readOnly);
         DrawComponents(entity);
@@ -40,6 +40,7 @@ void InspectorPanel::DrawComponents(Entity entity)
 
     ComponentUI::DrawTransform(entity);
     ComponentUI::DrawModel(entity);
+    ComponentUI::DrawMaterial(entity, m_SelectedMeshIndex);
     ComponentUI::DrawCollider(entity);
     ComponentUI::DrawRigidBody(entity);
     ComponentUI::DrawSpawn(entity);
