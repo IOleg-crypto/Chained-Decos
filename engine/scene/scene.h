@@ -60,6 +60,11 @@ template <typename T, typename... Args> T &Entity::AddComponent(Args &&...args)
     return m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
 }
 
+inline bool Entity::IsValid() const
+{
+    return m_Scene && m_Scene->m_Registry.valid(m_EntityHandle);
+}
+
 template <typename T> T &Entity::GetComponent()
 {
     return m_Scene->m_Registry.get<T>(m_EntityHandle);

@@ -1,9 +1,9 @@
 #ifndef CH_AUDIO_MANAGER_H
 #define CH_AUDIO_MANAGER_H
 
-#include <raylib.h>
+#include "engine/core/base.h"
+#include "sound_asset.h"
 #include <string>
-#include <unordered_map>
 
 namespace CHEngine
 {
@@ -13,14 +13,10 @@ public:
     static void Init();
     static void Shutdown();
 
-    static void LoadSound(const std::string &name, const std::string &path);
-    static void PlaySound(const std::string &name, float volume = 1.0f, float pitch = 1.0f);
-    static void StopSound(const std::string &name);
+    static void PlaySound(Ref<SoundAsset> asset, float volume = 1.0f, float pitch = 1.0f);
+    static void StopSound(Ref<SoundAsset> asset);
 
     static void SetMasterVolume(float volume);
-
-private:
-    static std::unordered_map<std::string, Sound> s_Sounds;
 };
 } // namespace CHEngine
 

@@ -4,6 +4,7 @@ set(EDITOR_SOURCES
     editor_main.cpp
     editor_layer.h
     editor_layer.cpp
+    editor_settings.cpp
     viewport/editor_gizmo.h
     viewport/editor_gizmo.cpp
     viewport/editor_camera.h
@@ -14,11 +15,11 @@ set(EDITOR_SOURCES
     panels/inspector_panel.cpp
     panels/component_ui.h
     panels/component_ui.cpp
-    logic/undo/command_history.cpp
-    logic/undo/command_history.h
-    logic/undo/editor_command.h
-    logic/undo/transform_command.h
-    logic/undo/entity_commands.h
+    undo/command_history.cpp
+    undo/command_history.h
+    undo/editor_command.h
+    undo/transform_command.h
+    undo/entity_commands.h
     panels/content_browser_panel.h
     panels/content_browser_panel.cpp
     panels/console_panel.h
@@ -28,8 +29,6 @@ set(EDITOR_SOURCES
     panels/viewport_panel.h
     panels/environment_panel.h
     panels/environment_panel.cpp
-    panels/input_graph_panel.h
-    panels/input_graph_panel.cpp
     ui/toolbar.h
     ui/toolbar.cpp
     ui/project_selector.h
@@ -38,7 +37,7 @@ set(EDITOR_SOURCES
 
 add_executable(ChainedEditor ${EDITOR_SOURCES})
 
-target_link_libraries(ChainedEditor PUBLIC engine nfd)
+target_link_libraries(ChainedEditor PUBLIC engine ChainedDecosGame nfd)
 target_include_directories(ChainedEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Copy resources to build directory

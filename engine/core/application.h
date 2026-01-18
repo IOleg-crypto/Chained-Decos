@@ -5,9 +5,9 @@
 #include "engine/core/events.h"
 #include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
-#include <raylib.h>
+#include "engine/core/window.h"
+#include "engine/scene/scene.h"
 #include <string>
-
 
 namespace CHEngine
 {
@@ -17,6 +17,8 @@ struct ApplicationConfig
     std::string Title = "Chained Engine";
     int Width = 1280;
     int Height = 720;
+    bool Fullscreen = false;
+    int TargetFPS = 60;
 };
 
 class Application
@@ -55,12 +57,29 @@ public:
         return *s_Instance;
     }
 
+    Scope<Window> &GetWindow()
+    {
+        return m_Window;
+    }
+
+    Ref<Scene> GetActiveScene()
+    {
+        return m_ActiveScene;
+    }
+    void SetActiveScene(Ref<Scene> scene)
+    {
+        m_ActiveScene = scene;
+    }
+    void LoadScene(const std::string &path);
+
 private:
     static Application *s_Instance;
 
     bool m_Running = false;
     float m_DeltaTime = 0.0f;
     LayerStack m_LayerStack;
+    Scope<Window> m_Window;
+    Ref<Scene> m_ActiveScene;
 };
 
 // To be defined by CLIENT

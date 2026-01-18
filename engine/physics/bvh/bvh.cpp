@@ -6,8 +6,9 @@
 
 namespace CHEngine
 {
-CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c)
-    : v0(a), v1(b), v2(c)
+CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c,
+                                     int index)
+    : v0(a), v1(b), v2(c), meshIndex(index)
 {
     min = Vector3Min(Vector3Min(v0, v1), v2);
     max = Vector3Max(Vector3Max(v0, v1), v2);
@@ -71,7 +72,7 @@ Ref<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
 
                 tris.emplace_back(Vector3Transform(v0, meshTransform),
                                   Vector3Transform(v1, meshTransform),
-                                  Vector3Transform(v2, meshTransform));
+                                  Vector3Transform(v2, meshTransform), i);
             }
         }
         else
@@ -84,7 +85,7 @@ Ref<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
 
                 tris.emplace_back(Vector3Transform(v0, meshTransform),
                                   Vector3Transform(v1, meshTransform),
-                                  Vector3Transform(v2, meshTransform));
+                                  Vector3Transform(v2, meshTransform), i);
             }
         }
     }
@@ -204,11 +205,12 @@ Ref<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, in
     return node;
 }
 
-bool BVHBuilder::Raycast(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal)
+bool BVHBuilder::Raycast(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal,
+                         int &meshIndex)
 {
     if (!node)
         return false;
-    return RayInternal(node, ray, t, normal);
+    return RayInternal(node, ray, t, normal, meshIndex);
 }
 
 static bool IntersectRayAABB(const Ray &ray, Vector3 min, Vector3 max, float &t)
@@ -229,7 +231,8 @@ static bool IntersectRayAABB(const Ray &ray, Vector3 min, Vector3 max, float &t)
     return true;
 }
 
-bool BVHBuilder::RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal)
+bool BVHBuilder::RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal,
+                             int &meshIndex)
 {
     float tBox;
     if (!IntersectRayAABB(ray, node->min, node->max, tBox))
@@ -251,6 +254,7 @@ bool BVHBuilder::RayInternal(const BVHNode *node, const Ray &ray, float &t, Vect
                     t = triT;
                     normal = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(tri.v1, tri.v0),
                                                                   Vector3Subtract(tri.v2, tri.v0)));
+                    meshIndex = tri.meshIndex;
                     hit = true;
                 }
             }
@@ -258,9 +262,9 @@ bool BVHBuilder::RayInternal(const BVHNode *node, const Ray &ray, float &t, Vect
     }
     else
     {
-        if (RayInternal(node->left.get(), ray, t, normal))
+        if (RayInternal(node->left.get(), ray, t, normal, meshIndex))
             hit = true;
-        if (RayInternal(node->right.get(), ray, t, normal))
+        if (RayInternal(node->right.get(), ray, t, normal, meshIndex))
             hit = true;
     }
 
