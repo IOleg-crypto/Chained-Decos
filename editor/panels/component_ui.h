@@ -10,6 +10,7 @@ namespace ComponentUI
 void DrawTag(Entity entity);
 void DrawTransform(Entity entity);
 void DrawModel(Entity entity);
+void DrawMaterial(Entity entity, int hitMeshIndex = -1);
 void DrawCollider(Entity entity);
 void DrawRigidBody(Entity entity);
 void DrawSpawn(Entity entity);

@@ -6,9 +6,10 @@
 #include "engine/scene/scene.h"
 #include <string>
 
-
 namespace CHEngine
 {
+class ShaderAsset;
+
 struct DebugRenderFlags
 {
     bool DrawColliders = false;
@@ -34,6 +35,9 @@ public:
     static void DrawGrid(int slices, float spacing);
     static void DrawLine(Vector3 start, Vector3 end, Color color);
     static void DrawModel(const std::string &path, const Matrix &transform,
+                          const std::vector<struct MaterialSlot> &overrides,
+                          Vector3 scale = {1.0f, 1.0f, 1.0f});
+    static void DrawModel(const std::string &path, const Matrix &transform,
                           const MaterialInstance &material, Vector3 scale = {1.0f, 1.0f, 1.0f});
     static void DrawModel(const std::string &path, const Matrix &transform, Color tint = WHITE,
                           Vector3 scale = {1.0f, 1.0f, 1.0f});
@@ -54,7 +58,7 @@ public:
 private:
     struct ShaderState
     {
-        Shader lightingShader;
+        Ref<ShaderAsset> lightingShader;
         int lightDirLoc;
         int lightColorLoc;
         int ambientLoc;
@@ -69,8 +73,8 @@ private:
             int enabled;
         } lightLocs[8];
 
-        Shader skyboxShader;
-        Shader panoramaShader;
+        Ref<ShaderAsset> skyboxShader;
+        Ref<ShaderAsset> panoramaShader;
         Model skyboxCube;
         int skyboxVflippedLoc;
         int skyboxDoGammaLoc;
@@ -87,7 +91,7 @@ private:
         int panoContrastLoc;
 
         // Infinite Grid
-        Shader gridShader;
+        Ref<ShaderAsset> gridShader;
         unsigned int gridVAO = 0;
         unsigned int gridVBO = 0;
         int gridNearLoc;

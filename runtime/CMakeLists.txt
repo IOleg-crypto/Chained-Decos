@@ -6,7 +6,7 @@ set(RUNTIME_SOURCES
 
 add_executable(ChainedRuntime ${RUNTIME_SOURCES})
 
-target_link_libraries(ChainedRuntime PRIVATE engine)
+target_link_libraries(ChainedRuntime PRIVATE engine ChainedDecosGame)
 target_include_directories(ChainedRuntime PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Project configuration for ChainedRuntime

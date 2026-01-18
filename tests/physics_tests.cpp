@@ -1,5 +1,6 @@
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
+#include "engine/scene/scene.h"
 #include <gtest/gtest.h>
 
 using namespace CHEngine;

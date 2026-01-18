@@ -8,13 +8,25 @@ namespace CHEngine
 {
 struct MaterialInstance
 {
+    // Albedo/Base Color
     Color AlbedoColor = WHITE;
     std::string AlbedoPath = "";
+    bool OverrideAlbedo = false;
 
-    // Potential future fields
-    // float Metalness = 0.0f;
-    // float Roughness = 0.5f;
-    // std::string NormalMapPath = "";
+    // PBR Maps
+    std::string NormalMapPath = "";
+    bool OverrideNormal = false;
+
+    std::string MetallicRoughnessPath = "";
+    bool OverrideMetallicRoughness = false;
+
+    // Optional Emissive
+    std::string EmissivePath = "";
+    bool OverrideEmissive = false;
+
+    // Material Parameters
+    float Metalness = 0.0f;
+    float Roughness = 0.5f;
 
     MaterialInstance() = default;
 };

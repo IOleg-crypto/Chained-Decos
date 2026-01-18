@@ -26,8 +26,9 @@ public:
 
     operator bool() const
     {
-        return m_EntityHandle != entt::null;
+        return m_EntityHandle != entt::null && m_Scene != nullptr;
     }
+    bool IsValid() const;
     operator entt::entity() const
     {
         return m_EntityHandle;

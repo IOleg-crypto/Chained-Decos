@@ -54,13 +54,6 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
             Render::DrawGrid((int)viewportPanelSize.x, 1.0f);
         SceneRender::SubmitScene(scene, debugFlags);
 
-        // Gizmos
-        if (selectedEntity && allowTools)
-        {
-            gizmo.RenderAndHandle(scene, camera, selectedEntity, currentTool,
-                                  {m_ViewportSize.x, m_ViewportSize.y}, m_Hovered);
-        }
-
         SceneRender::EndScene();
     }
 
@@ -194,7 +187,7 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
             pickedEntity = Entity{res.Entity, scene};
             if (m_EventCallback)
             {
-                EntitySelectedEvent e(res.Entity, scene);
+                EntitySelectedEvent e(res.Entity, scene, res.MeshIndex);
                 m_EventCallback(e);
             }
         }
@@ -203,7 +196,7 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
             pickedEntity = {}; // Deselect if clicked empty space
             if (m_EventCallback)
             {
-                EntitySelectedEvent e(entt::null, scene);
+                EntitySelectedEvent e(entt::null, scene, -1);
                 m_EventCallback(e);
             }
         }
@@ -214,22 +207,45 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
     // Draw texture in ImGui
     rlImGuiImageRenderTextureFit(&m_ViewportTexture, true);
 
+    // Gizmos
+    if (selectedEntity && allowTools)
+    {
+        gizmo.RenderAndHandle(scene, camera, selectedEntity, currentTool, viewportPos,
+                              ImVec2{m_ViewportSize.x, m_ViewportSize.y});
+    }
+
     // --- Gizmo Toolbar Overlay ---
     ImGui::SetCursorPos(ImVec2(10, 30));                          // Slightly below top-left
-    ImGui::BeginChild("GizmoToolbar", ImVec2(120, 40), false, 0); // Transparent background
-    // Transparent style
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0.5f));
+    ImGui::BeginChild("GizmoToolbar", ImVec2(160, 40), false, 0); // Transparent background
 
-    if (ImGui::Button("T", ImVec2(30, 30)))
-        currentTool = GizmoType::TRANSLATE;
-    ImGui::SameLine();
-    if (ImGui::Button("R", ImVec2(30, 30)))
-        currentTool = GizmoType::ROTATE;
-    ImGui::SameLine();
-    if (ImGui::Button("S", ImVec2(30, 30)))
-        currentTool = GizmoType::SCALE;
+    auto drawToolButton = [&](const char *label, GizmoType type, GizmoType target)
+    {
+        bool active = (type == target);
+        if (active)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
+        else
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0.5f));
 
-    ImGui::PopStyleColor();
+        if (ImGui::Button(label, ImVec2(30, 30)))
+            currentTool = target;
+
+        ImGui::PopStyleColor();
+    };
+
+    drawToolButton("T", currentTool, GizmoType::TRANSLATE);
+    ImGui::SameLine();
+    drawToolButton("R", currentTool, GizmoType::ROTATE);
+    ImGui::SameLine();
+    drawToolButton("S", currentTool, GizmoType::SCALE);
+
+    ImGui::SameLine();
+    bool isLocal = gizmo.IsLocalSpace();
+    if (ImGui::Button(isLocal ? "L" : "W", ImVec2(30, 30)))
+        gizmo.SetLocalSpace(!isLocal);
+
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(isLocal ? "Local Space" : "World Space");
+
     ImGui::EndChild();
 
     // Reset cursor for overlay logic if needed, but EndChild handles it.
@@ -246,7 +262,7 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
         gizmo.SetSnapping(snapping);
 
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(80);
+    ImGui::SetNextItemWidth(40);
     float grid = gizmo.GetGridSize();
     if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
         gizmo.SetGridSize(grid);

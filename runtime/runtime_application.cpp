@@ -13,25 +13,26 @@ namespace CHEngine
 class RuntimeLayer : public Layer
 {
 public:
-    RuntimeLayer(Ref<Scene> scene) : Layer("RuntimeLayer"), m_Scene(scene)
+    RuntimeLayer() : Layer("RuntimeLayer")
     {
     }
 
     virtual void OnUpdate(float deltaTime) override
     {
-        if (m_Scene)
-            m_Scene->OnUpdateRuntime(deltaTime);
+        auto scene = Application::Get().GetActiveScene();
+        if (scene)
+            scene->OnUpdateRuntime(deltaTime);
     }
 
     virtual void OnRender() override
     {
-        if (!m_Scene)
+        auto scene = Application::Get().GetActiveScene();
+        if (!scene)
             return;
 
         // Runtime Camera - looking for player
-        auto view = m_Scene->GetRegistry().view<PlayerComponent, TransformComponent>();
+        auto view = scene->GetRegistry().view<PlayerComponent, TransformComponent>();
         Camera3D camera = {0};
-        bool playerFound = false;
 
         if (view.begin() != view.end())
         {
@@ -53,7 +54,6 @@ public:
             camera.up = {0.0f, 1.0f, 0.0f};
             camera.fovy = 60.0f;
             camera.projection = CAMERA_PERSPECTIVE;
-            playerFound = true;
         }
         else
         {
@@ -65,21 +65,16 @@ public:
             camera.projection = CAMERA_PERSPECTIVE;
         }
 
-        SceneRender::BeginScene(m_Scene.get(), camera);
-        SceneRender::SubmitScene(m_Scene.get());
+        SceneRender::BeginScene(scene.get(), camera);
+        SceneRender::SubmitScene(scene.get());
         SceneRender::EndScene();
     }
-
-private:
-    Ref<Scene> m_Scene;
 };
 
 RuntimeApplication::RuntimeApplication(const Application::Config &config,
                                        const std::string &projectPath)
     : Application(config)
 {
-    m_ActiveScene = CreateRef<Scene>();
-
     if (!projectPath.empty())
     {
         std::filesystem::path absolutePath = std::filesystem::absolute(projectPath);
@@ -95,10 +90,7 @@ RuntimeApplication::RuntimeApplication(const Application::Config &config,
 
                 if (std::filesystem::exists(startScenePath))
                 {
-                    SceneSerializer sceneSerializer(m_ActiveScene.get());
-                    sceneSerializer.Deserialize(startScenePath.string());
-                    CH_CORE_INFO("Runtime: Loaded project start scene: %s",
-                                 startScenePath.string().c_str());
+                    LoadScene(startScenePath.string());
                 }
                 else
                 {
@@ -107,10 +99,7 @@ RuntimeApplication::RuntimeApplication(const Application::Config &config,
                         absolutePath.parent_path() / "assets" / "scenes" / startScene;
                     if (std::filesystem::exists(fallbackScene))
                     {
-                        SceneSerializer sceneSerializer(m_ActiveScene.get());
-                        sceneSerializer.Deserialize(fallbackScene.string());
-                        CH_CORE_INFO("Runtime: Loaded fallback project scene: %s",
-                                     fallbackScene.string().c_str());
+                        LoadScene(fallbackScene.string());
                     }
                     else
                     {
@@ -125,11 +114,6 @@ RuntimeApplication::RuntimeApplication(const Application::Config &config,
                               absolutePath.string().c_str());
             }
         }
-        else
-        {
-            CH_CORE_ERROR("Runtime: Project path does not exist: %s",
-                          absolutePath.string().c_str());
-        }
     }
     else
     {
@@ -137,16 +121,10 @@ RuntimeApplication::RuntimeApplication(const Application::Config &config,
         std::string fallbackPath = "assets/scenes/default.chscene";
         if (std::filesystem::exists(fallbackPath))
         {
-            SceneSerializer serializer(m_ActiveScene.get());
-            serializer.Deserialize(fallbackPath);
-            CH_CORE_INFO("Runtime: Loaded default scene: %s", fallbackPath.c_str());
-        }
-        else
-        {
-            CH_CORE_WARN("Runtime: No scene found to load.");
+            LoadScene(fallbackPath);
         }
     }
 
-    PushLayer(new RuntimeLayer(m_ActiveScene));
+    PushLayer(new RuntimeLayer());
 }
 } // namespace CHEngine

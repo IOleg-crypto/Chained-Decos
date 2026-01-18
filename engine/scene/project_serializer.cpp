@@ -22,6 +22,27 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "StartScene" << YAML::Value << config.StartScene;
         out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();
         out << YAML::Key << "ActiveScene" << YAML::Value << config.ActiveScenePath.string();
+
+        out << YAML::Key << "Physics" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Gravity" << YAML::Value << config.Physics.Gravity;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Animation" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "TargetFPS" << YAML::Value << config.Animation.TargetFPS;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Render" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "AmbientIntensity" << YAML::Value << config.Render.AmbientIntensity;
+        out << YAML::Key << "DefaultExposure" << YAML::Value << config.Render.DefaultExposure;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Window" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Width" << YAML::Value << config.Window.Width;
+        out << YAML::Key << "Height" << YAML::Value << config.Window.Height;
+        out << YAML::Key << "VSync" << YAML::Value << config.Window.VSync;
+        out << YAML::Key << "Resizable" << YAML::Value << config.Window.Resizable;
+        out << YAML::EndMap;
+
         out << YAML::EndMap;
     }
     out << YAML::EndMap; // Project
@@ -33,7 +54,7 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         return true;
     }
 
-    CH_CORE_ERROR("Failed to save project file: {0}", filepath.string());
+    CH_CORE_ERROR("Failed to save project file: {}", filepath.string());
     return false;
 }
 
@@ -42,7 +63,7 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     std::ifstream stream(filepath);
     if (!stream.is_open())
     {
-        CH_CORE_ERROR("Failed to open project file: {0}", filepath.string());
+        CH_CORE_ERROR("Failed to open project file: {}", filepath.string());
         return false;
     }
 
@@ -60,6 +81,27 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
     if (projectNode["ActiveScene"])
         config.ActiveScenePath = projectNode["ActiveScene"].as<std::string>();
+
+    if (projectNode["Physics"])
+        config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
+
+    if (projectNode["Animation"])
+        config.Animation.TargetFPS = projectNode["Animation"]["TargetFPS"].as<float>();
+
+    if (projectNode["Render"])
+    {
+        config.Render.AmbientIntensity = projectNode["Render"]["AmbientIntensity"].as<float>();
+        config.Render.DefaultExposure = projectNode["Render"]["DefaultExposure"].as<float>();
+    }
+
+    if (projectNode["Window"])
+    {
+        config.Window.Width = projectNode["Window"]["Width"].as<int>();
+        config.Window.Height = projectNode["Window"]["Height"].as<int>();
+        config.Window.VSync = projectNode["Window"]["VSync"].as<bool>();
+        config.Window.Resizable = projectNode["Window"]["Resizable"].as<bool>();
+    }
+
     config.ProjectDirectory = filepath.parent_path();
 
     return true;

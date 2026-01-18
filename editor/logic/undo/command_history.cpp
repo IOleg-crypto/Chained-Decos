@@ -25,7 +25,7 @@ void CommandHistory::PushCommand(std::unique_ptr<IEditorCommand> command)
         m_UndoStack.pop_front();
     }
 
-    CH_CORE_INFO("Command pushed: %s (Undo stack size: %zu)", m_UndoStack.back()->GetName().c_str(),
+    CH_CORE_INFO("Command pushed: {} (Undo stack size: {})", m_UndoStack.back()->GetName(),
                  m_UndoStack.size());
 }
 
@@ -37,7 +37,7 @@ void CommandHistory::Undo()
     std::unique_ptr<IEditorCommand> command = std::move(m_UndoStack.back());
     m_UndoStack.pop_back();
 
-    CH_CORE_INFO("Undoing command: %s", command->GetName().c_str());
+    CH_CORE_INFO("Undoing command: {}", command->GetName());
     command->Undo();
 
     m_RedoStack.push_back(std::move(command));
@@ -51,7 +51,7 @@ void CommandHistory::Redo()
     std::unique_ptr<IEditorCommand> command = std::move(m_RedoStack.back());
     m_RedoStack.pop_back();
 
-    CH_CORE_INFO("Redoing command: %s", command->GetName().c_str());
+    CH_CORE_INFO("Redoing command: {}", command->GetName());
     command->Execute();
 
     m_UndoStack.push_back(std::move(command));

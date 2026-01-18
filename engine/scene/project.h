@@ -7,6 +7,30 @@
 
 namespace CHEngine
 {
+struct PhysicsSettings
+{
+    float Gravity = 20.0f;
+};
+
+struct AnimationSettings
+{
+    float TargetFPS = 30.0f;
+};
+
+struct RenderSettings
+{
+    float AmbientIntensity = 0.3f;
+    float DefaultExposure = 1.0f;
+};
+
+struct WindowSettings
+{
+    int Width = 1280;
+    int Height = 720;
+    bool VSync = true;
+    bool Resizable = true;
+};
+
 struct ProjectConfig
 {
     std::string Name = "Untitled";
@@ -14,6 +38,11 @@ struct ProjectConfig
     std::filesystem::path AssetDirectory = "assets";
     std::filesystem::path ProjectDirectory;
     std::filesystem::path ActiveScenePath;
+
+    PhysicsSettings Physics;
+    AnimationSettings Animation;
+    RenderSettings Render;
+    WindowSettings Window;
 };
 
 class Project

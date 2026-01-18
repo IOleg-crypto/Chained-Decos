@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <deque>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -36,6 +37,7 @@ public:
 private:
     static ConsolePanel *s_Instance;
     std::deque<ConsoleLogEntry> m_Messages;
+    std::mutex m_LogMutex;
     static constexpr size_t MAX_MESSAGES = 500;
 };
 } // namespace CHEngine

@@ -15,6 +15,8 @@
 
 namespace CHEngine
 {
+class SoundAsset;
+
 struct IDComponent
 {
     UUID ID;
@@ -60,10 +62,36 @@ struct TransformComponent
     }
 };
 
+enum class MaterialSlotTarget : uint8_t
+{
+    MaterialIndex = 0,
+    MeshIndex = 1
+};
+
+struct MaterialSlot
+{
+    std::string Name;
+    int Index = -1;
+    MaterialSlotTarget Target = MaterialSlotTarget::MaterialIndex;
+    MaterialInstance Material;
+
+    MaterialSlot() = default;
+    MaterialSlot(const std::string &name, int index) : Name(name), Index(index)
+    {
+    }
+};
+
+struct MaterialComponent
+{
+    std::vector<MaterialSlot> Slots;
+
+    MaterialComponent() = default;
+    MaterialComponent(const MaterialComponent &) = default;
+};
+
 struct ModelComponent
 {
     std::string ModelPath;
-    MaterialInstance Material;
     Vector3 Scale = {1.0f, 1.0f, 1.0f};
 
     ModelComponent() = default;
@@ -169,6 +197,9 @@ struct AudioComponent
     float Pitch = 1.0f;
     bool Loop = false;
     bool PlayOnStart = true;
+
+    // Runtime
+    Ref<SoundAsset> Asset;
 };
 
 struct CameraComponent

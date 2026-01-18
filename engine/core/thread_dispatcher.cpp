@@ -21,7 +21,7 @@ void ThreadDispatcher::Init()
     if (threadCount == 0)
         threadCount = 1;
 
-    CH_CORE_INFO("ThreadDispatcher: Initializing with {0} worker threads", threadCount);
+    CH_CORE_INFO("ThreadDispatcher: Initializing with {} worker threads", threadCount);
 
     for (uint32_t i = 0; i < threadCount; ++i)
     {

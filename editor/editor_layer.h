@@ -6,15 +6,14 @@
 #include "engine/renderer/render.h"
 #include "engine/renderer/scene_render.h"
 #include "engine/scene/scene.h"
-#include "logic/undo/command_history.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/environment_panel.h"
-#include "panels/input_graph_panel.h"
 #include "panels/inspector_panel.h"
 #include "panels/project_browser_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/viewport_panel.h"
+#include "undo/command_history.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
 #include <filesystem>
@@ -72,14 +71,14 @@ public:
 
 private:
     EditorCamera m_EditorCamera;
-    Ref<Scene> m_ActiveScene;
     Entity m_SelectedEntity;
     SceneState m_SceneState = SceneState::Edit;
     DebugRenderFlags m_DebugRenderFlags;
+    int m_LastHitMeshIndex = -1;
 
 private:
     EditorGizmo m_Gizmo;
-    GizmoType m_CurrentTool = GizmoType::SELECT;
+    GizmoType m_CurrentTool = GizmoType::NONE;
     CommandHistory m_CommandHistory;
 
 private:
@@ -90,7 +89,6 @@ private:
     ConsolePanel m_ConsolePanel;
     ViewportPanel m_ViewportPanel;
     EnvironmentPanel m_EnvironmentPanel;
-    InputGraphPanel m_InputGraphPanel;
     bool m_ShowContentBrowser = true;
 };
 } // namespace CHEngine

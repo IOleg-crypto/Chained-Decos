@@ -32,17 +32,20 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
     ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
     ImGui::PopStyleVar();
 
-    for (const auto &msg : m_Messages)
     {
-        ImVec4 color = ImVec4(1, 1, 1, 1);
-        if (msg.level == ConsoleLogLevel::Warn)
-            color = ImVec4(1, 1, 0, 1);
-        if (msg.level == ConsoleLogLevel::Error)
-            color = ImVec4(1, 0, 0, 1);
+        std::lock_guard<std::mutex> lock(m_LogMutex);
+        for (const auto &msg : m_Messages)
+        {
+            ImVec4 color = ImVec4(1, 1, 1, 1);
+            if (msg.level == ConsoleLogLevel::Warn)
+                color = ImVec4(1, 1, 0, 1);
+            if (msg.level == ConsoleLogLevel::Error)
+                color = ImVec4(1, 0, 0, 1);
 
-        ImGui::PushStyleColor(ImGuiCol_Text, color);
-        ImGui::TextUnformatted(msg.message.c_str());
-        ImGui::PopStyleColor();
+            ImGui::PushStyleColor(ImGuiCol_Text, color);
+            ImGui::TextUnformatted(msg.message.c_str());
+            ImGui::PopStyleColor();
+        }
     }
 
     if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
@@ -54,6 +57,7 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
 
 void ConsolePanel::Log(const std::string &message, ConsoleLogLevel level)
 {
+    std::lock_guard<std::mutex> lock(m_LogMutex);
     ConsoleLogEntry entry;
     entry.level = level;
     entry.message = message;
@@ -65,6 +69,7 @@ void ConsolePanel::Log(const std::string &message, ConsoleLogLevel level)
 
 void ConsolePanel::Clear()
 {
+    std::lock_guard<std::mutex> lock(m_LogMutex);
     m_Messages.clear();
 }
 } // namespace CHEngine

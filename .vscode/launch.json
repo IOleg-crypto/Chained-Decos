@@ -5,9 +5,9 @@
       "name": "Debug with LLDB",
       "type": "lldb",
       "request":"launch",
-      "program": "${workspaceFolder}/build/bin/Runtime.exe",
+      "program": "${workspaceFolder}/build/ninja-debug/bin/ChainedRuntime.exe",
       "args": ["--fullscreen"],
-      "cwd": "${workspaceFolder}/build",
+      "cwd": "${workspaceFolder}",
       "stopOnEntry": true,
       "sourceMap": {
         "${workspaceFolder}": "${workspaceFolder}"
@@ -15,7 +15,7 @@
       "setupCommands": [
         {
           "description": "Load debug symbols",
-          "text": "target symbols add \"${workspaceFolder}/build/bin/ChainedDecos_debug.exe\"",
+          "text": "target symbols add \"${workspaceFolder}/build/ninja-debug/editor/ChainedEditor.exe\"",
           "ignoreFailures": true
         },
         {
@@ -29,9 +29,9 @@
       "name": "Debug Editor with LLDB",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/bin/ChainedEditor.exe",
+      "program": "${workspaceFolder}/build/ninja-debug/editor/ChainedEditor.exe",
       "args": [],
-      "cwd": "${workspaceFolder}/build",
+      "cwd": "${workspaceFolder}",
       "stopOnEntry": true,
       "sourceMap": {
         "${workspaceFolder}": "${workspaceFolder}"
@@ -39,7 +39,7 @@
       "setupCommands": [
         {
           "description": "Load debug symbols",
-          "text": "target symbols add \"${workspaceFolder}/build/bin/ChainedDecos_debug.exe\"",
+          "text": "target symbols add \"${workspaceFolder}/build/ninja-debug/editor/ChainedEditor.exe\"",
           "ignoreFailures": true
         },
         {

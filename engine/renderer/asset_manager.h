@@ -1,89 +1,59 @@
-#ifndef CH_ASSET_MANAGER_H
-#define CH_ASSET_MANAGER_H
-
+#include "engine/audio/sound_asset.h"
+#include "engine/core/base.h"
+#include "model_asset.h"
+#include "shader_asset.h"
+#include "texture_asset.h"
 #include <filesystem>
 #include <future>
 #include <mutex>
-#include <raylib.h>
 #include <string>
-#include <string_view>
 #include <unordered_map>
-#include <vector>
+
 
 namespace CHEngine
 {
-struct ModelLoadResult
-{
-    Model model;
-    std::string path;
-    bool success;
-};
 
-class AssetManager
+class Assets
 {
 public:
     static void Init();
     static void Shutdown();
 
-    // Model Management (Synchronous)
-    static Model LoadModel(std::string_view path);
-    static Model GetModel(std::string_view name);
-    static bool HasModel(std::string_view name);
-    static void UnloadModel(std::string_view name);
+    // Cache Access
+    static Ref<ModelAsset> LoadModel(const std::string &path);
+    static Ref<TextureAsset> LoadTexture(const std::string &path);
+    static Ref<SoundAsset> LoadSound(const std::string &path);
+    static Ref<ShaderAsset> LoadShader(const std::string &vsPath, const std::string &fsPath);
 
-    // Animation Management
-    static ModelAnimation *LoadAnimation(std::string_view path, int *count);
-    static ModelAnimation *GetAnimations(std::string_view path, int *count);
+    // Async
+    static std::future<Ref<ModelAsset>> LoadModelAsync(const std::string &path);
 
-    // Model Management (Asynchronous)
-    static std::future<ModelLoadResult> LoadModelAsync(std::string_view path);
-    static void LoadModelsAsync(const std::vector<std::string> &paths,
-                                std::function<void(float)> progressCallback = nullptr);
-    static bool IsModelReady(std::string_view path);
+    // Helpers
+    static std::filesystem::path ResolvePath(const std::string &path);
 
-    // Texture Management
-    static Texture2D LoadTexture(std::string_view path);
-    static Texture2D GetTexture(std::string_view name);
-    static bool HasTexture(std::string_view name);
-    static void UnloadTexture(std::string_view name);
-
-    // Cubemap Management
-    static Texture2D LoadCubemap(std::string_view path);
-
-    // Shader Management
-    static Shader LoadShader(std::string_view vsPath, std::string_view fsPath);
-
-    // Helper
-    static BoundingBox GetModelBoundingBox(std::string_view path);
-    static std::filesystem::path ResolvePath(std::string_view path);
+private:
     struct StringHash
     {
         using is_transparent = void;
-        size_t operator()(const char *txt) const
-        {
-            return std::hash<std::string_view>{}(txt);
-        }
         size_t operator()(std::string_view txt) const
         {
             return std::hash<std::string_view>{}(txt);
         }
-        size_t operator()(const std::string &txt) const
-        {
-            return std::hash<std::string>{}(txt);
-        }
     };
 
-    static std::unordered_map<std::string, Model, StringHash, std::equal_to<>> s_LoadedModels;
-    static std::unordered_map<std::string, Texture2D, StringHash, std::equal_to<>> s_LoadedTextures;
-    static std::unordered_map<std::string, std::pair<ModelAnimation *, int>, StringHash,
-                              std::equal_to<>>
-        s_LoadedAnimations;
-    static std::mutex s_ModelsCacheMutex;
-    static std::mutex s_TexturesCacheMutex;
-    static std::mutex s_AnimationsCacheMutex;
+    static std::unordered_map<std::string, Ref<ModelAsset>, StringHash, std::equal_to<>> s_Models;
+    static std::unordered_map<std::string, Ref<TextureAsset>, StringHash, std::equal_to<>>
+        s_Textures;
+    static std::unordered_map<std::string, Ref<SoundAsset>, StringHash, std::equal_to<>> s_Sounds;
+    static std::unordered_map<std::string, Ref<ShaderAsset>, StringHash, std::equal_to<>> s_Shaders;
 
-    AssetManager() = default;
+    static std::mutex s_ModelsMutex;
+    static std::mutex s_TexturesMutex;
+    static std::mutex s_SoundsMutex;
+    static std::mutex s_ShadersMutex;
 };
-} // namespace CHEngine
 
-#endif // CH_ASSET_MANAGER_H
+// Aliasing for compatibility during transition if needed
+using AssetManager = Assets;
+
+} // namespace CHEngine

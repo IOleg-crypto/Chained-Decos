@@ -1,11 +1,13 @@
 #include "scene.h"
 #include "components.h"
+#include "engine/audio/audio_manager.h"
 #include "engine/core/events.h"
 #include "engine/core/input.h"
 #include "engine/core/log.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/asset_manager.h"
+#include "engine/scene/project.h"
 #include "entity.h"
 #include "scriptable_entity.h"
 #include <cfloat>
@@ -41,11 +43,34 @@ Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
 
 void Scene::DestroyEntity(Entity entity)
 {
-    if (!m_Registry.valid(entity))
+    if (!entity || !m_Registry.valid(entity))
     {
-        CH_CORE_WARN("Attempted to destroy invalid entity: %d", (uint32_t)entity);
+        CH_CORE_WARN("Attempted to destroy invalid entity");
         return;
     }
+
+    if (entity.HasComponent<HierarchyComponent>())
+    {
+        auto &hc = entity.GetComponent<HierarchyComponent>();
+        if (hc.Parent != entt::null)
+        {
+            Entity parent{hc.Parent, this};
+            if (parent.HasComponent<HierarchyComponent>())
+            {
+                auto &phc = parent.GetComponent<HierarchyComponent>();
+                auto it = std::find(phc.Children.begin(), phc.Children.end(), (entt::entity)entity);
+                if (it != phc.Children.end())
+                    phc.Children.erase(it);
+            }
+        }
+
+        std::vector<entt::entity> children = hc.Children;
+        for (auto child : children)
+        {
+            DestroyEntity({child, this});
+        }
+    }
+
     CH_CORE_INFO("Entity Destroyed: %d", (uint32_t)entity);
     m_Registry.destroy(entity);
 }
@@ -78,38 +103,60 @@ void Scene::OnUpdateRuntime(float deltaTime)
             {
                 if (anim.IsPlaying)
                 {
-                    Model rlModel = AssetManager::GetModel(model.ModelPath);
-                    int animCount = 0;
-                    ModelAnimation *animations =
-                        AssetManager::GetAnimations(model.ModelPath, &animCount);
-
-                    if (animations && anim.CurrentAnimationIndex < animCount)
+                    auto asset = Assets::LoadModel(model.ModelPath);
+                    if (asset)
                     {
-                        anim.FrameTimeCounter += deltaTime;
-                        float frameTime =
-                            1.0f / 30.0f; // Standard 30fps for animations, or use anim speed
+                        int animCount = 0;
+                        auto *animations = asset->GetAnimations(&animCount);
 
-                        if (anim.FrameTimeCounter >= frameTime)
+                        if (animations && anim.CurrentAnimationIndex < animCount)
                         {
-                            anim.CurrentFrame++;
-                            anim.FrameTimeCounter = 0;
+                            anim.FrameTimeCounter += deltaTime;
 
-                            if (anim.CurrentFrame >=
-                                animations[anim.CurrentAnimationIndex].frameCount)
+                            float targetFPS = 30.0f;
+                            if (Project::GetActive())
+                                targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
+
+                            float frameTime = 1.0f / targetFPS;
+
+                            if (anim.FrameTimeCounter >= frameTime)
                             {
-                                if (anim.IsLooping)
-                                    anim.CurrentFrame = 0;
-                                else
-                                {
-                                    anim.CurrentFrame =
-                                        animations[anim.CurrentAnimationIndex].frameCount - 1;
-                                    anim.IsPlaying = false;
-                                }
-                            }
+                                anim.CurrentFrame++;
+                                anim.FrameTimeCounter = 0;
 
-                            UpdateModelAnimation(rlModel, animations[anim.CurrentAnimationIndex],
-                                                 anim.CurrentFrame);
+                                if (anim.CurrentFrame >=
+                                    animations[anim.CurrentAnimationIndex].frameCount)
+                                {
+                                    if (anim.IsLooping)
+                                        anim.CurrentFrame = 0;
+                                    else
+                                    {
+                                        anim.CurrentFrame =
+                                            animations[anim.CurrentAnimationIndex].frameCount - 1;
+                                        anim.IsPlaying = false;
+                                    }
+                                }
+
+                                asset->UpdateAnimation(anim.CurrentAnimationIndex,
+                                                       anim.CurrentFrame);
+                            }
                         }
+                    }
+                }
+            });
+    }
+
+    // Audio Logic
+    {
+        m_Registry.view<AudioComponent>().each(
+            [&](auto entity, auto &audio)
+            {
+                if (!audio.Asset && !audio.SoundPath.empty())
+                {
+                    audio.Asset = Assets::LoadSound(audio.SoundPath);
+                    if (audio.Asset && audio.PlayOnStart)
+                    {
+                        AudioManager::PlaySound(audio.Asset, audio.Volume, audio.Pitch);
                     }
                 }
             });

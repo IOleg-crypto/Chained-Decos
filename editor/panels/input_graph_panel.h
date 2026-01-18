@@ -1,7 +1,7 @@
 #ifndef CH_INPUT_GRAPH_PANEL_H
 #define CH_INPUT_GRAPH_PANEL_H
 
-#include "engine/core/input_manager.h"
+#include "engine/core/input.h"
 #include <string>
 #include <unordered_map>
 
@@ -29,8 +29,8 @@ private:
     void ShowKeyDetectionModal();
 
     // Actions
-    void SaveCurrentContext();
-    void LoadContext(const std::string &path);
+    void SaveCurrentActions();
+    void LoadActions(const std::string &path);
     void OnAddBinding(const std::string &actionName);
     void OnEditBinding(const std::string &actionName, int bindingIndex);
     void OnRemoveBinding(const std::string &actionName, int bindingIndex);

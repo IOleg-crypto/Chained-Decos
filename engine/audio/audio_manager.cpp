@@ -3,8 +3,6 @@
 
 namespace CHEngine
 {
-std::unordered_map<std::string, Sound> AudioManager::s_Sounds;
-
 void AudioManager::Init()
 {
     InitAudioDevice();
@@ -20,51 +18,29 @@ void AudioManager::Init()
 
 void AudioManager::Shutdown()
 {
-    for (auto &[name, sound] : s_Sounds)
-    {
-        UnloadSound(sound);
-    }
-    s_Sounds.clear();
     CloseAudioDevice();
     CH_CORE_INFO("Audio Device Shutdown.");
 }
 
-void AudioManager::LoadSound(const std::string &name, const std::string &path)
+void AudioManager::PlaySound(Ref<SoundAsset> asset, float volume, float pitch)
 {
-    if (s_Sounds.find(name) != s_Sounds.end())
-        return;
-
-    Sound sound = ::LoadSound(path.c_str());
-    if (sound.frameCount > 0)
+    if (!asset)
     {
-        s_Sounds[name] = sound;
-        CH_CORE_INFO("Loaded sound: {0} from {1}", name, path);
-    }
-    else
-    {
-        CH_CORE_ERROR("Failed to load sound: {0} from {1}", name, path);
-    }
-}
-
-void AudioManager::PlaySound(const std::string &name, float volume, float pitch)
-{
-    if (s_Sounds.find(name) == s_Sounds.end())
-    {
-        CH_CORE_WARN("Attempted to play unknown sound: {0}", name);
+        CH_CORE_WARN("Attempted to play null sound asset");
         return;
     }
 
-    Sound sound = s_Sounds[name];
+    Sound &sound = asset->GetSound();
     SetSoundVolume(sound, volume);
     SetSoundPitch(sound, pitch);
     ::PlaySound(sound);
 }
 
-void AudioManager::StopSound(const std::string &name)
+void AudioManager::StopSound(Ref<SoundAsset> asset)
 {
-    if (s_Sounds.find(name) != s_Sounds.end())
+    if (asset)
     {
-        ::StopSound(s_Sounds[name]);
+        ::StopSound(asset->GetSound());
     }
 }
 

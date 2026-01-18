@@ -1,0 +1,17 @@
+Project:
+  Name: TestProject
+  StartScene: ""
+  AssetDirectory: assets
+  ActiveScene: ..\testproject\assets\scenes\Untitled.chscene
+  Physics:
+    Gravity: 20
+  Animation:
+    TargetFPS: 30
+  Render:
+    AmbientIntensity: 0.300000012
+    DefaultExposure: 1
+  Window:
+    Width: 1280
+    Height: 720
+    VSync: true
+    Resizable: true

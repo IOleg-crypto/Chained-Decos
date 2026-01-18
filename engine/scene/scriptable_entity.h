@@ -21,6 +21,11 @@ public:
 
     template <typename T> T &GetComponent()
     {
+        if (!m_Entity.HasComponent<T>())
+        {
+            CH_CORE_ERROR("ScriptableEntity: Entity '{0}' does not have component {1}!",
+                          m_Entity.GetComponent<TagComponent>().Tag, typeid(T).name());
+        }
         return m_Entity.GetComponent<T>();
     }
 

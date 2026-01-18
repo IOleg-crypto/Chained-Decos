@@ -1,13 +1,14 @@
 #include "application.h"
 #include "engine/audio/audio_manager.h"
 #include "engine/core/input.h"
-#include "engine/core/input_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/thread_dispatcher.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
 #include "engine/renderer/scene_render.h"
+#include "engine/scene/project.h"
+#include "engine/scene/scene_serializer.h"
 #include "engine/scene/script_registry.h"
 #include <raylib.h>
 #include <rlImGui.h>
@@ -21,53 +22,49 @@ Application::Application(const Config &config)
     CH_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
 
-    // Log::Init(); // Removed
-    CH_CORE_INFO("Initializing Engine..."); // Added
-    SetTraceLogLevel(LOG_WARNING);          // Reduce spam
+    CH_CORE_INFO("Initializing Engine...");
+    SetTraceLogLevel(LOG_WARNING);
 
-    // Enable resizing and MSAA
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    WindowConfig windowConfig;
+    windowConfig.Title = config.Title;
+    windowConfig.Width = config.Width;
+    windowConfig.Height = config.Height;
+    windowConfig.Fullscreen = config.Fullscreen;
+    windowConfig.TargetFPS = config.TargetFPS;
 
-    InitWindow(config.Width, config.Height, config.Title.c_str());
-    SetTargetFPS(60);
-    SetExitKey(KEY_NULL); // Prevent ESC from closing the app
-    rlImGuiSetup(true);   // Added
+    if (Project::GetActive())
+    {
+        auto &projConfig = Project::GetActive()->GetConfig();
+        windowConfig.Width = projConfig.Window.Width;
+        windowConfig.Height = projConfig.Window.Height;
+        windowConfig.VSync = projConfig.Window.VSync;
+        windowConfig.Resizable = projConfig.Window.Resizable;
+        // Project could also override fullscreen/fps if we wanted
+    }
+
+    m_Window = CreateScope<Window>(windowConfig);
+
     m_Running = true;
 
     Render::Init();
     SceneRender::Init();
     ThreadDispatcher::Init();
     Physics::Init();
-    AssetManager::Init();
+    Assets::Init();
     AudioManager::Init();
-    InputManager::Init();
 
-    // Register Default Input Actions (old system - for compatibility)
-    Input::RegisterAction("Jump", KEY_SPACE);
-    Input::RegisterAction("Teleport", KEY_F);
-
-    // Register Game-Specific Scripts
     RegisterGameScripts();
 
-    // Load Input Action Graph (new system)
-    if (InputManager::LoadInputGraph("assets/input/gameplay_input.json"))
-    {
-        InputManager::PushContext("Gameplay");
-        CH_CORE_INFO("Input Action System initialized with Gameplay context");
-    }
-
-    CH_CORE_INFO("Application Initialized: %s (%dx%d)", config.Title, config.Width, config.Height);
+    CH_CORE_INFO("Application Initialized: %s", config.Title);
 }
 
 Application::~Application()
 {
-    InputManager::Shutdown();
-    AssetManager::Shutdown();
+    Assets::Shutdown();
     ThreadDispatcher::Shutdown();
     Physics::Shutdown();
     SceneRender::Shutdown();
     Render::Shutdown();
-    CloseWindow();
     s_Instance = nullptr;
 }
 
@@ -79,11 +76,8 @@ void Application::Init(const Config &config)
 void Application::Shutdown()
 {
     CH_CORE_INFO("Shutting down Engine...");
-
     AudioManager::Shutdown();
-    rlImGuiShutdown();
-    CloseWindow();
-
+    s_Instance->m_Window.reset();
     CH_CORE_INFO("Engine Shutdown Successfully.");
 }
 
@@ -105,20 +99,18 @@ void Application::PushOverlay(Layer *overlay)
 
 void Application::BeginFrame()
 {
-    // Clear per-frame input state
     Input::UpdateState();
-
     ThreadDispatcher::ExecuteMainThreadQueue();
 
-    PollEvents();
+    // Poll input
+    Input::PollEvents(Application::OnEvent);
 
     s_Instance->m_DeltaTime = GetFrameTime();
 
     for (Layer *layer : s_Instance->m_LayerStack)
         layer->OnUpdate(s_Instance->m_DeltaTime);
 
-    BeginDrawing();
-    ClearBackground(DARKGRAY);
+    s_Instance->m_Window->BeginFrame();
 
     for (Layer *layer : s_Instance->m_LayerStack)
         layer->OnRender();
@@ -129,17 +121,12 @@ void Application::BeginFrame()
 
 void Application::EndFrame()
 {
-    EndDrawing();
-}
-
-void Application::PollEvents()
-{
-    Input::PollEvents(Application::OnEvent);
+    s_Instance->m_Window->EndFrame();
 }
 
 bool Application::ShouldClose()
 {
-    return !s_Instance->m_Running || WindowShouldClose();
+    return !s_Instance->m_Running || s_Instance->m_Window->ShouldClose();
 }
 
 void Application::OnEvent(Event &e)
@@ -169,8 +156,18 @@ bool Application::IsRunning()
     return s_Instance->m_Running;
 }
 
-float Application::GetDeltaTime()
+void Application::LoadScene(const std::string &path)
 {
-    return s_Instance->m_DeltaTime;
+    Ref<Scene> newScene = CreateRef<Scene>();
+    SceneSerializer serializer(newScene.get());
+    if (serializer.Deserialize(path))
+    {
+        m_ActiveScene = newScene;
+        CH_CORE_INFO("Scene Loaded: {0}", path);
+    }
+    else
+    {
+        CH_CORE_ERROR("Failed to load scene: {0}", path);
+    }
 }
 } // namespace CHEngine
