@@ -296,7 +296,8 @@ private:
 class EntitySelectedEvent : public Event
 {
 public:
-    EntitySelectedEvent(entt::entity entity, class Scene *scene) : m_Entity(entity), m_Scene(scene)
+    EntitySelectedEvent(entt::entity entity, class Scene *scene, int meshIndex = -1)
+        : m_Entity(entity), m_Scene(scene), m_MeshIndex(meshIndex)
     {
     }
 
@@ -308,6 +309,10 @@ public:
     {
         return m_Scene;
     }
+    int GetMeshIndex() const
+    {
+        return m_MeshIndex;
+    }
 
     EVENT_CLASS_TYPE(EntitySelected)
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
@@ -315,6 +320,7 @@ public:
 private:
     entt::entity m_Entity;
     class Scene *m_Scene;
+    int m_MeshIndex = -1;
 };
 
 class ScenePlayEvent : public Event

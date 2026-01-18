@@ -20,6 +20,7 @@ file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
 
 add_subdirectory(engine)
+add_subdirectory(game/chaineddecos)
 add_subdirectory(editor)
 add_subdirectory(runtime)
 

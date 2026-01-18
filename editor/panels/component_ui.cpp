@@ -5,11 +5,12 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/script_registry.h"
-#include "logic/undo/transform_command.h"
+#include "undo/transform_command.h"
 #include <filesystem>
 #include <imgui.h>
 #include <nfd.h>
 #include <raymath.h>
+#include <set>
 
 namespace CHEngine
 {
@@ -189,8 +190,322 @@ void DrawModel(Entity entity)
             }
             if (ImGui::Button("Load / Reload"))
                 AssetManager::LoadModel(model.ModelPath);
+
+            // Model Info / Texture List
+            auto asset = AssetManager::LoadModel(model.ModelPath);
+            if (asset && ImGui::TreeNode("Model Info"))
+            {
+                Model &m = asset->GetModel();
+                ImGui::Text("Meshes: %d", m.meshCount);
+                ImGui::Text("Materials: %d", m.materialCount);
+                ImGui::Separator();
+                ImGui::Text("Detected Textures:");
+                for (int i = 0; i < m.materialCount; i++)
+                {
+                    Material &mat = m.materials[i];
+                    for (int j = 0; j < 12; j++) // Raylib maps
+                    {
+                        if (mat.maps[j].texture.id != 0)
+                        {
+                            const char *mapNames[] = {"Albedo",    "Metal",     "Normal",
+                                                      "Roughness", "Occlusion", "Emission"};
+                            std::string name = (j < 6) ? mapNames[j] : "Map " + std::to_string(j);
+                            ImGui::BulletText("%s (ID: %d)", name.c_str(), mat.maps[j].texture.id);
+                        }
+                    }
+                }
+                ImGui::TreePop();
+            }
+
             DrawVec3Control("Scale", model.Scale, 1.0f);
         });
+}
+void DrawMaterial(Entity entity, int hitMeshIndex)
+{
+    const ImGuiTreeNodeFlags treeNodeFlags =
+        ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+        ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
+        ImGuiTreeNodeFlags_FramePadding;
+
+    if (entity.HasComponent<MaterialComponent>())
+    {
+        auto &mc = entity.GetComponent<MaterialComponent>();
+        bool open = ImGui::TreeNodeEx((void *)typeid(MaterialComponent).hash_code(), treeNodeFlags,
+                                      "Material Overrides");
+
+        if (open)
+        {
+            if (hitMeshIndex != -1)
+            {
+                ImGui::Text("Last Picked Mesh: %d", hitMeshIndex);
+                ImGui::SameLine();
+                if (ImGui::Button("Add Slot for Picked Mesh"))
+                {
+                    mc.Slots.emplace_back("Mesh Slot " + std::to_string(hitMeshIndex),
+                                          hitMeshIndex);
+                    mc.Slots.back().Target = MaterialSlotTarget::MeshIndex;
+                }
+                ImGui::Separator();
+            }
+
+            if (ImGui::Button("Add Slot"))
+            {
+                mc.Slots.emplace_back("New Slot", (int)mc.Slots.size());
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Populate from Model"))
+            {
+                if (entity.HasComponent<ModelComponent>())
+                {
+                    auto &mod = entity.GetComponent<ModelComponent>();
+                    auto asset = AssetManager::LoadModel(mod.ModelPath);
+                    if (asset)
+                    {
+                        Model &model = asset->GetModel();
+                        std::set<int> uniqueIndices;
+                        for (int i = 0; i < model.meshCount; i++)
+                            uniqueIndices.insert(model.meshMaterial[i]);
+
+                        for (int idx : uniqueIndices)
+                        {
+                            bool exists = false;
+                            for (const auto &s : mc.Slots)
+                                if (s.Index == idx && s.Target == MaterialSlotTarget::MaterialIndex)
+                                {
+                                    exists = true;
+                                    break;
+                                }
+
+                            if (!exists)
+                            {
+                                mc.Slots.emplace_back("Material " + std::to_string(idx), idx);
+                                auto &newSlot = mc.Slots.back();
+                                newSlot.Target = MaterialSlotTarget::MaterialIndex;
+
+                                // Try to pre-populate with current model values
+                                newSlot.Material.AlbedoColor = model.materials[idx].maps[0].color;
+                            }
+                        }
+                    }
+                }
+            }
+
+            int slotToDelete = -1;
+            for (int i = 0; i < mc.Slots.size(); i++)
+            {
+                auto &slot = mc.Slots[i];
+                std::string label = slot.Name + " (Index: " + std::to_string(slot.Index) + ")";
+                if (ImGui::TreeNode(label.c_str()))
+                {
+                    char nameBuffer[256];
+                    memset(nameBuffer, 0, sizeof(nameBuffer));
+                    strncpy(nameBuffer, slot.Name.c_str(), sizeof(nameBuffer) - 1);
+                    if (ImGui::InputText("Slot Name", nameBuffer, sizeof(nameBuffer)))
+                        slot.Name = std::string(nameBuffer);
+
+                    ImGui::InputInt("Slot Index", &slot.Index);
+
+                    const char *targetTypes[] = {"Material Index", "Mesh Index"};
+                    int currentTarget = (int)slot.Target;
+                    if (ImGui::Combo("Target", &currentTarget, targetTypes, 2))
+                        slot.Target = (MaterialSlotTarget)currentTarget;
+
+                    auto &material = slot.Material;
+
+                    // Albedo Section
+                    ImGui::Checkbox("##OverrideAlbedo", &material.OverrideAlbedo);
+                    ImGui::SameLine();
+                    if (ImGui::TreeNodeEx("Albedo", ImGuiTreeNodeFlags_DefaultOpen))
+                    {
+                        if (material.OverrideAlbedo)
+                        {
+                            char textureBuffer[256];
+                            memset(textureBuffer, 0, sizeof(textureBuffer));
+                            strncpy(textureBuffer, material.AlbedoPath.c_str(),
+                                    sizeof(textureBuffer) - 1);
+                            if (ImGui::InputText("Texture", textureBuffer, sizeof(textureBuffer)))
+                                material.AlbedoPath = std::string(textureBuffer);
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("...##Albedo"))
+                            {
+                                nfdchar_t *outPath = NULL;
+                                nfdu8filteritem_t filterItem[1] = {
+                                    {"Image Files", "png,jpg,jpeg,bmp,tga"}};
+                                if (NFD_OpenDialog(&outPath, filterItem, 1, NULL) == NFD_OKAY)
+                                {
+                                    std::filesystem::path fullPath = outPath;
+                                    if (Project::GetActive())
+                                    {
+                                        std::filesystem::path assetDir =
+                                            Project::GetAssetDirectory();
+                                        std::error_code ec;
+                                        auto relativePath =
+                                            std::filesystem::relative(fullPath, assetDir, ec);
+                                        material.AlbedoPath =
+                                            (!ec) ? relativePath.string() : fullPath.string();
+                                    }
+                                    else
+                                        material.AlbedoPath = fullPath.string();
+                                    NFD_FreePath(outPath);
+                                }
+                            }
+                        }
+
+                        float albedoColor[4] = {
+                            material.AlbedoColor.r / 255.0f, material.AlbedoColor.g / 255.0f,
+                            material.AlbedoColor.b / 255.0f, material.AlbedoColor.a / 255.0f};
+                        if (ImGui::ColorEdit4("Tint", albedoColor))
+                        {
+                            material.AlbedoColor.r = (unsigned char)(albedoColor[0] * 255.0f);
+                            material.AlbedoColor.g = (unsigned char)(albedoColor[1] * 255.0f);
+                            material.AlbedoColor.b = (unsigned char)(albedoColor[2] * 255.0f);
+                            material.AlbedoColor.a = (unsigned char)(albedoColor[3] * 255.0f);
+                        }
+                        ImGui::TreePop();
+                    }
+
+                    // PBR Section (Normal, MR, Emissive)
+                    ImGui::Checkbox("##OverrideNormal", &material.OverrideNormal);
+                    ImGui::SameLine();
+                    if (ImGui::TreeNodeEx("Normal Map", ImGuiTreeNodeFlags_DefaultOpen))
+                    {
+                        if (material.OverrideNormal)
+                        {
+                            char texBuffer[256];
+                            memset(texBuffer, 0, sizeof(texBuffer));
+                            strncpy(texBuffer, material.NormalMapPath.c_str(),
+                                    sizeof(texBuffer) - 1);
+                            if (ImGui::InputText("Map", texBuffer, sizeof(texBuffer)))
+                                material.NormalMapPath = std::string(texBuffer);
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("...##Normal"))
+                            {
+                                nfdchar_t *outPath = NULL;
+                                nfdu8filteritem_t filterItem[1] = {
+                                    {"Image Files", "png,jpg,jpeg,bmp,tga"}};
+                                if (NFD_OpenDialog(&outPath, filterItem, 1, NULL) == NFD_OKAY)
+                                {
+                                    std::filesystem::path fullPath = outPath;
+                                    if (Project::GetActive())
+                                    {
+                                        std::filesystem::path assetDir =
+                                            Project::GetAssetDirectory();
+                                        std::error_code ec;
+                                        auto relativePath =
+                                            std::filesystem::relative(fullPath, assetDir, ec);
+                                        material.NormalMapPath =
+                                            (!ec) ? relativePath.string() : fullPath.string();
+                                    }
+                                    else
+                                        material.NormalMapPath = fullPath.string();
+                                    NFD_FreePath(outPath);
+                                }
+                            }
+                        }
+                        ImGui::TreePop();
+                    }
+
+                    ImGui::Checkbox("##OverrideMetallicRoughness",
+                                    &material.OverrideMetallicRoughness);
+                    ImGui::SameLine();
+                    if (ImGui::TreeNodeEx("PBR Parameters", ImGuiTreeNodeFlags_DefaultOpen))
+                    {
+                        if (material.OverrideMetallicRoughness)
+                        {
+                            char texBuffer[256];
+                            memset(texBuffer, 0, sizeof(texBuffer));
+                            strncpy(texBuffer, material.MetallicRoughnessPath.c_str(),
+                                    sizeof(texBuffer) - 1);
+                            if (ImGui::InputText("MR Map", texBuffer, sizeof(texBuffer)))
+                                material.MetallicRoughnessPath = std::string(texBuffer);
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("...##MR"))
+                            {
+                                nfdchar_t *outPath = NULL;
+                                nfdu8filteritem_t filterItem[1] = {
+                                    {"Image Files", "png,jpg,jpeg,bmp,tga"}};
+                                if (NFD_OpenDialog(&outPath, filterItem, 1, NULL) == NFD_OKAY)
+                                {
+                                    std::filesystem::path fullPath = outPath;
+                                    if (Project::GetActive())
+                                    {
+                                        std::filesystem::path assetDir =
+                                            Project::GetAssetDirectory();
+                                        std::error_code ec;
+                                        auto relativePath =
+                                            std::filesystem::relative(fullPath, assetDir, ec);
+                                        material.MetallicRoughnessPath =
+                                            (!ec) ? relativePath.string() : fullPath.string();
+                                    }
+                                    else
+                                        material.MetallicRoughnessPath = fullPath.string();
+                                    NFD_FreePath(outPath);
+                                }
+                            }
+                        }
+                        ImGui::SliderFloat("Metalness", &material.Metalness, 0.0f, 1.0f);
+                        ImGui::SliderFloat("Roughness", &material.Roughness, 0.0f, 1.0f);
+                        ImGui::TreePop();
+                    }
+
+                    ImGui::Checkbox("##OverrideEmissive", &material.OverrideEmissive);
+                    ImGui::SameLine();
+                    if (ImGui::TreeNodeEx("Emissive", ImGuiTreeNodeFlags_DefaultOpen))
+                    {
+                        if (material.OverrideEmissive)
+                        {
+                            char texBuffer[256];
+                            memset(texBuffer, 0, sizeof(texBuffer));
+                            strncpy(texBuffer, material.EmissivePath.c_str(),
+                                    sizeof(texBuffer) - 1);
+                            if (ImGui::InputText("Map", texBuffer, sizeof(texBuffer)))
+                                material.EmissivePath = std::string(texBuffer);
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("...##Emissive"))
+                            {
+                                nfdchar_t *outPath = NULL;
+                                nfdu8filteritem_t filterItem[1] = {
+                                    {"Image Files", "png,jpg,jpeg,bmp,tga"}};
+                                if (NFD_OpenDialog(&outPath, filterItem, 1, NULL) == NFD_OKAY)
+                                {
+                                    std::filesystem::path fullPath = outPath;
+                                    if (Project::GetActive())
+                                    {
+                                        std::filesystem::path assetDir =
+                                            Project::GetAssetDirectory();
+                                        std::error_code ec;
+                                        auto relativePath =
+                                            std::filesystem::relative(fullPath, assetDir, ec);
+                                        material.EmissivePath =
+                                            (!ec) ? relativePath.string() : fullPath.string();
+                                    }
+                                    else
+                                        material.EmissivePath = fullPath.string();
+                                    NFD_FreePath(outPath);
+                                }
+                            }
+                        }
+                        ImGui::TreePop();
+                    }
+
+                    if (ImGui::Button("Remove Slot"))
+                        slotToDelete = i;
+
+                    ImGui::TreePop();
+                }
+            }
+
+            if (slotToDelete != -1)
+                mc.Slots.erase(mc.Slots.begin() + slotToDelete);
+
+            ImGui::TreePop();
+        }
+    }
 }
 
 void DrawCollider(Entity entity)
@@ -367,6 +682,8 @@ void DrawAddComponentPopup(Entity entity)
             entity.AddComponent<TransformComponent>();
         if (ImGui::MenuItem("Model") && !entity.HasComponent<ModelComponent>())
             entity.AddComponent<ModelComponent>();
+        if (ImGui::MenuItem("Material") && !entity.HasComponent<MaterialComponent>())
+            entity.AddComponent<MaterialComponent>();
         if (ImGui::MenuItem("Collider") && !entity.HasComponent<ColliderComponent>())
             entity.AddComponent<ColliderComponent>();
         if (ImGui::MenuItem("RigidBody") && !entity.HasComponent<RigidBodyComponent>())

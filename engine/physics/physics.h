@@ -14,6 +14,7 @@ struct RaycastResult
     Vector3 Position = {0.0f, 0.0f, 0.0f};
     Vector3 Normal = {0.0f, 0.0f, 0.0f};
     entt::entity Entity = entt::null;
+    int MeshIndex = -1;
 };
 
 class Physics

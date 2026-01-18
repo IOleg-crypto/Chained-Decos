@@ -16,22 +16,18 @@ void InputGraphPanel::OnImGuiRender()
 {
     ImGui::Begin("Input Graph Editor");
 
-    // Top bar with Save/Load buttons
     if (ImGui::Button("Save"))
     {
-        SaveCurrentContext();
+        SaveCurrentActions();
     }
     ImGui::SameLine();
     if (ImGui::Button("Load"))
     {
-        // TODO: File dialog
-        LoadContext("assets/input/gameplay_input.json");
+        LoadActions("assets/input/gameplay_input.json");
     }
 
     ImGui::Separator();
 
-    RenderContextSelector();
-    ImGui::Separator();
     RenderActionList();
 
     // Modals
@@ -45,44 +41,24 @@ void InputGraphPanel::OnImGuiRender()
     ImGui::End();
 }
 
-void InputGraphPanel::RenderContextSelector()
-{
-    ImGui::Text("Context:");
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(200);
-
-    // For now, just display current context
-    ImGui::Text("%s", m_SelectedContext.c_str());
-}
-
 void InputGraphPanel::RenderActionList()
 {
-    auto *context = InputManager::GetContext(m_SelectedContext);
-    if (!context)
+    auto &actions = Input::GetActions();
+    if (actions.empty())
     {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Context '%s' not found!",
-                           m_SelectedContext.c_str());
-
-        if (ImGui::Button("Create Default Gameplay Context"))
-        {
-            InputManager::RegisterContext("Gameplay");
-            CH_CORE_INFO("Created default Gameplay context via editor");
-        }
-        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), "No actions registered.");
         if (ImGui::Button("Load assets/input/gameplay_input.json"))
         {
-            LoadContext("assets/input/gameplay_input.json");
+            LoadActions("assets/input/gameplay_input.json");
         }
-        return;
     }
 
     ImGui::Text("Actions:");
     ImGui::Separator();
 
-    const auto &actions = context->GetActions();
-    for (const auto &[name, action] : actions)
+    for (auto &[name, action] : actions)
     {
-        RenderActionNode(name, action.get());
+        RenderActionNode(name, &action);
     }
 
     ImGui::Spacing();
@@ -98,9 +74,8 @@ void InputGraphPanel::RenderActionNode(const std::string &actionName, InputActio
     if (!action)
         return;
 
-    // Color based on type
     ImVec4 headerColor;
-    switch (action->GetType())
+    switch (action->Type)
     {
     case InputActionType::Button:
         headerColor = ImVec4(0.2f, 0.8f, 0.2f, 1.0f);
@@ -117,15 +92,13 @@ void InputGraphPanel::RenderActionNode(const std::string &actionName, InputActio
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(headerColor.x * 1.2f, headerColor.y * 1.2f,
                                                          headerColor.z * 1.2f, 1.0f));
 
-    std::string label = actionName + " (" + ActionTypeToString(action->GetType()) + ")";
+    std::string label = actionName + " (" + ActionTypeToString(action->Type) + ")";
     if (ImGui::CollapsingHeader(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::Indent();
 
-        auto *context = InputManager::GetContext(m_SelectedContext);
-        auto bindings = context->GetBindingsForAction(actionName);
-
         ImGui::Text("Bindings:");
+        auto &bindings = action->Bindings;
         for (size_t i = 0; i < bindings.size(); ++i)
         {
             RenderBindingRow(actionName, bindings[i], static_cast<int>(i));
@@ -134,6 +107,12 @@ void InputGraphPanel::RenderActionNode(const std::string &actionName, InputActio
         if (ImGui::Button(("+ Add Binding##" + actionName).c_str()))
         {
             OnAddBinding(actionName);
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button(("- Remove Action##" + actionName).c_str()))
+        {
+            Input::RemoveAction(actionName);
         }
 
         ImGui::Unindent();
@@ -148,7 +127,6 @@ void InputGraphPanel::RenderBindingRow(const std::string &actionName, const Inpu
 {
     ImGui::PushID(index);
 
-    // Display binding info
     std::string bindingText = "• " + KeyCodeToString(binding.KeyCode);
 
     if (binding.Axis != InputAxis::None)
@@ -160,14 +138,12 @@ void InputGraphPanel::RenderBindingRow(const std::string &actionName, const Inpu
     ImGui::Text("%s", bindingText.c_str());
     ImGui::SameLine();
 
-    // Edit button
     if (ImGui::SmallButton("Edit"))
     {
         OnEditBinding(actionName, index);
     }
     ImGui::SameLine();
 
-    // Remove button
     if (ImGui::SmallButton("Remove"))
     {
         OnRemoveBinding(actionName, index);
@@ -187,13 +163,8 @@ void InputGraphPanel::ShowAddActionModal()
 
         if (ImGui::Button("Create"))
         {
-            auto *context = InputManager::GetContext(m_SelectedContext);
-            if (context)
-            {
-                InputActionType type = static_cast<InputActionType>(m_NewActionTypeIndex);
-                context->RegisterAction(m_NewActionName, type);
-                CH_CORE_INFO("Created action: {}", m_NewActionName);
-            }
+            Input::RegisterAction(m_NewActionName, 0,
+                                  static_cast<InputActionType>(m_NewActionTypeIndex));
             m_ShowAddActionModal = false;
             ImGui::CloseCurrentPopup();
         }
@@ -226,15 +197,13 @@ void InputGraphPanel::ShowEditBindingModal()
             ImGui::Text("Key: %s", KeyCodeToString(m_DetectedKey).c_str());
         }
 
-        // Modifiers
         ImGui::Checkbox("Require Shift", &m_EditingBinding.RequireShift);
         ImGui::Checkbox("Require Ctrl", &m_EditingBinding.RequireCtrl);
         ImGui::Checkbox("Require Alt", &m_EditingBinding.RequireAlt);
 
-        // Axis settings (for Axis2D actions)
-        auto *context = InputManager::GetContext(m_SelectedContext);
-        auto *action = context ? context->GetAction(m_EditingActionName) : nullptr;
-        if (action && action->GetType() == InputActionType::Axis2D)
+        auto &actions = Input::GetActions();
+        auto it = actions.find(m_EditingActionName);
+        if (it != actions.end() && it->second.Type != InputActionType::Button)
         {
             ImGui::Separator();
             const char *axes[] = {"None", "X", "Y"};
@@ -267,7 +236,6 @@ void InputGraphPanel::ShowKeyDetectionModal()
         ImGui::Text("Press any key...");
         ImGui::Spacing();
 
-        // Detect key press
         int key = GetKeyPressed();
         if (key != 0)
         {
@@ -299,28 +267,27 @@ void InputGraphPanel::ShowKeyDetectionModal()
     }
 }
 
-void InputGraphPanel::SaveCurrentContext()
+void InputGraphPanel::SaveCurrentActions()
 {
-    std::string path = "assets/input/" + m_SelectedContext + "_input.json";
-    if (InputManager::SaveInputGraph(path, m_SelectedContext))
+    if (Input::SaveActions("assets/input/gameplay_input.json"))
     {
-        CH_CORE_INFO("Saved input graph: {}", path);
+        CH_CORE_INFO("Saved input actions to assets/input/gameplay_input.json");
     }
     else
     {
-        CH_CORE_ERROR("Failed to save input graph");
+        CH_CORE_ERROR("Failed to save input actions");
     }
 }
 
-void InputGraphPanel::LoadContext(const std::string &path)
+void InputGraphPanel::LoadActions(const std::string &path)
 {
-    if (InputManager::LoadInputGraph(path))
+    if (Input::LoadActions(path))
     {
-        CH_CORE_INFO("Loaded input graph: {}", path);
+        CH_CORE_INFO("Loaded input actions: {}", path);
     }
     else
     {
-        CH_CORE_ERROR("Failed to load input graph: {}", path);
+        CH_CORE_ERROR("Failed to load input actions: {}", path);
     }
 }
 
@@ -328,7 +295,6 @@ void InputGraphPanel::OnAddBinding(const std::string &actionName)
 {
     m_EditingActionName = actionName;
     m_EditingBinding = InputBinding{};
-    m_EditingBinding.ActionName = actionName;
     m_EditingBindingIndex = -1;
     m_DetectedKey = 0;
     m_AxisIndex = 0;
@@ -340,11 +306,12 @@ void InputGraphPanel::OnAddBinding(const std::string &actionName)
 
 void InputGraphPanel::OnEditBinding(const std::string &actionName, int bindingIndex)
 {
-    auto *context = InputManager::GetContext(m_SelectedContext);
-    if (!context)
+    auto &actions = Input::GetActions();
+    auto it = actions.find(actionName);
+    if (it == actions.end())
         return;
 
-    auto bindings = context->GetBindingsForAction(actionName);
+    auto &bindings = it->second.Bindings;
     if (bindingIndex < 0 || bindingIndex >= static_cast<int>(bindings.size()))
         return;
 
@@ -353,7 +320,6 @@ void InputGraphPanel::OnEditBinding(const std::string &actionName, int bindingIn
     m_EditingBindingIndex = bindingIndex;
     m_DetectedKey = m_EditingBinding.KeyCode;
 
-    // Set axis settings
     m_AxisIndex = static_cast<int>(m_EditingBinding.Axis);
     m_AxisScale = m_EditingBinding.Scale;
 
@@ -363,41 +329,39 @@ void InputGraphPanel::OnEditBinding(const std::string &actionName, int bindingIn
 
 void InputGraphPanel::OnRemoveBinding(const std::string &actionName, int bindingIndex)
 {
-    auto *context = InputManager::GetContext(m_SelectedContext);
-    if (!context)
+    auto &actions = Input::GetActions();
+    auto it = actions.find(actionName);
+    if (it == actions.end())
         return;
 
-    auto bindings = context->GetBindingsForAction(actionName);
+    auto &bindings = it->second.Bindings;
     if (bindingIndex < 0 || bindingIndex >= static_cast<int>(bindings.size()))
         return;
 
-    context->RemoveBinding(actionName, bindings[bindingIndex].KeyCode);
-    CH_CORE_INFO("Removed binding from action: {}", actionName);
+    Input::RemoveBinding(actionName, bindings[bindingIndex].KeyCode);
 }
 
 void InputGraphPanel::ApplyBinding()
 {
-    auto *context = InputManager::GetContext(m_SelectedContext);
-    if (!context)
-        return;
-
-    // Set axis from UI
     m_EditingBinding.Axis = static_cast<InputAxis>(m_AxisIndex);
     m_EditingBinding.Scale = m_AxisScale;
 
-    // If editing existing binding, remove old one first
+    auto &actions = Input::GetActions();
+    auto it = actions.find(m_EditingActionName);
+    if (it == actions.end())
+        return;
+
     if (m_EditingBindingIndex >= 0)
     {
-        auto bindings = context->GetBindingsForAction(m_EditingActionName);
-        if (m_EditingBindingIndex < static_cast<int>(bindings.size()))
+        if (m_EditingBindingIndex < (int)it->second.Bindings.size())
         {
-            context->RemoveBinding(m_EditingActionName, bindings[m_EditingBindingIndex].KeyCode);
+            it->second.Bindings[m_EditingBindingIndex] = m_EditingBinding;
         }
     }
-
-    // Add new/updated binding
-    context->AddBinding(m_EditingBinding);
-    CH_CORE_INFO("Applied binding to action: {}", m_EditingActionName);
+    else
+    {
+        Input::AddBinding(m_EditingActionName, m_EditingBinding);
+    }
 }
 
 std::string InputGraphPanel::KeyCodeToString(int keyCode) const

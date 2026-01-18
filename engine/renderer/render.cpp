@@ -1,5 +1,6 @@
 #include "render.h"
 #include "engine/renderer/asset_manager.h"
+#include "engine/renderer/shader_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
@@ -16,68 +17,85 @@ Render::SceneData Render::s_Scene;
 void Render::Init()
 {
     s_Shaders.lightingShader =
-        AssetManager::LoadShader("engine:shaders/lighting.vs", "engine:shaders/lighting.fs");
-    s_Shaders.lightDirLoc = GetShaderLocation(s_Shaders.lightingShader, "lightDir");
-    s_Shaders.lightColorLoc = GetShaderLocation(s_Shaders.lightingShader, "lightColor");
-    s_Shaders.ambientLoc = GetShaderLocation(s_Shaders.lightingShader, "ambient");
+        Assets::LoadShader("engine:shaders/lighting.vs", "engine:shaders/lighting.fs");
 
-    for (int i = 0; i < 8; i++)
+    if (s_Shaders.lightingShader)
     {
-        std::string base = "lights[" + std::to_string(i) + "].";
-        s_Shaders.lightLocs[i].position =
-            GetShaderLocation(s_Shaders.lightingShader, (base + "position").c_str());
-        s_Shaders.lightLocs[i].color =
-            GetShaderLocation(s_Shaders.lightingShader, (base + "color").c_str());
-        s_Shaders.lightLocs[i].radius =
-            GetShaderLocation(s_Shaders.lightingShader, (base + "radius").c_str());
-        s_Shaders.lightLocs[i].radiance =
-            GetShaderLocation(s_Shaders.lightingShader, (base + "radiance").c_str());
-        s_Shaders.lightLocs[i].falloff =
-            GetShaderLocation(s_Shaders.lightingShader, (base + "falloff").c_str());
-        s_Shaders.lightLocs[i].enabled =
-            GetShaderLocation(s_Shaders.lightingShader, (base + "enabled").c_str());
+        auto &shader = s_Shaders.lightingShader->GetShader();
+        s_Shaders.lightDirLoc = GetShaderLocation(shader, "lightDir");
+        s_Shaders.lightColorLoc = GetShaderLocation(shader, "lightColor");
+        s_Shaders.ambientLoc = GetShaderLocation(shader, "ambient");
+
+        for (int i = 0; i < 8; i++)
+        {
+            std::string base = "lights[" + std::to_string(i) + "].";
+            s_Shaders.lightLocs[i].position =
+                GetShaderLocation(shader, (base + "position").c_str());
+            s_Shaders.lightLocs[i].color = GetShaderLocation(shader, (base + "color").c_str());
+            s_Shaders.lightLocs[i].radius = GetShaderLocation(shader, (base + "radius").c_str());
+            s_Shaders.lightLocs[i].radiance =
+                GetShaderLocation(shader, (base + "radiance").c_str());
+            s_Shaders.lightLocs[i].falloff = GetShaderLocation(shader, (base + "falloff").c_str());
+            s_Shaders.lightLocs[i].enabled = GetShaderLocation(shader, (base + "enabled").c_str());
+        }
     }
 
+    float ambient = 0.3f;
+    if (Project::GetActive())
+        ambient = Project::GetActive()->GetConfig().Render.AmbientIntensity;
+
     SetDirectionalLight({-1.0f, -1.0f, -1.0f}, WHITE);
-    SetAmbientLight(0.3f);
+    SetAmbientLight(ambient);
 
     // Skybox initialization
     s_Shaders.skyboxShader =
-        AssetManager::LoadShader("engine:shaders/skybox.vs", "engine:shaders/skybox.fs");
+        Assets::LoadShader("engine:shaders/skybox.vs", "engine:shaders/skybox.fs");
     s_Shaders.skyboxCube = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
-    s_Shaders.skyboxCube.materials[0].shader = s_Shaders.skyboxShader;
 
-    s_Shaders.skyboxVflippedLoc = GetShaderLocation(s_Shaders.skyboxShader, "vflipped");
-    s_Shaders.skyboxDoGammaLoc = GetShaderLocation(s_Shaders.skyboxShader, "doGamma");
-    s_Shaders.skyboxFragGammaLoc = GetShaderLocation(s_Shaders.skyboxShader, "fragGamma");
-    s_Shaders.skyboxExposureLoc = GetShaderLocation(s_Shaders.skyboxShader, "exposure");
-    s_Shaders.skyboxBrightnessLoc = GetShaderLocation(s_Shaders.skyboxShader, "brightness");
-    s_Shaders.skyboxContrastLoc = GetShaderLocation(s_Shaders.skyboxShader, "contrast");
-
-    int environmentMapLoc = GetShaderLocation(s_Shaders.skyboxShader, "environmentMap");
-    if (environmentMapLoc >= 0)
+    if (s_Shaders.skyboxShader)
     {
-        s_Shaders.skyboxShader.locs[SHADER_LOC_MAP_CUBEMAP] = environmentMapLoc;
-        int envMapValue[1] = {MATERIAL_MAP_CUBEMAP};
-        SetShaderValue(s_Shaders.skyboxShader, environmentMapLoc, envMapValue, SHADER_UNIFORM_INT);
+        auto &shader = s_Shaders.skyboxShader->GetShader();
+        s_Shaders.skyboxCube.materials[0].shader = shader;
+        s_Shaders.skyboxVflippedLoc = GetShaderLocation(shader, "vflipped");
+        s_Shaders.skyboxDoGammaLoc = GetShaderLocation(shader, "doGamma");
+        s_Shaders.skyboxFragGammaLoc = GetShaderLocation(shader, "fragGamma");
+        s_Shaders.skyboxExposureLoc = GetShaderLocation(shader, "exposure");
+        s_Shaders.skyboxBrightnessLoc = GetShaderLocation(shader, "brightness");
+        s_Shaders.skyboxContrastLoc = GetShaderLocation(shader, "contrast");
+
+        int environmentMapLoc = GetShaderLocation(shader, "environmentMap");
+        if (environmentMapLoc >= 0)
+        {
+            shader.locs[SHADER_LOC_MAP_CUBEMAP] = environmentMapLoc;
+            int envMapValue[1] = {MATERIAL_MAP_CUBEMAP};
+            SetShaderValue(shader, environmentMapLoc, envMapValue, SHADER_UNIFORM_INT);
+        }
     }
 
     // Panorama initialization
     s_Shaders.panoramaShader =
-        AssetManager::LoadShader("engine:shaders/skybox.vs", "engine:shaders/skybox_panorama.fs");
-    s_Shaders.panoDoGammaLoc = GetShaderLocation(s_Shaders.panoramaShader, "doGamma");
-    s_Shaders.panoFragGammaLoc = GetShaderLocation(s_Shaders.panoramaShader, "fragGamma");
-    s_Shaders.panoExposureLoc = GetShaderLocation(s_Shaders.panoramaShader, "exposure");
-    s_Shaders.panoBrightnessLoc = GetShaderLocation(s_Shaders.panoramaShader, "brightness");
-    s_Shaders.panoContrastLoc = GetShaderLocation(s_Shaders.panoramaShader, "contrast");
+        Assets::LoadShader("engine:shaders/skybox.vs", "engine:shaders/skybox_panorama.fs");
+    if (s_Shaders.panoramaShader)
+    {
+        auto &shader = s_Shaders.panoramaShader->GetShader();
+        s_Shaders.panoDoGammaLoc = GetShaderLocation(shader, "doGamma");
+        s_Shaders.panoFragGammaLoc = GetShaderLocation(shader, "fragGamma");
+        s_Shaders.panoExposureLoc = GetShaderLocation(shader, "exposure");
+        s_Shaders.panoBrightnessLoc = GetShaderLocation(shader, "brightness");
+        s_Shaders.panoContrastLoc = GetShaderLocation(shader, "contrast");
+    }
 
     // Infinite Grid initialization
-    s_Shaders.gridShader = AssetManager::LoadShader("engine:shaders/infinite_grid.vs",
-                                                    "engine:shaders/infinite_grid.fs");
-    s_Shaders.gridNearLoc = GetShaderLocation(s_Shaders.gridShader, "near");
-    s_Shaders.gridFarLoc = GetShaderLocation(s_Shaders.gridShader, "far");
-    s_Shaders.gridViewLoc = GetShaderLocation(s_Shaders.gridShader, "matView");
-    s_Shaders.gridProjLoc = GetShaderLocation(s_Shaders.gridShader, "matProjection");
+    s_Shaders.gridShader =
+        Assets::LoadShader("engine:shaders/infinite_grid.vs", "engine:shaders/infinite_grid.fs");
+    if (s_Shaders.gridShader)
+    {
+        auto &shader = s_Shaders.gridShader->GetShader();
+        s_Shaders.gridNearLoc = GetShaderLocation(shader, "near");
+        s_Shaders.gridFarLoc = GetShaderLocation(shader, "far");
+        s_Shaders.gridViewLoc = GetShaderLocation(shader, "matView");
+        s_Shaders.gridProjLoc = GetShaderLocation(shader, "matProjection");
+    }
 
     // Create fullscreen quad for grid using rlgl
     float gridVertices[] = {-1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f,
@@ -95,9 +113,10 @@ void Render::Init()
 
 void Render::Shutdown()
 {
-    UnloadShader(s_Shaders.lightingShader);
-    UnloadShader(s_Shaders.skyboxShader);
-    UnloadShader(s_Shaders.gridShader);
+    s_Shaders.lightingShader = nullptr;
+    s_Shaders.skyboxShader = nullptr;
+    s_Shaders.panoramaShader = nullptr;
+    s_Shaders.gridShader = nullptr;
     UnloadModel(s_Shaders.skyboxCube);
 
     if (s_Shaders.gridVAO != 0)
@@ -156,44 +175,87 @@ void Render::DrawModel(const std::string &path, const Matrix &transform, Color t
 }
 
 void Render::DrawModel(const std::string &path, const Matrix &transform,
-                       const MaterialInstance &material, Vector3 scale)
+                       const std::vector<MaterialSlot> &overrides, Vector3 scale)
 {
-    Model model = AssetManager::LoadModel(path);
-    if (model.meshCount > 0)
+    auto asset = Assets::LoadModel(path);
+    if (asset)
     {
+        Model &model = asset->GetModel();
         rlPushMatrix();
         rlMultMatrixf(MatrixToFloat(transform));
 
         for (int i = 0; i < model.meshCount; i++)
         {
-            Material mat = model.materials[model.meshMaterial[i]];
+            int matIndex = model.meshMaterial[i];
+            // Use local copy of material to avoid polluting shared asset
+            Material mat = model.materials[matIndex];
 
-            // Raylib Material maps are pointers to shared data.
-            // We MUST use a local copy to avoid modifying other instances.
-            MaterialMap localMaps[12]; // MAX_MATERIAL_MAPS is usually 12
-            for (int j = 0; j < 12; j++)
-                localMaps[j] = mat.maps[j];
-            mat.maps = localMaps;
+            if (s_Shaders.lightingShader)
+                mat.shader = s_Shaders.lightingShader->GetShader();
 
-            mat.shader = s_Shaders.lightingShader;
-            mat.maps[MATERIAL_MAP_ALBEDO].color = material.AlbedoColor;
-
-            if (!material.AlbedoPath.empty())
+            // Find override for this slot
+            for (const auto &slot : overrides)
             {
-                Texture2D tex = AssetManager::LoadTexture(material.AlbedoPath);
-                if (tex.id > 0)
+                bool matches = (slot.Index == -1); // Global override
+                if (slot.Target == MaterialSlotTarget::MaterialIndex)
+                    matches |= (slot.Index == matIndex);
+                else if (slot.Target == MaterialSlotTarget::MeshIndex)
+                    matches |= (slot.Index == i);
+
+                if (matches)
                 {
-                    mat.maps[MATERIAL_MAP_ALBEDO].texture = tex;
+                    const auto &material = slot.Material;
+                    // Only apply if override flag is set
+                    if (material.OverrideAlbedo)
+                    {
+                        mat.maps[MATERIAL_MAP_ALBEDO].color = material.AlbedoColor;
+                        if (!material.AlbedoPath.empty())
+                        {
+                            auto texAsset = Assets::LoadTexture(material.AlbedoPath);
+                            if (texAsset)
+                                mat.maps[MATERIAL_MAP_ALBEDO].texture = texAsset->GetTexture();
+                        }
+                    }
+
+                    if (material.OverrideNormal && !material.NormalMapPath.empty())
+                    {
+                        auto texAsset = Assets::LoadTexture(material.NormalMapPath);
+                        if (texAsset)
+                            mat.maps[MATERIAL_MAP_NORMAL].texture = texAsset->GetTexture();
+                    }
+
+                    if (material.OverrideMetallicRoughness &&
+                        !material.MetallicRoughnessPath.empty())
+                    {
+                        auto texAsset = Assets::LoadTexture(material.MetallicRoughnessPath);
+                        if (texAsset)
+                            mat.maps[MATERIAL_MAP_ROUGHNESS].texture = texAsset->GetTexture();
+                    }
+
+                    if (material.OverrideEmissive && !material.EmissivePath.empty())
+                    {
+                        auto texAsset = Assets::LoadTexture(material.EmissivePath);
+                        if (texAsset)
+                            mat.maps[MATERIAL_MAP_EMISSION].texture = texAsset->GetTexture();
+                    }
                 }
             }
 
-            // Draw this mesh with our custom material and it's own scale (identity transform
-            // because we pushed it)
-            ::DrawMesh(model.meshes[i], mat, MatrixScale(scale.x, scale.y, scale.z));
+            DrawMesh(model.meshes[i], mat, MatrixIdentity());
         }
-
         rlPopMatrix();
     }
+}
+
+void Render::DrawModel(const std::string &path, const Matrix &transform,
+                       const MaterialInstance &material, Vector3 scale)
+{
+    std::vector<MaterialSlot> overrides;
+    MaterialSlot slot;
+    slot.Index = -1; // Override all slots
+    slot.Material = material;
+    overrides.push_back(slot);
+    DrawModel(path, transform, overrides, scale);
 }
 
 void Render::SetDirectionalLight(Vector3 direction, Color color)
@@ -204,15 +266,23 @@ void Render::SetDirectionalLight(Vector3 direction, Color color)
     float dir[3] = {direction.x, direction.y, direction.z};
     float col[4] = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
 
-    SetShaderValue(s_Shaders.lightingShader, s_Shaders.lightDirLoc, dir, SHADER_UNIFORM_VEC3);
-    SetShaderValue(s_Shaders.lightingShader, s_Shaders.lightColorLoc, col, SHADER_UNIFORM_VEC4);
+    if (s_Shaders.lightingShader)
+    {
+        SetShaderValue(s_Shaders.lightingShader->GetShader(), s_Shaders.lightDirLoc, dir,
+                       SHADER_UNIFORM_VEC3);
+        SetShaderValue(s_Shaders.lightingShader->GetShader(), s_Shaders.lightColorLoc, col,
+                       SHADER_UNIFORM_VEC4);
+    }
 }
 
 void Render::SetAmbientLight(float intensity)
 {
     s_Scene.ambientIntensity = intensity;
-    SetShaderValue(s_Shaders.lightingShader, s_Shaders.ambientLoc, &intensity,
-                   SHADER_UNIFORM_FLOAT);
+    if (s_Shaders.lightingShader)
+    {
+        SetShaderValue(s_Shaders.lightingShader->GetShader(), s_Shaders.ambientLoc, &intensity,
+                       SHADER_UNIFORM_FLOAT);
+    }
 }
 
 void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
@@ -220,9 +290,11 @@ void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
     if (skybox.TexturePath.empty())
         return;
 
-    Texture2D tex = AssetManager::LoadTexture(skybox.TexturePath);
-    if (tex.id == 0)
+    auto texAsset = Assets::LoadTexture(skybox.TexturePath);
+    if (!texAsset)
         return;
+
+    Texture2D &tex = texAsset->GetTexture();
 
     // We don't have an easy way to check if it's a cubemap in Raylib Texture struct,
     // so we assume PNG/JPG/BMP are 2D panoramas and .hdr/special cubemaps are cubemaps.
@@ -236,7 +308,11 @@ void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
     // Actually, let's just try to be smart: if it's a regular LoadTexture, it's 2D.
     // If we'll have a LoadCubemap later that sets a flag, we'll use that.
 
-    Shader shader = usePanorama ? s_Shaders.panoramaShader : s_Shaders.skyboxShader;
+    Ref<ShaderAsset> shaderAsset = usePanorama ? s_Shaders.panoramaShader : s_Shaders.skyboxShader;
+    if (!shaderAsset)
+        return;
+
+    auto &shader = shaderAsset->GetShader();
     s_Shaders.skyboxCube.materials[0].shader = shader;
 
     // Set texture to material

@@ -1,7 +1,8 @@
 #include "input.h"
 #include "engine/core/events.h"
-#include "input_manager.h"
+#include "engine/core/log.h"
 #include <algorithm>
+
 
 namespace CHEngine
 {
@@ -15,10 +16,15 @@ std::array<bool, Input::MAX_MOUSE_BUTTONS> Input::s_MouseButtonsPressedThisFrame
 std::array<bool, Input::MAX_MOUSE_BUTTONS> Input::s_MouseButtonsReleasedThisFrame = {};
 
 std::vector<int> Input::s_ActiveKeys = {};
-std::unordered_map<std::string, int> Input::s_RegisteredInputActions = {};
 
 Vector2 Input::s_LastMousePosition = {0.0f, 0.0f};
 Vector2 Input::s_MouseDelta = {0.0f, 0.0f};
+
+bool Input::s_IsShiftDown = false;
+bool Input::s_IsCtrlDown = false;
+bool Input::s_IsAltDown = false;
+
+// Keyboard
 
 // Keyboard
 bool Input::IsKeyPressed(int key)
@@ -105,24 +111,7 @@ float Input::GetMouseWheelMove()
     return ::GetMouseWheelMove();
 }
 
-void Input::RegisterAction(const std::string &name, int key)
-{
-    s_RegisteredInputActions[name] = key;
-}
-
-bool Input::IsActionPressed(const std::string &name)
-{
-    if (s_RegisteredInputActions.find(name) == s_RegisteredInputActions.end())
-        return false;
-    return IsKeyPressed(s_RegisteredInputActions[name]);
-}
-
-bool Input::IsActionDown(const std::string &name)
-{
-    if (s_RegisteredInputActions.find(name) == s_RegisteredInputActions.end())
-        return false;
-    return IsKeyDown(s_RegisteredInputActions[name]);
-}
+// Internal state management
 
 // Internal state management
 void Input::PollEvents(std::function<void(class Event &)> eventCallback)
@@ -132,22 +121,16 @@ void Input::PollEvents(std::function<void(class Event &)> eventCallback)
     while (key != 0)
     {
         OnKeyPressed(key);
-        // Only add if not already in active keys
         if (std::find(s_ActiveKeys.begin(), s_ActiveKeys.end(), key) == s_ActiveKeys.end())
         {
             s_ActiveKeys.push_back(key);
         }
-
-        // Notify InputManager for action processing
-        InputManager::ProcessKeyPressed(key);
 
         KeyPressedEvent e(key, false);
         eventCallback(e);
         key = GetKeyPressed();
     }
 
-    // Check for releases without looping through the entire range
-    // We only check keys that we know were previously down.
     auto it = s_ActiveKeys.begin();
     while (it != s_ActiveKeys.end())
     {
@@ -155,10 +138,6 @@ void Input::PollEvents(std::function<void(class Event &)> eventCallback)
         if (::IsKeyReleased(activeKey))
         {
             OnKeyReleased(activeKey);
-
-            // Notify InputManager for action processing
-            InputManager::ProcessKeyReleased(activeKey);
-
             KeyReleasedEvent e(activeKey);
             eventCallback(e);
             it = s_ActiveKeys.erase(it);
@@ -169,7 +148,7 @@ void Input::PollEvents(std::function<void(class Event &)> eventCallback)
         }
     }
 
-    // 2. Mouse Events - Individual checks (No loop)
+    // 2. Mouse Events
     auto handleMouse = [&](int button)
     {
         if (::IsMouseButtonPressed(button))
@@ -190,16 +169,13 @@ void Input::PollEvents(std::function<void(class Event &)> eventCallback)
     handleMouse(MOUSE_BUTTON_RIGHT);
     handleMouse(MOUSE_BUTTON_MIDDLE);
 
-    // Mouse Movement
     Vector2 currentMousePos = ::GetMousePosition();
     if (currentMousePos.x != s_LastMousePosition.x || currentMousePos.y != s_LastMousePosition.y)
     {
         MouseMovedEvent e(currentMousePos.x, currentMousePos.y);
         eventCallback(e);
-        // Delta and LastPos will be updated in UpdateState() called later/every frame
     }
 
-    // Mouse Scroll
     float wheel = ::GetMouseWheelMove();
     if (wheel != 0)
     {
@@ -210,20 +186,15 @@ void Input::PollEvents(std::function<void(class Event &)> eventCallback)
 
 void Input::UpdateState()
 {
-    // Clear per-frame flags
     s_KeysPressedThisFrame.fill(false);
     s_KeysReleasedThisFrame.fill(false);
     s_MouseButtonsPressedThisFrame.fill(false);
     s_MouseButtonsReleasedThisFrame.fill(false);
 
-    // Update mouse delta
     Vector2 currentMousePos = ::GetMousePosition();
     s_MouseDelta = {currentMousePos.x - s_LastMousePosition.x,
                     currentMousePos.y - s_LastMousePosition.y};
     s_LastMousePosition = currentMousePos;
-
-    // Process axis inputs for InputManager (continuous input like WASD movement)
-    InputManager::ProcessAxisInput();
 }
 
 void Input::OnKeyPressed(int key)

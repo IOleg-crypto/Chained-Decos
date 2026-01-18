@@ -89,7 +89,16 @@ void SceneRender::RenderOpaquePass()
     for (auto entity : view)
     {
         auto [transform, model] = view.get<TransformComponent, ModelComponent>(entity);
-        Render::DrawModel(model.ModelPath, transform.GetTransform(), model.Material, model.Scale);
+
+        if (registry.all_of<MaterialComponent>(entity))
+        {
+            auto &mc = registry.get<MaterialComponent>(entity);
+            Render::DrawModel(model.ModelPath, transform.GetTransform(), mc.Slots, model.Scale);
+        }
+        else
+        {
+            Render::DrawModel(model.ModelPath, transform.GetTransform(), WHITE, model.Scale);
+        }
     }
 }
 
@@ -123,11 +132,15 @@ static void DrawColliderDebug(Scene *scene)
 
         if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
         {
-            Model model = AssetManager::LoadModel(collider.ModelPath);
-            Matrix originalTransform = model.transform;
-            model.transform = MatrixMultiply(originalTransform, transform.GetTransform());
-            ::DrawModelWires(model, {0, 0, 0}, 1.0f, color);
-            model.transform = originalTransform;
+            auto asset = Assets::LoadModel(collider.ModelPath);
+            if (asset)
+            {
+                Model &model = asset->GetModel();
+                Matrix originalTransform = model.transform;
+                model.transform = MatrixMultiply(originalTransform, transform.GetTransform());
+                ::DrawModelWires(model, {0, 0, 0}, 1.0f, color);
+                model.transform = originalTransform;
+            }
         }
         else
         {
