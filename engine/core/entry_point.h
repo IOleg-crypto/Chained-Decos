@@ -10,7 +10,10 @@ int main(int argc, char **argv)
 {
     SetExitKey(NULL); // To prevent raylib from exiting on escape
     auto app = CHEngine::CreateApplication();
-    app->Run();
+    if (app->Initialize(app->GetConfig()))
+    {
+        app->Run();
+    }
     delete app;
     return 0;
 }

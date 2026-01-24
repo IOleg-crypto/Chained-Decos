@@ -8,18 +8,16 @@ ConsolePanel *ConsolePanel::s_Instance = nullptr;
 ConsolePanel::ConsolePanel()
 {
     s_Instance = this;
-}
-
-void ConsolePanel::AddLog(const char *message, ConsoleLogLevel level)
-{
-    if (s_Instance)
-        s_Instance->Log(message, level);
+    m_Name = "Console";
 }
 
 void ConsolePanel::OnImGuiRender(bool readOnly)
 {
+    if (!m_IsOpen)
+        return;
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
-    ImGui::Begin("Console");
+    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
     ImGui::BeginDisabled(readOnly);
     if (ImGui::Button("Clear"))
@@ -30,7 +28,6 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
     ImGui::Spacing();
 
     ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-    ImGui::PopStyleVar();
 
     {
         std::lock_guard<std::mutex> lock(m_LogMutex);
@@ -39,7 +36,7 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
             ImVec4 color = ImVec4(1, 1, 1, 1);
             if (msg.level == ConsoleLogLevel::Warn)
                 color = ImVec4(1, 1, 0, 1);
-            if (msg.level == ConsoleLogLevel::Error)
+            else if (msg.level == ConsoleLogLevel::Error)
                 color = ImVec4(1, 0, 0, 1);
 
             ImGui::PushStyleColor(ImGuiCol_Text, color);
@@ -53,6 +50,7 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
 
     ImGui::EndChild();
     ImGui::End();
+    ImGui::PopStyleVar();
 }
 
 void ConsolePanel::Log(const std::string &message, ConsoleLogLevel level)
@@ -71,5 +69,11 @@ void ConsolePanel::Clear()
 {
     std::lock_guard<std::mutex> lock(m_LogMutex);
     m_Messages.clear();
+}
+
+void ConsolePanel::AddLog(const char *message, ConsoleLogLevel level)
+{
+    if (s_Instance)
+        s_Instance->Log(message, level);
 }
 } // namespace CHEngine

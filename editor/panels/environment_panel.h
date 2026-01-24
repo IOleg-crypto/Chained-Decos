@@ -2,27 +2,27 @@
 #define CH_ENVIRONMENT_PANEL_H
 
 #include "engine/renderer/render.h"
-#include "engine/scene/components.h"
-#include "engine/scene/scene.h"
+#include "panel.h"
+
 
 namespace CHEngine
 {
-class EnvironmentPanel
+class EnvironmentPanel : public Panel
 {
 public:
-    EnvironmentPanel() = default;
-    ~EnvironmentPanel() = default;
+    EnvironmentPanel();
+    virtual void OnImGuiRender(bool readOnly = false) override;
 
-    void OnImGuiRender(Scene *scene, bool readOnly, DebugRenderFlags *debugFlags);
+    void SetDebugFlags(DebugRenderFlags *flags)
+    {
+        m_DebugFlags = flags;
+    }
 
 private:
-    bool m_IsOpen = true;
+    void DrawEnvironmentSettings(Ref<EnvironmentAsset> env, bool readOnly);
 
-public:
-    bool &IsOpen()
-    {
-        return m_IsOpen;
-    }
+private:
+    DebugRenderFlags *m_DebugFlags = nullptr;
 };
 } // namespace CHEngine
 

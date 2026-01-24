@@ -8,10 +8,9 @@
 
 namespace CHEngine
 {
-CH_SCRIPT(PlayerController){public : CH_UPDATE(deltaTime){
-    if (!HasComponent<PlayerComponent>() || !HasComponent<RigidBodyComponent>()) return;
-
-auto &player = GetComponent<PlayerComponent>();
+CH_SCRIPT(PlayerController){
+    public : CH_UPDATE(deltaTime){// CH_CORE_INFO("PlayerController: OnUpdate running...");
+                                  auto &player = GetComponent<PlayerComponent>();
 auto &rigidBody = RigidBody();
 
 float currentSpeed = player.MovementSpeed;
@@ -42,7 +41,9 @@ if (magSq > 0.01f)
     Velocity().x = movementVector.x * currentSpeed;
     Velocity().z = movementVector.z * currentSpeed;
 
-    Rotation().y = atan2f(movementVector.x, movementVector.z);
+    Vector3 euler = Rotation();
+    euler.y = atan2f(movementVector.x, movementVector.z);
+    Transform().SetRotation(euler);
 }
 else
 {
@@ -53,16 +54,13 @@ else
 
 CH_EVENT(e)
 {
-    if (!HasComponent<PlayerComponent>() || !HasComponent<RigidBodyComponent>())
-        return;
-
     EventDispatcher dispatcher(e);
 
     // Handle Jump
     dispatcher.Dispatch<KeyPressedEvent>(
         [this](KeyPressedEvent &ev)
         {
-            if (Input::IsKeyPressed(KEY_SPACE))
+            if (Input::IsActionPressed("Jump"))
             {
                 auto &player = GetComponent<PlayerComponent>();
                 auto &rb = RigidBody();
@@ -81,7 +79,7 @@ CH_EVENT(e)
     dispatcher.Dispatch<KeyPressedEvent>(
         [this](KeyPressedEvent &ev)
         {
-            if (Input::IsKeyPressed(KEY_F))
+            if (Input::IsActionPressed("Teleport"))
             {
                 auto &sceneRegistry = GetEntity().GetScene()->GetRegistry();
                 auto spawnZoneView = sceneRegistry.view<SpawnComponent>();
@@ -108,7 +106,7 @@ CH_EVENT(e)
                 if (HasComponent<AnimationComponent>())
                 {
                     auto &animation = GetComponent<AnimationComponent>();
-                    animation.Play(1); // Play second animation
+                    animation.Play(1); // Play second animation (e.g. Interact/Attack)
                     CH_CORE_INFO("Player triggered animation!");
                     return true;
                 }

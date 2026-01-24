@@ -10,6 +10,8 @@ class Editor : public Application
 public:
     Editor(const Application::Config &config);
     virtual ~Editor() = default;
+
+    virtual void PostInitialize() override;
 };
 } // namespace CHEngine
 

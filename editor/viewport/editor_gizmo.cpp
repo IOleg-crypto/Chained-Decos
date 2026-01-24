@@ -64,6 +64,11 @@ bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity e
         transform.Rotation.x = rotation.x * DEG2RAD;
         transform.Rotation.y = rotation.y * DEG2RAD;
         transform.Rotation.z = rotation.z * DEG2RAD;
+
+        // Update Quaternion for internal precision and smooth interpolation
+        transform.RotationQuat =
+            QuaternionFromEuler(transform.Rotation.x, transform.Rotation.y, transform.Rotation.z);
+
         transform.Scale = scale;
     }
     else if (m_WasUsing)

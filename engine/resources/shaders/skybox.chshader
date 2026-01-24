@@ -1,0 +1,14 @@
+# Skybox Shader Metadata
+VertexShader: "engine:shaders/skybox.vs"
+FragmentShader: "engine:shaders/skybox.fs"
+
+Uniforms:
+  - matProjection
+  - matView
+  - environmentMap
+  - vflipped
+  - doGamma
+  - fragGamma
+  - exposure
+  - brightness
+  - contrast

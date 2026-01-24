@@ -4,35 +4,52 @@ set(EDITOR_SOURCES
     editor_main.cpp
     editor_layer.h
     editor_layer.cpp
+    editor_layer_events.cpp
+    editor_utils.h
+    editor_utils.cpp
     editor_settings.cpp
+
+    # Viewport
     viewport/editor_gizmo.h
     viewport/editor_gizmo.cpp
     viewport/editor_camera.h
     viewport/editor_camera.cpp
+
+    # Panels
     panels/scene_hierarchy_panel.h
     panels/scene_hierarchy_panel.cpp
     panels/inspector_panel.h
     panels/inspector_panel.cpp
     panels/component_ui.h
     panels/component_ui.cpp
-    undo/command_history.cpp
-    undo/command_history.h
-    undo/editor_command.h
-    undo/transform_command.h
-    undo/entity_commands.h
     panels/content_browser_panel.h
     panels/content_browser_panel.cpp
     panels/console_panel.h
     panels/console_panel.cpp
+    panels/profiler_panel.h
+    panels/profiler_panel.cpp
+    panels/viewport_panel.h
     panels/viewport_panel.cpp
     panels/project_browser_panel.cpp
-    panels/viewport_panel.h
+    panels/project_settings_panel.h
+    panels/project_settings_panel.cpp
     panels/environment_panel.h
     panels/environment_panel.cpp
+
+    # Undo
+    undo/command_history.h
+    undo/command_history.cpp
+    undo/editor_command.h
+    undo/transform_command.h
+    undo/entity_commands.h
+
+    # UI
     ui/toolbar.h
     ui/toolbar.cpp
     ui/project_selector.h
     ui/project_selector.cpp
+    ui/menu_bar.h
+    ui/menu_bar.cpp
 )
 
 add_executable(ChainedEditor ${EDITOR_SOURCES})

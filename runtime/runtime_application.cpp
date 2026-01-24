@@ -6,6 +6,7 @@
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
+#include "engine/scene/scriptable_entity.h"
 #include <filesystem>
 
 namespace CHEngine
@@ -21,7 +22,8 @@ public:
     {
         auto scene = Application::Get().GetActiveScene();
         if (scene)
-            scene->OnUpdateRuntime(deltaTime);
+            scene->OnUpdateRuntime(
+                deltaTime); // This now handles Physics, Scripting, Animation, etc.
     }
 
     virtual void OnRender() override
@@ -65,9 +67,29 @@ public:
             camera.projection = CAMERA_PERSPECTIVE;
         }
 
-        SceneRender::BeginScene(scene.get(), camera);
-        SceneRender::SubmitScene(scene.get());
+        RenderState runtimeState;
+        SceneRender::CreateSnapshot(scene.get(), camera, runtimeState, 1.0f);
+
+        SceneRender::BeginScene(runtimeState);
+        SceneRender::SubmitScene(runtimeState);
         SceneRender::EndScene();
+    }
+
+    virtual void OnImGuiRender() override
+    {
+        auto scene = Application::Get().GetActiveScene();
+        if (!scene)
+            return;
+
+        scene->GetRegistry().view<NativeScriptComponent>().each(
+            [&](auto entity, auto &nsc)
+            {
+                for (auto &script : nsc.Scripts)
+                {
+                    if (script.Instance)
+                        script.Instance->OnImGuiRender();
+                }
+            });
     }
 };
 
@@ -117,11 +139,14 @@ RuntimeApplication::RuntimeApplication(const Application::Config &config,
     }
     else
     {
-        // Try fallback to assets/scenes/default.chscene
-        std::string fallbackPath = "assets/scenes/default.chscene";
-        if (std::filesystem::exists(fallbackPath))
+        // Try fallback to project.chproj in CWD
+        if (std::filesystem::exists("project.chproj"))
         {
-            LoadScene(fallbackPath);
+            LoadScene("assets/scenes/default.chscene"); // Placeholder, should deserial project
+        }
+        else if (std::filesystem::exists("assets/scenes/default.chscene"))
+        {
+            LoadScene("assets/scenes/default.chscene");
         }
     }
 

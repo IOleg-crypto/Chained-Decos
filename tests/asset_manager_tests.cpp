@@ -44,7 +44,7 @@ TEST_F(AssetManagerTest, ProceduralModelLoading)
     if (!IsWindowReady())
         return;
 
-    auto cube = AssetManager::LoadModel(":cube:");
+    auto cube = Assets::Get<ModelAsset>(":cube:");
     EXPECT_TRUE(cube);
     EXPECT_GT(cube->GetModel().meshCount, 0);
 
@@ -57,8 +57,8 @@ TEST_F(AssetManagerTest, ModelCaching)
     if (!IsWindowReady())
         return;
 
-    auto cube1 = AssetManager::LoadModel(":cube:");
-    auto cube2 = AssetManager::LoadModel(":cube:");
+    auto cube1 = Assets::Get<ModelAsset>(":cube:");
+    auto cube2 = Assets::Get<ModelAsset>(":cube:");
 
     EXPECT_EQ(cube1, cube2);
     EXPECT_EQ(cube1->GetModel().meshes, cube2->GetModel().meshes);
@@ -69,7 +69,7 @@ TEST_F(AssetManagerTest, Unloading)
     if (!IsWindowReady())
         return;
 
-    AssetManager::LoadModel(":cube:");
+    Assets::Get<ModelAsset>(":cube:");
     // The current Assets system doesn't expose HasModel/UnloadModel directly like this anymore
     // without more complex interaction with the asset library, but we'll leave it for now
     // or just check that re-loading works.

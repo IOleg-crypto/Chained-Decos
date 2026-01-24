@@ -10,13 +10,16 @@
 #include "panels/content_browser_panel.h"
 #include "panels/environment_panel.h"
 #include "panels/inspector_panel.h"
+#include "panels/profiler_panel.h"
 #include "panels/project_browser_panel.h"
+#include "panels/project_settings_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/viewport_panel.h"
 #include "undo/command_history.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
 #include <filesystem>
+#include <imgui.h>
 #include <raylib.h>
 
 namespace CHEngine
@@ -40,56 +43,54 @@ public:
     virtual void OnImGuiRender() override;
     virtual void OnEvent(Event &e) override;
 
-private:
-    void NewProject();
-    void NewProject(const std::string &name, const std::string &path);
-    void OpenProject();
-    void OpenProject(const std::filesystem::path &path);
-    void SaveProject();
+    template <typename T, typename... Args> Ref<T> AddPanel(Args &&...args)
+    {
+        auto panel = std::make_shared<T>(std::forward<Args>(args)...);
+        m_Panels.push_back(panel);
+        return panel;
+    }
 
-    void NewScene();
-    void OpenScene();
-    void OpenScene(const std::filesystem::path &path);
-    void SaveScene();
-    void SaveSceneAs();
+    template <typename T> Ref<T> GetPanel()
+    {
+        for (auto &panel : m_Panels)
+        {
+            if (auto p = std::dynamic_pointer_cast<T>(panel))
+                return p;
+        }
+        return nullptr;
+    }
+
+private:
+    bool OnProjectOpened(ProjectOpenedEvent &e);
+    bool OnSceneOpened(SceneOpenedEvent &e);
+    bool OnScenePlay(ScenePlayEvent &e);
+    bool OnSceneStop(SceneStopEvent &e);
 
     void ResetLayout();
-
-    void OnScenePlay();
-    void OnSceneStop();
     void LaunchStandalone();
-
     void SetDarkThemeColors();
     Camera3D GetActiveCamera();
 
-    void UI_DrawMenuBar();
     void UI_DrawDockSpace();
     void UI_DrawPanels();
+    void UI_DrawScriptUI();
 
 public:
     static CommandHistory &GetCommandHistory();
+    static SceneState GetSceneState();
+    static EditorLayer &Get();
 
 private:
-    EditorCamera m_EditorCamera;
+    std::vector<Ref<Panel>> m_Panels;
+
     Entity m_SelectedEntity;
     SceneState m_SceneState = SceneState::Edit;
     DebugRenderFlags m_DebugRenderFlags;
     int m_LastHitMeshIndex = -1;
+    Ref<Scene> m_EditorScene;
 
 private:
-    EditorGizmo m_Gizmo;
-    GizmoType m_CurrentTool = GizmoType::NONE;
     CommandHistory m_CommandHistory;
-
-private:
-    ProjectBrowserPanel m_ProjectBrowserPanel;
-    SceneHierarchyPanel m_SceneHierarchyPanel;
-    InspectorPanel m_InspectorPanel;
-    ContentBrowserPanel m_ContentBrowserPanel;
-    ConsolePanel m_ConsolePanel;
-    ViewportPanel m_ViewportPanel;
-    EnvironmentPanel m_EnvironmentPanel;
-    bool m_ShowContentBrowser = true;
 };
 } // namespace CHEngine
 

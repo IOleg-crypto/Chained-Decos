@@ -7,6 +7,7 @@
 namespace CHEngine
 {
 class Scene;
+
 struct RaycastResult
 {
     bool Hit = false;
@@ -24,11 +25,6 @@ public:
     static void Shutdown();
 
     static void Update(Scene *scene, float deltaTime, bool runtime = false);
-
-    // Collision Detection Helpers
-    static bool CheckAABB(const Vector3 &min1, const Vector3 &max1, const Vector3 &min2,
-                          const Vector3 &max2);
-
     static RaycastResult Raycast(Scene *scene, Ray ray);
 };
 } // namespace CHEngine

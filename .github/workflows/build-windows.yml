@@ -21,11 +21,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          submodules: recursive
 
-      - name: Fast parallel submodules
-        shell: pwsh
-        run: |
-          git submodule update --init --recursive --depth 1 --jobs 8
       - name: Cache
         uses: actions/cache@v4
         with:

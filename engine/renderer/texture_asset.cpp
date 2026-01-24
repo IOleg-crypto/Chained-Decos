@@ -27,7 +27,7 @@ Ref<TextureAsset> TextureAsset::Load(const std::string &path)
 
     auto asset = CreateRef<TextureAsset>();
     asset->m_Texture = tex;
-    asset->m_Path = path;
+    asset->SetPath(path);
     return asset;
 }
 
@@ -35,6 +35,6 @@ TextureAsset::~TextureAsset()
 {
     if (m_Texture.id > 0)
         ::UnloadTexture(m_Texture);
-    CH_CORE_TRACE("TextureAsset Unloaded: {}", m_Path);
+    CH_CORE_TRACE("TextureAsset Unloaded: {}", GetPath());
 }
 } // namespace CHEngine

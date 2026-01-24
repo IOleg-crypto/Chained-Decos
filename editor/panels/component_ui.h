@@ -3,26 +3,44 @@
 
 #include "engine/scene/entity.h"
 
+#include <unordered_map>
+
 namespace CHEngine
 {
-namespace ComponentUI
+class ComponentUI
 {
-void DrawTag(Entity entity);
-void DrawTransform(Entity entity);
-void DrawModel(Entity entity);
-void DrawMaterial(Entity entity, int hitMeshIndex = -1);
-void DrawCollider(Entity entity);
-void DrawRigidBody(Entity entity);
-void DrawSpawn(Entity entity);
-void DrawPlayer(Entity entity);
-void DrawPointLight(Entity entity);
-void DrawAudio(Entity entity);
-void DrawHierarchy(Entity entity);
-void DrawNativeScript(Entity entity);
-void DrawAnimation(Entity entity);
+public:
+    static void Init();
 
-void DrawAddComponentPopup(Entity entity);
-} // namespace ComponentUI
+    // Registry-based API
+    static void RegisterDrawer(entt::id_type typeId, std::function<void(Entity)> drawer);
+    static void DrawEntityComponents(Entity entity);
+
+    template <typename T> static void Register(std::function<void(Entity)> drawer)
+    {
+        RegisterDrawer(entt::type_hash<T>::value(), drawer);
+    }
+
+    // Individual drawing functions (can still be used manually)
+    static void DrawTag(Entity entity);
+    static void DrawTransform(Entity entity);
+    static void DrawModel(Entity entity);
+    static void DrawMaterial(Entity entity, int hitMeshIndex = -1);
+    static void DrawCollider(Entity entity);
+    static void DrawRigidBody(Entity entity);
+    static void DrawSpawn(Entity entity);
+    static void DrawPlayer(Entity entity);
+    static void DrawPointLight(Entity entity);
+    static void DrawAudio(Entity entity);
+    static void DrawHierarchy(Entity entity);
+    static void DrawNativeScript(Entity entity);
+    static void DrawAnimation(Entity entity);
+
+    static void DrawAddComponentPopup(Entity entity);
+
+private:
+    static std::unordered_map<entt::id_type, std::function<void(Entity)>> s_DrawerRegistry;
+};
 } // namespace CHEngine
 
 #endif // CH_COMPONENT_UI_H

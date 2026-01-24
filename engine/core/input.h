@@ -1,7 +1,9 @@
 #ifndef CH_INPUT_H
 #define CH_INPUT_H
 
+#include <array>
 #include <functional>
+#include <mutex>
 #include <raylib.h>
 #include <string>
 #include <unordered_map>
@@ -33,6 +35,11 @@ public:
     // Mouse Wheel
     static float GetMouseWheelMove();
 
+    // Action System (Abstractions)
+    static bool IsActionPressed(const std::string &action);
+    static bool IsActionDown(const std::string &action);
+    static Vector2 GetActionAxis(const std::string &action);
+
     // Internal state management (called by Application)
     static void PollEvents(std::function<void(class Event &)> eventCallback);
     static void UpdateState();
@@ -60,9 +67,13 @@ private:
     static Vector2 s_LastMousePosition;
     static Vector2 s_MouseDelta;
 
+    static float s_MouseWheelMove;
+
     static bool s_IsShiftDown;
     static bool s_IsCtrlDown;
     static bool s_IsAltDown;
+
+    static std::mutex s_InputMutex;
 };
 } // namespace CHEngine
 

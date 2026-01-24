@@ -31,27 +31,57 @@ void DrawToolbar(bool isPlaying, const EventCallbackFn &callback)
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoNav);
 
-    float toolbarSize = ImGui::GetWindowHeight() - 4.0f;
-    ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (toolbarSize * 0.5f));
+    float toolbarSize = ImGui::GetWindowHeight() - 6.0f;
+    float buttonsCount = isPlaying ? 2.0f : 2.0f; // Play/Pause or Stop/Pause
+    float totalWidth =
+        (toolbarSize * buttonsCount) + (ImGui::GetStyle().ItemSpacing.x * (buttonsCount - 1));
 
-    const char *icon = isPlaying ? ICON_FA_CIRCLE_STOP : ICON_FA_PLAY;
-    if (ImGui::Button(icon, ImVec2(toolbarSize, toolbarSize)))
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() * 0.5f) - (totalWidth * 0.5f));
+    ImGui::SetCursorPosY(3.0f);
+
+    // Play / Stop Button
     {
-        if (isPlaying)
+        const char *icon = isPlaying ? ICON_FA_CIRCLE_STOP : ICON_FA_PLAY;
+        ImVec4 iconColor =
+            isPlaying ? ImVec4(1.0f, 0.3f, 0.3f, 1.0f) : ImVec4(0.3f, 1.0f, 0.3f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Text, iconColor);
+        if (ImGui::Button(icon, ImVec2(toolbarSize, toolbarSize)))
         {
-            SceneStopEvent e;
-            callback(e);
+            if (isPlaying)
+            {
+                SceneStopEvent e;
+                callback(e);
+            }
+            else
+            {
+                ScenePlayEvent e;
+                callback(e);
+            }
         }
-        else
-        {
-            ScenePlayEvent e;
-            callback(e);
-        }
+        ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(isPlaying ? "Stop (ESC)" : "Play");
     }
 
+    ImGui::SameLine();
+
+    // Pause Button (Draft - needs engine support for Pause state)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.3f, 1.0f));
+        if (ImGui::Button(ICON_FA_PAUSE, ImVec2(toolbarSize, toolbarSize)))
+        {
+            // TODO: Dispatch Pause Event
+        }
+        ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Pause Simulation");
+    }
+
+    // Standalone Launch (Only if not playing)
     if (!isPlaying)
     {
         ImGui::SameLine();
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - toolbarSize - 10.0f);
         if (ImGui::Button(ICON_FA_ROCKET, ImVec2(toolbarSize, toolbarSize)))
         {
             AppLaunchRuntimeEvent e;

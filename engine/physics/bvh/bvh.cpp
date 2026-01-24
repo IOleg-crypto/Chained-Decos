@@ -1,7 +1,7 @@
 #include "bvh.h"
-#include "engine/core/thread_dispatcher.h"
 #include <algorithm>
 #include <cfloat>
+#include <future>
 #include <raymath.h>
 
 namespace CHEngine
@@ -59,9 +59,16 @@ Ref<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
         {
             for (int k = 0; k < mesh.triangleCount * 3; k += 3)
             {
-                unsigned short idx0 = mesh.indices[k];
-                unsigned short idx1 = mesh.indices[k + 1];
-                unsigned short idx2 = mesh.indices[k + 2];
+                // Raylib's mesh.indices is unsigned short*, but if the mesh was 32-bit,
+                // it might have been truncated. We can't fix the truncation here,
+                // but we can ensure we read it consistently.
+                int idx0 = mesh.indices[k];
+                int idx1 = mesh.indices[k + 1];
+                int idx2 = mesh.indices[k + 2];
+
+                if (idx0 >= mesh.vertexCount || idx1 >= mesh.vertexCount ||
+                    idx2 >= mesh.vertexCount)
+                    continue;
 
                 Vector3 v0 = {mesh.vertices[idx0 * 3], mesh.vertices[idx0 * 3 + 1],
                               mesh.vertices[idx0 * 3 + 2]};
@@ -93,114 +100,54 @@ Ref<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
     if (tris.empty())
         return nullptr;
 
-    return BuildRecursive(tris, 0);
+    return BuildRecursive(tris, 0, tris.size(), 0);
 }
 
-Ref<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, int depth)
+Ref<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, size_t start,
+                                        size_t end, int depth)
 {
     auto node = CreateRef<BVHNode>();
 
     // Calculate Bounds
     node->min = {1e30f, 1e30f, 1e30f};
     node->max = {-1e30f, -1e30f, -1e30f};
-    for (const auto &tri : tris)
+    for (size_t i = start; i < end; ++i)
     {
-        node->min = Vector3Min(node->min, tri.min);
-        node->max = Vector3Max(node->max, tri.max);
+        node->min = Vector3Min(node->min, tris[i].min);
+        node->max = Vector3Max(node->max, tris[i].max);
     }
 
-    if (tris.size() <= 4 || depth > 20)
+    size_t count = end - start;
+    if (count <= 4 || depth > 20)
     {
-        node->triangles = std::move(tris);
+        node->triangles.reserve(count);
+        for (size_t i = start; i < end; ++i)
+            node->triangles.push_back(std::move(tris[i]));
         return node;
     }
 
-    // For small sets, use fast median split instead of SAH
-    if (tris.size() <= 16)
-    {
-        // Fast median split
-        Vector3 size = Vector3Subtract(node->max, node->min);
-        int axis = 0;
-        if (size.y > size.x && size.y > size.z)
-            axis = 1;
-        if (size.z > size.x && size.z > size.y)
-            axis = 2;
-
-        std::sort(tris.begin(), tris.end(),
-                  [axis](const CollisionTriangle &a, const CollisionTriangle &b)
-                  {
-                      if (axis == 0)
-                          return a.center.x < b.center.x;
-                      if (axis == 1)
-                          return a.center.y < b.center.y;
-                      return a.center.z < b.center.z;
-                  });
-
-        size_t mid = tris.size() / 2;
-        std::vector<CollisionTriangle> leftTris(tris.begin(), tris.begin() + mid);
-        std::vector<CollisionTriangle> rightTris(tris.begin() + mid, tris.end());
-
-        node->left = BuildRecursive(leftTris, depth + 1);
-        node->right = BuildRecursive(rightTris, depth + 1);
-        return node;
-    }
-
-    // SAH Split evaluation - O(N) using prefix/suffix bounds
-    int bestAxis = -1;
-    float bestCost = FLT_MAX;
-    size_t bestMid = 0;
-
+    // Determine split axis based on largest dimension
     Vector3 size = Vector3Subtract(node->max, node->min);
-    int primaryAxis = (size.y > size.x && size.y > size.z) ? 1 : (size.z > size.x ? 2 : 0);
+    int axis = 0;
+    if (size.y > size.x && size.y > size.z)
+        axis = 1;
+    else if (size.z > size.x && size.z > size.y)
+        axis = 2;
 
-    std::sort(tris.begin(), tris.end(),
-              [primaryAxis](const CollisionTriangle &a, const CollisionTriangle &b)
-              {
-                  if (primaryAxis == 0)
-                      return a.center.x < b.center.x;
-                  if (primaryAxis == 1)
-                      return a.center.y < b.center.y;
-                  return a.center.z < b.center.z;
-              });
+    // Partition in-place using median element (nth_element is O(N))
+    size_t mid = start + count / 2;
+    std::nth_element(tris.begin() + start, tris.begin() + mid, tris.begin() + end,
+                     [axis](const CollisionTriangle &a, const CollisionTriangle &b)
+                     {
+                         if (axis == 0)
+                             return a.center.x < b.center.x;
+                         if (axis == 1)
+                             return a.center.y < b.center.y;
+                         return a.center.z < b.center.z;
+                     });
 
-    size_t n = tris.size();
-    std::vector<BoundingBox> rightBounds(n);
-    BoundingBox currentRight = {{1e30f, 1e30f, 1e30f}, {-1e30f, -1e30f, -1e30f}};
-
-    for (int i = (int)n - 1; i >= 0; i--)
-    {
-        currentRight.min = Vector3Min(currentRight.min, tris[i].min);
-        currentRight.max = Vector3Max(currentRight.max, tris[i].max);
-        rightBounds[i] = currentRight;
-    }
-
-    BoundingBox leftBound = {{1e30f, 1e30f, 1e30f}, {-1e30f, -1e30f, -1e30f}};
-    for (size_t i = 1; i < n; i++)
-    {
-        leftBound.min = Vector3Min(leftBound.min, tris[i - 1].min);
-        leftBound.max = Vector3Max(leftBound.max, tris[i - 1].max);
-
-        Vector3 sL = Vector3Subtract(leftBound.max, leftBound.min);
-        float saL = 2.0f * (sL.x * sL.y + sL.y * sL.z + sL.z * sL.x);
-
-        Vector3 sR = Vector3Subtract(rightBounds[i].max, rightBounds[i].min);
-        float saR = 2.0f * (sR.x * sR.y + sR.y * sR.z + sR.z * sR.x);
-
-        float cost = saL * (float)i + saR * (float)(n - i);
-        if (cost < bestCost)
-        {
-            bestCost = cost;
-            bestAxis = primaryAxis;
-            bestMid = i;
-        }
-    }
-
-    // Already sorted by primaryAxis, just split
-    std::vector<CollisionTriangle> leftTris(tris.begin(), tris.begin() + bestMid);
-    std::vector<CollisionTriangle> rightTris(tris.begin() + bestMid, tris.end());
-
-    node->left = BuildRecursive(leftTris, depth + 1);
-    node->right = BuildRecursive(rightTris, depth + 1);
+    node->left = BuildRecursive(tris, start, mid, depth + 1);
+    node->right = BuildRecursive(tris, mid, end, depth + 1);
 
     return node;
 }
@@ -394,8 +341,12 @@ bool BVHBuilder::IntersectAABB(const BVHNode *node, const BoundingBox &box, Vect
 
 std::future<Ref<BVHNode>> BVHBuilder::BuildAsync(const Model &model, const Matrix &transform)
 {
-    return ThreadDispatcher::DispatchAsync([model, transform]() -> Ref<BVHNode>
-                                           { return Build(model, transform); });
+    auto task = std::make_shared<std::packaged_task<Ref<BVHNode>()>>(
+        [model, transform]() { return Build(model, transform); });
+
+    std::future<Ref<BVHNode>> future = task->get_future();
+    std::async(std::launch::async, [task]() { (*task)(); });
+    return future;
 }
 
 } // namespace CHEngine

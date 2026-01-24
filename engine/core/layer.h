@@ -5,7 +5,6 @@
 #include "engine/core/events.h"
 #include <string>
 
-
 namespace CHEngine
 {
 class Layer

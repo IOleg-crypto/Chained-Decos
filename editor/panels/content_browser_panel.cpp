@@ -9,6 +9,7 @@ namespace CHEngine
 {
 ContentBrowserPanel::ContentBrowserPanel()
 {
+    m_Name = "Content Browser";
     // These should ideally be project-relative or from a global engine resource folder
     m_RootDirectory = std::filesystem::current_path() / "assets";
     m_CurrentDirectory = m_RootDirectory;
@@ -22,9 +23,11 @@ ContentBrowserPanel::~ContentBrowserPanel()
     // Unload textures if they were loaded
 }
 
-void ContentBrowserPanel::OnImGuiRender(bool *p_open, bool readOnly)
+void ContentBrowserPanel::OnImGuiRender(bool readOnly)
 {
-    ImGui::Begin("Content Browser", p_open);
+    if (!m_IsOpen)
+        return;
+    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
     ImGui::BeginDisabled(readOnly);
     RenderToolbar();
@@ -105,7 +108,7 @@ void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry &entry)
         m_CurrentDirectory = entry.path;
         RefreshDirectory();
     }
-    else if (entry.type == AssetType::Scene && m_OnSceneOpenCallback)
+    else if (entry.type == EditorAssetType::Scene && m_OnSceneOpenCallback)
     {
         m_OnSceneOpenCallback(entry.path);
     }
@@ -135,16 +138,24 @@ void ContentBrowserPanel::ScanCurrentDirectory()
     }
 }
 
-AssetType ContentBrowserPanel::DetermineAssetType(const std::filesystem::path &path)
+EditorAssetType ContentBrowserPanel::DetermineAssetType(const std::filesystem::path &path)
 {
     if (std::filesystem::is_directory(path))
-        return AssetType::Directory;
-    auto ext = path.extension().string();
+        return EditorAssetType::Directory;
+
+    std::string ext = path.extension().string();
     if (ext == ".chscene")
-        return AssetType::Scene;
-    if (ext == ".obj" || ext == ".glb" || ext == ".gltf")
-        return AssetType::Model;
-    return AssetType::Other;
+        return EditorAssetType::Scene;
+    if (ext == ".h" || ext == ".cpp")
+        return EditorAssetType::Script;
+    if (ext == ".obj" || ext == ".gltf" || ext == ".glb")
+        return EditorAssetType::Model;
+    if (ext == ".png" || ext == ".jpg" || ext == ".tga")
+        return EditorAssetType::Texture;
+    if (ext == ".wav" || ext == ".ogg" || ext == ".mp3")
+        return EditorAssetType::Audio;
+
+    return EditorAssetType::Other;
 }
 
 void ContentBrowserPanel::SetRootDirectory(const std::filesystem::path &path)

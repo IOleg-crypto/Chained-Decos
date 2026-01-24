@@ -1,21 +1,28 @@
 #ifndef CH_MODEL_ASSET_H
 #define CH_MODEL_ASSET_H
 
+#include "asset.h"
 #include "engine/core/base.h"
 #include <raylib.h>
 #include <string>
 #include <vector>
 
+
 namespace CHEngine
 {
-class ModelAsset
+class ModelAsset : public Asset
 {
 public:
     static Ref<ModelAsset> Load(const std::string &path);
     static Ref<ModelAsset> CreateProcedural(const std::string &type);
 
     ModelAsset() = default;
-    ~ModelAsset();
+    virtual ~ModelAsset();
+
+    virtual AssetType GetType() const override
+    {
+        return AssetType::Model;
+    }
 
     Model &GetModel()
     {
@@ -24,11 +31,6 @@ public:
     const Model &GetModel() const
     {
         return m_Model;
-    }
-
-    const std::string &GetPath() const
-    {
-        return m_Path;
     }
 
     BoundingBox GetBoundingBox() const;
@@ -56,7 +58,6 @@ public:
 
 private:
     Model m_Model = {0};
-    std::string m_Path;
     ModelAnimation *m_Animations = nullptr;
     int m_AnimCount = 0;
     std::vector<Ref<class TextureAsset>> m_Textures;

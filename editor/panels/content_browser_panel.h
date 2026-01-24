@@ -1,6 +1,7 @@
 #ifndef CH_CONTENT_BROWSER_PANEL_H
 #define CH_CONTENT_BROWSER_PANEL_H
 
+#include "panel.h"
 #include <filesystem>
 #include <functional>
 #include <raylib.h>
@@ -9,7 +10,7 @@
 
 namespace CHEngine
 {
-enum class AssetType
+enum class EditorAssetType
 {
     Directory,
     Scene,
@@ -24,19 +25,18 @@ struct AssetEntry
 {
     std::string name;
     std::filesystem::path path;
-    AssetType type;
+    EditorAssetType type;
     Texture2D icon;
     bool isDirectory;
 };
 
-class ContentBrowserPanel
+class ContentBrowserPanel : public Panel
 {
 public:
     ContentBrowserPanel();
     ~ContentBrowserPanel();
 
-public:
-    void OnImGuiRender(bool *p_open = nullptr, bool readOnly = false);
+    virtual void OnImGuiRender(bool readOnly = false) override;
     void SetRootDirectory(const std::filesystem::path &path);
 
     using SceneOpenCallback = std::function<void(const std::filesystem::path &)>;
@@ -50,7 +50,7 @@ private:
     void RenderGridView();
     void RefreshDirectory();
     void ScanCurrentDirectory();
-    AssetType DetermineAssetType(const std::filesystem::path &path);
+    EditorAssetType DetermineAssetType(const std::filesystem::path &path);
     void LoadDefaultIcons();
     Texture2D GetIconForAsset(const AssetEntry &entry);
     void OnAssetDoubleClicked(AssetEntry &entry);

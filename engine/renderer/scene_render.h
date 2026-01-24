@@ -4,8 +4,8 @@
 #include <raylib.h>
 
 #include "engine/renderer/render.h"
+#include "engine/renderer/render_state.h"
 #include "engine/scene/scene.h"
-
 
 namespace CHEngine
 {
@@ -16,10 +16,13 @@ public:
     static void Init();
     static void Shutdown();
 
-    static void BeginScene(Scene *scene, const Camera3D &camera);
+    static void BeginScene(const RenderState &state);
     static void EndScene();
+    static void SubmitScene(const RenderState &state);
 
-    static void SubmitScene(Scene *scene, const DebugRenderFlags *debugFlags = nullptr);
+    // Snapshot helper (runs on simulation thread)
+    static void CreateSnapshot(Scene *scene, const Camera3D &camera, RenderState &outState,
+                               float alpha, const DebugRenderFlags *debugFlags = nullptr);
 
 private:
     static void RenderOpaquePass();

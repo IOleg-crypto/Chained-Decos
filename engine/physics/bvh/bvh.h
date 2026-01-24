@@ -7,34 +7,11 @@
 #include <raymath.h>
 #include <vector>
 
+#include "bvh_node.h"
+#include "engine/physics/collision/collision_triangle.h"
+
 namespace CHEngine
 {
-struct CollisionTriangle
-{
-    Vector3 v0, v1, v2;
-    Vector3 min, max;
-    Vector3 center;
-    int meshIndex = -1;
-
-    CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c, int index = -1);
-    bool IntersectsRay(const Ray &ray, float &t) const;
-};
-
-struct BVHNode
-{
-    Vector3 min;
-    Vector3 max;
-    std::vector<CollisionTriangle> triangles;
-    Ref<BVHNode> left;
-    Ref<BVHNode> right;
-
-    BVHNode() = default;
-    bool IsLeaf() const
-    {
-        return !left && !right;
-    }
-};
-
 class BVHBuilder
 {
 public:
@@ -51,7 +28,8 @@ public:
                               Vector3 &outOverlapNormal, float &outOverlapDepth);
 
 private:
-    static Ref<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris, int depth);
+    static Ref<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris, size_t start,
+                                       size_t end, int depth);
     static bool RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal,
                             int &meshIndex);
 };

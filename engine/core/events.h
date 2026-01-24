@@ -27,10 +27,12 @@ enum class EventType
     MouseScrolled,
     ProjectCreated,
     ProjectOpened,
+    SceneOpened,
     SceneSaved,
     ScenePlay,
     SceneStop,
     AppLaunchRuntime,
+    AppResetLayout,
     EntitySelected
 };
 
@@ -292,6 +294,25 @@ private:
     std::string m_Path;
 };
 
+class SceneOpenedEvent : public Event
+{
+public:
+    SceneOpenedEvent(const std::string &path) : m_Path(path)
+    {
+    }
+
+    const std::string &GetPath() const
+    {
+        return m_Path;
+    }
+
+    EVENT_CLASS_TYPE(SceneOpened)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+
+private:
+    std::string m_Path;
+};
+
 // Selection Events
 class EntitySelectedEvent : public Event
 {
@@ -344,6 +365,14 @@ class AppLaunchRuntimeEvent : public Event
 public:
     AppLaunchRuntimeEvent() = default;
     EVENT_CLASS_TYPE(AppLaunchRuntime)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+};
+
+class AppResetLayoutEvent : public Event
+{
+public:
+    AppResetLayoutEvent() = default;
+    EVENT_CLASS_TYPE(AppResetLayout)
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 

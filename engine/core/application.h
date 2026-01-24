@@ -6,8 +6,12 @@
 #include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/window.h"
+#include "engine/renderer/render_state.h"
 #include "engine/scene/scene.h"
+#include <atomic>
+#include <mutex>
 #include <string>
+#include <thread>
 
 namespace CHEngine
 {
@@ -30,8 +34,9 @@ public:
     Application(const Config &config = Config());
     virtual ~Application();
 
-    static void Init(const Config &config);
-    static void Shutdown();
+    bool Initialize(const Config &config);
+    void Shutdown();
+    void Close();
 
     static void PushLayer(Layer *layer);
     static void PushOverlay(Layer *overlay);
@@ -43,6 +48,12 @@ public:
     static void OnEvent(Event &e);
 
     void Run();
+
+    virtual void PostInitialize()
+    {
+    }
+    virtual void OnUpdate(float deltaTime);
+    virtual void OnRender();
 
     LayerStack &GetLayerStack()
     {
@@ -72,14 +83,44 @@ public:
     }
     void LoadScene(const std::string &path);
 
+    const Config &GetConfig() const
+    {
+        return m_Config;
+    }
+
+    // Threading access
+    std::mutex &GetSimMutex()
+    {
+        return m_SimMutex;
+    }
+
 private:
+    void UpdateSimulation();
     static Application *s_Instance;
 
+    Config m_Config;
     bool m_Running = false;
+    bool m_Minimized = false;
     float m_DeltaTime = 0.0f;
+    float m_LastFrameTime = 0.0f;
+    float m_FixedTimeAccumulator = 0.0f;
+    const float m_FixedStep = 1.0f / 60.0f;
+
     LayerStack m_LayerStack;
     Scope<Window> m_Window;
     Ref<Scene> m_ActiveScene;
+
+    // Simulation Threading
+    std::thread m_SimulationThread;
+    std::mutex m_SimMutex;
+    std::atomic<bool> m_IsSimulating{false};
+
+    // Render Snapshotting
+    RenderState m_RenderStates[3];
+    uint32_t m_SimBufferIndex = 0;
+    uint32_t m_RenderBufferIndex = 1;
+    uint32_t m_PendingBufferIndex = 2;
+    std::atomic<bool> m_NewStateAvailable{false};
 };
 
 // To be defined by CLIENT
