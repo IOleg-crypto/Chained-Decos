@@ -1,19 +1,27 @@
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
+#include "engine/core/application.h"
 #include "engine/scene/components.h"
 #include "undo/entity_commands.h"
 #include <imgui.h>
 
+
 namespace CHEngine
 {
+SceneHierarchyPanel::SceneHierarchyPanel()
+{
+    m_Name = "Scene Hierarchy";
+}
+
 SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene> &context)
 {
+    m_Name = "Scene Hierarchy";
     SetContext(context);
 }
 
 void SceneHierarchyPanel::SetContext(const Ref<Scene> &context)
 {
-    m_Context = context;
+    Panel::SetContext(context);
     m_SelectionContext = {};
 }
 
@@ -151,11 +159,8 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
     if (ImGui::IsItemClicked())
     {
         m_SelectionContext = entity;
-        if (m_EventCallback)
-        {
-            EntitySelectedEvent e(entity, m_Context.get());
-            m_EventCallback(e);
-        }
+        EntitySelectedEvent e(entity, m_Context.get());
+        Application::Get().OnEvent(e);
     }
 
     bool entityDeleted = false;

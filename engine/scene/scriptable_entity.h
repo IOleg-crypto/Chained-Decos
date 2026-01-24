@@ -11,9 +11,12 @@
 #define CH_START() void OnCreate() override
 #define CH_UPDATE(dt) void OnUpdate(float dt) override
 #define CH_EVENT(e) void OnEvent(CHEngine::Event &e) override
+#define CH_GUI() void OnImGuiRender() override
 
 namespace CHEngine
 {
+class Scene;
+
 class ScriptableEntity
 {
 public:
@@ -32,6 +35,22 @@ public:
     template <typename T> bool HasComponent()
     {
         return m_Entity.HasComponent<T>();
+    }
+
+    virtual void OnCreate()
+    {
+    }
+    virtual void OnDestroy()
+    {
+    }
+    virtual void OnUpdate(float deltaTime)
+    {
+    }
+    virtual void OnImGuiRender()
+    {
+    }
+    virtual void OnEvent(Event &e)
+    {
     }
 
 protected:
@@ -86,22 +105,10 @@ protected:
         return nullptr;
     }
 
-    virtual void OnCreate()
-    {
-    }
-    virtual void OnDestroy()
-    {
-    }
-    virtual void OnUpdate(float deltaTime)
-    {
-    }
-    virtual void OnEvent(Event &e)
-    {
-    }
-
 private:
     Entity m_Entity;
     friend class Scene;
+    friend class SceneScripting;
 };
 } // namespace CHEngine
 

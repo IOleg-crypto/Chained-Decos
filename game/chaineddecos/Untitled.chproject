@@ -11,7 +11,7 @@ Project:
     AmbientIntensity: 0.300000012
     DefaultExposure: 1
   Window:
-    Width: 1280
+    Width: 1601
     Height: 720
-    VSync: true
+    VSync: false
     Resizable: true

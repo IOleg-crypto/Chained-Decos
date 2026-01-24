@@ -1,36 +1,20 @@
 Scene: Untitled
+EnvironmentPath: environments/new_environment.chenv
 Skybox:
   TexturePath: skyboxes\Starry night preview4.png
   Exposure: 1
   Brightness: 0
   Contrast: 1
 Entities:
-  - Entity: 10230838813022407529
+  - Entity: 1326311650816898569
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [2.43304682, 4.14459991, 62.619976]
-      Rotation: [0, -0.816814184, 0]
+      Translation: [0, 18.7588005, -1.1920929e-07]
+      Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: Models\player_low.glb
-      Scale: [1, 1, 1]
-    MaterialComponent:
-      - Name: Legacy Migration
-        Index: -1
-        Target: 0
-        Material:
-          AlbedoColor: [255, 255, 255, 255]
-          AlbedoPath: ""
-          OverrideAlbedo: false
-          NormalMapPath: ""
-          OverrideNormal: false
-          MetallicRoughnessPath: ""
-          OverrideMetallicRoughness: false
-          EmissivePath: ""
-          OverrideEmissive: false
-          Metalness: 0
-          Roughness: 0.5
     ColliderComponent:
       Type: 0
       bEnabled: true
@@ -39,21 +23,22 @@ Entities:
       bAutoCalculate: false
       ModelPath: ""
     RigidBodyComponent:
-      Velocity: [0, -0.138891995, 0]
+      Velocity: [0, 0, 0]
       UseGravity: true
       IsKinematic: false
-      Mass: 1
+      Mass: 39.4000015
     PlayerComponent:
       MovementSpeed: 15
       LookSensitivity: 0.899999976
-      CameraYaw: 142.200073
-      CameraPitch: 23.2999973
-      CameraDistance: 30
+      CameraYaw: 0
+      CameraPitch: 20
+      CameraDistance: 10
       JumpForce: 10
     NativeScriptComponent:
       Scripts:
         - PlayerController
         - CameraController
+        - GameHUD
   - Entity: 1283719283719284
     TagComponent:
       Tag: Castle
@@ -63,23 +48,6 @@ Entities:
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: Models\TaverGLTF.gltf
-      Scale: [1, 1, 1]
-    MaterialComponent:
-      - Name: Legacy Migration
-        Index: -1
-        Target: 0
-        Material:
-          AlbedoColor: [255, 255, 255, 255]
-          AlbedoPath: ""
-          OverrideAlbedo: false
-          NormalMapPath: ""
-          OverrideNormal: false
-          MetallicRoughnessPath: ""
-          OverrideMetallicRoughness: false
-          EmissivePath: ""
-          OverrideEmissive: false
-          Metalness: 0
-          Roughness: 0.5
     ColliderComponent:
       Type: 1
       bEnabled: true
@@ -91,28 +59,11 @@ Entities:
     TagComponent:
       Tag: Arena
     TransformComponent:
-      Translation: [0, 7.23472166, 0]
+      Translation: [0, 6.69923544, 0]
       Rotation: [0, -0, 0]
       Scale: [1, 1.20000005, 1]
     ModelComponent:
       ModelPath: Models\arena.glb
-      Scale: [1, 1, 1]
-    MaterialComponent:
-      - Name: Legacy Migration
-        Index: -1
-        Target: 0
-        Material:
-          AlbedoColor: [255, 255, 255, 255]
-          AlbedoPath: ""
-          OverrideAlbedo: false
-          NormalMapPath: ""
-          OverrideNormal: false
-          MetallicRoughnessPath: ""
-          OverrideMetallicRoughness: false
-          EmissivePath: ""
-          OverrideEmissive: false
-          Metalness: 0
-          Roughness: 0.5
     ColliderComponent:
       Type: 1
       bEnabled: true
@@ -129,23 +80,6 @@ Entities:
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: ":plane:"
-      Scale: [1, 1, 1]
-    MaterialComponent:
-      - Name: Legacy Migration
-        Index: -1
-        Target: 0
-        Material:
-          AlbedoColor: [255, 255, 255, 255]
-          AlbedoPath: ""
-          OverrideAlbedo: false
-          NormalMapPath: ""
-          OverrideNormal: false
-          MetallicRoughnessPath: ""
-          OverrideMetallicRoughness: false
-          EmissivePath: ""
-          OverrideEmissive: false
-          Metalness: 0
-          Roughness: 0.5
     ColliderComponent:
       Type: 0
       bEnabled: true
@@ -162,23 +96,6 @@ Entities:
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: ":torus:"
-      Scale: [1, 1, 1]
-    MaterialComponent:
-      - Name: Legacy Migration
-        Index: -1
-        Target: 0
-        Material:
-          AlbedoColor: [255, 255, 255, 255]
-          AlbedoPath: ""
-          OverrideAlbedo: false
-          NormalMapPath: ""
-          OverrideNormal: false
-          MetallicRoughnessPath: ""
-          OverrideMetallicRoughness: false
-          EmissivePath: ""
-          OverrideEmissive: false
-          Metalness: 0
-          Roughness: 0.5
     ColliderComponent:
       Type: 1
       bEnabled: true
@@ -195,23 +112,6 @@ Entities:
       Scale: [1, 1, 1]
     ModelComponent:
       ModelPath: ":plane:"
-      Scale: [1, 1, 1]
-    MaterialComponent:
-      - Name: Legacy Migration
-        Index: -1
-        Target: 0
-        Material:
-          AlbedoColor: [255, 255, 255, 255]
-          AlbedoPath: ""
-          OverrideAlbedo: false
-          NormalMapPath: ""
-          OverrideNormal: false
-          MetallicRoughnessPath: ""
-          OverrideMetallicRoughness: false
-          EmissivePath: ""
-          OverrideEmissive: false
-          Metalness: 0
-          Roughness: 0.5
     ColliderComponent:
       Type: 0
       bEnabled: true

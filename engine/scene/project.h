@@ -31,6 +31,12 @@ struct WindowSettings
     bool Resizable = true;
 };
 
+enum class Configuration
+{
+    Debug = 0,
+    Release = 1
+};
+
 struct ProjectConfig
 {
     std::string Name = "Untitled";
@@ -43,6 +49,8 @@ struct ProjectConfig
     AnimationSettings Animation;
     RenderSettings Render;
     WindowSettings Window;
+
+    Configuration BuildConfig = Configuration::Debug;
 };
 
 class Project

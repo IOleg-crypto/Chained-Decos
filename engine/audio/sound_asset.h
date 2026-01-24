@@ -1,19 +1,23 @@
-#ifndef CH_SOUND_ASSET_H
-#define CH_SOUND_ASSET_H
-
+#pragma once
 #include "engine/core/base.h"
+#include "engine/renderer/asset.h"
 #include <raylib.h>
 #include <string>
 
 namespace CHEngine
 {
-class SoundAsset
+class SoundAsset : public Asset
 {
 public:
     SoundAsset(Sound sound);
-    ~SoundAsset();
+    virtual ~SoundAsset();
 
     static Ref<SoundAsset> Load(const std::string &path);
+
+    virtual AssetType GetType() const override
+    {
+        return AssetType::Audio;
+    }
 
     Sound &GetSound()
     {
@@ -28,5 +32,3 @@ private:
     Sound m_Sound;
 };
 } // namespace CHEngine
-
-#endif // CH_SOUND_ASSET_H

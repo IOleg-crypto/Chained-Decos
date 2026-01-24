@@ -1,5 +1,9 @@
+#ifndef CH_ASSET_MANAGER_H
+#define CH_ASSET_MANAGER_H
+
+#include "asset.h"
 #include "engine/audio/sound_asset.h"
-#include "engine/core/base.h"
+#include "environment.h"
 #include "model_asset.h"
 #include "shader_asset.h"
 #include "texture_asset.h"
@@ -8,7 +12,6 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-
 
 namespace CHEngine
 {
@@ -19,16 +22,31 @@ public:
     static void Init();
     static void Shutdown();
 
-    // Cache Access
-    static Ref<ModelAsset> LoadModel(const std::string &path);
-    static Ref<TextureAsset> LoadTexture(const std::string &path);
-    static Ref<SoundAsset> LoadSound(const std::string &path);
-    static Ref<ShaderAsset> LoadShader(const std::string &vsPath, const std::string &fsPath);
+    // Generic Cache Access
+    template <typename T> static Ref<T> Get(const std::string &path)
+    {
+        static_assert(std::is_base_of<Asset, T>::value, "T must inherit from Asset");
 
-    // Async
-    static std::future<Ref<ModelAsset>> LoadModelAsync(const std::string &path);
+        std::lock_guard<std::mutex> lock(s_AssetsMutex);
+
+        if (s_Assets.find(path) != s_Assets.end())
+        {
+            return std::static_pointer_cast<T>(s_Assets[path]);
+        }
+
+        Ref<T> asset = T::Load(path);
+        if (asset)
+        {
+            s_Assets[path] = asset;
+        }
+        return asset;
+    }
 
     // Helpers
+    static Ref<ShaderAsset> LoadShader(const std::string &vsPath, const std::string &fsPath);
+    static Ref<ShaderAsset> LoadShader(const std::string &path);
+    static Ref<EnvironmentAsset> LoadEnvironment(const std::string &path);
+    static std::future<Ref<ModelAsset>> LoadModelAsync(const std::string &path);
     static std::filesystem::path ResolvePath(const std::string &path);
 
 private:
@@ -41,19 +59,12 @@ private:
         }
     };
 
-    static std::unordered_map<std::string, Ref<ModelAsset>, StringHash, std::equal_to<>> s_Models;
-    static std::unordered_map<std::string, Ref<TextureAsset>, StringHash, std::equal_to<>>
-        s_Textures;
-    static std::unordered_map<std::string, Ref<SoundAsset>, StringHash, std::equal_to<>> s_Sounds;
-    static std::unordered_map<std::string, Ref<ShaderAsset>, StringHash, std::equal_to<>> s_Shaders;
-
-    static std::mutex s_ModelsMutex;
-    static std::mutex s_TexturesMutex;
-    static std::mutex s_SoundsMutex;
-    static std::mutex s_ShadersMutex;
+    static std::unordered_map<std::string, Ref<Asset>, StringHash, std::equal_to<>> s_Assets;
+    static std::mutex s_AssetsMutex;
 };
 
-// Aliasing for compatibility during transition if needed
 using AssetManager = Assets;
 
 } // namespace CHEngine
+
+#endif // CH_ASSET_MANAGER_H

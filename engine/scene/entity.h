@@ -24,6 +24,8 @@ public:
 
     template <typename T> void RemoveComponent();
 
+    template <typename T, typename... Func> void Patch(Func &&...func);
+
     operator bool() const
     {
         return m_EntityHandle != entt::null && m_Scene != nullptr;

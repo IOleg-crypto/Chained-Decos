@@ -22,7 +22,7 @@ Chained Engine follows a modern, modular design inspired by professional game en
 
 - **Entity Component System (ECS)**: Powered by [EnTT](https://github.com/skypjack/entt) for high-performance entity management.
 - **Native C++ Scripting**: Custom scripting DSL for gameplay logic with hot-reloading support.
-- **Virtual File System**: Unified asset access with support for engine-relative paths and project-relative assets.
+- **Virtual File System**: Unified asset access with support for engine-relative paths and project-relative assets.(Planned)
 - **Advanced Physics**: BVH-accelerated collision detection with robust world-to-local coordinate transformations.
 - **Project Hub**: Integrated project browser with recent project tracking and intelligent path resolution.
 

@@ -12,7 +12,15 @@ Ref<ModelAsset> ModelAsset::Load(const std::string &path)
     if (path.empty())
         return nullptr;
 
+    // Check for procedural models first
+    if (path.starts_with(":"))
+    {
+        return CreateProcedural(path);
+    }
+
     auto fullPath = Assets::ResolvePath(path);
+    CH_CORE_INFO("Loading model: {} (resolved: {})", path, fullPath.string());
+
     if (!std::filesystem::exists(fullPath))
     {
         CH_CORE_ERROR("Model file not found: {}", fullPath.string());
@@ -21,11 +29,17 @@ Ref<ModelAsset> ModelAsset::Load(const std::string &path)
 
     Model model = ::LoadModel(fullPath.string().c_str());
     if (model.meshCount == 0)
+    {
+        CH_CORE_ERROR("Failed to load model meshes: {}", path);
         return nullptr;
+    }
+
+    CH_CORE_INFO("Model loaded successfully: {} (meshes: {}, materials: {})", path, model.meshCount,
+                 model.materialCount);
 
     auto asset = CreateRef<ModelAsset>();
     asset->m_Model = model;
-    asset->m_Path = path;
+    asset->SetPath(path);
 
     // Register textures with AssetManager to ensure they are tracked
     for (int i = 0; i < model.materialCount; i++)
@@ -44,8 +58,10 @@ Ref<ModelAsset> ModelAsset::Load(const std::string &path)
         }
     }
 
-    // Load animations
+    // Load animations - Raylib animations are sometimes problematic with GLB
+    CH_CORE_INFO("Loading animations for: {}", path);
     asset->m_Animations = ::LoadModelAnimations(fullPath.string().c_str(), &asset->m_AnimCount);
+    CH_CORE_INFO("Animations loaded for: {} (count: {})", path, asset->m_AnimCount);
 
     return asset;
 }
@@ -59,13 +75,15 @@ Ref<ModelAsset> ModelAsset::CreateProcedural(const std::string &type)
         mesh = GenMeshSphere(0.5f, 16, 16);
     else if (type == ":plane:")
         mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
+    else if (type == ":torus:")
+        mesh = GenMeshTorus(0.2f, 0.4f, 16, 16);
 
     if (mesh.vertexCount == 0)
         return nullptr;
 
     auto asset = CreateRef<ModelAsset>();
     asset->m_Model = LoadModelFromMesh(mesh);
-    asset->m_Path = type;
+    asset->SetPath(type);
     return asset;
 }
 
@@ -76,7 +94,7 @@ ModelAsset::~ModelAsset()
     if (m_Animations)
         ::UnloadModelAnimations(m_Animations, m_AnimCount);
 
-    CH_CORE_TRACE("ModelAsset Unloaded: {}", m_Path);
+    CH_CORE_TRACE("ModelAsset Unloaded: {}", GetPath());
 }
 
 void ModelAsset::UpdateAnimation(int animIndex, int frame)
