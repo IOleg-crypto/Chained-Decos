@@ -1,0 +1,18 @@
+Project:
+  Name: Untitled
+  StartScene: Untitled.chscene
+  AssetDirectory: assets
+  ActiveScene: assets\scenes\Untitled.chscene
+  Physics:
+    Gravity: 20
+  Animation:
+    TargetFPS: 30
+  Render:
+    AmbientIntensity: 0.300000012
+    DefaultExposure: 1
+  Window:
+    Width: 1601
+    Height: 720
+    VSync: false
+    Resizable: true
+  BuildConfig: 0

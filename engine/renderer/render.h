@@ -6,23 +6,10 @@
 #include "engine/scene/scene.h"
 #include <string>
 
+#include "render_types.h"
+
 namespace CHEngine
 {
-class ShaderAsset;
-
-struct DebugRenderFlags
-{
-    bool DrawColliders = false;
-    bool DrawLights = false;
-    bool DrawSpawnZones = false;
-    bool DrawGrid = true;
-
-    bool IsAnyEnabled() const
-    {
-        return DrawColliders || DrawLights || DrawSpawnZones;
-    }
-};
-
 class Render
 {
 public:
@@ -32,86 +19,32 @@ public:
     static void BeginScene(const Camera3D &camera);
     static void EndScene();
 
-    static void DrawGrid(int slices, float spacing);
     static void DrawLine(Vector3 start, Vector3 end, Color color);
     static void DrawModel(const std::string &path, const Matrix &transform,
-                          const std::vector<struct MaterialSlot> &overrides,
-                          Vector3 scale = {1.0f, 1.0f, 1.0f});
+                          const std::vector<struct MaterialSlot> &overrides);
+    static void DrawModel(Ref<class ModelAsset> asset, const Matrix &transform,
+                          const std::vector<struct MaterialSlot> &overrides);
     static void DrawModel(const std::string &path, const Matrix &transform,
-                          const MaterialInstance &material, Vector3 scale = {1.0f, 1.0f, 1.0f});
-    static void DrawModel(const std::string &path, const Matrix &transform, Color tint = WHITE,
-                          Vector3 scale = {1.0f, 1.0f, 1.0f});
+                          const MaterialInstance &material);
+    static void DrawModel(const std::string &path, const Matrix &transform, Color tint = WHITE);
 
     static void DrawScene(Scene *scene,
                           const DebugRenderFlags *debugFlags = nullptr); // To be removed soon
 
-    // Lighting
+    // Lighting & Environment
     static void SetDirectionalLight(Vector3 direction, Color color);
     static void SetAmbientLight(float intensity);
+    static void ApplyEnvironment(const struct EnvironmentSettings &settings);
 
-    static void DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera);
+    static void DrawSkybox(const struct SkyboxComponent &skybox, const Camera3D &camera);
+    static void DrawSkybox(const struct EnvironmentSettings &settings, const Camera3D &camera);
 
     // For 2D / UI
     static void BeginUI();
     static void EndUI();
 
 private:
-    struct ShaderState
-    {
-        Ref<ShaderAsset> lightingShader;
-        int lightDirLoc;
-        int lightColorLoc;
-        int ambientLoc;
-
-        struct ShaderLightLocs
-        {
-            int position;
-            int color;
-            int radius;
-            int radiance;
-            int falloff;
-            int enabled;
-        } lightLocs[8];
-
-        Ref<ShaderAsset> skyboxShader;
-        Ref<ShaderAsset> panoramaShader;
-        Model skyboxCube;
-        int skyboxVflippedLoc;
-        int skyboxDoGammaLoc;
-        int skyboxFragGammaLoc;
-        int skyboxExposureLoc;
-        int skyboxBrightnessLoc;
-        int skyboxContrastLoc;
-
-        // Panorama shader locations
-        int panoDoGammaLoc;
-        int panoFragGammaLoc;
-        int panoExposureLoc;
-        int panoBrightnessLoc;
-        int panoContrastLoc;
-
-        // Infinite Grid
-        Ref<ShaderAsset> gridShader;
-        unsigned int gridVAO = 0;
-        unsigned int gridVBO = 0;
-        int gridNearLoc;
-        int gridFarLoc;
-        int gridViewLoc;
-        int gridProjLoc;
-    };
-
-    struct SceneData
-    {
-        Color lightColor = WHITE;
-        Vector3 lightDir = {0.0f, -1.0f, 0.0f};
-        float ambientIntensity = 0.2f;
-        Camera3D currentCamera;
-    };
-
-    static ShaderState s_Shaders;
-    static SceneData s_Scene;
-
-    Render() = default;
+    static RendererState s_State;
 };
 } // namespace CHEngine
 

@@ -1,20 +1,20 @@
 #ifndef CH_PROJECT_BROWSER_PANEL_H
 #define CH_PROJECT_BROWSER_PANEL_H
 
-#include "engine/core/events.h"
+#include "panel.h"
 #include <functional>
 #include <string>
 #include <vector>
 
 namespace CHEngine
 {
-class ProjectBrowserPanel
+class ProjectBrowserPanel : public Panel
 {
 public:
     ProjectBrowserPanel();
     ~ProjectBrowserPanel() = default;
 
-    void OnImGuiRender();
+    virtual void OnImGuiRender(bool readOnly = false) override;
 
     using EventCallbackFn = std::function<void(Event &)>;
     void SetEventCallback(const EventCallbackFn &callback)

@@ -1,4 +1,5 @@
 #include "render.h"
+#include "engine/core/profiler.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/shader_asset.h"
 #include "engine/scene/components.h"
@@ -11,32 +12,27 @@
 
 namespace CHEngine
 {
-Render::ShaderState Render::s_Shaders;
-Render::SceneData Render::s_Scene;
+RendererState Render::s_State;
 
 void Render::Init()
 {
-    s_Shaders.lightingShader =
-        Assets::LoadShader("engine:shaders/lighting.vs", "engine:shaders/lighting.fs");
+    s_State.LightingShader = Assets::LoadShader("engine:shaders/lighting.chshader");
 
-    if (s_Shaders.lightingShader)
+    if (s_State.LightingShader)
     {
-        auto &shader = s_Shaders.lightingShader->GetShader();
-        s_Shaders.lightDirLoc = GetShaderLocation(shader, "lightDir");
-        s_Shaders.lightColorLoc = GetShaderLocation(shader, "lightColor");
-        s_Shaders.ambientLoc = GetShaderLocation(shader, "ambient");
+        s_State.LightDirLoc = s_State.LightingShader->GetLocation("lightDir");
+        s_State.LightColorLoc = s_State.LightingShader->GetLocation("lightColor");
+        s_State.AmbientLoc = s_State.LightingShader->GetLocation("ambient");
 
         for (int i = 0; i < 8; i++)
         {
             std::string base = "lights[" + std::to_string(i) + "].";
-            s_Shaders.lightLocs[i].position =
-                GetShaderLocation(shader, (base + "position").c_str());
-            s_Shaders.lightLocs[i].color = GetShaderLocation(shader, (base + "color").c_str());
-            s_Shaders.lightLocs[i].radius = GetShaderLocation(shader, (base + "radius").c_str());
-            s_Shaders.lightLocs[i].radiance =
-                GetShaderLocation(shader, (base + "radiance").c_str());
-            s_Shaders.lightLocs[i].falloff = GetShaderLocation(shader, (base + "falloff").c_str());
-            s_Shaders.lightLocs[i].enabled = GetShaderLocation(shader, (base + "enabled").c_str());
+            s_State.LightLocs[i].position = s_State.LightingShader->GetLocation(base + "position");
+            s_State.LightLocs[i].color = s_State.LightingShader->GetLocation(base + "color");
+            s_State.LightLocs[i].radius = s_State.LightingShader->GetLocation(base + "radius");
+            s_State.LightLocs[i].radiance = s_State.LightingShader->GetLocation(base + "radiance");
+            s_State.LightLocs[i].falloff = s_State.LightingShader->GetLocation(base + "falloff");
+            s_State.LightLocs[i].enabled = s_State.LightingShader->GetLocation(base + "enabled");
         }
     }
 
@@ -48,22 +44,21 @@ void Render::Init()
     SetAmbientLight(ambient);
 
     // Skybox initialization
-    s_Shaders.skyboxShader =
-        Assets::LoadShader("engine:shaders/skybox.vs", "engine:shaders/skybox.fs");
-    s_Shaders.skyboxCube = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
+    s_State.SkyboxShader = Assets::LoadShader("engine:shaders/skybox.chshader");
+    s_State.SkyboxCube = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
 
-    if (s_Shaders.skyboxShader)
+    if (s_State.SkyboxShader)
     {
-        auto &shader = s_Shaders.skyboxShader->GetShader();
-        s_Shaders.skyboxCube.materials[0].shader = shader;
-        s_Shaders.skyboxVflippedLoc = GetShaderLocation(shader, "vflipped");
-        s_Shaders.skyboxDoGammaLoc = GetShaderLocation(shader, "doGamma");
-        s_Shaders.skyboxFragGammaLoc = GetShaderLocation(shader, "fragGamma");
-        s_Shaders.skyboxExposureLoc = GetShaderLocation(shader, "exposure");
-        s_Shaders.skyboxBrightnessLoc = GetShaderLocation(shader, "brightness");
-        s_Shaders.skyboxContrastLoc = GetShaderLocation(shader, "contrast");
+        auto &shader = s_State.SkyboxShader->GetShader();
+        s_State.SkyboxCube.materials[0].shader = shader;
+        s_State.SkyboxVflippedLoc = s_State.SkyboxShader->GetLocation("vflipped");
+        s_State.SkyboxDoGammaLoc = s_State.SkyboxShader->GetLocation("doGamma");
+        s_State.SkyboxFragGammaLoc = s_State.SkyboxShader->GetLocation("fragGamma");
+        s_State.SkyboxExposureLoc = s_State.SkyboxShader->GetLocation("exposure");
+        s_State.SkyboxBrightnessLoc = s_State.SkyboxShader->GetLocation("brightness");
+        s_State.SkyboxContrastLoc = s_State.SkyboxShader->GetLocation("contrast");
 
-        int environmentMapLoc = GetShaderLocation(shader, "environmentMap");
+        int environmentMapLoc = s_State.SkyboxShader->GetLocation("environmentMap");
         if (environmentMapLoc >= 0)
         {
             shader.locs[SHADER_LOC_MAP_CUBEMAP] = environmentMapLoc;
@@ -73,62 +68,28 @@ void Render::Init()
     }
 
     // Panorama initialization
-    s_Shaders.panoramaShader =
-        Assets::LoadShader("engine:shaders/skybox.vs", "engine:shaders/skybox_panorama.fs");
-    if (s_Shaders.panoramaShader)
+    s_State.PanoramaShader = Assets::LoadShader("engine:shaders/panorama.chshader");
+    if (s_State.PanoramaShader)
     {
-        auto &shader = s_Shaders.panoramaShader->GetShader();
-        s_Shaders.panoDoGammaLoc = GetShaderLocation(shader, "doGamma");
-        s_Shaders.panoFragGammaLoc = GetShaderLocation(shader, "fragGamma");
-        s_Shaders.panoExposureLoc = GetShaderLocation(shader, "exposure");
-        s_Shaders.panoBrightnessLoc = GetShaderLocation(shader, "brightness");
-        s_Shaders.panoContrastLoc = GetShaderLocation(shader, "contrast");
+        s_State.PanoDoGammaLoc = s_State.PanoramaShader->GetLocation("doGamma");
+        s_State.PanoFragGammaLoc = s_State.PanoramaShader->GetLocation("fragGamma");
+        s_State.PanoExposureLoc = s_State.PanoramaShader->GetLocation("exposure");
+        s_State.PanoBrightnessLoc = s_State.PanoramaShader->GetLocation("brightness");
+        s_State.PanoContrastLoc = s_State.PanoramaShader->GetLocation("contrast");
     }
-
-    // Infinite Grid initialization
-    s_Shaders.gridShader =
-        Assets::LoadShader("engine:shaders/infinite_grid.vs", "engine:shaders/infinite_grid.fs");
-    if (s_Shaders.gridShader)
-    {
-        auto &shader = s_Shaders.gridShader->GetShader();
-        s_Shaders.gridNearLoc = GetShaderLocation(shader, "near");
-        s_Shaders.gridFarLoc = GetShaderLocation(shader, "far");
-        s_Shaders.gridViewLoc = GetShaderLocation(shader, "matView");
-        s_Shaders.gridProjLoc = GetShaderLocation(shader, "matProjection");
-    }
-
-    // Create fullscreen quad for grid using rlgl
-    float gridVertices[] = {-1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f,
-                            -1.0f, 1.0f,  0.0f, 1.0f, 1.0f,  0.0f};
-
-    s_Shaders.gridVAO = rlLoadVertexArray();
-    rlEnableVertexArray(s_Shaders.gridVAO);
-
-    s_Shaders.gridVBO = rlLoadVertexBuffer(gridVertices, sizeof(gridVertices), false);
-    rlSetVertexAttribute(0, 3, RL_FLOAT, false, 0, 0);
-    rlEnableVertexAttribute(0);
-
-    rlDisableVertexArray();
 }
 
 void Render::Shutdown()
 {
-    s_Shaders.lightingShader = nullptr;
-    s_Shaders.skyboxShader = nullptr;
-    s_Shaders.panoramaShader = nullptr;
-    s_Shaders.gridShader = nullptr;
-    UnloadModel(s_Shaders.skyboxCube);
-
-    if (s_Shaders.gridVAO != 0)
-    {
-        rlUnloadVertexArray(s_Shaders.gridVAO);
-        rlUnloadVertexBuffer(s_Shaders.gridVBO);
-    }
+    s_State.LightingShader = nullptr;
+    s_State.SkyboxShader = nullptr;
+    s_State.PanoramaShader = nullptr;
+    UnloadModel(s_State.SkyboxCube);
 }
 
 void Render::BeginScene(const Camera3D &camera)
 {
-    s_Scene.currentCamera = camera;
+    s_State.ActiveCamera = camera;
     BeginMode3D(camera);
 }
 
@@ -137,152 +98,168 @@ void Render::EndScene()
     EndMode3D();
 }
 
-void Render::DrawGrid(int slices, float spacing)
-{
-    // Simple line-based grid using rlgl for performance and control
-    rlCheckRenderBatchLimit(slices * 4);
-
-    rlBegin(RL_LINES);
-    rlColor4ub(100, 100, 100, 255);
-
-    float halfSize = (float)slices * spacing / 2.0f;
-
-    for (int i = 0; i <= slices; i++)
-    {
-        float pos = -halfSize + (float)i * spacing;
-
-        // X-axis lines
-        rlVertex3f(-halfSize, 0.0f, pos);
-        rlVertex3f(halfSize, 0.0f, pos);
-
-        // Z-axis lines
-        rlVertex3f(pos, 0.0f, -halfSize);
-        rlVertex3f(pos, 0.0f, halfSize);
-    }
-    rlEnd();
-}
-
 void Render::DrawLine(Vector3 start, Vector3 end, Color color)
 {
     ::DrawLine3D(start, end, color);
 }
 
-void Render::DrawModel(const std::string &path, const Matrix &transform, Color tint, Vector3 scale)
+void Render::DrawModel(const std::string &path, const Matrix &transform, Color tint)
 {
     MaterialInstance material;
     material.AlbedoColor = tint;
-    DrawModel(path, transform, material, scale);
+    DrawModel(path, transform, material);
 }
 
 void Render::DrawModel(const std::string &path, const Matrix &transform,
-                       const std::vector<MaterialSlot> &overrides, Vector3 scale)
+                       const std::vector<MaterialSlot> &overrides)
 {
-    auto asset = Assets::LoadModel(path);
-    if (asset)
+    auto asset = Assets::Get<ModelAsset>(path);
+    if (!asset)
+        return;
+
+    DrawModel(asset, transform, overrides);
+}
+
+void Render::DrawModel(Ref<ModelAsset> asset, const Matrix &transform,
+                       const std::vector<MaterialSlot> &overrides)
+{
+    if (!asset)
+        return;
+
+    Model &model = asset->GetModel();
+    rlPushMatrix();
+
+    // Calculate final transform: Asset Root Transform * Entity Transform
+    Matrix finalTransform = MatrixMultiply(model.transform, transform);
+    rlMultMatrixf(MatrixToFloat(finalTransform));
+
+    // Track statistics
+    ProfilerStats stats;
+    stats.DrawCalls++;
+    stats.MeshCount += model.meshCount;
+    for (int i = 0; i < model.meshCount; i++)
+        stats.PolyCount += model.meshes[i].triangleCount;
+    Profiler::UpdateStats(stats);
+
+    for (int i = 0; i < model.meshCount; i++)
     {
-        Model &model = asset->GetModel();
-        rlPushMatrix();
-        rlMultMatrixf(MatrixToFloat(transform));
+        int matIndex = model.meshMaterial[i];
+        // Use local copy of material to avoid polluting shared asset
+        Material mat = model.materials[matIndex];
 
-        for (int i = 0; i < model.meshCount; i++)
+        if (s_State.LightingShader)
+            mat.shader = s_State.LightingShader->GetShader();
+
+        // Apply overrides if any match the slot index or name
+        for (const auto &slot : overrides)
         {
-            int matIndex = model.meshMaterial[i];
-            // Use local copy of material to avoid polluting shared asset
-            Material mat = model.materials[matIndex];
+            bool matches = (slot.Index == -1); // Global override
+            if (slot.Target == MaterialSlotTarget::MaterialIndex)
+                matches |= (slot.Index == matIndex);
+            else if (slot.Target == MaterialSlotTarget::MeshIndex)
+                matches |= (slot.Index == i);
 
-            if (s_Shaders.lightingShader)
-                mat.shader = s_Shaders.lightingShader->GetShader();
-
-            // Find override for this slot
-            for (const auto &slot : overrides)
+            if (matches)
             {
-                bool matches = (slot.Index == -1); // Global override
-                if (slot.Target == MaterialSlotTarget::MaterialIndex)
-                    matches |= (slot.Index == matIndex);
-                else if (slot.Target == MaterialSlotTarget::MeshIndex)
-                    matches |= (slot.Index == i);
+                const auto &material = slot.Material;
+                if (material.OverrideAlbedo)
+                    mat.maps[MATERIAL_MAP_ALBEDO].color = material.AlbedoColor;
 
-                if (matches)
+                if (!material.AlbedoPath.empty())
                 {
-                    const auto &material = slot.Material;
-                    // Only apply if override flag is set
-                    if (material.OverrideAlbedo)
-                    {
-                        mat.maps[MATERIAL_MAP_ALBEDO].color = material.AlbedoColor;
-                        if (!material.AlbedoPath.empty())
-                        {
-                            auto texAsset = Assets::LoadTexture(material.AlbedoPath);
-                            if (texAsset)
-                                mat.maps[MATERIAL_MAP_ALBEDO].texture = texAsset->GetTexture();
-                        }
-                    }
+                    auto texAsset = Assets::Get<TextureAsset>(material.AlbedoPath);
+                    if (texAsset)
+                        mat.maps[MATERIAL_MAP_ALBEDO].texture = texAsset->GetTexture();
+                }
 
-                    if (material.OverrideNormal && !material.NormalMapPath.empty())
-                    {
-                        auto texAsset = Assets::LoadTexture(material.NormalMapPath);
-                        if (texAsset)
-                            mat.maps[MATERIAL_MAP_NORMAL].texture = texAsset->GetTexture();
-                    }
+                if (material.OverrideNormal && !material.NormalMapPath.empty())
+                {
+                    auto texAsset = Assets::Get<TextureAsset>(material.NormalMapPath);
+                    if (texAsset)
+                        mat.maps[MATERIAL_MAP_NORMAL].texture = texAsset->GetTexture();
+                }
 
-                    if (material.OverrideMetallicRoughness &&
-                        !material.MetallicRoughnessPath.empty())
-                    {
-                        auto texAsset = Assets::LoadTexture(material.MetallicRoughnessPath);
-                        if (texAsset)
-                            mat.maps[MATERIAL_MAP_ROUGHNESS].texture = texAsset->GetTexture();
-                    }
+                if (material.OverrideMetallicRoughness && !material.MetallicRoughnessPath.empty())
+                {
+                    auto texAsset = Assets::Get<TextureAsset>(material.MetallicRoughnessPath);
+                    if (texAsset)
+                        mat.maps[MATERIAL_MAP_ROUGHNESS].texture = texAsset->GetTexture();
+                }
 
-                    if (material.OverrideEmissive && !material.EmissivePath.empty())
-                    {
-                        auto texAsset = Assets::LoadTexture(material.EmissivePath);
-                        if (texAsset)
-                            mat.maps[MATERIAL_MAP_EMISSION].texture = texAsset->GetTexture();
-                    }
+                if (material.OverrideEmissive && !material.EmissivePath.empty())
+                {
+                    auto texAsset = Assets::Get<TextureAsset>(material.EmissivePath);
+                    if (texAsset)
+                        mat.maps[MATERIAL_MAP_EMISSION].texture = texAsset->GetTexture();
                 }
             }
-
-            DrawMesh(model.meshes[i], mat, MatrixIdentity());
         }
-        rlPopMatrix();
+
+        DrawMesh(model.meshes[i], mat, MatrixIdentity());
     }
+
+    rlPopMatrix();
 }
 
 void Render::DrawModel(const std::string &path, const Matrix &transform,
-                       const MaterialInstance &material, Vector3 scale)
+                       const MaterialInstance &material)
 {
     std::vector<MaterialSlot> overrides;
     MaterialSlot slot;
     slot.Index = -1; // Override all slots
     slot.Material = material;
     overrides.push_back(slot);
-    DrawModel(path, transform, overrides, scale);
+    DrawModel(path, transform, overrides);
 }
 
 void Render::SetDirectionalLight(Vector3 direction, Color color)
 {
-    s_Scene.lightDir = direction;
-    s_Scene.lightColor = color;
+    s_State.CurrentLightDir = direction;
+    s_State.CurrentLightColor = color;
 
     float dir[3] = {direction.x, direction.y, direction.z};
     float col[4] = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
 
-    if (s_Shaders.lightingShader)
+    if (s_State.LightingShader)
     {
-        SetShaderValue(s_Shaders.lightingShader->GetShader(), s_Shaders.lightDirLoc, dir,
+        SetShaderValue(s_State.LightingShader->GetShader(), s_State.LightDirLoc, dir,
                        SHADER_UNIFORM_VEC3);
-        SetShaderValue(s_Shaders.lightingShader->GetShader(), s_Shaders.lightColorLoc, col,
+        SetShaderValue(s_State.LightingShader->GetShader(), s_State.LightColorLoc, col,
                        SHADER_UNIFORM_VEC4);
     }
 }
 
 void Render::SetAmbientLight(float intensity)
 {
-    s_Scene.ambientIntensity = intensity;
-    if (s_Shaders.lightingShader)
+    s_State.CurrentAmbientIntensity = intensity;
+    if (s_State.LightingShader)
     {
-        SetShaderValue(s_Shaders.lightingShader->GetShader(), s_Shaders.ambientLoc, &intensity,
+        SetShaderValue(s_State.LightingShader->GetShader(), s_State.AmbientLoc, &intensity,
                        SHADER_UNIFORM_FLOAT);
     }
+}
+
+void Render::DrawScene(Scene *scene, const DebugRenderFlags *debugFlags)
+{
+    CH_PROFILE_FUNCTION();
+    if (!scene)
+        return;
+
+    auto &registry = scene->GetRegistry();
+
+    // Scene statistics
+    ProfilerStats sceneStats;
+    sceneStats.EntityCount = (uint32_t)registry.storage<entt::entity>().size();
+
+    registry.view<ColliderComponent>().each(
+        [&](auto entity, auto &col)
+        {
+            sceneStats.ColliderCount++;
+            sceneStats.ColliderTypeCounts[(int)col.Type]++;
+        });
+    Profiler::UpdateStats(sceneStats);
+
+    // Render loop ...
 }
 
 void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
@@ -290,7 +267,7 @@ void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
     if (skybox.TexturePath.empty())
         return;
 
-    auto texAsset = Assets::LoadTexture(skybox.TexturePath);
+    auto texAsset = Assets::Get<TextureAsset>(skybox.TexturePath);
     if (!texAsset)
         return;
 
@@ -308,15 +285,15 @@ void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
     // Actually, let's just try to be smart: if it's a regular LoadTexture, it's 2D.
     // If we'll have a LoadCubemap later that sets a flag, we'll use that.
 
-    Ref<ShaderAsset> shaderAsset = usePanorama ? s_Shaders.panoramaShader : s_Shaders.skyboxShader;
+    Ref<ShaderAsset> shaderAsset = usePanorama ? s_State.PanoramaShader : s_State.SkyboxShader;
     if (!shaderAsset)
         return;
 
     auto &shader = shaderAsset->GetShader();
-    s_Shaders.skyboxCube.materials[0].shader = shader;
+    s_State.SkyboxCube.materials[0].shader = shader;
 
     // Set texture to material
-    SetMaterialTexture(&s_Shaders.skyboxCube.materials[0],
+    SetMaterialTexture(&s_State.SkyboxCube.materials[0],
                        usePanorama ? MATERIAL_MAP_ALBEDO : MATERIAL_MAP_CUBEMAP, tex);
 
     // Update shader uniforms
@@ -325,23 +302,22 @@ void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
 
     if (usePanorama)
     {
-        SetShaderValue(shader, s_Shaders.panoDoGammaLoc, &doGamma, SHADER_UNIFORM_INT);
-        SetShaderValue(shader, s_Shaders.panoFragGammaLoc, &fragGamma, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(shader, s_Shaders.panoExposureLoc, &skybox.Exposure, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(shader, s_Shaders.panoBrightnessLoc, &skybox.Brightness,
-                       SHADER_UNIFORM_FLOAT);
-        SetShaderValue(shader, s_Shaders.panoContrastLoc, &skybox.Contrast, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, s_State.PanoDoGammaLoc, &doGamma, SHADER_UNIFORM_INT);
+        SetShaderValue(shader, s_State.PanoFragGammaLoc, &fragGamma, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, s_State.PanoExposureLoc, &skybox.Exposure, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, s_State.PanoBrightnessLoc, &skybox.Brightness, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, s_State.PanoContrastLoc, &skybox.Contrast, SHADER_UNIFORM_FLOAT);
     }
     else
     {
         int vflipped = 0;
-        SetShaderValue(shader, s_Shaders.skyboxVflippedLoc, &vflipped, SHADER_UNIFORM_INT);
-        SetShaderValue(shader, s_Shaders.skyboxDoGammaLoc, &doGamma, SHADER_UNIFORM_INT);
-        SetShaderValue(shader, s_Shaders.skyboxFragGammaLoc, &fragGamma, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(shader, s_Shaders.skyboxExposureLoc, &skybox.Exposure, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(shader, s_Shaders.skyboxBrightnessLoc, &skybox.Brightness,
+        SetShaderValue(shader, s_State.SkyboxVflippedLoc, &vflipped, SHADER_UNIFORM_INT);
+        SetShaderValue(shader, s_State.SkyboxDoGammaLoc, &doGamma, SHADER_UNIFORM_INT);
+        SetShaderValue(shader, s_State.SkyboxFragGammaLoc, &fragGamma, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, s_State.SkyboxExposureLoc, &skybox.Exposure, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, s_State.SkyboxBrightnessLoc, &skybox.Brightness,
                        SHADER_UNIFORM_FLOAT);
-        SetShaderValue(shader, s_Shaders.skyboxContrastLoc, &skybox.Contrast, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, s_State.SkyboxContrastLoc, &skybox.Contrast, SHADER_UNIFORM_FLOAT);
     }
 
     // Disable backface culling for inside cube rendering
@@ -349,10 +325,30 @@ void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
     rlDisableDepthMask();
 
     // The vertex shader handles removing translation
-    ::DrawModel(s_Shaders.skyboxCube, {0, 0, 0}, 1.0f, WHITE);
+    ::DrawModel(s_State.SkyboxCube, {0, 0, 0}, 1.0f, WHITE);
 
     rlEnableDepthMask();
     rlEnableBackfaceCulling();
+}
+
+void Render::ApplyEnvironment(const EnvironmentSettings &settings)
+{
+    SetDirectionalLight(settings.LightDirection, settings.LightColor);
+    SetAmbientLight(settings.AmbientIntensity);
+
+    // If we have an active skybox, it will be drawn with these settings
+    // during DrawSkybox calls.
+}
+
+void Render::DrawSkybox(const EnvironmentSettings &settings, const Camera3D &camera)
+{
+    SkyboxComponent sc;
+    sc.TexturePath = settings.Skybox.TexturePath;
+    sc.Exposure = settings.Skybox.Exposure;
+    sc.Brightness = settings.Skybox.Brightness;
+    sc.Contrast = settings.Skybox.Contrast;
+
+    DrawSkybox(sc, camera);
 }
 
 void Render::BeginUI()

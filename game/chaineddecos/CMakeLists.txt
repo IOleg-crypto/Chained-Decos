@@ -1,5 +1,7 @@
 set(GAME_SOURCES
     src/game_scripts.cpp
+    src/PlayerController.h
+    src/CameraController.h
 )
 
 add_library(ChainedDecosGame STATIC ${GAME_SOURCES})

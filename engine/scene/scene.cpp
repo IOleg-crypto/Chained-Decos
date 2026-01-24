@@ -1,21 +1,49 @@
 #include "scene.h"
-#include "components.h"
-#include "engine/audio/audio_manager.h"
-#include "engine/core/events.h"
-#include "engine/core/input.h"
-#include "engine/core/log.h"
-#include "engine/physics/bvh/bvh.h"
+#include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/asset_manager.h"
-#include "engine/scene/project.h"
-#include "entity.h"
+#include "scene_animator.h"
+#include "scene_audio.h"
+#include "scene_scripting.h"
+#include "scene_serializer.h"
 #include "scriptable_entity.h"
-#include <cfloat>
 
 namespace CHEngine
 {
 Scene::Scene()
 {
+    m_Scripting = CreateScope<SceneScripting>(this);
+    m_Animator = CreateScope<SceneAnimator>(this);
+    m_Audio = CreateScope<SceneAudio>(this);
+
+    m_Registry.on_construct<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
+    m_Registry.on_update<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
+
+    m_Registry.on_construct<AnimationComponent>().connect<&Scene::OnAnimationComponentAdded>(this);
+    m_Registry.on_update<AnimationComponent>().connect<&Scene::OnAnimationComponentAdded>(this);
+
+    m_Registry.on_construct<AudioComponent>().connect<&Scene::OnAudioComponentAdded>(this);
+    m_Registry.on_update<AudioComponent>().connect<&Scene::OnAudioComponentAdded>(this);
+}
+
+Scene::~Scene()
+{
+}
+
+Ref<Scene> Scene::Copy(Ref<Scene> other)
+{
+    Ref<Scene> newScene = CreateRef<Scene>();
+
+    SceneSerializer serializer(other.get());
+    std::string yaml = serializer.SerializeToString();
+
+    SceneSerializer deserializer(newScene.get());
+    if (deserializer.DeserializeFromString(yaml))
+    {
+        return newScene;
+    }
+
+    return nullptr;
 }
 
 Entity Scene::CreateEntity(const std::string &name)
@@ -75,94 +103,70 @@ void Scene::DestroyEntity(Entity entity)
     m_Registry.destroy(entity);
 }
 
+// (Old hardcoded player movement removed in favor of NativeScriptComponent)
+
+template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component)
+{
+    if (!component.ModelPath.empty())
+    {
+        // Check if we need to (re)load the asset
+        bool pathChanged = !component.Asset || (component.Asset->GetPath() != component.ModelPath);
+
+        if (pathChanged)
+        {
+            component.Asset = Assets::Get<ModelAsset>(component.ModelPath);
+            component.MaterialsInitialized = false; // Reset materials if asset changed
+        }
+
+        if (component.Asset && !component.MaterialsInitialized)
+        {
+            Model &model = component.Asset->GetModel();
+            component.Materials.clear();
+            std::set<int> uniqueIndices;
+            for (int i = 0; i < model.meshCount; i++)
+                uniqueIndices.insert(model.meshMaterial[i]);
+
+            for (int idx : uniqueIndices)
+            {
+                MaterialSlot slot("Material " + std::to_string(idx), idx);
+                slot.Target = MaterialSlotTarget::MaterialIndex;
+                slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
+                component.Materials.push_back(slot);
+            }
+            component.MaterialsInitialized = true;
+        }
+    }
+}
+
+template <>
+void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationComponent &component)
+{
+    // Animation component might need the model asset to perform calculations
+    if (entity.HasComponent<ModelComponent>())
+    {
+        auto &mc = entity.GetComponent<ModelComponent>();
+        if (!mc.Asset && !mc.ModelPath.empty())
+        {
+            mc.Asset = Assets::Get<ModelAsset>(mc.ModelPath);
+        }
+    }
+}
+
+template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioComponent &component)
+{
+    if (!component.SoundPath.empty())
+    {
+        component.Asset = Assets::Get<SoundAsset>(component.SoundPath);
+    }
+}
+
 void Scene::OnUpdateRuntime(float deltaTime)
 {
-    // Native Scripting Logic
-    {
-        m_Registry.view<NativeScriptComponent>().each(
-            [=](auto entity, auto &nsc)
-            {
-                for (auto &script : nsc.Scripts)
-                {
-                    if (!script.Instance)
-                    {
-                        script.Instance = script.InstantiateScript();
-                        script.Instance->m_Entity = Entity{entity, this};
-                        script.Instance->OnCreate();
-                    }
+    CH_PROFILE_FUNCTION();
 
-                    script.Instance->OnUpdate(deltaTime);
-                }
-            });
-    }
-
-    // Animation Logic
-    {
-        m_Registry.view<AnimationComponent, ModelComponent>().each(
-            [&](auto entity, auto &anim, auto &model)
-            {
-                if (anim.IsPlaying)
-                {
-                    auto asset = Assets::LoadModel(model.ModelPath);
-                    if (asset)
-                    {
-                        int animCount = 0;
-                        auto *animations = asset->GetAnimations(&animCount);
-
-                        if (animations && anim.CurrentAnimationIndex < animCount)
-                        {
-                            anim.FrameTimeCounter += deltaTime;
-
-                            float targetFPS = 30.0f;
-                            if (Project::GetActive())
-                                targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
-
-                            float frameTime = 1.0f / targetFPS;
-
-                            if (anim.FrameTimeCounter >= frameTime)
-                            {
-                                anim.CurrentFrame++;
-                                anim.FrameTimeCounter = 0;
-
-                                if (anim.CurrentFrame >=
-                                    animations[anim.CurrentAnimationIndex].frameCount)
-                                {
-                                    if (anim.IsLooping)
-                                        anim.CurrentFrame = 0;
-                                    else
-                                    {
-                                        anim.CurrentFrame =
-                                            animations[anim.CurrentAnimationIndex].frameCount - 1;
-                                        anim.IsPlaying = false;
-                                    }
-                                }
-
-                                asset->UpdateAnimation(anim.CurrentAnimationIndex,
-                                                       anim.CurrentFrame);
-                            }
-                        }
-                    }
-                }
-            });
-    }
-
-    // Audio Logic
-    {
-        m_Registry.view<AudioComponent>().each(
-            [&](auto entity, auto &audio)
-            {
-                if (!audio.Asset && !audio.SoundPath.empty())
-                {
-                    audio.Asset = Assets::LoadSound(audio.SoundPath);
-                    if (audio.Asset && audio.PlayOnStart)
-                    {
-                        AudioManager::PlaySound(audio.Asset, audio.Volume, audio.Pitch);
-                    }
-                }
-            });
-    }
-
-    // (Old hardcoded player movement removed in favor of NativeScriptComponent)
+    m_Scripting->OnUpdate(deltaTime);
+    m_Animator->OnUpdate(deltaTime);
+    m_Audio->OnUpdate(deltaTime);
 }
 
 void Scene::OnUpdateEditor(float deltaTime)
@@ -170,20 +174,24 @@ void Scene::OnUpdateEditor(float deltaTime)
     // TODO: Editor specific updates
 }
 
+void Scene::OnRuntimeStart()
+{
+    m_IsSimulationRunning = true;
+    CH_CORE_INFO("Scene '{0}' simulation started.",
+                 m_Registry.view<TagComponent>()
+                     .get<TagComponent>(m_Registry.view<TagComponent>().front())
+                     .Tag);
+}
+
+void Scene::OnRuntimeStop()
+{
+    m_IsSimulationRunning = false;
+    // TODO: Cleanup runtime state
+}
+
 void Scene::OnEvent(Event &e)
 {
-    // Native Scripting Event Handling
-    m_Registry.view<NativeScriptComponent>().each(
-        [&](auto entity, auto &nsc)
-        {
-            for (auto &script : nsc.Scripts)
-            {
-                if (script.Instance)
-                {
-                    script.Instance->OnEvent(e);
-                }
-            }
-        });
+    m_Scripting->OnEvent(e);
 }
 Entity Scene::FindEntityByTag(const std::string &tag)
 {
@@ -205,6 +213,21 @@ Entity Scene::GetEntityByUUID(UUID uuid)
             return {entity, this};
     }
     return {};
+}
+
+void Scene::OnAudioComponentAdded(entt::registry &reg, entt::entity entity)
+{
+    OnComponentAdded<AudioComponent>(Entity{entity, this}, reg.get<AudioComponent>(entity));
+}
+
+void Scene::OnModelComponentAdded(entt::registry &reg, entt::entity entity)
+{
+    OnComponentAdded<ModelComponent>(Entity{entity, this}, reg.get<ModelComponent>(entity));
+}
+
+void Scene::OnAnimationComponentAdded(entt::registry &reg, entt::entity entity)
+{
+    OnComponentAdded<AnimationComponent>(Entity{entity, this}, reg.get<AnimationComponent>(entity));
 }
 
 } // namespace CHEngine
