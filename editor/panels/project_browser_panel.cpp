@@ -1,4 +1,5 @@
 #include "project_browser_panel.h"
+#include "editor/editor_utils.h"
 #include "editor_settings.h"
 #include "engine/renderer/asset_manager.h"
 #include "nfd.h"
@@ -11,11 +12,12 @@ namespace CHEngine
 {
 ProjectBrowserPanel::ProjectBrowserPanel()
 {
+    m_Name = "Project Browser";
     std::string cwd = std::filesystem::current_path().string();
     strncpy(m_ProjectLocationBuffer, cwd.c_str(), sizeof(m_ProjectLocationBuffer));
 }
 
-void ProjectBrowserPanel::OnImGuiRender()
+void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
 {
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -93,11 +95,8 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
             if (ImGui::Button(fileName.c_str(), ImVec2(sidebarWidth - 60, 60)))
             {
-                if (m_EventCallback)
-                {
-                    ProjectOpenedEvent e(lastPath);
-                    m_EventCallback(e);
-                }
+                // Call EditorUtils directly - it will dispatch the event after loading
+                EditorUtils::ProjectUtils::OpenProject(lastPath);
             }
             if (ImGui::IsItemHovered())
             {
@@ -165,7 +164,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
                                   ImGuiWindowFlags_NoScrollbar |
                                       ImGuiWindowFlags_NoScrollWithMouse))
             {
-                auto texAsset = Assets::LoadTexture(iconPath);
+                auto texAsset = Assets::Get<TextureAsset>(iconPath);
                 Texture2D tex = texAsset ? texAsset->GetTexture() : Texture2D{0};
                 ImVec2 imageSize = {160, 160};
                 ImGui::SetCursorPosX((cardWidth - imageSize.x) * 0.5f);
@@ -229,11 +228,9 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
 
                            if (result == NFD_OKAY)
                            {
-                               if (m_EventCallback)
-                               {
-                                   ProjectOpenedEvent e(outPath);
-                                   m_EventCallback(e);
-                               }
+                               // Call EditorUtils directly - it will dispatch the event after
+                               // loading
+                               EditorUtils::ProjectUtils::OpenProject(outPath);
                                NFD_FreePath(outPath);
                            }
                        });

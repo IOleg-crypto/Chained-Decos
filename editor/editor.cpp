@@ -9,11 +9,22 @@ namespace CHEngine
 Editor::Editor(const Application::Config &config) : Application(config)
 {
     CH_CORE_INFO("Editor Started");
-    SetWindowIcon(
+}
+
+void Editor::PostInitialize()
+{
+    CH_CORE_INFO("Editor PostInitialize - Setting window icon");
+
+    // Set window icon (safe to do after window is created)
+    Image icon =
         LoadImage(AssetManager::ResolvePath(
                       "engine:icons/game-engine-icon-featuring-a-game-controller-with-.png")
                       .string()
-                      .c_str()));
+                      .c_str());
+    SetWindowIcon(icon);
+    UnloadImage(icon);
+
+    CH_CORE_INFO("Editor PostInitialize - Pushing EditorLayer");
     PushLayer(new EditorLayer());
 }
 

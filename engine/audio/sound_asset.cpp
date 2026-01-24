@@ -2,7 +2,6 @@
 #include "engine/core/log.h"
 #include "engine/renderer/asset_manager.h"
 
-
 namespace CHEngine
 {
 SoundAsset::SoundAsset(Sound sound) : m_Sound(sound)
@@ -24,7 +23,9 @@ Ref<SoundAsset> SoundAsset::Load(const std::string &path)
 
     if (sound.frameCount > 0)
     {
-        return CreateRef<SoundAsset>(sound);
+        auto asset = CreateRef<SoundAsset>(sound);
+        asset->SetPath(path);
+        return asset;
     }
 
     CH_CORE_ERROR("Failed to load sound: {0}", path);

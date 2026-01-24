@@ -43,6 +43,8 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "Resizable" << YAML::Value << config.Window.Resizable;
         out << YAML::EndMap;
 
+        out << YAML::Key << "BuildConfig" << YAML::Value << (int)config.BuildConfig;
+
         out << YAML::EndMap;
     }
     out << YAML::EndMap; // Project
@@ -101,6 +103,9 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
         config.Window.VSync = projectNode["Window"]["VSync"].as<bool>();
         config.Window.Resizable = projectNode["Window"]["Resizable"].as<bool>();
     }
+
+    if (projectNode["BuildConfig"])
+        config.BuildConfig = (Configuration)projectNode["BuildConfig"].as<int>();
 
     config.ProjectDirectory = filepath.parent_path();
 

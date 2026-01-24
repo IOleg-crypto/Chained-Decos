@@ -1,100 +1,19 @@
 #include "scene_serializer.h"
 #include "components.h"
 #include "engine/core/log.h"
-#include "engine/core/thread_dispatcher.h"
+#include "engine/core/main_thread_queue.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
 #include "scene.h"
 #include "script_registry.h"
+#include "yaml_utils.h"
 
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-namespace YAML
-{
-template <> struct convert<Vector3>
-{
-    static Node encode(const Vector3 &rhs)
-    {
-        Node node;
-        node.push_back(rhs.x);
-        node.push_back(rhs.y);
-        node.push_back(rhs.z);
-        return node;
-    }
-
-    static bool decode(const Node &node, Vector3 &rhs)
-    {
-        if (node.IsSequence() && node.size() == 3)
-        {
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            rhs.z = node[2].as<float>();
-            return true;
-        }
-        else if (node.IsMap())
-        {
-            rhs.x = node["x"] ? node["x"].as<float>() : 0.0f;
-            rhs.y = node["y"] ? node["y"].as<float>() : 0.0f;
-            rhs.z = node["z"] ? node["z"].as<float>() : 0.0f;
-            return true;
-        }
-        return false;
-    }
-};
-
-template <> struct convert<Color>
-{
-    static Node encode(const Color &rhs)
-    {
-        Node node;
-        node.push_back(rhs.r);
-        node.push_back(rhs.g);
-        node.push_back(rhs.b);
-        node.push_back(rhs.a);
-        return node;
-    }
-
-    static bool decode(const Node &node, Color &rhs)
-    {
-        if (node.IsSequence() && node.size() == 4)
-        {
-            rhs.r = node[0].as<unsigned char>();
-            rhs.g = node[1].as<unsigned char>();
-            rhs.b = node[2].as<unsigned char>();
-            rhs.a = node[3].as<unsigned char>();
-            return true;
-        }
-        else if (node.IsMap())
-        {
-            rhs.r = node["r"] ? node["r"].as<unsigned char>() : 255;
-            rhs.g = node["g"] ? node["g"].as<unsigned char>() : 255;
-            rhs.b = node["b"] ? node["b"].as<unsigned char>() : 255;
-            rhs.a = node["a"] ? node["a"].as<unsigned char>() : 255;
-            return true;
-        }
-        return false;
-    }
-};
-} // namespace YAML
-
 namespace CHEngine
 {
-YAML::Emitter &operator<<(YAML::Emitter &out, const Vector3 &v)
-{
-    out << YAML::Flow;
-    out << YAML::BeginSeq << v.x << v.y << v.z << YAML::EndSeq;
-    return out;
-}
-
-YAML::Emitter &operator<<(YAML::Emitter &out, const Color &c)
-{
-    out << YAML::Flow;
-    out << YAML::BeginSeq << (int)c.r << (int)c.g << (int)c.b << (int)c.a << YAML::EndSeq;
-    return out;
-}
-
 SceneSerializer::SceneSerializer(Scene *scene) : m_Scene(scene)
 {
 }
@@ -137,41 +56,42 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         auto &mc = entity.GetComponent<ModelComponent>();
         out << YAML::BeginMap;
         out << YAML::Key << "ModelPath" << YAML::Value << mc.ModelPath;
-        out << YAML::Key << "Scale" << YAML::Value << mc.Scale;
+
+        if (!mc.Materials.empty())
+        {
+            out << YAML::Key << "Materials";
+            out << YAML::BeginSeq;
+            for (const auto &slot : mc.Materials)
+            {
+                out << YAML::BeginMap;
+                out << YAML::Key << "Name" << YAML::Value << slot.Name;
+                out << YAML::Key << "Index" << YAML::Value << slot.Index;
+                out << YAML::Key << "Target" << YAML::Value << (int)slot.Target;
+                out << YAML::Key << "Material";
+                out << YAML::BeginMap;
+                out << YAML::Key << "AlbedoColor" << YAML::Value << slot.Material.AlbedoColor;
+                out << YAML::Key << "AlbedoPath" << YAML::Value << slot.Material.AlbedoPath;
+                out << YAML::Key << "OverrideAlbedo" << YAML::Value << slot.Material.OverrideAlbedo;
+                out << YAML::Key << "NormalMapPath" << YAML::Value << slot.Material.NormalMapPath;
+                out << YAML::Key << "OverrideNormal" << YAML::Value << slot.Material.OverrideNormal;
+                out << YAML::Key << "MetallicRoughnessPath" << YAML::Value
+                    << slot.Material.MetallicRoughnessPath;
+                out << YAML::Key << "OverrideMetallicRoughness" << YAML::Value
+                    << slot.Material.OverrideMetallicRoughness;
+                out << YAML::Key << "EmissivePath" << YAML::Value << slot.Material.EmissivePath;
+                out << YAML::Key << "OverrideEmissive" << YAML::Value
+                    << slot.Material.OverrideEmissive;
+                out << YAML::Key << "Metalness" << YAML::Value << slot.Material.Metalness;
+                out << YAML::Key << "Roughness" << YAML::Value << slot.Material.Roughness;
+                out << YAML::EndMap;
+                out << YAML::EndMap;
+            }
+            out << YAML::EndSeq;
+        }
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<MaterialComponent>())
-    {
-        out << YAML::Key << "MaterialComponent";
-        auto &mc = entity.GetComponent<MaterialComponent>();
-        out << YAML::BeginSeq;
-        for (const auto &slot : mc.Slots)
-        {
-            out << YAML::BeginMap;
-            out << YAML::Key << "Name" << YAML::Value << slot.Name;
-            out << YAML::Key << "Index" << YAML::Value << slot.Index;
-            out << YAML::Key << "Target" << YAML::Value << (int)slot.Target;
-            out << YAML::Key << "Material";
-            out << YAML::BeginMap;
-            out << YAML::Key << "AlbedoColor" << YAML::Value << slot.Material.AlbedoColor;
-            out << YAML::Key << "AlbedoPath" << YAML::Value << slot.Material.AlbedoPath;
-            out << YAML::Key << "OverrideAlbedo" << YAML::Value << slot.Material.OverrideAlbedo;
-            out << YAML::Key << "NormalMapPath" << YAML::Value << slot.Material.NormalMapPath;
-            out << YAML::Key << "OverrideNormal" << YAML::Value << slot.Material.OverrideNormal;
-            out << YAML::Key << "MetallicRoughnessPath" << YAML::Value
-                << slot.Material.MetallicRoughnessPath;
-            out << YAML::Key << "OverrideMetallicRoughness" << YAML::Value
-                << slot.Material.OverrideMetallicRoughness;
-            out << YAML::Key << "EmissivePath" << YAML::Value << slot.Material.EmissivePath;
-            out << YAML::Key << "OverrideEmissive" << YAML::Value << slot.Material.OverrideEmissive;
-            out << YAML::Key << "Metalness" << YAML::Value << slot.Material.Metalness;
-            out << YAML::Key << "Roughness" << YAML::Value << slot.Material.Roughness;
-            out << YAML::EndMap;
-            out << YAML::EndMap;
-        }
-        out << YAML::EndSeq;
-    }
+    // MaterialComponent is deprecated and merged into ModelComponent per USER request
 
     if (entity.HasComponent<SpawnComponent>())
     {
@@ -317,13 +237,19 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
     out << YAML::EndMap; // Entity
 }
 
-bool SceneSerializer::Serialize(const std::string &filepath)
+std::string SceneSerializer::SerializeToString()
 {
     YAML::Emitter out;
     out << YAML::BeginMap;
     out << YAML::Key << "Scene" << YAML::Value << "Untitled";
 
-    // Serialize Skybox
+    // Serialize Environment
+    if (m_Scene->m_Environment)
+    {
+        out << YAML::Key << "EnvironmentPath" << YAML::Value << m_Scene->m_Environment->GetPath();
+    }
+
+    // Keep legacy Skybox for now to avoid breaking existing scenes
     {
         auto &sc = m_Scene->GetSkybox();
         out << YAML::Key << "Skybox";
@@ -347,10 +273,16 @@ bool SceneSerializer::Serialize(const std::string &filepath)
     out << YAML::EndSeq;
     out << YAML::EndMap;
 
+    return std::string(out.c_str());
+}
+
+bool SceneSerializer::Serialize(const std::string &filepath)
+{
+    std::string yaml = SerializeToString();
     std::ofstream fout(filepath);
     if (fout.is_open())
     {
-        fout << out.c_str();
+        fout << yaml;
         CH_CORE_INFO("Scene saved successfully to: %s", filepath.c_str());
         return true;
     }
@@ -373,12 +305,24 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
     std::stringstream strStream;
     strStream << stream.rdbuf();
 
-    YAML::Node data = YAML::Load(strStream.str());
+    return DeserializeFromString(strStream.str());
+}
+
+bool SceneSerializer::DeserializeFromString(const std::string &yaml)
+{
+    YAML::Node data = YAML::Load(yaml);
     if (!data["Scene"])
         return false;
 
     std::string sceneName = data["Scene"].as<std::string>();
     CH_CORE_INFO("Deserializing scene '%s'", sceneName.c_str());
+
+    // Deserialize Environment
+    auto envPath = data["EnvironmentPath"];
+    if (envPath)
+    {
+        m_Scene->m_Environment = Assets::LoadEnvironment(envPath.as<std::string>());
+    }
 
     // Deserialize Skybox
     auto skybox = data["Skybox"];
@@ -410,12 +354,12 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
         for (const auto &path : modelPaths)
         {
             if (!path.empty())
-                AssetManager::LoadModelAsync(path);
+                Assets::LoadModelAsync(path);
         }
 
         // Drain the main thread queue immediately to start loading these models
         // while the background IO warmup for others might still be happening.
-        ThreadDispatcher::ExecuteMainThreadQueue();
+        MainThread::ProcessAll();
 
         struct HierarchyTask
         {
@@ -464,6 +408,7 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 auto &tc = deserializedEntity.GetComponent<TransformComponent>();
                 tc.Translation = transformComponent["Translation"].as<Vector3>();
                 tc.Rotation = transformComponent["Rotation"].as<Vector3>();
+                tc.RotationQuat = QuaternionFromEuler(tc.Rotation.x, tc.Rotation.y, tc.Rotation.z);
                 tc.Scale = transformComponent["Scale"].as<Vector3>();
             }
 
@@ -472,17 +417,19 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
             {
                 auto &mc = deserializedEntity.AddComponent<ModelComponent>();
                 mc.ModelPath = modelComponent["ModelPath"].as<std::string>();
-                if (modelComponent["Scale"])
-                    mc.Scale = modelComponent["Scale"].as<Vector3>();
 
-                if (modelComponent["Material"] || modelComponent["Tint"])
+                auto materials = modelComponent["Materials"];
+                if (materials && materials.IsSequence())
                 {
-                    auto &matComp = deserializedEntity.AddComponent<MaterialComponent>();
-                    MaterialSlot slot("Legacy Migration", -1);
-
-                    if (modelComponent["Material"])
+                    for (auto slotNode : materials)
                     {
-                        auto mat = modelComponent["Material"];
+                        MaterialSlot slot;
+                        slot.Name = slotNode["Name"].as<std::string>();
+                        slot.Index = slotNode["Index"].as<int>();
+                        if (slotNode["Target"])
+                            slot.Target = (MaterialSlotTarget)slotNode["Target"].as<int>();
+
+                        auto mat = slotNode["Material"];
                         slot.Material.AlbedoColor = mat["AlbedoColor"].as<Color>();
                         slot.Material.AlbedoPath = mat["AlbedoPath"].as<std::string>();
                         if (mat["OverrideAlbedo"])
@@ -505,12 +452,10 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                             slot.Material.Metalness = mat["Metalness"].as<float>();
                         if (mat["Roughness"])
                             slot.Material.Roughness = mat["Roughness"].as<float>();
+
+                        mc.Materials.push_back(slot);
                     }
-                    else if (modelComponent["Tint"])
-                    {
-                        slot.Material.AlbedoColor = modelComponent["Tint"].as<Color>();
-                    }
-                    matComp.Slots.push_back(slot);
+                    mc.MaterialsInitialized = true;
                 }
             }
 
@@ -591,7 +536,7 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 if (cc.Type == ColliderType::Mesh && !cc.ModelPath.empty())
                 {
                     // Block until model is loaded (it might be in cache or loading async)
-                    auto asset = Assets::LoadModel(cc.ModelPath);
+                    auto asset = Assets::Get<ModelAsset>(cc.ModelPath);
                     if (asset && asset->GetModel().meshCount > 0)
                     {
                         // Check model's persistent cache first
@@ -738,7 +683,7 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
                 task.entity.GetComponent<ColliderComponent>().BVHRoot = bvh;
 
                 // Also update the ModelAsset's persistent cache if not already set
-                auto asset = Assets::LoadModel(task.path);
+                auto asset = Assets::Get<ModelAsset>(task.path);
                 if (asset && !asset->GetBVHCache())
                     asset->SetBVHCache(bvh);
 

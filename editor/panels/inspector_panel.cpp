@@ -4,21 +4,41 @@
 
 namespace CHEngine
 {
-void InspectorPanel::OnImGuiRender(Scene *scene, Entity entity, bool readOnly)
+InspectorPanel::InspectorPanel()
 {
-    ImGui::Begin("Inspector");
-    if (entity && entity.IsValid())
+    m_Name = "Inspector";
+}
+
+void InspectorPanel::OnImGuiRender(bool readOnly)
+{
+    if (!m_IsOpen)
+        return;
+
+    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    if (m_SelectedEntity && m_SelectedEntity.IsValid())
     {
         ImGui::BeginDisabled(readOnly);
-        DrawComponents(entity);
+        DrawComponents(m_SelectedEntity);
         ImGui::EndDisabled();
     }
     else
     {
         ImGui::Text("Selection: None");
-        ImGui::TextDisabled("Select an entity to view its components.");
+        ImGui::TextDisabled("Select an entity in the Hierarchy to view its components.");
     }
     ImGui::End();
+}
+
+void InspectorPanel::OnEvent(Event &e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<EntitySelectedEvent>(
+        [this](EntitySelectedEvent &ev)
+        {
+            m_SelectedEntity = Entity{ev.GetEntity(), ev.GetScene()};
+            m_SelectedMeshIndex = ev.GetMeshIndex();
+            return false;
+        });
 }
 
 void InspectorPanel::DrawComponents(Entity entity)
@@ -38,17 +58,10 @@ void InspectorPanel::DrawComponents(Entity entity)
     ComponentUI::DrawAddComponentPopup(entity);
     ImGui::PopItemWidth();
 
-    ComponentUI::DrawTransform(entity);
-    ComponentUI::DrawModel(entity);
+    // Use our new dynamic registry to draw all other components
+    ComponentUI::DrawEntityComponents(entity);
+
+    // Some special cases that might not be in the registry or need extra data
     ComponentUI::DrawMaterial(entity, m_SelectedMeshIndex);
-    ComponentUI::DrawCollider(entity);
-    ComponentUI::DrawRigidBody(entity);
-    ComponentUI::DrawSpawn(entity);
-    ComponentUI::DrawPlayer(entity);
-    ComponentUI::DrawPointLight(entity);
-    ComponentUI::DrawAudio(entity);
-    ComponentUI::DrawHierarchy(entity);
-    ComponentUI::DrawNativeScript(entity);
-    ComponentUI::DrawAnimation(entity);
 }
 } // namespace CHEngine

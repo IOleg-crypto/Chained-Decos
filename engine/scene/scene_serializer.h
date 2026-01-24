@@ -14,6 +14,9 @@ public:
     bool Serialize(const std::string &filepath);
     bool Deserialize(const std::string &filepath);
 
+    std::string SerializeToString();
+    bool DeserializeFromString(const std::string &yaml);
+
 private:
     Scene *m_Scene;
 };

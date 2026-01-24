@@ -1,4 +1,6 @@
 #include "viewport_panel.h"
+#include "editor/editor_layer.h"
+#include "engine/core/input.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/render.h"
 #include "engine/renderer/scene_render.h"
@@ -9,7 +11,12 @@ namespace CHEngine
 {
 ViewportPanel::ViewportPanel()
 {
+    m_Name = "Viewport";
     m_ViewportTexture = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
+
+    m_EditorCamera.SetPosition({10.0f, 10.0f, 10.0f});
+    m_EditorCamera.SetTarget({0.0f, 0.0f, 0.0f});
+    m_EditorCamera.SetFOV(90.0f);
 }
 
 ViewportPanel::~ViewportPanel()
@@ -17,11 +24,8 @@ ViewportPanel::~ViewportPanel()
     UnloadRenderTexture(m_ViewportTexture);
 }
 
-Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity selectedEntity,
-                                    GizmoType &currentTool, EditorGizmo &gizmo,
-                                    const DebugRenderFlags *debugFlags, bool allowTools)
+void ViewportPanel::OnImGuiRender(bool readOnly)
 {
-    Entity pickedEntity = {};
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGui::Begin("Viewport");
@@ -47,18 +51,49 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
     BeginTextureMode(m_ViewportTexture);
     ClearBackground(DARKGRAY);
 
-    if (scene && m_ViewportSize.x > 0)
-    {
-        SceneRender::BeginScene(scene, camera);
-        if (debugFlags && debugFlags->DrawGrid)
-            Render::DrawGrid((int)viewportPanelSize.x, 1.0f);
-        SceneRender::SubmitScene(scene, debugFlags);
+    auto camera = m_EditorCamera.GetRaylibCamera();
 
+    if (m_Context && m_ViewportSize.x > 0)
+    {
+        if (EditorLayer::GetSceneState() == SceneState::Play)
+        {
+            auto view = m_Context->GetRegistry().view<PlayerComponent, TransformComponent>();
+            if (view.begin() != view.end())
+            {
+                auto entity = *view.begin();
+                auto &transform = view.get<TransformComponent>(entity);
+                auto &player = view.get<PlayerComponent>(entity);
+
+                Vector3 target = transform.Translation;
+                target.y += 1.0f;
+
+                float yawRad = player.CameraYaw * DEG2RAD;
+                float pitchRad = player.CameraPitch * DEG2RAD;
+                Vector3 offset = {player.CameraDistance * cosf(pitchRad) * sinf(yawRad),
+                                  player.CameraDistance * sinf(pitchRad),
+                                  player.CameraDistance * cosf(pitchRad) * cosf(yawRad)};
+
+                camera.position = Vector3Add(target, offset);
+                camera.target = target;
+                camera.up = {0.0f, 1.0f, 0.0f};
+                camera.fovy = 60.0f;
+                camera.projection = CAMERA_PERSPECTIVE;
+            }
+        }
+
+        RenderState viewportState;
+        SceneRender::CreateSnapshot(m_Context.get(), camera, viewportState, 1.0f, m_DebugFlags);
+
+        SceneRender::BeginScene(viewportState);
+        if (m_DebugFlags && m_DebugFlags->DrawGrid)
+            ::DrawGrid(10, 1.0f);
+        SceneRender::SubmitScene(viewportState);
         SceneRender::EndScene();
     }
 
     // --- Picking Logic ---
-    if (allowTools && m_Hovered && !gizmo.IsHovered() && ImGui::IsMouseClicked(0) && scene)
+    bool allowTools = !readOnly;
+    if (allowTools && m_Hovered && !m_Gizmo.IsHovered() && ImGui::IsMouseClicked(0) && m_Context)
     {
         ImVec2 mousePos = ImGui::GetMousePos();
         Vector2 relativeMousePos = {mousePos.x - viewportPos.x, mousePos.y - viewportPos.y};
@@ -181,24 +216,19 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
             Vector3Subtract({worldPos.x, worldPos.y, worldPos.z}, camera.position));
 
         // Perform Raycast
-        RaycastResult res = Physics::Raycast(scene, ray);
+        RaycastResult res = Physics::Raycast(m_Context.get(), ray);
         if (res.Hit)
         {
-            pickedEntity = Entity{res.Entity, scene};
-            if (m_EventCallback)
-            {
-                EntitySelectedEvent e(res.Entity, scene, res.MeshIndex);
-                m_EventCallback(e);
-            }
+            m_SelectedEntity = Entity{res.Entity, m_Context.get()};
+            EntitySelectedEvent e(res.Entity, m_Context.get(), res.MeshIndex);
+            // We should probably dispatch this through a global event system
+            // For now, if we have a way to reach the layer...
+            // better yet, panels should just dispatch events that the layer can catch.
         }
         else
         {
-            pickedEntity = {}; // Deselect if clicked empty space
-            if (m_EventCallback)
-            {
-                EntitySelectedEvent e(entt::null, scene, -1);
-                m_EventCallback(e);
-            }
+            m_SelectedEntity = {};
+            EntitySelectedEvent e(entt::null, m_Context.get(), -1);
         }
     }
 
@@ -208,10 +238,10 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
     rlImGuiImageRenderTextureFit(&m_ViewportTexture, true);
 
     // Gizmos
-    if (selectedEntity && allowTools)
+    if (m_SelectedEntity && allowTools)
     {
-        gizmo.RenderAndHandle(scene, camera, selectedEntity, currentTool, viewportPos,
-                              ImVec2{m_ViewportSize.x, m_ViewportSize.y});
+        m_Gizmo.RenderAndHandle(m_Context.get(), camera, m_SelectedEntity, m_CurrentTool,
+                                viewportPos, ImVec2{m_ViewportSize.x, m_ViewportSize.y});
     }
 
     // --- Gizmo Toolbar Overlay ---
@@ -227,21 +257,21 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0.5f));
 
         if (ImGui::Button(label, ImVec2(30, 30)))
-            currentTool = target;
+            m_CurrentTool = target;
 
         ImGui::PopStyleColor();
     };
 
-    drawToolButton("T", currentTool, GizmoType::TRANSLATE);
+    drawToolButton("T", m_CurrentTool, GizmoType::TRANSLATE);
     ImGui::SameLine();
-    drawToolButton("R", currentTool, GizmoType::ROTATE);
+    drawToolButton("R", m_CurrentTool, GizmoType::ROTATE);
     ImGui::SameLine();
-    drawToolButton("S", currentTool, GizmoType::SCALE);
+    drawToolButton("S", m_CurrentTool, GizmoType::SCALE);
 
     ImGui::SameLine();
-    bool isLocal = gizmo.IsLocalSpace();
+    bool isLocal = m_Gizmo.IsLocalSpace();
     if (ImGui::Button(isLocal ? "L" : "W", ImVec2(30, 30)))
-        gizmo.SetLocalSpace(!isLocal);
+        m_Gizmo.SetLocalSpace(!isLocal);
 
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip(isLocal ? "Local Space" : "World Space");
@@ -257,33 +287,64 @@ Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity
                           ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_Borders,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-    bool snapping = gizmo.IsSnappingEnabled();
+    bool snapping = m_Gizmo.IsSnappingEnabled();
     if (ImGui::Checkbox("Snap", &snapping))
-        gizmo.SetSnapping(snapping);
+        m_Gizmo.SetSnapping(snapping);
 
     ImGui::SameLine();
     ImGui::SetNextItemWidth(40);
-    float grid = gizmo.GetGridSize();
+    float grid = m_Gizmo.GetGridSize();
     if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
-        gizmo.SetGridSize(grid);
+        m_Gizmo.SetGridSize(grid);
 
     ImGui::EndChild();
 
     ImGui::End();
     ImGui::PopStyleVar();
+}
 
-    return pickedEntity;
-}
-bool ViewportPanel::IsFocused() const
+void ViewportPanel::OnUpdate(float deltaTime)
 {
-    return m_Focused;
+    if (m_Focused || Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+    {
+        m_EditorCamera.OnUpdate(deltaTime);
+    }
 }
-bool ViewportPanel::IsHovered() const
+
+void ViewportPanel::OnEvent(Event &e)
 {
-    return m_Hovered;
-}
-Vector2 ViewportPanel::GetSize() const
-{
-    return m_ViewportSize;
+    // m_EditorCamera.OnEvent(e); // Removed as EditorCamera handles update in OnUpdate
+
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<EntitySelectedEvent>(
+        [this](EntitySelectedEvent &ev)
+        {
+            m_SelectedEntity = Entity{ev.GetEntity(), ev.GetScene()};
+            return false;
+        });
+
+    dispatcher.Dispatch<KeyPressedEvent>(
+        [this](KeyPressedEvent &ev)
+        {
+            if (m_Focused && !Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+            {
+                switch (ev.GetKeyCode())
+                {
+                case KEY_Q:
+                    m_CurrentTool = GizmoType::NONE;
+                    return true;
+                case KEY_W:
+                    m_CurrentTool = GizmoType::TRANSLATE;
+                    return true;
+                case KEY_E:
+                    m_CurrentTool = GizmoType::ROTATE;
+                    return true;
+                case KEY_R:
+                    m_CurrentTool = GizmoType::SCALE;
+                    return true;
+                }
+            }
+            return false;
+        });
 }
 } // namespace CHEngine
