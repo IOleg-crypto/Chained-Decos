@@ -124,42 +124,6 @@ float Input::GetMouseWheelMove()
     return s_MouseWheelMove;
 }
 
-bool Input::IsActionPressed(const std::string &action)
-{
-    if (action == "Jump")
-        return IsKeyPressed(KEY_SPACE);
-    if (action == "Interact")
-        return IsKeyPressed(KEY_E);
-    if (action == "Teleport")
-        return IsKeyPressed(KEY_T);
-    return false;
-}
-
-bool Input::IsActionDown(const std::string &action)
-{
-    if (action == "Sprint")
-        return IsKeyDown(KEY_LEFT_SHIFT);
-    return false;
-}
-
-Vector2 Input::GetActionAxis(const std::string &action)
-{
-    if (action == "Move")
-    {
-        Vector2 axis = {0.0f, 0.0f};
-        if (IsKeyDown(KEY_D))
-            axis.x += 1.0f;
-        if (IsKeyDown(KEY_A))
-            axis.x -= 1.0f;
-        if (IsKeyDown(KEY_W))
-            axis.y += 1.0f;
-        if (IsKeyDown(KEY_S))
-            axis.y -= 1.0f;
-        return axis;
-    }
-    return {0.0f, 0.0f};
-}
-
 // Internal state management
 void Input::PollEvents(std::function<void(class Event &)> eventCallback)
 {

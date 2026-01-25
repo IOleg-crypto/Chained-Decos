@@ -91,6 +91,54 @@ protected:
         return m_Entity.GetScene()->FindEntityByTag(tag);
     }
 
+    Entity FindEntityByUUID(UUID uuid)
+    {
+        return m_Entity.GetScene()->GetEntityByUUID(uuid);
+    }
+
+    bool IsButtonClicked(const std::string &tagName)
+    {
+        Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
+        if (e && e.HasComponent<ButtonWidget>())
+            return e.GetComponent<ButtonWidget>().Pressed;
+        return false;
+    }
+
+    bool IsUIActive(const std::string &tagName)
+    {
+        Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
+        if (e && e.HasComponent<WidgetComponent>())
+            return e.GetComponent<WidgetComponent>().IsActive;
+        return false;
+    }
+
+    void SetUIActive(const std::string &tagName, bool active)
+    {
+        Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
+        if (e && e.HasComponent<WidgetComponent>())
+            e.GetComponent<WidgetComponent>().IsActive = active;
+    }
+
+    void SetUIValue(const std::string &tagName, float value)
+    {
+        Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
+        if (e && e.HasComponent<SliderWidget>())
+            e.GetComponent<SliderWidget>().Value = value;
+    }
+
+    float GetUIValue(const std::string &tagName)
+    {
+        Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
+        if (e && e.HasComponent<SliderWidget>())
+            return e.GetComponent<SliderWidget>().Value;
+        return 0.0f;
+    }
+
+    void ChangeScene(const std::string &path)
+    {
+        m_Entity.GetScene()->RequestSceneChange(path);
+    }
+
     ScriptableEntity *GetScript(const std::string &name)
     {
         if (HasComponent<NativeScriptComponent>())

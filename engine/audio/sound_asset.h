@@ -12,7 +12,7 @@ public:
     SoundAsset(Sound sound);
     virtual ~SoundAsset();
 
-    static Ref<SoundAsset> Load(const std::string &path);
+    static std::shared_ptr<SoundAsset> Load(const std::string &path);
 
     virtual AssetType GetType() const override
     {

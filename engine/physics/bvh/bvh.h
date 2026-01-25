@@ -16,11 +16,12 @@ class BVHBuilder
 {
 public:
     // Synchronous API
-    static Ref<BVHNode> Build(const Model &model, const Matrix &transform = MatrixIdentity());
+    static std::shared_ptr<BVHNode> Build(const Model &model,
+                                          const Matrix &transform = MatrixIdentity());
 
     // Asynchronous API
-    static std::future<Ref<BVHNode>> BuildAsync(const Model &model,
-                                                const Matrix &transform = MatrixIdentity());
+    static std::future<std::shared_ptr<BVHNode>>
+    BuildAsync(const Model &model, const Matrix &transform = MatrixIdentity());
 
     static bool Raycast(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal,
                         int &meshIndex);
@@ -28,8 +29,10 @@ public:
                               Vector3 &outOverlapNormal, float &outOverlapDepth);
 
 private:
-    static Ref<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris, size_t start,
-                                       size_t end, int depth);
+    static std::shared_ptr<BVHNode> BuildTopLevel(std::vector<std::shared_ptr<BVHNode>> &roots,
+                                                  size_t start, size_t end);
+    static std::shared_ptr<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris,
+                                                   size_t start, size_t end, int depth);
     static bool RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal,
                             int &meshIndex);
 };

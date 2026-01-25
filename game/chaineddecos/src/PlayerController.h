@@ -60,7 +60,7 @@ CH_EVENT(e)
     dispatcher.Dispatch<KeyPressedEvent>(
         [this](KeyPressedEvent &ev)
         {
-            if (Input::IsActionPressed("Jump"))
+            if (Input::IsKeyDown(KEY_SPACE))
             {
                 auto &player = GetComponent<PlayerComponent>();
                 auto &rb = RigidBody();
@@ -79,7 +79,7 @@ CH_EVENT(e)
     dispatcher.Dispatch<KeyPressedEvent>(
         [this](KeyPressedEvent &ev)
         {
-            if (Input::IsActionPressed("Teleport"))
+            if (Input::IsKeyDown(KEY_T))
             {
                 auto &sceneRegistry = GetEntity().GetScene()->GetRegistry();
                 auto spawnZoneView = sceneRegistry.view<SpawnComponent>();
@@ -97,22 +97,22 @@ CH_EVENT(e)
             return false;
         });
 
-    // Example: Trigger Animation on 'E' press
-    dispatcher.Dispatch<KeyPressedEvent>(
-        [this](KeyPressedEvent &ev)
-        {
-            if (ev.GetKeyCode() == KEY_E)
-            {
-                if (HasComponent<AnimationComponent>())
-                {
-                    auto &animation = GetComponent<AnimationComponent>();
-                    animation.Play(1); // Play second animation (e.g. Interact/Attack)
-                    CH_CORE_INFO("Player triggered animation!");
-                    return true;
-                }
-            }
-            return false;
-        });
+    // // Example: Trigger Animation on 'E' press
+    // dispatcher.Dispatch<KeyPressedEvent>(
+    //     [this](KeyPressedEvent &ev)
+    //     {
+    //         if (ev.GetKeyCode() == KEY_E)
+    //         {
+    //             if (HasComponent<AnimationComponent>())
+    //             {
+    //                 auto &animation = GetComponent<AnimationComponent>();
+    //                 animation.Play(1); // Play second animation (e.g. Interact/Attack)
+    //                 CH_CORE_INFO("Player triggered animation!");
+    //                 return true;
+    //             }
+    //         }
+    //         return false;
+    //     });
 }
 }
 ;

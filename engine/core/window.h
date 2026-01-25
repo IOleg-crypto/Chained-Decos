@@ -1,8 +1,10 @@
 #ifndef CH_WINDOW_H
 #define CH_WINDOW_H
 
-#include <raylib.h>
 #include <string>
+
+// Forward declare GLFWwindow
+struct GLFWwindow;
 
 namespace CHEngine
 {
@@ -38,12 +40,19 @@ public:
         return m_Height;
     }
 
+    GLFWwindow *GetNativeWindow() const
+    {
+        return m_Window;
+    }
+
     void SetTitle(const std::string &title);
     void ToggleFullscreen();
 
 private:
+    GLFWwindow *m_Window = nullptr;
     int m_Width, m_Height;
     std::string m_Title;
+    bool m_VSync = true;
 };
 } // namespace CHEngine
 

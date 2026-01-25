@@ -2,7 +2,6 @@
 #include "engine/core/input.h"
 #include "engine/core/log.h"
 #include "engine/renderer/render.h"
-#include "engine/renderer/scene_render.h"
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
@@ -67,39 +66,31 @@ public:
             camera.projection = CAMERA_PERSPECTIVE;
         }
 
-        RenderState runtimeState;
-        SceneRender::CreateSnapshot(scene.get(), camera, runtimeState, 1.0f);
-
-        SceneRender::BeginScene(runtimeState);
-        SceneRender::SubmitScene(runtimeState);
-        SceneRender::EndScene();
+        Render::BeginScene(camera);
+        scene->OnRender(camera);
+        Render::EndScene();
     }
 
     virtual void OnImGuiRender() override
     {
         auto scene = Application::Get().GetActiveScene();
-        if (!scene)
-            return;
-
-        scene->GetRegistry().view<NativeScriptComponent>().each(
-            [&](auto entity, auto &nsc)
-            {
-                for (auto &script : nsc.Scripts)
-                {
-                    if (script.Instance)
-                        script.Instance->OnImGuiRender();
-                }
-            });
+        if (scene)
+            scene->OnImGuiRender();
     }
 };
 
 RuntimeApplication::RuntimeApplication(const Application::Config &config,
                                        const std::string &projectPath)
-    : Application(config)
+    : Application(config), m_ProjectPath(projectPath)
 {
-    if (!projectPath.empty())
+    PushLayer(new RuntimeLayer());
+}
+
+void RuntimeApplication::PostInitialize()
+{
+    if (!m_ProjectPath.empty())
     {
-        std::filesystem::path absolutePath = std::filesystem::absolute(projectPath);
+        std::filesystem::path absolutePath = std::filesystem::absolute(m_ProjectPath);
         if (std::filesystem::exists(absolutePath))
         {
             Ref<Project> project = CreateRef<Project>();
@@ -125,14 +116,14 @@ RuntimeApplication::RuntimeApplication(const Application::Config &config,
                     }
                     else
                     {
-                        CH_CORE_WARN("Runtime: Project start scene not found: %s",
+                        CH_CORE_WARN("Runtime: Project start scene not found: {}",
                                      startScenePath.string().c_str());
                     }
                 }
             }
             else
             {
-                CH_CORE_ERROR("Runtime: Failed to deserialize project: %s",
+                CH_CORE_ERROR("Runtime: Failed to deserialize project: {}",
                               absolutePath.string().c_str());
             }
         }
@@ -142,14 +133,12 @@ RuntimeApplication::RuntimeApplication(const Application::Config &config,
         // Try fallback to project.chproj in CWD
         if (std::filesystem::exists("project.chproj"))
         {
-            LoadScene("assets/scenes/default.chscene"); // Placeholder, should deserial project
+            LoadScene("assets/scenes/default.chscene"); // Placeholder
         }
         else if (std::filesystem::exists("assets/scenes/default.chscene"))
         {
             LoadScene("assets/scenes/default.chscene");
         }
     }
-
-    PushLayer(new RuntimeLayer());
 }
 } // namespace CHEngine
