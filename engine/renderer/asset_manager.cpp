@@ -1,6 +1,5 @@
 #include "asset_manager.h"
 #include "engine/core/log.h"
-#include "engine/core/main_thread_queue.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 #include <fstream>
@@ -9,8 +8,11 @@
 namespace CHEngine
 {
 
-std::unordered_map<std::string, Ref<Asset>, Assets::StringHash, std::equal_to<>> Assets::s_Assets;
+std::unordered_map<std::string, std::shared_ptr<Asset>, Assets::StringHash, std::equal_to<>>
+    Assets::s_Assets;
 std::mutex Assets::s_AssetsMutex;
+std::vector<std::shared_ptr<Asset>> Assets::s_GPUUploadQueue;
+std::mutex Assets::s_GPUQueueMutex;
 
 void Assets::Init()
 {
@@ -21,10 +23,47 @@ void Assets::Shutdown()
 {
     std::lock_guard<std::mutex> lock(s_AssetsMutex);
     s_Assets.clear();
+
+    std::lock_guard<std::mutex> gpuLock(s_GPUQueueMutex);
+    s_GPUUploadQueue.clear();
+
     CH_CORE_INFO("Assets System Shut Down");
 }
 
-Ref<ShaderAsset> Assets::LoadShader(const std::string &vsPath, const std::string &fsPath)
+void Assets::Update()
+{
+    std::vector<std::shared_ptr<Asset>> toUpload;
+    {
+        std::lock_guard<std::mutex> lock(s_GPUQueueMutex);
+        if (s_GPUUploadQueue.empty())
+            return;
+        toUpload = std::move(s_GPUUploadQueue);
+        s_GPUUploadQueue.clear();
+    }
+
+    for (auto &asset : toUpload)
+    {
+        if (asset->GetType() == AssetType::Texture)
+        {
+            auto tex = std::static_pointer_cast<TextureAsset>(asset);
+            tex->UploadToGPU();
+        }
+        else if (asset->GetType() == AssetType::Model)
+        {
+            auto model = std::static_pointer_cast<ModelAsset>(asset);
+            model->UploadToGPU();
+        }
+    }
+}
+
+void Assets::QueueForGPUUpload(std::shared_ptr<Asset> asset)
+{
+    std::lock_guard<std::mutex> lock(s_GPUQueueMutex);
+    s_GPUUploadQueue.push_back(asset);
+}
+
+std::shared_ptr<ShaderAsset> Assets::LoadShader(const std::string &vsPath,
+                                                const std::string &fsPath)
 {
     std::string key = vsPath + "|" + fsPath;
     {
@@ -42,52 +81,14 @@ Ref<ShaderAsset> Assets::LoadShader(const std::string &vsPath, const std::string
     return asset;
 }
 
-Ref<ShaderAsset> Assets::LoadShader(const std::string &path)
+std::shared_ptr<ShaderAsset> Assets::LoadShader(const std::string &path)
 {
     return Get<ShaderAsset>(path);
 }
 
-Ref<EnvironmentAsset> Assets::LoadEnvironment(const std::string &path)
+std::shared_ptr<EnvironmentAsset> Assets::LoadEnvironment(const std::string &path)
 {
     return Get<EnvironmentAsset>(path);
-}
-
-std::future<Ref<ModelAsset>> Assets::LoadModelAsync(const std::string &path)
-{
-    {
-        std::lock_guard<std::mutex> lock(s_AssetsMutex);
-        if (s_Assets.count(path))
-        {
-            std::promise<Ref<ModelAsset>> promise;
-            promise.set_value(std::static_pointer_cast<ModelAsset>(s_Assets[path]));
-            return promise.get_future();
-        }
-    }
-
-    auto promise = std::make_shared<std::promise<Ref<ModelAsset>>>();
-    std::future<Ref<ModelAsset>> future = promise->get_future();
-
-    // Use std::async instead of TaskSystem
-    std::async(std::launch::async,
-               [path, promise]()
-               {
-                   // Background work
-                   auto fullPath = ResolvePath(path);
-                   if (std::filesystem::exists(fullPath))
-                   {
-                       std::ifstream f(fullPath, std::ios::binary | std::ios::ate);
-                   }
-
-                   // Finalize on Main Thread
-                   MainThread::Execute(
-                       [path, promise]()
-                       {
-                           Ref<ModelAsset> asset = Assets::Get<ModelAsset>(path);
-                           promise->set_value(asset);
-                       });
-               });
-
-    return future;
 }
 
 std::filesystem::path Assets::ResolvePath(const std::string &path)

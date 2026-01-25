@@ -1,10 +1,10 @@
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
+#include "editor_utils.h"
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
 #include "undo/entity_commands.h"
 #include <imgui.h>
-
 
 namespace CHEngine
 {
@@ -13,13 +13,13 @@ SceneHierarchyPanel::SceneHierarchyPanel()
     m_Name = "Scene Hierarchy";
 }
 
-SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene> &context)
+SceneHierarchyPanel::SceneHierarchyPanel(const std::shared_ptr<Scene> &context)
 {
     m_Name = "Scene Hierarchy";
     SetContext(context);
 }
 
-void SceneHierarchyPanel::SetContext(const Ref<Scene> &context)
+void SceneHierarchyPanel::SetContext(const std::shared_ptr<Scene> &context)
 {
     Panel::SetContext(context);
     m_SelectionContext = {};
@@ -32,6 +32,16 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
     ImGui::BeginDisabled(readOnly);
     if (m_Context)
     {
+        const char *sceneTypes[] = {"3D Scene", "UI Menu"};
+        int currentType = (int)m_Context->GetType();
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+        if (ImGui::Combo("##SceneType", &currentType, sceneTypes, 2))
+        {
+            m_Context->SetType((SceneType)currentType);
+        }
+        ImGui::PopItemWidth();
+        ImGui::Separator();
+
         m_DrawnEntities.clear();
         auto &registry = m_Context->GetRegistry();
 
@@ -45,6 +55,12 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 {
                     if (entity.GetComponent<HierarchyComponent>().Parent != entt::null)
                         isChild = true;
+                }
+
+                if (entity.HasComponent<WidgetComponent>())
+                {
+                    if (entity.GetComponent<WidgetComponent>().HiddenInHierarchy)
+                        return;
                 }
 
                 if (!isChild)
@@ -125,6 +141,22 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 if (ImGui::MenuItem("Plane"))
                     EditorLayer::GetCommandHistory().PushCommand(
                         std::make_unique<CreateEntityCommand>(m_Context.get(), "Plane", ":plane:"));
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Widget"))
+            {
+                if (ImGui::MenuItem("Image"))
+                    WidgetFactory::CreateImage(m_Context.get());
+                if (ImGui::MenuItem("Button"))
+                    WidgetFactory::CreateButton(m_Context.get());
+                if (ImGui::MenuItem("Text"))
+                    WidgetFactory::CreateText(m_Context.get());
+                if (ImGui::MenuItem("Slider"))
+                    WidgetFactory::CreateSlider(m_Context.get());
+                if (ImGui::MenuItem("Checkbox"))
+                    WidgetFactory::CreateCheckbox(m_Context.get());
 
                 ImGui::EndMenu();
             }

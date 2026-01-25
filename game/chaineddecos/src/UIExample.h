@@ -5,8 +5,7 @@
 #include "engine/scene/scriptable_entity.h"
 #include <imgui.h>
 
-
-namespace CHEmple
+namespace CHEngine
 {
 CH_SCRIPT(GameHUD)
 {
@@ -24,26 +23,56 @@ CH_SCRIPT(GameHUD)
 
     CH_GUI()
     {
-        // Unity/Godot style simple GUI pass-through
-        ImGui::Begin("Parkour HUD", nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
-                         ImGuiWindowFlags_AlwaysAutoResize);
+        // 1. Calculate Player Altitude
+        float altitude = 0.0f;
+        auto *scene = GetEntity().GetScene();
+        if (scene)
+        {
+            auto &registry = scene->GetRegistry();
+            auto playerView = registry.view<CHEngine::PlayerComponent>();
+            if (!playerView.empty())
+            {
+                auto entity = playerView.front();
+                if (registry.all_of<CHEngine::TransformComponent>(entity))
+                {
+                    altitude = registry.get<CHEngine::TransformComponent>(entity).Translation.y;
+                }
+            }
+        }
 
-        ImGui::SetWindowPos(ImVec2(20, 20));
-        ImGui::TextColored(ImVec4(1, 1, 0, 1), "CH_DECOS RUNTIME");
-        ImGui::Separator();
+        // 2. Format Time (Hh Mm Ss)
+        int hours = (int)(m_Timer / 3600.0f);
+        int minutes = (int)((m_Timer - hours * 3600.0f) / 60.0f);
+        int seconds = (int)(m_Timer) % 60;
 
-        ImGui::Text("Session Time: %.2f s", m_Timer);
+        // 3. Premium Overlay Styling
+        ImGuiWindowFlags window_flags =
+            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+            ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground;
 
-        if (ImGui::Button("Reset Timer"))
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::Begin("ParkourHUD", nullptr, window_flags);
+
+        // Absolute position
+        ImGui::SetWindowPos(ImVec2(30, 30));
+
+        // Display Altitude
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.9f), "%.0fm", altitude);
+        ImGui::SameLine();
+        ImGui::TextDisabled("|");
+        ImGui::SameLine();
+
+        // Display Time
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.9f), "%dh %dm %ds", hours, minutes, seconds);
+
+        // Shortcut hint (R to Reset)
+        if (ImGui::IsKeyPressed(ImGuiKey_R))
             m_Timer = 0.0f;
-
-        if (ImGui::Button("Quit Game"))
-            CHEngine::Application::Get().Close();
 
         ImGui::End();
     }
 };
-} // namespace CHEmple
+} // namespace CHEngine
 
 #endif // CH_UI_EXAMPLE_H

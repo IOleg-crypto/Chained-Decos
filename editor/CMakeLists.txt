@@ -55,7 +55,10 @@ set(EDITOR_SOURCES
 add_executable(ChainedEditor ${EDITOR_SOURCES})
 
 target_link_libraries(ChainedEditor PUBLIC engine ChainedDecosGame nfd)
-target_include_directories(ChainedEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(ChainedEditor PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+)
 
 # Copy resources to build directory
 if(EXISTS "${CMAKE_SOURCE_DIR}/resources")

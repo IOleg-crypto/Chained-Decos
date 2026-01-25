@@ -42,26 +42,29 @@ bool CollisionTriangle::IntersectsRay(const Ray &ray, float &t) const
     return t > 0.000001f;
 }
 
-Ref<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
+std::shared_ptr<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
 {
-    std::vector<CollisionTriangle> tris;
+    if (model.meshCount == 0)
+        return nullptr;
+
+    std::vector<std::shared_ptr<BVHNode>> meshRoots;
+    meshRoots.reserve(model.meshCount);
 
     for (int i = 0; i < model.meshCount; i++)
     {
         Mesh &mesh = model.meshes[i];
+        if (mesh.vertices == nullptr)
+            continue;
+
+        std::vector<CollisionTriangle> tris;
+
         Matrix meshTransform = MatrixMultiply(model.transform, transform);
 
-        // This is a simplification. Usually meshes have their own transform in submodels.
-        // For GLB/Raylib it might be in model.meshes[i].animVertices etc, but typically
-        // we just use the indices.
-
-        if (mesh.indices != nullptr)
+        if (mesh.indices != nullptr && mesh.triangleCount > 0)
         {
+            tris.reserve(mesh.triangleCount);
             for (int k = 0; k < mesh.triangleCount * 3; k += 3)
             {
-                // Raylib's mesh.indices is unsigned short*, but if the mesh was 32-bit,
-                // it might have been truncated. We can't fix the truncation here,
-                // but we can ensure we read it consistently.
                 int idx0 = mesh.indices[k];
                 int idx1 = mesh.indices[k + 1];
                 int idx2 = mesh.indices[k + 2];
@@ -84,6 +87,7 @@ Ref<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
         }
         else
         {
+            tris.reserve(mesh.vertexCount / 3);
             for (int k = 0; k < mesh.vertexCount * 3; k += 9)
             {
                 Vector3 v0 = {mesh.vertices[k], mesh.vertices[k + 1], mesh.vertices[k + 2]};
@@ -95,18 +99,78 @@ Ref<BVHNode> BVHBuilder::Build(const Model &model, const Matrix &transform)
                                   Vector3Transform(v2, meshTransform), i);
             }
         }
+
+        if (!tris.empty())
+        {
+            auto root = BuildRecursive(tris, 0, tris.size(), 0);
+            if (root)
+            {
+                root->isSubBVH = true;
+                root->meshIndex = i;
+                meshRoots.push_back(root);
+            }
+        }
     }
 
+    if (meshRoots.empty())
+        return nullptr;
+
+    // Build Top-Level hierarchy of Mesh BVHs
+    return BuildTopLevel(meshRoots, 0, meshRoots.size());
+}
+
+std::shared_ptr<BVHNode> BVHBuilder::BuildTopLevel(std::vector<std::shared_ptr<BVHNode>> &roots,
+                                                   size_t start, size_t end)
+{
+    if (start >= end)
+        return nullptr;
+    if (end - start == 1)
+        return roots[start];
+
+    auto node = std::make_shared<BVHNode>();
+    node->min = {FLT_MAX, FLT_MAX, FLT_MAX};
+    node->max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+    for (size_t i = start; i < end; i++)
+    {
+        node->min = Vector3Min(node->min, roots[i]->min);
+        node->max = Vector3Max(node->max, roots[i]->max);
+    }
+
+    // Split based on AABB centers of sub-BVHs
+    int bestAxis = 0;
+    Vector3 size = Vector3Subtract(node->max, node->min);
+    if (size.y > size.x && size.y > size.z)
+        bestAxis = 1;
+    else if (size.z > size.x && size.z > size.y)
+        bestAxis = 2;
+
+    std::sort(roots.begin() + start, roots.begin() + end,
+              [bestAxis](const std::shared_ptr<BVHNode> &a, const std::shared_ptr<BVHNode> &b)
+              {
+                  Vector3 centerA = Vector3Scale(Vector3Add(a->min, a->max), 0.5f);
+                  Vector3 centerB = Vector3Scale(Vector3Add(b->min, b->max), 0.5f);
+                  if (bestAxis == 0)
+                      return centerA.x < centerB.x;
+                  if (bestAxis == 1)
+                      return centerA.y < centerB.y;
+                  return centerA.z < centerB.z;
+              });
+
+    size_t mid = start + (end - start) / 2;
+    node->left = BuildTopLevel(roots, start, mid);
+    node->right = BuildTopLevel(roots, mid, end);
+
+    return node;
+}
+
+std::shared_ptr<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris,
+                                                    size_t start, size_t end, int depth)
+{
     if (tris.empty())
         return nullptr;
 
-    return BuildRecursive(tris, 0, tris.size(), 0);
-}
-
-Ref<BVHNode> BVHBuilder::BuildRecursive(std::vector<CollisionTriangle> &tris, size_t start,
-                                        size_t end, int depth)
-{
-    auto node = CreateRef<BVHNode>();
+    auto node = std::make_shared<BVHNode>();
 
     // Calculate Bounds
     node->min = {1e30f, 1e30f, 1e30f};
@@ -181,41 +245,51 @@ static bool IntersectRayAABB(const Ray &ray, Vector3 min, Vector3 max, float &t)
 bool BVHBuilder::RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal,
                              int &meshIndex)
 {
-    float tBox;
-    if (!IntersectRayAABB(ray, node->min, node->max, tBox))
+    if (!node)
         return false;
 
-    if (tBox > t)
+    RayCollision collision = GetRayCollisionBox(ray, {node->min, node->max});
+    if (!collision.hit || collision.distance >= t)
         return false;
+
+    if (node->isSubBVH)
+    {
+        // When we enter a sub-BVH, we use its already assigned meshIndex
+        meshIndex = node->meshIndex;
+    }
 
     bool hit = false;
     if (node->IsLeaf())
     {
         for (const auto &tri : node->triangles)
         {
-            float triT;
-            if (tri.IntersectsRay(ray, triT))
+            Vector3 v0 = tri.v0;
+            Vector3 v1 = tri.v1;
+            Vector3 v2 = tri.v2;
+
+            Vector3 hitPoint;
+            if (::GetRayCollisionTriangle(ray, v0, v1, v2).hit)
             {
-                if (triT < t)
+                RayCollision triCollision = ::GetRayCollisionTriangle(ray, v0, v1, v2);
+                if (triCollision.distance < t)
                 {
-                    t = triT;
-                    normal = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(tri.v1, tri.v0),
-                                                                  Vector3Subtract(tri.v2, tri.v0)));
-                    meshIndex = tri.meshIndex;
+                    t = triCollision.distance;
+                    normal = triCollision.normal;
+                    // Note: meshIndex is already set by sub-BVH root or is passed down
+                    if (node->meshIndex != -1)
+                        meshIndex = node->meshIndex;
                     hit = true;
                 }
             }
         }
-    }
-    else
-    {
-        if (RayInternal(node->left.get(), ray, t, normal, meshIndex))
-            hit = true;
-        if (RayInternal(node->right.get(), ray, t, normal, meshIndex))
-            hit = true;
+        return hit;
     }
 
-    return hit;
+    // Recurse
+    bool hitLeft = RayInternal(node->left.get(), ray, t, normal, meshIndex);
+    bool hitRight = RayInternal(node->right.get(), ray, t, normal, meshIndex);
+
+    return hitLeft || hitRight;
 }
 
 static bool TestAxis(const Vector3 &axis, const Vector3 &v0, const Vector3 &v1, const Vector3 &v2,
@@ -339,12 +413,13 @@ bool BVHBuilder::IntersectAABB(const BVHNode *node, const BoundingBox &box, Vect
     return IntersectAABBInternal(node, box, outNormal, outDepth);
 }
 
-std::future<Ref<BVHNode>> BVHBuilder::BuildAsync(const Model &model, const Matrix &transform)
+std::future<std::shared_ptr<BVHNode>> BVHBuilder::BuildAsync(const Model &model,
+                                                             const Matrix &transform)
 {
-    auto task = std::make_shared<std::packaged_task<Ref<BVHNode>()>>(
+    auto task = std::make_shared<std::packaged_task<std::shared_ptr<BVHNode>()>>(
         [model, transform]() { return Build(model, transform); });
 
-    std::future<Ref<BVHNode>> future = task->get_future();
+    std::future<std::shared_ptr<BVHNode>> future = task->get_future();
     std::async(std::launch::async, [task]() { (*task)(); });
     return future;
 }

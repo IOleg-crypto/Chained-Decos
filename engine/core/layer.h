@@ -21,6 +21,16 @@ public:
     virtual void OnDetach()
     {
     }
+
+    bool IsEnabled() const
+    {
+        return m_Enabled;
+    }
+    void SetEnabled(bool enabled)
+    {
+        m_Enabled = enabled;
+    }
+
     virtual void OnUpdate(float deltaTime)
     {
     }
@@ -41,6 +51,7 @@ public:
 
 protected:
     std::string m_DebugName;
+    bool m_Enabled = true;
 };
 } // namespace CHEngine
 

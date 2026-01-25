@@ -13,23 +13,16 @@ set(ENGINE_SOURCES
     core/layer_stack.h
     core/process_utils.cpp
     core/process_utils.h
-    core/main_thread_queue.cpp
-    core/main_thread_queue.h
-    core/async_utils.h
     core/base.h
     core/events.h
     core/entry_point.h
     core/math_types.h
+    core/task_system.cpp
+    core/task_system.h
 
     # Scene
     scene/scene.cpp
     scene/scene.h
-    scene/scene_scripting.cpp
-    scene/scene_scripting.h
-    scene/scene_animator.cpp
-    scene/scene_animator.h
-    scene/scene_audio.cpp
-    scene/scene_audio.h
     scene/entity.h
     scene/components.h
     scene/scene_serializer.cpp
@@ -43,17 +36,25 @@ set(ENGINE_SOURCES
     scene/yaml_utils.h
 
     # Components (Subfolders)
-    scene/components/animation_component.h
+    scene/components/audio_component.h
+    scene/components/camera_component.h
+    scene/components/game_components.h
     scene/components/hierarchy_component.h
+    scene/components/id_component.h
+    scene/components/lighting_component.h
+    scene/components/mesh_component.h
+    scene/components/physics_component.h
     scene/components/scripting_components.h
-    scene/components/ui_component.h
+    scene/components/tag_component.h
+    scene/components/transform_component.h
+    scene/components/widget_component.h
+    scene/components/animation_component.h
 
     # Renderer
     renderer/render.cpp
     renderer/render.h
     renderer/render_types.h
-    renderer/scene_render.cpp
-    renderer/scene_render.h
+
     renderer/asset_manager.cpp
     renderer/asset_manager.h
     renderer/model_asset.cpp
@@ -64,9 +65,11 @@ set(ENGINE_SOURCES
     renderer/shader_asset.h
     renderer/environment.cpp
     renderer/environment.h
+    renderer/font_asset.cpp
+    renderer/font_asset.h
     renderer/asset.h
     renderer/material.h
-    renderer/render_state.h
+
 
     # Physics
     physics/physics.cpp
@@ -80,14 +83,22 @@ set(ENGINE_SOURCES
     # Audio
     audio/sound_asset.cpp
     audio/sound_asset.h
+
+    # UI
+    ui/canvas_renderer.cpp
+    ui/canvas_renderer.h
+    ui/imgui_raylib_ui.h
 )
 
 add_library(engine STATIC ${ENGINE_SOURCES})
 target_link_libraries(engine PUBLIC yaml-cpp)
 
 target_link_libraries(engine PUBLIC raylib imguilib EnTT)
-target_include_directories(engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(engine PUBLIC ${CMAKE_SOURCE_DIR}/include/json/single_include)
+target_include_directories(engine PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+)
+target_include_directories(engine PRIVATE ${CMAKE_SOURCE_DIR}/include/json/single_include)
 
 # Copy engine resources to the build directory
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources" DESTINATION "${CMAKE_BINARY_DIR}/engine")

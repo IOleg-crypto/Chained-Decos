@@ -8,8 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Options
 option(BUILD_TESTS "Build unit tests" ON)
 
-# Global Include Paths
-include_directories(${CMAKE_SOURCE_DIR})
+# Global Include Paths - Removed in favor of target_include_directories
+# include_directories(${CMAKE_SOURCE_DIR})
 
 # Dependencies
 include(cmake/CompilerSettings.cmake)

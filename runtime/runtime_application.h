@@ -10,10 +10,11 @@ class RuntimeApplication : public Application
 {
 public:
     RuntimeApplication(const Application::Config &config, const std::string &projectPath = "");
+    virtual void PostInitialize() override;
     virtual ~RuntimeApplication() = default;
 
 private:
-    Ref<Scene> m_ActiveScene;
+    std::string m_ProjectPath;
 };
 } // namespace CHEngine
 

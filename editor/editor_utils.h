@@ -6,27 +6,40 @@
 #include <filesystem>
 #include <string>
 
-namespace CHEngine::EditorUtils
+namespace CHEngine
 {
-namespace ProjectUtils
+class ProjectUtils
 {
-void NewProject();
-void NewProject(const std::string &name, const std::string &path);
+public:
+    static void NewProject();
+    static void NewProject(const std::string &name, const std::string &path);
 
-void OpenProject();
-void OpenProject(const std::filesystem::path &path);
+    static void OpenProject();
+    static void OpenProject(const std::filesystem::path &path);
 
-void SaveProject();
-} // namespace ProjectUtils
+    static void SaveProject();
+};
 
-namespace SceneUtils
+class SceneUtils
 {
-void NewScene();
-void OpenScene();
-void OpenScene(const std::filesystem::path &path);
-void SaveScene();
-void SaveSceneAs();
-} // namespace SceneUtils
-} // namespace CHEngine::EditorUtils
+public:
+    static void NewScene(SceneType type = SceneType::Scene3D);
+    static void OpenScene();
+    static void OpenScene(const std::filesystem::path &path);
+    static void SaveScene();
+    static void SaveSceneAs();
+    static void SetParent(Entity child, Entity parent);
+};
+
+class WidgetFactory
+{
+public:
+    static Entity CreateButton(Scene *scene, const std::string &label = "Button");
+    static Entity CreateText(Scene *scene, const std::string &text = "Text");
+    static Entity CreateImage(Scene *scene, const std::string &name = "Image");
+    static Entity CreateSlider(Scene *scene, const std::string &label = "Slider");
+    static Entity CreateCheckbox(Scene *scene, const std::string &label = "Checkbox");
+};
+} // namespace CHEngine
 
 #endif // CH_EDITOR_UTILS_H
